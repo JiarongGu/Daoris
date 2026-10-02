@@ -1,7 +1,9 @@
 /**
  * The family rehearsal's set-up phase, in the parts a test can hold without a host or a driver (LAYOUT7a):
  * the doctrine tool's launcher a child of Daoris finds by its bare name, the PATH that puts it first, and a
- * reading of what `daoris-driver setup` prints.
+ * reading of what `daoris-driver setup` prints; for the registration that follows the landing (WSSETUP5a), a
+ * reading of what `daoris-driver register` prints and of the machine log's lines; and, for a workspace set up one
+ * repository at a time (WSSETUP6a), a reading of what `daoris-driver setup --workspace` prints.
  *
  * ## Why the workspace's CLI, and a launcher of the rehearsal's own
  *
@@ -13,9 +15,12 @@
  * ## A reading of another program's words
  *
  * `readSetup` reads `SetupCommand`'s output by its shape: the head, the rows of what was read, the quest's
- * words, the rules, the refusals, what a press published. It shares no code with it. `setup-kit.test.mjs`
- * holds the reading against output spelled as `SetupCommand` writes it, so a change to those words is a
+ * words, the rules, the refusals, what a press published. It shares no code with it. The CLI's
+ * `test/setup-kit.test.ts`, which `npm run verify` runs (TEST3), holds the reading against output spelled as
+ * `SetupCommand` writes it, so a change to those words is a
  * change to that test's fixtures too, and the family rehearsal is what runs the two against each other.
+ * `readRegister`, `readFollowed`, `readEvents` and `readWorkspaceSetup` read `RegisterCommand`, `MachineLog` and
+ * `WorkspaceSetupCommand` the same way.
  */
 import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
@@ -67,9 +72,9 @@ export function withFirstOnPath(folder, env = process.env) {
   return { [key]: env[key] ? `${folder}${delimiter}${env[key]}` : folder };
 }
 
-/** A row of what was read (`  line     …`): its label padded to nine, after two spaces. */
-const row = (lines, label) => {
-  const lead = `  ${label.padEnd(9)}`;
+/** A row of what was read (`  line     …`): its label padded to nine, after two spaces; a plan's pacing pads to ten. */
+const row = (lines, label, width = 9) => {
+  const lead = `  ${label.padEnd(width)}`;
   const found = lines.find((line) => line.startsWith(lead));
   return found === undefined ? null : found.slice(lead.length);
 };
@@ -119,5 +124,103 @@ export function readSetup(out) {
     ask: id('ask'),
     quest: id('quest'),
     nothingPublished: lines.includes('--plan: nothing was published, and no rule was added.'),
+  };
+}
+
+/**
+ * What `daoris-driver register [--repository <name>]` printed (`RegisterCommand`, WSSETUP5), read back: each
+ * repository's line as its outcome's word, its name and the sentence its row says, and the counts the last line gives
+ * (null where it gave none). A line per repository starts with two spaces, the outcome padded to sixteen, a space, the
+ * name and two spaces; every other line starts `register: `.
+ */
+export function readRegister(out) {
+  const lines = out.split(/\r?\n/);
+  const followed = lines
+    .map((line) => /^ {2}(\S+) +(\S+) {2}(.+)$/.exec(line))
+    .filter(Boolean)
+    .map(([, outcome, repository, said]) => ({ outcome, repository, said }));
+  const counts = lines
+    .map((line) => /^register: (\d+) registered, (\d+) already as their lines say, (\d+) not registered\b/.exec(line))
+    .find(Boolean);
+  const count = (at) => (counts ? Number(counts[at]) : null);
+  return { followed, registered: count(1), unchanged: count(2), refused: count(3) };
+}
+
+/**
+ * The machine log's `registry.followed` lines (WSSETUP5, D124 §3.4), from what `daoris-driver logs --json` printed: each
+ * as its repository's name, its outcome's word and the names of every field the line carried, in order, so a reader can
+ * hold that it carried nothing else. Other events, and lines that are not the log's, are skipped.
+ */
+export function readFollowed(out) {
+  return readEvents(out, 'registry.followed')
+    .map((data) => ({ repository: data.repository, outcome: data.outcome, fields: Object.keys(data) }));
+}
+
+/**
+ * The data of every machine log line of `event` (D94), from what `daoris-driver logs --json` printed, in the order the
+ * lines were written. Other events, and lines that are not the log's, are skipped.
+ */
+export function readEvents(out, event) {
+  return out.split(/\r?\n/).flatMap((line) => {
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      return [];
+    }
+    return parsed?.event === event && typeof parsed.data === 'object' && parsed.data !== null ? [parsed.data] : [];
+  });
+}
+
+/** The words a workspace plan says a repository's state in (`WorkspaceSetup.Word`, D124 §4.4). */
+const SETUP_STATES = ['set up', 'waiting for your review', 'setting up', 'parked', 'to go', 'skipped', 'declined', 'deleted'];
+
+/**
+ * What `daoris-driver setup --workspace <name> …` printed (`WorkspaceSetupCommand`, WSSETUP6), read back. `rows` is the
+ * list a press works from (what touched each, its state now, and each refusal under it); `atOnce`, `pilot` and `agent`
+ * the pacing rows; `rules` the ones a press would add or added; `refusals` the press's own, after `refused:`; `messages`
+ * each `setup: …` sentence that is not a head (a press's, a steer's); `standing` where each repository of a plan stands,
+ * with `summary` its head line; `nothingWritten` whether a plan said it wrote, published and added nothing.
+ */
+export function readWorkspaceSetup(out) {
+  const lines = out.split(/\r?\n/);
+  const head = lines.map((line) => /^setup: workspace `([^`]+)`, /.exec(line)).find(Boolean);
+  const rows = [];
+  const standing = [];
+  for (const line of lines) {
+    const listed = /^ {0,2}\d+ {2}(\S+) +(\d+) {2,}(\d+) {2,}(\d+) {2}(.+)$/.exec(line);
+    if (listed) {
+      rows.push({
+        repository: listed[1], asked: Number(listed[2]), read: Number(listed[3]), sessions: Number(listed[4]), now: listed[5],
+        refusals: [],
+      });
+      continue;
+    }
+    const refused = /^ {7}refused: (.+)$/.exec(line);
+    if (refused && rows.length > 0) {
+      rows.at(-1).refusals.push(refused[1]);
+      continue;
+    }
+    const stands = /^ {0,2}\d+ {2}(\S+) +(.+)$/.exec(line);
+    const state = stands && SETUP_STATES.find((word) => stands[2] === word || stands[2].startsWith(`${word} — `));
+    if (state) {
+      standing.push({ repository: stands[1], state, said: stands[2] === state ? null : stands[2].slice(state.length + 3) });
+    }
+  }
+
+  const rulesAt = lines.findIndex((line) => /^(a press adds|added) to workspace `[^`]+`'s rules, .*doctrine tool:$/.test(line));
+  const refusedAt = lines.indexOf('refused:');
+  return {
+    workspace: head?.[1] ?? null,
+    rows,
+    atOnce: row(lines, 'at once', 10),
+    pilot: row(lines, 'pilot', 10),
+    agent: row(lines, 'agent', 10),
+    rules: rulesAt < 0 ? [] : following(lines, rulesAt, '  ').filter((each) => /^Bash\(.+\)$/.test(each)),
+    refusals: refusedAt < 0 ? [] : following(lines, refusedAt, '  - '),
+    messages: lines.filter((line) => line.startsWith('setup: ') && !/^setup: workspace `/.test(line)).map((line) => line.slice(7)),
+    standing,
+    summary: lines.find((line) => line.startsWith('Setting up — ')) ?? null,
+    nothingWritten: lines.includes('--plan: nothing was written, published or added.'),
   };
 }

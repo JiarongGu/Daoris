@@ -44,6 +44,12 @@ public static class DriverCommand
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
               prints what was read, the rule and the quest, and publishes nothing.
+          setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
+          setup --workspace <name> --pause | --resume | --stop
+              set a workspace up one repository at a time, the ones other work touches first: a press
+              writes a plan the loop works, adding the doctrine tool's verbs to the workspace's rules
+              once, and pausing after a pilot of two. --plan prints the list and each refusal; --pause,
+              --resume (which judges the skipped again) and --stop steer a plan already made.
           register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `connect` would; a start and a line Daoris moves do the same on their own.

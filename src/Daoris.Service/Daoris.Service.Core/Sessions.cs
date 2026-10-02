@@ -154,6 +154,19 @@ public sealed record Session(
     /// </summary>
     public bool Interrupted { get; init; }
 
+    /// <summary>
+    /// A <see cref="SessionState.Failed"/> record whose turn an account's limit refused (TOOL4c, D125 §5.2),
+    /// as the driver read it from the door's failure. The quest waits for the reset or rotates rather than
+    /// spending a strike on it, which is the driver's to decide. False for everything else, and for every
+    /// record from before the field, which is the old reading: a failure like any other.
+    /// </summary>
+    /// <remarks>
+    /// <b>It names no account</b>, so unlike <see cref="Profile"/> it is served to every caller and travels
+    /// with the record: a teammate reading a quest's sessions sees that one was cut off by a limit, never
+    /// whose.
+    /// </remarks>
+    public bool Limit { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
@@ -293,6 +306,10 @@ public sealed class SessionStore
         // D104: a stop that was not the person's — the sweep's, or a shutdown's. A record from before it
         // says nothing, and nothing is the old reading: the person's stop.
         await SchemaColumns.EnsureAsync(_connection, "sessions", "interrupted", "interrupted INTEGER NULL", ct).ConfigureAwait(false);
+
+        // TOOL4c (D125 §5.2): a failure an account's limit made. A record from before it says nothing, and
+        // nothing is the old reading: a failure like any other. `limited`, since LIMIT is SQL's own word.
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "limited", "limited INTEGER NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _connection.CreateCommand())
         {
@@ -444,9 +461,10 @@ public sealed class SessionStore
     /// a later move must not erase the transcript an earlier one recorded.
     /// </summary>
     /// <param name="interrupted">That this move ends it not by the person's hand (D104) — kept once said.</param>
+    /// <param name="limit">That an account's limit refused its turn (TOOL4c) — kept once said.</param>
     public async Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false)
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
@@ -459,15 +477,17 @@ public sealed class SessionStore
             Transcript = transcript ?? session.Transcript,
             Updated = now,
             Interrupted = interrupted || session.Interrupted,
+            Limit = limit || session.Limit,
         };
 
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, evidence = $evidence,
-              transcript = $transcript, updated = $updated, interrupted = $interrupted,
+              transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
               revision = {NextRevision} WHERE id = $id
             """;
         command.Parameters.AddWithValue("$interrupted", moved.Interrupted ? 1 : (object)DBNull.Value);
+        command.Parameters.AddWithValue("$limited", moved.Limit ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$state", moved.State.ToString());
         command.Parameters.AddWithValue("$note", (object?)moved.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)moved.Evidence ?? DBNull.Value);
@@ -489,12 +509,15 @@ public sealed class SessionStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, {NextRevision})
             ON CONFLICT (id) DO UPDATE SET
               state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace,
-              kind = $kind, harness_version = $harnessVersion, origin = $origin, revision = {NextRevision}
+              kind = $kind, harness_version = $harnessVersion, origin = $origin, limited = $limited,
+              revision = {NextRevision}
             """;
+        // A limit names no account (TOOL4c), so it is copied like the state beside it.
+        command.Parameters.AddWithValue("$limited", record.Limit ? 1 : (object)DBNull.Value);
         // Whose record: named, or read from the id a mirror is always keyed by — never empty, because
         // a mirrored row with no origin would count as this machine's own and hold its trees.
         command.Parameters.AddWithValue(
@@ -772,6 +795,7 @@ public sealed class SessionStore
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         Answer = reader.IsDBNull(reader.GetOrdinal("answer")) ? null : reader.GetString(reader.GetOrdinal("answer")),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
+        Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
     };
 
     /// <summary>Keep the person's answer on a parked session's record (STANDDOWN2).</summary>

@@ -635,6 +635,18 @@ public interface ISessionAdapter
     HarnessToolchain? Toolchain => null;
 
     /// <summary>
+    /// For a door Daoris manages no toolchain for: the agent whose limit table it reads, and whose own sign-in a limit
+    /// on it cools (TOOL4d, D125 §1.3) — AGT7's rule, that a door's limits are its owner's, for a door with no
+    /// <see cref="HarnessToolchain.AccountOf"/> to say it. Null, the default, reads none, and a door WITH a toolchain
+    /// reads its owner's through <c>AccountOf</c>, never through this.
+    /// </summary>
+    /// <remarks>
+    /// The protocol stub's alone, so the family rehearsal gates a limit over the protocol door with no account behind
+    /// it: the pipe stub's door carries text alone, and a limit is never read from text (D125 §1.2, §1.4).
+    /// </remarks>
+    string? LimitsOf => null;
+
+    /// <summary>
     /// A reader of this harness's own structured stdout on the pipe door (D76 §1), new per session — or
     /// null when the door carries text, which is every adapter until its harness's wire is checked.
     /// </summary>
@@ -803,7 +815,9 @@ public sealed class StubAdapter : ISessionAdapter
             Account: @"logged-in as (\S+)"),
         // Claude Code's own words for a refused credential (AGT3b), mirrored so the rehearsal can
         // gate a refused account with no account behind it.
-        Refused: "API Error: 401");
+        Refused: "API Error: 401",
+        // And its words for an account's limit (TOOL4a, D125 §1.3 rule 4), mirrored for the same reason.
+        Limits: ClaudeLimits.Words);
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -842,6 +856,13 @@ public sealed class AcpStubAdapter : ISessionAdapter
 
     public ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         Spawning.ChatInRoot(target, Resolve(command)[0], Resolve(command).Skip(1));
+
+    /// <summary>
+    /// The stub's words for an account's limit, read as its owner's (TOOL4d, D125 §1.3): the stub mirrors Claude Code,
+    /// and this door mirrors Claude Code's protocol door, which reads Claude Code's. A limit here cools the stub's own
+    /// sign-in. Declared here rather than as a toolchain, which would make this door an agent with accounts to manage.
+    /// </summary>
+    public string? LimitsOf => "stub";
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -1307,7 +1328,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // What it prints when its provider refuses the credential (AGT3b) — measured on 2.1.280: a
         // `-p` run with an invalid key was silent for 189 s of retries, then printed "Failed to
         // authenticate. API Error: 401 API key is invalid." and exited 1.
-        Refused: "API Error: 401");
+        Refused: "API Error: 401",
+        // What it says when an account's limit refuses a turn (TOOL4a, D125 §0.2): five recorded
+        // sentences, each naming its reset. Its ACP door reads these as its owner's (AGT7).
+        Limits: ClaudeLimits.Words);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

@@ -139,6 +139,8 @@ internal sealed class StandInLedger : HttpMessageHandler
                     session["state"] = body!["state"]!.GetValue<string>();
                     if (body["note"] is { } note) session["note"] = note.GetValue<string>();
                     if (body["interrupted"] is { } interrupted) session["interrupted"] = interrupted.GetValue<bool>();
+                    // Kept once said, as the service keeps it (TOOL4c).
+                    if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" });
                 }
 

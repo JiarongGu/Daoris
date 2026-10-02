@@ -131,7 +131,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   (`agent pin|unpin`; *explicit command → managed pin → `PATH`*; a pin nobody installed
   **refuses**), usage **measured before managed** (ACP's `usage_update` per session at its
   high-water mark, totalled per account, machine-local; 🔴 **absent is never zero**, no price
-  claimed), and breadth as **native adapters plus the ACP door, never a registry**. TOOL4 is held.
+  claimed), and breadth as **native adapters plus the ACP door, never a registry**. TOOL4 is designed (D125).
 - 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
   it — **`Daoris.exe`, a small launcher, at the root; the application (`app/Daoris.Desktop.exe`, on
   its own Chromium, and the browser too, D99) and the host under `app/`** (D93); **the Daoris home in `data/`**;

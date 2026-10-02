@@ -57,7 +57,15 @@ public static class RegistryOutcome
 public sealed record RegistrationRow(
     string Repository, string Workspace, string? Root, bool Adopted, string? Summary, IReadOnlyList<string> Owns,
     IReadOnlyList<string> Accepts, IReadOnlyList<string> Uses, IReadOnlyList<string> Packs, bool Joined, bool SharesKnowledge,
-    IReadOnlyList<LaneView> Lanes);
+    IReadOnlyList<LaneView> Lanes)
+{
+    /// <summary>
+    /// The service's own word that the row is registered: adopted, and declaring something (its <c>Registration.Registered</c>).
+    /// Read from the door, never recomputed here, so a workspace plan's <i>set up</i> is the service's (WSSETUP6). Absent is
+    /// false: a host that does not say it is not taken to have said yes.
+    /// </summary>
+    public bool Registered { get; init; }
+}
 
 /// <summary>What a repository's line holds of the two files a registration reads (D124 §3.2), read as git objects.</summary>
 /// <param name="Line">The line, where one is known.</param>

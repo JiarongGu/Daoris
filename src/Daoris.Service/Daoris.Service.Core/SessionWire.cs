@@ -9,7 +9,7 @@ namespace Daoris.Knowledge;
 /// </summary>
 /// <remarks>
 /// <para>What travels is a fact about work: which quest, which repository, which tool, how it ended,
-/// what landed. What never travels has no field here at all — the TRANSCRIPT and the TREE are paths on
+/// whether an account's limit cut it off (never whose), what landed. What never travels has no field here at all — the TRANSCRIPT and the TREE are paths on
 /// a machine's disk, and the PROFILE is the name of the account it ran as (D47 §4, D49 §4, D51). Absent,
 /// not policed: a record read from a store that holds them is copied field by field, and none of the
 /// three is a field.</para>
@@ -28,7 +28,8 @@ public static class SessionWire
         {
             writer.WriteStartObject();
             Write(writer, record.Id, origin: null, record.Quest, record.Repository, record.Adapter, record.State,
-                record.Note, record.Evidence, record.Created, record.Updated, record.Kind, record.HarnessVersion);
+                record.Note, record.Evidence, record.Created, record.Updated, record.Kind, record.HarnessVersion,
+                record.Limit);
             writer.WriteEndObject();
         }
 
@@ -52,7 +53,7 @@ public static class SessionWire
             records.Add(new FedSessionRecord(
                 Text(item, "id"), Text(item, "quest"), Text(item, "repository"), Text(item, "adapter"),
                 Text(item, "state"), Text(item, "note"), Text(item, "evidence"), created, updated,
-                Text(item, "kind"), Text(item, "harnessVersion")));
+                Text(item, "kind"), Text(item, "harnessVersion"), Said(item, "limit")));
         }
 
         return records;
@@ -70,7 +71,7 @@ public static class SessionWire
             writer.WriteStartObject();
             Write(writer, session.Id, session.Origin, session.Quest, session.Repository, session.Adapter,
                 session.StateName, session.Note, session.Evidence, session.Created, session.Updated,
-                session.Kind.ToString(), session.HarnessVersion);
+                session.Kind.ToString(), session.HarnessVersion, session.Limit);
             writer.WriteEndObject();
         }
 
@@ -101,6 +102,7 @@ public static class SessionWire
                 HarnessVersion: Text(item, "harnessVersion"))
             {
                 Origin = origin,
+                Limit = Said(item, "limit"),
             });
         }
 
@@ -113,7 +115,7 @@ public static class SessionWire
     private static void Write(
         Utf8JsonWriter writer, string? id, string? origin, string? quest, string? repository, string? adapter,
         string? state, string? note, string? evidence, DateTimeOffset created, DateTimeOffset updated,
-        string? kind, string? harnessVersion)
+        string? kind, string? harnessVersion, bool limit)
     {
         writer.WriteString("id", id);
         if (origin is not null) writer.WriteString("origin", origin);
@@ -129,7 +131,15 @@ public static class SessionWire
         writer.WriteString("updated", updated.ToString("O"));
         if (kind is not null) writer.WriteString("kind", kind);
         if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
+        // TOOL4c: said only where true, so a record from before the field and one it never applied to read
+        // alike on both sides, as false. It names no account, which is why it has a field at all.
+        if (limit) writer.WriteBoolean("limit", true);
     }
+
+    /// <summary>Whether a flag is said, true: absent, false or of another kind is not.</summary>
+    private static bool Said(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value)
+        && value.ValueKind == JsonValueKind.True;
 
     private static DateTimeOffset? Time(JsonElement element, string name) =>
         Text(element, name) is { } text && DateTimeOffset.TryParse(text, out var at) ? at : null;

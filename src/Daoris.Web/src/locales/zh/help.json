@@ -35,7 +35,7 @@
   "help.proposal.plugin.change": "{{what}}：{{was}} → {{now}}",
   "help.proposal.plugin.needs": "需要：{{need}}",
   "help.proposal.plugin.replaced": "应用会从它的来处替换它的文件夹，它保存的内容留下。按下时不会启动它运行的任何东西：驱动会在下一次查看时重新启动它。",
-  "help.proposal.titleSync": "问道衍提议把仓库更新到最新",
+  "help.proposal.titleSync": "问道衍提议更新到最新",
   "help.proposal.syncLook": "查看时会以你的身份从 origin 获取每条主线，只移动 origin 自己的引用；之后卡片会列出按下后会做什么。在你应用之前，你的任何东西都不会移动，而道衍从不推送。",
   "help.proposal.syncRows": "按下后会做什么",
   "help.proposal.syncNote": "应用只处理会移动的行，每一行在动手之前都会再判断一次。道衍不再获取，也从不推送。",

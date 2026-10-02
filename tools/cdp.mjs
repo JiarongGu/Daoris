@@ -13,15 +13,8 @@
  * that was bought with incidents: the id-matched client, and the rule that you identify a page
  * before reporting its answer.
  */
+import { createServer } from 'node:net';
 
-/**
- * Find a port nobody is listening on, starting at `preferred`.
- *
- * ⚠ A port is not ours because a browser answers on it. The sibling's suite once ran entirely inside
- * an unrelated application's WebView2 that happened to hold its hard-coded port: the checks that only
- * needed *a* page passed, and the ones that cared which host they were in read exactly like an app
- * regression. Pick a free one, and attach only to something we started.
- */
 /**
  * Both loopback addresses. The engine binds its debug port to `localhost`, which one machine resolves to
  * IPv4 and another (or the same one, another day) to IPv6 alone: a port asked only on 127.0.0.1 then read
@@ -29,20 +22,86 @@
  */
 export const LOOPBACKS = ['127.0.0.1', '[::1]'];
 
-export async function freePort(preferred, span = 20) {
-  for (let port = preferred; port < preferred + span; port += 1) {
+/**
+ * What a failed bind says about a port: held, or refused by the system (`taken`), or refused because the
+ * machine has no such address (`absent`), which a machine without an IPv6 loopback answers for every port.
+ */
+export function bindVerdictOf(code) {
+  return code === 'EADDRNOTAVAIL' || code === 'EAFNOSUPPORT' ? 'absent' : 'taken';
+}
+
+/** Whether this process could bind `port` on `host` (an address, unbracketed) now: bound, then let go. */
+export function bindVerdict(host, port) {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once('error', (error) => resolve(bindVerdictOf(error.code)));
+    server.listen({ port, host, exclusive: true }, () => server.close(() => resolve('free')));
+  });
+}
+
+/** Whether anything answers HTTP on `port` at either loopback. */
+export async function answersOn(port, timeoutMs = 700) {
+  for (const host of LOOPBACKS) {
     // ANY answer means something is listening — not just an OK one. Testing `response.ok` would call
     // a port held by some other HTTP server free, and the shell would then fail to bind it.
-    let taken = false;
-    for (const host of LOOPBACKS) {
-      taken = await fetch(`http://${host}:${port}/json/version`, { signal: AbortSignal.timeout(700) })
-        .then(() => true)
-        .catch(() => false);
-      if (taken) break;
-    }
-    if (!taken) return port;
+    const answered = await fetch(`http://${host}:${port}/json/version`, { signal: AbortSignal.timeout(timeoutMs) })
+      .then(() => true)
+      .catch(() => false);
+    if (answered) return true;
   }
-  throw new Error(`no free port in ${preferred}..${preferred + span - 1}`);
+  return false;
+}
+
+/**
+ * Whether `port` is ours to hand out: this process can bind it on every loopback the machine has, and
+ * nothing answers on it.
+ *
+ * 🔴 Bound, not only asked (LOOK4). A port Windows reserves (`netsh interface ipv4 show excludedportrange
+ * protocol=tcp`) answers nothing, so asking called it free, and nobody can bind it: the engine opened no
+ * debug port and said nothing. A listener that never answers HTTP read as free the same way. The bind
+ * sees both; the asking stays for a listener on an address the bind does not collide with.
+ */
+export async function portIsFree(port) {
+  for (const host of LOOPBACKS) {
+    if ((await bindVerdict(host.replace(/^\[|\]$/g, ''), port)) === 'taken') return false;
+  }
+  return !(await answersOn(port));
+}
+
+/** A port the system hands out on loopback, or null when it hands none. */
+function systemPort() {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once('error', () => resolve(null));
+    server.listen({ port: 0, host: '127.0.0.1' }, () => {
+      const { port } = server.address();
+      server.close(() => resolve(port));
+    });
+  });
+}
+
+/**
+ * Find a port nobody is listening on and this process can bind, starting at `preferred`.
+ *
+ * ⚠ A port is not ours because a browser answers on it. The sibling's suite once ran entirely inside
+ * an unrelated application's WebView2 that happened to hold its hard-coded port: the checks that only
+ * needed *a* page passed, and the ones that cared which host they were in read exactly like an app
+ * regression. Pick a free one, and attach only to something we started.
+ *
+ * @param isFree - the test of one port; tests pass their own.
+ */
+export async function freePort(preferred, span = 20, isFree = portIsFree) {
+  for (let port = preferred; port < preferred + span; port += 1) {
+    if (await isFree(port)) return port;
+  }
+
+  // A whole walk can sit inside one reservation: Windows held 9309–9408 on LOOK4's machine, every port
+  // the walk from 9333 tries. So the system picks one, and the pick is held to the same test.
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const port = await systemPort();
+    if (port && await isFree(port)) return port;
+  }
+  throw new Error(`no free port in ${preferred}..${preferred + span - 1}, nor one the system handed out`);
 }
 
 /**

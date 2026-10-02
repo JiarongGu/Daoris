@@ -106,7 +106,8 @@ public sealed partial class Driver
             return Hold(error.Message);
         }
 
-        if (!selection.Allowed) return Hold(selection.Refusal!);
+        // A cooling account's hold carries its cool-off (TOOL4d), as a quest's does.
+        if (!selection.Allowed) return Hold(selection.Refusal!) with { Cooling = selection.Cooling };
 
         // The room, written from the circle's declarations as they stand now.
         string room;
@@ -219,8 +220,10 @@ public sealed partial class Driver
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+                    // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
+                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
-                    await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct).ConfigureAwait(false);
+                    await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited).ConfigureAwait(false);
 
                     return new StartRun(
                         $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",

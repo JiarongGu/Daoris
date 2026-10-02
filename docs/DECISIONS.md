@@ -2102,6 +2102,10 @@ its binary is resolved, so a bare name is found on the tools' `PATH`. The resolu
 held to one way rather than layered. A package pin's `npm` is the npm the tools resolve, and `agent install` keeps the
 system's.*
 
+*Amended by D125 (TOOL4, 2026-10-02): §b's hold on rotation is lifted. Five observed limits answered its three
+questions, and rotation is designed in `docs/2026-10-01-account-rotation-design.md`, which replaces the toolchain
+design's §2 part 4 and §6.*
+
 ## D58 — An unattended driver stops after three failures on one quest, and the count is derived (2026-09-22)
 
 **Decision.** A quest that has failed **three** times on this machine is **parked**: the driver stops
@@ -2155,6 +2159,10 @@ one broken quest must keep working the rest.
 
 *Amended by D104 (DRV8, 2026-09-30): a `stopped` record that says it was interrupted — the orphan sweep's
 or a shutdown's, not the person's — counts as a strike too. The person's own stop still never does.*
+
+*Amended by D125 (TOOL4d, 2026-10-02): a `failed` record that says `limit` — an account's limit refused its turn —
+is not a strike. The account cools until the reset the agent named, and the quest's carry-on waits for it rather
+than being parked for it.*
 
 ## D59 — The always-loaded tier lives in `AGENTS.md`, inside a region Daoris owns (2026-09-22)
 
@@ -6419,6 +6427,21 @@ check went from 519 findings (glossary 84, form 288, door 16, budget 131) to 107
 placeholders. The Playwright specs were edited to the new names and **not run** in the branch (the parent runs
 `test:web`); what they pin was read against Playwright's matching (case-insensitive substrings unless `exact`). The
 107 budgets are the window's to judge, and nothing looked at the window in this branch either.
+
+*Noted by NAME2 (2026-10-02): what the build settled that the design left open.*
+- **An accepted budget judgement is kept in the glossary** (`accepted`: the key, the name accepted per language, and
+  why). The design said the window decides each judgement but not where a decision lives, so NAME1b's 107 came back
+  on every run. The check stops reporting a name while it is the one accepted. A rename lapses the acceptance, and a
+  name that fits again is reported so the acceptance can go. Both are reports (D54). Rejected: a fifteenth kind for a
+  select's option, the commonest acceptance, which would amend the kinds rather than fill what was left open; and
+  recording acceptances in the audit, which the check cannot read.
+- **A plugin's switch is 启用 and 停用**, and its off state 已停用, held by the terms `turn on` and `turn off`.
+  关闭 is close's name, so the press read as close and an off plugin wore a closed quest's 已关闭. The English pair
+  stays *Turn on* and *Turn off*, the driver's room says *switch one on or off*, and the CLI's verbs are typed words.
+- **A lane is 泳道** (the term `lane`), which DEV4 put on the window before the glossary had a term.
+- **What the gates do not cover.** The acceptances' rooms are read from the code (classes, a menu's width, a row
+  that wraps), not measured, and the seven judgements left on the report are the window's. Nothing looked at the
+  window in this branch.
 ## D119 — Plugins get a view of their own: a list by what they need, a page per plugin, and Settings keeps where they are looked for (2026-10-01)
 
 **Decision (PLUGUI1a).** The owner, 2026-10-01: *"because plugin will be a big part of daoris so it need to have a
@@ -7329,6 +7352,44 @@ the folder, so it reaches into nothing.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
 
+**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
+driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
+install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
+network: a package source is PLUGDIST1c's. What the design left open, settled here:
+- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
+  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
+  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
+  anything is extracted, the last naming both numbers.
+- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
+  check a source makes before downloading would trust a type that says something else.
+- **Any `dependency` element refuses the package**, in a group or not.
+- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
+  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
+  too, since Windows would write the second over the first, and so does a name holding a control character, which
+  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
+  is written, and each target is checked again against the stage's whole path as it is written.
+- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
+- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
+  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
+  copies from; `Placement` still refuses every other.
+- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
+  offline kind, which PLUGDIST1c can update from as from an index.
+- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
+  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
+  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
+  offer does not read, and `{}` now names all three kinds.
+- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
+  record and update theories and holds its own to them, and was seen failing on a one-sided change.
+- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
+  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
+- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
+  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
+  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
+  update, and `daoris plugin install` answers as a moved verb does.
+- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
+  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
+  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
+
 ## D124 — A workspace is set up one repository at a time by its own sessions: the install carries the doctrine tool, a set-up writes the knowledge a neighbour needs, registration follows the line, and a session looks before it asks (2026-10-01)
 
 **Decision (WSSETUP1).** A driven session in the owner's work workspace stopped to ask the person a question its
@@ -7640,6 +7701,84 @@ the row's own root, and sends through the registry door. What the design left op
   rehearsal's check (a set-up under `merge` reads adopted and declared with no `connect`) is the tools lane's and not
   written. Whether a real *Bring up to date* after a real merge registers what a set-up declared is §9's sixth item.
 
+**As built (WSSETUP6, 2026-10-02): the workspace plan** (point 5, design §4.1–§4.3 and §4.5's terminal).
+`daoris-driver setup --workspace <name>` previews and presses (`WorkspaceSetup.PreviewAsync`, `PressAsync`): it writes
+`<home>/setup/<workspace>.json` (`WorkspaceSetupFile`, named by the intake room's rule) and adds the nine verbs once, at the
+workspace's scope. Each look works every plan that is live and not paused (`WorkspaceSetup.TickAsync`), publishing the next
+to go as the single press does (`SetupPress.PlanAsync`, then `PublishAsync`, the ask without a rule). What the build settled:
+- **The tick works the plans before the look reads the quests**, after it follows the moved lines, so a set-up it publishes
+  is planned and started in that same look. A home with no working plan reads nothing.
+- **Each state is read from the facts.** *Set up* is the registry door's own `registered` word (the service's `Registered`:
+  adopted, and a summary, an area owned or a kind of work accepted), read onto `RegistrationRow.Registered` and never
+  recomputed, so there is no twin to keep; absent is no. A set-up quest open or taken, from any door, is *setting
+  up*, or *parked* by the planner's strikes rule. One closed done is *waiting for your review*, one declined is *declined*,
+  and one the plan published that is gone is *deleted*. Else the plan's own record says *skipped*, or it is *to go*. A
+  set-up the single press opened holds its turn and a slot, so no repository is asked twice, and the press's own `open`
+  refusal is the second guard.
+- **A parked set-up frees its slot, and has not closed.** It holds no session and waits on the person, so the plan moves on.
+  The pilot waits for it.
+- **`atOnce` is held to `cap − 1` at every tick**, whatever the file says, and to one at a cap of one. The press refuses more,
+  naming `daoris driver cap`.
+- **The pilot is the first `pilot` set-ups the plan published**, in its order; a skipped repository is not one of them.
+  Nothing more is asked until all of them have closed. Then the plan writes `paused` with `by: pilot` once, says it in the
+  look's report and the log, and a resume sets `pilotResumed`, so the pilot never pauses it again.
+- **A skip keeps the refusal's code and its sentences**, and the repository is not judged again until the person resumes the
+  plan, since a resume clears `skipped`. An ask the service refuses is skipped as `service-refused`.
+- **A refusal of the machine's tools pauses the plan** (`by: tool`) rather than skip every repository in turn, and the press
+  refuses up front on the same refusals.
+- **Stop marks `stopped`.** The quests the plan published stay, and the terminal names each one still open that nobody has
+  started, with `daoris-driver quest delete <id>`. A new press replaces a stopped plan, never a working one.
+- **The order is read at the press, never at a tick.** It counts quests of any status addressed to the repository by anyone
+  but itself, set-ups left out; an ask's quest counts whichever tier routed it, since the quest does not say. It counts reads
+  from each session record's conversation record (`locations` on tool calls) by another repository's session, each call
+  once, with the deepest root owning a path. It counts sessions from the ledger's records, this machine's alone. A row with
+  no checkout here is left out of the order, and the press says so.
+- **The lines** are `setup.planned`, `published`, `skipped`, `paused`, `resumed` and `stopped`, from one catalogue
+  (`SetupLine`). The service client raises them (`SetupLined`) and `SessionLog` writes them. A look's report carries a
+  `setup  <workspace>: …` line for each publish, skip and pause.
+- **The doors.** The terminal is built. Ask Daoris's `workspace`, `pause`, `resume` and `stop` doors are owed to WSSETUP7
+  (`HelpCoverageTests`), and the room names the terminal's forms meanwhile. The screen and its modules route are WSSETUP7's.
+
+**Not covered by a gate run here**: the real world (`WorkspaceSetupWorld`: the git reads, the tools' versions, the service's
+doors), which only a real tick or terminal reaches. The family rehearsal's check (two scratch repositories set up one at a
+time by the stub, pausing after a pilot of one) is the tools lane's: written as phase 17d (WSSETUP6a, below). Whether one set-up at a time keeps
+pace with the owner's review is §9's fifth item.
+**As built (WSSETUP5a, 2026-10-02): the family rehearsal checks registration from the line.** Phase 17c reads atlas's
+row through the host's `/api/registry` before its landing and after it. Before, the row is not adopted and declares
+nothing, though the set-up is done. After, `trees land` has printed `registry  atlas: registered from its line …` at the
+landed commit, and the row reads adopted and declared, with the summary, `owns` and `accepts` of the `daoris.json` on
+the line, for the checkout's root. Nothing in the phase runs `connect`. The machine log, read through `logs --event
+registry.followed --json`, holds one line for atlas, `registered`, carrying the name and the word and nothing else. Then
+`daoris-driver register --repository atlas` finds it `unchanged` and registers none, the row's declaration is as it was,
+and the log's second line says `unchanged`. `tools/setup-kit.mjs` gains `readRegister` and `readFollowed`, held in
+`tools/setup-kit.test.mjs` against output spelled as `RegisterCommand` and `MachineLog` write it.
+**Proven without the rehearsal**: the checks were cut out of the phase and run against stand-ins answering in the host's
+and the driver's formats. 31 breakages, each of one claim, were each caught by the check that owns the claim.
+**Not run in the branch**: the family rehearsal itself, which the parent runs at the merge.
+
+**As built (WSSETUP6a, 2026-10-02): the family rehearsal sets a workspace up one repository at a time.** Phase 17d
+registers two repositories that hold only a README, without adopting them, in a workspace of their own. Both are drivable,
+each in a tree of its own, on the protocol stub, at a cap of two. Its checks:
+- **The list.** `setup --workspace meridian --plan` lists both, each to go and refused nothing, one at a time, with the
+  nine verbs a press adds. It writes no plan, publishes no quest and adds no rule.
+- **The press.** `--pilot 1` writes `<home>/setup/meridian.json` with both, one at a time and a pilot of one, and publishes
+  nothing. The nine verbs land in `permissions.json` under `workspaces.meridian.allow`, and under neither repository.
+- **The pilot.** `drive --until-idle` publishes the first in the plan's order and carries it to done in its own tree. It
+  does not ask the second.
+- **The pause.** A look then finds the plan paused by `pilot`. A look's report says so, and the log holds one
+  `setup.paused` with `by: pilot`.
+- **The rest.** `--resume` carries the plan on past its pilot, and `drive --until-idle` sets up the second. `logs --event
+  setup.published` shows two lines, the pilot's first.
+- **Registration.** Both land under `merge` and are registered from their lines, adopted and declared, still in their
+  workspace, with no `connect`. The plan then reads `Setting up — 2 set up`.
+Last, the plan is stopped, so no later look works it, and both repositories are retired. `tools/setup-kit.mjs` gains
+`readWorkspaceSetup` and `readEvents`, held in `tools/setup-kit.test.mjs` against output spelled as
+`WorkspaceSetupCommand` and `MachineLog` write it.
+**Proven without the rehearsal**, as WSSETUP5a's were: the phase was run against stand-ins in the formats WSSETUP6's code
+writes, and 44 breakages, each of one claim, were each caught by the check that owns the claim.
+**Not run in the branch**: the family rehearsal. This branch does not carry WSSETUP6's code: the phase was written from
+that branch's sources, read and not merged, so it needs WSSETUP6 merged first.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
@@ -7835,3 +7974,332 @@ by syncing scratch copies against drafted canon text, which the build may reword
 sessions here open, and when, is not measured (DOC7). Whether a line or three is enough for a later reader is
 judgement, read from the first entries after the cut-over. `verify` checks this entry's shape and the design's links
 and budget, and none of their words.
+**Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
+reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
+every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
+comes from `MarkdownSections.Preamble`, the text the splitter drops for a log. Each entry is local knowledge with
+the path the disk spells. The choices §5 left open, each held by a test in `RepositoryReadmeTests`:
+- **"No lock" is the scanner's own test**: no lock, or one it reads as none (not JSON, no entries, a target that
+  leaves the repository), the same test that reads both roots. A manifest with no lock is mid-adoption and has
+  declared nothing yet, so its README is still read. Once a lock is read, the next scan reads no README. The
+  refresh replaces a repository's entries whole, so that scan's refresh drops them.
+- **The part before the first heading keeps its title line.** For a README, `# Name` and the paragraph under it
+  say what the repository is. It is titled *README* and has no anchor, so it points at the top of the file and its
+  id is never a section's. A README whose sections are all level one is one entry, as a log's split would leave
+  it. An empty section is skipped, and a heading used twice gets a count in its anchor (REV3).
+- **Any case, one file.** The root's file named `README.md` in any case, labelled as the disk spells it, so a
+  session can open it on a case-sensitive disk. Two spellings side by side, which only such a disk holds, read the
+  first in ordinal order.
+- **Read last, so a declaration wins.** A README that a manifest with no lock declares as its router or a log is
+  read by that role's reader and not again. Read twice, the router's entry and the part before the first heading
+  would share the id `<repository>:README.md`, and the store's primary key would fail the refresh (REV3).
+- **Rejected**: splitting at every heading level, which cuts a section's subsections into entries too small to
+  answer anything; titling the first part by its `#` heading, since §5 names it *README* and the heading stays in
+  its body; reading `README.markdown`, `README.rst`, `README.txt` or `README` with no extension, or a README
+  below the root.
+- **Not a twin** (design §12): the driver's `SelfDescription` reads the same file for the intake, a title and a
+  paragraph, and neither is held to the other.
+- What the gates do not cover: no refresh of a real workspace has read a README on this branch, so whether its
+  sections help a neighbour's search is WSSETUP12's canary. The real-link test made a link on this machine. On a
+  machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
+  cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
+  now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.
+**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
+pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
+tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
+and swapped in whole. What the design left open, settled here:
+- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
+  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
+  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
+  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
+  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
+  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
+- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
+  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
+  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
+- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
+  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
+  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
+  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
+- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
+  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
+  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
+  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
+  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
+- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
+  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
+  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
+  desktop tree.
+
+**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
+`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
+`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
+`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
+- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
+  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
+  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
+  older than the lock.
+- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
+  version to read is left to the refusals that already name it.
+- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
+  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
+  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
+- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
+- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
+  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
+  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
+  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.
+
+## D125 — An account's limit is read from the agent's own words, cools that account until the reset it names, and is never a strike; rotation moves the next start to the next account of the person's order (2026-10-02)
+
+**Decision (TOOL4).** The owner, 2026-10-01, continuing after their own assistant hit its weekly limit and they signed
+in to another account: *"this is also good to test for account switch"*. D57 §b held rotation until real output
+answered three questions. Five observations now do (design §0.2): Claude Code's ACP adapter refusing `session/prompt`
+in driven sessions on 27 and 29 September and 1 October, and the same maker's CLI refusing with an HTTP 429 outside
+Daoris on 1 and 2 October. Every one is one sentence shape, *You've hit your <what> limit · … · [your <window>
+limit ]resets <when> (<zone>)*, and every one names its reset: a time of day within a day, a date when days away. On
+1 October a driven quest was carried on twice into the same refusal, three events each, and parked on its strikes in
+seconds; and the person's sign-in to another account at their terminal moved Daoris's next session with it, since the
+session named no account. The contract is `docs/2026-10-01-account-rotation-design.md`.
+
+1. **The signal is the door's failure, read by a table.** A turn the harness refused, on a door that carries the
+   refusal apart from the agent's words (today the protocol door's JSON-RPC error; the native door's failed `result`
+   once recorded), whose words an entry on the agent's toolchain recognises. An entry grows only with a recorded
+   sentence, held by a test both ways. Never the transcript or the agent's output, never a provider query, never token
+   counts; a field beats a sentence where a door carries one.
+2. **The cool-off is the reset the agent named**, read in its zone (the machine's own when the zone is not an IANA
+   name), plus a 2-minute margin, with a 15-minute grace for clocks that disagree and nothing believed past 8 days.
+   Otherwise 60 minutes, settable (`cooloff`). Kept per account in `cooling.json` under the home, on disk, with no words
+   and no route; ended early only by *Try now*, a sign-in or key into that account, and, for the tool's own home, the
+   roster's refresh.
+3. **A limit is not a strike** (amends D58). The record says `limit`, naming no account. The quest waits for the reset
+   or rotates, and is never carried on into the same refusal nor parked for it.
+4. **Rotation is at a start, by the person's order.** `rotation` and `workspaceRotation` in `harnesses.json`, resolved
+   workspace, then machine, then none; none is today's behaviour. The resolved account runs if ready; if not, and a
+   default named it and the order lists it, the next ready account in the order runs. A person's pick, the tool's own
+   home, an account outside the order and a running session never rotate. A carry-on rotated keeps its tree and is
+   handed the cut-off session's last plan and last words from Daoris's own record (amends D80); the harness's own
+   conversation stays in the first account's home, never read.
+5. **Rotation needs accounts of Daoris's own.** Daoris chooses an account only by its directory; the tool's own home is
+   whichever account the person last signed in to, which Daoris neither chooses nor sees change. The screen says so
+   while starts run there, and offers *Sign in to another account*.
+6. **When every account a start may use is cooling, starts wait**: held at spawn with one sentence naming the first
+   reset, no process started, said once by the attention and *What needs you*, the queue unchanged.
+7. **Reproducible from Daoris's records.** Each record names its account (loopback only) and version; the carried-on
+   session's conversation opens with a note naming both accounts, the cut-off session and its refused turn; the log
+   writes `account.limited`, `account.rotated` and `starts.waiting` by profile name, never a key, a handle, who signed
+   in or the agent's words. The travelling note never names another account, since the scrubber knows only the
+   record's own.
+8. **Two doors and Ask Daoris** (D50, D110): `daoris agent profile order|ready`, `daoris driver cooloff`, `daoris agent
+   list`'s cool-offs, and the same on Settings → Agents and → Driver.
+
+**Why.** The agent says when its limit lifts, so the cool-off is read rather than guessed, and D57 §b's worry, a string
+match on someone else's text written blind, is answered by writing it against five recorded sentences and refusing an
+entry without one. A strike says trying again spends an account without progress; a limit is the account's state with
+its own reset, so counting it parked a healthy quest in seconds. Rotation at a start, by an order the person wrote,
+moves only work that would have started anyway, and the records already name each session's account, which is what
+makes rotated work reproducible. The tool's own home cannot be rotated because Daoris cannot choose it: the 1 October
+sign-in showed it moving under Daoris unseen.
+
+**This lifts D57 §b's hold on TOOL4**, because the evidence it waited for exists: what a limit looks like (§0.2), how
+long a cool-off is (the agent says), and whether rotated work stays reproducible (yes, from Daoris's records, for named
+accounts). The toolchain design's §2 part 4 and §6 are replaced by the new design.
+
+**Rejected** (the design's §9 has the full list):
+- **Reading the transcript or the agent's output**: a session that quotes a limit would cool an account not spent.
+- **Asking the provider what is left, guessing from token counts, or a 429 reader**: a credential and an API Daoris
+  holds none of (D49 §4), what was used is not what is left, and no door of Daoris's sees a status.
+- **One cool-off for every limit, or exponential backoff**: the reset is stated.
+- **Spreading work across accounts**, **rotating inside a running session**, and **copying the harness's conversation
+  between account homes** (a read inside an account's directory, D66 §3).
+- **A limit counted as a strike, or a separate count that parks after some number.**
+- **The cool-offs in `harnesses.json` or in memory**; **a do-not-rotate list beside the order**.
+- **Rotating the tool's own home, giving its sessions a profile silently, or keying its cool-off by who signed in.**
+- **Sleeping the loop or reordering the queue while it waits**; **`StartVerdict.Exhausted` for a cooling account**.
+
+**What it amends, when built.** D57 §b (lifted), D58 (a limit is no strike), D80 (a carry-on gains the last plan and
+last words), D94 §4 (three events), D110 (three doors), D66 §3 and AGT3b (an account action ends that account's
+cool-off). Unchanged: D49 §4, D48 §2a, D67 §1, D73. Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about today were
+read from the code at `4f65cd3`: the conclusion and the protocol door's failure, the native door's mapper, AGT3b's
+refusal and the roster, the profile resolution and its environment seam, the planner and the strikes, the attention
+watch, the usage record, the conversation runner, the service's record and its note scrubber, the CLI's toolchain and
+`agent` usage. The observations are the install's and the owner's, given to the branch, not read from its records. Not
+measured: the protocol door's words for a bare weekly limit, the native door's words, whether a reset lands at its
+minute, whether a carried-on session on another account finishes, whether an hour is a good default, and whether a
+quest spends windows without landing anything. Found and not filed: AGT3b reads the transcript's last lines for its
+phrase, the hazard this decision refuses for limits; and the ACPEND1 note carries the agent's sentence, zone included,
+to every reader. `verify` checks the log's shape and the design's links, and none of these words.
+
+**Built 2026-10-02 (TOOL4a): the limit table and its reader** (points 1 and 2, design §1.3, §1.5, §2.1).
+`HarnessToolchain.Limits` is a `LimitWords` entry: its markers, its resets, and the recorded sentences they stand on.
+Claude Code declares `ClaudeLimits.Words`, and the stub declares the same entry, as it mirrors `Refused`.
+`AccountLimits.Read(entry, failure, seen, machineZone, coolOff)` in `AccountLimits.cs` is the one reader, and it is
+pure. What building it settled, each held by `AccountLimitsTests`:
+- **An abbreviation is the machine's zone on every platform.** Asking the platform whether a name is a zone was not
+  enough: on Windows, ICU resolves `PST` as a three-letter alias of its own, and Windows resolves its own ids
+  (`Pacific Standard Time`). So a zone is read as named only when it has the IANA shape (`Area/Location`, or `UTC`)
+  and the platform resolves it. `PST`, `CST`, `EST` and `Pacific Standard Time` are the machine's zone, said as
+  assumed. `EST` is a legacy name in tzdata, and is read as the abbreviation it is used as.
+- **`LimitSeen` says when a date was not believed** (`NotBelieved`), apart from a sentence that named no time, since
+  §2.1 says the default is *said so*. Both are `Stated: false`.
+- **The grace looks back across midnight**: a reset at 11:55pm seen at 00:05 is yesterday's, landed, and waits the
+  margin.
+- **The grammar reads** a twelve-hour time (`7am`, `7:50am`, `12am` as midnight), and a three-letter English month, a
+  day and such a time, the comma optional. A 24-hour clock, a full month name, an impossible date or hour are not
+  read, and take the default.
+- **The reset is a clause after the marker**, as every recorded sentence has it.
+- **Observation 2's marker clause is written, not quoted.** The record given to the design kept the note's start and
+  the reset and elided the rest. TOOL4's row names it the spend-limit refusal, so it is written in observation 1's
+  words, and its provenance says so. Observation 4's elided middle is kept as `…`, a clause that matches nothing.
+- **The both-ways check is the test's.** Each marker and reset is matched by a recorded sentence, each recorded
+  sentence by a marker, and an entry holds one at least. A test feeds it an unproven marker, reset and sentence and an
+  empty entry, and it refuses each. A recorded sentence carries `<zone>` once and no zone of its own.
+- **For TOOL4d**: nothing reads `Limits` yet. `acp-stub` declares no toolchain, so no limits: a limit gated over the
+  protocol door with no account needs that door to read the stub's entry as its owner's (AGT7), or to declare one.
+
+**What the gates do not cover.** How Claude Code prints the zone: the five sentences were given with it elided, so
+whether a real one is an IANA name, and so read as named, was not seen. The default as a setting is TOOL4e's.
+
+**Built 2026-10-02 (TOOL4c): the record says a limit** (point 3, design §5.2). `Session.Limit`, as D104's
+`Interrupted` was added: the ledger takes `limit` only on a move to `failed` and refuses it on any other, naming
+`failed`; the store keeps it once said, in a column `SchemaColumns` adds, so a record from before reads false. What
+building it settled:
+- **The column is `limited`**, since `LIMIT` is SQL's own word. The record, the HTTP door and the wire say `limit`.
+- **It travels, where `Interrupted` does not.** It names no account, so `ToSession` answers it to every caller, the
+  feed carries it up and a page down, and a mirrored record keeps it on its first copy and each later one. The wire
+  says `limit` only where it is true, so a feed or a page from a build before the field reads false on both sides.
+- **The ledger still opens the carry-on** of a taken quest whose last session here failed on a limit (D80). The
+  wait for the reset, and passing a limit record in the strikes, are the driver's at spawn (TOOL4d), and the
+  client sending `limit` with them.
+
+**What the gates do not cover.** Nothing sends `limit` yet: the driver's client is TOOL4d's. The page shows nothing
+new (TOOL4g), and no rehearsal was run by this change.
+
+**Built 2026-10-02 (TOOL4d): the cool-off and the hold** (points 2, 3, 6 and 7; design §2, §4, §5.2, §5.4). What
+building it settled, each held by `AccountCoolingTests`, `AccountLimitHoldTests` and `StrikeTests`:
+- **`cooling.json` sits beside `harnesses.json`**, in the roster's home, as the accounts and their keys do
+  (`AccountCooling`). An entry is `until`, `stated`, `window`, `seen` and `session`, with `assumedZone` and
+  `notBelieved` written only when true, every moment UTC to the second. A moment is read as ISO 8601 and nothing else:
+  a lenient parse read *Oct 3* as this year's, which would make a hand-mangled entry an account cooling. One writer at
+  a time in the process; the next write drops a passed or unreadable entry and keeps what it has no field for, since
+  TOOL4e's CLI reads and ends entries too.
+- **The failure read is the door's** (`turnFailed`, ACPEND1), through `HarnessRoster.Limited`, which reads the door's
+  own entry or else its owner's (AGT7). A driven session and an intake read it at the conclusion, for `failed` alone
+  (`Driver.AccountLimited`): the record moves with `limit`, which the client sends only when true, and its note gains
+  *The account it ran on is cooling until Oct 3, 16:02 (<zone>), as the agent said*, naming no account. A
+  conversation's refused turn reads it too (`ChatRunner.Limited`): the account cools, the record gets a note, and the
+  conversation goes on.
+- **D58 amended**: `ReadStrikes` passes a `limit` record. A quest parked on its strikes before this stays parked
+  behind Retry.
+- **`SelectAsync` reads the cool-off first**, a file read before AGT3b's refused-key check and before any probe, and
+  holds with §4's sentence and the cool-off on the selection (`HarnessSelection.Cooling`). A start held so is `Blocked`
+  with that sentence and never `Exhausted`, and the look's report carries one `Waits` entry per account: the adapter,
+  the agent, the account, the workspace where the held starts share one, the reset, and the quests, asks and
+  repositories held.
+- **The early ends**: `HarnessRoster.Ready`, the driver's half of *Try now*; a sign-in that exits 0 through
+  `HarnessActions.LoginAsync`, which both of the screen's sign-ins call (`AccountCooling.SignedIn` reads the account
+  from the directory's place under the home); a key made by `HarnessKeys.Add`; and the roster's refresh, which ends
+  every tool's own home's cool-off and no named account's.
+- **Said once**: the attention watch's `Waiting` kind, *<repository> — waits for an account*, once per
+  cool-off, its first look a baseline as for parks; `starts.waiting` once per cool-off, which the roster remembers;
+  `account.limited` per limit, its `turn` the turns the record ended plus one. Each names an account by its profile
+  name, and a name that is not an identifier is null.
+- **The protocol stub reads the stub's words as its owner's** (TOOL4a's hand-back). `acp-stub` keeps no toolchain:
+  one would make it an agent with accounts to probe and list, and the modules refuse a default on it because it has
+  none. `ISessionAdapter.LimitsOf` names the agent a door with no toolchain reads limits as, and whose own sign-in a
+  limit on it cools; it is `acp-stub`'s alone. The protocol stub's starts and the pipe stub's share that cool-off, as
+  Claude Code's two doors share theirs. Two stub accounts on the protocol door, TOOL4h's rehearsal, need that door to
+  run as the stub's accounts, which this does not give.
+- **The native door's failed result is not handed to the conclusion.** The row said *an empty table: no change*, but
+  an entry is per agent, not per door: `claude-code` declares its entry for its protocol door's sake, and handing the
+  native door's failure to it would read sentences on a door none was recorded on (§1.2). It waits for TOOL4b's
+  evidence. The default is the constant `AccountLimits.DefaultCoolOff` until TOOL4e's `cooloff`.
+
+**What the gates do not cover.** The `Process` half was not run by this branch: `AccountLimitTickTests` replays
+observation 4 through real ticks (a cut-off, then a carry-on refused by the recorded sentence; the account cools until
+Oct 3, 16:02 in the test's zone; the next looks spawn nothing and park nothing; the wait is said once; at the reset the
+carry-on closes the quest), and `AcpTurnFailureTickTests` was changed with it: its first case now says `limit`, and its
+carry-on case is cut off by a refusal no table knows. A sign-in's end through `LoginAsync` is reached only by a real
+process, which no test runs. The note's time names the machine's zone, which travels with the note as the agent's own
+sentence already did. Nothing on the screen shows any of it yet (TOOL4g).
+## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
+
+**Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
+it's not really smooth for ui/ux"*. Read from the code the same day: a session's row offered its review and its id; a
+running driven session was stopped only from its quest's page; a quest parked on its failed sessions was started again
+only from its quest's page, where the owner's work stood after an account limit on 1 October; a person's stop left a
+taken quest with no way back and an open one planned again; nothing that ended could be cleared; and a driven session's
+title was its quest's whole title. `docs/2026-10-02-session-management-design.md` is the contract; its §1 is the audit,
+state by state and act by act. It settles:
+
+1. **The list shows sessions by state**, the default, in five groups in the order the person acts on them: *Waiting on
+   you* (a parked session, and the last session of a quest parked on its failed sessions, shown *parked*), *To review*
+   (an ended session whose own tree holds work no branch of the person's holds, by D88's proof), *Working*, *Resumes
+   later* (*awaiting reply*, D79; *account cooling*, D125) and *Ended*. *Group by repository*, today's arrangement,
+   stays a choice in the list's new ⋯, remembered. *Ended* shows twelve and then a press for the rest.
+2. **One reader decides a session's group**, `SessionGroups.Read` in the driver library: the records, the quests, the
+   planner's own verdicts, the trees' judgement, D125's cool-off once built, and the archive marks. `SESSION_GROUPS`
+   hands it to the page and `daoris-driver sessions` prints it. Nothing is written back to the record: **no new session
+   state**.
+3. **Open's hue is the person's alone.** *Waiting on you* and *parked* wear it; `queued` moves to neutral. Red stays
+   an outcome, and every mark keeps its word.
+4. **Every act is where its session is**: the row's ⋯ and a page header pinned at the top of Sessions' main area, both
+   calling one module, `work/sessionActs.ts`. The acts are *Stop…*, *Try again*, *Review*, *Open folder*, *Open a
+   terminal here*, *Open in its own window*, *Archive*, *Unarchive*, *Delete…* and *Copy session ID*, each offered only
+   where it applies. The parked card keeps *Answer and carry on…*, *Finish* and *Decline…*. This amends RAIL1's rule
+   that a row's menu holds only what has no other home.
+5. **The stop has one owner and one word.** *Stop…* in the header asks once and says what follows by kind. The chat
+   composer keeps *Finish* and *Stop turn*; the parked and intake cards and the quest page lose their stops. Ask
+   Daoris's panel keeps its own, since the side bar holds that conversation on every view.
+6. **A person's stop holds its quest on this machine**, open or taken: the planner's new `Stopped` verdict, with a
+   sentence where a taken quest had none and an open one was planned again. **Try again releases it**: one act on the
+   session and on the quest's page, recording RETRY1's mark for a parked quest and `released` in `driver.json` for a
+   stopped one (twins: `DriverConfig.cs`, `driverconfig.ts`). A stop is still not a strike (D58).
+7. **What ended is cleared by archive**, a mark kept on this machine (`<home>/sessions/archived.json`), never on the
+   record, which travels. Archive refuses a live session and never hides what needs the person. *Archive what
+   ended…* lists, then archives. **Delete** is for a conversation that served no quest only, ended, this machine's,
+   named by nothing, with no tree here and held by no remote; it removes the record and what this machine kept of it,
+   never a tree, a branch, the usage or the log.
+8. **What needs you holds a parked quest**, and a quest's park is said once, as a session's is (`QuestParked`).
+9. **A quest carries a short title**, `short`, written by whoever publishes it and travelling with it; a list shows it,
+   a page shows the whole title. Sessions are still not named by hand (D52).
+10. **The doors.** `daoris-driver sessions` lists by group and stops, finishes, declines, archives, unarchives and
+    deletes; a stop reaches a session another process runs through a request the running loop honours. Ask Daoris
+    gains a `session` kind (`stop`, `archive`, `unarchive`) and the `delete` kind's `session` door, and
+    `HelpCoverageTests` reads Sessions' acts. Answering, finishing and declining stay the person's.
+11. **Names** follow D116 in both languages; the glossary gains *try again* 重试, *archive* 归档 and *short title*
+    短标题.
+
+The build is SESSUX1a–l, the design's §9.
+
+**Why.** A list is where many sessions are managed, and every act that lived on another view, or nowhere, was a trip
+the owner had to know to make. The quest that stood parked on 1 October needed one press, and nothing where its
+sessions were said so. A stop that left its quest in silence, or undid itself at the next look, is not one a person can
+manage with. What ended had nowhere to go but further down.
+
+**This amends:**
+- **The working surface design's §3** (RAIL1's row menu; the list grouped by repository) and **§4** (the parked
+  card's stop).
+- **D104 and D80**, as the planner reads them: a person's stop holds its quest, open or taken, until *Try again*.
+- **RETRY1**: *Try again* also releases a stop.
+- **The platform language's §3** (open's hue) and **§5** *Sessions*.
+- **D110**: the `session` kind, the `delete` kind's `session` door, and the coverage of Sessions' acts.
+- **D94 §4**: `session.deleted` and `sessions.archived`, once SESSUX1f and SESSUX1g build them.
+
+**D55, D118, D51 rule 7 as D88 amended it, D58, D46 §4 and D52 stand.**
+
+**Rejected.**
+- **Naming a session by hand.** D52's trigger is two sessions that cannot be told apart, and the complaint was length.
+- **A short title cut from the title.** It keeps the start, where a family's quests tend to agree.
+- **Archive as a field on the record.** The record travels; one person's tidy is not a fact about the work.
+- **Archiving or deleting by age.** A session gone without a press is one the person never saw go.
+- **Deleting a session that served a quest.** It is that work's record, and the strikes are counted from it.
+- **A delete that travels to a remote.** A session record does not travel as a deletion.
+- **Several sessions chosen at once.** A second selection beside the attended one; the bulk archive covers the case.
+- **Unlanded work in Overview's *What needs you*.** The proof is a git walk per repository on every open.
+- **New ledger states** for *parked*, *awaiting reply* or *account cooling*: each is a derived fact about the quest.
+- **Ask Daoris answering a parked session.** The answer is the person's (D37).
+- **The grouping as a helper on the page.** It needs the planner's verdict and a git judgement, which only the driver
+  has, and a terminal twin would make it a twin of an eleven-case rule.

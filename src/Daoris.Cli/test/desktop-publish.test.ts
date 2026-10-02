@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN,
+  CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN,
   PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, cliLaunchers,
   installedNote, isInstall, layCli, layOffers, layResources, recordedShellFiles, refusal, retiredPaths,
   // @ts-expect-error — untyped workspace tooling; see above
@@ -105,6 +105,30 @@ test('the install note says where the doctrine tool is, how each shell runs it, 
   assert.match(section, /Node\.js 22 or later/);
   assert.match(section, /Nothing puts `app\/bin\/` on your account's PATH/);
   assert.doesNotMatch(note, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, 'a machine path in the note');
+});
+
+/**
+ * WSSETUP3 (D124 §1.3): every child Daoris starts is handed a PATH that begins with the install's `app/bin/`, found
+ * beside the home (`Tools.InstallBin`, the CLI's `installBin`), while the account's PATH stays the person's. The note
+ * says both, in one section, and names the condition the code tests: the home, `data/`, sits beside `app/`.
+ */
+test('the install note says Daoris’s own children find the doctrine tool first on their PATH, and your account’s PATH is untouched', () => {
+  const note: string = installedNote();
+  const section = note.slice(note.indexOf('## The doctrine tool')).split('\n## ')[0] ?? '';
+  const prose = section.replace(/\s+/g, ' ');
+  assert.match(prose, /Every program Daoris starts finds it by its bare name/);
+  for (const child of ['a driven session', 'a conversation', 'an intake', 'a hook', 'a landing plugin', 'every shell of its terminal panel']) {
+    assert.ok(prose.includes(child), `names ${child}`);
+  }
+  assert.ok(prose.includes(`begin their PATH with \`${CLI_BIN.join('/')}/\``), 'says app/bin/ comes first');
+  assert.ok(prose.includes(`this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\``), 'names why: the home beside app/');
+  assert.match(prose, /Nothing puts `app\/bin\/` on your account's PATH, so a terminal of yours outside Daoris still runs whatever `daoris` you installed/);
+  // What the note says is what the code finds: the install's home finds its own launchers, a home elsewhere none.
+  const install = folder();
+  mkdirSync(join(install, HOME));
+  mkdirSync(join(install, ...CLI_BIN), { recursive: true });
+  assert.equal(installBin(join(install, HOME)), join(install, ...CLI_BIN));
+  assert.equal(installBin(join(folder(), HOME)), null);
 });
 
 test('a marker without the header is not ours — a file with that name proves nothing', () => {
