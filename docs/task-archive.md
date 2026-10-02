@@ -9612,3 +9612,22 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > rotated; a conversation only at its opening; the carry-on handed the last plan and last words; `account.rotated`.
 
 **Outcome** A start whose default account is not ready runs on the next ready account of the person's order, said in its record and logged as `account.rotated`; a carry-on is handed the last plan and last words. Detail: D125's TOOL4f note, `0498853`.
+
+
+## SESSUX1d — the page header, and every act where its session is (2026-10-02)
+
+> - [ ] **SESSUX1d — the page header, and every act where its session is** (§3; web-shell, modules; after b, c): the pinned
+> header, Stop… asking once, Try again, Open folder, a terminal here, the row's ⋯; the stop's other owners go.
+> With SESSUX1b: the quest page's Try again for a `Stopped` verdict (today only `Exhausted`), its toast, and zh
+> `work.sitting.Stopped`.
+
+**Outcome** Sessions has a pinned page header and a row's ⋯ with the same acts, from one rule and one owner; the stop has one owner and asks once, and the quest page's *Try again* also releases a stop. Detail: D126's SESSUX1d note, `e6ded2b`.
+
+
+## TOOL4j — the protocol stub on the stub's accounts (2026-10-02)
+
+> - [ ] **TOOL4j — the protocol stub on the stub's accounts** (driver; after TOOL4f, before TOOL4h; in flight). A limit read on
+> the protocol door cools a named stub account and the carry-on rotates. Contract: D125 §1.3 rule 4, §8. Proof: a
+> fast-half selection on `acp-stub` with an order; the real-process carry-on onto stub account 2.
+
+**Outcome** `acp-stub` is a door onto the stub's accounts: a limit on the protocol door cools the named stub account and the carry-on rotates over the stub's order. Detail: D125's TOOL4j note, `dde51f0`.

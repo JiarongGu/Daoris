@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1032 CLI tests, 916 service and 50 HTTP host, 2959 driver,
-523 desktop modules, 80 devkit, 2563 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
+**Counts, and this is their one home:** seventeen commands, **1032 CLI tests, 916 service and 50 HTTP host, 2965 driver,
+527 desktop modules, 80 devkit, 2617 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,522 of 26,000 bytes** — a span in
@@ -200,10 +200,6 @@ owner on 1 October.
 - [ ] **CARRY1 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
   cut-off without asking whose take the quest is, so a start that failed before its take carries on over someone else's.
   Contract: D80, D126's SESSUX1b2 note. Proof: a ledger row refused, seen failing first.
-- [ ] **SESSUX1d — the page header, and every act where its session is** (§3; web-shell, modules; after b, c): the pinned
-  header, Stop… asking once, Try again, Open folder, a terminal here, the row's ⋯; the stop's other owners go.
-  With SESSUX1b: the quest page's Try again for a `Stopped` verdict (today only `Exhausted`), its toast, and zh
-  `work.sitting.Stopped`.
 - [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
@@ -431,26 +427,32 @@ the ACP door, not a registry**.
   failed `result`, on an ordinary turn and at a warning, whether the protocol door forwards them, and Codex's `rate_limits`;
   read keylessly, labelled unmeasured, then the first real frame recorded. TOOL6c builds only on it. Contract: D130 §0.3,
   §5.1–§5.2.
-- [ ] **TOOL4j — the protocol stub on the stub's accounts** (driver; after TOOL4f, before TOOL4h; in flight). A limit read on
-  the protocol door cools a named stub account and the carry-on rotates. Contract: D125 §1.3 rule 4, §8. Proof: a
-  fast-half selection on `acp-stub` with an order; the real-process carry-on onto stub account 2.
 - [ ] **TOOL6 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
   how switch works and how to optimize the account use since there are 3 accounts"*; then: all three may run the work
   workspace, by the allowance each has left, one by one, in parallel or by other logic, configurable; any number of
-  accounts, three is only today's). Modes, which
+  accounts, three is only today's; the goal: *"to optimize the limit and usage of multiple accounts"*, the rules and
+  defaults designed around it, D130's amendment in flight). Modes, which
   accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130.
   Proof: the design (landing).
-- [ ] **TOOL6a — the settings and their terminal doors** (cli; driver). `prefer`, `parallel`, `keep`, `early` and `near`
-  per scope in `harnesses.json`, both twins, `daoris agent profile use`, and the refusals on `order` and `default`, so the
-  choices have a file and a terminal before anything reads them. Contract: D130 §2, §3.1, §4.6, §9, §14. Proof: twin
-  tables both sides, none by a list's length.
-- [ ] **TOOL6b — the walk reads one scope and its settings** (driver; after TOOL6a). The list is the whole set; *in
-  parallel* starts on the account running fewest sessions; a quest decides once; the wait names accounts outside the
-  list. Contract: D130 §2, §3, §4.1–§4.3, §4.6, §5.3, §7. Proof: `AccountRotation` tables for one account and many; a
-  Process tick, cap K over N accounts.
-- [ ] **TOOL6c — what the agents say, read** (driver; after TOOL4b's frame and TOOL6b). `windows.json`, *most left* and
-  *soonest reset* by the agents' own readings, and *switch before the limit*: how many tokens are left. Contract: D130
-  §4.4, §4.5, §5.2, §5.3, §6. Proof: fast-half tables; a Process tick replaying a recorded frame.
+- [ ] **TOOL6a — the settings and their terminal doors** (cli; driver; in flight). `use` (`goal`, the default, or
+  `order`), `keep`, `early` (on unless `false`) and `near` per scope in `harnesses.json`, both twins, `daoris agent
+  profile use`, and the refusals on `order` and `default`, so the choices have a file and a terminal before anything
+  reads them. Contract: D130 §2, §3.1, §9, §14, §16.6. Proof: twin tables both sides, none by a list's length.
+- [ ] **TOOL6b — the walk toward the goal** (driver; after TOOL6a). Every listed account used: fewest of Daoris's
+  sessions first, a weekly reset within a day first, then pace, then least recently started; *order* keeps D125's walk;
+  `windows.json` keeps the weekly resets limits tell; the wait names accounts outside the list. Contract: D130 §16.3,
+  §2, §3, §7. Proof: `AccountRotation` tables for one account and many; a Process tick, cap K over N accounts.
+- [ ] **TOOL6c — what the agents say, read** (driver; after TOOL6b; unblocked: TOOL4b measured the frame). Claude Code's
+  `rate_limit_event` `unifiedWindows` (each window's use 0–1 and reset, every frame) on the native door, and the
+  protocol door's `usage_update._meta["_claude/rateLimit"]`, kept in `windows.json`, so pace and *switch before the
+  limit* act on what is left. Contract: D130 §4.4, §4.5, §5.2, §16.3, as the evidence corrects them. Proof: fast-half
+  tables over the recorded frames; a Process tick replaying one.
+- [ ] **ACPDATA1 — the protocol door keeps a refusal's `data`** (driver; found by TOOL4b). `AcpSession` keeps only the
+  JSON-RPC error's message, so a Codex limit arrives as `Internal error` and Claude Code's `errorKind` is lost. Contract:
+  D125 §1.2, limit-signals evidence §3–§4. Proof: `AcpSession` tests written to fail first.
+- [ ] **TOOL4k — a weekday reset, and Codex's clock** (driver; found by TOOL4b). The maker documents `resets Mon 12:00am`,
+  which TOOL4a's grammar does not read; Codex prints `4:05 PM` and `Oct 3rd, 2026 4:05 PM` with no zone. Contract: D125
+  §2.1, evidence §2, §4. Proof: `AccountLimitsTests` rows for each recorded form, failing first.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
