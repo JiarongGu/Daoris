@@ -8999,3 +8999,31 @@ absent never zero (point 7's rule), the cool-off, a limit not a strike, D57, D49
 not a measurement: neither an account's allowance nor the load is known, and §16.8 names what only a real run shows,
 the day's horizon among them. The first real rotation and its weekly sentence are the fix log's and D125's notes, not
 re-read here. `verify` checks this note's place and the design's links, and none of their words.
+
+**Built 2026-10-02 (TOOL6a): the settings and their terminal door** (points 2, 4 and 11 and the goal's point 7; design
+§2, §3.1, §4.6, §14, §16.6), held by `RotationUseTwinTests` and `RotationTwinTests` on the driver's side and, cell for
+cell, by the CLI's `rotation-use.test.ts` and `rotation.test.ts`. What building it settled:
+- **A value or a default changes by a row.** Today's defaults live in one place (`USE_DEFAULTS`, `RotationUse.Default`)
+  and the ways to use accounts in one list (`USE_MODES`, `RotationUse.Modes`). A value the reader does not know reads as
+  today's default and is said by `agent list` and `profile use`; a setting it has no name for is kept as written and
+  said. `prefer` and `parallel` are skipped and gone at the next write (§16.6).
+- **A choice is written as made**, one equal to today's default included, so a later default never overturns what a
+  person chose; only absence means the default. Known settings go out in one order, normalised, then the rest as read;
+  both writers write the same bytes.
+- **A scope's settings come with its list.** Clearing a list clears its settings; an account removed is kept nowhere.
+  `profile use` refuses a scope with no list of its own, naming the `order` that gives it one. `--clear` returns a
+  scope to today's defaults.
+- **One rule binds a scope** (`scopeProblem`, `ScopeProblem.Of`): its default and its kept account are of its list,
+  compared exactly, and a kept account leaves driven work another. `profile order` refuses all three, naming both sides
+  and the fix; `profile default` the first, where its scope has a list of its own (a workspace with none takes any
+  account and is then that account alone); `profile use --keep` the kept ones. The order door's two kept-account
+  refusals keep §4.6's state unreachable by the back door. Tested with one account and with six.
+- **`agent list`** prints beneath each list how it is used, a default outside it, a kept account alone in it, and what
+  the build does not know. `profile use` with the agent alone adds what each account last said, which today is its
+  cool-off or nothing: no door carries the agent's word about its windows yet (§5.3), and the switch says so.
+- **The room names the door** (`HelpRoomDoors`, *no screen yet*).
+
+**What the gates do not cover.** Nothing reads these settings to choose an account: `SelectAsync` still walks D125's
+order, and `ResolveScope` waits for TOOL6b. §3.1's refusal is the terminal's alone: the screen's `profile-default`
+route (`DriverModule.DefaultEdited`, modules) and Ask Daoris's `default` door do not ask `ScopeProblem.Of` yet (TOOL4g,
+or a modules row). The `Process` half, the rehearsals and the screen were not run by this branch.
