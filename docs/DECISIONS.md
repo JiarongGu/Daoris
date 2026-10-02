@@ -1440,6 +1440,9 @@ knowledge server on `session/new`, not through the repository's own files. It is
 because the canon is what adoption installs. For such a repository the driven session is the only one
 that can answer, and the surfaces say so. The pipe door keeps its own requirements.
 
+*Amended by D131 (ANSWER1, 2026-10-02): resume is built for one follow-up, a park the person answered, which a real
+driven run asked for. Every other start is still a fresh session.*
+
 **Amended 2026-10-01 (LOOK2a): the shell says when its driver is up.** Every route that reads the driver's service
 refuses *still coming up* (`DRIVER_NOT_READY`) until the loop hands the service over, and never answers an empty list
 for it. The service holds its registry the moment it answers at all, so that handing over is the whole of being ready.
@@ -3713,6 +3716,10 @@ taker's, and the connector already knows which session it speaks for (PERM2).
 *Amended by D124 (WSSETUP9, 2026-10-01): what may park a session narrows to what no source holds and only the person
 can give: a sign-in, a go-ahead for an act outside the repository or on a production system, a preference nothing
 records. A choice between options is no longer a reason by itself, and a park says what the session looked at.*
+
+*Amended by D131 (ANSWER1, 2026-10-02): the answer goes on in the session that asked. Once ANSWER1b lands, the answer
+keeps the record parked; at the next look its record moves back to working and its harness conversation resumes with the
+answer, on the same account, adapter and tree. The carry-on in a new session is the fallback, saying why.*
 
 ## D84 — Daoris's browser is a Chromium Daoris ships, and the person's Edge is always an option (2026-09-28)
 
@@ -9000,3 +9007,34 @@ and D94 §4 (`session.answered`). D51, D58, D79, D90, D104, D125 and D130 stand.
 the adapter's and SDK's published packages at their pinned versions; no real agent was resumed. The native door's
 `--resume` and its `init` line are the maker's published shapes, not a run on this machine. `verify` checks this
 entry's shape and the design's links, and none of their words.
+
+**Built 2026-10-02 (ANSWER1a): the driver's half** (points 1–4; design §1–§3), held by `ContinuationTests`,
+`AnswerContinuesPlanTests`, `HarnessConversationsTests`, `AcpResumeTests`, `NativeResumeTests` and `SessionLogTests`.
+What building it settled:
+- **The id is kept at the wire's first word.** `AcpSession` tells `session/new`'s id as it arrives (`onConversation`), so
+  a turn that then fails or parks still leaves it; the native door keeps its `init` line's `session_id` once its output
+  ends. Both land in `HarnessConversations`, for a quest's session only, since an intake is answered through its ask.
+- **Only a resume's refusal keeps its code** (`AcpCallRefused`): every other call is still refused as the plain
+  `DriverException` the door's callers and tests expect. A load's replay is dropped by its `sessionId` while the load is
+  answered.
+- **The judgement's order is the record, the adapter, the account, the tree, the kept id, then the door**
+  (`Continuations.Judge`), so the line said is the first a person can act on.
+- **The planner continues through the carry-on's verdict**, `continuing`: the park is not busy with its own tree, quest
+  or repository, and already holds its slot of the cap. The person's hold and the strikes still stand.
+- **A refusal on the wire ends the record from `working`**, since a run moves its record to working at spawn; the park's
+  note keeps what it asked and adds why, and the carry-on starts in the same look, taking the starting hold (LEFT2) again
+  until its own record holds the tree. A resumed run that could not start ends the park the same way, as `refused`,
+  whose line became *its conversation could not be resumed* to cover it.
+- **The resumed run's evidence counts from the record's own base commit**, so the review's range is the whole session's.
+- **An answer that keeps its park tells the watchers nothing** (`ServiceClient.AnswerSessionAsync`): the log would
+  otherwise write a second park, or an ending that did not happen.
+- **`session.answered` rides the account lines' channel**, which writes a catalogued line as it is given; the machine
+  log design's §4 lists it.
+
+**What the gates do not cover.** The `Process` half was not run by this branch: `AnswerContinuesTickTests` runs three
+real ticks on a protocol stub that speaks `session/resume`. An answer resumes the parked record's own conversation, with
+one record from start to end. A conversation the stub no longer has is carried on in a new session in the same tree,
+saying why. An answer on another stub account never asks the stub to resume. Its stand-in service models ANSWER1b, and
+the real service still ends the record as it takes the answer, so until ANSWER1b lands every answer reads `ended` and
+is carried on as before. The page still shows an answered park as waiting on the person for up to one look (ANSWER1c).
+The family rehearsal's protocol stub was not taught `session/resume`: no rehearsal reaches a resume before ANSWER1b.

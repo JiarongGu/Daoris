@@ -24,7 +24,8 @@ namespace Daoris.Driver;
 /// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
 /// (UNBLOCK5, D122 §3.10). Beside the sessions, what the client says of the registry and of the workspace
 /// plans: <c>registry.followed</c> (WSSETUP5) and the <c>setup.*</c> lines (WSSETUP6); and of the accounts:
-/// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d).</para>
+/// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d). An answer taken up, <c>session.answered</c> (ANSWER1a,
+/// D131 §2), rides the account lines' channel, which writes a catalogued line as it is given.</para>
 ///
 /// <para><b>A park is counted where it is made</b> (WSSETUP11, D124 §7.3): a session that stopped to ask the
 /// person (D83) is what setting a workspace up is meant to make rarer, so parks per week are its measure. Only

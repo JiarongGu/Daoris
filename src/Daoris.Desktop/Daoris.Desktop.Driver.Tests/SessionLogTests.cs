@@ -374,6 +374,25 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// <c>session.answered</c> (ANSWER1a, D131 §2): written as the driver gives it, whether the answer resumed its own
+    /// conversation and why not by a code, and never the answer.
+    /// </summary>
+    [Fact]
+    public void An_answer_taken_up_is_one_line_saying_whether_it_resumed_and_why_not()
+    {
+        using var w = Watch();
+
+        w.Client.AccountSaid(Continuations.Answered("s1", "claude-code-acp", ContinueWhy.Of(ContinueWhy.Gone)));
+        w.Client.AccountSaid(Continuations.Answered("s2", "claude-code-acp", why: null));
+
+        var lines = Named("session.answered").Select(Data).ToList();
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(("s1", false, "gone"),
+            (lines[0].GetProperty("session").GetString(), lines[0].GetProperty("resumed").GetBoolean(), lines[0].GetProperty("why").GetString()));
+        Assert.Equal((true, JsonValueKind.Null), (lines[1].GetProperty("resumed").GetBoolean(), lines[1].GetProperty("why").ValueKind));
+    }
+
+    /// <summary>
     /// A park is the state the attention watch calls one (<see cref="SessionStates.IsParked"/>), and no other:
     /// <c>AttentionTests</c> holds the same rows, so what the log counts is what the person was told about.
     /// </summary>

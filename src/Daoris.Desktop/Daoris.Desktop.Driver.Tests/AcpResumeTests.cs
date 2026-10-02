@@ -109,7 +109,7 @@ public sealed class AcpResumeTests
     });
 
     private static readonly IReadOnlyList<AcpMcpServer> Servers =
-        [new("daoris", "D:/bin/daoris-mcp.exe", ["--stdio"], new Dictionary<string, string> { ["DAORIS_HOME"] = "D:/home" })];
+        [new("daoris", "D:/bin/daoris-mcp.exe", ["--stdio"], new Dictionary<string, string> { ["DAORIS_HOME"] = "D:/daoris-data" })];
 
     /// <summary>
     /// 🔴 The resume call: <c>session/resume</c> on the kept conversation, in the same tree, handed the servers and the rules
@@ -121,7 +121,7 @@ public sealed class AcpResumeTests
         var agent = Answering(Both);
         var lines = new List<string>();
 
-        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, meta: new { claudeCode = new { options = new { settings = "D:/home/s.json" } } })
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, meta: new { claudeCode = new { options = new { settings = "D:/daoris-data/s.json" } } })
             .RunAsync("D:/trees/s-1", "Port 8080.", CancellationToken.None, Servers, resume: "0b5e7c1a");
 
         Assert.Equal(["initialize", "session/resume", "session/prompt", "session/close"], agent.Methods);
@@ -129,7 +129,7 @@ public sealed class AcpResumeTests
         Assert.Equal("0b5e7c1a", resumed.GetProperty("sessionId").GetString());
         Assert.Equal("D:/trees/s-1", resumed.GetProperty("cwd").GetString());
         Assert.Equal("daoris", resumed.GetProperty("mcpServers")[0].GetProperty("name").GetString());
-        Assert.Equal("D:/home/s.json", resumed.GetProperty("_meta").GetProperty("claudeCode").GetProperty("options").GetProperty("settings").GetString());
+        Assert.Equal("D:/daoris-data/s.json", resumed.GetProperty("_meta").GetProperty("claudeCode").GetProperty("options").GetProperty("settings").GetString());
         var prompt = agent.Params("session/prompt");
         Assert.Equal("0b5e7c1a", prompt.GetProperty("sessionId").GetString());
         Assert.Equal("Port 8080.", prompt.GetProperty("prompt")[0].GetProperty("text").GetString());

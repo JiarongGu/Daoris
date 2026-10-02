@@ -43,8 +43,8 @@ public sealed class NativeResumeTests
         var adapter = new ClaudeCodeAdapter();
         var info = adapter.PrepareResume(Target(), ["claude"], "0b5e7c1a", "Port 8080.")!;
 
-        adapter.HandSettings(info, "D:/home/sessions/s1.settings.json");
-        adapter.HandServers(info, "D:/home/sessions/s1.mcp.json");
+        adapter.HandSettings(info, "D:/daoris-data/sessions/s1.settings.json");
+        adapter.HandServers(info, "D:/daoris-data/sessions/s1.mcp.json");
 
         Assert.Contains("--settings", info.ArgumentList);
         Assert.Contains("--mcp-config", info.ArgumentList);
