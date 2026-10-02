@@ -279,6 +279,10 @@ has none, which reads as no index written yet.
 
 ### 2.5 What reads it
 
+> **Amended by D129** (`docs/2026-10-02-knowledge-design-review.md` §4.2–§4.4, KNOW2): a long index is searched in more
+> than one wording, and a connected search is asked too; `skills-workflow` names the agent's own skill list first;
+> `development-documents` gains a sentence on naming a document by its subject.
+
 - **`doc-loader`**, step 2, in the canon's words: *The always-loaded doctrine names the index of the on-demand
   tiers. Open it and scan its knowledge table's applies-when column against the task: whole when it is a few dozen
   rows, by searching it for the task's words when it is longer. Read every matched document. The index is generated
