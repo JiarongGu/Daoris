@@ -9519,3 +9519,42 @@ takes posts nothing; `kept: false`, a refusal, a failure and an unreachable serv
 client that posted nothing; `SessionAddedTests` (the body, `kept` and its sentence, a refusal, a host without the door).
 Not covered: no test drives the `Chat.Say` path, since a conversation that takes a message needs a real process; nothing
 is drawn, so there is no look.
+
+**DRIFT1c, built 2026-10-03: a quest's requirements quote the person.** `quest_publish`, `POST /api/quests` and
+`POST /api/asks/{id}/publish` take `requirements`, each a `quote` and a `check`. Every quest answers them on both quest
+routes, the publish answers and `quest_list`. The exchange judges them for every door (`JudgeRequirementShape`,
+`JudgeQuotesAsync`). Each quote must stand in one of the person's words on the ask that asks the quest: its sentence, an
+answer or an added message (DRIFT1a's `Words`). It is matched verbatim, every run of whitespace read as one space and case
+aside (`QuestRequirement.QuotedIn`). A refusal lists each quote not found as `requirement N: "…"`, and nothing is
+published. A chain step inherits its parent's requirements (`NextStep`), so each step after it carries them too. The
+intake's instruction asks for them in this shape (`IntakePrompt`), and a golden pins it whole. Choices §3 left open:
+- **Only the asker's ask.** A quest a repository asks is on no ask, and requirements on it are refused, saying to put
+  what is needed in the body. Which ask a repository's session works for is its record's (`KeepOnAskAsync` derives it),
+  and is not read at publish. A host that keeps no asks refuses rather than keep a quote unchecked.
+- **Within one word.** A quote stands in one thing the person said: two of their sentences joined are words they never
+  said together.
+- **Nothing else is forgiven.** Quotation marks around a quote are not stripped. A fragment of their words matches,
+  since it is still their words.
+- **Bounded**: at most 20 requirements, both halves required, each at most 2,000 characters, trimmed at the ends and
+  otherwise kept as given.
+- **An ask from before DRIFT1a** holds no earlier answers. Its refusal says from when its words are kept, and that what
+  was said before is in its sessions' records. A session's `Answer` is not searched: it holds only the latest answer, and
+  parking again clears it.
+- **Written only when there are some**, in the log's payload, the cache and on the wire, as lanes are. A quest with none
+  crosses as it did, and an older build reads one with them as the quest it always was. A remote holds no asks, so it
+  checks only the halves and the bounds (`JudgeReceived`).
+- **The body is unchanged**, and the receiving session's instruction does not show them yet: it reads them through
+  `quest_list` and the routes. Handing them to its instruction, and answering each at done, is DRIFT1d's.
+
+Proof: `QuestRequirementTests`, seen failing on stubs that kept and judged nothing: the sentence, spacing and case, an
+answer and an added message quoted; an unsaid quote refused naming it with nothing published, each unsaid one named and
+no other, and one across two words refused; a missing half, the bounds, a repository's quest and a host with no asks; a
+publish with none as before; a chain inherited two steps down and in its history; the log and the wire, a half-made
+requirement on the wire, a remote's check, and an ask from before its words were kept. The inheritance was seen failing
+again with its line removed. `McpToolsTests` (an intake's publish refused, then published and listed; a missing half) and
+`LocalHostTests` (the ask's door: 409 naming the quote, then the quest's requirements on the publish and the list; the
+quest door: `[]` for an old client, 400 on no ask) were seen failing first. `IntakePromptGoldenTests` pinned the
+instruction for two asks as it was, then the golden gained the paragraph and failed before the instruction did. Not
+covered: no real intake was handed the instruction, so whether a harness quotes rather than paraphrases is not measured;
+the family rehearsal's stub intake publishes no requirements, so no rehearsal drives them through the real host; nothing
+is drawn, so there is no look.
