@@ -13,15 +13,16 @@ public sealed partial class KnowledgeTools
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
         + "their next message. Each door is a `daoris driver` verb: drive, undrive, hold, resume, trees, line, "
         + "landing, across, intake, helper, strikes, retry, timeout, notify, cap, adapter. An `across` write-to is the "
-        + "person's standing say-so for one repository's sessions to write into another; `retry` starts a quest its "
-        + "failed sessions parked, one the room lists. Never for a push, a merge, a discard, a sign-in or a key: those "
+        + "person's standing say-so for one repository's sessions to write into another; `retry` takes a quest parked by "
+        + "its failed sessions, or held by the person's stop, as the room lists them. Never for a push, a merge, a "
+        + "discard, a sign-in or a key: those "
         + "stay the person's own presses.")]
     public string ProposeSetting(
         [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, intake, helper, strikes, retry, timeout, notify, cap or adapter.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,
-        [Description("The repository, for drive, undrive, hold, resume, trees, across, and a line or a landing set for one repository; for retry, the quest's id, as the room lists the parked ones.")]
+        [Description("The repository, for drive, undrive, hold, resume, trees, across, and a line or a landing set for one repository; for retry, the quest's id, as the room lists the parked and the held ones.")]
         string? target = null,
         [Description("The workspace, for a line, a landing or `across … read` set for every repository in it. Name this or target, not both.")]
         string? workspace = null,

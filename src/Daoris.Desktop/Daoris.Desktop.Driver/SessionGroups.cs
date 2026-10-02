@@ -175,6 +175,12 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 
     /// <summary>For a session to review: what its own tree holds.</summary>
     public TreeWork? Work { get; init; }
+
+    /// <summary>
+    /// Whether this session's stop holds its quest here (SESSUX1b, D126 §2.2): the person stopped it, it is its quest's
+    /// last session here, and nothing starts that quest on this machine until they choose *Try again*.
+    /// </summary>
+    public bool HoldsQuest { get; init; }
 }
 
 /// <summary>
@@ -230,7 +236,8 @@ public sealed record SessionLook(
 /// <para><b>To review is the tree's work, once nothing will go back into the tree.</b> Only the newest session on a tree
 /// stands for it; a tree a live session holds is in use, as D88's proof keeps a tree in use; and a tree whose quest is
 /// still taken and considered by the planner is the one its carry-on or resume goes back into (D79, D80), so its asker
-/// rests in Resumes later or Ended. Read literally, the order would put every awaiting reply with a commit in To review
+/// rests in Resumes later or Ended. A quest the person's stop holds goes back into nothing until they release it
+/// (<see cref="StartVerdict.Stopped"/>, SESSUX1b), so the stop's work is to review. Read literally, the order would put every awaiting reply with a commit in To review
 /// and offer a review of a tree a carry-on is writing.</para>
 ///
 /// <para><b>A teammate's record is grouped by its state only.</b> Its park waits on them, its tree is on their machine,
@@ -374,6 +381,8 @@ public static class SessionGroups
             if (record.Teammate) return Rest(row);
 
             var verdict = VerdictOnLast(record);
+            // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests.
+            row = row with { HoldsQuest = verdict?.Verdict == StartVerdict.Stopped };
             if (verdict?.Verdict == StartVerdict.Exhausted)
             {
                 return row with
@@ -416,8 +425,10 @@ public static class SessionGroups
             if (!_newestOnTree.TryGetValue(key, out var newest) || newest != record.Id || _liveTrees.Contains(key)) return null;
 
             // Parked comes first, and a quest the planner still considers while it is taken goes back into this
-            // session's tree: its carry-on (D80) or its resume (D79), whatever holds that start for now.
+            // session's tree: its carry-on (D80) or its resume (D79), whatever holds that start for now. Bar the person's
+            // stop (SESSUX1b): nothing goes back into its tree until they release it, so its work is theirs to review.
             return VerdictOnLast(record) is { } verdict
+                   && verdict.Verdict != StartVerdict.Stopped
                    && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken")
                 ? null
                 : tree;

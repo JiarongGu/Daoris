@@ -88,6 +88,24 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         }
     }
 
+    /// <summary>
+    /// SESSUX1b2: `retry` releases a quest the person's stop holds as well as one its failed sessions parked (D126 §3.4),
+    /// so the tool and its target say both, as the room lists both.
+    /// </summary>
+    [Fact]
+    public void The_tool_says_retry_takes_a_held_quest_as_well_as_a_parked_one()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var target = method.GetParameters().Single(parameter => parameter.Name == "target")
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.Contains("`retry` takes a quest parked by its failed sessions, or held by the person's stop", tool);
+        Assert.Contains("for retry, the quest's id, as the room lists the parked and the held ones", target);
+    }
+
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
@@ -111,10 +129,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("adapter", null, null, null, "an agent")]
     [InlineData("adapter", null, null, "two words", "an agent")]
-    [InlineData("retry", null, null, null, "names the quest its failed sessions parked")]
-    [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked")]
-    [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked")]
-    [InlineData("retry", "q1a2b3c4", null, "--at 2", "names the quest its failed sessions parked")]
+    [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
+    [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
+    [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]
+    [InlineData("retry", "q1a2b3c4", null, "--at 2", "names the quest its failed sessions parked or the person's stop holds")]
     public void A_setting_that_is_no_door_s_shape_is_refused_with_nothing_written(
         string door, string? target, string? workspace, string? value, string says)
     {

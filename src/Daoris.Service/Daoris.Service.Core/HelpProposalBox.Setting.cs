@@ -4,7 +4,7 @@ namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
 /// <param name="Door">One of <see cref="HelpProposalBox.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap` or `adapter`.</param>
-/// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked.</param>
+/// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
 /// <param name="Workspace">The workspace, for a line, a landing or reading across set for a whole workspace.</param>
 /// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, an agent…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
@@ -49,9 +49,10 @@ public sealed partial class HelpProposalBox
             case "strikes":
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out _) ? null : "`strikes` is a whole number, 0 or more.";
             case "retry":
-                // HELP10: the quest by id, as `daoris driver retry <quest>` takes it; whether it is parked is the driver's.
+                // HELP10: the quest by id, as `daoris driver retry <quest>` takes it; whether it is parked, or held by the
+                // person's stop (SESSUX1b), is the driver's to judge, so the box takes either id unchanged.
                 return !named || circle || !string.IsNullOrWhiteSpace(value) || Word(change.Target!.Trim(), "a quest") is not null
-                    ? "`retry` names the quest its failed sessions parked, by id, as the target — and nothing else."
+                    ? "`retry` names the quest its failed sessions parked or the person's stop holds, by id, as the target — and nothing else."
                     : null;
             case "timeout":
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var minutes) && minutes >= 1

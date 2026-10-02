@@ -221,6 +221,8 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         // The loop parked q4 and said nothing of q1, whatever a fresh plan would say of either.
         Assert.Equal("parked", rows["done1"].GetProperty("shown").GetString());
         Assert.Equal("ended", rows["failed3"].GetProperty("group").GetString());
+        // SESSUX1b: whether a row's stop holds its quest rides each row; no stop holds one here.
+        Assert.False(rows["failed3"].GetProperty("holdsQuest").GetBoolean());
     }
 
     /// <summary>

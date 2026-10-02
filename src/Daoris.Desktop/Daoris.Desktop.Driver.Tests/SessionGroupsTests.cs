@@ -122,6 +122,20 @@ public sealed class SessionGroupsTests
             new(Look([Record("s1", "completed", "q1", Tree)], [Done], trees: [(Tree, new TreeWork(0, 0))]), "s1", SessionGroup.Ended, "completed"),
         ["a stopped session with unlanded work is to review"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], trees: [(Tree, new TreeWork(1, 0))]), "s1", SessionGroup.Review, "stopped"),
+        // SESSUX1b: the planner now considers a taken quest the person's stop holds, and nothing goes back into its tree until
+        // they release it, so the stop's work stays to review.
+        ["a stop that holds its taken quest leaves its tree to review"] =
+            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Stopped)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Review, "stopped")
+            {
+                Also = row => Assert.True(row.HoldsQuest),
+            },
+        ["a released stop whose carry-on is planned is ended, not to review"] =
+            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Start)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Ended, "stopped")
+            {
+                Also = row => Assert.False(row.HoldsQuest),
+            },
         ["a conversation's own tree with work is to review"] =
             new(Look([Record("s1", "completed", tree: Tree, kind: "chat")], trees: [(Tree, new TreeWork(2, 0))]), "s1", SessionGroup.Review, "completed"),
         ["the tree's separators and case are one tree"] =
@@ -179,6 +193,23 @@ public sealed class SessionGroupsTests
         ["failed where the quest is not parked is ended"] =
             new(Look([Record("s1", "failed", "q1")], [Open], [Verdict(Open, StartVerdict.Held)]), "s1", SessionGroup.Ended, "failed"),
         ["stopped is ended"] = new(Look([Record("s1", "stopped", "q1")], [Taken]), "s1", SessionGroup.Ended, "stopped"),
+        // SESSUX1b (D126 §2.2): its line says *held here until you try again*, from this fact.
+        ["a stop that holds its quest is ended, and says it holds it"] =
+            new(Look([Record("s1", "stopped", "q1")], [Taken], [Verdict(Taken, StartVerdict.Stopped)]), "s1", SessionGroup.Ended, "stopped")
+            {
+                Also = row => Assert.True(row.HoldsQuest),
+            },
+        ["a stop that holds its open quest says so too"] =
+            new(Look([Record("s1", "stopped", "q1")], [Open], [Verdict(Open, StartVerdict.Stopped)]), "s1", SessionGroup.Ended, "stopped")
+            {
+                Also = row => Assert.True(row.HoldsQuest),
+            },
+        ["an earlier stop of a quest held by a later one does not hold it"] =
+            new(Look([Record("s1", "stopped", "q1"), Record("s2", "stopped", "q1", at: 10)], [Taken], [Verdict(Taken, StartVerdict.Stopped)]),
+                "s1", SessionGroup.Ended, "stopped")
+            {
+                Also = row => Assert.False(row.HoldsQuest),
+            },
         ["stood down is ended"] = new(Look([Record("s1", "stood-down", "q1")], [Taken]), "s1", SessionGroup.Ended, "stood-down"),
         ["a conversation that ended is ended"] = new(Look([Record("s1", "completed", kind: "chat")]), "s1", SessionGroup.Ended, "completed"),
 
@@ -284,8 +315,11 @@ public sealed class SessionGroupsTests
         const string busy = "X:/daoris/trees/aurora/engine/s-busy";
         const string parked = "X:/daoris/trees/aurora/engine/s-parked";
         const string elsewhere = "C:/checkouts/engine";
+        // SESSUX1b: a taken quest the person's stop holds goes back into no tree until they release it.
+        const string held = "X:/daoris/trees/aurora/engine/s-held";
         var carriedQuest = Quest("q2", "Taken");
         var parkedQuest = Quest("q3", "Taken");
+        var heldQuest = Quest("q4", "Taken");
         var look = Look(
         [
             Record("old", "failed", "q1", Tree),
@@ -294,16 +328,17 @@ public sealed class SessionGroupsTests
             Record("idle", "completed", tree: busy),
             Record("live", "working", tree: busy, at: 5),
             Record("park", "failed", "q3", parked),
+            Record("stop", "stopped", "q4", held),
             Record("root", "completed", tree: elsewhere),
             Record("laptop/s9", "completed", tree: "X:/daoris/trees/aurora/engine/s-theirs"),
             Record("bare", "completed"),
         ],
-        [Done, carriedQuest, parkedQuest],
-        [Verdict(carriedQuest, StartVerdict.Start), Verdict(parkedQuest, StartVerdict.Exhausted)]);
+        [Done, carriedQuest, parkedQuest, heldQuest],
+        [Verdict(carriedQuest, StartVerdict.Start), Verdict(parkedQuest, StartVerdict.Exhausted), Verdict(heldQuest, StartVerdict.Stopped)]);
 
         var judged = SessionGroups.TreesToJudge(look, tree => tree.StartsWith("X:/daoris/trees/", StringComparison.OrdinalIgnoreCase));
 
-        Assert.Equal([SessionGroups.Normal(Tree)], judged.Select(SessionGroups.Normal), StringComparer.OrdinalIgnoreCase);
+        Assert.Equal([SessionGroups.Normal(Tree), held], judged.Select(SessionGroups.Normal), StringComparer.OrdinalIgnoreCase);
         // Asked for one session, only its tree.
         Assert.Empty(SessionGroups.TreesToJudge(look, _ => true, only: ["bare", "old"]));
     }

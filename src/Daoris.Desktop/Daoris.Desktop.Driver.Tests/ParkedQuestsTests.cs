@@ -45,4 +45,19 @@ public sealed class ParkedQuestsTests
     {
         Assert.Empty(new ParkedQuests().Latest);
     }
+
+    /// <summary>
+    /// SESSUX1b: the quests a look held by the person's stop, each with the session they stopped, which a release names;
+    /// a parked quest is not one, and before any look there are none.
+    /// </summary>
+    [Fact]
+    public void A_quest_the_persons_stop_holds_is_kept_with_the_session_they_stopped()
+    {
+        var held = Considered("q2", "game", StartVerdict.Stopped) with { HeldBy = new PriorSession("s7", null, "stopped") };
+
+        Assert.Equal(
+            [new HeldQuest("q2", "game", "s7")],
+            HeldQuest.From([Considered("q1", "engine", StartVerdict.Exhausted), held, Considered("q3", "game", StartVerdict.Start)]));
+        Assert.Empty(HeldQuest.From(null));
+    }
 }

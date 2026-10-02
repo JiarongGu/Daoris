@@ -39,6 +39,8 @@ public abstract class HelpProposalsFixture : IDisposable
     {
         // HELP10: what the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
         Parked = [new ParkedQuest("q1a2b3c4", "engine")],
+        // SESSUX1b: what its last look held by the person's stop, and the session each was stopped in.
+        Held = [new HeldQuest("q2taken0", "engine", "s7a8b9c0")],
     };
 
     /// <summary>A file as the service's `HelpProposalBox` writes it — the twin's shape.</summary>

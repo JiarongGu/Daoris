@@ -246,6 +246,23 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// SESSUX1b (D126 §3.4): a carry-on after the person released their stop is told that they stopped the session before
+    /// and released the quest, never that it was cut off, and that the quest is still its own.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_after_the_person_released_their_stop_says_they_stopped_it_and_released_it()
+    {
+        var prompt = TargetPrompt.Compose(Target() with { CutOff = "the person stopped it.", Released = true });
+
+        Assert.Contains("carrying on quest `#abc123`", prompt);
+        Assert.Contains("do not take it again", prompt);
+        Assert.Contains(
+            "An earlier session on this quest was stopped by the person before it closed it, and they have since released the "
+            + "quest for you to carry on. Its record reads: the person stopped it.", prompt);
+        Assert.DoesNotContain("was cut off", prompt);
+    }
+
+    /// <summary>
     /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The carry-on's
     /// record opens with the target and then the person's answer, as theirs, so the conversation shows
     /// what they said rather than folding it inside the target.

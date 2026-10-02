@@ -108,15 +108,17 @@ public static class HelpRoom
     /// <param name="offers">The install's own plugins (PLUG9 d); the room lists the sound ones not installed here.</param>
     /// <param name="parked">The quests the loop's last tick parked by their failed sessions (HELP10), which a retry names.</param>
     /// <param name="browser">What Daoris's browser's files hold, as the desktop read them (HELP10); null where none was read.</param>
+    /// <param name="held">The quests the loop's last look held by the person's stop (SESSUX1b), which a retry releases.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
-        IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null)
+        IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null,
+        IReadOnlyList<HeldQuest>? held = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? [], browser);
+            parked ?? [], browser) { Held = held ?? [] };
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -166,4 +168,8 @@ internal sealed record HelpMachineSources(
     DriverConfig Config, Snapshot Snapshot, IReadOnlyList<RepositoryLine> Lines, IReadOnlyList<HarnessReport> Roster,
     Func<string, string?> Product, int Asks, IReadOnlyList<AskView> Standing, PluginCatalog Plugins,
     IReadOnlyList<LandedBranch> Landed, IReadOnlyList<PluginOffer> Offers, IReadOnlyList<ParkedQuest> Parked,
-    HelpBrowserFacts? Browser);
+    HelpBrowserFacts? Browser)
+{
+    /// <summary>The quests the loop's last look held by the person's stop (SESSUX1b).</summary>
+    public IReadOnlyList<HeldQuest> Held { get; init; } = [];
+}

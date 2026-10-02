@@ -43,6 +43,11 @@ export interface DriverChoices {
   strikes: number;
   /** Quests the person restarted, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
+  /**
+   * Quests the person released from their stop (SESSUX1b, D126 §3.4), each against the session they stopped: a later stop
+   * holds the quest again. The driver's `DriverConfig.Released` is the twin, read by the same table.
+   */
+  released: Record<string, string>;
   /** The harness an ask's intake session runs on (INT4b, D65 §1b) — null, and no intake runs. */
   intakeAdapter: string | null;
   /** The agent Ask Daoris runs on (HELP1, D89) — null, and it offers only its starters. */
@@ -86,7 +91,7 @@ export const DEFAULT_COOLOFF_MINUTES = 60;
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
+  strikes: 3, forgiven: {}, released: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
 };
 
@@ -226,14 +231,14 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   }
   if (parsed === null) {
     return {
-      ...EMPTY, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {},
+      ...EMPTY, forgiven: {}, released: {}, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {},
       readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
     };
   }
 
   const {
-    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, helperAdapter, timeoutMinutes, cooloff,
-    lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, ...rest
+    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
+    cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -246,6 +251,8 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // so silence there must not mean "never park". Zero is settable and means exactly that.
     strikes: typeof strikes === 'number' && strikes >= 0 ? Math.floor(strikes) : EMPTY.strikes,
     forgiven: marks(forgiven),
+    // Each quest against a session, as the driver reads it (SESSUX1b): a release the driver would not read is not listed.
+    released: releases(released),
     // 🔴 Absent means ON, the same reading the driver makes (SURF5b): every machine that already
     // has this file predates the field, and taking silence for "off" would ship the feature
     // switched off on exactly the machines that have been driving longest.
@@ -291,6 +298,8 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     notify: choices.notify,
     strikes: choices.strikes,
     forgiven: choices.forgiven,
+    // Written only when set (SESSUX1b), as the driver writes it: absent is no release.
+    ...(Object.keys(choices.released).length > 0 ? { released: choices.released } : {}),
     // Written only when named — absent IS off, and the driver writes it the same way.
     ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
     ...(choices.helperAdapter ? { helperAdapter: choices.helperAdapter } : {}),
@@ -433,8 +442,32 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     // Not `unpark` or `forgive`: the person is saying "try this again", and the mark records where
     // to count from rather than erasing what happened — the records still say it.
+    // SESSUX1b (D126 §3.4): with `--session`, it releases the person's stop of that session instead. This command talks to
+    // nothing (D50), so it cannot see which hold a quest is under: the stop's sentence names the session, and a stop is not
+    // a strike, so a release moves no mark.
     case 'retry': {
       const quest = named(argv, 'retry').replace(/^#/, '');
+      const sessionAt = argv.indexOf('--session');
+      if (sessionAt !== -1) {
+        const session = argv[sessionAt + 1]?.trim();
+        if (!session || session.startsWith('--')) {
+          throw new DaorisError('`--session` needs the session your stop ended — the quest\'s *Sitting* names it: '
+            + '`daoris driver retry <quest> --session <id>`.');
+        }
+        if (argv.includes('--at')) {
+          throw new DaorisError('a retry either releases your stop (`--session <id>`) or counts the strikes from a mark '
+            + '(`--at <n>`) — a stop is not a strike, so the two never go together.');
+        }
+
+        const key = Object.keys(choices.released).find((name) => name.toLowerCase() === quest.toLowerCase()) ?? quest;
+        writeDriverChoices(path, { ...choices, released: { ...choices.released, [key]: session } });
+        write(`daoris: quest \`#${quest}\` is released from your stop of session \`${session}\`.`);
+        write('  The driver takes it up again at its next look: a taken quest is carried on in the tree that session');
+        write('  worked in, an open one is planned again. A later stop holds it again.');
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      }
+
       const at = argv.indexOf('--at');
       const mark = at !== -1 && argv[at + 1] ? Number(argv[at + 1]) : choices.strikes;
       if (!Number.isInteger(mark) || mark < 0) {
@@ -749,6 +782,10 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       write(`  retried    #${quest}  (counting from ${mark} failure(s))`);
     }
 
+    for (const [quest, session] of Object.entries(choices.released)) {
+      write(`  released   #${quest}  (your stop of session ${session})`);
+    }
+
     write(choices.timeoutMinutes === null
       ? `  timeout    ${DEFAULT_TIMEOUT_MINUTES} minutes a session may run  (the default — \`daoris driver timeout <minutes>\` changes it)`
       : `  timeout    ${choices.timeoutMinutes} minutes a session may run`);
@@ -855,13 +892,38 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
   }
 
   function named(args: string[], verb: string): string {
-    // A flag's value is never the name (REV3): `retry --at 2 42` read `2` as the quest.
-    const name = operands(args, new Set(['--at']))[1];
+    // A flag's value is never the name (REV3): `retry --at 2 42` read `2` as the quest. `--session`'s neither (SESSUX1b).
+    const name = operands(args, new Set(['--at', '--session']))[1];
     if (name !== undefined) return name;
 
     throw new DaorisError(
       `\`driver ${verb}\` needs a name — e.g. \`daoris driver ${verb} aurora-engine\`.`);
   }
+}
+
+/**
+ * The session whose stop of this quest the person released (SESSUX1b), or null: the quest matched without case, as the
+ * driver's `DriverConfig.ReleasedFor` matches it.
+ */
+export function releasedFor(choices: DriverChoices, quest: string): string | null {
+  const key = Object.keys(choices.released).find((name) => name.toLowerCase() === quest.toLowerCase());
+  return key === undefined ? null : choices.released[key]!;
+}
+
+/**
+ * The releases, as the driver reads them (SESSUX1b): each quest against a session's id, read without the spaces around it.
+ * A blank session, one that is not text, a map that is not one, and a quest written again in another case are not read.
+ */
+function releases(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, string> = {};
+  for (const [quest, session] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof session !== 'string' || session.trim().length === 0 || quest.length === 0) continue;
+    if (Object.keys(held).some((name) => name.toLowerCase() === quest.toLowerCase())) continue;
+    held[quest] = session.trim();
+  }
+
+  return held;
 }
 
 /** The forgiveness marks, as a map of quest id to the failure count it was restarted at. */
