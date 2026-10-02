@@ -62,6 +62,42 @@ internal sealed class StoreRemote(
     }
 }
 
+/// <summary>
+/// A remote built before PAUSE1c: a real store behind the real wire, whose reader has no field for a decline's
+/// <c>whileOpen</c>. The flag is taken out of every operation it reads and every one it serves, so it keeps, judges
+/// and hands back a plain decline, as an older build does. Quests only: nothing else of an older build differs here.
+/// </summary>
+internal sealed class OlderRemote(QuestStore remote) : IRemote
+{
+    public async Task<QuestFetch> FetchQuestsAsync(long since, CancellationToken ct = default) =>
+        QuestWire.ReadPage(WithoutWhileOpen(QuestWire.Page(await remote.OperationsSinceAsync(since, ct: ct))))!;
+
+    public async Task<QuestPush> PushQuestsAsync(long @base, IReadOnlyList<QuestOperation> operations, CancellationToken ct = default)
+    {
+        var (sent, pushed) = QuestWire.ReadPush(WithoutWhileOpen(QuestWire.Push(@base, operations)))!.Value;
+        return QuestWire.ReadPushed(QuestWire.Pushed(
+            await remote.ReceiveAsync(sent, pushed, _ => null, _ => Workspaces.Default, ct)))!;
+    }
+
+    /// <summary>What an older reader makes of the JSON: every operation as it was, less the field it never knew.</summary>
+    private static string WithoutWhileOpen(string json)
+    {
+        var root = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
+        foreach (var operation in root["operations"]!.AsArray()) operation!.AsObject().Remove("whileOpen");
+        return root.ToJsonString();
+    }
+
+    public Task PushSessionsAsync(IReadOnlyList<FedSessionRecord> records, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<SessionFetch> FetchSessionsAsync(long since, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<string?> HeldCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
+
+    public Task<FedCodeMap?> FetchCodeMapAsync(string repository, CancellationToken ct = default) => throw QuestsOnly();
+
+    private static NotSupportedException QuestsOnly() => new("an older remote here speaks quests only");
+}
+
 /// <summary>A remote nobody can reach — what a take meets offline.</summary>
 internal sealed class UnreachableRemote : IRemote
 {

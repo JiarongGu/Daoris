@@ -323,6 +323,124 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.False(QuestLog.Applies(null, Op(3, QuestOperationKind.Deleted)));
     }
 
+    // ——— A decline that applies only while open (PAUSE1c, D132 point 10): an abandon judged its decline on an
+    // open quest, so landing after somebody's take it must not decline their work under them.
+
+    private static QuestOperation WhileOpen(long sequence, string reason) =>
+        Op(sequence, QuestOperationKind.Declined, reason) with { WhileOpen = true };
+
+    /// <summary>
+    /// A decline made while open applies to an open quest and to nothing else: after a take the take stands, and
+    /// after a close the close does — whichever machine's history the decline came from.
+    /// </summary>
+    [Fact]
+    public void A_decline_made_while_open_applies_only_to_an_open_quest()
+    {
+        var declined = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            WhileOpen(1, "Abandoned: the work went the wrong way."),
+        ])!;
+        var taken = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, QuestOperationKind.Taken, "A teammate's session."),
+            WhileOpen(2, "Abandoned: the work went the wrong way."),
+        ])!;
+
+        Assert.Equal((QuestStatus.Declined, "Abandoned: the work went the wrong way."), (declined.Status, declined.Note));
+        Assert.Equal((QuestStatus.Taken, "A teammate's session."), (taken.Status, taken.Note));
+        Assert.Equal(Now.AddHours(1), taken.Updated);
+        Assert.False(QuestLog.Applies(taken, WhileOpen(3, "again")));
+        Assert.False(QuestLog.Applies(declined, WhileOpen(3, "again")));
+        Assert.False(QuestLog.Applies(null, WhileOpen(3, "again")));
+    }
+
+    /// <summary>
+    /// A decline that says nothing of the flag is a plain one — every decline before PAUSE1c, and the quest page's
+    /// *Decline…* — and a plain decline still applies over a take: a person declining work they see taken means to.
+    /// </summary>
+    [Fact]
+    public void A_decline_with_no_flag_is_plain_and_still_applies_over_a_take()
+    {
+        var replayed = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, QuestOperationKind.Taken),
+            Op(2, QuestOperationKind.Declined, "Not ours after all."),
+        ])!;
+
+        Assert.False(Op(2, QuestOperationKind.Declined, "Not ours after all.").WhileOpen);
+        Assert.Equal((QuestStatus.Declined, "Not ours after all."), (replayed.Status, replayed.Note));
+    }
+
+    /// <summary>
+    /// The store judges the flag inside the write, as it judges every move (D47 §5): an open quest is declined and
+    /// its history keeps the flag; a taken one is refused and its history gains nothing.
+    /// </summary>
+    [Fact]
+    public async Task The_store_declines_while_open_only_an_open_quest_and_keeps_the_flag()
+    {
+        var open = await Publish("Open");
+        var taken = await Publish("Taken");
+        await _quests.MoveAsync(taken.Id, QuestStatus.Taken, null, Now.AddHours(1));
+
+        var declined = await _quests.MoveAsync(open.Id, QuestStatus.Declined, "Abandoned.", Now.AddHours(2), whileOpen: true);
+        var refused = await _quests.MoveAsync(taken.Id, QuestStatus.Declined, "Abandoned.", Now.AddHours(2), whileOpen: true);
+
+        Assert.True(declined.Moved);
+        Assert.Equal(QuestStatus.Declined, declined.Quest!.Status);
+        Assert.True((await _quests.HistoryAsync(open.Id))[^1].WhileOpen);
+        Assert.False(refused.Moved);
+        Assert.Equal(QuestStatus.Taken, refused.Quest!.Status);
+        Assert.Equal(
+            [QuestOperationKind.Published, QuestOperationKind.Taken],
+            (await _quests.HistoryAsync(taken.Id)).Select(o => o.Kind));
+    }
+
+    /// <summary>
+    /// The flag is written only when set: a plain decline's record is byte for byte what it was before PAUSE1c, and
+    /// a record from before — a decline whose payload says nothing of the flag — reads back plain.
+    /// </summary>
+    [Fact]
+    public async Task A_plain_decline_is_recorded_as_before_and_an_older_record_reads_plain()
+    {
+        var plain = await Publish("Plain");
+        var flagged = await Publish("Flagged");
+        await _quests.MoveAsync(plain.Id, QuestStatus.Declined, "Not ours.", Now.AddHours(1));
+        await _quests.MoveAsync(flagged.Id, QuestStatus.Declined, "Abandoned.", Now.AddHours(1), whileOpen: true);
+
+        Assert.Equal("""{"note":"Not ours."}""", await PayloadAsync(plain.Id, "declined"));
+        Assert.Equal("""{"note":"Abandoned.","whileOpen":true}""", await PayloadAsync(flagged.Id, "declined"));
+        Assert.False((await _quests.HistoryAsync(plain.Id))[^1].WhileOpen);
+
+        // A take on another machine, then a decline from before the flag, as an older build's log holds them.
+        var older = await Publish("Older");
+        await using (var write = _connection.CreateCommand())
+        {
+            write.CommandText = """
+                INSERT INTO quest_log (quest, kind, machine, sequence, at, payload) VALUES
+                  ($id, 'taken', 'older', 1, '2026-09-23T11:00:00.0000000+00:00', '{}'),
+                  ($id, 'declined', 'older', 2, '2026-09-23T12:00:00.0000000+00:00', '{"note":"Declined by an older build."}')
+                """;
+            write.Parameters.AddWithValue("$id", older.Id);
+            await write.ExecuteNonQueryAsync();
+        }
+
+        var history = await _quests.HistoryAsync(older.Id);
+        Assert.False(history[^1].WhileOpen);
+        Assert.Equal(QuestStatus.Declined, QuestLog.Replay(history)!.Status);
+    }
+
+    private async Task<string> PayloadAsync(string quest, string kind)
+    {
+        await using var read = _connection.CreateCommand();
+        read.CommandText = "SELECT payload FROM quest_log WHERE quest = $quest AND kind = $kind";
+        read.Parameters.AddWithValue("$quest", quest);
+        read.Parameters.AddWithValue("$kind", kind);
+        return (string)(await read.ExecuteScalarAsync())!;
+    }
+
     /// <summary>The ask is the quest: a history with nothing published is no quest at all.</summary>
     [Fact]
     public void A_history_with_nothing_published_is_no_quest()

@@ -630,7 +630,7 @@ public sealed class QuestStore
     private async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
-        IReadOnlyList<QuestAnswer>? answers = null)
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false)
     {
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
@@ -645,7 +645,8 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
         command.Parameters.AddWithValue("$at", at.ToString("O"));
-        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null, dismisses, answers));
+        var flagged = whileOpen && kind == QuestOperationKind.Declined;
+        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null, dismisses, answers, flagged));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
@@ -653,7 +654,8 @@ public sealed class QuestStore
             quest, kind, Machine, sequence, at, note,
             published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Conflicts = [] },
             Dismisses: dismisses,
-            Answers: answers is { Count: > 0 } ? answers : null);
+            Answers: answers is { Count: > 0 } ? answers : null,
+            WhileOpen: flagged);
     }
 
     /// <summary>
@@ -678,7 +680,9 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$sequence", operation.Sequence);
         command.Parameters.AddWithValue("$at", operation.At.ToString("O"));
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers));
+            "$payload", PayloadJson(
+                operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers,
+                operation.WhileOpen && operation.Kind == QuestOperationKind.Declined));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -803,9 +807,13 @@ public sealed class QuestStore
     /// How a done answers the quest's requirements (DRIFT1d, D133 §4), already judged by the exchange. A departure
     /// among them holds the chain's next step: it is published by the person's yes (<see cref="AcceptAsync"/>), not here.
     /// </param>
+    /// <param name="whileOpen">
+    /// A decline that applies only while the quest is open (PAUSE1c, D132 point 10): refused here on a quest no longer
+    /// open, and kept with the flag, so a rebase or a remote judges it by the same rule. Ignored on any other move.
+    /// </param>
     public Task<QuestMove> MoveAsync(
         string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
-        IReadOnlyList<QuestAnswer>? answers = null) =>
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
@@ -826,14 +834,17 @@ public sealed class QuestStore
                 history = await GiveHistoryAsync(held, transaction, inside).ConfigureAwait(false);
             }
 
-            if (!QuestTransitions.Allows(QuestLog.Replay(history)!.Status, status))
+            // Judged by the replay's own rule, so the store refuses here exactly what a rebase or a remote
+            // would not apply — a decline made while open (PAUSE1c) on a quest no longer open among them.
+            var open = whileOpen && status == QuestStatus.Declined;
+            if (!QuestLog.Applies(QuestLog.Replay(history), new QuestOperation(id, kind, Machine, 0, now, note, WhileOpen: open)))
             {
                 return new QuestMove(held, Moved: false);
             }
 
             var operation = await AppendAsync(
                 id, kind, now, note, null, transaction, inside,
-                answers: status == QuestStatus.Done ? answers : null).ConfigureAwait(false);
+                answers: status == QuestStatus.Done ? answers : null, whileOpen: open).ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
             await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
 
@@ -1165,9 +1176,11 @@ public sealed class QuestStore
                 }
             }
 
+            // A decline made while open that lost to a take (PAUSE1c) is kept like any losing move, with its
+            // reason: the conflict says it attempted a decline, and the flag, a decline's, goes with the kind.
             var lost = operation with
             {
-                Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind),
+                Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind), WhileOpen = false,
             };
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
             quest = quest is null ? null : QuestLog.Step(quest, lost);
@@ -1512,7 +1525,11 @@ public sealed class QuestStore
                             ? known
                                 ? $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which was deleted here."
                                 : $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which this deployment has never had published."
-                            : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
+                            : filed.WhileOpen
+                                // PAUSE1c: named as the decline it is, so the refusal its machine relays says why it did not land.
+                                ? $"`{KindText(filed.Kind)}` applies to quest `#{group.Key}` only while it is open (`whileOpen`), "
+                                  + $"and it is {quest.Status} here, so the quest stays {quest.Status}."
+                                : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
                     }
 
                     if (why is not null) break;
@@ -1715,7 +1732,10 @@ public sealed class QuestStore
             quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published, attempted,
             reader.IsDBNull(6) ? null : reader.GetInt64(6), dismisses,
             // Absent from every done before answers, and from one on a quest with no requirements (DRIFT1d).
-            payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null);
+            payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null,
+            // Absent from every decline before PAUSE1c and from every plain one: a plain decline.
+            kind == QuestOperationKind.Declined
+            && payload.TryGetProperty("whileOpen", out var open) && open.ValueKind == System.Text.Json.JsonValueKind.True);
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -1727,7 +1747,7 @@ public sealed class QuestStore
     /// </summary>
     private static string PayloadJson(
         string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
-        IReadOnlyList<QuestAnswer>? answers = null) => JsonFields.Written(writer =>
+        IReadOnlyList<QuestAnswer>? answers = null, bool whileOpen = false) => JsonFields.Written(writer =>
     {
         if (dismisses is not null)
         {
@@ -1782,6 +1802,9 @@ public sealed class QuestStore
         }
 
         if (note is not null) writer.WriteString("note", note);
+
+        // Only when set (PAUSE1c), for the lanes' reason: a plain decline is recorded exactly as before it.
+        if (whileOpen) writer.WriteBoolean("whileOpen", true);
 
         // Only when it answers some (DRIFT1d), for the lanes' reason: a done on a quest with none reads as it did.
         if (answers is { Count: > 0 })
