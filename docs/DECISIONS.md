@@ -7891,102 +7891,6 @@ page shows `semanticError` from a refresh, and since SEM3b `embedded` too, in th
 Settings → AI names `DAORIS_EMBED_WINDOW` beside the model and the address. A refresh with no `embedded` says nothing
 of embedding.
 
-**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
-driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
-install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
-network: a package source is PLUGDIST1c's. What the design left open, settled here:
-- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
-  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
-  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
-  anything is extracted, the last naming both numbers.
-- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
-  check a source makes before downloading would trust a type that says something else.
-- **Any `dependency` element refuses the package**, in a group or not.
-- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
-  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
-  too, since Windows would write the second over the first, and so does a name holding a control character, which
-  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
-  is written, and each target is checked again against the stage's whole path as it is written.
-- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
-- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
-  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
-  copies from; `Placement` still refuses every other.
-- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
-  offline kind, which PLUGDIST1c can update from as from an index.
-- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
-  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
-  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
-  offer does not read, and `{}` now names all three kinds.
-- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
-  record and update theories and holds its own to them, and was seen failing on a one-sided change.
-- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
-  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
-- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
-  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
-  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
-  update, and `daoris plugin install` answers as a moved verb does.
-- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
-  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
-  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
-
-**Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
-reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
-every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
-comes from `MarkdownSections.Preamble`, the text the splitter drops for a log. Each entry is local knowledge with
-the path the disk spells. The choices §5 left open, each held by a test in `RepositoryReadmeTests`:
-- **"No lock" is the scanner's own test**: no lock, or one it reads as none (not JSON, no entries, a target that
-  leaves the repository), the same test that reads both roots. A manifest with no lock is mid-adoption and has
-  declared nothing yet, so its README is still read. Once a lock is read, the next scan reads no README. The
-  refresh replaces a repository's entries whole, so that scan's refresh drops them.
-- **The part before the first heading keeps its title line.** For a README, `# Name` and the paragraph under it
-  say what the repository is. It is titled *README* and has no anchor, so it points at the top of the file and its
-  id is never a section's. A README whose sections are all level one is one entry, as a log's split would leave
-  it. An empty section is skipped, and a heading used twice gets a count in its anchor (REV3).
-- **Any case, one file.** The root's file named `README.md` in any case, labelled as the disk spells it, so a
-  session can open it on a case-sensitive disk. Two spellings side by side, which only such a disk holds, read the
-  first in ordinal order.
-- **Read last, so a declaration wins.** A README that a manifest with no lock declares as its router or a log is
-  read by that role's reader and not again. Read twice, the router's entry and the part before the first heading
-  would share the id `<repository>:README.md`, and the store's primary key would fail the refresh (REV3).
-- **Rejected**: splitting at every heading level, which cuts a section's subsections into entries too small to
-  answer anything; titling the first part by its `#` heading, since §5 names it *README* and the heading stays in
-  its body; reading `README.markdown`, `README.rst`, `README.txt` or `README` with no extension, or a README
-  below the root.
-- **Not a twin** (design §12): the driver's `SelfDescription` reads the same file for the intake, a title and a
-  paragraph, and neither is held to the other.
-- What the gates do not cover: no refresh of a real workspace has read a README on this branch, so whether its
-  sections help a neighbour's search is WSSETUP12's canary. The real-link test made a link on this machine. On a
-  machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
-  cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
-  now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.
-
-**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
-pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
-tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
-and swapped in whole. What the design left open, settled here:
-- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
-  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
-  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
-  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
-  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
-  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
-- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
-  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
-  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
-- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
-  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
-  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
-  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
-- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
-  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
-  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
-  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
-  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
-- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
-  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
-  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
-  desktop tree.
-
 ## D125 — An account's limit is read from the agent's own words, cools that account until the reset it names, and is never a strike; rotation moves the next start to the next account of the person's order (2026-10-02)
 
 **Decision (TOOL4).** The owner, 2026-10-01, continuing after their own assistant hit its weekly limit and they signed
@@ -8265,12 +8169,81 @@ plugin's does; that is unchanged. TOOL4h's rehearsal phase is still to be writte
 account for two minutes. The agent drops the date once a reset is under a day away (the same account had said
 `resets Oct 3, 4pm` the day before), and a refusal says the reset has not come. So the grace now holds only for a dated
 reset, and a time of day is the first such moment after the refusal. `AccountLimitsTests` holds the install's sentence.
+
 *Amended by D130 (TOOL6, 2026-10-02): a start reads one scope, and a scope's list is the whole set of accounts its
 starts may run on, for any number of accounts, so a workspace that names a default and no list rotates nowhere, and
 one that lists accounts starts within them. A list may start on the account with the most left or the soonest reset,
 run its sessions in parallel, keep one account for conversations, and switch before a limit, each on the agent's own
 word (`docs/2026-10-02-account-use-design.md` §13). Point 4's reading and the rejection of spreading are amended
 there.*
+
+**Read 2026-10-02 (TOOL4b): what each door says about an account's limits** (point 1, design §1.2; D130 §0.3,
+§5.1, §5.2), in `docs/2026-10-02-limit-signals-evidence.md`: keyless but for one short headless turn, and no limit
+was met. What it found:
+- **The native door's `rate_limit_event` carries a number on every frame.** Its `unifiedWindows` gives each window's
+  use, as a fraction, and its reset, on ordinary turns: 117 frames recorded on Claude Code 2.1.287, one shape, all
+  `allowed`. The SDK's declaration omits the field, so D130 §4.4's *clear, said without a number* does not describe
+  Claude Code (evidence §1, §6).
+- **The warning word is the CLI's own**, derived from use and time elapsed, and still `allowed` at 88% of a five-hour
+  window (evidence §1.3).
+- **A limit's failed `result` is `success` with `is_error: true`, `api_error_status` and the sentence**, read and not
+  measured, so TOOL4d's reason for not handing the native door's failure to the table stands (evidence §2).
+- **The protocol door forwards the frame** as `usage_update`'s `_meta["_claude/rateLimit"]`, except on a turn refused
+  before the model answered, and its limit error carries `data.errorKind`. Daoris drops both today (evidence §3).
+- **`codex-acp` forwards no limits, and a Codex limit's error message is `Internal error` alone**, with the sentence
+  in `data.message`: no Codex entry can match on the door as built (evidence §4).
+- **`/usage` and the status line stay unread** (§1.4, D130 §5.1): a separate fetch, and a person's terminal
+  (evidence §5).
+
+**What the gates do not cover.** No warning, refusal or Codex frame was measured. The protocol door's forwarded frame
+and the CLI under it, 2.1.284, were not read on a turn, and two reads of the CLI binary were not made (evidence §7).
+`verify` checks the note's links and none of these words.
+
+**Built 2026-10-02 (ACPDATA1): the protocol door keeps a refusal's `data`** (point 1, design §1.2; evidence §3, §4),
+held by `AcpTests`. A JSON-RPC error is now an `AcpRefusal`, still a `DriverException`. What building it settled:
+- **The data's `message` is said after the error's**, as `<message>: <data.message>`, the shape the protocol's own
+  `Internal error: …` has. So a Codex limit reaches the conclusion, the note and `AccountLimits.Read` as
+  *the ACP agent refused the call: Internal error: You’ve hit your usage limit. …*, where it said `Internal error`
+  alone. Words the message already says are not said twice, and Claude Code's message, which carries its sentence,
+  reads byte for byte as before.
+- **`errorKind` is kept beside the sentence, never in it** (`AcpRefusal.ErrorKind`, with `Said` for the data's
+  message). Written into the sentence after Claude Code's reset clause, it would become part of the reset and the
+  grammar would read none.
+- **Read without trusting the shape** (REV3): a `data` that is not an object, or fields in it that are not text, add
+  nothing, and the call still ends in a refusal.
+
+**What the gates do not cover.** Nothing reads `ErrorKind` yet, and it does not travel past the door: the conclusion
+takes the refusal's sentence alone. Reading it, or Codex's `codexErrorInfo`, which is not kept, is §1.2's *a field
+beats a sentence*, and waits for a refusal recorded on the door. No real refusal with a `data` was seen; the shapes
+are the evidence's, read from the adapters' code.
+
+**Built 2026-10-02 (TOOL4k): a weekday reset, and Codex's clock** (points 1 and 2; amends design §1.3 and §2.1;
+evidence §2, §4), held by `AccountLimitsTests`. What building it settled:
+- **A weekday and a time** (*resets Mon 12:00am*, the maker's errors page) is the first moment after the refusal on
+  that weekday at that time, with no grace, as a time of day is since the fix above. It stands where the date was
+  dropped, so one just past is next week's; one whose time is still ahead today is today's, since a guess too short
+  costs one refused start and one too long a week. Claude Code's entry records the page's sentence as documented,
+  never seen, with no zone, so the machine's stands in.
+- **A date may carry an ordinal and a year** (*Oct 3rd, 2026 4:05 PM*). A year names one date: more than 8 days ahead,
+  or past beyond the grace, it is not believed, said so. A year not next to this one is not read. A dated reset keeps
+  its grace.
+- **The reset may be the rest of the marker's own clause** (§1.3 said a later clause): Codex writes its refusal as
+  sentences, with no ` · `. A marker that ends its clause, as Claude Code's does, leaves no rest, so its sentences read
+  as before.
+- **Codex's entry is `codex-acp`'s** (`CodexLimits`), since no `codex` adapter exists to own it; a cool-off is still
+  the `codex` account's (`AccountOf`). Its marker is *You've hit your usage limit[ for <model>].* at a clause's start
+  or after a door's `: `, since a marker that does not end its clause cannot otherwise tell a refusal from a
+  quotation. Its reset is *try again at <when>*, in the machine's zone, said as assumed; *Try again later.* is the
+  default. `hit` is `usage`, never the model's name, since the log writes it.
+- **Its four sentences were read in Codex's source** (codex 0.159.3, as the evidence cites it), the plan's next step
+  and the model's name elided as `…`: the evidence records the template, and no sentence seen on a door. The
+  both-ways check holds them as it holds Claude Code's.
+
+**What the gates do not cover.** No Codex refusal and no weekday reset was seen on a door. Still unrecorded: Codex's
+four workspace sentences (*Your workspace is out of credits…*, *You hit your spend cap…*, elided in the evidence, naming
+no reset), its plans' next steps, and whether the app server's message is that text; Claude Code's *Opus limit*,
+*Sonnet limit*, *team's shared budget* and *usage limit* on usage-based billing, of which the marker reads all but the
+budget, unrecorded; and whether a real weekday reset prints a zone.
 
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
@@ -8812,7 +8785,7 @@ hand when this was written. `verify` checks this entry's shape and the review's 
 spend-limited: *"there are multiple accounts we should be able to set option how switch works and how to optimize the
 account use since there are 3 accounts"*. Asked the open questions, they answered: *"yes all three accounts can run the
 work workspace this really depends on how many token left since all 3 are sub based and how accounts been used like
-one by one or 3 paralle or other logic should be configable"*, and *"3 is becau I only have 3 not limited to account
+one by one or 3 parallel or other logic should be configurable"*, and *"3 is because I only have 3 not limited to account
 numbers"*. D125 has one policy: walk the order when the default is not ready. Read from the code at `7cca0e1`, with
 TOOL4f landed, two of its readings infer what nobody said. A workspace that names its own
 default and no list takes the machine's list, so a work workspace rotates onto personal accounts. A workspace that
@@ -8928,7 +8901,7 @@ account just to optimize the usage"*. One person runs their own work, in one wor
 one after another, to use what they pay for. That reading is the owner's and stands. Point 12 stays as written: the
 screen names each account's own plan and terms, and Daoris claims nothing about them.
 
-**What *in parallel* means (the owner, 2026-10-02):** *"paralle mostly means if we running multi repo or multi
+**What *in parallel* means (the owner, 2026-10-02):** *"parallel mostly means if we running multi repo or multi
 sessions"*. It is the sessions running at once, across repositories or within one, that spread over the accounts,
 each start going to the account running the fewest. A quest's carry-on stays on its last account while that is
 ready, as point 6 says, and moves to the next account when that one hits its limit (the owner: *"a quest can be
@@ -9043,3 +9016,90 @@ remote applies a `whileOpen` decline as a plain one. Found while reading and fil
 nothing that runs, so by this glossary it is a hold, for WSSETUP7 to name. The code's comments call a repository's
 hold *paused*, which PAUSE1b rewords. Not measured: every item of the design's §12. `verify` checks this entry's shape
 and the design's links, and none of their words.
+**The rules around the goal (2026-10-02).** The owner: *"you can design the rules around this purpose"*. So the
+defaults are re-decided on the goal: the most work from the accounts' combined allowance, the fewest stalls, and no
+allowance left unused at a reset (design §16).
+
+1. **Every listed account is used toward the goal by default** (`use: goal`). *List order, one by one* is an override
+   (`use: order`), D125's walk, kept for a person who wants their accounts used in their order.
+2. **No start is held** while an account it may use is ready and a slot is free, so allowance lapses only where there
+   was no work or no slot for it.
+3. **The default walk** (design §16.3), each step stable: a driven start drops the kept account; an account its agent
+   said is near goes last; fewest of Daoris's sessions running first; an account whose known weekly reset falls within
+   the next day first, sooner first; furthest behind its week's pace first, where the agent said; least recently
+   started first; the list's order last. While every account is ready, none runs more than ⌈K ÷ N⌉ at once.
+4. **With nothing said** (today), steps 2 and 5 are inert. The walk spreads by Daoris's own sessions and over time,
+   and learns each account's weekly reset from the weekly limits it meets, carried a week at a time where the maker
+   fixes it (Claude, C1). It says so on the screen, in `daoris agent list` and in each start's first line, and no
+   number stands in for a reading.
+5. **Switching before the limit is on by default**, inert until a door carries the agent's word. A kept account stays
+   an option, off by default.
+6. **A quest's next session goes where the walk sends it.** A carry-on carries no conversation, so its account buys
+   only readability, which its first line gives. This amends point 6 and the note on *in parallel* above.
+7. **The settings are the list, `use`, `keep`, `early` and `near`**, per agent and scope, for any number of accounts.
+   TOOL6a's vocabulary changes: `prefer` and `parallel` are gone; `use` (`goal` or `order`, absent `goal`) is new;
+   `early` is on when absent and off only when `false`; `keep` and `near` are unchanged. The terminal door is `daoris
+   agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>]
+   [--workspace W]`, and Ask Daoris's `use` door takes the same four. A machine with an order written before changes
+   to `goal` when TOOL6b lands.
+8. **It is judged** by TOOL4h's report per account and week: sessions landed, hours waited, limit cut-offs, allowance
+   left at each weekly reset where the agent's word shows it (*not measured* where not), the limits met, the starts
+   each step moved, and whether the cap rather than the accounts was the limit; and by TOOL4i's run under `goal`.
+
+**Why.** One by one meets a limit as soon as the load passes one account's five-hour window while the others sit idle,
+and that limit cuts off every session on the account; spreading meets none while the load fits all accounts together,
+and a limit cuts off at most ⌈K ÷ N⌉. A week recovers in days and five hours in hours, so the week's risks, lapsing and
+running ahead, rank above any five-hour order, and the five-hour window is a gate: passed when near, kept below its
+limit by spreading. A week is ranked by its reset only in its last day, when what is left is at risk of lapsing;
+ranked so all week, it would pile one account's work onto it while the others' weeks went by. Pace keeps every week
+moving, but alone it would pass a small leftover about to lapse, so it ranks below the last day. The fallbacks use only
+what Daoris knows: its own sessions, its own starts, and the resets the agents named.
+
+**Rejected** (design §16.5 and §16.9):
+- **Keeping *list order, one by one* as the default**: the most cautious choice, and the goal argues against it on
+  every measure.
+- **The five-hour window's reset as an order above the week**: unknown without the agent's word, and it would spend a
+  week to save hours.
+- **Ranking every week by its reset all week**, and **holding work to pace a week**.
+- **A quest kept on its account**, and **a cached prompt as a reason to keep it** (no page read says one counts less).
+- **Keeping `prefer` and `parallel` beside `use`**, and **a cap per account or a cap raised to use more windows**.
+
+**What it amends.** D130 points 3 (the settings), 6 (the walk), 7 (`left` and `soonest` fold into pace and the lapsing
+week), 8 (on by default), 10 (spreading is the default), 11 (the `use` door's fields), and the note on *in parallel*
+(a quest's carry-on no longer stays on its last account). The design's §2, §4, §6–§10 and §12–§14 carry notes, and the
+TOOL6a–d, TOOL4g, TOOL4h and TOOL4i rows in its §10 are amended in place. D125 §3.3 and §3.4 are the walk under
+`order`. Unchanged: eligibility (point 4), the wait that asks (point 5), what is left by the agent's own word and
+absent never zero (point 7's rule), the cool-off, a limit not a strike, D57, D49 §4 and D66 §3.
+
+**What the checks do not cover.** Documents only, and nothing is built. The arithmetic of spreading is an argument,
+not a measurement: neither an account's allowance nor the load is known, and §16.8 names what only a real run shows,
+the day's horizon among them. The first real rotation and its weekly sentence are the fix log's and D125's notes, not
+re-read here. `verify` checks this note's place and the design's links, and none of their words.
+
+**Built 2026-10-02 (TOOL6a): the settings and their terminal door** (points 2, 4 and 11 and the goal's point 7; design
+§2, §3.1, §4.6, §14, §16.6), held by `RotationUseTwinTests` and `RotationTwinTests` on the driver's side and, cell for
+cell, by the CLI's `rotation-use.test.ts` and `rotation.test.ts`. What building it settled:
+- **A value or a default changes by a row.** Today's defaults live in one place (`USE_DEFAULTS`, `RotationUse.Default`)
+  and the ways to use accounts in one list (`USE_MODES`, `RotationUse.Modes`). A value the reader does not know reads as
+  today's default and is said by `agent list` and `profile use`; a setting it has no name for is kept as written and
+  said. `prefer` and `parallel` are skipped and gone at the next write (§16.6).
+- **A choice is written as made**, one equal to today's default included, so a later default never overturns what a
+  person chose; only absence means the default. Known settings go out in one order, normalised, then the rest as read;
+  both writers write the same bytes.
+- **A scope's settings come with its list.** Clearing a list clears its settings; an account removed is kept nowhere.
+  `profile use` refuses a scope with no list of its own, naming the `order` that gives it one. `--clear` returns a
+  scope to today's defaults.
+- **One rule binds a scope** (`scopeProblem`, `ScopeProblem.Of`): its default and its kept account are of its list,
+  compared exactly, and a kept account leaves driven work another. `profile order` refuses all three, naming both sides
+  and the fix; `profile default` the first, where its scope has a list of its own (a workspace with none takes any
+  account and is then that account alone); `profile use --keep` the kept ones. The order door's two kept-account
+  refusals keep §4.6's state unreachable by the back door. Tested with one account and with six.
+- **`agent list`** prints beneath each list how it is used, a default outside it, a kept account alone in it, and what
+  the build does not know. `profile use` with the agent alone adds what each account last said, which today is its
+  cool-off or nothing: no door carries the agent's word about its windows yet (§5.3), and the switch says so.
+- **The room names the door** (`HelpRoomDoors`, *no screen yet*).
+
+**What the gates do not cover.** Nothing reads these settings to choose an account: `SelectAsync` still walks D125's
+order, and `ResolveScope` waits for TOOL6b. §3.1's refusal is the terminal's alone: the screen's `profile-default`
+route (`DriverModule.DefaultEdited`, modules) and Ask Daoris's `default` door do not ask `ScopeProblem.Of` yet (TOOL4g,
+or a modules row). The `Process` half, the rehearsals and the screen were not run by this branch.

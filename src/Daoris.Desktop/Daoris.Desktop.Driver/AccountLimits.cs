@@ -34,8 +34,8 @@ public sealed record RecordedLimit(string Sentence, string Seen, string Channel,
 /// A clause that says a limit was hit, with a <c>hit</c> group: what was hit, kept for the record.
 /// </param>
 /// <param name="Resets">
-/// A later clause that says when it lifts, with a <c>when</c> group the reader's grammar reads (D125 §2.1),
-/// and an optional <c>window</c> and <c>zone</c>.
+/// A later clause, or the rest of the marker's own (TOOL4k), that says when it lifts, with a <c>when</c> group
+/// the reader's grammar reads (D125 §2.1), and an optional <c>window</c> and <c>zone</c>.
 /// </param>
 /// <param name="Recorded">The sentences the patterns were written against.</param>
 public sealed record LimitWords(
@@ -118,8 +118,11 @@ public static class AccountLimits
             var hit = marker.Groups["hit"] is { Success: true } said ? said.Value.Trim() : clauses[i];
             var byDefault = new LimitSeen(hit, null, seen + (coolOff ?? DefaultCoolOff), Stated: false, AssumedZone: false);
 
-            // The reset is a LATER clause (D125 §0.2): what was hit comes first, then when it lifts.
-            foreach (var later in clauses.Skip(i + 1))
+            // The reset comes AFTER what was hit (D125 §0.2): a later clause, or, for an agent that writes its refusal as
+            // sentences in one clause, the rest of the marker's own (TOOL4k, Codex). A marker that ends its clause, as
+            // Claude Code's does, leaves no rest, so its sentences read as they always did.
+            var rest = clauses[i][(marker.Index + marker.Length)..].Trim();
+            foreach (var later in (rest.Length > 0 ? [rest] : Array.Empty<string>()).Concat(clauses.Skip(i + 1)))
             {
                 if (First(entry.Resets, later) is not { } reset) continue;
 
@@ -128,7 +131,8 @@ public static class AccountLimits
                 var moment = When(reset.Groups["when"].Value.Trim(), seen, named ?? machineZone);
 
                 if (moment is null) return byDefault with { Window = window };
-                if (moment.Value - seen > Furthest) return byDefault with { Window = window, NotBelieved = true };
+                // A year names one date, which may be past (TOOL4k): not believed, as a date too far ahead is not.
+                if (moment.Value < seen || moment.Value - seen > Furthest) return byDefault with { Window = window, NotBelieved = true };
                 return new LimitSeen(hit, window, moment.Value + Margin, Stated: true, AssumedZone: named is null);
             }
 
@@ -190,22 +194,41 @@ public static class AccountLimits
         @"^(?<hour>\d{1,2})(?::(?<minute>\d{2}))? ?(?<half>am|pm)$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// A month, a day and a time (<i>Oct 3, 4pm</i>), the day with an ordinal and a year where Codex writes them
+    /// (<i>Oct 3rd, 2026 4:05 PM</i>, TOOL4k).
+    /// </summary>
     private static readonly Regex DayAndTime = new(
-        @"^(?<month>jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec) (?<day>\d{1,2}),? (?<time>.+)$",
+        @"^(?<month>jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec) (?<day>\d{1,2})(?:st|nd|rd|th)?,? (?:(?<year>\d{4}),? )?(?<time>.+)$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    /// <summary>A weekday and a time (<i>Mon 12:00am</i>), as the maker documents a weekly reset (TOOL4k).</summary>
+    private static readonly Regex WeekdayAndTime = new(
+        @"^(?<weekday>sun|mon|tue|wed|thu|fri|sat) (?<time>.+)$",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly string[] Months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 
+    /// <summary>Three-letter English weekdays, in <see cref="DayOfWeek"/>'s order.</summary>
+    private static readonly string[] Weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
     /// <summary>
-    /// The moment a reset names (D125 §2.1), in <paramref name="zone"/>: a time of day is the first such
-    /// moment after <paramref name="seen"/>, a month, a day and a time the one in the year that puts it first
-    /// after it, and a dated one up to <see cref="Grace"/> before it is <paramref name="seen"/> itself. Null
-    /// when this grammar does not read it. Month names are English, as the sentences print them.
+    /// The moment a reset names (D125 §2.1), in <paramref name="zone"/>: a time of day, or a weekday and a time, is
+    /// the first such moment after <paramref name="seen"/>; a month, a day and a time the one in the year that puts
+    /// it first after it, or in the year it names; and a dated one up to <see cref="Grace"/> before it is
+    /// <paramref name="seen"/> itself. Null when this grammar does not read it. Month and weekday names are English,
+    /// as the sentences print them.
     /// </summary>
     /// <remarks>
-    /// 🔴 A time of day gets no grace (FIX 2026-10-02): the agent drops the date once the reset is under a day
+    /// <para>🔴 A time of day gets no grace (FIX 2026-10-02): the agent drops the date once the reset is under a day
     /// away, so <i>resets 4pm</i> refused at 4:12pm is tomorrow's, and the refusal itself says it has not come.
-    /// Read as today's in the grace, it cooled the account for the margin and the next start was refused again.
+    /// Read as today's in the grace, it cooled the account for the margin and the next start was refused again.</para>
+    ///
+    /// <para>A weekday gets none either (TOOL4k), for the same reason: it stands where the date was dropped, so
+    /// <i>Mon 12:00am</i> refused at 00:05 on a Monday is next week's.</para>
+    ///
+    /// <para>A named year is that one date, so it may lie behind <paramref name="seen"/>, which the reader does not
+    /// believe. Only a year next to this one is read: any other is a date no limit names, and is not read.</para>
     /// </remarks>
     private static DateTimeOffset? When(string when, DateTimeOffset seen, TimeZoneInfo zone)
     {
@@ -217,12 +240,24 @@ public static class AccountLimits
         {
             candidates = new[] { 0, 1 }.Select(days => local.Date.AddDays(days) + time);
         }
+        else if (WeekdayAndTime.Match(when) is { Success: true } weekday && Clock(weekday.Groups["time"].Value) is { } on)
+        {
+            var named = (DayOfWeek)Array.IndexOf(Weekdays, weekday.Groups["weekday"].Value.ToLowerInvariant());
+            candidates = Enumerable.Range(0, 8)
+                .Select(days => local.Date.AddDays(days))
+                .Where(day => day.DayOfWeek == named)
+                .Select(day => day + on);
+        }
         else if (DayAndTime.Match(when) is { Success: true } date && Clock(date.Groups["time"].Value) is { } at)
         {
             dated = true;
             var month = Array.IndexOf(Months, date.Groups["month"].Value.ToLowerInvariant()) + 1;
             var day = int.Parse(date.Groups["day"].Value, CultureInfo.InvariantCulture);
-            candidates = new[] { local.Year - 1, local.Year, local.Year + 1 }
+            var near = new[] { local.Year - 1, local.Year, local.Year + 1 };
+            var years = date.Groups["year"] is { Success: true } said
+                ? near.Where(year => year == int.Parse(said.Value, CultureInfo.InvariantCulture))
+                : near;
+            candidates = years
                 .Where(year => day >= 1 && day <= DateTime.DaysInMonth(year, month))
                 .Select(year => new DateTime(year, month, day) + at);
         }
@@ -234,10 +269,12 @@ public static class AccountLimits
         // The zone's offset AT that wall-clock moment, so a reset across a change of offset lands on its minute.
         var moments = candidates.Select(c => new DateTimeOffset(c, zone.GetUtcOffset(c))).OrderBy(m => m).ToList();
         if (dated && moments.Any(m => m <= seen && seen - m <= Grace)) return seen;
-        return moments.Where(m => m > seen).Select(m => (DateTimeOffset?)m).FirstOrDefault();
+        // Every moment behind the refusal happens only for a named year: the latest, for the reader not to believe.
+        return moments.Where(m => m > seen).Select(m => (DateTimeOffset?)m).FirstOrDefault()
+            ?? moments.Select(m => (DateTimeOffset?)m).LastOrDefault();
     }
 
-    /// <summary>A twelve-hour clock's time of day (<i>7am</i>, <i>7:50am</i>, <i>12pm</i>), or null.</summary>
+    /// <summary>A twelve-hour clock's time of day (<i>7am</i>, <i>7:50am</i>, <i>12pm</i>, <i>4:05 PM</i>), or null.</summary>
     private static TimeSpan? Clock(string text)
     {
         if (TimeOfDay.Match(text.Trim()) is not { Success: true } clock) return null;
@@ -253,7 +290,8 @@ public static class AccountLimits
 
 /// <summary>
 /// Claude Code's words for an account's limit (TOOL4a, D125 §0.2): five recorded sentences, on its ACP
-/// adapter's door and on the maker's own CLI outside Daoris, which inform the grammar.
+/// adapter's door and on the maker's own CLI outside Daoris, which inform the grammar, and the weekly reset
+/// the maker's errors page documents with a weekday (TOOL4k).
 /// </summary>
 public static class ClaudeLimits
 {
@@ -282,5 +320,42 @@ public static class ClaudeLimits
                 "You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit · your weekly limit resets Oct 3, 4pm (<zone>)",
                 "2026-10-02",
                 "the maker's CLI outside Daoris, an HTTP 429 rate_limit mid-run: no door of Daoris's"),
+            new(
+                "You've hit your weekly limit · resets Mon 12:00am",
+                "2026-10-02",
+                "documented, not seen: the maker's errors page, read by TOOL4b (limit-signals evidence §2), which prints it with no zone; the weekday it names is TOOL4k's grammar"),
+        ]);
+}
+
+/// <summary>
+/// Codex's words for an account's limit (TOOL4k, limit-signals evidence §4), declared by its protocol door,
+/// <c>codex-acp</c>, since no <c>codex</c> adapter exists to own them. Read in Codex's source and never seen
+/// on a door: they reach Daoris as the JSON-RPC error's <c>data.message</c>, which the door says after the
+/// message <c>Internal error</c> (ACPDATA1).
+/// </summary>
+/// <remarks>
+/// <para><b>One clause of sentences.</b> Codex joins no <c>·</c>: the reset is the rest of the marker's own
+/// clause, <i>Try again at {time}.</i>, and <i>Try again later.</i> names none.</para>
+///
+/// <para><b>Its time has no zone</b>: the machine's local time, <i>4:05 PM</i> the same day, else
+/// <i>Oct 3rd, 2026 4:05 PM</i>, read in the machine's zone and said as assumed.</para>
+///
+/// <para><b>The marker starts a clause or follows what a door put before it</b> (<c>: </c>), since a clause that
+/// does not end on it, as Claude Code's must, cannot tell a refusal from a quotation any other way.</para>
+/// </remarks>
+public static class CodexLimits
+{
+    private const string Source =
+        "read, not measured: codex 0.159.3's source at rust-v0.159.3 (codex-rs/protocol/src/error.rs, UsageLimitReachedError), which codex-acp 2.1.1 sends as the JSON-RPC error's data.message beside the message `Internal error` (limit-signals evidence §4)";
+
+    public static LimitWords Words { get; } = new(
+        Markers: [@"(?:^|: )you've hit your (?<hit>usage) limit(?: for .+?)?\.(?= |$)"],
+        Resets: [@"\btry again at (?<when>.+?)\.?$"],
+        Recorded:
+        [
+            new("You’ve hit your usage limit. … Try again at 4:05 PM.", "2026-10-02", $"{Source}; the plan's own next step elided", "0.159.3"),
+            new("You’ve hit your usage limit. … or try again at Oct 3rd, 2026 4:05 PM.", "2026-10-02", $"{Source}; the plan's own next step elided", "0.159.3"),
+            new("You’ve hit your usage limit for …. Switch to another model now, or try again at 4:05 PM.", "2026-10-02", $"{Source}; a named model's limit, the model elided", "0.159.3"),
+            new("You’ve hit your usage limit. … Try again later.", "2026-10-02", $"{Source}; no reset known, the plan's own next step elided", "0.159.3"),
         ]);
 }

@@ -130,7 +130,8 @@ public sealed class AccountLimitsTests
 
     /// <summary>
     /// A reset this grammar does not read is the default, as no reset is: a word, a 24-hour clock no
-    /// sentence used, a date no calendar has, an hour no clock shows, a month in another language.
+    /// sentence used, a date no calendar has, an hour no clock shows, a month in another language, a
+    /// weekday spelled out or with no time, a year in two digits, and a year not next to this one.
     /// </summary>
     [Theory]
     [InlineData("resets soon")]
@@ -139,6 +140,10 @@ public sealed class AccountLimitsTests
     [InlineData("resets 13pm")]
     [InlineData("resets 7:75am")]
     [InlineData("resets Okt 6, 10pm")]
+    [InlineData("resets Monday 12:00am")]
+    [InlineData("resets Mon")]
+    [InlineData("resets Oct 3rd, 26 4pm")]
+    [InlineData("resets Oct 3rd, 2030 4pm")]
     public void A_reset_this_grammar_does_not_read_is_the_default(string reset)
     {
         var seen = At("2026-10-02 03:00", Zone);
@@ -179,6 +184,29 @@ public sealed class AccountLimitsTests
 
         Assert.Equal(At("2026-10-02 23:57", Zone), Read($"You've hit your weekly limit · resets 11:55pm ({Zone.Id})", seen)!.Until);
         Assert.Equal(TimeSpan.FromMinutes(2), AccountLimits.Margin);
+    }
+
+    /// <summary>
+    /// A weekday and a time (TOOL4k; the maker documents <i>resets Mon 12:00am</i>, limit-signals evidence §2) is the first
+    /// moment after the refusal on that weekday at that time, with no grace, as a time of day is: the agent names the day
+    /// only once the date is dropped, and its refusal says the reset has not come, so one just past is next week's.
+    /// 2 October 2026 is a Friday.
+    /// </summary>
+    [Theory]
+    [InlineData("resets Mon 12:00am", "2026-10-02 12:00", "2026-10-05 00:02")]
+    [InlineData("resets Mon 12:00am", "2026-10-04 23:50", "2026-10-05 00:02")]
+    [InlineData("resets Mon 12:00am", "2026-10-05 00:05", "2026-10-12 00:02")]
+    [InlineData("resets Mon 11pm", "2026-10-05 09:00", "2026-10-05 23:02")]
+    [InlineData("your weekly limit resets Thu 4:30pm", "2026-10-02 12:00", "2026-10-08 16:32")]
+    [InlineData("resets Sun 9am", "2026-12-31 12:00", "2027-01-03 09:02")]
+    public void A_weekday_is_the_first_such_moment_after_the_refusal_with_no_grace(string reset, string seen, string until)
+    {
+        var limit = Read($"You've hit your weekly limit · {reset} ({Zone.Id})", At(seen, Zone));
+
+        Assert.NotNull(limit);
+        Assert.Equal(At(until, Zone), limit.Until);
+        Assert.True(limit.Stated);
+        Assert.False(limit.NotBelieved);
     }
 
     /// <summary>Noon is 12pm and midnight is 12am, as a twelve-hour clock prints them.</summary>
@@ -248,22 +276,131 @@ public sealed class AccountLimitsTests
         Assert.Null(AccountLimits.Read(Claude, null, seen, Machine));
     }
 
+    // ——— Codex's words (TOOL4k, limit-signals evidence §4): one sentence of sentences, its time the machine's, no zone.
+
+    /// <summary>Codex's entry, read where its door reads it: `codex-acp`'s own (it has no `codex` adapter to own it).</summary>
+    private static LimitWords Codex => new CodexAcpAdapter().Toolchain!.Limits!;
+
+    /// <summary>The refusal as the protocol door says it once it keeps the error's data (ACPDATA1).</summary>
+    private const string CodexDoor = "the ACP agent refused the call: Internal error: ";
+
+    /// <summary>
+    /// Codex says its reset after the marker in the same clause, as <i>Try again at {time}.</i>, in the machine's local
+    /// time with no zone: the machine's zone, said as assumed. A time of day is the first such moment after the refusal,
+    /// with no grace; a date with an ordinal and a year is that day, with the grace a dated reset has.
+    /// </summary>
+    [Theory]
+    [InlineData("You’ve hit your usage limit. … Try again at 4:05 PM.", "2026-10-02 14:00", "2026-10-02 16:07")]
+    [InlineData("You’ve hit your usage limit. … Try again at 4:05 PM.", "2026-10-02 16:12", "2026-10-03 16:07")]
+    [InlineData("You’ve hit your usage limit. … or try again at Oct 3rd, 2026 4:05 PM.", "2026-10-02 14:00", "2026-10-03 16:07")]
+    [InlineData("You’ve hit your usage limit. … Try again at Oct 2nd, 2026 4:05 PM.", "2026-10-02 16:10", "2026-10-02 16:12")]
+    [InlineData("You’ve hit your usage limit for …. Switch to another model now, or try again at 4:05 PM.", "2026-10-02 14:00", "2026-10-02 16:07")]
+    [InlineData("You’ve hit your usage limit. … Try again at Jan 1st, 2027 9:00 AM.", "2026-12-30 12:00", "2027-01-01 09:02")]
+    public void Codex_s_reset_is_read_in_the_machine_s_zone(string sentence, string seen, string until)
+    {
+        var limit = AccountLimits.Read(Codex, CodexDoor + sentence, At(seen, Machine), Machine);
+
+        Assert.NotNull(limit);
+        Assert.Equal(At(until, Machine), limit.Until);
+        Assert.True(limit.Stated);
+        Assert.True(limit.AssumedZone);
+        Assert.Equal("usage", limit.Hit);
+        Assert.Null(limit.Window);
+    }
+
+    /// <summary>Each ordinal names its day, beside a year.</summary>
+    [Theory]
+    [InlineData("Oct 1st, 2026 4:05 PM", "2026-10-01 16:07")]
+    [InlineData("Oct 2nd, 2026 4:05 PM", "2026-10-02 16:07")]
+    [InlineData("Oct 3rd, 2026 4:05 PM", "2026-10-03 16:07")]
+    [InlineData("Oct 4th, 2026 4:05 PM", "2026-10-04 16:07")]
+    public void An_ordinal_and_a_year_read_as_the_day_they_name(string time, string until)
+    {
+        var limit = AccountLimits.Read(Codex, $"{CodexDoor}You’ve hit your usage limit. … Try again at {time}.", At("2026-09-30 12:00", Machine), Machine);
+
+        Assert.Equal(At(until, Machine), limit!.Until);
+    }
+
+    /// <summary>
+    /// A year names one date, so a moment it puts more than 8 days ahead, or already past beyond the grace, is not believed:
+    /// the default stands, and says so.
+    /// </summary>
+    [Theory]
+    [InlineData("Oct 3rd, 2027 4:05 PM")]
+    [InlineData("Oct 1st, 2026 4:05 PM")]
+    public void A_year_that_puts_the_reset_out_of_reach_is_not_believed(string time)
+    {
+        var seen = At("2026-10-02 14:00", Machine);
+        var limit = AccountLimits.Read(Codex, $"{CodexDoor}You’ve hit your usage limit. … Try again at {time}.", seen, Machine);
+
+        Assert.NotNull(limit);
+        Assert.Equal(seen + AccountLimits.DefaultCoolOff, limit.Until);
+        Assert.False(limit.Stated);
+        Assert.True(limit.NotBelieved);
+    }
+
+    /// <summary><i>Try again later.</i> names no reset: Codex's limit, on the default.</summary>
+    [Fact]
+    public void Codex_s_try_again_later_is_the_default()
+    {
+        var seen = At("2026-10-02 14:00", Machine);
+        var limit = AccountLimits.Read(Codex, $"{CodexDoor}You’ve hit your usage limit. … Try again later.", seen, Machine);
+
+        Assert.NotNull(limit);
+        Assert.Equal(seen + AccountLimits.DefaultCoolOff, limit.Until);
+        Assert.False(limit.Stated);
+        Assert.Equal("usage", limit.Hit);
+    }
+
+    /// <summary>
+    /// Anything else is not Codex's limit: the door's bare <i>Internal error</i>, as it said before it kept the data;
+    /// the words quoted in the middle of a sentence; a workspace sentence no entry records; Claude Code's words.
+    /// </summary>
+    [Theory]
+    [InlineData("the ACP agent refused the call: Internal error")]
+    [InlineData("the test said You’ve hit your usage limit. Try again at 4:05 PM.")]
+    [InlineData("the ACP agent refused the call: Internal error: Your workspace is out of credits…")]
+    [InlineData("the ACP agent refused the call: Internal error: You've hit your weekly limit · resets 7am")]
+    public void A_failure_that_is_not_codex_s_limit_is_none(string failure)
+    {
+        Assert.Null(AccountLimits.Read(Codex, failure, At("2026-10-02 14:00", Machine), Machine));
+    }
+
+    /// <summary>Every sentence Codex's entry records is its limit, and each that names a time is read as stated.</summary>
+    [Fact]
+    public void Every_codex_sentence_is_recognised()
+    {
+        Assert.NotEmpty(Codex.Recorded);
+        foreach (var recorded in Codex.Recorded)
+        {
+            var seen = At($"{recorded.Seen} 12:00", Machine);
+            var limit = AccountLimits.Read(Codex, CodexDoor + recorded.Sentence, seen, Machine);
+
+            Assert.True(limit is not null, $"not read: {recorded.Sentence}");
+            var named = recorded.Sentence.Contains("try again at", StringComparison.OrdinalIgnoreCase);
+            Assert.True(limit.Stated == named && limit.AssumedZone == named, $"misread: {recorded.Sentence}");
+            Assert.InRange(limit.Until - seen, TimeSpan.Zero, TimeSpan.FromDays(8));
+        }
+    }
+
     // ——— The table: an entry grows only with a recorded sentence.
 
     /// <summary>
     /// Every recorded sentence, in the zone this test chose, is recognised by its own entry and its reset
-    /// read as stated: the five of D125 §0.2 each named a time.
+    /// read as stated: the five of D125 §0.2 each named a time, and so does the weekday the maker documents
+    /// (TOOL4k), which its page prints with no zone, so the machine's stands in.
     /// </summary>
     [Fact]
     public void Every_recorded_sentence_is_recognised_and_its_reset_read()
     {
-        Assert.Equal(5, Claude.Recorded.Count);
+        Assert.Equal(6, Claude.Recorded.Count);
         foreach (var recorded in Claude.Recorded)
         {
             var seen = At($"{recorded.Seen} 12:00", Zone);
             var limit = AccountLimits.Read(Claude, InZone(recorded), seen, Machine);
+            var zoned = recorded.Sentence.Contains(AccountLimits.ZonePlaceholder, StringComparison.Ordinal);
 
-            Assert.True(limit is { Stated: true, AssumedZone: false, NotBelieved: false }, $"not read: {recorded.Sentence}");
+            Assert.True(limit is { Stated: true, NotBelieved: false } && limit.AssumedZone != zoned, $"not read: {recorded.Sentence}");
             Assert.InRange(limit!.Until - seen, TimeSpan.Zero, TimeSpan.FromDays(8));
         }
     }
@@ -298,13 +435,16 @@ public sealed class AccountLimitsTests
         Assert.NotEmpty(Unproven(empty));
     }
 
-    /// <summary>A recorded sentence carries the zone as a placeholder, once, and never a zone of its own.</summary>
+    /// <summary>
+    /// A recorded sentence carries the zone as a placeholder, at most once, and never a zone of its own. Codex prints
+    /// none (TOOL4k), and neither does the maker's page for the weekday; each of the five observations printed one.
+    /// </summary>
     [Fact]
     public void A_recorded_sentence_carries_no_zone_of_its_own()
     {
         foreach (var recorded in Declared().SelectMany(d => d.Words.Recorded))
         {
-            Assert.Single(recorded.Sentence.Split(AccountLimits.ZonePlaceholder)[1..]);
+            Assert.InRange(recorded.Sentence.Split(AccountLimits.ZonePlaceholder).Length - 1, 0, 1);
             Assert.DoesNotMatch(@"\((?!<zone>\))[^()]*\)\s*$", recorded.Sentence);
             Assert.False(string.IsNullOrWhiteSpace(recorded.Channel));
             Assert.Matches(@"^\d{4}-\d{2}-\d{2}$", recorded.Seen);
@@ -312,14 +452,15 @@ public sealed class AccountLimitsTests
     }
 
     /// <summary>
-    /// Only an agent seen hitting a limit declares an entry: Claude Code, and the stub that mirrors its words
-    /// as it mirrors <c>Refused</c>, so a rehearsal can gate a limit with no account. A door onto Claude Code
-    /// reads its owner's (AGT7); codex, dsh and a plugin have none, and read every failure as a failure.
+    /// Only an agent whose limit's words are recorded declares an entry: Claude Code; the stub that mirrors its
+    /// words as it mirrors <c>Refused</c>, so a rehearsal can gate a limit with no account; and Codex's door, whose
+    /// sentences TOOL4b read in Codex's source (TOOL4k), since no <c>codex</c> adapter exists to own them. A door onto
+    /// Claude Code reads its owner's (AGT7); dsh and a plugin have none, and read every failure as a failure.
     /// </summary>
     [Fact]
     public void Only_an_agent_seen_hitting_a_limit_declares_an_entry()
     {
-        Assert.Equal(new[] { "claude-code", "stub" }, Declared().Select(d => d.Agent).Order(StringComparer.Ordinal));
+        Assert.Equal(new[] { "claude-code", "codex-acp", "stub" }, Declared().Select(d => d.Agent).Order(StringComparer.Ordinal));
         Assert.Same(Claude, new StubAdapter().Toolchain!.Limits);
     }
 
