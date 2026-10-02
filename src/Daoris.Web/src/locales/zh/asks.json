@@ -59,5 +59,18 @@
   "asks.record.intake": "受理会话",
   "asks.record.tierIntakeUnpublished": "按声明判断；受理会话已读过，尚未发布",
   "asks.gone.headline": "此需求已不在这里",
-  "asks.gone.body": "它已被删除，或者属于本窗口没有显示的工作区。请在列表中另选一个。"
+  "asks.gone.body": "它已被删除，或者属于本窗口没有显示的工作区。请在列表中另选一个。",
+  "asks.record.closeLeaves": "关闭需求不会改变它的委托；放弃会谢绝它们。",
+  "asks.record.pause": "暂缓…",
+  "asks.record.pauseMeanIt": "确认暂缓需求",
+  "asks.record.resume": "恢复",
+  "asks.record.abandon": "放弃…",
+  "asks.record.abandonMeanIt": "确认放弃需求",
+  "asks.record.abandonWhy": "原因——随每条谢绝留存",
+  "asks.record.paused": "已暂缓",
+  "asks.record.pausedTip": "在你恢复之前，本机不会启动它的任何工作。",
+  "asks.record.abandonedAt": "放弃时间",
+  "asks.record.went": "放弃的部分",
+  "asks.record.stayed": "保留的部分",
+  "asks.record.noDriver": "暂缓和放弃属于一台机器的驱动，所以浏览器两者都不提供：请在桌面应用中操作，或在终端运行 `daoris-driver ask --pause {{id}}` 和 `daoris-driver ask --abandon {{id}}`。"
 }

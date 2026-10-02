@@ -59,5 +59,18 @@
   "asks.record.intake": "Intake session",
   "asks.record.tierIntakeUnpublished": "by declarations; an intake read it and has not published",
   "asks.gone.headline": "This ask is no longer here",
-  "asks.gone.body": "It was deleted, or it belongs to a workspace this window is not showing. Choose another in the list."
+  "asks.gone.body": "It was deleted, or it belongs to a workspace this window is not showing. Choose another in the list.",
+  "asks.record.closeLeaves": "Closing leaves its quests as they are; Abandon declines them.",
+  "asks.record.pause": "Pause…",
+  "asks.record.pauseMeanIt": "Pause ask",
+  "asks.record.resume": "Resume",
+  "asks.record.abandon": "Abandon…",
+  "asks.record.abandonMeanIt": "Abandon ask",
+  "asks.record.abandonWhy": "why — kept with each decline",
+  "asks.record.paused": "paused",
+  "asks.record.pausedTip": "Nothing of its work starts on this machine until you resume it.",
+  "asks.record.abandonedAt": "Abandoned",
+  "asks.record.went": "What went",
+  "asks.record.stayed": "What stayed",
+  "asks.record.noDriver": "Pausing and abandoning are a machine's driver's, so a browser offers neither: on the desktop, or at a terminal, `daoris-driver ask --pause {{id}}` and `daoris-driver ask --abandon {{id}}`."
 }

@@ -1,0 +1,20 @@
+{
+  "work.pause.title": "pause this work",
+  "work.pause.join": "{{first}} {{second}}",
+  "work.pause.ask.stops": "Stops {{count}} running session now and starts nothing of {{what}} on this machine until you resume it. Its tree keeps what it wrote, and a quest it took stays taken here.",
+  "work.pause.ask.stops_other": "Stops {{count}} running sessions now and starts nothing of {{what}} on this machine until you resume it. Their trees keep what they wrote, and the quests they took stay taken here.",
+  "work.pause.ask.elsewhere": "Another machine may still take {{quests}}: a pause holds this machine only.",
+  "work.pause.ask.intake": "Its intake keeps reading; what it publishes waits too.",
+  "work.pause.reading": "Reading what the pause would stop…",
+  "work.pause.nothing": "Nothing of {{what}} is open or taken on this machine, so there is nothing to pause.",
+  "work.pause.done.stopped": "Paused {{what}} and stopped {{count}} session: nothing of it starts on this machine until you resume it.",
+  "work.pause.done.stopped_other": "Paused {{what}} and stopped {{count}} sessions: nothing of it starts on this machine until you resume it.",
+  "work.pause.done.nothingStopped": "Paused {{what}}: nothing of it starts on this machine until you resume it.",
+  "work.pause.done.already": "Already paused: nothing of {{what}} starts on this machine until you resume it.",
+  "work.pause.unreached": "Could not stop session {{session}}: Stop… on its page asks again.",
+  "work.pause.resumed": "Resumed {{what}}: the driver's next look plans its work as it would have.",
+  "work.pause.notPaused": "Not paused on this machine, so nothing of {{what}} changed.",
+  "work.pause.stillSits": "#{{quest}} still sits: {{why}}",
+  "work.pause.stillSitMany": "{{count}} quest of it still sits; its page says why, under Sitting.",
+  "work.pause.stillSitMany_other": "{{count}} quests of it still sit; each quest's page says why, under Sitting."
+}

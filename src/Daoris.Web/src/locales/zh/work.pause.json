@@ -1,0 +1,20 @@
+{
+  "work.pause.title": "暂缓这份工作",
+  "work.pause.join": "{{first}}{{second}}",
+  "work.pause.ask.stops": "现在会停止 {{count}} 个运行中的会话，并且在你恢复之前，本机不会再启动{{what}} 的任何工作。它的工作树保留已写下的内容，它接下的委托在本机仍是已接下。",
+  "work.pause.ask.stops_other": "现在会停止 {{count}} 个运行中的会话，并且在你恢复之前，本机不会再启动{{what}} 的任何工作。它们的工作树保留已写下的内容，它们接下的委托在本机仍是已接下。",
+  "work.pause.ask.elsewhere": "另一台机器仍可能接下 {{quests}}：暂缓只作用于本机。",
+  "work.pause.ask.intake": "它的受理会继续读取；它发布的内容也会一同等待。",
+  "work.pause.reading": "正在读取暂缓会停止的内容…",
+  "work.pause.nothing": "本机上{{what}} 没有未接下或已接下的委托，没有可暂缓的内容。",
+  "work.pause.done.stopped": "已暂缓{{what}}，并停止了 {{count}} 个会话：在你恢复之前，本机不会启动它的任何工作。",
+  "work.pause.done.stopped_other": "已暂缓{{what}}，并停止了 {{count}} 个会话：在你恢复之前，本机不会启动它的任何工作。",
+  "work.pause.done.nothingStopped": "已暂缓{{what}}：在你恢复之前，本机不会启动它的任何工作。",
+  "work.pause.done.already": "早已暂缓：在你恢复之前，本机不会启动{{what}} 的任何工作。",
+  "work.pause.unreached": "无法停止会话 {{session}}：在它的页面上按「停止…」可再次请求。",
+  "work.pause.resumed": "已恢复{{what}}：驱动的下一轮会照常安排它的工作。",
+  "work.pause.notPaused": "它在本机没有暂缓，{{what}} 没有任何改变。",
+  "work.pause.stillSits": "#{{quest}} 仍在搁置：{{why}}",
+  "work.pause.stillSitMany": "其中仍有 {{count}} 条委托在搁置；它的页面会在「搁置」下说明原因。",
+  "work.pause.stillSitMany_other": "其中仍有 {{count}} 条委托在搁置；各自的页面会在「搁置」下说明原因。"
+}
