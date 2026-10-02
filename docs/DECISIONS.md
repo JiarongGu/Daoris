@@ -9917,3 +9917,64 @@ real agent was handed the requirements or asked to answer them, so whether a har
 each met is not measured, and nothing compares a met answer with the work, since a fact gates and a judgement reports
 (D54); the family rehearsal publishes no requirements, so no rehearsal drives an answered done through the real host;
 the page shows neither the answers nor the yes, so there is no look.
+
+## D135 — Sessions ask the person too often because a go-ahead is asked again and a reading is put as a question, not because they skip the knowledge: a go-ahead is held once, a standing answer is kept, every item names its source, and a model's review is measured before it is shown (2026-10-03)
+
+**Decision (KNOWUSE1, the owner's: *"I found [the repository] itself is kind of ignoring the repo's knowledge docs?
+since a lot asks back to me should not be there? … that will need LLM/AI to involve"*).** The evidence is
+`docs/2026-10-03-knowledge-use-evidence.md`: every question 33 driven sessions of the owner's work repository put to the
+owner, 46 items, classed by what could have answered each, against what each session read and was told.
+
+1. **The knowledge is not the cause.** The repository's own discovery gate ran in 20 of 22 working sessions, and every
+   document that answered a question, or told the session to ask, had been read. Finishing the set-up and pushing
+   recall into the prompt (KNOW2b) are not this problem's fix; each stays on its own reason (D128, D129).
+2. **A go-ahead is asked once and held on the ask.** A session that needs the person's yes for an act outside the
+   repository records it as one pending go-ahead named by the act; later sessions are handed it and its answer, and
+   do not re-list it. The production acts stay the person's (D37, D52).
+3. **A standing answer is kept for the repository.** An answer the person marks as outliving its quest (which
+   environment to test in, which writes are allowed) is handed to every later session there, beneath its quest. It is
+   the person's, on this machine, and set at both doors (D50); it is never written into the repository (D32).
+4. **A closing note separates what needs the person from the readings taken, and every item names its source**: the
+   ticket's line, the document and its line, the code path. The look names the indexes the repository's own
+   instructions name. A question that names nothing it checked has not been looked into.
+5. **An attributed reading is not a requirement.** The person's words quoted in a document, a closed quest's note or a
+   commit are someone's reading unless the ask's record holds them (D133 §1), and a session relying on one says so.
+6. **A model's review is measured before it is shown, and never answers in the person's place until it is.** Beside
+   each item a park or closing note brings, the review shows what may already answer it. The floor needs no model: a
+   word search over the repository's knowledge and the ask's words, saying *words only*. The model tier is a short check
+   session on the deployment's own harness and account, which quotes a source, says *needs the person*, or says *a
+   reading*, and the review names the tier that classed each item (D24). It is built after a replay bench over recorded
+   questions, this evidence's 46 first, shows it classes them as a person did.
+7. **A repository document that requires the person's agreement stands.** The session asks once and names the
+   document. A conflict between such a document and the person's later words is the person's to settle, as a request
+   to that repository.
+
+**Why.** 25 of the 46 needed the owner, and 13 of those were asks for three production acts, because the repository's
+knowledge routes verification through production and nothing held a go-ahead between sessions. The owner's
+development-first answer was given once and read by no later session. 10 were settled by the ticket, the code or a
+read-only look, five of them readings put to the owner as decisions without the ticket's line they rested on;
+6 came from drift, one of them now written into the repository's knowledge as the owner's decision; 3 were asked
+because the repository's own documents say to ask. Only 2 were answered by a document the session had read, and neither stopped work. So a review against the
+knowledge alone would have caught 2 of 46, and a review that also reads the ask's words and the ticket reaches about 16
+more. That is worth measuring, and not worth trusting unmeasured.
+
+**Rejected.**
+- **Finishing the set-up as the fix.** The repository's own gate already ran, and the pilot's branch replaced its
+  richer routing skill with the canon's.
+- **Pushing recall into the prompt as the fix.** Every governing document was already read, and this install's
+  service answers by words only.
+- **A model that answers parked questions from the knowledge, unmeasured.** It would have answered almost none here,
+  and would have answered one from the drifted document.
+- **Naming the repository's index as a fix of its own.** Sessions found the indexes through the repository's
+  instructions; it rides in point 4's wording.
+- **Editing the repository's documents that require asking.** That is the repository's own work (D32).
+
+**What it amends, when built.** WSSETUP9's `TargetPrompt.Asking` (points 4 and 5). D133: the ask holds pending
+go-aheads beside the person's words (point 2). D129 §6's push stays held. WSSETUP14f's close shows the canon's discovery
+skill still reaches a repository's own routing. The rows are the evidence's §6, KNOWUSE1a–KNOWUSE1d, KNOWUSE2 and
+KNOWUSE3.
+
+**What the checks do not cover.** Documents only, and nothing is built. The classes are this evidence's reading of the
+records, the documents and the owner's later words; the owner did not class them, which is what KNOWUSE2 measures. One
+session was still running and an earlier ticket's ten sessions were not read. No session was re-run with the proposed
+wording. `verify` checks this entry's place and the evidence's links, and none of their words.

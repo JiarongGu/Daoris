@@ -182,14 +182,31 @@ install in both themes and both languages.
 > need other resouce location"*
 
 
-### Knowledge that sessions actually use (owner, 2026-10-03)
+### Knowledge that sessions actually use (owner, 2026-10-03) — D135
 
-- [ ] **KNOWUSE1 — why report-ui's sessions ask what its knowledge answers** (owner, 2026-10-03: *"I found report-ui itself
-  is kind of ignoring the repo's knowledge docs? since a lot asks back to me should not be there? … we need to check the
-  process properly or the initialize of daoris system still not 100% working and that will need llm/ai to involve"*).
-  Every question sessions put to the owner, classed by what could have answered it (knowledge, code, history, only the
-  owner), against what each session read and was told; then the fix, model-backed where text matching cannot judge.
-  Contract: D135 (in flight). Proof: the evidence, de-identified; raw notes untracked.
+KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
+3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
+
+- [ ] **KNOWUSE1a — a go-ahead is asked once and held on the ask** (service, driver, web). Three prod acts drew 13 asks;
+  a request for an act already asked joins the first, and every session on the ask is handed its answer. Contract: D135.
+  Proof: a second request for one act joins the first; a carry-on is handed it.
+- [ ] **KNOWUSE1b — a standing answer kept per repository** (driver, modules, both doors). *Dev writes allowed, test
+  locally against dev, prod only on a yes*: kept on this machine, never written into the repository, handed to every
+  session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
+- [ ] **KNOWUSE1c — a closing note says what needs you apart from readings, each citing its source** (driver). Ticket line,
+  doc line or code path beside every item; the look names the repository's own indexes. Contract: D135. Proof:
+  `AskAndWaitPromptTests`; a canary turn.
+- [ ] **KNOWUSE1d — the owner's words quoted second-hand are a reading** (driver; beside DRIFT1). A quote in a doc, a closed
+  note or a commit is attributed only if the ask's record holds it. Contract: D135. Proof: prompt goldens.
+- [ ] **KNOWUSE2 — a bench for checking a question before it reaches the owner** (tools). Replays the 46 recorded
+  questions through the no-model floor (word search, labelled *words only*) and a model tier on the deployment's own
+  harness, scored against their classes. Contract: D135. Proof: script tests; the model tier is the owner's run.
+- [ ] **KNOWUSE3 — the review beside each item** (web, driver; held on KNOWUSE2). Says which tier found each hint and never
+  answers in the owner's place. Contract: D135. Proof: stories; the look.
+- [ ] **KNOWUSE4 — a request the owner may publish to the work repository** (the owner's). Its comparison document
+  records a misread answer as *the owner also settled the calculation*; correct it, and reconcile its *fix the config,
+  not the shared component* rule with the owner's *add it into the common-report module*. Contract: the evidence §4.
+
 
 ### The desktop's own surfaces (owner, 2026-10-03)
 
