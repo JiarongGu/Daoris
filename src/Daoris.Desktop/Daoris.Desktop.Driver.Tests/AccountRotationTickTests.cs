@@ -11,11 +11,14 @@ namespace Daoris.Desktop.Driver.Tests;
 /// account-1 is ready again, the next start takes it.
 /// </summary>
 /// <remarks>
-/// On the pipe stub, whose toolchain manages accounts: the protocol stub reads the stub's limit table but runs on its own
-/// sign-in alone (TOOL4d), so the limit itself is replayed here as the driver records one, its account cooled by the
-/// roster's reader and its record saying <c>limit</c>. The stub agent answers the sign-in question for each account from
-/// the directory it is handed, and writes down where it ran, as which account, what it was handed and what its record's
-/// note said while it ran.
+/// <para>On the pipe stub first, whose door carries text alone, so the limit there is replayed as the driver records one,
+/// its account cooled by the roster's reader and its record saying <c>limit</c>. The stub agent answers the sign-in
+/// question for each account from the directory it is handed, and writes down where it ran, as which account, what it
+/// was handed and what its record's note said while it ran.</para>
+///
+/// <para>Then on the protocol door (TOOL4j), where the limit is the door's own failure: the protocol stub runs as the
+/// stub's accounts, so its refused turn cools stub account 1 through the driver's own conclusion, and the carry-on opens
+/// on stub account 2.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class AccountRotationTickTests : IDisposable
@@ -23,6 +26,9 @@ public sealed class AccountRotationTickTests : IDisposable
     private static readonly TimeZoneInfo Zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Kathmandu");
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 1, 14, 0, 0, TimeSpan.FromMinutes(345));
+
+    /// <summary>Observation 4's reset, read: 3 October, 16:02 in the test's zone.</summary>
+    private static readonly DateTimeOffset Until = new(2026, 10, 3, 16, 2, 0, TimeSpan.FromMinutes(345));
 
     private static readonly string Refusal =
         "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask "
@@ -141,6 +147,102 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(("account-1", (RotatedStart?)null), (next.Profile, next.Rotated));
     }
 
+    /// <summary>
+    /// TOOL4j (D125 §1.3 rule 4, §8): on the protocol door, the refused turn itself is the limit. The first session runs on
+    /// stub account 1, takes the quest and is refused with observation 4's sentence; the driver reads it, the record says
+    /// <c>limit</c> and stub account 1 cools until the reset it names, for both doors onto it. The carry-on, which a strike
+    /// would have parked, opens on stub account 2 in the same tree and closes the quest.
+    /// </summary>
+    [Fact]
+    public async Task A_limit_on_the_protocol_door_cools_stub_account_1_and_the_carry_on_opens_on_stub_account_2()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var lines = new List<AccountLine>();
+        client.AccountLined += line => { lock (lines) lines.Add(line); };
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Adapter = "acp-stub",
+            TimeoutMinutes = 1,
+            PollSeconds = 1,
+            // One failure would park it: the limit must hold none.
+            Strikes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", AcpAgent(), Log] },
+        };
+        var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        // The first session runs on stub account 1, the default, takes the quest, and its turn is refused for the limit.
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var cut = service.Session("s1");
+        Assert.Equal(("failed", "account-1"), (cut["state"]!.GetValue<string>(), cut["profile"]!.GetValue<string>()));
+        Assert.True(cut["limit"]!.GetValue<bool>());
+        var cutNote = cut["note"]!.GetValue<string>();
+        Assert.Contains($"The account it ran on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said", cutNote);
+        Assert.DoesNotContain("account-1", cutNote);
+        var tree = cut["tree"]!.GetValue<string>();
+
+        // Stub account 1 cools until the reset the agent named, read by the driver from the door's failure: one account,
+        // so the pipe door onto it is held too.
+        var cooling = roster.CoolingOf("acp-stub", "account-1")!;
+        Assert.Equal(("stub", "account-1", Until, true, "s1"), (cooling.Agent, cooling.Account, cooling.Until, cooling.Stated, cooling.Session));
+        Assert.Equal(cooling, roster.CoolingOf("stub", "account-1"));
+        Assert.Null(roster.CoolingOf("acp-stub", "account-2"));
+        lock (lines)
+        {
+            var limited = Assert.Single(lines, line => line.Event == "account.limited");
+            Assert.Equal(
+                new object?[] { "s1", "acp-stub", "account-1" },
+                limited.Data.Take(3).Select(field => field.Value));
+        }
+
+        // The carry-on opens on stub account 2, in the same tree, and closes the quest.
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var carried = service.Session("s2");
+        Assert.Equal("completed", carried["state"]!.GetValue<string>());
+        Assert.Equal("account-2", carried["profile"]!.GetValue<string>());
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(carried["tree"]!.GetValue<string>()), ignoreCase: true);
+        Assert.Equal("Done", service.Status("q1"));
+
+        // Each run was handed its stub account through the stub's own variable.
+        var runs = File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!).ToList();
+        Assert.Equal(["account-1", "account-2"], runs.Select(run => run["account"]!.GetValue<string>()));
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(runs[1]["cwd"]!.GetValue<string>()), ignoreCase: true);
+
+        // It was told its last session ran on another account, now cooling, naming none; its note, which travels, too.
+        var handed = runs[1]["prompt"]!.GetValue<string>();
+        Assert.Contains("carrying on quest `#q1`", handed);
+        Assert.Contains("It ran on another account, which reached its limit and is cooling", handed);
+        Assert.DoesNotContain("account-1", handed);
+        var note = runs[1]["note"]!.GetValue<string>();
+        Assert.Contains("after session `s1` was cut off, on another account", note);
+        Assert.DoesNotContain("account-1", note);
+        Assert.DoesNotContain("account-2", note);
+
+        // Its conversation record opens naming both stub accounts, the cut-off session and the turn the limit refused.
+        var opening = new SessionEvents(Path.Combine(_home, "sessions")).After("s2", 0).Events[0];
+        Assert.Equal(SessionEventKind.Note, opening.Kind);
+        Assert.Equal(
+            $"carried on from session `s1` on `account-2`; the `stub` account `account-1` is cooling until Oct 3, 16:02 "
+            + $"({Zone.Id}), as the agent said; its turn 1 was refused.",
+            opening.Text);
+
+        lock (lines)
+        {
+            var rotated = Assert.Single(lines, line => line.Event == "account.rotated");
+            Assert.Equal(new object?[] { "s2", "acp-stub", "account-1", "account-2", "s1" }, rotated.Data.Select(field => field.Value));
+        }
+
+        // Once stub account 1 is ready again, the protocol door's next start takes it.
+        Assert.True(roster.Ready("acp-stub", "account-1"));
+        var next = await roster.SelectAsync("acp-stub", config, "default", null);
+        Assert.Equal(("account-1", (RotatedStart?)null), (next.Profile, next.Rotated));
+    }
+
     /// <summary>An account the agent says is signed out is walked past as a cooling one is (§3.3), once the probe says so.</summary>
     [Fact]
     public async Task A_signed_out_default_the_order_lists_is_walked_past_to_the_next_account()
@@ -199,6 +301,55 @@ public sealed class AccountRotationTickTests : IDisposable
               process.exit(1);
             }
             await respond({ action: 'done', reason: 'finished on the next account of the order' });
+            """);
+        return script;
+    }
+
+    /// <summary>
+    /// The protocol door's stand-in (TOOL4j). It speaks the wire and nothing else on stdout, and for each prompt writes
+    /// down where it ran, as which stub account, what it was prompted and what its record's note said. A first prompt takes
+    /// the quest, says its last words and is refused with observation 4's sentence, its zone the test's; a carry-on closes
+    /// the quest.
+    /// </summary>
+    private string AcpAgent()
+    {
+        var script = Path.Combine(_home, "acp-agent.mjs");
+        File.WriteAllText(script, $$"""
+            import { createInterface } from 'node:readline';
+            import { appendFileSync } from 'node:fs';
+            import { basename } from 'node:path';
+            const [log] = process.argv.slice(2);
+            const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
+            const account = home ? basename(home) : '(own)';
+            const url = process.env.DAORIS_SERVICE_URL;
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1' } });
+              } else if (frame.method === 'session/prompt') {
+                const prompt = (frame.params?.prompt ?? []).map((block) => block.text ?? '').join('\n');
+                const sessions = await (await fetch(`${url}/api/sessions`)).json();
+                const own = sessions.find((s) => s.id === process.env.DAORIS_SESSION_ID);
+                appendFileSync(log, JSON.stringify({ cwd: process.cwd(), account, prompt, note: own?.note ?? null }) + '\n');
+                if (!prompt.includes('carrying on quest')) {
+                  await respond({ action: 'take' });
+                  send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-1',
+                    update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'I started the field.' } } } });
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: "Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit · your weekly limit resets Oct 3, 4pm ({{Zone.Id}})" } });
+                } else {
+                  await respond({ action: 'done', reason: 'finished on the next stub account of the order' });
+                  send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            process.exit(0);
             """);
         return script;
     }

@@ -1513,11 +1513,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
 
     /// <summary>
-    /// Whose accounts a cool-off on this adapter belongs to: its owner, as its accounts are (AGT7), or the agent a door
-    /// with no toolchain reads limits as (<see cref="ISessionAdapter.LimitsOf"/>); null for one that reads none.
+    /// Whose accounts a cool-off on this adapter belongs to: its owner, as its accounts are (AGT7); null for an adapter
+    /// that declares no toolchain, which has no accounts and reads no limit.
     /// </summary>
-    private string? CoolingAgent(ISessionAdapter resolved) =>
-        resolved.Toolchain is { } toolchain ? toolchain.Owner(resolved.Name) : resolved.LimitsOf;
+    private static string? CoolingAgent(ISessionAdapter resolved) => resolved.Toolchain?.Owner(resolved.Name);
 
     /// <summary>
     /// The words this adapter says an account's limit in (TOOL4a, D125 §1.3): its own entry, else its owner's, since a
@@ -1755,14 +1754,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // An adapter that declares no toolchain has nothing to check: it spawns exactly as it did
         // before this existed. Purely additive, which is what lets a new adapter arrive without
-        // answering questions about installers it may not have. One that reads another agent's limits
-        // (the protocol stub, TOOL4d) runs on that agent's own sign-in, and its cool-off holds it.
-        if (resolved.Toolchain is not { } toolchain)
-        {
-            return resolved.LimitsOf is { } limitsOf && AccountCooling.Of(Home, limitsOf, null, Clock()) is { } spent
-                ? Cooled(spent)
-                : new HarnessSelection(Refusal: null);
-        }
+        // answering questions about installers it may not have.
+        if (resolved.Toolchain is not { } toolchain) return new HarnessSelection(Refusal: null);
 
         var settings = Settings;
         // 🔴 A door runs as its OWNER's accounts (AGT7): the owner's default, the owner's directory,
@@ -1960,13 +1953,6 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var report = await ReportAsync(AccountAgent(adapter, toolchain).Name, config, refresh: false, ct).ConfigureAwait(false);
         return report is { Present: false } ? [] : [.. others.Where(name => LoginOf(report, name) != LoginState.Out)];
     }
-
-    /// <summary>
-    /// A start held because its account is cooling: §4's sentence, and the cool-off itself, so a look can say the wait
-    /// once and a screen can show the quest waiting for an account rather than parked.
-    /// </summary>
-    private HarnessSelection Cooled(CoolingEntry cooling) =>
-        new(CoolingWords.Hold(cooling, Zone)) { Cooling = cooling };
 
     /// <summary>
     /// What a start in this workspace would run on, and where each part came from (MAP1b, D67 §3).

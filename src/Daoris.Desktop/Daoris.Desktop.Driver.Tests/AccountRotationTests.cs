@@ -215,6 +215,41 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal("account-1", (await roster.SelectAsync("fake", Config, null, null)).Profile);
     }
 
+    /// <summary>
+    /// TOOL4j: the protocol stub runs as the stub's accounts, so its start walks the stub's order and its spawn is handed
+    /// the stub account it runs as. Present by a file look on the command this test writes; the stub, whose own command
+    /// is not named here, is asked nothing, so every account is ready unless it is cooling.
+    /// </summary>
+    [Fact]
+    public async Task The_protocol_stub_s_start_walks_the_stub_s_order_and_runs_as_the_next_stub_account()
+    {
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
+        foreach (var name in new[] { "account-1", "account-2" }) Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", name));
+        Wire(s => s.WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2"]));
+        var cooling = new CoolingEntry("stub", "account-1", Until, true, "weekly", Seen, "s1");
+        AccountCooling.Cool(_home, cooling, _now);
+        var config = DriverConfig.Empty with
+        {
+            Adapter = "acp-stub",
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = [Command] },
+        };
+
+        var selection = await roster.SelectAsync("acp-stub", config, null, null);
+
+        Assert.True(selection.Allowed, selection.Refusal);
+        Assert.Equal("account-2", selection.Profile);
+        Assert.Equal(HarnessSettings.ProfileHome(_home, "stub", "account-2"), selection.ProfileHome);
+        Assert.Equal(
+            new RotatedStart("account-1", cooling, $"the `stub` account `account-1` is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said"),
+            selection.Rotated);
+
+        // The spawn is handed that account through the stub's own variable, as a pipe-door start on it would be.
+        var spawn = new ProcessStartInfo(Command);
+        HarnessProbe.Apply(spawn, adapters.Resolve("acp-stub").Toolchain!, selection.ProfileHome);
+        Assert.Equal(HarnessSettings.ProfileHome(_home, "stub", "account-2"), spawn.Environment["DAORIS_STUB_CONFIG_DIR"]);
+    }
+
     // ——— What never rotates (§3.4).
 
     [Fact]

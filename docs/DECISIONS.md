@@ -8192,6 +8192,28 @@ the last words, its record opens naming both accounts, the log line is written, 
 once ready. It also walks past a signed-out account through a real probe. The limit there is replayed as the driver records one, since the protocol
 stub reads the stub's table but runs on its own sign-in alone (TOOL4d): TOOL4h's two stub accounts on the protocol
 door need that door to run on the stub's accounts, a driver change no row holds yet. A real rotation is TOOL4i's.
+
+**Built 2026-10-02 (TOOL4j): the protocol stub on the stub's accounts** (point 4; design §1.3 rule 4, §8), held by
+`AccountCoolingTests` and `AccountRotationTests`. What building it settled:
+- **`acp-stub` is a door onto the stub, as `claude-code-acp` is onto Claude Code** (AGT7). Its toolchain says
+  `AccountOf: "stub"` and the stub's variable (`StubAdapter.ConfigVariable`), with no binary, sign-in, login question
+  or limit table of its own. So the stub's default and order choose its account, a limit on it cools the stub account
+  it ran as, and both doors onto that account hold.
+- **Present by a file look** (`ProbeByPresence`), as a plugin with no version question is: the agent a rehearsal names
+  waits on its stdin, so a version asked of it would stall the probe. With no command named, it is absent, as the stub
+  is, and a machine lists no such door.
+- **TOOL4d's `ISessionAdapter.LimitsOf` is gone.** It existed so a door with no toolchain could read another agent's
+  table, and `acp-stub` was its only user. A door's limits are now its owner's by one route, `AccountOf`.
+- **The modules' refusal of a default on an agent with no toolchain has no built-in subject left.** Every built-in
+  adapter now declares one, so `HelpFileDoorsTests` in the modules, which named `acp-stub`, fails; it is the modules'
+  to change.
+
+**What the gates do not cover.** The `Process` half was not run by this branch. `AccountRotationTickTests` gains a
+case on the protocol door, where the driver reads the door's failure itself. Stub account 1 is refused with observation
+4's sentence; the record says `limit`; that account cools until Oct 3, 16:02 in the test's zone, for both doors. The
+carry-on opens on stub account 2 in the same tree, with the opening line, the note and `account.rotated`, and account 1,
+once ready, takes the next start. A presence look reads this process's `PATH`, not the managed tools' (TOOLS5), as a
+plugin's does; that is unchanged. TOOL4h's rehearsal phase is still to be written.
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
