@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ACP_STUB_AGENT } from './rehearsal-kit.mjs';
 import {
-  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readSetup, withFirstOnPath, writeDoctrineLauncher,
+  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readFollowed, readRegister, readSetup, withFirstOnPath, writeDoctrineLauncher,
 } from './setup-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -128,6 +128,73 @@ test('what is not the command\'s output reads as nothing at all', () => {
   assert.deepEqual(nothing.rules, []);
   assert.deepEqual(nothing.refusals, []);
   assert.equal(nothing.nothingPublished, false);
+});
+
+// What `RegisterCommand` writes (WSSETUP5), spelled as it writes it: a line per repository, two spaces, the outcome
+// padded to sixteen as C#'s `{0,-16}` pads it, a space, the name, two spaces and the sentence; then the counts.
+const followedLine = (outcome, repository, said) => `  ${outcome.padEnd(16)} ${repository}  ${said}`;
+const REGISTER_SENT = [
+  followedLine('registered', 'atlas',
+    'registered from its line `main` at `0123456`: adopted, and declaring what it owns, with no `connect` run.'),
+  followedLine('lanes-unreadable', 'engine',
+    'its daoris.lanes.json on `main` at `89abcde` cannot be read: `lanes` is not a list. Nothing was registered; its row keeps what it held.'),
+  'register: the index was not read again after registering: the service answered 503.',
+  'register: 1 registered, 0 already as their lines say, 1 not registered, each saying why above.',
+  '',
+];
+const REGISTER_UNCHANGED = [
+  followedLine('unchanged', 'atlas', 'its row already holds what its line `main` at `0123456` declares.'),
+  'register: 0 registered, 1 already as their lines say, 0 not registered.',
+  '',
+];
+
+for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']]) {
+  test(`what \`register\` printed is read back: each repository's outcome, name and sentence, and its counts (${ending})`, () => {
+    const sent = readRegister(REGISTER_SENT.join(eol));
+    assert.deepEqual(sent.followed, [
+      {
+        outcome: 'registered', repository: 'atlas',
+        said: 'registered from its line `main` at `0123456`: adopted, and declaring what it owns, with no `connect` run.',
+      },
+      {
+        outcome: 'lanes-unreadable', repository: 'engine',
+        said: 'its daoris.lanes.json on `main` at `89abcde` cannot be read: `lanes` is not a list. Nothing was registered; its row keeps what it held.',
+      },
+    ]);
+    // The refresh's sentence starts as the counts do, and is no count.
+    assert.deepEqual([sent.registered, sent.unchanged, sent.refused], [1, 0, 1]);
+
+    const again = readRegister(REGISTER_UNCHANGED.join(eol));
+    assert.deepEqual(again.followed, [
+      { outcome: 'unchanged', repository: 'atlas', said: 'its row already holds what its line `main` at `0123456` declares.' },
+    ]);
+    assert.deepEqual([again.registered, again.unchanged, again.refused], [0, 1, 0]);
+  });
+}
+
+test('what is not `register`\'s report reads as no repository and no counts', () => {
+  const nothing = readRegister('register: `--repository` takes a repository\'s name.\nusage: daoris-driver register [--repository <name>]\n');
+  assert.deepEqual(nothing.followed, []);
+  assert.deepEqual([nothing.registered, nothing.unchanged, nothing.refused], [null, null, null]);
+  const none = readRegister('register: no repository has a checkout here, so there is nothing to register.\r\n');
+  assert.deepEqual(none.followed, []);
+  assert.equal(none.registered, null);
+});
+
+test('the machine log\'s `registry.followed` lines are read as a name, a word and the fields each carried, and no other event', () => {
+  // As `MachineLog` writes a line and `daoris-driver logs --json` prints it: one JSON object a line.
+  const logged = [
+    '{"time":"2026-10-01T12:00:00.000Z","source":"driver","level":"info","event":"session.started","data":{"session":"s1","repository":"atlas"}}',
+    '{"time":"2026-10-01T12:00:01.000Z","source":"driver","level":"info","event":"registry.followed","data":{"repository":"atlas","outcome":"registered"}}',
+    'logs: 3 lines skipped, not the log\'s shape.',
+    '{"time":"2026-10-01T12:00:02.000Z","source":"driver","level":"info","event":"registry.followed","data":{"repository":"atlas","outcome":"unchanged","root":"/somewhere"}}',
+    '',
+  ].join('\r\n');
+  assert.deepEqual(readFollowed(logged), [
+    { repository: 'atlas', outcome: 'registered', fields: ['repository', 'outcome'] },
+    { repository: 'atlas', outcome: 'unchanged', fields: ['repository', 'outcome', 'root'] },
+  ]);
+  assert.deepEqual(readFollowed(''), []);
 });
 
 test('a set-up\'s title is the whole set-up\'s words with a day, and nothing else is', () => {

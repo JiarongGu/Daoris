@@ -24,7 +24,7 @@ import {
   ACP_STUB_AGENT, capture, makeChecker, openTranscript,
 } from './rehearsal-kit.mjs';
 import {
-  SETUP_RULES, SETUP_TITLE, readSetup, withFirstOnPath, writeDoctrineLauncher,
+  SETUP_RULES, SETUP_TITLE, readFollowed, readRegister, readSetup, withFirstOnPath, writeDoctrineLauncher,
 } from './setup-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -3702,12 +3702,13 @@ check('it is retired again, so no later phase meets it', unadoptedRetired.status
 
 // -------------------------------------------------- 17c. a repository is set up by its own session
 
-section('17c. A repository nobody adopted is set up by its own session (LAYOUT7, D117 §6, D124 §2)');
+section('17c. A repository nobody adopted is set up by its own session, and registered from its line (LAYOUT7, D117 §6, D124 §2–§3)');
 
 // The set-up press (LAYOUT7): `daoris-driver setup <repository>` reads the repository's LINE as git objects, says
 // every refusal with its door, and publishes one ask to it as the person's, adding the doctrine tool's exact verbs to
 // its rules. Its own session then takes up the doctrine with the tool found by its bare name, in a tree of its own,
-// and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch.
+// and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch. The
+// landing moves the line, and the driver registers what the line now declares, with no `connect` (WSSETUP5).
 //
 // atlas is born here with a README and nothing for agents, outside the family folder as 17b's was, and registered
 // without adopting. The doctrine tool its session finds is the WORKSPACE's CLI behind a launcher first on the PATH
@@ -3863,6 +3864,12 @@ check(
   startsRead.out,
 );
 
+// Registration follows the line (WSSETUP5a, D124 §3). Until the line moves, atlas's row is as the press found it, not
+// adopted and declaring nothing, though its set-up is done: its session ran no `connect`, and the press's rule holds
+// none. Nothing in this phase runs one. The landing below is what moves the line.
+const atlasRow = async () => ((await api('GET', '/api/registry')).json ?? []).find((r) => r.repository === 'atlas') ?? null;
+const rowBeforeLanding = await atlasRow();
+
 // Landed by the person's press, by the workspace's rule (WSR1): merged into the line. A merge commit needs an
 // identity, handed as every git call here is, since the rehearsal runs on machines with no git config.
 const landedSetup = onSetupMachine(`trees land ${setupRecord?.id}`, {
@@ -3886,6 +3893,62 @@ check(
     && run('git cat-file -e main:.agents/knowledge/what-this-repository-owns.md', atlas).code === 0,
   `${landedSetup.out}\n${run('git log --oneline -4 main', atlas).out}`,
 );
+
+// The landing moved the line, so the press followed it at once (`trees land`): `daoris.json` and `daoris.lanes.json`
+// read on the line as git objects, sent through the registry door as `connect` would send them, for the checkout's root.
+const rowAfterLanding = await atlasRow();
+const declared = lineManifest?.domain ?? {};
+const landedAt = `\`main\` at \`${atlasLine.slice(0, 7)}\``;
+const sameWords = (held, wrote) => Array.isArray(wrote) && wrote.length > 0 && JSON.stringify(held) === JSON.stringify(wrote);
+check(
+  'the landing registers atlas from its line at once, and says so, while until then its row was as the press found it: no `connect` was run',
+  rowBeforeLanding?.adopted === false && rowBeforeLanding.registered === false
+    && landedSetup.out.includes(
+      `registry  atlas: registered from its line ${landedAt}: adopted, and declaring what it owns, with no \`connect\` run.`),
+  `${JSON.stringify(rowBeforeLanding)}\n${landedSetup.out}`,
+);
+check(
+  '…and the host\'s registry reads atlas adopted and declared, with the domain its set-up wrote, for its checkout\'s root',
+  rowAfterLanding?.adopted === true && rowAfterLanding.registered === true
+    && Boolean(declared.summary) && rowAfterLanding.summary === declared.summary
+    && sameWords(rowAfterLanding.owns, declared.owns) && sameWords(rowAfterLanding.accepts, declared.accepts)
+    && Boolean(rowAfterLanding.root) && rowAfterLanding.root === rowBeforeLanding?.root,
+  `${JSON.stringify(rowAfterLanding)}\n${JSON.stringify(declared)}`,
+);
+
+// Each outcome is the machine log's `registry.followed`, read through the driver's own door: a name and a word from a
+// fixed list, never a path or a summary (D124 §3.4).
+const atlasFollowed = () => {
+  const read = onSetupMachine('logs --event registry.followed --json');
+  return { code: read.code, lines: readFollowed(read.out).filter((line) => line.repository === 'atlas') };
+};
+const followedOnce = atlasFollowed();
+check(
+  'the machine log has `registry.followed` for atlas, once: its outcome `registered`, and nothing but the name and the word',
+  followedOnce.code === 0 && followedOnce.lines.length === 1 && followedOnce.lines[0].outcome === 'registered'
+    && JSON.stringify(followedOnce.lines[0].fields) === '["repository","outcome"]',
+  JSON.stringify(followedOnce),
+);
+
+// A second follow with nothing changed sends nothing: a registration goes only where the row holds something else.
+// The terminal's door asks for it as the row's *Refresh* would (D124 §3.1).
+const DECLARATION = ['adopted', 'registered', 'summary', 'owns', 'accepts', 'uses', 'packs', 'joined', 'sharesKnowledge', 'workspace', 'root', 'lanes'];
+const declarationOf = (row) => JSON.stringify(DECLARATION.map((field) => row?.[field] ?? null));
+const followAgain = onSetupMachine('register --repository atlas');
+const followedAgain = readRegister(followAgain.out);
+const rowAfterAgain = await atlasRow();
+const followedTwice = atlasFollowed();
+check(
+  'a second follow with nothing changed sends nothing: `register` finds atlas unchanged and registers none, the row is as it was, and the log says so',
+  followAgain.code === 0 && followedAgain.followed.length === 1 && followedAgain.followed[0].repository === 'atlas'
+    && followedAgain.followed[0].outcome === 'unchanged'
+    && followedAgain.followed[0].said === `its row already holds what its line ${landedAt} declares.`
+    && followedAgain.registered === 0 && followedAgain.unchanged === 1 && followedAgain.refused === 0
+    && rowAfterAgain?.registered === true && declarationOf(rowAfterAgain) === declarationOf(rowAfterLanding)
+    && JSON.stringify(followedTwice.lines.map((line) => line.outcome)) === '["registered","unchanged"]',
+  `${followAgain.out}\n${JSON.stringify(rowAfterAgain)}\n${JSON.stringify(followedTwice)}`,
+);
+
 const afterLanding = onSetupMachine('setup atlas --plan');
 const afterRead = readSetup(afterLanding.out);
 check(

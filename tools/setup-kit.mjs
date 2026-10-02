@@ -1,7 +1,8 @@
 /**
  * The family rehearsal's set-up phase, in the parts a test can hold without a host or a driver (LAYOUT7a):
  * the doctrine tool's launcher a child of Daoris finds by its bare name, the PATH that puts it first, and a
- * reading of what `daoris-driver setup` prints.
+ * reading of what `daoris-driver setup` prints; and, for the registration that follows the landing (WSSETUP5a),
+ * a reading of what `daoris-driver register` prints and of the machine log's `registry.followed` lines.
  *
  * ## Why the workspace's CLI, and a launcher of the rehearsal's own
  *
@@ -16,6 +17,7 @@
  * words, the rules, the refusals, what a press published. It shares no code with it. `setup-kit.test.mjs`
  * holds the reading against output spelled as `SetupCommand` writes it, so a change to those words is a
  * change to that test's fixtures too, and the family rehearsal is what runs the two against each other.
+ * `readRegister` and `readFollowed` read `RegisterCommand` and `MachineLog` the same way.
  */
 import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
@@ -120,4 +122,41 @@ export function readSetup(out) {
     quest: id('quest'),
     nothingPublished: lines.includes('--plan: nothing was published, and no rule was added.'),
   };
+}
+
+/**
+ * What `daoris-driver register [--repository <name>]` printed (`RegisterCommand`, WSSETUP5), read back: each
+ * repository's line as its outcome's word, its name and the sentence its row says, and the counts the last line gives
+ * (null where it gave none). A line per repository starts with two spaces, the outcome padded to sixteen, a space, the
+ * name and two spaces; every other line starts `register: `.
+ */
+export function readRegister(out) {
+  const lines = out.split(/\r?\n/);
+  const followed = lines
+    .map((line) => /^ {2}(\S+) +(\S+) {2}(.+)$/.exec(line))
+    .filter(Boolean)
+    .map(([, outcome, repository, said]) => ({ outcome, repository, said }));
+  const counts = lines
+    .map((line) => /^register: (\d+) registered, (\d+) already as their lines say, (\d+) not registered\b/.exec(line))
+    .find(Boolean);
+  const count = (at) => (counts ? Number(counts[at]) : null);
+  return { followed, registered: count(1), unchanged: count(2), refused: count(3) };
+}
+
+/**
+ * The machine log's `registry.followed` lines (WSSETUP5, D124 §3.4), from what `daoris-driver logs --json` printed: each
+ * as its repository's name, its outcome's word and the names of every field the line carried, in order, so a reader can
+ * hold that it carried nothing else. Other events, and lines that are not the log's, are skipped.
+ */
+export function readFollowed(out) {
+  return out.split(/\r?\n/).flatMap((line) => {
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      return [];
+    }
+    if (parsed?.event !== 'registry.followed' || typeof parsed.data !== 'object' || parsed.data === null) return [];
+    return [{ repository: parsed.data.repository, outcome: parsed.data.outcome, fields: Object.keys(parsed.data) }];
+  });
 }
