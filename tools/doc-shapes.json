@@ -1,0 +1,8 @@
+{
+  "_why": "Each entry's shape in words, for the records daoris.json declares (D127, docs/2026-10-02-session-economy-design.md §3): a backlog row, a router row whose first cell is a code span, and an archive outcome headed on or after archiveCutOver. The numbers are the canon's (development-documents). They report and never fail (D54); tools/doc-shapes.mjs owns what each entry is and why the report is this repository's and not check's. archiveCutOver is null until the steward writes the date of the merge that lands the dispatch skill's one-line hand-back (SESSOPT1c, design §3.5); until then every archive entry stands as written, and after it every entry headed earlier still does. Raising a number is a one-line diff here, justified in the commit.",
+
+  "backlogRow": 60,
+  "routerRow": 60,
+  "archiveOutcome": 60,
+  "archiveCutOver": null
+}

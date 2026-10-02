@@ -8311,3 +8311,12 @@ opens with stay two. `set-up-documents` took §2.4. This amends D122 §2.5 (an o
 region grew exactly 458 bytes in each repository: 24,522 of 26,000 here, 22,216 and 22,433 of 30,000 in the
 examples, re-synced in the same commit. Not covered: the family rehearsal (the parent's), and whether the words
 read well to an adopter.
+
+**As built (SESSOPT1b, 2026-10-02): the shape report.** `tools/doc-shapes.mjs` runs in `verify` after
+`doc-budgets`, with its numbers in `tools/doc-shapes.json`. `archiveCutOver` is `null` until the steward writes
+it (§3.5). An entry is counted as written, the list marker and a table's pipes included, as `doc-budgets` counts
+a document. Over the tree at `7e4cb1c` it reports §3.1's 17 rows and 12 router rows. A backlog row runs on across a
+blank line when the next line is indented, since a reader sees that paragraph as the row's, so FLAKE1 measures
+831 words, not §1.4's 769. An archive heading with no date is counted as undated and is not measured. Proof:
+`doc-shapes.test.ts`, ten cases, each seen failing against a stub first. Not covered: the adopter's own record
+formats, which stay out of `check` (§3.2).
