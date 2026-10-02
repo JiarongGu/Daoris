@@ -100,13 +100,23 @@ public sealed record SessionEvent
 
     public required string Kind { get; init; }
 
-    /// <summary>A tool call's id: its later updates carry the same one.</summary>
+    /// <summary>
+    /// A tool call's id: its later updates carry the same one. For the person's words to a driven session (STEER1, D136):
+    /// the id that pairs the words shown while they wait (<see cref="Reaches"/>) with the same words where it took them.
+    /// </summary>
     public string? Id { get; init; }
 
     public string? Text { get; init; }
 
     /// <summary>For <see cref="SessionEventKind.User"/>: <c>person</c>, or <c>target</c> for the driver's composed prompt.</summary>
     public string? Origin { get; init; }
+
+    /// <summary>
+    /// For the person's words to a driven session, on the event that shows them the moment they are said (STEER1, D136):
+    /// when they reach it, <c>next-step</c> or <c>turn-end</c>. The words where the session took them come again without
+    /// it, under the same <see cref="Id"/>, and that one is the turn's ask.
+    /// </summary>
+    public string? Reaches { get; init; }
 
     /// <summary>
     /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached (CONV4c) —
@@ -553,7 +563,9 @@ public sealed class SessionEvents(string directory)
                 message = null;
             }
 
-            if (e.Kind == SessionEventKind.User && e.Text is { Length: > 0 } said) yield return (e.Seq, e.Kind, said);
+            // The words a driven session was told while it worked are found once, where it took them (STEER1): the event
+            // that showed them waiting carries `Reaches`, and the same words follow it.
+            if (e.Kind == SessionEventKind.User && e.Reaches is null && e.Text is { Length: > 0 } said) yield return (e.Seq, e.Kind, said);
         }
 
         if (message is { } last) yield return (last.Seq, SessionEventKind.Message, last.Text.ToString());

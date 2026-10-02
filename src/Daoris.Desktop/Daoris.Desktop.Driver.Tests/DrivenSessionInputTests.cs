@@ -172,10 +172,16 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.Equal("the budget is in level.json, not config.json", heard[1]);
         // The same session, not a second one: the agent was asked for one session only.
         Assert.Single(File.ReadAllLines(prompts + ".sessions"));
-        // And the record keeps the words as the person's, where the conversation is read.
-        var record = Directory.GetFiles(_home, "s1.events.jsonl", SearchOption.AllDirectories).Single();
-        Assert.Contains(File.ReadAllLines(record), line =>
-            line.Contains("\"origin\":\"person\"") && line.Contains("the budget is in level.json, not config.json"));
+        // And the record keeps the words as the person's, where the conversation is read: the moment they were said, with
+        // when they reach the session — this stand-in says nothing about prompts during a turn, so its turn's end (STEER1)
+        // — and again where the session took them.
+        var record = File.ReadAllLines(Directory.GetFiles(_home, "s1.events.jsonl", SearchOption.AllDirectories).Single());
+        Assert.Contains(record, line =>
+            line.Contains("\"origin\":\"person\"") && line.Contains("\"reaches\":\"turn-end\"")
+            && line.Contains("the budget is in level.json, not config.json"));
+        Assert.Contains(record, line =>
+            line.Contains("\"origin\":\"person\"") && !line.Contains("\"reaches\"")
+            && line.Contains("the budget is in level.json, not config.json"));
         Assert.Null(processes.InboxOf("s1"));
     }
 

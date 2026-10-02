@@ -189,6 +189,11 @@ the derived title is free and true, and a rename is a store column plus a surfac
   *finish* closes stdin and lets the harness wind up (`completed`), *stop* is the person's interrupt
   (`stopped`).
 
+> **Amended by D90 and D136 (2026-10-03).** A driven session on the protocol door has a box too, with no endings: what
+> the person tells it reaches it at its next step where its agent takes a prompt during a turn, and when its turn ends
+> elsewhere. The conversation shows the words the moment they are said, in the turn they were said in, saying which, and
+> then as the ask of the turn that took them. *Send now* stops the turn for what is held, on the door that holds.
+
 > **Amended by D76 (2026-09-25).** The rejection below stands for a pipe's TEXT and no further. The
 > protocol door (D53) and Claude Code's `stream-json` are the harnesses' own structured wires, so a
 > session's messages, thoughts, tool calls, plan and usage now reach the page as typed events the
