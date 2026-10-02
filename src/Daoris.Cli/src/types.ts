@@ -205,7 +205,12 @@ export interface DriftReport {
   stalePacks: string[];
   coreBytes: number;
   overBudget: boolean;
+  /** Where the index of the on-demand tiers is, at the lock's root (D128 §2.3). */
+  index: string;
+  /** The index is absent, not yet recorded in the lock, or behind the files it lists: a fact. */
   indexStale: boolean;
+  /** The region's pointer to the index, its mirror sentence or its rooms differ from the disk: a fact. */
+  rosterStale: boolean;
   /** The core rows the lock says are off, and by which pack (D71) — named on every run. */
   switchedOff: { target: string; by: string }[];
   /** Rows the manifest and the lock disagree about: a fact, so it fails like a stale pack. */
@@ -366,10 +371,31 @@ export interface Lock {
    */
   harness?: string;
   target?: string;
+  /**
+   * Where `sync` wrote the index of the on-demand tiers, repository-relative (WSSETUP14a, D128 §2.4):
+   * always `<target>/INDEX.md`. Absent in a lock written before it, which reads as no index written yet.
+   */
+  index?: string;
   /** Every mirror file `sync` wrote, and what it hashed to (D117 §3.2). Absent when there are none. */
   mirrors?: MirrorEntry[];
   /** The rooms whose pointers `sync` keeps, so a room taken out of the manifest loses its pointer. */
   rooms?: string[];
+}
+
+/**
+ * The index of the on-demand tiers, decided (D128 §2.4's cells): generated like the region's roster, so
+ * a file the lock names is rewritten whatever it says, and one it does not name is the repository's own
+ * unless it is already what would be written.
+ */
+export interface IndexPlan {
+  /** Where it is written, repository-relative: `<target>/INDEX.md`. */
+  path: string;
+  /** The index the lock names at the old root, deleted once this one is written; null without a move. */
+  old: string | null;
+  content: string;
+  state: 'create' | 'update' | 'unchanged';
+  /** A file of the repository's own at `path`, which only `--force` overwrites. */
+  collision: boolean;
 }
 
 /**
@@ -454,6 +480,8 @@ export interface SyncPlan {
   keptRules: string[];
   mirrors: MirrorPlan;
   rooms: RoomPlan;
+  /** The index of the on-demand tiers (WSSETUP14a, D128 §2.3–§2.4). */
+  index: IndexPlan;
   links: LinkProblem[];
   /**
    * The declared documents (D122 §2.7), which `sync` names and never writes: a link refuses, since the

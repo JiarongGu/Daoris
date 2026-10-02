@@ -237,7 +237,9 @@ export function commandStatus(
       stalePacks: inspection?.stalePacks ?? [],
       // Everything `check` fails on, so "why is check red?" is answered here too (REV3 CLI F11).
       staleSwitches: inspection?.staleSwitches ?? [],
+      index: inspection?.index ?? null,
       indexStale: inspection?.indexStale ?? false,
+      rosterStale: inspection?.rosterStale ?? false,
       staleLayout: inspection?.staleLayout ?? null,
       mirrorsDrifted: inspection?.mirrorsDrifted ?? [],
       mirrorsMissing: inspection?.mirrorsMissing ?? [],
@@ -298,8 +300,9 @@ export function commandStatus(
     if (inspection.missing.length) write(`  missing       ${inspection.missing.join(', ')}`);
     if (inspection.stalePacks.length) write(`  stale packs   ${inspection.stalePacks.join(', ')}`);
     for (const stale of inspection.staleSwitches) write(`  stale         ${stale} — run 'daoris sync'`);
-    if (inspection.indexStale) {
-      write("  roster        the doctrine region's on-demand tables are out of date — run 'daoris sync'");
+    if (inspection.indexStale) write(`  index         ${inspection.index} is out of date — run 'daoris sync'`);
+    if (inspection.rosterStale) {
+      write("  roster        the doctrine region's pointer or rooms are out of date — run 'daoris sync'");
     }
     if (inspection.staleLayout) write(`  layout        ${inspection.staleLayout} — run 'daoris sync'`);
     const mirrorFacts = [...inspection.mirrorsDrifted.map((m) => m.path), ...inspection.mirrorsMissing, ...inspection.mirrorsBehind];

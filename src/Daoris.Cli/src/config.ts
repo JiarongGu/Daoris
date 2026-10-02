@@ -134,6 +134,8 @@ export function writeLock(root: string, lock: Lock): void {
     // The same for the layout (D117 §5.1): absent means the older one, so a lock on it is unchanged.
     ...(lock.harness !== undefined ? { harness: lock.harness } : {}),
     ...(lock.target !== undefined ? { target: lock.target } : {}),
+    // Where the index was written (D128 §2.4); absent in a lock from before it, which reads as none yet.
+    ...(lock.index !== undefined ? { index: lock.index } : {}),
     ...(lock.mirrors?.length
       ? { mirrors: [...lock.mirrors].sort((a, b) => a.path.localeCompare(b.path)) }
       : {}),

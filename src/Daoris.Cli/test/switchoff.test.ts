@@ -364,7 +364,7 @@ test('status names each switched-off row with its pack and reason, and each pend
   done(canonFx, repoFx);
 });
 
-test('status names what check would fail on: a switch never synced, and a roster behind the disk', () => {
+test('status names what check would fail on: a switch never synced, and an index behind the disk', () => {
   // REV3 CLI F11: `status` rendered drifted, missing and stale packs, and dropped the other two facts
   // `inspect` computes — so the one command a person asks "why is check red?" said nothing about them.
   const canonFx = canonFixture('status-stale');
@@ -379,7 +379,7 @@ test('status names what check would fail on: a switch never synced, and a roster
   commandStatus({ root: repoFx.root, write: (line) => out.push(line), packageRoot: '' });
   const text = out.join('\n');
   assert.match(text, /stale\s+rules\/task-lifecycle\.md is switched off by 'tracker' in the manifest and still on here/, text);
-  assert.match(text, /roster\s+.*out of date/, text);
+  assert.match(text, /index\s+\.claude\/INDEX\.md is out of date/, text);
 
   const json: string[] = [];
   commandStatus({ root: repoFx.root, argv: ['--json'], write: (line) => json.push(line), packageRoot: '' });
