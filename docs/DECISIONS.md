@@ -8194,10 +8194,11 @@ stub reads the stub's table but runs on its own sign-in alone (TOOL4d): TOOL4h's
 door need that door to run on the stub's accounts, a driver change no row holds yet. A real rotation is TOOL4i's.
 
 *Amended by D130 (TOOL6, 2026-10-02): a start reads one scope, and a scope's list is the whole set of accounts its
-starts may run on, so a workspace that names a default and no list rotates nowhere, and one that lists accounts starts
-within them. A list may be used side by side, keep one account for conversations, and switch before a limit on the
-agent's own word (`docs/2026-10-02-account-use-design.md` §12). Point 4's reading and the rejection of spreading are
-amended there.*
+starts may run on, for any number of accounts, so a workspace that names a default and no list rotates nowhere, and
+one that lists accounts starts within them. A list may start on the account with the most left or the soonest reset,
+run its sessions in parallel, keep one account for conversations, and switch before a limit, each on the agent's own
+word (`docs/2026-10-02-account-use-design.md` §13). Point 4's reading and the rejection of spreading are amended
+there.*
 
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
@@ -8724,12 +8725,15 @@ dsh's skill budget and prompt hooks, and hooks under codex-acp and in Daoris's c
 Whether recall by meaning beats word searches on repository knowledge is KNOW3's to show, and its numbers were not in
 hand when this was written. `verify` checks this entry's shape and the review's links, and none of their words.
 
-## D130 — The person says which accounts may run each workspace and how a list is used; Daoris spreads only what runs at once, switches early only on the agent's own word, and infers nothing (2026-10-02)
+## D130 — The person says which accounts may run each workspace and how they are used, for any number of accounts; Daoris weighs what each has left only by the agent's own word, spreads only what runs at once, and infers nothing (2026-10-02)
 
 **Decision (TOOL6).** The owner, 2026-10-02, asked which account should run a workspace whose account was
 spend-limited: *"there are multiple accounts we should be able to set option how switch works and how to optimize the
-account use since there are 3 accounts"*. D125 has one policy: walk the order when the default is not ready. Read from
-the code at `7cca0e1`, with TOOL4f landed, two of its readings infer what nobody said. A workspace that names its own
+account use since there are 3 accounts"*. Asked the open questions, they answered: *"yes all three accounts can run the
+work workspace this really depends on how many token left since all 3 are sub based and how accounts been used like
+one by one or 3 paralle or other logic should be configable"*, and *"3 is becau I only have 3 not limited to account
+numbers"*. D125 has one policy: walk the order when the default is not ready. Read from the code at `7cca0e1`, with
+TOOL4f landed, two of its readings infer what nobody said. A workspace that names its own
 default and no list takes the machine's list, so a work workspace rotates onto personal accounts. A workspace that
 lists accounts and names no default starts on the machine's default, outside its own list. And D125's observation 2
 was two driven sessions on one account refused by one limit: a limit takes every session on its account at once. The
@@ -8737,41 +8741,49 @@ contract is `docs/2026-10-02-account-use-design.md`.
 
 1. **Five aims pull apart** (design §1): keep the person's own accounts fresh, lose little work to a limit, get the
    most done in a week, keep work readable, and keep work where it belongs. The last is the person's to state, never
-   inferred. The others are traded by a setting, and the default is D125's.
-2. **Per agent and scope, the machine or one workspace, the person states four things**: the list (D125's order),
-   *use* (`fill`, the default, or `spread`), one account *kept for conversations*, and *switch before the limit*, off by
-   default. A start reads one scope: its workspace's when that names a default or a list of its own, else the
+   inferred. The others are traded by settings, and the default is D125's.
+2. **Any number of accounts.** An agent may have one account or many, and nothing counts them: every rule reads the
+   list it is given, with one account each setting falls back to it, and no door refuses a list for its length.
+3. **Per agent and scope, the machine or one workspace, the person states**: the list (D125's order); *start on*,
+   `list` (the default), `left` (most left first) or `soonest` (soonest reset first); *sessions at once*, one by one
+   (the default) or in parallel; one account *kept for conversations*; and *switch before the limit*, off by default,
+   with its *near*. A start reads one scope: its workspace's when that names a default or a list of its own, else the
    machine's; a scope with no list is its one account, D125's behaviour byte for byte. A workspace's list comes with
-   its own settings, never mixed with the machine's.
-3. **The list is the whole set.** An account a scope does not list never carries its starts; a person's pick is the
+   its own settings, never mixed with the machine's. *List order, one by one* is D125's rotation as built.
+4. **The list is the whole set.** An account a scope does not list never carries its starts; a person's pick is the
    one exception. A scope with a list begins at its default, or else its first, and a default outside its scope's list
    is refused at both doors. A workspace that names a default and no list rotates nowhere. The tool's own sign-in runs
    only where no default and no list name an account.
-4. **The wait asks.** When every account a workspace may use is cooling and others are not, the hold's sentence
+5. **The wait asks.** When every account a workspace may use is cooling and others are not, the hold's sentence
    names them, with *Let `account-1` run `work`…*, the `order` command and Ask Daoris's card. Daoris never takes the
    answer.
-5. **`spread` orders the walk by Daoris's live sessions on each account**, fewest first, the list's order breaking
-   ties. One session at a time runs as `fill` does, and only sessions at once go to different accounts. A quest's
-   carry-on or resume stays on its last session's account while that account is ready.
-6. **A kept account** is one of the list that driven work never starts on. Conversations and Ask Daoris reach it only
-   when the accounts before it are not ready. Keeping a list's only account is refused.
-7. **Switching before the limit reads only the agent's own field about its windows, on the door its session runs on**,
-   kept per account in `windows.json`. An account it says is near (its own word, else 90% used, settable) is passed
-   while another account is ready and run when none is: never a wait, a cool-off or a stop. Nothing is offered until a
-   door is recorded carrying the field (TOOL4b, amended).
-8. **A limit history is reported, never acted on** (D54): the limits each account met per window, with Daoris's
-   sessions before each, labelled as Daoris's share. No capacity, share or price is claimed.
-9. **The cap stays one number for the machine**, and sessions split across accounts only by `spread`. There is no cap
-   per account.
-10. **The doors.** `daoris agent profile use|keep|early`, `order`'s new refusals and `daoris agent list` on the
-    terminal; the screen's controls fold into TOOL4g; Ask Daoris gains `use`, `keep` and `early`, and a door that
-    widens what Daoris may spend is a card. A conversation cut off by a limit offers *Continue on `account-2`*: a new
-    conversation, handed the last plan and last words.
-11. **Each account's own plan and terms apply**, and the screen says so. Daoris uses only accounts the person holds
+6. **One walk** (design §4.1): the list begun at the start's account; a driven start drops the kept account; *start
+   on* orders it; *in parallel* orders by Daoris's live sessions on each account, fewest first, so *start on* breaks
+   ties; outside *list order, one by one* a quest's carry-on or resume stays on its last account while that is ready
+   and not near; with *switch* on, a near account goes last; the first ready runs.
+7. **What is left is the agent's own word, and nothing else.** What each agent says about its windows on the door its
+   session runs on is kept per account in `windows.json`, as a floor as of when it was said, gone at its reset; a
+   stated weekly reset is kept, since the maker fixes it per account. `left` ranks accounts said to be clear (the less
+   used first), then accounts that said nothing, then accounts said to be near; `soonest` ranks by the earliest reset
+   known, then accounts with none. **Absent is never zero, and never full**: an account that said nothing is unknown,
+   between clear and near, and with nothing said by any account both are list order and say so. No probe is made to
+   find out. A table per agent reads the field and grows only from a frame recorded on Daoris's door (TOOL4b, amended).
+8. **Switching before the limit** passes an account its agent said is near (its own warning word, else at or over
+   *near*, 90 by default, or drawing on usage credits) while another account is ready, and runs it when none is: never
+   a wait, a cool-off or a stop.
+9. **A limit history and Daoris's measured use are reported, never acted on** (D54): the limits each account met per
+   window, with Daoris's sessions and tokens before each, labelled as Daoris's share. No capacity, share or price.
+10. **The cap stays one number for the machine**, K. *In parallel*, N accounts hold at most ⌈K ÷ N⌉ sessions each, and
+    one limit cuts off no more; *one by one*, one account holds them all. There is no cap per account.
+11. **The doors.** `daoris agent profile use <agent> [--prefer …] [--parallel …] [--keep …] [--early …] [--near …]
+    [--workspace W]`, `order`'s new refusals and `daoris agent list` on the terminal; the screen's controls fold into
+    TOOL4g; Ask Daoris gains a `use` door, and a change that widens what Daoris may spend is a card. A conversation cut
+    off by a limit offers *Continue on `account-2`*: a new conversation, handed the last plan and last words.
+12. **Each account's own plan and terms apply**, and the screen says so. Daoris uses only accounts the person holds
     and listed, for that person's work, signed in through the unmodified tool's own sign-in, and claims nothing about
     whether a person's use of several accounts fits a maker's terms.
 
-The build is TOOL6a–d, the design's §9, which also amends TOOL4b, TOOL4g, TOOL4h and TOOL4i rather than duplicating
+The build is TOOL6a–d, the design's §10, which also amends TOOL4b, TOOL4g, TOOL4h and TOOL4i rather than duplicating
 them.
 
 **Why.** *Which accounts may run this work* is a policy the person holds (a work seat, personal plans) and Daoris
@@ -8786,29 +8798,35 @@ cool an account that is not spent or miss one that is: D125 §1.4's reason again
 own pages, read on 2026-10-02 (design §0.3), say the rest: windows reset on the maker's clock, every five hours and
 weekly at a time fixed per account; one allowance covers every surface, which is why Daoris sees only its share; a
 team member's spend limit pauses credits to the month's end while the seat's window still resets; and the agent has
-its own word for near, `allowed_warning`, which no door of Daoris's is yet known to carry. So switching early is a
-pass on that word, never a wait, and the account whose window resets soonest is held until a door says when. The
-tools that rotate accounts learn quota by asking and switch by replacing a credential, which is what D49 §4 and D125
-§1.4 refuse; their shapes, fill first, round robin and least busy, are the ones weighed.
+its own word for what is left (`allowed`, `allowed_warning`, `rejected`, a reset per window), which no door of Daoris's
+is yet known to carry. So *how many token left*, the owner's measure, is weighed by that word alone, as a floor as of
+when it was said, and an account that has said nothing is neither spent nor fresh: guessing either way would cool, or
+spend, an account on a number Daoris made up. Switching early is a pass on that word, never a wait. The owner's *one by
+one or parallel or other logic* is two questions, which account first and how many at once, so they are two settings
+that compose. The tools that rotate accounts learn quota by asking and switch by replacing a credential, which is what
+D49 §4 and D125 §1.4 refuse; their shapes, fill first, round robin, least busy and most quota left, are the ones
+weighed.
 
-**Rejected** (design §11 has each with its reason):
+**Rejected** (design §12 has each with its reason):
 - **Inferring a workspace's accounts** from an address, a name, a team plan or where its work last ran.
 - **A workspace that names a default inheriting the machine's list**, today's reading, and **mixing scopes**.
-- **`spread` as the default**; **round robin by start**, **a share per account** and **a cap per account**.
-- **The account whose window resets soonest, now**: an order by resets Daoris has not been told. Held, with TOOL4b's
-  frame as its trigger.
+- **One choice of four modes**: it cannot say *most left first, in parallel*.
+- **Spreading as the default**; **round robin by start**, **a share per account**, **a cap per account** and **ranking
+  by Daoris's own measured use**.
+- **Treating an account that said nothing as spent or as fresh**, and **probing an idle account** to learn what it has
+  left: the probe spends what it measures and misses the person's own use.
 - **Learning capacity and acting on it**, and **asking the agent's usage command before a start** (a text door, and a
-  process spent to ask); **polling or probing for quota**, and **switching by replacing the active sign-in or its
-  credential file**, as the rotating tools do.
+  process spent to ask); **polling for quota**, and **switching by replacing the active sign-in or its credential
+  file**, as the rotating tools do.
 - **Near as a wait or a cool-off**; **switching a running session or conversation**.
 - **A kept account as a second list**, and **keeping or listing the tool's own sign-in**.
-- **A new `daoris driver` verb**: every choice here is per agent and per scope.
+- **Any rule or door that counts accounts**, and **a new `daoris driver` verb**: every choice here is per agent and
+  per scope.
 
 **What it amends, when built.** D125 §3.1 (one scope; the list the whole set; a default outside it refused), §3.3 and
-§3.4 (the walk orders by *use*, skips a kept account for driven work, moves a near one to the end; the tool's own
-sign-in only where nothing is named), §5.1 and §9 (spreading a person's choice), §6 (*Rotate* becomes *Use*; three
-doors). D94 §4 (`account.rotated` gains `why` and `scope`; `account.near`). D110 (the `use`, `keep` and `early`
-doors). Unchanged: D57 (no price, no provider's console), D58 as D125 amended it, D48 §2a, D49 §4, D66 §3, and D125
+§3.4 (the walk is the design's §4.1; the tool's own sign-in only where nothing is named), §5.1 and §9 (spreading a
+person's choice), §6 (*Rotate* becomes *Use*; the `use` door). D94 §4 (`account.rotated` gains `why` and `scope`;
+`account.near`). D110 (the `use` door). Unchanged: D57 (no price, no provider's console), D58 as D125 amended it, D48 §2a, D49 §4, D66 §3, and D125
 §1–§2, §3.2, §3.7, §4 and §5. Each row that builds a piece notes the amendment where it lands.
 
 **What the checks do not cover.** This change is documents only, and nothing is built. Its statements about today
@@ -8816,9 +8834,9 @@ were read from the code at `7cca0e1`: the walk, the selection and its readiness,
 reader, the log lines, the usage record and the protocol door's measure, the native door's mapper, the planner's cap
 and its session view, the driver's settings, the conversation runner, and the CLI's `agent` usage. The evidence is
 D125 §0.2's, given to that branch, and no transcript or record was read here; that observation 2's two sessions shared
-one account rests on their one reset. The makers' cells are their documentation as fetched on 2026-10-02, and the
+one account rests on their one reset. The owner's answers were relayed to this branch by the parent. The makers' cells are their documentation as fetched on 2026-10-02, and the
 design's §0.3 marks each line not read on the maker's own page: among them when a five-hour window starts, the
 TypeScript declaration of `rate_limit_event`, every help.openai.com article and OpenAI's terms. The install's cap of 4
-is the brief's. Not measured: every item of the design's §10. Found, and the owner's to weigh: the consumer terms'
+is the brief's. Not measured: every item of the design's §11. Found, and the owner's to weigh: the consumer terms'
 sentence on automated access bears on driven sessions as a whole, and this decision does not answer it. `verify`
 checks this entry's shape and the design's links, and none of their words.
