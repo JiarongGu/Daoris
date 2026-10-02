@@ -320,19 +320,23 @@ try
         // and still has to answer the question (D50), so the judgement is the library's and this
         // door's delivery is a line — the same shape as everything else this host prints.
         var attention = new AttentionWatch();
+        // A quest's park is said with its last session's facts (SESSUX1i), read from the records when the parks change.
+        var parks = new QuestParkReader();
+        var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
 
         // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
         // below, which is this door's exit-2 contract.
         await new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events).RunAsync(
-            (report, ticked) =>
+            async (report, ticked) =>
             {
                 Print(report, quietWhenIdle: true);
                 // Observed either way, so turning notifications back on does not then announce
                 // everything that happened while they were off — the switch is about being TOLD.
-                var events = attention.Observe(report);
+                var read = await parks.LookAsync(
+                    report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), closing.Token);
+                var events = attention.Observe(report, read);
                 if (ticked.Notify) foreach (var item in events) Console.WriteLine($"  !  {item.Line}");
-                return Task.CompletedTask;
             },
             onError: null,
             closing.Token);
