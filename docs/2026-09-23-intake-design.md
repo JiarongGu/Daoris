@@ -264,6 +264,11 @@ first one's home. A step's id derives from its parent, and `{parent}` in its wor
 A decline stops the chain. The composer offers one next step; `quest_publish` and the HTTP door take
 up to five.
 
+*(Amended by D133 §3, DRIFT1c, 2026-10-03: a quest an ask asks may carry `requirements`, each the
+person's own words with the check that proves it. The intake names them, the service refuses a quote
+found in none of the ask's words, and every step of a chain inherits its parent's. D133's DRIFT1c note
+has the rest.)*
+
 ### 1h. Report
 
 The ask's record links the intake session and every quest it published; the Work frame reads a
