@@ -5,9 +5,9 @@ import { sentence } from '../format';
 import { buildChain } from '../map/chain';
 import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
 import {
-  stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionOpenings, useSessionOptions, useSessionStreams, useSetSessionOption, useStartChat,
-  useStopSession, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
+  type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
+  NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
+  useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals,
 } from '../shell';
 import { FilePreview } from './FilePreview';
@@ -26,7 +26,10 @@ import { useDraft } from './drafts';
 import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
-import { keptSessionFilters, sessionFilters } from './groups';
+import { type ActFacts, offeredActs, primaryAct, stopAsk } from './acts';
+import { keptSessionFilters, sessionFilters, shownOf } from './groups';
+import { SessionPageHead, StopAsk } from './SessionPageHead';
+import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
@@ -184,6 +187,12 @@ export function WorkFrame({
   // *Archive what ended…* pressed in the list's ⋯ (SESSUX1e): its first press stands under the list's header until it
   // archives or the person never minds. Not remembered: it is a question asked now.
   const [archivingEnded, setArchivingEnded] = useState(false);
+  // The session whose stop asks under the header (SESSUX1d, D126 §3.3), from the header's *Stop…* or its row's: a
+  // question asked now, of that session only, so attending another closes it.
+  const [stopAsking, setStopAsking] = useState<string | null>(null);
+  // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
+  // once per press, including a second press on the same session.
+  const [answerFocus, setAnswerFocus] = useState<{ session: string; at: number } | null>(null);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
   // Which dock surface each session has up (FRAME6: tabs per session). Not remembered across launches:
@@ -238,6 +247,10 @@ export function WorkFrame({
   // A conversation's name (RAIL1): the same answer the rail asks for, from the same list, so the head
   // and the row read one name and the bridge is asked once.
   const openings = useSessionOpenings(sessions.data);
+  // Where the attended session is listed, and where its work is (SESSUX1d): the rail's own two answers, asked under the
+  // same keys, so the page header and its row are offered one set of acts and the bridge is asked once.
+  const groups = useSessionGroups();
+  const where = useSessionWhere(sessions.data);
   const quests = useQuests(null, true);
   const registry = useRegistry();
   const harnesses = useHarnesses();
@@ -247,7 +260,6 @@ export function WorkFrame({
   const answer = useAnswerSession();
   const send = useSendMessage();
   const end = useEndChat();
-  const stop = useStopSession();
   const cancelTurn = useCancelTurn();
 
   useErrorNotify(sessions.error, notify);
@@ -290,7 +302,7 @@ export function WorkFrame({
   // Parked, there is no process left to hear one, and its answer is on the ask. Running, the pipe
   // door gave it no stdin and on the protocol door its stdin is the driver's own frames — so a box
   // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
-  // refuses such a line too; the frame offers no box, and the head carries the stop.
+  // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
   const talking = Boolean(attended && conversation && here && !intake);
   // 🔴 A driven session parked to ask the person is answered from the box at the foot, where a chat's
@@ -351,6 +363,11 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
+  // A stop's ask is a question asked now, of the session it was asked of (D126 §3.3): attending another by any door
+  // puts it down, so coming back later does not find it still open.
+  useEffect(() => {
+    setStopAsking((asked) => (asked === selected ? asked : null));
+  }, [selected]);
 
   const resize = (next: number) => {
     setHeight(next);
@@ -461,16 +478,6 @@ export function WorkFrame({
           ? said.reduce((first, second) => t('work.composer.twoSentences', { first, second }))
           : t('work.composer.noTurn'));
       },
-      onError: failure(notify),
-    });
-  };
-
-  // Cutting a live session off — a conversation's, from its composer, or a running intake's, from
-  // the head, since an intake has no composer to carry it (INT4h).
-  const onStop = () => {
-    if (!attended) return;
-    stop.mutate(attended.id, {
-      onSuccess: (answer) => notify(t(stopNotice(answer), { id: attended.id })),
       onError: failure(notify),
     });
   };
@@ -730,6 +737,63 @@ export function WorkFrame({
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
 
+  // What only this frame can do with a session (SESSUX1d, D126 §3.1), handed to the one owner of the acts at both doors,
+  // the page header and the rows: each attends the session first, as a press on its row would.
+  const doors: SessionDoors = {
+    answer: (id) => {
+      chosen();
+      attend(id);
+      setAnswerFocus((was) => ({ session: id, at: (was?.at ?? 0) + 1 }));
+    },
+    stop: (id) => {
+      chosen();
+      attend(id);
+      setStopAsking(id);
+    },
+    // Its review: attended, with the dock open on its work.
+    review: (id) => {
+      chosen();
+      attend(id);
+      setDocked((was) => ({ ...was, [id]: 'review' }));
+      closeDock(false);
+    },
+    // A terminal in its folder (§3.5), only where the terminal is a view here: the panel's, shown if it was hidden.
+    ...(terminal ? {
+      terminal: (folder: string) => {
+        terminals.open({ cwd: folder });
+        openView('terminal');
+      },
+    } : {}),
+  };
+  const actions = useSessionActs({ notify, doors });
+
+  // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
+  const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
+  const attendedFacts: ActFacts | null = attended
+    ? { session: attended, grouping, root: rootOf(attended.repository), where: where[attended.id] }
+    : null;
+  const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
+  const asked = attended ? stopAsk(attended, quest) : null;
+  const pageHead = attended && attendedFacts && (
+    <SessionPageHead
+      session={attended}
+      title={sessionTitle(attended, quest, openings[attended.id])}
+      shown={shownOf(attended, grouping, taking[attended.id])}
+      acts={headActs}
+      primary={primaryAct(headActs, grouping)}
+      busy={actions.busy}
+      onAct={(act) => actions.run(act, attendedFacts)}
+      asking={stopAsking === attended.id && live && asked ? (
+        <StopAsk
+          sentence={t(asked.key, asked.values)}
+          busy={actions.stopping}
+          onStop={() => actions.stopNow(attended, () => setStopAsking(null))}
+          onCancel={() => setStopAsking(null)}
+        />
+      ) : null}
+    />
+  );
+
   // Sessions' list (D118 §3a): the rail, handed to the list pane as every view with a list hands its own.
   // NEW is one control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for
   // something a person does occasionally, and every reference in the study puts new behind a single affordance.
@@ -793,13 +857,8 @@ export function WorkFrame({
         archived={sessionsFilters.archived}
         archiveEnded={archivingEnded}
         onArchiveEnded={() => setArchivingEnded(false)}
-        // A row's menu reviews that session: attended, with the dock open on its work.
-        onReview={(id) => {
-          chosen();
-          attend(id);
-          setDocked((was) => ({ ...was, [id]: 'review' }));
-          closeDock(false);
-        }}
+        // A row's acts that are this frame's: answering, asking to stop, reviewing, a terminal there (SESSUX1d).
+        doors={doors}
       />
     ),
   });
@@ -846,6 +905,8 @@ export function WorkFrame({
         <ViewMain
           ref={centre}
           gutters="session"
+          // Pinned at the top while the conversation scrolls under it (D126 §3.2); none with nothing attended.
+          header={pageHead || undefined}
           // A remembered session is found in the list, so while the list first loads it is on its way, never
           // *Nothing attended* (audit SE11).
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
@@ -861,12 +922,12 @@ export function WorkFrame({
             opening={attended ? openings[attended.id] : null}
             taking={attended ? taking[attended.id] : undefined}
             lastTurn={attended ? lastTurns[attended.id] : undefined}
+            // The page header above carries its state, its id and its stop (D126 §3.2): said once.
+            headed
             resolving={resolve.isPending || answer.isPending}
-            stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}
-            onStop={here && intake ? onStop : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             onSession={(session) => attend(session.id)}
@@ -906,9 +967,12 @@ export function WorkFrame({
             live={live}
             sending={send.isPending}
             refusal={refusal?.session === attended.id ? refusal.text : null}
-            // One owner for the moves at a time (D56): while the session is parked the attention
-            // band above holds finish, decline and stop, and this form keeps `send` alone.
+            // One owner for the moves at a time (D56): while the session is parked the card above holds
+            // finish and decline, and this form keeps `send` alone. Its session stop is the page
+            // header's at every state (D126 §3.3); this form keeps *Finish* and *Stop turn*.
             endings={attended.state !== 'awaiting-person'}
+            // *Answer…* from its row puts the focus here, where a parked chat is answered.
+            focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
             draft={draft}
             onDraft={setDraft}
             queued={turns.queued}
@@ -937,7 +1001,6 @@ export function WorkFrame({
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),
               onError: failure(notify),
             })}
-            onStop={onStop}
           />
         )}
 
@@ -962,7 +1025,6 @@ export function WorkFrame({
             onStopTurn={onSteerNow}
             onSend={(text) => onSteer(text.trim())}
             onFinish={() => {}}
-            onStop={() => {}}
           />
         )}
 
@@ -977,9 +1039,10 @@ export function WorkFrame({
             sendLabel={t('work.awaiting.answerConfirm')}
             draft={answerDraft}
             onDraft={setAnswerDraft}
+            // *Answer…* from its row puts the focus here (D126 §3.1).
+            focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
             onSend={(text) => onAnswerSession(text.trim() || null)}
             onFinish={() => {}}
-            onStop={() => {}}
           />
         )}
 

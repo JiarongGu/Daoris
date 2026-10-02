@@ -14,7 +14,7 @@ import {
 } from './quests/records';
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import {
-  stopNotice, useConsidered, useDriver, useNudge, useRetryQuest, useSetHold, useStopSession, useTrustFolder, useUntrusted,
+  retryNotice, useConsidered, useDriver, useNudge, useRetryQuest, useSetHold, useTrustFolder, useUntrusted,
 } from './shell';
 import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -118,7 +118,6 @@ export function useQuestsView({
   const nudge = useNudge();
   const considered = useConsidered().data ?? [];
   const setHold = useSetHold();
-  const stop = useStopSession();
   // A start the driver is holding for the agent's trust (D73), and the person's grant of it.
   const untrusted = useUntrusted().data ?? [];
   const trust = useTrustFolder();
@@ -246,19 +245,18 @@ export function useQuestsView({
         hold={hold}
         chain={buildChain(quest.id, everything.data ?? quests.data ?? [quest], sessions.data ?? [])}
         session={session}
-        running={session ? driver.data?.running.includes(session.id) ?? false : false}
         busy={busy}
         retrying={retry.isPending}
         trusting={trustingFor === quest.id}
         granting={trust.isPending}
         dismissing={dismiss.isPending}
-        stopping={stop.isPending}
         onRespond={(action, reason) => onRespond(quest, action, reason ?? null)}
         onDelete={() => onDelete(quest)}
         onDismiss={(machine, sequence) => onDismiss(quest, machine, sequence)}
-        // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered.
+        // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered. Said as the
+        // driver answered which it did (D126 §3.4), in the one sentence a session's *Try again* says too.
         onRetry={() => retry.mutate({ quest: quest.id }, {
-          onSuccess: (state) => notify(t('quests.detail.retried', { id: quest.id, count: state.strikes })),
+          onSuccess: (state) => notify(t(...retryNotice(quest.id, state))),
           onError: failure(notify),
         })}
         onTrusting={(open) => setTrustingFor(open ? quest.id : null)}
@@ -269,10 +267,6 @@ export function useQuestsView({
           },
           onError: failure(notify),
         })}
-        onStop={session ? () => stop.mutate(session.id, {
-          onSuccess: (answer) => notify(t(stopNotice(answer), { id: session.id })),
-          onError: failure(notify),
-        }) : undefined}
         onOpenQuest={(id) => onChoose(id)}
         onAttend={attend}
       />

@@ -17,7 +17,8 @@ export type Resolution = 'completed' | 'declined' | 'stopped';
  * **Three, not four, and no new states.** The ledger also allows `awaiting-person → working`; that
  * one is the driver observing a session that carried on, which a person causes by *answering* it
  * in the composer. A button for it would be a second way to say the same thing, and the surface
- * says so instead.
+ * says so instead. **The third, `stopped`, is the page header's** (SESSUX1d, D126 §3.3): a session's stop has one
+ * owner, so this card keeps *Answer and carry on…*, *Finish* and *Decline…*.
  *
  * **Unless nothing is left to take a message (STANDDOWN2).** A driven session that took its quest and
  * ended its turn to ask the person has no process: its answer is a move here, handed `onAnswer`. The
@@ -35,7 +36,7 @@ export function AwaitingPerson({ note, pending = false, onResolve, onAnswer }: {
   /** The session's own analysis, rendered word for word. */
   note?: string | null;
   pending?: boolean;
-  /** The ledger's three moves, where this surface can make them (the shell). */
+  /** The ledger's moves this card makes, finish and decline, where this surface can make them (the shell). */
   onResolve?: (state: Resolution, note: string | null) => void;
   /** The answer to a session with no process left — its quest carried on with the words (STANDDOWN2). */
   onAnswer?: (answer: string | null) => void;
@@ -119,9 +120,6 @@ export function AwaitingPerson({ note, pending = false, onResolve, onAnswer }: {
                 </Button>
                 <Button disabled={pending} onClick={() => setDeclining(true)}>
                   {t('work.awaiting.decline')}
-                </Button>
-                <Button variant="danger" disabled={pending} onClick={() => onResolve('stopped', null)}>
-                  {t('work.awaiting.stop')}
                 </Button>
               </>
             )}

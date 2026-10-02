@@ -36,6 +36,12 @@ export type SessionGrouping = {
   awaits?: string | null;
   awaitsOf?: string | null;
   work?: { commits: number | null; uncommitted: number | null } | null;
+  /**
+   * Whether this session's stop holds its quest on this machine (SESSUX1b, D126 §3.3): the person stopped it, and nothing
+   * starts the quest here until *Try again* releases it. Its row says so, and offers *Try again* (SESSUX1d). Absent on a
+   * host older than the fact.
+   */
+  holdsQuest?: boolean;
 };
 
 /** How the list is arranged (D126 §4.1): by state, the default, or by repository, the arrangement it had before. */

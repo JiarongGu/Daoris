@@ -40,6 +40,11 @@ export interface Consideration {
   repository: string;
   verdict: string;
   reason: string;
+  /**
+   * For a quest the person's stop holds (verdict `Stopped`, SESSUX1b): the session they stopped, which *Try again*
+   * releases and the sentence names (SESSUX1d). Absent for every other verdict, and on a shell older than the fact.
+   */
+  heldBy?: string;
 }
 
 /**
@@ -81,12 +86,17 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * outstanding row said *搁置 —* over the driver's English. **It translates by the VERDICT**, the
  * driver's typed half, and never by matching the English, which would turn a rewording into a silent
  * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
- * (`NotDrivable`, `Held`, `NoRoot`). The rest keep the driver's words, since their sentences name a
- * session or a cap the tick does not carry, and so does a verdict the page has not heard of. English
- * passes the driver's sentence through as its only copy, as the rules' defaults do (POLISH2).
+ * (`NotDrivable`, `Held`, `NoRoot`), and `Stopped`, whose session the tick names as a fact (`heldBy`,
+ * SESSUX1d). The rest keep the driver's words, since their sentences name a session or a cap the tick
+ * does not carry, and so does a verdict the page has not heard of, and a stop on a shell that names no
+ * session. English passes the driver's sentence through as its only copy, as the rules' defaults do
+ * (POLISH2).
  */
 export function sittingSentence(sitting: Consideration): string {
-  return i18n.t(`work.sitting.${sitting.verdict}`, { why: sitting.reason, defaultValue: sitting.reason });
+  if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
+  return i18n.t(`work.sitting.${sitting.verdict}`, {
+    why: sitting.reason, session: sitting.heldBy, quest: sitting.quest, defaultValue: sitting.reason,
+  });
 }
 
 /**
