@@ -9582,3 +9582,58 @@ instruction for two asks as it was, then the golden gained the paragraph and fai
 covered: no real intake was handed the instruction, so whether a harness quotes rather than paraphrases is not measured;
 the family rehearsal's stub intake publishes no requirements, so no rehearsal drives them through the real host; nothing
 is drawn, so there is no look.
+
+**DRIFT1d, built 2026-10-03: a done answers each requirement, and a departure waits for the person's yes.** The session
+working a quest is handed its requirements beneath it and beside the ask's words, on a first start, a resume and a
+carry-on alike (`TargetPrompt.Required`): each numbered, the person's words quoted verbatim, its check, then how a done
+answers. `quest_respond`'s done and `POST /api/quests/{id}/respond` take `answers`, one per requirement by its number:
+`met`, with how its check was met, or `departed`, with the reason and the person's words it turns on (`quote`). The
+exchange judges them for every door (`JudgeAnswersAsync`): one left unanswered is refused naming each with its words and
+check (`Unanswered`), and nothing closes. A departure closes the quest done and holds it (`Quest.Held`): the chain's next
+step is not published, the quest stays on the outstanding list, and its ask does not read done. The person's yes is an
+`Accepted` operation, which publishes the held step in the same transaction (`QuestStore.AcceptAsync`), through
+`POST /api/quests/{id}/accept` and `daoris-driver quest accept <id>`. Choices §4 left open:
+- **By number**, in the order the quest lists them, which is the order `quest_list`, the routes and the instruction show.
+- **A met answer quotes nothing**: its requirement already quotes the person. A quote on one is refused, so the record
+  holds one reading of each. So is an answer naming no requirement or one twice, saying both or neither, departing without
+  its reason or words, or longer than 2,000 characters (`BadAnswer`).
+- **A departure's words are checked as a requirement's are** (`QuotedIn`): against the person's words on the ask where this
+  host holds it, and always against the quest's own requirements, which crossed with the quest already checked. On a host
+  that does not hold the ask only those count, and the refusal says so (`NotQuoted`). A departure may quote the
+  requirement it departs from. "Per your answer" without the answer's words is what this refuses.
+- **Held whatever follows.** A departure with no next step and no quest waiting on it still holds the quest, so its ask
+  does not read done before the person has seen the departure: what the drift lacked was the person's look, not a chain.
+- **A held quest is outstanding**, listed without `includeClosed` at every door (the store's `held` column, the replay's
+  own reading). That is how the driver keeps a quest waiting on it waiting, with no new read: the planner sees the
+  question, and its sentence names the person's yes and the terminal's door.
+- **The yes is an operation**, which travels like every verb (D68). It applies only while a departure holds the quest, so
+  two yeses are one, and a later one rebases away. A yes whose done lost rebases away with the step it published. It is a
+  local door alone, as a delete is, and no connector tool says it: the yes is the person's.
+- **Answers are a done's.** A take, decline or wait carrying them is refused rather than dropping them. A quest with no
+  requirements closes word for word as before, and takes no answers.
+- **Bounded in the instruction** at 8,000 characters of words and checks, for the person's words' reason (DRIFT1b): those
+  left out are named, with `quest_list` as where each is whole.
+- **What it does not carry**: a done that loses a race keeps its note and attempted move as a conflict, not its answers.
+  A build from before this reads a done's answers as absent, and refuses a page holding an `accepted` operation as not
+  whole, as it did `waited` and `deleted` when they were new.
+
+The doors: the terminal's is built. The quest page's yes and Ask Daoris's are owed to a row of their own, DRIFT1d2: the
+page showing each answer, a departure with the words it quotes and the yes on a held quest, in both languages; and Ask
+Daoris's kind, with the service's box and tool, the driver's judge and the card (`HelpCoverageTests`' `AcceptDoor`).
+
+Proof: `QuestAnswerTests`, seen failing on stubs that judged and held nothing: one left unanswered and none answered,
+named; each met closes with its answers and the chain goes on; a departure holds the step and stays listed; an unsaid
+departure refused; the ask's words or, where the ask is not held, the requirements; nine shapes of answer refused; a
+quest with none as before; answers off a done; the yes publishing the step, refused for a quest nothing holds, releasing
+a waiting quest and the ask; the history, the wire and a half-made answer on it. The hold and the listing were each seen
+failing again with their line removed. `QuestSyncTests` (two yeses are one; a yes on a lost done goes with its step) were
+seen failing with the rebase's forgetting removed. `McpToolsTests` (one left refused, then each met and listed; a
+departure held and listed) and `LocalHostTests` (400 naming it, 200 with `held`, the accept door 200, 409, 404) were seen
+failing first, and `SharedHostTests` failed with the accept door's local guard removed. `QuestRequirementTests`' chain now
+answers its requirement. In the driver, `RequirementsHandedTests` (every kind of start, numbered and quoted, none as
+before, the bound, the client's read, the accept door) and `PlannerTests` (a waiting quest held with its question) were
+seen failing on stubs; `HelpCoverageTests` holds the owed door, and the room's goldens gained its row. Not covered: no
+real agent was handed the requirements or asked to answer them, so whether a harness departs honestly rather than marking
+each met is not measured, and nothing compares a met answer with the work, since a fact gates and a judgement reports
+(D54); the family rehearsal publishes no requirements, so no rehearsal drives an answered done through the real host;
+the page shows neither the answers nor the yes, so there is no look.
