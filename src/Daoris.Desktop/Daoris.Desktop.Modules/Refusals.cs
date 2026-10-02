@@ -68,6 +68,18 @@ public static class Refusals
     /// <summary>A decline with nothing in it. The same rule the quest door holds, for its reason.</summary>
     public const string SessionDeclineNeedsReason = "SESSION_DECLINE_NEEDS_REASON";
 
+    /// <summary>A session asked to be archived that no record here is (SESSUX1a, D126 §5.2).</summary>
+    public const string SessionUnknown = "SESSION_UNKNOWN";
+
+    /// <summary>A session asked to be archived that still runs or waits (D126 §5.2): it is stopped first, and then it has ended.</summary>
+    public const string SessionLive = "SESSION_LIVE";
+
+    /// <summary>
+    /// A session asked to be archived that waits on you or has work to review (D126 §5.2): archive never hides what needs
+    /// the person. Its <c>group</c> says which, and travels as the catalogue's <c>context</c>, so the sentence names it.
+    /// </summary>
+    public const string SessionNeedsYou = "SESSION_NEEDS_YOU";
+
     /// <summary>
     /// A review asked for where this machine cannot answer it (SURF6): the record names no tree or no
     /// base commit, or the tree is gone. It is INFORMATION rather than a fault — a session whose

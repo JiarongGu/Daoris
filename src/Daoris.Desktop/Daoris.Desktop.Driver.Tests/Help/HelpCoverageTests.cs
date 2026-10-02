@@ -83,6 +83,15 @@ public sealed partial class HelpCoverageTests
         + "the person already said, so Ask Daoris should propose each; that waits on WSSETUP7's `workspace`, `pause`, `resume` "
         + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
 
+    /// <summary>
+    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), a bridge hook no Settings domain presses and no screen yet: a door
+    /// Ask Daoris owes, until SESSUX1h builds the <c>session</c> kind's <c>archive</c> and <c>unarchive</c> doors.
+    /// </summary>
+    private static readonly Owed SessionArchiveDoor = new(
+        "archiving takes ended sessions out of this machine's list and unarchiving brings them back, a tidy that undoes "
+        + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
+        + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -300,6 +309,7 @@ public sealed partial class HelpCoverageTests
             .Append(SetupDoor)
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
+            .Append(SessionArchiveDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -361,6 +371,21 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup --workspace <name> [--plan]", StringComparison.Ordinal)
             && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1a: the archive's bridge hook changes something and no screen presses it yet, so it is a door owed to
+    /// SESSUX1h's <c>session</c> kind (D126 §7.3) while no kind of that name is built. When the kind lands, this owed door
+    /// becomes its door, and Sessions' acts are read as Settings' domains are.
+    /// </summary>
+    [Fact]
+    public void The_session_archive_is_a_door_owed_to_the_session_kind()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
+        Assert.Null(HelpProposalKinds.Find("session"));
+        Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
     }
 
     /// <summary>
