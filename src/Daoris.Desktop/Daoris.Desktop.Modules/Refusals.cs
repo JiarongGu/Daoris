@@ -81,6 +81,13 @@ public static class Refusals
     public const string SessionNeedsYou = "SESSION_NEEDS_YOU";
 
     /// <summary>
+    /// *Try again* asked of a quest the driver's last look neither parked on its failed sessions nor held by the person's
+    /// stop (SESSUX1b, D126 §3.4): nothing to mark and no stop to release, and forgiving it would let it run past its
+    /// strikes (D110). Its <c>id</c> names the quest.
+    /// </summary>
+    public const string QuestNotHeld = "QUEST_NOT_HELD";
+
+    /// <summary>
     /// A review asked for where this machine cannot answer it (SURF6): the record names no tree or no
     /// base commit, or the tree is gone. It is INFORMATION rather than a fault — a session whose
     /// record travelled here from another machine has nothing to diff here and never will, and so

@@ -153,7 +153,11 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     [Fact]
     public async Task The_strike_limit_and_a_retry_write_the_same_file_the_terminal_edits()
     {
-        var module = Module();
+        // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first.
+        var loop = Loop();
+        loop.Look.Record([new Consideration(
+            new QuestView("a78553", "game", "engine", "A parked quest", "A body.", "Open"), StartVerdict.Exhausted, "parked")]);
+        var module = new DriverModule(Bus, loop);
 
         Assert.Equal(3, (await AnswerAsync(module, "STATE")).GetProperty("strikes").GetInt32());
 
