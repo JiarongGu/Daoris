@@ -24,7 +24,7 @@ public static class RequestDoor
     /// <summary><c>daoris-driver sessions</c>.</summary>
     public const string Terminal = "terminal";
 
-    /// <summary>A pause stopping what of its work another process runs (PAUSE1b, D132 §2.1), when it lands.</summary>
+    /// <summary>A pause stopping what of its work another process runs (PAUSE1b, D132 §2.1): <see cref="WorkPausing"/>.</summary>
     public const string Pause = "pause";
 }
 
@@ -33,7 +33,10 @@ public static class RequestDoor
 /// <param name="At">When it was asked: a request nobody took for <see cref="SessionRequests.Lifetime"/> is dropped.</param>
 public sealed record SessionRequest(string Session, string Move, DateTimeOffset At)
 {
-    /// <summary>A finish's note or a decline's reason, the person's words; none for a stop.</summary>
+    /// <summary>
+    /// A finish's note or a decline's reason, the person's words; for a stop, none, or a pause's words for the record
+    /// (PAUSE1b, design §4.1).
+    /// </summary>
     public string? Note { get; init; }
 
     /// <summary>

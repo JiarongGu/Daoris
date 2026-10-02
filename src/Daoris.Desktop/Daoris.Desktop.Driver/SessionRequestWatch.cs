@@ -22,7 +22,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 {
     private readonly SessionRequests _requests;
     private readonly Func<string, bool> _runsHere;
-    private readonly Func<string, bool> _stop;
+    private readonly Func<string, string?, bool> _stop;
     private readonly Func<ServiceClient?> _service;
     private readonly Func<DateTimeOffset> _clock;
     private readonly CancellationTokenSource _stopping = new();
@@ -32,7 +32,9 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// <summary>A loop's watch over its own registry, looking every <paramref name="every"/> (a second) until it is disposed.</summary>
     /// <param name="service">The loop's service once it answers; null before, when a request that needs the ledger waits.</param>
     public SessionRequestWatch(string home, SessionProcesses processes, Func<ServiceClient?> service, TimeSpan? every = null)
-        : this(home, id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase), id => processes.Stop(id), service, clock: null)
+        : this(
+            home, id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase), (id, note) => processes.Stop(id, note: note),
+            service, clock: null)
     {
         _watching = WatchAsync(every ?? TimeSpan.FromSeconds(1));
     }
@@ -43,6 +45,16 @@ public sealed class SessionRequestWatch : IAsyncDisposable
     /// </summary>
     public SessionRequestWatch(
         string home, Func<string, bool> runsHere, Func<string, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
+        : this(home, runsHere, (id, _) => stop(id), service, clock)
+    {
+    }
+
+    /// <summary>
+    /// The test seam that also hears the note a stop carries: a pause's words for the record (PAUSE1b), which the registry's
+    /// stop writes on it as the person's.
+    /// </summary>
+    public SessionRequestWatch(
+        string home, Func<string, bool> runsHere, Func<string, string?, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
     {
         _requests = new SessionRequests(home);
         _runsHere = runsHere;
@@ -73,7 +85,8 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
                 try
                 {
-                    if (!resolves) _stop(request.Session);
+                    // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop.
+                    if (!resolves) _stop(request.Session, request.Note);
                     else
                     {
                         var state = request.Move switch
@@ -82,7 +95,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
                             SessionMove.Decline => "declined",
                             _ => "stopped",
                         };
-                        await SessionMoves.ResolveAsync(_stop, service!, request.Session, state, request.Note, ct).ConfigureAwait(false);
+                        await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, state, request.Note, ct).ConfigureAwait(false);
                     }
 
                     honoured.Add(request);

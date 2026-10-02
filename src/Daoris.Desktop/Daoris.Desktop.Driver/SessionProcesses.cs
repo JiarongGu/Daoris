@@ -29,6 +29,9 @@ public sealed class SessionProcesses(string? markers = null)
         /// <summary>Why the driver ended it, when the driver did — null when the person did.</summary>
         public string? Reason;
 
+        /// <summary>What the person's stop says on the record, where the door that stopped it said more (a pause, PAUSE1b).</summary>
+        public string? Note;
+
         /// <summary>Why a person's line is refused here, in the driver's words — null for a conversation.</summary>
         public string? RefusesInput;
 
@@ -139,7 +142,11 @@ public sealed class SessionProcesses(string? markers = null)
     /// the session already finished and its record says how, or another driver on this machine holds
     /// it, or nothing does and its record is an orphan (<see cref="Orphans"/>).
     /// </summary>
-    public bool Stop(string sessionId, string? reason = null)
+    /// <param name="note">
+    /// For the person's stop, what its record says in place of the plain one: a pause's stop names the pause (PAUSE1b, design
+    /// §4.1). Still the person's stop, which nothing decides from (D104).
+    /// </param>
+    public bool Stop(string sessionId, string? reason = null, string? note = null)
     {
         Entry? entry;
         lock (_gate)
@@ -147,6 +154,7 @@ public sealed class SessionProcesses(string? markers = null)
             if (!_running.TryGetValue(sessionId, out entry)) return false;
             entry.StopRequested = true;
             entry.Reason ??= reason;
+            entry.Note ??= note;
         }
 
         try
@@ -208,6 +216,12 @@ public sealed class SessionProcesses(string? markers = null)
     public string? StopReason(string sessionId)
     {
         lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Reason : null;
+    }
+
+    /// <summary>What the person's stop of this session says on its record, where its door said more; null for the plain stop.</summary>
+    public string? StopNote(string sessionId)
+    {
+        lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Note : null;
     }
 
     /// <summary>

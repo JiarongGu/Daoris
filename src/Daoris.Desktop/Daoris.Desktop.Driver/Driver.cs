@@ -266,6 +266,8 @@ public sealed partial class Driver(
         // while they were read: marked first, so a conversation chosen meanwhile is not lost.
         var mark = _harnesses.Mark();
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
+        // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
+        snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
         _harnesses.Look(snapshot.Started, mark);
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
@@ -943,7 +945,8 @@ public sealed partial class Driver(
                         // else's, which is what standing down has always meant — and the reason says who.
                         ? new SessionConclusion("stood-down", stoppedFor)
                         : _processes.WasStopRequested(sessionId)
-                        ? new SessionConclusion("stopped", "the person stopped it.")
+                        // A pause's stop names the pause (PAUSE1b, design §4.1); still the person's, never interrupted.
+                        ? new SessionConclusion("stopped", _processes.StopNote(sessionId) ?? "the person stopped it.")
                         : exitCode is int code
                             // What it waited on before and after (D79): a NEW question is this session
                             // asking and waiting, which is a good ending, not a stand-down.

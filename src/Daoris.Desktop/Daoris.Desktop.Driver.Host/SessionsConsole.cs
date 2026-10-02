@@ -27,7 +27,7 @@ internal static class SessionsConsole
     }
 
     /// <summary>The configured agent's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
-    private static SessionWire Wire(DriverConfig config)
+    internal static SessionWire Wire(DriverConfig config)
     {
         try
         {
