@@ -122,6 +122,36 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.True((await _sessions.FindAsync("bob-desktop/ef56ab78"))!.Limit);
     }
 
+    /// <summary>
+    /// ANSWER1b: an answer is kept with its note and leaves the state where it is. It is a new revision, so the note goes
+    /// up with the next push; a teammate's mirrored record is never answered here. A move told to clear it clears it,
+    /// and any other move keeps it.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_is_kept_with_its_note_as_a_new_revision_and_a_move_clears_it_only_when_told()
+    {
+        var parked = await Create();
+        await _sessions.SetStateAsync(parked.Id, SessionState.AwaitingPerson, "which port?", null, null, Now);
+        var before = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single().Revision;
+
+        var answered = await _sessions.AnswerAsync(parked.Id, "8080.", "which port?\n\nAnswered: 8080.", Now.AddMinutes(1));
+
+        Assert.Equal((SessionState.AwaitingPerson, "8080.", "which port?\n\nAnswered: 8080.", Now.AddMinutes(1)),
+            (answered!.State, answered.Answer, answered.Note, answered.Updated));
+        Assert.True((await _sessions.OwnChangedSinceAsync(before, Workspaces.Default)).Single().Revision > before);
+
+        await _sessions.SetStateAsync(parked.Id, SessionState.Working, null, null, null, Now.AddMinutes(2));
+        Assert.Equal("8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
+        await _sessions.SetStateAsync(parked.Id, SessionState.AwaitingPerson, "and which host?", null, null, Now.AddMinutes(3), clearAnswer: true);
+        Assert.Null((await _sessions.FindAsync(parked.Id))!.Answer);
+
+        var fed = new Session(
+            "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code", SessionState.AwaitingPerson, "which port?", null, null, Now, Now);
+        await _sessions.MirrorAsync(fed);
+        Assert.Null(await _sessions.AnswerAsync(fed.Id, "8080.", "which port?\n\nAnswered: 8080.", Now));
+        Assert.Null((await _sessions.FindAsync(fed.Id))!.Answer);
+    }
+
     /// <summary>An attachment set earlier survives a later move that does not mention it.</summary>
     [Fact]
     public async Task An_unmentioned_attachment_is_kept_not_erased()

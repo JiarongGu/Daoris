@@ -2,8 +2,8 @@
 
 > The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input and after I input it
 > starts a new session? isn't this should be continue"*. This is the contract for what an answer does. Its decision is
-> **D131**. Status: **designed; the driver's half built (ANSWER1a); the service's half (ANSWER1b) and the page's
-> (ANSWER1c) are rows.** Read with **D46 §4**, **D51**, **D79**, **D80**, **D83**, **D90**, **D104**, **D125** and
+> **D131**. Status: **designed; the driver's half (ANSWER1a) and the service's (ANSWER1b) built; the page's (ANSWER1c)
+> is a row.** Read with **D46 §4**, **D51**, **D79**, **D80**, **D83**, **D90**, **D104**, **D125** and
 > **D130**.
 
 ## 0. What happened, and what is true today
@@ -139,8 +139,10 @@ rejects.
   parked card shows the answer and *carries on at the next look*, and `SessionGroups` lists it under *Working*, never
   *Waiting on you*. The attention watch's count follows. Proof: `SessionGroupsTests`, the card's story.
 
-Until ANSWER1b lands, the driver sees every answered record already `completed`, and carries it on as today with the
-`ended` line.
+ANSWER1b is built (2026-10-02): an answered park stays parked on the real service, so the driver goes on with it. A
+service from before it still ends the record as it takes the answer, and the driver carries that answer on as before,
+with the `ended` line. The family rehearsal's 17a drives an answer through the real service and resumes the same
+record's conversation; D131's ANSWER1b note says what building it settled.
 
 ## 6. The build (ANSWER1a) and what its gates do not cover
 
@@ -152,4 +154,4 @@ driver (`Driver.Continue.cs`), the line, and a real-process tick on a protocol s
 Not covered: no real agent was resumed by this branch, so whether `claude-agent-acp` resumes a driven conversation
 across a process, with Daoris's rules and servers handed again, is ANSWER1d's canary on the install. The native door's
 `--resume` is held by its arguments and the `init` line's shape, not by a real run. The stand-in service models
-ANSWER1b; the real service still ends the record (§5).
+ANSWER1b, which the real service now does too (§5).

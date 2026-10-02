@@ -702,6 +702,25 @@ if (mode == ServiceMode.Local)
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
     });
+
+    // What the person added to a running session (DRIFT1a, D133 §1), as its driver reports it: the words
+    // reach the session through the driver, which never passes them here otherwise, so this is where they
+    // are kept on the ask its work is for. Local like the asks; a session on no ask is answered `kept:
+    // false` with the reason, which is no error.
+    app.MapPost("/api/sessions/{id}/added", async (
+        ComposedService s, HttpContext http, string id, AddedRequest body, CancellationToken ct) =>
+    {
+        var outcome = await s.Ledger.KeepOnAskAsync(id, AskWordKind.Added, body.Text, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            AskWordRefusal.None => Results.Ok(new AddedResponse(
+                true, outcome.Message,
+                await s.Asks.FindAsync(outcome.Ask!, ct) is { } ask ? ToAsk(ask, s.Files, MachineLocal(http)) : null)),
+            AskWordRefusal.NoAsk => Results.Ok(new AddedResponse(false, outcome.Message, null)),
+            AskWordRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is
@@ -789,12 +808,22 @@ app.MapPost("/api/sessions/{id}/state", async (
     };
 });
 
-// The person answers a driven session that parked to ask them (STANDDOWN2): the record ends with their
-// words, and the quest it holds is carried on in the same tree at the driver's next tick.
+// The person answers a driven session that parked to ask them (STANDDOWN2): the record stays parked with
+// their words, and the reply is the session as it now stands, for the driver's next look to go on with
+// (ANSWER1b, D131) — its own conversation resumed, or its quest carried on in the same tree.
 app.MapPost("/api/sessions/{id}/answer", async (
     ComposedService s, HttpContext http, string id, AnswerSessionRequest body, CancellationToken ct) =>
 {
-    var outcome = await s.Ledger.AnswerAsync(id, body.Answer, DateTimeOffset.UtcNow, ct);
+    var now = DateTimeOffset.UtcNow;
+    var outcome = await s.Ledger.AnswerAsync(id, body.Answer, now, ct);
+    // DRIFT1a (D133 §1): the answer is the person's word on the ask the session's quest was asked by, so
+    // it is kept there too, beside the answer and never inside it. A blank one says nothing to keep, and a
+    // session on no ask has nowhere to keep it; either way the answer stands as it was given.
+    if (outcome.Refusal == SessionAdvanceRefusal.None)
+    {
+        await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, body.Answer, now, ct);
+    }
+
     return outcome.Refusal switch
     {
         SessionAdvanceRefusal.None => Results.Ok(
@@ -1332,7 +1361,10 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
             f.Name, f.Sha256, f.Bytes,
             Path: machineLocal && kept is not null && kept.Has(a.Id, f) ? kept.PathOf(a.Id, f) : null)).ToList(),
         a.Proposal.Select(m => new DeclarationMatchResponse(m.Repository, m.Score, m.Matched)).ToList(),
-        a.Quests, a.Intake, a.Deletable);
+        a.Quests, a.Intake, a.Deletable,
+        // The person's words, served as the sentence is: these routes are a local host's alone (DRIFT1a).
+        Words: a.Words.Select(w => new AskWordResponse(AskWord.Spell(w.Kind), w.Text, w.At, w.Session, w.Quest)).ToList(),
+        WordsKeptFrom: a.WordsKeptFrom);
 }
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(

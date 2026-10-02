@@ -126,7 +126,10 @@ into a quest. Naming the receiver publishes at once. An ask's quests are asked *
 are machine-local: a local host's door, and `daoris-driver ask` from a terminal. An ask is **done**
 (USE1c) once it became a quest and every quest asked by it, chain steps included, has closed. That is
 worked out from the quests on every read and never stored, so a quest closed on another machine
-counts when it syncs in. The default list hides a done ask as it hides a closed one.
+counts when it syncs in. The default list hides a done ask as it hides a closed one. An ask also keeps
+**the person's words after it** (DRIFT1a, D133 §1): each answer to a session on its work and each message
+added to one, verbatim, with when, the session and its quest, after its own sentence (`words`). They are
+not back-filled, so an ask from before says from when they are kept (`wordsKeptFrom`).
 
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would
@@ -263,9 +266,10 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; a repository with a checkout here is read from it, and one without answers with what was fed at a shared deployment (MAP3b) or brought down by a machine's sync (MAP3e), with `fed` naming the commit, its line and the key that fed it, or with no file |
 | `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's `to` may name lanes (`repository:lane+lane`); a quest answers `to` as the repository and `lanes` beside it (D115). A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
 | `POST /api/quests/{id}/conflicts/dismiss` | a person dismisses a conflict: `{ machine, sequence }` names one, and naming none dismisses every one the quest carries. It is an operation the next pass carries, so every machine drops it. It moves no status (SYNC6c) |
-| `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason |
+| `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason. Every ask answers `words`, the person's own, oldest first (DRIFT1a) |
 | `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |
 | `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46); a move to `stopped` may say `interrupted: true` (D104), and a move to `failed` may say `limit: true` (TOOL4c); a move anywhere else that says either is refused |
+| `POST /api/sessions/{id}/answer` · `/api/sessions/{id}/added` | the person answers a session parked to ask them (STANDDOWN2); and, local mode only, what they added to a running one, as its driver reports it. Each is kept on the ask the session's work is for (DRIFT1a); `added` answers `kept: false`, with the reason, for a session on no ask |
 | `POST /api/sessions/chat` · `/api/sessions/intake` · `/api/sessions/help` | the record a conversation opens: a chat in a repository (D49 §3); and, local mode only, an intake for an ask (D65 §1b) and Ask Daoris's conversation in its room (HELP1a, D89), recorded in `daoris:help`, one running per room |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
 | `POST /api/feed/sessions` · `/api/feed/entries` · `/api/feed/code-map` | shared mode only: what a desktop's sync feeds up (D47, MAP3b) |

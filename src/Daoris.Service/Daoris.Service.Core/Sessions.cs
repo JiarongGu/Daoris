@@ -141,8 +141,9 @@ public sealed record Session(
     public bool Took { get; init; }
 
     /// <summary>
-    /// What the person answered a session that parked to ask them (STANDDOWN2), or null. The session
-    /// that carries its quest on is handed it.
+    /// What the person answered a session that parked to ask them (STANDDOWN2), or null. The record stays parked with it
+    /// until the driver goes on with it, as that session's next prompt or handed to the session that carries its quest
+    /// on (ANSWER1b, D131); parking again clears it, so a session that asks again is answered anew.
     /// </summary>
     public string? Answer { get; init; }
 
@@ -463,9 +464,11 @@ public sealed class SessionStore
     /// </summary>
     /// <param name="interrupted">That this move ends it not by the person's hand (D104) — kept once said.</param>
     /// <param name="limit">That an account's limit refused its turn (TOOL4c) — kept once said.</param>
+    /// <param name="clearAnswer">That the person's answer goes with this move (ANSWER1b): the ledger's to say.</param>
     public async Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
+        bool clearAnswer = false)
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
@@ -479,14 +482,16 @@ public sealed class SessionStore
             Updated = now,
             Interrupted = interrupted || session.Interrupted,
             Limit = limit || session.Limit,
+            Answer = clearAnswer ? null : session.Answer,
         };
 
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, evidence = $evidence,
               transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
-              revision = {NextRevision} WHERE id = $id
+              answer = $answer, revision = {NextRevision} WHERE id = $id
             """;
+        command.Parameters.AddWithValue("$answer", (object?)moved.Answer ?? DBNull.Value);
         command.Parameters.AddWithValue("$interrupted", moved.Interrupted ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$limited", moved.Limit ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$state", moved.State.ToString());
@@ -812,14 +817,26 @@ public sealed class SessionStore
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
     };
 
-    /// <summary>Keep the person's answer on a parked session's record (STANDDOWN2).</summary>
-    public async Task SetAnswerAsync(string id, string answer, CancellationToken ct = default)
+    /// <summary>
+    /// Keep the person's answer on a parked session's record (STANDDOWN2), with the note that says it, leaving its state
+    /// where it is (ANSWER1b). A new revision, since the note travels. Null when there is no such record of this machine's.
+    /// </summary>
+    public async Task<Session?> AnswerAsync(string id, string answer, string note, DateTimeOffset now, CancellationToken ct = default)
     {
-        await using var command = _connection.CreateCommand();
-        command.CommandText = "UPDATE sessions SET answer = $answer WHERE id = $id AND origin IS NULL";
-        command.Parameters.AddWithValue("$id", id);
-        command.Parameters.AddWithValue("$answer", answer);
-        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await using (var command = _connection.CreateCommand())
+        {
+            command.CommandText = $"""
+                UPDATE sessions SET answer = $answer, note = $note, updated = $updated, revision = {NextRevision}
+                WHERE id = $id AND origin IS NULL
+                """;
+            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$answer", answer);
+            command.Parameters.AddWithValue("$note", note);
+            command.Parameters.AddWithValue("$updated", now.ToString("O"));
+            if (await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 0) return null;
+        }
+
+        return await FindAsync(id, ct).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -59,6 +59,30 @@ public enum SessionAdvanceRefusal
 /// <param name="Session">The session as it now stands, when it moved.</param>
 public sealed record SessionAdvanceOutcome(SessionAdvanceRefusal Refusal, string Message, Session? Session);
 
+/// <summary>Why a person's word was not kept on an ask (DRIFT1a) — or <see cref="None"/> when it was.</summary>
+public enum AskWordRefusal
+{
+    None,
+
+    /// <summary>No words: nothing was said.</summary>
+    Empty,
+
+    /// <summary>No session under that id of this machine's.</summary>
+    NotFound,
+
+    /// <summary>
+    /// The session is on no ask held here — a quest a repository asked, or a conversation on none — so
+    /// there is no ask to keep the words on. Not an error: its own record holds what was said.
+    /// </summary>
+    NoAsk,
+}
+
+/// <param name="Refusal"><see cref="AskWordRefusal.None"/> when the word was kept.</param>
+/// <param name="Message">The whole answer, phrased once here for every door.</param>
+/// <param name="Ask">The ask it was kept on, when it was.</param>
+/// <param name="Word">The word as it was kept, when it was.</param>
+public sealed record AskWordOutcome(AskWordRefusal Refusal, string Message, string? Ask = null, AskWord? Word = null);
+
 /// <summary>
 /// The judgement half of the session system: when a session may open, and what may move where. The
 /// store holds state; this decides — one implementation for every door, for the same reason
@@ -299,40 +323,128 @@ public sealed class SessionLedger(
     }
 
     /// <summary>
-    /// The person answers a driven session that parked to ask them (STANDDOWN2): its record ends
-    /// `completed` with their words kept, and the quest it holds is carried on in the same tree at
-    /// the driver's next tick, handed what they said. An intake is answered through its ask instead.
+    /// The person answers a driven session that parked to ask them (STANDDOWN2): the record stays
+    /// `awaiting-person` with their words kept and said on its note, and the driver goes on with it at
+    /// its next look (ANSWER1b, D131) — the session's own conversation resumed with the answer where it
+    /// can, else the park ended and its quest carried on in a new session in the same tree, handed what
+    /// they said. A second answer before then replaces the first. An intake is answered through its ask.
     /// </summary>
+    /// <remarks>
+    /// <b>The answer keeps the park</b> because one record stands for one harness conversation (D131 §3):
+    /// a record the answer ended could not reopen, since a finished record does not move.
+    /// </remarks>
     /// <returns>The session as it now stands, or a refusal in words a person can act on.</returns>
     public async Task<SessionAdvanceOutcome> AnswerAsync(
         string id, string? answer, DateTimeOffset now, CancellationToken ct = default)
     {
-        var session = await sessions.FindAsync(id, ct).ConfigureAwait(false);
+        var said = string.IsNullOrWhiteSpace(answer) ? "carry on." : answer.Trim();
+
+        // Read, judged and written as one step (REV3): the driver taking the park up and a second answer,
+        // arriving from two hosts, could both read it parked, and the answer land on a record going on.
+        return await sessions.ExclusiveAsync(async inside =>
+        {
+            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
+            if (session is null || session.Origin is not null)
+            {
+                return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}` of this machine's.", Session: null);
+            }
+
+            if (session.State != SessionState.AwaitingPerson || session.Quest is null)
+            {
+                return new SessionAdvanceOutcome(
+                    SessionAdvanceRefusal.InvalidMove,
+                    session.Ask is not null
+                        ? $"Session `{id}` is an intake — answer its ask `#{session.Ask}` instead: publish it or close it."
+                        : $"Session `{id}` is {Session.Spell(session.State)}, not waiting on you — there is nothing to answer.",
+                    Session: null);
+            }
+
+            var answered = await sessions.AnswerAsync(id, said, AnsweredNote(session, said), now, inside).ConfigureAwait(false);
+            return new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.None,
+                $"Answered session `{id}`: it carries on with `#{session.Quest}` at the driver's next look.",
+                answered);
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The note an answer leaves (ANSWER1b): what the session asked, then what it was told, since the conversation that
+    /// goes on and a session that carries the quest on are both read from this record, and an answer without its
+    /// question is half a conversation. A second answer replaces the first one's line, so the note says what the record holds.
+    /// </summary>
+    private static string AnsweredNote(Session parked, string said)
+    {
+        var asked = parked.Note ?? "It stopped to ask the person; its question is in its transcript.";
+        if (parked.Answer is { } earlier && asked.EndsWith(AnsweredLine(earlier), StringComparison.Ordinal))
+        {
+            asked = asked[..^AnsweredLine(earlier).Length];
+        }
+
+        return asked + AnsweredLine(said);
+    }
+
+    private static string AnsweredLine(string said) => $"\n\nAnswered: {said}";
+
+    /// <summary>
+    /// Keep what the person said to a session on the ask its work is for (DRIFT1a, D133 §1): verbatim, with
+    /// when, the session it was said to and the quest that session works. Beside <see cref="AnswerAsync"/>,
+    /// never inside it: the answer door calls both, and what an answer does to a parked session is not this
+    /// method's to decide.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The ask is derived, never passed.</b> An intake names its ask; a driven session's quest was
+    /// asked by one when its sender is <c>ask #id</c>, a chain step included. A quest one repository asked
+    /// of another, and a conversation on no quest, are on no ask, and the answer says so rather than filing
+    /// the words under an ask they were not given on.</para>
+    ///
+    /// <para><b>In any state.</b> An answer is kept after the answer moved the record, and a message while
+    /// the session runs; a record of another machine's is not this machine's person talking.</para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">For <see cref="AskWordKind.Asked"/>: the ask's own sentence is its record's.</exception>
+    public async Task<AskWordOutcome> KeepOnAskAsync(
+        string sessionId, AskWordKind kind, string? words, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (kind == AskWordKind.Asked)
+        {
+            throw new ArgumentException("the ask's own sentence is kept when it is asked, never by a session", nameof(kind));
+        }
+
+        var text = words?.Trim() ?? "";
+        if (text.Length == 0)
+        {
+            return new(AskWordRefusal.Empty, "There are no words to keep: the person said nothing.");
+        }
+
+        var session = await sessions.FindAsync(sessionId, ct).ConfigureAwait(false);
         if (session is null || session.Origin is not null)
         {
-            return new(SessionAdvanceRefusal.NotFound, $"No session `{id}` of this machine's.", Session: null);
+            return new(AskWordRefusal.NotFound, $"No session `{sessionId}` of this machine's.");
         }
 
-        if (session.State != SessionState.AwaitingPerson || session.Quest is null)
+        const string Own = "so nothing was kept on one; its own record holds what was said.";
+        var quest = session.Quest is { } questId ? await quests.FindAsync(questId, ct).ConfigureAwait(false) : null;
+        var askId = session.Ask ?? AskDesk.AskOf(quest?.From);
+        if (askId is null)
         {
-            return new(
-                SessionAdvanceRefusal.InvalidMove,
-                session.Ask is not null
-                    ? $"Session `{id}` is an intake — answer its ask `#{session.Ask}` instead: publish it or close it."
-                    : $"Session `{id}` is {Session.Spell(session.State)}, not waiting on you — there is nothing to answer.",
-                Session: null);
+            return new(AskWordRefusal.NoAsk, (session.Quest, quest) switch
+            {
+                (null, _) => $"Session `{session.Id}` is a conversation on no ask, {Own}",
+                (_, null) => $"Session `{session.Id}` works quest `#{session.Quest}`, which is not held here, {Own}",
+                _ => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked rather than an ask, {Own}",
+            });
         }
 
-        var said = string.IsNullOrWhiteSpace(answer) ? "carry on." : answer.Trim();
-        await sessions.SetAnswerAsync(id, said, ct).ConfigureAwait(false);
-        // The note keeps what it asked beside what it was told: the session that carries the quest on is
-        // handed this record, and an answer without its question is half a conversation.
-        var moved = await AdvanceAsync(
-            id, "completed", $"{session.Note ?? "It stopped to ask the person; its question is in its transcript."}\n\nAnswered: {said}",
-            evidence: null, transcript: null, now, ct).ConfigureAwait(false);
-        return moved.Refusal == SessionAdvanceRefusal.None
-            ? moved with { Message = $"Answered session `{id}`: `#{session.Quest}` is carried on in its tree at the driver's next look." }
-            : moved;
+        var word = new AskWord(kind, text, now, session.Id, session.Quest);
+        if (asks is null || !await asks.RecordWordAsync(askId, word, now, ct).ConfigureAwait(false))
+        {
+            return new(AskWordRefusal.NoAsk, $"Session `{session.Id}` is on ask `#{askId}`, which is not held here, {Own}");
+        }
+
+        return new(
+            AskWordRefusal.None,
+            $"Kept on ask `#{askId}`, as said to session `{session.Id}`"
+            + (session.Quest is { } on ? $" on quest `#{on}`." : "."),
+            askId, word);
     }
 
     /// <summary>
@@ -364,8 +476,9 @@ public sealed class SessionLedger(
         // failed — timed out, refused, crashed — before closing it. The take is this machine's and its
         // tree holds the work. The driver's strikes bound how often; a stand-down or a teammate's
         // record never counts, because either means the take is somebody else's.
-        // And the person's answer to one that parked to ask them (STANDDOWN2): its record ended
-        // `completed` with their words kept, and the quest it held is carried on the same way.
+        // And the person's answer to one that parked to ask them (STANDDOWN2), where the driver could not
+        // go on with that record itself: it ended the park `completed` with their words kept, saying why
+        // (D131 §2), and the quest it held is carried on the same way. A park still parked holds its quest.
         // And a stop that was not the person's (D104): the sweep found nothing running it, or the driver
         // shut down under it.
         // And the person's own stop, of a take a session here made (SESSUX1b2): the driver holds the quest
@@ -490,7 +603,10 @@ public sealed class SessionLedger(
                     Session: null);
             }
 
-            var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, inside, interrupted, limit)
+            // A session that parks again asks anew (ANSWER1b, D131 §5): the answer it went on with is not this park's.
+            var moved = await sessions.SetStateAsync(
+                    id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
+                    clearAnswer: target == SessionState.AwaitingPerson)
                 .ConfigureAwait(false);
 
             return new SessionAdvanceOutcome(

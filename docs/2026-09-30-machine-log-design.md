@@ -164,7 +164,9 @@ tests (`SessionLogTests`, `AttentionTests`, `SetupQuestsTests`):
   writer, since its first look is a baseline that would drop a park made just before a restart, and the headless
   `--once` and `--until-idle` run none. Both read the one predicate, and their tests hold the same rows. `kind`,
   `repository` and `workspace` are what the session's open said; each is null for a session whose open this process
-  never saw. A park is no ending: the record ends, and `session.ended` is written, when the person answers.
+  never saw. A park is no ending, and neither is the answer that keeps it (ANSWER1b, D131): the record ends, and
+  `session.ended` is written, when its resumed conversation does, or when the driver ends the park to carry the
+  answer on in a new session.
 - **`session.started`'s `workspace`** is the record's, the circle its repository is wired into on this machine
   (D48). **`setup` is true** only for a driven session whose quest is a set-up (`SetupQuests`: a title the set-up
   press composes, D117 §6.2 and D124 §2.1–§2.2, with or without its day), and absent on every other line. The
