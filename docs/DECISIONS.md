@@ -10082,7 +10082,10 @@ holding for the turn's end; the marker read only as the agent's own `true`; word
 a refused word costing only itself), `DrivenInboxTests` (told at once with the reach, the early word told when the door
 is known; on the next-step door each word sent at once and the inbox closing only after every answer; *send now* stopping
 nothing there; close handing back nothing sent) and `SessionEventsTests` (kept waiting, then taken, found once). The
-hand-off, the inbox's sending and the run's waiting were each seen failing with their line removed.
-`DrivenSessionInputTests`' process test now asserts the words kept twice; it is the parent's to run. Not covered: no
-driven session on the install has heard a word mid-turn yet (only the evidence's session, outside Daoris); a fold that
-waits for a long tool is read, not seen.
+hand-off, the inbox's sending and the run's waiting were each seen failing with their line removed. In the page,
+`conversation.test.ts` (the words held where they were said, then the ask of the turn that took them; never reached once
+the session ended) and `ConversationView.test.tsx` (each door's sentence, and *it ended before reading this*), the held
+branch seen failing with its line removed. `DrivenSessionInputTests`' process test now asserts the words kept twice; it
+is the parent's to run. Not covered: no driven session on the install has heard a word mid-turn yet (only the
+evidence's session, outside Daoris); a fold that waits for a long tool is read, not seen; nobody has looked at the held
+words on the window; the steer box still says nothing of its door, and *send now* stays disabled on the next-step door.
