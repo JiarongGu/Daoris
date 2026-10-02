@@ -61,13 +61,14 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `turn.ended` | desktop | session, stopReason, turnMs, input, cacheRead, cacheWrite, output, calls, used, size | how long a turn takes, how it ends, and what it consumed: its tokens as METER1 splits them, its tool calls, and its context against the window (WSSETUP11) |
 | `session.parked` | desktop, driver | session, kind, repository, workspace | a session that stopped to ask the person (D83): the owner's complaint, counted per week by workspace (WSSETUP11, D124 §7.3) |
 | `session.ended` | desktop | session, state, seconds | how it finished |
+| `session.answered` | desktop, driver | session, adapter, resumed, why | an answer to a parked session taken up (D131 §2): whether its own conversation resumed, and where not, why by a code (`account`, `adapter`, `unkept`, `tree`, `unable`, `offered`, `gone`, `refused`, `ended`), never the answer |
 | `registry.followed` | desktop, driver | repository, outcome | a registration followed from a repository's line, by a word from a fixed list (`registered`, `unchanged`, `declares-nothing`, `not-set-up`, `no-line`, `unreadable`, `lanes-unreadable`, `worktree`, `no-checkout`, `not-on-registry`, `refused`), never the sentence its row says: whether set-ups reach the registry once they land (WSSETUP5, D124 §3.4) |
 | `setup.planned` | desktop, driver | workspace, repositories, atOnce, pilot | a workspace plan written by its press: how many it set out to set up, at what pace (WSSETUP6, D124 §4.1) |
 | `setup.published` / `setup.skipped` | desktop, driver | workspace, repository, quest; or refusal, by the press's code | each set-up a plan asked, and each repository its press refused at its turn, by a word, never the sentence |
 | `setup.paused` / `setup.resumed` / `setup.stopped` | desktop, driver | workspace; `by` when paused (`person`, `pilot`, `tool`) | how a plan was steered: whether the pilot's pause is taken up, and how often a plan is stopped |
 | `account.limited` | desktop, driver | session, adapter, account, hit, window, until, stated, assumedZone, turn, used | an account's limit met (TOOL4d, D125 §5.4): which account, which window, until when, said or defaulted, at which turn and context |
 | `starts.waiting` | desktop, driver | adapter, account, workspace, until, quests | every account a start may use was cooling, written once per wait |
-| `account.rotated` | desktop, driver | session, adapter, from, to, carries, why, scope, said | a start that ran on another account of its scope's list than the one the scope begins at (TOOL4f, D125 §5.4; TOOL6b, D130 §13 as §16 amends it); `carries` is the cut-off session a carry-on carries on, or null; `why` the step that moved it, `scope` the workspace whose list it was, `said` whether any account had said what it has left |
+| `account.rotated` | desktop, driver | session, adapter, from, to, carries, why, scope, said, fromSaid, toSaid | a start that ran on another account of its scope's list than the one the scope begins at (TOOL4f, D125 §5.4; TOOL6b, D130 §13 as §16 amends it); `carries` is the cut-off session a carry-on carries on, or null; `why` the step that moved it, `scope` the workspace whose list it was, `said` whether any account had said what it has left, `fromSaid` and `toSaid` what each of the two said, by Daoris's word (TOOL6c) |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
 | `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
 | `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
@@ -218,6 +219,14 @@ step that moved it, by its word: `kept`, `cooling`, `refused`, `signedOut`, or t
 or where it is not an identifier. `said` is false while no door carries the agent's word about its windows, which today
 none does. A start the goal chose on the account its scope begins at writes no line; its record's first line names the
 step.
+
+**As built (TOOL6c): `account.rotated`'s `near`, `pace`, `said`, `fromSaid` and `toSaid`** (D130's TOOL6c note), measured
+against `AccountRotationTests`, `AccountRotationGoalTests` and, in the `Process` half, `AccountReadingTickTests`: `why` is
+also `near`, an account its agent said is near was passed, or `pace`. `said` is true where any account of the list had a
+reading in `windows.json` still before its reset. `fromSaid` and `toSaid` are what the account the start was moved off and
+the one it ran on said, by Daoris's word only: `refused`, `near` (by the agent's word, its credits, or a window at or over
+the scope's *near*), `clear`, or null where it said nothing; never a number, a reset or the agent's own words. No
+`account.near` line is written: near by number is each scope's own threshold.
 
 **As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
 (`HookSetLogTests`, `PluginHealthTests`):

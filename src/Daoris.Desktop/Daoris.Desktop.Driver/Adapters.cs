@@ -715,6 +715,19 @@ public interface ISessionAdapter
     /// null where the harness has none, and a turn there cannot be stopped short of ending the session.
     /// </summary>
     string? FrameInterrupt() => null;
+
+    /// <summary>
+    /// Whether this adapter's door can resume a harness conversation an answer continues (ANSWER1a, D131 §1). The protocol
+    /// door's agent says on its own wire whether it resumes, so it is asked there; a native door resumes only where its
+    /// adapter knows the harness's own resume (<see cref="PrepareResume"/>).
+    /// </summary>
+    bool Resumes => Wire == SessionWire.Acp;
+
+    /// <summary>
+    /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation it kept, with
+    /// <paramref name="prompt"/> as its next turn, under the same posture a start has. Null where this adapter knows none.
+    /// </summary>
+    ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) => null;
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
@@ -869,7 +882,9 @@ public sealed class StubAdapter : ISessionAdapter
         // And its words for an account's limit (TOOL4a, D125 §1.3 rule 4), mirrored for the same reason.
         Limits: ClaudeLimits.Words,
         // And its weekly reset fixed per account (TOOL6b), mirrored so a rehearsal can gate a week carried on.
-        WeekFixed: true);
+        WeekFixed: true,
+        // And its words for an account's windows (TOOL6c), mirrored so a frame replayed on its doors is read as Claude Code's.
+        Windows: ClaudeWindows.Words);
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -1270,6 +1285,24 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 
     public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
 
+    /// <summary>The harness's own resume (ANSWER1a, D131 §1): <c>--resume &lt;id&gt;</c>, the id its <c>init</c> line named.</summary>
+    public bool Resumes => true;
+
+    /// <summary>
+    /// <c>claude -p &lt;answer&gt; --resume &lt;id&gt;</c>, with the posture and the structured output a start has. The answer is
+    /// the conversation's next turn as it is: the conversation already holds the target, so it is not sent again.
+    /// 🔴 The flag is the maker's documented one, not yet run on this machine by a driven session (design §6).
+    /// </summary>
+    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt)
+    {
+        var resolved = Resolve(command);
+        var arguments = resolved.Skip(1)
+            .Concat(["-p", prompt, "--resume", conversation, "--permission-mode", "acceptEdits"])
+            .Concat(StreamJsonOut);
+
+        return Spawning.InRoot(target, resolved[0], arguments);
+    }
+
     /// <summary>
     /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
     /// per line, in the probe the evidence records.
@@ -1401,7 +1434,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         Limits: ClaudeLimits.Words,
         // Its maker fixes an account's weekly reset at one time each week (TOOL6b, D130 §0.3 C1: "The weekly limit resets
         // at a fixed time each week that is assigned to your account"), so a weekly reset a limit told is carried on.
-        WeekFixed: true);
+        WeekFixed: true,
+        // What it says about an account's windows (TOOL6c, limit-signals evidence §1): each window's use and reset on every
+        // `rate_limit_event`, which its ACP door forwards as `usage_update._meta["_claude/rateLimit"]` and reads as its owner's.
+        Windows: ClaudeWindows.Words);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

@@ -155,13 +155,25 @@ public sealed record AcpOutcome(
 /// <param name="message">The refusal as a sentence: the error's message, then the data's, where it adds one.</param>
 /// <param name="said">The data's <c>message</c>, or null where it carried none.</param>
 /// <param name="errorKind">The data's <c>errorKind</c>, or null where it carried none.</param>
-public sealed class AcpRefusal(string message, string? said = null, string? errorKind = null) : DriverException(message)
+/// <param name="code">The error's JSON-RPC <c>code</c>, or null where it gave none (ANSWER1a).</param>
+/// <param name="words">The agent's own sentence, without this client's preface (ANSWER1a); the message where unsaid.</param>
+public sealed class AcpRefusal(
+    string message, string? said = null, string? errorKind = null, int? code = null, string? words = null) : DriverException(message)
 {
     /// <summary>What the error's <c>data.message</c> said, or null where it said nothing.</summary>
     public string? Said => said;
 
     /// <summary>The error's <c>data.errorKind</c>, or null where it carried none.</summary>
     public string? ErrorKind => errorKind;
+
+    /// <summary>
+    /// The error's <c>code</c> (ANSWER1a): a resume refused <c>resource_not_found</c> is a conversation the agent no longer
+    /// has, any other a refusal. Null where the error gave none.
+    /// </summary>
+    public int? Code => code;
+
+    /// <summary>The agent's own sentence, as the error and its data said it, without this client's preface.</summary>
+    public string Words => words ?? message;
 
     /// <summary>
     /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape (REV3): a message that is not
@@ -174,7 +186,11 @@ public sealed class AcpRefusal(string message, string? said = null, string? erro
         var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
         var said = Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
         var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
-        return new AcpRefusal($"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"));
+        var code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var c)
+                   && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
+            ? number
+            : (int?)null;
+        return new AcpRefusal($"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"), code, sentence);
     }
 
     private static string? Text(JsonElement element, string name) =>
@@ -240,7 +256,11 @@ public sealed class AcpRefusal(string message, string? said = null, string? erro
 /// them, as an answer to a change, and as the agent's own <c>config_option_update</c>. Null where nobody
 /// asks.
 /// </param>
-public sealed class AcpSession(
+/// <param name="onConversation">
+/// Told the id <c>session/new</c>'s answer names, the moment it arrives (ANSWER1a, D131 §1): what an answer
+/// to a park resumes, kept before the first turn can fail or park. Null where nobody keeps it.
+/// </param>
+public sealed partial class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
     Action<string> onLine,
@@ -250,7 +270,8 @@ public sealed class AcpSession(
     Action<SessionEvent>? onEvent = null,
     TimeSpan? quiet = null,
     SessionStreams? streams = null,
-    Action<IReadOnlyList<AcpConfigOption>>? onOptions = null)
+    Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
+    Action<string>? onConversation = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -285,6 +306,13 @@ public sealed class AcpSession(
     {
         get { lock (_measured) return _usage; }
     }
+
+    /// <summary>
+    /// Told what a <c>usage_update</c> says about the account's windows (TOOL6c, D130 §5.2): its
+    /// <c>_meta["_claude/rateLimit"]</c>, which Claude Code's adapter fills with the frame's <c>rate_limit_info</c> unchanged
+    /// (limit-signals evidence §3), for the agent's table to read. Raised on the reader's thread; a listener's failure is its own.
+    /// </summary>
+    public event Action<JsonElement>? LimitsSaid;
 
     /// <summary>The config options as the agent last said them (AGT6b), and the lock that guards them.</summary>
     private readonly object _optionsGate = new();
@@ -358,13 +386,19 @@ public sealed class AcpSession(
     /// once. Null for a session nobody may tell anything — an intake (INT4h).
     /// </param>
     /// <param name="asked">Told each held word as it is handed over, so the record keeps it as the person's.</param>
+    /// <param name="resume">
+    /// The harness conversation an answer continues (ANSWER1a, D131 §1), resumed rather than a new session opened, with
+    /// <paramref name="prompt"/> — the answer — as its next turn. Null opens a new session, as every start does.
+    /// </param>
+    /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
-        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null)
+        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null)
     {
         try
         {
-            await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+            if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+            else await ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
             inbox?.Attach(CancelTurnAsync);
             var stopReason = await PromptAsync(prompt, ct).ConfigureAwait(false);
             // The person's words, one prompt each, in the order said — the session keeps its context,
@@ -401,11 +435,48 @@ public sealed class AcpSession(
     /// </remarks>
     public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
     {
+        await HandshakeAsync(ct).ConfigureAwait(false);
+        var offered = Offer(servers);
+
+        // The rules composed for this session ride here when the adapter takes them (PERM1) —
+        // and a session given none sends exactly what it sent before they existed.
+        var created = await RequestAsync(
+            "session/new",
+            meta is null
+                ? new { cwd, mcpServers = offered }
+                : (object)new { cwd, mcpServers = offered, _meta = meta },
+            ct).ConfigureAwait(false);
+        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
+        // names this client's own failures, and a conversation waited for a session that never came.
+        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
+                     && id.ValueKind == JsonValueKind.String
+            ? id.GetString()
+            : null;
+        if (string.IsNullOrEmpty(_sessionId))
+        {
+            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
+        }
+
+        // What an answer to a park resumes (ANSWER1a), told before the first turn can fail or park.
+        Told(_sessionId);
+
+        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
+        // kept as it said them, so a person may be offered the ones that are theirs.
+        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
+            ? AcpConfigOption.Read(offeredOptions)
+            : []);
+
+        await SetPostureAsync(created, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The reader started and the handshake answered: what every session asks before it is one. The agent's answer.</summary>
+    private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
+    {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
         if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet);
         _pump = PumpAsync(_pumpStop.Token);
 
-        await RequestAsync(
+        return await RequestAsync(
             "initialize",
             new
             {
@@ -414,7 +485,11 @@ public sealed class AcpSession(
                 clientInfo = new { name = "daoris-driver", version = "0" },
             },
             ct).ConfigureAwait(false);
+    }
 
+    /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
+    private static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
+    {
         // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
         // close its quest over its own connector, and the pipe door only manages that because the
         // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
@@ -438,33 +513,7 @@ public sealed class AcpSession(
                 .Select(pair => new { name = pair.Key, value = pair.Value })
                 .ToArray(),
         }).ToArray();
-
-        // The rules composed for this session ride here when the adapter takes them (PERM1) —
-        // and a session given none sends exactly what it sent before they existed.
-        var created = await RequestAsync(
-            "session/new",
-            meta is null
-                ? new { cwd, mcpServers = offered }
-                : (object)new { cwd, mcpServers = offered, _meta = meta },
-            ct).ConfigureAwait(false);
-        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
-        // names this client's own failures, and a conversation waited for a session that never came.
-        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
-                     && id.ValueKind == JsonValueKind.String
-            ? id.GetString()
-            : null;
-        if (string.IsNullOrEmpty(_sessionId))
-        {
-            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
-        }
-
-        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
-        // kept as it said them, so a person may be offered the ones that are theirs.
-        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
-            ? AcpConfigOption.Read(offeredOptions)
-            : []);
-
-        await SetPostureAsync(created, ct).ConfigureAwait(false);
+        return offered;
     }
 
     /// <summary>What this client asks of the agent at <c>initialize</c>.</summary>
@@ -726,6 +775,9 @@ public sealed class AcpSession(
         if (name == "session/update" && frame.TryGetProperty("params", out var p)
             && p.TryGetProperty("update", out var update))
         {
+            // A load's replay of the history (ANSWER1a): the record already holds it, so it is not kept a second time.
+            if (Replayed(p)) return;
+
             Interlocked.Increment(ref _updates);
 
             // 🔴 Routed by whose it is (CONSOLE2): a subagent speaks under its own session id, and a
@@ -948,7 +1000,8 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// Keep the largest context reading this session reported (TOOL3/D57 §4).
+    /// Keep the largest context reading this session reported (TOOL3/D57 §4), and tell <see cref="LimitsSaid"/> what the
+    /// same update says about the account's windows (TOOL6c).
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>The high-water mark, not the last reading.</b> Context drops when a session
@@ -961,12 +1014,23 @@ public sealed class AcpSession(
     /// </remarks>
     private void Measure(JsonElement update)
     {
-        if (Kind(update) != "usage_update"
-            || Number(update, "used") is not { } used
-            || Number(update, "size") is not { } size)
+        if (Kind(update) != "usage_update") return;
+
+        // The account's windows ride beside the context, whether or not the context reads (TOOL6c): an object, or nothing.
+        if (update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+            && meta.TryGetProperty("_claude/rateLimit", out var limits) && limits.ValueKind == JsonValueKind.Object)
         {
-            return;
+            try
+            {
+                LimitsSaid?.Invoke(limits.Clone());
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                onLine($"[what the session said about its account's windows could not be kept: {error.Message}]");
+            }
         }
+
+        if (Number(update, "used") is not { } used || Number(update, "size") is not { } size) return;
 
         lock (_measured)
         {

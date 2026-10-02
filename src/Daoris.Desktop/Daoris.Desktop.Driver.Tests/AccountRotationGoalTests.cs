@@ -447,8 +447,8 @@ public sealed class AccountRotationGoalTests : IDisposable
 
         // Only a start moved off where its scope begins is a rotation in the log, with the step that moved it.
         Assert.Equal(2, lines.Count);
-        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said"], lines[0].Data.Select(field => field.Key));
-        Assert.Equal(new object?[] { "s1", "claude-code-acp", "account-1", "account-3", null, "fewest", "work", false }, lines[0].Data.Select(field => field.Value));
+        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said", "fromSaid", "toSaid"], lines[0].Data.Select(field => field.Key));
+        Assert.Equal(new object?[] { "s1", "claude-code-acp", "account-1", "account-3", null, "fewest", "work", false, null, null }, lines[0].Data.Select(field => field.Value));
         Assert.Equal("s0", lines[1].Data.Single(field => field.Key == "carries").Value);
     }
 
@@ -484,6 +484,158 @@ public sealed class AccountRotationGoalTests : IDisposable
             + "fewest of Daoris's sessions",
             cooled.Choice?.Clause);
         Assert.Equal("account-1", cooled.Profile);
+    }
+
+    // ——— What the agents said (TOOL6c, D130 §5.2, §6, §16.3 steps 2 and 5, §16.4): read from `windows.json` as each door
+    // kept it, a floor as of when it was said, gone at its reset.
+
+    /// <summary>What an account's agent said, kept as a door keeps it: the session window, then the week where given.</summary>
+    private void Said(string account, double session, double? weekly = null, double weekHours = 96, string standing = "clear", TimeSpan? ago = null)
+    {
+        IReadOnlyList<WindowReading> readings = weekly is { } week
+            ? [new WindowReading("session", session, _now.AddHours(2), standing), new WindowReading("weekly", week, _now.AddHours(weekHours))]
+            : [new WindowReading("session", session, _now.AddHours(2), standing)];
+        AccountWindows.Said(_home, "fake", account, readings, _now - (ago ?? TimeSpan.FromMinutes(20)), "s0");
+    }
+
+    [Fact]
+    public async Task An_account_its_agent_said_is_near_is_passed_and_the_start_says_what_each_account_said()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
+        Said("account-1", 0.95, weekly: 0.30);
+        using var ledger = new StandInLedger();
+        using var service = ledger.Client();
+        var lines = new List<AccountLine>();
+        service.AccountLined += lines.Add;
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+
+        var selection = await Present().SelectAsync("fake", Config, null, null);
+        RotatedOpening.Say(service, events, "s1", "fake", selection, carried: null);
+
+        Assert.Equal("account-2", selection.Profile);
+        Assert.Equal(
+            new AccountChoice(WalkStep.Near, "`account-1` has used 95% of its session limit, at or over the 90% that counts as near"),
+            selection.Choice);
+        Assert.Equal(
+            "opened on `account-2`: `account-1` has used 95% of its session limit, at or over the 90% that counts as near. What each "
+            + "account said: `account-1` 20 min ago, 95% of its session limit and 30% of its weekly limit used, near at 90%; "
+            + "`account-2` nothing yet; `account-3` nothing yet.",
+            Assert.Single(events.After("s1", 0).Events).Text);
+        var rotated = Assert.Single(lines);
+        Assert.Equal(
+            new object?[] { "s1", "fake", "account-1", "account-2", null, "near", null, true, "near", null },
+            rotated.Data.Select(field => field.Value));
+    }
+
+    [Fact]
+    public async Task Near_by_the_agent_s_word_by_credits_and_at_the_scope_s_own_near()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Near: 85)));
+
+        Said("account-1", 0.88);
+        Assert.Equal(
+            ("account-2", "`account-1` has used 88% of its session limit, at or over the 85% that counts as near"),
+            await Ran());
+
+        Said("account-1", 0.10, standing: "near");
+        Assert.Equal(("account-2", "`account-1` said it is near its session limit"), await Ran());
+
+        AccountWindows.Said(_home, "fake", "account-1", [new WindowReading("session", 0.10, _now.AddHours(2), "clear", Credits: true)], _now, "s0");
+        Assert.Equal(("account-2", "`account-1` said it is drawing on usage credits"), await Ran());
+
+        async Task<(string?, string?)> Ran()
+        {
+            var selection = await Present().SelectAsync("fake", Config, null, null);
+            return (selection.Profile, selection.Choice?.Clause);
+        }
+    }
+
+    [Fact]
+    public async Task Near_is_a_pass_never_a_wait_and_the_switch_off_passes_nothing()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
+        Said("account-1", 0.95);
+        Said("account-2", 0.97);
+
+        var both = await Present().SelectAsync("fake", Config, null, null);
+        Assert.True(both.Allowed, both.Refusal);
+        Assert.Equal("account-1", both.Profile);
+
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Early: false)));
+        AccountWindows.Said(_home, "fake", "account-2", [new WindowReading("session", 0.1, _now.AddHours(2), "clear")], _now, "s0");
+        Assert.Equal("account-1", (await Present().SelectAsync("fake", Config, null, null)).Profile);
+    }
+
+    [Fact]
+    public async Task Under_order_a_near_default_is_passed_and_says_so_with_what_each_account_said()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]).WithUse("fake", new UseChange(Use: "order")));
+        Said("account-1", 0.95);
+
+        var selection = await Present().SelectAsync("fake", Config, null, null);
+
+        Assert.Equal(("account-2", (AccountChoice?)null), (selection.Profile, selection.Choice));
+        Assert.Equal(
+            ("account-1", WalkStep.Near, "`account-1` has used 95% of its session limit, at or over the 90% that counts as near"),
+            (selection.Rotated!.From, selection.Rotated.Step, selection.Rotated.Why));
+        Assert.Equal("What each account said: `account-1` 20 min ago, 95% of its session limit used, near at 90%; `account-2` nothing yet.", selection.SaidLine);
+    }
+
+    [Fact]
+    public async Task The_account_furthest_behind_its_week_s_pace_goes_first_and_one_that_said_nothing_sits_between()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
+        // Four days to each reset: three sevenths of the week are gone.
+        Said("account-1", 0.20, weekly: 0.80);
+        Said("account-3", 0.20, weekly: 0.10);
+        var roster = Present();
+
+        var first = await roster.SelectAsync("fake", Config, null, null);
+        var second = await roster.SelectAsync("fake", Config, null, null);
+
+        Assert.Equal("account-3", first.Profile);
+        Assert.Equal(
+            new AccountChoice(WalkStep.Pace, "it is furthest behind its week's pace, 10% of its weekly limit used with 43% of its week gone"),
+            first.Choice);
+        // The second start: account-3 runs one now; of the two that run none, the one that said nothing ranks ahead of the one
+        // ahead of its pace, and says why by that account's word.
+        Assert.Equal("account-2", second.Profile);
+        Assert.Equal(
+            new AccountChoice(WalkStep.Pace, "`account-1` is ahead of its week's pace, 80% of its weekly limit used with 43% of its week gone"),
+            second.Choice);
+    }
+
+    [Fact]
+    public async Task A_week_the_agent_said_resets_within_the_day_goes_first_its_reset_read_from_the_reading()
+    {
+        Accounts("account-1", "account-2", "account-3");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2", "account-3"]));
+        Said("account-3", 0.10, weekly: 0.50, weekHours: 20);
+
+        var selection = await Present().SelectAsync("fake", Config, null, null);
+
+        Assert.Equal("account-3", selection.Profile);
+        Assert.Equal(new AccountChoice(WalkStep.Lapsing, $"its week resets first, at Oct 2, 10:00 ({Zone.Id})"), selection.Choice);
+    }
+
+    [Fact]
+    public async Task A_reading_gone_at_its_reset_leaves_the_account_unknown_and_the_start_says_none_has_said()
+    {
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
+        Said("account-1", 0.95);
+
+        Assert.Equal("account-2", (await Present().SelectAsync("fake", Config, null, null)).Profile);
+
+        _now = _now.AddHours(2);
+        var after = await Present().SelectAsync("fake", Config, null, null);
+        Assert.Equal(("account-1", (string?)null), (after.Profile, after.SaidLine));
+        Assert.Equal(WalkStep.List, after.Choice!.Step);
     }
 
     private HarnessRoster Present() => Roster();
