@@ -8657,8 +8657,13 @@ wording and asks a connected search too, `skills-workflow` sends a session to it
 
 ## D129 — Knowledge is found from files first: D128's index is the floor, searched in several wordings, with recall by meaning pulled where connected and pushed only where Daoris writes the prompt (2026-10-02)
 
-**Pending KNOW3's measurement**: this decision takes the bench's numbers when they land
-(`docs/2026-10-02-knowledge-bench-results.md`), and §4.7 of the review says what each would confirm or refute.
+**Measured (KNOW3, `docs/2026-10-02-knowledge-bench-results.md` §3, §6).** 72 real headless sessions over 73
+documents, one harness and one model: every design found every document, the control too, so the designs differ in
+cost, not recall. The region's table took the fewest calls and cost 9,447 tokens on every request (about 21,800 at
+169). D128's index cost one more call, and every session read it whole rather than searching it. A pushed keyword top
+5 was cheapest per hit when its ranking was right, which was 5 of 12 times. That confirms the index leaving the region
+and recall as an accelerator over a floor that finds without it. It leaves two things open, for KNOW3a: whether a
+54 KB index is still read whole, and whether a ranker by meaning lifts the push's 5 of 12.
 
 **Decision (KNOW2, the owner's question whether D128's index is the best knowledge design, and whether Lyntai's file
 storage is better).** The contract is `docs/2026-10-02-knowledge-design-review.md`: what each agent does today (§1),
