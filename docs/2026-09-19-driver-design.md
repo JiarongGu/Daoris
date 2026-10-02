@@ -134,6 +134,10 @@ word is on its way, and `CANCEL_TURN` stops nothing there. Every other agent kee
 words the moment they are said, with `reaches`, and again where the session took them, under one id
 (`docs/2026-10-03-steer-evidence.md`).
 
+*Amended by D137 (MSG1, 2026-10-03).* An ended state has one way out: to `working`, with the person's words waiting, on
+this machine's record, when its harness conversation resumes with them. A native driven session holds words too, and
+resumes its conversation with them before it concludes (`docs/2026-10-03-session-messages-design.md` §2).
+
 **Session records live in the service, beside the quests.** A `sessions` table in the same store
 (`~/.daoris/knowledge.db`), for the same reason quests do: every client benefits — the platform renders
 them, the record survives a driver restart, and part 3 later syncs records where it could never sync

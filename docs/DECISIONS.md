@@ -3997,6 +3997,10 @@ words are a prompt sent the moment they are said, and reach it at its next step;
 everywhere else. The words are recorded the moment they are said, with when they reach the session, and again where it
 took them, not only when they are handed over. *Send now* stops nothing on the next-step door, where nothing is held.
 
+*Amended by D137 (MSG1, 2026-10-03): a session never concludes while words are held, on the native door too, which
+resumes its conversation with them; a word said as a session winds up waits for its record to reopen instead of being
+refused.*
+
 ## D91 — What depends on what is declared by the repository that depends, as `domain.uses` (2026-09-30)
 
 **Decision (MAP4e, amending D34).** A repository's `domain` in its `daoris.json` may carry `uses`: the
@@ -9437,6 +9441,10 @@ both languages are the parent's to look at. Whether an answer through the window
 real agent is ANSWER1d's canary. The map's *parked* mark and Ask Daoris's count of sessions waiting on you still read
 the record's state, so for up to one look they count an answered park.
 
+*Amended by D137 (MSG1, 2026-10-03): the resume reaches every session of this machine the person writes to, not only an
+answered park. A finished record reopens on the person's words alone, which this entry rejected; a second answer joins
+the first; a resume asks for its record's own account and waits out a cool-off; and `elsewhere` joins the codes.*
+
 ## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
 
 **Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
@@ -10089,3 +10097,81 @@ branch seen failing with its line removed. `DrivenSessionInputTests`' process te
 is the parent's to run. Not covered: no driven session on the install has heard a word mid-turn yet (only the
 evidence's session, outside Daoris); a fold that waits for a long tool is read, not seen; nobody has looked at the held
 words on the window; the steer box still says nothing of its door, and *send now* stays disabled on the next-step door.
+
+*Amended by D137 (MSG1, 2026-10-03): the reaches gain `resume`, for a parked or ended session whose record reopens; a
+chat on the next-step door takes words at once; and `codex-acp`'s next-step door is `_session/steering`, which Codex
+drains at the next step as read, built after one measured turn.*
+
+## D137 — A person's words reach a session whatever its door and state: at its next step, at its turn's end, or by reopening its record and resuming its own conversation; Daoris resumes only by the id it kept (2026-10-03)
+
+**Decision (MSG1).** The owner, 2026-10-03: *"we do need a way to send messages between runs so it does the resume, so
+that closes the gap for codex and it does look like the same session, and this should be properly designed:
+native/Daoris-managed session messages"*. Read from the code at `14338bff`: a running driven session on the protocol
+door hears words (D90, D136), a native one refuses them, a session winding up refuses them, a parked one takes them as
+its answer (D131), and an ended one takes nothing. The contract is `docs/2026-10-03-session-messages-design.md`; its §1
+reads what `codex-acp` 2.1.1, `codex exec` at `rust-v0.159.3` and Claude Code's native door offer.
+
+1. **Three reaches, one record.** Words are said to a session and reach it at its `next-step`, at its `turn-end`, or
+   on `resume`. The record shows them the moment they are said with their reach, and again under the same id where the
+   session took them, or names where a fallback sent them (design §2, §3.1).
+2. **While a turn runs**, at the next step where the agent declares it takes words then (D136), and at the turn's end
+   everywhere else. **A session never concludes while words are held**: the protocol door prompts them in the same
+   process; the native door resumes its conversation with them under the same record. A word said as a session winds
+   up waits for the reopen instead of being refused. A chat on a next-step door takes words at once (design §2.1).
+3. **Between runs, the record reopens and the conversation resumes.** Words to a parked or ended session of this
+   machine resume its harness conversation, every held word its next prompt, by D131's judgement and doors: a parked,
+   completed, declined, failed, cut-off or stopped driven session, and an ended chat. Never a teammate's record, an
+   intake or a stood-down session. A stop's hold is released and a failure forgiven, as *Try again* does (design §2.2).
+4. **Where it cannot resume**, a taken quest is carried on in a new session handed the words (D80, D131 §2); an open
+   one starts handed them; a closed quest or a chat offers *Start a conversation with these words*, the person's press.
+   A pause, a repository's hold, the cap and an account cooling hold the words, named; they never refuse them.
+5. **The ledger gains one move out of an ended state**: to `working`, with the person's words waiting, on this
+   machine's record. `stood-down` never moves. A reopened run on a closed quest ends as its process does, its quest
+   unmoved (design §2.3).
+6. **The words wait in `said`**, a list on the record, local to this machine, which `answer` becomes: a second word
+   joins the first. On the ask they are kept once taken, as the new kind `reopened` (design §2.4).
+7. **A resume asks for its record's own account.** A cool-off holds the words until its reset, with *Go on in a new
+   session* offered; an account that can no longer run there carries on at once, saying `account`.
+8. **One record per harness conversation; Daoris resumes only by the id it kept.** A chat keeps its id too. Never
+   `--continue`, `--last` or a name: `codex exec resume` starts a new thread for a name it cannot find. A person's own
+   terminal conversation comes into Daoris only as a fork, held until asked. What is never claimed is design §4.4.
+9. **Codex.** `codex-acp` resumes (`session/resume` is `thread/resume` with no history; `session/load` replays), names
+   the conversation by Codex's thread id, and refuses a thread another Codex client holds with
+   `data.reason: "thread_active_writer"`, which Daoris reads as a new code, `elsewhere`. Its next-step door is
+   `_session/steering`, which Codex drains at the next step as read, built only after one measured turn. A native Codex
+   door would resume with `codex exec resume <thread-uuid>`, the id from `thread.started`, its words waiting for the
+   run's end.
+10. **Both doors.** The screen's box on every session that takes words, and a line saying why where none does; *Send
+    back…* opens it; both catalogues, *resume* staying the pause's word. The terminal's `daoris-driver sessions say
+    <id> "…"` through D126's request folder. Ask Daoris is exempt: the words are the person's.
+
+**Why.** A session that finished is the one that knows what it did, and Claude Code's own terminal lets a person write
+to a conversation after its turn, the next day, and it goes on. D131 built the resume for one entry, an answered park;
+every other entry still starts a fresh session or refuses, so the person rebuilds through a quest or a new chat what
+the conversation holds, and sees two rows for one piece of work. One record per harness conversation (D131 §3) means a
+resumed conversation is the same record, so it must reopen: the cost is one ledger move, its strikes and its travel,
+stated where they bind. The doors that cannot hear words during a turn (`codex-acp` today, the native door) hear them
+between runs with the same record, which is the gap the owner named for Codex.
+
+**Rejected.**
+- **A new record continuing the old conversation, linked to it**: D131's rejected shape, every reader learning a fold.
+- **Refusing words to an ended session**, which is today, and **a fresh session for every message** (D90).
+- **`--continue`, `--last` or a name** to find a conversation, and **reading the account's home** for one (D66 §3).
+- **Adopting a terminal conversation in place**: two clients writing one conversation.
+- **A second `session/prompt` to `codex-acp`**, and **steering it before a turn is measured**: a steer that lands after
+  the turn ended starts a turn of its own.
+- **Replacing a first answer with a second** (ANSWER1b as built), and **reopening a done quest from its session's
+  box**, which is DRIFT1e's.
+
+**This amends:** D131 (reopening a finished record, for the person's words alone; a second answer joins; a resume's
+account; `elsewhere`), D90 and D136 (no conclusion while words are held, on the native door too; no refusal while
+winding up; chats), D76's CONV4a (a chat's words on a next-step door, and as record events), D46 §4 (one way out of an
+ended state), D83, D80, D104 and D126 §3.4 (words to a stopped or failed session reopen it), D133 §1 (`reopened`), and
+D94 §4 (`session.reopened`, `message.sent`'s `reach`). INT4i, D52, D47 §6 and D132 stand. The rows are design §8,
+MSG1a–MSG1k.
+
+**What the checks do not cover.** Documents only, and nothing is built. The harness findings were read from shipped
+packages, the maker's source and one binary's help at the versions in design §1; no turn was run, Codex is not
+installed on this machine, and Daoris pins no Codex version. Whether Codex's steer ever cuts a step short, whether Codex
+locks a thread across processes, and whether Claude Code notices a second writer were not read. `verify` checks this
+entry's place and the design's links, and none of their words.
