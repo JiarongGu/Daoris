@@ -58,6 +58,14 @@ public static class DriverCommand
           answer <session> ["…"]
               answer a session that parked to ask you; the same session goes on with your words at the
               driver's next look.
+          sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
+              this machine's sessions by what they need: waiting on you first, then to review, working,
+              resumes later and ended.
+          sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
+              stop a live session (its quest is then held here until `daoris driver retry`), or finish or
+              decline one that waits on you.
+          sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
+              take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
           trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | sync [--repository <name>] [--all] [--yes]]

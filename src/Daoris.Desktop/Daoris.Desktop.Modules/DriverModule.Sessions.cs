@@ -21,16 +21,12 @@ public sealed partial class DriverModule
         // it ends: pressing it used to change nothing and say nothing (2026-09-25).
         // Which of the three it was is part of the answer: the page says it, and an orphan's
         // ending is not the person's — its record says nothing ran it.
-        var stopped = _loop.Processes.Stop(id);
-        var orphan = !stopped
-            && _loop.Service is { } service
-            && (await Orphans.EndAsync(service, _loop.Processes, only: id, ct: cancellationToken)
-                .ConfigureAwait(false)).Count > 0;
         // 🔴 And when another Daoris process on this machine runs it — a terminal's chat — this
         // host can neither stop it nor call it ended: the record still says working (REV3).
-        var elsewhere = !stopped && !orphan && _loop.Processes.AliveOnThisMachine(id);
+        // The one implementation the terminal's request is honoured by too (SESSUX1g).
+        var answer = await SessionMoves.StopAsync(_loop.Processes, _loop.Service, id, cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
-        return new { Stopped = stopped || orphan, Orphan = orphan, Elsewhere = elsewhere };
+        return new { answer.Stopped, answer.Orphan, answer.Elsewhere };
     }
 
     // The person's answer to a session parked at a checkpoint (D52 §4). It goes through the
@@ -83,10 +79,10 @@ public sealed partial class DriverModule
 
         var service = _loop.Service ?? throw NotReady();
 
-        // False is the common case, not a failure: a parked session usually has no process here.
-        _loop.Processes.Stop(id);
-        var message = await service.AdvanceAsync(
-            id, state, note ?? ByThePerson(state), ct: cancellationToken);
+        // The process first, then the record, with the person's words or the sentence that says they moved it: the one
+        // implementation the terminal's request is honoured by too (SESSUX1g). False from the stop is the common case.
+        var message = await SessionMoves.ResolveAsync(
+            session => _loop.Processes.Stop(session), service, id, state, note, cancellationToken).ConfigureAwait(false);
         _loop.Nudge();
 
         return new { Session = id, State = state, Message = message };
@@ -98,14 +94,6 @@ public sealed partial class DriverModule
 
     private const string DeclineNeedsReason =
         "Declining needs a reason: it is the part whoever reads this record can act on.";
-
-    /// <summary>What the record says when the person wrote nothing — never translated: it is data.</summary>
-    private static string ByThePerson(string state) => state switch
-    {
-        "completed" => "The person finished this at a checkpoint.",
-        "stopped" => "The person stopped this at a checkpoint.",
-        _ => "The person moved this at a checkpoint.",
-    };
 
     // What a person first said in each of these sessions (RAIL1): a conversation's identity, from
     // this machine's own record — never the session record, which travels (D47 §4).
@@ -242,6 +230,8 @@ public sealed partial class DriverModule
         var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
         var answer = marks.Archive(ids, grouped, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
         var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).ToList();
+        // SESSUX1g (D126 §7.4): counted in the machine log as the screen's, as the terminal's archive is counted as its own.
+        SessionArchive.Said(_loop.Log, answer.Outcomes.Count - kept.Count, PluginEvents.Screen);
         if (ids.Count == 1 && kept.Count == 1) throw Kept(kept[0]);
 
         return new

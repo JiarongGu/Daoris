@@ -438,6 +438,58 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// SESSUX1g (D126 §7.1): <c>daoris-driver sessions --json</c> prints this route's answer, field for field, so the screen
+    /// and the terminal cannot disagree about a session's place.
+    /// </summary>
+    [Fact]
+    public async Task The_groups_answer_has_the_terminals_fields_in_its_order()
+    {
+        using var ledger = Ledger();
+        var module = new DriverModule(Bus, await UpAsync(ledger));
+
+        var row = (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
+
+        Assert.Equal(SessionsCommand.JsonFields, row.EnumerateObject().Select(field => field.Name));
+    }
+
+    /// <summary>SESSUX1g (D126 §7.4): an archive from the screen is counted in the machine log as the screen's, with no session named.</summary>
+    [Fact]
+    public async Task An_archive_from_the_screen_is_counted_in_the_log_as_the_screens()
+    {
+        using var ledger = Ledger();
+        (DriverConfig.Empty with { Drivable = ["engine"] }).Save(DriverConfigPath);
+        var log = new MachineLog(Home, "desktop");
+        var loop = new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", log: log);
+        await loop.ComeUpAsync(new ServiceClient(ledger.Address, null));
+
+        await AnswerAsync(new DriverModule(Bus, loop), "SESSION_ARCHIVE", new { ids = new[] { "done1", "failed1", "running1" }, archived = true });
+
+        log.Dispose();
+        var line = Assert.Single(Directory.GetFiles(Path.Combine(Home, MachineLog.Folder)).SelectMany(File.ReadAllLines),
+            each => each.Contains("\"sessions.archived\"", StringComparison.Ordinal));
+        Assert.Contains("\"count\":2", line);
+        Assert.Contains("\"door\":\"screen\"", line);
+        Assert.DoesNotContain("done1", line);
+    }
+
+    /// <summary>
+    /// SESSUX1g (D126 §7.1): every loop on the home watches the requests, the desktop's as the headless host's does, with the
+    /// registry its conversations and driven sessions share and the service it comes up with.
+    /// </summary>
+    [Fact]
+    public void The_shells_loop_watches_the_requests_with_its_own_registry()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "daoris.json"))) root = root.Parent;
+        var loop = File.ReadAllText(Path.Combine(root!.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "DriverLoop.cs"));
+
+        Assert.Contains("new SessionRequestWatch(homeDirectory, Processes, () => Service)", loop);
+        Assert.True(
+            loop.IndexOf("new SessionRequestWatch(", StringComparison.Ordinal) < loop.IndexOf("HoldHomeAsync(ct)", StringComparison.Ordinal),
+            "the watch starts before the loop waits for the home's lock, so a conversation is reached meanwhile");
+    }
+
+    /// <summary>
     /// The records a delete reads, and the ledger's judgement of each it is asked about (its delete answers yes, since this
     /// stand-in answers a path whatever the verb): a conversation <c>chat1</c>, one with its tree here, one a landing names,
     /// a teammate's, and the main ledger's done session.

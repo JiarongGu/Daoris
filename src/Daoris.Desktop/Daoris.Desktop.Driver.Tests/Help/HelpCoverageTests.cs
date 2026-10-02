@@ -101,6 +101,16 @@ public sealed partial class HelpCoverageTests
         + "person applies as a card, so Ask Daoris should propose it; that is the `delete` kind's `session` door, judged by "
         + "the same two halves, which SESSUX1h builds (D126 §7.3).");
 
+    /// <summary>
+    /// SESSUX1g's <c>daoris-driver sessions</c> (D126 §7.1), a verb of the headless host: its stop, archive, unarchive and
+    /// delete are doors Ask Daoris owes until SESSUX1h builds the <c>session</c> kind and the <c>delete</c> kind's
+    /// <c>session</c> door; its finish and decline are the person's answer, exempt as the screen's are (§7.3).
+    /// </summary>
+    private static readonly Owed SessionsVerbDoor = new(
+        "stopping a session holds its quest until the person tries again, and archiving and deleting tidy this machine's "
+        + "list, each a change the person applies as a card, so Ask Daoris should propose them; that is SESSUX1h's `session` "
+        + "kind and the `delete` kind's `session` door, while finishing and declining stay the person's answer (D126 §7.3).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -320,6 +330,7 @@ public sealed partial class HelpCoverageTests
             .Append(WorkspaceDoor)
             .Append(SessionArchiveDoor)
             .Append(SessionDeleteDoor)
+            .Append(SessionsVerbDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -410,6 +421,19 @@ public sealed partial class HelpCoverageTests
         Assert.True(hooks.TryGetValue("useDeleteSession", out var delete) && delete.Changes);
         Assert.DoesNotContain("session", HelpProposalKinds.Find("delete")!.Doors);
         Assert.Contains("SESSUX1h", SessionDeleteDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1g: the headless host's <c>sessions</c> verbs are doors owed to SESSUX1h's <c>session</c> kind (D126 §7.3) while
+    /// the host's usage spells them and no kind of that name is built.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_sessions_verbs_are_doors_owed_to_the_session_kind()
+    {
+        Assert.Contains("sessions stop <id>", DriverCommand.Usage);
+        Assert.Contains("sessions archive <id>… | --ended [--yes]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("session"));
+        Assert.Contains("SESSUX1h", SessionsVerbDoor.Reason);
     }
 
     /// <summary>

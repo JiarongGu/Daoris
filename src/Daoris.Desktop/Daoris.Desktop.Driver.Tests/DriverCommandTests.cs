@@ -178,6 +178,31 @@ public sealed class DriverCommandTests
         Assert.Contains("new RegistrationWorld(service, home, config)", console);
     }
 
+    /// <summary>
+    /// SESSUX1g (D126 §7.1): Sessions' terminal door is named in the usage, each form on its own line, and routed by the host
+    /// to its console with this host's log, where the archive's and the delete's lines say the terminal's door; the words
+    /// are the library's, which <c>SessionsCommandTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_sessions_and_the_host_routes_it_to_the_librarys_words()
+    {
+        var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
+        Assert.Contains("\n  sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]\n", usage);
+        Assert.Contains("\n  sessions stop <id>  ·  sessions finish <id> [--note \"…\"]  ·  sessions decline <id> --reason \"…\"\n", usage);
+        Assert.Contains("\n  sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>\n", usage);
+        Assert.Contains("sessions stop <id>", SessionsCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        Assert.Contains("if (args is [\"sessions\", .. var sessionsArgs])", program);
+        Assert.Contains("SessionsConsole.RunAsync(sessionsArgs, log)", program);
+        // Every loop on the home watches the requests: the headless loop as the desktop's does.
+        Assert.Contains("new SessionRequestWatch(home, processes, () => service)", program);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SessionsConsole.cs"));
+        Assert.Contains("SessionsCommand.Read(args, out var problem)", console);
+        Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)", console);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

@@ -76,6 +76,15 @@ using Daoris.Driver;
 //                 tree, handed them, and says why. Nothing after the id is "carry on". The page's box on the
 //                 parked session is the other door.
 //
+//   sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
+//   sessions stop <id> · finish <id> [--note "…"] · decline <id> --reason "…"
+//   sessions archive <id>… | --ended [--yes] · unarchive <id>… · delete <id>
+//                 this machine's sessions by what they need (SESSUX1g, D126 §7.1), from the reader Sessions' list reads;
+//                 --json prints its answer. stop, finish and decline reach a session another process runs through a
+//                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
+//                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
+//                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
+//
 //   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
 //         | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
@@ -188,6 +197,13 @@ try
         return ok ? 0 : 1;
     }
 
+    // Sessions from a terminal (SESSUX1g, D126 §7.1, D50): Sessions' list and its acts are the other door to the same
+    // reader and the same owners; a stop of a session another process runs reaches it through the request its loop takes.
+    if (args is ["sessions", .. var sessionsArgs])
+    {
+        return await Daoris.Driver.Host.SessionsConsole.RunAsync(sessionsArgs, log);
+    }
+
     // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —
     // the CLI's `daoris driver trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
     if (args is ["trees", .. var treesArgs])
@@ -273,6 +289,10 @@ try
     var processes = new SessionProcesses(Path.Combine(home, "sessions"));
 
     using var service = ServiceClient.FromEnvironment();
+
+    // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126 §7.1),
+    // and acts on one for a session this host runs as the screen's route would.
+    await using var requests = new SessionRequestWatch(home, processes, () => service);
 
     // What this host runs and how long each part takes, into its log (LOG1b): the watcher hears the
     // client's opens and moves and the record's events, so the record is handed to every driver below.

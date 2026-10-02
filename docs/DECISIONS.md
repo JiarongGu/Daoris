@@ -8650,6 +8650,49 @@ and then moved before the upgrade reads unpushed until its next push. The frame'
 deleted session's draft back if another is typed before a reload. **Not measured**: *Delete…* and its ask in both themes
 and languages at 1280, 888 and 680 px (§12).
 
+**As built (SESSUX1g, 2026-10-03): `daoris-driver sessions`.** `SessionsCommand` in the driver library, with
+`SessionsConsole` in the headless host, lists by group from `SessionGroups.LookAsync`, the gatherer `SESSION_GROUPS` reads
+too. `--json` prints that route's row field for field (`SessionsCommand.JsonFields`). Stop, finish and decline go through
+`SessionRequests` and `SessionRequestWatch`; archive, unarchive and delete through `SessionArchive` and `SessionDeletion`.
+What the build settled that §7.1 left open:
+
+- **A request is a file, taken once.** `<home>/sessions/requests/<id>.json` holds the move, the person's note, whether the
+  record was parked when asked, who asked (`by`) and when. A loop takes it by renaming it, which only one rename can do.
+  The verb withdraws a request nothing took within its ten seconds, so no loop acts on it after the person was told. Any
+  loop drops one nobody took for a minute.
+- **Each loop looks every second, not every tick.** The verb waits ten seconds, and a tick may be a minute apart. The
+  shell's loop starts its watch before it waits for the home's lock, so a conversation is reached while a terminal's loop
+  drives the home. The headless host's `drive` runs one in every mode. `daoris-driver chat` runs none: its session stops
+  with its own Ctrl+C, and the verb withdraws the request and says so.
+- **One implementation of the person's moves.** `SessionMoves` carries what `STOP_SESSION` and `RESOLVE_SESSION` did, and
+  the watch and the verb call it too. A parked session's stop is the resolve's (the process first, then the ledger), which
+  is why the request says whether the record was parked.
+- **Where nothing here runs the session, the verb acts itself.** A parked session is moved by the ledger. Any other is
+  ended as the screen ends an orphan, as the person's stop. A queued record nothing runs yet is refused, since the screen's
+  stop ends nothing there either.
+- **Built for PAUSE1b** (D132 §2.1, §6.1): a pause asks a stop with `by` `pause` and records its stops itself. The move is
+  the person's whichever door asked.
+- **Exit codes**: 0 done or listed. 1 refused: no such session, a teammate's, already ended, not waiting on you, an intake,
+  an archive that kept one, a delete refused. 2 could not: the usage, a request nobody took in time, no service.
+- **The listing's words are the page's in English.** Its title is the quest's title until SESSUX1j gives a short one, a
+  conversation's first line, *Ask Daoris*, or the intake's ask. Its line says the facts §2.2 gives a row.
+- **`sessions.archived` (`count`, `door`) is written by both doors**, the screen's `SESSION_ARCHIVE` and the terminal's,
+  and only when an archive took something. It is the machine log design's §4 row, beside SESSUX1f's `session.deleted`,
+  whose `door` this verb writes as `terminal`.
+- **D110**: the verbs are doors owed to SESSUX1h's `session` kind; finish and decline stay the person's answer.
+
+Held by `SessionRequestsTests` (written and read whole, an id that could name a path refused, a request for a session this
+loop runs and one it does not, a stale one dropped, a parked move resolved process first, a resolve waiting for the
+loop's service, taken once, withdrawn), `SessionsCommandTests` (each problem, the listing and its filters, `--json`, a stop
+and a finish through the request, a request nobody took, an orphan ended, a parked session moved by the ledger, each
+refusal, archive with its log line, archive what ended, unarchive, delete), `DriverCommandTests` (the usage and the host's
+routing and watch), `HelpCoverageTests`, and `DriverModuleSessionsTests` (the terminal's fields, the screen's archive line,
+the shell's watch). The driver's were seen failing first as compile errors. The modules' archive line and the shell's
+watch were seen failing under a sabotage. The fields test guards a twin. `SessionRequestTickTests` (the `Process` half, a
+real stub harness) is written and was not run here: a terminal's stop taken by the running loop, the record the person's
+stop, and the next look holding the quest. **Not built here**: the family rehearsal's phase (§9), which is the tools
+lane's. **Not measured**: a terminal's stop taken by the desktop's loop on the install within ten seconds (§12).
+
 ## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
 
 **Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
