@@ -8961,3 +8961,91 @@ TOOL6b builds it so; TOOL6a's words for the setting say so.
 accounts"*. Every setting above serves it: work keeps moving when one account is spent, and no account sits idle while
 another is cut off. It is judged by TOOL4h's report (the limits each account met, the sessions each ran, the starts a
 setting moved) and TOOL4i's run, never by a number Daoris made up.
+
+**The rules around the goal (2026-10-02).** The owner: *"you can design the rules around this purpose"*. So the
+defaults are re-decided on the goal: the most work from the accounts' combined allowance, the fewest stalls, and no
+allowance left unused at a reset (design §16).
+
+1. **Every listed account is used toward the goal by default** (`use: goal`). *List order, one by one* is an override
+   (`use: order`), D125's walk, kept for a person who wants their accounts used in their order.
+2. **No start is held** while an account it may use is ready and a slot is free, so allowance lapses only where there
+   was no work or no slot for it.
+3. **The default walk** (design §16.3), each step stable: a driven start drops the kept account; an account its agent
+   said is near goes last; fewest of Daoris's sessions running first; an account whose known weekly reset falls within
+   the next day first, sooner first; furthest behind its week's pace first, where the agent said; least recently
+   started first; the list's order last. While every account is ready, none runs more than ⌈K ÷ N⌉ at once.
+4. **With nothing said** (today), steps 2 and 5 are inert. The walk spreads by Daoris's own sessions and over time,
+   and learns each account's weekly reset from the weekly limits it meets, carried a week at a time where the maker
+   fixes it (Claude, C1). It says so on the screen, in `daoris agent list` and in each start's first line, and no
+   number stands in for a reading.
+5. **Switching before the limit is on by default**, inert until a door carries the agent's word. A kept account stays
+   an option, off by default.
+6. **A quest's next session goes where the walk sends it.** A carry-on carries no conversation, so its account buys
+   only readability, which its first line gives. This amends point 6 and the note on *in parallel* above.
+7. **The settings are the list, `use`, `keep`, `early` and `near`**, per agent and scope, for any number of accounts.
+   TOOL6a's vocabulary changes: `prefer` and `parallel` are gone; `use` (`goal` or `order`, absent `goal`) is new;
+   `early` is on when absent and off only when `false`; `keep` and `near` are unchanged. The terminal door is `daoris
+   agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>]
+   [--workspace W]`, and Ask Daoris's `use` door takes the same four. A machine with an order written before changes
+   to `goal` when TOOL6b lands.
+8. **It is judged** by TOOL4h's report per account and week: sessions landed, hours waited, limit cut-offs, allowance
+   left at each weekly reset where the agent's word shows it (*not measured* where not), the limits met, the starts
+   each step moved, and whether the cap rather than the accounts was the limit; and by TOOL4i's run under `goal`.
+
+**Why.** One by one meets a limit as soon as the load passes one account's five-hour window while the others sit idle,
+and that limit cuts off every session on the account; spreading meets none while the load fits all accounts together,
+and a limit cuts off at most ⌈K ÷ N⌉. A week recovers in days and five hours in hours, so the week's risks, lapsing and
+running ahead, rank above any five-hour order, and the five-hour window is a gate: passed when near, kept below its
+limit by spreading. A week is ranked by its reset only in its last day, when what is left is at risk of lapsing;
+ranked so all week, it would pile one account's work onto it while the others' weeks went by. Pace keeps every week
+moving, but alone it would pass a small leftover about to lapse, so it ranks below the last day. The fallbacks use only
+what Daoris knows: its own sessions, its own starts, and the resets the agents named.
+
+**Rejected** (design §16.5 and §16.9):
+- **Keeping *list order, one by one* as the default**: the most cautious choice, and the goal argues against it on
+  every measure.
+- **The five-hour window's reset as an order above the week**: unknown without the agent's word, and it would spend a
+  week to save hours.
+- **Ranking every week by its reset all week**, and **holding work to pace a week**.
+- **A quest kept on its account**, and **a cached prompt as a reason to keep it** (no page read says one counts less).
+- **Keeping `prefer` and `parallel` beside `use`**, and **a cap per account or a cap raised to use more windows**.
+
+**What it amends.** D130 points 3 (the settings), 6 (the walk), 7 (`left` and `soonest` fold into pace and the lapsing
+week), 8 (on by default), 10 (spreading is the default), 11 (the `use` door's fields), and the note on *in parallel*
+(a quest's carry-on no longer stays on its last account). The design's §2, §4, §6–§10 and §12–§14 carry notes, and the
+TOOL6a–d, TOOL4g, TOOL4h and TOOL4i rows in its §10 are amended in place. D125 §3.3 and §3.4 are the walk under
+`order`. Unchanged: eligibility (point 4), the wait that asks (point 5), what is left by the agent's own word and
+absent never zero (point 7's rule), the cool-off, a limit not a strike, D57, D49 §4 and D66 §3.
+
+**What the checks do not cover.** Documents only, and nothing is built. The arithmetic of spreading is an argument,
+not a measurement: neither an account's allowance nor the load is known, and §16.8 names what only a real run shows,
+the day's horizon among them. The first real rotation and its weekly sentence are the fix log's and D125's notes, not
+re-read here. `verify` checks this note's place and the design's links, and none of their words.
+
+**Built 2026-10-02 (TOOL6a): the settings and their terminal door** (points 2, 4 and 11 and the goal's point 7; design
+§2, §3.1, §4.6, §14, §16.6), held by `RotationUseTwinTests` and `RotationTwinTests` on the driver's side and, cell for
+cell, by the CLI's `rotation-use.test.ts` and `rotation.test.ts`. What building it settled:
+- **A value or a default changes by a row.** Today's defaults live in one place (`USE_DEFAULTS`, `RotationUse.Default`)
+  and the ways to use accounts in one list (`USE_MODES`, `RotationUse.Modes`). A value the reader does not know reads as
+  today's default and is said by `agent list` and `profile use`; a setting it has no name for is kept as written and
+  said. `prefer` and `parallel` are skipped and gone at the next write (§16.6).
+- **A choice is written as made**, one equal to today's default included, so a later default never overturns what a
+  person chose; only absence means the default. Known settings go out in one order, normalised, then the rest as read;
+  both writers write the same bytes.
+- **A scope's settings come with its list.** Clearing a list clears its settings; an account removed is kept nowhere.
+  `profile use` refuses a scope with no list of its own, naming the `order` that gives it one. `--clear` returns a
+  scope to today's defaults.
+- **One rule binds a scope** (`scopeProblem`, `ScopeProblem.Of`): its default and its kept account are of its list,
+  compared exactly, and a kept account leaves driven work another. `profile order` refuses all three, naming both sides
+  and the fix; `profile default` the first, where its scope has a list of its own (a workspace with none takes any
+  account and is then that account alone); `profile use --keep` the kept ones. The order door's two kept-account
+  refusals keep §4.6's state unreachable by the back door. Tested with one account and with six.
+- **`agent list`** prints beneath each list how it is used, a default outside it, a kept account alone in it, and what
+  the build does not know. `profile use` with the agent alone adds what each account last said, which today is its
+  cool-off or nothing: no door carries the agent's word about its windows yet (§5.3), and the switch says so.
+- **The room names the door** (`HelpRoomDoors`, *no screen yet*).
+
+**What the gates do not cover.** Nothing reads these settings to choose an account: `SelectAsync` still walks D125's
+order, and `ResolveScope` waits for TOOL6b. §3.1's refusal is the terminal's alone: the screen's `profile-default`
+route (`DriverModule.DefaultEdited`, modules) and Ask Daoris's `default` door do not ask `ScopeProblem.Of` yet (TOOL4g,
+or a modules row). The `Process` half, the rehearsals and the screen were not run by this branch.

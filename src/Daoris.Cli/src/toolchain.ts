@@ -23,8 +23,9 @@
 //   5. An account made by signing in takes the first free `account-N`; who it is, is the tool's answer.
 //   6. An account that is an API key keeps its key in `keys.json` under the home, beside the account.
 //   7. A door's accounts, defaults and keys are its owner's (`accountOf`); its pin is its own.
-//   8. The order rotation may use (`rotation`, `workspaceRotation`) is read, resolved and edited by `rotation.ts`, and
-//      each writer keeps the other's sections — for the same wiring both write the same bytes (TOOL4e).
+//   8. The order rotation may use (`rotation`, `workspaceRotation`), and how each list is used (`rotationUse`,
+//      `workspaceRotationUse`, TOOL6a), are read, resolved and edited by `rotation.ts`, and each writer keeps the other's
+//      sections — for the same wiring both write the same bytes (TOOL4e).
 //   9. An account's cool-off (`cooling.json`) is the driver's to write; here it is read, listed and ended — by
 //      `profile ready`, a sign-in or a key into the account, and the account's removal (`cooling.ts`, TOOL4e).
 //
@@ -48,7 +49,40 @@ import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';
 import { flagValue, operands } from './args.ts';
 
 /** The `agent` flags that take a value — so that value is never read as an operand. */
-const AGENT_VALUED: ReadonlySet<string> = new Set(['--profile', '--workspace', '--account', '--for']);
+const AGENT_VALUED: ReadonlySet<string> = new Set([
+  '--profile', '--workspace', '--account', '--for', '--keep', '--early', '--near',
+]);
+
+/** `agent profile use`'s flags (TOOL6a, D130 §16.6); any other is refused rather than read as a choice. */
+const USE_FLAGS: ReadonlySet<string> = new Set(['--keep', '--no-keep', '--early', '--near', '--workspace', '--clear']);
+
+/**
+ * What the terminal says for each *use accounts* choice (D130 §16.6): its name, and what it costs where the screen says
+ * so. A choice added to `USE_MODES` is a row here. TOOL6b, which builds `goal`'s walk, adds the step a start follows.
+ */
+export const USE_WORDS: Record<UseMode, { name: string; cost: string | null }> = {
+  goal: { name: 'make the most of them', cost: null },
+  order: { name: 'one by one, in order', cost: 'one limit stops every session on that account' },
+};
+
+/** `agent profile use`'s shape, as a refusal names it. */
+const USE_SHAPE = `[${USE_MODES.join('|')}] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace W], `
+  + 'or --clear';
+
+/** A scope named in a sentence: this machine, or one workspace. */
+function where(workspace: string | null): string {
+  return workspace ? `in \`${workspace}\`` : 'on this machine';
+}
+
+/** A scope named in a command: nothing for the machine, `--workspace` for one workspace. */
+function scoped(workspace: string | null): string {
+  return workspace ? ` --workspace ${workspace}` : '';
+}
+
+/** Choices said as a person says them: `a, b or c`. */
+function either(choices: readonly string[]): string {
+  return choices.length > 1 ? `${choices.slice(0, -1).join(', ')} or ${choices.at(-1)}` : choices.join('');
+}
 import { DaorisError } from './errors.ts';
 import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from './agentsettings.ts';
 import type { AgentSettingsEdit } from './agentsettings.ts';
@@ -62,10 +96,11 @@ import { commandRules } from './permissions.ts';
 import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
 import { grantTrust, TRUST_FILE } from './trust.ts';
 import {
-  readOrderCircles, readOrders, resolveRotation, rotationProblem, rotationRefusal, withRotation, withoutAccount,
-  writtenOrderCircles, writtenOrders,
+  NEAR_HIGHEST, NEAR_LOWEST, USE_FIELDS, USE_MODES, readOrderCircles, readOrders, readUse, readUseCircles, readUses,
+  resolveRotation, resolveScope, rotationProblem, rotationRefusal, scopeProblem, withRotation, withUse, withoutAccount,
+  writtenOrderCircles, writtenOrders, writtenUseCircles, writtenUses,
 } from './rotation.ts';
-import type { Orders } from './rotation.ts';
+import type { Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
 import { coolingLine, coolingOf, endCooling, machineZone, readCooling } from './cooling.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
@@ -328,6 +363,13 @@ export interface HarnessSettings {
   rotation: Orders;
   /** @see rotation */
   workspaceRotation: Record<string, Orders>;
+  /**
+   * How each scope's list is used, per agent (TOOL6a, D130 §2): the machine's, and one workspace's. `rotation.ts` reads,
+   * resolves and edits them, keeping what this build does not know; absent is today's default.
+   */
+  rotationUse: Uses;
+  /** @see rotationUse */
+  workspaceRotationUse: Record<string, Uses>;
   /** Everything else the file held, preserved — this is an editor, not the file's owner. */
   rest: Record<string, unknown>;
 }
@@ -342,13 +384,16 @@ export interface HarnessSettings {
  */
 export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
   const empty: HarnessSettings = {
-    defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {},
+    defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {},
+    rotationUse: {}, workspaceRotationUse: {}, rest: {},
   };
   // Unreadable reads as empty, for a session about to spawn; an EDIT over it is refused by the writer.
   const { value: parsed } = readJsonObject(path);
   if (parsed === null) return empty;
 
-  const { defaults, workspaces, versions, workspaceVersions, rotation, workspaceRotation, ...rest } = parsed;
+  const {
+    defaults, workspaces, versions, workspaceVersions, rotation, workspaceRotation, rotationUse, workspaceRotationUse, ...rest
+  } = parsed;
   return {
     defaults: stringMap(defaults),
     workspaces: Object.fromEntries(
@@ -358,6 +403,8 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
       Object.entries(asObject(workspaceVersions)).map(([circle, map]) => [circle, stringMap(map)])),
     rotation: readOrders(rotation),
     workspaceRotation: readOrderCircles(workspaceRotation),
+    rotationUse: readUses(rotationUse),
+    workspaceRotationUse: readUseCircles(workspaceRotationUse),
     rest,
   };
 }
@@ -367,8 +414,8 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
  *
  * @remarks
  * 🔴 The driver's `HarnessSettings.Save` is the other writer of this file, and for the same wiring the two write the same
- * bytes (TOOL4e, `rotation.test.ts` and `RotationTwinTests` hold it): what neither knows first, then the four sections,
- * then the orders only where one is set.
+ * bytes (TOOL4e, TOOL6a; `rotation.test.ts` and `RotationTwinTests` hold it): what neither knows first, then the four
+ * sections, then each order and its settings only where one is set.
  */
 export function writeHarnessSettings(path: string, settings: HarnessSettings): void {
   const circles = (map: Record<string, Record<string, string>>) => Object.fromEntries(
@@ -376,7 +423,9 @@ export function writeHarnessSettings(path: string, settings: HarnessSettings): v
       .filter(([, inner]) => Object.keys(inner).length > 0)
       .sort(([a], [b]) => (a < b ? -1 : 1)));
   const rotation = writtenOrders(settings.rotation);
+  const rotationUse = writtenUses(settings.rotationUse);
   const workspaceRotation = writtenOrderCircles(settings.workspaceRotation);
+  const workspaceRotationUse = writtenUseCircles(settings.workspaceRotationUse);
 
   writeJsonAtomic(path, {
     ...settings.rest,
@@ -385,7 +434,9 @@ export function writeHarnessSettings(path: string, settings: HarnessSettings): v
     versions: sorted(settings.versions),
     workspaceVersions: circles(settings.workspaceVersions),
     ...(Object.keys(rotation).length > 0 ? { rotation } : {}),
+    ...(Object.keys(rotationUse).length > 0 ? { rotationUse } : {}),
     ...(Object.keys(workspaceRotation).length > 0 ? { workspaceRotation } : {}),
+    ...(Object.keys(workspaceRotationUse).length > 0 ? { workspaceRotationUse } : {}),
   });
 }
 
@@ -829,6 +880,43 @@ export function signInNew(
 }
 
 /**
+ * How a scope's list is used, in the terminal's words (TOOL6a; D130 §3.2, §6, §16.6): each setting's label and value,
+ * and a note for each thing the person should know — a default outside the list, a kept account that leaves driven work
+ * none, and every value or setting this build does not know, said rather than dropped. `agent list` and `profile use`
+ * both print it.
+ *
+ * @remarks
+ * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
+ * walk, which TOOL6b builds and then says the step a start follows. *Switch before the limit* passes no account while no
+ * session says how near it is (§6): no agent's door carries that word yet, which is a fact today and is said.
+ */
+export function useLines(scope: Scope, product: string): { rows: [label: string, value: string][]; notes: string[] } {
+  const { use } = scope;
+  const mode = USE_WORDS[use.use];
+  const rows: [string, string][] = [
+    ['use accounts', `${mode.name}${mode.cost ? ` — ${mode.cost}` : ''}`],
+    ['kept for conversations', use.keep ?? 'none'],
+    ['switch before the limit', use.early
+      ? `on, at ${use.near}% — ${product}'s sessions here do not say how near their limits are`
+      : `off (near: ${use.near}%)`],
+  ];
+
+  const notes: string[] = [];
+  const problem = scopeProblem({ default: scope.default, list: scope.list, keep: use.keep });
+  if (problem?.kind === 'default') {
+    notes.push(`its default, \`${problem.account}\`, is not in this list: name it in the list, or make one of the list the default`);
+  } else if (problem?.kind === 'alone') {
+    notes.push(`\`${problem.account}\` is kept for conversations, and this list holds no other account for driven work`);
+  }
+  for (const name of scope.unknown) {
+    notes.push((USE_FIELDS as readonly string[]).includes(name)
+      ? `\`${name}\` holds a value this build does not know, so it reads as today's default; it is kept as written`
+      : `\`${name}\` is a setting this build does not know: nothing here reads it, and it is kept as written`);
+  }
+  return { rows, notes };
+}
+
+/**
  * What `agent list` says under one agent about its accounts (D49 §4, D66 §3, TOOL4e): each account and what marks it,
  * each one's cool-off under it, the tool's own sign-in's cool-off, the order rotation may use, and — where a start would
  * run on the person's own sign-in — that it does, and how to give Daoris an account of its own (D125 §2.4, §3.7).
@@ -868,10 +956,22 @@ export function accountLines(
   const ownCooling = coolingOf(home, owner, null, now);
   if (ownCooling) lines.push(`${indent}its own sign-in: ${coolingLine(ownCooling, now, zone)}`);
 
+  // Each list, and how it is used beneath it (TOOL6a, D130 §3.2): the machine's, then each workspace's own.
+  const product = TOOLCHAINS[owner]?.product ?? owner;
+  const beneath = (scope: Scope) => {
+    const { rows, notes } = useLines(scope, product);
+    for (const [label, value] of rows) lines.push(`${indent}${''.padEnd(16)} ${label}: ${value}`);
+    for (const note of notes) lines.push(`${indent}${''.padEnd(16)} ${note}`);
+  };
   const order = resolveRotation(settings, owner, null);
-  if (order.from === 'machine') lines.push(`${indent}rotation         ${order.order.join(', then ')}`);
+  if (order.from === 'machine') {
+    lines.push(`${indent}rotation         ${order.order.join(', then ')}`);
+    beneath(resolveScope(settings, owner, null));
+  }
   for (const [circle, orders] of Object.entries(settings.workspaceRotation)) {
-    if (orders[owner]) lines.push(`${indent}rotation in ${circle.padEnd(4)} ${orders[owner].join(', then ')}`);
+    if (!orders[owner]) continue;
+    lines.push(`${indent}rotation in ${circle.padEnd(4)} ${orders[owner].join(', then ')}`);
+    beneath(resolveScope(settings, owner, circle));
   }
 
   if (!toolchain.accountOf && toolchain.login && report.present && !report.machineDefault) {
@@ -1388,6 +1488,12 @@ export function commandHarness(
         const problem = rotationProblem(existing, named);
         if (problem !== null) throw new DaorisError(rotationRefusal(name, problem, existing));
 
+        // D130 §3.1, §4.6 (TOOL6a): the list is every account the scope's starts may run on, so it holds the scope's
+        // default and its kept account, and leaves driven work another beside the kept one.
+        const list = named.map((account) => account.trim());
+        const bound = scopeProblem({ default: ownDefault(name, workspace), list, keep: ownKeep(name, workspace) });
+        if (bound !== null) throw new DaorisError(orderRefusal(name, workspace, bound, list));
+
         writeHarnessSettings(path, withRotation(settings, name, named, workspace));
         const spelled = named.map((account) => account.trim()).join(', then ');
         write(workspace
@@ -1451,6 +1557,17 @@ export function commandHarness(
             + `${profiles(home, name).join(', ') || '(none)'}`);
         }
 
+        // D130 §3.1 (TOOL6a): a scope's default is where its starts begin within its list, so one the list does not hold
+        // is refused. A workspace with no list of its own takes any account, and is then that account alone.
+        const list = ownList(name, workspace);
+        if (scopeProblem({ default: profile, list, keep: null }) !== null) {
+          throw new DaorisError(
+            `\`${name}\`'s list ${where(workspace)} is ${list.join(', then ')}, and \`${profile}\` is not in it — the list is `
+            + 'every account its starts may run on, and the default is where they begin within it. '
+            + `\`daoris agent profile order ${name} ${[...list, profile].join(' ')}${scoped(workspace)}\` adds it, or make one `
+            + 'of the list the default.');
+        }
+
         writeHarnessSettings(path, withDefault(settings, name, profile, workspace));
 
         write(workspace
@@ -1460,9 +1577,201 @@ export function commandHarness(
         return 0;
       }
 
+      // How a scope's list is used (TOOL6a, D130 §2, §9): the machine's, or with `--workspace` one workspace's. Each choice
+      // is written as made; with no flag it prints the scope's settings and what each account last said.
+      case 'use':
+        return useVerb();
+
       default:
         throw new DaorisError(
-          `unknown agent profile verb '${action}' — one of: list, add, remove, default, order, ready`);
+          `unknown agent profile verb '${action}' — one of: list, add, remove, default, order, ready, use`);
+    }
+
+    /** A scope's own list: the machine's, or the workspace's own — never the machine's standing in for it. */
+    function ownList(name: string, workspace: string | null): string[] {
+      return (workspace ? settings.workspaceRotation[workspace]?.[name] : settings.rotation[name]) ?? [];
+    }
+
+    /** A scope's own default: the machine's, or the workspace's own. */
+    function ownDefault(name: string, workspace: string | null): string | null {
+      return (workspace ? settings.workspaces[workspace]?.[name] : settings.defaults[name])?.trim() || null;
+    }
+
+    /** A scope's kept account, as its settings name it, whether or not its list holds it. */
+    function ownKeep(name: string, workspace: string | null): string | null {
+      return readUse(workspace ? settings.workspaceRotationUse[workspace]?.[name] : settings.rotationUse[name]).use.keep;
+    }
+
+    /** `profile order`'s refusal for a list that leaves out its scope's default or kept account (§3.1, §4.6). */
+    function orderRefusal(name: string, workspace: string | null, problem: ScopeProblem, list: string[]): string {
+      const named = `\`daoris agent profile order ${name} ${[...list, problem.account].join(' ')}${scoped(workspace)}\``;
+      const noKeep = `\`daoris agent profile use ${name} --no-keep${scoped(workspace)}\``;
+      switch (problem.kind) {
+        case 'default':
+          return `${workspace ? `\`${workspace}\`'s` : 'this machine\'s'} default for \`${name}\` is \`${problem.account}\`, and `
+            + 'this list does not hold it — the list is every account its starts may run on, and the default is where they '
+            + `begin within it. Name it in the list (${named}), or first make one of the list the default `
+            + `(\`daoris agent profile default ${name} ${list[0]}${scoped(workspace)}\`).`;
+        case 'keep':
+          return `\`${problem.account}\` is kept for conversations ${where(workspace)}, and this list does not hold it — the `
+            + `kept account is one of the list. Name it in the list (${named}), or first keep none (${noKeep}).`;
+        case 'alone':
+          return `\`${problem.account}\` is kept for conversations, and this list holds no other account, so driven work `
+            + `would have none — name another account in it, or first keep none (${noKeep}).`;
+      }
+    }
+
+    /**
+     * `profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace <name>]`,
+     * or `--clear` (D130 §16.6). A scope with no list of its own has nothing to use and is refused, naming the door that
+     * gives it one; a kept account is one of the list and leaves driven work another (§4.6).
+     */
+    function useVerb(): ExitCode {
+      const name = accountsOf(operand(argv, 2), 'profile use');
+      const flagged = flagValue(argv, '--workspace');
+      const workspace = flagged ? normalizeWorkspace(flagged) : null;
+
+      const stray = argv.slice(2).find((token) => token.startsWith('--') && !USE_FLAGS.has(token));
+      if (stray) throw new DaorisError(`\`${stray}\` is not a flag of \`agent profile use\` — it takes ${USE_SHAPE}.`);
+      const chosen = operands(argv, AGENT_VALUED).slice(3);
+      const modes = USE_MODES.map((mode) => `${mode} (${USE_WORDS[mode].name})`);
+      if (chosen.length > 1) {
+        throw new DaorisError(`\`agent profile use\` takes one way to use accounts, and \`${chosen.join(' ')}\` names more — `
+          + `${either(modes)}.`);
+      }
+      if (chosen.length === 1 && !(USE_MODES as readonly string[]).includes(chosen[0]!)) {
+        throw new DaorisError(`\`${chosen[0]}\` is not a way to use accounts — ${either(modes)}. An account is kept for `
+          + `conversations with \`--keep <account>\`.`);
+      }
+
+      const change = useChangeOf();
+      if (chosen.length === 1) change.use = chosen[0] as UseMode;
+      const clear = argv.includes('--clear');
+      if (clear && Object.keys(change).length > 0) {
+        throw new DaorisError(`\`--clear\` sets no setting beside it — \`daoris agent profile use ${name} --clear\` returns `
+          + 'the scope to today\'s defaults, and the setting is set on its own.');
+      }
+
+      if (clear) {
+        const after = withUse(settings, name, null, workspace);
+        writeHarnessSettings(path, after);
+        write(`daoris: ${where(workspace)}, \`${name}\` sets nothing of its own about how its list is used: today's defaults apply.`);
+        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+        return 0;
+      }
+
+      if (Object.keys(change).length === 0) return printUse(name, workspace, resolveScope(settings, name, workspace));
+
+      const list = ownList(name, workspace);
+      if (list.length === 0) {
+        const borrowed = workspace !== null && resolveScope(settings, name, workspace).from === 'machine';
+        throw new DaorisError(workspace
+          ? `\`${workspace}\` has no list of its own for \`${name}\`, so there is nothing to use there — \`daoris agent profile `
+            + `order ${name} <account>… --workspace ${workspace}\` gives it one`
+            + (borrowed ? ', and until then it uses this machine\'s, which is set without --workspace.' : '.')
+          : `\`${name}\` has no list on this machine, so there is nothing to use yet — \`daoris agent profile order ${name} `
+            + '<account>…` sets one, and how it is used is set beside it.');
+      }
+
+      if (typeof change.keep === 'string') {
+        const problem = scopeProblem({ default: null, list, keep: change.keep });
+        if (problem?.kind === 'keep') {
+          throw new DaorisError(
+            `\`${problem.account}\` is not in \`${name}\`'s list ${where(workspace)} (${list.join(', then ')}) — the kept account `
+            + `is one of the list. Name it in the list first (\`daoris agent profile order ${name} `
+            + `${[...list, problem.account].join(' ')}${scoped(workspace)}\`), or keep one of it.`);
+        }
+        if (problem?.kind === 'alone') {
+          throw new DaorisError(
+            `\`${name}\`'s list ${where(workspace)} holds no account but \`${problem.account}\`, so keeping it for conversations `
+            + `would leave driven work none — \`daoris agent profile order ${name} ${list.join(' ')} <account>…`
+            + `${scoped(workspace)}\` adds one.`);
+        }
+      }
+
+      const after = withUse(settings, name, change, workspace);
+      writeHarnessSettings(path, after);
+      printUse(name, workspace, resolveScope(after, name, workspace));
+      write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+      return 0;
+    }
+
+    /** The settings `profile use`'s flags name, each refused unless it is one; none named is an empty change. */
+    function useChangeOf(): UseChange {
+      const change: UseChange = {};
+      const early = onOff('--early', 'switch before the limit, or not');
+      if (early !== undefined) change.early = early;
+
+      const near = useValue('--near');
+      if (near !== undefined) {
+        const percent = /^\d+$/.test(near) ? Number(near) : Number.NaN;
+        if (!(percent >= NEAR_LOWEST && percent <= NEAR_HIGHEST)) {
+          throw new DaorisError(`\`--near\` is a whole percent from ${NEAR_LOWEST} to ${NEAR_HIGHEST} — e.g. \`--near 85\`: `
+            + 'where an agent gives only how much of a window is used, an account at or over it is near its limit.');
+        }
+        change.near = percent;
+      }
+
+      const keep = useValue('--keep');
+      if (keep !== undefined && argv.includes('--no-keep')) {
+        throw new DaorisError('`--keep` and `--no-keep` together say two things — keep one account for conversations, or none.');
+      }
+      if (keep !== undefined) change.keep = keep.trim();
+      if (argv.includes('--no-keep')) change.keep = null;
+      return change;
+    }
+
+    /** A `profile use` flag's value, refusing the flag with none after it. */
+    function useValue(flag: string): string | undefined {
+      const at = argv.indexOf(flag);
+      if (at === -1) return undefined;
+      const value = argv[at + 1];
+      if (value === undefined || value.startsWith('--') || value.trim() === '') {
+        throw new DaorisError(`\`${flag}\` needs a value — it takes ${USE_SHAPE}.`);
+      }
+      return value;
+    }
+
+    function onOff(flag: string, meaning: string): boolean | undefined {
+      const value = useValue(flag);
+      if (value === undefined) return undefined;
+      if (value !== 'on' && value !== 'off') throw new DaorisError(`\`${flag}\` is on or off — ${meaning}.`);
+      return value === 'on';
+    }
+
+    /** `profile use`'s print: whose scope it is, its list, how it is used, and what each of its accounts last said. */
+    function printUse(name: string, workspace: string | null, scope: Scope): ExitCode {
+      const borrowed = workspace !== null && scope.from === 'machine';
+      if (scope.list.length === 0) {
+        write(!workspace
+          ? `daoris: \`${name}\` has no list on this machine, so it has no settings — \`daoris agent profile order ${name} `
+            + '<account>…` sets one.'
+          : borrowed
+            ? `daoris: \`${workspace}\` names no account of its own for \`${name}\`, and this machine has no list, so there are `
+              + `no settings — \`daoris agent profile order ${name} <account>…\` sets the machine's.`
+            : `daoris: \`${workspace}\` names its own account for \`${name}\`, \`${scope.default}\`, and no list of its own, so it `
+              + `has no settings — \`daoris agent profile order ${name} ${scope.default} <account>… --workspace ${workspace}\` `
+              + 'gives it a list.');
+        return 0;
+      }
+
+      write(borrowed
+        ? `daoris: \`${workspace}\` names no account of its own for \`${name}\`, so it uses this machine's: `
+          + `${scope.list.join(', then ')}.`
+        : `daoris: ${where(workspace)}, \`${name}\`'s list is ${scope.list.join(', then ')}.`);
+
+      const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name);
+      for (const [label, value] of rows) write(`  ${label.padEnd(24)} ${value}`);
+      for (const note of notes) write(`  ${note}`);
+
+      const now = new Date();
+      const zone = machineZone();
+      write('  what each account last said:');
+      for (const account of scope.list) {
+        const cooled = coolingOf(home, name, account, now);
+        write(`    ${account.padEnd(14)} ${cooled ? coolingLine(cooled, now, zone) : 'nothing said about what it has left'}`);
+      }
+      return 0;
     }
 
     /**

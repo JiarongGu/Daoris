@@ -269,7 +269,7 @@ test('with no account named, the machine’s default account is the one', () => 
   const fx = makeFixture('agent-settings-verb-default');
   const file = account(fx.root, 'work');
   writeHarnessSettings(join(fx.root, 'harnesses.json'), {
-    defaults: { 'claude-code': 'work' }, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {},
+    defaults: { 'claude-code': 'work' }, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rotationUse: {}, workspaceRotationUse: {}, rest: {},
   });
 
   assert.equal(run(['settings', 'claude-code', 'model', 'haiku'], fx.root).code, 0);

@@ -210,8 +210,9 @@ public sealed record HarnessReport(
 /// three copies established (WSP3).</para>
 ///
 /// <para><b>Each writer keeps the other's sections</b> (TOOL4e): the four here, the orders (<see cref="Rotation"/>,
-/// <see cref="WorkspaceRotation"/>), and whatever a newer build wrote (<see cref="Kept"/>). For the same wiring the two
-/// write the same bytes, which <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c> hold row for row.</para>
+/// <see cref="WorkspaceRotation"/>), how each is used (<see cref="Uses"/>, <see cref="WorkspaceUses"/>, TOOL6a), and
+/// whatever a newer build wrote (<see cref="Kept"/>). For the same wiring the two write the same bytes, which
+/// <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c> hold row for row.</para>
 ///
 /// <para><b>Silence means the harness's own home.</b> A machine that has never named a profile spawns
 /// exactly as it did before this existed — the environment seam is not set at all, and the harness
@@ -226,7 +227,7 @@ public sealed record HarnessReport(
 /// Daoris manages it. Absent means <c>PATH</c>.
 /// </param>
 /// <param name="WorkspaceVersions">Workspace → harness → pinned version. The same cut as the profiles.</param>
-public sealed record HarnessSettings(
+public sealed partial record HarnessSettings(
     IReadOnlyDictionary<string, string>? Defaults = null,
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? Workspaces = null,
     IReadOnlyDictionary<string, string>? Versions = null,
@@ -267,8 +268,10 @@ public sealed record HarnessSettings(
     public string? Problem { get; init; }
 
     /// <summary>The sections this build reads and writes; anything else is <see cref="Kept"/>. Spelled as the CLI's are.</summary>
-    private static readonly HashSet<string> Sections =
-        new(StringComparer.Ordinal) { "defaults", "workspaces", "versions", "workspaceVersions", "rotation", "workspaceRotation" };
+    private static readonly HashSet<string> Sections = new(StringComparer.Ordinal)
+    {
+        "defaults", "workspaces", "versions", "workspaceVersions", "rotation", "workspaceRotation", "rotationUse", "workspaceRotationUse",
+    };
 
     public const string PathVariable = "DAORIS_HARNESS_CONFIG";
 
@@ -320,6 +323,8 @@ public sealed record HarnessSettings(
             {
                 Rotation = ReadOrders(document.RootElement, "rotation"),
                 WorkspaceRotation = ReadOrderCircles(document.RootElement, "workspaceRotation"),
+                Uses = ReadUses(document.RootElement, "rotationUse"),
+                WorkspaceUses = ReadUseCircles(document.RootElement, "workspaceRotationUse"),
                 Kept = [.. document.RootElement.EnumerateObject()
                     .Where(property => !Sections.Contains(property.Name))
                     .Select(property => KeyValuePair.Create(property.Name, property.Value.Clone()))],
@@ -395,6 +400,9 @@ public sealed record HarnessSettings(
                 writer.WriteEndObject();
             }
 
+            // TOOL6a: how each list is used goes out beside it, for the same reason the orders do.
+            WriteUses(writer, "rotationUse", Uses);
+
             if (WorkspaceRotation.Any(circle => circle.Value.Any(order => order.Value.Count > 0)))
             {
                 writer.WriteStartObject("workspaceRotation");
@@ -408,6 +416,8 @@ public sealed record HarnessSettings(
 
                 writer.WriteEndObject();
             }
+
+            WriteUseCircles(writer, "workspaceRotationUse", WorkspaceUses);
 
             writer.WriteEndObject();
         }
@@ -553,17 +563,23 @@ public sealed record HarnessSettings(
     /// workspace left with no order is dropped. The names are kept trimmed; whether each is an account here, once, is
     /// <see cref="OrderProblem"/>'s question, which a door asks first.
     /// </summary>
+    /// <remarks>A list cleared takes its scope's settings with it (TOOL6a, D130 §2): they come with the list.</remarks>
     public HarnessSettings WithRotation(string agent, IReadOnlyList<string>? order, string? workspace = null)
     {
         IReadOnlyList<string> kept = order is null ? [] : [.. order.Select(name => name.Trim()).Where(name => name.Length > 0)];
-        if (string.IsNullOrWhiteSpace(workspace)) return this with { Rotation = Ordered(Rotation, agent, kept) };
+        if (string.IsNullOrWhiteSpace(workspace))
+        {
+            var machine = this with { Rotation = Ordered(Rotation, agent, kept) };
+            return kept.Count > 0 ? machine : machine.WithUse(agent, null);
+        }
 
         var circles = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(
             WorkspaceRotation, StringComparer.OrdinalIgnoreCase);
         var circle = Ordered(circles.GetValueOrDefault(workspace.Trim()) ?? new Dictionary<string, IReadOnlyList<string>>(), agent, kept);
         if (circle.Count == 0) circles.Remove(workspace.Trim());
         else circles[workspace.Trim()] = circle;
-        return this with { WorkspaceRotation = circles };
+        var scoped = this with { WorkspaceRotation = circles };
+        return kept.Count > 0 ? scoped : scoped.WithUse(agent, null, workspace);
     }
 
     /// <summary>
@@ -586,7 +602,8 @@ public sealed record HarnessSettings(
 
     /// <summary>
     /// The wiring with an account removed gone from it (D66 §3): no default names it, the machine's or a workspace's,
-    /// and no order does. The rest of each order keeps its place, and an order or a workspace left naming none goes.
+    /// no order does, and no scope keeps it (TOOL6a). The rest of each order keeps its place, and an order or a workspace
+    /// left naming none goes, its settings with it.
     /// </summary>
     public HarnessSettings WithoutAccount(string agent, string profile)
     {
@@ -604,6 +621,14 @@ public sealed record HarnessSettings(
             {
                 settings = settings.WithRotation(agent, [.. own.Where(name => name != profile)], workspace);
             }
+        }
+
+        bool Keeps(UseEntry? entry) =>
+            entry?["keep"] is { ValueKind: JsonValueKind.String } keep && keep.GetString()!.Trim() == profile;
+        if (Keeps(settings.Uses.GetValueOrDefault(agent))) settings = settings.WithUse(agent, new UseChange(NoKeep: true));
+        foreach (var (workspace, uses) in settings.WorkspaceUses)
+        {
+            if (Keeps(uses.GetValueOrDefault(agent))) settings = settings.WithUse(agent, new UseChange(NoKeep: true), workspace);
         }
 
         return settings;
