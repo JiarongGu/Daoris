@@ -69,6 +69,17 @@ describe('a row in what needs you', () => {
     expect(screen.getByText(/propose engine, game/)).toBeInTheDocument();
   });
 
+  /** SESSUX1i (D126 §4.6): a quest parked on its failed sessions, named by what parked it, its door where Try again is. */
+  it('names a quest parked on its failed sessions by that, and says its door leads where it is tried again', () => {
+    render(<AttentionRow
+      item={{ ...PARKED, id: '7a82cc', kind: 'parked-quest', detail: '3 session(s) have failed on `#7a82cc`.' }}
+      onOpen={() => {}}
+    />);
+
+    expect(screen.getByText('parked after failed sessions')).toBeInTheDocument();
+    expect(screen.getByRole('button')).toHaveTextContent('open the quest to try again');
+  });
+
   it('names an ask whose intake parked asking by that', () => {
     render(<AttentionRow item={{ ...PROPOSAL, kind: 'intake', detail: 'published nothing.' }} />);
     expect(screen.getByText('its intake asked you')).toBeInTheDocument();
