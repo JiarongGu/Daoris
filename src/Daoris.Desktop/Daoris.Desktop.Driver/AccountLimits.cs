@@ -199,23 +199,29 @@ public static class AccountLimits
     /// <summary>
     /// The moment a reset names (D125 §2.1), in <paramref name="zone"/>: a time of day is the first such
     /// moment after <paramref name="seen"/>, a month, a day and a time the one in the year that puts it first
-    /// after it, and one up to <see cref="Grace"/> before it is <paramref name="seen"/> itself. Null when this
-    /// grammar does not read it. Month names are English, as the sentences print them.
+    /// after it, and a dated one up to <see cref="Grace"/> before it is <paramref name="seen"/> itself. Null
+    /// when this grammar does not read it. Month names are English, as the sentences print them.
     /// </summary>
+    /// <remarks>
+    /// 🔴 A time of day gets no grace (FIX 2026-10-02): the agent drops the date once the reset is under a day
+    /// away, so <i>resets 4pm</i> refused at 4:12pm is tomorrow's, and the refusal itself says it has not come.
+    /// Read as today's in the grace, it cooled the account for the margin and the next start was refused again.
+    /// </remarks>
     private static DateTimeOffset? When(string when, DateTimeOffset seen, TimeZoneInfo zone)
     {
         var local = TimeZoneInfo.ConvertTime(seen, zone).DateTime;
         IEnumerable<DateTime> candidates;
+        var dated = false;
 
         if (Clock(when) is { } time)
         {
-            // Yesterday's too, so a reset just before midnight, seen just after, falls in the grace.
-            candidates = new[] { -1, 0, 1 }.Select(days => local.Date.AddDays(days) + time);
+            candidates = new[] { 0, 1 }.Select(days => local.Date.AddDays(days) + time);
         }
-        else if (DayAndTime.Match(when) is { Success: true } dated && Clock(dated.Groups["time"].Value) is { } at)
+        else if (DayAndTime.Match(when) is { Success: true } date && Clock(date.Groups["time"].Value) is { } at)
         {
-            var month = Array.IndexOf(Months, dated.Groups["month"].Value.ToLowerInvariant()) + 1;
-            var day = int.Parse(dated.Groups["day"].Value, CultureInfo.InvariantCulture);
+            dated = true;
+            var month = Array.IndexOf(Months, date.Groups["month"].Value.ToLowerInvariant()) + 1;
+            var day = int.Parse(date.Groups["day"].Value, CultureInfo.InvariantCulture);
             candidates = new[] { local.Year - 1, local.Year, local.Year + 1 }
                 .Where(year => day >= 1 && day <= DateTime.DaysInMonth(year, month))
                 .Select(year => new DateTime(year, month, day) + at);
@@ -227,7 +233,7 @@ public static class AccountLimits
 
         // The zone's offset AT that wall-clock moment, so a reset across a change of offset lands on its minute.
         var moments = candidates.Select(c => new DateTimeOffset(c, zone.GetUtcOffset(c))).OrderBy(m => m).ToList();
-        if (moments.Any(m => m <= seen && seen - m <= Grace)) return seen;
+        if (dated && moments.Any(m => m <= seen && seen - m <= Grace)) return seen;
         return moments.Where(m => m > seen).Select(m => (DateTimeOffset?)m).FirstOrDefault();
     }
 

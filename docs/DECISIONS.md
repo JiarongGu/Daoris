@@ -8214,6 +8214,13 @@ case on the protocol door, where the driver reads the door's failure itself. Stu
 carry-on opens on stub account 2 in the same tree, with the opening line, the note and `account.rotated`, and account 1,
 once ready, takes the next start. A presence look reads this process's `PATH`, not the managed tools' (TOOLS5), as a
 plugin's does; that is unchanged. TOOL4h's rehearsal phase is still to be written.
+
+**Fixed 2026-10-02: a time of day gets no grace** (amends §2.1; FIX-LOG). The first real rotation on the install read
+`your weekly limit resets 4pm (<zone>)`, refused at 4:12pm, as today's 4pm within the 15-minute grace, and cooled the
+account for two minutes. The agent drops the date once a reset is under a day away (the same account had said
+`resets Oct 3, 4pm` the day before), and a refusal says the reset has not come. So the grace now holds only for a dated
+reset, and a time of day is the first such moment after the refusal. `AccountLimitsTests` holds the install's sentence.
+
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
