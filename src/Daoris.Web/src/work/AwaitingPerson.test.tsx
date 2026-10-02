@@ -15,13 +15,17 @@ describe('a session parked at a checkpoint', () => {
     expect(screen.getByText(/I recommend the second/)).toBeInTheDocument();
   });
 
-  it('offers exactly the three moves, and never the fourth the ledger allows', async () => {
+  /**
+   * Finish and decline, and never the fourth move the ledger allows. The third, a stop, is the page header's since
+   * SESSUX1d (D126 §3.3): one owner for a session's stop.
+   */
+  it('offers finish and decline, never the move the ledger keeps for the driver, and no stop of its own', async () => {
     const resolve = vi.fn();
     show({ onResolve: resolve });
 
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Stop session' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
     // `working` is the driver observing a session that carried on — a message, not a button.
     expect(screen.queryByRole('button', { name: /resume|continue|working/i })).toBeNull();
 
@@ -57,14 +61,6 @@ describe('a session parked at a checkpoint', () => {
     expect(answer).toHaveBeenCalledWith(null);
   });
 
-  it('stops it as the person, with nothing they have to write', async () => {
-    const resolve = vi.fn();
-    show({ onResolve: resolve });
-
-    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
-    expect(resolve).toHaveBeenCalledWith('stopped', null);
-  });
-
   /**
    * The same two-step a quest's page uses: the note is the only part whoever reads the record
    * later can act on, and a decline that slipped out on one click would routinely carry nothing.
@@ -96,7 +92,7 @@ describe('a session parked at a checkpoint', () => {
 
   it('holds every move while one is in flight', () => {
     show({ pending: true });
-    for (const name of ['Finish', 'Decline…', 'Stop session']) {
+    for (const name of ['Finish', 'Decline…']) {
       expect(screen.getByRole('button', { name })).toBeDisabled();
     }
   });

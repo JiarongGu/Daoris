@@ -294,6 +294,81 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
         Assert.Equal("you", kept["waiting1"].GetProperty("group").GetString());
     }
 
+    /// <summary>
+    /// SESSUX1d (D126 §3.5): *Open folder* opens the folder a session worked in, its own tree or its repository's checkout,
+    /// through the window kit's launcher, as the log's folder opens. The module names the folder from the session's record,
+    /// never the page, and nothing machine-local comes back. A tree a tidy took is refused in the catalogue's words, so is
+    /// a folder this home did not open and that is no checkout, a teammate's record, and an id no record has.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_folder_opens_its_own_tree_or_its_checkout_and_one_that_is_gone_is_refused()
+    {
+        var trees = new SessionTrees(Home);
+        var own = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-2394e5d9");
+        Directory.CreateDirectory(own);
+        var gone = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-0b3c4d5e");
+        var root = Path.Combine(Home, "checkouts", "engine");
+        Directory.CreateDirectory(root);
+        var elsewhere = Path.Combine(Home, "elsewhere", "engine");
+        Directory.CreateDirectory(elsewhere);
+        using var ledger = FolderLedger(own, gone, root, elsewhere);
+        var loop = await UpAsync(ledger);
+        var opened = new List<string>();
+        var module = new DriverModule(Bus, loop, opened.Add);
+
+        var tree = await AnswerAsync(module, "SESSION_OPEN_FOLDER", new { id = "own1" });
+        Assert.True(tree.GetProperty("opened").GetBoolean());
+        await AnswerAsync(module, "SESSION_OPEN_FOLDER", new { id = "root1" });
+        Assert.Equal([Path.GetFullPath(own), Path.GetFullPath(root)], opened.Select(Path.GetFullPath));
+        // Never a machine path back: the module named the folder, and the page has no use for it.
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), tree.GetRawText(), StringComparison.OrdinalIgnoreCase);
+
+        foreach (var refused in new[] { "gone1", "elsewhere1", "machine-b/own1" })
+        {
+            var refusal = await RefusalAsync(module, "SESSION_OPEN_FOLDER", new { id = refused });
+            Assert.Contains(Refusals.SessionFolderGone, refusal);
+            Assert.Contains($"session={refused}", refusal);
+        }
+
+        Assert.Contains(Refusals.SessionUnknown, await RefusalAsync(module, "SESSION_OPEN_FOLDER", new { id = "nobody" }));
+        Assert.Equal(2, opened.Count);
+
+        var failing = new DriverModule(Bus, loop, _ => throw new System.ComponentModel.Win32Exception("no file manager answers"));
+        var failed = await RefusalAsync(failing, "SESSION_OPEN_FOLDER", new { id = "own1" });
+        Assert.Contains(Refusals.SessionFolderNotOpened, failed);
+        Assert.Contains("no file manager answers", failed);
+
+        // A host with no launcher opens nothing, and says so.
+        Assert.False((await AnswerAsync(new DriverModule(Bus, loop), "SESSION_OPEN_FOLDER", new { id = "own1" })).GetProperty("opened").GetBoolean());
+    }
+
+    /// <summary>Before the driver's service is up, a folder is the cold-start sentence: the record names it.</summary>
+    [Fact]
+    public async Task A_sessions_folder_before_the_service_answers_says_so()
+    {
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SESSION_OPEN_FOLDER", new { id = "own1" }));
+    }
+
+    /// <summary>
+    /// The records a folder is named from: a session in its own tree, one whose tree is gone, one in its repository's
+    /// checkout, one that names a folder this home did not open, and a teammate's.
+    /// </summary>
+    private LoopbackHost FolderLedger(string own, string gone, string root, string elsewhere)
+    {
+        var ledger = new LoopbackHost();
+        static string Slashed(string path) => path.Replace('\\', '/');
+        string Session(string id, string tree) =>
+            $$"""{"id":"{{id}}","quest":"q1","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","tree":"{{Slashed(tree)}}","created":"2026-10-02T09:00:00Z","updated":"2026-10-02T09:10:00Z"}""";
+        var records = $"[{Session("own1", own)},{Session("gone1", gone)},{Session("root1", root)},{Session("elsewhere1", elsewhere)},{Session("machine-b/own1", own)}]";
+        ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(records));
+        ledger.Serve("/api/sessions", System.Text.Encoding.UTF8.GetBytes("[]"));
+        ledger.Serve("/api/quests?includeClosed=true", System.Text.Encoding.UTF8.GetBytes("[]"));
+        ledger.Serve("/api/quests", System.Text.Encoding.UTF8.GetBytes("[]"));
+        ledger.Serve("/api/registry", System.Text.Encoding.UTF8.GetBytes(
+            $$"""[{"repository":"engine","adopted":true,"registered":true,"root":"{{Slashed(root)}}","workspace":"aurora"}]"""));
+        return ledger;
+    }
+
     /// <summary>The loop with its service up over a ledger on this machine, and `engine` drivable, so its strikes can park a quest.</summary>
     private async Task<DriverLoop> UpAsync(LoopbackHost ledger)
     {

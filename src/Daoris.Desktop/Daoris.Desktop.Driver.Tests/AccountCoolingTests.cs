@@ -443,18 +443,51 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.NotNull(roster.CoolingOf("fake", "account-1"));
     }
 
-    // ——— The protocol stub (TOOL4a's hand-back): a door Daoris manages no toolchain for reads the stub's words as
-    // its owner's, so a limit is gated over the protocol door with no account behind it.
+    // ——— The protocol stub (TOOL4j, D125 §1.3 rule 4): a door onto the stub, as Claude Code's protocol door is onto
+    // Claude Code, so a limit is gated over the protocol door with no account behind it, on the stub's named accounts.
 
+    /// <summary>
+    /// It runs as the stub's accounts (AGT7): the stub's directories through the stub's variable, the stub's limit table,
+    /// and nothing of its own to sign in with. Present by a file look, since the agent it runs waits on its stdin.
+    /// </summary>
     [Fact]
-    public async Task The_protocol_stub_reads_the_stub_s_limits_and_cools_the_stub_s_own_sign_in()
+    public void The_protocol_stub_is_a_door_onto_the_stub_s_accounts_present_by_a_file_look()
     {
         var adapters = AdapterSet.Built();
         var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
+        var door = adapters.Resolve("acp-stub").Toolchain!;
+        var stub = adapters.Resolve("stub").Toolchain!;
 
-        Assert.Null(adapters.Resolve("acp-stub").Toolchain);
-        Assert.Equal("stub", adapters.Resolve("acp-stub").LimitsOf);
-        Assert.Same(adapters.Resolve("stub").Toolchain!.Limits, roster.LimitsOf("acp-stub"));
+        Assert.Equal("stub", door.Owner("acp-stub"));
+        Assert.Equal(stub.ProfileVariable, door.ProfileVariable);
+        Assert.True(door.ProbeByPresence);
+        Assert.Equal((0, (LimitWords?)null, (LoginQuestion?)null), (door.Binary.Count, door.Limits, door.LoginCheck));
+        Assert.Same(stub.Limits, roster.LimitsOf("acp-stub"));
+    }
+
+    [Fact]
+    public async Task A_limit_on_the_protocol_stub_cools_the_stub_account_it_ran_as_and_holds_both_doors_onto_it()
+    {
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, Settings) { Clock = () => _now, Zone = Zone };
+        new HarnessSettings().WithDefault("stub", "account-1").WithWorkspaceDefault("work", "stub", "account-2").Save(Settings);
+
+        var limited = roster.Limited("acp-stub", "account-1", Refusal, "s1");
+
+        Assert.Equal(("stub", "account-1", Until), (limited!.Value.Entry.Agent, limited.Value.Entry.Account, limited.Value.Entry.Until));
+        Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "stub", "account-1", _now));
+        // One account, spent: neither way onto it starts, and another account of the stub is not held.
+        var door = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
+        var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, null);
+        Assert.Equal((CoolingWords.Hold(limited.Value.Entry, Zone), limited.Value.Entry), (door.Refusal, door.Cooling));
+        Assert.Equal(limited.Value.Entry, pipe.Cooling);
+        Assert.Null((await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, "work", null)).Cooling);
+    }
+
+    [Fact]
+    public async Task A_limit_on_the_protocol_stub_with_no_account_named_cools_the_stub_s_own_sign_in()
+    {
+        var roster = new HarnessRoster(AdapterSet.Built(), Settings) { Clock = () => _now, Zone = Zone };
 
         var limited = roster.Limited("acp-stub", null, Refusal, "s1");
 
@@ -463,19 +496,6 @@ public sealed class AccountCoolingTests : IDisposable
         var pipe = await roster.SelectAsync("stub", DriverConfig.Empty with { Adapter = "stub" }, null, null);
         Assert.Equal(CoolingWords.Hold(limited.Value.Entry, Zone), door.Refusal);
         Assert.Equal(limited.Value.Entry, pipe.Cooling);
-    }
-
-    [Fact]
-    public void Only_the_protocol_stub_reads_another_agent_s_limits_without_a_toolchain()
-    {
-        var adapters = AdapterSet.Built();
-
-        Assert.Equal(
-            ["acp-stub"],
-            adapters.Names.Where(name => adapters.Resolve(name).LimitsOf is not null));
-        Assert.All(
-            adapters.Names.Where(name => adapters.Resolve(name).LimitsOf is not null),
-            name => Assert.Null(adapters.Resolve(name).Toolchain));
     }
 
     [Fact]

@@ -34,15 +34,19 @@ public sealed class AccountLimitsTests
     /// <summary>
     /// A stated reset is the first such moment after the limit was seen, in the zone it names, plus the
     /// 2-minute margin: a time of day within a day, a date when days away, and the next year when the
-    /// date has passed this one. The second row is the grace: a reset up to 15 minutes before it was seen
-    /// is two clocks disagreeing, so the account waits only the margin.
+    /// date has passed this one. A time of day just past is TOMORROW's (FIX 2026-10-02): the agent prints
+    /// the date only when the reset is a day or more away, and its refusal says the reset has not come. Only
+    /// a dated reset gets the grace: up to 15 minutes before it was seen is two clocks disagreeing, so the
+    /// account waits only the margin.
     /// </summary>
     [Theory]
     [InlineData("your session limit resets 7am", "2026-10-02 03:10", "2026-10-02 07:02")]
-    [InlineData("your session limit resets 7am", "2026-10-02 07:05", "2026-10-02 07:07")]
+    [InlineData("your session limit resets 7am", "2026-10-02 07:05", "2026-10-03 07:02")]
+    [InlineData("your weekly limit resets 4pm", "2026-10-02 16:12", "2026-10-03 16:02")]
     [InlineData("your session limit resets 7:50am", "2026-10-02 08:30", "2026-10-03 07:52")]
     [InlineData("resets Oct 6, 10pm", "2026-10-01 14:00", "2026-10-06 22:02")]
     [InlineData("your weekly limit resets Oct 3, 4pm", "2026-10-02 09:00", "2026-10-03 16:02")]
+    [InlineData("your weekly limit resets Oct 2, 4pm", "2026-10-02 16:05", "2026-10-02 16:07")]
     [InlineData("resets Jan 2, 9am", "2026-12-30 12:00", "2027-01-02 09:02")]
     public void A_stated_reset_is_read_in_its_zone_plus_the_margin(string reset, string seen, string until)
     {
@@ -147,13 +151,33 @@ public sealed class AccountLimitsTests
         Assert.Equal("weekly", limit.Window);
     }
 
-    /// <summary>The grace looks back across midnight too: yesterday's 11:55pm, seen at 00:05, has landed.</summary>
+    /// <summary>
+    /// The sentence the install recorded on 2 October (FIX 2026-10-02), at 16:12 in the zone it named: the
+    /// weekly reset was the next day's 4pm, which the same account's sentence the day before had dated
+    /// <i>Oct 3, 4pm</i>. Read as today's 4pm in the grace, it cooled the account for two minutes, and every
+    /// start after was refused on it again.
+    /// </summary>
     [Fact]
-    public void The_grace_reaches_back_across_midnight()
+    public void A_time_of_day_just_past_is_tomorrow_s_as_the_install_recorded()
+    {
+        var seen = At("2026-10-02 16:12", Zone);
+        var limit = Read(
+            $"the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit · your weekly limit resets 4pm ({Zone.Id})",
+            seen);
+
+        Assert.NotNull(limit);
+        Assert.Equal(At("2026-10-03 16:02", Zone), limit.Until);
+        Assert.Equal("weekly", limit.Window);
+        Assert.True(limit.Stated);
+    }
+
+    /// <summary>A time of day just before midnight, seen just after, is tonight's: the next such moment.</summary>
+    [Fact]
+    public void A_time_of_day_just_before_midnight_seen_after_it_is_tonight_s()
     {
         var seen = At("2026-10-02 00:05", Zone);
 
-        Assert.Equal(seen + AccountLimits.Margin, Read($"You've hit your weekly limit · resets 11:55pm ({Zone.Id})", seen)!.Until);
+        Assert.Equal(At("2026-10-02 23:57", Zone), Read($"You've hit your weekly limit · resets 11:55pm ({Zone.Id})", seen)!.Until);
         Assert.Equal(TimeSpan.FromMinutes(2), AccountLimits.Margin);
     }
 

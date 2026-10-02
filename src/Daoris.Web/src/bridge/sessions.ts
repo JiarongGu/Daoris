@@ -190,6 +190,15 @@ export const useArchiveSessions = () => {
   });
 };
 
+/**
+ * *Open folder* (SESSUX1d, D126 §3.5): the folder a session worked in, its own tree or its repository's checkout, opened
+ * in the system's file manager. By its id alone: the module names the folder from the session's record, and the page
+ * never prints a path (platform language §4). It changes nothing, so nothing is asked again.
+ */
+export const useOpenSessionFolder = () => useMutation({
+  mutationFn: (id: string) => call<{ opened: boolean }>('SESSION_OPEN_FOLDER', { id }),
+});
+
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };
 

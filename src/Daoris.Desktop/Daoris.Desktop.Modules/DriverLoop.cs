@@ -188,6 +188,25 @@ public sealed class DriverLoop(
         });
 
     /// <summary>
+    /// One quest as the tick hands it to the page: its id, its repository, the verdict and the driver's sentence, which
+    /// the page translates by the verdict and never by its words (UX5 U27). One writer, since the shape is the page's
+    /// contract.
+    /// </summary>
+    /// <remarks>
+    /// <b>Whose stop holds it</b> (SESSUX1d, D126 §3.3): a <c>Stopped</c> verdict names the session stopped, so the page
+    /// can say the sentence in the reader's language and name the session as a fact rather than reading it out of the
+    /// driver's English. Null for every other verdict, which the bridge leaves out. The stop's tree stays here.
+    /// </remarks>
+    public static object TickConsideration(Consideration consideration) => new
+    {
+        Quest = consideration.Quest.Id,
+        Repository = consideration.Quest.To,
+        Verdict = consideration.Verdict.ToString(),
+        consideration.Reason,
+        HeldBy = consideration.HeldBy?.Session,
+    };
+
+    /// <summary>
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
     /// </summary>
     public TrustHolds Trust { get; } = new();
@@ -443,13 +462,7 @@ public sealed class DriverLoop(
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
                         Events = report.Events,
-                        Considered = report.Considerations.Select(c => new
-                        {
-                            Quest = c.Quest.Id,
-                            Repository = c.Quest.To,
-                            Verdict = c.Verdict.ToString(),
-                            c.Reason,
-                        }).ToArray(),
+                        Considered = report.Considerations.Select(TickConsideration).ToArray(),
                         // The trust holds as facts (D73): machine-local paths, so over this bridge only.
                         // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge.
                         Untrusted = report.Untrusted.Select(hold => new

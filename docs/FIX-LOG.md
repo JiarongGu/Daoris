@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A limit reset given as a time of day cooled its account for two minutes (2026-10-02)
+
+**Symptom.** The first real rotation on the install (TOOL4f) moved a refused start to the next account as designed,
+but `cooling.json` held the refused account only until two minutes after the refusal. Its weekly limit lifted the
+next afternoon, so every start that resolved to it after those two minutes would have been refused again.
+
+**Root cause.** The agent printed `your weekly limit resets 4pm (<zone>)` at 4:12pm in that zone. The same account's
+sentence the day before had said `resets Oct 3, 4pm`: the agent drops the date once the reset is under a day away.
+`AccountLimits.When` (TOOL4a, D125 §2.1) gave every reset a 15-minute grace, a reset up to 15 minutes in the past being
+two clocks disagreeing, so it read today's 4pm as just landed and cooled the account for the margin alone. For a time
+of day that is backwards: the refusal itself says the reset has not come.
+
+**Fix.** Only a dated reset keeps the grace. A time of day is the first such moment after the refusal, today's or
+tomorrow's, so `resets 4pm` at 4:12pm cools until tomorrow's 4:02pm. The install's own entry was set to that by hand
+until a republish carried the fix.
+
+**Verification.** `AccountLimitsTests`: the install's sentence, at the minute it was refused, reads the next day's
+reset; `7am` seen at 7:05 reads tomorrow's 7:02; a dated `Oct 2, 4pm` seen at 4:05pm keeps the grace; 11:55pm seen at
+00:05 is tonight's. All four failed before the change. The driver's fast half passes (2372).
+
 ## `run --install` printed a debug port that never opened (2026-10-02)
 
 **Symptom.** Found looking at the install (LOOK4): `node tools/desktop.mjs run --install <folder>` printed

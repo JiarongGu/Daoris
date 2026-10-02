@@ -236,7 +236,7 @@ describe('the session rail', () => {
 
     it('opens a session in its own window from its row\'s menu', async () => {
       answer(() => undefined);
-      rail({ onReview: () => {} });
+      rail({ doors: { review: () => {} } });
       await screen.findByText('Expose a streaming budget on the chunk API');
 
       const user = userEvent.setup();
@@ -244,7 +244,47 @@ describe('the session rail', () => {
       await user.keyboard('{Enter}');
       await user.click(screen.getByRole('menuitem', { name: 'Open in its own window' }));
 
-      expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:s1a2b3c4' } });
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:s1a2b3c4' } }));
+    });
+
+    /**
+     * SESSUX1d, D126 §3.1: a running driven session's row offers its acts where its row is, as the one rule offers them;
+     * what only the frame can do (ask to stop it, open a terminal in its tree) goes to the frame's door with the session.
+     */
+    it('offers a running session its acts on its row, and hands the frame what is the frame’s', async () => {
+      answer(() => undefined);
+      const stop = vi.fn();
+      const terminal = vi.fn();
+      rail({ doors: { stop, terminal, review: () => {}, answer: () => {} } });
+      await screen.findByText('Expose a streaming budget on the chunk API');
+
+      const user = userEvent.setup();
+      screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+        'Stop…', 'Review', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Copy session ID',
+      ]);
+      await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
+      expect(stop).toHaveBeenCalledWith('s1a2b3c4');
+
+      screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
+      await user.keyboard('{Enter}');
+      await user.click(screen.getByRole('menuitem', { name: 'Open a terminal here' }));
+      expect(terminal).toHaveBeenCalledWith('C:/somewhere/.daoris/trees/default/engine/streaming-budget');
+      // Nothing was stopped on the first press: the frame asks.
+      expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
+    });
+
+    it('offers no act the frame has not handed a door for', async () => {
+      answer(() => undefined);
+      rail();
+      await screen.findByText('Expose a streaming budget on the chunk API');
+
+      const user = userEvent.setup();
+      screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
+      await user.keyboard('{Enter}');
+      expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
+        .toEqual(['Open folder', 'Open in its own window', 'Copy session ID']);
     });
   });
 

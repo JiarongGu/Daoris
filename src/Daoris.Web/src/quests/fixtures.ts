@@ -77,6 +77,11 @@ export const EXHAUSTED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Exhausted',
   reason: '3 sessions failed on this quest, so it is parked. `daoris driver retry abc123` starts it again.',
 };
+/** Held by the person's stop (SESSUX1b), naming the session the tick says holds it (SESSUX1d). */
+export const STOPPED: Consideration = {
+  quest: OPEN.id, repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',
+  reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris driver retry abc123 --session s1a2b3c4`.',
+};
 
 /** A start the driver holds for the agent's trust (D73). */
 export const TRUST: TrustHold = {

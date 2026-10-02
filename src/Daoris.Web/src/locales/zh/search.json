@@ -11,7 +11,7 @@
   "search.emptyLexical": "字面搜索只认词，换一套词汇得出同一结论的仓库不会出现在这里。同归视图能找到它们。",
   "search.emptySemantic": "这里的搜索既认词也认意思，所以家族学到的东西里没有与此相近的。同归视图显示两个仓库在哪里得出了同一结论。",
   "search.nothingHeadline": "没有搜索作答",
-  "search.nothingBody": "这次两种搜索都没能读到索引，所以这不是空结果。再试一次，或者重建索引。",
+  "search.nothingBody": "这次两种搜索都没能读到索引，所以这不是空结果。请重试，或者重建索引。",
   "search.meaningDown": "只按字词匹配：这次按语义的搜索没有作答，用别的说法得出的结论可能漏掉了。",
   "search.toConvergence": "在同归中查看",
   "search.list.open": "展开结果列表",

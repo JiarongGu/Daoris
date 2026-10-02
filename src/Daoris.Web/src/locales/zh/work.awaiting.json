@@ -4,7 +4,6 @@
   "work.awaiting.decline": "谢绝…",
   "work.awaiting.declineConfirm": "以此理由谢绝",
   "work.awaiting.declinePlaceholder": "理由——之后读到这条记录的人能据以行动的部分",
-  "work.awaiting.stop": "停止会话",
   "work.awaiting.resolved": "会话 {{id}} 现在是{{state}}。",
   "work.awaiting.answer": "在下面的框里回答它，它就会继续——那是发消息，不在这三项之内。",
   "work.awaiting.carryOn": "回答并继续…",

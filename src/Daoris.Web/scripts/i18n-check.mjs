@@ -103,11 +103,17 @@ const family = (catalogue, key) => {
 // Named here, so adding one is noticed.
 const PASSED_THROUGH = [/^settings\.rules\.defaultWhy\./, /^work\.sitting\./];
 
+// The facts the page hands a passed-through sentence beside the driver's words, which the other language may say
+// though the English, the driver's own sentence, names none: the quest, and the session a person's stop holds it by
+// (`sittingSentence`, SESSUX1d). Named here, as the keys are, so a fact the page does not hand is still refused.
+const PASSED_FACTS = [{ pattern: /^work\.sitting\./, names: ['quest', 'session'] }];
+
 const mismatched = [];
 for (const key of en) {
   const inEnglish = family(enCatalog, key);
   const inChinese = family(zhCatalog, key);
-  const invented = [...placeholders(zhCatalog[key])].filter((name) => !inEnglish.has(name));
+  const facts = new Set(PASSED_FACTS.filter(({ pattern }) => pattern.test(key)).flatMap(({ names }) => names));
+  const invented = [...placeholders(zhCatalog[key])].filter((name) => !inEnglish.has(name) && !facts.has(name));
   const dropped = PASSED_THROUGH.some((pattern) => pattern.test(key))
     ? []
     : [...placeholders(enCatalog[key])].filter((name) => !inChinese.has(name));

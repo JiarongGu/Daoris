@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
 import {
-  CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD_BY_PERSON, LANED, OPEN, QUESTION, TAKEN,
-  TRUST, WAITING, WORKING,
+  CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD_BY_PERSON, LANED, OPEN, QUESTION, STOPPED,
+  TAKEN, TRUST, WAITING, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -19,7 +19,7 @@ const meta: Meta<typeof QuestPage> = {
   args: {
     quest: OPEN,
     onRespond: nothing, onDelete: nothing, onDismiss: nothing, onRetry: nothing, onTrusting: nothing, onGrant: nothing,
-    onStop: nothing, onOpenQuest: nothing,
+    onOpenQuest: nothing,
   },
   // The main area's height, and a width between the side bar's two states.
   decorators: [(Story) => (
@@ -47,6 +47,9 @@ export const HeldForTrust: Story = { args: { hold: TRUST, trusting: true } };
 /** Parked by its strikes (RETRY1): *Try again* where its sentence is read. */
 export const ParkedByStrikes: Story = { args: { sitting: EXHAUSTED } };
 
+/** Held by the person's stop (SESSUX1b, D126 §3.4): its sentence, and *Try again*, which releases it. */
+export const HeldByAStop: Story = { args: { sitting: STOPPED } };
+
 /** Taken, and waiting on a question its taker asked another repository (D79). */
 export const WaitingOnAQuestion: Story = { args: { quest: WAITING, question: { id: QUESTION.id, quest: QUESTION } } };
 
@@ -59,15 +62,18 @@ export const Lanes: Story = { args: { quest: LANED, lanes: 'assets (Assets), cor
 /** A step of a chain (MAP1): the quest it follows, unseen, this one, and the step its close will publish. */
 export const AChain: Story = { args: { quest: CHAINED, chain: buildChain(CHAINED.id, [CHAINED], []) } };
 
-/** A driven session works it: its record, *Stop session* where its process runs here, and the door into Sessions. */
+/**
+ * A driven session works it: its record and the door into Sessions, where its stop is (D126 §3.6): a quest is decided
+ * on its page, and its sessions are managed on theirs.
+ */
 export const WithItsSession: Story = {
   args: {
-    session: WORKING, running: true, onAttend: nothing,
+    session: WORKING, onAttend: nothing,
     chain: buildChain(OPEN.id, [OPEN, { ...OPEN, id: 'n3n3n3', parent: OPEN.id, title: 'Next' }], [FAILED, WORKING]),
   },
 };
 
-/** The same session read in a browser: the record, and neither the stop nor the door. */
+/** The same session read in a browser: the record, and no door. */
 export const WithItsSessionInABrowser: Story = { args: { session: WORKING } };
 
 /** Declined, with the reason the asker can act on. */

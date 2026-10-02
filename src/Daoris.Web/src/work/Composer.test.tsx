@@ -79,6 +79,37 @@ describe('the composer', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument();
   });
 
+  /**
+   * SESSUX1d (D126 §3.3): in Sessions the session's stop is its page header's, its one owner, so a chat's composer there
+   * keeps *Finish* and *Stop turn* and is handed no stop. Ask Daoris's panel, which holds its conversation on every view,
+   * still hands it one.
+   */
+  it('offers no session stop where it is handed none, and keeps Finish and the turn’s own stop', () => {
+    render(
+      <Tooltip.Provider>
+        <Composer live taking stoppable onSend={() => {}} onFinish={() => {}} onStopTurn={() => {}} />
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument();
+  });
+
+  /** *Answer…* from a session's row puts the focus in the box at its foot (D126 §3.1), once per press. */
+  it('takes the focus when it is told to, and again on a second telling', () => {
+    const { rerender } = render(
+      <Tooltip.Provider><Composer live onSend={() => {}} onFinish={() => {}} focus={0} /></Tooltip.Provider>,
+    );
+    expect(box()).not.toHaveFocus();
+
+    rerender(<Tooltip.Provider><Composer live onSend={() => {}} onFinish={() => {}} focus={1} /></Tooltip.Provider>);
+    expect(box()).toHaveFocus();
+
+    box().blur();
+    rerender(<Tooltip.Provider><Composer live onSend={() => {}} onFinish={() => {}} focus={2} /></Tooltip.Provider>);
+    expect(box()).toHaveFocus();
+  });
+
   it('keeps a draft the session ended underneath, and says nothing is listening', async () => {
     const { rerender } = show();
     await userEvent.type(box(), 'half a thought');
