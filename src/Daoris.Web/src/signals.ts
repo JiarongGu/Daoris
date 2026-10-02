@@ -45,6 +45,15 @@ export interface Consideration {
    * releases and the sentence names (SESSUX1d). Absent for every other verdict, and on a shell older than the fact.
    */
   heldBy?: string;
+  /**
+   * For a quest parked on its failed sessions (verdict `Exhausted`, SESSUX1i): how many failed, as the planner counted to
+   * park it, which the sentence names. Absent for every other verdict, a park the shell has not read yet, and an older shell.
+   */
+  strikes?: number;
+  /**
+   * And when its last session ended (SESSUX1i): what *What needs you* counts its wait from. Absent as `strikes` is.
+   */
+  since?: string;
 }
 
 /**
@@ -86,16 +95,19 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * outstanding row said *搁置 —* over the driver's English. **It translates by the VERDICT**, the
  * driver's typed half, and never by matching the English, which would turn a rewording into a silent
  * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
- * (`NotDrivable`, `Held`, `NoRoot`), and `Stopped`, whose session the tick names as a fact (`heldBy`,
- * SESSUX1d). The rest keep the driver's words, since their sentences name a session or a cap the tick
- * does not carry, and so does a verdict the page has not heard of, and a stop on a shell that names no
- * session. English passes the driver's sentence through as its only copy, as the rules' defaults do
+ * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`,
+ * SESSUX1d), and `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i). The rest
+ * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
+ * so does a verdict the page has not heard of, and a stop or a park on a shell that names no session or
+ * number. English passes the driver's sentence through as its only copy, as the rules' defaults do
  * (POLISH2).
  */
 export function sittingSentence(sitting: Consideration): string {
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
+  if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
   return i18n.t(`work.sitting.${sitting.verdict}`, {
-    why: sitting.reason, session: sitting.heldBy, quest: sitting.quest, defaultValue: sitting.reason,
+    why: sitting.reason, session: sitting.heldBy, quest: sitting.quest, failed: sitting.strikes,
+    defaultValue: sitting.reason,
   });
 }
 

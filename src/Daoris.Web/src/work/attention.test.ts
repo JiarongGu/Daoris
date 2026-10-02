@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Ask, Quest, Registration, Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
+import type { Consideration } from '../signals';
 import { needsAPerson, waitingInSessions } from './attention';
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -329,6 +330,88 @@ describe('a proposal to widen the rules', () => {
       [], [quest({ to: 'nobody' })], [registration('engine')], [ask()], [], [proposal()]);
 
     expect(waiting.map((item) => item.kind)).toEqual(['proposal', 'rule', 'unanswerable']);
+  });
+});
+
+/**
+ * SESSUX1i (D126 §4.6): a quest parked on its failed sessions here. On 1 October the owner's work stood exactly there,
+ * and *What needs you* did not say so: the one press that moved it was on the quest's page. The row is read from the
+ * planner's verdicts the tick hands the page, so a browser, which has no driver, has none.
+ */
+describe('a quest parked on its failed sessions', () => {
+  const parked = (over: Partial<Consideration> = {}): Consideration => ({
+    quest: '7a82cc', repository: 'engine', verdict: 'Exhausted', strikes: 3, since: '2026-10-01T09:21:00+00:00',
+    reason: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 7a82cc` starts it again once you know why.',
+    ...over,
+  });
+
+  it('is a row: the quest, where it is addressed, since its last session ended, and why it sits in the driver’s words', () => {
+    const waiting = needsAPerson([], [quest({ status: 'Taken' })], [registration('engine')], [], [], [], [parked()]);
+
+    expect(waiting).toEqual([{
+      id: '7a82cc',
+      kind: 'parked-quest',
+      title: 'Expose a streaming budget on the chunk API',
+      where: 'engine',
+      since: '2026-10-01T09:21:00+00:00',
+      detail: parked().reason,
+    }]);
+  });
+
+  /** A session parked to ask holds a tree while it waits; a parked quest holds nothing, and comes after it. */
+  it('sits after the parked sessions and ahead of the folders held for trust, oldest first', () => {
+    const waiting = needsAPerson(
+      [session({ id: 'asking', state: 'awaiting-person', updated: '2026-10-01T12:00:00Z' })],
+      [quest({ id: 'q-new', status: 'Taken' }), quest({ id: 'q-old' })],
+      [registration('engine')], [],
+      [{ folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/.claude.json', quest: 'q-new' }], [],
+      [parked({ quest: 'q-new', since: '2026-10-01T10:00:00+00:00' }), parked({ quest: 'q-old', since: '2026-09-30T10:00:00+00:00' })],
+    );
+
+    expect(waiting.map((item) => `${item.kind}:${item.id}`)).toEqual([
+      'parked:asking', 'parked-quest:q-old', 'parked-quest:q-new', `trust:C:/somewhere/.claude.json\nC:/somewhere/engine`,
+    ]);
+  });
+
+  /**
+   * Only the planner's park is the person's to press. A stop holds its quest too, and the person caused it; every other
+   * verdict is a wait or a hold the row does not answer.
+   */
+  it('is only the planner’s park, never a stop’s hold or a wait', () => {
+    const waiting = needsAPerson([], [quest()], [registration('engine')], [], [], [], [
+      parked({ verdict: 'Stopped', heldBy: 's1a2b3c4' }), parked({ verdict: 'RepositoryBusy' }), parked({ verdict: 'Start' }),
+    ]);
+
+    expect(waiting).toEqual([]);
+  });
+
+  it('is absent in a browser, where no driver says what it parked', () => {
+    expect(needsAPerson([], [quest()], [registration('engine')], [])).toEqual([]);
+  });
+
+  /**
+   * A shell older than the fact names no time, and a quest a scope does not list has no title in hand: the row still
+   * says what waits, waiting since the quest's last move and named by its id.
+   */
+  it('still says what waits where the tick names no time and the quest is not in hand', () => {
+    const [named] = needsAPerson([], [quest({ updated: '2026-09-30T08:00:00Z' })], [registration('engine')], [], [], [],
+      [parked({ since: undefined, strikes: undefined })]);
+    expect(named.since).toBe('2026-09-30T08:00:00Z');
+
+    const [unnamed] = needsAPerson([], [], [], [], [], [], [parked()]);
+    expect(unnamed.title).toBe('#7a82cc');
+  });
+
+  /** Why it sits, in the reader's language, by the verdict and the number the tick carries (never its English). */
+  it('says why it sits in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const [item] = needsAPerson([], [quest()], [registration('engine')], [], [], [], [parked()]);
+      expect(item.detail).toMatch(/3 个会话/);
+      expect(item.detail).toContain('`daoris driver retry 7a82cc`');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
 

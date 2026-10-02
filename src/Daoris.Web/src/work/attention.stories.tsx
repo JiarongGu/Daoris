@@ -20,6 +20,19 @@ const PARKED: Attention = {
   detail: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.',
 };
 
+/**
+ * A quest parked on its failed sessions here (SESSUX1i, D126 §4.6): the quest, waiting since its last session ended, and
+ * the driver's sitting sentence; its door is the quest's page, where Try again is.
+ */
+const PARKED_QUEST: Attention = {
+  id: '7a82cc',
+  kind: 'parked-quest',
+  title: 'Read the media field names from config',
+  where: 'engine',
+  since: at(64),
+  detail: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 7a82cc` starts it again once you know why.',
+};
+
 /** An ask waiting on a person (INT4d): its place is its circle, named as one. */
 const PROPOSAL: Attention = {
   id: '7c1e9a04b2d5',
@@ -51,13 +64,14 @@ const meta: Meta = { title: 'Work/Attention' };
 export default meta;
 
 /**
- * The band's rows, in the band's order: parked, the two kinds of ask, a quest nobody can take, a long
- * title, one that said nothing — and last, a parked row with no door, as a browser shows it.
+ * The band's rows, in the band's order: parked, a quest parked on its failed sessions, the two kinds of ask, a quest
+ * nobody can take, a long title, one that said nothing — and last, a parked row with no door, as a browser shows it.
  */
 export const Rows: StoryObj = {
   render: () => (
     <ul className="m-0 max-w-2xl list-none border border-line bg-raised p-0">
       <AttentionRow item={PARKED} onOpen={() => {}} />
+      <AttentionRow item={PARKED_QUEST} onOpen={() => {}} />
       {/* A folder waiting on the person's trust (D73): the folder, what it holds, and why. */}
       <AttentionRow item={TRUST_ROW} onOpen={() => {}} />
       <AttentionRow
@@ -96,6 +110,27 @@ export const Rows: StoryObj = {
       />
       {/* No door: a parked session in a browser, which has no Sessions to open it in. */}
       <AttentionRow item={{ ...PARKED, id: 'browser' }} />
+    </ul>
+  ),
+};
+
+/**
+ * Quests parked on their failed sessions (SESSUX1i): one as English says it, and one with a long 中文 title and the
+ * sitting sentence as 中文 says it from the number the tick carries; the title truncates to its line.
+ */
+export const ParkedQuestRows: StoryObj = {
+  render: () => (
+    <ul className="m-0 max-w-2xl list-none border border-line bg-raised p-0">
+      <AttentionRow item={PARKED_QUEST} onOpen={() => {}} />
+      <AttentionRow
+        item={{
+          ...PARKED_QUEST,
+          id: 'cjk-quest',
+          title: '让世界流式加载在每一帧内限制水合工作量，并把预算暴露在区块 API 上，供上层调度器读取',
+          detail: '`#cjk-quest` 上已有 3 个会话失败，且没有落地任何工作——已挂起，因为继续尝试只会消耗账户，而不会有进展。弄清原因后，`daoris driver retry cjk-quest` 会让它重新开始。',
+        }}
+        onOpen={() => {}}
+      />
     </ul>
   ),
 };
