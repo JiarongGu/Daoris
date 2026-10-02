@@ -361,8 +361,10 @@ controls are in the frame design's §3.
     repository, and *Ended* shows twelve and then *Show N more*. Its ⋯ offers **by repository** instead, remembered:
     a group per repository stating its facts (*drives here*, *held*, *busy* in words), what needs the person first
     (*parked* with it), and the ended beneath. Closed, its strip holds what waits on the person, then what runs.
-    It searches by name at once and by what was said when typing settles. A row's menu holds what has no other
-    home: its own window, its review, its id.
+    It searches by name at once and by what was said when typing settles, archived sessions included and marked. A
+    row's menu holds its own window, its review and its id, and *Archive* on an ended row or *Unarchive* on an
+    archived one (SESSUX1e). The ⋯ shows archived sessions as *Archived*, last, and *Archive what ended…* lists what
+    it would take and what stays before its second press archives.
   - **The centre is the record, then the conversation**, one scroll, following the centre's width
     (U16): the head read once, then the agent's words, which the region follows until the person
     scrolls up and is then offered *Back to bottom*. **A long run reads from what it was asked**
