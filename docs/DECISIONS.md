@@ -8867,3 +8867,9 @@ TypeScript declaration of `rate_limit_event`, every help.openai.com article and 
 is the brief's. Not measured: every item of the design's §11. Found, and the owner's to weigh: the consumer terms'
 sentence on automated access bears on driven sessions as a whole, and this decision does not answer it. `verify`
 checks this entry's shape and the design's links, and none of their words.
+
+**The owner's reading (2026-10-02).** Shown the terms' lines on automated access and on coordinating several
+accounts, the owner answered: *"we are not coordinate, we are doing the same work in the same workspace/repo account by
+account just to optimize the usage"*. One person runs their own work, in one workspace, on accounts they each hold,
+one after another, to use what they pay for. That reading is the owner's and stands. Point 12 stays as written: the
+screen names each account's own plan and terms, and Daoris claims nothing about them.
