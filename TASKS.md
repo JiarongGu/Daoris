@@ -351,7 +351,11 @@ repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidenc
 the archive: **usage is measured before it is managed**, and breadth is **more native adapters plus
 the ACP door, not a registry**.
 
-- [ ] **TOOL4 — rotation** (owner, 2026-10-01: *"this is also good to test for account switch"*): **being designed as
+- [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to
+  check daoris continue"*): Daoris did not continue: on 1 Oct a carrying-on session was refused mid-turn by the weekly
+  spend limit, two more carry-ons were refused at once, and the quest parked on its strikes (Exhausted) until the
+  person presses Retry; an exhaustion burned the strikes like any failure. Sessions read the person's own default
+  login, so the person's `/login` to a third account moved Daoris too. **Being designed as
   D125**, since the install now holds three observed exhaustions (27 and 29 Sep, the ACP adapter's spend-limit
   refusal naming its reset time) and the owner's own weekly-limit switch on 1 Oct. Was: ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
   questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
