@@ -25,7 +25,7 @@ const SESSIONS: Session[] = [
   session({ id: 'w0rk1ng0', state: 'working', repository: 'tools' }),
   session({ id: 'p4rk3d00', state: 'awaiting-person', kind: 'chat' }),
   session({ id: 'f41led00', state: 'failed', quest: 'q1' }),
-  session({ id: 'st0pp3d0', state: 'stopped', tree: 'C:/home/trees/default/engine/st0pp3d0' }),
+  session({ id: 'st0pp3d0', state: 'stopped', tree: 'C:/somewhere/.daoris/trees/default/engine/st0pp3d0' }),
   session({ id: 'aw41t000', state: 'completed', quest: 'q2', repository: 'game' }),
   session({ id: 'd0ne0000', state: 'completed', updated: at(30) }),
   session({ id: 'd0ne0001', state: 'declined', updated: at(10) }),

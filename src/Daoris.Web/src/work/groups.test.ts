@@ -43,7 +43,7 @@ describe('the list by state', () => {
     session({ id: 'f1', state: 'failed', quest: 'q1' }),
     session({ id: 'c1', state: 'completed', updated: at(30) }),
     session({ id: 'c2', state: 'completed', updated: at(5) }),
-    session({ id: 'r1', state: 'stopped', tree: 'C:/home/trees/engine/r1' }),
+    session({ id: 'r1', state: 'stopped', tree: 'C:/somewhere/.daoris/trees/default/engine/r1' }),
     session({ id: 'a1', state: 'completed', quest: 'q2' }),
   ];
   // The reader's answer, in its order: the groups in the order the person acts on them, and each in its own.
