@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1067 CLI tests, 916 service and 50 HTTP host, 3189 driver,
+**Counts, and this is their one home:** seventeen commands, **1073 CLI tests, 916 service and 50 HTTP host, 3352 driver,
 529 desktop modules, 80 devkit, 2630 web unit, 24 Playwright**, 114/114 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
@@ -204,11 +204,6 @@ owner on 1 October.
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **ANSWER1 — an answer continues the session** (owner, 2026-10-02: *"whenever I input anything say the session was
-  waiting for my input and after I input it starts a new session? isn't this should be continue"*). An answer to a parked
-  driven session resumes the agent's own conversation on the same account and tree, shown as the same session going on;
-  a fresh carry-on only when resuming cannot work, said why. Contract: D131 (in flight). Proof: driver tests; a Process
-  tick on the stub; the look on the install.
 - [ ] **ANSWER1b — the service keeps an answered park** (service, tools; in flight). `SessionLedger.AnswerAsync` ends the
   parked record, so the driver can never reopen it; keep it `awaiting-person` with its answer instead, so the resume
   ANSWER1a built can happen. Contract: D131 point 6, design §5. Proof: `SessionLedgerTests`; the family rehearsal's
@@ -222,6 +217,9 @@ owner on 1 October.
   each answer, each message typed into a running session) is kept on the ask verbatim, with when and to which session and
   quest; today they live only in session records. Contract: D133 §1. Proof: service tests reading an answer and a typed
   message back from the ask, failing first.
+- [ ] **DRIFT1a2 — a typed message reaches its ask** (modules; after DRIFT1a). `SESSION_INPUT` posts
+  `/api/sessions/{id}/added` when a driven session's inbox takes the person's words and when an intake is told them.
+  Contract: D133 §1, its DRIFT1a note. Proof: a modules test that a held message posts once with its session's id.
 - [ ] **DRIFT1b — every session on an ask is given all of them** (driver; after DRIFT1a). A first start, a resume, a
   carry-on on any account and a follow-up's session get every one of the ask's words, newest last, not one hop's answer.
   Contract: D133 §2. Proof: a driver test on the drift's chain (answer, cut-off, cut-off, carry-on elsewhere still quotes it).
@@ -234,10 +232,6 @@ owner on 1 October.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
-- [ ] **PAUSE1 — pause and clean up an ask** (owner, 2026-10-02: *"so there is a pause and cleanup feature needed"*). Pause
-  holds every quest of an ask and stops its sessions; clean up declines them with a reason, discards their trees and
-  unpushed branches, and archives their sessions, listing first and refusing pushed or landed work. Contract: D132.
-  Proof: the design (landing; its acts are named *Pause* 暂缓 and *Abandon* 放弃, §8.2).
 - [ ] **PAUSE1a — the work, and the pause's file** (driver; cli). `AskWork.Read` answers what an ask's work is (its
   quests, chain steps, questions it asked, sessions, trees, branches); `pausedAsks` and `pausedQuests` in `driver.json`,
   both twins. Contract: D132 §1, §2.5. Proof: `AskWorkTests`; the twin tables, both sides.
@@ -467,11 +461,6 @@ the ACP door, not a registry**.
   none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
   accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
   waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
-- [ ] **TOOL6c — what the agents say, read** (driver; after TOOL6b; unblocked: TOOL4b measured the frame). Claude Code's
-  `rate_limit_event` `unifiedWindows` (each window's use 0–1 and reset, every frame) on the native door, and the
-  protocol door's `usage_update._meta["_claude/rateLimit"]`, kept in `windows.json`, so pace and *switch before the
-  limit* act on what is left. Contract: D130 §4.4, §4.5, §5.2, §16.3, as the evidence corrects them. Proof: fast-half
-  tables over the recorded frames; a Process tick replaying one.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.

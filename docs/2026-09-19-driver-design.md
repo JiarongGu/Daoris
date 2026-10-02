@@ -242,7 +242,10 @@ tier, and says which tier ran.
 
 1. **Resume as a follow-up mechanism** — when a closed quest gets a successor on the same ground, is a
    fresh session (today's answer) ever worse than waking the one that did the work? Evidence from real
-   driven runs decides; the capability flag in §5 is the seam it lands in.
+   driven runs decides; the capability flag in §5 is the seam it lands in. *Answered in part by D131
+   (2026-10-02): a park the person answered resumes its own harness conversation where the account, the
+   adapter and the tree are the same (`ISessionAdapter.Resumes`); a successor quest is still a fresh
+   session.*
 2. **A live channel** — polling is right-sized for a local host; if the platform's session view proves
    too stale in real use, that evidence picks the mechanism (SSE first, being one-way).
 3. **Session visibility over MCP** — should a repository's agent be able to ask "is a session already
