@@ -285,11 +285,13 @@ public sealed class QuestRequirementTests : IAsyncLifetime
             ],
         })).Quest!;
 
+        // Each done answers the requirement it carries (DRIFT1d): met, so nothing holds the chain.
+        QuestAnswer[] met = [new(1, Met: "It opens through the bridge's route.")];
         await _exchange.RespondAsync(built.Id, "take", null, Now);
-        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(built.Id, "done", "Built.", Now)).Refusal);
+        Assert.Equal(QuestRespondRefusal.None, (await _exchange.RespondAsync(built.Id, "done", "Built.", Now, answers: met)).Refusal);
         var step = (await _quests.FromAsync(AskDesk.SenderOf(ask.Id))).Single(quest => quest.Parent == built.Id);
         await _exchange.RespondAsync(step.Id, "take", null, Now);
-        await _exchange.RespondAsync(step.Id, "done", "Verified.", Now);
+        await _exchange.RespondAsync(step.Id, "done", "Verified.", Now, answers: met);
         var report = (await _quests.FromAsync(AskDesk.SenderOf(ask.Id))).Single(quest => quest.Parent == step.Id);
 
         Assert.Equal([bridge], step.Requirements);

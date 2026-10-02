@@ -123,6 +123,21 @@ public enum QuestRespondRefusal
 
     /// <summary>A wait that waits on nothing (D79): no question named, an unknown or answered one, itself, or a quest nobody has taken.</summary>
     CannotWait,
+
+    /// <summary>A done that leaves one of the quest's requirements unanswered (DRIFT1d, D133 §4) — the answer names each.</summary>
+    Unanswered,
+
+    /// <summary>
+    /// An answer that is not one (DRIFT1d): it names no requirement the quest carries, or one twice; it says both met
+    /// and departed, or neither; a departure lacks its reason or the person's words; or it came with no done to answer.
+    /// </summary>
+    BadAnswer,
+
+    /// <summary>A departure quotes words the person never said (DRIFT1d) — the answer names them.</summary>
+    NotQuoted,
+
+    /// <summary>A yes to a quest no departure holds (DRIFT1d): not closed done with one, or already accepted.</summary>
+    NotHeld,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -838,7 +853,9 @@ public sealed class QuestExchange(
     public async Task<QuestRespondOutcome> RespondAsync(
         string id, string action, string? reason, DateTimeOffset now, CancellationToken ct = default,
         // The question a `wait` waits on (D79): a quest the waiting session asked another repository.
-        string? on = null)
+        string? on = null,
+        // How a `done` answers each of the quest's requirements (DRIFT1d, D133 §4).
+        IReadOnlyList<QuestAnswer>? answers = null)
     {
         if (string.Equals(action, "wait", StringComparison.OrdinalIgnoreCase))
         {
@@ -869,9 +886,31 @@ public sealed class QuestExchange(
                 Quest: null);
         }
 
+        // Answers are a done's (DRIFT1d): carried by any other verb, they would be dropped, and dropped looks kept.
+        if (answers is { Count: > 0 } && status != QuestStatus.Done)
+        {
+            return new(
+                QuestRespondRefusal.BadAnswer,
+                $"Answers are given when closing `done`, one for each requirement; a `{action.ToLowerInvariant()}` carries none. "
+                + "Nothing moved.",
+                Quest: null);
+        }
+
+        // A done answers each of the person's requirements (DRIFT1d, D133 §4), judged before the move. A quest's
+        // requirements are fixed at its publish, so a look outside the write judges what the write will hold; whether
+        // it may still close is the store's, inside it.
+        IReadOnlyList<QuestAnswer> answered = [];
+        if (status == QuestStatus.Done
+            && await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false) is { Status: QuestStatus.Open or QuestStatus.Taken } live)
+        {
+            var judged = await JudgeAnswersAsync(live, answers ?? [], ct).ConfigureAwait(false);
+            if (judged.Refusal is { } refusal) return new(refusal, judged.Message!, Quest: null);
+            answered = judged.Answers;
+        }
+
         // Every verb commits here, shared or not (D68): the next sync carries it to the remote, where the
         // first push wins and a later one is kept as a conflict rather than lost (design §5).
-        var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct)
+        var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct, answered)
             .ConfigureAwait(false);
 
         if (move.Quest is null)
@@ -889,11 +928,11 @@ public sealed class QuestExchange(
         {
             // The chain moved on with the close (D65 §4) — said here, because the next step is now
             // somebody's open quest and whoever closed this one should know whose.
-            var then = move.FollowUp is { } next
-                ? $"\n\nThen: published `#{next.Id}` to `{next.To}` on behalf of `{next.From}` — {next.Status}."
-                  + (next.Then.Count > 0 ? $" {next.Then.Count} more step(s) follow it." : "")
-                : "";
-            return new(QuestRespondRefusal.None, $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{then}", move.Quest);
+            return new(
+                QuestRespondRefusal.None,
+                $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"
+                + Then(move.FollowUp),
+                move.Quest);
         }
 
         // The store refused the transition; the quest comes back unchanged so the answer can name the
@@ -957,6 +996,234 @@ public sealed class QuestExchange(
             + "now. The driver starts it again in the same tree once `#" + on + "` is answered, with the answer "
             + "in the instruction.", move.Quest);
     }
+
+    /// <summary>The chain's next step a close or a yes published (D65 §4), said so whoever moved it knows whose it now is.</summary>
+    private static string Then(Quest? followUp) => followUp is { } next
+        ? $"\n\nThen: published `#{next.Id}` to `{next.To}` on behalf of `{next.From}` — {next.Status}."
+          + (next.Then.Count > 0 ? $" {next.Then.Count} more step(s) follow it." : "")
+        : "";
+
+    // ——— A done answers each requirement, and a departure holds what follows for the person's yes (DRIFT1d, D133 §4).
+
+    /// <summary>
+    /// The person accepts a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on — the
+    /// chain's next step is published now, and a quest waiting on it resumes at the driver's next look. Only a quest a
+    /// departure holds takes a yes; any other is refused saying why, as a state, not a malformed ask.
+    /// </summary>
+    /// <remarks>
+    /// The person's door, never an agent's: no connector tool reaches it. It commits here and travels like any verb (D68).
+    /// </remarks>
+    public async Task<QuestRespondOutcome> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var quest = id.TrimStart('#');
+        var move = await quests.AcceptAsync(quest, now, ct).ConfigureAwait(false);
+        if (move.Quest is null)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{quest}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (!move.Moved)
+        {
+            var standing = move.Quest;
+            return new(QuestRespondRefusal.NotHeld, standing switch
+            {
+                { Status: not QuestStatus.Done } =>
+                    $"Quest `#{standing.Id}` is {standing.Status}: only a quest closed done with a departure from what you "
+                    + "required waits for your yes.",
+                { Accepted: { } at } =>
+                    $"Quest `#{standing.Id}`'s departure was already accepted, {When(at)}: nothing waits for a yes.",
+                _ => $"Quest `#{standing.Id}` closed done departing from none of what you required: nothing waits for a yes.",
+            }, Quest: null);
+        }
+
+        var waiting = await quests.WaitingOnAsync(move.Quest.Id, ct).ConfigureAwait(false);
+        var resumes = waiting.Count == 0
+            ? ""
+            : $"\n\n{Listed(waiting)} {(waiting.Count == 1 ? "waits" : "wait")} on it, and {(waiting.Count == 1 ? "resumes" : "resume")} "
+              + "at the driver's next look.";
+        return new(
+            QuestRespondRefusal.None,
+            $"Accepted the departure on quest `#{move.Quest.Id}`: what it held goes on.{resumes}{Then(move.FollowUp)}",
+            move.Quest);
+    }
+
+    /// <summary>
+    /// The answers a done gives, judged against the quest's requirements (DRIFT1d, D133 §4): one for each, by its
+    /// number, each <c>met</c> with how its check was met, or <c>departed</c> with the reason and the person's words it
+    /// turns on, which must be theirs. The answers as kept, trimmed at their ends, in the requirements' order — or why
+    /// not, naming each requirement or answer at fault.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A quote is a fact</b> (D24, D54): a departure's words are matched as a requirement's are
+    /// (<see cref="QuestRequirement.QuotedIn"/>), against the person's words on the ask where this host holds it,
+    /// and always against the quest's own requirements, which were checked where the ask is and travel with the
+    /// quest. A reading attributed to the person without their words is what this refuses.</para>
+    ///
+    /// <para><b>A quest with none</b> closes as it always did, and takes no answers.</para>
+    /// </remarks>
+    private async Task<(IReadOnlyList<QuestAnswer> Answers, QuestRespondRefusal? Refusal, string? Message)> JudgeAnswersAsync(
+        Quest quest, IReadOnlyList<QuestAnswer> given, CancellationToken ct)
+    {
+        (IReadOnlyList<QuestAnswer>, QuestRespondRefusal?, string?) Bad(string why) =>
+            ([], QuestRespondRefusal.BadAnswer, why + " Nothing was closed.");
+
+        var required = quest.Requirements;
+        if (required.Count == 0)
+        {
+            return given.Count == 0
+                ? ([], null, null)
+                : Bad($"Quest `#{quest.Id}` carries no requirements, so a `done` answers none: close it with a note.");
+        }
+
+        var kept = new Dictionary<int, QuestAnswer>();
+        foreach (var (answer, index) in given.Select((answer, index) => (answer, index + 1)))
+        {
+            var which = $"Answer {index}";
+            if (answer.Requirement < 1 || answer.Requirement > required.Count)
+            {
+                return Bad(answer.Requirement < 1
+                    ? $"{which} names no requirement: answer each by its number, from 1, as the quest lists them."
+                    : $"{which} names requirement {answer.Requirement}, and quest `#{quest.Id}` carries {required.Count}.");
+            }
+
+            which = $"{which} (requirement {answer.Requirement})";
+            if (kept.ContainsKey(answer.Requirement))
+            {
+                return Bad($"Requirement {answer.Requirement} is answered twice: answer each once.");
+            }
+
+            var met = Blank(answer.Met);
+            var departed = Blank(answer.Departed);
+            var quote = Blank(answer.Quote);
+            if (met is not null && departed is not null)
+            {
+                return Bad($"{which} says `met` and `departed` at once: say which.");
+            }
+
+            if (met is null && departed is null)
+            {
+                // A departure's reason left blank is a departure without its reason, not an answer that says nothing.
+                return Bad(answer.Departed is not null
+                    ? $"{which} departs without its reason: say why the work departed from it."
+                    : $"{which} says neither `met` nor `departed`: say how its check was met, or why the work departed from it.");
+            }
+
+            if (met is not null && answer.Quote is not null)
+            {
+                return Bad($"{which} is met, and a met answer quotes nothing: its requirement already quotes the person.");
+            }
+
+            if (departed is not null && quote is null)
+            {
+                return Bad($"{which} departs without the person's own words it turns on (`quote`), copied exactly from what "
+                    + "they said: a reading of their words is the reason, never their words.");
+            }
+
+            var tooLong = new[] { ("how", met), ("reason", departed), ("quote", quote) }
+                .FirstOrDefault(half => half.Item2 is { Length: > MaxRequirementLength });
+            if (tooLong.Item2 is not null)
+            {
+                return Bad($"{which}'s {tooLong.Item1} is longer than {MaxRequirementLength} characters: say it in a few lines.");
+            }
+
+            kept[answer.Requirement] = new QuestAnswer(answer.Requirement, met, departed, quote);
+        }
+
+        var unanswered = Enumerable.Range(1, required.Count).Where(number => !kept.ContainsKey(number)).ToList();
+        if (unanswered.Count > 0)
+        {
+            return ([], QuestRespondRefusal.Unanswered,
+                $"Quest `#{quest.Id}` carries {Count(required.Count, "requirement")}, each the person's own words, and this "
+                + $"`done` leaves {(unanswered.Count == 1 ? "one" : unanswered.Count.ToString(System.Globalization.CultureInfo.InvariantCulture))} unanswered:\n\n"
+                + string.Join("\n", unanswered.Select(number =>
+                    $"- requirement {number}: \"{Clip(required[number - 1].Quote)}\" — check: {Clip(required[number - 1].Check)}"))
+                + "\n\nAnswer each by its number: `met`, with how its check was met, or `departed`, with the reason and the "
+                + "person's own words it turns on (`quote`), copied exactly. A departure is shown to the person, and what "
+                + $"follows this quest waits for their yes. Nothing was closed; the quest stays {quest.Status}.");
+        }
+
+        var ordered = kept.OrderBy(pair => pair.Key).Select(pair => pair.Value).ToList();
+        if (await UnquotedAsync(quest, ordered, ct).ConfigureAwait(false) is { } unquoted)
+        {
+            return ([], QuestRespondRefusal.NotQuoted, unquoted);
+        }
+
+        return (ordered, null, null);
+    }
+
+    /// <summary>
+    /// Why a departure's words are not the person's (DRIFT1d), naming each — or null when every departure quotes them:
+    /// their words on the ask where this host holds it, and the quest's requirements wherever it is.
+    /// </summary>
+    private async Task<string?> UnquotedAsync(Quest quest, IReadOnlyList<QuestAnswer> answers, CancellationToken ct)
+    {
+        var departures = answers.Where(answer => answer.IsDeparture).ToList();
+        if (departures.Count == 0) return null;
+
+        var askId = AskDesk.AskOf(quest.From);
+        var held = askId is not null && asks is not null ? await asks.FindAsync(askId, ct).ConfigureAwait(false) : null;
+        var words = (held?.Words.Select(word => word.Text) ?? []).Concat(quest.Requirements.Select(requirement => requirement.Quote)).ToList();
+
+        var unsaid = departures.Where(answer => !words.Any(text => QuestRequirement.QuotedIn(answer.Quote!, text))).ToList();
+        if (unsaid.Count == 0) return null;
+
+        var where = held is not null
+            ? $"on ask `#{held.Id}`"
+            : $"in quest `#{quest.Id}`'s requirements — this host does not hold ask `#{askId}`, so here a departure may "
+              + "quote only the requirements' own words";
+        return (unsaid.Count == 1 ? "A departure quotes" : $"{unsaid.Count} departures quote")
+            + $" words the person never said {where}:\n\n"
+            + string.Join("\n", unsaid.Select(answer => $"- requirement {answer.Requirement}: \"{Clip(answer.Quote!)}\""))
+            + "\n\nA departure quotes the person's own words it turns on, verbatim (whitespace and case aside): from the ask, "
+            + "what they said on it since, or the requirement itself. A reading of their words attributed to them is what "
+            + "this refuses: say it in the reason. Nothing was closed.";
+    }
+
+    /// <summary>
+    /// What a done said of its requirements (DRIFT1d), for whoever closed it: each met, or which departed and what that
+    /// holds — the next step, a quest waiting on it, or the ask — until the person accepts it. Nothing for a quest with none.
+    /// </summary>
+    private async Task<string> AnsweredAsync(Quest closed, CancellationToken ct)
+    {
+        if (closed.Answers.Count == 0) return "";
+        var departed = closed.Answers.Count(answer => answer.IsDeparture);
+        if (departed == 0)
+        {
+            return closed.Answers.Count == 1 ? " Its requirement is met." : $" Each of its {closed.Answers.Count} requirements is met.";
+        }
+
+        var holds = new List<string>();
+        if (closed.Then.Count > 0)
+        {
+            var next = closed.Then[0];
+            holds.Add($"the next step, \"{next.Title.Replace("{parent}", $"#{closed.Id}", StringComparison.Ordinal)}\" to "
+                      + $"`{next.To}`, is published only once they accept it");
+        }
+
+        var waiting = await quests.WaitingOnAsync(closed.Id, ct).ConfigureAwait(false);
+        if (waiting.Count > 0)
+        {
+            holds.Add($"{Listed(waiting)}, which {(waiting.Count == 1 ? "waits" : "wait")} on it, "
+                      + $"{(waiting.Count == 1 ? "resumes" : "resume")} only then");
+        }
+
+        if (holds.Count == 0) holds.Add("nothing follows it, and what it was asked for stays open until they accept it");
+
+        return $" It departed from {departed} of its {Count(closed.Answers.Count, "requirement")}, so it is held for the "
+               + $"person's yes: {string.Join("; and ", holds)}. The departure is kept on the quest, and the person accepts "
+               + $"it with `daoris-driver quest accept {closed.Id}`.";
+    }
+
+    /// <summary>Quests by id and receiver, as an answer names them.</summary>
+    private static string Listed(IReadOnlyList<Quest> quests) =>
+        string.Join(", ", quests.Select(quest => $"`#{quest.Id}` (`{quest.To}`)"));
+
+    private static string Count(int count, string what) => count == 1 ? $"1 {what}" : $"{count} {what}s";
+
+    private static string When(DateTimeOffset at) =>
+        at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string? Blank(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
 
     // ——— Deleting a quest made by mistake (D95).
 

@@ -347,6 +347,62 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// DRIFT1d (D133 §4): the respond door's done answers each requirement. One left unanswered is refused, 400 naming
+    /// it; a departure closes the quest done, answered on the quest with <c>held</c>, and it stays on the outstanding
+    /// list. The accept door, the person's yes, releases it: 200 once, 409 after, 404 for a quest nobody holds.
+    /// </summary>
+    [Fact]
+    public async Task A_done_answers_each_requirement_and_a_departure_waits_for_the_accept_door()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the weekly report through the v3 bridge, using the common-report.",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Build the weekly report", body = "Reached through the bridge.",
+            requirements = new[]
+            {
+                new { quote = "through the v3 bridge", check = "It opens through the bridge's route." },
+                new { quote = "using the common-report", check = "It is a common-report configuration." },
+            },
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+
+        var unanswered = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "done", reason = "Built.", answers = new[] { new { requirement = 1, met = "It opens through the route." } },
+        });
+        Assert.Equal(400, unanswered.Status);
+        Assert.Contains("requirement 2: \"using the common-report\"", unanswered.Error);
+
+        var closed = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "done", reason = "Built.",
+            answers = new object[]
+            {
+                new { requirement = 1, met = "It opens through the route." },
+                new { requirement = 2, departed = "The weekly totals needed a type of its own.", quote = "the common-report" },
+            },
+        });
+        Assert.Equal(200, closed.Status);
+        var answered = closed.Json.GetProperty("quest");
+        Assert.True(answered.GetProperty("held").GetBoolean());
+        Assert.Equal("the common-report", answered.GetProperty("answers")[1].GetProperty("quote").GetString());
+        Assert.Contains((await host.GetAsync("/api/quests")).Json.EnumerateArray(), row => row.GetProperty("id").GetString() == quest);
+
+        Assert.Contains(("POST", "/api/quests/{id}/accept"), host.Routes());
+        var accepted = await host.PostAsync($"/api/quests/{quest}/accept", new { });
+        Assert.Equal(200, accepted.Status);
+        Assert.False(accepted.Json.GetProperty("quest").GetProperty("held").GetBoolean());
+        Assert.Equal(JsonValueKind.String, accepted.Json.GetProperty("quest").GetProperty("accepted").ValueKind);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/accept", new { })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/accept", new { })).Status);
+    }
+
+    /// <summary>
     /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
     /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>

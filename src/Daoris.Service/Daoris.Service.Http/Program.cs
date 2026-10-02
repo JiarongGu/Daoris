@@ -465,8 +465,13 @@ app.MapPost("/api/quests", async (
 app.MapPost("/api/quests/{id}/respond", async (
     ComposedService s, HttpContext http, string id, RespondQuestRequest body, CancellationToken ct) =>
 {
+    // A done's answers (DRIFT1d): a number left out arrives as 0, a half left out blank, and the exchange refuses
+    // each naming which — the same sentence every door gives.
+    var answers = (body.Answers ?? [])
+        .Select(a => new QuestAnswer(a?.Requirement ?? 0, a?.Met, a?.Departed, a?.Quote))
+        .ToList();
     var outcome = await s.Exchange.RespondAsync(
-        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On);
+        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On, answers: answers);
 
     return outcome.Refusal switch
     {
@@ -480,6 +485,26 @@ app.MapPost("/api/quests/{id}/respond", async (
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
+
+// The person's yes to a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on — the
+// chain's next step is published, and a quest waiting on it resumes. LOCAL mode only, as a delete is: the person
+// says yes on their own machine, and the operation travels from there like any verb (D68). No connector tool reaches
+// it, since the yes is the person's, never an agent's.
+if (mode == ServiceMode.Local)
+{
+    app.MapPost("/api/quests/{id}/accept", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.AcceptAsync(id, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Nothing waits for a yes: a state, the lock's own shape.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+}
 
 // A person dismissing a conflict (SYNC6c): committed here like any verb, and carried by the next pass,
 // so the conflict goes on every machine. It moves no status, which is why it is not a `respond`
@@ -1340,7 +1365,10 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.PublishedBy,
     deletable,
     q.Lanes,
-    q.Requirements.Select(r => new QuestRequirementWire(r.Quote, r.Check)).ToList());
+    q.Requirements.Select(r => new QuestRequirementWire(r.Quote, r.Check)).ToList(),
+    q.Answers.Select(a => new QuestAnswerWire(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
+    q.Held,
+    q.Accepted);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives.

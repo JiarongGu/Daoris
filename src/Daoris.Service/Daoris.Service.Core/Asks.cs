@@ -570,6 +570,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// <remarks>
     /// A quest deleted (D95), here or on another machine, leaves the record as if the ask had never
     /// become it; a published ask left with none is a proposal again, for a person to publish or close.
+    /// A quest closed done departing from what the person required has not closed for the ask (DRIFT1d,
+    /// D133 §4): it waits for their yes, and an ask reading done would say they had agreed.
     /// </remarks>
     /// <param name="asked">Every quest asked by this ask — chain steps included, closed ones included.</param>
     public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked)
@@ -578,7 +580,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var standing = ask.Quests.All(held.Contains) ? ask : ask with { Quests = [.. ask.Quests.Where(held.Contains)] };
         if (standing.State != AskState.Published) return standing;
         if (asked.Count == 0) return standing with { State = AskState.Proposed };
-        return asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined)
+        return asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined && !quest.Held)
             ? standing with { State = AskState.Done }
             : standing;
     }

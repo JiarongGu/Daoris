@@ -23,7 +23,8 @@ public static class QuestWire
     public const string Shape =
         "every operation names its machine, sequence, quest, kind and time; a publish carries from, to, title and "
         + "body, every file its name, sha256 and size, every step its to, title and body, and every requirement "
-        + "its quote and check; a conflict names "
+        + "its quote and check; a done's every answer names its requirement and says met or departed, a departure "
+        + "with its quote; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
@@ -132,6 +133,13 @@ public static class QuestWire
         writer.WriteString("kind", operation.Kind.ToString().ToLowerInvariant());
         writer.WriteString("at", operation.At.ToString("O"));
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
+        // Only when it answers some (DRIFT1d): a done on a quest with none crosses exactly as it did.
+        if (operation.Answers is { Count: > 0 } answers)
+        {
+            writer.WritePropertyName("answers");
+            QuestStore.WriteAnswers(writer, answers);
+        }
+
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
         if (operation.Dismisses is { } named)
         {
@@ -307,9 +315,27 @@ public static class QuestWire
             };
         }
 
+        // An answer that names no requirement, says both or neither, or departs without the person's words is half
+        // of one (DRIFT1d), and a replay would hold the quest, or release it, on something nobody said.
+        List<QuestAnswer>? answers = null;
+        if (item.TryGetProperty("answers", out var answered))
+        {
+            if (answered.ValueKind != JsonValueKind.Array) return null;
+            answers = [];
+            foreach (var answer in answered.EnumerateArray())
+            {
+                if (Number(answer, "requirement") is not { } requirement || requirement < 1 || requirement > int.MaxValue) return null;
+                var met = Text(answer, "met");
+                var departed = Text(answer, "departed");
+                var quote = Text(answer, "quote");
+                if ((met is null) == (departed is null) || (departed is not null && quote is null)) return null;
+                answers.Add(new QuestAnswer((int)requirement, met, departed, quote));
+            }
+        }
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null,
-            dismisses);
+            dismisses, answers is { Count: > 0 } ? answers : null);
     }
 
 }

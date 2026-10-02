@@ -38,6 +38,10 @@ public sealed record QuestStepWire(string? To, string? Title, string? Body);
 // A requirement (DRIFT1c, D133 §3): the person's words, quoted, and the check that proves them — the same
 // shape both ways. Nullable on the way in and judged by the exchange, which refuses one missing a half.
 public sealed record QuestRequirementWire(string? Quote, string? Check);
+// How a done answers one requirement (DRIFT1d, D133 §4): its number, and `Met` with how its check was met, or
+// `Departed` with the reason and `Quote`, the person's words it turns on — the same shape both ways. Nullable on the
+// way in and judged by the exchange, which refuses one that says both or neither, naming which.
+public sealed record QuestAnswerWire(int? Requirement, string? Met, string? Departed = null, string? Quote = null);
 // `Then` is what this quest's close will publish next; `Parent` the quest whose close published it;
 // `Conflicts` the moves that lost to another machine's (D68 §5), kept for a person.
 // `Machine` and `Sequence` name the conflict on every machine — what a dismissal names (SYNC6c).
@@ -57,7 +61,10 @@ public sealed record QuestResponse(
     // The lanes of `To` it addresses (D115 §2.2), sorted; empty for a quest to the whole repository.
     IReadOnlyList<string>? Lanes = null,
     // What the person requires (DRIFT1c), each their words and its check; empty for a quest that names none.
-    IReadOnlyList<QuestRequirementWire>? Requirements = null);
+    IReadOnlyList<QuestRequirementWire>? Requirements = null,
+    // How its done answered each (DRIFT1d); `Held` whether a departure holds it for the person's yes, and
+    // `Accepted` when they gave it. Empty, false and null for a quest no departure ever held.
+    IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -66,8 +73,9 @@ public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null);
-// `On` is the question a `wait` waits on (D79).
-public sealed record RespondQuestRequest(string? Action, string? Reason, string? On = null);
+// `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d).
+public sealed record RespondQuestRequest(
+    string? Action, string? Reason, string? On = null, IReadOnlyList<QuestAnswerWire?>? Answers = null);
 // A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
