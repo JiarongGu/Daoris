@@ -8294,6 +8294,24 @@ was met. What it found:
 and the CLI under it, 2.1.284, were not read on a turn, and two reads of the CLI binary were not made (evidence §7).
 `verify` checks the note's links and none of these words.
 
+**Built 2026-10-02 (ACPDATA1): the protocol door keeps a refusal's `data`** (point 1, design §1.2; evidence §3, §4),
+held by `AcpTests`. A JSON-RPC error is now an `AcpRefusal`, still a `DriverException`. What building it settled:
+- **The data's `message` is said after the error's**, as `<message>: <data.message>`, the shape the protocol's own
+  `Internal error: …` has. So a Codex limit reaches the conclusion, the note and `AccountLimits.Read` as
+  *the ACP agent refused the call: Internal error: You’ve hit your usage limit. …*, where it said `Internal error`
+  alone. Words the message already says are not said twice, and Claude Code's message, which carries its sentence,
+  reads byte for byte as before.
+- **`errorKind` is kept beside the sentence, never in it** (`AcpRefusal.ErrorKind`, with `Said` for the data's
+  message). Written into the sentence after Claude Code's reset clause, it would become part of the reset and the
+  grammar would read none.
+- **Read without trusting the shape** (REV3): a `data` that is not an object, or fields in it that are not text, add
+  nothing, and the call still ends in a refusal.
+
+**What the gates do not cover.** Nothing reads `ErrorKind` yet, and it does not travel past the door: the conclusion
+takes the refusal's sentence alone. Reading it, or Codex's `codexErrorInfo`, which is not kept, is §1.2's *a field
+beats a sentence*, and waits for a refusal recorded on the door. No real refusal with a `data` was seen; the shapes
+are the evidence's, read from the adapters' code.
+
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
