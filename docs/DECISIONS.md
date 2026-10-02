@@ -9011,6 +9011,33 @@ saying why. An answer on another stub account never asks the stub to resume. Its
 the real service still ends the record as it takes the answer, so until ANSWER1b lands every answer reads `ended` and
 is carried on as before. The page still shows an answered park as waiting on the person for up to one look (ANSWER1c).
 The family rehearsal's protocol stub was not taught `session/resume`: no rehearsal reaches a resume before ANSWER1b.
+
+**Built 2026-10-02 (ANSWER1b): the service's half** (point 6; design §5), held by `SessionLedgerTests`,
+`SessionStoreTests` and `LocalHostTests`, and the family rehearsal's 17a and section 4. What building it settled:
+- **The answer keeps the park in one step**, under the store's write lock as a move is (REV3), so a second answer and
+  the driver taking the park up never both read it parked. It is a new revision, so its note travels as a move's does;
+  the words themselves are still answered to this machine only.
+- **A second answer replaces the first** on the record and on the note. The note's *Answered:* line is replaced only
+  where it ends the note and quotes the answer held, so nothing else the note says is ever cut.
+- **Clearing is the ledger's to say** (`SetStateAsync`'s `clearAnswer`), on a move into `awaiting-person` alone: working
+  keeps the answer while it is worked on, and `completed` keeps it for the fallback's open, which still carries on a
+  `completed` record with an answer.
+- **The reply is the session as it stands**, still parked, which is how `ServiceClient.AnswerSessionAsync` tells the
+  watchers nothing moved; its sentence says it carries the quest on at the driver's next look. An answer once the
+  driver has taken the park up is refused naming the state the record is in.
+- **The rehearsal's park is a carry-on's.** The protocol stub takes through the service's HTTP door, which marks no
+  session as the taker, so a first session ending with its quest taken reads as a stand-down; a session carrying a
+  take on parks (D80). So 17a makes the cut-off through the doors as section 4 does, the driver carries it on, its
+  session asks, `daoris-driver answer` answers, and the next look resumes the same record's conversation over
+  `session/resume`. The stub advertises `resume` as the real adapter does, and resumes whatever conversation it is
+  asked, keeping no history.
+
+**What the gates do not cover.** The family rehearsal was written, not run: it is the parent's to run at the merge,
+with `AnswerContinuesTickTests`. A take through a connector, which a real agent's first session parks on, is
+`McpToolsTests`' (STANDDOWN2), not 17a's. Words in lanes this branch does not hold still say an answer ends the
+record: the headless host's usage for `answer`, and the comments on the page's answer box, its query and its frame
+(ANSWER1c's lane).
+
 **The rules around the goal (2026-10-02).** The owner: *"you can design the rules around this purpose"*. So the
 defaults are re-decided on the goal: the most work from the accounts' combined allowance, the fewest stalls, and no
 allowance left unused at a reset (design §16).
