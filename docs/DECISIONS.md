@@ -8586,6 +8586,45 @@ failing first, bar the row's tests, rewritten with the rule they draw. **Not bui
 (SESSUX1f) and *Stop…*'s Ask Daoris door (SESSUX1h). **Not measured**: the header at 1280, 888, 680 and 560 px in both
 themes and languages, the long run's toolbar pinned beneath it, and a real stop's ask (§12).
 
+**As built (SESSUX1i, 2026-10-02): What needs you holds a parked quest, and a park is said once.** Overview's band has
+a `parked-quest` row after the parked sessions (`needsAPerson`, from the tick's `Exhausted` verdicts), its door the
+quest's page. `AttentionKind.QuestParked` is said once by `AttentionWatch`: a toast, an OS notification and the headless
+host's line, behind the notify switch. What the build settled that §4.6 and §4.7 left open:
+
+- **A park's facts are read from the records, and only when the parks change.** A verdict names the quest and says the
+  rest in English. The notice needs how many failed and the last failure's note, and the row when the last session
+  ended. `SessionGroups.Parks` reads them from what the list's *parked* row is placed by (the last run, the strikes less
+  RETRY1's mark, the record's end), so the row, the notice and the list count one number. `QuestParkReader` asks the
+  records door only when the quests the planner parked change, since the records are every session ever run (M9) and a
+  park lasts every look. A refused read is asked again at the next look and says nothing meanwhile. The planner and its
+  snapshot were outside this branch's lanes; a count carried on the consideration would save the read.
+- **A park is its last session.** The watch keys each quest's park by its last session here, so a hold that hides it
+  for a look (a held repository outranks the strikes) is the same park, and *Try again* then new failures is a new one.
+  The first look is a baseline, as a session's park is, so a relaunch says nothing. A quest the planner no longer
+  considers is forgotten.
+- **The last failure is said by its park.** The notice carries that failure's note, so the same look's *a session
+  failed* for that session is not said beside it.
+- **The tick carries `strikes` and `since` for a park** (`TickConsideration`), never its session or note. 中文 says the
+  sitting sentence from the number (`work.sitting.Exhausted`; `failed` joins i18n-check's passed facts), and without it
+  the driver's words stand, as for a stop with no `heldBy`. The row waits since the last session ended, else since the
+  quest's last move.
+- **Overview's badge counts every row the band lists.** It had left out the rule proposals (PERM2), and now takes the
+  band's every input.
+- **Names.** `work.attention.parked-quest`, *parked after failed sessions* / 会话失败后挂起, and its door *open the quest
+  to try again* / 打开委托以重试. The notice is the driver's sentence, *engine — `#q` parked after 3 failed sessions*,
+  untranslated as every notice is (D24). The OS notification wears the park's warning, and pressing it attends the last
+  session, whose header offers *Try again*.
+
+Held by `QuestParksTests`, `AttentionTests` (once, a hold between, tried again, the first look, the failure folded, never
+for a stop), `TickConsiderationTests`, `attention.test.ts`, `signals.test.ts`, `AttentionRow.test.tsx`,
+`ShellSignals.test.tsx`, `sessionsBadge.test.tsx` (the band, its door and both badges over a mocked shell) and the
+stories. Each was seen failing first, as a compile error or an assertion, bar one negative case that passed before (no
+parked quest before a tick). The watch's key and fold, the tick's verdict check and the badge's inputs were also seen
+failing under a sabotage. `SessionNotifier` has no test, as before. **Not built here**: the row's short title
+(SESSUX1j), so it shows the quest's title. **Not run here**: the `Process` half and the rehearsals; no rehearsal reads
+the attention lines, which only the watch mode prints. **Not measured**: the row and its 中文 sentence on Overview at
+1280, 888 and 680 px in both themes, and a real park's notification on the install (§12).
+
 ## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
 
 **Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
