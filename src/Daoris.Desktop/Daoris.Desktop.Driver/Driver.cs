@@ -757,6 +757,23 @@ public sealed partial class Driver(
             }
         }
 
+        // An answer continues its own session (ANSWER1a, D131): a park still parked goes on itself where its harness
+        // conversation resumes. Otherwise the park ends, and the answer is carried on below in a new session, saying why.
+        ContinueReason? fellBack = null;
+        var answerKept = false;
+        if (start.Resumes is { Answer: not null, State: "awaiting-person" or "completed" } park && quest.Awaits is null or "")
+        {
+            (var continued, fellBack, answerKept) = await ContinueAsync(start, park, selection, registry, starting, onOpened, ct)
+                .ConfigureAwait(false);
+            if (continued is not null) return continued;
+            start = start with { Resumes = park with { State = "completed" } };
+        }
+
+        // A resume that was tried let go of the starting hold (LEFT2) when the park held the tree; the carry-on's open below
+        // needs it again, until its own record holds the tree.
+        using var restarting = isolated && answerKept ? TreeLock.TryStarting(home, start.Workspace, quest.To) : null;
+        if (isolated && answerKept && restarting is null) return Hold(TreeLock.Replaying(quest.To));
+
         // Where the tree stands BEFORE anything runs in it (SURF6). Read here rather than after the
         // spawn so it is genuinely the base: between this line and the process starting, the only
         // thing that touches the tree is the process. It goes onto the record because the review
@@ -789,6 +806,7 @@ public sealed partial class Driver(
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
+        restarting?.Dispose();
         onOpened();
 
         // Which account it opened on and why (TOOL4f, D125 §3.6; TOOL6b, D130 §16.4): its record's first line names the step
@@ -861,12 +879,15 @@ public sealed partial class Driver(
                               // only the record's own account, so another account's name here would reach a teammate.
                               + (elsewhere ? ", on another account" : "")
                               + (resumedIn is null ? "." : ", in the tree it worked in.")
+                              // Why the answer did not go on in its own conversation (ANSWER1a, D131 §2).
+                              + (fellBack is not null ? Continuations.CarriedOn(fellBack) : "")
                             : null),
                 ct: ct).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
-            // the person's words in its own record, where they read the question.
-            if (carryingOn && start.Resumes!.Answer is { Length: > 0 } answeredWith)
+            // the person's words in its own record, where they read the question. A resume that was tried already put
+            // them there (ANSWER1a).
+            if (carryingOn && !answerKept && start.Resumes!.Answer is { Length: > 0 } answeredWith)
             {
                 _events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
             }
@@ -1024,10 +1045,11 @@ public sealed partial class Driver(
     /// session and an ask's intake, so neither can forget a line the other carries.
     /// </summary>
     /// <returns>The process to start, and what this harness is doing that Daoris could not govern.</returns>
+    /// <param name="prepared">The process a resume prepared (ANSWER1a), given the same environment; null prepares a start.</param>
     private (ProcessStartInfo Info, string? Notice) Prepare(
-        ISessionAdapter adapter, SessionTarget target, HarnessSelection selection)
+        ISessionAdapter adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null)
     {
-        var info = adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
+        var info = prepared ?? adapter.Prepare(target, config.Commands.GetValueOrDefault(adapter.Name));
 
         // The environment seam every harness already carries for exactly this (D49 §4). Applied
         // by the driver rather than inside the adapter's Prepare, so one line governs both doors
@@ -1214,12 +1236,18 @@ public sealed partial class Driver(
     /// The exit code (null when the timeout killed it) and the usage the door reported (null when it
     /// reported none), to the caller's conclusion — which reads the stop flags and moves the record.
     /// </param>
+    /// <param name="resume">
+    /// The conversation an answer continues (ANSWER1a, D131 §1): the run resumes it with the answer as its prompt, appends
+    /// to the record's transcript and conversation, and says on it whether the agent would not resume. Null for a start.
+    /// </param>
+    /// <param name="workingNote">What the record says while it works, where a start's opening sentence is not it.</param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
-        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false)
+        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false,
+        ResumeAsk? resume = null, string? workingNote = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1233,7 +1261,11 @@ public sealed partial class Driver(
         // same process; the pipe door reads its text, or its structure where its own wire carries one
         // (D76, CONV3). All of them end the same way: the record is concluded from the exit code and
         // what the session was for, never from what the session said about itself (D46 §4).
-        var prompt = TargetPrompt.Compose(target);
+        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target.
+        var prompt = resume?.Answer ?? TargetPrompt.Compose(target);
+        // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
+        // intake's: it is answered through its ask.
+        var keepAs = target.Ask is null ? adapter.Name : null;
         // What the person tells a quest's session while it works (SESS3), held for the protocol door to
         // hand over between turns. Never an intake's: it is one turn framed as one prompt (INT4h).
         var inbox = adapter.Wire == SessionWire.Acp && target.Ask is null ? _processes.OpenInbox(sessionId) : null;
@@ -1241,12 +1273,12 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, keepAs, resume)
             : null;
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid) : null;
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, keepAs, resume) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
-        await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
+        await service.AdvanceAsync(sessionId, "working", note: workingNote, transcript: transcript, ct: ct).ConfigureAwait(false);
 
         var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
         await capture.ConfigureAwait(false);
@@ -1300,14 +1332,34 @@ public sealed partial class Driver(
     /// The structured capture for a pipe-door harness whose adapter reads its stdout (CONV3), or null
     /// when the adapter has no reader and the door stays text.
     /// </summary>
+    /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
+    /// <param name="resume">The conversation an answer continues: the record's transcript and conversation go on.</param>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
-        CancellationToken ct, string? preamble = null, string? personSaid = null) =>
+        CancellationToken ct, string? preamble = null, string? personSaid = null, string? keepAs = null,
+        ResumeAsk? resume = null) =>
         adapter.StructuredOutput() is { } mapper
-            ? CaptureStructuredAsync(
+            ? KeepingAsync(mapper, CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
-                prompt, ct, preamble, personSaid: personSaid)
+                resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
+                opened: resume?.Opening(), append: resume is not null), sessionId, keepAs, resume)
             : null;
+
+    /// <summary>
+    /// The native door's conversation id, once its output has ended (ANSWER1a): kept for a quest's session, and told to a
+    /// resume, whose run that never named one ended before the harness opened its conversation.
+    /// </summary>
+    private async Task<AcpUsage?> KeepingAsync(IStreamMapper mapper, Task<AcpUsage?> capture, string sessionId, string? keepAs, ResumeAsk? resume)
+    {
+        var usage = await capture.ConfigureAwait(false);
+        if (mapper.Conversation is { } conversation)
+        {
+            if (keepAs is not null) _conversations.Keep(sessionId, keepAs, conversation);
+            if (resume is not null) resume.Named = true;
+        }
+
+        return usage;
+    }
 
     /// <summary>
     /// A session's opening in its record: the target the driver composed, then — for a carry-on the person
@@ -1348,13 +1400,19 @@ public sealed partial class Driver(
     /// Null for a quest's session.
     /// </param>
     /// <param name="meta">What <c>session/new</c> carries for the rules composed for this session (PERM1).</param>
+    /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
+    /// <param name="resume">
+    /// The conversation an answer continues (ANSWER1a): resumed rather than opened, the record's transcript and
+    /// conversation going on, and an agent that would not resume it told to the resume, never as a turn that failed.
+    /// </param>
     private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
-        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null)
+        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
+        string? keepAs = null, ResumeAsk? resume = null)
     {
-        await using var file = new StreamWriter(transcript, append: false);
+        await using var file = new StreamWriter(transcript, append: resume is not null);
 
         void Line(string text)
         {
@@ -1377,8 +1435,20 @@ public sealed partial class Driver(
         try
         {
             // What was asked, first: the target the driver composed is the conversation's opening line,
-            // and a person's answer it carries on from follows it, as theirs.
-            foreach (var opening in Opening(prompt, personSaid)) Event(opening);
+            // and a person's answer it carries on from follows it, as theirs. A resumed run opens with its own first
+            // line and the answer (ANSWER1a): the target is already in the conversation above.
+            if (resume is not null)
+            {
+                foreach (var opening in resume.Opening())
+                {
+                    if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
+                    Event(opening);
+                }
+            }
+            else
+            {
+                foreach (var opening in Opening(prompt, personSaid)) Event(opening);
+            }
 
             // What this harness is doing that daoris has not been able to govern (ACP3). On the
             // transcript rather than swallowed: it is a fact about how this session ran, and the
@@ -1409,7 +1479,8 @@ public sealed partial class Driver(
             // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
             var session = new AcpSession(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
-                streams: output is null ? null : new SessionStreams(output, sessionId));
+                streams: output is null ? null : new SessionStreams(output, sessionId),
+                onConversation: keepAs is null ? null : conversation => _conversations.Keep(sessionId, keepAs, conversation));
             using var stops = output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
             var outcome = await session
                 .RunAsync(
@@ -1426,13 +1497,22 @@ public sealed partial class Driver(
                             Text = message.Text,
                             Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
                         });
-                    })
+                    },
+                    resume: resume?.Conversation)
                 .ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
             return (outcome, null);
+        }
+        catch (AcpResumeRefused refused) when (resume is not null)
+        {
+            // Not a turn that failed (ANSWER1a): nothing was prompted. The agent's own words stay in this machine's record of
+            // the conversation, and the reason goes to the resume, which ends the park and carries the answer on.
+            resume.Refused = refused.Why;
+            Said($"— {refused.Message}; your answer is carried on in a new session.");
+            return (null, null);
         }
         catch (DriverException error)
         {
@@ -1632,12 +1712,17 @@ public sealed partial class Driver(
     /// After the record, never before: its next message must land behind the ending it waited for.
     /// </param>
     /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
+    /// <param name="opened">
+    /// The record's opening where it is not a prompt's (ANSWER1a): a resumed run's first line and the person's answer.
+    /// </param>
+    /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
-        Action<SessionEvent>? observed = null, string? personSaid = null)
+        Action<SessionEvent>? observed = null, string? personSaid = null,
+        IReadOnlyList<SessionEvent>? opened = null, bool append = false)
     {
-        await using var file = new StreamWriter(transcript, append: false);
+        await using var file = new StreamWriter(transcript, append);
 
         void Line(string text)
         {
@@ -1648,9 +1733,11 @@ public sealed partial class Driver(
         void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
 
         if (preamble is { Length: > 0 }) Line(preamble);
-        if (prompt is not null)
+        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid)))
         {
-            foreach (var opening in Opening(prompt, personSaid)) Event(opening);
+            // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
+            if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
+            Event(opening);
         }
 
         var errors = PumpAsync(stderr, file, sessionId, output, ct);

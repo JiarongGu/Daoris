@@ -25,6 +25,12 @@ public interface IStreamMapper
     AcpUsage? Usage { get; }
 
     /// <summary>
+    /// The harness's own conversation id, once its wire named it (ANSWER1a, D131 §1): what an answer to a park resumes.
+    /// Null for a wire that names none, or before it has.
+    /// </summary>
+    string? Conversation => null;
+
+    /// <summary>
     /// What reads the session's subagents and background work off this wire (CONSOLE3c), each a console
     /// stream of its own, or null for a wire that carries none. Asked once, where a console is kept.
     /// </summary>
@@ -86,6 +92,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
     public AcpUsage? Usage => _usage;
 
+    /// <summary>
+    /// The <c>init</c> line's <c>session_id</c>, the first one said (ANSWER1a): <c>SDKSystemMessage</c> declares it, and
+    /// <c>--resume</c> takes it. 🔴 The maker's published shape, not yet a line this machine printed.
+    /// </summary>
+    public string? Conversation { get; private set; }
+
     /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, and tasks on <c>system</c> lines (CONSOLE3c).</summary>
     public IStreamsReader? Beside(SessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
@@ -114,6 +126,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "result" => Result(frame),
             "control_response" => Control(frame),
             "system" when Str(frame, "subtype") == "permission_denied" => Denied(frame),
+            "system" when Str(frame, "subtype") == "init" => Init(frame),
             // Known and deliberately not the conversation: the session's setup, its status, its limits.
             "system" or "rate_limit_event" => StreamMapped.Nothing,
             var kind => new([], [new SessionEvent
@@ -121,6 +134,13 @@ public sealed class ClaudeStreamJson : IStreamMapper
                 Kind = SessionEventKind.Raw, Title = kind ?? "frame", Raw = SessionEvents.Cut(line, SessionEvents.RawLimit),
             }]),
         };
+    }
+
+    /// <summary>The session's setup (ANSWER1a): its conversation's id kept, the first said, and nothing rendered, as before.</summary>
+    private StreamMapped Init(JsonElement frame)
+    {
+        if (Conversation is null && Str(frame, "session_id") is { Length: > 0 } id) Conversation = id;
+        return StreamMapped.Nothing;
     }
 
     private StreamMapped Stream(JsonElement frame)

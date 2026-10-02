@@ -567,3 +567,100 @@ test('the stub\'s ordinary quest turn ends with exit 0 once its input closes, af
     fx.cleanup();
   }
 });
+
+type Said = { id: number; method: string; params: object };
+type Heard = { id?: number; result?: { stopReason?: string; sessionId?: string; agentCapabilities?: unknown } };
+
+/**
+ * One process of the stub, spoken to as the driver speaks to one: the frames sent in order, a permission it asks for
+ * refused (D52), and end of input once every frame is answered. Resolves with each answer by its id, the text of
+ * every update, stderr, and the code the stub exited with.
+ */
+async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said[] }): Promise<{
+  answers: Map<number, Heard>; texts: string[]; stderr: string; code: number | null;
+}> {
+  const agent = join(cwd, '..', 'acp-agent.mjs');
+  writeFileSync(agent, ACP_STUB_AGENT);
+  const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', (chunk) => { stderr += chunk; });
+  const send = (frame: object) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', ...frame })}\n`);
+  const answers = new Map<number, Heard>();
+  const texts: string[] = [];
+  const answered = new Promise<void>((resolve) => {
+    createInterface({ input: child.stdout }).on('line', (line) => {
+      const frame = JSON.parse(line) as Heard & { method?: string; params?: { update?: { content?: { text?: string } } } };
+      if (frame.method === 'session/update') texts.push(frame.params?.update?.content?.text ?? '');
+      else if (frame.method === 'session/request_permission') {
+        send({ id: frame.id, result: { outcome: { outcome: 'selected', optionId: 'deny' } } });
+      } else if (frame.id !== undefined && frames.some((said) => said.id === frame.id)) {
+        answers.set(frame.id, frame);
+        if (answers.size === frames.length) resolve();
+      }
+    });
+  });
+  const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
+  for (const frame of frames) send(frame);
+  await answered;
+  child.stdin.end();
+  return { answers, texts, stderr, code: await exited };
+}
+
+/**
+ * ANSWER1b (D131 §1): the stub resumes a conversation, as the family rehearsal's answer phase needs it to. A quest that
+ * asks the person first is taken, asks which port and ends its turn holding the quest, doing nothing else. The next
+ * process, as the driver's next look starts one, is sent `session/resume` on the conversation the first one named,
+ * never `session/new`, and its prompt is the person's answer: the report is served where it says, committed, and done.
+ */
+test('the stub resumes the conversation it is asked to, and the person\'s answer is the prompt it does the work with (ANSWER1b)', async () => {
+  const fx = makeFixture('setup-kit-stub-resume');
+  const tree = unadoptedRepository(join(fx.root, 'atlas'));
+  const born = git(tree, 'rev-parse', 'HEAD').trim();
+  const door = await questDoor();
+  const env: Env = {
+    ...process.env,
+    DAORIS_SERVICE_URL: door.url,
+    DAORIS_QUEST_ID: 'quest-port',
+    DAORIS_QUEST_TITLE: 'Ask the person first: which port should the report listen on?',
+  };
+  try {
+    const asking = await speak({
+      cwd: tree, env, frames: [
+        { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
+        { id: 2, method: 'session/new', params: { cwd: tree, mcpServers: [] } },
+        { id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'You are carrying on quest quest-port.' }] } },
+      ],
+    });
+
+    assert.deepEqual(asking.answers.get(1)?.result?.agentCapabilities, { sessionCapabilities: { resume: {} } });
+    assert.equal(asking.answers.get(2)?.result?.sessionId, 'acp-session-1');
+    assert.equal(asking.answers.get(3)?.result?.stopReason, 'end_turn', asking.stderr);
+    assert.deepEqual(asking.texts, ['Which port should the report listen on?']);
+    assert.deepEqual(door.moves.map((move) => move.action), ['take'], asking.stderr);
+    assert.equal(git(tree, 'rev-parse', 'HEAD').trim(), born, 'nothing is done before the answer');
+    assert.equal(asking.code, 0, asking.stderr);
+
+    const resumed = await speak({
+      cwd: tree, env, frames: [
+        { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
+        { id: 2, method: 'session/resume', params: { sessionId: 'acp-session-1', cwd: tree, mcpServers: [] } },
+        { id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'Port 8080.' }] } },
+      ],
+    });
+
+    assert.deepEqual(resumed.answers.get(2)?.result, {});
+    assert.equal(resumed.answers.get(3)?.result?.stopReason, 'end_turn', resumed.stderr);
+    assert.match(resumed.stderr, /acp-agent: resumed conversation acp-session-1 on /);
+    assert.doesNotMatch(resumed.stderr, /acp-agent: session on /);
+    assert.deepEqual(resumed.texts, ['Serving on the port you named: Port 8080.']);
+    assert.deepEqual(door.moves.map((move) => move.action), ['take', 'done'], resumed.stderr);
+    assert.match(git(tree, 'log', '-1', '--format=%s'), /^acp: serve the report where the person said \(quest quest-port\)/);
+    assert.match(git(tree, 'show', 'HEAD:acp-port-quest-port.md'), /It listens where the person said: Port 8080\./);
+    assert.equal(git(tree, 'rev-parse', 'HEAD~1').trim(), born);
+    assert.equal(git(tree, 'status', '--porcelain'), '');
+    assert.equal(resumed.code, 0, `end of input is the ending, after the quest's fetches too (STUB1)\n${resumed.stderr}`);
+  } finally {
+    await door.close();
+    fx.cleanup();
+  }
+});

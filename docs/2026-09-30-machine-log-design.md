@@ -61,6 +61,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `turn.ended` | desktop | session, stopReason, turnMs, input, cacheRead, cacheWrite, output, calls, used, size | how long a turn takes, how it ends, and what it consumed: its tokens as METER1 splits them, its tool calls, and its context against the window (WSSETUP11) |
 | `session.parked` | desktop, driver | session, kind, repository, workspace | a session that stopped to ask the person (D83): the owner's complaint, counted per week by workspace (WSSETUP11, D124 §7.3) |
 | `session.ended` | desktop | session, state, seconds | how it finished |
+| `session.answered` | desktop, driver | session, adapter, resumed, why | an answer to a parked session taken up (D131 §2): whether its own conversation resumed, and where not, why by a code (`account`, `adapter`, `unkept`, `tree`, `unable`, `offered`, `gone`, `refused`, `ended`), never the answer |
 | `registry.followed` | desktop, driver | repository, outcome | a registration followed from a repository's line, by a word from a fixed list (`registered`, `unchanged`, `declares-nothing`, `not-set-up`, `no-line`, `unreadable`, `lanes-unreadable`, `worktree`, `no-checkout`, `not-on-registry`, `refused`), never the sentence its row says: whether set-ups reach the registry once they land (WSSETUP5, D124 §3.4) |
 | `setup.planned` | desktop, driver | workspace, repositories, atOnce, pilot | a workspace plan written by its press: how many it set out to set up, at what pace (WSSETUP6, D124 §4.1) |
 | `setup.published` / `setup.skipped` | desktop, driver | workspace, repository, quest; or refusal, by the press's code | each set-up a plan asked, and each repository its press refused at its turn, by a word, never the sentence |
@@ -163,7 +164,9 @@ tests (`SessionLogTests`, `AttentionTests`, `SetupQuestsTests`):
   writer, since its first look is a baseline that would drop a park made just before a restart, and the headless
   `--once` and `--until-idle` run none. Both read the one predicate, and their tests hold the same rows. `kind`,
   `repository` and `workspace` are what the session's open said; each is null for a session whose open this process
-  never saw. A park is no ending: the record ends, and `session.ended` is written, when the person answers.
+  never saw. A park is no ending, and neither is the answer that keeps it (ANSWER1b, D131): the record ends, and
+  `session.ended` is written, when its resumed conversation does, or when the driver ends the park to carry the
+  answer on in a new session.
 - **`session.started`'s `workspace`** is the record's, the circle its repository is wired into on this machine
   (D48). **`setup` is true** only for a driven session whose quest is a set-up (`SetupQuests`: a title the set-up
   press composes, D117 §6.2 and D124 §2.1–§2.2, with or without its day), and absent on every other line. The
