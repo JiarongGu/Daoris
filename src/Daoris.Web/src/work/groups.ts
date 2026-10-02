@@ -1,5 +1,5 @@
 import type { Session } from '../api';
-import { SESSION_ACTIVE, type ShownState, shownState } from '../ui';
+import { answeredPark, SESSION_ACTIVE, type ShownState, shownState } from '../ui';
 import { sessionOrigin } from './identity';
 
 // The session list by state (SESSUX1c, D126 §2.1, §4): the groups the driver's one reader answers, as the list
@@ -22,7 +22,7 @@ export const GROUP_ORDER: readonly SessionGroupName[] = ['you', 'review', 'worki
  * @remarks
  * **One reader, in the driver.** It needs the planner's verdicts and a git judgement per tree, which only the driver has,
  * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `shown` is the
- * record's state or a derived word, `parked` or `awaiting-reply`; the page keeps its own *idle* for a live chat between
+ * record's state or a derived word, `parked`, `awaiting-reply` or `answered` (ANSWER1c); the page keeps its own *idle* for a live chat between
  * turns (UX5 U17). `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
  * says the mark stands: a session that needs the person stays in its group whatever the mark says.
  */
@@ -65,31 +65,38 @@ export function keptSessionFilters(filters: SessionFilters): Record<string, unkn
 }
 
 /**
- * A row's shown state: the reader's derived word where it said one (*parked*, *awaiting reply*), and otherwise the
- * page's own reading of the record, *idle* among it. A word a newer host derives that this page does not know reads
- * as the record's own, never as nothing.
+ * A row's shown state: the reader's derived word where it said one (*parked*, *awaiting reply*, *answered*), and
+ * otherwise the page's own reading of the record, *idle* and *answered* among it. A word a newer host derives that this
+ * page does not know reads as the record's own, never as nothing.
  */
 export function shownOf(
-  session: Pick<Session, 'kind' | 'state'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined, taking: boolean | undefined,
+  session: Pick<Session, 'kind' | 'state' | 'answer'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
+  taking: boolean | undefined,
 ): ShownState {
-  if (grouping?.shown === 'parked' || grouping?.shown === 'awaiting-reply') return grouping.shown;
+  if (grouping?.shown === 'parked' || grouping?.shown === 'awaiting-reply' || grouping?.shown === 'answered') return grouping.shown;
   return shownState(session, taking);
 }
 
-/** Whether a row waits on the person: a session parked to ask them, or the last session of a quest parked on its failures. */
-export function waitsOnYou(session: Pick<Session, 'state'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined): boolean {
-  return session.state === 'awaiting-person' || grouping?.shown === 'parked';
+/**
+ * Whether a row waits on the person: a session parked to ask them, or the last session of a quest parked on its
+ * failures. Not a park they answered, which the same session goes on from at the driver's next look (ANSWER1c).
+ */
+export function waitsOnYou(
+  session: Pick<Session, 'state' | 'answer'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
+): boolean {
+  return (session.state === 'awaiting-person' && !answeredPark(session)) || grouping?.shown === 'parked';
 }
 
 /**
  * Where a session goes until the reader answers for it: a record that started after the reader's last look. Its record
  * alone says only the reader's first step, live or ended (`SessionGroups.Place`): a live session of this machine's
- * parked to ask the person waits on you, a teammate's waits on them and is working, and an ended one is ended. Nothing
- * here says parked, to review or resumes later, which only the reader can.
+ * parked to ask the person waits on you, a teammate's waits on them and is working, one the person answered goes on and
+ * is working (ANSWER1c), and an ended one is ended. Nothing here says parked, to review or resumes later, which only
+ * the reader can.
  */
 function provisional(session: Session): SessionGroupName {
   if (!SESSION_ACTIVE.has(session.state)) return 'ended';
-  return session.state === 'awaiting-person' && !sessionOrigin(session) ? 'you' : 'working';
+  return session.state === 'awaiting-person' && !answeredPark(session) && !sessionOrigin(session) ? 'you' : 'working';
 }
 
 const newestFirst = (a: Session, b: Session) => b.updated.localeCompare(a.updated);

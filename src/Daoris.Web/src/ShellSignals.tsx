@@ -82,6 +82,9 @@ export function ShellSignals({ notify, onAttend }: {
     // terminal, and Overview still said *no workspace yet* until a reload. The shell now forwards a
     // tick when the registry moved, and this is the half that makes the page look again.
     void client.invalidateQueries({ queryKey: keys.allRegistry });
+    // And the accounts (TOOL4g): a session's end may have cooled one, its door may have said what one has left, and the
+    // sessions running on each have moved. A file read, never a probe, so it is cheap to ask at every tick.
+    void client.invalidateQueries({ queryKey: keys.accounts });
   });
 
   // The driver's service is up (LOOK2a): what it refused while it came up is asked again now, not at the first tick.

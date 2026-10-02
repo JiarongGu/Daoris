@@ -57,7 +57,8 @@ public static class DriverCommand
               delete a quest nobody has started on, or accept a done's departure from what you required, so what
               it held (the chain's next step, a quest waiting on it) goes on.
           answer <session> ["…"]
-              answer a session that parked to ask you; its quest is carried on with your words.
+              answer a session that parked to ask you; the same session goes on with your words at the
+              driver's next look.
           trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | sync [--repository <name>] [--all] [--yes]]

@@ -105,9 +105,11 @@ const PASSED_THROUGH = [/^settings\.rules\.defaultWhy\./, /^work\.sitting\./];
 
 // The facts the page hands a passed-through sentence beside the driver's words, which the other language may say
 // though the English, the driver's own sentence, names none: the quest, the session a person's stop holds it by
-// (`sittingSentence`, SESSUX1d), and how many failed sessions parked it (SESSUX1i). Named here, as the keys are, so a
-// fact the page does not hand is still refused.
-const PASSED_FACTS = [{ pattern: /^work\.sitting\./, names: ['quest', 'session', 'failed'] }];
+// (`sittingSentence`, SESSUX1d), how many failed sessions parked it (SESSUX1i), and the account a wait holds it for, until
+// when and why (TOOL4g). Named here, as the keys are, so a fact the page does not hand is still refused.
+const PASSED_FACTS = [
+  { pattern: /^work\.sitting\./, names: ['quest', 'session', 'failed', 'agent', 'account', 'when', 'because'] },
+];
 
 const mismatched = [];
 for (const key of en) {

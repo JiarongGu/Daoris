@@ -4,6 +4,7 @@ import { firstLine } from '../asks/AskRow';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../signals';
+import { answeredPark } from '../ui';
 import { sessionOrigin, sessionTitle } from './identity';
 import type { Attention } from './AttentionRow';
 
@@ -22,14 +23,16 @@ const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting'
  *
  * **It counts the list's first group, *Waiting on you*** (SESSUX1c, D126 §2.5): this machine's sessions parked to ask,
  * and each quest parked on its failed sessions, whose last session here the list shows *parked*. A teammate's parked
- * session waits on them and is listed under Working (SESSUX1a). The parked quests are the planner's verdicts the tick
+ * session waits on them and is listed under Working (SESSUX1a), and so is one the person answered, which the same
+ * session goes on from at the driver's next look (ANSWER1c). The parked quests are the planner's verdicts the tick
  * hands the page (`useConsidered`), as Overview's band reads them, so both counts read the same two facts; the list's
  * reader would walk git in every tree to review on every view, for a number it does not need trees for.
  */
 export function waitingInSessions(
   sessions: readonly Session[], considered: readonly Pick<Consideration, 'verdict'>[] = [],
 ): number {
-  const asking = sessions.filter((session) => session.state === 'awaiting-person' && !sessionOrigin(session)).length;
+  const asking = sessions
+    .filter((session) => session.state === 'awaiting-person' && !answeredPark(session) && !sessionOrigin(session)).length;
   return asking + considered.filter((consideration) => consideration.verdict === 'Exhausted').length;
 }
 
@@ -117,8 +120,9 @@ export function needsAPerson(
     });
 
   const standsFor = new Set(live.map((ask) => ask.intake).filter(Boolean));
+  // A park the person answered goes on at the driver's next look (ANSWER1c): it no longer needs them.
   const parked = sessions
-    .filter((session) => session.state === 'awaiting-person' && !standsFor.has(session.id))
+    .filter((session) => session.state === 'awaiting-person' && !answeredPark(session) && !standsFor.has(session.id))
     .map((session): Attention => ({
       id: session.id,
       kind: 'parked',

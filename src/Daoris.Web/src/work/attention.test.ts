@@ -463,4 +463,18 @@ describe('what the Sessions badge counts', () => {
   it("leaves a teammate's parked session to its own machine", () => {
     expect(waitingInSessions([session({ id: 'laptop/c4a7c4a7', kind: 'chat', state: 'awaiting-person' })])).toBe(0);
   });
+
+  /**
+   * ANSWER1c (D131): a park the person answered goes on at the driver's next look, and the list shows it under Working,
+   * so neither the badge nor the band counts it while its record is still parked.
+   */
+  it('counts no park the person has answered, and the band lists none', () => {
+    const sessions = [
+      session({ id: 'p4rk3d00', quest: '7a82cc', state: 'awaiting-person' }),
+      session({ id: 'an5wered', quest: '7a82cd', state: 'awaiting-person', answer: 'Use the second.' }),
+    ];
+
+    expect(waitingInSessions(sessions)).toBe(1);
+    expect(needsAPerson(sessions, [], [], []).map((item) => item.id)).toEqual(['p4rk3d00']);
+  });
 });

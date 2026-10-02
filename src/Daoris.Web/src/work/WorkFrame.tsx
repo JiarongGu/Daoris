@@ -13,7 +13,7 @@ import {
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import { answeredPark, Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
@@ -308,9 +308,10 @@ export function WorkFrame({
   // 🔴 A driven session parked to ask the person is answered from the box at the foot, where a chat's
   // is: the door was a button at the top of a record of 1,800 events, and the question is read at its
   // foot. The card above keeps the
-  // endings and says the box carries it on: one owner for the answer (D56).
+  // endings and says the box carries it on: one owner for the answer (D56). Once answered it has no box:
+  // the record stays parked until the driver's next look, when the same session goes on (ANSWER1c).
   const answering = Boolean(attended && here && !intake && !conversation && attended.quest
-    && attended.state === 'awaiting-person');
+    && attended.state === 'awaiting-person' && !answeredPark(attended));
   const [answerDraft, setAnswerDraft] = useState('');
   // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
@@ -494,8 +495,9 @@ export function WorkFrame({
     });
   };
 
-  // The answer to a driven session that parked to ask the person (STANDDOWN2): the record ends with
-  // their words, and its quest is carried on in the same tree at the driver's next tick.
+  // The answer to a driven session that parked to ask the person (STANDDOWN2): the record stays parked
+  // with their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131).
+  // The sessions are read again, so until then the frame shows it going on, not waiting (ANSWER1c).
   const onAnswerSession = (words: string | null) => {
     if (!attended) return;
     answer.mutate({ id: attended.id, answer: words }, {

@@ -1,5 +1,5 @@
 import type { Quest, Session } from '../api';
-import { type IconName, SESSION_ACTIVE } from '../ui';
+import { answeredPark, type IconName, SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isHelp, isIntake, sessionOrigin } from './identity';
 import type { SessionWhere } from './SessionRow';
@@ -62,7 +62,8 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  * not, never disabled (D119 §3.2).
  *
  * @remarks
- * - **Answer…** for a session waiting on you, on its row: its header's card keeps the answer.
+ * - **Answer…** for a session waiting on you, on its row: its header's card keeps the answer. Not for a park the person
+ *   answered, which goes on at the driver's next look and has no box to answer in (ANSWER1c).
  * - **Stop…** for a live session this machine runs. **Try again** for a parked quest's last session, and a stopped one
  *   whose stop holds its quest. **Review** where there is work to read: its tree, its landing, or a place in To review.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
@@ -78,7 +79,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
   const offered = new Set<SessionActId>();
 
   if (here) {
-    if (door === 'row' && session.state === 'awaiting-person' && !intake) offered.add('answer');
+    if (door === 'row' && session.state === 'awaiting-person' && !answeredPark(session) && !intake) offered.add('answer');
     if (live) offered.add('stop');
     if (grouping?.shown === 'parked' || (session.state === 'stopped' && grouping?.holdsQuest)) offered.add('retry');
     if (!intake && !isHelp(session)
@@ -111,12 +112,13 @@ export function primaryAct(acts: readonly SessionActId[], grouping?: SessionGrou
 /**
  * What a stop says under the header before its second press (§3.3), by what the session is: a driven session holding
  * its quest, one that has not taken it yet, one waiting on you, a chat, an intake. A driven session whose quest is still
- * open has not taken it; any other has, or is about to say so.
+ * open has not taken it; any other has, or is about to say so. A park the person answered is no longer stopped
+ * unanswered: it says what a driven session's stop says (ANSWER1c).
  */
 export function stopAsk(session: Session, quest?: Quest | null): { key: string; values: Record<string, string> } {
   if (isIntake(session)) return { key: 'work.intake.stopMeans', values: {} };
   if (session.kind === 'chat') return { key: 'work.stop.chat', values: {} };
-  if (session.state === 'awaiting-person') return { key: 'work.stop.parked', values: {} };
+  if (session.state === 'awaiting-person' && !answeredPark(session)) return { key: 'work.stop.parked', values: {} };
   if (quest?.status === 'Open') return { key: 'work.stop.drivenOpen', values: { quest: quest.id } };
   return { key: 'work.stop.drivenHeld', values: {} };
 }

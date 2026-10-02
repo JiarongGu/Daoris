@@ -45,6 +45,39 @@ public static class Refusals
     /// </summary>
     public const string HarnessActionBusy = "HARNESS_ACTION_BUSY";
 
+    /// <summary>An account action this build does not have (TOOL4g): not one of order, use, ready, inherit.</summary>
+    public const string AccountActionUnknown = "ACCOUNT_ACTION_UNKNOWN";
+
+    /// <summary>A list naming an account that is not on this machine (D125 §3.1, TOOL4g), compared exactly as a default is.</summary>
+    public const string AccountOrderUnknown = "ACCOUNT_ORDER_UNKNOWN";
+
+    /// <summary>A list naming one account twice, in any case (D125 §3.1, TOOL4g).</summary>
+    public const string AccountOrderTwice = "ACCOUNT_ORDER_TWICE";
+
+    /// <summary>
+    /// A list that would leave out its scope's default (D130 §3.1, TOOL4g): the default is where starts begin within the list.
+    /// A workspace's carries the catalogue's <c>context</c>, so the sentence names it.
+    /// </summary>
+    public const string AccountScopeDefault = "ACCOUNT_SCOPE_DEFAULT";
+
+    /// <summary>A kept account that the list does not hold (D130 §4.6, TOOL4g).</summary>
+    public const string AccountScopeKeep = "ACCOUNT_SCOPE_KEEP";
+
+    /// <summary>A kept account alone in its list, which would leave driven work none (D130 §4.6, TOOL4g).</summary>
+    public const string AccountScopeAlone = "ACCOUNT_SCOPE_ALONE";
+
+    /// <summary>How a list is used, asked of a scope with no list of its own (D130 §16.6, TOOL4g): there is nothing to use.</summary>
+    public const string AccountUseNoList = "ACCOUNT_USE_NO_LIST";
+
+    /// <summary>A setting's value this build does not take (D130 §16.6, TOOL4g): a way to use accounts, or a near out of range.</summary>
+    public const string AccountUseValue = "ACCOUNT_USE_VALUE";
+
+    /// <summary>
+    /// A default outside its scope's own list (D130 §3.1; TOOL6a's terminal refusal, the screen's since TOOL4g): the default is
+    /// where starts begin within the list.
+    /// </summary>
+    public const string AccountDefaultOutsideList = "ACCOUNT_DEFAULT_OUTSIDE_LIST";
+
     /// <summary>
     /// The driver itself refused, in its own words — an unknown adapter, a harness with no toolchain,
     /// an installer that would not start.

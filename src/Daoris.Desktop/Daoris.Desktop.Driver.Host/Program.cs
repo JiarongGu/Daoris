@@ -73,9 +73,11 @@ using Daoris.Driver;
 //                 verb. Nothing else answers a quest here, since a quest is answered by the session that takes it.
 //
 //   answer <session> ["…"]
-//                 answer a driven session that parked to ask you (STANDDOWN2): its record ends with your
-//                 words, and its quest is carried on in the same tree at the next tick, handed them.
-//                 Nothing after the id is "carry on". The page's box on the parked quest is the other door.
+//                 answer a driven session that parked to ask you (STANDDOWN2): its record stays parked with
+//                 your words, and at the next tick the same session goes on with them (D131), its own
+//                 conversation resumed; where it cannot be, a new session carries the quest on in the same
+//                 tree, handed them, and says why. Nothing after the id is "carry on". The page's box on the
+//                 parked session is the other door.
 //
 //   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
 //         | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]

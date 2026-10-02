@@ -91,13 +91,15 @@ describe('the list by state', () => {
       session({ id: 'n2', state: 'awaiting-person' }),
       session({ id: 'n3', state: 'failed' }),
       session({ id: 'team/n4', state: 'awaiting-person' }),
+      session({ id: 'n5', state: 'awaiting-person', answer: 'Use the second.' }),
     ];
     const groups = sessionsByState(fresh, groupings, { selected: null, archived: false });
     const of = (name: string) => ids(groups.find((group) => group.group === name)!.sessions);
 
     expect(of('you')).toEqual(['p1', 'f1', 'n2']);
-    // A teammate's park waits on them, as the reader lists it (SESSUX1a).
-    expect(of('working')).toEqual(['w1', 'n1', 'team/n4']);
+    // A teammate's park waits on them, as the reader lists it (SESSUX1a); one the person answered goes on at the
+    // driver's next look (ANSWER1c).
+    expect(of('working')).toEqual(['w1', 'n1', 'team/n4', 'n5']);
     expect(of('ended')).toEqual(['n3', 'c2', 'c1']);
   });
 
@@ -278,9 +280,22 @@ describe('a row as the list shows it', () => {
     expect(shownOf(failed, grouping({ session: 'f1', group: 'later', shown: 'account-cooling' }), undefined)).toBe('failed');
   });
 
+  /**
+   * ANSWER1c (D131): a park the person answered shows as answered, by the reader's word or, before the reader has
+   * answered for it, by its own record, which holds the answer.
+   */
+  it('shows a park the person answered as answered, by the reader or by its record', () => {
+    const answered = session({ id: 'p1', state: 'awaiting-person', answer: 'Use the second.' });
+    expect(shownOf(answered, grouping({ session: 'p1', group: 'working', shown: 'answered' }), undefined)).toBe('answered');
+    expect(shownOf(answered, null, undefined)).toBe('answered');
+    expect(shownOf(session({ id: 'p2', state: 'awaiting-person' }), null, undefined)).toBe('awaiting-person');
+  });
+
   it('says what waits on the person: a session parked to ask, or a parked quest\'s last session', () => {
     expect(waitsOnYou(session({ id: 'p1', state: 'awaiting-person' }), null)).toBe(true);
     expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'you', shown: 'parked' }))).toBe(true);
     expect(waitsOnYou(session({ id: 'w1', state: 'working' }), null)).toBe(false);
+    // ANSWER1c: answered, it goes on at the driver's next look, and nothing about it waits on the person.
+    expect(waitsOnYou(session({ id: 'p2', state: 'awaiting-person', answer: 'carry on.' }), null)).toBe(false);
   });
 });

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
 import {
   CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD_BY_PERSON, LANED, OPEN, QUESTION, STOPPED,
-  TAKEN, TRUST, WAITING, WORKING,
+  TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -46,6 +46,9 @@ export const HeldForTrust: Story = { args: { hold: TRUST, trusting: true } };
 
 /** Parked by its strikes (RETRY1): *Try again* where its sentence is read. */
 export const ParkedByStrikes: Story = { args: { sitting: EXHAUSTED } };
+
+/** Waits for an account (TOOL4g, D125 §4): its pill and the hold's sentence, and no *Try again*, since nothing needs you. */
+export const WaitsForAnAccount: Story = { args: { sitting: WAITS_FOR_ACCOUNT } };
 
 /** Held by the person's stop (SESSUX1b, D126 §3.4): its sentence, and *Try again*, which releases it. */
 export const HeldByAStop: Story = { args: { sitting: STOPPED } };

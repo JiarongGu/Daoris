@@ -42,6 +42,21 @@ public sealed partial class HelpCoverageTests
         + "against the lists as last fetched; that is the `tool` kind's `use` door, which TOOLS8 builds (D121 §4.3), and "
         + "until then `daoris tool use` is the terminal's door.";
 
+    /// <summary>The default cool-off (TOOL4g, D125 §6): the `setting` kind's `cooloff`, whose service half is another lane's.</summary>
+    private const string CoolOffOwed =
+        "the cool-off a limit naming no time takes is a setting that undoes itself, so Ask Daoris should propose it; that is "
+        + "the `setting` kind's `cooloff` door (D125 §6), which waits on the service's setting writer listing it beside this "
+        + "side's doors, and until then `daoris driver cooloff` and Settings → Driver are its doors.";
+
+    /// <summary>
+    /// How an agent's accounts are used, Settings → Agents' controls (TOOL4g; D125 §6, D130 §9): each a door of the `agent`
+    /// kind that the service's `agent_propose` does not write yet, which another lane's row holds.
+    /// </summary>
+    private static Owed AccountDoorOwed(string door, string what, string terminal) => new(
+        $"{what}, so Ask Daoris should propose it as a card the person applies (D89); that is the `agent` kind's `{door}` "
+        + $"door (D125 §6, D130 §9), which waits on the service's `agent_propose` writing it, and until then `{terminal}` is the "
+        + "terminal's door.");
+
     private const string Rules =
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
         + "since a rule narrowing is applied with nobody's press (PERM2).";
@@ -120,11 +135,9 @@ public sealed partial class HelpCoverageTests
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
         ("timeout", new Door("setting", "timeout")),
-        // TOOL4e: the default cool-off's terminal door (D125 §6), owed to Ask Daoris until TOOL4g builds its door.
-        ("cooloff", new Owed(
-            "the cool-off a limit naming no time takes is a setting that undoes itself, so Ask Daoris should propose it; that "
-            + "is the `setting` kind's `cooloff` door, which TOOL4g builds with Settings → Driver's control (D125 §6), and "
-            + "until then `daoris driver cooloff` is the terminal's door.")),
+        // TOOL4e: the default cool-off's terminal door (D125 §6); TOOL4g built Settings → Driver's control, and its Ask Daoris
+        // door waits on the service.
+        ("cooloff", new Owed(CoolOffOwed)),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
     ];
@@ -150,6 +163,19 @@ public sealed partial class HelpCoverageTests
 
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
+        ("driver", "useSetCoolOff", null, new Owed(CoolOffOwed)),
+
+        // TOOL4g: how an agent's accounts are used. The `use` door is judged and applied on this side already
+        // (`HelpAgentProposals`); every one waits on the service's writer.
+        ("agents", "useAccountUse", "order", AccountDoorOwed(
+            "order", "adding an account to a list widens what Daoris may spend", "daoris agent profile order")),
+        ("agents", "useAccountUse", "use", AccountDoorOwed(
+            "use", "how a list is used changes which account a start spends, and undoes itself", "daoris agent profile use")),
+        ("agents", "useAccountUse", "ready", AccountDoorOwed(
+            "ready", "*Try now* spends an account sooner than its cool-off said", "daoris agent profile ready")),
+        ("agents", "useAccountUse", "inherit", AccountDoorOwed(
+            "order", "returning a workspace to this machine's accounts may widen what its work spends",
+            "daoris agent profile order <agent> --clear --workspace <name>")),
 
         ("agents", "useHarnessAction", "install", new Exempt(
             "an install fetches a maker's release and runs its installer on this machine, the person's own press (HELP6).")),

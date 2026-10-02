@@ -7,7 +7,9 @@
   "work.awaiting.resolved": "session {{id}} is now {{state}}.",
   "work.awaiting.answer": "Answering it in the box below lets it carry on — that is a message, not one of these.",
   "work.awaiting.carryOn": "Answer and carry on…",
-  "work.awaiting.answerPlaceholder": "your answer — the session that carries the quest on is handed these words",
+  "work.awaiting.answerPlaceholder": "your answer — the same session goes on with these words",
   "work.awaiting.answerConfirm": "Carry on with this answer",
-  "work.awaiting.answered": "Answered — its quest is carried on in the same tree at the driver's next look."
+  "work.awaiting.answered": "Answered — the same session goes on with your words at the driver's next look.",
+  "work.awaiting.yourAnswer": "Your answer",
+  "work.awaiting.goesOn": "The same session goes on with this answer at the driver's next look."
 }

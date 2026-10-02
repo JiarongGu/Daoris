@@ -71,6 +71,26 @@ export const Parked: Story = {
 };
 
 /**
+ * Answered (ANSWER1c, D131): the park above, once the person answered, for up to one look of the driver's. The record is
+ * still parked with the answer set; the head shows the answer, says the same session goes on with it, and offers none
+ * of the parked card's moves, though the frame could act. Its state reads *answered*, quiet, not the waiting hue.
+ */
+export const Answered: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      state: 'awaiting-person',
+      created: at(52),
+      updated: at(1),
+      note: 'Two ways forward; I recommend the second.\n\nAnswered: The second: cap it on the chunk API. Apply it to dev first.',
+      answer: 'The second: cap it on the chunk API. Apply it to dev first.',
+    },
+    onResolve: () => {},
+    onAnswerSession: () => {},
+  },
+};
+
+/**
  * A parked INTAKE (INT4g): it serves an ask and runs in Daoris's own room, so the record says *ask*
  * and *room* rather than *repository* and *tree*, and its answer is a door to the ask.
  */

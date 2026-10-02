@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 931 service and 53 HTTP host, 3386 driver,
-529 desktop modules, 80 devkit, 2630 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
+**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 931 service and 53 HTTP host, 3439 driver,
+568 desktop modules, 80 devkit, 2698 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -204,23 +204,17 @@ owner on 1 October.
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **ANSWER1c — the page shows an answered park as carrying on** (driver `SessionGroups`, web-shell; after ANSWER1b and
-  SESSUX1i). Listed under Working until the next look, the card showing the answer and *goes on*. Contract: design §5.
-  Proof: `SessionGroupsTests`; the card's story; both catalogues.
 - [ ] **ANSWER1e — the map and Ask Daoris read an answered park** (web-shell; found by ANSWER1c). The map's *parked* mark
   (`map/topology.ts`) and Ask Daoris's waiting count (`help/machine.ts`) still count an answered park for up to one look.
   Contract: answer-continues design §5. Proof: `topology.test.ts` and the help machine test read `answeredPark`.
 - [ ] **ANSWER1d — the canary on the install** (the parent's, after b). One park answered on the install shows one row,
   the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
-- [ ] **DRIFT1a2 — a typed message reaches its ask** (modules; after DRIFT1a). `SESSION_INPUT` posts
-  `/api/sessions/{id}/added` when a driven session's inbox takes the person's words and when an intake is told them.
-  Contract: D133 §1, its DRIFT1a note. Proof: a modules test that a held message posts once with its session's id.
-- [ ] **DRIFT1b — every session on an ask is given all of them** (driver; after DRIFT1a). A first start, a resume, a
-  carry-on on any account and a follow-up's session get every one of the ask's words, newest last, not one hop's answer.
-  Contract: D133 §2. Proof: a driver test on the drift's chain (answer, cut-off, cut-off, carry-on elsewhere still quotes it).
 - [ ] **DRIFT1c — a quest's requirements quote the owner** (service, MCP, intake). `quest_publish` takes requirements, each
   the owner's words plus the check that proves it; words in neither the ask nor an answer are refused; a follow-up inherits
   them. Contract: D133 §3. Proof: refusal tests; the intake prompt's golden.
+- [ ] **DRIFT1c2 — the family rehearsal drives a requirement** (tools; after DRIFT1c). Teach the stub intake to publish
+  one quote the person said and to see one they never said refused, through the real host and the sync wire. Contract:
+  D133's DRIFT1c note. Proof: the family rehearsal's intake phase.
 - [ ] **DRIFT1d — a done answers each requirement** (driver, service, web). Each requirement is met, or departed with the
   reason and the owner's words; a departure holds the follow-up until the owner says yes. Contract: D133 §4. Proof: a held
   follow-up in service tests; the look.
@@ -310,6 +304,11 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
   `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
   both doors; the composed settings' tests.
+- [ ] **DOC8 — the decisions record stops tearing under union merges** (found 2026-10-03, four integrations running).
+  Branches append notes under an older decision and move decisions to keep order, so the union merge leaves a decision
+  twice and another's notes under it; the parent rebuilt D130–D133 by script three times. Weigh one file per decision (a
+  record read by lookup has no ceiling) against a merge driver for the file. Contract: a short design, then D-number.
+  Proof: four branches noting four decisions merge with nothing twice and nothing moved.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
   a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
   (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
@@ -456,13 +455,6 @@ the ACP door, not a registry**.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
-- [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL6b;
-  with D130 §3.2, §9, §16.6: a workspace's own list, *Use* (goal or order), *Keep for conversations*, *Switch before the
-  limit*, the terms line; the screen's `profile-default` route and Ask Daoris's `default` door call `ScopeProblem.Of`, as
-  the terminal does since TOOL6a):
-  the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
-  the cool-off setting, the doors; both languages (D116); the look on the window. The modules' *Remove* must call
-  `HarnessSettings.WithoutAccount`, as the terminal now does (TOOL4e).
 - [ ] **TOOL4l — Ask Daoris's account doors, the service's half** (service, driver; found by TOOL4g). `agent_propose`
   writes `use` (with `use`, `keep`, `early`, `near`), `order` and `ready`, and the setting writer lists `cooloff`, so the
   cards the screen's controls owe can be offered. Contract: D125 §6, D130 §9, §16.6. Proof: the proposal-kind tests with
@@ -655,6 +647,10 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   failed in the driver's Process half and passed alone, with three branches building beside it.
   **And merging ANSWER1b, PAUSE1a and DRIFT1a** (2026-10-03): `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`
   failed in the driver's Process half and passed alone, with four branches building beside it.
+  **And merging ANSWER1c, DRIFT1b and TOOL4g** (2026-10-03): `AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own`,
+  `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it` and the modules'
+  `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` failed in the
+  full runs and passed alone, with three branches building and two real sessions running on the install.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.
