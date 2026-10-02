@@ -12,7 +12,7 @@ the family's work.
 
 **Every arc is closed and in the archive**: the driver (D45), the remote (D47),
 workspaces, the interactive surface and management parity (D48–D50), the working surface (D51–D56),
-the protocol door (D53), the toolchain (D57, bar TOOL4 and TOOL5), the instruction file (D59), the
+the protocol door (D53), the toolchain (D57, bar TOOL5; TOOL4 designed as D125), the instruction file (D59), the
 first deployment (D60–D63), plugins (D64), the remote as a git remote (D68), permission scopes
 (D72–D74), the menus (D75), and the conversation (D76, bar its held file tools), closed by UX5's
 screen-by-screen pass. [`docs/README.md`](docs/README.md) names each arc's contract. Two
@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **947 CLI tests, 901 service and 49 HTTP host, 2434 driver,
-504 desktop modules, 80 devkit, 2445 web unit, 24 Playwright**, 113/113 release rehearsal, **329/329
+**Counts, and this is their one home:** seventeen commands, **953 CLI tests, 901 service and 49 HTTP host, 2542 driver,
+507 desktop modules, 80 devkit, 2445 web unit, 24 Playwright**, 113/113 release rehearsal, **329/329
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
@@ -58,7 +58,7 @@ unobserved as Daoris's did: a request for the kit's owner, not Daoris's to chang
   (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
   rehearsals when nothing else builds.
-- **Open and the owner's:** BUDGET1, TRUST2, AGT2c, FG5, BRW3, UNBLOCK4c, LAYOUT2, PLUGDIST1f; on a trigger: TOOL4, TOOL5,
+- **Open and the owner's:** BUDGET1, TRUST2, AGT2c, FG5, BRW3, UNBLOCK4c, LAYOUT2, PLUGDIST1f; on a trigger: TOOL5,
   PLUG7, SEM2, CANON9, REH1. **A new direction from the owner outranks all of them.**
 
 **Start by reading the contract the item cites** — every backlog row names one, and
@@ -113,14 +113,14 @@ rather than designed.
 
 ## Backlog
 
-**Sixty-three rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Building:** WSSETUP5 (resumed after the account's limit; WSSETUP3 committed on its branch), TEST2 with TEST3
-  and STUB1, TOOL4's design (D125). **Next in the driver lane:** WSSETUP6; then LAYOUT8 and WSSETUP7.
+**Eighty-six rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** integrate-l (WSSETUP6, TEST2/TEST3/STUB1, the D125 design with TOOL4a/TOOL4c, NAME2, LOOK4,
+  WSSETUP5a with WSSETUP6a, the D126 design). **Building:** TOOL4d, SESSUX1a.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
-- **Parked on a trigger (nine):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
+- **Parked on a trigger (eight):** TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
   and FLAKE1 and TEST1, which wait for their next sighting (the Process category runs serially since MOD8,
   and the final serial run was clean). None is work until its trigger arrives.
 
@@ -156,6 +156,10 @@ install in both themes and both languages.
   high-water and cache reads per turn, from the usage record and the turn events, over a week), then offer a
   per-agent ceiling, a smaller window or the harness's own compaction setting, on both doors. The owner's call,
   since it trades cost for what a session remembers.
+- [ ] **NAME2b — seven names, looked at on the window** (NAME2's hand-back; 888 px, both languages): `help.setup`
+  (Ask Daoris at its 300 px floor before setup is done), `scope.every` (the status bar with *Every workspace*),
+  `signin.titleNew` (Settings → Agents, signing in to another account, the side bar at its floor) and
+  `work.group.noCheckout` (English: a repository with no checkout here); each renamed or accepted after the look.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
@@ -183,6 +187,47 @@ install in both themes and both languages.
 > need other resouce location"*
 
 
+### Sessions that are easy to manage (owner, 2026-10-02) — D126
+
+> *"so there is no way to easily maanged sessions in daoris rn and it's not really smooth for ui/ux lets also set this
+> improve task too"*
+
+Read from the code the same day: a session row's ⋯ offers only *Review* and *Copy session ID*; a quest parked on its
+strikes is started again only by *重试* on the quest's page, under its "sitting" fact (the 1 October limit left the
+owner's AR-2203 work there); a parked session is answered in its conversation; what ended folds under one heading,
+with no view by state (needs you, failed, parked, waiting for an account) and no clearing; titles run long.
+
+The contract is `docs/2026-10-02-session-management-design.md`; §9 carries each row's full text, proof and look.
+Order: SESSUX1a ∥ SESSUX1j; the driver lane a → b → g; the web shell lane c → d → e → i; f after e; h after d–g and
+FRAME1i; k after TOOL4c, TOOL4d and c; then the look (l). b alone ends the silent stop; i alone would have told the
+owner on 1 October.
+
+- [ ] **SESSUX1a — the reader of a session's group, and the archive marks** (§2.4, §5.2; driver, modules, web-shell for
+  the refusals' catalogues): `SessionGroups.Read`, `SessionArchive`, `SESSION_GROUPS`, `SESSION_ARCHIVE`.
+- [ ] **SESSUX1b — a person's stop holds its quest; Try again releases it** (§3.3, §3.4; driver, cli, modules): the
+  `Stopped` verdict, `released` in `driver.json` (twins), `retry` doing whichever applies; the room's retry row's place
+  (it still says "the quest's drawer", which FRAME1d made a page).
+- [ ] **SESSUX1c — the list by state** (§2.1–§2.5, §4.1–§4.4; web-shell; after a): five groups, the words and marks,
+  `queued` neutral, Group by in the list's ⋯, Show N more, the strip and Sessions' badge.
+- [ ] **SESSUX1d — the page header, and every act where its session is** (§3; web-shell, modules; after b, c): the pinned
+  header, Stop… asking once, Try again, Open folder, a terminal here, the row's ⋯; the stop's other owners go.
+- [ ] **SESSUX1e — archive on the screen** (§5.2, §5.3, §4.5; web-shell; after a, c).
+- [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
+- [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
+  and decline through the requests the running loop honours; archive, unarchive, delete.
+- [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
+- [ ] **SESSUX1i — What needs you holds a parked quest, and a park is said once** (§4.6, §4.7; web-shell, driver, modules;
+  after c).
+- [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
+- [ ] **SESSUX1k — waits for an account, in the list** (§2.2; driver, web-shell; after TOOL4c, TOOL4d and c).
+- [ ] **SESSUX1l — looked at on the install** (the parent's, after a republish carrying a–i): real sessions by state, a
+  parked quest carried on from its session, a stop's hold and Try again, Archive what ended; every width, both themes and
+  languages, with a ledger like SESS1's.
+- [ ] **LOOK4 — the dev tool's debug port did not open on the install** (found 2026-10-02): `desktop run --install`
+  said "debug port 9333" for the same build whose port opened the day before, and nothing listened on it, so `shot`,
+  `eval` and `click` could not reach the window. Find why (the environment reaching the app, the engine's port
+  setting), and make the tool say so when the port never opens.
+
 ### A workspace that knows itself (owner, 2026-10-01) — D124
 
 > *"since all is known knowldge it should be able to figure out itself"* … *"its more like leaking of knowledge for
@@ -197,10 +242,6 @@ first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 
 TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
 FRAME1e and WSSETUP6. Then the owner's two runs.
 
-- [ ] **WSSETUP3 — `daoris` on every child's PATH** (§1.3; driver, modules, cli; after TOOLS5 and WSSETUP2): `app/bin/`
-  first in the tools' environment; the press's facts gain `node` and `daoris` with their versions.
-  Also (WSSETUP2's hand-back): `src/Daoris.Desktop/README.md`'s *Installing it* and gate paragraphs name the doctrine
-  tool (`app/cli/node_modules/daoris/`, `app/bin/`) and the deployment rehearsal's phase 8.
 - [ ] **TEST3 — the set-up kit's tests join a gate** (LAYOUT7a's hand-back): `tools/setup-kit.test.mjs` (12) runs outside
   `verify`; move it beside the other tools' tests in `src/Daoris.Cli/test/`, so a gate runs it.
 - [ ] **STUB1 — the protocol stub ends on a libuv assertion on Windows** (LAYOUT7a's hand-back): with Node 24 the stub
@@ -209,8 +250,6 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **TEST2 — `tools.test.ts` reads the shell's spelling of PATH** (LAYOUT7's hand-back): three cases found the system
   git and gh when `verify` ran from PowerShell, where the variable is `Path`; they pass from Git Bash. Make the
   cases set the environment they assume whatever the parent shell spells.
-- [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
-  objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
 - [ ] **WSSETUP5a — the family rehearsal checks registration from the line** (WSSETUP5's hand-back; tools): after
   phase 17c lands, the row reads adopted and declared with no `connect`; and the install note in `desktop-publish.mjs`
   says Daoris's own children find `app/bin/` first. Also (records): the PLUGDIST1a note sits after D123, a union
@@ -355,24 +394,39 @@ repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidenc
 the archive: **usage is measured before it is managed**, and breadth is **more native adapters plus
 the ACP door, not a registry**.
 
-- [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to
-  check daoris continue"*): Daoris did not continue: on 1 Oct a carrying-on session was refused mid-turn by the weekly
-  spend limit, two more carry-ons were refused at once, and the quest parked on its strikes (Exhausted) until the
-  person presses Retry; an exhaustion burned the strikes like any failure. Sessions read the person's own default
-  login, so the person's `/login` to a third account moved Daoris too. **Being designed as
-  D125**, since the install now holds three observed exhaustions (27 and 29 Sep, the ACP adapter's spend-limit
-  refusal naming its reset time) and the owner's own weekly-limit switch on 1 Oct. Was: ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
-  questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
-  should be, and whether a rotated session stays reproducible. Exhaustion is **observed, never read**
-  — Daoris cannot ask a provider what is left without a credential, and D49 §4 stands. Do not start
-  this before there are real transcripts to write the signal against; a string match on somebody
-  else's error text is the fragile part and guessing it is how it gets written wrong.
-  **The first real one (2026-09-27, FG5's run):** Claude Code over its ACP adapter answered
-  `session/prompt` with a JSON-RPC internal error, 370k tokens into a twenty-minute turn. Its message
-  was *"You've hit your individual spend limit · run /usage-credits to ask your admin for a higher
-  limit · your session limit resets 7am (<zone>)"*, and the adapter then exited 0. One observation
-  answers part of the first question and none of the other two.
-
+- [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to check
+  daoris continue"*): **designed as D125** (`docs/2026-10-01-account-rotation-design.md`), which lifts D57 §b's hold:
+  five observed limits (design §0.2) answer its three questions. A limit is read from the door's failure by a table
+  that grows only with recorded sentences; its account cools until the reset the agent names (60 minutes when it names
+  none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
+  accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
+  waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
+- [ ] **TOOL4a — the limit table and its reader** (driver; §1.3, §2.1): `HarnessToolchain.Limits` on `claude-code` and the
+  stub; `AccountLimits.Read`, pure; the five sentences as fixtures, the zone replaced.
+- [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2): `rate_limit_event` and a limit's failed `result`,
+  read keylessly from the maker's SDK declarations and labelled unmeasured; the first real one recorded.
+- [ ] **TOOL4c — the record says a limit** (service; §5.2): `Session.Limit`, stored, served off loopback and synced, as
+  `Interrupted` was; an older record reads false.
+- [ ] **TOOL4d — the cool-off and the hold** (driver; §2, §4, §5; after TOOL4a and TOOL4c): `cooling.json`; a recognised
+  limit cools the account from a driven session, an intake or a conversation; `SelectAsync` holds a cooling account
+  before any probe; `ReadStrikes` passes a `limit` record; the early endings; the wait said once; `account.limited`,
+  `starts.waiting`; a `Process`-half tick replaying 1 October.
+  From TOOL4a's hand-back: `acp-stub` declares no toolchain, so a limit over the protocol door with no account
+  behind it needs the door to read the stub's entry as its owner's (AGT7) or declare its own.
+- [ ] **TOOL4e — the twins and the terminal** (cli, driver; §3.1, §6; after TOOL4d): `rotation` and `workspaceRotation` in
+  `harnesses.json` on both twins (🔴 `HarnessSettings.Save` must write them, or a screen edit deletes the order);
+  `daoris agent profile order|ready`; cool-offs in `daoris agent list`; `cooloff` in `driver.json`.
+- [ ] **TOOL4f — rotation** (driver; §3; after TOOL4e): `SelectAsync`'s walk; a pick and the tool's own home never
+  rotated; a conversation only at its opening; the carry-on handed the last plan and last words; `account.rotated`.
+- [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL4f):
+  the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
+  the cool-off setting, the doors; both languages (D116); the look on the window.
+- [ ] **TOOL4h — the rehearsal and the report** (tools; §8, §2.2; after TOOL4f): two stub accounts; the usage report's
+  limits section.
+- [ ] **TOOL4i — a real rotation on the install** (the owner's run, after a republish carrying TOOL4a and TOOL4c–TOOL4f).
+- [ ] **AGT3c — two readings that trust what a session printed** (found designing D125): AGT3b's 401 detection reads the
+  transcript's last lines, so a session whose own output ends with `API Error: 401` holds its account; and the ACPEND1
+  note carries the agent's sentence, zone included, to every machine (`SessionNote.ForAnotherMachine` removes no zone).
 - [ ] **TOOL5 — more native adapters** (design §5). D23 applied more times: a native adapter per tool
   worth matching properly (its own flags, configuration home, login flow, version question), with the
   ACP door for tools that speak the protocol and a tool free to be both. **Not a registry** — the
@@ -540,6 +594,10 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   **And a rehearsal check, a new kind** (merging PLUG10, UNBLOCK4 and UNBLOCK5, three builds beside it): the family
   rehearsal's *its driver stops its own losing session* failed on its printed line (DEV3a), 311/312, green alone.
 
+  **Sighted 2026-10-02** (merging WSSETUP3/5, four branches building at once): `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
+  failed in the modules' Process half and passed alone. And `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`
+  failed twice, alone too: its read of a heartbeat file the child rewrites every 100 ms asked to share only reading and
+  met the writer's handle; fixed in that merge (TEST4: read sharing read and write, retried briefly), three runs green.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.

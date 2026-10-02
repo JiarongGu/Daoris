@@ -219,9 +219,31 @@ public sealed class PseudoConsoleTests : IDisposable
     /// <summary>Whether the heartbeat moves over most of a second.</summary>
     private static async Task<bool> Beating(string heartbeat)
     {
-        var before = File.Exists(heartbeat) ? File.ReadAllText(heartbeat) : null;
+        var before = await Beat(heartbeat);
         await Task.Delay(800);
-        var after = File.Exists(heartbeat) ? File.ReadAllText(heartbeat) : null;
+        var after = await Beat(heartbeat);
         return before != after;
+    }
+
+    /// <summary>
+    /// The heartbeat as it stands, read beside its writer: the child rewrites it every 100 ms, and a read that
+    /// asked to share only reading met the writer's open handle and threw, under load, twice in a row (TEST4).
+    /// </summary>
+    private static async Task<string?> Beat(string heartbeat)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            if (!File.Exists(heartbeat)) return null;
+            try
+            {
+                using var stream = new FileStream(heartbeat, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(stream);
+                return await reader.ReadToEndAsync();
+            }
+            catch (IOException) when (attempt < 20)
+            {
+                await Task.Delay(15);
+            }
+        }
     }
 }
