@@ -270,6 +270,7 @@ public static class IntakeRoom
     /// <summary>
     /// A circle's name as one folder: ASCII letters, digits, `-` and `_`, lower case — and, when that
     /// lost anything, a short hash of the exact name beside it, so two circles are never one room.
+    /// A workspace plan's file is named by the same rule (WSSETUP6), so two circles never share one.
     /// </summary>
     /// <remarks>
     /// 🔴 Every name with no ASCII letter in it used to fold to <c>default</c>, and `my circle` and
@@ -277,7 +278,7 @@ public static class IntakeRoom
     /// declarations, so two circles in one room blocked each other and read each other's family.
     /// A name that is already a folder name stays exactly that, so no existing room moves.
     /// </remarks>
-    private static string SafeName(string workspace)
+    internal static string SafeName(string workspace)
     {
         var name = workspace.Trim().ToLowerInvariant();
         if (name.Length == 0) name = "default";   // silence is the default circle, as everywhere (D48)

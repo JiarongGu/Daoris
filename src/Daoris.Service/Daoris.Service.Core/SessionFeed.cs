@@ -11,10 +11,14 @@ namespace Daoris.Knowledge;
 /// deliberately has no field here: which account a session ran as is machine-local, guarded like the
 /// transcript — and a field that does not exist cannot be filled in by accident.
 /// </param>
+/// <param name="Limit">
+/// That an account's limit failed it (TOOL4c, D125 §5.2). It travels because it names no account: a
+/// teammate sees that a session was cut off by a limit, never whose. False is the old reading.
+/// </param>
 public sealed record FedSessionRecord(
     string? Id, string? Quest, string? Repository, string? Adapter, string? State,
     string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated,
-    string? Kind = null, string? HarnessVersion = null);
+    string? Kind = null, string? HarnessVersion = null, bool Limit = false);
 
 /// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
 public enum SessionFeedRefusal
@@ -101,6 +105,7 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                 Profile: null, Tree: null)
                 {
                     Origin = origin,
+                    Limit = record.Limit,
                 }, ct)
                 .ConfigureAwait(false);
         }

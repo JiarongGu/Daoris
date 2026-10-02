@@ -1,14 +1,17 @@
 import type { ReactNode, Ref } from 'react';
-import { EmptyState, type IconName, SectionTitle, SkeletonRows } from '../ui';
+import { EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
 
 /**
  * A page's header in the main area (D118 §3b, D119 §3.2): its title, with what is beside it (a version, its pills); its
- * id in the mono face; its one line, cut to one line and whole in its tip; and its acts. A title and a line are content.
+ * id in the mono face; its line; and its acts. A title and a line are content.
  *
  * @remarks
  * Shared by every view's page since FRAME1d: PLUGUI1b drew it for a plugin, and a quest's and an ask's wear it. A
  * repository's has no id line (FRAME1e): its name is its id, and a title said twice is noise.
+ *
+ * **The line is shown whole, at the reading measure** (NAME2): content is shown as it is (platform language §4), and
+ * cut to one line a plugin's description ended in an ellipsis on the install, its tip the only place it could be read.
  */
 export function PageHead({ title, version, pills, id, line, acts }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode;
@@ -22,7 +25,7 @@ export function PageHead({ title, version, pills, id, line, acts }: {
           {pills}
         </div>
         {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
-        {line && <p title={line} className="m-0 mt-1 truncate text-body text-ink-soft">{line}</p>}
+        {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
       </div>
       {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
     </header>

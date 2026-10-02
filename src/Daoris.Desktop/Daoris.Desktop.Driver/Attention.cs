@@ -8,6 +8,13 @@ public enum AttentionKind
 
     /// <summary>A session ended, and the person did not ask for that.</summary>
     Ended,
+
+    /// <summary>
+    /// Starts wait because every account they may use is cooling (TOOL4d, D125 §4). Nothing about the work is wrong, and
+    /// it starts by itself at the reset; it is said because the person may sign in to another account, or end the
+    /// cool-off early, sooner. <see cref="AttentionEvent.Session"/> is empty: no session is concerned.
+    /// </summary>
+    Waiting,
 }
 
 /// <param name="State">The state it ended in, for <see cref="AttentionKind.Ended"/>; null for a park.</param>
@@ -31,6 +38,7 @@ public sealed record AttentionEvent(
     public string Headline => Kind switch
     {
         AttentionKind.Parked => $"{Repository} — a session needs you",
+        AttentionKind.Waiting => $"{Repository} — waits for an account",
         _ => $"{Repository} — a session {State}",
     };
 
@@ -62,6 +70,10 @@ public sealed record AttentionEvent(
 /// <para><b>It says a thing once.</b> A parked session is parked on every tick until somebody answers
 /// it; reporting that every poll interval would be the same failure in a different shape.</para>
 ///
+/// <para><b>A wait for an account is the third thing</b> (TOOL4d, D125 §4): starts held because every account they may
+/// use is cooling, from the report's <see cref="TickReport.Waits"/>. Said once per cool-off, since it lasts every look
+/// until its reset; nothing is wrong with the work, and it starts by itself then.</para>
+///
 /// <para><b>A conversation's end is deliberately not reported</b>, though a conversation that PARKS
 /// is — parks come from the tick and are blind to how the session was started. The reason is design
 /// §4's own: this exists because nobody should have to watch an <i>unattended</i> session, and a
@@ -74,6 +86,10 @@ public sealed record AttentionEvent(
 public sealed class AttentionWatch
 {
     private Dictionary<string, string>? _seen;
+
+    // The waits already said, by account, with the cool-off each was for (TOOL4d): a wait lasts every look until its
+    // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once.
+    private readonly Dictionary<string, DateTimeOffset> _waits = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The sessions whose state is being remembered — bounded by what is active.</summary>
     public IReadOnlyList<string> Watching => _seen is null ? [] : [.. _seen.Keys.Order(StringComparer.Ordinal)];
@@ -94,9 +110,14 @@ public sealed class AttentionWatch
 
         var previous = _seen;
         _seen = now;
+
+        // A wait whose cool-off was not said yet (TOOL4d, D125 §4) — recorded on the first look too, which says nothing.
+        var waits = report.Waits.Where(Unsaid).ToList();
         if (previous is null) return [];
 
         var events = new List<AttentionEvent>();
+        events.AddRange(waits.Select(wait => new AttentionEvent(
+            AttentionKind.Waiting, "", string.Join(", ", wait.Repositories), Note: wait.Sentence)));
 
         foreach (var session in report.Active)
         {
@@ -115,6 +136,15 @@ public sealed class AttentionWatch
         }
 
         return events;
+    }
+
+    /// <summary>Whether this wait's cool-off is not yet said; it is marked said either way.</summary>
+    private bool Unsaid(AccountWait wait)
+    {
+        var account = $"{wait.Agent}/{wait.Account ?? ""}";
+        var said = _waits.TryGetValue(account, out var until) && until == wait.Until;
+        _waits[account] = wait.Until;
+        return !said;
     }
 }
 

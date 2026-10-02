@@ -36,7 +36,9 @@ is this column. Plural forms (`_other`) move with their stem and are not rows.
   judgements remain**, which the renames leave as a report (D54): mostly a row's phrases and a chip that
   carries a name (*declared by plugin X*, *waiting for this turn to end*) measured against a pill's room,
   the plugin kit's three long choices, and English confirming presses a few characters over. The window
-  decides each (design §4).
+  decides each (design §4). *NAME2 (2026-10-02) went through them by kind, 113 by then: seven names renamed,
+  one key nothing rendered removed, ninety-six key and language pairs accepted in the glossary's `accepted`
+  with their reasons, and seven left for the window (design §6).*
 
 ## 2. The ten that matter most
 

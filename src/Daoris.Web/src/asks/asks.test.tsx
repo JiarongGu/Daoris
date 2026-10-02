@@ -111,7 +111,8 @@ describe('AskPage', () => {
 
   it('names the workspace a receiver is chosen from as a workspace', () => {
     const { page } = record(UNMATCHED);
-    expect(within(page).getByText('any repository in workspace aurora that can be asked')).toBeInTheDocument();
+    // NAME2: the list offers only those that can be asked, so the hint no longer says it.
+    expect(within(page).getByText('any repository in workspace aurora')).toBeInTheDocument();
   });
 
   it('shows a tier it has no word for as the service wrote it', () => {

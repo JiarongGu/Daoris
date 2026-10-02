@@ -5,16 +5,19 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { createServer, type Server } from 'node:net';
 import { readText, listFiles } from '../src/fsx.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
 // by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, PAGE_THEME, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, installedExe, isShell, prune, scratchEnvironment,
-  startedHere, withPageTheme,
+  CLEARED, PAGE_THEME, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, awaitDebugPort, closedPortReport, engineLogOf,
+  installedExe, isShell, prune, scratchEnvironment, startedHere, withPageTheme,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
+// @ts-expect-error — untyped workspace tooling; see above
+import { bindVerdictOf, freePort } from '../../../tools/cdp.mjs';
 import {
   BROWSER_ARGUMENT, applicationsIn, browsersIn, isBrowserProcess, isEngineProcess, psQuote, running,
   // @ts-expect-error — untyped workspace tooling; see above
@@ -133,6 +136,135 @@ test('the debug port needs the runtime in dev mode, and neither is set unasked',
   });
   assert.equal('DOTNET_ENVIRONMENT' in quiet, false);
   assert.equal('DAORIS_DEVTOOLS_PORT' in quiet, false);
+});
+
+/** Whether this process can bind `port` on `host` now. The test's own, so it does not grade the tool by itself. */
+const bindsHere = (port: number, host: string) => new Promise<string>((resolve) => {
+  const server = createServer();
+  server.once('error', (error: NodeJS.ErrnoException) => resolve(error.code ?? 'error'));
+  server.listen({ port, host, exclusive: true }, () => server.close(() => resolve('bound')));
+});
+
+const listening = (server: Server, host: string) => new Promise<number>((resolve) => {
+  server.listen({ port: 0, host }, () => resolve((server.address() as { port: number }).port));
+});
+
+/**
+ * LOOK4: `run` printed `debug port 9333` and nothing ever listened there, on a machine where Windows had
+ * reserved 9309–9408 (`netsh interface ipv4 show excludedportrange protocol=tcp`). Nobody can bind a
+ * reserved port, so the engine could not open it, and said nothing. The probe asked whether anything
+ * ANSWERED there, and a reserved port answers nothing, so it read as free. Every port of the 20 the walk
+ * tries sat inside the same reservation. On a machine with no reservation over 9333 this passes either
+ * way; the two tests below it fail on any machine.
+ */
+test('a port handed out for the debug port is one this machine lets a process bind', async () => {
+  const port = await freePort(9333);
+  assert.equal(await bindsHere(port, '127.0.0.1'), 'bound', `port ${port} cannot be bound on 127.0.0.1`);
+});
+
+test('a port held by a listener that answers nothing is not free', async () => {
+  // A raw socket server: it accepts, and never answers HTTP, so an asking probe times out and calls it free.
+  const silent = createServer(() => {});
+  const held = await listening(silent, '127.0.0.1');
+  try {
+    const port = await freePort(held, 1);
+    assert.notEqual(port, held);
+    assert.equal(await bindsHere(port, '127.0.0.1'), 'bound');
+  } finally {
+    silent.close();
+  }
+});
+
+test('the walk passes a port the system refuses, and asks the system when every port it tries is refused', async () => {
+  const refused = new Set([9333, 9334]);
+  const isFree = async (port: number) => !refused.has(port);
+  assert.equal(await freePort(9333, 3, isFree), 9335);
+
+  // Windows reserves ports in blocks, so a whole walk can sit inside one; the system's own pick is outside it.
+  const port = await freePort(9333, 2, isFree);
+  assert.equal(refused.has(port), false);
+  assert.ok(port > 0);
+});
+
+test('a bind refused for the port is taken, and one refused for an address the machine lacks is not', () => {
+  assert.equal(bindVerdictOf('EACCES'), 'taken'); // a reserved port, Windows' WSAEACCES
+  assert.equal(bindVerdictOf('EADDRINUSE'), 'taken');
+  // A machine with no IPv6 loopback refuses [::1] for every port: that says nothing about this one.
+  assert.equal(bindVerdictOf('EADDRNOTAVAIL'), 'absent');
+  assert.equal(bindVerdictOf('EAFNOSUPPORT'), 'absent');
+  assert.equal(bindVerdictOf('ESOMETHINGELSE'), 'taken');
+});
+
+/** A clock the wait reads and its sleep advances, so a 30-second bound takes no time at all. */
+const fakeClock = () => {
+  let at = 0;
+  return { now: () => at, sleep: async (ms: number) => { at += ms; } };
+};
+
+test('run waits for the debug port and says when it answered', async () => {
+  const clock = fakeClock();
+  let asked = 0;
+  const outcome = await awaitDebugPort({
+    answers: async () => (asked += 1) >= 3, gone: () => null, limitMs: 30_000, stepMs: 500, ...clock,
+  });
+  assert.equal(outcome.open, true);
+  assert.equal(asked, 3);
+});
+
+test('a port that never opens is reported once the bound is reached, with the window still running', async () => {
+  const clock = fakeClock();
+  const outcome = await awaitDebugPort({
+    answers: async () => false, gone: () => null, limitMs: 30_000, stepMs: 500, ...clock,
+  });
+  assert.equal(outcome.open, false);
+  assert.equal(outcome.gone, null);
+  assert.ok(outcome.waitedMs >= 30_000);
+});
+
+test('an application that ended before its port opened is reported at once, not after the bound', async () => {
+  const clock = fakeClock();
+  let polls = 0;
+  const outcome = await awaitDebugPort({
+    answers: async () => false,
+    gone: () => ((polls += 1) >= 2 ? { code: 0, signal: null } : null),
+    limitMs: 30_000, stepMs: 500, ...clock,
+  });
+  assert.equal(outcome.open, false);
+  assert.deepEqual(outcome.gone, { code: 0, signal: null });
+  assert.ok(outcome.waitedMs < 30_000);
+});
+
+test('the report says the window started without its debug port, and what to try', () => {
+  const text = closedPortReport({
+    port: 9333, waitedMs: 30_000, gone: null, pid: 42,
+    engineLog: '/install/data/chromium/cef.log', home: '/install/data',
+  });
+  assert.match(text, /started WITHOUT its debug port/);
+  assert.match(text, /9333/);
+  assert.match(text, /`shot`, `eval` and `click` cannot reach it/);
+  assert.match(text, /restart/);
+  assert.match(text, /\/install\/data\/chromium\/cef\.log/);
+  assert.match(text, /excludedportrange/);
+});
+
+test('the report of an application that ended says so, and does not claim a window is up', () => {
+  const text = closedPortReport({
+    port: 9333, waitedMs: 1_500, gone: { code: 0, signal: null }, pid: 42,
+    engineLog: '/install/data/chromium/cef.log', home: '/install/data',
+  });
+  assert.match(text, /pid 42/);
+  assert.match(text, /exited 0/);
+  assert.doesNotMatch(text, /started WITHOUT/);
+  assert.match(text, /already running/);
+  assert.match(text.replaceAll('\\', '/'), /\/install\/data\/logs/);
+});
+
+test('the engine log is under the root the run gave the application', () => {
+  const sep = (path: string) => path.replaceAll('\\', '/');
+  assert.equal(sep(engineLogOf({ install: '/i', real: true, exe: '/i/app/Daoris.Desktop.exe' })), '/i/data/chromium/cef.log');
+  assert.equal(sep(engineLogOf({ install: null, real: true, exe: '/b/Daoris.Desktop.exe' })), '/b/data/chromium/cef.log');
+  assert.match(sep(engineLogOf({ install: null, real: false, exe: '/b/Daoris.Desktop.exe' })),
+    /_fixtures\/desktop\/app\/data\/chromium\/cef\.log$/);
 });
 
 /**

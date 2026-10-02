@@ -535,16 +535,44 @@ test('the driver’s tables are these tables, row for row and in this order', ()
 
 // ——— The verb: `daoris tool list|path|use`.
 
+/**
+ * An environment whose PATH is the case's, under no other spelling (TEST2). A copy of `process.env` keeps the
+ * spelling the shell that ran the suite gave it (`Path` from PowerShell, `PATH` from Git Bash), and on Windows
+ * `onPath` reads the first key that is PATH in any case (TOOLS5), so a `PATH` set beside an inherited `Path`
+ * was not the one read, and the system's git and gh were found.
+ */
+function withOnlyPath(path: string, inherited: NodeJS.ProcessEnv): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(inherited)) if (key.toUpperCase() !== 'PATH') env[key] = value;
+  env.PATH = path;
+  return env;
+}
+
 /** The verb, given no way to reach a network: these verbs need none. */
-function run(argv: string[], at: string | null, path = ''): { code: number; out: string[] } {
+function run(argv: string[], at: string | null, path = '', inherited: NodeJS.ProcessEnv = process.env): { code: number; out: string[] } {
   const out: string[] = [];
-  const env: Record<string, string | undefined> = { ...process.env, PATH: path };
+  const env = withOnlyPath(path, inherited);
   if (at === null) delete env.DAORIS_HOME;
   else env.DAORIS_HOME = at;
   const code = commandTool({ root: process.cwd(), argv, write: (line) => out.push(line), packageRoot: process.cwd() }, null, env);
   assert.equal(typeof code, 'number', `${argv.join(' ')} answers at once: it reaches no network`);
   return { code: code as number, out };
 }
+
+test('a case’s PATH is the one read, whatever the shell that ran the suite spells it (TEST2)', () => {
+  const { fx, home: at } = home('tools-path-spelling');
+  const shell = join(fx.root, 'shell');
+  mkdirSync(shell, { recursive: true });
+  writeFileSync(join(shell, process.platform === 'win32' ? 'gh.exe' : 'gh'), '');
+  // PowerShell hands its children `Path`, Git Bash `PATH`: this is PowerShell's, from whichever shell runs it.
+  const inherited: NodeJS.ProcessEnv = withOnlyPath(shell, process.env);
+  inherited.Path = inherited.PATH;
+  delete inherited.PATH;
+
+  const gh = run(['path', 'gh'], at, '', inherited);
+  assert.equal(gh.code, 1, `the case's empty PATH finds no gh, and the shell's was not read: ${gh.out.join('\n')}`);
+  fx.cleanup();
+});
 
 test('tool list on a home with no file says every tool is the system’s, and writes nothing', () => {
   const { fx, home: at } = home('tools-list-empty');

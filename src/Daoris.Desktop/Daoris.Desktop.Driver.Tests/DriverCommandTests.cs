@@ -130,11 +130,32 @@ public sealed class DriverCommandTests
 
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
         Assert.Contains("if (args is [\"setup\", .. var setupArgs])", program);
-        Assert.Contains("SetupConsole.RunAsync(setupArgs)", program);
+        Assert.Contains("SetupConsole.RunAsync(setupArgs, log)", program);
 
         var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SetupConsole.cs"));
         Assert.Contains("SetupCommand.Problem(args)", console);
         Assert.Contains("new SetupWorld(service, home), config, SetupWorld.DoorOf(config, home)", console);
+    }
+
+    /// <summary>
+    /// WSSETUP6 (D124 §4.5): the workspace plan's terminal door is named in the usage, each form on its own line, and the host's
+    /// set-up console hands the words that name a workspace to the library's command, with the real world and this host's log.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_workspace_plan_and_the_set_up_console_routes_it_to_the_librarys_words()
+    {
+        var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
+        Assert.Contains("\n  setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]\n", usage);
+        Assert.Contains("\n  setup --workspace <name> --pause | --resume | --stop\n", usage);
+        Assert.Contains("setup --workspace <name> --pause | --resume | --stop", WorkspaceSetupCommand.Usage);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SetupConsole.cs"));
+        var workspace = console.IndexOf("WorkspaceSetupCommand.Asks(args)", StringComparison.Ordinal);
+        Assert.True(workspace >= 0 && workspace < console.IndexOf("SetupCommand.Problem(args)", StringComparison.Ordinal),
+            "the set-up console asks whether the words name a workspace before it reads them as one repository's");
+        Assert.Contains("WorkspaceSetupCommand.Problem(args)", console);
+        Assert.Contains("new WorkspaceSetupWorld(service, home)", console);
+        Assert.Contains("SessionLog.WriteSetup(log, line)", console);
     }
 
     /// <summary>

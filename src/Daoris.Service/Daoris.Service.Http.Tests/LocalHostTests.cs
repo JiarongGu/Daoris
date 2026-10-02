@@ -245,6 +245,43 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit through the state door, and the
+    /// record answers it back to every caller, off this machine too: the flag names no account, so it
+    /// travels where the account's name does not. Asked of any other move, it is refused, 409.
+    /// </summary>
+    [Fact]
+    public async Task A_failure_the_driver_says_was_a_limit_is_kept_and_answered_to_any_caller()
+    {
+        var quest = await PublishAsync("A quest whose session an account's limit cut off");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", profile = "account-limited-here" });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        Assert.False(opened.Json.GetProperty("session").GetProperty("limit").GetBoolean());
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var refused = await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped", limit = true });
+        Assert.Equal(409, refused.Status);
+        Assert.Contains("failed", refused.Error);
+
+        var failed = await host.PostAsync(
+            $"/api/sessions/{id}/state", new { state = "failed", note = "the ACP agent refused the call.", limit = true });
+
+        Assert.Equal(200, failed.Status);
+        Assert.True(failed.Json.GetProperty("session").GetProperty("limit").GetBoolean());
+        foreach (var from in new[] { DaorisHost.Loopback, DaorisHost.OffMachine })
+        {
+            var answer = await host.GetAsync("/api/sessions?includeClosed=true", from);
+            var listed = answer.Json.EnumerateArray().Single(row => row.GetProperty("id").GetString() == id);
+            Assert.True(listed.GetProperty("limit").GetBoolean());
+        }
+
+        Assert.DoesNotContain("account-limited-here", (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Body);
+    }
+
+    /// <summary>
     /// The page is served here — which is what makes the shared host's 404 for the same file a refusal
     /// rather than a missing file.
     /// </summary>

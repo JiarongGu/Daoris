@@ -9395,3 +9395,96 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
 
 **Outcome** (built by a subagent, resumed twice across the account's limits, merged with `tools/merge-branch.mjs`, every gate; notes under D124): The driver registers a repository from `daoris.json` and `daoris.lanes.json` read on its line as git objects, for the checkout's root and never a tree. `LineRegistration.Compose` twins `connect.ts`'s `registration()` and the checks before it, with one table in `LineRegistrationTests` and `connect-twin.test.ts`; a registration is sent only when the row holds something else, and a manifest that declares nothing records adoption and sends the row's own declaration back, because the registry door replaces the declaration whole. Following runs after Daoris moves a line (`lines-moved.json`, written by the merge and the fast-forward, then followed by the next look or at once by `trees land`/`trees sync`), once as a watch starts, and on `daoris-driver register` or the modules' `REGISTRY_REFRESH`. Every refusal is kept for the row in `registry-followed.json`, said where it needs fixing, and logged as `registry.followed`; the index is refreshed once per pass. Ask Daoris's `register` door and the row's button are owed to WSSETUP7. `RegistrationLineProcessTests` (a real merge landing registered while the checkout is on another branch) was written in the branch and run at the merge. Driver fast half 1853 → 1960 and CLI 947 → 953, with main merged.
+
+
+## WSSETUP6 — the workspace plan (2026-10-02)
+
+> - [ ] **WSSETUP6 — the workspace plan** (§4.1–§4.3; driver; after LAYOUT7): the plan file, the tick, the order,
+> `atOnce` at most `cap − 1`, the pilot pause, pause, resume and stop.
+
+**Outcome** A paced plan of single set-ups per workspace (`daoris-driver setup --workspace`), one at a time, pausing after its pilot. Detail: the WSSETUP6 note under D124, commit `f2ea8e2`.
+
+
+## TEST2 — tools.test.ts sets the PATH it assumes (2026-10-02)
+
+> - [ ] **TEST2 — `tools.test.ts` reads the shell's spelling of PATH** (LAYOUT7's hand-back): three cases found the system
+> git and gh when `verify` ran from PowerShell, where the variable is `Path`; they pass from Git Bash. Make the
+> cases set the environment they assume whatever the parent shell spells.
+
+**Outcome** `tools.test.ts` sets the PATH it assumes, whatever spelling the shell gives; green from Git Bash and PowerShell. Detail: commit `04c499f`.
+
+
+## TEST3 — the set-up kit's tests join verify (2026-10-02)
+
+> - [ ] **TEST3 — the set-up kit's tests join a gate** (LAYOUT7a's hand-back): `tools/setup-kit.test.mjs` (12) runs outside
+> `verify`; move it beside the other tools' tests in `src/Daoris.Cli/test/`, so a gate runs it.
+
+**Outcome** The set-up kit's tests moved into the CLI suite, so `verify` runs them. Detail: commit `8cc7816`.
+
+
+## STUB1 — the protocol stub ends by draining (2026-10-02)
+
+> - [ ] **STUB1 — the protocol stub ends on a libuv assertion on Windows** (LAYOUT7a's hand-back): with Node 24 the stub
+> can exit `0xC0000409` in `process.exit` after a `fetch`, in phases 17, 17b and 17c; the driver judges by the quest,
+> so records still end right. Let the stub close its handles and return rather than call `process.exit`.
+
+**Outcome** The protocol stub ends by draining instead of `process.exit`, ending its 0xC0000409 exits on Windows. Detail: commit `bbcfaf1`.
+
+
+## TOOL4a — the limit table and its reader (2026-10-02)
+
+> - [ ] **TOOL4a — the limit table and its reader** (driver; §1.3, §2.1): `HarnessToolchain.Limits` on `claude-code` and the
+> stub; `AccountLimits.Read`, pure; the five sentences as fixtures, the zone replaced.
+
+**Outcome** `AccountLimits.Read` recognises a limit and its reset from the door's failure, held to five recorded sentences. Detail: the TOOL4a note under D125, commit `10d162d`.
+
+
+## TOOL4c — the record says a limit (2026-10-02)
+
+> - [ ] **TOOL4c — the record says a limit** (service; §5.2): `Session.Limit`, stored, served off loopback and synced, as
+> `Interrupted` was; an older record reads false.
+
+**Outcome** A session's record says `limit`, stored, served and synced. Detail: the TOOL4c note under D125, commit `abab903`.
+
+
+## TOOL4d — the cool-off and the hold (2026-10-02)
+
+> - [ ] **TOOL4d — the cool-off and the hold** (driver; §2, §4, §5; after TOOL4a and TOOL4c): `cooling.json`; a recognised
+> limit cools the account from a driven session, an intake or a conversation; `SelectAsync` holds a cooling account
+> before any probe; `ReadStrikes` passes a `limit` record; the early endings; the wait said once; `account.limited`,
+> `starts.waiting`; a `Process`-half tick replaying 1 October.
+> From TOOL4a's hand-back: `acp-stub` declares no toolchain, so a limit over the protocol door with no account
+> behind it needs the door to read the stub's entry as its owner's (AGT7) or declare its own.
+
+**Outcome** A limit cools its account until the stated reset, is never a strike, and holds starts with one notice. Detail: the TOOL4d note under D125, commit `21bd950`.
+
+
+## NAME2 — the names after NAME1b (2026-10-02)
+
+> - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
+> had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
+> languages, and each is renamed or accepted.
+> Seen on the republished install (2026-10-01, 中文): the plugin page's on/off act reads 关闭, which says *close* as
+> much as *turn off* (停用 is unambiguous); the plugin's description is cut to one line with an ellipsis.
+
+**Outcome** A plugin's switch is 启用 / 停用, a header's line wraps whole, *lane* is 泳道, and 96 width judgements are accepted in the glossary. Detail: the note under D116, commits `3c60b52`, `9e0bbef`, `30979a9`, `04dff4f`.
+
+
+## LOOK4 — the debug port a reserved range refused (2026-10-02)
+
+> - [ ] **LOOK4 — the dev tool's debug port did not open on the install** (found 2026-10-02): `desktop run --install`
+> said "debug port 9333" for the same build whose port opened the day before, and nothing listened on it, so `shot`,
+> `eval` and `click` could not reach the window. Find why (the environment reaching the app, the engine's port
+> setting), and make the tool say so when the port never opens.
+
+**Outcome** The debug port never opened because Windows reserved 9309–9408; the port finder now binds before choosing, and `run` says when the port never opens. Detail: FIX-LOG, commit `ca98c6a`.
+
+
+## WSSETUP5a — the family rehearsal checks registration from the line (2026-10-02)
+
+> - [ ] **WSSETUP5a — the family rehearsal checks registration from the line** (WSSETUP5's hand-back; tools): after
+> phase 17c lands, the row reads adopted and declared with no `connect`; and the install note in `desktop-publish.mjs`
+> says Daoris's own children find `app/bin/` first. Also (records): the PLUGDIST1a note sits after D123, a union
+> artefact; move it under D120.
+
+**Outcome** The family rehearsal checks a repository registers from its line with no `connect` (phase 17c), and sets a workspace up one at a time (phase 17d). Detail: the WSSETUP5a and WSSETUP6a notes under D124, commits `fb7609f`, `01c8be8`.

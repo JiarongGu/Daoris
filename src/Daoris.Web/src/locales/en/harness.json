@@ -56,7 +56,6 @@
   "harness.profile.useFor": "use {{profile}} for a workspace",
   "harness.profile.useForPlaceholder": "use for a workspace…",
   "harness.profile.workspaceUses": "used in {{workspace}}",
-  "harness.machineDefault": "this machine's default",
   "harness.homeTip": "the configuration directory Daoris owns the location of. What is inside it belongs to the tool.",
   "harness.login.action": "Sign in",
   "harness.login.in": "signed in",

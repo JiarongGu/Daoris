@@ -201,7 +201,7 @@ describe('the kinds that reach every door', () => {
   it('a hand-off says a plugin pushes the branch, signed in as the person, before Apply', async () => {
     await press(HAND, 'Apply');
 
-    expect(screen.getByText('Ask Daoris proposes handing a branch on')).toBeInTheDocument();
+    expect(screen.getByText('Ask Daoris proposes a hand-off')).toBeInTheDocument();
     expect(screen.getByText('feature/q2-second', { selector: 'code' })).toBeInTheDocument();
     expect(screen.getByText(/pushes the branch to its remote, signed in as you/)).toBeInTheDocument();
     expect(screen.getByText(HAND.terminal, { selector: 'code' })).toBeInTheDocument();
@@ -248,7 +248,7 @@ describe('the kinds that reach every door', () => {
   it('bringing up to date asks the person to look first, the press that fetches, and lists nothing yet', async () => {
     await press(SYNC, 'Look for updates');
 
-    expect(screen.getByText('Ask Daoris proposes bringing repositories up to date')).toBeInTheDocument();
+    expect(screen.getByText('Ask Daoris proposes updates')).toBeInTheDocument();
     expect(screen.getByText(/Looking fetches each line from origin, as you/)).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'what the press would do' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
@@ -361,7 +361,7 @@ describe('the kinds that reach every door', () => {
       cleanup();
       // HELP10: bringing up to date's chrome, the look's word the screen's own.
       render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议把仓库更新到最新')).toBeInTheDocument();
+      expect(screen.getByText('问道衍提议更新到最新')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '检查更新' })).toBeInTheDocument();
       cleanup();
       // LEFT3 b: what the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
