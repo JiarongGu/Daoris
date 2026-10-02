@@ -38,6 +38,9 @@ public sealed class HelpRoomDoorsTests
             // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors until TOOL4g.
             "daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]",
             "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
+            // TOOL6a (D130 §16.6): how a list is used, the terminal's door until TOOL4g.
+            "daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
+                + "[--workspace <name>]",
         })
         {
             Assert.Contains(command, agents);
