@@ -239,6 +239,66 @@ export function prune(entries, { keep = 25, maxBytes = 150 * 1024 * 1024 } = {})
   return drop;
 }
 
+/**
+ * Wait for the debug port a run asked for, and say how the wait ended (LOOK4).
+ *
+ * 🔴 The engine opens its port only in development, and when it cannot bind the port it runs on without
+ * one. So a started window is no evidence of a port: `run` used to print the port it asked for and leave
+ * `shot` to find nothing listening there. The application ending before the port answered is said at
+ * once, since nothing is left to wait for.
+ *
+ * @param answers - whether anything answers on the port now.
+ * @param gone - null while the application runs, `{ code, signal }` once it has ended.
+ * @returns `{ open, waitedMs, gone }`, where `gone` is null unless the application ended.
+ */
+export async function awaitDebugPort({
+  answers, gone, limitMs = 30_000, stepMs = 500,
+  now = Date.now, sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}) {
+  const started = now();
+  for (;;) {
+    if (await answers()) return { open: true, waitedMs: now() - started, gone: null };
+    const ended = gone();
+    if (ended) return { open: false, waitedMs: now() - started, gone: ended };
+    if (now() - started >= limitMs) return { open: false, waitedMs: now() - started, gone: null };
+    await sleep(stepMs);
+  }
+}
+
+/**
+ * Where the engine's own log is for a run: CEF keeps it in the kit's `chromium` data area, under the
+ * `data/` of the root the application anchors at (`ShenoraPaths`). That root is the install's folder
+ * (`Program.cs` passes it as the explicit root), the scratch run's `--app-root`, or, for `--real`, the
+ * built executable's folder.
+ */
+export function engineLogOf({ install, real, exe }) {
+  const root = install ?? (real ? dirname(exe) : join(scratchRoot, 'app'));
+  return join(root, 'data', 'chromium', 'cef.log');
+}
+
+/** What `run` says when the debug port it asked for never answered (LOOK4), from `awaitDebugPort`'s outcome. */
+export function closedPortReport({ port, waitedMs, gone, pid, engineLog, home }) {
+  if (gone) {
+    const how = Number.isInteger(gone.code) ? `exited ${gone.code}` : `ended (${gone.signal ?? 'no exit code'})`;
+    return [
+      `⚠ the application (pid ${pid}) ${how} before its debug port ${port} opened, so this run has no window.`,
+      '  A Daoris already running from the same folder takes a later start and ends it, and that window has',
+      '  no debug port: close it (`kill` closes one this tool started), then `run` again. Otherwise the machine',
+      `  log in ${join(home ?? '(the home)', 'logs')} says why it ended.`,
+    ].join('\n');
+  }
+  return [
+    `⚠ the window started WITHOUT its debug port: nothing listens on ${port} (127.0.0.1 or [::1]) `
+      + `${Math.round(waitedMs / 1000)}s after the start,`,
+    '  so `shot`, `eval` and `click` cannot reach it. The engine opens the port only in development, and when',
+    '  it cannot bind the port it runs on without one. Try:',
+    '    node tools/desktop.mjs restart   to pick a port again and start a new window',
+    `    the engine's log, ${engineLog}, for why it did not listen`,
+    '    netsh interface ipv4 show excludedportrange protocol=tcp   for whether Windows reserves the port:',
+    '      nobody can bind a reserved port, and `run` now passes one over (LOOK4)',
+  ].join('\n');
+}
+
 // ---------------------------------------------------------------------------------------------
 // Everything below runs; everything above is asserted.
 
@@ -462,6 +522,11 @@ async function attach(window = null) {
 
   const { Cdp, pickPageTarget, targetsAt } = await import('./cdp.mjs');
   const targets = await targetsAt(state.cdpPort);
+  if (!targets && state.debugPortOpen === false) {
+    // `run` waited and said so (LOOK4); the same sentence here, rather than a guess at why.
+    fail(`nothing is listening on the debug port ${state.cdpPort}: the window \`run\` started never opened it, `
+      + 'as `run` said. `node tools/desktop.mjs restart` picks a port again.');
+  }
   if (!targets) {
     fail(`nothing is listening on the debug port ${state.cdpPort} — the shell is not running, or was `
       + 'started without this tool. `node tools/desktop.mjs restart`.');
@@ -544,7 +609,7 @@ async function start(command, args) {
   }
 
   const real = args.includes('--real') || Boolean(install);
-  const { freePort } = await import('./cdp.mjs');
+  const { answersOn, freePort } = await import('./cdp.mjs');
   const cdpPort = await freePort(9333);
 
   let environment = debugEnvironment(cdpPort);
@@ -601,18 +666,32 @@ async function start(command, args) {
   if (!real) for (const name of CLEARED) delete env[name];
 
   const child = spawn(exe, extra, { env, detached: true, stdio: 'ignore' });
+  // Heard while `run` waits for the port below, so an application that ended is said at once.
+  let ended = null;
+  child.on('exit', (code, signal) => { ended = { code, signal }; });
   child.unref();
 
+  // Written before the wait, so `kill` and `restart` reach a window whose port never opens.
   mkdirSync(scratchRoot, { recursive: true });
-  writeFileSync(RUN_FILE, `${JSON.stringify(
-    { pid: child.pid, exe, serviceUrl, cdpPort, real, started: new Date().toISOString() }, null, 2)}\n`);
+  const record = { pid: child.pid, exe, serviceUrl, cdpPort, real, started: new Date().toISOString() };
+  writeFileSync(RUN_FILE, `${JSON.stringify(record, null, 2)}\n`);
 
+  const home = install ? join(install, HOME) : real ? process.env.DAORIS_HOME : join(scratchRoot, 'home');
   console.log(`shell started (pid ${child.pid})`);
   console.log(`  platform   ${serviceUrl}`);
   console.log(`  debug port ${cdpPort}`);
-  console.log(`  machine    ${real
-    ? `${install ? join(install, HOME) : process.env.DAORIS_HOME ?? '(no DAORIS_HOME)'} — YOUR OWN`
-    : join(scratchRoot, 'home')}`);
+  console.log(`  machine    ${real ? `${home ?? '(no DAORIS_HOME)'} — YOUR OWN` : home}`);
+
+  // The port asked for is not a port opened (LOOK4): wait until it answers, or say why it did not.
+  const outcome = await awaitDebugPort({ answers: () => answersOn(cdpPort), gone: () => ended });
+  writeFileSync(RUN_FILE, `${JSON.stringify({ ...record, debugPortOpen: outcome.open }, null, 2)}\n`);
+  if (!outcome.open) {
+    fail(closedPortReport({
+      port: cdpPort, waitedMs: outcome.waitedMs, gone: outcome.gone, pid: child.pid,
+      engineLog: engineLogOf({ install, real, exe }), home,
+    }));
+  }
+  console.log(`  debug port answering after ${Math.round(outcome.waitedMs / 1000)}s`);
 }
 
 function doctor() {

@@ -223,6 +223,9 @@ Two couplings the tool holds that nothing else does, both found by running it: t
 development, which is why a shipped window has nothing to attach to — D78 §3.1 by construction), and the scratch port needs **`ASPNETCORE_URLS`** as
 well (the shell *probes* `DAORIS_SERVICE_URL` while the host *binds* `ASPNETCORE_URLS`, and nothing
 passes one to the other — move only the probe and the window waits on the splash forever).
+And a port asked for is not a port opened (LOOK4): the engine runs on without its port when it cannot bind
+it, as on a port Windows reserves, which answers nothing and so looked free. So `run` picks a port it has
+bound on both loopbacks, waits for the port to answer, and says when the window started without it.
 
 Captures and the scratch machine live under `_fixtures/`, which is gitignored: a window capture can
 show real repository content, so it never enters a tracked file (`sensitive-info`). Every capture

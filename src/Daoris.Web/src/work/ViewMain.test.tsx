@@ -1,7 +1,7 @@
 import { createRef } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ViewMain } from './ViewMain';
+import { PageHead, ViewMain } from './ViewMain';
 
 // The main area (D118 §3b): props only, since a molecule imports no hook. jsdom lays nothing out, so what
 // it holds is the property each state rests on — the container a view's split is measured by, the region
@@ -63,5 +63,21 @@ describe('the main area', () => {
   it('caps no content: the page follows the main area (UX5 U59)', () => {
     render(<ViewMain header={<h1>Overview</h1>}><p>the page</p></ViewMain>);
     expect(screen.getByRole('main').className).not.toMatch(/\bmax-w-/);
+  });
+});
+
+describe("a page's header", () => {
+  /**
+   * NAME2: a plugin's description, a repository's summary and a quest's state line are content, shown as they
+   * are (platform language §4). Cut to one line, the install showed a plugin's description ending in an
+   * ellipsis; it wraps at the reading measure instead, whole.
+   */
+  it('shows its line whole, wrapping at the reading measure', () => {
+    const description = 'Holds every quest that arrives after hours until the morning, then lets the driver start them in the order they came.';
+    render(<PageHead title="Acme gate" id="acme.gate" line={description} />);
+    const line = screen.getByText(description);
+    expect(line).not.toHaveClass('truncate');
+    expect(line).toHaveClass('max-w-prose', 'wrap-anywhere');
+    expect(line).not.toHaveAttribute('title');
   });
 });

@@ -335,6 +335,13 @@ const handle = async (line) => {
 };
 
 lines.on('line', (line) => { handle(line).catch((error) => say('handler failed:', error.message)); });
-// stdin closed: end of input is the ending, and the process exits on its own.
-lines.on('close', () => { say('input closed; exiting'); process.exit(0); });
+// stdin closed: end of input is the ending. The stub releases its input, sets its code and returns, and the
+// process ends when the event loop drains, never by process.exit: on Windows, Node 24 could end in a libuv
+// assertion (0xC0000409) inside process.exit while a fetch's socket was still open (STUB1). Nothing else holds
+// the loop: a permission still awaited is a promise, not a handle.
+lines.on('close', () => {
+  say('input closed; exiting');
+  process.exitCode = 0;
+  process.stdin.destroy();
+});
 `;
