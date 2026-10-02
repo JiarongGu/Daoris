@@ -138,6 +138,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
+| keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Standing answer | `daoris driver standing <repository> "…"|--clear` |
 | sign an agent in, or add an account | Settings → Agents | `daoris agent login <agent>` |
 | choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents → Make default, use for a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
 | choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Settings → Agents → How accounts are used → Use, up and down, and a workspace's Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |

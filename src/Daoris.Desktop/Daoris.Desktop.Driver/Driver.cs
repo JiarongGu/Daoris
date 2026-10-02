@@ -834,8 +834,11 @@ public sealed partial class Driver(
             // another account that is now cooling, which only a limit makes so.
             var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
-            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is.
-            var target = (await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false)) with
+            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
+            // and their standing answer for its repository (KNOWUSE1b), from this machine's config.
+            var target = WithStanding(
+                await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
+                config) with
             {
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -1620,6 +1623,13 @@ public sealed partial class Driver(
     /// </summary>
     internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, ServiceClient service, CancellationToken ct) =>
         target with { Words = await AskWords.ReadAsync(service, target.Asker, ct).ConfigureAwait(false) };
+
+    /// <summary>
+    /// The person's standing answer for the quest's repository on this machine (KNOWUSE1b, D135 §3), read from the config this
+    /// tick holds for every start, whatever kind: a follow-up step in another repository is handed that repository's.
+    /// </summary>
+    internal static SessionTarget WithStanding(SessionTarget target, DriverConfig config) =>
+        target with { Standing = config.StandingFor(target.Repository) };
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account

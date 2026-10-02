@@ -9903,3 +9903,36 @@ person's words, a yes with words, a no, an answer changed, no door, no section),
 through it rather than in its last message is not measured; nothing compares an act's words by meaning, so two wordings
 sharing no word are asked twice; the parked session's page does not show the go-aheads it asked, which are on the ask's
 page; the family rehearsal asks none; the page was not looked at on the window.
+
+**KNOWUSE1b, built 2026-10-03: a standing answer kept per repository.** It lives in `driver.json`'s `standing`, by
+repository, as the person's words with when they set them. Both twins read it by one table (`DriverConfig.Standing`,
+`driverconfig.ts`'s `standing`; `.claude/knowledge/twins.md` has the row). It is set at
+`daoris driver standing <repo> "…"|--clear`, on the repository's page under the driver's choices (`SET_STANDING`), and by
+Ask Daoris's `setting` kind's `standing` door. Every start reads it from the tick's config (`Driver.WithStanding`): a claim,
+a D79 resume, a carry-on on any account and a follow-up step, each for its own repository. It is quoted beneath the quest,
+after the person's words and the go-aheads, saying it answers what it covers and that the quest's words and the ask's are
+newer and win (`StandingText`). Choices §3 left open:
+- **`driver.json`, not a file of its own**: it is a standing choice of the person's for this machine's driver, read at each
+  start beside the lines and landings, and `daoris driver list` shows it there. It is never written into the repository
+  (D32).
+- **Verbatim, one per repository**: the words trimmed at the ends only, a later answer replacing the earlier under the
+  spelling first written, the time kept in UTC to the second. Clearing is its own act (`--clear`, or no words at the screen's
+  door); blank words are refused.
+- **Bounded at 2,000 characters**, which the three doors refuse past, for the instruction's command-line reason (DRIFT1b).
+  An answer longer in a hand-edited file is cut in the instruction and said to be.
+- **Every session there, and no other**: a chat is the person's own conversation, and an ANSWER1 resume was handed it at
+  its start. Ask Daoris proposes it as a card the person applies, since it only says what the person said.
+
+Proof: `StandingTests` and `driverconfig.test.ts` (the shared table, the CLI parsing the driver's theory cell for cell; the
+written shape; a later answer; the refusals; another edit keeping it), seen failing before either reader existed;
+`StandingHandedTests` (the proof, a claim, a resume, a carry-on and a follow-up each handed it beneath the quest; a step in
+another repository handed that one's; gone once cleared; the bound), seen failing with the section removed;
+`DriverModuleStandingTests` (the screen's door writing the terminal's file, the state's rows, the refusals), seen failing
+with no route; `HelpSettingProposalTests` and `HelpSettingProposalsTests` (the box's shape, the driver's plan and its edit),
+seen failing before the door existed; `HelpCoverageTests` holds the verb to its door and the room names it, its goldens
+gaining the row; the CLI's usage fixture gained the verb. In the page, `StandingAnswer.test.tsx` (none and add, words with
+when and edit, clear, the bound) and `ProjectsView.test.tsx` (shown on the repository's page, saved and cleared on
+`DAORIS.DRIVER`), seen failing before the field existed. Ask Daoris's room lists each workspace's answers after its table
+(`HelpRoomTests`, seen failing with the list removed), so `daoris driver list` shows nothing the room does not. Not covered:
+no real agent was handed the answer, so whether it stops the go-ahead questions it answers is not measured; the page was
+not looked at on the window.

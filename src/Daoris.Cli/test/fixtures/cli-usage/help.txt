@@ -115,6 +115,11 @@ daoris <command> [options]
                          across <repo> write-to <other> [--clear]
                                                    let its sessions also write
                                                    into <other>: your say-so
+                         standing <repo> "…"|--clear
+                                                   an answer handed to every
+                                                   session there: which writes
+                                                   are allowed, where to test;
+                                                   kept here, never in the repo
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

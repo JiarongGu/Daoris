@@ -99,6 +99,13 @@ public sealed record SessionTarget(
     public AskWords? Words { get; init; }
 
     /// <summary>
+    /// What the person has told this machine holds for every quest in this repository (KNOWUSE1b, D135 §3), read from
+    /// <c>driver.json</c> for this start and handed beneath the quest: a claim, a resume, a carry-on and a follow-up alike.
+    /// Null where the repository keeps none, and the instruction reads as it did.
+    /// </summary>
+    public StandingAnswer? Standing { get; init; }
+
+    /// <summary>
     /// Whether the session before was stopped by the person, who has since released the quest from that stop with *Try
     /// again* (SESSUX1b): the carry-on is told so, rather than that the session before was cut off.
     /// </summary>
@@ -198,7 +205,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
@@ -226,7 +233,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}
         An earlier session on this quest needed something only `{answered.To}` could answer, asked it, and
         waited. What it did is in this tree — read its commits before you go on. The question was quest
         `#{answered.Id}`, "{answered.Title}", and {Answer(answered)}
@@ -257,7 +264,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}
         {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
         and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}
 
@@ -304,6 +311,12 @@ public static class TargetPrompt
     /// was refused and what still waits, each by its number. Nothing where the ask holds none, or for a quest no ask asked.
     /// </summary>
     private static string GoAheads(SessionTarget target) => GoAheadsText.Beneath(target.Words);
+
+    /// <summary>
+    /// The person's standing answer for this repository (KNOWUSE1b, D135 §3), beneath the quest and beside what was said on
+    /// its ask: their words, verbatim, with when they set them. Nothing where the repository keeps none.
+    /// </summary>
+    private static string Standing(SessionTarget target) => StandingText.Beneath(target.Standing, target.Repository);
 
     /// <summary>
     /// The most characters of the requirements' words and checks an instruction carries, for the person's words' reason

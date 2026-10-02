@@ -78,6 +78,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Settings → Permissions → Across repositories",
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
+        // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
+        ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
+            "Repositories → the repository's page → Standing answer", "`daoris driver standing <repository> \"…\"|--clear`"),
         ("sign an agent in, or add an account", "Settings → Agents", "`daoris agent login <agent>`"),
         // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
         // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).

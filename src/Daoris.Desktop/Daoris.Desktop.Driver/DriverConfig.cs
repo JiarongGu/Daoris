@@ -151,6 +151,51 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
+    /// What the person has told this machine holds for every session in a repository (KNOWUSE1b, D135 §3): a standing answer
+    /// by repository, in their words, with when it was set, handed to every session there beneath its quest. Absent is none,
+    /// written only when set. The CLI's <c>driverconfig.ts</c> reads it the same way (<c>StandingTests</c>, held row for row
+    /// by its <c>driverconfig.test.ts</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, StandingAnswer> Standing { get; init; } =
+        new Dictionary<string, StandingAnswer>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The most characters a standing answer holds — the CLI's <c>STANDING_LIMIT</c>, a deliberate copy.</summary>
+    public const int StandingLimit = 2_000;
+
+    /// <summary>The refusal every door says for blank words or words past the bound.</summary>
+    public const string StandingRefusal = "a standing answer is the person's words, at most 2,000 characters — or cleared.";
+
+    /// <summary>This repository's standing answer on this machine, or null: the name matched in any case.</summary>
+    public StandingAnswer? StandingFor(string repository) => Standing.GetValueOrDefault(repository.Trim());
+
+    /// <summary>
+    /// Keep a standing answer for this repository, set <paramref name="at"/>, or clear it with null: one per repository, the
+    /// later replacing the earlier under the spelling first written.
+    /// </summary>
+    /// <exception cref="DriverException">No repository, blank words, or words past <see cref="StandingLimit"/>.</exception>
+    public DriverConfig WithStanding(string repository, string? says, DateTimeOffset at)
+    {
+        var named = repository?.Trim() ?? "";
+        if (named.Length == 0) throw new DriverException("a standing answer names the repository it holds for.");
+        var words = says?.Trim();
+        if (says is not null && (words!.Length == 0 || words.Length > StandingLimit)) throw new DriverException(StandingRefusal);
+
+        var next = new Dictionary<string, StandingAnswer>(Standing, StringComparer.OrdinalIgnoreCase);
+        // The repository's spelling first written, when it has one in another case: one entry, never two.
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
+        if (words is null) next.Remove(key);
+        else next[key] = new StandingAnswer(words, ToTheSecond(at));
+        return this with { Standing = next };
+    }
+
+    /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
+    private static DateTimeOffset ToTheSecond(DateTimeOffset at)
+    {
+        var utc = at.ToUniversalTime();
+        return new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, utc.Second, TimeSpan.Zero);
+    }
+
+    /// <summary>
     /// The harness an ask's INTAKE session runs on (D65 §1b) — or null, and no intake runs.
     /// </summary>
     /// <remarks>
@@ -387,6 +432,8 @@ public sealed record DriverConfig(
             // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
             WritePauses(writer, "pausedAsks", PausedAsks);
             WritePauses(writer, "pausedQuests", PausedQuests);
+            // Written only when set (KNOWUSE1b), as the CLI writes it: absent is no standing answer.
+            WriteStanding(writer, Standing);
             // Written only when set (WSR2): absent is the checkout's guess, and a file that never chose
             // a line should not start carrying an empty one.
             WriteMap(writer, "lines", Lines);
@@ -468,6 +515,48 @@ public sealed record DriverConfig(
         }
 
         return pauses;
+    }
+
+    /// <summary>The standing answers (KNOWUSE1b): each repository an object, its words, and its time in UTC to the second where known.</summary>
+    private static void WriteStanding(Utf8JsonWriter writer, IReadOnlyDictionary<string, StandingAnswer> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject("standing");
+        foreach (var (repository, answer) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(repository);
+            writer.WriteString("says", answer.Says);
+            if (answer.At is { } at) writer.WriteString("at", at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The standing answers (KNOWUSE1b): each repository an object whose <c>says</c> is text, read without the spaces around it,
+    /// and read where first written in any case. Its <c>at</c> is read only as ISO 8601 writes a moment, and a time that does not
+    /// read leaves the answer standing with its time unknown. Blank words, an entry that is not an object, and a map that is not
+    /// one are none.
+    /// </summary>
+    private static IReadOnlyDictionary<string, StandingAnswer> StandingMap(JsonElement root, string name)
+    {
+        var standing = new Dictionary<string, StandingAnswer>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return standing;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Value.ValueKind != JsonValueKind.Object || property.Name.Trim().Length == 0 || standing.ContainsKey(property.Name)) continue;
+            if (!property.Value.TryGetProperty("says", out var says) || says.ValueKind != JsonValueKind.String
+                || says.GetString()?.Trim() is not { Length: > 0 } words)
+            {
+                continue;
+            }
+
+            standing[property.Name] = new StandingAnswer(words, Moment(String(property.Value, "at")));
+        }
+
+        return standing;
     }
 
     /// <summary>
@@ -669,6 +758,7 @@ public sealed record DriverConfig(
             Released = SessionMap(root, "released"),
             PausedAsks = PauseMap(root, "pausedAsks"),
             PausedQuests = PauseMap(root, "pausedQuests"),
+            Standing = StandingMap(root, "standing"),
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Landings = RuleMap(root, "landings"),
