@@ -257,7 +257,10 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         var routes = host.Routes();
         Assert.DoesNotContain(("DELETE", "/api/quests/{id}"), routes);
         Assert.DoesNotContain(("DELETE", "/api/asks/{id}"), routes);
-        foreach (var path in new[] { $"/api/quests/{id}", $"/api/asks/{id}" })
+        // SESSUX1f (D126 §5.4): nor a session's, nor its judgement; a delete is a person's on their own machine.
+        Assert.DoesNotContain(("DELETE", "/api/sessions/{id}"), routes);
+        Assert.DoesNotContain(("GET", "/api/sessions/{id}/deletable"), routes);
+        foreach (var path in new[] { $"/api/quests/{id}", $"/api/asks/{id}", "/api/sessions/ab12cd34" })
         {
             var refused = await host.DeleteAsync(path, key: key);
             Assert.True(refused.Status is 404 or 405, $"DELETE {path} answered {refused.Status}");
@@ -265,5 +268,15 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
 
         var listed = await host.GetAsync("/api/quests", key: key);
         Assert.Contains(listed.Json.EnumerateArray(), row => row.GetProperty("id").GetString() == id);
+    }
+
+    /// <summary>
+    /// DRIFT1d (D133 §4): the person's yes to a departure is said on their own machine, and travels from there as an
+    /// operation, as a delete does — a shared host has no accept door.
+    /// </summary>
+    [Fact]
+    public void The_accept_door_does_not_exist_on_a_shared_host()
+    {
+        Assert.DoesNotContain(("POST", "/api/quests/{id}/accept"), host.Routes());
     }
 }

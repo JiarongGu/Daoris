@@ -152,6 +152,44 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Null((await _sessions.FindAsync(fed.Id))!.Answer);
     }
 
+    /// <summary>
+    /// SESSUX1f (D126 §5.4): a record that went up to a remote is marked so, and the mark is no change of the record, so
+    /// it moves no revision and the next push does not send it again. It is kept through later moves, since the remote
+    /// still holds the copy it was sent.
+    /// </summary>
+    [Fact]
+    public async Task A_record_that_went_up_is_marked_pushed_without_a_new_revision_and_keeps_the_mark()
+    {
+        var sent = await Create();
+        var home = await Create();
+        var before = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Max(change => change.Revision);
+
+        await _sessions.MarkPushedAsync([sent.Id, "not-a-session"]);
+
+        Assert.Empty(await _sessions.OwnChangedSinceAsync(before, Workspaces.Default));
+        Assert.True((await _sessions.FindAsync(sent.Id))!.Pushed);
+        Assert.False((await _sessions.FindAsync(home.Id))!.Pushed);
+        await _sessions.SetStateAsync(sent.Id, SessionState.Stopped, null, null, null, Now.AddMinutes(1));
+        Assert.True((await _sessions.FindAsync(sent.Id))!.Pushed);
+    }
+
+    /// <summary>
+    /// SESSUX1f: the store deletes a record whole when asked, and says whether there was one. It judges nothing: whether a
+    /// record may go is the ledger's.
+    /// </summary>
+    [Fact]
+    public async Task A_record_is_deleted_whole_and_an_unknown_one_is_said()
+    {
+        var gone = await Create();
+        var kept = await Create();
+
+        Assert.True(await _sessions.DeleteAsync(gone.Id));
+        Assert.False(await _sessions.DeleteAsync(gone.Id));
+
+        Assert.Null(await _sessions.FindAsync(gone.Id));
+        Assert.NotNull(await _sessions.FindAsync(kept.Id));
+    }
+
     /// <summary>An attachment set earlier survives a later move that does not mention it.</summary>
     [Fact]
     public async Task An_unmentioned_attachment_is_kept_not_erased()
@@ -438,5 +476,36 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         var second = await SessionStore.OpenAsync(_connection);
 
         Assert.NotNull(await second.FindAsync("old12345"));
+    }
+
+    /// <summary>
+    /// SESSUX1f (D126 §5.4): a store from before the pushed mark derives it once, from its push cursor. A record of this
+    /// machine's at or before what its workspace pushed went up as far as anything here can tell, so it is marked, which
+    /// errs toward refusing a delete; one written after, a teammate's and one of a workspace never pushed are not.
+    /// </summary>
+    [Fact]
+    public async Task A_store_from_before_the_pushed_mark_derives_it_from_its_cursor()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var earlier = await sessions.CreateAsync(null, "Elder", "stub", Now, kind: SessionKind.Chat);
+        await sessions.AdvanceCursorAsync("aurora", pushed: (await sessions.OwnChangedSinceAsync(0, "aurora")).Max(change => change.Revision));
+        await sessions.AdvanceCursorAsync(
+            Workspaces.Default, pushed: (await sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Max(change => change.Revision));
+        var later = await sessions.CreateAsync(null, "Elder", "stub", Now, workspace: "aurora", kind: SessionKind.Chat);
+        var elsewhere = await sessions.CreateAsync(null, "Elder", "stub", Now, workspace: "borealis", kind: SessionKind.Chat);
+        await sessions.MirrorAsync(new Session("bob/fe12dc34", null, "Elder", "stub", SessionState.Completed, null, null, null, Now, Now));
+        await using (var drop = _connection.CreateCommand())
+        {
+            drop.CommandText = "ALTER TABLE sessions DROP COLUMN pushed";
+            await drop.ExecuteNonQueryAsync();
+        }
+
+        var upgraded = await SessionStore.OpenAsync(_connection);
+
+        Assert.True((await upgraded.FindAsync("old12345"))!.Pushed);
+        Assert.True((await upgraded.FindAsync(earlier.Id))!.Pushed);
+        Assert.False((await upgraded.FindAsync(later.Id))!.Pushed);
+        Assert.False((await upgraded.FindAsync(elsewhere.Id))!.Pushed);
+        Assert.False((await upgraded.FindAsync("bob/fe12dc34"))!.Pushed);
     }
 }

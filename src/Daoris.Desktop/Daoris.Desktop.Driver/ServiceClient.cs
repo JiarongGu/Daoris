@@ -569,6 +569,84 @@ public sealed class ServiceClient : IDisposable
     public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct = default) =>
         DeleteRecordAsync($"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
 
+    /// <summary>
+    /// The person's yes to a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on. The
+    /// service's sentence comes back verbatim, a refusal (nothing waits for a yes) included.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct = default)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/accept", "{}", ct).ConfigureAwait(false);
+        // A host older than the accept door answers a bare 404 or 405 — said plainly, not parsed as nothing.
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no accept door ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
+    /// Every session record, closed ones included, as the service answers them, with this client's key: what the session
+    /// list's reader and a session delete read (SESSUX1a, SESSUX1f).
+    /// </summary>
+    public async Task<IReadOnlyList<SessionRecord>> SessionRecordsAsync(CancellationToken ct = default) =>
+        SessionRecords.Parse(await SessionRecordsJsonAsync(ct).ConfigureAwait(false));
+
+    /// <summary>The same records as the service wrote them, for a reader that reads the strikes and the last runs from them too.</summary>
+    public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => GetAsync(SessionRecords.Door, ct);
+
+    /// <summary>
+    /// The ledger's judgement of deleting a session's record (SESSUX1f, D126 §5.4), deleting nothing: whether it would, and
+    /// if not, its sentence, its word and the facts the word names.
+    /// </summary>
+    /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
+    public Task<SessionDeleteAnswer> JudgeSessionDeleteAsync(string id, CancellationToken ct = default) =>
+        SessionDeleteAsync(HttpMethod.Get, $"/api/sessions/{Uri.EscapeDataString(id)}/deletable", ct);
+
+    /// <summary>
+    /// Delete a session's record (SESSUX1f): the ledger judges it again as it deletes, so a record that moved since is
+    /// refused as it now stands. A refusal is an answer, not an exception.
+    /// </summary>
+    /// <exception cref="DriverException">A host older than the door, which answers no judgement.</exception>
+    public Task<SessionDeleteAnswer> DeleteSessionAsync(string id, CancellationToken ct = default) =>
+        SessionDeleteAsync(HttpMethod.Delete, $"/api/sessions/{Uri.EscapeDataString(id)}", ct);
+
+    private async Task<SessionDeleteAnswer> SessionDeleteAsync(HttpMethod method, string path, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(method, $"{_base}{path}");
+        using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        JsonElement root;
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            root = document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            root = default;
+        }
+
+        // A refusal carries its word; a yes is a success that carries none. Anything else is a host older than the door.
+        var refusal = root.ValueKind == JsonValueKind.Object ? Text(root, "refusal") : null;
+        var taken = response.IsSuccessStatusCode && root.ValueKind == JsonValueKind.Object && refusal is null;
+        if (!taken && refusal is null)
+        {
+            throw new DriverException(
+                $"the service at {_base} has no session delete door ({(int)response.StatusCode}) — is it older than this driver?");
+        }
+
+        return new SessionDeleteAnswer(taken, Text(root, taken ? "message" : "error") ?? "")
+        {
+            Refusal = refusal,
+            Quest = Text(root, "quest"),
+            Ask = Text(root, "ask"),
+            Origin = Text(root, "origin"),
+            Workspace = Text(root, "workspace"),
+        };
+    }
+
     private async Task<(bool Ok, string Message)> DeleteRecordAsync(string path, CancellationToken ct)
     {
         using var response = await _http.DeleteAsync($"{_base}{path}", ct).ConfigureAwait(false);
@@ -721,6 +799,14 @@ public sealed class ServiceClient : IDisposable
                 Lanes = quest.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
                     ? lanes.EnumerateArray().Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null).OfType<string>().ToList()
                     : [],
+                // What the person requires (DRIFT1c), in the service's order, which a done answers by number (DRIFT1d), so
+                // each keeps its place. Absent is none: a host from before requirements.
+                Requirements = quest.TryGetProperty("requirements", out var required) && required.ValueKind == JsonValueKind.Array
+                    ? required.EnumerateArray()
+                        .Select(r => new QuestRequirementView(Text(r, "quote") ?? "", Text(r, "check") ?? "")).ToList()
+                    : [],
+                // Whether a departure holds it for the person's yes (DRIFT1d). Absent is false: a host from before answers.
+                Held = Flag(quest, "held"),
             });
         }
 
@@ -1030,6 +1116,22 @@ public sealed record SessionOpened(string Session, string Kind, string Adapter, 
 
 /// <summary>A session record the ledger moved for this client (LOG1b), in the state's public spelling.</summary>
 public sealed record SessionMoved(string Session, string State);
+
+/// <summary>
+/// What the ledger said of deleting a session's record (SESSUX1f, D126 §5.4): whether it did, or would; and if not its
+/// sentence, its word (<c>not-found</c>, <c>not-ours</c>, <c>live</c>, <c>served-quest</c>, <c>named</c>,
+/// <c>on-remote</c>), which a reader acts on instead of the sentence, and the facts the word names.
+/// </summary>
+/// <param name="Taken">It was deleted, or the judgement says it would be.</param>
+/// <param name="Message">The ledger's sentence: its yes, or its refusal, verbatim.</param>
+public sealed record SessionDeleteAnswer(bool Taken, string Message)
+{
+    public string? Refusal { get; init; }
+    public string? Quest { get; init; }
+    public string? Ask { get; init; }
+    public string? Origin { get; init; }
+    public string? Workspace { get; init; }
+}
 
 /// <summary>What the service said to an ask, a publish or a close (D65 §1a).</summary>
 /// <param name="Ok">Whether it did what was asked — false is a refusal, said in <paramref name="Message"/>.</param>

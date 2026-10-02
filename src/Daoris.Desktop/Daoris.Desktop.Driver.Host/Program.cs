@@ -66,8 +66,11 @@ using Daoris.Driver;
 //                 delete a quest made by mistake (D95): only one nobody has started on — open, with no
 //                 session record naming it — goes, and the service's refusal says what to do instead.
 //                 A shared quest's delete travels to its remote as an operation. The drawer's Delete is
-//                 the other door; there is no other quest verb here, since a quest is answered by the
-//                 session that takes it.
+//                 the other door.
+//   quest accept <id>
+//                 accept a done's departure from what you required (DRIFT1d, D133 §4): what the departure
+//                 held — the chain's next step, a quest waiting on it — goes on, and the yes travels like any
+//                 verb. Nothing else answers a quest here, since a quest is answered by the session that takes it.
 //
 //   answer <session> ["…"]
 //                 answer a driven session that parked to ask you (STANDDOWN2): its record stays parked with
@@ -75,6 +78,15 @@ using Daoris.Driver;
 //                 conversation resumed; where it cannot be, a new session carries the quest on in the same
 //                 tree, handed them, and says why. Nothing after the id is "carry on". The page's box on the
 //                 parked session is the other door.
+//
+//   sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
+//   sessions stop <id> · finish <id> [--note "…"] · decline <id> --reason "…"
+//   sessions archive <id>… | --ended [--yes] · unarchive <id>… · delete <id>
+//                 this machine's sessions by what they need (SESSUX1g, D126 §7.1), from the reader Sessions' list reads;
+//                 --json prints its answer. stop, finish and decline reach a session another process runs through a
+//                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
+//                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
+//                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
 //
 //   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
 //         | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]
@@ -162,19 +174,22 @@ try
         return await Daoris.Driver.Host.RegisterConsole.RunAsync(registerArgs, log);
     }
 
-    // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door.
+    // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
+    // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed.
     if (args is ["quest", .. var questArgs])
     {
-        if (questArgs is not ["delete", var questId])
+        if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
-            Console.Error.WriteLine("usage: daoris-driver quest delete <id>");
+            Console.Error.WriteLine("usage: daoris-driver quest delete <id>  ·  daoris-driver quest accept <id>");
             return 2;
         }
 
         using var client = ServiceClient.FromEnvironment();
-        var (ok, message) = await client.DeleteQuestAsync(questId);
+        var (ok, message) = verb == "delete"
+            ? await client.DeleteQuestAsync(questId)
+            : await client.AcceptDepartureAsync(questId);
         Console.WriteLine($"daoris-driver: {message}");
-        // A refusal — something stands on the quest — is an answer, not a tool error.
+        // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
         return ok ? 0 : 1;
     }
 
@@ -186,6 +201,13 @@ try
         Console.WriteLine($"daoris-driver: {message}");
         // A refusal — nothing parked by that id — is an answer, not a tool error.
         return ok ? 0 : 1;
+    }
+
+    // Sessions from a terminal (SESSUX1g, D126 §7.1, D50): Sessions' list and its acts are the other door to the same
+    // reader and the same owners; a stop of a session another process runs reaches it through the request its loop takes.
+    if (args is ["sessions", .. var sessionsArgs])
+    {
+        return await Daoris.Driver.Host.SessionsConsole.RunAsync(sessionsArgs, log);
     }
 
     // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —
@@ -273,6 +295,10 @@ try
     var processes = new SessionProcesses(Path.Combine(home, "sessions"));
 
     using var service = ServiceClient.FromEnvironment();
+
+    // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126 §7.1),
+    // and acts on one for a session this host runs as the screen's route would.
+    await using var requests = new SessionRequestWatch(home, processes, () => service);
 
     // What this host runs and how long each part takes, into its log (LOG1b): the watcher hears the
     // client's opens and moves and the record's events, so the record is handed to every driver below.

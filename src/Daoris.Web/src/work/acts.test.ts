@@ -71,6 +71,19 @@ describe('the acts a session is offered', () => {
     expect(offeredActs({ ...ended, grouping: null }, 'row')).not.toContain('archive');
   });
 
+  /** SESSUX1f (D126 §5.4): Delete… only where the reader says the delete would be taken, D95's way, at both doors. */
+  it('offers Delete… only where the reader says deletable, after the archive marks and before the id', () => {
+    const chat = session({ quest: null, kind: 'chat', state: 'completed', tree: null });
+    const deletable = { session: chat, grouping: placed({ group: 'ended', shown: 'completed', deletable: true }), root: ROOT };
+    expect(offeredActs(deletable, 'row')).toEqual(['openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy']);
+    expect(offeredActs(deletable, 'header')).toContain('delete');
+
+    expect(offeredActs({ ...deletable, grouping: placed({ group: 'ended', shown: 'completed' }) }, 'row')).not.toContain('delete');
+    expect(offeredActs({ ...deletable, grouping: null }, 'row')).not.toContain('delete');
+    const driven = { session: session({ state: 'completed' }), grouping: placed({ group: 'ended', shown: 'completed', deletable: false }), root: ROOT };
+    expect(offeredActs(driven, 'header')).not.toContain('delete');
+  });
+
   it('offers a teammate’s record only what this machine can do of it: archive marks and its id', () => {
     const theirs = session({ id: 'person@machine-b/s1a2b3c4', state: 'completed', tree: null });
     expect(offeredActs({ session: theirs, grouping: placed({ group: 'ended', shown: 'completed', teammate: true }) }, 'header'))

@@ -169,6 +169,13 @@ public sealed record Session(
     /// </remarks>
     public bool Limit { get; init; }
 
+    /// <summary>
+    /// Whether this machine's record went up to a workspace's remote (SESSUX1f, D126 §5.4): the team holds a copy, and a
+    /// session record does not travel as a deletion, so a delete here would leave theirs. Kept once said, through every
+    /// later move, since the copy stays. This machine's own fact: it never travels.
+    /// </summary>
+    public bool Pushed { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
@@ -324,6 +331,22 @@ public sealed class SessionStore
                 CREATE INDEX IF NOT EXISTS sessions_revision ON sessions (revision);
                 """;
             await cursor.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // SESSUX1f (D126 §5.4): whether a record went up to a remote, after the cursor it is derived from. For rows that
+        // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
+        // pushed was examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
+        // that had not joined is marked too). From here on a push marks what it sent.
+        if (!await SchemaColumns.HasAsync(_connection, "sessions", "pushed", ct).ConfigureAwait(false))
+        {
+            await using var alter = _connection.CreateCommand();
+            alter.CommandText = """
+                ALTER TABLE sessions ADD COLUMN pushed INTEGER NULL;
+                UPDATE sessions SET pushed = 1
+                WHERE origin IS NULL AND revision <= COALESCE(
+                  (SELECT c.pushed FROM session_cursor c WHERE c.workspace = sessions.workspace COLLATE NOCASE), 0);
+                """;
+            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -815,7 +838,36 @@ public sealed class SessionStore
         Answer = reader.IsDBNull(reader.GetOrdinal("answer")) ? null : reader.GetString(reader.GetOrdinal("answer")),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
+        Pushed = !reader.IsDBNull(reader.GetOrdinal("pushed")) && reader.GetInt64(reader.GetOrdinal("pushed")) != 0,
     };
+
+    /// <summary>
+    /// Mark these records as gone up to a remote (SESSUX1f, D126 §5.4), once a push took them. No revision moves: the mark
+    /// is this machine's fact about the record, not a change to it, so the next push does not send it again. An id with
+    /// no record of this machine's is passed over.
+    /// </summary>
+    public async Task MarkPushedAsync(IEnumerable<string> ids, CancellationToken ct = default)
+    {
+        foreach (var id in ids.Distinct(StringComparer.Ordinal))
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = "UPDATE sessions SET pushed = 1 WHERE id = $id AND origin IS NULL";
+            command.Parameters.AddWithValue("$id", id);
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Remove a record whole (SESSUX1f, D126 §5.4). Blind, like every write here: whether a record may go is the ledger's
+    /// judgement, made before this is asked. False when there was none.
+    /// </summary>
+    public async Task<bool> DeleteAsync(string id, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "DELETE FROM sessions WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }
 
     /// <summary>
     /// Keep the person's answer on a parked session's record (STANDDOWN2), with the note that says it, leaving its state

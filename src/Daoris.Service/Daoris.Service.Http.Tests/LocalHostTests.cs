@@ -281,6 +281,128 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// DRIFT1c (D133 §3): the ask's publish door takes requirements, each the person's words with its check.
+    /// A quote they never said is refused, 409 with the exchange's sentence naming the words, and nothing is
+    /// published; one they said is published, and the quest answers it on the publish and on the list.
+    /// </summary>
+    [Fact]
+    public async Task An_asks_publish_takes_requirements_and_refuses_a_quote_the_person_never_said()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the daily report, and it will need the v3 bridge.",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+
+        var refused = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Build the daily report", body = "Reached through the bridge.",
+            requirements = new[] { new { quote = "make it reachable through the v3 bridge", check = "It opens in the older shell." } },
+        });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Contains("\"make it reachable through the v3 bridge\"", refused.Error);
+        Assert.Empty((await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("quests").EnumerateArray());
+
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Build the daily report", body = "Reached through the bridge.",
+            requirements = new[] { new { quote = "it will need the v3 bridge", check = "The report opens through the bridge's route." } },
+        });
+
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest");
+        var requirement = Assert.Single(quest.GetProperty("requirements").EnumerateArray().ToList());
+        Assert.Equal("it will need the v3 bridge", requirement.GetProperty("quote").GetString());
+        Assert.Equal("The report opens through the bridge's route.", requirement.GetProperty("check").GetString());
+        var listed = (await host.GetAsync("/api/quests")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == quest.GetProperty("id").GetString());
+        Assert.Equal(1, listed.GetProperty("requirements").GetArrayLength());
+    }
+
+    /// <summary>
+    /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
+    /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_door_publishes_without_requirements_and_refuses_them_on_no_ask()
+    {
+        var plain = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "A quest from a client before requirements", body = "It names none.",
+        });
+
+        Assert.Equal(200, plain.Status);
+        Assert.Equal(0, plain.Json.GetProperty("quest").GetProperty("requirements").GetArrayLength());
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "A quest that quotes nobody", body = "It names some.",
+            requirements = new[] { new { quote = "its own tree", check = "Kept." } },
+        });
+
+        Assert.Equal(400, refused.Status);
+        Assert.Contains("`Asker`", refused.Error);
+        Assert.Contains("on no ask", refused.Error);
+    }
+
+    /// <summary>
+    /// DRIFT1d (D133 §4): the respond door's done answers each requirement. One left unanswered is refused, 400 naming
+    /// it; a departure closes the quest done, answered on the quest with <c>held</c>, and it stays on the outstanding
+    /// list. The accept door, the person's yes, releases it: 200 once, 409 after, 404 for a quest nobody holds.
+    /// </summary>
+    [Fact]
+    public async Task A_done_answers_each_requirement_and_a_departure_waits_for_the_accept_door()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the weekly report through the v3 bridge, using the common-report.",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Build the weekly report", body = "Reached through the bridge.",
+            requirements = new[]
+            {
+                new { quote = "through the v3 bridge", check = "It opens through the bridge's route." },
+                new { quote = "using the common-report", check = "It is a common-report configuration." },
+            },
+        });
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+
+        var unanswered = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "done", reason = "Built.", answers = new[] { new { requirement = 1, met = "It opens through the route." } },
+        });
+        Assert.Equal(400, unanswered.Status);
+        Assert.Contains("requirement 2: \"using the common-report\"", unanswered.Error);
+
+        var closed = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "done", reason = "Built.",
+            answers = new object[]
+            {
+                new { requirement = 1, met = "It opens through the route." },
+                new { requirement = 2, departed = "The weekly totals needed a type of its own.", quote = "the common-report" },
+            },
+        });
+        Assert.Equal(200, closed.Status);
+        var answered = closed.Json.GetProperty("quest");
+        Assert.True(answered.GetProperty("held").GetBoolean());
+        Assert.Equal("the common-report", answered.GetProperty("answers")[1].GetProperty("quote").GetString());
+        Assert.Contains((await host.GetAsync("/api/quests")).Json.EnumerateArray(), row => row.GetProperty("id").GetString() == quest);
+
+        Assert.Contains(("POST", "/api/quests/{id}/accept"), host.Routes());
+        var accepted = await host.PostAsync($"/api/quests/{quest}/accept", new { });
+        Assert.Equal(200, accepted.Status);
+        Assert.False(accepted.Json.GetProperty("quest").GetProperty("held").GetBoolean());
+        Assert.Equal(JsonValueKind.String, accepted.Json.GetProperty("quest").GetProperty("accepted").ValueKind);
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/accept", new { })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/accept", new { })).Status);
+    }
+
+    /// <summary>
     /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
     /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>
@@ -409,6 +531,85 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         }
 
         Assert.DoesNotContain("account-limited-here", (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Body);
+    }
+
+    /// <summary>A chat in <c>Keeper</c>, in a tree of its own so it holds nothing another test opens, ended <c>completed</c>.</summary>
+    private async Task<string> EndedChatAsync(string tree)
+    {
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf(tree) });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working", "completed" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        return id;
+    }
+
+    private async Task<JsonElement?> ListedSessionAsync(string id) =>
+        (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray()
+            .Cast<JsonElement?>().SingleOrDefault(row => row!.Value.GetProperty("id").GetString() == id);
+
+    /// <summary>
+    /// SESSUX1f (D126 §5.4): a conversation that served no quest is listed as deletable and goes, with the ledger's
+    /// sentence; the judgement alone, which the driver asks before its own half, answers the same and deletes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_that_served_no_quest_is_deletable_and_deleted()
+    {
+        var id = await EndedChatAsync("keeper-chat-deleted");
+        Assert.True((await ListedSessionAsync(id))!.Value.GetProperty("deletable").GetBoolean());
+
+        var judged = await host.GetAsync($"/api/sessions/{id}/deletable");
+        Assert.Equal(200, judged.Status);
+        Assert.True(judged.Json.GetProperty("deletable").GetBoolean());
+        Assert.NotNull(await ListedSessionAsync(id));
+
+        var deleted = await host.DeleteAsync($"/api/sessions/{id}");
+
+        Assert.Equal(200, deleted.Status);
+        Assert.Equal(id, deleted.Json.GetProperty("id").GetString());
+        Assert.Equal($"Deleted session `{id}`: its record is gone from this machine.", deleted.Json.GetProperty("message").GetString());
+        Assert.Null(await ListedSessionAsync(id));
+    }
+
+    /// <summary>
+    /// SESSUX1f: a session that served a quest is listed as not deletable, and its delete is a 409 carrying the ledger's
+    /// sentence verbatim and the refusal's word and facts, which the driver reads instead of the sentence. The judgement
+    /// answers the same refusal.
+    /// </summary>
+    [Fact]
+    public async Task A_session_that_served_a_quest_is_refused_with_409_its_word_and_the_ledgers_sentence()
+    {
+        var quest = await PublishAsync("A quest whose session is that work's record");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree = host.RootOf("keeper-served") });
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "failed" })).Status);
+        Assert.False((await ListedSessionAsync(id))!.Value.GetProperty("deletable").GetBoolean());
+
+        var refused = await host.DeleteAsync($"/api/sessions/{id}");
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal((await host.Composed.Ledger.JudgeDeleteAsync(id)).Message, refused.Error);
+        Assert.Equal(("served-quest", quest), (refused.Json.GetProperty("refusal").GetString(), refused.Json.GetProperty("quest").GetString()));
+        Assert.NotNull(await ListedSessionAsync(id));
+
+        var judged = await host.GetAsync($"/api/sessions/{id}/deletable");
+        Assert.Equal(200, judged.Status);
+        Assert.False(judged.Json.GetProperty("deletable").GetBoolean());
+        Assert.Equal(("served-quest", refused.Error), (judged.Json.GetProperty("refusal").GetString(), judged.Json.GetProperty("error").GetString()));
+    }
+
+    [Fact]
+    public async Task A_session_that_is_not_held_answers_404_to_a_delete_and_its_judgement()
+    {
+        var missing = await host.DeleteAsync("/api/sessions/nope1234");
+        var judged = await host.GetAsync("/api/sessions/nope1234/deletable");
+
+        Assert.Equal((404, 404), (missing.Status, judged.Status));
+        Assert.Contains("`nope1234`", missing.Error);
+        Assert.Equal("not-found", missing.Json.GetProperty("refusal").GetString());
     }
 
     /// <summary>

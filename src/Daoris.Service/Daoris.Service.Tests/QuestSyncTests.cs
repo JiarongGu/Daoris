@@ -314,6 +314,83 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, Assert.Single((await _b.FindAsync(parent.Id))!.Conflicts).Attempted);
     }
 
+    /// <summary>A chain's parent carrying the person's requirement (DRIFT1c), closed done on B departing from it (DRIFT1d).</summary>
+    private async Task<Quest> HeldOnBothAsync()
+    {
+        var parent = await _a.PublishAsync(
+            "ask #a1", "Federated", "Develop", "b", Now, then: [new QuestStep("Federated", "Verify {parent}", "c")],
+            requirements: [new QuestRequirement("the v3 bridge", "It opens through the bridge.")]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await _b.MoveAsync(parent.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        var closed = await _b.MoveAsync(
+            parent.Id, QuestStatus.Done, "Built.", Now.AddHours(2),
+            answers: [new QuestAnswer(1, Met: null, Departed: "Another route.", Quote: "the v3 bridge")]);
+        Assert.Null(closed.FollowUp);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+        Assert.True((await _a.FindAsync(parent.Id))!.Held);
+        return parent;
+    }
+
+    /// <summary>
+    /// DRIFT1d: a departure's yes said on two machines before either pushes is one yes. The second rebases away, as a
+    /// second copy of a decision already made, and the step both published is the one quest everywhere.
+    /// </summary>
+    [Fact]
+    public async Task Two_yeses_to_one_departure_are_one_and_the_held_step_is_published_once()
+    {
+        var parent = await HeldOnBothAsync();
+
+        var onA = await _a.AcceptAsync(parent.Id, Now.AddHours(3));
+        var onB = await _b.AcceptAsync(parent.Id, Now.AddHours(4));
+        await SyncAsync(_a);
+        var second = await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Equal(onA.FollowUp!.Id, onB.FollowUp!.Id);
+        Assert.Empty(second.Refused);
+        Assert.Empty(second.Conflicts);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var standing = (await store.FindAsync(parent.Id))!;
+            Assert.Equal(Now.AddHours(3), standing.Accepted);
+            Assert.False(standing.Held);
+            Assert.Single(await store.HistoryAsync(parent.Id), operation => operation.Kind == QuestOperationKind.Accepted);
+            Assert.Single(await store.HistoryAsync(onA.FollowUp.Id), operation => operation.Kind == QuestOperationKind.Published);
+        }
+    }
+
+    /// <summary>
+    /// DRIFT1d: a yes to a departure whose done lost goes with it, and so does the step it published: there is no
+    /// departure left to accept, and the chain did not move.
+    /// </summary>
+    [Fact]
+    public async Task A_yes_on_a_done_that_lost_goes_with_it_and_its_step_too()
+    {
+        var parent = await _a.PublishAsync(
+            "ask #a1", "Federated", "Develop", "b", Now, then: [new QuestStep("Federated", "Verify {parent}", "c")],
+            requirements: [new QuestRequirement("the v3 bridge", "It opens through the bridge.")]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _a.MoveAsync(parent.Id, QuestStatus.Declined, "Not ours.", Now.AddHours(1));
+        await _b.MoveAsync(
+            parent.Id, QuestStatus.Done, "Built.", Now.AddHours(2),
+            answers: [new QuestAnswer(1, Met: null, Departed: "Another route.", Quote: "the v3 bridge")]);
+        var step = (await _b.AcceptAsync(parent.Id, Now.AddHours(3))).FollowUp!;
+        await SyncAsync(_a);
+        var lost = await SyncAsync(_b);
+
+        Assert.Empty(lost.Refused);
+        Assert.DoesNotContain(await _b.HistoryAsync(parent.Id), operation => operation.Kind == QuestOperationKind.Accepted);
+        Assert.Null(await _b.FindAsync(step.Id));
+        Assert.Null(await _remote.FindAsync(step.Id));
+        var standing = (await _b.FindAsync(parent.Id))!;
+        Assert.Equal(QuestStatus.Declined, standing.Status);
+        Assert.Equal(QuestStatus.Done, Assert.Single(standing.Conflicts).Attempted);
+    }
+
     /// <summary>
     /// A store written by the build before this one — a log with no numbers, a quests table that still
     /// marks mirror rows — opens as a machine with nothing fetched: the mirror row goes (the first fetch

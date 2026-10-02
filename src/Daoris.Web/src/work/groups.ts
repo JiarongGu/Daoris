@@ -42,6 +42,12 @@ export type SessionGrouping = {
    * host older than the fact.
    */
   holdsQuest?: boolean;
+  /**
+   * Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): a conversation that served no quest, whose record the ledger
+   * would delete and whose tree and landing this machine no longer holds. Offered only where true, D95's way. Absent on a
+   * host older than the fact, which offers none.
+   */
+  deletable?: boolean;
 };
 
 /** How the list is arranged (D126 §4.1): by state, the default, or by repository, the arrangement it had before. */

@@ -35,6 +35,13 @@ public sealed record QuestAttachmentResponse(string Name, string Sha256, long By
 // A chain's step (D65 §4), the same shape both ways. Nullable on the way in and judged by the
 // exchange, which refuses a step without its words naming which step it was.
 public sealed record QuestStepWire(string? To, string? Title, string? Body);
+// A requirement (DRIFT1c, D133 §3): the person's words, quoted, and the check that proves them — the same
+// shape both ways. Nullable on the way in and judged by the exchange, which refuses one missing a half.
+public sealed record QuestRequirementWire(string? Quote, string? Check);
+// How a done answers one requirement (DRIFT1d, D133 §4): its number, and `Met` with how its check was met, or
+// `Departed` with the reason and `Quote`, the person's words it turns on — the same shape both ways. Nullable on the
+// way in and judged by the exchange, which refuses one that says both or neither, naming which.
+public sealed record QuestAnswerWire(int? Requirement, string? Met, string? Departed = null, string? Quote = null);
 // `Then` is what this quest's close will publish next; `Parent` the quest whose close published it;
 // `Conflicts` the moves that lost to another machine's (D68 §5), kept for a person.
 // `Machine` and `Sequence` name the conflict on every machine — what a dismissal names (SYNC6c).
@@ -52,7 +59,12 @@ public sealed record QuestResponse(
     // Always false at a shared deployment, which has no delete door.
     bool Deletable = false,
     // The lanes of `To` it addresses (D115 §2.2), sorted; empty for a quest to the whole repository.
-    IReadOnlyList<string>? Lanes = null);
+    IReadOnlyList<string>? Lanes = null,
+    // What the person requires (DRIFT1c), each their words and its check; empty for a quest that names none.
+    IReadOnlyList<QuestRequirementWire>? Requirements = null,
+    // How its done answered each (DRIFT1d); `Held` whether a departure holds it for the person's yes, and
+    // `Accepted` when they gave it. Empty, false and null for a quest no departure ever held.
+    IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -60,9 +72,10 @@ public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, strin
 public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
-    IReadOnlyList<QuestStepWire>? Then = null);
-// `On` is the question a `wait` waits on (D79).
-public sealed record RespondQuestRequest(string? Action, string? Reason, string? On = null);
+    IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null);
+// `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d).
+public sealed record RespondQuestRequest(
+    string? Action, string? Reason, string? On = null, IReadOnlyList<QuestAnswerWire?>? Answers = null);
 // A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
@@ -71,11 +84,12 @@ public sealed record AskRequestBody(
     string? Workspace, string? Sentence, IReadOnlyList<string>? Links,
     IReadOnlyList<QuestAttachmentRequest>? Attachments, string? To);
 // A publish is a person's `To` alone; an intake (D65 §1b) adds its own words, carry and chain, and
-// names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own.
+// names its `Session` — which moves the ask's tier to `intake` only when it is the ask's own. Its
+// `Requirements` quote the person (DRIFT1c), judged against the ask's words.
 public sealed record AskPublishRequest(
     string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
     IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire>? Then = null,
-    string? Session = null);
+    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null);
 public sealed record AskCloseRequest(string? Reason);
 public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
 // `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
@@ -175,7 +189,15 @@ public sealed record SessionResponse(
     // D104: a stop that was not the person's — the sweep's, or a shutdown's — which the driver carries on.
     bool Interrupted = false,
     // TOOL4c (D125 §5.2): a failure an account's limit made. It names no account, so every caller is told.
-    bool Limit = false);
+    bool Limit = false,
+    // SESSUX1f (D126 §5.4): whether the ledger would delete its record, D95's way, so the driver offers *Delete…* only
+    // where it would be taken. False at a shared deployment, which has no delete door.
+    bool Deletable = false);
+// SESSUX1f (D126 §5.4): a session delete refused, or its judgement alone. `error` is the ledger's sentence, the field every
+// reader already knows; `refusal` its word, which a reader acts on instead of the sentence; and the facts the word names.
+public sealed record SessionDeletionResponse(
+    bool Deletable, string? Error = null, string? Refusal = null,
+    string? Quest = null, string? Ask = null, string? Origin = null, string? Workspace = null);
 // STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
 public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
@@ -285,6 +307,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(OpenHelpRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
+[JsonSerializable(typeof(SessionDeletionResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedCodeMapRequest))]

@@ -190,6 +190,24 @@ export const useArchiveSessions = () => {
   });
 };
 
+/** What a delete answered (SESSUX1f, D126 §5.4): the session, and what went by name; nothing machine-local. */
+export type DeleteAnswer = { deleted: string; removed?: string[] };
+
+/**
+ * *Delete…* (SESSUX1f, D126 §5.4): a conversation that served no quest, its record through the ledger and what this
+ * machine kept of it, by its id alone. Each refusal is a code the catalogue says, naming what kept it. The sessions,
+ * their groups among them, are asked again.
+ */
+export const useDeleteSession = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call<DeleteAnswer>('SESSION_DELETE', { id }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
+  });
+};
+
 /**
  * *Open folder* (SESSUX1d, D126 §3.5): the folder a session worked in, its own tree or its repository's checkout, opened
  * in the system's file manager. By its id alone: the module names the folder from the session's record, and the page

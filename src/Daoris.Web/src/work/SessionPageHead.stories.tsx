@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import i18n from '../i18n';
 import type { Session } from '../api';
-import { SessionPageHead, StopAsk } from './SessionPageHead';
+import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { ViewMain } from './ViewMain';
 
 // A session's page header (SESSUX1d, D126 §3.2) pinned in Sessions' main area, in each state's acts, each stop's ask
@@ -122,6 +122,22 @@ export const StopAskingAnIntake: Story = {
     session: { ...SESSION, quest: null, kind: 'chat', ask: '0fda18', repository: 'ask #0fda18' }, title: 'Intake for ask #0fda18',
     acts: ['stop', 'detach', 'copy'],
     asking: <StopAsk sentence={i18n.t('work.intake.stopMeans')} onStop={() => {}} onCancel={() => {}} />,
+  },
+};
+
+/** An ended conversation that served no quest (SESSUX1f): *Delete…* in its ⋯, after the archive marks. */
+export const ADeletableConversation: Story = {
+  args: {
+    session: { ...SESSION, quest: null, kind: 'chat', state: 'completed' }, title: 'Cap the hydration per frame', shown: 'completed',
+    acts: ['openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
+  },
+};
+
+/** Its delete asking once under the header (§5.4): what goes, and that nothing brings it back. */
+export const DeleteAsking: Story = {
+  args: {
+    ...ADeletableConversation.args,
+    asking: <DeleteAsk onDelete={() => {}} onCancel={() => {}} />,
   },
 };
 

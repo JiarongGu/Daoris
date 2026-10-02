@@ -16,7 +16,8 @@ import { ACT_LOOK, type SessionActId } from './acts';
  * - **On the left**: its title on one line, whole in its tip, its shown word on its pill, and its id in the meta face.
  * - **On the right**: the primary act where the state has one (*Try again*, *Review*), then *Stop…* while it is live,
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
- * - **What asks under it** (the stop's ask, §3.3) is pinned with it, since the ask is about the acts beside it.
+ * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4) is pinned with it, since the ask is about the acts
+ *   beside it.
  * - **Below 560 px** its acts take their own line under the title, as the plugin page's do (D119 §3.6): by the main
  *   area's width, never the window's.
  *
@@ -137,6 +138,31 @@ export function StopAsk({ sentence, busy = false, onStop, onCancel }: {
     >
       <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft"><Inline text={sentence} /></span>
       <Button variant="danger" disabled={busy} onClick={onStop}>{t('work.act.stopMeanIt')}</Button>
+      <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
+    </div>
+  );
+}
+
+/**
+ * **A delete's ask** (SESSUX1f, D126 §5.4): nothing brings a deleted conversation back, so it asks once, under the header
+ * as the stop's ask does: what goes, then *Delete session* and *Never mind*. The page offers *Delete…* only where the
+ * driver said it would be taken, so the sentence is one for every session that reaches it.
+ */
+export function DeleteAsk({ busy = false, onDelete, onCancel }: {
+  /** A delete on its way: the presses wait for it. */
+  busy?: boolean;
+  onDelete: () => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="group"
+      aria-label={t('work.delete.title')}
+      className="mt-2.5 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+    >
+      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('work.delete.means')}</span>
+      <Button variant="danger" disabled={busy} onClick={onDelete}>{t('work.act.deleteMeanIt')}</Button>
       <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
     </div>
   );

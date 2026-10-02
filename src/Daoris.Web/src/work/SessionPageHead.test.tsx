@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Session } from '../api';
-import { SessionPageHead, StopAsk } from './SessionPageHead';
+import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 
 // The session's page header (SESSUX1d, D126 §3.2) and its stop's ask (§3.3), as molecules: every state is reached by
 // passing it. Which acts apply is the rule's (`acts.test.ts`); this holds how the header draws what it is handed.
@@ -113,5 +113,44 @@ describe('the stop’s ask', () => {
   it('waits while a stop is on its way', () => {
     render(<StopAsk sentence="Stops it." busy onStop={() => {}} onCancel={() => {}} />);
     expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
+  });
+});
+
+/** SESSUX1f (D126 §5.4): *Delete…* sits in the header's ⋯, and its ask says what goes and that nothing brings it back. */
+describe('the delete’s ask', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('is offered in the header’s ⋯ after the archive marks and before the id', async () => {
+    const act = vi.fn();
+    head({ session: session({ quest: null, kind: 'chat', state: 'completed' }), shown: 'completed', acts: ['archive', 'delete', 'copy'], onAct: act });
+    const user = userEvent.setup();
+    within(screen.getByRole('banner')).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Archive', 'Delete…', 'Copy session ID']);
+    await user.click(screen.getByRole('menuitem', { name: 'Delete…' }));
+    expect(act).toHaveBeenCalledWith('delete');
+  });
+
+  it('says what goes, and deletes only on its second press, with never mind beside it', async () => {
+    const remove = vi.fn();
+    const cancel = vi.fn();
+    render(<DeleteAsk onDelete={remove} onCancel={cancel} />);
+
+    const ask = screen.getByRole('group', { name: 'delete this session' });
+    expect(ask).toHaveTextContent(
+      'Deletes this conversation’s record and what this machine kept of it: its words, its transcript and its files. Nothing brings it back.');
+    expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Delete session', 'Never mind']);
+    await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(cancel).toHaveBeenCalledOnce();
+    await userEvent.click(within(ask).getByRole('button', { name: 'Delete session' }));
+    expect(remove).toHaveBeenCalledOnce();
+  });
+
+  it('waits while a delete is on its way, and speaks 中文', async () => {
+    await i18n.changeLanguage('zh');
+    render(<DeleteAsk busy onDelete={() => {}} onCancel={() => {}} />);
+    expect(screen.getByRole('button', { name: '确认删除会话' })).toBeDisabled();
+    expect(screen.getByRole('group', { name: '删除这个会话' })).toHaveTextContent('无法找回');
   });
 });

@@ -41,6 +41,12 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public bool Answered => State == "awaiting-person" && Answer is not null;
 
+    /// <summary>
+    /// Whether the ledger would delete this record (SESSUX1f, D126 §5.4): the record's half, as the service answers it per
+    /// record. Whether this machine still holds its tree or a landing of it is the driver's half (<see cref="SessionDeletion"/>).
+    /// </summary>
+    public bool Deletable { get; init; }
+
     /// <summary>A record that came down from the team (SYNC4): its process is on another machine, and nothing here reaches it.</summary>
     public bool Teammate => Id.Contains('/');
 
@@ -81,6 +87,8 @@ public static class SessionRecords
                 Updated = Time(session, "updated"),
                 // The service keeps a blank answer as its own words, so an empty one is none.
                 Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
+                // A host older than the field says nothing, and nothing is no delete (SESSUX1f).
+                Deletable = session.TryGetProperty("deletable", out var deletable) && deletable.ValueKind == JsonValueKind.True,
             });
         }
 
@@ -202,6 +210,12 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// last session here, and nothing starts that quest on this machine until they choose *Try again*.
     /// </summary>
     public bool HoldsQuest { get; init; }
+
+    /// <summary>
+    /// Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): the ledger would delete its record, and this machine holds
+    /// neither its tree nor a landing of it. The page offers the act only here, D95's way.
+    /// </summary>
+    public bool Deletable { get; init; }
 }
 
 /// <summary>
@@ -244,6 +258,12 @@ public sealed record SessionLook(
 
     /// <summary>This machine's archive marks (§5.2), by session.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Archived { get; init; } = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The sessions whose tree or landing this machine still holds (SESSUX1f, <see cref="SessionDeletion.Kept"/>): what
+    /// keeps a record the ledger would delete from being deleted here.
+    /// </summary>
+    public IReadOnlySet<string> Kept { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
@@ -383,6 +403,28 @@ public static class SessionGroups
         ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default) =>
         lastLook ?? Planner.Plan(await service.SnapshotAsync(ct).ConfigureAwait(false), config, door);
 
+    /// <summary>
+    /// One look at the sessions, gathered for the reader (D126 §2.4): the records, every quest, the planner's verdicts, the
+    /// trees judged, the archive marks and what this machine still holds of each (SESSUX1f). The screen's
+    /// <c>SESSION_GROUPS</c> and the terminal's <c>sessions</c> both gather here, so they cannot disagree.
+    /// </summary>
+    /// <param name="lastLook">The loop's last look, where a loop has looked; null plans over a fresh snapshot.</param>
+    public static async Task<SessionLook> LookAsync(
+        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, string home,
+        IReadOnlyCollection<string>? only = null, CancellationToken ct = default)
+    {
+        var records = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+        var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
+        var considered = await VerdictsAsync(service, config, door, lastLook, ct).ConfigureAwait(false);
+        var trees = new SessionTrees(home);
+        var look = SessionLook.From(records, quests, considered, config.ForgivenAt) with
+        {
+            Archived = new SessionArchive(home).Marks(),
+        };
+        look = look with { Kept = new SessionDeletion(home).Kept(look.Records) };
+        return await JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct).ConfigureAwait(false);
+    }
+
     /// <summary>A tree path as one tree: separators and a trailing one aside, compared without case, as Windows sees it.</summary>
     public static string Normal(string tree) => tree.Replace('\\', '/').TrimEnd('/');
 
@@ -446,7 +488,13 @@ public static class SessionGroups
         public SessionGrouping Place(SessionRecord record)
         {
             var archived = _look.Archived.ContainsKey(record.Id);
-            var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State) { Archived = archived, Teammate = record.Teammate };
+            var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State)
+            {
+                Archived = archived,
+                Teammate = record.Teammate,
+                // SESSUX1f (D126 §5.4): the ledger's half, as the service answered it, and this machine's.
+                Deletable = record.Deletable && !record.Live && !record.Teammate && !_look.Kept.Contains(record.Id),
+            };
 
             if (record.Live)
             {

@@ -110,6 +110,16 @@ public sealed class SessionArchive(string home)
         }
     }
 
+    /// <summary>
+    /// The machine log's <c>sessions.archived</c> (SESSUX1g, D126 §7.4): how many an archive took, and from which door,
+    /// <see cref="PluginEvents.Screen"/> or <see cref="PluginEvents.Terminal"/>. An archive changes no work, so it is counted,
+    /// never listed; one that took nothing writes nothing.
+    /// </summary>
+    public static void Said(MachineLog? log, int count, string door)
+    {
+        if (count > 0) log?.Info("sessions.archived", ("count", count), ("door", door));
+    }
+
     private static ArchiveOutcome Judge(string id, SessionGrouping? placed) => placed?.Group switch
     {
         null => new(id, ArchiveVerdict.Unknown),

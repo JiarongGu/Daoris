@@ -9822,3 +9822,36 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `HarnessSettings.WithoutAccount`, as the terminal now does (TOOL4e).
 
 **Outcome** Settings → Agents shows and sets each agent's account lists, how they are used, cool-offs with *Try now* and what each agent last said, with the shared-sign-in and terms lines; Settings → Driver sets the cool-off; a waiting quest says so with no Retry. Detail: D130's TOOL4g note, `b9825e7`.
+
+
+## DRIFT1c — a quest's requirements quote the owner (2026-10-03)
+
+> - [ ] **DRIFT1c — a quest's requirements quote the owner** (service, MCP, intake). `quest_publish` takes requirements, each
+> the owner's words plus the check that proves it; words in neither the ask nor an answer are refused; a follow-up inherits
+> them. Contract: D133 §3. Proof: refusal tests; the intake prompt's golden.
+
+**Outcome** A quest an ask asks carries `requirements`, each the person's words quoted plus its check; the exchange refuses a quote in none of the ask's words and names it; a chain step inherits them; the intake asks for them. Detail: D133's DRIFT1c note, `d92b7cf`.
+
+
+## DRIFT1d — a done answers each requirement (2026-10-03)
+
+> - [ ] **DRIFT1d — a done answers each requirement** (driver, service, web). Each requirement is met, or departed with the
+> reason and the owner's words; a departure holds the follow-up until the owner says yes. Contract: D133 §4. Proof: a held
+> follow-up in service tests; the look.
+
+**Outcome** A session is handed its quest's requirements, and a done answers each (*met*, or *departed* with the person's words), an unanswered one refused by name; a departure holds the next step until `daoris-driver quest accept`. Detail: D133's DRIFT1d note, `1b1ef103`.
+
+
+## SESSUX1f — delete a conversation that served no quest (2026-10-03)
+
+> - [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
+
+**Outcome** A conversation that served no quest is deleted from the header's or a row's ⋯, asking once; the ledger judges the record (a `pushed` mark covers what a remote holds), the driver the tree and landing; `session.deleted` is logged. Detail: D126's SESSUX1f note, `96b932c4`.
+
+
+## SESSUX1g — daoris-driver sessions (2026-10-03)
+
+> - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
+> and decline through the requests the running loop honours; archive, unarchive, delete.
+
+**Outcome** `daoris-driver sessions` lists by group, and stops, finishes and declines through a request folder every loop watches (built for PAUSE1b); archive, unarchive and delete go through the screen's owners. Detail: D126's SESSUX1g note, `7df769e3`.

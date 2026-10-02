@@ -40,6 +40,13 @@ public enum QuestOperationKind
     /// remote keeping it is what stops a later fetch bringing the quest back. It carries nothing else.
     /// </summary>
     Deleted,
+
+    /// <summary>
+    /// The person accepted a done's departure from what they required (DRIFT1d, D133 §4): what it held, a chain's
+    /// next step or a quest waiting on it, goes on. It applies only to a quest its departure holds, so two yeses are
+    /// one, and it moves no status.
+    /// </summary>
+    Accepted,
 }
 
 /// <summary>
@@ -68,6 +75,10 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// machine with no remote.
 /// </param>
 /// <param name="Dismisses">For a <see cref="QuestOperationKind.Dismissed"/>: the conflict it dismisses.</param>
+/// <param name="Answers">
+/// For a <see cref="QuestOperationKind.Done"/>: how it answered each of the quest's requirements (DRIFT1d). Null
+/// where it carries none, which is every operation of a build before answers.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -78,7 +89,8 @@ public sealed record QuestOperation(
     Quest? Published = null,
     QuestStatus? Attempted = null,
     long? Number = null,
-    QuestOperationRef? Dismisses = null);
+    QuestOperationRef? Dismisses = null,
+    IReadOnlyList<QuestAnswer>? Answers = null);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -193,6 +205,8 @@ public static class QuestLog
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
         QuestOperationKind.Waited => quest is { Status: QuestStatus.Taken } && !string.IsNullOrEmpty(operation.Note),
         QuestOperationKind.Deleted => quest is { Status: QuestStatus.Open },
+        // A yes only while a departure waits for one (DRIFT1d): a second machine's yes is the same yes, never a move.
+        QuestOperationKind.Accepted => quest is { Held: true },
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -222,6 +236,12 @@ public static class QuestLog
                 .ToList(),
         },
         QuestOperationKind.Waited => quest! with { Awaits = operation.Note, Updated = operation.At },
-        _ => quest! with { Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At },
+        QuestOperationKind.Accepted => quest! with { Accepted = operation.At, Updated = operation.At },
+        // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none.
+        _ => quest! with
+        {
+            Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At,
+            Answers = operation.Answers ?? [],
+        },
     };
 }

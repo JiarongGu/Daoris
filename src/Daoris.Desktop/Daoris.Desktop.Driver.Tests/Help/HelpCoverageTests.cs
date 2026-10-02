@@ -88,6 +88,15 @@ public sealed partial class HelpCoverageTests
         + "line (D124 §4.5).");
 
     /// <summary>
+    /// DRIFT1d's <c>daoris-driver quest accept</c> (D133 §4), a verb of the headless host: the person's yes to a done's
+    /// departure, a door Ask Daoris owes until DRIFT1d2 gives it a kind of its own, with the quest page's yes beside it.
+    /// </summary>
+    private static readonly Owed AcceptDoor = new(
+        "accepting a departure releases what it held, the chain's next step and a quest waiting on it, so Ask Daoris should "
+        + "propose it and the person apply it as a card, the departure and the words it quotes shown; that waits on "
+        + "DRIFT1d2's kind: the service's box and tool, the driver's judge against the quest as it stands, and the card.");
+
+    /// <summary>
     /// WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5), a verb of the headless host: the press, and its pause,
     /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
     /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
@@ -106,6 +115,25 @@ public sealed partial class HelpCoverageTests
         "archiving takes ended sessions out of this machine's list and unarchiving brings them back, a tidy that undoes "
         + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
         + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
+
+    /// <summary>
+    /// SESSUX1f's <c>useDeleteSession</c> (D126 §7.3), the bridge hook Sessions' *Delete…* presses: a door Ask Daoris owes,
+    /// until SESSUX1h gives the <c>delete</c> kind its <c>session</c> door, judged by §5.4.
+    /// </summary>
+    private static readonly Owed SessionDeleteDoor = new(
+        "deleting a conversation that served no quest removes its record and what this machine kept of it, a removal the "
+        + "person applies as a card, so Ask Daoris should propose it; that is the `delete` kind's `session` door, judged by "
+        + "the same two halves, which SESSUX1h builds (D126 §7.3).");
+
+    /// <summary>
+    /// SESSUX1g's <c>daoris-driver sessions</c> (D126 §7.1), a verb of the headless host: its stop, archive, unarchive and
+    /// delete are doors Ask Daoris owes until SESSUX1h builds the <c>session</c> kind and the <c>delete</c> kind's
+    /// <c>session</c> door; its finish and decline are the person's answer, exempt as the screen's are (§7.3).
+    /// </summary>
+    private static readonly Owed SessionsVerbDoor = new(
+        "stopping a session holds its quest until the person tries again, and archiving and deleting tidy this machine's "
+        + "list, each a change the person applies as a card, so Ask Daoris should propose them; that is SESSUX1h's `session` "
+        + "kind and the `delete` kind's `session` door, while finishing and declining stay the person's answer (D126 §7.3).");
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
@@ -336,6 +364,9 @@ public sealed partial class HelpCoverageTests
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionArchiveDoor)
+            .Append(AcceptDoor)
+            .Append(SessionDeleteDoor)
+            .Append(SessionsVerbDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -400,6 +431,19 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
+    /// DRIFT1d: the headless host's <c>quest accept</c> is a door owed to DRIFT1d2's kind (D133 §4) while the host's usage
+    /// spells it and no kind of that name is built; the room names it meanwhile, so the helper can point the person at it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_quest_accept_is_a_door_owed_to_a_kind_of_its_own()
+    {
+        Assert.Contains("quest accept <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("accept"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal));
+        Assert.Contains("DRIFT1d2", AcceptDoor.Reason);
+    }
+
+    /// <summary>
     /// SESSUX1a: the archive's bridge hook changes something and no screen presses it yet, so it is a door owed to
     /// SESSUX1h's <c>session</c> kind (D126 §7.3) while no kind of that name is built. When the kind lands, this owed door
     /// becomes its door, and Sessions' acts are read as Settings' domains are.
@@ -412,6 +456,33 @@ public sealed partial class HelpCoverageTests
         Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
         Assert.Null(HelpProposalKinds.Find("session"));
         Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1f: the delete's bridge hook changes something, and the `delete` kind takes no `session` door yet, so it is a door
+    /// owed to SESSUX1h (D126 §7.3). When the door lands, this owed door becomes it.
+    /// </summary>
+    [Fact]
+    public void The_session_delete_is_a_door_owed_to_the_delete_kinds_session_door()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useDeleteSession", out var delete) && delete.Changes);
+        Assert.DoesNotContain("session", HelpProposalKinds.Find("delete")!.Doors);
+        Assert.Contains("SESSUX1h", SessionDeleteDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1g: the headless host's <c>sessions</c> verbs are doors owed to SESSUX1h's <c>session</c> kind (D126 §7.3) while
+    /// the host's usage spells them and no kind of that name is built.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_sessions_verbs_are_doors_owed_to_the_session_kind()
+    {
+        Assert.Contains("sessions stop <id>", DriverCommand.Usage);
+        Assert.Contains("sessions archive <id>… | --ended [--yes]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("session"));
+        Assert.Contains("SESSUX1h", SessionsVerbDoor.Reason);
     }
 
     /// <summary>

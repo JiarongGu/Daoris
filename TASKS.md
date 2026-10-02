@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 931 service and 53 HTTP host, 3439 driver,
-568 desktop modules, 80 devkit, 2698 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
+**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 993 service and 60 HTTP host, 3520 driver,
+578 desktop modules, 80 devkit, 2711 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -200,9 +200,6 @@ owner on 1 October.
 - [ ] **CARRY1 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
   cut-off without asking whose take the quest is, so a start that failed before its take carries on over someone else's.
   Contract: D80, D126's SESSUX1b2 note. Proof: a ledger row refused, seen failing first.
-- [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
-- [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
-  and decline through the requests the running loop honours; archive, unarchive, delete.
 - [ ] **CHATTAKE1 — a chat's take is marked on its record** (service; found by SESSUX1f). `MarkTookAsync` ignores a chat, so a
   chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
   Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
@@ -212,15 +209,9 @@ owner on 1 October.
   Contract: answer-continues design §5. Proof: `topology.test.ts` and the help machine test read `answeredPark`.
 - [ ] **ANSWER1d — the canary on the install** (the parent's, after b). One park answered on the install shows one row,
   the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
-- [ ] **DRIFT1c — a quest's requirements quote the owner** (service, MCP, intake). `quest_publish` takes requirements, each
-  the owner's words plus the check that proves it; words in neither the ask nor an answer are refused; a follow-up inherits
-  them. Contract: D133 §3. Proof: refusal tests; the intake prompt's golden.
 - [ ] **DRIFT1c2 — the family rehearsal drives a requirement** (tools; after DRIFT1c). Teach the stub intake to publish
   one quote the person said and to see one they never said refused, through the real host and the sync wire. Contract:
   D133's DRIFT1c note. Proof: the family rehearsal's intake phase.
-- [ ] **DRIFT1d — a done answers each requirement** (driver, service, web). Each requirement is met, or departed with the
-  reason and the owner's words; a departure holds the follow-up until the owner says yes. Contract: D133 §4. Proof: a held
-  follow-up in service tests; the look.
 - [ ] **DRIFT1d2 — the quest page shows the answers and takes the yes** (web-shell, service, driver; after DRIFT1d). Each
   answer and departure with the words it quotes, and *Accept the departure* on a held quest, both languages; Ask Daoris
   proposes the yes as its own card. Contract: D133 §4, its DRIFT1d note. Proof: stories, both catalogues,

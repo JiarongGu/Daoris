@@ -84,6 +84,51 @@ public enum AskWordRefusal
 public sealed record AskWordOutcome(AskWordRefusal Refusal, string Message, string? Ask = null, AskWord? Word = null);
 
 /// <summary>
+/// Why a session record was not deleted — or <see cref="None"/> when it was, or would be (SESSUX1f, D126 §5.4). The
+/// record's half only: whether its tree or a landing is still on the machine is the driver's to judge.
+/// </summary>
+public enum SessionDeleteRefusal
+{
+    None,
+
+    /// <summary>No record under that id.</summary>
+    NotFound,
+
+    /// <summary>A teammate's record (SYNC4): it ran on their machine, and the record is theirs.</summary>
+    NotOurs,
+
+    /// <summary>It still runs or waits: stopped first, it ends.</summary>
+    Live,
+
+    /// <summary>It served a quest, and is that work's record: the strikes and the carry-ons are read from it (D58, D80).</summary>
+    ServedQuest,
+
+    /// <summary>An ask names it as its intake, or a quest was published by it (SESS1).</summary>
+    Named,
+
+    /// <summary>It went up to a workspace's remote, and a session record does not travel as a deletion.</summary>
+    OnRemote,
+}
+
+/// <param name="Refusal"><see cref="SessionDeleteRefusal.None"/> when it was deleted, or would be.</param>
+/// <param name="Message">The full answer, phrased once here.</param>
+/// <param name="Session">The record judged, when there is one.</param>
+public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string Message, Session? Session)
+{
+    /// <summary>The quest it served, or the quest it published, where that refused it.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>The ask that names it as its intake, where that refused it.</summary>
+    public string? Ask { get; init; }
+
+    /// <summary>The machine a teammate's record ran on, where that refused it.</summary>
+    public string? Origin { get; init; }
+
+    /// <summary>The workspace whose remote holds it, where that refused it.</summary>
+    public string? Workspace { get; init; }
+}
+
+/// <summary>
 /// The judgement half of the session system: when a session may open, and what may move where. The
 /// store holds state; this decides — one implementation for every door, for the same reason
 /// <see cref="QuestExchange"/> exists.
@@ -614,6 +659,124 @@ public sealed class SessionLedger(
                 $"Session `{moved!.Id}` is now {Spell(moved.State)}.",
                 moved);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Whether this session's record may be deleted (SESSUX1f, D126 §5.4), and if not why, in words a person can act on.
+    /// Deletes nothing: the driver asks it for a refusal before judging its own half, the tree and a landing.
+    /// </summary>
+    public async Task<SessionDeleteOutcome> JudgeDeleteAsync(string id, CancellationToken ct = default)
+    {
+        var session = await sessions.FindAsync(id, ct).ConfigureAwait(false);
+        return await JudgeAsync(id, session, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Delete a conversation's record that served no quest (SESSUX1f, D126 §5.4): ended, this machine's, named by no ask's
+    /// intake and no quest's publisher, and held by no remote. Judged and removed as one step (REV3), so a record that
+    /// moved since the driver asked is judged as it now stands.
+    /// </summary>
+    /// <remarks>
+    /// <b>Why so narrow.</b> A session that served a quest is that work's record: which agent, which version, which
+    /// account and which tree did it (D49 §4), and the quest's strikes and carry-ons are read from it (D58, D80). Archive is
+    /// how such a session is cleared. A record pushed to a remote would leave the team's copy, since a session record does
+    /// not travel as a deletion.
+    /// </remarks>
+    public async Task<SessionDeleteOutcome> DeleteAsync(string id, CancellationToken ct = default) =>
+        await sessions.ExclusiveAsync(async inside =>
+        {
+            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
+            var judged = await JudgeAsync(id, session, inside).ConfigureAwait(false);
+            if (judged.Refusal != SessionDeleteRefusal.None) return judged;
+
+            await sessions.DeleteAsync(id, inside).ConfigureAwait(false);
+            return judged with { Message = $"Deleted session `{id}`: its record is gone from this machine." };
+        }, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// Which of these records <see cref="DeleteAsync"/> would delete, by the same rule (D95's way for quests): a list's
+    /// answer says it per record, so a page offers *Delete…* only where the ledger would take it.
+    /// </summary>
+    public async Task<IReadOnlySet<string>> DeletableAsync(IEnumerable<Session> candidates, CancellationToken ct = default)
+    {
+        var named = await NamesAsync(ct).ConfigureAwait(false);
+        return candidates
+            .Where(session => Judge(session, named).Refusal == SessionDeleteRefusal.None)
+            .Select(session => session.Id)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private async Task<SessionDeleteOutcome> JudgeAsync(string id, Session? session, CancellationToken ct) =>
+        session is null
+            ? new(SessionDeleteRefusal.NotFound, $"No session `{id}`.", Session: null)
+            : Judge(session, await NamesAsync(ct).ConfigureAwait(false));
+
+    /// <summary>
+    /// What names a session: each ask's intake, and each quest's publishing session (SESS1). Read whole, since a delete is
+    /// rare and a list asks once for all its records.
+    /// </summary>
+    private async Task<(IReadOnlyList<Ask> Asks, IReadOnlyList<Quest> Quests)> NamesAsync(CancellationToken ct) =>
+        (asks is null ? [] : await asks.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false),
+         await quests.ListAsync(includeClosed: true, ct: ct).ConfigureAwait(false));
+
+    /// <summary>
+    /// The record's half of §5.4, in the order a person meets it: whose it is, whether it still runs, whether it served a
+    /// quest, what names it, and whether the team holds a copy.
+    /// </summary>
+    private static SessionDeleteOutcome Judge(Session session, (IReadOnlyList<Ask> Asks, IReadOnlyList<Quest> Quests) named)
+    {
+        var id = session.Id;
+        if (session.Origin is { } origin)
+        {
+            return new(SessionDeleteRefusal.NotOurs, $"Session `{id}` ran on `{origin}`; its record is theirs — archive it here instead.", session)
+            {
+                Origin = origin,
+            };
+        }
+
+        if (session.Active)
+        {
+            return new(SessionDeleteRefusal.Live, $"Session `{id}` is still running; stop it first.", session);
+        }
+
+        if (session.Quest is { } served)
+        {
+            return new(
+                SessionDeleteRefusal.ServedQuest,
+                $"Session `{id}` worked on `#{served}`, and its record is that work's; archive it instead.",
+                session) { Quest = served };
+        }
+
+        var intakeOf = named.Asks.FirstOrDefault(ask =>
+            string.Equals(ask.Intake, id, StringComparison.Ordinal)
+            || (session.Ask is { } asked && string.Equals(ask.Id, asked, StringComparison.OrdinalIgnoreCase)));
+        if (intakeOf is not null)
+        {
+            return new(SessionDeleteRefusal.Named, $"Session `{id}` is named by ask `#{intakeOf.Id}` as its intake.", session)
+            {
+                Ask = intakeOf.Id,
+            };
+        }
+
+        var publishedHere = named.Quests.FirstOrDefault(quest => string.Equals(quest.PublishedBy, id, StringComparison.Ordinal));
+        if (publishedHere is not null)
+        {
+            return new(SessionDeleteRefusal.Named, $"Session `{id}` published `#{publishedHere.Id}`, which names it.", session)
+            {
+                Quest = publishedHere.Id,
+            };
+        }
+
+        if (session.Pushed)
+        {
+            return new(
+                SessionDeleteRefusal.OnRemote,
+                $"The remote for `{session.Workspace}` holds session `{id}`; a delete here would not reach the team's copy, so "
+                + "archive it instead.",
+                session) { Workspace = session.Workspace };
+        }
+
+        return new(SessionDeleteRefusal.None, $"Session `{id}` may be deleted.", session);
     }
 
     /// <summary>

@@ -17,7 +17,7 @@ vi.mock('@shenora/react', () => ({
 import { sentence } from '../format';
 import i18n from '../i18n';
 import { keys } from '../queries';
-import { useArchiveSessions, useOpenSessionFolder, useSessionGroups, type SessionGrouping } from './sessions';
+import { useArchiveSessions, useDeleteSession, useOpenSessionFolder, useSessionGroups, type SessionGrouping } from './sessions';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -111,6 +111,40 @@ describe('the sessions domain', () => {
       expect(sentence(refusal('SESSION_UNKNOWN', { session: 's9', context: 'folder' }))).toMatch(/no folder to open/);
       await i18n.changeLanguage('zh');
       expect(sentence(refusal('SESSION_FOLDER_GONE', { session: 's1' }))).toMatch(/^s1 工作过的文件夹不在本机/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * SESSUX1f (D126 §5.4): a delete names the session alone, the sessions are asked again, and each refusal reaches the
+   * person in the catalogue, naming what kept it; which named it, and the archive's codes asked of a delete, by context.
+   */
+  it('deletes on DAORIS.DRIVER by its id and asks the sessions again, and says each refusal in the catalogue', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    invoke.mockImplementation(async () => ({ deleted: 's1', removed: ['record'] }));
+    const { result } = renderHook(() => useDeleteSession(), { wrapper: wrapper(client) });
+
+    expect(await result.current.mutateAsync('s1')).toEqual({ deleted: 's1', removed: ['record'] });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 's1' } });
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }));
+
+    const refusal = (code: string, parameters: Record<string, string>) => Object.assign(new Error(code), { code, parameters });
+    try {
+      await i18n.changeLanguage('en');
+      expect(sentence(refusal('SESSION_LIVE', { session: 's2', context: 'delete' }))).toBe('s2 is still running, so it was not deleted. Stop it first.');
+      expect(sentence(refusal('SESSION_UNKNOWN', { session: 's9', context: 'delete' }))).toMatch(/nothing to delete/);
+      expect(sentence(refusal('SESSION_NOT_OURS', { session: 's3', machine: 'laptop' }))).toMatch(/^s3 ran on laptop/);
+      expect(sentence(refusal('SESSION_SERVED_QUEST', { session: 's4', quest: 'q1' }))).toMatch(/^s4 worked on #q1/);
+      expect(sentence(refusal('SESSION_NAMED', { session: 's5', context: 'ask', ask: 'a1', quest: '' }))).toMatch(/^Ask #a1 names s5 as its intake/);
+      expect(sentence(refusal('SESSION_NAMED', { session: 's5', context: 'quest', ask: '', quest: 'q2' }))).toMatch(/^#q2 was published by s5/);
+      expect(sentence(refusal('SESSION_NAMED', { session: 's5', context: 'landing', ask: '', quest: '' }))).toMatch(/^A landing names s5/);
+      expect(sentence(refusal('SESSION_TREE_HERE', { session: 's6' }))).toMatch(/^s6’s tree is still on this machine/);
+      expect(sentence(refusal('SESSION_ON_REMOTE', { session: 's7', workspace: 'aurora' }))).toMatch(/^The remote for aurora holds s7/);
+      await i18n.changeLanguage('zh');
+      expect(sentence(refusal('SESSION_NAMED', { session: 's5', context: 'quest', ask: '', quest: 'q2' }))).toMatch(/^委托 #q2 是由 s5 发布的/);
+      expect(sentence(refusal('SESSION_ON_REMOTE', { session: 's7', workspace: 'aurora' }))).toMatch(/^aurora 的远端保存着 s7/);
     } finally {
       await i18n.changeLanguage('en');
     }
