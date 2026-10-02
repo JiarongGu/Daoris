@@ -7779,6 +7779,10 @@ writes, and 44 breakages, each of one claim, were each caught by the check that 
 **Not run in the branch**: the family rehearsal. This branch does not carry WSSETUP6's code: the phase was written from
 that branch's sources, read and not merged, so it needs WSSETUP6 merged first.
 
+*Built by WSSETUP10 (2026-10-01): §6.3, the canon's line.* The canon's `autonomous-development` gained *Look before
+you ask*, with an entry under the canon changelog's Unreleased, and this repository and both examples were re-synced in
+the same commit. Its archive entry has the rest.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
