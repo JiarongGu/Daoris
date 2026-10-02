@@ -92,6 +92,24 @@ public sealed record SessionTarget(
     public bool Released { get; init; }
 
     /// <summary>
+    /// For a carry-on (D80): the cut-off session's plan as its record last kept it, the harness's own to-do list (TOOL4f,
+    /// D125 §3.5). Empty where the record kept none, and the instruction reads as it did.
+    /// </summary>
+    public IReadOnlyList<PlanEntry> LastPlan { get; init; } = [];
+
+    /// <summary>
+    /// For a carry-on (D80): the cut-off session's last words, bounded, from its record or else its transcript (TOOL4f,
+    /// D125 §3.5). Null where it said nothing, and the instruction reads as it did.
+    /// </summary>
+    public string? LastWords { get; init; }
+
+    /// <summary>
+    /// For a carry-on after an account's limit (TOOL4f, D125 §3.5): the cut-off session ran on another account, which is
+    /// now cooling, so nothing of its own conversation carries over. Names no account: the instruction is the agent's.
+    /// </summary>
+    public bool AccountChanged { get; init; }
+
+    /// <summary>
     /// The branch this session's tree grew from when it is a chain's next step in its parent's
     /// repository (CHAIN2) — the parent's unmerged work is in the tree. Null for the canonical line.
     /// </summary>
@@ -227,7 +245,7 @@ public static class TargetPrompt
         {target.Body}
         {Carried(target)}
         {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
-        and {InFlight(target)}
+        and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}
 
         Finish from there rather than starting again, inside this repository under its own doctrine and
         gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
@@ -258,6 +276,37 @@ public static class TargetPrompt
         ? "it left nothing uncommitted."
         : "these are the changes it had not committed yet:\n\n"
           + string.Join("\n", target.InFlight.Select(line => $"    {line}"));
+
+    /// <summary>The most of a cut-off session's plan a carry-on is handed: its to-do list, not a log.</summary>
+    internal const int PlanLimit = 50;
+
+    /// <summary>
+    /// The cut-off session's plan as its record last kept it (TOOL4f, D125 §3.5), each step with its status in the wire's
+    /// own word — or nothing, where it kept none, and the instruction reads as it did.
+    /// </summary>
+    private static string LastPlan(SessionTarget target)
+    {
+        if (target.LastPlan.Count == 0) return "";
+        var steps = target.LastPlan.Take(PlanLimit)
+            .Select(step => $"    - {(step.Status is { Length: > 0 } status ? $"[{status}] " : "")}{step.Content.ReplaceLineEndings(" ")}");
+        var more = target.LastPlan.Count > PlanLimit ? $"\n    … and {target.LastPlan.Count - PlanLimit} more" : "";
+        return "\n\nIts plan, as its record last kept it:\n\n" + string.Join("\n", steps) + more;
+    }
+
+    /// <summary>The cut-off session's last words, quoted (TOOL4f, D125 §3.5), or nothing where it said none.</summary>
+    private static string LastWords(SessionTarget target) => target.LastWords is { Length: > 0 } words
+        ? "\n\nIts last words were:\n\n> " + words.ReplaceLineEndings("\n> ")
+        : "";
+
+    /// <summary>
+    /// After an account's limit (TOOL4f, D125 §3.5): the session before ran on another account, which is cooling, so
+    /// nothing of its own conversation carries over. The harness keeps that in the first account's home, which Daoris
+    /// never reads, so the tree and what Daoris recorded are all a carry-on has.
+    /// </summary>
+    private static string AccountChanged(SessionTarget target) => target.AccountChanged
+        ? "\n\nIt ran on another account, which reached its limit and is cooling, and you run on a different one: nothing "
+          + "of its own conversation carries over to you. This tree, the quest and what is above are what it left."
+        : "";
 
     /// <summary>What came back, in the answerer's own words where it gave any.</summary>
     private static string Answer(QuestView answered)

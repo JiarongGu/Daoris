@@ -3628,6 +3628,11 @@ ended the same way, on an account limit (ACPEND1).
 *Amended by D104 (DRV8, 2026-09-30): a last session that ended `stopped` and interrupted — by the orphan
 sweep or the driver's shutdown, not the person — is a cut-off too, carried on and counted the same way.*
 
+*Amended by D125 (TOOL4f, 2026-10-02): the instruction also carries the cut-off session's last plan and last words,
+from Daoris's own record of it, and after an account's limit says the last session ran on another account, now
+cooling. The carry-on may run on the next account of the person's order; the harness's own conversation stays in the
+first account's home and is never read.*
+
 ## D81 — A driven session works in its harness's own judged mode, as a regular session would (2026-09-27)
 
 **Decision.** On the protocol door, Claude Code sessions drive in `auto`, the harness's own mode in
@@ -4162,6 +4167,11 @@ and times: an answer is its word (`allow`, `hold`, `pushed`…), never its reaso
 plugin wrote to stderr reaches a line, since no writer takes words as a parameter. `stopped` and `failed` carry `by`
 as `started` does, so a reader can tell the loop's process from a landing's one frame. `tested` has its shape and no
 writer until PLUGUI1g. The machine-log design's §4 says, as built, what each line measures.*
+
+*Amended by D125 (TOOL4d and TOOL4f, 2026-10-02): the catalogue gains three account events, `account.limited`,
+`starts.waiting` and `account.rotated` {session, adapter, from, to, carries}, each naming an account by its profile
+name and never a key, its handle, who signed in or the agent's sentence. The machine-log design's §4 says, as built,
+what each line measures.*
 
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
@@ -8159,6 +8169,48 @@ carry-on closes the quest), and `AcpTurnFailureTickTests` was changed with it: i
 carry-on case is cut off by a refusal no table knows. A sign-in's end through `LoginAsync` is reached only by a real
 process, which no test runs. The note's time names the machine's zone, which travels with the note as the agent's own
 sentence already did. Nothing on the screen shows any of it yet (TOOL4g).
+
+**Built 2026-10-02 (TOOL4f): rotation** (points 4, 6 and 7; design §3, §3.7, §4, §5.4), held by `AccountRotationTests`,
+`AccountRotationHoldTests` and `CarryOnHandedTests`. What building it settled:
+- **The walk is a list, then a look.** `AccountRotation.Candidates` is pure: the resolved account, and only where a
+  default named it and the applicable order lists it, the rest of the order after it, wrapping. An order naming an
+  account with no directory here is never rotated into, since a start there would fail where it should wait.
+  `SelectAsync` reads each candidate's cool-off and AGT3b's refusals first, and probes only when one is ready on both
+  counts; signed out is read from the probe, re-asked once per start, and walked past alike. The first ready runs,
+  and the selection carries `Rotated`: the account the default named and why, as a clause naming it.
+- **A wait over an order holds on the first reset.** The selection's `Cooling` is the cool-off that ends first, so the
+  look's wait, `starts.waiting` and the attention name that account and time. The sentence says every account is
+  cooling, or lists each account and why when some are refused or signed out. With none cooling, nothing comes ready
+  by itself, so the default's own refusal, which names its fix, is the answer.
+- **A pick on a cooling account** is refused with the hold's sentence and the accounts ready now, by name. Naming them
+  asks the probe the conversation was about to make, since a pick is a person's start, never a look.
+- **Every rotated start says it once its record opens** (`RotatedOpening.Say`): its conversation record's first line
+  names the account it opened on and why, and `account.rotated` is written. That covers a driven start, a carry-on,
+  an intake, a conversation and Ask Daoris's opening. A carry-on's line adds the cut-off session and, after a limit,
+  its refused turn and its context: usage's high-water, else the record's own usage reports. `carries` is the
+  cut-off session for a carry-on alone.
+- **The carry-on is handed what Daoris kept** (D80 amended): its record's last plan, at most 50 steps, each with its
+  status in the wire's word; and its last words, bounded as a parked session's card bounds them, from the record or
+  else the transcript's last plain lines. After a limit it is told the last session ran on another account, now
+  cooling, which needs three facts: the record says `limit`, it ran on another account (`PriorSession.Profile`, read on
+  loopback with `Limit`), and that account still cools. None of it names an account. With nothing kept, the
+  instruction reads as it did, byte for byte.
+- **The note, which travels, says `on another account`** where a carry-on runs on a different account than the cut-off
+  session did, and names neither.
+- **The wiring panel shows the account a start takes**: `StartWiring.Profile` is the rotated account, and
+  `RotatedFrom` the one its rung named, so MAP1b's rule holds. The modules' `STARTS` route does not send
+  `RotatedFrom` yet.
+- **The words are the driver's, verbatim** (D24), in one place (`RotationWords`), with the glossary's names: an
+  account, signed in, the tool's own sign-in. The page shows them as it shows every driver sentence. Saying them in
+  both languages needs a code and parameters, which is the modules' and the web's (TOOL4g).
+
+**What the gates do not cover.** The `Process` half was not run by this branch. `AccountRotationTickTests` runs a
+carry-on on the pipe stub with two accounts, account-1 cooling, and checks the result: it runs on account-2 in the
+cut-off session's tree, its record names account-2, its note names the cut-off session and no account, it is handed
+the last words, its record opens naming both accounts, the log line is written, and account-1 takes the next start
+once ready. It also walks past a signed-out account through a real probe. The limit there is replayed as the driver records one, since the protocol
+stub reads the stub's table but runs on its own sign-in alone (TOOL4d): TOOL4h's two stub accounts on the protocol
+door need that door to run on the stub's accounts, a driver change no row holds yet. A real rotation is TOOL4i's.
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and

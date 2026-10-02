@@ -149,6 +149,9 @@ public sealed partial class Driver
 
         onOpened();
 
+        // An intake on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
+        RotatedOpening.Say(service, _events, sessionId, adapterName, selection, carried: null);
+
         try
         {
             var scope = IntakeRoom.Scope(ask.Id, sessionId);
