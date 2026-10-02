@@ -7,9 +7,9 @@
 > now holds five observations (§0.2), and they answer all three. This is the contract for the TOOL4 rows, and its
 > decision is **D125**. Status: **designed; TOOL4a, TOOL4c, TOOL4d, TOOL4e, TOOL4f and TOOL4j built** (notes under
 > D125; TOOL4d's says why the native door's failure is not yet handed over; TOOL4e's, that the terminal spells the
-> tool's own sign-in , and that the screen's *Remove* is still to take an account out of its orders; TOOL4f's,
+> tool's own sign-in `--own`, and that the screen's *Remove* is still to take an account out of its orders; TOOL4f's,
 > how a wait over an order holds on the first reset; TOOL4j's, that the protocol stub is a door onto the stub's
-> accounts; and a fix of §2.1, that a time of day gets no grace). **D130** (,
+> accounts; and a fix of §2.1, that a time of day gets no grace). **D130** (`docs/2026-10-02-account-use-design.md`,
 > TOOL6) amends §3.1, §3.3, §3.4, §5.1, §6 and §9: a start reads one scope, a workspace's list is the whole set of
 > accounts that may run it, for any number of accounts, and a list may start on the account with the most left or the
 > soonest reset, run its sessions in parallel, keep an account for conversations, and switch before a limit, each on the
