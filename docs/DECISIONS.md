@@ -857,7 +857,6 @@ the same pair. It also confirms **D24** from both sides — convergence detectio
 restatements with no model at all, and the model adds the class that text comparison provably cannot
 reach.
 
-
 ## D30 — The web UI's primary view is convergence, not search
 
 **Decided 2026-08-05, settling `Daoris.Web`'s first open question.** The landing view is *"these
@@ -1017,7 +1016,6 @@ disciplined.)*
 
 Stored beside the index in the same database: quests are service state as the index is service state,
 and two files would be two things to back up and two that can disagree about which repositories exist.
-
 
 ## D34 — A repository registers what it owns, and that is what makes a quest addressable
 
@@ -8979,200 +8977,6 @@ accounts"*. Every setting above serves it: work keeps moving when one account is
 another is cut off. It is judged by TOOL4h's report (the limits each account met, the sessions each ran, the starts a
 setting moved) and TOOL4i's run, never by a number Daoris made up.
 
-## D131 — An answer continues the session: its record reopens and its harness conversation resumes where the account, the adapter and the tree are the same; otherwise today's carry-on, saying why (2026-10-02)
-
-**Decision (ANSWER1).** The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input
-and after I input it starts a new session? isn't this should be continue"*. Seen on the install the same day: a driven
-session on `claude-code-acp` 0.84.0 parked to ask, the person answered, and the driver started a new session in the
-same tree, the agent's own conversation gone and a second row on the screen. Read from the code at `32cbf03`, the
-answer ends the parked record `completed` (D83) and the planner opens a new one (D80's carry-on); nothing resumes an
-agent's own conversation, though the adapter offers `session/resume` and `session/load` and the ledger already allows
-`awaiting-person` → `working`. The contract is `docs/2026-10-02-answer-continues-design.md`.
-
-1. **Resume when it can work.** An answered park is continued by its own record: `awaiting-person` → `working`, the
-   harness's own conversation resumed in the same tree, and the answer its next prompt, verbatim. The protocol door
-   sends `session/resume` where the agent advertises it (no replay, since the record already holds the conversation),
-   else `session/load` with its replay not kept again; the native door runs `claude -p <answer> --resume <id>`. The
-   conversation's id is kept the moment the wire says it, beside the transcript, never read from the agent's home.
-2. **It needs** the record still parked with its answer, the same adapter, the same account (the conversation lives
-   in that account's configuration home, and a record names one account), the same tree standing, a kept id, and a
-   door that can resume. A changed harness version is said on the resumed run's first line, never refused.
-3. **Otherwise, today's carry-on, said why.** The park ends `completed` with its answer and the reason, and a new
-   record carries the quest on in the same tree with the answer, the last plan and the last words. The reason is one
-   line on its note, by a code: `account`, `adapter`, `unkept`, `tree`, `unable`, `offered`, `gone`, `refused` or
-   `ended` (design §2). A note never names an account nor quotes the agent's refusal. The machine log writes
-   `session.answered` {session, adapter, resumed, why} once per answer taken up.
-4. **One Daoris record for one harness conversation.** A resume reopens the record that parked; a fallback is a new
-   record because it is a new conversation.
-5. **The other entries stay new sessions**: *Try again* after a person's stop, a carry-on after a time-out, a crash,
-   a refused turn or an interrupted take, and D79's resume, which is the same shape and held. Each one's record is
-   finished, and a finished record does not move.
-6. **The service and the page follow** (design §5): ANSWER1b keeps an answered record parked, and clears `answer` on a
-   move into `awaiting-person`; ANSWER1c shows an answered park as carrying on. Until ANSWER1b, the driver carries every
-   answer on as today, saying `ended`.
-
-**Why.** The person answered a question, and a conversation that asked it is the one that should hear the answer: a
-new session rebuilds from a handed summary what the first one knew, and the screen shows the person a second session
-for one piece of work. D46 held resume as an adapter capability until a real run asked for it, and D90 already keeps
-a working session's context for what the person adds; a park the person answers is the same need after the turn has
-ended. The record is the authority (D46 §4), so one record standing for one conversation is what makes the page, the
-log, the review and a teammate's view show one session without each learning a fold.
-
-**Rejected.**
-- **A linked record that the page folds into one thread.** It leaves the ledger alone, but every reader of records
-  would have to learn the fold, one conversation would have two homes, the log would count two sessions, and a
-  teammate would see two rows unless the link travelled as a new field.
-- **Reopening a finished record.** A finished record does not move, has travelled, and is what the strikes count.
-- **Resuming the conversation in a new record** for a fallback, a stop or a cut-off. That is the linked shape: one
-  conversation over two records.
-- **`session/load` first.** It replays the whole history, which the record already holds; `session/resume` sends none.
-- **Checking for the conversation in the agent's home before resuming.** A read inside an account's directory (D66 §3);
-  the agent's own refusal is the answer, and the fallback takes it.
-- **Refusing a resume across a harness version.** The native `claude` updates itself, so nearly every answer would
-  fall back; the run says its version instead.
-
-**This amends:** D83 (an answer no longer ends the record, once ANSWER1b lands, and a continued park is not a new
-session), D80 and STANDDOWN2's carry-on (now the fallback, said why), D46's held resume (built for an answered park),
-and D94 §4 (`session.answered`). D51, D58, D79, D90, D104, D125 and D130 stand.
-
-**What the gates do not cover.** This entry's statements about today were read from the code at `32cbf03` and from
-the adapter's and SDK's published packages at their pinned versions; no real agent was resumed. The native door's
-`--resume` and its `init` line are the maker's published shapes, not a run on this machine. `verify` checks this
-entry's shape and the design's links, and none of their words.
-
-**Built 2026-10-02 (ANSWER1a): the driver's half** (points 1–4; design §1–§3), held by `ContinuationTests`,
-`AnswerContinuesPlanTests`, `HarnessConversationsTests`, `AcpResumeTests`, `NativeResumeTests` and `SessionLogTests`.
-What building it settled:
-- **The id is kept at the wire's first word.** `AcpSession` tells `session/new`'s id as it arrives (`onConversation`), so
-  a turn that then fails or parks still leaves it; the native door keeps its `init` line's `session_id` once its output
-  ends. Both land in `HarnessConversations`, for a quest's session only, since an intake is answered through its ask.
-- **A refusal keeps its code and the agent's own sentence** beside ACPDATA1's data (`AcpRefusal.Code`, `.Words`): a
-  resume refused `resource_not_found` is `gone`, any other `refused`. A load's replay is dropped by its `sessionId`
-  while the load is answered.
-- **The judgement's order is the record, the adapter, the account, the tree, the kept id, then the door**
-  (`Continuations.Judge`), so the line said is the first a person can act on.
-- **The planner continues through the carry-on's verdict**, `continuing`: the park is not busy with its own tree, quest
-  or repository, and already holds its slot of the cap. The person's hold and the strikes still stand.
-- **A refusal on the wire ends the record from `working`**, since a run moves its record to working at spawn; the park's
-  note keeps what it asked and adds why, and the carry-on starts in the same look, taking the starting hold (LEFT2) again
-  until its own record holds the tree. A resumed run that could not start ends the park the same way, as `refused`,
-  whose line became *its conversation could not be resumed* to cover it.
-- **The resumed run's evidence counts from the record's own base commit**, so the review's range is the whole session's.
-- **An answer that keeps its park tells the watchers nothing** (`ServiceClient.AnswerSessionAsync`): the log would
-  otherwise write a second park, or an ending that did not happen.
-- **`session.answered` rides the account lines' channel**, which writes a catalogued line as it is given; the machine
-  log design's §4 lists it.
-
-**What the gates do not cover.** The `Process` half was not run by this branch: `AnswerContinuesTickTests` runs three
-real ticks on a protocol stub that speaks `session/resume`. An answer resumes the parked record's own conversation, with
-one record from start to end. A conversation the stub no longer has is carried on in a new session in the same tree,
-saying why. An answer on another stub account never asks the stub to resume. Its stand-in service models ANSWER1b, and
-the real service still ends the record as it takes the answer, so until ANSWER1b lands every answer reads `ended` and
-is carried on as before. The page still shows an answered park as waiting on the person for up to one look (ANSWER1c).
-The family rehearsal's protocol stub was not taught `session/resume`: no rehearsal reaches a resume before ANSWER1b.
-## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
-
-**Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
-is a pause and cleanup feature needed"*. The parent paused it by hand: `daoris driver hold <repository>` held every new
-start in the whole repository, and *Stop…* on the running session held its one quest (D126, SESSUX1b). Nothing paused
-the ask, every quest and session of it at once. Nothing removed what it left: quests open or taken, trees under the
-home, `daoris/*` branches with commits nobody pushed, and sessions in the list. *Close ask* writes only the ask's row,
-and its quests go on. `docs/2026-10-02-pause-and-clean-up-design.md` is the contract; its §0 is what was true at
-`32cbf03`. It settles:
-
-1. **An ask's work is one thing, read by one reader.** It is the quests asked by the ask, chain steps included; every
-   quest a session of the work published, which brings in a question asked of another repository (D79), applied
-   again to what that adds; their sessions and the ask's intake; and their trees, branches and landings here. A
-   quest's work starts from that quest. `AskWork.Read` answers it for both doors (`WORK_PLAN`, `daoris-driver`), and the
-   look reads it again each time, so a step or a question that appears after a pause is paused too.
-2. **Pause stops the work on this machine and keeps everything.** It stops every live session of the work as the
-   person's stop, starts nothing of it (the ask's intake included), and keeps each open quest's place in the queue and
-   each taken quest's take, tree, wait and strikes. **It takes nothing *Resume* cannot give back**, so a session waiting
-   on you stays parked, and a running intake goes on, its publishes paused with the rest. It asks once when it ends
-   work in flight.
-3. **The planner's `Paused` verdict comes before every other**, a person's stop included. Its sentence names the pause
-   and *Resume*, with its terminal line. The look computes the paused set and the planner reads it.
-4. **Resume releases the pause and every stop it made** (`released`, SESSUX1b's field), so a taken quest is carried on
-   in its tree and an open one starts in its place. What still holds (a stop made before the pause, the strikes, a
-   repository's hold, an account's cool-off, another pause) is named, never released.
-5. **A pause is kept in `driver.json`** as `pausedAsks` and `pausedQuests`, each with when it was made and the stops it
-   made. They are twins (`DriverConfig.cs`, `driverconfig.ts`). `daoris driver list` shows them; `daoris-driver` pauses
-   and resumes, since it reads the work and reaches the running loop.
-6. **Abandon is listed first and done on the second press, with the person's reason**, as *Archive what ended…* is.
-   The second press sends exactly what the first listed, and judges each piece again. In order, it pauses the scope,
-   stops and ends the work's sessions, declines each open quest and each quest this machine's session took with the
-   reason, closes the ask with it, syncs, discards trees and branches, archives sessions, tidies `driver.json`, and
-   writes the record.
-7. **Abandon discards a tree and its branch only when nothing it holds is anywhere else**: no commit after the
-   session's base on any ref but this machine's local `daoris/*` branches. Landed, a branch of the person's, a branch
-   a landing made, a tag, and **pushed, a remote `daoris/*` branch included**, each keep it, named. So does a session a
-   landing names, standing or a trace, and a count git cannot give. Uncommitted changes in Daoris's tree go, named on
-   the first press. This is D88's proof inverted: the clean-up removes what is proven elsewhere, abandon what is
-   proven nowhere else, and a branch partly elsewhere is kept by both.
-8. **Abandon takes only what Daoris made for the work on this machine.** A quest taken on another machine, or taken here
-   outside Daoris, is kept and named. A done quest keeps its record. A branch of the person's, the line, a remote
-   branch, the intake's room, kept files, the usage and the log are never touched. Records are archived, never
-   deleted.
-9. **What the record keeps.** Each declined quest's note is the person's reason, verbatim, and travels. The ask's close
-   note is the same reason. `<home>/abandoned.json` keeps, per abandon, what went (each tree's repository, branch, tip
-   and counts) and what stayed with its reason, and never a path. The log gains `work.paused`, `work.resumed` and
-   `work.abandoned`, names and counts only.
-10. **A pause is this machine's; a decline travels.** A teammate's driver may still take an open quest of paused work,
-    and their running sessions are not reached (D47 §4). A taken quest's pause holds everywhere, because its take
-    does. **A decline the abandon makes of an open quest carries `whileOpen`**: it applies only to an open quest, so
-    pushed after another machine's take it becomes a conflict on the quest (D68 rule 2) and the take stands. The
-    abandon runs a sync pass before it answers, and says which declines were confirmed, lost or unconfirmed. A remote
-    has no pause or abandon route.
-11. **The doors.** Pause, *Resume* and *Abandon…* are on the ask's page and the quest's page. *Pause quest…*, *Pause
-    ask…* and *Resume* are also on a session's header and row, where work going wrong is met. Abandon is on the two
-    pages only, where an ask or a quest is decided. At a terminal: `daoris-driver ask --pause|--resume|--abandon` and
-    `quest pause|resume|abandon`, an abandon listing until `--reason` and `--yes`. Ask Daoris gains a `pause` kind
-    (`pause`, `resume`). Abandon is exempt there, since its reason is the person's answer (D37).
-12. **Names.** *Pause* is 暂缓 and its inverse *Resume* 恢复. *Abandon* is 放弃, never *clean up*: the glossary's *clean
-    up* (清理) keeps exactly the work this throws away, and a destructive press must not wear a safe press's name.
-    Both are new glossary terms.
-
-The build is PAUSE1a–g, the design's §9.
-
-**Why.** The owner's work went wrong in one ask, and every act they had reached either too far (a whole repository) or
-too little (one session, one quest). A pause that stops what runs and keeps the take, the tree and the place is the
-act a person reaches for when they want to look before they decide. Once they decide, giving the work up should be one
-listed press. That press must throw away only what nobody else can have: unpushed commits and uncommitted changes in
-Daoris's own trees. Anything that reached a branch of theirs, the line or a remote has left Daoris's hands, and is
-named, not touched.
-
-**This amends:**
-- **D126 §3.3 and SESSUX1b's note**: a pause is the reason its quest sits before a stop, and *Try again* is not offered
-  while it holds; `RETRY_QUEST` refuses with `QUEST_PAUSED`.
-- **D51 rule 7 as D88 amended it**: a second removal by a person's press, behind the inverse proof.
-- **D68 rule 2 and the sync design's §5**: a `whileOpen` decline after another machine's take is a conflict.
-- **D65**: an ask's close leaves its quests, and its page now says so; abandon closes it and declines them.
-- **D94 §4**: three events. **D110**: the `pause` kind; abandon exempt. **D116's glossary**: *pause* and *abandon*.
-
-**D46 §3–§4 (no new state), D58 (a stop is no strike), D68's one lock, D95, D47 §4 and D32 stand.**
-
-**Rejected.**
-- **Naming the second act *Clean up***, as the owner and the dispatch did. The glossary's *clean up* is D88's removal of
-  what landed, the safe press in Settings, and it keeps exactly what this one throws away.
-- **A pause that travels.** It would be a new operation every machine's planner obeys, a second lock beside the take.
-- **Stopping a running intake, or a parked session, on pause.** Neither comes back on *Resume*: one intake per ask, and a
-  parked session's question would be lost.
-- **Narrowing a repository's hold with a filter.** A hold leaves what runs running, and `holds` is read by two twins.
-- **Deleting the quests nobody started**, as D95 allows. A delete says the ask was a mistake; abandon keeps the reason.
-- **Discarding the unlanded half of a partly landed branch.** It would decide which half the person meant; its review
-  does.
-- **Abandon judging landed work, or declining a quest taken elsewhere or outside Daoris.** Neither is Daoris's work
-  here; *Decline…* on the quest's page is one deliberate answer.
-- **Prefixing each decline's note with Daoris's words.** It would put English into content; the abandon record says
-  what went.
-- **Ask Daoris abandoning**, **several asks at once**, **an undo**, and **a new ask state** for *paused* or *abandoned*.
-
-**What the gate does not cover.** This decision is documents only. The code was read at `32cbf03`, as the design's
-§13 lists. That SESSUX1g's request folder is built as D126 §7.1 says is assumed, and PAUSE1b waits on it. An older
-remote applies a `whileOpen` decline as a plain one. Found while reading and filed: D124's set-up plan *Pause* stops
-nothing that runs, so by this glossary it is a hold, for WSSETUP7 to name. The code's comments call a repository's
-hold *paused*, which PAUSE1b rewords. Not measured: every item of the design's §12. `verify` checks this entry's shape
-and the design's links, and none of their words.
 **The rules around the goal (2026-10-02).** The owner: *"you can design the rules around this purpose"*. So the
 defaults are re-decided on the goal: the most work from the accounts' combined allowance, the fewest stalls, and no
 allowance left unused at a reset (design §16).
@@ -9348,6 +9152,7 @@ door, and no `allowed_warning`, `rejected` or overage frame anywhere (evidence �
 scope the reading does not carry; each start's line and `account.rotated`'s `why` log every pass. Not measured: whether
 near comes early enough (§11 item 3), or whether pace leaves less at a weekly reset (§16.7). The screen says none of it
 yet (TOOL4g). The modules build against the change; their suites, the web's and the rehearsals were not run.
+
 ## D131 — An answer continues the session: its record reopens and its harness conversation resumes where the account, the adapter and the tree are the same; otherwise today's carry-on, saying why (2026-10-02)
 
 **Decision (ANSWER1).** The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input
@@ -9465,6 +9270,7 @@ with `AnswerContinuesTickTests`. A take through a connector, which a real agent'
 `McpToolsTests`' (STANDDOWN2), not 17a's. Words in lanes this branch does not hold still say an answer ends the
 record: the headless host's usage for `answer`, and the comments on the page's answer box, its query and its frame
 (ANSWER1c's lane).
+
 ## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
 
 **Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
