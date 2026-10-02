@@ -115,6 +115,123 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p7")!.State);
     }
 
+    /// <summary>The machine with lists of its own (TOOL4g): the machine's <c>work, play</c>, and <c>lab</c>'s <c>work</c>.</summary>
+    private static readonly HelpMachineFacts Listed = Machine with
+    {
+        Workspaces = ["default", "work", "lab"],
+        Wiring = new HarnessSettings
+        {
+            Rotation = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = ["work", "play"] },
+            WorkspaceRotation = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["lab"] = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase) { ["claude-code"] = ["play"] },
+            },
+        },
+    };
+
+    /// <summary>
+    /// TOOL4g (D130 §3.1): a default is where its scope's starts begin within its own list, so Ask Daoris's <c>default</c>
+    /// refuses an account the list does not hold, as the terminal and the screen do; a scope with no list takes any account.
+    /// </summary>
+    [Theory]
+    [InlineData("work", "lab", "`claude-code`'s list in `lab` is play, and `work` is not in it", "`daoris agent profile order claude-code play work --workspace lab`")]
+    public void A_default_outside_its_scopes_own_list_is_refused_naming_the_order_that_adds_it(
+        string account, string? workspace, string says, string door)
+    {
+        var plan = HelpProposals.Plan(Default("claude-code-acp", account, workspace), DriverConfig.Empty, Listed);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Contains(door, plan.Refusal);
+    }
+
+    [Theory]
+    [InlineData("work", null)]
+    [InlineData("work", "work")]
+    public void A_default_inside_its_scopes_list_or_in_a_scope_with_none_is_made(string account, string? workspace)
+    {
+        var plan = HelpProposals.Plan(Default("claude-code", account, workspace), DriverConfig.Empty, Listed);
+
+        Assert.Null(plan.Refusal);
+    }
+
+    private static HelpProposal Use(string agent, UseChange change, string? workspace = null) =>
+        new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change };
+
+    /// <summary>
+    /// TOOL4g's <c>use</c> (D130 §9, §16.6): how a scope's list is used, as <c>daoris agent profile use</c> takes it, said in its
+    /// words; a door's accounts are its owner's (AGT7), so the command and the sentence name the owner.
+    /// </summary>
+    [Fact]
+    public void How_a_list_is_used_is_judged_and_said_as_the_terminal_says_it()
+    {
+        var machine = HelpProposals.Plan(
+            Use("claude-code-acp", new UseChange("order", "play", Early: false, Near: 85)), DriverConfig.Empty, Listed);
+        var lab = HelpProposals.Plan(Use("claude-code", new UseChange(Use: "goal"), "lab"), DriverConfig.Empty, Listed);
+        var none = HelpProposals.Plan(Use("claude-code", new UseChange(NoKeep: true)), DriverConfig.Empty, Listed);
+
+        Assert.Null(machine.Refusal);
+        Assert.Equal("daoris agent profile use claude-code order --keep play --early off --near 85", machine.Terminal);
+        Assert.Equal("On this machine, `claude-code` uses its accounts one by one, in order, keeps `play` for conversations, does not "
+            + "switch before the limit and counts an account near its limit at 85%.", machine.Describe);
+        Assert.Equal("daoris agent profile use claude-code goal --workspace lab", lab.Terminal);
+        Assert.Equal("In `lab`, `claude-code` makes the most of its accounts.", lab.Describe);
+        Assert.Equal("daoris agent profile use claude-code --no-keep", none.Terminal);
+        Assert.Contains("keeps no account for conversations", none.Describe);
+    }
+
+    /// <summary><c>profile use</c>'s refusals, in its words, before the person ever sees a card.</summary>
+    [Theory]
+    [InlineData("claude-code", null, null, null, false, null, null, "a use names how the list is used")]
+    [InlineData("claude-code", "work", "goal", null, false, null, null, "`work` has no list of its own for `claude-code`")]
+    [InlineData("claude-code", null, "spread", null, false, null, null, "`spread` is not a way to use accounts")]
+    [InlineData("claude-code", null, null, null, false, null, 49, "a whole percent from 50 to 99, not 49")]
+    [InlineData("claude-code", null, null, "solo", false, null, null, "`solo` is not in `claude-code`'s list on this machine (work, then play)")]
+    [InlineData("claude-code", "lab", null, "play", false, null, null, "holds no account but `play`")]
+    [InlineData("claude-code", "elsewhere", "goal", null, false, null, null, "there is no workspace `elsewhere`")]
+    [InlineData("gpt-agent", null, "goal", null, false, null, null, "no agent `gpt-agent`")]
+    public void A_use_the_route_would_refuse_is_refused(
+        string agent, string? workspace, string? use, string? keep, bool noKeep, bool? early, int? near, string says)
+    {
+        var plan = HelpProposals.Plan(Use(agent, new UseChange(use, keep, noKeep, early, near), workspace), DriverConfig.Empty, Listed);
+
+        Assert.Contains(says, plan.Refusal);
+    }
+
+    [Fact]
+    public async Task A_use_is_applied_through_the_screens_own_door_and_a_refusal_there_settles_it_refused()
+    {
+        var (applied, doors, later) = await ApplyAsync(Use("claude-code-acp", new UseChange("order", Early: true), "lab"), facts: Listed);
+        var (refused, _, _) = await ApplyAsync(
+            Use("claude-code", new UseChange(Use: "goal")) with { Id = "p10" }, new HelpStandInDoors { UseRefusal = "the list moved." }, Listed);
+
+        Assert.True(applied.Applied);
+        Assert.Equal(["ACCOUNT_USE claude-code-acp use=order keep= noKeep=False early=True near= lab"], doors.Calls);
+        Assert.Equal([applied.Told], later);
+        Assert.False(refused.Applied);
+        Assert.Contains("the list moved.", refused.Told);
+        Assert.Equal("refused", HelpProposals.Find(_home, "p10")!.State);
+    }
+
+    /// <summary>
+    /// The file's four fields, as the service's writer is to write them (TOOL4g): a field left out is no change, and a
+    /// <c>keep</c> of JSON null keeps none. A file of any other door names none of them.
+    /// </summary>
+    [Fact]
+    public void The_use_doors_fields_are_read_from_its_file()
+    {
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "u1.json"), """
+            { "id": "u1", "kind": "agent", "door": "use", "target": "claude-code", "workspace": "lab", "value": null,
+              "use": "order", "keep": null, "early": false, "near": 85, "why": "the person asked", "state": "proposed",
+              "by": { "session": "h1" } }
+            """);
+        File("u2", "agent", "default", "claude-code", value: "work");
+
+        var read = HelpProposals.Find(_home, "u1")!;
+
+        Assert.Equal(new UseChange("order", null, NoKeep: true, Early: false, Near: 85), read.AccountUse);
+        Assert.Null(HelpProposals.Find(_home, "u2")!.AccountUse);
+    }
+
     /// <summary>A pin already installed ends before its start is answered: its end is still said second.</summary>
     [Fact]
     public async Task An_action_that_ends_at_once_is_said_after_what_the_Apply_did()
@@ -149,6 +266,16 @@ public sealed partial class HelpStandInDoors
     {
         if (DefaultRefusal is { } refused) throw new DriverException(refused);
         Calls.Add($"HARNESS_ACTION {harness} profile-default {account} {workspace}".TrimEnd());
+        return Task.CompletedTask;
+    }
+
+    /// <summary>What the use's door refuses with, as `ACCOUNT_USE` would; null to make it (TOOL4g).</summary>
+    public string? UseRefusal { get; init; }
+
+    public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
+    {
+        if (UseRefusal is { } refused) throw new DriverException(refused);
+        Calls.Add($"ACCOUNT_USE {harness} use={change.Use} keep={change.Keep} noKeep={change.NoKeep} early={change.Early} near={change.Near} {workspace}".TrimEnd());
         return Task.CompletedTask;
     }
 }

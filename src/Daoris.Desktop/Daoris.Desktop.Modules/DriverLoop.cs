@@ -200,15 +200,21 @@ public sealed class DriverLoop(
     /// carries the number the planner parked it at, so the page says why in the reader's language, and when its last
     /// session ended, which *What needs you* counts its wait from. Null for every other verdict and a park not read yet.
     /// The last session and its note stay here, as the stop's tree does.</para>
+    /// <para><b>Which account it waits for</b> (TOOL4g, D125 §4): a quest held at spawn because every account its start may use
+    /// is cooling waits for an account, not parked and with no Retry. The wait names whose account, which (null for the tool's
+    /// own sign-in), until when, and whether the agent named the time, so the page says it in the reader's language. Null where
+    /// no wait of the look holds this quest. A profile name rides this bridge only (D47 §4).</para>
     /// </remarks>
     /// <param name="park">The quest's park as the loop last read it (<see cref="QuestParkReader"/>), or null.</param>
-    public static object TickConsideration(Consideration consideration, QuestPark? park = null)
+    /// <param name="wait">The look's wait on a cooling account, where it holds this quest (<see cref="TickReport.Waits"/>), or null.</param>
+    public static object TickConsideration(Consideration consideration, QuestPark? park = null, AccountWait? wait = null)
     {
         var parked = consideration.Verdict == StartVerdict.Exhausted
                      && park is not null
                      && string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)
             ? park
             : null;
+        var waiting = wait is not null && wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase) ? wait : null;
         return new
         {
             Quest = consideration.Quest.Id,
@@ -218,6 +224,7 @@ public sealed class DriverLoop(
             HeldBy = consideration.HeldBy?.Session,
             parked?.Strikes,
             parked?.Since,
+            WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Until, waiting.Stated },
         };
     }
 
@@ -487,8 +494,13 @@ public sealed class DriverLoop(
                     {
                         Events = report.Events,
                         Considered = report.Considerations
-                            .Select(consideration => TickConsideration(consideration, parks.Latest.FirstOrDefault(park =>
-                                string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase))))
+                            .Select(consideration => TickConsideration(
+                                consideration,
+                                parks.Latest.FirstOrDefault(park =>
+                                    string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)),
+                                // The wait holding it on a cooling account, if one does (TOOL4g, D125 §4).
+                                report.Waits.FirstOrDefault(wait =>
+                                    wait.Quests.Contains(consideration.Quest.Id, StringComparer.OrdinalIgnoreCase))))
                             .ToArray(),
                         // The trust holds as facts (D73): machine-local paths, so over this bridge only.
                         // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge.
