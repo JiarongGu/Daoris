@@ -930,4 +930,184 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.False(rest.More);
         Assert.Equal(5, rest.Through);
     }
+
+    // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline
+    // on an open quest, so one that reaches the remote after another machine's take is a conflict on the quest (D68
+    // rule 2), and the take stands.
+
+    private Task<QuestSyncReport> SyncThroughAsync(QuestStore machine, IRemote remote) =>
+        QuestSync.RunAsync(machine, _ => true, remote, Workspaces.Default);
+
+    private const string Reason = "Abandoned: the work went the wrong way.";
+
+    /// <summary>
+    /// 🔴 Take first: a teammate's take reached the remote before this machine's decline, made while the quest still
+    /// looked open here. The rebase turns the decline into a conflict carrying the reason, and the quest stays taken
+    /// by the machine that took it, on every side.
+    /// </summary>
+    [Fact]
+    public async Task A_decline_made_while_open_that_lands_after_a_take_is_a_conflict_and_the_take_stands()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(1))).Moved);
+        await SyncAsync(_b);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Declined, Reason, Now.AddHours(2), whileOpen: true)).Moved);
+        var lost = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Empty(lost.Refused);
+        var conflict = Assert.Single(lost.Conflicts);
+        Assert.Equal((QuestStatus.Declined, Reason), (conflict.Attempted!.Value, conflict.Note));
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Equal(QuestClaim.Held, await _b.ClaimAsync(quest.Id));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Taken, "B's session."), (held.Status, held.Note));
+            var kept = Assert.Single(held.Conflicts);
+            Assert.Equal((_a.Machine, QuestStatus.Declined, Reason), (kept.Machine, kept.Attempted, kept.Note));
+        }
+    }
+
+    /// <summary>
+    /// Decline first: the decline reached the remote while the quest was open, so it is the quest's answer, and a
+    /// take made meanwhile on another machine is the conflict, as any losing take is. The flag crosses the wire both
+    /// ways: the remote keeps it, and the machine that fetched it holds the decline as it was made.
+    /// </summary>
+    [Fact]
+    public async Task A_decline_made_while_open_that_lands_first_declines_and_the_later_take_is_the_conflict()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _a.MoveAsync(quest.Id, QuestStatus.Declined, Reason, Now.AddHours(1), whileOpen: true);
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2));
+        await SyncAsync(_a);
+        var lost = await SyncAsync(_b);
+
+        Assert.Equal(QuestStatus.Taken, Assert.Single(lost.Conflicts).Attempted);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Declined, Reason), (held.Status, held.Note));
+            Assert.True((await store.HistoryAsync(quest.Id)).Single(o => o.Kind == QuestOperationKind.Declined).WhileOpen);
+        }
+    }
+
+    /// <summary>
+    /// An older record: a decline that says nothing of the flag — every decline before PAUSE1c, and the quest page's
+    /// plain *Decline…* today — crosses the wire exactly as before and still lands over a take, because a person
+    /// declining work they see taken means to.
+    /// </summary>
+    [Fact]
+    public async Task A_decline_with_no_flag_crosses_as_before_and_still_lands_over_a_take()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        await SyncAsync(_b);
+        await _a.MoveAsync(quest.Id, QuestStatus.Declined, "Not ours after all.", Now.AddHours(2));
+        var pass = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Empty(pass.Conflicts);
+        var declined = (await _a.HistoryAsync(quest.Id)).Single(o => o.Kind == QuestOperationKind.Declined);
+        Assert.DoesNotContain("whileOpen", QuestWire.Push(0, [declined]));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Equal(QuestStatus.Declined, (await store.FindAsync(quest.Id))!.Status);
+        }
+    }
+
+    /// <summary>
+    /// 🔴 A remote built before PAUSE1c reads the decline as a plain one and keeps it without the flag. The race still
+    /// ends as it does at a remote of this build — take first, the decline is the conflict and the take stands; decline
+    /// first, the later take is the conflict — because this machine's rebase judges the flag before it pushes, and a
+    /// remote judges a push only when nothing reached the quest after the base it was rebased on. What the older remote
+    /// loses is its own second judgement, and the flag on what it hands back.
+    /// </summary>
+    [Fact]
+    public async Task A_remote_that_drops_the_flag_still_ends_the_race_in_a_conflict_and_keeps_the_decline_plain()
+    {
+        var older = new OlderRemote(_remote);
+        var takenFirst = await Publish(_a, "Taken first");
+        var declinedFirst = await Publish(_a, "Declined first");
+        await SyncThroughAsync(_a, older);
+        await SyncThroughAsync(_b, older);
+
+        await _b.MoveAsync(takenFirst.Id, QuestStatus.Taken, "B's session.", Now.AddHours(1));
+        await SyncThroughAsync(_b, older);
+        await _a.MoveAsync(takenFirst.Id, QuestStatus.Declined, Reason, Now.AddHours(2), whileOpen: true);
+        await _a.MoveAsync(declinedFirst.Id, QuestStatus.Declined, Reason, Now.AddHours(2), whileOpen: true);
+        await _b.MoveAsync(declinedFirst.Id, QuestStatus.Taken, "B's other session.", Now.AddHours(3));
+        var a = await SyncThroughAsync(_a, older);
+        var b = await SyncThroughAsync(_b, older);
+
+        Assert.Equal((takenFirst.Id, QuestStatus.Declined), (Assert.Single(a.Conflicts).Quest, a.Conflicts[0].Attempted!.Value));
+        Assert.Equal((declinedFirst.Id, QuestStatus.Taken), (Assert.Single(b.Conflicts).Quest, b.Conflicts[0].Attempted!.Value));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Equal(QuestStatus.Taken, (await store.FindAsync(takenFirst.Id))!.Status);
+            Assert.Equal(QuestStatus.Declined, (await store.FindAsync(declinedFirst.Id))!.Status);
+        }
+
+        Assert.False((await _remote.HistoryAsync(declinedFirst.Id)).Single(o => o.Kind == QuestOperationKind.Declined).WhileOpen);
+        Assert.False((await _b.HistoryAsync(declinedFirst.Id)).Single(o => o.Kind == QuestOperationKind.Declined).WhileOpen);
+    }
+
+    /// <summary>
+    /// The remote judges the flag too, through the same table (D47 §5): a push it judges — nothing reached the quest
+    /// after its base — whose decline would land on a taken quest is refused for that quest, naming why. An older
+    /// remote, judging the same push, keeps it as a plain decline: that is the one place its build decides, and no
+    /// machine of this build sends such a push, since its rebase made the decline a conflict first.
+    /// </summary>
+    [Fact]
+    public async Task The_remote_refuses_a_decline_made_while_open_on_a_quest_taken_there_and_an_older_one_keeps_it()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        await SyncAsync(_a);
+        var decline = new QuestOperation(quest.Id, QuestOperationKind.Declined, "m-elsewhere", 7, Now.AddHours(2), Reason,
+            WhileOpen: true);
+
+        var refused = await new StoreRemote(_remote).PushQuestsAsync(2, [decline]);
+        Assert.Empty(refused.Accepted);
+        Assert.Contains("only while it is open", Assert.Single(refused.Refused, r => r.Quest == quest.Id).Reason);
+        Assert.Equal(QuestStatus.Taken, (await _remote.FindAsync(quest.Id))!.Status);
+
+        var kept = await new OlderRemote(_remote).PushQuestsAsync(2, [decline]);
+        Assert.Single(kept.Accepted);
+        Assert.Equal(QuestStatus.Declined, (await _remote.FindAsync(quest.Id))!.Status);
+    }
+
+    /// <summary>
+    /// The flag crosses the wire on a decline, written only when set; a decline that says nothing of it reads plain;
+    /// and one that says something other than true or false is half-made and does not cross, since read as plain it
+    /// would decline over a take.
+    /// </summary>
+    [Fact]
+    public void A_decline_made_while_open_crosses_the_wire_and_a_malformed_flag_does_not_cross_at_all()
+    {
+        var page = new QuestFetch(
+        [
+            new QuestOperation("abcdefabcdef", QuestOperationKind.Declined, "m1", 3, Now, Reason, Number: 4, WhileOpen: true),
+            new QuestOperation("fedcbafedcba", QuestOperationKind.Declined, "m1", 5, Now, "Not ours.", Number: 6),
+        ], 6, More: false);
+
+        var json = QuestWire.Page(page);
+        var back = QuestWire.ReadPage(json)!.Operations;
+
+        Assert.Equal([true, false], back.Select(o => o.WhileOpen));
+        Assert.Equal(1, json.Split("whileOpen").Length - 1);
+        Assert.False(Assert.Single(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "declined", "at": "2026-09-24T10:00:00Z", "note": "n", "whileOpen": false }] }""")!.Value.Operations).WhileOpen);
+        Assert.Null(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "declined", "at": "2026-09-24T10:00:00Z", "note": "n", "whileOpen": "yes" }] }"""));
+    }
 }

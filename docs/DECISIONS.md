@@ -9605,6 +9605,37 @@ refusal and the owed door were written after their code. `PauseTickTests` (the `
 works, its quest held with nothing spawned, then carried on in its tree after *Resume*; and an open quest paused before
 any session) is written and was not run here. **Not built**: §2.6's ask, the pages' and a session's acts (PAUSE1e), and
 Ask Daoris's `pause` kind and the room's list of what is paused (PAUSE1f).
+**Built 2026-10-03 (PAUSE1c): a decline that applies only while open** (point 10; design §5.2). A decline carries
+`whileOpen` on the operation (`QuestOperation.WhileOpen`), in the log, on the wire (`QuestWire`) and through the replay.
+`QuestLog.Applies` applies such a decline only to an open quest. So the store refuses it on a quest taken here, a rebase
+keeps one that lands after another machine's take as a conflict with its reason, and a remote refuses one it judges on a
+taken quest. The local respond door takes it (`POST /api/quests/{id}/respond`, `whileOpen: true`) through
+`QuestExchange.RespondAsync`; no MCP tool does. Held by `QuestLogTests`; `QuestSyncTests` over the real wire (take first,
+decline first, an older record, an older remote); `QuestShareTests`; `LocalHostTests`. What building it settled:
+- **The flag rides the log's payload, not a column.** Every field an operation carries beyond its kind (a note, an
+  attempt, a dismissal's conflict, a done's answers) is in the payload. So the design's *store's column* is the
+  payload's `whileOpen`, written only when set, and a plain decline's record is byte for byte what it was.
+- **The store judges a move by the replay's own rule** (`QuestLog.Applies`) rather than the table beside it, so it
+  refuses exactly what a rebase or a remote would not apply.
+- **A refusal here is the lock's state, said as the decline it is**: `AlreadyTaken`, 409 at the door, saying the decline
+  applies only while open and the take stands, never the take race's stand-down. On a shared quest the answer says what
+  a take that came first would make of it, since only the next sync can know. `whileOpen` on another verb is refused.
+- **A lost decline's conflict drops the flag**, kept as any losing move is: attempting `Declined`, with the reason. The
+  pass's conflicts (`/api/sync`'s `conflicts`, `attempted: "Declined"`) are how the abandon's pass (§3.4 step 4) tells
+  a lost decline from a confirmed one.
+- **A malformed flag on the wire is half an operation** and does not cross: read as plain, it would decline over a take.
+- 🔴 **An older remote does not decide the race.** A remote built before PAUSE1c reads the flag as absent, keeps the
+  decline plain and hands it back plain. Take first or decline first, the race still ends in a conflict and the take
+  stands. This machine's rebase judges the flag before it pushes, and a remote judges a push only when nothing reached
+  the quest after the base it was rebased on. What differs is the remote's own second judgement: given a push nobody
+  rebased, which no machine of this build sends, an older remote keeps the decline over a take where this build refuses
+  it. So this decision's gate note and the design's §5.2 and §13 (*a remote built before this applies it over a take*) claim
+  more than the code does, and no refusal or conflict a person reads carries that warning, since none can show it.
+
+**What the gates do not cover.** Nothing sends the flag yet: the abandon (PAUSE1d) does, through the driver's
+`ServiceClient`, which this branch did not touch. Reading each decline's answer from the pass is the abandon's. No real
+remote ran, an older one included: the older remote here is the real store behind the real wire with the flag taken
+out. The rehearsals were not run by this branch.
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
