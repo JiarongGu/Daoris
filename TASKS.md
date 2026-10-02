@@ -182,6 +182,30 @@ install in both themes and both languages.
 > need other resouce location"*
 
 
+### Knowledge that sessions actually use (owner, 2026-10-03)
+
+- [ ] **KNOWUSE1 — why report-ui's sessions ask what its knowledge answers** (owner, 2026-10-03: *"I found report-ui itself
+  is kind of ignoring the repo's knowledge docs? since a lot asks back to me should not be there? … we need to check the
+  process properly or the initialize of daoris system still not 100% working and that will need llm/ai to involve"*).
+  Every question sessions put to the owner, classed by what could have answered it (knowledge, code, history, only the
+  owner), against what each session read and was told; then the fix, model-backed where text matching cannot judge.
+  Contract: D135 (in flight). Proof: the evidence, de-identified; raw notes untracked.
+
+### The desktop's own surfaces (owner, 2026-10-03)
+
+- [ ] **CTX1 — the desktop's right-click menu** (owner, 2026-10-03: *"we do need to utilize the right click menu of daoris
+  desktop"*). Today a right-click shows the engine's default menu, or nothing; give each surface (a session row, a quest,
+  a repository, a plugin, selected text, a link) its own acts there, the same acts its ⋯ offers, from one owner. Contract:
+  a short design (D41's interaction rules amended). Proof: route and vitest tests; the look in both themes and languages.
+- [ ] **PLUGUI2 — the plugins page and a plugin's icon** (owner, 2026-10-03: *"plugin page design (and plugin icon)"*). The
+  page reads as a list of manifests; design it as a catalogue (installed, Daoris's own, available) with each plugin's
+  icon, declared in its manifest with a generated fallback. Contract: a short design (D64, D120 amended). Proof: stories,
+  the manifest's twin tables, the look.
+- [ ] **LAYOUT11 — content that does not size with its pane** (owner, 2026-10-03: *"some page content still not auto
+  sizing with the outer like quest body and plugin detail"*). A quest's body and a plugin's detail keep a fixed measure
+  inside a wider or narrower pane. Find every such surface by looking at 1280, 888 and 680, and size each by its pane
+  (D41 §3's measure kept for prose only). Contract: D41 §3, the working-surface components. Proof: the look before and after.
+
 ### Sessions that are easy to manage (owner, 2026-10-02) — D126
 
 > *"so there is no way to easily managed sessions in daoris rn and it's not really smooth for ui/ux lets also set this
@@ -204,11 +228,28 @@ owner on 1 October.
   chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
   Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
+- [ ] **STEER1 — a message to a running session reaches it at its next step, and shows at once** (owner, 2026-10-03: *"I
+  did send back the message but it never shows to daoris"*). A driven session's words are held until its turn ends,
+  and its turn is its whole run, so the agent hears nothing for up to an hour and the conversation shows nothing
+  meanwhile. Deliver at the harness's next step where its door allows (measure what the protocol adapter does with a
+  prompt during a turn), and show the held words in the conversation as *held, reaches it at …*. Contract: a short
+  design (SESS3 amended). Proof: the measurement; driver and page tests; the look.
+- [ ] **ANSWER1 on the install — the plan** (owner, 2026-10-03: *"you need to fix the ANSWER1 bug too"*). The fix is on
+  main (ANSWER1a–c, 2026-10-02/03): an answer keeps its session and resumes the agent's own conversation. The install
+  still runs the build before it, because a session has been running at every chance to republish. In order:
+  1. **Republish** at the first moment no session runs (the watcher on the drill-down quest says when), carrying
+     ANSWER1a–c, DRIFT1, TOOL6c and TOOL4g; or, on the owner's word, stop the running one and republish now.
+  2. **ANSWER1d**, below: answer the next park on the install and see the same row go on.
+  3. **ANSWER1e**, below, and **UPDATE1**, so the next fix never waits on a free moment again.
+- [ ] **ANSWER1d — the canary on the install** (the parent's, after the republish). One park answered on the install shows
+  one row, the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
 - [ ] **ANSWER1e — the map and Ask Daoris read an answered park** (web-shell; found by ANSWER1c). The map's *parked* mark
   (`map/topology.ts`) and Ask Daoris's waiting count (`help/machine.ts`) still count an answered park for up to one look.
   Contract: answer-continues design §5. Proof: `topology.test.ts` and the help machine test read `answeredPark`.
-- [ ] **ANSWER1d — the canary on the install** (the parent's, after b). One park answered on the install shows one row,
-  the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
+- [ ] **UPDATE1 — the install updates when its work allows** (found 2026-10-03: four republishes waited on running
+  sessions). *Update when idle*: the desktop starts no new session, lets the running ones end or park, then installs the
+  new build and starts again, saying so; a session cut by an update is carried on, never lost. Contract: a short design
+  (D62, D93 amended). Proof: the deployment rehearsal's update phase; the look.
 - [ ] **DRIFT1c2 — the family rehearsal drives a requirement** (tools; after DRIFT1c). Teach the stub intake to publish
   one quote the person said and to see one they never said refused, through the real host and the sync wire. Contract:
   D133's DRIFT1c note. Proof: the family rehearsal's intake phase.
@@ -225,7 +266,8 @@ owner on 1 October.
 - [ ] **PAUSE1c — a decline that applies only while open** (service; any time). `whileOpen`, so an abandon's decline never
   lands on a take that reached the remote first. Contract: D132 §5.2. Proof: `QuestLogTests`; the sync suite over the wire.
 - [ ] **PAUSE1d — abandon** (driver, modules; after b and c). One listed press that declines the quests with the person's
-  reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`. Contract: D132 §3, §4,
+  reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`; its declines send
+  `whileOpen` (PAUSE1c), and D132 §5.2 and §13's older-remote sentence takes PAUSE1c's reading. Contract: D132 §3, §4,
   §7.2–§7.3. Proof: `AbandonTests`; a Process case on real git; a family rehearsal phase.
 - [ ] **PAUSE1e — on the screen** (web-shell; after b and d). *Pause…*, *Resume*, *Abandon…* with its list and reason on
   the ask's and quest's pages and a session's acts. Contract: D132 §6, §7.1, §8. Proof: stories, vitest, the look.
