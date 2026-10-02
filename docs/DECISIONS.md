@@ -9060,6 +9060,49 @@ order, and `ResolveScope` waits for TOOL6b. §3.1's refusal is the terminal's al
 route (`DriverModule.DefaultEdited`, modules) and Ask Daoris's `default` door do not ask `ScopeProblem.Of` yet (TOOL4g,
 or a modules row). The `Process` half, the rehearsals and the screen were not run by this branch.
 
+**Built 2026-10-02 (TOOL6b): the walk toward the goal** (the goal's points 1–4 and 6, and points 4 and 5; design §3.1, §3.3, §4.6,
+§7, §16.2–§16.4 and §16.6's `order`), held by `AccountRotationWalkTests` (the walk's tables per step, and ⌈K ÷ N⌉ for one
+account to six), `AccountRotationGoalTests` (through `SelectAsync`), `AccountWindowsTests` and, in the `Process` half,
+`AccountGoalTickTests`. As §16.6 says, a machine whose order was written before now follows the goal unless its scope
+says `order`, so *rotation never moves work off a ready account* (D125 §3.3) holds under `order` only. What building it
+settled:
+- **One scope for every start but a pick** (`ResolveScope`, D130 §3.1): a workspace naming a default and no list rotates
+  nowhere; a list begins at its default, else its first, never on the machine's default or the tool's own sign-in; a
+  default outside its list is read with the list winning, where D125 held the start on it.
+- **The count is Daoris's own records and its own choices.** Each look marks the last start chosen, reads this machine's
+  records (`Snapshot.Started`: adapter, account, opened, running) and hands them to the roster (`Look`), which keeps every
+  start chosen after the mark. A look begins only once the last look's starts opened their records, so none is counted
+  twice or lost. Choices and their counts are made one at a time, so starts begun together spread; one held after it was
+  chosen counts until the next look. The wiring panel asks the same walk and counts nothing. A door's sessions count
+  for its owner (AGT7).
+- **Least recently started**: never first, then by when the record opened, and a start chosen since the look is the most
+  recent of all, in the order chosen, whatever the clocks say.
+- **A weekly reset is told by a limit** whose window, or what was hit where it named none, is weekly, at a time the agent
+  named. `windows.json` keeps it (names, times, the session; what it has no field for kept). It is carried a week at a
+  time where the toolchain declares `WeekFixed` (Claude Code, and the stub mirroring it), declared beside `Limits` and not
+  in it, since that table grows only with recorded sentences and this is the maker's page (C1); elsewhere it is dropped
+  at its reset (Codex). Within a day it ranks first; beyond, nothing.
+- **Which step chose it.** `account.rotated` is written when a start ran somewhere other than where its scope begins:
+  `why` is the step that moved it (`kept`, `cooling`, `refused`, `signedOut`, or the goal's `fewest`, `lapsing`,
+  `leastRecent`), `scope` the workspace or null, `said` false. Under the goal every start whose walk had more than one
+  account opens naming its step, against where the scope begins or, where it ran there, against the next account (`list`
+  where nothing told them apart), adds the step among the rest where the first was passed for itself, and ends *No
+  account has said what it has left yet.* Under `order` a rotation alone speaks, in D125's words. A list of one, a pick
+  and a scope with no list say nothing.
+- **Keep**: driven work drops the kept account; under the goal a conversation takes it last, or first where it is the
+  default; under `order` in its place. A kept account that would leave driven work none is read as none.
+- **The wait asks** where the scope names accounts of its own: it adds the agent's other accounts, neither cooling nor
+  refused, and the `profile order` that adds the first; a driven start whose kept account is ready says it is kept. A
+  machine with no list keeps its sentence byte for byte.
+- **`profile use`** prints *next start*: the goal's steps, or the list's order under `order`, and the kept account driven
+  work passes. The CLI reads no session record, so it names the steps, not the account they would choose.
+
+**What the gates do not cover.** `AccountGoalTickTests` and the two updated `AccountRotationTickTests` are the `Process`
+half, written by this branch and not run by it. Near and pace, and `early` and `near`, choose nothing until TOOL6c. Not
+measured: whether a day is the right horizon, or whether spreading meets fewer limits (§16.8). `agent list` and the screen
+say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
+suites, the web's and the rehearsals were not run.
+
 ## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
 
 **Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
@@ -9188,48 +9231,6 @@ terminal's verbs are PAUSE1b's, and `driver list` names no resume door until one
 pause or an abandon would do with each piece (§2.1, §3.2); that is PAUSE1b's and PAUSE1d's, and `Took` and `BaseCommit`,
 which they need, are not on `SessionRecord` yet. How long a reading takes over a real workspace is not measured. The
 `Process` half, the rehearsals and the screen were not run by this branch.
-**Built 2026-10-02 (TOOL6b): the walk toward the goal** (the goal's points 1–4 and 6, and points 4 and 5; design §3.1, §3.3, §4.6,
-§7, §16.2–§16.4 and §16.6's `order`), held by `AccountRotationWalkTests` (the walk's tables per step, and ⌈K ÷ N⌉ for one
-account to six), `AccountRotationGoalTests` (through `SelectAsync`), `AccountWindowsTests` and, in the `Process` half,
-`AccountGoalTickTests`. As §16.6 says, a machine whose order was written before now follows the goal unless its scope
-says `order`, so *rotation never moves work off a ready account* (D125 §3.3) holds under `order` only. What building it
-settled:
-- **One scope for every start but a pick** (`ResolveScope`, D130 §3.1): a workspace naming a default and no list rotates
-  nowhere; a list begins at its default, else its first, never on the machine's default or the tool's own sign-in; a
-  default outside its list is read with the list winning, where D125 held the start on it.
-- **The count is Daoris's own records and its own choices.** Each look marks the last start chosen, reads this machine's
-  records (`Snapshot.Started`: adapter, account, opened, running) and hands them to the roster (`Look`), which keeps every
-  start chosen after the mark. A look begins only once the last look's starts opened their records, so none is counted
-  twice or lost. Choices and their counts are made one at a time, so starts begun together spread; one held after it was
-  chosen counts until the next look. The wiring panel asks the same walk and counts nothing. A door's sessions count
-  for its owner (AGT7).
-- **Least recently started**: never first, then by when the record opened, and a start chosen since the look is the most
-  recent of all, in the order chosen, whatever the clocks say.
-- **A weekly reset is told by a limit** whose window, or what was hit where it named none, is weekly, at a time the agent
-  named. `windows.json` keeps it (names, times, the session; what it has no field for kept). It is carried a week at a
-  time where the toolchain declares `WeekFixed` (Claude Code, and the stub mirroring it), declared beside `Limits` and not
-  in it, since that table grows only with recorded sentences and this is the maker's page (C1); elsewhere it is dropped
-  at its reset (Codex). Within a day it ranks first; beyond, nothing.
-- **Which step chose it.** `account.rotated` is written when a start ran somewhere other than where its scope begins:
-  `why` is the step that moved it (`kept`, `cooling`, `refused`, `signedOut`, or the goal's `fewest`, `lapsing`,
-  `leastRecent`), `scope` the workspace or null, `said` false. Under the goal every start whose walk had more than one
-  account opens naming its step, against where the scope begins or, where it ran there, against the next account (`list`
-  where nothing told them apart), adds the step among the rest where the first was passed for itself, and ends *No
-  account has said what it has left yet.* Under `order` a rotation alone speaks, in D125's words. A list of one, a pick
-  and a scope with no list say nothing.
-- **Keep**: driven work drops the kept account; under the goal a conversation takes it last, or first where it is the
-  default; under `order` in its place. A kept account that would leave driven work none is read as none.
-- **The wait asks** where the scope names accounts of its own: it adds the agent's other accounts, neither cooling nor
-  refused, and the `profile order` that adds the first; a driven start whose kept account is ready says it is kept. A
-  machine with no list keeps its sentence byte for byte.
-- **`profile use`** prints *next start*: the goal's steps, or the list's order under `order`, and the kept account driven
-  work passes. The CLI reads no session record, so it names the steps, not the account they would choose.
-
-**What the gates do not cover.** `AccountGoalTickTests` and the two updated `AccountRotationTickTests` are the `Process`
-half, written by this branch and not run by it. Near and pace, and `early` and `near`, choose nothing until TOOL6c. Not
-measured: whether a day is the right horizon, or whether spreading meets fewer limits (§16.8). `agent list` and the screen
-say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
-suites, the web's and the rehearsals were not run.
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
