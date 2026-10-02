@@ -21,6 +21,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// </summary>
     public string? Awaits { get; init; }
 
+    /// <summary>
+    /// The session whose connector published it (SESS1), as the machine that ran it spells it, or null: a person's publish,
+    /// or a chain's step. How a question a session asked joins that session's work (PAUSE1a, <see cref="AskWork"/>).
+    /// </summary>
+    public string? PublishedBy { get; init; }
+
     /// <summary>What its close said — a done's note or a decline's reason. The answer a waiting session resumes with.</summary>
     public string? Note { get; init; }
 

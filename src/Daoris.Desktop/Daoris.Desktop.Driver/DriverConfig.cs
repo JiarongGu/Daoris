@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Daoris.Driver;
@@ -104,6 +105,49 @@ public sealed record DriverConfig(
         var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
         next[key] = session.Trim();
         return this with { Released = next };
+    }
+
+    /// <summary>
+    /// The asks the person paused on this machine (PAUSE1a, D132 point 5, design §2.5), each with when and the stops its pause
+    /// made. Absent is none, written only when set. Nothing here acts on a pause: the planner's <c>Paused</c> verdict is
+    /// PAUSE1b's. The CLI's <c>driverconfig.ts</c> reads it the same way (<c>PausedWorkTests</c>, held row for row by its
+    /// <c>driverconfig.test.ts</c>), and keeps it as written.
+    /// </summary>
+    public IReadOnlyDictionary<string, WorkPause> PausedAsks { get; init; } =
+        new Dictionary<string, WorkPause>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The quests the person paused on this machine, on their own (design §2.5): read and written as <see cref="PausedAsks"/>.</summary>
+    public IReadOnlyDictionary<string, WorkPause> PausedQuests { get; init; } =
+        new Dictionary<string, WorkPause>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>This ask's pause, or null where it is not paused here: the id as a person writes it, matched in any case.</summary>
+    public WorkPause? PausedAsk(string ask) => PausedAsks.GetValueOrDefault(Id(ask));
+
+    /// <summary>This quest's own pause, or null: a quest in a paused ask's work is that ask's pause, not one of its own.</summary>
+    public WorkPause? PausedQuest(string quest) => PausedQuests.GetValueOrDefault(Id(quest));
+
+    /// <summary>Pause this ask, or with null resume it: one pause per ask, the later replacing the earlier under the spelling first written.</summary>
+    /// <exception cref="DriverException">A blank id: a pause names what it pauses.</exception>
+    public DriverConfig WithPausedAsk(string ask, WorkPause? pause) => this with { PausedAsks = WithPause(PausedAsks, ask, pause) };
+
+    /// <summary>Pause this quest on its own, or with null resume it.</summary>
+    /// <exception cref="DriverException">A blank id: a pause names what it pauses.</exception>
+    public DriverConfig WithPausedQuest(string quest, WorkPause? pause) => this with { PausedQuests = WithPause(PausedQuests, quest, pause) };
+
+    private static string Id(string id) => id.Trim().TrimStart('#').Trim();
+
+    private static IReadOnlyDictionary<string, WorkPause> WithPause(
+        IReadOnlyDictionary<string, WorkPause> map, string id, WorkPause? pause)
+    {
+        var named = Id(id ?? "");
+        if (named.Length == 0) throw new DriverException("a pause names the ask or the quest it pauses.");
+
+        var next = new Dictionary<string, WorkPause>(map, StringComparer.OrdinalIgnoreCase);
+        // The id's spelling first written, when it has one in another case: one entry, never two.
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
+        if (pause is null) next.Remove(key);
+        else next[key] = pause;
+        return next;
     }
 
     /// <summary>
@@ -340,6 +384,9 @@ public sealed record DriverConfig(
             writer.WriteEndObject();
             // Written only when set (SESSUX1b), as the CLI writes it: absent is no release.
             WriteMap(writer, "released", Released);
+            // Written only when set (PAUSE1a), as the CLI keeps them: absent is no pause.
+            WritePauses(writer, "pausedAsks", PausedAsks);
+            WritePauses(writer, "pausedQuests", PausedQuests);
             // Written only when set (WSR2): absent is the checkout's guess, and a file that never chose
             // a line should not start carrying an empty one.
             WriteMap(writer, "lines", Lines);
@@ -385,6 +432,60 @@ public sealed record DriverConfig(
         foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(key, value);
         writer.WriteEndObject();
     }
+
+    /// <summary>The design's shape (§2.5): each id an object, its time in UTC to the second where known, and its stops always, none as <c>{}</c>.</summary>
+    private static void WritePauses(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, WorkPause> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject(name);
+        foreach (var (id, pause) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(id);
+            if (pause.At is { } at) writer.WriteString("at", at.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture));
+            writer.WriteStartObject("stopped");
+            foreach (var (quest, session) in pause.Stopped.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(quest, session);
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The pauses (PAUSE1a): each id an object, read where first written in any case. Its <c>at</c> is read only as ISO 8601
+    /// writes a moment, and a time that does not read leaves the pause standing with its time unknown: the pause is the
+    /// person's, and the time only says when. Its <c>stopped</c> is read as <c>released</c> is.
+    /// </summary>
+    private static IReadOnlyDictionary<string, WorkPause> PauseMap(JsonElement root, string name)
+    {
+        var pauses = new Dictionary<string, WorkPause>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return pauses;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Value.ValueKind != JsonValueKind.Object || property.Name.Length == 0 || pauses.ContainsKey(property.Name)) continue;
+            pauses[property.Name] = new WorkPause(Moment(String(property.Value, "at")), SessionMap(property.Value, "stopped"));
+        }
+
+        return pauses;
+    }
+
+    /// <summary>
+    /// A moment as ISO 8601 writes it, and only so: to the second, with a fraction or not, in UTC or at an offset. The same
+    /// forms <see cref="AccountCooling"/> reads (TOOL4d), and the CLI's <c>cooling.ts</c> (<c>isoMoment</c>): a lenient parse
+    /// would read <i>Oct 2</i> as this year's.
+    /// </summary>
+    private static DateTimeOffset? Moment(string? text) =>
+        text is not null && DateTimeOffset.TryParseExact(
+            text, IsoMoments, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var moment)
+            ? moment
+            : null;
+
+    private static readonly string[] IsoMoments =
+    [
+        "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF'Z'", "yyyy-MM-dd'T'HH:mm:sszzz",
+        "yyyy-MM-dd'T'HH:mm:ss.FFFFFFFzzz",
+    ];
 
     private static void WriteFlags(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, bool> map)
     {
@@ -565,7 +666,9 @@ public sealed record DriverConfig(
             // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
-            Released = ReleasedMap(root),
+            Released = SessionMap(root, "released"),
+            PausedAsks = PauseMap(root, "pausedAsks"),
+            PausedQuests = PauseMap(root, "pausedQuests"),
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Landings = RuleMap(root, "landings"),
@@ -577,13 +680,14 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
-    /// The releases (SESSUX1b): each quest against a session's id, read without the spaces around it. A blank session, one
-    /// that is not text, a map that is not one, and a quest written again in another case are not read.
+    /// The releases (SESSUX1b), and a pause's stops (PAUSE1a): each quest against a session's id, read without the spaces
+    /// around it. A blank session, one that is not text, a map that is not one, and a quest written again in another case
+    /// are not read.
     /// </summary>
-    private static IReadOnlyDictionary<string, string> ReleasedMap(JsonElement root)
+    private static IReadOnlyDictionary<string, string> SessionMap(JsonElement container, string name)
     {
         var released = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        if (!root.TryGetProperty("released", out var element) || element.ValueKind != JsonValueKind.Object) return released;
+        if (!container.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return released;
 
         foreach (var property in element.EnumerateObject())
         {
@@ -673,3 +777,11 @@ public sealed record DriverConfig(
         return items;
     }
 }
+
+/// <summary>
+/// One pause of an ask's work or a quest's, as <c>driver.json</c> keeps it (PAUSE1a, design §2.5). Machine-local, like
+/// everything in that file: a pause is this machine's (D132 point 10).
+/// </summary>
+/// <param name="At">When the person paused it, or null where the file does not say in a form this reads.</param>
+/// <param name="Stopped">Each quest the pause stopped, against the session it stopped: what <i>Resume</i> writes into <see cref="DriverConfig.Released"/> (design §2.4).</param>
+public sealed record WorkPause(DateTimeOffset? At, IReadOnlyDictionary<string, string> Stopped);
