@@ -54,6 +54,7 @@
   "work.archive.wasNot": "It was not archived, so nothing changed.",
   "work.shown.parked": "parked",
   "work.shown.awaitingReply": "awaiting reply",
+  "work.shown.answered": "answered",
   "work.timeline.title": "Timeline",
   "work.timeline.hint": "what was observed — process lifetime, the quest's transitions, and what landed in git. Never a reading of the stream.",
   "work.timeline.opened": "session opened",

@@ -230,6 +230,12 @@ export type Session = {
   tree?: string | null;
   /** The ask an intake session answers (D65 §1b) — absent for every other session. */
   ask?: string | null;
+  /**
+   * The person's answer to a driven session that parked to ask them (STANDDOWN2). The service keeps the record parked
+   * with it until the driver's next look (ANSWER1b, D131), so a parked record that holds one goes on rather than waits
+   * (ANSWER1c). The person's own words, answered to this machine only: null over a keyed remote and on a teammate's.
+   */
+  answer?: string | null;
 };
 
 /**
@@ -417,8 +423,9 @@ export const api = {
   // Through the same helper as every write, so the service's refusal — a shared deployment is fed,
   // not scanned — reaches the person as the sentence, never as a bare status code.
   refresh: () => post<RefreshReport>('/api/refresh', {}),
-  // The person's answer to a driven session that parked to ask them (STANDDOWN2): the record ends with
-  // their words, and its quest is carried on in the same tree — `daoris-driver answer` is the twin.
+  // The person's answer to a driven session that parked to ask them (STANDDOWN2): the record stays parked
+  // with their words, and the same session goes on with them at the driver's next look (D131); where it
+  // cannot, a new session carries the quest on in the same tree — `daoris-driver answer` is the twin.
   answerSession: (id: string, answer: string | null) =>
     post<{ message: string }>(`/api/sessions/${encodeURIComponent(id)}/answer`, { answer }),
 };

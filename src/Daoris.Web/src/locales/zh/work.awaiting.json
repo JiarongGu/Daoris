@@ -7,7 +7,9 @@
   "work.awaiting.resolved": "会话 {{id}} 现在是{{state}}。",
   "work.awaiting.answer": "在下面的框里回答它，它就会继续——那是发消息，不在这三项之内。",
   "work.awaiting.carryOn": "回答并继续…",
-  "work.awaiting.answerPlaceholder": "你的回答——继续这个委托的会话会收到这些话",
+  "work.awaiting.answerPlaceholder": "你的回答——同一个会话会带着这些话继续",
   "work.awaiting.answerConfirm": "以此回答继续",
-  "work.awaiting.answered": "已回答——它的委托会在下一轮于同一工作树中继续。"
+  "work.awaiting.answered": "已回答——同一个会话会在驱动的下一轮带着你的话继续。",
+  "work.awaiting.yourAnswer": "你的回答",
+  "work.awaiting.goesOn": "同一个会话会在驱动的下一轮带着这个回答继续。"
 }

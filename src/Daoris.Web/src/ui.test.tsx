@@ -372,9 +372,9 @@ describe('the session tone map', () => {
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
-  // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), and the two words the
-  // session list's reader derives from the session's quest (D126 §2.2).
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply'];
+  // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
+  // session list's reader derives from the session's quest (D126 §2.2), and the park the person answered (ANSWER1c).
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -400,6 +400,9 @@ describe('the session tone map', () => {
     // Awaiting a reply, nothing runs and nothing waits on the person: quiet.
     expect(SESSION_TONE['awaiting-reply']).toBe('neutral');
     expect(SESSION_DOT['awaiting-reply']).toBe('idle');
+    // ANSWER1c: answered, it waits on the driver's next look, as a queued session does, and no longer on the person.
+    expect(SESSION_TONE.answered).toBe('neutral');
+    expect(SESSION_DOT.answered).toBe('idle');
   });
 
   /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown` (D126 §8). */
@@ -408,6 +411,7 @@ describe('the session tone map', () => {
     expect(shownKey('idle')).toBe('sessionState.idle');
     expect(shownKey('parked')).toBe('work.shown.parked');
     expect(shownKey('awaiting-reply')).toBe('work.shown.awaitingReply');
+    expect(shownKey('answered')).toBe('work.shown.answered');
     for (const state of SHOWN) {
       expect(i18n.exists(shownKey(state as ShownState), { lng: 'en' })).toBe(true);
       expect(i18n.exists(shownKey(state as ShownState), { lng: 'zh' })).toBe(true);
@@ -431,6 +435,19 @@ describe('the session tone map', () => {
     expect(shownState({ kind: 'driven', state: 'working' }, false)).toBe('working');
     expect(shownState({ kind: 'chat', state: 'awaiting-person' }, false)).toBe('awaiting-person');
     expect(shownState({ kind: 'chat', state: 'starting' }, false)).toBe('starting');
+  });
+
+  /**
+   * ANSWER1c (D131): a park the person answered stays parked until the driver's next look, with the answer set, and the
+   * same session goes on then. Its state still says it waits on the person; it shows as answered, so no surface asks
+   * the person again. An answer this machine was not told (a teammate's, or none) leaves it waiting.
+   */
+  it('shows a park the person answered as answered until the driver takes it up', () => {
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: 'Use the second.' }, undefined)).toBe('answered');
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: null }, undefined)).toBe('awaiting-person');
+    expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: '' }, undefined)).toBe('awaiting-person');
+    // Once the driver takes it up the record says so, and the answer it kept is no longer what the row says.
+    expect(shownState({ kind: 'driven', state: 'working', answer: 'Use the second.' }, undefined)).toBe('working');
   });
 
   /**

@@ -216,39 +216,55 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'idle': 'neutral',
   'parked': 'open',
   'awaiting-reply': 'neutral',
+  // Answered, it waits on the driver's next look, as a queued session does, and no longer on the person (ANSWER1c).
+  'answered': 'neutral',
 };
 
 /**
  * What the page shows a session as: the nine states the record carries; **idle** — a live chat
- * whose turn has ended, waiting for the person's next message (UX5 U17); and the two words the session
+ * whose turn has ended, waiting for the person's next message (UX5 U17); the two words the session
  * list's reader derives from the session's quest (D126 §2.2): **parked**, the last session here of a quest
  * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
- * question asked of another repository. Neither is a record state: no new session state (D126 §2).
+ * question asked of another repository; and **answered**, a park the person answered, which the same session
+ * goes on from at the driver's next look (ANSWER1c, D131). None is a record state: no new session state (D126 §2).
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply';
+export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered';
 
 /**
- * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's two
- * derived words in `work.shown` (D126 §8). One place, so a row, a strip mark and a page header say one word.
+ * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
+ * words in `work.shown` (D126 §8). One place, so a row, a strip mark and a page header say one word.
  */
 export function shownKey(shown: ShownState): string {
   if (shown === 'parked') return 'work.shown.parked';
   if (shown === 'awaiting-reply') return 'work.shown.awaitingReply';
+  if (shown === 'answered') return 'work.shown.answered';
   return `sessionState.${shown}`;
+}
+
+/**
+ * A park the person answered (ANSWER1c, D131): the service keeps the record `awaiting-person` with the answer set until
+ * the driver's next look takes it up (ANSWER1b), and the same session goes on then, so nothing about it waits on the
+ * person. The answer is answered to this machine only, so a teammate's park, or one read over a keyed remote, is never
+ * one: it stays as its record says.
+ */
+export function answeredPark(session: { state: SessionState; answer?: string | null }): boolean {
+  return session.state === 'awaiting-person' && Boolean(session.answer);
 }
 
 /**
  * A session as the page shows it (UX5 U17, decided by the reference console, which draws a running
  * turn as live and a session between turns with no live mark at all). A live chat is idle when the
  * driver says no turn is in flight, and working while one is; a turn the driver has not answered for
- * is the record's own word, never a guess. Driven work is one long turn, so it is never idle.
+ * is the record's own word, never a guess. Driven work is one long turn, so it is never idle. A park the
+ * person answered is **answered** (ANSWER1c), read from its own record, as the list's reader reads it.
  */
 export function shownState(
-  session: { kind?: 'driven' | 'chat'; state: SessionState }, taking: boolean | undefined,
+  session: { kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null }, taking: boolean | undefined,
 ): ShownState {
+  if (answeredPark(session)) return 'answered';
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
 }
 
@@ -287,6 +303,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   // A parked quest's last session waits on the person, whatever its record's ending (D126 §2.3).
   'parked': 'parked',
   'awaiting-reply': 'idle',
+  // Answered, nothing runs yet and nothing waits on the person: quiet until the driver's next look (ANSWER1c).
+  'answered': 'idle',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */

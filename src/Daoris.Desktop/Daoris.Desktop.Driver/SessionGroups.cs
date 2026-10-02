@@ -29,6 +29,18 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// <summary>When the record last moved: when a parked session began to wait, or when an ended one ended.</summary>
     public DateTimeOffset Updated { get; init; }
 
+    /// <summary>
+    /// The person's answer to a park (STANDDOWN2), or null. The service answers it to this machine only, so a teammate's
+    /// record carries none.
+    /// </summary>
+    public string? Answer { get; init; }
+
+    /// <summary>
+    /// A park the person answered (ANSWER1b keeps it parked with the answer set): the same session goes on at the driver's
+    /// next look (D131), so nothing about it waits on the person any more.
+    /// </summary>
+    public bool Answered => State == "awaiting-person" && Answer is not null;
+
     /// <summary>A record that came down from the team (SYNC4): its process is on another machine, and nothing here reaches it.</summary>
     public bool Teammate => Id.Contains('/');
 
@@ -67,6 +79,8 @@ public static class SessionRecords
                 Ask = Text(session, "ask"),
                 Created = Time(session, "created"),
                 Updated = Time(session, "updated"),
+                // The service keeps a blank answer as its own words, so an empty one is none.
+                Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
             });
         }
 
@@ -141,8 +155,9 @@ public static class SessionGroup
 }
 
 /// <summary>
-/// The words a row shows that are not a record state (D126 §2.2): each a fact about the session's quest, derived here and
-/// never written back to the record, so there is no new session state.
+/// The words a row shows that are not a record state (D126 §2.2): each a fact about the session's quest, or for an
+/// answered park about its record (ANSWER1c), derived here and never written back to the record, so there is no new
+/// session state.
 /// </summary>
 public static class ShownState
 {
@@ -151,6 +166,12 @@ public static class ShownState
 
     /// <summary>The last session here of a quest taken and waiting on a question asked of another repository (D79).</summary>
     public const string AwaitingReply = "awaiting-reply";
+
+    /// <summary>
+    /// A park the person answered, still parked until the driver's next look takes it up (ANSWER1c, D131): the one word
+    /// derived from the record rather than its quest, since its state still says it waits on the person.
+    /// </summary>
+    public const string Answered = "answered";
 }
 
 /// <summary>Where one session is listed, and what its row's second line says (D126 §2.2, §2.4).</summary>
@@ -429,6 +450,9 @@ public static class SessionGroups
 
             if (record.Live)
             {
+                // ANSWER1c (D131): an answered park goes on at the driver's next look, so it is working, never waiting on you.
+                if (record.Answered) return row with { Group = SessionGroup.Working, Shown = ShownState.Answered };
+
                 // A teammate's park waits on them: nothing this window sends reaches its process (D47 §6).
                 return row with { Group = record.State == "awaiting-person" && !record.Teammate ? SessionGroup.You : SessionGroup.Working };
             }

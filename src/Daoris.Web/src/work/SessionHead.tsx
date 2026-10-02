@@ -4,7 +4,10 @@ import type { SweepBranch } from '../settings/Sweep';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
 import { cn } from '../lib/cn';
-import { Button, MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownState, WaitingCard } from '../ui';
+import {
+  answeredPark, Button, MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+} from '../ui';
+import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
@@ -25,6 +28,10 @@ import { RunningIntake } from './RunningIntake';
  * this" since D46 and had never been rendered anywhere. It sits **above** the record, because it is
  * the reason the person is looking, and it carries the three moves — which is why `onResolve` is a
  * prop: the head knows nothing about the bridge, and the frame that does hands it down.
+ *
+ * **A park the person answered is `AnsweredPark`'s** (ANSWER1c): the record stays parked with the answer until the
+ * driver's next look, when the same session goes on, so the head shows the answer and says so, with no moves, wherever
+ * the frame could act.
  *
  * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
  * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
@@ -77,14 +84,17 @@ export function SessionHead({
    */
   onAnswerAsk?: (ask: string) => void;
   /**
-   * Answer a driven session that parked to ask the person (STANDDOWN2): its quest is carried on in the
-   * same tree, handed the words. Absent where nothing can reach this machine's host.
+   * Answer a driven session that parked to ask the person (STANDDOWN2): the same session goes on with the
+   * words at the driver's next look (D131). Absent where nothing can reach this machine's host.
    */
   onAnswerSession?: (answer: string | null) => void;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
   const parked = session.state === 'awaiting-person';
+  // ANSWER1c: answered, it goes on at the driver's next look, so nothing below asks the person again.
+  const answered = answeredPark(session);
+  const waiting = parked && !answered;
   const intake = isIntake(session);
   const shown = shownState(session, taking);
 
@@ -92,10 +102,11 @@ export function SessionHead({
     <header className="grid gap-2.5">
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
-      {parked && intake && (onResolve || onAnswerAsk) && (
+      {answered && <AnsweredPark answer={session.answer!} />}
+      {waiting && intake && (onResolve || onAnswerAsk) && (
         <AwaitingIntake ask={session.ask!} note={session.note} onAnswer={onAnswerAsk} />
       )}
-      {parked && !intake && (onResolve || onAnswerSession) && (
+      {waiting && !intake && (onResolve || onAnswerSession) && (
         // Keyed: a half-written decline reason belongs to the session it was written for, and it
         // carried into the next parked one, ready to decline it with somebody else's reason (REV3).
         <AwaitingPerson
@@ -109,7 +120,7 @@ export function SessionHead({
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
-      {parked && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && session.note && (
+      {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && session.note && (
         <WaitingCard title={t('work.head.waiting')}>
           <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{session.note}</p>
         </WaitingCard>
@@ -124,7 +135,7 @@ export function SessionHead({
         </h2>
         {!headed && (
           <span className="flex shrink-0 items-baseline gap-2">
-            <Pill tone={SESSION_TONE[shown]}>{t(`sessionState.${shown}`)}</Pill>
+            <Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>
             <span className="font-mono text-meta text-ink-faint">{session.id}</span>
           </span>
         )}

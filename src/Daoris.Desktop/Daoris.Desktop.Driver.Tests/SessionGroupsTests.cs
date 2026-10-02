@@ -22,7 +22,7 @@ public sealed class SessionGroupsTests
 
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
-        string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null) => new()
+        string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null) => new()
         {
             ["id"] = id,
             ["repository"] = repository,
@@ -35,6 +35,7 @@ public sealed class SessionGroupsTests
             ["created"] = T0.AddMinutes(at).ToString("O"),
             ["updated"] = T0.AddMinutes(updated ?? at + 1).ToString("O"),
             ["interrupted"] = interrupted,
+            ["answer"] = answer,
         };
 
     private static QuestView Quest(string id, string status, string to = "engine", string? awaits = null) =>
@@ -80,6 +81,19 @@ public sealed class SessionGroupsTests
         // Waiting on you: only the person's press moves it.
         ["a parked session waits on you"] =
             new(Look([Record("s1", "awaiting-person", "q1", Tree)], [Taken]), "s1", SessionGroup.You, "awaiting-person"),
+        // ANSWER1c (D131): the person answered, and the same session goes on at the driver's next look, so nothing waits
+        // on them. Until that look its record is still parked, with the answer set.
+        ["an answered park goes on: working, and shown answered"] =
+            new(Look([Record("s1", "awaiting-person", "q1", Tree, answer: "The second; apply it to dev.")], [Taken]),
+                "s1", SessionGroup.Working, ShownState.Answered),
+        ["an archived answered park stays working while it goes on"] =
+            new(Look([Record("s1", "awaiting-person", "q1", Tree, answer: "carry on.")], [Taken], archived: ["s1"]),
+                "s1", SessionGroup.Working, ShownState.Answered)
+            {
+                Also = row => Assert.True(row.Archived),
+            },
+        ["a park with an empty answer still waits on you"] =
+            new(Look([Record("s1", "awaiting-person", "q1", Tree, answer: "")], [Taken]), "s1", SessionGroup.You, "awaiting-person"),
         ["an intake that asked waits on you"] =
             new(Look([Record("s1", "awaiting-person", repository: "ask #a1", kind: "chat", ask: "a1")]), "s1", SessionGroup.You, "awaiting-person"),
         ["the last session of a quest parked on its failed sessions is parked"] =
@@ -398,6 +412,30 @@ public sealed class SessionGroupsTests
         // Two of this machine's failures; a stand-down is not a run, and a teammate's failure is theirs.
         Assert.Equal(2, look.Strikes["q1"]);
         Assert.Equal("s3", look.LastRun["q1"].Session);
+    }
+
+    /// <summary>
+    /// ANSWER1c: the person's answer to a park, as the service answers it to this machine (ANSWER1b keeps the record
+    /// parked with it). None, an empty one, or one that is not text is no answer.
+    /// </summary>
+    [Fact]
+    public void A_parks_answer_is_read_as_the_service_answers_it()
+    {
+        var json = new JsonArray(
+            Record("s1", "awaiting-person", "q1", answer: "Use the second."),
+            Record("s2", "awaiting-person", "q2"),
+            Record("s3", "awaiting-person", "q3", answer: ""),
+            new JsonObject { ["id"] = "s4", ["state"] = "awaiting-person", ["answer"] = 7 }).ToJsonString();
+
+        var records = SessionRecords.Parse(json);
+
+        Assert.Equal("Use the second.", records[0].Answer);
+        Assert.True(records[0].Answered);
+        Assert.All(records.Skip(1), record =>
+        {
+            Assert.Null(record.Answer);
+            Assert.False(record.Answered);
+        });
     }
 
     /// <summary>
