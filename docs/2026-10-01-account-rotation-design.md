@@ -7,9 +7,13 @@
 > now holds five observations (§0.2), and they answer all three. This is the contract for the TOOL4 rows, and its
 > decision is **D125**. Status: **designed; TOOL4a, TOOL4c, TOOL4d, TOOL4e, TOOL4f and TOOL4j built** (notes under
 > D125; TOOL4d's says why the native door's failure is not yet handed over; TOOL4e's, that the terminal spells the
-> tool's own sign-in `--own`, and that the screen's *Remove* is still to take an account out of its orders; TOOL4f's,
+> tool's own sign-in , and that the screen's *Remove* is still to take an account out of its orders; TOOL4f's,
 > how a wait over an order holds on the first reset; TOOL4j's, that the protocol stub is a door onto the stub's
-> accounts). It replaces the
+> accounts; and a fix of §2.1, that a time of day gets no grace). **D130** (,
+> TOOL6) amends §3.1, §3.3, §3.4, §5.1, §6 and §9: a start reads one scope, a workspace's list is the whole set of
+> accounts that may run it, for any number of accounts, and a list may start on the account with the most left or the
+> soonest reset, run its sessions in parallel, keep an account for conversations, and switch before a limit, each on the
+> agent's own word. It replaces the
 > toolchain design's §2 part 4 and §6 (`docs/2026-09-22-toolchain-design.md`, noted at its head). Read with
 > **D49 §4**, **D57**, **D58**, **D66 §3**, **D67 §1**, **D73**, **D76**, **D80**, **D94**, **D104**, **D110** and
 > **D116**.
@@ -257,6 +261,10 @@ The person's list of the accounts rotation may use, per agent (the account's own
 - An order naming an account that does not exist, or one account twice, is refused by both doors, as `profile default`
   refuses a name that does not exist.
 
+*Amended by D130 (account-use design §3.1): a start reads one scope, and the scope's list is the whole set of accounts
+its starts may run on. A workspace that names a default and no list rotates nowhere, rather than taking the machine's
+list; a scope with a list begins at its default, or else its first; a default outside its scope's list is refused.*
+
 ### 3.2 When
 
 **Only at a start**: a driven start, a carry-on (D80), a resume (D79), an intake, a new conversation, Ask Daoris's
@@ -285,6 +293,11 @@ The account the resolution names (pick, workspace, machine, none) runs if it is 
 - **A new conversation rotates like a start**, since it holds no context yet, and its first line says which account it
   opened on and why (*opened on account-2: account-1 is cooling until 07:52*).
 
+*Amended by D130 (account-use design §4.1, §6): the walk is one pipeline. It skips the account kept for conversations
+on a driven start, orders by the scope's start on (list order, as here, most left first or soonest reset first) and
+sessions at once (one by one, as here, or in parallel), keeps a quest on its account outside list order one by one,
+and, with switching before the limit on, moves an account its agent said is near its limit to the end.*
+
 ### 3.4 What never rotates
 
 - **A running session or conversation** (§3.2).
@@ -296,6 +309,9 @@ The account the resolution names (pick, workspace, machine, none) runs if it is 
 
 *A session holding a person's sign-in context*, which the ask names, is read here as the last three: a conversation
 the person is in, an account they chose for it, and the tool's own home.
+
+*Amended by D130 (account-use design §3.1): the tool's own home runs only where no default and no list name an
+account; a scope with a list begins within it.*
 
 ### 3.5 Carrying a stopped session on to the next account
 
@@ -405,6 +421,9 @@ spent **less** than today: today the carry-on starts the spent account again unt
 Observation 2's two refusals named the same reset, and observation 4's carry-ons started twice into it and parked the
 quest within seconds.
 
+*Amended by D130 (account-use design §4.2): spreading is a person's choice (in parallel), never the default, and it
+spreads only the sessions running at once, which one limit cuts off together.*
+
 ### 5.2 A limit is not a strike
 
 A `failed` record that says `limit` (a field on the record, beside D104's `interrupted`, naming no account) is **not a
@@ -453,6 +472,9 @@ never the agent's sentence (D94 §5). Null is the tool's own home.
   may spend, and *Try now* spends sooner, so each is a card the person applies (D89).
 - The new names (*Rotation*, *Rotate*, *Cooling until*, *Try now*) are designed in both languages and entered in the
   glossary, which the names check holds (D116).
+
+*Amended by D130 (account-use design §9): the switch named Rotate becomes Use, since it now says the account may run
+that scope's work; a workspace shows This machine's accounts or Its own accounts; and the `use` door joins these.*
 
 ## 7. The build
 
@@ -507,7 +529,8 @@ records and the log naming both accounts, the attention said once, the order's t
   wrong for both.
 - **Exponential backoff.** D58's reason, and here the reset is stated.
 - **Spreading work across accounts** to share a load: it spends windows the work did not need, and makes a quest's
-  sessions harder to read.
+  sessions harder to read. *Amended by D130: as the default, still; as a person's choice, in parallel spreads only the
+  sessions running at once, and a quest keeps its account.*
 - **Rotating inside a running session.** The account is set at spawn, and the harness's conversation is not Daoris's.
 - **Copying the harness's conversation into the next account's home** to carry the context: a read inside an account's
   directory (D49 §4, D66 §3).
