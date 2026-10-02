@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { elapsed } from '../format';
-import { Button, Dot, Icon, SESSION_ACTIVE, SESSION_DOT, shownState } from '../ui';
+import { Button, Dot, Icon, SESSION_ACTIVE, SESSION_DOT, shownKey, shownState } from '../ui';
 import { sessionOrigin, sessionTitle } from './identity';
 
 /**
@@ -47,7 +47,7 @@ export function StreamTile({ session, quest, opening, taking, onDetach, children
     // Without it the section sizes to its content and a console region reads as a text field.
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
       <header className="flex shrink-0 items-baseline gap-2 border-b border-line px-3 py-1.5">
-        <Dot tone={SESSION_DOT[shownState(session, taking)]} label={t(`sessionState.${shownState(session, taking)}`)} />
+        <Dot tone={SESSION_DOT[shownState(session, taking)]} label={t(shownKey(shownState(session, taking)))} />
         <span title={sessionTitle(session, quest, opening)} className="truncate text-body">
           {sessionTitle(session, quest, opening)}
         </span>

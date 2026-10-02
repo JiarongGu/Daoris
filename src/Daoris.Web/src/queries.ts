@@ -321,8 +321,9 @@ export const useRespondQuest = () => {
 };
 
 /**
- * Answer a driven session that parked to ask the person (STANDDOWN2): its record ends with their
- * words and the quest it holds is carried on in the same tree at the driver's next tick.
+ * Answer a driven session that parked to ask the person (STANDDOWN2): its record stays parked with
+ * their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131). The
+ * sessions are read again, so the page shows it going on (ANSWER1c) rather than still waiting.
  */
 export const useAnswerSession = () => {
   const invalidate = useInvalidateQuestWork();

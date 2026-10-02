@@ -179,6 +179,28 @@ describe('the attended session\'s head', () => {
   });
 
   /**
+   * ANSWER1c (D131): answered, the park stays parked until the driver's next look, and the same session goes on then.
+   * The head shows the answer and says so, offers none of the moves a park waiting on the person has, and its state
+   * reads answered, wherever the frame could act.
+   */
+  it('shows a park the person answered as going on, with the answer and no moves', () => {
+    render(
+      <SessionHead
+        session={session({ state: 'awaiting-person', note: 'Two ways forward.\n\nAnswered: The second.', answer: 'The second.' })}
+        onResolve={vi.fn()}
+        onAnswerSession={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Your answer' })).toBeInTheDocument();
+    expect(screen.getByText('The second.')).toBeInTheDocument();
+    expect(screen.getByText("The same session goes on with this answer at the driver's next look.")).toBeInTheDocument();
+    expect(screen.queryByText('This one is waiting on you')).toBeNull();
+    for (const name of ['Finish', 'Decline…', 'Answer and carry on…']) expect(screen.queryByRole('button', { name })).toBeNull();
+    expect(screen.getByText('answered')).toBeInTheDocument();
+  });
+
+  /**
    * SESS2 H5, H6 (reversing the rule that it left the note to the timeline, which since FRAME6 is in
    * the side bar and starts closed): an ended session says how it stands in the record's own words —
    * why a failed one failed — and a long note shows three lines with the rest a press away. A running

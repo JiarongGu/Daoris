@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
-import { Button, EmptyState } from '../ui';
+import { answeredPark, Button, EmptyState } from '../ui';
 import { store, stored } from '../lib/stored';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
@@ -36,10 +36,11 @@ import { SessionTimeline } from './SessionTimeline';
  * Whether a session's current note is already shown in its head — the parked card, with its moves —
  * so the timeline leaves it out rather than saying it twice. ONE rule for the column and the dock
  * (REV3): the dock hid every parked note, while the head shows one only where it can be answered
- * here, so another machine's parked note was shown nowhere on a wide window.
+ * here, so another machine's parked note was shown nowhere on a wide window. A park the person answered shows its
+ * answer in the head and not its note (ANSWER1c), so its note stays the timeline's.
  */
 export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
-  session.state === 'awaiting-person' && answerableHere;
+  session.state === 'awaiting-person' && !answeredPark(session) && answerableHere;
 
 /** Whether the chain is shown whole above a session (SESS2 H7) — this viewer's. */
 const CHAIN_WHOLE = 'daoris.chainWhole';

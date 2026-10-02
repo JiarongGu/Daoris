@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { AnsweredPark } from './AnsweredPark';
 import { type Attention, AttentionRow } from './AttentionRow';
 import { AwaitingIntake } from './AwaitingIntake';
 import { RunningIntake } from './RunningIntake';
@@ -160,6 +161,21 @@ export const Resolving: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
       <AwaitingPerson note={ANALYSIS} pending onResolve={() => {}} />
+    </div>
+  ),
+};
+
+/**
+ * ANSWER1c (D131): the park answered, for up to one look of the driver's. The record is still parked with the answer
+ * set, and the same session goes on with it then: the card shows what the person said and says so, asking nothing.
+ * A blank answer is the service's own *carry on.*, and a 中文 one is content, never translated.
+ */
+export const Answered: StoryObj = {
+  render: () => (
+    <div className="grid max-w-3xl gap-3">
+      <AnsweredPark answer={'The second: cap it on the chunk API.\n\nApply it to dev first, and leave the scheduler alone.'} />
+      <AnsweredPark answer="carry on." />
+      <AnsweredPark answer="用第二种：在区块 API 上限制，先应用到 dev。" />
     </div>
   ),
 };

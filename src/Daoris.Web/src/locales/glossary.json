@@ -80,7 +80,7 @@
         "setup.step.agent.title", "setup.step.driven.title", "setup.step.helper.title",
         "setup.step.landing.title", "setup.step.repositories.title", "setup.step.rules.title", "signin.output",
         "signin.title", "signin.titleNew", "usage.title", "wiring.title", "work.attention.title",
-        "work.group.archived", "work.group.ended", "work.group.later", "work.group.review", "work.group.working",
+        "work.awaiting.yourAnswer", "work.group.archived", "work.group.ended", "work.group.later", "work.group.review", "work.group.working",
         "work.group.you", "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.list.groupBy",
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",

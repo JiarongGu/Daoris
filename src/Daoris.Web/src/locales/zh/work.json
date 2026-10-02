@@ -54,6 +54,7 @@
   "work.archive.wasNot": "它本来就没有归档，所以没有变化。",
   "work.shown.parked": "已挂起",
   "work.shown.awaitingReply": "等回复",
+  "work.shown.answered": "已回答",
   "work.timeline.title": "时间线",
   "work.timeline.hint": "被观察到的事实——进程存续、委托的状态变动，以及落进 git 的提交。绝不来自对输出流的解读。",
   "work.timeline.opened": "会话开启",
