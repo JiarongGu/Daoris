@@ -8235,6 +8235,39 @@ manage with. What ended had nowhere to go but further down.
 - **The grouping as a helper on the page.** It needs the planner's verdict and a git judgement, which only the driver
   has, and a terminal twin would make it a twin of an eleven-case rule.
 
+**Built 2026-10-02 (TOOL4e): the twins and the terminal** (points 2, 4 and 8; design §2.2, §2.4, §3.1, §3.7, §6), held
+by `RotationTwinTests`, `CoolingTwinTests` and `CoolOffTests` on the driver's side and, cell for cell, by the CLI's
+`rotation.test.ts`, `cooling.test.ts` and `driverconfig.test.ts`. What building it settled:
+- **Each writer of `harnesses.json` keeps the other's sections, and both write the same bytes** for the same wiring.
+  `HarnessSettings.Save` writes `rotation` and `workspaceRotation` (only where an order is set), and now keeps what it
+  has no field for (`Kept`, first, as the CLI's `rest`): a section a newer build writes outlives this build's save.
+  Holding the bytes found that the driver's save wrote CRLF on Windows (the JSON writer's line end is the platform's);
+  it writes LF now, and so does `cooling.json`'s writer. Byte for byte holds for names in ASCII; a key neither knows
+  holding other characters is the same JSON, escaped differently.
+- **The order is read leniently and refused strictly.** Reading trims each name, skips a blank or a name that is not
+  text, and reads a name written twice, in any case, once; a door refuses a name that is no account here, compared
+  exactly as `profile default` compares one, or one named twice in any case, the first problem said
+  (`HarnessSettings.OrderProblem`, `RotationProblem.Sentence` for the screen's route). Clearing is naming nobody.
+- **An account removed leaves no order and no cool-off naming it.** `WithoutAccount` takes it out of every default and
+  order, and `RemoveProfile` ends its cool-off, since the next account made takes the first free `account-N`, which may
+  be its name. The terminal's `profile remove` does both. The screen's *Remove* still clears only defaults: the modules'
+  `ProfileRemove` should call `WithoutAccount` (TOOL4g, or a modules row).
+- **The terminal's spelling of the tool's own sign-in is `--own`**: `daoris agent profile ready <agent> <profile>|--own`.
+  `ready` on an account not cooling says so, names what is, and writes nothing. A sign-in (`login`, `login --new`) or a
+  key (`agent key`) made from the terminal ends that account's cool-off, as `LoginAsync` and `HarnessKeys.Add` do.
+- **`cooloff` is read as a whole number of at least 1**, anything else the hour; `HarnessRoster.Limited` takes it, from a
+  driven session or an intake (`Driver.AccountLimited`) and a conversation (`ChatRunner`), and
+  `AccountLimits.DefaultCoolOff` stays the default. `daoris driver cooloff <minutes>` refuses less than 1.
+- **`daoris agent list`** says each account's cool-off under it (until when in the machine's zone, how long, why, and the
+  `ready` that ends it), the tool's own sign-in's under the agent, the order, and §3.7's line where a start would run on
+  the person's own sign-in: an agent that is here, signs in by its own flow and names no machine default.
+- **The room names the three terminal doors** (`HelpRoomDoors`, *no screen yet*), and `HelpCoverageTests` holds
+  `driver cooloff` as a door Ask Daoris owes until TOOL4g builds the `setting` kind's `cooloff`.
+
+**What the gates do not cover.** Nothing reads an order to choose an account yet (TOOL4f). `login --profile`'s end of a
+cool-off is reached only by a real login, and a conversation's `cooloff` only through a real protocol chat; both are one
+line each, beside tested ones. The `Process` half, the rehearsals and the screen were not run by this branch, and the
+screen, Ask Daoris's doors and the room's cooling facts are TOOL4g's.
 **As built (SESSUX1a, 2026-10-02): the reader of a session's group, and the archive marks.** `SessionGroups.Read`
 (`SessionGroups.cs`) is pure over a `SessionLook`: the records, every quest, the planner's verdicts, each quest's last
 session here and its strikes as `ServiceClient`'s own readers derive them, the trees' judgement and the marks.

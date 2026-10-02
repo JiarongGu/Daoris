@@ -9488,3 +9488,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > artefact; move it under D120.
 
 **Outcome** The family rehearsal checks a repository registers from its line with no `connect` (phase 17c), and sets a workspace up one at a time (phase 17d). Detail: the WSSETUP5a and WSSETUP6a notes under D124, commits `fb7609f`, `01c8be8`.
+
+
+## SESSOPT1 — the session-economy design (2026-10-02 → D127)
+
+> - [ ] **SESSOPT1 — the design** (D127): what a session reads and writes, as doctrine.
+
+**Outcome** Designed: a session pays for what it reads, so rows and entries point to their detail; measured, canon text drafted (+458 region bytes), a shape report, the build SESSOPT1a–e. Detail: `docs/2026-10-02-session-economy-design.md`, D127.
+
+
+## TOOL4e — the twins and the terminal (2026-10-02)
+
+> - [ ] **TOOL4e — the twins and the terminal** (cli, driver; §3.1, §6; after TOOL4d): `rotation` and `workspaceRotation` in
+> `harnesses.json` on both twins (🔴 `HarnessSettings.Save` must write them, or a screen edit deletes the order);
+> `daoris agent profile order|ready`; cool-offs in `daoris agent list`; `cooloff` in `driver.json`.
+
+**Outcome** Both twins read, resolve and write the account order (`rotation`, `workspaceRotation`); `daoris agent profile order|ready` and `daoris driver cooloff` are the terminal's doors; the driver's writers now write LF. Detail: the TOOL4e note under D125, commit `0a861ef`.
+
+
+## SESSUX1a — the reader of a session's group, and the archive marks (2026-10-02)
+
+> - [ ] **SESSUX1a — the reader of a session's group, and the archive marks** (§2.4, §5.2; driver, modules, web-shell for
+> the refusals' catalogues): `SessionGroups.Read`, `SessionArchive`, `SESSION_GROUPS`, `SESSION_ARCHIVE`.
+
+**Outcome** One reader (`SessionGroups.Read`) decides each session's group, `SessionArchive` keeps the machine-local marks, and `SESSION_GROUPS`/`SESSION_ARCHIVE` answer the page. Detail: D126's SESSUX1a note, commits `9755355`, `2a2808f`.

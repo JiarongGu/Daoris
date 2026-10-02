@@ -62,6 +62,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
         ("start a quest its failed sessions parked again", "Quests → the quest's drawer → Try again", "`daoris driver retry <quest>`"),
         ("bound how long one session runs", "(no screen yet)", "`daoris driver timeout <minutes>`"),
+        // TOOL4e: the terminal's door onto the default cool-off; Settings → Driver's control and Ask Daoris's are TOOL4g's.
+        ("set how long an account cools when its agent hits a limit and names no time", "(no screen yet)",
+            "`daoris driver cooloff <minutes>`"),
         ("bound how many sessions run at once", "(no screen yet)", "`daoris driver cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         ("allow, ask or deny what an agent may do", "Settings → Permissions", "`daoris agent rules …`"),
@@ -77,6 +80,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Settings → Agents → Make default, use for a workspace",
             "`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: "
             + "the tool's own home, or for a workspace the machine's default)"),
+        // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; the screen's and Ask Daoris's are TOOL4g's.
+        ("choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never "
+            + "rotates)", "(no screen yet)",
+            "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
+        ("end an account's cool-off now, after its agent hit a limit", "(no screen yet)",
+            "`daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in)"),
         // HELP6: the doors built since, which the helper now proposes too.
         ("update an agent, or pin it to one version", "Settings → Agents → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),

@@ -35,7 +35,8 @@ public sealed record CoolingEntry(
 ///
 /// <para><b>Missing or unreadable is no account cooling</b> (D21's reading): an observation lost costs at most one start.
 /// An entry whose <c>until</c> has passed is ready, and the next write drops it. A writer keeps what it has no field for,
-/// since the CLI reads and ends entries too (TOOL4e, the twin). No HTTP route reaches it (D47 §4).</para>
+/// since the CLI reads and ends entries too: its <c>cooling.ts</c> is the twin of <see cref="Read"/>, <see cref="Of"/> and
+/// <see cref="End"/>, and <c>CoolingTwinTests</c> holds the tables both keep (TOOL4e). No HTTP route reaches it (D47 §4).</para>
 ///
 /// <para>The file's shape, each field written only where it says something:
 /// <c>{ "&lt;agent&gt;": { "&lt;profile or empty&gt;": { "until": "…Z", "stated": true, "window": "weekly",
@@ -47,6 +48,8 @@ public static class AccountCooling
 
     // One writer at a time in this process: the conclusions of sessions side by side, and a screen's early end.
     private static readonly object Gate = new();
+
+    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
 
     /// <summary>Where the file is: beside <c>harnesses.json</c> and the accounts, under the home.</summary>
     public static string PathOf(string home) => Path.Combine(home, FileName);
@@ -175,7 +178,8 @@ public static class AccountCooling
             }
 
             Directory.CreateDirectory(home);
-            AtomicFile.WriteText(PathOf(home), root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n");
+            // LF on every platform, as the CLI's `endCooling` writes the file (TOOL4e).
+            AtomicFile.WriteText(PathOf(home), root.ToJsonString(Indented) + "\n");
         }
     }
 

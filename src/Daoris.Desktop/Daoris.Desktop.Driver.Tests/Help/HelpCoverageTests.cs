@@ -73,15 +73,6 @@ public sealed partial class HelpCoverageTests
         + "line (D124 §4.5).");
 
     /// <summary>
-    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), a bridge hook no Settings domain presses and no screen yet: a door
-    /// Ask Daoris owes, until SESSUX1h builds the <c>session</c> kind's <c>archive</c> and <c>unarchive</c> doors.
-    /// </summary>
-    private static readonly Owed SessionArchiveDoor = new(
-        "archiving takes ended sessions out of this machine's list and unarchiving brings them back, a tidy that undoes "
-        + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
-        + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
-
-    /// <summary>
     /// WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5), a verb of the headless host: the press, and its pause,
     /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
     /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
@@ -91,6 +82,15 @@ public sealed partial class HelpCoverageTests
         + "workspace's scope, a widening the person applies as a card, and pausing, resuming or stopping it changes only what "
         + "the person already said, so Ask Daoris should propose each; that waits on WSSETUP7's `workspace`, `pause`, `resume` "
         + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
+
+    /// <summary>
+    /// SESSUX1a's <c>useArchiveSessions</c> (D126 §7.3), a bridge hook no Settings domain presses and no screen yet: a door
+    /// Ask Daoris owes, until SESSUX1h builds the <c>session</c> kind's <c>archive</c> and <c>unarchive</c> doors.
+    /// </summary>
+    private static readonly Owed SessionArchiveDoor = new(
+        "archiving takes ended sessions out of this machine's list and unarchiving brings them back, a tidy that undoes "
+        + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
+        + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
 
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
@@ -111,6 +111,11 @@ public sealed partial class HelpCoverageTests
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
         ("timeout", new Door("setting", "timeout")),
+        // TOOL4e: the default cool-off's terminal door (D125 §6), owed to Ask Daoris until TOOL4g builds its door.
+        ("cooloff", new Owed(
+            "the cool-off a limit naming no time takes is a setting that undoes itself, so Ask Daoris should propose it; that "
+            + "is the `setting` kind's `cooloff` door, which TOOL4g builds with Settings → Driver's control (D125 §6), and "
+            + "until then `daoris driver cooloff` is the terminal's door.")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
     ];
@@ -303,8 +308,8 @@ public sealed partial class HelpCoverageTests
             .Append(Share)
             .Append(SetupDoor)
             .Append(RegisterDoor)
-            .Append(SessionArchiveDoor)
             .Append(WorkspaceDoor)
+            .Append(SessionArchiveDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -353,21 +358,6 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// SESSUX1a: the archive's bridge hook changes something and no screen presses it yet, so it is a door owed to
-    /// SESSUX1h's <c>session</c> kind (D126 §7.3) while no kind of that name is built. When the kind lands, this owed door
-    /// becomes its door, and Sessions' acts are read as Settings' domains are.
-    /// </summary>
-    [Fact]
-    public void The_session_archive_is_a_door_owed_to_the_session_kind()
-    {
-        var hooks = BridgeHooks();
-
-        Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
-        Assert.Null(HelpProposalKinds.Find("session"));
-        Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
-    }
-
-    /// <summary>
     /// WSSETUP6: the headless host's <c>setup --workspace</c>, its press and its pause, resume and stop, are doors owed to the
     /// <c>setup</c> kind (D124 §4.5) while the host's usage spells them and no kind of that name is built; the room names both
     /// forms meanwhile, so the helper can point the person at them. The screen's route is WSSETUP7's too.
@@ -381,6 +371,21 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup --workspace <name> [--plan]", StringComparison.Ordinal)
             && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1a: the archive's bridge hook changes something and no screen presses it yet, so it is a door owed to
+    /// SESSUX1h's <c>session</c> kind (D126 §7.3) while no kind of that name is built. When the kind lands, this owed door
+    /// becomes its door, and Sessions' acts are read as Settings' domains are.
+    /// </summary>
+    [Fact]
+    public void The_session_archive_is_a_door_owed_to_the_session_kind()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
+        Assert.Null(HelpProposalKinds.Find("session"));
+        Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
     }
 
     /// <summary>

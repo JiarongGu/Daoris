@@ -49,6 +49,11 @@ export interface DriverChoices {
   helperAdapter: string | null;
   /** How long a session may run before the driver kills it — null is the driver's own default. */
   timeoutMinutes: number | null;
+  /**
+   * How long an account cools, in minutes, when its agent's limit names no time this reads (TOOL4e, D125 §2.2) — null is
+   * the default hour. The driver's `DriverConfig.CoolOffMinutes` is the twin, read by the same table.
+   */
+  cooloff: number | null;
   /** The line each repository's work grows from and lands on, as the person set it (WSR2). */
   lines: Record<string, string>;
   /** A workspace's line, for every repository in it that sets none of its own. */
@@ -72,10 +77,16 @@ export interface DriverChoices {
 /** The driver's own default for `timeoutMinutes` (`DriverConfig.Empty`) — the twin says 30 too. */
 export const DEFAULT_TIMEOUT_MINUTES = 30;
 
+/**
+ * How long an account cools when its agent's limit names no time (TOOL4e, D125 §2.2), when `cooloff` sets none — a
+ * deliberate copy of the driver's `AccountLimits.DefaultCoolOff`, which `CoolOffTests` holds beside this one's table.
+ */
+export const DEFAULT_COOLOFF_MINUTES = 60;
+
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {},
+  strikes: 3, forgiven: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
 };
 
@@ -221,7 +232,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   }
 
   const {
-    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, helperAdapter, timeoutMinutes,
+    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, helperAdapter, timeoutMinutes, cooloff,
     lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, ...rest
   } = parsed;
   return {
@@ -250,6 +261,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // listing never names a number the driver would not use.
     timeoutMinutes: typeof timeoutMinutes === 'number' && Number.isInteger(timeoutMinutes)
       ? Math.max(1, timeoutMinutes) : null,
+    // A whole number of at least one, within what the driver reads as a number, or the default (TOOL4e): never a spin.
+    cooloff: typeof cooloff === 'number' && Number.isInteger(cooloff) && cooloff >= 1 && cooloff <= 2_147_483_647
+      ? cooloff : null,
     // An entry git would refuse is not read, as the driver does not read it: a line the driver would
     // ignore must not be listed as if it held.
     lines: branchMap(lines),
@@ -283,6 +297,8 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set: absent is the driver's own default, and an edit elsewhere must not
     // pin today's default into a file that never chose it.
     ...(choices.timeoutMinutes !== null ? { timeoutMinutes: choices.timeoutMinutes } : {}),
+    // Written only when set (TOOL4e), as the driver writes it: absent is the default hour.
+    ...(choices.cooloff !== null ? { cooloff: choices.cooloff } : {}),
     // Written only when set (WSR2): absent is the checkout's guess, and the driver writes them the same way.
     ...(Object.keys(choices.lines).length > 0 ? { lines: choices.lines } : {}),
     ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: choices.workspaceLines } : {}),
@@ -449,6 +465,23 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       write('  One that runs out is recorded as failed, and its quest is carried on in the same tree at a');
       write('  later tick, until the strikes park it.');
       write(`  Written to ${path} — the driver re-reads it every tick; a session already running keeps its own.`);
+      return 0;
+    }
+
+    // How long an account cools when its agent hits a limit and names no time this reads (TOOL4e, D125 §2.2). A time the
+    // agent names is read, whatever this says; this is the guess for a sentence that names none.
+    case 'cooloff': {
+      const value = Number(named(argv, 'cooloff'));
+      if (!Number.isInteger(value) || value < 1 || value > 2_147_483_647) {
+        throw new DaorisError(
+          '`driver cooloff` needs a whole number of minutes, at least 1 — e.g. `daoris driver cooloff 60`; a zero '
+          + 'cool-off would start a spent account again at every look.');
+      }
+
+      writeDriverChoices(path, { ...choices, cooloff: value });
+      write(`daoris: an account whose agent names no time for its limit cools for ${value} minutes on this machine.`);
+      write('  When the agent names when its limit resets, that time is the cool-off, whatever this says.');
+      write(`  Written to ${path} — read at the next limit, so nothing restarts.`);
       return 0;
     }
 
@@ -702,7 +735,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, notify, `
-        + 'strikes, retry, timeout, cap, adapter, intake, helper');
+        + 'strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -719,6 +752,10 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     write(choices.timeoutMinutes === null
       ? `  timeout    ${DEFAULT_TIMEOUT_MINUTES} minutes a session may run  (the default — \`daoris driver timeout <minutes>\` changes it)`
       : `  timeout    ${choices.timeoutMinutes} minutes a session may run`);
+    write(choices.cooloff === null
+      ? `  cooloff    ${DEFAULT_COOLOFF_MINUTES} minutes an account cools when its agent names no time for its limit  (the default — `
+        + '`daoris driver cooloff <minutes>` changes it)'
+      : `  cooloff    ${choices.cooloff} minutes an account cools when its agent names no time for its limit`);
 
     write(`  notify     ${choices.notify ? 'on' : 'off'}`
       + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);
