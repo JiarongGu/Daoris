@@ -569,6 +569,23 @@ public sealed class ServiceClient : IDisposable
     public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct = default) =>
         DeleteRecordAsync($"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
 
+    /// <summary>
+    /// The person's yes to a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on. The
+    /// service's sentence comes back verbatim, a refusal (nothing waits for a yes) included.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct = default)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/accept", "{}", ct).ConfigureAwait(false);
+        // A host older than the accept door answers a bare 404 or 405 — said plainly, not parsed as nothing.
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no accept door ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
     private async Task<(bool Ok, string Message)> DeleteRecordAsync(string path, CancellationToken ct)
     {
         using var response = await _http.DeleteAsync($"{_base}{path}", ct).ConfigureAwait(false);
@@ -721,6 +738,14 @@ public sealed class ServiceClient : IDisposable
                 Lanes = quest.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
                     ? lanes.EnumerateArray().Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null).OfType<string>().ToList()
                     : [],
+                // What the person requires (DRIFT1c), in the service's order, which a done answers by number (DRIFT1d), so
+                // each keeps its place. Absent is none: a host from before requirements.
+                Requirements = quest.TryGetProperty("requirements", out var required) && required.ValueKind == JsonValueKind.Array
+                    ? required.EnumerateArray()
+                        .Select(r => new QuestRequirementView(Text(r, "quote") ?? "", Text(r, "check") ?? "")).ToList()
+                    : [],
+                // Whether a departure holds it for the person's yes (DRIFT1d). Absent is false: a host from before answers.
+                Held = Flag(quest, "held"),
             });
         }
 

@@ -44,7 +44,22 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
     /// <summary>Whom it asks as a person reads it: `repository`, or `repository:lane+lane` (the service's `QuestAddress.Spell`).</summary>
     public string Address => Lanes.Count == 0 ? To : $"{To}:{string.Join('+', Lanes)}";
+
+    /// <summary>
+    /// What the person requires of it (DRIFT1c, D133 §3), each their words and its check, in the service's order — the
+    /// numbers its done answers by (DRIFT1d). Empty for a quest that names none, and from a host before requirements.
+    /// </summary>
+    public IReadOnlyList<QuestRequirementView> Requirements { get; init; } = [];
+
+    /// <summary>
+    /// Whether a departure holds it for the person's yes (DRIFT1d, D133 §4): closed done departing from what they required,
+    /// not yet accepted. The service lists it among the open, so a quest waiting on it waits. Absent is false.
+    /// </summary>
+    public bool Held { get; init; }
 }
+
+/// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
+public sealed record QuestRequirementView(string Quote, string Check);
 
 /// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>
 /// <param name="Session">Its record's id.</param>
@@ -459,6 +474,15 @@ public static class Planner
         {
             var question = snapshot.Quests.FirstOrDefault(q =>
                 string.Equals(q.Id, awaits, StringComparison.OrdinalIgnoreCase));
+            // A question closed done departing from what the person required stays on the open list, held for their yes
+            // (DRIFT1d, D133 §4), and what waits on it waits with it: the sentence names whose move it is, and its door.
+            if (question is { Held: true })
+            {
+                return new(quest, StartVerdict.Waiting,
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
+                    + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.");
+            }
+
             if (question is not null)
             {
                 return new(quest, StartVerdict.Waiting,

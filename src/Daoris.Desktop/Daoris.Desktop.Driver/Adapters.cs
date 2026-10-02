@@ -37,6 +37,12 @@ public sealed record SessionTarget(
     /// <summary>What the service publishes when this closes done (D65 §4) — told, so the session knows.</summary>
     public IReadOnlyList<QuestStepView> Then { get; init; } = [];
 
+    /// <summary>
+    /// What the person requires of the quest (DRIFT1c), handed verbatim beneath it with how its done answers each
+    /// (DRIFT1d, D133 §4). Empty for a quest that names none, and the instruction reads as it did.
+    /// </summary>
+    public IReadOnlyList<QuestRequirementView> Requirements { get; init; } = [];
+
     /// <summary>The quest this one follows, when it is a step of a chain.</summary>
     public string? Parent { get; init; }
 
@@ -150,6 +156,7 @@ public sealed record SessionTarget(
             Attachments = quest.Attachments,
             Then = quest.Then,
             Parent = quest.Parent,
+            Requirements = quest.Requirements,
             CodeMap = CodeMapFile.Find(workTree),
         };
 
@@ -191,7 +198,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Words(target)}
+        {Carried(target)}{Required(target)}{Words(target)}
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
@@ -219,7 +226,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Words(target)}
+        {Carried(target)}{Required(target)}{Words(target)}
         An earlier session on this quest needed something only `{answered.To}` could answer, asked it, and
         waited. What it did is in this tree — read its commits before you go on. The question was quest
         `#{answered.Id}`, "{answered.Title}", and {Answer(answered)}
@@ -250,7 +257,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Words(target)}
+        {Carried(target)}{Required(target)}{Words(target)}
         {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
         and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}
 
@@ -291,6 +298,56 @@ public static class TargetPrompt
     /// read; nothing for a quest no ask asked.
     /// </summary>
     private static string Words(SessionTarget target) => AskWordsText.Beneath(target.Words, target.QuestId);
+
+    /// <summary>
+    /// The most characters of the requirements' words and checks an instruction carries, for the person's words' reason
+    /// (<see cref="AskWordsText"/>): the native door hands the instruction as one argument, and Windows caps a command
+    /// line. The service bounds each half at 2,000 characters and a quest at 20, which together would not fit.
+    /// </summary>
+    internal const int RequirementsLimit = 8_000;
+
+    /// <summary>
+    /// What the person requires of the quest (DRIFT1c), beneath it and beside their words (DRIFT1d, D133 §4): each numbered
+    /// as the service numbers it, their words quoted verbatim line by line, and its check; then how a `done` answers each.
+    /// Past <see cref="RequirementsLimit"/> each one left out is named, with where it is read whole. Nothing for a quest
+    /// with none, so its instruction reads as it did.
+    /// </summary>
+    private static string Required(SessionTarget target)
+    {
+        if (target.Requirements.Count == 0) return "";
+
+        var text = new StringBuilder("\n");
+        text.Append("What the person requires of this quest, in their own words, each quoted verbatim with the check that ")
+            .Append("proves the work meets it. A reading of their words, the body's above included, is someone else's:\n");
+
+        var used = 0;
+        var shown = 0;
+        foreach (var requirement in target.Requirements)
+        {
+            var cost = requirement.Quote.Length + requirement.Check.Length;
+            if (shown > 0 && used + cost > RequirementsLimit) break;
+            used += cost;
+            shown++;
+            text.Append($"\n- Requirement {shown}:\n\n")
+                .Append(string.Join("\n", requirement.Quote.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}")))
+                .Append("\n\n  Check: ")
+                .Append(requirement.Check.ReplaceLineEndings("\n").Replace("\n", "\n  ", StringComparison.Ordinal))
+                .Append('\n');
+        }
+
+        if (shown < target.Requirements.Count)
+        {
+            text.Append($"\n- Requirements {shown + 1} to {target.Requirements.Count} are left out here to keep this instruction ")
+                .Append("bounded: `quest_list` shows each whole, and each still needs its answer.\n");
+        }
+
+        text.Append("\nWhen you close it `done`, answer each requirement by its number (`answers`): `met`, with how its check was ")
+            .Append("met, or `departed`, with the reason and the person's own words it turns on, quoted exactly (`quote`). A `done` ")
+            .Append("that leaves one unanswered is refused. A departure is shown to the person, and what follows this quest ")
+            .Append("waits until the person accepts it: say plainly where the work departs from their words, rather than close ")
+            .Append("as though they had agreed to your reading of them.\n");
+        return text.ToString();
+    }
 
     /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>
     private static string InFlight(SessionTarget target) => target.InFlight.Count == 0

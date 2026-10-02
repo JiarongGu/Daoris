@@ -53,8 +53,9 @@ public static class DriverCommand
           register [--repository <name>]
               register each repository with a checkout here, or the one named, from what its line declares,
               as `connect` would; a start and a line Daoris moves do the same on their own.
-          quest delete <id>
-              delete a quest nobody has started on.
+          quest delete <id>  ·  quest accept <id>
+              delete a quest nobody has started on, or accept a done's departure from what you required, so what
+              it held (the chain's next step, a quest waiting on it) goes on.
           answer <session> ["…"]
               answer a session that parked to ask you; its quest is carried on with your words.
           trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]

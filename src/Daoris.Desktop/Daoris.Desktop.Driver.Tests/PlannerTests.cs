@@ -516,8 +516,29 @@ public sealed class PlannerTests
     }
 
     /// <summary>
-    /// The open list holds open and taken quests only, so a question absent from it has closed — and
-    /// the quest resumes where its earlier session left off, carrying which session that was.
+    /// DRIFT1d (D133 §4): a question closed done departing from what the person required is held for their yes, and
+    /// stays on the open list — so the quest waiting on it waits too, saying it is the person's yes it waits for, and
+    /// the terminal's door to give it.
+    /// </summary>
+    [Fact]
+    public void A_quest_waiting_on_a_question_a_departure_holds_waits_for_the_persons_yes()
+    {
+        var held = Quest("q2", to: "Backend", status: "Done") with { Held = true };
+
+        var plan = Planner.Plan(Ran([WaitingOn("q2"), held], ("q1", new PriorSession("s1", "D:/trees/s1"))), Config());
+
+        var waiting = Assert.Single(plan, c => c.Quest.Id == "q1");
+        Assert.Equal(StartVerdict.Waiting, waiting.Verdict);
+        Assert.Contains("#q2", waiting.Reason);
+        Assert.Contains("your yes", waiting.Reason);
+        Assert.Contains("`daoris-driver quest accept q2`", waiting.Reason);
+        Assert.Null(waiting.Resumes);
+        Assert.DoesNotContain(plan, c => c.Quest.Id == "q2");
+    }
+
+    /// <summary>
+    /// The open list holds open and taken quests, and a done a departure holds (DRIFT1d), so a question absent from
+    /// it has closed — and the quest resumes where its earlier session left off, carrying which session that was.
     /// </summary>
     [Fact]
     public void Once_its_question_closes_the_waiting_quest_resumes_from_the_session_that_asked()

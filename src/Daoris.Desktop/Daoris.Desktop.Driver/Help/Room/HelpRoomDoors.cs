@@ -103,6 +103,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
+        // DRIFT1d: the person's yes to a done's departure, the terminal's door; the quest page's yes and Ask Daoris's are
+        // owed meanwhile (HelpCoverageTests' AcceptDoor).
+        ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
+            + "waiting on it", "(no screen yet)", "`daoris-driver quest accept <id>`"),
         // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
         // Daoris's own (d) and updates one from where it came from (c).
         ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",
