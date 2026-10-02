@@ -28,6 +28,15 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
 
     /// <summary>Whether the service would delete it with its quests (D95). Absent is false.</summary>
     public bool Deletable { get; init; }
+
+    /// <summary>
+    /// The person's words on it (DRIFT1a, D133 §1), oldest first: its sentence, then each answer and each message added to a
+    /// session on its work. Null where the host answered none, a host from before them: never read as having said nothing.
+    /// </summary>
+    public IReadOnlyList<AskWordView>? Words { get; init; }
+
+    /// <summary>For an ask made before its words were kept: from when they are, since nothing is back-filled (DRIFT1a).</summary>
+    public DateTimeOffset? WordsKeptFrom { get; init; }
 }
 
 public static class Asks
@@ -315,6 +324,9 @@ public static class IntakePrompt
         text.Append($"The person asked, as ask `#{ask.Id}`:\n\n");
         foreach (var line in ask.Sentence.Split('\n')) text.Append($"> {line.TrimEnd('\r')}\n");
         text.Append('\n');
+
+        // What they said on it after the ask (DRIFT1b, D133 §2), as every session on the ask is handed it.
+        text.Append(AskWordsText.Since(ask));
 
         // A URL in the words is a link as much as one given apart: the first real ask was a ticket's
         // address typed as the sentence, and the guidance below was offered only for the field.

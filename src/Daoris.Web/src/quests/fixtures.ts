@@ -83,6 +83,16 @@ export const STOPPED: Consideration = {
   reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris driver retry abc123 --session s1a2b3c4`.',
 };
 
+/**
+ * Waits for an account (TOOL4g, D125 §4): held at spawn because the only account its start may use is cooling until the
+ * reset the agent named. Not parked, so no *Try again*; it starts by itself then.
+ */
+export const WAITS_FOR_ACCOUNT: Consideration = {
+  quest: OPEN.id, repository: 'engine', verdict: 'Blocked',
+  reason: 'the `claude-code` account `account-1` is cooling until Oct 3, 16:02 (Etc/UTC), as the agent said. Daoris starts nothing on it until then.',
+  waitsFor: { agent: 'claude-code', account: 'account-1', until: '2026-10-03T16:02:00Z', stated: true },
+};
+
 /** A start the driver holds for the agent's trust (D73). */
 export const TRUST: TrustHold = {
   folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json', quest: OPEN.id,

@@ -47,6 +47,11 @@ export const keys = {
   // account added, removed or chosen changes what a start would take (MAP1b).
   allStarts: ['harnesses', 'starts'] as const,
   starts: (workspaces: string[]) => ['harnesses', 'starts', ...workspaces] as const,
+  /**
+   * How each agent's accounts are used (TOOL4g): under the roster's key too, so a sign-in, a removal or a default asks the
+   * lists, the cool-offs and what each agent last said again.
+   */
+  accounts: ['harnesses', 'accounts'] as const,
   /** What sessions consumed — shell-only, because per-account usage names a profile (TOOL3). */
   usage: ['usage'] as const,
   /** This machine's plugins — shell-only, since a plugin's folder is a machine path (D64). */

@@ -59,6 +59,30 @@ public enum SessionAdvanceRefusal
 /// <param name="Session">The session as it now stands, when it moved.</param>
 public sealed record SessionAdvanceOutcome(SessionAdvanceRefusal Refusal, string Message, Session? Session);
 
+/// <summary>Why a person's word was not kept on an ask (DRIFT1a) — or <see cref="None"/> when it was.</summary>
+public enum AskWordRefusal
+{
+    None,
+
+    /// <summary>No words: nothing was said.</summary>
+    Empty,
+
+    /// <summary>No session under that id of this machine's.</summary>
+    NotFound,
+
+    /// <summary>
+    /// The session is on no ask held here — a quest a repository asked, or a conversation on none — so
+    /// there is no ask to keep the words on. Not an error: its own record holds what was said.
+    /// </summary>
+    NoAsk,
+}
+
+/// <param name="Refusal"><see cref="AskWordRefusal.None"/> when the word was kept.</param>
+/// <param name="Message">The whole answer, phrased once here for every door.</param>
+/// <param name="Ask">The ask it was kept on, when it was.</param>
+/// <param name="Word">The word as it was kept, when it was.</param>
+public sealed record AskWordOutcome(AskWordRefusal Refusal, string Message, string? Ask = null, AskWord? Word = null);
+
 /// <summary>
 /// Why a session record was not deleted — or <see cref="None"/> when it was, or would be (SESSUX1f, D126 §5.4). The
 /// record's half only: whether its tree or a landing is still on the machine is the driver's to judge.
@@ -405,6 +429,68 @@ public sealed class SessionLedger(
     }
 
     private static string AnsweredLine(string said) => $"\n\nAnswered: {said}";
+
+    /// <summary>
+    /// Keep what the person said to a session on the ask its work is for (DRIFT1a, D133 §1): verbatim, with
+    /// when, the session it was said to and the quest that session works. Beside <see cref="AnswerAsync"/>,
+    /// never inside it: the answer door calls both, and what an answer does to a parked session is not this
+    /// method's to decide.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The ask is derived, never passed.</b> An intake names its ask; a driven session's quest was
+    /// asked by one when its sender is <c>ask #id</c>, a chain step included. A quest one repository asked
+    /// of another, and a conversation on no quest, are on no ask, and the answer says so rather than filing
+    /// the words under an ask they were not given on.</para>
+    ///
+    /// <para><b>In any state.</b> An answer is kept after the answer moved the record, and a message while
+    /// the session runs; a record of another machine's is not this machine's person talking.</para>
+    /// </remarks>
+    /// <exception cref="ArgumentException">For <see cref="AskWordKind.Asked"/>: the ask's own sentence is its record's.</exception>
+    public async Task<AskWordOutcome> KeepOnAskAsync(
+        string sessionId, AskWordKind kind, string? words, DateTimeOffset now, CancellationToken ct = default)
+    {
+        if (kind == AskWordKind.Asked)
+        {
+            throw new ArgumentException("the ask's own sentence is kept when it is asked, never by a session", nameof(kind));
+        }
+
+        var text = words?.Trim() ?? "";
+        if (text.Length == 0)
+        {
+            return new(AskWordRefusal.Empty, "There are no words to keep: the person said nothing.");
+        }
+
+        var session = await sessions.FindAsync(sessionId, ct).ConfigureAwait(false);
+        if (session is null || session.Origin is not null)
+        {
+            return new(AskWordRefusal.NotFound, $"No session `{sessionId}` of this machine's.");
+        }
+
+        const string Own = "so nothing was kept on one; its own record holds what was said.";
+        var quest = session.Quest is { } questId ? await quests.FindAsync(questId, ct).ConfigureAwait(false) : null;
+        var askId = session.Ask ?? AskDesk.AskOf(quest?.From);
+        if (askId is null)
+        {
+            return new(AskWordRefusal.NoAsk, (session.Quest, quest) switch
+            {
+                (null, _) => $"Session `{session.Id}` is a conversation on no ask, {Own}",
+                (_, null) => $"Session `{session.Id}` works quest `#{session.Quest}`, which is not held here, {Own}",
+                _ => $"Session `{session.Id}` works quest `#{quest.Id}`, which `{quest.From}` asked rather than an ask, {Own}",
+            });
+        }
+
+        var word = new AskWord(kind, text, now, session.Id, session.Quest);
+        if (asks is null || !await asks.RecordWordAsync(askId, word, now, ct).ConfigureAwait(false))
+        {
+            return new(AskWordRefusal.NoAsk, $"Session `{session.Id}` is on ask `#{askId}`, which is not held here, {Own}");
+        }
+
+        return new(
+            AskWordRefusal.None,
+            $"Kept on ask `#{askId}`, as said to session `{session.Id}`"
+            + (session.Quest is { } on ? $" on quest `#{on}`." : "."),
+            askId, word);
+    }
 
     /// <summary>
     /// Queue a session for an open quest. Refuses an unknown or non-open quest, and a repository that

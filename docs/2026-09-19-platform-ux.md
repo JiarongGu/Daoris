@@ -467,8 +467,10 @@ controls are in the frame design's §3.
     the strikes dial); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose
     it, a job named once a circle has two, a blocked start's sentence at a reading measure);
-    *Agents* (one card per agent, its accounts leading, its ways in beneath — a declared door
-    wearing the plugin it came from — and *Usage*, what each account has carried); *Permissions* (the rules
+    *Agents* (one card per agent, its accounts leading, each row saying its cool-off with *Try now*, the
+    sessions of Daoris's on it and what its agent last said; then *How accounts are used*, this machine's
+    list and each workspace's, a press the terminal would refuse not offered (TOOL4g, D130 §9); its ways in
+    beneath — a declared door wearing the plugin it came from — and *Usage*, what each account has carried); *Permissions* (the rules
     file, Daoris's defaults each with a switch and no remove, a person's rules with a remove, and
     nothing on the card ranking one scope over another, since precedence is the harness's; the
     machine's scope reads *every session on this machine*); *Plugins* (a row per folder: what it

@@ -214,6 +214,96 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal(200, (await host.GetAsync($"/api/asks/{ask}")).Status);
     }
 
+    /// <summary>A session on <paramref name="quest"/> in a tree of its own, so no other test's session holds it.</summary>
+    private async Task<string> RunningAsync(string quest, string tree)
+    {
+        var opened = await host.PostAsync("/api/sessions", new
+        {
+            quest, adapter = "stub", tree = Path.Combine(host.Repositories, "trees", tree),
+        });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        return id;
+    }
+
+    /// <summary>
+    /// DRIFT1a (D133 §1): what the person adds to a running session and what they answer it are kept on the
+    /// ask its quest was asked by, and both ask routes answer them as `words`, after the ask's own sentence:
+    /// each verbatim, with when, the session and the quest. An ask made now keeps its words whole, so it
+    /// says nothing of when keeping began.
+    /// </summary>
+    [Fact]
+    public async Task An_added_message_and_an_answer_are_read_back_from_the_asks_routes()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the report through the v3 bridge.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(["asked"], asked.Json.GetProperty("ask").GetProperty("words").EnumerateArray().Select(w => w.GetProperty("kind").GetString()));
+        var id = await RunningAsync(quest, "drift1a-words");
+
+        var added = await host.PostAsync($"/api/sessions/{id}/added", new { text = "no need for a new backend api" });
+
+        Assert.Equal(200, added.Status);
+        Assert.True(added.Json.GetProperty("kept").GetBoolean());
+        Assert.Contains($"ask `#{ask}`", added.Json.GetProperty("message").GetString());
+        Assert.Equal(2, added.Json.GetProperty("ask").GetProperty("words").GetArrayLength());
+
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "awaiting-person", note = "Which report?" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/answer", new { answer = "use the v3 common-report" })).Status);
+
+        var read = await host.GetAsync($"/api/asks/{ask}");
+        Assert.Equal(200, read.Status);
+        var words = read.Json.GetProperty("words").EnumerateArray().ToList();
+        Assert.Equal(["asked", "added", "answered"], words.Select(w => w.GetProperty("kind").GetString()));
+        Assert.Equal(
+            ["Build the report through the v3 bridge.", "no need for a new backend api", "use the v3 common-report"],
+            words.Select(w => w.GetProperty("text").GetString()));
+        Assert.False(words[0].TryGetProperty("session", out _));
+        foreach (var word in words[1..])
+        {
+            Assert.Equal(id, word.GetProperty("session").GetString());
+            Assert.Equal(quest, word.GetProperty("quest").GetString());
+            Assert.True(word.GetProperty("at").GetDateTimeOffset() >= words[0].GetProperty("at").GetDateTimeOffset());
+        }
+
+        Assert.False(read.Json.TryGetProperty("wordsKeptFrom", out _));
+        var listed = (await host.GetAsync("/api/asks?includeClosed=true")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == ask);
+        Assert.Equal(3, listed.GetProperty("words").GetArrayLength());
+    }
+
+    /// <summary>
+    /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
+    /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
+    /// </summary>
+    [Fact]
+    public async Task The_added_door_keeps_nothing_off_an_ask_and_refuses_an_unknown_session_or_no_words()
+    {
+        var quest = await PublishAsync("A quest one repository asked of another");
+        var id = await RunningAsync(quest, "drift1a-none");
+
+        var none = await host.PostAsync($"/api/sessions/{id}/added", new { text = "use the hook" });
+        var unknown = await host.PostAsync("/api/sessions/nothing1/added", new { text = "use the hook" });
+        var blank = await host.PostAsync($"/api/sessions/{id}/added", new { text = "  " });
+
+        Assert.Equal(200, none.Status);
+        Assert.False(none.Json.GetProperty("kept").GetBoolean());
+        Assert.Contains("`Asker`", none.Json.GetProperty("message").GetString());
+        Assert.False(none.Json.TryGetProperty("ask", out _));
+        Assert.Equal(404, unknown.Status);
+        Assert.Contains("nothing1", unknown.Error);
+        Assert.Equal(400, blank.Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped" })).Status);
+    }
+
     /// <summary>
     /// D104: the driver says a stop was not the person's — the sweep's, or a shutdown's — through the
     /// state door, and the record answers it back. Asked of any other move, it is refused, 409.

@@ -9753,3 +9753,72 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Proof: the design (landing; its acts are named *Pause* 暂缓 and *Abandon* 放弃, §8.2).
 
 **Outcome** Designed as D132: an ask's or a quest's work is paused and resumed whole on this machine, and abandoned on a listed second press that declines its quests with the person's reason and discards only what nothing else holds. Detail: `docs/2026-10-02-pause-and-clean-up-design.md` §1–§9.
+
+
+## ANSWER1b — the service keeps an answered park (2026-10-02)
+
+> - [ ] **ANSWER1b — the service keeps an answered park** (service, tools; in flight). `SessionLedger.AnswerAsync` ends the
+> parked record, so the driver can never reopen it; keep it `awaiting-person` with its answer instead, so the resume
+> ANSWER1a built can happen. Contract: D131 point 6, design §5. Proof: `SessionLedgerTests`; the family rehearsal's
+> STANDDOWN2 answer phase, its stub taught to resume.
+
+**Outcome** The service keeps an answered park parked with the words on its note and replies with the session; a second answer replaces the first; the family rehearsal's 17a resumes the same session through the real service. Detail: D131's ANSWER1b note, `5df2b41`.
+
+
+## PAUSE1a — the work, and the pause's file (2026-10-02)
+
+> - [ ] **PAUSE1a — the work, and the pause's file** (driver; cli). `AskWork.Read` answers what an ask's work is (its
+> quests, chain steps, questions it asked, sessions, trees, branches); `pausedAsks` and `pausedQuests` in `driver.json`,
+> both twins. Contract: D132 §1, §2.5. Proof: `AskWorkTests`; the twin tables, both sides.
+
+**Outcome** `AskWork.Read` reads an ask's or a quest's work (its quests, the questions their sessions asked down the chain, sessions, trees, branches, landings), and `driver.json` keeps `pausedAsks` and `pausedQuests` in both twins, shown by `daoris driver list`; nothing acts on a pause yet. Detail: D132's PAUSE1a note, `ef8a3b0`.
+
+
+## DRIFT1a — the owner's words are the ask's record (2026-10-02)
+
+> - [ ] **DRIFT1a — the owner's words are the ask's record** (service). Every sentence the owner gives on an ask (the ask,
+> each answer, each message typed into a running session) is kept on the ask verbatim, with when and to which session and
+> quest; today they live only in session records. Contract: D133 §1. Proof: service tests reading an answer and a typed
+> message back from the ask, failing first.
+
+**Outcome** The person's words on an ask (its sentence, each answer to a park, each message added to a running session) are kept on the ask verbatim with when, the session and the quest, and the ask routes answer them as `words`; older asks say from when. Detail: D133's DRIFT1a note, `928d68a`.
+
+
+## ANSWER1c — the page shows an answered park as carrying on (2026-10-02)
+
+> - [ ] **ANSWER1c — the page shows an answered park as carrying on** (driver `SessionGroups`, web-shell; after ANSWER1b and
+> SESSUX1i). Listed under Working until the next look, the card showing the answer and *goes on*. Contract: design §5.
+> Proof: `SessionGroupsTests`; the card's story; both catalogues.
+
+**Outcome** An answered park reads as *answered* under *Working*, its card shows the answer and that the same session goes on at the driver's next look, and the badge and band no longer count it. Detail: D131's ANSWER1c note, `59d76ab`.
+
+
+## DRIFT1b — every session on an ask is given all of them (2026-10-02)
+
+> - [ ] **DRIFT1b — every session on an ask is given all of them** (driver; after DRIFT1a). A first start, a resume, a
+> carry-on on any account and a follow-up's session get every one of the ask's words, newest last, not one hop's answer.
+> Contract: D133 §2. Proof: a driver test on the drift's chain (answer, cut-off, cut-off, carry-on elsewhere still quotes it).
+
+**Outcome** Every start of a quest an ask asked is handed the ask's words beneath its quest, newest last (sentence whole, later words cut at 2,000 characters, the newest within 8,000), and says in one line when they could not be read. Detail: D133's DRIFT1b note, `9eb33e8`.
+
+
+## DRIFT1a2 — a typed message reaches its ask (2026-10-02)
+
+> - [ ] **DRIFT1a2 — a typed message reaches its ask** (modules; after DRIFT1a). `SESSION_INPUT` posts
+> `/api/sessions/{id}/added` when a driven session's inbox takes the person's words and when an intake is told them.
+> Contract: D133 §1, its DRIFT1a note. Proof: a modules test that a held message posts once with its session's id.
+
+**Outcome** `SESSION_INPUT` posts a message the session took to `/api/sessions/{id}/added`, never awaited, so a typed message reaches its ask. Detail: D133's DRIFT1a2 note, `6eff645`.
+
+
+## TOOL4g — the screen and Ask Daoris for accounts (2026-10-03)
+
+> - [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL6b;
+> with D130 §3.2, §9, §16.6: a workspace's own list, *Use* (goal or order), *Keep for conversations*, *Switch before the
+> limit*, the terms line; the screen's `profile-default` route and Ask Daoris's `default` door call `ScopeProblem.Of`, as
+> the terminal does since TOOL6a):
+> the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
+> the cool-off setting, the doors; both languages (D116); the look on the window. The modules' *Remove* must call
+> `HarnessSettings.WithoutAccount`, as the terminal now does (TOOL4e).
+
+**Outcome** Settings → Agents shows and sets each agent's account lists, how they are used, cool-offs with *Try now* and what each agent last said, with the shared-sign-in and terms lines; Settings → Driver sets the cool-off; a waiting quest says so with no Retry. Detail: D130's TOOL4g note, `b9825e7`.

@@ -758,21 +758,9 @@ public sealed partial class DriverModule
             return 1;
         }
 
-        var settings = _loop.Harnesses.Settings;
-        if (settings.Defaults.TryGetValue(harness, out var machine) && machine == profile)
-        {
-            settings = settings.WithDefault(harness, null);
-        }
-
-        foreach (var workspace in settings.Workspaces.Keys.ToList())
-        {
-            if (settings.Workspaces[workspace].TryGetValue(harness, out var held) && held == profile)
-            {
-                settings = settings.WithWorkspaceDefault(workspace, harness, null);
-            }
-        }
-
-        settings.Save(_loop.Harnesses.SettingsPath);
+        // No default, list or kept account names it afterwards (TOOL4g, TOOL4e's note), as the terminal's `profile remove`
+        // leaves the wiring: the next account made takes the first free name, which may be this one's.
+        _loop.Harnesses.Settings.WithoutAccount(harness, profile).Save(_loop.Harnesses.SettingsPath);
         return 0;
     }
 
@@ -781,10 +769,15 @@ public sealed partial class DriverModule
     /// named CLEARS it: "use the tool's own home again" is a choice a person makes, not an argument
     /// they forgot, and the file's own rule is that absence means the harness's own home.
     /// </summary>
-    /// <remarks>One method the route and Ask Daoris's door both call (HELP10), so the two cannot drift.</remarks>
+    /// <remarks>
+    /// One method the route and Ask Daoris's door both call (HELP10), so the two cannot drift. A default outside its scope's
+    /// own list is refused before anything is written, as the terminal refuses it since TOOL6a (TOOL4g, D130 §3.1).
+    /// </remarks>
     private int ProfileDefault(string harness, string? profile, string? workspace)
     {
-        DefaultEdited(_loop.Harnesses.Settings, harness, profile, workspace).Save(_loop.Harnesses.SettingsPath);
+        var settings = _loop.Harnesses.Settings;
+        DefaultAllowed(settings, harness, profile, workspace);
+        DefaultEdited(settings, harness, profile, workspace).Save(_loop.Harnesses.SettingsPath);
         return 0;
     }
 

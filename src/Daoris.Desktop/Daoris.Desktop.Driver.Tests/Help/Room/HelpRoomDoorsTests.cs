@@ -35,10 +35,10 @@ public sealed class HelpRoomDoorsTests
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // LAYOUT7: the set-up press, which Ask Daoris owes a kind until LAYOUT8.
             "daoris-driver setup <repository> [--plan]",
-            // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors until TOOL4g.
+            // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors (on the screen since TOOL4g).
             "daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]",
             "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
-            // TOOL6a (D130 §16.6): how a list is used, the terminal's door until TOOL4g.
+            // TOOL6a (D130 §16.6): how a list is used, the terminal's door (on the screen since TOOL4g).
             "daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
                 + "[--workspace <name>]",
         })

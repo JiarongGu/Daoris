@@ -75,6 +75,46 @@ public sealed class TickConsiderationTests
         }
     }
 
+    /// <summary>
+    /// TOOL4g (D125 §4): a quest held at spawn because every account its start may use is cooling waits for an account — not
+    /// parked, no Retry — and the page says so in the reader's language from the wait's facts: whose account, which, until
+    /// when, and whether the agent named the time. The driver's sentence still travels as its reason.
+    /// </summary>
+    [Fact]
+    public void A_quest_waiting_for_an_account_says_whose_account_and_until_when()
+    {
+        var until = new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.Zero);
+        var held = new Consideration(Quest, StartVerdict.Blocked, "the `claude-code` account `account-1` is cooling until Oct 3, 16:02 (UTC).");
+        var wait = new AccountWait("claude-code-acp", "claude-code", "account-1", "work", until, true, held.Reason) { Quests = ["q1"] };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held, null, wait), Wire);
+
+        Assert.Equal("Blocked", shape.GetProperty("verdict").GetString());
+        var waits = shape.GetProperty("waitsFor");
+        Assert.Equal("claude-code", waits.GetProperty("agent").GetString());
+        Assert.Equal("account-1", waits.GetProperty("account").GetString());
+        Assert.Equal(until, waits.GetProperty("until").GetDateTimeOffset());
+        Assert.True(waits.GetProperty("stated").GetBoolean());
+    }
+
+    /// <summary>A wait that holds other quests, or none, names no wait on this one; the tool's own sign-in is a null account.</summary>
+    [Fact]
+    public void A_quest_no_wait_holds_names_none_and_the_own_sign_in_is_no_account()
+    {
+        var until = new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.Zero);
+        var held = new Consideration(Quest, StartVerdict.Blocked, "`claude-code`'s own sign-in is cooling.");
+        var other = new AccountWait("claude-code", "claude-code", null, null, until, false, held.Reason) { Quests = ["q9"] };
+        var own = other with { Quests = ["q1"] };
+
+        Assert.Equal(JsonValueKind.Null,
+            JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held, null, other), Wire).GetProperty("waitsFor").ValueKind);
+        Assert.Equal(JsonValueKind.Null,
+            JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held), Wire).GetProperty("waitsFor").ValueKind);
+        var waits = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held, null, own), Wire).GetProperty("waitsFor");
+        Assert.Equal(JsonValueKind.Null, waits.GetProperty("account").ValueKind);
+        Assert.False(waits.GetProperty("stated").GetBoolean());
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()
