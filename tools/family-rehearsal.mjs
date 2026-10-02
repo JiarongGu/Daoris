@@ -3390,42 +3390,72 @@ cliDriver('trees newcomer off');
 
 section('16a. An ask abandoned: listed first, then declined with the reason, discarding only what nothing else holds (D132/PAUSE1d)');
 
-// The owner's case (D132), from a terminal: an ask whose work went the wrong way is given up in one listed press. Its
-// first quest is driven to done in a tree whose one commit is on no ref but its own `daoris/*` branch; its second is driven
-// to done and its branch pushed to an `origin` (a bare repository in scratch, so nothing reaches a network), which counts
-// as elsewhere; its third is left open. No remote is wired here, so the abandon's pass has nothing to carry: the race a
-// `whileOpen` decline loses is PAUSE1c's suite's, over the real wire.
+// The owner's case (D132), from a terminal: an ask whose work went the wrong way is given up in one listed press. The ask
+// is made with its receiver named, which publishes ONE quest; a person's `ask --publish` to the same receiver answers that
+// same quest again (the exchange keeps one quest per words), so the ask's two other quests are published onto it through
+// its publish door with words of their own, a draft, as an intake publishes (D65 §1b), each asked BY the ask, which is how
+// `AskWork.Read` gathers them. Its first quest is driven to done in a tree whose one commit is on no ref but its own
+// `daoris/*` branch; its second is driven to done and its branch pushed to an `origin` (a bare repository in scratch, so
+// nothing reaches a network), which counts as elsewhere; its third is published after the last drive, so it stays open.
+// The family's stub takes over HTTP and never marks `Took`, so the phase keeps to open and done quests and the trees the
+// stub made. No remote is wired here, so the abandon's pass has nothing to carry: the race a `whileOpen` decline loses is
+// PAUSE1c's suite's, over the real wire. Whatever else sits in newcomer from earlier phases (a quest parked on its strikes)
+// is not asked by this ask, and a check below holds that nothing of it moves.
 cliDriver('trees newcomer on');
 const abandonAsk = askVerb('--workspace default --to newcomer "abandon rehearsal: build the widget"');
 const abandonAskId = /ask\s+#([0-9a-f]{6})/.exec(abandonAsk.out)?.[1] ?? '';
 const abandonFirstId = /quest\s+#([0-9a-f]{12})/.exec(abandonAsk.out)?.[1] ?? '';
 const abandonDrive = () => driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
-const abandonFirstRun = abandonDrive();
-const abandonSecond = askVerb(`--publish ${abandonAskId} --to newcomer`);
-const abandonSecondId = /quest\s+#([0-9a-f]{12})/.exec(abandonSecond.out)?.[1] ?? '';
-const abandonSecondRun = abandonDrive();
-const abandonThird = askVerb(`--publish ${abandonAskId} --to newcomer`);
-const abandonThirdId = /quest\s+#([0-9a-f]{12})/.exec(abandonThird.out)?.[1] ?? '';
+// A quest published onto the ask in words of its own. Its title avoids the stub's cues (`decline`, `linger`, `never lands`).
+const abandonPublish = (title) => api('POST', `/api/asks/${abandonAskId}/publish`, {
+  body: { to: 'newcomer', title, body: `${title}: a piece of the abandon rehearsal's ask (D132).` },
+});
 const abandonRecords = async () => ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []);
 const abandonQuests = async () => ((await api('GET', '/api/quests?includeClosed=true')).json ?? []);
+// The work as it stands, printed beside every check below so a failure shows the precondition it met: the ask's quests,
+// their sessions with whether each tree is here, and newcomer's session branches and origin's copies.
+const abandonWork = async () => {
+  const asked = (await abandonQuests()).filter((q) => q.from === `ask #${abandonAskId}`);
+  const sessions = (await abandonRecords()).filter((s) => asked.some((q) => q.id === s.quest));
+  return [
+    `work of ask #${abandonAskId}:`,
+    ...asked.map((q) => `  quest #${q.id} ${q.status} — ${q.title}${q.note ? ` (note: ${q.note})` : ''}`),
+    ...sessions.map((s) => `  session ${s.id} ${s.state} on #${s.quest}, tree ${s.tree ? (existsSync(s.tree) ? 'here' : 'gone') : 'none'}`),
+    `  branches: ${run('git branch --list "daoris/*"', newcomer).out.trim().replace(/\s+/g, ' ') || '(none)'}`,
+    `  origin's: ${run('git branch -r --list "origin/*"', newcomer).out.trim().replace(/\s+/g, ' ') || '(none)'}`,
+  ].join('\n');
+};
+
+const abandonFirstRun = abandonDrive();
+const abandonSecond = await abandonPublish('abandon rehearsal: the pushed half');
+const abandonSecondId = abandonSecond.json?.quest?.id ?? '';
+const abandonSecondRun = abandonDrive();
+const abandonThird = await abandonPublish('abandon rehearsal: the half still open');
+const abandonThirdId = abandonThird.json?.quest?.id ?? '';
 const abandonFirstRecord = (await abandonRecords()).find((s) => s.quest === abandonFirstId);
 const abandonSecondRecord = (await abandonRecords()).find((s) => s.quest === abandonSecondId);
 const abandonFirstTree = abandonFirstRecord?.tree ?? '';
 const abandonSecondTree = abandonSecondRecord?.tree ?? '';
-const abandonFirstBranch = run('git rev-parse --abbrev-ref HEAD', abandonFirstTree).out.trim();
-const abandonSecondBranch = run('git rev-parse --abbrev-ref HEAD', abandonSecondTree).out.trim();
+const abandonFirstBranch = existsSync(abandonFirstTree) ? run('git rev-parse --abbrev-ref HEAD', abandonFirstTree).out.trim() : '';
+const abandonSecondBranch = existsSync(abandonSecondTree) ? run('git rev-parse --abbrev-ref HEAD', abandonSecondTree).out.trim() : '';
 const abandonOrigin = join(scratch, 'abandon-origin.git');
 run(`git init -q --bare "${abandonOrigin}"`, scratch);
 run(`git remote add origin "${abandonOrigin}"`, newcomer);
-run(`git push -q origin ${abandonSecondBranch}`, newcomer);
+const abandonPushed = abandonSecondBranch ? run(`git push -q origin ${abandonSecondBranch}`, newcomer) : { code: -1, out: 'no branch to push' };
+const abandonAsked = (await abandonQuests()).filter((q) => q.from === `ask #${abandonAskId}`);
+const abandonStatus = (id) => abandonAsked.find((q) => q.id === id)?.status;
+const abandonSetUp = await abandonWork();
 check(
-  'an ask’s work is made: two quests driven to done in trees of their own, the second’s branch pushed, a third left open',
-  abandonAsk.code === 0 && abandonFirstRun.code === 0 && abandonSecondRun.code === 0 && abandonThird.code === 0
+  'an ask’s work is made: three distinct quests asked by it, two driven to done in trees of their own, the second’s branch pushed, the third open',
+  abandonAsk.code === 0 && abandonFirstRun.code === 0 && abandonSecondRun.code === 0
+    && abandonSecond.status === 200 && abandonThird.status === 200
+    && new Set([abandonFirstId, abandonSecondId, abandonThirdId]).size === 3 && abandonAsked.length === 3
+    && abandonStatus(abandonFirstId) === 'Done' && abandonStatus(abandonSecondId) === 'Done' && abandonStatus(abandonThirdId) === 'Open'
     && existsSync(abandonFirstTree) && existsSync(abandonSecondTree)
     && abandonFirstBranch.startsWith('daoris/') && abandonSecondBranch.startsWith('daoris/')
-    && run(`git rev-parse --verify --quiet refs/remotes/origin/${abandonSecondBranch}`, newcomer).code === 0
-    && (await abandonQuests()).find((q) => q.id === abandonThirdId)?.status === 'Open',
-  `${abandonAsk.out}\n${abandonFirstRun.out}\n${abandonSecond.out}\n${abandonSecondRun.out}\n${abandonThird.out}`,
+    && abandonPushed.code === 0
+    && run(`git rev-parse --verify --quiet refs/remotes/origin/${abandonSecondBranch}`, newcomer).code === 0,
+  `${abandonSetUp}\n${abandonAsk.out}\n${abandonSecond.text}\n${abandonThird.text}\n${abandonFirstRun.out}\n${abandonSecondRun.out}\n${abandonPushed.out}`,
 );
 
 // The first press lists every piece, and what it keeps and why, and changes nothing.
@@ -3441,10 +3471,11 @@ check(
     && abandonListed.out.includes(`keeps newcomer ${abandonSecondBranch}: its commits are on \`origin/${abandonSecondBranch}\`.`)
     && abandonListed.out.includes(`keeps ${abandonSecondRecord?.id} to review: its tree keeps work.`)
     && abandonListed.out.includes(`keeps #${abandonFirstId}: done: finished work keeps its record.`)
+    && abandonListed.out.includes(`keeps #${abandonSecondId}: done: finished work keeps its record.`)
     && !abandonListed.out.replaceAll('\\', '/').includes(scratch.replaceAll('\\', '/'))
     && existsSync(abandonFirstTree)
     && (await abandonQuests()).find((q) => q.id === abandonThirdId)?.status === 'Open',
-  abandonListed.out,
+  `${abandonListed.out}\n${await abandonWork()}`,
 );
 
 const abandonNoReason = askVerb(`--abandon ${abandonAskId} --yes`);
@@ -3452,21 +3483,43 @@ check(
   '…`--yes` without `--reason` is refused, since each declined quest keeps the reason',
   abandonNoReason.code === 1 && /abandoning needs your reason: each declined quest keeps it\./.test(abandonNoReason.out)
     && existsSync(abandonFirstTree),
-  abandonNoReason.out,
+  `${abandonNoReason.out}\n${await abandonWork()}`,
 );
+
+// What lies outside the ask's work, taken before the second press: every other quest with its status and note, the
+// restart marks of quests not asked by it, and every session branch but the one the abandon is to discard.
+const abandonForgiven = () => {
+  const forgiven = JSON.parse(readFileSync(driverConfig, 'utf8')).forgiven ?? {};
+  return JSON.stringify(Object.keys(forgiven).filter((id) => !abandonAsked.some((q) => q.id === id)).sort().map((id) => [id, forgiven[id]]));
+};
+const abandonOutside = async () => [
+  ...(await abandonQuests()).filter((q) => q.from !== `ask #${abandonAskId}`).map((q) => `#${q.id} ${q.status} ${q.note ?? ''}`).sort(),
+  `forgiven ${abandonForgiven()}`,
+  ...run('git branch --list "daoris/*"', newcomer).out.split('\n').map((line) => line.replace(/^[*+]?\s*/, '').trim())
+    .filter((branch) => branch && branch !== abandonFirstBranch).sort(),
+].join('\n');
+const outsideBefore = await abandonOutside();
 
 // The second press, with the person's reason.
 const ABANDON_REASON = 'The widget is not wanted after all.';
 const abandonPressed = askVerb(`--abandon ${abandonAskId} --reason "${ABANDON_REASON}" --yes`);
 const abandonedThird = (await abandonQuests()).find((q) => q.id === abandonThirdId);
 const abandonedAsk = (await api('GET', `/api/asks/${abandonAskId}`)).json;
+const abandonAfter = await abandonWork();
 check(
   '…and with `--reason` and `--yes` it abandons what the list holds: the open quest declined with the reason, the ask closed with it',
   abandonPressed.code === 0
     && abandonPressed.out.includes(`abandoned ask #${abandonAskId}: 4 of 4 pieces.`)
     && abandonedThird?.status === 'Declined' && abandonedThird?.note === ABANDON_REASON
     && abandonedAsk?.state === 'Closed' && abandonedAsk?.note === ABANDON_REASON,
-  `${abandonPressed.out}\n${JSON.stringify(abandonedThird)}\n${JSON.stringify(abandonedAsk)}`,
+  `${abandonPressed.out}\n${abandonAfter}\n${JSON.stringify(abandonedAsk)}`,
+);
+
+const outsideAfter = await abandonOutside();
+check(
+  '…and nothing outside the ask’s work moved: every other quest (one parked here by an earlier phase among them), its restart marks and its session branches',
+  outsideAfter === outsideBefore && outsideBefore.length > 0,
+  `before:\n${outsideBefore}\nafter:\n${outsideAfter}`,
 );
 
 const archivedMarks = existsSync(join(scratch, 'sessions', 'archived.json'))
@@ -3478,7 +3531,7 @@ check(
     && existsSync(abandonSecondTree) && run(`git branch --list "${abandonSecondBranch}"`, newcomer).out.includes(abandonSecondBranch)
     && archivedMarks.includes(abandonFirstRecord?.id) && !archivedMarks.includes(abandonSecondRecord?.id)
     && !(JSON.parse(readFileSync(driverConfig, 'utf8')).pausedAsks ?? {})[abandonAskId],
-  `${run('git branch --list "daoris/*"', newcomer).out}\n${JSON.stringify(archivedMarks)}\n${readFileSync(driverConfig, 'utf8')}`,
+  `${abandonAfter}\narchived: ${JSON.stringify(archivedMarks)}\n${readFileSync(driverConfig, 'utf8')}`,
 );
 
 // The record keeps what went, with each discarded branch's tip, and no path; the tip brings the branch back.
@@ -3509,8 +3562,16 @@ check(
   JSON.stringify(abandonLines),
 );
 
-// Leave the newcomer as the phases after this one expect it: no tree, no `origin`, its trees off.
-run(`dotnet "${driverDll}" trees remove "${abandonSecondTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+// Leave the newcomer as the phases after this one expect it: no tree, no `origin`, its trees off, and nothing of this ask
+// open for a later drive to start, should the abandon above have failed to decline it.
+if ((await abandonQuests()).find((q) => q.id === abandonThirdId)?.status === 'Open') {
+  await api('POST', `/api/quests/${abandonThirdId}/respond`, {
+    body: { action: 'decline', reason: 'The rehearsal leaves nothing of phase 16a open.' },
+  });
+}
+if (abandonSecondTree) {
+  run(`dotnet "${driverDll}" trees remove "${abandonSecondTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+}
 run('git remote remove origin', newcomer);
 cliDriver('trees newcomer off');
 

@@ -9676,8 +9676,13 @@ files, each seen failing first: `AbandonTests` against stubbed bodies (its unkno
 verb), the module's abandon cases with the route unmarked and the keep words blanked, and the catalogue and README route
 tests before their rows. `SessionTreeOnlyHereTests` (the `Process` half, real git) and the family rehearsal's phase 16a are
 written and were not run here; the ranges the proof asks were checked by hand on a scratch repository (a branch, a tag,
-another `daoris/*` branch, a pushed one). The phase wires no remote, so the `whileOpen` race over a real one stays
-PAUSE1c's suite's. A queued session nothing runs is not reached, as for a pause. How long `WORK_PLAN` takes now that it walks
+another `daoris/*` branch, a pushed one). 🔴 The phase's first run, at the merge, failed at its set-up: a person's
+`ask --publish` to the receiver the ask already named answers that same quest again, so the "second" quest was the first,
+its branch was the one pushed, and the list rightly found nothing only Daoris held. The phase now publishes its other
+quests through the ask's publish door with words of their own, as an intake does, prints the work beside every check, and
+holds that nothing outside the ask's work moves; the proof was then run by hand over a copy of that layout and cleared the
+tree. The phase wires no remote, so the `whileOpen` race over a real one stays PAUSE1c's suite's. A queued session nothing
+runs is not reached, as for a pause. How long `WORK_PLAN` takes now that it walks
 git per tree is not measured (design §12). The page's acts and its words for each act and why are PAUSE1e's.
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
