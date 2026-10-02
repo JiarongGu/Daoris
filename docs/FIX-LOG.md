@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## `run --install` printed a debug port that never opened (2026-10-02)
+
+**Symptom.** Found looking at the install (LOOK4): `node tools/desktop.mjs run --install <folder>` printed
+`debug port 9333` twice, nothing listened there on 127.0.0.1 or [::1], and `shot`, `eval` and `click` said nothing
+was listening. The same build had opened its port the day before, started the same way.
+
+**Root cause.** Windows held TCP 9309–9408 as an excluded port range (`netsh interface ipv4 show excludedportrange
+protocol=tcp`), and a bind to 9333 is refused there with `EACCES` on both loopbacks, measured with Node. The engine
+opens its DevTools port by binding it, and when the bind fails it runs on without one and the window starts as
+usual. `freePort` (`tools/cdp.mjs`, since `dcbd9b8`) judged a port free when nothing *answered* on it, and a
+reserved port answers nothing, so it handed out 9333. Every port its walk tries (9333–9352) sat inside the same
+range, so `restart` could not have escaped it. The machine had not rebooted since 2026-09-17, and its host network
+service was running, so the range was most likely reserved while it ran, between the two days. When it was taken
+was not observed. A listener that accepts and never answers HTTP read as free the same way. Ruled out: the
+development check (Shenora 0.19 reads `DOTNET_ENVIRONMENT`, then `ASPNETCORE_ENVIRONMENT`, or a `.dev` marker; the
+tool sets the first), and a hand-over to a running instance (the tool refuses a start while one runs from that path,
+and a handed-over start ends, where this one ran).
+
+**Fix.** `freePort` binds each port on both loopbacks before asking it, and passes over one that is held or refused.
+An address the machine lacks says nothing about the port. When the whole walk is refused it takes a port the system
+hands out, held to the same test. `run` then waits up to 30 seconds for the port to answer. When it does not, `run`
+says the window started without its debug port, and names `restart`, the engine's log and the reserved ranges. When
+the application ended first, `run` says that instead, at once. Either way it exits 2, and the run file records
+`debugPortOpen` so `attach` says the same.
+
+**Verify.** `desktop-tool.test.ts`: the port handed out for 9333 binds on 127.0.0.1 (failed first on this machine,
+`EACCES`); a silent listener's port is passed over and an injected refusal walks on to the system's pick (both failed
+first on any machine); the wait and its two reports. **Not run on the window**, and the engine's own log line for
+the refused bind was not seen.
+
 ## Saving a repository's declaration erased what it uses from the registry (2026-10-01)
 
 **Symptom.** Found by DEV4 (MANAGE1): Repositories → Manage → *Write daoris.json* left the file's `domain.uses`
