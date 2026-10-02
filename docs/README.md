@@ -87,6 +87,7 @@ changes no row (D127).
 | `2026-10-01-entry-point-evidence.md` | evidence | D117, LAYOUT2: what Claude Code (both doors), codex, codex-acp and dsh read, from their shipped code, keylessly. The Claude Code ACP adapter loads project instructions; codex cuts its project docs at 32,768 bytes; dsh lists a mirrored skill once. §6 is the canary turn, the owner's to run |
 | `2026-10-01-tools-resources-evidence.md` | evidence | D121, TOOLS3: where each line of the list built in was read from, each maker's published sum, each archive's layout, and the whole files streamed once and matched. MinGit carries an ssh of its own and no bash. A test holds the list to it |
 | `2026-10-02-knowledge-bench-results.md` | evidence | KNOW3, for D128 and KNOW2 (D129): 72 real headless sessions over this repository's documents, behind six knowledge designs, by `tools/knowledge-bench.mjs`. Every design found every document. The region's table is fastest and costs 9,447 tokens a request at 73 documents; the on-demand index costs one more call and was read whole every time; a pushed BM25 top 5 was cheapest when right. §2 proves the isolation, §5 the threats |
+| `2026-10-02-limit-signals-evidence.md` | evidence | TOOL4b, for D125 and D130: what each door says about an account's limits, read keylessly, one turn measured. Claude Code's frame gives each window's use on every turn; its protocol door forwards it in `_meta`; `codex-acp` forwards none, and its limit error's message is `Internal error` alone |
 
 ## Records
 

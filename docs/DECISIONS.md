@@ -8272,6 +8272,28 @@ run its sessions in parallel, keep one account for conversations, and switch bef
 word (`docs/2026-10-02-account-use-design.md` §13). Point 4's reading and the rejection of spreading are amended
 there.*
 
+**Read 2026-10-02 (TOOL4b): what each door says about an account's limits** (point 1, design §1.2; D130 §0.3,
+§5.1, §5.2), in `docs/2026-10-02-limit-signals-evidence.md`: keyless but for one short headless turn, and no limit
+was met. What it found:
+- **The native door's `rate_limit_event` carries a number on every frame.** Its `unifiedWindows` gives each window's
+  use, as a fraction, and its reset, on ordinary turns: 117 frames recorded on Claude Code 2.1.287, one shape, all
+  `allowed`. The SDK's declaration omits the field, so D130 §4.4's *clear, said without a number* does not describe
+  Claude Code (evidence §1, §6).
+- **The warning word is the CLI's own**, derived from use and time elapsed, and still `allowed` at 88% of a five-hour
+  window (evidence §1.3).
+- **A limit's failed `result` is `success` with `is_error: true`, `api_error_status` and the sentence**, read and not
+  measured, so TOOL4d's reason for not handing the native door's failure to the table stands (evidence §2).
+- **The protocol door forwards the frame** as `usage_update`'s `_meta["_claude/rateLimit"]`, except on a turn refused
+  before the model answered, and its limit error carries `data.errorKind`. Daoris drops both today (evidence §3).
+- **`codex-acp` forwards no limits, and a Codex limit's error message is `Internal error` alone**, with the sentence
+  in `data.message`: no Codex entry can match on the door as built (evidence §4).
+- **`/usage` and the status line stay unread** (§1.4, D130 §5.1): a separate fetch, and a person's terminal
+  (evidence §5).
+
+**What the gates do not cover.** No warning, refusal or Codex frame was measured. The protocol door's forwarded frame
+and the CLI under it, 2.1.284, were not read on a turn, and two reads of the CLI binary were not made (evidence §7).
+`verify` checks the note's links and none of these words.
+
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
