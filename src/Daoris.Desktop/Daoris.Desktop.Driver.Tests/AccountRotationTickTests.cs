@@ -89,6 +89,14 @@ public sealed class AccountRotationTickTests : IDisposable
         client.AccountLined += line => { lock (lines) lines.Add(line); };
         var config = Config();
         var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+        // What the person answered an earlier session on the ask (DRIFT1b): no record this chain holds keeps it.
+        service.Words = new JsonArray(
+            new JsonObject { ["kind"] = "asked", ["text"] = "Add the note field", ["at"] = "2026-10-01T08:00:00+00:00" },
+            new JsonObject
+            {
+                ["kind"] = "answered", ["text"] = "Keep the note beside the title, not under it.", ["at"] = "2026-10-01T08:10:00+00:00",
+                ["session"] = "s0", ["quest"] = "q1",
+            });
 
         // The first session runs on account-1, the default, takes the quest and is cut off.
         await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
@@ -126,6 +134,9 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Contains("Its last words were:\n\n> I started the field.", handed.ReplaceLineEndings("\n"));
         Assert.Contains("It ran on another account, which reached its limit and is cooling", handed);
         Assert.DoesNotContain("account-1", handed);
+        // And the person's words on the ask, read from it for this start (DRIFT1b): the answer outlives the hop.
+        Assert.Contains("- They answered a session on this quest, 2026-10-01 08:10 UTC:\n\n  > Keep the note beside the title, not under it.",
+            handed.ReplaceLineEndings("\n"));
 
         // Its conversation record opens saying both accounts, the cut-off session and its refused turn, and that no account
         // has said what it has left (TOOL6b, D130 §16.4): the goal's walk chose it, by the step that passed account-1.

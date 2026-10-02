@@ -462,6 +462,34 @@ public sealed class ServiceClient : IDisposable
         ];
     }
 
+    /// <summary>One ask as the service writes it — the reader the routes use, for the tests that hold its fields.</summary>
+    internal static AskView ReadAskJson(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return ReadAsk(document.RootElement);
+    }
+
+    /// <summary>
+    /// The person's words on an ask (DRIFT1a), oldest first, or null where the host answered none — a host from before
+    /// them, which is never read as the person having said nothing. A word without its kind, its words or a moment that
+    /// reads is passed over, as the service passes over a kind it does not know: never a failed read of the ask.
+    /// </summary>
+    private static IReadOnlyList<AskWordView>? ReadWords(JsonElement ask)
+    {
+        if (!ask.TryGetProperty("words", out var words) || words.ValueKind != JsonValueKind.Array) return null;
+        return
+        [
+            .. words.EnumerateArray()
+                .Select(word => (Kind: Text(word, "kind"), Said: Text(word, "text"), At: Moment(word, "at"), Word: word))
+                .Where(word => word.Kind is { Length: > 0 } && word.Said is not null && word.At is not null)
+                .Select(word => new AskWordView(word.Kind!, word.Said!, word.At!.Value, Text(word.Word, "session"), Text(word.Word, "quest"))),
+        ];
+    }
+
+    /// <summary>An ISO 8601 moment the service wrote, or null where it wrote none that reads.</summary>
+    private static DateTimeOffset? Moment(JsonElement element, string name) =>
+        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+
     private static AskView ReadAsk(JsonElement ask) =>
         new(
             Text(ask, "id") ?? "", Text(ask, "workspace") ?? "", Text(ask, "sentence") ?? "",
@@ -483,6 +511,9 @@ public sealed class ServiceClient : IDisposable
                 ? [.. proposal.EnumerateArray().Select(match => Text(match, "repository")).OfType<string>()]
                 : [],
             Deletable = Flag(ask, "deletable"),
+            // The person's words (DRIFT1a), which every session on the ask is handed (DRIFT1b).
+            Words = ReadWords(ask),
+            WordsKeptFrom = Moment(ask, "wordsKeptFrom"),
         };
 
     /// <summary>A field that is true, or false when it is anything else or absent.</summary>
