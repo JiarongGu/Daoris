@@ -362,9 +362,17 @@ controls are in the frame design's §3.
     a group per repository stating its facts (*drives here*, *held*, *busy* in words), what needs the person first
     (*parked* with it), and the ended beneath. Closed, its strip holds what waits on the person, then what runs.
     It searches by name at once and by what was said when typing settles, archived sessions included and marked. A
-    row's menu holds its own window, its review and its id, and *Archive* on an ended row or *Unarchive* on an
-    archived one (SESSUX1e). The ⋯ shows archived sessions as *Archived*, last, and *Archive what ended…* lists what
-    it would take and what stays before its second press archives.
+    row's menu holds the session's acts where its row is (SESSUX1d, D126 §3.1), each where it applies: *Answer…*,
+    *Stop…*, *Try again*, *Review*, *Open folder*, *Open a terminal here*, its own window, *Archive* on an ended row or
+    *Unarchive* on an archived one (SESSUX1e), and its id. The ⋯ shows archived sessions as *Archived*, last, and
+    *Archive what ended…* lists what it would take and what stays before its second press archives.
+  - **The attended session has a page header, pinned** (SESSUX1d, D126 §3.2): its title on one line, whole in its tip,
+    its word on its pill and its id; then its loud act where its state has one (*Try again*, *Review*), *Stop…* while
+    it is live, and ⋯ with the rest. The conversation scrolls under it, and the long run's way through pins beneath it.
+    Below 560 px of main area its acts take their own line. **A session's stop has one owner, this header**: *Stop…*
+    asks once under it, saying what follows by what the session is, then *Stop session* or *Never mind*. The parked
+    card keeps *Finish* and *Decline…*, a chat's composer *Finish* and *Stop turn*, and a quest's page its door into
+    Sessions; Ask Daoris's panel keeps its own, since the side bar holds that conversation on every view.
   - **The centre is the record, then the conversation**, one scroll, following the centre's width
     (U16): the head read once, then the agent's words, which the region follows until the person
     scrolls up and is then offered *Back to bottom*. **A long run reads from what it was asked**
@@ -391,7 +399,7 @@ controls are in the frame design's §3.
     nothing beside itself keeps the header it had. Picking a tab opens a hidden panel, and a stream the
     session no longer lists falls back to the session's own console.
   - **The composer's turn** (CONV4b): while a turn runs *Send* reads *Queue*, and what waits behind it
-    sits above the box under *waiting for this turn to end*; *Stop turn* stands beside the endings,
+    sits above the box under *waiting for this turn to end*; *Stop turn* stands beside *Finish*,
     neutral, only while the driver says a turn is in flight and only on a door that can see a turn
     end. A stop hands back what was waiting into the box, and a stopped turn says *the turn was
     stopped here*, its cut calls drawn as *stopped*. A draft is kept per session, across a switch and
@@ -399,8 +407,8 @@ controls are in the frame design's §3.
     `@` completes from what git says the tree holds (CONV4d).
   - **An intake is named for what it serves** (INT4g, INT4h): *Intake for ask #id*, *Ask* and *Room*
     in its head. It takes no messages, so it gets no composer; its answer is on the ask, so its one
-    answering move is a door (*Answer ask #id*), and *Stop session* stays, saying the ask then stays a
-    proposal. A running intake's door looks (*Open ask #id*) and only a parked one's answers.
+    answering move is a door (*Answer ask #id*), and its stop is the page header's, whose ask says the ask then stays
+    a proposal (SESSUX1d). A running intake's door looks (*Open ask #id*) and only a parked one's answers.
   - **A tree is reviewed as one only when it is the session's own** (U66): a session in the
     repository's checkout is offered no merge and no discard, since both could only refuse; sending the
     work back is about the work and stays.

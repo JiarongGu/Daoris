@@ -45,9 +45,14 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 const CHAIN_WHOLE = 'daoris.chainWhole';
 
 export function AttendedSession({
-  session, quest, opening, taking, lastTurn, resolving, stopping, onResolve, onAnswerAsk, onStop, onAnswerSession,
-  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch,
+  session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
+  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, headed = false,
 }: {
+  /**
+   * A page header above carries its state, its id and its acts (SESSUX1d, D126 §3.2), so the record head says neither
+   * again. A window with no header (a detached session) keeps them in the head.
+   */
+  headed?: boolean;
   /** Open its review — the move beside work it left that no branch of the person's holds (SESS2 H4). */
   onReview?: () => void;
   /** Who it worked with beyond its chain (SESS1): the session that asked, and what it asked of others. */
@@ -66,13 +71,10 @@ export function AttendedSession({
   /** When its last turn ended here (RAIL2), for the head's *moved*. */
   lastTurn?: string | null;
   resolving?: boolean;
-  stopping?: boolean;
-  /** Passed straight through to the head, where a parked session's three moves live (design §4). */
+  /** Passed straight through to the head, where a parked session's moves live (design §4); its stop is the page header's. */
   onResolve?: (state: Resolution, note: string | null) => void;
   /** Passed straight through too: where an intake's answer is, its ask (INT4g). */
   onAnswerAsk?: (ask: string) => void;
-  /** And a running intake's stop, which has no composer to live on (INT4h). */
-  onStop?: () => void;
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
   onAnswerSession?: (answer: string | null) => void;
   /**
@@ -117,13 +119,12 @@ export function AttendedSession({
         taking={taking}
         lastTurn={lastTurn}
         resolving={resolving}
-        stopping={stopping}
         onResolve={onResolve}
         onAnswerAsk={onAnswerAsk}
-        onStop={onStop}
         onAnswerSession={onAnswerSession}
         branch={branch}
         onReview={onReview}
+        headed={headed}
       />
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and

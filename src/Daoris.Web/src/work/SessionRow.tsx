@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
-import { Dot, Icon, type IconName, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../ui';
+import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../ui';
 import { cn } from '../lib/cn';
+import { ACT_LOOK, type SessionActId } from './acts';
 import { type SessionGrouping, shownOf } from './groups';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { ListRowDoor } from './ListPane';
@@ -66,8 +67,8 @@ export type SessionWhere = {
 };
 
 export function SessionRow({
-  session, quest, opening, root, where, taking, lastTurn, grouping, place, archived = false, selected = false, onSelect, onDetach,
-  onReview, onArchive, onUnarchive, onCopy,
+  session, quest, opening, root, where, taking, lastTurn, grouping, place, archived = false, selected = false, onSelect,
+  acts = [], onAct,
 }: {
   session: Session;
   /**
@@ -109,19 +110,13 @@ export function SessionRow({
   selected?: boolean;
   onSelect?: (id: string) => void;
   /**
-   * The row's menu (RAIL1): its own window, its review, its id, and since D126 §3.1 the session's acts where its row is,
-   * each offered only where it applies. Absent, no menu. Finish and stop keep one owner each (D56).
+   * The row's menu (RAIL1; SESSUX1d, D126 §3.1): the session's acts where its row is, as the one rule offers them
+   * (`offeredActs`), in that order. Handed in, since which apply is the rule's and not the row's. Finish and Decline…
+   * stay its card's (D56).
    */
-  onDetach?: (id: string) => void;
-  onReview?: (id: string) => void;
-  /**
-   * *Archive* (SESSUX1e, D126 §5.2): offered on a row the reader placed in Ended, and on nothing live or waiting on the
-   * person, since archive never hides what needs them. Absent where the reader has not placed it.
-   */
-  onArchive?: (id: string) => void;
-  /** *Unarchive*: offered wherever the reader says the mark stands. */
-  onUnarchive?: (id: string) => void;
-  onCopy?: (id: string) => void;
+  acts?: readonly SessionActId[];
+  /** An act pressed, with the session it was pressed for, for the one owner to carry out (`sessionActs.ts`). Absent, no menu. */
+  onAct?: (act: SessionActId, id: string) => void;
 }) {
   const { t } = useTranslation();
   const title = sessionTitle(session, quest, opening);
@@ -160,16 +155,9 @@ export function SessionRow({
     origin ? t('work.rail.onTip') : null,
   ].filter(Boolean).join(' ');
 
-  // Archive where the reader placed it in Ended, Unarchive where its mark stands (D126 §3.1): each absent where it does
-  // not apply, never disabled (D119 §3.2).
-  const archivable = grouping?.group === 'ended' && !grouping.archived;
-  const actions = [
-    onDetach && { label: t('work.monitor.detach'), icon: 'external' as const, act: onDetach },
-    onReview && { label: t('work.rail.menu.review'), icon: 'diff' as const, act: onReview },
-    onArchive && archivable && { label: t('work.act.archive'), icon: 'archive' as const, act: onArchive },
-    onUnarchive && grouping?.archived && { label: t('work.act.unarchive'), icon: 'unarchive' as const, act: onUnarchive },
-    onCopy && { label: t('work.rail.menu.copy'), icon: 'copy' as const, act: onCopy },
-  ].filter((action) => Boolean(action)) as Array<{ label: string; icon: IconName; act: (id: string) => void }>;
+  // What the rule offered, each absent where it does not apply and never disabled (D119 §3.2); nothing at all where there
+  // is nowhere to report a press.
+  const actions = onAct ? acts : [];
 
   return (
     // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;
@@ -219,10 +207,10 @@ export function SessionRow({
             </button>
           </Menu.Trigger>
           <Menu.Content side="bottom" align="end" highlight="accent" className="min-w-44">
-            {actions.map(({ label, icon, act }) => (
-              <Menu.Item key={label} onSelect={() => act(session.id)}>
-                <Icon name={icon} size={12} className="shrink-0 text-ink-faint" />
-                {label}
+            {actions.map((act) => (
+              <Menu.Item key={act} onSelect={() => onAct?.(act, session.id)}>
+                <Icon name={ACT_LOOK[act].icon} size={12} className="shrink-0 text-ink-faint" />
+                {t(ACT_LOOK[act].label)}
               </Menu.Item>
             ))}
           </Menu.Content>
@@ -234,8 +222,8 @@ export function SessionRow({
 
 /**
  * What a row's line says for the group the reader placed it in (D126 §2.2), with the tip that explains it: how many
- * sessions failed before its quest parked, which question its quest waits on and who it was asked of, or what its own
- * tree holds to review. Null for every other row, whose group needs no sentence.
+ * sessions failed before its quest parked, which question its quest waits on and who it was asked of, that its stop
+ * holds its quest here, or what its own tree holds to review. Null for every other row, whose group needs no sentence.
  */
 function placedFact(
   grouping: SessionGrouping | null | undefined, shown: string,
@@ -251,6 +239,8 @@ function placedFact(
       ? { line: 'work.rail.awaitsOf', values: { quest: grouping.awaits, repository: grouping.awaitsOf }, tip: 'work.rail.awaitsTip' }
       : { line: 'work.rail.awaits', values: { quest: grouping.awaits }, tip: 'work.rail.awaitsTip' };
   }
+  // A person's stop that holds its quest here (SESSUX1b, D126 §2.2): its quest moves again only on *Try again*.
+  if (shown === 'stopped' && grouping.holdsQuest) return { line: 'work.rail.heldHere', tip: 'work.rail.heldTip' };
   if (grouping.group === 'review' && grouping.work) {
     const { commits, uncommitted } = grouping.work;
     // A count git could not give is still work (D88's proof keeps it): said as work, never as nothing.

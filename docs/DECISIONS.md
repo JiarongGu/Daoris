@@ -5310,6 +5310,7 @@ own sources does not.
 **What the gates do not cover.** A real helper choosing `across`, `cap` or `adapter`; the write-to card on
 the window in both themes; and a control that reaches the bridge without a hook, which the reading would not
 see (none does today).
+
 ## D111 — A file's preview is a tab of the side bar, read from the session's tree and never written (2026-09-30)
 
 **Decision (PREVIEW1, D76's held file tools, their trigger met).** The conversation's tool cards and
@@ -5621,6 +5622,7 @@ apart on the card itself, not only in its look's words. The look keeps both in t
 by reason, with what the git on the path needs, and the repositories left apart collapsed, with how a proposal
 includes one. A file a look kept before LEFT3 holds neither, and its card says nothing more. Held by
 `HelpSyncProposalsTests`, `DriverModuleHelpTests` and the card's vitest cases; not looked at on the window.*
+
 ## D113 — A landed session reads as landed: its review and preview read the landed branch once the tree is gone (2026-10-01)
 
 **Decision (REVIEW2, found by the parent looking at the installed window).** A session accepted under a branch rule
@@ -5747,6 +5749,7 @@ and counts its repository as holding Daoris's branches (D112), and the hand-off 
 reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
 is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
 up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
+
 ## D115 — Daoris develops Daoris: a repository declares its lanes, a queue lands them, a steward keeps the records (2026-10-01)
 
 **Decision (DEV1, from the owner's *"we should be able to run sub-agents cross darois development … daoris
@@ -6452,6 +6455,7 @@ placeholders. The Playwright specs were edited to the new names and **not run** 
 - **What the gates do not cover.** The acceptances' rooms are read from the code (classes, a menu's width, a row
   that wraps), not measured, and the seven judgements left on the report are the window's. Nothing looked at the
   window in this branch.
+
 ## D119 — Plugins get a view of their own: a list by what they need, a page per plugin, and Settings keeps where they are looked for (2026-10-01)
 
 **Decision (PLUGUI1a).** The owner, 2026-10-01: *"because plugin will be a big part of daoris so it need to have a
@@ -6646,6 +6650,7 @@ shell's conversations write `plugin.served` through one seam of the chat runner.
 (PLUGUI1f); until then the route test holds each route by the tests that ask it. `daoris-driver chat` writes no
 `plugin.served`, as it writes no session lines. A conversation's line is held at the seam, not in a real conversation, and
 `PLUGIN_OPEN_FOLDER` has met no file manager: the window is where both are seen.*
+
 ## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
 
 **Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as
@@ -6892,6 +6897,7 @@ test in `RepositoryDocumentsTests`:
   once against `checkDocuments` from the source and are held by no CLI test. A real link was made and read on this
   machine; on one that makes none, the link test returns early. No repository in the family declares documents on
   this branch (DOC4, DOC6), so no refresh of a real corpus has read a declaration.
+
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
@@ -7208,6 +7214,7 @@ tools' environment. What the design left open, settled here:
 *Amended by D124 (WSSETUP3, 2026-10-01): a child's `PATH` begins with the install's `app/bin/` beside the home, before
 the tools' folders, so every child finds the install's `daoris`. With no install beside the home it is as above, byte
 for byte. D124's note has the rest.*
+
 **As built (TOOLS7, 2026-10-01): Settings → Tools.** A machine domain after *Agents*, on the routes of
 `DriverModule.Tools.cs` that the page's `bridge/tools.ts` calls, the molecules in `settings/Tools.tsx` and the organism
 `settings/ToolsDomain.tsx`. What the design left open, settled here:
@@ -7753,6 +7760,7 @@ to go as the single press does (`SetupPress.PlanAsync`, then `PublishAsync`, the
 doors), which only a real tick or terminal reaches. The family rehearsal's check (two scratch repositories set up one at a
 time by the stub, pausing after a pilot of one) is the tools lane's: written as phase 17d (WSSETUP6a, below). Whether one set-up at a time keeps
 pace with the owner's review is §9's fifth item.
+
 **As built (WSSETUP5a, 2026-10-02): the family rehearsal checks registration from the line.** Phase 17c reads atlas's
 row through the host's `/api/registry` before its landing and after it. Before, the row is not adopted and declares
 nothing, though the set-up is done. After, `trees land` has printed `registry  atlas: registered from its line …` at the
@@ -7882,6 +7890,7 @@ given model's context, and what segmenting does to recall on the real corpus, ne
 page shows `semanticError` from a refresh, and since SEM3b `embedded` too, in the refresh's notice beside the count;
 Settings → AI names `DAORIS_EMBED_WINDOW` beside the model and the address. A refresh with no `embedded` says nothing
 of embedding.
+
 **As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
 driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
 install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
@@ -7919,6 +7928,7 @@ network: a package source is PLUGDIST1c's. What the design left open, settled he
 - **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
   for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
   answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
+
 **Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
 reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
 every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
@@ -7949,6 +7959,7 @@ the path the disk spells. The choices §5 left open, each held by a test in `Rep
   machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
   cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
   now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.
+
 **As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
 pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
 tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
@@ -8151,6 +8162,40 @@ carry-on case is cut off by a refusal no table knows. A sign-in's end through `L
 process, which no test runs. The note's time names the machine's zone, which travels with the note as the agent's own
 sentence already did. Nothing on the screen shows any of it yet (TOOL4g).
 
+**Built 2026-10-02 (TOOL4e): the twins and the terminal** (points 2, 4 and 8; design §2.2, §2.4, §3.1, §3.7, §6), held
+by `RotationTwinTests`, `CoolingTwinTests` and `CoolOffTests` on the driver's side and, cell for cell, by the CLI's
+`rotation.test.ts`, `cooling.test.ts` and `driverconfig.test.ts`. What building it settled:
+- **Each writer of `harnesses.json` keeps the other's sections, and both write the same bytes** for the same wiring.
+  `HarnessSettings.Save` writes `rotation` and `workspaceRotation` (only where an order is set), and now keeps what it
+  has no field for (`Kept`, first, as the CLI's `rest`): a section a newer build writes outlives this build's save.
+  Holding the bytes found that the driver's save wrote CRLF on Windows (the JSON writer's line end is the platform's);
+  it writes LF now, and so does `cooling.json`'s writer. Byte for byte holds for names in ASCII; a key neither knows
+  holding other characters is the same JSON, escaped differently.
+- **The order is read leniently and refused strictly.** Reading trims each name, skips a blank or a name that is not
+  text, and reads a name written twice, in any case, once; a door refuses a name that is no account here, compared
+  exactly as `profile default` compares one, or one named twice in any case, the first problem said
+  (`HarnessSettings.OrderProblem`, `RotationProblem.Sentence` for the screen's route). Clearing is naming nobody.
+- **An account removed leaves no order and no cool-off naming it.** `WithoutAccount` takes it out of every default and
+  order, and `RemoveProfile` ends its cool-off, since the next account made takes the first free `account-N`, which may
+  be its name. The terminal's `profile remove` does both. The screen's *Remove* still clears only defaults: the modules'
+  `ProfileRemove` should call `WithoutAccount` (TOOL4g, or a modules row).
+- **The terminal's spelling of the tool's own sign-in is `--own`**: `daoris agent profile ready <agent> <profile>|--own`.
+  `ready` on an account not cooling says so, names what is, and writes nothing. A sign-in (`login`, `login --new`) or a
+  key (`agent key`) made from the terminal ends that account's cool-off, as `LoginAsync` and `HarnessKeys.Add` do.
+- **`cooloff` is read as a whole number of at least 1**, anything else the hour; `HarnessRoster.Limited` takes it, from a
+  driven session or an intake (`Driver.AccountLimited`) and a conversation (`ChatRunner`), and
+  `AccountLimits.DefaultCoolOff` stays the default. `daoris driver cooloff <minutes>` refuses less than 1.
+- **`daoris agent list`** says each account's cool-off under it (until when in the machine's zone, how long, why, and the
+  `ready` that ends it), the tool's own sign-in's under the agent, the order, and §3.7's line where a start would run on
+  the person's own sign-in: an agent that is here, signs in by its own flow and names no machine default.
+- **The room names the three terminal doors** (`HelpRoomDoors`, *no screen yet*), and `HelpCoverageTests` holds
+  `driver cooloff` as a door Ask Daoris owes until TOOL4g builds the `setting` kind's `cooloff`.
+
+**What the gates do not cover.** Nothing reads an order to choose an account yet (TOOL4f). `login --profile`'s end of a
+cool-off is reached only by a real login, and a conversation's `cooloff` only through a real protocol chat; both are one
+line each, beside tested ones. The `Process` half, the rehearsals and the screen were not run by this branch, and the
+screen, Ask Daoris's doors and the room's cooling facts are TOOL4g's.
+
 **Built 2026-10-02 (TOOL4f): rotation** (points 4, 6 and 7; design §3, §3.7, §4, §5.4), held by `AccountRotationTests`,
 `AccountRotationHoldTests` and `CarryOnHandedTests`. What building it settled:
 - **The walk is a list, then a look.** `AccountRotation.Candidates` is pure: the resolved account, and only where a
@@ -8307,39 +8352,6 @@ manage with. What ended had nowhere to go but further down.
 - **The grouping as a helper on the page.** It needs the planner's verdict and a git judgement, which only the driver
   has, and a terminal twin would make it a twin of an eleven-case rule.
 
-**Built 2026-10-02 (TOOL4e): the twins and the terminal** (points 2, 4 and 8; design §2.2, §2.4, §3.1, §3.7, §6), held
-by `RotationTwinTests`, `CoolingTwinTests` and `CoolOffTests` on the driver's side and, cell for cell, by the CLI's
-`rotation.test.ts`, `cooling.test.ts` and `driverconfig.test.ts`. What building it settled:
-- **Each writer of `harnesses.json` keeps the other's sections, and both write the same bytes** for the same wiring.
-  `HarnessSettings.Save` writes `rotation` and `workspaceRotation` (only where an order is set), and now keeps what it
-  has no field for (`Kept`, first, as the CLI's `rest`): a section a newer build writes outlives this build's save.
-  Holding the bytes found that the driver's save wrote CRLF on Windows (the JSON writer's line end is the platform's);
-  it writes LF now, and so does `cooling.json`'s writer. Byte for byte holds for names in ASCII; a key neither knows
-  holding other characters is the same JSON, escaped differently.
-- **The order is read leniently and refused strictly.** Reading trims each name, skips a blank or a name that is not
-  text, and reads a name written twice, in any case, once; a door refuses a name that is no account here, compared
-  exactly as `profile default` compares one, or one named twice in any case, the first problem said
-  (`HarnessSettings.OrderProblem`, `RotationProblem.Sentence` for the screen's route). Clearing is naming nobody.
-- **An account removed leaves no order and no cool-off naming it.** `WithoutAccount` takes it out of every default and
-  order, and `RemoveProfile` ends its cool-off, since the next account made takes the first free `account-N`, which may
-  be its name. The terminal's `profile remove` does both. The screen's *Remove* still clears only defaults: the modules'
-  `ProfileRemove` should call `WithoutAccount` (TOOL4g, or a modules row).
-- **The terminal's spelling of the tool's own sign-in is `--own`**: `daoris agent profile ready <agent> <profile>|--own`.
-  `ready` on an account not cooling says so, names what is, and writes nothing. A sign-in (`login`, `login --new`) or a
-  key (`agent key`) made from the terminal ends that account's cool-off, as `LoginAsync` and `HarnessKeys.Add` do.
-- **`cooloff` is read as a whole number of at least 1**, anything else the hour; `HarnessRoster.Limited` takes it, from a
-  driven session or an intake (`Driver.AccountLimited`) and a conversation (`ChatRunner`), and
-  `AccountLimits.DefaultCoolOff` stays the default. `daoris driver cooloff <minutes>` refuses less than 1.
-- **`daoris agent list`** says each account's cool-off under it (until when in the machine's zone, how long, why, and the
-  `ready` that ends it), the tool's own sign-in's under the agent, the order, and §3.7's line where a start would run on
-  the person's own sign-in: an agent that is here, signs in by its own flow and names no machine default.
-- **The room names the three terminal doors** (`HelpRoomDoors`, *no screen yet*), and `HelpCoverageTests` holds
-  `driver cooloff` as a door Ask Daoris owes until TOOL4g builds the `setting` kind's `cooloff`.
-
-**What the gates do not cover.** Nothing reads an order to choose an account yet (TOOL4f). `login --profile`'s end of a
-cool-off is reached only by a real login, and a conversation's `cooloff` only through a real protocol chat; both are one
-line each, beside tested ones. The `Process` half, the rehearsals and the screen were not run by this branch, and the
-screen, Ask Daoris's doors and the room's cooling facts are TOOL4g's.
 **As built (SESSUX1a, 2026-10-02): the reader of a session's group, and the archive marks.** `SessionGroups.Read`
 (`SessionGroups.cs`) is pure over a `SessionLook`: the records, every quest, the planner's verdicts, each quest's last
 session here and its strikes as `ServiceClient`'s own readers derive them, the trees' judgement and the marks.
@@ -8459,6 +8471,7 @@ Held by `SessionLedgerTests`: a released stop of the session that took, and of a
 seen failing first; a stop before the take with the quest then taken by another machine or by nobody here, refused,
 which passed before and was seen failing under the rule without `took`; a stand-down and a decline after a released
 carry-on, refused. And `HelpSettingProposalTests`' retry rows and the tool's words, seen failing first.
+
 **As built (SESSUX1c, 2026-10-02): the list by state.** `SessionRail` asks `useSessionGroups` and hands `SessionList`
 and `SessionStrip` (molecules, `work/SessionList.tsx`) the records and the reader's answer; `work/groups.ts` draws
 the groups in the reader's order, the list by repository, *Ended*'s twelve and the strip, and took over `partition`.
@@ -8495,6 +8508,84 @@ a browser's and the monitor's lists asking nothing), `SessionRow.test.tsx`, `ui.
 stories. Each was seen failing first, `groups.test.ts` only as a module not yet written. **Not built here**: a stopped session's line *held here until you try again*,
 which needs SESSUX1b's verdict in the reader, and *account cooling* (SESSUX1k). **Not measured**: the groups'
 headings and the rows' lines at 888 and 680 px in both languages, which the window decides (§12).
+
+**As built (SESSUX1e, 2026-10-02): archive on the screen.** A row's ⋯ offers *Archive* where the reader placed the
+session in Ended and *Unarchive* wherever its mark stands. Sessions' ⋯ gains *Show archived*, the filter's `archived`
+kept beside the arrangement, and below a rule (`MoreItem.rule`) *Archive what ended…*. `SessionRail` sends each through
+`useArchiveSessions`. `ArchiveEndedAsk`, a molecule in `work/SessionList.tsx`, is the bulk's first press, listed by
+`endedToArchive` in `work/groups.ts`. What the build settled that §3.1 and §5 left open:
+
+- **The acts are the rail's until the header exists.** §3.1 gives every act one module, `work/sessionActs.ts`, for the
+  row and the header to share. The header is SESSUX1d's, after SESSUX1b, so the row's two archive acts and the bulk's
+  second press live in `SessionRail` for now, and SESSUX1d moves them when the header gives them a second door.
+- **Archive is offered only where the reader placed a session in Ended.** A record the reader has not answered for is
+  placed in Ended by its record alone (SESSUX1c's note), and may yet be to review, so it offers no *Archive* and the
+  bulk does not take it. *Unarchive* is offered wherever the mark stands, on a row that waits on you too, since the
+  reader keeps a session that needs the person in its group whatever its mark says.
+- **The bulk's first press holds what it listed.** It opens once the reader has answered. It says how many it would
+  take, and how many stay under *Waiting on you* and *To review*, counted as those headings count within the page's
+  scope. The second press sends exactly the ids the first listed, held from when the ask opened, since the reader
+  answers again on every tick. With nothing to take it says so and offers only *Close*, never a press that archives
+  nothing.
+- **What the second press kept is counted, not listed.** The route archives what may go and returns each kept session
+  with its code. The toast says *Archived N of M; the rest changed since the list*, and each kept row stands in the
+  group that now holds it. Asked of one session, a bulk list of one included, the route's refusal is the answer, said
+  in the catalogue's words, `SESSION_NEEDS_YOU`'s group through its context.
+- **An archived row says so where no heading does.** Under *Archived* the heading says it. By repository and in a
+  search (§4.5), the row's line starts with *archived*, and its tip says how it comes back. *Show archived* with
+  nothing archived draws *Archived (0)* and *Nothing archived*, so the tick never seems to do nothing.
+- **The glossary gains *archive*** (归档; its inverse 取消归档; never 存档 or 隐藏). The Chinese refusal SESSUX1a wrote
+  said 归档从不隐藏…, and now says 归档绝不会把需要你处理的会话移出列表, so the term's own avoid list holds of the
+  sentences `names-check --all` reads.
+
+Held by `groups.test.ts` (what the bulk takes), `SessionRow.test.tsx` (each act offered or absent by group, the line's
+mark, 中文), `SessionList.test.tsx` (Archived and its empty state, the ask's two presses, nothing to archive),
+`ListPane.test.tsx` (the rule), `SessionRail.test.tsx` (each act and refusal over a mocked bridge, the bulk's kept count,
+a search's mark), `WorkFrame.test.tsx` (the ⋯, remembered, and the ask opened from it), and the stories. Each was seen
+failing first. Two negative cases passed before the build: no *Archive* on a live, waiting or to-review row, and no
+Archived group while hidden. Each was then seen failing under a sabotage of the rule it holds. **Not built here**: the
+header's *Archive* and *Unarchive* (SESSUX1d) and *Delete…* (SESSUX1f). **Not measured**: the bulk's ask at 1280 and
+680 px, and *Archived* in both languages and both themes, which the window decides (§12).
+
+**As built (SESSUX1d, 2026-10-02): the page header, and every act where its session is.** Sessions' main area has a
+pinned `SessionPageHead` with the acts by state and `StopAsk` under it. A row's ⋯ draws the same acts. The parked
+card, the intake cards, a chat's composer and the quest page lose their stops. The quest page's *Try again* also
+takes a `Stopped` verdict. `SESSION_OPEN_FOLDER` is on `DriverModule.Sessions.cs`. What the build settled that §3
+left open:
+
+- **One rule and one owner, in two files.** `work/acts.ts` is the rule, pure, which the molecules read
+  (`offeredActs`, `primaryAct`, `folderOf`, `stopAsk`). `work/sessionActs.ts` is the owner both doors call
+  (`useSessionActs`), an organism. A molecule imports no hook, so the rule could not live beside the bridge. What only
+  the frame can do (attend and answer, attend and ask to stop, review, a terminal there) goes through its `doors`, and
+  the monitor's list, which has none, offers its window and its id.
+- **A teammate's record offers Archive, Unarchive and its id at both doors.** §3.2's *Copy alone* rests on nothing
+  reaching its process, and an archive mark is this machine's (§5.2).
+- **Review is offered where there is work to read**: a tree its record names here, a landing, or *To review*. RAIL1
+  offered it on every row. **Open folder and a terminal** are offered where `folderOf` finds the tree, else the
+  checkout, never for an intake or Ask Daoris. The route opens only a tree this home opened or the registry's
+  checkout. Anything else, a teammate's record included, is `SESSION_FOLDER_GONE`. A system that will not open it is
+  `SESSION_FOLDER_NOT_OPENED`, as the log's and a plugin's are, and an id no record has is `SESSION_UNKNOWN` with
+  the `folder` context.
+- **A driven session whose quest the page holds as open has not taken it**, so its ask says another machine may.
+- **One toast per outcome on both pages**: `retryNotice` reads `RETRY_QUEST`'s `retried.did`, so a mark is
+  `quests.detail.retried` and a release `quests.detail.released`.
+- **中文 says a stop's hold with the session the tick names.** `DriverLoop.TickConsideration` adds `heldBy`, and
+  `work.sitting.Stopped` reads it, never the driver's English. `i18n-check`'s `PASSED_FACTS` lets a passed-through
+  sentence's other language say the facts the page hands beside it. With no `heldBy`, the driver's words stand.
+- **SESSUX1c's leftover line**, *held here until you try again*, is built: `holdsQuest` reaches the page's grouping,
+  and *Try again* reads it too.
+- **Names.** 中文 `work.act.stopMeanIt` is 确认停止会话, not §8's 确认停止: the names check holds a button that says
+  *session* to say 会话. `work.composer.stop` stays for Ask Daoris's panel, §3.3's exception. `work.awaiting.stop`,
+  `quests.session.stop` and `work.rail.menu.review` are retired, since the review is `work.head.review` on both doors.
+  The glossary gains *try again* 重试.
+
+Held by `acts.test.ts`, `sessionActs.test.tsx`, `SessionPageHead.test.tsx`, `SessionRow`, `SessionList`,
+`SessionRail`, `WorkFrame`, `Composer`, the cards' tests, `QuestsView.shell.test.tsx`, `signals.test.ts`,
+`bridge/sessions.test.tsx`, `DriverModuleSessionsTests` and `TickConsiderationTests`, and the stories. Each was seen
+failing first, bar the row's tests, rewritten with the rule they draw. **Not built here**: the header's *Delete…*
+(SESSUX1f) and *Stop…*'s Ask Daoris door (SESSUX1h). **Not measured**: the header at 1280, 888, 680 and 560 px in both
+themes and languages, the long run's toolbar pinned beneath it, and a real stop's ask (§12).
+
 ## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
 
 **Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
@@ -8581,43 +8672,6 @@ blank line when the next line is indented, since a reader sees that paragraph as
 `doc-shapes.test.ts`, ten cases, each seen failing against a stub first. Not covered: the adopter's own record
 formats, which stay out of `check` (§3.2).
 
-**As built (SESSUX1e, 2026-10-02): archive on the screen.** A row's ⋯ offers *Archive* where the reader placed the
-session in Ended and *Unarchive* wherever its mark stands. Sessions' ⋯ gains *Show archived*, the filter's `archived`
-kept beside the arrangement, and below a rule (`MoreItem.rule`) *Archive what ended…*. `SessionRail` sends each through
-`useArchiveSessions`. `ArchiveEndedAsk`, a molecule in `work/SessionList.tsx`, is the bulk's first press, listed by
-`endedToArchive` in `work/groups.ts`. What the build settled that §3.1 and §5 left open:
-
-- **The acts are the rail's until the header exists.** §3.1 gives every act one module, `work/sessionActs.ts`, for the
-  row and the header to share. The header is SESSUX1d's, after SESSUX1b, so the row's two archive acts and the bulk's
-  second press live in `SessionRail` for now, and SESSUX1d moves them when the header gives them a second door.
-- **Archive is offered only where the reader placed a session in Ended.** A record the reader has not answered for is
-  placed in Ended by its record alone (SESSUX1c's note), and may yet be to review, so it offers no *Archive* and the
-  bulk does not take it. *Unarchive* is offered wherever the mark stands, on a row that waits on you too, since the
-  reader keeps a session that needs the person in its group whatever its mark says.
-- **The bulk's first press holds what it listed.** It opens once the reader has answered. It says how many it would
-  take, and how many stay under *Waiting on you* and *To review*, counted as those headings count within the page's
-  scope. The second press sends exactly the ids the first listed, held from when the ask opened, since the reader
-  answers again on every tick. With nothing to take it says so and offers only *Close*, never a press that archives
-  nothing.
-- **What the second press kept is counted, not listed.** The route archives what may go and returns each kept session
-  with its code. The toast says *Archived N of M; the rest changed since the list*, and each kept row stands in the
-  group that now holds it. Asked of one session, a bulk list of one included, the route's refusal is the answer, said
-  in the catalogue's words, `SESSION_NEEDS_YOU`'s group through its context.
-- **An archived row says so where no heading does.** Under *Archived* the heading says it. By repository and in a
-  search (§4.5), the row's line starts with *archived*, and its tip says how it comes back. *Show archived* with
-  nothing archived draws *Archived (0)* and *Nothing archived*, so the tick never seems to do nothing.
-- **The glossary gains *archive*** (归档; its inverse 取消归档; never 存档 or 隐藏). The Chinese refusal SESSUX1a wrote
-  said 归档从不隐藏…, and now says 归档绝不会把需要你处理的会话移出列表, so the term's own avoid list holds of the
-  sentences `names-check --all` reads.
-
-Held by `groups.test.ts` (what the bulk takes), `SessionRow.test.tsx` (each act offered or absent by group, the line's
-mark, 中文), `SessionList.test.tsx` (Archived and its empty state, the ask's two presses, nothing to archive),
-`ListPane.test.tsx` (the rule), `SessionRail.test.tsx` (each act and refusal over a mocked bridge, the bulk's kept count,
-a search's mark), `WorkFrame.test.tsx` (the ⋯, remembered, and the ask opened from it), and the stories. Each was seen
-failing first. Two negative cases passed before the build: no *Archive* on a live, waiting or to-review row, and no
-Archived group while hidden. Each was then seen failing under a sabotage of the rule it holds. **Not built here**: the
-header's *Archive* and *Unarchive* (SESSUX1d) and *Delete…* (SESSUX1f). **Not measured**: the bulk's ask at 1280 and
-680 px, and *Archived* in both languages and both themes, which the window decides (§12).
 ## D128 — A set-up keeps the repository's checks green, and the doctrine region lists only what the canon bounds: knowledge and skills are an index read on demand (2026-10-02)
 
 **Decision (WSSETUP14, from the first real set-up, WSSETUP12's).** On the report repository, the set-up's own

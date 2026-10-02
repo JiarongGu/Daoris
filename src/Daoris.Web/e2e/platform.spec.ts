@@ -549,8 +549,10 @@ test("a driven session's record reaches the quest's page (D46)", async ({ page, 
   await expect(ran.getByText('the process is alive')).toBeVisible();
 
   // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
-  // PROCESS, and a browser has none to reach (D46 §6).
+  // PROCESS, and a browser has none to reach (D46 §6). Since SESSUX1d no quest page carries a stop at all:
+  // its one owner is the session's page header in Sessions, which a browser has not got (D126 §3.3).
   await expect(shown.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
+  await expect(shown.getByRole('button', { name: 'Stop…' })).toHaveCount(0);
 });
 
 /**

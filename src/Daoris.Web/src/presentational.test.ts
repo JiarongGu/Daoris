@@ -47,6 +47,9 @@ const ORGANISMS = new Set<string>([
   './work/DiffPane.tsx',
   './work/MonitorWindow.tsx',
   './work/SessionRail.tsx',
+  // The one owner of each act on a session (SESSUX1d, D126 §3.1): it holds the bridge's hooks, so the row, the list and
+  // the page header, which each press it, hold none.
+  './work/sessionActs.ts',
   './work/WorkFrame.tsx',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',

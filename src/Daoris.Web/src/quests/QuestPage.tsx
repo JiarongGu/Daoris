@@ -24,9 +24,9 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
 /**
  * **A quest's page** (FRAME1d, D118 §3d): its record in Quests' main area, where it was a drawer that lay
  * over the side bar and the panel. Its acts are in its header and the loud one is its next step (UX5 U31):
- * *Take* while it is open, *Mark done* once it is taken. Then what it is waiting on, the person's two holds
- * (a folder to trust, D73; a quest parked by its strikes, RETRY1), a conflict a person must see (D68 §5), the
- * ask itself, what it carries (D65 §2), its chain (MAP1) and its driven session's record (D46 §4).
+ * *Take* while it is open, *Mark done* once it is taken. Then what it is waiting on, the holds only the person lifts
+ * (a folder to trust, D73; a quest parked by its strikes, RETRY1; one their stop holds, D126 §3.4), a conflict a person
+ * must see (D68 §5), the ask itself, what it carries (D65 §2), its chain (MAP1) and its driven session's record (D46 §4).
  *
  * @remarks
  * **A molecule**: every state is reached by its props, and every press goes out. What asks under the header —
@@ -41,9 +41,9 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   route, and one kept elsewhere says so.
  */
 export function QuestPage({
-  quest, lanes, question, sitting, hold, chain = [], session, running = false,
-  busy = false, retrying = false, trusting = false, granting = false, dismissing = false, stopping = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onStop, onOpenQuest, onAttend,
+  quest, lanes, question, sitting, hold, chain = [], session,
+  busy = false, retrying = false, trusting = false, granting = false, dismissing = false,
+  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend,
 }: {
   quest: Quest;
   /** Its lanes as its repository declares them (D115 §2.2), each named where its registration says. */
@@ -56,29 +56,30 @@ export function QuestPage({
   hold?: TrustHold | null;
   /** The chain it belongs to (MAP1); drawn only where there is more than this quest. */
   chain?: ChainStep[];
-  /** Its driven session's freshest record: a retry is its own record, and the page says where things stand now. */
+  /**
+   * Its driven session's freshest record: a retry is its own record, and the page says where things stand now. Read
+   * here and managed in Sessions (D126 §3.6): its stop is its page header's there, behind the door below.
+   */
   session?: Session | null;
-  /** That session's process runs on this machine, so it can be stopped here (D46 §6). */
-  running?: boolean;
   busy?: boolean;
   retrying?: boolean;
   /** The agent's trust question is open for the hold (D73), asked only on the press. */
   trusting?: boolean;
   granting?: boolean;
   dismissing?: boolean;
-  stopping?: boolean;
   onRespond: (action: 'take' | 'done' | 'decline', reason?: string) => void;
   /** Delete the quest (D95) — absent where there is no door to do it. */
   onDelete?: () => void;
   onDismiss: (machine: string, sequence: number) => void;
-  /** Start a quest parked by its strikes again (RETRY1) — the shell's. */
+  /**
+   * *Try again* (RETRY1; D126 §3.4): start a quest parked by its strikes again, or release one the person's stop holds
+   * — the shell's, which the driver judges by its verdict.
+   */
   onRetry?: () => void;
   /** Open or put down the trust question (D73) — the shell's, which closes it once the grant is written. */
   onTrusting?: (open: boolean) => void;
   /** Grant the agent's trust for the folder held (D73) — the shell's. */
   onGrant?: (hold: TrustHold) => void;
-  /** Stop its session's process — only where it runs here. */
-  onStop?: () => void;
   onOpenQuest: (id: string) => void;
   /** The door into Sessions: absent where there are none, a browser, or no driver is attached. */
   onAttend?: (session: string) => void;
@@ -213,9 +214,10 @@ export function QuestPage({
             {hold && onGrant && onTrusting && !trusting && (
               <span className="mt-1.5 block"><Button onClick={() => onTrusting(true)}>{t('trust.open')}</Button></span>
             )}
-            {/* And the other: a quest parked by its strikes, started again on the press (RETRY1). Counted from
-                where it stands, so the next failures park it again. */}
-            {because?.verdict === 'Exhausted' && onRetry && (
+            {/* And the other two: a quest parked by its strikes, started again on the press (RETRY1), counted from
+                where it stands so the next failures park it again; and one the person's stop holds, released from that
+                stop (SESSUX1b, D126 §3.4). One act and one word, on this page and on the session that holds it. */}
+            {(because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry && (
               <span className="mt-1.5 block">
                 <Button disabled={retrying} onClick={onRetry}>{t('quests.detail.retry')}</Button>
               </span>
@@ -338,9 +340,9 @@ export function QuestPage({
       {quest.note && <p className="mt-4 max-w-prose rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>}
 
       {session && (
-        /* The driven session's RECORD (D46 §4) — read-only here: the process, and the person's controls over
-           it, live where a driver is attached, which is the desktop. The note and evidence are the driver's
-           observations and render verbatim, like every system sentence. */
+        /* The driven session's RECORD (D46 §4) — read-only here: a quest is decided on its page, and its sessions
+           are managed on theirs (D126 §3.6), so the stop is the session's page header's, behind the door below. The
+           note and evidence are the driver's observations and render verbatim, like every system sentence. */
         <section className="mt-5" aria-label={t('quests.session.title')}>
           <SectionTitle>{t('quests.session.title')}</SectionTitle>
           <div className="flex flex-wrap items-center gap-2">
@@ -349,11 +351,6 @@ export function QuestPage({
               {session.id} · {sessionTool(session)}
               {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
             </span>
-            {/* Stop reaches a PROCESS, so it renders only where one is actually running — the shell's driver —
-                never in a browser that could only wish (D46 §6). */}
-            {running && onStop && (
-              <Button variant="danger" disabled={stopping} onClick={onStop}>{t('quests.session.stop')}</Button>
-            )}
           </div>
           {session.note && <p className="mt-2 mb-0 max-w-prose text-body text-ink-soft">{session.note}</p>}
           {session.evidence && (

@@ -3,18 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
-  type SessionHit, useArchiveSessions, useDriver, useOpenWindow, useSessionGroups, useSessionOpenings, useSessionSearch,
-  useSessionWhere,
+  type SessionHit, useDriver, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
 } from '../shell';
-import { failure, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import { Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
+import { offeredActs, type SessionActId } from './acts';
 import { endedToArchive, type SessionArrangement } from './groups';
 import { SessionRow } from './SessionRow';
 import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
 import { isIntake, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
-import { sessionWindowName } from './window';
+import { type SessionDoors, useSessionActs } from './sessionActs';
 
 /**
  * The rail: Sessions' list, by state or by repository (SESSUX1c, D126 §4), and its search (RAIL1).
@@ -34,11 +34,14 @@ import { sessionWindowName } from './window';
  * its list is the arrangement it always had, by repository (D47 §4); and the monitor's list, the present tense only,
  * asks nothing and keeps it too.
  *
- * **Archive is sent from here** (SESSUX1e, D126 §5.2, §5.3): a row's *Archive* and *Unarchive*, and *Archive what
- * ended…*'s two presses, each through `useArchiveSessions`, the host judging every session as it is asked.
+ * **A row's acts are the one owner's** (SESSUX1d, D126 §3.1): each row is offered what the one rule offers it
+ * (`offeredActs`), and a press goes to `useSessionActs`, which the page header calls too. What only the frame can do
+ * (attend and answer, attend and ask to stop, review, a terminal there) goes through the frame's `doors`. The monitor's
+ * list, the present tense on a second screen, offers only its window and its id: the moves stay in the main window.
+ * *Archive what ended…*'s second press is the owner's too (SESSUX1e, §5.3).
  */
 export function SessionRail({
-  selected = null, onSelect, notify, compact = false, onReview, taking = {}, lastTurns = {}, live = false,
+  selected = null, onSelect, notify, compact = false, doors, taking = {}, lastTurns = {}, live = false,
   arrangement = 'state', archived = false, archiveEnded = false, onArchiveEnded,
 }: {
   /** The attended session's id, held by the frame. */
@@ -50,8 +53,11 @@ export function SessionRail({
    * in the open rail's order (D126 §2.5). What ended is left to the open rail.
    */
   compact?: boolean;
-  /** Review a session's work — the frame's, since the dock is (RAIL1's row menu). */
-  onReview?: (id: string) => void;
+  /**
+   * What only the frame can do with a session (SESSUX1d): attend it and open its answer's box, attend it and ask to stop
+   * it, review it in the dock, open a terminal in its folder. Absent, a row offers none of them.
+   */
+  doors?: SessionDoors;
   /**
    * Whether each live conversation has a turn in flight, as the driver says — the frame's, which
    * follows them for its composer too (UX5 U17). A chat between turns reads idle; one absent here
@@ -84,7 +90,8 @@ export function SessionRail({
   const quests = useQuests(null, true);
   const registry = useRegistry();
   const driver = useDriver();
-  const openWindow = useOpenWindow();
+  // Each act on a row, by the one owner the page header calls too (SESSUX1d).
+  const actions = useSessionActs({ notify, doors });
   // Where each session is listed by state (SESSUX1a): the driver's one reader, asked under the sessions' key, so every
   // tick that asks the records again asks this too. The monitor's list draws no group and asks nothing.
   const groups = useSessionGroups(undefined, { enabled: !live });
@@ -99,7 +106,6 @@ export function SessionRail({
   const listed = (sessions.data ?? []).filter((session) => !live || SESSION_ACTIVE.has(session.state) || session.id === selected);
   // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows listed.
   const where = useSessionWhere(listed);
-  const archive = useArchiveSessions();
   // Searching (RAIL1): by name at once, and by what was said once the typing settles.
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 250);
@@ -126,34 +132,23 @@ export function SessionRail({
   }));
   const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
 
-  // Archive and unarchive one session from its row (SESSUX1e, D126 §5.2). Asked of one, a refusal is the host's answer,
-  // said in the catalogue's words with the group that kept it; one that was not archived is information (D48 §6).
-  const archiveOne = (id: string, mark: boolean) => archive.mutate({ ids: [id], archived: mark }, {
-    onSuccess: (answer) => notify(t(mark ? 'work.archive.done'
-      : answer?.notArchived?.includes(id) ? 'work.archive.wasNot' : 'work.archive.back')),
-    onError: failure(notify),
+  // What decides each row's acts: its record, where the reader placed it, its checkout, where its work is (D126 §3.1).
+  const factsFor = (session: Session) => ({
+    session,
+    grouping: live ? null : placed.get(session.id),
+    root: registered.get(session.repository)?.root,
+    where: where[session.id],
   });
-  // *Archive what ended…*'s second press (§5.3): what its first listed, each judged again by the host as it goes. What
-  // changed since the list is kept and counted, never refused as a whole.
-  const archiveListed = (ids: readonly string[]) => archive.mutate({ ids, archived: true }, {
-    onSuccess: (answer) => {
-      const kept = answer?.kept?.length ?? 0;
-      notify(kept > 0
-        ? t('work.archive.endedKept', { archived: ids.length - kept, count: ids.length })
-        : t('work.archive.ended', { count: ids.length }));
-      onArchiveEnded?.();
-    },
-    onError: failure(notify),
-  });
-
+  // The acts each row is offered, as the one rule offers them and this door can carry out. The monitor's list is read
+  // only: its window and its id (D55 §b).
+  const actsFor = (session: Session): SessionActId[] => offeredActs(factsFor(session), 'row')
+    .filter((act) => actions.can(act) && (!live || act === 'detach' || act === 'copy'));
   const acts = {
     onSelect,
-    onDetach: (id: string) => openWindow.mutate(sessionWindowName(id)),
-    onReview,
-    onArchive: (id: string) => archiveOne(id, true),
-    onUnarchive: (id: string) => archiveOne(id, false),
-    onCopy: (id: string) => {
-      void navigator.clipboard?.writeText(id).then(() => notify(t('work.rail.menu.copied', { id })), () => {});
+    actsFor,
+    onAct: (act: SessionActId, id: string) => {
+      const session = (sessions.data ?? []).find((row) => row.id === id);
+      if (session) actions.run(act, factsFor(session));
     },
   };
 
@@ -213,7 +208,9 @@ export function SessionRail({
       // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
       archived={!live && Boolean(placed.get(session.id)?.archived)}
       selected={session.id === selected}
-      {...acts}
+      onSelect={onSelect}
+      acts={actsFor(session)}
+      onAct={acts.onAct}
     />
   );
 
@@ -226,8 +223,8 @@ export function SessionRail({
       {asking && (
         <ArchiveEndedAsk
           {...endedToArchive(listed, groupings)}
-          busy={archive.isPending}
-          onArchive={archiveListed}
+          busy={actions.archiving}
+          onArchive={(ids) => actions.archiveListed(ids, onArchiveEnded)}
           onCancel={() => onArchiveEnded?.()}
         />
       )}

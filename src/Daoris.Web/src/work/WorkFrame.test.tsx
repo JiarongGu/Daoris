@@ -590,10 +590,12 @@ describe('the Work frame', () => {
   it('is the rail and the attended session, bound by one selection', async () => {
     show('s1a2b3c4');
 
-    // The rail's row and the head's title are the same derived identity, from one implementation.
+    // The rail's row, the page header's title and the head's are the same derived identity, from one implementation:
+    // the header on one line, the head whole (D126 §3.2).
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
     await vi.waitFor(() =>
-      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(2));
+      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(3));
+    expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
   });
 
   /**
@@ -601,13 +603,15 @@ describe('the Work frame', () => {
    * same one, from one implementation — and a row's menu reviews that session's work in the dock.
    */
   it('names a conversation by its first line in the rail and the head, and reviews it from its row', async () => {
-    SESSIONS = [DRIVEN, CHAT];
+    // A conversation's record names the checkout it works in (D51), which is work to read: Review is offered where
+    // there is some (SESSUX1d, D126 §3.1).
+    SESSIONS = [DRIVEN, { ...CHAT, tree: 'C:/somewhere/engine' }];
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_OPENINGS' ? { openings: { c0ffee11: 'Cap the hydration per frame' } } : DRIVER_STATE));
     const { onSelect } = show('c0ffee11');
 
     await screen.findByRole('heading', { level: 2, name: 'Cap the hydration per frame' });
-    await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(2));
+    await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(3));
 
     const user = userEvent.setup();
     screen.getByRole('button', { name: 'more for Cap the hydration per frame' }).focus();
@@ -1130,12 +1134,19 @@ describe('starting and holding a conversation', () => {
     const notify = vi.fn();
 
     show('c0ffee11', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }));
+    // The stop is the page header's, and asks once (SESSUX1d, D126 §3.3).
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
 
     await waitFor(() => expect(notify).toHaveBeenCalledWith(sentence));
   });
 
-  it('offers finishing and stopping separately', async () => {
+  /**
+   * Finish and stop are still two endings, and never one button (SES2): *Finish* stays the composer's, the chat's own
+   * ending (D49), and the session's stop is the page header's, its one owner (D126 §3.3), which says what Finish does
+   * instead before it stops anything.
+   */
+  it('offers finishing in the composer and stopping in the page header, apart', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'END_CHAT') return { ended: true };
@@ -1143,10 +1154,14 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
-
+    const box = (await screen.findByLabelText('Message')).closest('form')!;
+    expect(within(box).queryByRole('button', { name: 'Stop' })).toBeNull();
+    await userEvent.click(within(box).getByRole('button', { name: 'Finish' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: 'c0ffee11' } });
-    expect(screen.getByRole('button', { name: 'Stop' })).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Stop…' }));
+    expect(screen.getByRole('group', { name: 'stop this session' })).toHaveTextContent(/Finish lets its agent wind up instead/);
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
   });
 
   /**
@@ -1462,7 +1477,8 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11');
     const rail = await screen.findByRole('navigation', { name: 'Sessions' });
     await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
-    const head = screen.getByRole('heading', { level: 2 }).parentElement!;
+    // The word is the page header's since SESSUX1d (D126 §3.2): its pill moved up from the record head.
+    const head = screen.getByRole('heading', { level: 1 }).parentElement!;
     expect(within(head).getByText('idle')).toBeInTheDocument();
 
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));
@@ -1603,13 +1619,27 @@ describe('clearing a parked session', () => {
     expect(JSON.parse(String(init!.body))).toEqual({ answer: 'go ahead with the PUT' });
   });
 
-  it('shows the analysis and the three moves on the attended session', async () => {
+  /** The card keeps finish and decline; the stop is the page header's, which asks once (SESSUX1d, D126 §3.3). */
+  it('shows the analysis and its moves on the attended session, its stop in the page header', async () => {
     show('p4rk3d00');
 
     expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Stop session' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
+    expect(within(screen.getByRole('group', { name: 'Session actions' })).getByRole('button', { name: 'Stop…' })).toBeInTheDocument();
+  });
+
+  /** §3.3: a session waiting on you, with no process left, stops unanswered through its resolve, as its card's stop did. */
+  it('stops a parked session from its page header through its resolve, saying it stops unanswered', async () => {
+    show('p4rk3d00');
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop…' }));
+
+    const ask = screen.getByRole('group', { name: 'stop this session' });
+    expect(ask).toHaveTextContent('Stops it unanswered. Its quest stays taken here until you choose Try again.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Stop session' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', { payload: { id: 'p4rk3d00', state: 'stopped' } });
   });
 
   /**
@@ -1631,16 +1661,16 @@ describe('clearing a parked session', () => {
     expect(within(box()).queryByRole('button', { name: 'Finish' })).toBeNull();
     expect(within(box()).queryByRole('button', { name: 'Stop' })).toBeNull();
 
-    // Working again: no band, and the composer owns both endings.
+    // Working again: no band, and the composer owns Finish; the stop is the page header's at every state (D126 §3.3).
     SESSIONS = [{ ...PARKED, kind: 'chat', state: 'working' }];
     cleanup();
     show('p4rk3d00');
 
     await within(await screen.findByLabelText('Message').then((field) => field.closest('form')!))
       .findByRole('button', { name: 'Finish' });
-    expect(within(box()).getByRole('button', { name: 'Stop' })).toBeInTheDocument();
+    expect(within(box()).queryByRole('button', { name: 'Stop' })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Finish' })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Stop…' })).toHaveLength(1);
   });
 
   it('finishes it over the driver, with no note the person did not write', async () => {
@@ -1700,6 +1730,9 @@ describe('clearing a parked session', () => {
     expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
     expect(screen.queryByLabelText('Message')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    // Its page header offers only what reaches no process: its ⋯, with its id (SESSUX1d, D126 §3.2).
+    const acts = within(screen.getByRole('group', { name: 'Session actions' }));
+    expect(acts.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['More actions']);
   });
 
   /**
@@ -1726,11 +1759,16 @@ describe('clearing a parked session', () => {
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
-  /** Stopping stays: the person may end the intake and settle the ask later, as a proposal. */
+  /**
+   * Stopping stays: the person may end the intake and settle the ask later, as a proposal. Its stop is the page
+   * header's since SESSUX1d, and asks with the sentence its card said (D126 §3.3).
+   */
   it('stops a parked intake over the driver, and nothing more', async () => {
     SESSIONS = [PARKED_INTAKE];
     show('i9n8t7k6');
-    await userEvent.click(await screen.findByRole('button', { name: 'Stop session' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop…' }));
+    expect(screen.getByRole('group', { name: 'stop this session' })).toHaveTextContent(/the ask stays a proposal/);
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'i9n8t7k6', state: 'stopped' },
@@ -1764,11 +1802,12 @@ describe('clearing a parked session', () => {
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
   });
 
-  /** The stop the composer used to carry: the process is cut off, over the driver. */
+  /** The stop the composer used to carry, then its card: the process is cut off, over the driver, from the page header. */
   it('stops a running intake over the driver', async () => {
     SESSIONS = [RUNNING_INTAKE];
     show('r7n8t7k6');
-    await userEvent.click(await screen.findByRole('button', { name: 'Stop session' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 'r7n8t7k6' } });
   });
@@ -1789,6 +1828,164 @@ describe('clearing a parked session', () => {
 
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+  });
+});
+
+/**
+ * The session's page header, and every act where its session is (SESSUX1d, D126 §3): a running driven session is
+ * stopped where it is read, asking once; a parked quest is tried again from its session; a row's acts attend their
+ * session and do their part there.
+ */
+describe('a session’s page header and its acts', () => {
+  beforeEach(() => {
+    SESSIONS = [DRIVEN];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async () => DRIVER_STATE);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    window.localStorage.removeItem('daoris.drafts');
+  });
+
+  /** The frame with the application's selection held in state, as `App` holds it, so a row's act can attend another. */
+  function Attending({ initial, terminal = false }: { initial: string; terminal?: boolean }) {
+    const [selected, setSelected] = useState<string | null>(initial);
+    return <WorkFrame selected={selected} onSelect={setSelected} notify={() => {}} terminal={terminal} />;
+  }
+  const attending = (initial: string, terminal = false) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(<QueryClientProvider client={client}><Tooltip.Provider><Attending initial={initial} terminal={terminal} /></Tooltip.Provider></QueryClientProvider>);
+  };
+
+  /**
+   * M1, the audit's first finding: a running driven session had no stop in Sessions, and its one stop was on its quest's
+   * page. Its page header's *Stop…* asks once, saying what follows for a session that has not taken its quest yet, and
+   * stops nothing until its second press.
+   */
+  it('stops a running driven session from its page header, asking once and saying what follows', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'STOP_SESSION' ? { stopped: true } : DRIVER_STATE));
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    await userEvent.click(acts.getByRole('button', { name: 'Stop…' }));
+    const ask = screen.getByRole('group', { name: 'stop this session' });
+    expect(ask).toHaveTextContent(
+      'Stops the session now. The driver will not start #abc123 again on this machine until you choose Try again; another machine may still take it.');
+    await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(screen.queryByRole('group', { name: 'stop this session' })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
+
+    await userEvent.click(acts.getByRole('button', { name: 'Stop…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 's1a2b3c4' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
+  });
+
+  /** The record head below opens on the quest's whole title and says neither its word nor its id again (§3.2). */
+  it('names the session in its header, and says its word and its id there alone', async () => {
+    show('s1a2b3c4');
+
+    const header = (await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).closest('header')!;
+    expect(within(header).getByText('working')).toBeInTheDocument();
+    expect(within(header).getByText('s1a2b3c4')).toBeInTheDocument();
+    const head = screen.getByRole('heading', { level: 2, name: 'Expose a streaming budget' }).closest('header')!;
+    expect(within(head).queryByText('s1a2b3c4')).toBeNull();
+    expect(within(head).queryByText('working')).toBeNull();
+  });
+
+  /** M2: a quest parked on its failed sessions is tried again where its session is, the loud act in its header. */
+  it('tries a parked quest again from its session’s page header', async () => {
+    SESSIONS = [{ ...DRIVEN, id: 'f41led00', state: 'failed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }] };
+      }
+      if (type === 'RETRY_QUEST') return { ...DRIVER_STATE, strikes: 3, retried: { quest: 'abc123', did: 'marked', session: null } };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('f41led00', notify);
+
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    const retry = await acts.findByRole('button', { name: 'Try again' });
+    expect(acts.queryByRole('button', { name: 'Stop…' })).toBeNull();
+    await userEvent.click(retry);
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RETRY_QUEST', { payload: { quest: 'abc123' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^#abc123 will be tried again/)));
+  });
+
+  /** A row's *Stop…* attends its session, then opens the same ask under its header (§3.1). */
+  it('asks to stop a session from its row: attended, the ask under its header', async () => {
+    SESSIONS = [DRIVEN, { ...CHAT }];
+    attending('c0ffee11');
+    await screen.findByLabelText('Message');
+
+    const user = userEvent.setup();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    within(list).getByRole('button', { name: 'more for Expose a streaming budget' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'stop this session' })).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
+  });
+
+  /** A row's *Answer…* attends a session waiting on you and puts the focus in the box at its foot (§3.1). */
+  it('answers a session from its row: attended, the focus in the box at its foot', async () => {
+    SESSIONS = [{ ...CHAT }, PARKED];
+    attending('c0ffee11');
+    await screen.findByLabelText('Message');
+
+    const user = userEvent.setup();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    const waiting = within(list).getByRole('heading', { level: 3, name: 'Waiting on you (1)' }).closest('section')!;
+    within(waiting).getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Answer…' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Carry on with this answer' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveFocus());
+  });
+
+  /** *Open a terminal here* opens the panel's terminal in the session's folder, the panel shown (§3.5). */
+  it('opens a terminal in the session’s folder from its header, and shows it', async () => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module === 'DAORIS.TERMINAL' && type === 'OPEN') return { id: 't1', shell: 'pwsh', cwd: 'C:/somewhere/engine' };
+      if (module === 'DAORIS.TERMINAL' && type === 'SHELLS') return { shells: [{ shell: 'pwsh' }], default: 'pwsh' };
+      return DRIVER_STATE;
+    });
+    // A viewer who hid the panel: the press shows it again, on the terminal.
+    window.localStorage.setItem('daoris.panelClosed', '1');
+    attending('s1a2b3c4', true);
+
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Open a terminal here' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.TERMINAL', 'OPEN', { payload: { cwd: 'C:/somewhere/engine' } }));
+    expect(await screen.findByRole('tab', { name: 'Terminal', selected: true })).toBeInTheDocument();
+    window.localStorage.removeItem('daoris.panelClosed');
+  });
+
+  /** *Open folder* names the session alone: the module names its folder (§3.5). */
+  it('opens the session’s folder from its header by its id', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_OPEN_FOLDER' ? { opened: true } : DRIVER_STATE));
+    show('s1a2b3c4');
+
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Open folder' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPEN_FOLDER', { payload: { id: 's1a2b3c4' } }));
   });
 });
 

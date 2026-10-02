@@ -1,7 +1,6 @@
 {
   "work.rail.label": "会话",
   "work.rail.menu.label": "{{title}} 的更多操作",
-  "work.rail.menu.review": "审阅",
   "work.rail.menu.copy": "复制会话 ID",
   "work.rail.menu.copied": "已复制 {{id}}。",
   "work.rail.search.label": "搜索会话",
@@ -27,7 +26,9 @@
   "work.rail.parkedAfter": "{{count}} 个会话失败后挂起",
   "work.rail.parkedAfter_other": "{{count}} 个会话失败后挂起",
   "work.rail.parkedAfterSome": "会话多次失败后挂起",
-  "work.rail.parkedTip": "它的委托在这里失败的会话太多，已挂起，等你处理：委托页面会说明原因，在那里按「重试」即可重新开始。",
+  "work.rail.parkedTip": "它的委托在这里失败的会话太多，已挂起，等你处理：委托页面会说明原因，在这一行的 ⋯ 或那个页面上按「重试」即可重新开始。",
+  "work.rail.heldHere": "留在本机，等你重试",
+  "work.rail.heldTip": "你停止了这个会话，所以它的委托留在本机：在你于这一行的 ⋯ 或委托页面上选择「重试」之前，这里不会再开始它。",
   "work.rail.awaitsOf": "等 {{repository}} 答复 #{{quest}}",
   "work.rail.awaits": "等 #{{quest}} 的答复",
   "work.rail.awaitsTip": "它的委托向另一个仓库提了问题，答复到了会自己继续。",

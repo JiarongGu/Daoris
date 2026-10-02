@@ -339,25 +339,6 @@ describe('a conversation\'s row', () => {
     expect(screen.getByText('Cap the hydration per frame')).toBeInTheDocument();
   });
 
-  it('offers its own window, its review and its id — and each does what it says', async () => {
-    const detach = vi.fn();
-    const review = vi.fn();
-    const copy = vi.fn();
-    render(
-      <SessionRow session={session({ kind: 'chat' })} opening="Cap the hydration" onDetach={detach} onReview={review} onCopy={copy} />,
-    );
-
-    const user = userEvent.setup();
-    screen.getByRole('button', { name: 'more for Cap the hydration' }).focus();
-    await user.keyboard('{Enter}');
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
-      .toEqual(['Open in its own window', 'Review', 'Copy session ID']);
-    expect(screen.queryByRole('menuitem', { name: /stop|finish/i })).toBeNull();
-
-    await user.keyboard('{Enter}');
-    expect(detach).toHaveBeenCalledWith('s1a2b3c4');
-  });
-
   it('offers no menu where the rail gave it nothing to do', () => {
     render(<SessionRow session={session()} />);
     expect(screen.getAllByRole('button')).toHaveLength(1);
@@ -365,17 +346,18 @@ describe('a conversation\'s row', () => {
 });
 
 /**
- * SESSUX1e, D126 §3.1, §5.2: *Archive* is on an ended row's ⋯ and *Unarchive* on an archived one's, each offered only
- * where it applies and absent where it does not (D119 §3.2): never on a live row, never on one that needs the person.
- * An archived row says so on its line where no heading above it does: in a search, and by repository (§4.5).
+ * SESSUX1d, D126 §3.1: a row's ⋯ holds the session's acts where its row is, as the one rule (`acts.ts`) offers them and
+ * the one owner (`sessionActs.ts`) carries them out. The row draws what it is handed, in that order, and reports the act
+ * with its session; which acts apply is the rule's, held by `acts.test.ts`. SESSUX1e's archive is two of them. An
+ * archived row says so on its line where no heading above it does: in a search, and by repository (§4.5).
  */
-describe("an ended row's archive", () => {
+describe("a row's acts", () => {
   const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' | 'shown'>): SessionGrouping => ({
     session: 's1a2b3c4', archived: false, teammate: false, ...over,
   });
 
   const items = async (props: Partial<Parameters<typeof SessionRow>[0]>) => {
-    const view = render(<SessionRow session={session({ state: 'completed' })} onCopy={() => {}} {...props} />);
+    const view = render(<SessionRow session={session({ state: 'completed' })} onAct={() => {}} {...props} />);
     const user = userEvent.setup();
     // The row's door, then its menu's trigger, named in whichever language is on.
     screen.getAllByRole('button').at(-1)!.focus();
@@ -385,10 +367,45 @@ describe("an ended row's archive", () => {
     return names;
   };
 
-  it('offers Archive on an ended row, and archives that session', async () => {
-    const archive = vi.fn();
+  it('offers each act it is handed, named once, in order — and reports the act with its session', async () => {
+    const act = vi.fn();
     render(
-      <SessionRow session={session({ state: 'completed' })} grouping={placed({ group: 'ended', shown: 'completed' })} onArchive={archive} onCopy={() => {}} />,
+      <SessionRow
+        session={session({ kind: 'chat' })}
+        opening="Cap the hydration"
+        acts={['answer', 'stop', 'retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'unarchive', 'copy']}
+        onAct={act}
+      />,
+    );
+
+    const user = userEvent.setup();
+    screen.getByRole('button', { name: 'more for Cap the hydration' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Answer…', 'Stop…', 'Try again', 'Review', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Archive',
+      'Unarchive', 'Copy session ID',
+    ]);
+    // Finish and Decline… stay the session's card's: one owner each (D56).
+    expect(screen.queryByRole('menuitem', { name: /finish|decline/i })).toBeNull();
+
+    await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
+    expect(act).toHaveBeenCalledWith('stop', 's1a2b3c4');
+  });
+
+  it('offers no menu where it is handed no act, or nowhere to report one', () => {
+    const { rerender } = render(<SessionRow session={session()} acts={[]} onAct={() => {}} />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    rerender(<SessionRow session={session()} acts={['copy']} />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+
+  it('archives and unarchives through the act it reports', async () => {
+    const act = vi.fn();
+    render(
+      <SessionRow
+        session={session({ state: 'completed' })} grouping={placed({ group: 'ended', shown: 'completed' })}
+        acts={['archive', 'copy']} onAct={act}
+      />,
     );
 
     const user = userEvent.setup();
@@ -396,46 +413,14 @@ describe("an ended row's archive", () => {
     await user.keyboard('{Enter}');
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Archive', 'Copy session ID']);
     await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
-    expect(archive).toHaveBeenCalledWith('s1a2b3c4');
+    expect(act).toHaveBeenCalledWith('archive', 's1a2b3c4');
   });
 
-  it('offers Unarchive on an archived row, and brings that session back', async () => {
-    const unarchive = vi.fn();
-    render(
-      <SessionRow
-        session={session({ state: 'completed' })}
-        grouping={placed({ group: 'archived', shown: 'completed', archived: true })}
-        onArchive={() => {}}
-        onUnarchive={unarchive}
-      />,
-    );
-
-    const user = userEvent.setup();
-    screen.getByRole('button', { name: /^more for / }).focus();
-    await user.keyboard('{Enter}');
-    expect(screen.queryByRole('menuitem', { name: 'Archive' })).toBeNull();
-    await user.click(screen.getByRole('menuitem', { name: 'Unarchive' }));
-    expect(unarchive).toHaveBeenCalledWith('s1a2b3c4');
-  });
-
-  /** Archive never hides what needs the person, nor a session still running: absent, never disabled. */
-  it('offers no Archive on a live row, one waiting on you, one to review, or one the reader has not placed', async () => {
-    const acts = { onArchive: () => {}, onUnarchive: () => {} };
-    expect(await items({ ...acts, session: session({ state: 'working' }), grouping: placed({ group: 'working', shown: 'working' }) }))
-      .toEqual(['Copy session ID']);
-    expect(await items({ ...acts, session: session({ state: 'failed' }), grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }) }))
-      .toEqual(['Copy session ID']);
-    expect(await items({ ...acts, session: session({ state: 'stopped' }), grouping: placed({ group: 'review', shown: 'stopped' }) }))
-      .toEqual(['Copy session ID']);
-    expect(await items({ ...acts, grouping: null })).toEqual(['Copy session ID']);
-  });
-
-  /** A mark that stands on a session that now needs the person keeps it in its group; Unarchive takes the mark away. */
-  it('offers Unarchive wherever the mark stands, even on a row that waits on you', async () => {
-    expect(await items({
-      onArchive: () => {}, onUnarchive: () => {},
-      session: session({ state: 'failed' }), grouping: placed({ group: 'you', shown: 'parked', archived: true }),
-    })).toEqual(['Unarchive', 'Copy session ID']);
+  /** SESSUX1b's hold, said where the row is (D126 §2.2): a stop that holds its quest says so, with how it moves again. */
+  it('says a stop holds its quest here until you try again, and why in its tip', () => {
+    render(<SessionRow session={session({ state: 'stopped' })} grouping={placed({ group: 'ended', shown: 'stopped', holdsQuest: true })} />);
+    const line = screen.getByText(/held here until you try again/);
+    expect(line.getAttribute('title')).toMatch(/Try again/);
   });
 
   it('says it is archived on its line where it is told to, and why in its tip', () => {
@@ -447,12 +432,13 @@ describe("an ended row's archive", () => {
     expect(screen.queryByText(/archived/)).toBeNull();
   });
 
-  it('names its archive in 中文', async () => {
+  it('names its acts in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
-      expect(await items({ grouping: placed({ group: 'ended', shown: 'completed' }), onArchive: () => {} })).toEqual(['归档', '复制会话 ID']);
-      expect(await items({ grouping: placed({ group: 'archived', shown: 'completed', archived: true }), onUnarchive: () => {} }))
-        .toEqual(['取消归档', '复制会话 ID']);
+      expect(await items({ acts: ['archive', 'copy'] })).toEqual(['归档', '复制会话 ID']);
+      expect(await items({ acts: ['unarchive', 'copy'] })).toEqual(['取消归档', '复制会话 ID']);
+      expect(await items({ acts: ['answer', 'stop', 'retry', 'openFolder', 'terminal'] }))
+        .toEqual(['回答…', '停止…', '重试', '打开文件夹', '在此打开终端']);
     } finally {
       await i18n.changeLanguage('en');
     }

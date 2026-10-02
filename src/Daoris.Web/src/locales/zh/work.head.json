@@ -10,6 +10,8 @@
   "work.head.branch": "分支",
   "work.head.itsWork": "它的工作",
   "work.head.review": "审阅",
+  "work.head.more": "更多操作",
+  "work.head.acts": "会话操作",
   "work.head.noteMore": "展开全部",
   "work.head.noteLess": "收起",
   "work.head.landed.empty": "没有超出 {{line}} 的内容",

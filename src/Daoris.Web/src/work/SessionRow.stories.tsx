@@ -225,10 +225,8 @@ export const Archivable: Story = {
     session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) },
     grouping: placed({ group: 'ended', shown: 'completed' }),
     place: 'engine',
-    onDetach: () => {},
-    onReview: () => {},
-    onArchive: () => {},
-    onCopy: () => {},
+    acts: ['review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'],
+    onAct: () => {},
   },
 };
 
@@ -241,7 +239,51 @@ export const Archived: Story = {
     session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) },
     grouping: placed({ group: 'archived', shown: 'completed', archived: true }),
     archived: true,
-    onUnarchive: () => {},
-    onCopy: () => {},
+    acts: ['unarchive', 'copy'],
+    onAct: () => {},
+  },
+};
+
+/** Running, with every act its row offers a live driven session (SESSUX1d, D126 §3.1): *Stop…* first. Hover for the ⋯. */
+export const RunningWithItsActs: Story = {
+  args: {
+    session: { ...SESSION, state: 'working', created: at(40), updated: at(2) },
+    grouping: placed({ group: 'working', shown: 'working' }),
+    place: 'engine',
+    acts: ['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
+    onAct: () => {},
+  },
+};
+
+/** Waiting on you: *Answer…* attends it and opens the box at its foot (§3.1). */
+export const WaitingWithItsActs: Story = {
+  args: {
+    session: { ...SESSION, state: 'awaiting-person', created: at(40), updated: at(5) },
+    grouping: placed({ group: 'you', shown: 'awaiting-person' }),
+    place: 'engine',
+    acts: ['answer', 'stop', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
+    onAct: () => {},
+  },
+};
+
+/** A parked quest's last session: *Try again* where its row is. */
+export const ParkedWithTryAgain: Story = {
+  args: {
+    session: { ...SESSION, state: 'failed', created: at(80), updated: at(25) },
+    grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }),
+    place: 'engine',
+    acts: ['retry', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
+    onAct: () => {},
+  },
+};
+
+/** A person's stop that holds its quest (SESSUX1b): its line says so, and its ⋯ offers *Try again*. */
+export const StoppedHoldingItsQuest: Story = {
+  args: {
+    session: { ...SESSION, state: 'stopped', created: at(80), updated: at(20) },
+    grouping: placed({ group: 'ended', shown: 'stopped', holdsQuest: true }),
+    place: 'engine',
+    acts: ['retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'],
+    onAct: () => {},
   },
 };
