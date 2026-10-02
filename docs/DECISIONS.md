@@ -8550,3 +8550,131 @@ failing first. Two negative cases passed before the build: no *Archive* on a liv
 Archived group while hidden. Each was then seen failing under a sabotage of the rule it holds. **Not built here**: the
 header's *Archive* and *Unarchive* (SESSUX1d) and *Delete…* (SESSUX1f). **Not measured**: the bulk's ask at 1280 and
 680 px, and *Archived* in both languages and both themes, which the window decides (§12).
+## D128 — A set-up keeps the repository's checks green, and the doctrine region lists only what the canon bounds: knowledge and skills are an index read on demand (2026-10-02)
+
+**Decision (WSSETUP14, from the first real set-up, WSSETUP12's).** On the report repository, the set-up's own
+session wrote good knowledge, a brief and rooms, closed its quest `done`, and left a branch that cannot be merged.
+It had moved 169 knowledge documents that its CI and a hook read by path, its region grew to 53,398 bytes with a
+row per document, and 166 rows read *needs frontmatter*. The contract is
+`docs/2026-10-02-setup-pilot-lessons-design.md`: checks kept green (§1), the index (§2), a document without
+frontmatter (§3), the pilot's branch (§4) and the build (§6).
+
+1. **Move only what an agent needs moved.** The repository's own knowledge stays where it is, declared as
+   `documents.knowledge`: a folder the index lists, the service indexes and `sync` never writes. Its skills move to
+   `.agents/skills/`, and the mirror keeps their old paths readable. Nothing else a check, script, hook or CI
+   configuration reads by path moves. Where a move still breaks a reader, the set-up rewrites that path, and only it.
+2. **A set-up runs the repository's checks before its first change and at its close.** One that passed before and
+   fails after means it does not close `done`. If the fix is outside its bounds, it stops and asks.
+3. **The bounds are rewritten** (design §1.5): a moved path is the one change allowed in a source, build or CI file,
+   and a set-up adds no frontmatter to a document the repository already had.
+4. **The region holds what the canon bounds**: the rules table, a pointer, the rooms, *Where things are* and every
+   rule in full. The knowledge and skill tables move to `<target>/INDEX.md`, which `sync` writes, `check` keeps true
+   and the lock names. `doc-loader` reads it, whole when short and by search when long.
+5. **A knowledge document without frontmatter is listed by its first heading**, in a table of its own, and `check`
+   reports how many once, never failing.
+6. **The pilot's branch is never merged red.** When the press finds a set-up's branch standing and not on the line,
+   it composes *Finish setting up this repository*: the checks first, that branch merged by one exact rule, the
+   knowledge put back and declared, a re-sync, and the same close.
+
+**Why.** The quest moved the documents and forbade repairing what the move broke, and nothing asked whether the
+checks still passed. Knowledge is reached through the index wherever it lives, while skills are read by folder
+(Claude Code `.claude/skills/`, codex and dsh `.agents/skills/`, from the entry-point evidence). So moving the
+knowledge bought no agent anything. `renderRoster` writes every knowledge and skill row before the rules. Measured on
+a fixture shaped like the pilot (design §0.3): a region of 46,279 bytes whose first rule starts at byte 37,046, past
+the 32,768 one agent reads; 63,527 had every document been described, so fixing frontmatter first makes it worse.
+The proposed region is 19,010 bytes with no knowledge of its own and with 169 documents. Here it drops from 24,064
+to about 19,650 bytes, which is what lets LAYOUT6's brief fit under 32,768.
+
+**Rejected** (design §1.7, §2.8, §3.4 and §4.3 have each with its reason):
+- **Rewriting every reader and keeping the move**: a large diff in files a doctrine change is not about, for
+  knowledge no agent reads by folder.
+- **Declaring skills in place**: a skill outside an agent's skill root reaches no agent.
+- **Only *red never closes done***: every repository with its own knowledge folder would stop the same way.
+- **A knowledge mirror or a link at the old path**, and **the canonical knowledge in the declared folder**.
+- **The canonical rows in the region and the repository's own on demand**, **knowledge by folder**, **a cap**,
+  **shorter rows**, **the rules before the tables**, and **raising the budget**.
+- **The set-up describing every old document**, **a capped number**, **a description guessed from the heading**,
+  and **keeping the warning**.
+- **Growing the follow-up's tree from the red branch**, and **repairing it by hand**.
+- D59's rejection of a pointer in place of the rules stands: this moves the list of the on-demand tiers, not a tier.
+
+**What it amends, when built.**
+- D124 §2.1 (the follow-up's case), §2.3 (the checks first, the knowledge in place), §2.5, §2.6 (the bounds) and
+  §2.7 (the close).
+- D117 §2.1 and §5.4 (a declared knowledge folder is read in place), §6.2's steps, and `LayoutFacts.Clean`.
+- D122 §2.7 (DOC3): `knowledge` takes a folder; `skill` stays refused.
+- D59, and D7 through it: the region's on-demand tables move to `<target>/INDEX.md`.
+- The canon's `doc-loader` (step 2) and `development-documents` (one sentence), with a changelog entry for every
+  adopter; the adoption playbook (local); BUDGET1's arithmetic.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The pilot's facts are the
+owner's report: the repository is private and was not read. The fixtures were synced by today's CLI in a gitignored
+scratch folder, and their names are shorter than the pilot's. *Proposed* bytes are the rendered region with its
+tables cut and a drafted pointer put in, never rendered by built code. No token was counted. What each agent lists
+and reads is the entry-point evidence's reading of shipped code, not a turn. Whether a real session runs the checks
+first and keeps them green is WSSETUP14f's to show. `verify` checks this entry's shape and the design's links, and
+none of their words.
+
+**Amended 2026-10-02 (KNOW2, D129).** The split stands. `doc-loader` step 2 searches a long index in more than one
+wording and asks a connected search too, `skills-workflow` sends a session to its agent's own skill list first, and
+`development-documents` gains a sentence on naming a document by its subject
+(`docs/2026-10-02-knowledge-design-review.md` §4.2–§4.4).
+
+## D129 — Knowledge is found from files first: D128's index is the floor, searched in several wordings, with recall by meaning pulled where connected and pushed only where Daoris writes the prompt (2026-10-02)
+
+**Pending KNOW3's measurement**: this decision takes the bench's numbers when they land
+(`docs/2026-10-02-knowledge-bench-results.md`), and §4.7 of the review says what each would confirm or refute.
+
+**Decision (KNOW2, the owner's question whether D128's index is the best knowledge design, and whether Lyntai's file
+storage is better).** The contract is `docs/2026-10-02-knowledge-design-review.md`: what each agent does today (§1),
+eight candidates (§2), the comparison for the 169-document repository (§3), the recommendation (§4) and the build
+(§5).
+
+1. **D128's split stands as the floor.** The region keeps the rules, the pointer, the rooms and *Where things are*;
+   `<target>/INDEX.md` lists the knowledge and the skills, generated by `sync` and held by `check`. It is the only
+   design that is bounded in the region, reaches every agent, needs nothing running and proves the list whole.
+2. **A long index is searched in more than one wording**: the task's words, their synonyms, and the folders it
+   touches. Where a search over the repository's knowledge is connected, it is asked too, beside the index searches.
+   A search that finds nothing has not shown that nothing applies.
+3. **A document is findable without the index**: named by its subject, with when it applies in its first lines.
+4. **`skills-workflow` names the agent's own skill list first** (+22 bytes in every region), since every agent lists
+   its skills and the region no longer does.
+5. **A set-up's close names each hand-written index** the repository keeps and how it differs from the generated
+   one, and deletes none.
+6. **Recall by meaning is the driver's accelerator, held for measurement**: up to five headlines in the driven
+   target prompt, one slot reserved for the best keyword match and one for the best meaning match, failing open;
+   then a prompt hook for chat sessions on Claude Code. Never in the canon or a committed file.
+7. **Lyntai's file storage is declined as the knowledge store**, the first-goal study §3's three reasons re-tested and
+   standing. Its reserved slots go into the recall's ranking; *headlines, then expand* is already Daoris's shape.
+
+**Why.** The makers converge on a headline per entry always loaded and the body on demand, each capping the headlines
+in its own budget by use, which a committed file cannot know; so the headlines go on demand, in one checked file. Every agent's own search is lexical, and on the owner's own memory store keyword search fell from 9 of 12 at 16
+entries to 4 of 13 at 112, while keyword and meaning together found 11 of 13. So D128's *search it when it is long*
+inherits the miss rate that grows with the store, and recall by meaning is the one channel cheap per find and robust
+to wording, which needs a running service and so can only accelerate. The owner's install shows sessions reading
+knowledge (25 of 89 reads in one session) and opening hand-written index files unprompted. The prompt Daoris composes
+reaches every agent on both doors, where a hook reaches one or two.
+
+**Rejected** (the review's §2 and §7 have each with its reason):
+- **The index in the region**: it grows with the repository, and the rules fall past codex's cut.
+- **Knowledge as skills**: the catalogs shed descriptions at 169 entries, and it is the move D128 forbids, mirrored.
+- **Knowledge in rooms as the mechanism**: cross-cutting knowledge has no folder, and codex never loads a room.
+- **Search with no index**: nothing proves the list whole, and an undescribed document escapes a frontmatter search.
+- **Path-scoped rules**: one format per agent, none on codex or dsh.
+- **Lyntai's file store**: one owner where git and every branch write, sequential ids, no vectors, and a .NET process
+  between the doctrine and its offline `check`.
+- **Push as doctrine or a committed hook** (D48 §2a, D32), **a threshold that moves the table in and out of the
+  region**, and **a cap on the index**.
+
+**What it amends, when built.** D128 §2.5 and the rows WSSETUP14a and WSSETUP14d; D124 §2.7 through D128 §1.6 (the
+close names hand-written indexes); the D48 §2a canon scan, which gains a connected search beside *quest*. The
+first-goal study §3 stands, re-tested. Each row that builds a piece notes the amendment where it lands.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The install's counts, the
+owner's store and its measurements, and Lyntai's lock and scan facts are the parent's reports, not re-run here. The
+makers' cells are their documentation as fetched on 2026-10-02, or the entry-point evidence's reading of shipped code;
+dsh's skill budget and prompt hooks, and hooks under codex-acp and in Daoris's composed settings, are not measured.
+Whether recall by meaning beats word searches on repository knowledge is KNOW3's to show, and its numbers were not in
+hand when this was written. `verify` checks this entry's shape and the review's links, and none of their words.

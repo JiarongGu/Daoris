@@ -25,6 +25,10 @@ dsh or codex had `repository-owns-its-work` on disk and unread — which is the 
 
 ## 2. The decision
 
+> **Amended by D128** (`docs/2026-10-02-setup-pilot-lessons-design.md` §2, WSSETUP14a): the region keeps the rules
+> and their table; the knowledge and skill tables move to a generated index at the target's root, which the region
+> points to, so the region no longer grows with a repository's own documents.
+
 **The always-loaded tier lives in `AGENTS.md`, inside a region Daoris owns.** `.claude/rules/` is no
 longer written. `CLAUDE.md` carries a one-line import so the harness that looks for the other name
 finds it.
