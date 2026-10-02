@@ -240,8 +240,10 @@ public sealed class ServiceClient : IDisposable
         if (root is not { } answered) return (false, $"the service at {_base} has no answer door ({status}) — is it older than this driver?");
         if (!ok) return (false, Text(answered, "error") ?? payload);
 
-        // An answer ends the parked record `completed` (STANDDOWN2), which is a move like any other.
-        Raise(Moved, new SessionMoved(id, StateOf(answered) ?? "completed"));
+        // An answer ends the parked record `completed` (STANDDOWN2), which is a move like any other. Once it keeps the
+        // record parked for the driver's next look (ANSWER1b, D131 §5) nothing moved, and a watcher is told nothing.
+        var state = StateOf(answered) ?? "completed";
+        if (!SessionStates.IsParked(state)) Raise(Moved, new SessionMoved(id, state));
         return (true, Text(answered, "message") ?? "");
     }
 
@@ -821,6 +823,7 @@ public sealed class ServiceClient : IDisposable
                 Limit = Limit(session),
                 // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
                 Adapter = Text(session, "adapter"),
+                HarnessVersion = Text(session, "harnessVersion"),
                 BaseCommit = Text(session, "baseCommit"),
             }, at);
         }

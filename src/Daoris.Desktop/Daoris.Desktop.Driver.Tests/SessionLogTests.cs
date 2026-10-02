@@ -355,6 +355,25 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// ANSWER1b (D131 §5): an answer that keeps the record parked moves nothing. It is no ending, and no second park:
+    /// the record ends when its resumed conversation does, or when the driver carries the answer on in a new session.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_that_keeps_its_park_is_neither_an_ending_nor_a_second_park()
+    {
+        using var w = Watch();
+        _ledger.AnswerKeepsPark = true;
+        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code");
+        await w.Client.AdvanceAsync(id!, "awaiting-person");
+
+        var (ok, _) = await w.Client.AnswerSessionAsync(id!, "the one the plant reads");
+
+        Assert.True(ok);
+        Assert.Single(Named("session.parked"));
+        Assert.Empty(Named("session.ended"));
+    }
+
+    /// <summary>
     /// A park is the state the attention watch calls one (<see cref="SessionStates.IsParked"/>), and no other:
     /// <c>AttentionTests</c> holds the same rows, so what the log counts is what the person was told about.
     /// </summary>
@@ -575,6 +594,9 @@ public sealed class SessionLogTests : IDisposable
 
         public bool Refusing { get; set; }
 
+        /// <summary>The ledger as ANSWER1b has it: an answer keeps the record parked (D131 §5).</summary>
+        public bool AnswerKeepsPark { get; set; }
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             var path = request.RequestUri!.AbsolutePath;
@@ -586,7 +608,7 @@ public sealed class SessionLogTests : IDisposable
             var moved = System.Text.RegularExpressions.Regex.Match(path, "^/api/sessions/([^/]+)/(state|answer)$");
             if (moved.Success)
             {
-                var state = moved.Groups[2].Value == "answer" ? "completed" : Field("state");
+                var state = moved.Groups[2].Value == "answer" ? (AnswerKeepsPark ? "awaiting-person" : "completed") : Field("state");
                 return Answer(HttpStatusCode.OK, new { session = new { id = moved.Groups[1].Value, state }, message = "moved" });
             }
 

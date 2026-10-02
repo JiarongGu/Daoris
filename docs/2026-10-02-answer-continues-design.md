@@ -79,7 +79,7 @@ once per answer taken up: `{session, adapter, resumed, why}`, `why` being the co
 | `unable` | the adapter has no resume on its door | *`X` cannot resume a conversation* |
 | `offered` | the agent advertised neither `resume` nor `loadSession` | *the agent offers no way to resume a conversation* |
 | `gone` | the agent answered `resource_not_found`, or the native door ended before opening the conversation | *the agent no longer has its conversation* |
-| `refused` | the agent refused the resume otherwise | *the agent refused to resume it* |
+| `refused` | the agent refused the resume otherwise, or the resumed run could not start | *its conversation could not be resumed* |
 | `ended` | the record had already ended: a service from before ANSWER1b | *its record had already ended* |
 
 The first five are known before anything is spawned. The last four are the wire's: the resumed run then ends with

@@ -147,7 +147,64 @@ public sealed class ContinuationTests : IDisposable
     {
         Assert.Equal("the agent offers no way to resume a conversation", ContinueWhy.Of(ContinueWhy.Offered).Sentence);
         Assert.Equal("the agent no longer has its conversation", ContinueWhy.Of(ContinueWhy.Gone).Sentence);
-        Assert.Equal("the agent refused to resume it", ContinueWhy.Of(ContinueWhy.Refused).Sentence);
+        Assert.Equal("its conversation could not be resumed", ContinueWhy.Of(ContinueWhy.Refused).Sentence);
+    }
+
+    /// <summary>
+    /// The park a fallback ends keeps what it asked and says why the answer went to a new session; the new session's note
+    /// says the same in one line. Neither names an account.
+    /// </summary>
+    [Fact]
+    public void A_fallback_is_said_on_the_park_it_ends_and_on_the_session_that_carries_on()
+    {
+        var why = ContinueWhy.Of(ContinueWhy.Account);
+
+        Assert.Equal(
+            "It stopped with its quest still taken, to ask you:\n\nWhich port?\n\nCarried on in a new session, because "
+            + "its conversation stays with the account it ran on, and this start runs on another.",
+            Continuations.EndedNote(Park(), why));
+        Assert.Equal(
+            " A new session, because its conversation stays with the account it ran on, and this start runs on another.",
+            Continuations.CarriedOn(why));
+        Assert.Equal("It stopped to ask you.\n\nCarried on in a new session, because its tree is gone.",
+            Continuations.EndedNote(Park() with { Note = null }, ContinueWhy.Of(ContinueWhy.Tree)));
+    }
+
+    /// <summary>
+    /// The resumed run's first line names the door it resumed on, and the harness version where it moved since the record
+    /// opened (D131 §1): the record names the version it opened on, and a resume is never refused for a newer one.
+    /// </summary>
+    [Fact]
+    public void The_resumed_runs_first_line_names_its_door_and_a_version_that_moved()
+    {
+        Assert.Equal(
+            "— your answer is the next turn of its own conversation, resumed on `claude-code-acp`.",
+            Continuations.Opening("claude-code-acp", now: "0.84.0", then: "0.84.0"));
+        Assert.Equal(
+            "— your answer is the next turn of its own conversation, resumed on `claude-code` 2.1.300; it opened on 2.1.281.",
+            Continuations.Opening("claude-code", now: "2.1.300", then: "2.1.281"));
+        Assert.Equal(
+            "— your answer is the next turn of its own conversation, resumed on `claude-code`.",
+            Continuations.Opening("claude-code", now: "2.1.300", then: null));
+    }
+
+    /// <summary>
+    /// <c>session.answered</c> (D131 §2, D94 §4): once per answer taken up, the parked session, the adapter, whether it
+    /// resumed, and why not as an identifier — never the answer, the agent's words or an account.
+    /// </summary>
+    [Fact]
+    public void The_log_line_says_whether_an_answer_resumed_and_why_not_by_code()
+    {
+        var resumed = Continuations.Answered("s1", "claude-code-acp", why: null);
+        var carried = Continuations.Answered("s1", "claude-code-acp", ContinueWhy.Of(ContinueWhy.Gone));
+
+        Assert.Equal("session.answered", resumed.Event);
+        Assert.Equal(
+            [("session", (object?)"s1"), ("adapter", "claude-code-acp"), ("resumed", true), ("why", null)],
+            resumed.Data);
+        Assert.Equal(
+            [("session", (object?)"s1"), ("adapter", "claude-code-acp"), ("resumed", false), ("why", "gone")],
+            carried.Data);
     }
 
     /// <summary>A park the person has not answered is no continuation at all; only an answered one is.</summary>

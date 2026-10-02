@@ -32,7 +32,7 @@ public static class ContinueWhy
     /// <summary>The agent no longer has the conversation: <c>resource_not_found</c>, or the native door ended before opening it.</summary>
     public const string Gone = "gone";
 
-    /// <summary>The agent refused the resume otherwise.</summary>
+    /// <summary>The agent refused the resume otherwise, or the resumed run could not start.</summary>
     public const string Refused = "refused";
 
     /// <summary>The record had already ended as the answer reached it: a service from before ANSWER1b.</summary>
@@ -46,7 +46,7 @@ public static class ContinueWhy
         Tree => "its tree is gone",
         Offered => "the agent offers no way to resume a conversation",
         Gone => "the agent no longer has its conversation",
-        Refused => "the agent refused to resume it",
+        Refused => "its conversation could not be resumed",
         Ended => "its record had already ended",
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, "a reason whose line names an adapter is made by its own method"),
     });
@@ -107,4 +107,33 @@ public static class Continuations
 
         return doorResumes ? null : ContinueWhy.CannotResume(adapter);
     }
+
+    /// <summary>What the record says while its resumed conversation runs: the conclusion's note replaces it.</summary>
+    public const string Working = "resumes its own conversation with your answer, in the tree it worked in.";
+
+    /// <summary>
+    /// The resumed run's first line in its record (D131 §1): the door it resumed on, and the harness's version where it
+    /// moved since the record opened, since the record names the version it opened on and a newer one is never refused.
+    /// </summary>
+    public static string Opening(string adapter, string? now, string? then) =>
+        now is { Length: > 0 } && then is { Length: > 0 } && !string.Equals(now, then, StringComparison.Ordinal)
+            ? $"— your answer is the next turn of its own conversation, resumed on `{adapter}` {now}; it opened on {then}."
+            : $"— your answer is the next turn of its own conversation, resumed on `{adapter}`.";
+
+    /// <summary>The note a fallback ends the park with: what it asked, as its record said, and why the answer went to a new session.</summary>
+    public static string EndedNote(PriorSession park, ContinueReason why) =>
+        $"{park.Note ?? "It stopped to ask you."}\n\nCarried on in a new session, because {why.Sentence}.";
+
+    /// <summary>The sentence the carrying-on session's note ends with (D131 §2).</summary>
+    public static string CarriedOn(ContinueReason why) => $" A new session, because {why.Sentence}.";
+
+    /// <summary>
+    /// <c>session.answered</c> (D131 §2, D94 §4): once per answer the driver takes up, whether its own conversation resumed
+    /// and, where not, why by code. Never the answer, the agent's words or an account. Written on the account lines'
+    /// channel, which writes any catalogued line as it is given.
+    /// </summary>
+    /// <param name="session">The parked session the person answered.</param>
+    /// <param name="why">Null where it resumed.</param>
+    public static AccountLine Answered(string session, string adapter, ContinueReason? why) =>
+        new("session.answered", [("session", session), ("adapter", adapter), ("resumed", why is null), ("why", why?.Code)]);
 }
