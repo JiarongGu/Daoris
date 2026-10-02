@@ -211,6 +211,10 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
   cases set the environment they assume whatever the parent shell spells.
 - [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
   objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
+- [ ] **WSSETUP5a — the family rehearsal checks registration from the line** (WSSETUP5's hand-back; tools): after
+  phase 17c lands, the row reads adopted and declared with no `connect`; and the install note in `desktop-publish.mjs`
+  says Daoris's own children find `app/bin/` first. Also (records): the PLUGDIST1a note sits after D123, a union
+  artefact; move it under D120.
 - [ ] **WSSETUP6 — the workspace plan** (§4.1–§4.3; driver; after LAYOUT7): the plan file, the tick, the order,
   `atOnce` at most `cap − 1`, the pilot pause, pause, resume and stop.
 - [ ] **WSSETUP7 — the workspace on the screen and in Ask Daoris** (§4.4, §4.5; modules, web-shell, service, driver;
@@ -351,7 +355,11 @@ repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidenc
 the archive: **usage is measured before it is managed**, and breadth is **more native adapters plus
 the ACP door, not a registry**.
 
-- [ ] **TOOL4 — rotation** (owner, 2026-10-01: *"this is also good to test for account switch"*): **being designed as
+- [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to
+  check daoris continue"*): Daoris did not continue: on 1 Oct a carrying-on session was refused mid-turn by the weekly
+  spend limit, two more carry-ons were refused at once, and the quest parked on its strikes (Exhausted) until the
+  person presses Retry; an exhaustion burned the strikes like any failure. Sessions read the person's own default
+  login, so the person's `/login` to a third account moved Daoris too. **Being designed as
   D125**, since the install now holds three observed exhaustions (27 and 29 Sep, the ACP adapter's spend-limit
   refusal naming its reset time) and the owner's own weekly-limit switch on 1 Oct. Was: ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
   questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
