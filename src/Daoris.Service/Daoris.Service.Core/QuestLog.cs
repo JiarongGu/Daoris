@@ -79,6 +79,11 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// For a <see cref="QuestOperationKind.Done"/>: how it answered each of the quest's requirements (DRIFT1d). Null
 /// where it carries none, which is every operation of a build before answers.
 /// </param>
+/// <param name="WhileOpen">
+/// For a <see cref="QuestOperationKind.Declined"/>: it applies only to a quest still open where it lands (PAUSE1c,
+/// D132 point 10), so pushed after another machine's take it becomes a conflict rather than declining their work.
+/// False on every other kind, and on every decline made before it, which is a plain one.
+/// </param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -90,7 +95,8 @@ public sealed record QuestOperation(
     QuestStatus? Attempted = null,
     long? Number = null,
     QuestOperationRef? Dismisses = null,
-    IReadOnlyList<QuestAnswer>? Answers = null);
+    IReadOnlyList<QuestAnswer>? Answers = null,
+    bool WhileOpen = false);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -196,10 +202,13 @@ public static class QuestLog
     /// one, a move goes only where the table allows, and a conflict is recorded on any quest there is.
     /// A dismissal applies to any quest there is, whether or not its conflict is still there: two
     /// people dismissing one conflict is one dismissal, never a refusal or a new conflict. A delete
-    /// applies only to an open quest: taken, somebody's work stands on it (D95).
+    /// applies only to an open quest: taken, somebody's work stands on it (D95). So does a decline made
+    /// while open (PAUSE1c): it was judged on an open quest, so after a take the take stands, and the
+    /// rebase keeps the decline as a conflict (D68 rule 2).
     /// </summary>
     public static bool Applies(Quest? quest, QuestOperation operation) => operation.Kind switch
     {
+        QuestOperationKind.Declined when operation.WhileOpen => quest is { Status: QuestStatus.Open },
         QuestOperationKind.Published => quest is null,
         QuestOperationKind.Conflict or QuestOperationKind.Dismissed => quest is not null,
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.

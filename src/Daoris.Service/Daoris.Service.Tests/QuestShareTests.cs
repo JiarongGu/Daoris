@@ -164,6 +164,67 @@ public sealed class QuestShareTests : IAsyncLifetime
         Assert.Equal(0, remote.Calls);
     }
 
+    // ——— A decline that applies only while open (PAUSE1c, D132 point 10): an abandon's, through the one exchange.
+
+    /// <summary>
+    /// A decline made while open commits here like any verb, the flag on it. On a shared quest the answer says what
+    /// happens if another machine's take reached the remote first, since only the next sync can know; on a quest
+    /// nobody shares there is no other machine, and the answer is the plain one.
+    /// </summary>
+    [Fact]
+    public async Task A_decline_made_while_open_commits_here_and_says_what_a_take_that_came_first_would_do()
+    {
+        var shared = (await Exchange().PublishAsync("Asker", "Federated", "Do it", "why", Now)).Quest!;
+        var local = (await Exchange().PublishAsync("Asker", "Homebody", "Stay home", "why", Now)).Quest!;
+
+        var onShared = await Exchange().RespondAsync(shared.Id, "decline", "Abandoned.", Now.AddHours(1), whileOpen: true);
+        var onLocal = await Exchange().RespondAsync(local.Id, "decline", "Abandoned.", Now.AddHours(1), whileOpen: true);
+
+        Assert.Equal(QuestRespondRefusal.None, onShared.Refusal);
+        Assert.Contains("only while it is open", onShared.Message);
+        Assert.Contains("the take stands", onShared.Message);
+        Assert.True((await _quests.HistoryAsync(shared.Id))[^1].WhileOpen);
+        Assert.Equal((QuestRespondRefusal.None, $"Quest `#{local.Id}` is now Declined."), (onLocal.Refusal, onLocal.Message));
+        Assert.Equal(QuestStatus.Declined, (await _quests.FindAsync(local.Id))!.Status);
+    }
+
+    /// <summary>
+    /// A quest already taken where the decline is made is refused, as the lock's own state (409 at the door), saying
+    /// why — not the take race's stand-down, which is a taker's sentence — and its history gains nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_decline_made_while_open_of_a_taken_quest_is_refused_and_the_take_stands()
+    {
+        var quest = (await Exchange().PublishAsync("Asker", "Homebody", "Stay home", "why", Now)).Quest!;
+        await Exchange().RespondAsync(quest.Id, "take", null, Now.AddHours(1));
+
+        var refused = await Exchange().RespondAsync(quest.Id, "decline", "Abandoned.", Now.AddHours(2), whileOpen: true);
+
+        Assert.Equal(QuestRespondRefusal.AlreadyTaken, refused.Refusal);
+        Assert.Contains("only while it is open", refused.Message);
+        Assert.DoesNotContain("Stand down", refused.Message);
+        Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
+        Assert.Equal(
+            [QuestOperationKind.Published, QuestOperationKind.Taken],
+            (await _quests.HistoryAsync(quest.Id)).Select(o => o.Kind));
+    }
+
+    /// <summary>The flag is a decline's alone: carried by another verb it would be dropped, and dropped looks kept.</summary>
+    [Theory]
+    [InlineData("take")]
+    [InlineData("done")]
+    [InlineData("wait")]
+    public async Task While_open_with_any_verb_but_decline_is_refused_and_nothing_moves(string action)
+    {
+        var quest = (await Exchange().PublishAsync("Asker", "Homebody", "Stay home", "why", Now)).Quest!;
+
+        var refused = await Exchange().RespondAsync(quest.Id, action, null, Now.AddHours(1), on: "abcdefabcdef", whileOpen: true);
+
+        Assert.Equal(QuestRespondRefusal.UnknownAction, refused.Refusal);
+        Assert.Contains("`whileOpen`", refused.Message);
+        Assert.Single(await _quests.HistoryAsync(quest.Id));
+    }
+
     /// <summary>
     /// 🔴 The disclosure boundary for a quest's files (D65 §2, D47 §4): the bytes are kept on THIS
     /// machine under the quest's id, and what will travel — the pending publish — carries the name, the

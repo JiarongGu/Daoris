@@ -73,9 +73,11 @@ public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null);
-// `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d).
+// `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d);
+// `WhileOpen` a decline that applies only while the quest is open (PAUSE1c), an abandon's.
 public sealed record RespondQuestRequest(
-    string? Action, string? Reason, string? On = null, IReadOnlyList<QuestAnswerWire?>? Answers = null);
+    string? Action, string? Reason, string? On = null, IReadOnlyList<QuestAnswerWire?>? Answers = null,
+    bool? WhileOpen = null);
 // A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —
