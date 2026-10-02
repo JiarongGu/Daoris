@@ -113,7 +113,33 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: `#q1a2b3c4` (to `engine`), "
             + "`#q5e6f7a8` (to `game`).", some);
         Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: none.", HelpRoom.Render(HelpRoomFixture.Machine));
-        Assert.Contains("`retry` takes a quest parked by its failed sessions, from this machine's list below", some);
+        Assert.Contains("`retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below", some);
+    }
+
+    /// <summary>
+    /// SESSUX1b: the quests the driver's last look held by the person's stop, each with the session stopped, so a retry
+    /// names one *Try again* would release; and none said as none.
+    /// </summary>
+    [Fact]
+    public void The_room_lists_the_quests_the_persons_stop_holds()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            Held = [new HeldQuest("q2taken0", "engine", "s7a8b9c0")],
+        });
+
+        Assert.Contains("- Quests held by the person's stop, at the driver's last look: `#q2taken0` (to `engine`, session "
+            + "`s7a8b9c0` stopped).", some);
+        Assert.Contains("- Quests held by the person's stop, at the driver's last look: none.", HelpRoom.Render(HelpRoomFixture.Machine));
+    }
+
+    [Fact]
+    public void The_held_quests_are_described_from_the_loops_last_look()
+    {
+        var machine = HelpRoom.Describe(
+            DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, held: [new HeldQuest("q2taken0", "engine", "s7")]);
+
+        Assert.Equal(new HeldQuest("q2taken0", "engine", "s7"), Assert.Single(machine.Held));
     }
 
     /// <summary>

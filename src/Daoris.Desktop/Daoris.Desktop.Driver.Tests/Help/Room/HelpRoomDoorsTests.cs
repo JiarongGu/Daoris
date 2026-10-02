@@ -27,7 +27,9 @@ public sealed class HelpRoomDoorsTests
             // D107: reading and writing across, the CLI's `driver across` verbs.
             "daoris driver across <repository> read on|off|--clear", "daoris driver across <repository> write-to <other> [--clear]",
             // HELP9: every `daoris driver` verb that changes something, and the doors Ask Daoris owes, named where they are.
-            "daoris driver retry <quest>", "daoris driver cap <n>", "daoris driver adapter <agent>",
+            // SESSUX1b: and a stop's release, which names the session stopped.
+            "daoris driver retry <quest>", "daoris driver retry <quest> --session <id>", "daoris driver cap <n>",
+            "daoris driver adapter <agent>",
             // LEFT3: the screen's clear has its terminal door, which Ask Daoris still owes.
             "daoris agent profile default <agent> <profile>|--clear [--workspace <name>]",
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
@@ -42,8 +44,10 @@ public sealed class HelpRoomDoorsTests
         }
 
         Assert.Contains("Settings → Workspace → Lines", agents);
-        // HELP9: a parked quest's Retry is on its drawer, which the room names beside the command (HELP10: and proposes).
-        Assert.Contains("Quests → the quest's drawer → Try again", agents);
+        // HELP9: a parked quest's Retry is on its quest's page, which the room names beside the command (HELP10: and
+        // proposes). SESSUX1b: FRAME1d made the drawer a page; the row said a drawer until then.
+        Assert.Contains("Quests → the quest's page → Try again", agents);
+        Assert.DoesNotContain("the quest's drawer → Try again", agents);
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
         Assert.Contains("Settings → AI features", agents);

@@ -29,6 +29,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris driver retry` do, `#` or not.
     [InlineData("retry", "q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
     [InlineData("retry", "#q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "what already happened is still in the records")]
+    // SESSUX1b (D126 §3.4): a quest the person's stop holds, released from that stop as Try again releases it.
+    [InlineData("retry", "q2taken0", null, null, "daoris driver retry q2taken0 --session s7a8b9c0", "released from your stop of session `s7a8b9c0`")]
     public void A_setting_is_planned_as_what_it_changes_and_the_command_that_does_the_same(
         string door, string? target, string? workspace, string? value, string terminal, string says)
     {
@@ -90,6 +92,22 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
 
         Assert.Equal(5, config.ForgivenAt("q1a2b3c4"));
         Assert.Contains("5 more failure(s) will park it again", HelpProposals.Plan(Setting("retry", "q1a2b3c4"), config, Facts).Describe);
+        Assert.Null(config.ReleasedFor("q1a2b3c4"));
+    }
+
+    /// <summary>
+    /// SESSUX1b: a retry of a quest the person's stop holds is the release <c>RETRY_QUEST</c> writes, against the session the
+    /// last look named, and never a mark: a stop is not a strike (D58), so nothing about the strikes moves.
+    /// </summary>
+    [Fact]
+    public void Applying_a_retry_of_a_held_quest_releases_its_stop_as_the_route_does()
+    {
+        var plan = HelpProposals.Plan(Setting("retry", "#q2taken0"), DriverConfig.Empty, Facts);
+
+        var config = plan.Apply!(DriverConfig.Empty.WithStrikes(5));
+
+        Assert.Equal("s7a8b9c0", config.ReleasedFor("q2taken0"));
+        Assert.Equal(0, config.ForgivenAt("q2taken0"));
     }
 
     /// <summary>
@@ -134,9 +152,11 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
     [InlineData("adapter", null, null, "gpt-agent", "no agent `gpt-agent`")]
     // HELP10: a quest id a helper can invent, or one not parked, which forgiven would run past its strikes (D110).
-    [InlineData("retry", "q9none00", null, null, "`#q9none00` is not parked")]
-    [InlineData("retry", "engine", null, null, "`#engine` is not parked")]
-    [InlineData("retry", null, null, null, "`retry` names the quest its failed sessions parked")]
+    // SESSUX1b: or one no stop of the person's holds; the refusal names what the last look parked and what it held.
+    [InlineData("retry", "q9none00", null, null, "`#q9none00` is neither parked nor held by your stop on this machine")]
+    [InlineData("retry", "q9none00", null, null, "it parked `#q1a2b3c4` and held `#q2taken0`")]
+    [InlineData("retry", "engine", null, null, "`#engine` is neither parked nor held by your stop")]
+    [InlineData("retry", null, null, null, "`retry` names the quest its failed sessions parked or your stop holds")]
     public void What_the_route_would_refuse_is_refused_in_its_words(
         string door, string? target, string? workspace, string? value, string says)
     {
