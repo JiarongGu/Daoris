@@ -7741,7 +7741,7 @@ to go as the single press does (`SetupPress.PlanAsync`, then `PublishAsync`, the
 
 **Not covered by a gate run here**: the real world (`WorkspaceSetupWorld`: the git reads, the tools' versions, the service's
 doors), which only a real tick or terminal reaches. The family rehearsal's check (two scratch repositories set up one at a
-time by the stub, pausing after a pilot of one) is the tools lane's, and is not written. Whether one set-up at a time keeps
+time by the stub, pausing after a pilot of one) is the tools lane's: written as phase 17d (WSSETUP6a, below). Whether one set-up at a time keeps
 pace with the owner's review is §9's fifth item.
 **As built (WSSETUP5a, 2026-10-02): the family rehearsal checks registration from the line.** Phase 17c reads atlas's
 row through the host's `/api/registry` before its landing and after it. Before, the row is not adopted and declares
