@@ -70,6 +70,24 @@ public sealed record PriorSession(
 
     /// <summary>Its record says an account's limit made its failure (TOOL4c): what a carry-on is told after one (TOOL4f).</summary>
     public bool Limit { get; init; }
+
+    /// <summary>The adapter its record opened on (ANSWER1a, D131 §1): an answer resumes its conversation only on the same one.</summary>
+    public string? Adapter { get; init; }
+
+    /// <summary>The harness version its record opened on: a resumed run says so where the version moved since (D131 §1).</summary>
+    public string? HarnessVersion { get; init; }
+
+    /// <summary>
+    /// The commit its tree stood at when it opened (SURF6): a resumed run's evidence is counted from it, so the review's
+    /// range is the whole session's (ANSWER1a, D131 §3). Served on loopback, beside the tree.
+    /// </summary>
+    public string? BaseCommit { get; init; }
+
+    /// <summary>
+    /// A park the person answered, still parked (D131 §1): its own record goes on, and its harness conversation resumes
+    /// where it can. An answer a service from before ANSWER1b took has already ended the record, and is a carry-on.
+    /// </summary>
+    public bool AnsweredPark => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase) && Answer is not null;
 }
 
 /// <summary>One step of a chain, as the service answered it.</summary>
@@ -371,6 +389,13 @@ public static class Planner
             {
                 considerations.Add(Resume(quest, awaits, prior));
             }
+            // The person answered a park, and it is still parked (ANSWER1a, D131 §1): its own record goes on.
+            else if (quest is { Status: "Taken", Awaits: null or "" }
+                     && snapshot.LastRun.TryGetValue(quest.Id, out var park)
+                     && park.AnsweredPark)
+            {
+                considerations.Add(CarryOn(quest, park, continuing: true));
+            }
             else if (quest is { Status: "Taken", Awaits: null or "" }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
                      && (string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase)
@@ -402,9 +427,11 @@ public static class Planner
         // and the work is in its tree. Carried on like a failed start is retried: the strikes count every
         // cut-off, and the third parks it — bar one an account's limit made, which is no strike: its carry-on is
         // planned as any is, and held at spawn while the account cools (TOOL4d, D125 §4).
-        Consideration CarryOn(QuestView quest, PriorSession cutOff)
+        // An answered park (ANSWER1a) is planned the same way and says the same thing, `continuing` it: the park is still
+        // an active record holding its tree, its quest and its slot, which it is never busy with itself.
+        Consideration CarryOn(QuestView quest, PriorSession cutOff, bool continuing = false)
         {
-            var considered = Consider(quest, into: cutOff);
+            var considered = Consider(quest, into: cutOff, continuing);
             return considered.Verdict == StartVerdict.Start
                 ? considered with
                 {
@@ -441,8 +468,11 @@ public static class Planner
 
         // `into`: the earlier session whose tree a resume or a carry-on goes back into — the one tree a
         // live session there would hold (PAR1). Null for a first start, which grows a tree of its own.
-        Consideration Consider(QuestView quest, PriorSession? into = null)
+        // `continuing`: `into` is an answered park that goes on itself (ANSWER1a), so it holds nothing against itself.
+        Consideration Consider(QuestView quest, PriorSession? into = null, bool continuing = false)
         {
+            bool Itself(SessionView session) => continuing && string.Equals(session.Id, into?.Session, StringComparison.OrdinalIgnoreCase);
+
             var repo = snapshot.Repositories.FirstOrDefault(r =>
                 string.Equals(r.Repository, quest.To, StringComparison.OrdinalIgnoreCase));
 
@@ -506,7 +536,7 @@ public static class Planner
             // 🔴 A session outlives the look that started it (DEV3), so its quest can still be open while it
             // works — before it takes it, or when it never will. That session holds the quest: a second one
             // would double its work, and in a tree of its own nothing below would stop it.
-            if (snapshot.Active.FirstOrDefault(s => string.Equals(s.Quest, quest.Id, StringComparison.OrdinalIgnoreCase))
+            if (snapshot.Active.FirstOrDefault(s => string.Equals(s.Quest, quest.Id, StringComparison.OrdinalIgnoreCase) && !Itself(s))
                 is { } serving)
             {
                 return new(quest, StartVerdict.RepositoryBusy,
@@ -518,13 +548,16 @@ public static class Planner
             if (config.OpensOwnTree(quest.To))
             {
                 if (into is { Tree: { Length: > 0 } tree }
-                    && snapshot.Active.FirstOrDefault(s => SameTree(s.Tree, tree)) is { } holder)
+                    && snapshot.Active.FirstOrDefault(s => SameTree(s.Tree, tree) && !Itself(s)) is { } holder)
                 {
                     return new(quest, StartVerdict.RepositoryBusy,
                         $"session `{holder.Id}` is active in the tree `#{quest.Id}` goes back into — one session per tree.");
                 }
             }
-            else if (blockedBy.TryGetValue(quest.To, out var session))
+            else if ((continuing
+                         ? snapshot.Active.FirstOrDefault(s =>
+                             string.Equals(s.Repository, quest.To, StringComparison.OrdinalIgnoreCase) && !Itself(s))?.Id
+                         : blockedBy.GetValueOrDefault(quest.To)) is { } session)
             {
                 return new(quest, StartVerdict.RepositoryBusy,
                     $"session `{session}` is active in `{quest.To}` — one session per repository, whose root "
@@ -536,13 +569,18 @@ public static class Planner
                     $"queued behind quest `#{ahead}` in `{quest.To}` — oldest first, one at a time.");
             }
 
-            if (slots <= 0)
+            // An answered park already holds its slot among the active (ANSWER1a): going on, it starts no second session.
+            if (!continuing)
             {
-                return new(quest, StartVerdict.AtCapacity,
-                    $"the concurrency cap ({config.Cap}) is spent — it frees as sessions finish.");
+                if (slots <= 0)
+                {
+                    return new(quest, StartVerdict.AtCapacity,
+                        $"the concurrency cap ({config.Cap}) is spent — it frees as sessions finish.");
+                }
+
+                slots--;
             }
 
-            slots--;
             startedThisTick[quest.To] = quest.Id;
             return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root, repo.Workspace);
         }
