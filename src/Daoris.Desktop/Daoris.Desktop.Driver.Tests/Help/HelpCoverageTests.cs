@@ -63,6 +63,15 @@ public sealed partial class HelpCoverageTests
         + "as a card, so Ask Daoris should propose it; that waits on LAYOUT8's `setup` kind: the service's box and tool, the "
         + "driver's judge against the same facts, and the card (D110).");
 
+    /// <summary>
+    /// WSSETUP5's <c>daoris-driver register</c> (D124 §3.1), a verb of the headless host: a door Ask Daoris owes, until WSSETUP7
+    /// gives LAYOUT8's <c>setup</c> kind its <c>register</c> door (§4.5).
+    /// </summary>
+    private static readonly Owed RegisterDoor = new(
+        "registering a repository from its line changes only what the line already says, so Ask Daoris should propose it and "
+        + "the person apply it; that waits on WSSETUP7's `register` door of LAYOUT8's `setup` kind, judged against the same "
+        + "line (D124 §4.5).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -273,6 +282,7 @@ public sealed partial class HelpCoverageTests
             .Concat(Forms.Select(row => row.Answer))
             .Append(Share)
             .Append(SetupDoor)
+            .Append(RegisterDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -305,6 +315,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("setup"));
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup <repository> [--plan]`", StringComparison.Ordinal));
         Assert.Contains("LAYOUT8", SetupDoor.Reason);
+    }
+
+    /// <summary>
+    /// WSSETUP5: the headless host's <c>register</c> is a door owed to the <c>setup</c> kind's <c>register</c> (D124 §4.5), while
+    /// the host's usage spells it and no kind of that name is built; the room names it meanwhile.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_register_is_a_door_owed_to_the_setup_kind()
+    {
+        Assert.Contains("register [--repository <name>]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("setup"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver register [--repository <name>]`", StringComparison.Ordinal));
+        Assert.Contains("WSSETUP7", RegisterDoor.Reason);
     }
 
     /// <summary>

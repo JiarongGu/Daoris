@@ -52,15 +52,34 @@ public sealed class ToolsChildProcessTests : IDisposable
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>A node script that asks its own shell for <c>git --version</c> and writes the answer to the file it is given.</summary>
-    private string Probe()
+    /// <summary>A node script that asks its own shell for <c>&lt;program&gt; --version</c> and writes the answer to the file it is given.</summary>
+    private string Probe(string program = "git")
     {
-        var probe = Path.Combine(_root, "probe.mjs");
+        var probe = Path.Combine(_root, $"probe-{program}.mjs");
         File.WriteAllText(probe,
             "import { execSync } from 'node:child_process';\n"
             + "import { writeFileSync } from 'node:fs';\n"
-            + "writeFileSync(process.argv[2], execSync('git --version', { encoding: 'utf8' }));\n");
+            + $"writeFileSync(process.argv[2], execSync('{program} --version', {{ encoding: 'utf8' }}));\n");
         return probe;
+    }
+
+    /// <summary>
+    /// An install's launchers beside the home (WSSETUP2's layout), as stubs that answer with their own name: the
+    /// install is <c>_root</c>, whose <c>data/</c> is the home.
+    /// </summary>
+    private const string DoctrineAnswer = "stub-daoris 0.0.1";
+
+    private void LayInstallBin()
+    {
+        var bin = Path.Combine([_root, .. Tools.InstallBinLayout]);
+        Directory.CreateDirectory(bin);
+        File.WriteAllText(Path.Combine(bin, "daoris.cmd"), $"@echo {DoctrineAnswer} %*\r\n");
+        var script = Path.Combine(bin, "daoris");
+        File.WriteAllText(script, $"#!/bin/sh\necho \"{DoctrineAnswer} $*\"\n");
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
     }
 
     private static async Task<string> RunAsync(ProcessStartInfo info, string? marker = null)
@@ -119,5 +138,32 @@ public sealed class ToolsChildProcessTests : IDisposable
         var said = await RunAsync(info, marker);
 
         Assert.StartsWith($"{Answer} --version", said.Trim());
+    }
+
+    /// <summary>
+    /// WSSETUP3 (D124 §1.3): a driven session's own shell finds <c>daoris</c> by its bare name, and it is the install's,
+    /// beside the home, whatever the machine's own <c>PATH</c> holds.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_daoris_is_the_installs_beside_the_home()
+    {
+        LayInstallBin();
+        var marker = Path.Combine(_root, "session-daoris.txt");
+        var target = new SessionTarget("q1", "Title", "Body", "Asker", "engine", _root, "http://localhost:5177");
+        var saved = Environment.GetEnvironmentVariable(DaorisHome.Variable);
+        ProcessStartInfo info;
+        Environment.SetEnvironmentVariable(DaorisHome.Variable, Home);
+        try
+        {
+            info = new StubAdapter().Prepare(target, ["node", Probe("daoris"), marker]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(DaorisHome.Variable, saved);
+        }
+
+        var said = await RunAsync(info, marker);
+
+        Assert.StartsWith($"{DoctrineAnswer} --version", said.Trim());
     }
 }

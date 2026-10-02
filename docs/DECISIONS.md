@@ -6012,6 +6012,9 @@ branch: `SetupLineProcessTests` (a mode-120000 `CLAUDE.md` under `core.symlinks=
 checkout is on another branch with edits in flight), the parent's at merge; the family rehearsal's set-up phase
 (`setup game --plan`, a stub session running the CLI and landing) is the tools lane's and not written.*
 
+*Amended by D124 (WSSETUP5, 2026-10-01), §6.5: the driver registers a repository from what its line declares, after Daoris
+moves the line, once as a watch starts, and when the person asks (`daoris-driver register`). D124's note has the rest.*
+
 ## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
 
 **Decision (FRAME1a).** The owner, 2026-10-01: *"why only session has more layout option we do need to make
@@ -7169,6 +7172,9 @@ tools' environment. What the design left open, settled here:
   substitution D57's pin exists to prevent; and handing a hook's first word to the system bare, which finds only an
   `.exe`.
 
+*Amended by D124 (WSSETUP3, 2026-10-01): a child's `PATH` begins with the install's `app/bin/` beside the home, before
+the tools' folders, so every child finds the install's `daoris`. With no install beside the home it is as above, byte
+for byte. D124's note has the rest.*
 **As built (TOOLS7, 2026-10-01): Settings → Tools.** A machine domain after *Agents*, on the routes of
 `DriverModule.Tools.cs` that the page's `bridge/tools.ts` calls, the molecules in `settings/Tools.tsx` and the organism
 `settings/ToolsDomain.tsx`. What the design left open, settled here:
@@ -7497,6 +7503,143 @@ with Node 24, on its ordinary quest path too. The driver concludes from the ques
 **Not run in the branch**: the family rehearsal itself, which the parent runs at the merge. `verify` does not run
 `setup-kit.test.mjs`.
 
+**Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
+reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
+every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
+comes from `MarkdownSections.Preamble`, the text the splitter drops for a log. Each entry is local knowledge with
+the path the disk spells. The choices §5 left open, each held by a test in `RepositoryReadmeTests`:
+- **"No lock" is the scanner's own test**: no lock, or one it reads as none (not JSON, no entries, a target that
+  leaves the repository), the same test that reads both roots. A manifest with no lock is mid-adoption and has
+  declared nothing yet, so its README is still read. Once a lock is read, the next scan reads no README. The
+  refresh replaces a repository's entries whole, so that scan's refresh drops them.
+- **The part before the first heading keeps its title line.** For a README, `# Name` and the paragraph under it
+  say what the repository is. It is titled *README* and has no anchor, so it points at the top of the file and its
+  id is never a section's. A README whose sections are all level one is one entry, as a log's split would leave
+  it. An empty section is skipped, and a heading used twice gets a count in its anchor (REV3).
+- **Any case, one file.** The root's file named `README.md` in any case, labelled as the disk spells it, so a
+  session can open it on a case-sensitive disk. Two spellings side by side, which only such a disk holds, read the
+  first in ordinal order.
+- **Read last, so a declaration wins.** A README that a manifest with no lock declares as its router or a log is
+  read by that role's reader and not again. Read twice, the router's entry and the part before the first heading
+  would share the id `<repository>:README.md`, and the store's primary key would fail the refresh (REV3).
+- **Rejected**: splitting at every heading level, which cuts a section's subsections into entries too small to
+  answer anything; titling the first part by its `#` heading, since §5 names it *README* and the heading stays in
+  its body; reading `README.markdown`, `README.rst`, `README.txt` or `README` with no extension, or a README
+  below the root.
+- **Not a twin** (design §12): the driver's `SelfDescription` reads the same file for the intake, a title and a
+  paragraph, and neither is held to the other.
+- What the gates do not cover: no refresh of a real workspace has read a README on this branch, so whether its
+  sections help a neighbour's search is WSSETUP12's canary. The real-link test made a link on this machine. On a
+  machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
+  cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
+  now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.
+
+**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
+pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
+tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
+and swapped in whole. What the design left open, settled here:
+- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
+  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
+  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
+  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
+  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
+  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
+- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
+  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
+  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
+- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
+  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
+  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
+  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
+- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
+  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
+  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
+  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
+  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
+- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
+  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
+  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
+  desktop tree.
+
+**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
+`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
+`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
+`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
+- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
+  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
+  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
+  older than the lock.
+- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
+  version to read is left to the refusals that already name it.
+- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
+  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
+  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
+- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
+- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
+  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
+  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
+  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.
+
+**As built (WSSETUP3, 2026-10-01): `daoris` on every child's `PATH`.** TOOLS5's one environment puts the install's
+`app/bin/` first, before the tools' folders, in both twins: the driver's `Tools.ChildPath` (`InstallBin`) and the CLI's
+`childPath` (`installBin`), so every start already handed the tools' environment (a driven session on either door, a
+conversation, an intake, a hook, a landing plugin, the terminal's shells) finds the install's `daoris` by its bare name.
+What the design left open, settled here:
+- **"Where it exists" is the home's sibling `app/bin/` being a folder.** In an install the home is `data/`, so the
+  folder is the install's own; a home anywhere else has none beside it, and nothing is added. No file names it, so no
+  setting can point a child at another `daoris`: it is Daoris's own program, not a tool (§1.3). An `app/` with no `bin/`,
+  an install from before WSSETUP2, and an `app/bin` that is a file add nothing.
+- **Found from the home, not from the running application.** Every child's environment is built from the home it is
+  handed (`Tools.Hand`), and the headless host and the CLI have no application folder; the offers and the list built in
+  look beside the application first only because the application reads them itself.
+- **Byte for byte with no install.** The tables' earlier rows are unchanged, and a new table holds the install's rows
+  in both twins, cell for cell (`ToolsChildrenTests`' `A_childs_PATH_begins_with_the_installs_doctrine_tool_beside_the_home`
+  and `tools-children.test.ts`' `INSTALL_ROWS`); each new row was seen failing with the folder taken out of each side.
+  `desktop-publish.test.ts` holds `INSTALL_BIN` to the publish's `CLI_BIN` and the driver's `InstallBinLayout`.
+- **The press's facts were LAYOUT7's already**: `SetupTools` carries `node` with its version and `daoris` with what it
+  answered, read on the `PATH` a child starts with, so the press now finds the install's. Nothing else was owed.
+- **Not covered by a gate run here.** `ToolsChildProcessTests.A_sessions_daoris_is_the_installs_beside_the_home`, in the
+  `Process` half, lays stub launchers in an install's `app/bin/` and wants a stub driven session's own shell to answer
+  `daoris --version` with them. It was written and not run (MOD8). Whether each real harness's shell finds `daoris` by
+  its bare name stays §9's fourth item, for the pilot.
+
+**As built (WSSETUP5, 2026-10-01): registration follows the line.** `LineRegistration.Compose` (the driver) composes what
+`connect` would send from `daoris.json` and `daoris.lanes.json`, a twin of `connect.ts`'s `registration()` and the reads
+before it, held by `LineRegistrationTests` and `connect-twin.test.ts`, one table cell for cell. `RegistrationFollow` reads
+the two files on each repository's line as git objects (`LineDeclarationReader`, as `LayoutReader` reads the layout), for
+the row's own root, and sends through the registry door. What the design left open, settled here:
+- **"After Daoris moves a line" is a record, not a call.** `SessionTrees` writes `<home>/lines-moved.json` where a line
+  moves, its merge and its fast-forward, so a press from the screen, a terminal or Ask Daoris is followed without each
+  door knowing the service. The next look follows each moved line before it reads the registry, so a set-up that just
+  landed is planned by what it declares; `trees land` and `trees sync` at a terminal follow at once. A move made while no
+  loop runs is followed when one does.
+- **"Once at start" is a watch's**: the shell's loop and `daoris-driver drive`, beside its first looks on the pool, since
+  a workspace's lines are seconds of git and no start should wait on them. It is said in the next look's report and
+  tried again until the service answers. `--once` and `--until-idle` follow only the lines Daoris moved.
+- **Sent only where the row holds something else**, read as the service stores it: adopted, the words (a blank summary
+  is none), `uses` by its rule, the packs, the join and the knowledge as the service narrows them, and the lanes' words.
+  `ServiceClient.RegistrationsAsync` reads the whole row for it.
+- **"The declaration left as the row held it" sends the row's own declaration back**, since the registry door replaces
+  the declaration whole; the packs, the remote flags and the lanes are the line's. A row that already records adoption
+  and holds the same is sent nothing again.
+- **Where each refusal is said.** `<home>/registry-followed.json` keeps each repository's outcome, its sentence, the line
+  and the commit, for the row WSSETUP7 draws; `registry.followed {repository, outcome}` is the machine log's line, written
+  by `SessionLog` from the client's `RegistryFollowed` event. A look or a terminal says what was sent and what must be
+  fixed; a standing state (unchanged, not set up, no line, no checkout here) is kept and logged, and not said at every
+  start. *Not set up* names a set-up's landed branch still standing (the landings record, by its quest's title).
+- **Shapes the service would refuse are refused first**, naming the field (a domain that is not an object, a summary
+  that is not text, a list that is not of text); the layout's fields are neither sent nor judged. A root that is a linked
+  worktree is refused by `LinkedWorktree.MainOf`, `linkedWorktreeMain`'s twin, and a root not on disk asks git nothing.
+- **The refresh is asked once per pass**, when anything was sent, and a refusal of it is said.
+- **The doors.** `daoris-driver register [--repository <name>]` (exit 1 only for a repository named and refused), and the
+  modules' `REGISTRY_REFRESH` {repository} in `DriverModule.Registry.cs`, the row's *Refresh*, whose button and bridge are
+  WSSETUP7's. Ask Daoris's `register` door is owed to WSSETUP7 (`HelpCoverageTests`), and the room names the terminal's.
+- **Not covered by a gate run here.** `RegistrationLineProcessTests`, in the `Process` half, lands a manifest and a lanes
+  file by a real `merge` landing, moves the checkout to another branch with other words in flight, and wants the line's
+  declaration registered for the checkout's root with one refresh. It was written and not run (MOD8). The family
+  rehearsal's check (a set-up under `merge` reads adopted and declared with no `connect`) is the tools lane's and not
+  written. Whether a real *Bring up to date* after a real merge registers what a set-up declared is §9's sixth item.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
@@ -7623,78 +7766,3 @@ network: a package source is PLUGDIST1c's. What the design left open, settled he
 - **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
   for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
   answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
-**Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
-reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
-every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
-comes from `MarkdownSections.Preamble`, the text the splitter drops for a log. Each entry is local knowledge with
-the path the disk spells. The choices §5 left open, each held by a test in `RepositoryReadmeTests`:
-- **"No lock" is the scanner's own test**: no lock, or one it reads as none (not JSON, no entries, a target that
-  leaves the repository), the same test that reads both roots. A manifest with no lock is mid-adoption and has
-  declared nothing yet, so its README is still read. Once a lock is read, the next scan reads no README. The
-  refresh replaces a repository's entries whole, so that scan's refresh drops them.
-- **The part before the first heading keeps its title line.** For a README, `# Name` and the paragraph under it
-  say what the repository is. It is titled *README* and has no anchor, so it points at the top of the file and its
-  id is never a section's. A README whose sections are all level one is one entry, as a log's split would leave
-  it. An empty section is skipped, and a heading used twice gets a count in its anchor (REV3).
-- **Any case, one file.** The root's file named `README.md` in any case, labelled as the disk spells it, so a
-  session can open it on a case-sensitive disk. Two spellings side by side, which only such a disk holds, read the
-  first in ordinal order.
-- **Read last, so a declaration wins.** A README that a manifest with no lock declares as its router or a log is
-  read by that role's reader and not again. Read twice, the router's entry and the part before the first heading
-  would share the id `<repository>:README.md`, and the store's primary key would fail the refresh (REV3).
-- **Rejected**: splitting at every heading level, which cuts a section's subsections into entries too small to
-  answer anything; titling the first part by its `#` heading, since §5 names it *README* and the heading stays in
-  its body; reading `README.markdown`, `README.rst`, `README.txt` or `README` with no extension, or a README
-  below the root.
-- **Not a twin** (design §12): the driver's `SelfDescription` reads the same file for the intake, a title and a
-  paragraph, and neither is held to the other.
-- What the gates do not cover: no refresh of a real workspace has read a README on this branch, so whether its
-  sections help a neighbour's search is WSSETUP12's canary. The real-link test made a link on this machine. On a
-  machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
-  cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
-  now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.
-**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
-pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
-tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
-and swapped in whole. What the design left open, settled here:
-- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
-  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
-  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
-  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
-  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
-  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
-- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
-  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
-  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
-- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
-  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
-  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
-  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
-- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
-  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
-  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
-  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
-  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
-- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
-  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
-  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
-  desktop tree.
-
-**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
-`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
-`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
-`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
-- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
-  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
-  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
-  older than the lock.
-- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
-  version to read is left to the refusals that already name it.
-- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
-  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
-  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
-- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
-- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
-  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
-  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
-  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.

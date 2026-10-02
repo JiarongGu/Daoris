@@ -296,6 +296,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         }
 
         var landed = ahead.Trim().Split('\n').Length;
+        // The line moved: the registry follows it at the next look (WSSETUP5, D124 §3.1), whichever door pressed this.
+        RegistryFollowing.Moved(home, repository, DateTimeOffset.UtcNow);
         return new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}");
     }
 

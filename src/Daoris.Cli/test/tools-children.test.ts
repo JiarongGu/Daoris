@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { delimiter, dirname, join } from 'node:path';
+import { delimiter, dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   PATH_VARIABLE, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, childEnvironment, childPath,
-  commandOnTheSystem, commandThroughTools, handTools, readTools, resolveCommand,
+  commandOnTheSystem, commandThroughTools, handTools, installBin, readTools, resolveCommand,
 } from '../src/tools.ts';
 import { probe, readHarnessSettings } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
@@ -18,7 +18,8 @@ import { captureError, makeFixture } from './_fixture.ts';
  * same order, and *the driver's tables are these tables*, below, holds them cell for cell.
  *
  * A child's PATH is each tool that is managed or a named file, in the declared order, its folders first, then the
- * PATH it inherited; with every tool the system's it is the inherited one exactly. A command's first word a tool
+ * PATH it inherited; with every tool the system's it is the inherited one exactly. An install's `app/bin/` beside the
+ * home comes first of all (WSSETUP3, D124 §1.3), and no install is no change. A command's first word a tool
  * answers for is that tool's, by its way, and never falls back to PATH.
  *
  * Every case runs in a scratch home, laid out as the driver's test lays it out. Nothing here starts a program but
@@ -81,9 +82,27 @@ function laidOut(name: string) {
     writeFileSync(join(home, TOOLS_FILE), text);
   };
 
-  /** A folder token: `managed:<tool>/<path>`, `file:<tool>`, or `inherited`. */
+  /**
+   * Lay out beside the home what the install cell names: `none`, nothing; `bin`, an install's `app/bin/` with its two
+   * launchers; `app`, an `app/` with no `bin/` (an install from before the doctrine tool); `file`, an `app/bin` that is
+   * a file.
+   */
+  const install = (cell: string) => {
+    const bin = join(root, 'app', 'bin');
+    if (cell === 'bin') {
+      touch(join(bin, 'daoris'));
+      touch(join(bin, 'daoris.cmd'));
+    } else if (cell === 'app') {
+      mkdirSync(join(root, 'app'), { recursive: true });
+    } else if (cell === 'file') {
+      touch(bin);
+    }
+  };
+
+  /** A folder token: `managed:<tool>/<path>`, `file:<tool>`, `bin` (the install's, beside the home), or `inherited`. */
   const folder = (token: string, from: string | null) => {
     if (token === 'inherited') return from!;
+    if (token === 'bin') return join(root, 'app', 'bin');
     if (token.startsWith('file:')) return dirname(named(token.slice(5)));
     const slash = token.indexOf('/');
     const tool = token.slice(8, slash);
@@ -92,7 +111,7 @@ function laidOut(name: string) {
     return path === '.' ? pkg : join(pkg, ...path.split('/'));
   };
 
-  return { fx, root, home, named, inherited, write, folder };
+  return { fx, root, home, named, inherited, write, folder, install };
 }
 
 const spelled = (path: string | null | undefined) => (path && windows ? path.toLowerCase() : path ?? null);
@@ -129,6 +148,59 @@ test('a child’s PATH is the tools’ folders, then what it inherited, as the d
     assert.deepEqual(Object.keys(variables), wanted === null ? [] : [PATH_VARIABLE], name);
     at.fx.cleanup();
   }
+});
+
+// ——— The install's doctrine tool (D124 §1.3, WSSETUP3).
+
+const INSTALL_ROWS: [string, string | null, string | null, string, string][] = [
+  ['no install beside the home: byte for byte as before', null, 'two', 'none', 'unchanged'],
+  ['an install beside the home: its bin first, with every tool the system\'s', null, 'two', 'bin', 'bin inherited'],
+  ['its bin before a managed tool\'s folders', '{"tools":{"git":{"use":"managed","version":"2.51.0"}}}', 'two', 'bin', 'bin managed:git/cmd managed:git/mingw64/bin inherited'],
+  ['its bin before a named file\'s folder', '{"tools":{"node":{"use":"file","file":"@node"}}}', 'two', 'bin', 'bin file:node inherited'],
+  ['its bin, and an empty inherited PATH adds no empty folder', null, 'empty', 'bin', 'bin'],
+  ['its bin, and no inherited PATH', null, null, 'bin', 'bin'],
+  ['an app folder with no bin, an install from before the doctrine tool: as before', null, 'two', 'app', 'unchanged'],
+  ['a bin that is a file is no folder to put first', null, 'two', 'file', 'unchanged'],
+];
+
+test('a child’s PATH begins with the install’s doctrine tool beside the home, as the driver builds it', () => {
+  for (const [index, [name, json, inheritedCell, installCell, expected]] of INSTALL_ROWS.entries()) {
+    const at = laidOut(`tools-children-install-bin-${index}`);
+    at.write(json);
+    at.install(installCell);
+    const from = at.inherited(inheritedCell);
+
+    const path = childPath(readTools(at.home), at.home, from);
+
+    const wanted = expected === 'unchanged' ? null : expected.split(' ').map((token) => at.folder(token, from)).join(delimiter);
+    assert.equal(spelled(path), spelled(wanted), name);
+    const variables = childEnvironment(readTools(at.home), at.home, from);
+    assert.deepEqual(Object.keys(variables), wanted === null ? [] : [PATH_VARIABLE], name);
+    at.fx.cleanup();
+  }
+});
+
+test('a child is handed the install’s bin with every tool the system’s', () => {
+  const at = laidOut('tools-children-install-handed');
+  at.install('bin');
+  const key = windows ? 'Path' : 'PATH';
+  const env = { [key]: at.inherited('two')!, OTHER: 'x' };
+
+  const handed = handTools(env, at.home);
+
+  assert.equal(handed[key], join(at.root, 'app', 'bin') + delimiter + at.inherited('two'));
+  assert.deepEqual(Object.keys(handed).sort(), Object.keys(env).sort(), 'never both `Path` and `PATH`');
+  at.fx.cleanup();
+});
+
+test('the install’s bin is found beside the home, however the home is spelled', () => {
+  const at = laidOut('tools-children-install-spelled');
+  at.install('bin');
+
+  assert.equal(installBin(at.home + sep), join(at.root, 'app', 'bin'));
+  assert.equal(installBin(join(at.root, 'data', '..', 'data')), join(at.root, 'app', 'bin'));
+  assert.equal(installBin(join(at.root, 'elsewhere', 'data')), null);
+  at.fx.cleanup();
 });
 
 test('with every tool the system’s a child is handed the environment it inherited, byte for byte', () => {
@@ -276,5 +348,6 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const rows = (method: string) => csharpRows(source, method, {}, 'ToolsChildrenTests');
 
   assert.deepEqual(rows('A_childs_PATH_is_the_tools_folders_then_what_it_inherited'), ENVIRONMENT_ROWS);
+  assert.deepEqual(rows('A_childs_PATH_begins_with_the_installs_doctrine_tool_beside_the_home'), INSTALL_ROWS);
   assert.deepEqual(rows('A_commands_first_word_is_the_tool_that_answers_for_it'), COMMAND_ROWS);
 });

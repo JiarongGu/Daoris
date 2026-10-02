@@ -36,6 +36,29 @@ internal static class TreesConsole
         return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
     }
 
+    /// <summary>
+    /// The lines this press moved, registered from the line at once (WSSETUP5, D124 §3.1) rather than at a loop's next
+    /// look, so a terminal's landing reads as registered when it returns; each outcome to this host's log. What changed or
+    /// must be fixed is said. A service that did not answer leaves them due, for the next loop to follow.
+    /// </summary>
+    internal static async Task FollowMovedLinesAsync(ServiceClient service, string home, MachineLog? log)
+    {
+        var due = RegistryFollowing.Due(home);
+        if (due.Count == 0) return;
+        if (log is not null) service.RegistryFollowed += followed => SessionLog.WriteFollowed(log, followed);
+        try
+        {
+            var config = DriverConfig.Load(DriverConfig.ResolvePath());
+            var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), due).ConfigureAwait(false);
+            foreach (var line in report.Followed.Select(RegistrationFollow.EventLine).OfType<string>()) Console.WriteLine($"  {line}");
+            if (report.Refresh is { } refresh) Console.WriteLine($"  registry  the index was not read again after registering: {refresh}");
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException or IOException)
+        {
+            Console.Error.WriteLine($"trees: the registry did not follow the lines this moved ({error.Message}); the driver follows them at its next look.");
+        }
+    }
+
     /// <param name="log">This host's machine log: a landing's and a hand-off's plugin frame is written there (PLUGUI1d).</param>
     public static async Task<int> RunAsync(string[] args, MachineLog? log = null)
     {
@@ -189,6 +212,7 @@ internal static class TreesConsole
                 }
 
                 if (SyncWords.Apart(done.Apart) is { } untouched) Console.WriteLine(untouched);
+                await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
 
                 // 1 where something the proofs cleared did not happen: a conflict, or a branch or line that moved since.
                 var missed = done.Lines.Count(result => result.Pull.Moves && !result.Moved)
@@ -260,6 +284,7 @@ internal static class TreesConsole
                 Console.WriteLine($"trees: {landed.Message}");
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
                 if (landed.Landed) events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
+                await FollowMovedLinesAsync(service, home, log).ConfigureAwait(false);
                 // 1 where the step the rule asked for did not happen: refused, or the plugin did not push.
                 return landed.Landed && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1;
             }
