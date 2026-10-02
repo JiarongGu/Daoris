@@ -156,4 +156,174 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
 
         Assert.Contains(Refusals.DriverNotReady, refusal);
     }
+
+    /// <summary>
+    /// SESSUX1a: where each session is listed reads the service's records and quests, so before the driver's service is up
+    /// it is the cold-start sentence, and so is an archive, which is judged by the same reading.
+    /// </summary>
+    [Fact]
+    public async Task The_groups_and_an_archive_before_the_service_answers_say_so()
+    {
+        var module = Module();
+
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "SESSION_GROUPS"));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "done1" }, archived = true }));
+    }
+
+    /// <summary>
+    /// SESSUX1a (D126 §2.4): each session's group and the word its row shows, from the records, the quests and the
+    /// planner's verdict, which with no look yet is a plan over a fresh snapshot: a quest its three failed sessions park
+    /// shows its last session parked, waiting on you. Nothing machine-local comes back.
+    /// </summary>
+    [Fact]
+    public async Task Each_session_is_answered_in_its_group_and_a_quest_its_strikes_park_shows_its_last_session_parked()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+
+        var answer = await AnswerAsync(module, "SESSION_GROUPS");
+        var rows = answer.GetProperty("sessions").EnumerateArray().ToList();
+        var bySession = rows.ToDictionary(row => row.GetProperty("session").GetString()!);
+
+        // In the order the person acts on them: what waits on you first, the oldest wait first.
+        Assert.Equal(["failed3", "waiting1", "running1", "done1", "failed2", "failed1"], rows.Select(row => row.GetProperty("session").GetString()));
+        Assert.Equal("you", bySession["failed3"].GetProperty("group").GetString());
+        Assert.Equal("parked", bySession["failed3"].GetProperty("shown").GetString());
+        Assert.Equal(3, bySession["failed3"].GetProperty("strikes").GetInt32());
+        Assert.Equal("you", bySession["waiting1"].GetProperty("group").GetString());
+        Assert.Equal("awaiting-person", bySession["waiting1"].GetProperty("shown").GetString());
+        Assert.Equal("working", bySession["running1"].GetProperty("group").GetString());
+        Assert.Equal("ended", bySession["done1"].GetProperty("group").GetString());
+        Assert.Equal("completed", bySession["done1"].GetProperty("shown").GetString());
+        Assert.False(bySession["done1"].GetProperty("archived").GetBoolean());
+        Assert.Equal("ended", bySession["failed1"].GetProperty("group").GetString());
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
+
+        // Asked for some, it answers those.
+        var some = await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1", "nobody" } });
+        Assert.Equal(["done1"], some.GetProperty("sessions").EnumerateArray().Select(row => row.GetProperty("session").GetString()));
+    }
+
+    /// <summary>Where the loop has looked, its verdicts are the ones read: the list says what the loop decided, never a second plan.</summary>
+    [Fact]
+    public async Task The_loops_last_look_is_the_verdict_read()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        loop.Look.Record([new Consideration(
+            new QuestView("q4", "game", "engine", "Done long ago", "A body.", "Done"), StartVerdict.Exhausted, "the loop's sentence")]);
+        var module = new DriverModule(Bus, loop);
+
+        var answer = await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1", "failed3" } });
+        var rows = answer.GetProperty("sessions").EnumerateArray().ToDictionary(row => row.GetProperty("session").GetString()!);
+
+        // The loop parked q4 and said nothing of q1, whatever a fresh plan would say of either.
+        Assert.Equal("parked", rows["done1"].GetProperty("shown").GetString());
+        Assert.Equal("ended", rows["failed3"].GetProperty("group").GetString());
+    }
+
+    /// <summary>
+    /// SESSUX1a (D126 §5.2): an ended session is archived on this machine, its mark in the home's
+    /// <c>sessions/archived.json</c>, and listed as archived; unarchived, it is back in its group, and one that was not
+    /// archived is said, never refused (D48 §6).
+    /// </summary>
+    [Fact]
+    public async Task An_ended_session_is_archived_and_unarchived_and_the_marks_come_back_as_they_stand()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+        var module = new DriverModule(Bus, loop);
+
+        var archived = await AnswerAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "done1" }, archived = true });
+
+        Assert.Equal(["done1"], archived.GetProperty("archived").EnumerateArray().Select(mark => mark.GetProperty("session").GetString()));
+        Assert.Empty(archived.GetProperty("kept").EnumerateArray());
+        Assert.True(File.Exists(Path.Combine(Home, "sessions", "archived.json")));
+        var row = (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
+        Assert.Equal("archived", row.GetProperty("group").GetString());
+        Assert.True(row.GetProperty("archived").GetBoolean());
+
+        var back = await AnswerAsync(module, "SESSION_ARCHIVE", new { ids = new[] { "done1", "failed1" }, archived = false });
+
+        Assert.Empty(back.GetProperty("archived").EnumerateArray());
+        Assert.Equal(["failed1"], back.GetProperty("notArchived").EnumerateArray().Select(id => id.GetString()));
+        Assert.Equal("ended", (await AnswerAsync(module, "SESSION_GROUPS", new { ids = new[] { "done1" } }))
+            .GetProperty("sessions")[0].GetProperty("group").GetString());
+    }
+
+    /// <summary>
+    /// Archive refuses a session still running, one that waits on you (a parked session, or a quest's parked last one),
+    /// and an id no record has, each a code the page says in its own language, naming the session; nothing is written.
+    /// </summary>
+    [Theory]
+    [InlineData("running1", Refusals.SessionLive, "")]
+    [InlineData("waiting1", Refusals.SessionNeedsYou, "group=you")]
+    [InlineData("failed3", Refusals.SessionNeedsYou, "group=you")]
+    [InlineData("nobody", Refusals.SessionUnknown, "")]
+    public async Task An_archive_that_would_hide_what_needs_you_or_stop_nothing_is_refused(string session, string code, string group)
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+
+        var refusal = await RefusalAsync(new DriverModule(Bus, loop), "SESSION_ARCHIVE", new { ids = new[] { session }, archived = true });
+
+        Assert.Contains(code, refusal);
+        Assert.Contains($"session={session}", refusal);
+        Assert.Contains(group, refusal);
+        Assert.False(File.Exists(Path.Combine(Home, "sessions", "archived.json")));
+    }
+
+    /// <summary>The second press of *Archive what ended* judges each again: what may go is archived, and what may not is kept with its code.</summary>
+    [Fact]
+    public async Task Several_at_once_archive_what_may_go_and_say_what_was_kept()
+    {
+        using var ledger = Ledger();
+        var loop = await UpAsync(ledger);
+
+        var answer = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_ARCHIVE",
+            new { ids = new[] { "done1", "failed1", "running1", "waiting1" }, archived = true });
+
+        Assert.Equal(["done1", "failed1"], answer.GetProperty("archived").EnumerateArray()
+            .Select(mark => mark.GetProperty("session").GetString()).Order(StringComparer.Ordinal));
+        var kept = answer.GetProperty("kept").EnumerateArray().ToDictionary(row => row.GetProperty("session").GetString()!);
+        Assert.Equal(Refusals.SessionLive, kept["running1"].GetProperty("code").GetString());
+        Assert.Equal(Refusals.SessionNeedsYou, kept["waiting1"].GetProperty("code").GetString());
+        Assert.Equal("you", kept["waiting1"].GetProperty("group").GetString());
+    }
+
+    /// <summary>The loop with its service up over a ledger on this machine, and `engine` drivable, so its strikes can park a quest.</summary>
+    private async Task<DriverLoop> UpAsync(LoopbackHost ledger)
+    {
+        (DriverConfig.Empty with { Drivable = ["engine"] }).Save(DriverConfigPath);
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient(ledger.Address, null));
+        return loop;
+    }
+
+    /// <summary>
+    /// The service's doors a look at the sessions reads, standing in over a real socket on this machine: `engine` registered
+    /// and adopted; `q1` open with three failed sessions, which park it; a parked session, a running one, and a quest done.
+    /// </summary>
+    private LoopbackHost Ledger()
+    {
+        var ledger = new LoopbackHost();
+        var root = Path.Combine(Home, "checkouts", "engine").Replace('\\', '/');
+        string Session(string id, string state, string quest, int minute) =>
+            $$"""{"id":"{{id}}","quest":"{{quest}}","repository":"engine","adapter":"claude-code","state":"{{state}}","kind":"driven","created":"2026-10-02T09:{{minute:00}}:00Z","updated":"2026-10-02T09:{{minute + 1:00}}:00Z"}""";
+        var records = $"[{Session("failed1", "failed", "q1", 0)},{Session("failed2", "failed", "q1", 10)},{Session("failed3", "failed", "q1", 20)},"
+                      + $"{Session("waiting1", "awaiting-person", "q2", 30)},{Session("running1", "working", "q3", 40)},{Session("done1", "completed", "q4", 50)}]";
+        string Quest(string id, string status) =>
+            $$"""{"id":"{{id}}","from":"game","to":"engine","title":"The work of #{{id}}","body":"A body.","status":"{{status}}"}""";
+        var live = $"[{Quest("q1", "Open")},{Quest("q2", "Taken")},{Quest("q3", "Taken")}]";
+        var every = $"[{Quest("q1", "Open")},{Quest("q2", "Taken")},{Quest("q3", "Taken")},{Quest("q4", "Done")}]";
+        var active = $"[{Session("waiting1", "awaiting-person", "q2", 30)},{Session("running1", "working", "q3", 40)}]";
+        ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(records));
+        ledger.Serve("/api/sessions", System.Text.Encoding.UTF8.GetBytes(active));
+        ledger.Serve("/api/quests?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(every));
+        ledger.Serve("/api/quests", System.Text.Encoding.UTF8.GetBytes(live));
+        ledger.Serve("/api/registry", System.Text.Encoding.UTF8.GetBytes(
+            $$"""[{"repository":"engine","adopted":true,"registered":true,"root":"{{root}}","workspace":"aurora"}]"""));
+        return ledger;
+    }
 }

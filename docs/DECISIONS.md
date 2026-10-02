@@ -8101,3 +8101,125 @@ by `RotationTwinTests`, `CoolingTwinTests` and `CoolOffTests` on the driver's si
 cool-off is reached only by a real login, and a conversation's `cooloff` only through a real protocol chat; both are one
 line each, beside tested ones. The `Process` half, the rehearsals and the screen were not run by this branch, and the
 screen, Ask Daoris's doors and the room's cooling facts are TOOL4g's.
+## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
+
+**Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
+it's not really smooth for ui/ux"*. Read from the code the same day: a session's row offered its review and its id; a
+running driven session was stopped only from its quest's page; a quest parked on its failed sessions was started again
+only from its quest's page, where the owner's work stood after an account limit on 1 October; a person's stop left a
+taken quest with no way back and an open one planned again; nothing that ended could be cleared; and a driven session's
+title was its quest's whole title. `docs/2026-10-02-session-management-design.md` is the contract; its §1 is the audit,
+state by state and act by act. It settles:
+
+1. **The list shows sessions by state**, the default, in five groups in the order the person acts on them: *Waiting on
+   you* (a parked session, and the last session of a quest parked on its failed sessions, shown *parked*), *To review*
+   (an ended session whose own tree holds work no branch of the person's holds, by D88's proof), *Working*, *Resumes
+   later* (*awaiting reply*, D79; *account cooling*, D125) and *Ended*. *Group by repository*, today's arrangement,
+   stays a choice in the list's new ⋯, remembered. *Ended* shows twelve and then a press for the rest.
+2. **One reader decides a session's group**, `SessionGroups.Read` in the driver library: the records, the quests, the
+   planner's own verdicts, the trees' judgement, D125's cool-off once built, and the archive marks. `SESSION_GROUPS`
+   hands it to the page and `daoris-driver sessions` prints it. Nothing is written back to the record: **no new session
+   state**.
+3. **Open's hue is the person's alone.** *Waiting on you* and *parked* wear it; `queued` moves to neutral. Red stays
+   an outcome, and every mark keeps its word.
+4. **Every act is where its session is**: the row's ⋯ and a page header pinned at the top of Sessions' main area, both
+   calling one module, `work/sessionActs.ts`. The acts are *Stop…*, *Try again*, *Review*, *Open folder*, *Open a
+   terminal here*, *Open in its own window*, *Archive*, *Unarchive*, *Delete…* and *Copy session ID*, each offered only
+   where it applies. The parked card keeps *Answer and carry on…*, *Finish* and *Decline…*. This amends RAIL1's rule
+   that a row's menu holds only what has no other home.
+5. **The stop has one owner and one word.** *Stop…* in the header asks once and says what follows by kind. The chat
+   composer keeps *Finish* and *Stop turn*; the parked and intake cards and the quest page lose their stops. Ask
+   Daoris's panel keeps its own, since the side bar holds that conversation on every view.
+6. **A person's stop holds its quest on this machine**, open or taken: the planner's new `Stopped` verdict, with a
+   sentence where a taken quest had none and an open one was planned again. **Try again releases it**: one act on the
+   session and on the quest's page, recording RETRY1's mark for a parked quest and `released` in `driver.json` for a
+   stopped one (twins: `DriverConfig.cs`, `driverconfig.ts`). A stop is still not a strike (D58).
+7. **What ended is cleared by archive**, a mark kept on this machine (`<home>/sessions/archived.json`), never on the
+   record, which travels. Archive refuses a live session and never hides what needs the person. *Archive what
+   ended…* lists, then archives. **Delete** is for a conversation that served no quest only, ended, this machine's,
+   named by nothing, with no tree here and held by no remote; it removes the record and what this machine kept of it,
+   never a tree, a branch, the usage or the log.
+8. **What needs you holds a parked quest**, and a quest's park is said once, as a session's is (`QuestParked`).
+9. **A quest carries a short title**, `short`, written by whoever publishes it and travelling with it; a list shows it,
+   a page shows the whole title. Sessions are still not named by hand (D52).
+10. **The doors.** `daoris-driver sessions` lists by group and stops, finishes, declines, archives, unarchives and
+    deletes; a stop reaches a session another process runs through a request the running loop honours. Ask Daoris
+    gains a `session` kind (`stop`, `archive`, `unarchive`) and the `delete` kind's `session` door, and
+    `HelpCoverageTests` reads Sessions' acts. Answering, finishing and declining stay the person's.
+11. **Names** follow D116 in both languages; the glossary gains *try again* 重试, *archive* 归档 and *short title*
+    短标题.
+
+The build is SESSUX1a–l, the design's §9.
+
+**Why.** A list is where many sessions are managed, and every act that lived on another view, or nowhere, was a trip
+the owner had to know to make. The quest that stood parked on 1 October needed one press, and nothing where its
+sessions were said so. A stop that left its quest in silence, or undid itself at the next look, is not one a person can
+manage with. What ended had nowhere to go but further down.
+
+**This amends:**
+- **The working surface design's §3** (RAIL1's row menu; the list grouped by repository) and **§4** (the parked
+  card's stop).
+- **D104 and D80**, as the planner reads them: a person's stop holds its quest, open or taken, until *Try again*.
+- **RETRY1**: *Try again* also releases a stop.
+- **The platform language's §3** (open's hue) and **§5** *Sessions*.
+- **D110**: the `session` kind, the `delete` kind's `session` door, and the coverage of Sessions' acts.
+- **D94 §4**: `session.deleted` and `sessions.archived`, once SESSUX1f and SESSUX1g build them.
+
+**D55, D118, D51 rule 7 as D88 amended it, D58, D46 §4 and D52 stand.**
+
+**Rejected.**
+- **Naming a session by hand.** D52's trigger is two sessions that cannot be told apart, and the complaint was length.
+- **A short title cut from the title.** It keeps the start, where a family's quests tend to agree.
+- **Archive as a field on the record.** The record travels; one person's tidy is not a fact about the work.
+- **Archiving or deleting by age.** A session gone without a press is one the person never saw go.
+- **Deleting a session that served a quest.** It is that work's record, and the strikes are counted from it.
+- **A delete that travels to a remote.** A session record does not travel as a deletion.
+- **Several sessions chosen at once.** A second selection beside the attended one; the bulk archive covers the case.
+- **Unlanded work in Overview's *What needs you*.** The proof is a git walk per repository on every open.
+- **New ledger states** for *parked*, *awaiting reply* or *account cooling*: each is a derived fact about the quest.
+- **Ask Daoris answering a parked session.** The answer is the person's (D37).
+- **The grouping as a helper on the page.** It needs the planner's verdict and a git judgement, which only the driver
+  has, and a terminal twin would make it a twin of an eleven-case rule.
+
+**As built (SESSUX1a, 2026-10-02): the reader of a session's group, and the archive marks.** `SessionGroups.Read`
+(`SessionGroups.cs`) is pure over a `SessionLook`: the records, every quest, the planner's verdicts, each quest's last
+session here and its strikes as `ServiceClient`'s own readers derive them, the trees' judgement and the marks.
+`SessionTrees.WorkAsync` is D88's proof of one session's own tree. `SessionArchive` keeps `<home>/sessions/archived.json`.
+`SESSION_GROUPS` and `SESSION_ARCHIVE` are on `DriverModule.Sessions.cs`, with `SESSION_UNKNOWN`, `SESSION_LIVE` and
+`SESSION_NEEDS_YOU` in `Refusals` and both catalogues. `bridge/sessions.ts` has `useSessionGroups` and
+`useArchiveSessions`, and no screen reads them yet. What the build settled that §2 and §5 left open:
+
+- **To review needs a tree nothing will go back into.** §2.1 says a session is in the first group it qualifies for.
+  Read literally, that would put in To review every awaiting reply with a commit, and every cut-off a carry-on is
+  writing. So a tree a live session holds is in use, as D88's proof keeps a tree in use. So is a tree whose quest is
+  still taken and still considered by the planner: its resume or its carry-on goes back into that tree (D79, D80).
+  Only the newest session on a tree stands for it. A person's stop leaves its quest unconsidered, so the stop's work
+  is to review, as the proof's case says.
+- **A teammate's record is grouped by its state only.** Its park waits on the teammate, so it is listed under Working.
+  It is never parked, to review or resuming later: the verdicts, the strikes and the trees are this machine's, as the
+  park notification already reads them (D47 §6). It may be archived here.
+- **The planner's seam is the reader's, not `Planner`'s.** `SessionGroups.VerdictsAsync` takes the loop's last look
+  (`LastLook`, which `DriverLoop.Look` records beside the parked quests) and plans over a fresh snapshot where none has
+  looked. `Planner.cs`, the strikes and the client were TOOL4d's while this was built, so nothing there changed. For
+  the same reason `SessionRecords.ReadAsync` asks the records door with its own client and the loop's key, rather than
+  adding a method to `ServiceClient`. Moving it there later changes no answer.
+- **A parked row's number is the planner's count**: the records' strikes less RETRY1's mark, which is the expression
+  the planner parks by. Whether the quest is parked is the planner's verdict alone.
+- **A state this build does not know is live**, so nothing archives a session a newer host says is still running.
+- **git is asked only of a tree that could be to review, and only of a repository of its own.** A count git cannot give
+  is kept as work, as the clean-up keeps what it cannot clear. A folder under the trees that is no repository of its
+  own is never asked, since git walks up.
+- **Archive refuses per session, and the answer depends on how many were asked.** Asked of one session, a refusal is
+  the answer. Asked of several, the route archives what may go and lists each kept session with its code, as the
+  clean-up keeps what changed since its list. Unarchive needs no service, and a session that was not archived is named
+  in the answer, never refused (D48 §6). Each write drops marks for records that are gone.
+- **`SESSION_NEEDS_YOU` names which group kept a session through i18next's context.** The refusal carries `group` and
+  `context`, and `errors.SESSION_NEEDS_YOU_review` is the To review sentence beside the base one, in both languages.
+
+Held by `SessionGroupsTests` (a table of 44 cases over §1's states, the order, the trees judged, the readers),
+`SessionArchiveTests`, `SessionTreeWorkTests` (real git, the `Process` half, run by the parent),
+`DriverModuleSessionsTests`, `HelpCoverageTests` (the archive is a door owed to SESSUX1h's `session` kind) and
+`bridge/sessions.test.tsx`. Each was seen failing first, except `SessionTreeWorkTests`, which this branch could not
+run. **Not built here**: `deletable` (SESSUX1f), *account cooling* (SESSUX1k) and the stop's hold (SESSUX1b, which adds
+its verdict to the reader's table: a quest held by a stop leaves its tree to review). **Not measured**: how long
+`SESSION_GROUPS` takes over a workspace of 29 repositories with their trees (§12).
