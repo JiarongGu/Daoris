@@ -63,6 +63,7 @@ changes no row (D127).
 | `2026-10-02-knowledge-design-review.md` | contract | The knowledge design reviewed: what each agent loads, eight candidates, and the index as the floor with recall by meaning on top (KNOW2) | Reviewed (D129, pending KNOW3's measurement); nothing built |
 | `2026-10-02-account-use-design.md` | contract | Account use, for any number of accounts: which may run each workspace, as the person states; most left or soonest reset first; one by one or in parallel; one kept for conversations; what is left, by the agent's word (TOOL6) | Designed (D130); nothing built. Amends D125 §3, §6 and four TOOL4 rows |
 | `2026-10-02-answer-continues-design.md` | contract | An answer continues the session: the parked record reopens and its harness conversation resumes on the same account, adapter and tree; otherwise today's carry-on, saying why (ANSWER1) | Designed (D131); building, and D131's notes say what each build settled |
+| `2026-10-02-account-use-design.md` | contract | Account use, for any number of accounts: which may run each workspace, as the person states; by default the most work from all of them (§16), one by one as an override; what is left, by the agent's word (TOOL6) | Designed (D130); nothing built. Amends D125 §3, §6 and four TOOL4 rows |
 
 ## Studies and evidence
 
@@ -88,6 +89,7 @@ changes no row (D127).
 | `2026-10-01-entry-point-evidence.md` | evidence | D117, LAYOUT2: what Claude Code (both doors), codex, codex-acp and dsh read, from their shipped code, keylessly. The Claude Code ACP adapter loads project instructions; codex cuts its project docs at 32,768 bytes; dsh lists a mirrored skill once. §6 is the canary turn, the owner's to run |
 | `2026-10-01-tools-resources-evidence.md` | evidence | D121, TOOLS3: where each line of the list built in was read from, each maker's published sum, each archive's layout, and the whole files streamed once and matched. MinGit carries an ssh of its own and no bash. A test holds the list to it |
 | `2026-10-02-knowledge-bench-results.md` | evidence | KNOW3, for D128 and KNOW2 (D129): 72 real headless sessions over this repository's documents, behind six knowledge designs, by `tools/knowledge-bench.mjs`. Every design found every document. The region's table is fastest and costs 9,447 tokens a request at 73 documents; the on-demand index costs one more call and was read whole every time; a pushed BM25 top 5 was cheapest when right. §2 proves the isolation, §5 the threats |
+| `2026-10-02-limit-signals-evidence.md` | evidence | TOOL4b, for D125 and D130: what each door says about an account's limits, read keylessly, one turn measured. Claude Code's frame gives each window's use on every turn; its protocol door forwards it in `_meta`; `codex-acp` forwards none, and its limit error's message is `Internal error` alone |
 
 ## Records
 

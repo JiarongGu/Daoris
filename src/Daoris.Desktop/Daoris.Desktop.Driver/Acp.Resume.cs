@@ -1,22 +1,6 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Daoris.Driver;
-
-/// <summary>A call the agent answered with an error, in its words and with the error's code where it gave one.</summary>
-/// <remarks>
-/// A <see cref="DriverException"/>, so every catch that names this client's failures still takes it; the code is what
-/// tells a conversation the agent no longer has from any other refusal of a resume (ANSWER1a).
-/// </remarks>
-public sealed class AcpCallRefused(string words, int? code)
-    : DriverException($"the ACP agent refused the call: {words}")
-{
-    /// <summary>The agent's own words.</summary>
-    public string Words { get; } = words;
-
-    /// <summary>The JSON-RPC error code, or null where the agent gave none.</summary>
-    public int? Code { get; } = code;
-}
 
 /// <summary>
 /// The agent would not resume the conversation an answer continues (ANSWER1a, D131 §2): nothing was prompted, and the
@@ -43,16 +27,6 @@ public sealed partial class AcpSession
 
     /// <summary>The conversation whose replay is arriving while a <c>session/load</c> is answered, or null.</summary>
     private volatile string? _replaying;
-
-    /// <summary>The calls whose refusal keeps its code: a resume's, by request id.</summary>
-    private readonly ConcurrentDictionary<int, byte> _coded = new();
-
-    /// <summary>A JSON-RPC error's code, read without trusting its shape; null where it gave none.</summary>
-    private static int? Code(JsonElement error) =>
-        error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var code)
-        && code.ValueKind == JsonValueKind.Number && code.TryGetInt32(out var number)
-            ? number
-            : null;
 
     /// <summary>
     /// Resume a conversation instead of opening one (ANSWER1a, D131 §1): the reader started, the handshake, then
@@ -85,9 +59,9 @@ public sealed partial class AcpSession
         _replaying = method == "session/load" ? conversation : null;
         try
         {
-            resumed = await RequestAsync(method, parameters, ct, coded: true).ConfigureAwait(false);
+            resumed = await RequestAsync(method, parameters, ct).ConfigureAwait(false);
         }
-        catch (AcpCallRefused refused)
+        catch (AcpRefusal refused)
         {
             throw new AcpResumeRefused(
                 ContinueWhy.Of(refused.Code == ResourceNotFound ? ContinueWhy.Gone : ContinueWhy.Refused), refused.Words);

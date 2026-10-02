@@ -9631,3 +9631,54 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > fast-half selection on `acp-stub` with an order; the real-process carry-on onto stub account 2.
 
 **Outcome** `acp-stub` is a door onto the stub's accounts: a limit on the protocol door cools the named stub account and the carry-on rotates over the stub's order. Detail: D125's TOOL4j note, `dde51f0`.
+
+
+## TOOL4b — what the native door says (2026-10-02)
+
+> - [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2; as D130 amends it): `rate_limit_event` and a limit's
+> failed `result`, on an ordinary turn and at a warning, whether the protocol door forwards them, and Codex's `rate_limits`;
+> read keylessly, labelled unmeasured, then the first real frame recorded. TOOL6c builds only on it. Contract: D130 §0.3,
+> §5.1–§5.2.
+
+**Outcome** Claude Code's `rate_limit_event` gives each window's use (0–1) and reset on every frame (117 measured); the ACP adapter forwards it in `usage_update._meta`, which Daoris drops; codex-acp forwards nothing and its limit error says only `Internal error`. Detail: `docs/2026-10-02-limit-signals-evidence.md`, D125's TOOL4b note.
+
+
+## TOOL6 — how switching works, and accounts used well (2026-10-02 → D130)
+
+> - [ ] **TOOL6 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
+> how switch works and how to optimize the account use since there are 3 accounts"*; then: all three may run the work
+> workspace, by the allowance each has left, one by one, in parallel or by other logic, configurable; any number of
+> accounts, three is only today's; the goal: *"to optimize the limit and usage of multiple accounts"*, the rules and
+> defaults designed around it, D130's amendment in flight). Modes, which
+> accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130.
+> Proof: the design (landing).
+
+**Outcome** Account use designed for any number of accounts, then re-decided on the owner's goal: every listed account used toward the most work (spread, a lapsing week first, pace, least recently started), one by one in order as an override, switching early on. Detail: D130 and its note *The rules around the goal*, `docs/2026-10-02-account-use-design.md` §16; `92c7d46`.
+
+
+## TOOL6a — the settings and their terminal doors (2026-10-02)
+
+> - [ ] **TOOL6a — the settings and their terminal doors** (cli; driver; in flight). `use` (`goal`, the default, or
+> `order`), `keep`, `early` (on unless `false`) and `near` per scope in `harnesses.json`, both twins, `daoris agent
+> profile use`, and the refusals on `order` and `default`, so the choices have a file and a terminal before anything
+> reads them. Contract: D130 §2, §3.1, §9, §14, §16.6. Proof: twin tables both sides, none by a list's length.
+
+**Outcome** Each list's settings (`use` goal|order, `keep`, `early`, `near`) exist in both twins, with `daoris agent profile use`, the scope refusals on `order` and `default`, and `agent list`'s lines; nothing chooses by them yet (TOOL6b). Detail: D130's TOOL6a note, `cfd5455`.
+
+
+## ACPDATA1 — the protocol door keeps a refusal's data (2026-10-02)
+
+> - [ ] **ACPDATA1 — the protocol door keeps a refusal's `data`** (driver; found by TOOL4b). `AcpSession` keeps only the
+> JSON-RPC error's message, so a Codex limit arrives as `Internal error` and Claude Code's `errorKind` is lost. Contract:
+> D125 §1.2, limit-signals evidence §3–§4. Proof: `AcpSession` tests written to fail first.
+
+**Outcome** The protocol door keeps a refusal's `data`, so the conclusion and the limit reader get the sentence a Codex limit carries, with `errorKind` kept beside it. Detail: D125's ACPDATA1 note, `a5a0bc9`.
+
+
+## TOOL4k — a weekday reset, and Codex's clock (2026-10-02)
+
+> - [ ] **TOOL4k — a weekday reset, and Codex's clock** (driver; found by TOOL4b). The maker documents `resets Mon 12:00am`,
+> which TOOL4a's grammar does not read; Codex prints `4:05 PM` and `Oct 3rd, 2026 4:05 PM` with no zone. Contract: D125
+> §2.1, evidence §2, §4. Proof: `AccountLimitsTests` rows for each recorded form, failing first.
+
+**Outcome** The reset grammar reads a weekday (no grace) and Codex's `4:05 PM` and `Oct 3rd, 2026 4:05 PM`; `codex-acp` declares Codex's entry from four sentences read in its source. Detail: D125's TOOL4k note (what is still unrecorded), `2ff6458`.

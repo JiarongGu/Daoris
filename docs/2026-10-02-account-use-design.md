@@ -8,13 +8,17 @@
 > numbers"*. D125 (`docs/2026-10-01-account-rotation-design.md`) has one policy: walk the person's order when the
 > default is not ready. This is the contract for what the person sets beyond that, and for what Daoris does to use
 > the accounts well, for any number of accounts. Its decision is **D130**, which amends D125. Status: **designed;
-> nothing built.** Read with **D125** and its TOOL4a–TOOL4f notes, **D57**, **D58**, **D48 §2a**, **D49 §4**,
-> **D50**, **D54**, **D110** and **D116**.
+> nothing built.** 🔴 **§16, *the rules around the goal* (2026-10-02), re-decides the defaults** on the owner's goal:
+> the most work from the accounts' combined allowance, the fewest stalls, and no allowance left unused at a reset. By
+> default every listed account is used toward it; *one by one, in order* is an override. Where §16 and §2–§10
+> disagree, §16 wins, and each place it changes says so. Read with **D125** and its TOOL4a–TOOL4j notes, **D57**,
+> **D58**, **D48 §2a**, **D49 §4**, **D50**, **D54**, **D110** and **D116**.
 
 Accounts are named as Daoris names their directories (`account-1`, `account-2`, …, `account-N`: D66 §3). **An agent
 may have any number of accounts, one or more, and nothing here counts them**: where an example needs a number, it is
-N for the accounts and K for the driver's cap (the aims of §1 are lettered A to E). Nobody's account, address or time zone is named, and a sentence an
-agent printed is quoted only in a shape D125 §0.2 already recorded.
+N for the accounts and K for the driver's cap (the aims of §1 are lettered A to E). Nobody's account, address or time
+zone is named, and a sentence an agent printed is quoted only in a shape D125's notes, its §0.2 or the fix log already
+recorded.
 
 - §0 is what is true today, read from the code at `7cca0e1`, and what the makers document.
 - §1 is what *well* means: five aims that pull apart. §2 is the decision in one table.
@@ -22,6 +26,8 @@ agent printed is quoted only in a shape D125 §0.2 already recorded.
   switching before a limit, and sessions at once. §8 is what each choice costs, §9 the doors.
 - §10 is the build, as rows. §11–§15 are what only a real run proves, what was rejected, what this amends, the twins,
   and what this document's gate does not cover.
+- §16 is the rules around the goal: the defaults re-decided, each proposal weighed, the overrides, how the goal is
+  judged, and TOOL6a's vocabulary as it changes.
 
 ## 0. What is true today
 
@@ -195,6 +201,10 @@ chooses, and the default is D125's: A and D first.
 
 ## 2. The decision in one table
 
+> **Amended by §16 (2026-10-02).** *Start on* and *sessions at once* become one setting, *use accounts*, whose
+> default, `goal`, is §16.3's walk, and whose other value, `order`, is D125's. *Switch before the limit* is on by
+> default. The JSON is §16.6's. The list, rules 1–6 and the kept account stand.
+
 Per agent, in each **scope** (the machine, or one workspace), the person states:
 
 | Setting | Values | Absent | What it answers |
@@ -298,6 +308,13 @@ answer itself.**
 
 ## 4. How a list is used
 
+> **Amended by §16 (2026-10-02).** The default walk is §16.3's, not §4.1's. Its step 5, *a quest decides once*, is
+> gone: a carry-on carries no conversation, so its account buys only readability (§16.2). In parallel (§4.2) is the
+> default's step 3. Most left first (§4.4) folds into §16.3's step 5, pace, which is what is left measured against the
+> week's time; soonest reset first (§4.5) folds into its step 4, bounded to a week's last day. List order (§4.3) is
+> `order`'s walk and the goal's last word. Round robin by start, rejected in §4.7, returns as step 6, least recently
+> started, for §16.2's reason. The kept account (§4.6) stands.
+
 ### 4.1 The walk, in order
 
 Every start the list may carry is chosen by one pipeline, each step stable (it keeps the order it was handed where it
@@ -399,6 +416,10 @@ only when the accounts before it are not ready: it is the account left when driv
 
 ## 5. What Daoris knows of what is left
 
+> **Amended by §16 (2026-10-02).** What Daoris knows, and that absent is never zero, stand. Where this section says
+> `left` and `soonest`, read §16.3's steps 5 and 4; with nothing said, the default falls back as §16.4 says, not to
+> list order alone.
+
 ### 5.1 Each source, and what it can say
 
 | Source | What it says | Of what is left | Used by |
@@ -465,6 +486,9 @@ counted. Labelled *Daoris's sessions only*, and never a capacity, a share or a p
 
 ## 6. Switching before a limit
 
+> **Amended by §16 (2026-10-02).** On by default, under both values of *use accounts*. It is inert until a door
+> carries the agent's word, so on costs nothing today; the switch is shown on and says it is waiting for that word.
+
 **Switch before the limit reads one thing: what the agent says about its own windows, on the door its session already
 runs on** (§5.2). It is D125 §1.2's *a field beats a sentence*, read before the limit instead of at it.
 
@@ -488,6 +512,9 @@ refused.
 
 ## 7. Sessions at once
 
+> **Amended by §16 (2026-10-02).** Spreading what runs at once is the default (`goal`, step 3); one by one is `order`.
+> The arithmetic below stands for each.
+
 **The cap stays one number for the machine, K, and sessions split across accounts only *in parallel*.** With N
 accounts the list lets a start use:
 
@@ -509,6 +536,10 @@ Three more rules:
 
 ## 8. What each choice costs
 
+> **Amended by §16 (2026-10-02).** A carry-on no longer stays on its quest's account (§16.2); its first line says which
+> account and why. *In parallel*, *most left first* and *soonest reset first* are now steps of `goal`, whose cost is
+> aims A and D; `order` costs aim B (one limit stops every session on its account). The other rows stand.
+
 | Choice | What it costs | What keeps the cost visible |
 |---|---|---|
 | A conversation on a spent account | It cannot move mid-turn, nor between turns without losing the agent's conversation, which lives in the first account's home and is never copied (D125 §3.5) | The conversation's refused turn says the account is cooling and offers *Continue on `account-2`*: a new conversation, opened on the next ready account of its scope and handed the last plan and last words as a carry-on is (TOOL6d). The person's press, never automatic |
@@ -522,6 +553,13 @@ Three more rules:
 | The tool's own sign-in | Shared with the person, moved when they sign in elsewhere, unreadable in a record (D125 §3.7) | Never in a list, never kept, never switched to; §3.7's line while starts run on it |
 
 ## 9. The doors (D50, D110), in both languages (D116)
+
+> **Amended by §16 (2026-10-02).** *How a list is used* is §16.6's: on the screen *Use accounts*, *Make the most of
+> them* or *One by one, in order*, beside *Keep for conversations* and *Switch before the limit*; on the terminal
+> `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>]
+> [--workspace W]`, with `--prefer` and `--parallel` gone; Ask Daoris's `use` door takes `use`, `keep`, `early` and
+> `near`. The names *Start on*, *List order*, *Most left first*, *Soonest reset first*, *Sessions at once*, *One by
+> one* and *In parallel* are withdrawn; §16.6 proposes theirs. Everything else in this section stands.
 
 | What | The screen (TOOL4g's) | The terminal | Ask Daoris |
 |---|---|---|---|
@@ -569,21 +607,26 @@ Rows ready for `TASKS.md`. D130 decides all of it; a row takes a decision number
 D130 did not decide. A row with a `Process`-half case, a rehearsal or a look in its proof is proven by the parent at
 merge. Four rows are new; four of D125's rows are amended rather than duplicated.
 
+> **Amended by §16 (2026-10-02).** TOOL6a takes §16.6's vocabulary (`use` in place of `prefer` and `parallel`;
+> `early` on when absent). TOOL6b builds the goal's walk with nothing said (§16.3's steps 1, 3, 4, 6 and 7, and
+> `order`), and starts `windows.json` with the weekly resets limits tell. TOOL6c adds the agents' word: steps 2 and 5,
+> and step 4 from readings. TOOL4g, TOOL4h and TOOL4i follow. The rows below are the amended ones.
+
 | Row | What and why | Contract | Proof |
 |---|---|---|---|
-| **TOOL6a** | **The settings and their terminal doors** (cli; driver). `prefer`, `parallel`, `keep`, `early` and `near` per scope in `harnesses.json`, both twins, `daoris agent profile use`, and §3.1's refusals on `profile order` and `profile default`, so the person's choices have a file and a terminal before anything reads them | §2, §3.1, §4.6, §9, §14 | Twin tables both sides; each writer keeps the other's sections; the refusals, none by a list's length; `agent list`'s lines; the room's doors table; `node --test`; the golden usage |
-| **TOOL6b** | **The walk reads one scope and its settings** (driver; after TOOL6a). The list as the whole set, *in parallel* by live sessions per account, a quest deciding once, driven work off the kept account, `left` and `soonest` as list order saying so, and the wait naming accounts outside the list | §2, §3, §4.1–§4.3, §4.6, §5.3, §7; §13's log fields | `AccountRotation` tables per step, for one account and for many, failing first. A `Process`-half tick: *in parallel*, cap K, N stub accounts, K quests at most ⌈K ÷ N⌉ to an account; a limit cuts off only its own |
-| **TOOL6c** | **What the agents say, read** (driver; after TOOL4b records a frame, and TOOL6b). `windows.json`, the readings table per agent, `left` and `soonest` by its readings, the weekly reset kept, *switch before the limit* and `account.near`, so a start weighs what each account has left | §4.4, §4.5, §5.2, §5.3, §6 | Fast-half tables: each standing, unknown between clear and near, a reading gone at its reset, near by word and by percent, the pass; a `Process`-half tick replaying the recorded frame |
+| **TOOL6a** | **The settings and their terminal door** (cli; driver). `use` (`goal` or `order`), `keep`, `early` and `near` per scope in `harnesses.json`, both twins; `daoris agent profile use`; §3.1's refusals on `profile order` and `profile default`. So the person's overrides have a file and a terminal before the walk reads them | §2, §3.1, §4.6, §14, §16.6 | Twin tables both sides; each writer keeps the other's sections; absent `use` is `goal`, absent `early` on; the refusals, none by a list's length; `agent list`'s lines; the doors table; `node --test`; the golden usage |
+| **TOOL6b** | **The goal's walk, with nothing said** (driver; after TOOL6a). §16.3's steps 1, 3, 4, 6 and 7, and `order`'s walk; a weekly reset a limit tells, kept in `windows.json` and carried a week where the agent's table says fixed; each start's first line and `why`. So every listed account is used toward the goal before any agent says what it has left | §3, §7, §16.2–§16.4; §13's log fields | `AccountRotation` tables per step, one account and many, failing first. `Process` tick: cap K, N stub accounts, at most ⌈K ÷ N⌉ each; a limit cuts off only its own; a learned weekly reset ranks first in its last day |
+| **TOOL6c** | **What the agents say, read** (driver; after TOOL4b records a frame, and TOOL6b). The readings table per agent, `windows.json`'s readings, steps 2 and 5, step 4 from readings, and `account.near`. So a start weighs each account's week by the agent's own word and passes one near its limit | §5.2, §5.3, §6, §16.3 | Fast-half tables: near by word and by percent, pace by used and elapsed share, unknown between behind and ahead, a reading gone at its reset; a `Process` tick replaying the recorded frame |
 | **TOOL6d** | **A conversation continues on another account** (driver; modules; web-shell; after TOOL6b). A refused turn offers *Continue on `account-2`*, a new conversation in its scope handed the last plan and last words, so a person's conversation on a spent account is not a dead end | §8, §9 | Driver tests for the opening and what it is handed; modules route tests (MOD5); vitest over a mocked bridge; the look in both languages |
 | **TOOL4b**, amended | Also: `rate_limit_event`'s fields as Claude Code sends them, on an ordinary turn and at a warning; whether its protocol door's adapter forwards them; and whether `codex-acp` forwards Codex's `rate_limits` and its limit sentence. Read keylessly from shipped code, labelled unmeasured, then the first real frame of each recorded | §0.3, §5.1, §5.2 | The evidence document. TOOL6c, and a Codex entry in D125's table, build only on what it records |
-| **TOOL4g**, amended (after TOOL6b) | The screen also carries §3.2 and §9: a workspace's *This machine's accounts* / *Its own accounts* and its list; *Use* for *Rotate*; *Start on*, *Sessions at once*, *Keep for conversations* and *Switch before the limit*, each saying when it falls back; each row's running count, standing and its age; the terms line; the picker's split; the wait's *Let … run …*; Ask Daoris's `use` door | D125 §2.4, §3.7, §4, §6; §3.2, §9 here | As D125's TOOL4g, plus the new doors in `HelpCoverageTests` and the names check; the look with one account and with many, both themes and both languages |
-| **TOOL4h**, amended | The report also counts, per account and window kind, the limits met and Daoris's sessions, their running time and the native door's tokens before each, labelled *Daoris's sessions only*; and the starts each setting moved. The rehearsal adds *in parallel* over N stub accounts | §5.4 here; §8, §2.2 of D125 | The report's parse table; the rehearsal phase |
-| **TOOL4i**, amended | The owner's run also sets *in parallel* over all of their accounts, and records which account each of the sessions running at once took, what one limit cut off, and what each account's agent said about its windows | §11 | The evidence, with the owner present |
+| **TOOL4g**, amended (after TOOL6b) | The screen also carries §3.2, §9 and §16.6: a workspace's *This machine's accounts* / *Its own accounts* and its list; *Use* for *Rotate*; *Use accounts*, *Keep for conversations* and *Switch before the limit*; §16.4's line while no account has said; each row's running count, week reset, pace or near, and its age; the terms line; the picker's split; the wait's *Let … run …*; Ask Daoris's `use` door | D125 §2.4, §3.7, §4, §6; §3.2, §9, §16.4, §16.6 here | As D125's TOOL4g, plus the new doors in `HelpCoverageTests` and the names check; the look with one account and with many, both themes and both languages |
+| **TOOL4h**, amended | The report carries §16.7's measures per account and week: sessions landed, hours waited, limit cut-offs, allowance left at each weekly reset where the agent's word shows it, the limits met, the starts each step moved, and the cap's share; labelled *Daoris's sessions only* where so. The rehearsal adds the goal's walk over N stub accounts | §5.4, §16.7 here; §8, §2.2 of D125 | The report's parse table; the rehearsal phase |
+| **TOOL4i**, amended | The owner's run is under `goal` over all their accounts, for at least one of each account's weeks, recorded against §16.7's measures: which account each start took and why, what each limit cut off, and what each agent said about its windows | §11, §16.7 | The evidence, with the owner present |
 
 **Order.** TOOL6a, then TOOL6b, in the driver lane after TOOL4f (landed). TOOL4g after TOOL6b, so the screen is built
-once. TOOL6d after TOOL6b. TOOL4b any time; TOOL6c only on its frame. **TOOL6b alone answers the owner's first
-question**: each workspace's list says which accounts may run it, the wait asks when it matters, and *one by one* or
-*in parallel* is a setting. **TOOL6c answers *how many token left*.**
+once. TOOL6d after TOOL6b. TOOL4b any time; TOOL6c only on its frame. **TOOL6b alone puts every account to work toward
+the goal**: each workspace's list says which accounts may run it, the walk spreads and rotates across them, and a
+weekly reset learned from a limit is spent before it lapses. **TOOL6c answers *how many token left*.**
 
 ## 11. What a rehearsal can prove, and what only a real run can
 
@@ -605,6 +648,11 @@ reading ordering `left` and `soonest`, every door, each with one account and wit
    paused to the month's end, as C5 reads observations 1 and 2.
 
 ## 12. Considered and rejected
+
+> **Amended by §16 (2026-10-02).** Three rejections below are reversed or replaced on the goal: *spreading as the
+> default* (it is the default now), *round robin by start* (least recently started is the goal's step 6, with no
+> readings), and *one choice of four modes* (the modes are one setting with two values, `goal` and `order`). §16.5
+> gives each reason, and §16.9 adds what the goal rejects.
 
 - **Inferring which accounts may run a workspace**: from the signed-in address, the account's name, the workspace's
   name, a team plan, or where its work last ran. The brief says the decision is the person's.
@@ -637,6 +685,12 @@ reading ordering `left` and `soonest`, every door, each with one account and wit
 
 ## 13. What this amends
 
+> **Amended by §16 (2026-10-02).** D125 §3.3 and §3.4's walk is §16.3's by default and D125's own under `order`.
+> `account.rotated`'s `why` is `cooling`, `refused`, `signedOut`, `kept`, `near`, `fewest`, `lapsing`, `pace`,
+> `leastRecent` or `list`, and it is written whenever a step put a start on an account other than the first ready one
+> of the list. The owner's note under D130 that a quest's carry-on stays on its last account is amended: under `goal`
+> a quest's next session goes where the walk sends it (§16.2).
+
 - **D125 §3.1**: a start reads one scope; a workspace's list is the whole set of accounts that may run it; a workspace
   that names a default and no list rotates nowhere; a scope with a list begins at its default or its first; a default
   outside its scope's list is refused at both doors.
@@ -654,6 +708,9 @@ reading ordering `left` and `soonest`, every door, each with one account and wit
   §3.7, §4 and §5.
 
 ## 14. The twins this creates
+
+> **Amended by §16 (2026-10-02).** The `rotationUse` twin's keys are §16.6's: `use` (`goal` or `order`, else
+> `goal`), `keep`, `early` (absent or `true` on, `false` off) and `near`. `prefer` and `parallel` are gone.
 
 Added to `.claude/knowledge/twins.md` by TOOL6a, with their test tables:
 
@@ -692,3 +749,228 @@ This change is documents only, and nothing is built.
 - **Not measured**: every item of §11.
 - **`verify` checks** this document's links, the decision log's shape, the router's row, the budgets and the
   duplicates, and none of these words.
+
+## 16. The rules around the goal (2026-10-02)
+
+> The owner, 2026-10-02, after §1–§15 were written, in order: *"a quest can be running on different account if one
+> account runs out of the limit"*; *"so the goal is to optimize the limit and usage of multiple accounts"*; *"you can
+> design the rules around this purpose"*. This section designs the rules and the defaults around that goal. Where it
+> and §2–§10 disagree, it wins; each place it changes carries a note. D130's note *The rules around the goal* records
+> the decision.
+
+### 16.1 The goal, stated so it can be judged
+
+Over every account a scope lists, together:
+
+1. **The most work done from their combined allowance**: the sessions that land.
+2. **The fewest stalls**: the least time work waits because every account it may use is cooling, and the fewest
+   sessions a limit cuts off mid-turn, each of which loses its work in flight and starts again from Daoris's record
+   (TOOL4f).
+3. **No allowance left unused at a reset**: what a window still held when it turned over.
+
+So aims B and C of §1 become the defaults. Aims A (keep my own accounts fresh) and D (readable work) are no longer
+defaults; the person can still choose them (§16.6). Aim E, which accounts may run a workspace, stays the person's
+alone and is never inferred (§3).
+
+**Since §1–§15 were written**: the first real rotation on the install moved a refused start to the next account, as
+TOOL4f designed (D125's notes; the fix log, 2026-10-02). Its weekly sentence named the reset as a time of day once it
+was under a day away, *your weekly limit resets 4pm (<zone>)*, where the same account had said *resets Oct 3, 4pm* the
+day before: one account, one fixed weekly reset, as C1 says, told by a limit.
+
+### 16.2 What the goal implies
+
+- **Never hold a start the accounts could carry.** Rule 5 of §2 stands (nothing starts that would not have started
+  anyway), and its other half is made a rule: no start is held while an account it may use is ready and a slot is
+  free. So allowance lapses only where there was no work or no slot for it, and no rule here slows work down to save
+  allowance.
+- **Spread what runs at once.** Let R be what one account's five-hour window allows and L the load in five hours
+  (neither is known to Daoris, and neither is claimed: they are for the argument). One by one meets a limit as soon as
+  L is above R, while every other account sits idle. Spreading, which gives each account about L ÷ N, meets none while
+  L is at most N × R, the person's own use of the accounts aside. When a limit does
+  strike, one by one cuts off every session running on that account, up to K; spreading cuts off at most ⌈K ÷ N⌉. Under
+  a load beyond all accounts together both meet limits and both carry the same work per window, and spreading still
+  cuts off fewer. So spreading is the default.
+- **The week weighs more than the five hours.** A five-hour window recovers in hours, a week in days (C1). A week
+  spent early leaves its account gone for days; a week that turns over with allowance left has lost it for good. So
+  the week's two risks, lapsing and running ahead, rank above any five-hour ordering. The five-hour window is honoured
+  as a gate: an account near its limit is passed (§6), and spreading keeps each window below its limit.
+- **Spread over time, too.** With one session at a time, spreading what runs at once does nothing. Starting each
+  session on the account Daoris started on least recently spreads the load over the five-hour windows, which is the
+  same protection over time, and puts every account's week to use.
+- **A quest's account buys nothing for the goal.** A carry-on or a resume is a fresh conversation from the tree and
+  Daoris's record, whatever account it runs on (D125 §3.5, TOOL4f); no context stays with an account. So a quest's next
+  session goes where the walk sends it, and its record's first line says which account and why. That is the owner's
+  *a quest can be running on different account*, taken past a limit to every start.
+
+### 16.3 The walk, by default (`use: goal`)
+
+Over the ready accounts of the start's scope (§2's rules stand: one scope, its list the whole set, chosen at a start,
+nothing spent that would not have started, nothing counting accounts), each step stable, keeping the order it was
+handed where it has no reason to change it:
+
+1. **Keep.** A driven start drops the kept account. A conversation or Ask Daoris takes it last, or first where it is
+   also the scope's default (§4.6).
+2. **Near last.** An account whose agent said it is near any window's limit, or drawing on usage credits, goes to the
+   end (§6). On by default.
+3. **Fewest running.** Fewest of Daoris's sessions running on it now, counting this look's starts (§4.2, §7).
+4. **Its week lapsing first.** An account whose weekly reset is known and falls within the next day, sooner first.
+   Known from the agent's field, or from a weekly limit it already met. A reset a limit told is carried forward a week
+   at a time where the agent's table says the maker fixes it per account, as Claude's does (C1); where that was not
+   read (Codex), it is dropped at its reset.
+5. **Furthest behind its week's pace.** Where the agent said how much of its week is used: the account whose used share
+   is furthest below the share of its week already elapsed first, and an account ahead of pace after every account
+   that is not. An account that said nothing ranks between the two, neither behind nor ahead.
+6. **Least recently started.** The account Daoris last started a session on longest ago first; one never started on
+   first of all.
+7. **List order**, begun at the scope's default: the person's own preference has the last word.
+
+The first account still ready after the probe runs (D125 §3.3); none ready is D125 §4's wait, unchanged. While every
+account is ready, no account runs more than ⌈K ÷ N⌉ at once (step 3).
+
+**Why a day in step 4.** A week is spent over many five-hour windows, and a day holds about five of them. Before an
+account's last day, what it has left can still be spent at any position in the order; within it, what is left is at
+risk of lapsing, and an order that waited longer could not spend it. Ranking every week by its reset all week long
+would pile one account's whole week of work onto it while the others' weeks went by unused, and would leave each of
+them a leftover too large for the windows left when its turn came. The day is a constant, not a setting, and TOOL4h's
+report says whether it is right: allowance left at weekly resets, where the agents' word shows it (§16.7).
+
+**Why pace below the lapsing week.** Pace alone can pass a small leftover about to lapse: an account ahead of pace
+with a tenth of its week left and a day to go ranks after one behind pace with days to go, and its tenth lapses. Step
+4 spends it first. Before the last day, pace keeps every account's week moving, so none is spent on day one and none
+arrives at its reset under-used.
+
+### 16.4 With nothing said (today)
+
+Steps 2 and 5 need the agent's word, which no door of Daoris's yet carries (§5.3). Until TOOL4b records it and TOOL6c
+reads it:
+
+- the walk is keep, fewest running, a week lapsing (known only from limits already met), least recently started, then
+  list order;
+- Daoris learns only from limits as they strike: each cools its account (D125 §2), and a weekly one tells that
+  account's weekly reset for the weeks after (step 4);
+- no number stands in for a reading: an account that said nothing is ranked by the steps that do not need its word,
+  never as spent and never as fresh (D57);
+- it says so: under *Use accounts* on the screen and in `daoris agent list`, *No account has said what it has left
+  yet. Daoris spreads starts across them by its own sessions, and learns each account's weekly reset from the limits
+  it meets.* Each start's first line names the step that chose its account: *opened on `account-2`: it runs the
+  fewest of Daoris's sessions*, *…: its week resets first, at Oct 3, 16:02 (<zone>)*, *…: Daoris started on it least
+  recently*.
+
+### 16.5 Each proposal weighed
+
+| Proposal | Kept, changed or rejected | Why |
+|---|---|---|
+| 1. Use it before it resets: among ready accounts with allowance left, the one whose five-hour window resets soonest | **Changed**: kept for the week (step 4), rejected for the five-hour window as an order | The week's leftover is lost for good at its reset, and its reset is a fact the agent states and, for Claude, fixes per account. An open five-hour window's reset is unknown without the agent's word (its start was read on no maker's page, §0.3). Ranked above the week, it would pull work onto an account ahead of its weekly pace: spending a week, which recovers in days, to save room that recovers in hours. The five-hour window is a gate instead (step 2), and spreading keeps it below its limit (step 3) |
+| 2. Pace the weekly allowance: furthest behind pace first | **Kept**, as step 5, below the lapsing week | It keeps every account's week moving. It needs the used share, which only the agent states, so it waits for TOOL6c. Below step 4 for the reason in §16.3 |
+| 3. Spread what runs at once | **Kept, and made the default** (step 3) | No limit while the load fits all accounts together, and a limit cuts off ⌈K ÷ N⌉ rather than K (§16.2). This reverses D130's *spreading as the default* rejection, whose cost, aim A, the goal outranks |
+| 4. Switch before the limit | **Kept, and on by default** (step 2) | It is inert without the agent's word, so on costs nothing today; with it, a session does not start where it would be cut off. A quest still moves when its account is spent: TOOL4f's carry-on, unchanged |
+| 5. A kept account | **Kept as an option**, off by default | It takes one account's allowance out of driven work, which the goal alone would not do; a person may still want a reserve. What it leaves at its resets is in the report |
+| 6. No readings yet | **As §16.4** | Spread by Daoris's own sessions and over time, learn from limits, the list as the last word, and nothing made up |
+| 7. What the person overrides | **One default with overrides** (§16.6), replacing *start on* and *sessions at once* | The goal decides which account first and how many at once together. Two settings would let a person pick a combination that works against the goal without saying what it costs. The overrides the goal cannot decide stay: the list, `order`, keep and switch |
+| 8. How it is judged | **§16.7** | The report and the owner's run, never a number Daoris made up |
+| A quest's carry-on on its last account (D130 point 6, and the owner's note on *in parallel*) | **Rejected as a default** | It buys readability only, which the record's first line already gives (§16.2) |
+| Most left first, soonest reset first (§4.4, §4.5) | **Folded** | Most left without the week's time pulls a just-reset account ahead of one about to lapse; pace (step 5) is most left measured against time. Soonest reset is step 4, bounded to the last day |
+| Round robin by start (§4.7) | **Reversed**, as step 6 | It spreads load over the five-hour windows when nothing is said; its cost, aims A and D, the goal outranks |
+
+### 16.6 What the person sets
+
+Per agent, for the machine or for one workspace, for any number of accounts:
+
+| Setting | Values | Absent |
+|---|---|---|
+| The list (§3) | the accounts that may run the scope's work, in order | none: the one account, D48 §2a |
+| **Use accounts** (`use`) | *Make the most of them* (`goal`), *One by one, in order* (`order`) | `goal` |
+| Keep for conversations (`keep`) | one account of the list | none |
+| Switch before the limit (`early`, `near`) | on or off; the percentage that counts as near where the agent gives only a number | on; 90 |
+
+- **`goal`** is §16.3.
+- **`order`** is D125's walk: the list, begun at the default, the first ready account carrying every start, plus
+  switching before the limit unless it is off. It serves aims A and D for a person who wants their accounts used in
+  their order, and the screen says what it costs: *one limit stops every session on that account*.
+- 🔴 **A machine with an order written under D125 or D130 changes when TOOL6b lands**: its starts follow the goal
+  unless the scope says `order`. The owner asked for the goal; `daoris agent profile use <agent> order` keeps the old
+  walk. A machine with no list is untouched.
+
+**How TOOL6a's vocabulary changes.** A branch is building TOOL6a from §2 and §14. `rotationUse` and
+`workspaceRotationUse` keep their names and shape; within each agent's entry:
+
+| Key | §2 and §14 said | §16 says |
+|---|---|---|
+| `prefer` | `list`, `left` or `soonest`; else `list` | **gone**. Nothing released wrote it: a reader skips it and a writer drops it |
+| `parallel` | `true` or absent (off) | **gone**, as `prefer` |
+| `use` | — | **new**: `"goal"` or `"order"`; absent or anything else is `goal` |
+| `keep` | an account of the scope's list; else none | unchanged |
+| `early` | `true` on; absent off | **absent or `true` on; `false` off** |
+| `near` | a whole percent from 50 to 99; else 90 | unchanged |
+
+- **The terminal door** is `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early
+  on|off] [--near <percent>] [--workspace W]`. With the agent alone it prints the scope's settings, what each account
+  last said and the step the next start would follow. `--prefer` and `--parallel` are gone.
+- **Ask Daoris's `use` door** takes `use`, `keep`, `early` and `near`.
+- **Both twins write the same bytes** for the same wiring, as §14 says, and a scope's settings are read only with its
+  list.
+
+```json
+{
+  "rotation": { "claude-code": ["account-1", "account-2", "account-N"] },
+  "rotationUse": { "claude-code": { "keep": "account-N" } },
+  "workspaceRotation": { "work": { "claude-code": ["account-2", "account-1", "account-N"] } },
+  "workspaceRotationUse": { "work": { "claude-code": { "use": "order", "early": false } } }
+}
+```
+
+Here the machine makes the most of every account but the last, which it keeps for conversations, and the work
+workspace takes its accounts one by one in its own order, with no early switch.
+
+**Names, proposed for TOOL4g** (D116; the glossary and the names check decide):
+
+| Concept | Kind | English | Chinese |
+|---|---|---|---|
+| how a scope uses its accounts | field | *Use accounts* | 账户用法 |
+| `goal` | choice | *Make the most of them* | 充分利用 |
+| `order` | choice | *One by one, in order* | 按顺序逐个用 |
+
+The other names of §9 stand: *Use*, *Keep for conversations*, *Switch before the limit*, *near its limit*, *This
+machine's accounts*, *Its own accounts*, and the wait's and the conversation's doors.
+
+### 16.7 How the goal is judged
+
+TOOL4h's report, per account and per week, labelled *Daoris's sessions only* wherever it is:
+
+- **work done**: the sessions that landed;
+- **stalls**: the hours starts waited with every account they may use cooling (`starts.waiting`), and the sessions a
+  limit cut off mid-turn (records saying `limit`, TOOL4c);
+- **allowance left at each weekly reset**, from the last reading before it, where the agent's word shows it, and *not
+  measured* where it does not: absent is never zero;
+- **the limits each account met**, per window;
+- **the starts each step moved**, from `account.rotated`'s `why`;
+- **the cap's share**: allowance left at a reset while every slot was full says the cap, not the accounts, was the
+  limit, and raising it is the person's (`daoris driver cap`).
+
+Weeks under `goal` and weeks under `order` sit side by side where a machine has both. TOOL4i is the owner's run under
+`goal` over all their accounts, for at least one of each account's weeks, recorded against these measures. No target
+is set: the measures are compared and read, never scored against a number Daoris made up.
+
+### 16.8 What only a real run proves, added to §11
+
+1. **Whether spreading meets fewer limits than one by one** on real work, from the report's limits and cut-offs.
+2. **Whether a day is the right horizon for a lapsing week** (step 4), from allowance left at weekly resets once the
+   agents' word is read.
+3. **Whether least recently started keeps the five-hour windows below their limits** with one session at a time.
+4. **Whether a model family's weekly limit** (C3) is told by its own sentence, and whether it should cool only that
+   family's starts: D125 cools the whole account, and no such sentence is recorded.
+
+### 16.9 Considered and rejected, added to §12
+
+- **Holding work to pace an account's week**: a held start leaves allowance unused that a ready account and a free
+  slot could have spent, which is the goal's third measure.
+- **Ranking every week by its reset all week**: it piles one account's work onto it while the others' weeks go by
+  (§16.3).
+- **The five-hour window's reset as an order above the week** (§16.5, proposal 1).
+- **A quest kept on its account**: no context stays with an account; readability is in the record.
+- **A cap per account, or raising the cap to use more windows**: the cap is the person's dial for the machine and for
+  what they can review; the report says when it, not the accounts, was the limit.
+- **Keeping `prefer` and `parallel` beside `use`**: two ways to say one choice, and combinations that work against the
+  goal without saying so.
+- **A cached prompt as a reason to keep a quest's account**: no page read says a cached prompt counts less against a
+  subscription's windows.

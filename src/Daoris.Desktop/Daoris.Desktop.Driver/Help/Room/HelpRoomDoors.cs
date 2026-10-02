@@ -88,6 +88,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never "
             + "rotates)", "(no screen yet)",
             "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
+        // TOOL6a (D130 §16.6): how a list is used, the terminal's door; the screen's controls and Ask Daoris's `use` door
+        // (`use`, `keep`, `early`, `near`) are TOOL4g's.
+        ("choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one "
+            + "in order (`order`), one kept for conversations, and switching before a limit", "(no screen yet)",
+            "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
+            + "[--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults)"),
         ("end an account's cool-off now, after its agent hit a limit", "(no screen yet)",
             "`daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in)"),
         // HELP6: the doors built since, which the helper now proposes too.
