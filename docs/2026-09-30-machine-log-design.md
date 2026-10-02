@@ -67,6 +67,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `setup.paused` / `setup.resumed` / `setup.stopped` | desktop, driver | workspace; `by` when paused (`person`, `pilot`, `tool`) | how a plan was steered: whether the pilot's pause is taken up, and how often a plan is stopped |
 | `account.limited` | desktop, driver | session, adapter, account, hit, window, until, stated, assumedZone, turn, used | an account's limit met (TOOL4d, D125 §5.4): which account, which window, until when, said or defaulted, at which turn and context |
 | `starts.waiting` | desktop, driver | adapter, account, workspace, until, quests | every account a start may use was cooling, written once per wait |
+| `account.rotated` | desktop, driver | session, adapter, from, to, carries | a start that ran on another account of the person's order because its default was not ready (TOOL4f, D125 §5.4); `carries` is the cut-off session a carry-on carries on, or null |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
 | `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
 | `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
@@ -201,6 +202,13 @@ not again until a new cool-off on that account; `quests` counts the starts it he
 name that is not an identifier is null: never a key, a key's handle, who signed in or the agent's sentence. A
 conversation's line is written by the shell, whose chat runner shares the loop's client; `daoris-driver chat` writes
 none, as it writes no session lines.
+
+**As built (TOOL4f): `account.rotated`** (D125 §5.4), measured against the code and its tests (`AccountRotationTests`):
+written once a rotated start's record is open, through the same client and the same writer, by one helper
+(`RotatedOpening.Say`) that a driven start, a carry-on, an intake, a conversation and Ask Daoris's opening all call.
+`from` is the account the start's default named, `to` the one it ran on, each a profile name or null where it is not
+an identifier; `carries` is the cut-off session's id for a carry-on and null for any other start. A start that waits
+writes `starts.waiting` and no `account.rotated`, and over an order its `account` is the one whose reset ends first.
 
 **As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
 (`HookSetLogTests`, `PluginHealthTests`):
