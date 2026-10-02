@@ -315,16 +315,29 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
         ]);
 
     /// <summary>
-    /// A start that ran on another account of the person's order because its own was not ready (TOOL4f, D125 §5.4).
+    /// A start that ran on another account of its scope's list than the one the scope begins at (TOOL4f, D125 §5.4; TOOL6b,
+    /// D130 §13 as §16 amends it): which step moved it, from which scope's list, and whether any account had said what it has
+    /// left.
     /// </summary>
-    /// <param name="from">The account the resolution named.</param>
+    /// <param name="from">Where the scope begins: its default, else its list's first.</param>
     /// <param name="to">The account the start ran on.</param>
     /// <param name="carries">The cut-off session a carry-on carries on, or null for any other start.</param>
-    public static AccountLine Rotated(string session, string adapter, string from, string to, string? carries) =>
+    /// <param name="why">The step that moved it, by its word (<c>cooling</c>, <c>kept</c>, <c>fewest</c>, <c>leastRecent</c>, …).</param>
+    /// <param name="scope">The workspace whose list it was, or null for this machine's.</param>
+    /// <param name="said">
+    /// Whether any account of the list had said what it has left (§16.4). False until a door carries the agent's word about
+    /// its windows (TOOL6c), which today none does.
+    /// </param>
+    public static AccountLine Rotated(
+        string session, string adapter, string from, string to, string? carries, WalkStep why, string? scope, bool said = false) =>
         new("account.rotated",
         [
             ("session", session), ("adapter", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
+            ("why", Word(why)), ("scope", Profile(scope)), ("said", said),
         ]);
+
+    /// <summary>A step by its word in a line: <c>signedOut</c>, <c>leastRecent</c>.</summary>
+    private static string Word(WalkStep step) => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(step.ToString());
 
     private static string? Profile(string? account) => account is not null && Name.IsMatch(account) ? account : null;
 

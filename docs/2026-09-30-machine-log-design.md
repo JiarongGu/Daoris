@@ -67,7 +67,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `setup.paused` / `setup.resumed` / `setup.stopped` | desktop, driver | workspace; `by` when paused (`person`, `pilot`, `tool`) | how a plan was steered: whether the pilot's pause is taken up, and how often a plan is stopped |
 | `account.limited` | desktop, driver | session, adapter, account, hit, window, until, stated, assumedZone, turn, used | an account's limit met (TOOL4d, D125 §5.4): which account, which window, until when, said or defaulted, at which turn and context |
 | `starts.waiting` | desktop, driver | adapter, account, workspace, until, quests | every account a start may use was cooling, written once per wait |
-| `account.rotated` | desktop, driver | session, adapter, from, to, carries | a start that ran on another account of the person's order because its default was not ready (TOOL4f, D125 §5.4); `carries` is the cut-off session a carry-on carries on, or null |
+| `account.rotated` | desktop, driver | session, adapter, from, to, carries, why, scope, said | a start that ran on another account of its scope's list than the one the scope begins at (TOOL4f, D125 §5.4; TOOL6b, D130 §13 as §16 amends it); `carries` is the cut-off session a carry-on carries on, or null; `why` the step that moved it, `scope` the workspace whose list it was, `said` whether any account had said what it has left |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
 | `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
 | `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
@@ -209,6 +209,15 @@ written once a rotated start's record is open, through the same client and the s
 `from` is the account the start's default named, `to` the one it ran on, each a profile name or null where it is not
 an identifier; `carries` is the cut-off session's id for a carry-on and null for any other start. A start that waits
 writes `starts.waiting` and no `account.rotated`, and over an order its `account` is the one whose reset ends first.
+
+**As built (TOOL6b): `account.rotated`'s `why`, `scope` and `said`** (D130 §13 as §16 amends it), measured against
+`AccountRotationGoalTests` and `AccountRotationTests`: `from` is where the start's scope begins, its default or else its
+list's first, and the line is written whenever the start ran elsewhere, under `use: goal` as under `order`. `why` is the
+step that moved it, by its word: `kept`, `cooling`, `refused`, `signedOut`, or the goal's `fewest`, `lapsing` and
+`leastRecent` (`near` and `pace` arrive with TOOL6c). `scope` is the workspace whose list it was, null for the machine's
+or where it is not an identifier. `said` is false while no door carries the agent's word about its windows, which today
+none does. A start the goal chose on the account its scope begins at writes no line; its record's first line names the
+step.
 
 **As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
 (`HookSetLogTests`, `PluginHealthTests`):

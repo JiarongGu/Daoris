@@ -22,7 +22,9 @@ namespace Daoris.Driver;
 /// account not in the list is none, and a default outside it leaves the list to win.</para>
 /// <para>Written as chosen: a choice equal to today's default is still written, so a later default never overturns a
 /// person's choice; absence alone means <see cref="RotationUse.Default"/>, the one place today's defaults live.</para>
-/// <para>The driver only stores and reads these here: nothing chooses an account by them until TOOL6b.</para>
+/// <para><see cref="HarnessRoster.SelectAsync"/> reads them through <see cref="ResolveScope"/> (TOOL6b): <c>use</c> and
+/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>). <c>early</c> and <c>near</c> are read and
+/// choose nothing yet: they pass an account its agent said is near, and no door carries that word until TOOL6c.</para>
 /// </remarks>
 public sealed partial record HarnessSettings
 {
@@ -38,7 +40,7 @@ public sealed partial record HarnessSettings
     /// The scope a start for <paramref name="agent"/> reads (D130 §2 rule 1): the workspace's, when it names a default or a
     /// list of its own for the agent, else the machine's — its own default, its list, where it begins, and how it is used.
     /// </summary>
-    /// <remarks>Not read by <see cref="HarnessRoster.SelectAsync"/> yet, which walks D125's order (TOOL6b changes that).</remarks>
+    /// <remarks>What <see cref="HarnessRoster.SelectAsync"/> reads for every start but a pick (TOOL6b).</remarks>
     public RotationScope ResolveScope(string agent, string? workspace)
     {
         var circle = workspace?.Trim();
@@ -170,7 +172,7 @@ public sealed partial record HarnessSettings
 }
 
 /// <summary>How one scope's list is used, each setting's value as a start reads it (D130 §16.6).</summary>
-/// <param name="Use"><i>Use accounts</i>: one of <see cref="Modes"/> — <c>goal</c>, §16.3's walk (TOOL6b builds it), or
+/// <param name="Use"><i>Use accounts</i>: one of <see cref="Modes"/> — <c>goal</c>, §16.3's walk (<see cref="AccountRotation.Order"/>), or
 /// <c>order</c>, D125's walk.</param>
 /// <param name="Keep">The account kept for conversations, or none.</param>
 /// <param name="Early"><i>Switch before the limit</i>.</param>
