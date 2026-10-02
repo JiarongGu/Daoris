@@ -442,6 +442,12 @@ public sealed record AskDraft(string? Title, string? Body)
 
     /// <summary>What to ask next once this closes done (D65 §4) — judged by the exchange, like any chain.</summary>
     public IReadOnlyList<QuestStep> Then { get; init; } = [];
+
+    /// <summary>
+    /// What the person requires, in their own words with the check that proves each (DRIFT1c, D133 §3) —
+    /// judged by the exchange against the ask's words.
+    /// </summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
 }
 
 /// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
@@ -790,6 +796,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
                 Links = [.. ask.Links.Concat(draft?.Links ?? []).Distinct(StringComparer.Ordinal)],
                 Uploads = [.. uploads, .. draft?.Uploads ?? []],
                 Then = draft?.Then ?? [],
+                // The person's words, each with its check (DRIFT1c): the exchange judges them against this ask's.
+                Requirements = draft?.Requirements ?? [],
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it (SESS1): the intake that read the ask.
                 PublishedBy = session,

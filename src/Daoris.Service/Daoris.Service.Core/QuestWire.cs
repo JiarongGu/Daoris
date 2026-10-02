@@ -22,7 +22,8 @@ public static class QuestWire
     /// <summary>What a door says when an operation arrives half-made.</summary>
     public const string Shape =
         "every operation names its machine, sequence, quest, kind and time; a publish carries from, to, title and "
-        + "body, every file its name, sha256 and size, and every step its to, title and body; a conflict names "
+        + "body, every file its name, sha256 and size, every step its to, title and body, and every requirement "
+        + "its quote and check; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
@@ -157,6 +158,14 @@ public static class QuestWire
                 writer.WriteEndArray();
             }
 
+            // Only when it names some (DRIFT1c): a quest with none crosses exactly as it did, and an older
+            // build reads one with them as the quest it always was.
+            if (asked.Requirements.Count > 0)
+            {
+                writer.WritePropertyName("requirements");
+                QuestStore.WriteRequirements(writer, asked.Requirements);
+            }
+
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
             writer.WriteEndArray();
@@ -277,6 +286,14 @@ public static class QuestWire
             var lanes = Items(asked, "lanes");
             if (lanes.Any(lane => lane.ValueKind != JsonValueKind.String)) return null;
 
+            // A requirement without its words or its check is half of one (DRIFT1c), never replayed blank.
+            var requirements = new List<QuestRequirement>();
+            foreach (var requirement in Items(asked, "requirements"))
+            {
+                if (Text(requirement, "quote") is not { } quote || Text(requirement, "check") is not { } check) return null;
+                requirements.Add(new(quote, check));
+            }
+
             published = new Quest(quest, from, to, title, body, QuestStatus.Open, null, at, at)
             {
                 Links = Items(asked, "links").Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null)
@@ -286,6 +303,7 @@ public static class QuestWire
                 Parent = Text(asked, "parent"),
                 PublishedBy = Text(asked, "publishedBy"),
                 Lanes = lanes.Select(lane => lane.GetString()!).ToList(),
+                Requirements = requirements,
             };
         }
 

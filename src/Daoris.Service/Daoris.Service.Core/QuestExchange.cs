@@ -42,6 +42,15 @@ public enum QuestPublishRefusal
     /// declares none (D115 §2.2). The answer names the lanes there are.
     /// </summary>
     UnknownLane,
+
+    /// <summary>
+    /// A requirement that is not one (DRIFT1c, D133 §3): it lacks the person's words or its check, there
+    /// are too many or one is too long, or the quest is asked on no ask whose words it could quote.
+    /// </summary>
+    BadRequirement,
+
+    /// <summary>A requirement quotes words the person never said on the ask (DRIFT1c) — the answer names them.</summary>
+    NotQuoted,
 }
 
 /// <summary>
@@ -74,6 +83,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
 
     /// <summary>The session whose connector publishes, when one does (SESS1) — kept on the quest.</summary>
     public string? PublishedBy { get; init; }
+
+    /// <summary>
+    /// What the person requires (DRIFT1c, D133 §3), each quoting their words on the ask that asks it —
+    /// judged here against that ask's words, so every door refuses the same quote.
+    /// </summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -169,10 +184,20 @@ public sealed record QuestDeleteOutcome(QuestDeleteRefusal Refusal, string Messa
 /// The session records — what a delete asks whether any session was started for a quest (D95). Null
 /// where none are kept, where no session can stand in a delete's way.
 /// </param>
+/// <param name="asks">
+/// The asks — whose words a requirement's quote is checked against (DRIFT1c, D133 §3). Null where none
+/// are kept, where a requirement has no words to quote and is refused rather than kept unchecked.
+/// </param>
 public sealed class QuestExchange(
     KnowledgeService service, QuestStore quests, IRemotes? remotes = null, QuestFiles? files = null,
-    SessionStore? sessions = null)
+    SessionStore? sessions = null, AskStore? asks = null)
 {
+    /// <summary>How many requirements a quest carries — what the work is measured by, not everything said.</summary>
+    public const int MaxRequirements = 20;
+
+    /// <summary>How long a requirement's quote, or its check, may be.</summary>
+    public const int MaxRequirementLength = 2000;
+
     /// <summary>How many links a quest carries — a ticket and its neighbours, not a bibliography.</summary>
     public const int MaxLinks = 20;
 
@@ -302,9 +327,22 @@ public sealed class QuestExchange(
             return new(QuestPublishRefusal.BadChain, unfitChain, Quest: null, addressable);
         }
 
+        // What the person requires is judged against what they said (DRIFT1c, D133 §3), here, so every door
+        // refuses the same quote: its shape first, then whether they said it.
+        var (required, unfitRequirement) = JudgeRequirementShape(ask.Requirements);
+        if (unfitRequirement is not null)
+        {
+            return new(QuestPublishRefusal.BadRequirement, unfitRequirement, Quest: null, addressable);
+        }
+
+        if (await JudgeQuotesAsync(from, required, ct).ConfigureAwait(false) is { } unquoted)
+        {
+            return new(unquoted.Refusal, unquoted.Message, Quest: null, addressable);
+        }
+
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
-            publishedBy: ask.PublishedBy, lanes: lanes).ConfigureAwait(false);
+            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required).ConfigureAwait(false);
 
         var caution = !target.Adopted
             // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is
@@ -318,9 +356,17 @@ public sealed class QuestExchange(
                 : $"\n\n⚠ `{target.Repository}` has not declared what it owns or accepts, so this may not be "
                   + "its problem. Worth checking before you rely on it.";
 
+        // Said of the quest as it stands: a publish already held answers with the requirements it was kept with.
+        var requirements = quest.Requirements.Count switch
+        {
+            0 => "",
+            1 => " It carries 1 requirement, in the person's own words.",
+            var count => $" It carries {count} requirements, each in the person's own words.",
+        };
+
         return new(
             QuestPublishRefusal.None,
-            $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.{caution}\n\n"
+            $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.{requirements}{caution}\n\n"
             + "It is held by the service, not written into that repository. Its agent will see it and "
             + "decide. Do not make the change yourself."
             + await KeepAsync(quest, ask, carried, ct).ConfigureAwait(false),
@@ -432,6 +478,100 @@ public sealed class QuestExchange(
     }
 
     /// <summary>
+    /// The requirements as a quest keeps them (DRIFT1c, D133 §3): each trimmed at its ends, with both its
+    /// quote and its check, at most <see cref="MaxRequirements"/> of them, each half at most
+    /// <see cref="MaxRequirementLength"/> characters — or why not, naming which.
+    /// </summary>
+    /// <remarks>
+    /// The shape alone, which a remote judges of a pushed quest too: whether the person said the quote is
+    /// judged where the ask is (<see cref="JudgeQuotesAsync"/>), and a remote holds no asks.
+    /// </remarks>
+    private static (IReadOnlyList<QuestRequirement> Requirements, string? Refusal) JudgeRequirementShape(
+        IReadOnlyList<QuestRequirement> given)
+    {
+        if (given.Count > MaxRequirements)
+        {
+            return ([], $"A quest carries at most {MaxRequirements} requirements — this one was given {given.Count}. "
+                        + "Quote the words the work is measured by; everything the person said stays on the ask.");
+        }
+
+        var kept = new List<QuestRequirement>();
+        foreach (var (requirement, index) in given.Select((requirement, index) => (requirement, index + 1)))
+        {
+            var quote = requirement.Quote?.Trim() ?? "";
+            var check = requirement.Check?.Trim() ?? "";
+            if (quote.Length == 0 || check.Length == 0)
+            {
+                return ([], $"Requirement {index} needs both halves: the person's own words, quoted, and the check "
+                            + "that proves the work meets them.");
+            }
+
+            if (quote.Length > MaxRequirementLength || check.Length > MaxRequirementLength)
+            {
+                return ([], $"Requirement {index}'s {(quote.Length > MaxRequirementLength ? "quote" : "check")} is longer "
+                            + $"than {MaxRequirementLength} characters — quote the words the work turns on, and say the "
+                            + "check in a few lines.");
+            }
+
+            kept.Add(new QuestRequirement(quote, check));
+        }
+
+        return (kept, null);
+    }
+
+    /// <summary>
+    /// Whether the person said what each requirement quotes (DRIFT1c, D133 §3): somewhere in one of their
+    /// words on the ask that asks this quest — its sentence, an answer to a session, or a message added to
+    /// one (DRIFT1a) — verbatim, whitespace and case aside. Null when every quote is theirs, or there are none.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Only the asker's ask.</b> A quest one repository asks of another is asked on no ask, so there
+    /// are no words of the person's to quote; which ask a repository's session works for is its record's, and
+    /// is not read here.</para>
+    ///
+    /// <para><b>A fact, with no model</b> (D24, D54): a reading of the person's words is the body's, never a
+    /// requirement, so a quote that is not theirs is refused rather than compared by meaning.</para>
+    /// </remarks>
+    private async Task<(QuestPublishRefusal Refusal, string Message)?> JudgeQuotesAsync(
+        string from, IReadOnlyList<QuestRequirement> requirements, CancellationToken ct)
+    {
+        if (requirements.Count == 0) return null;
+
+        if (AskDesk.AskOf(from) is not { } askId)
+        {
+            return (QuestPublishRefusal.BadRequirement,
+                $"A requirement quotes the person's own words on the ask a quest is asked by, and this quest is asked "
+                + $"by `{from}`, on no ask — so there are no words of theirs to quote. Say what is needed in the body.");
+        }
+
+        if (asks is null || await asks.FindAsync(askId, ct).ConfigureAwait(false) is not { } held)
+        {
+            return (QuestPublishRefusal.BadRequirement,
+                $"This quest is asked by ask `#{askId}`, which this host does not hold, so there are no words to check "
+                + "a requirement's quote against. Say what is needed in the body.");
+        }
+
+        var unsaid = requirements
+            .Select((requirement, index) => (requirement.Quote, Index: index + 1))
+            .Where(quoted => !held.Words.Any(word => QuestRequirement.QuotedIn(quoted.Quote, word.Text)))
+            .ToList();
+        if (unsaid.Count == 0) return null;
+
+        var since = held.WordsKeptFrom is { } keptFrom
+            ? " Its words are kept from "
+              + keptFrom.UtcDateTime.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)
+              + " UTC: what the person said on it before then is in its sessions' records, not on the ask."
+            : "";
+        return (QuestPublishRefusal.NotQuoted,
+            (unsaid.Count == 1 ? "A requirement quotes" : $"{unsaid.Count} requirements quote")
+            + $" words the person never said on ask `#{held.Id}`:\n\n"
+            + string.Join("\n", unsaid.Select(quoted => $"- requirement {quoted.Index}: \"{Clip(quoted.Quote)}\""))
+            + "\n\nA requirement is the person's own words, verbatim (whitespace and case aside), from the ask or from "
+            + "what they said on it since: an answer to a session, or a message added to one. Copy their words; your "
+            + "reading of them belongs in the body." + since);
+    }
+
+    /// <summary>
     /// A take on a shared quest claims by push (D69): committed here a moment ago, it is pushed now and
     /// its answer awaited, so a take that lost is known before any work starts. Null for a quest this
     /// machine does not share — its take is the local one, and the answer the ordinary one.
@@ -514,6 +654,13 @@ public sealed class QuestExchange(
         {
             return $"Quest `#{asked.Id}` names `{Clip(malformed)}` as a lane, and no repository could declare it — a "
                    + "lane is lower-case letters, digits and dashes, starting with a letter.";
+        }
+
+        // Whether the person said a requirement's quote was judged where the ask is (DRIFT1c); a remote holds
+        // no asks, but a requirement missing half of itself is no requirement wherever it lands.
+        if (JudgeRequirementShape(asked.Requirements).Refusal is { } unfitRequirement)
+        {
+            return $"Quest `#{asked.Id}`: {unfitRequirement}";
         }
 
         var carried = Judge(new QuestAsk(asked.From, asked.To, asked.Title, asked.Body)

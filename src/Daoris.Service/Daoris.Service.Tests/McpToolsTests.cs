@@ -173,6 +173,57 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// DRIFT1c (D133 §3): an intake names what the person requires, each in their own words with the check
+    /// that proves it. A quote they said is published and listed on the quest; one they never said is
+    /// refused, naming the words, and nothing is published.
+    /// </summary>
+    [Fact]
+    public async Task An_intakes_requirements_quote_the_person_and_one_they_never_said_is_refused()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "the report will need the v3 bridge"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var session = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+
+        var refused = await tools.PublishQuestAsync(
+            "intake", "Owner", "Build the report", "Reached through the bridge.",
+            requirements: [new Requirement("make it reachable through the bridge", "It opens in the older shell.")]);
+        Assert.Contains("\"make it reachable through the bridge\"", refused);
+        Assert.Empty(await _quests.ListAsync());
+
+        var published = await tools.PublishQuestAsync(
+            "intake", "Owner", "Build the report", "Reached through the bridge.",
+            requirements: [new Requirement("will need the v3 bridge", "The report opens through the bridge's route.")]);
+
+        Assert.Contains("Published quest", published);
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        Assert.Equal([new QuestRequirement("will need the v3 bridge", "The report opens through the bridge's route.")], quest.Requirements);
+        var listed = await tools.ListQuestsAsync("Owner");
+        Assert.Contains("requires \"will need the v3 bridge\"", listed);
+        Assert.Contains("The report opens through the bridge's route.", listed);
+    }
+
+    /// <summary>
+    /// A requirement the agent leaves half of reaches the exchange half-made and is refused there, naming
+    /// which — a missing half is never published blank.
+    /// </summary>
+    [Fact]
+    public async Task A_requirement_missing_its_check_is_refused_naming_which()
+    {
+        var answer = await _tools.PublishQuestAsync(
+            "Asker", "Owner", "Read the field names from config", "b", requirements: [new Requirement("the field names", null)]);
+
+        Assert.Contains("Requirement 1", answer);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
+    /// <summary>
     /// The driver names the session on every connector it hands over (PERM2), so a rule proposal says
     /// who made it. With no ask that changes nothing about a publish: only an intake publishes as its ask.
     /// </summary>

@@ -371,6 +371,12 @@ public sealed partial class KnowledgeTools(
             + "the same asker; a decline stops the chain. Write {parent} in a step's title or body for "
             + "the id of the quest it follows.")]
         ChainStep[]? then = null,
+        [Description(
+            "What the person requires, for a quest an ask asks: each one their own words, quoted exactly as they "
+            + "gave them in the ask or said on it since, with the check that proves the work meets them. A quote "
+            + "they never said is refused, naming it; your reading of their words belongs in the body. Every step "
+            + "of the chain inherits them. A quest one repository asks of another carries none.")]
+        Requirement[]? requirements = null,
         CancellationToken ct = default)
     {
         // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
@@ -385,6 +391,8 @@ public sealed partial class KnowledgeTools(
         }
 
         var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList();
+        // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c).
+        var required = (requirements ?? []).Select(r => new QuestRequirement(r.Quote ?? "", r.Check ?? "")).ToList();
 
         // An intake publishes AS ITS ASK (D65 §1b): the room is no repository, so `from` could name
         // nothing addressable — the ask is the asker, in its own circle, carrying its own links and
@@ -393,7 +401,7 @@ public sealed partial class KnowledgeTools(
         {
             var answered = await asks.PublishAsync(
                     askId, to, DateTimeOffset.UtcNow, ct,
-                    new AskDraft(title, body) { Links = links ?? [], Uploads = uploads, Then = steps },
+                    new AskDraft(title, body) { Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required },
                     intake.Session)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
@@ -410,6 +418,7 @@ public sealed partial class KnowledgeTools(
                     Links = links ?? [],
                     Uploads = uploads,
                     Then = steps,
+                    Requirements = required,
                     // Which session asked (SESS1), as the driver named it on this connector (PERM2).
                     PublishedBy = intake?.Session,
                 },
@@ -461,6 +470,11 @@ public sealed partial class KnowledgeTools(
                 // Ask and wait (D79): what its taker waits on.
                 if (quest.Awaits is { } awaits) text.AppendLine($"  waits on `#{awaits}`");
                 foreach (var step in quest.Then) text.AppendLine($"  then → `{step.To}`: {step.Title}");
+                // What the person requires (DRIFT1c): their words as quoted, and the check, whole.
+                foreach (var requirement in quest.Requirements)
+                {
+                    text.AppendLine($"  requires \"{requirement.Quote}\" — check: {requirement.Check}");
+                }
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
             }
@@ -582,3 +596,13 @@ public sealed record ChainStep(
     string? Title,
     [property: Description("Why, and how to tell it is done — e.g. where to look in the browser. {parent} works here too.")]
     string? Body);
+
+/// <summary>
+/// One requirement as an agent writes it (DRIFT1c) — nullable for the chain step's reason: the exchange
+/// refuses one missing a half, naming which, rather than the door dropping it.
+/// </summary>
+public sealed record Requirement(
+    [property: Description("The person's own words, copied exactly from what they asked or said since — never reworded.")]
+    string? Quote,
+    [property: Description("How to tell the work meets them, in the terms of the repository asked.")]
+    string? Check);

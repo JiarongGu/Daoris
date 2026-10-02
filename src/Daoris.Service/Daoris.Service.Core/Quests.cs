@@ -93,6 +93,36 @@ public sealed record Quest(
     /// on reading one.
     /// </summary>
     public IReadOnlyList<string> Lanes { get; init; } = [];
+
+    /// <summary>
+    /// What the person requires of it (DRIFT1c, D133 §3), each in their own words with the check that
+    /// proves it, in the order given. Empty for a quest that names none, which is every quest from before.
+    /// </summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
+}
+
+/// <summary>
+/// One thing the person requires of a quest (DRIFT1c, D133 §3): their own words, quoted, and the check that
+/// proves the work meets them.
+/// </summary>
+/// <param name="Quote">The person's words, verbatim, found in what they said on the ask the quest is asked by.</param>
+/// <param name="Check">How to tell the work meets them — written by whoever composed the quest.</param>
+public sealed record QuestRequirement(string Quote, string Check)
+{
+    /// <summary>
+    /// Whether <paramref name="quote"/> stands in <paramref name="words"/> verbatim, whitespace and case aside
+    /// (DRIFT1c): every run of white space reads as one space and the ends are trimmed, so a line break or a
+    /// doubled space the person typed is not a different word, and neither is a capital. Nothing else is
+    /// forgiven — a reworded quote is a paraphrase, and a paraphrase is what drifted.
+    /// </summary>
+    public static bool QuotedIn(string quote, string words)
+    {
+        var folded = Folded(quote);
+        return folded.Length > 0 && Folded(words).Contains(folded, StringComparison.Ordinal);
+    }
+
+    private static string Folded(string text) =>
+        string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 }
 
 /// <summary>One step of a chain: whom to ask next, and what (D65 §4).</summary>
@@ -316,7 +346,8 @@ public sealed class QuestStore
                   conflicts   TEXT NOT NULL DEFAULT '[]',
                   awaits      TEXT NULL,
                   published_by TEXT NULL,
-                  lanes       TEXT NOT NULL DEFAULT '[]'
+                  lanes       TEXT NOT NULL DEFAULT '[]',
+                  requirements TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -342,6 +373,8 @@ public sealed class QuestStore
             ("quests", "published_by", "published_by TEXT NULL"),
             // The lanes it addresses (D115 §2.2); a quest from before asked the whole repository.
             ("quests", "lanes", "lanes TEXT NOT NULL DEFAULT '[]'"),
+            // What the person requires (DRIFT1c); a quest from before named none.
+            ("quests", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -505,6 +538,7 @@ public sealed class QuestStore
     /// <param name="then">The chain after this quest (D65 §4), already judged by the exchange.</param>
     /// <param name="publishedBy">The session whose connector published it, when one did (SESS1).</param>
     /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange (D115 §2.2).</param>
+    /// <param name="requirements">What the person requires, already judged by the exchange against their words (DRIFT1c).</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
@@ -513,7 +547,8 @@ public sealed class QuestStore
         IReadOnlyList<QuestStep>? then = null,
         CancellationToken ct = default,
         string? publishedBy = null,
-        IReadOnlyList<string>? lanes = null)
+        IReadOnlyList<string>? lanes = null,
+        IReadOnlyList<QuestRequirement>? requirements = null)
     {
         var sorted = (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         var id = MakeId(from, to, title, lanes: sorted);
@@ -533,6 +568,7 @@ public sealed class QuestStore
                 Then = then ?? [],
                 PublishedBy = string.IsNullOrWhiteSpace(publishedBy) ? null : publishedBy.Trim(),
                 Lanes = sorted,
+                Requirements = requirements ?? [],
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -630,17 +666,19 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
               workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
-              awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes
+              awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes,
+              requirements = excluded.requirements
             """;
         command.Parameters.AddWithValue("$publishedBy", (object?)quest.PublishedBy ?? DBNull.Value);
         command.Parameters.AddWithValue("$lanes", LinksJson(quest.Lanes));
+        command.Parameters.AddWithValue("$requirements", RequirementsJson(quest.Requirements));
         command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
@@ -686,7 +724,9 @@ public sealed class QuestStore
 
     /// <summary>
     /// The chain's next step as the close of <paramref name="parent"/> publishes it: asked on behalf of
-    /// the same asker, of the step's receiver, with <c>{parent}</c> expanded, carrying the rest.
+    /// the same asker, of the step's receiver, with <c>{parent}</c> expanded, carrying the rest and the
+    /// parent's requirements (DRIFT1c, D133 §3) — a step is measured by what the person asked, not by the
+    /// closing note of the work it follows.
     /// </summary>
     private static Quest? NextStep(Quest parent, DateTimeOffset now)
     {
@@ -700,6 +740,7 @@ public sealed class QuestStore
         {
             Then = parent.Then.Skip(1).ToList(),
             Parent = parent.Id,
+            Requirements = parent.Requirements,
         };
     }
 
@@ -1528,6 +1569,7 @@ public sealed class QuestStore
         Awaits = reader.IsDBNull(reader.GetOrdinal("awaits")) ? null : reader.GetString(reader.GetOrdinal("awaits")),
         PublishedBy = reader.IsDBNull(reader.GetOrdinal("published_by")) ? null : reader.GetString(reader.GetOrdinal("published_by")),
         Lanes = ReadLinks(reader.GetString(reader.GetOrdinal("lanes"))),
+        Requirements = ReadRequirements(reader.GetString(reader.GetOrdinal("requirements"))),
     };
 
     /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
@@ -1561,6 +1603,8 @@ public sealed class QuestStore
                 PublishedBy = payload.TryGetProperty("publishedBy", out var by) ? by.GetString() : null,
                 // Absent from every publish before lanes, which asked the whole repository (D115 §2.2).
                 Lanes = payload.TryGetProperty("lanes", out var lanes) ? ReadLinks(lanes) : [],
+                // Absent from every publish before requirements, and from one that names none (DRIFT1c).
+                Requirements = payload.TryGetProperty("requirements", out var required) ? ReadRequirements(required) : [],
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -1624,6 +1668,13 @@ public sealed class QuestStore
             {
                 writer.WritePropertyName("lanes");
                 WriteLinks(writer, published.Lanes);
+            }
+
+            // Only when it names some (DRIFT1c), for the lanes' reason: a publish with none reads as it did.
+            if (published.Requirements.Count > 0)
+            {
+                writer.WritePropertyName("requirements");
+                WriteRequirements(writer, published.Requirements);
             }
         }
 
@@ -1691,6 +1742,38 @@ public sealed class QuestStore
                 item.GetProperty("to").GetString() ?? "",
                 item.GetProperty("title").GetString() ?? "",
                 item.GetProperty("body").GetString() ?? ""))
+            .ToList();
+
+    private static string RequirementsJson(IReadOnlyList<QuestRequirement> requirements) =>
+        JsonFields.Written(writer => WriteRequirements(writer, requirements));
+
+    /// <summary>A quest's requirements, one shape in its column, its log's payload and on the wire (DRIFT1c).</summary>
+    internal static void WriteRequirements(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestRequirement> requirements)
+    {
+        writer.WriteStartArray();
+        foreach (var requirement in requirements)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("quote", requirement.Quote);
+            writer.WriteString("check", requirement.Check);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static IReadOnlyList<QuestRequirement> ReadRequirements(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return ReadRequirements(document.RootElement);
+    }
+
+    // The store's own column and log, which only this service writes; the wire judges what it reads instead.
+    private static IReadOnlyList<QuestRequirement> ReadRequirements(System.Text.Json.JsonElement requirements) =>
+        requirements.EnumerateArray()
+            .Select(item => new QuestRequirement(
+                item.GetProperty("quote").GetString() ?? "",
+                item.GetProperty("check").GetString() ?? ""))
             .ToList();
 
     // Written and read by hand rather than through the reflection serializer, for the same reason the

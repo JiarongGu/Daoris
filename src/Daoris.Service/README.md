@@ -88,7 +88,7 @@ network, and nothing in the CLI may open a socket. So the CLI has no quest comma
 
 | Tool | What it does |
 |---|---|
-| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, and `then`, the steps to ask next once it is done. Refuses a repository nothing here could answer: unregistered, or unadopted with no root (D70). `to` may be `repository:lane` or `repository:lane+lane` for lanes the registry lists, your own repository's included; a lane nobody declared is refused, naming the lanes there are (D115) |
+| `quest_publish` | Ask another repository for something, with `links` and `attachments` (paths on this machine) if the ask needs them, `then`, the steps to ask next once it is done, and, for a quest an ask asks, `requirements`, each the person's own words quoted with the check that proves it (DRIFT1c). Refuses a repository nothing here could answer: unregistered, or unadopted with no root (D70). `to` may be `repository:lane` or `repository:lane+lane` for lanes the registry lists, your own repository's included; a lane nobody declared is refused, naming the lanes there are (D115) |
 | `quest_list` | What has been asked of whom, and what is still outstanding: links, file names, what each follows and what follows it |
 | `quest_respond` | `take`, `done` or `decline` — declining needs a reason |
 
@@ -109,6 +109,15 @@ words becomes that id. A decline stops the chain. A step's id derives from its p
 never collides with an older quest of the same words. The whole chain is judged when it is composed:
 every step must be addressable from the asker, and every step must live in the same home as the
 first, because each is published wherever the one before it closes.
+
+**A quest's requirements quote the person** (DRIFT1c, D133 §3). `requirements` is a list of at most
+20, each a `quote` and a `check` of at most 2,000 characters. The quote must stand in one of the
+person's words on the ask that asks the quest: its sentence, an answer to a session, or a message added
+to one. It is matched verbatim, whitespace and case aside. A quote found in none of them is refused,
+and the refusal names each such quote. So is any requirement on a quest no ask asks, and on a host
+that keeps no asks. A step of the chain inherits its parent's requirements. They travel with the
+quest in the log and the sync, written only when there are some, and a remote checks only that each
+has both halves, since it holds no asks.
 
 **A quest names the session that published it** (SESS1) as `publishedBy`, when a session's
 connector did. The driver names every session on the connector it hands over and on its spawn
@@ -264,9 +273,9 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `DELETE /api/registry/{repository}` | take a repository off the map; nothing on disk is touched. At a shared deployment it is how a machine's retire reaches the circle (SYNC5b) |
 | `GET /api/registry/retired?workspace=` · `DELETE /api/registry/retired/{repository}?workspace=` | local mode only: the retires this machine's checkouts owe a circle, written by the store as a joined checkout's row leaves it (retired, re-wired, or re-registered unjoined), and cleared once the driver's pass has carried them (SYNC5b) |
 | `GET /api/code-map/{repository}` | a repository's own code map (MAP3a), read from its committed `docs/code-map.json` and judged whole; a repository with a checkout here is read from it, and one without answers with what was fed at a shared deployment (MAP3b) or brought down by a machine's sync (MAP3e), with `fed` naming the commit, its line and the key that fed it, or with no file |
-| `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's `to` may name lanes (`repository:lane+lane`); a quest answers `to` as the repository and `lanes` beside it (D115). A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape |
+| `GET /api/quests` · `POST /api/quests` · `POST /api/quests/{id}/respond` | the pull side; publish; take / done / decline. A publish's `to` may name lanes (`repository:lane+lane`); a quest answers `to` as the repository and `lanes` beside it (D115). A publish's files arrive whole (base64) at a local host and by name only at a shared one; each door refuses the other shape. A publish may name `requirements` (`quote`, `check`), and every quest answers them, `[]` for none (DRIFT1c) |
 | `POST /api/quests/{id}/conflicts/dismiss` | a person dismisses a conflict: `{ machine, sequence }` names one, and naming none dismisses every one the quest carries. It is an operation the next pass carries, so every machine drops it. It moves no status (SYNC6c) |
-| `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason. Every ask answers `words`, the person's own, oldest first (DRIFT1a) |
+| `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason. Every ask answers `words`, the person's own, oldest first (DRIFT1a). A publish's `requirements` quote them, and a quote they never said is refused, 409 (DRIFT1c) |
 | `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |
 | `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46); a move to `stopped` may say `interrupted: true` (D104), and a move to `failed` may say `limit: true` (TOOL4c); a move anywhere else that says either is refused |
 | `POST /api/sessions/{id}/answer` · `/api/sessions/{id}/added` | the person answers a session parked to ask them (STANDDOWN2); and, local mode only, what they added to a running one, as its driver reports it. Each is kept on the ask the session's work is for (DRIFT1a); `added` answers `kept: false`, with the reason, for a session on no ask |
