@@ -928,3 +928,120 @@ describe('the harness roster', () => {
 
   // The per-session PICKER moved with the start form it belongs to (`work/WorkFrame.test.tsx`).
 });
+
+/**
+ * How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6), over the bridge: each account's
+ * cool-off with *Try now*, its list with *Use*, a default the list would refuse not offered, the tool's own sign-in said while
+ * starts run on it, and the terms. Each press is the terminal's `daoris agent profile order|use|ready`, on the same files.
+ */
+describe('how accounts are used', () => {
+  const until = new Date(Date.now() + 190 * 60_000).toISOString();
+  const ROSTER = {
+    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
+    adapter: 'claude-code',
+    harnesses: [{
+      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
+      machineDefault: 'personal' as string | null, pinned: null, managed: null, pinnable: true, ownLogin: 'in', signsIn: true,
+      profiles: [
+        { name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' },
+        { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'in' },
+      ],
+    }],
+  };
+  const MACHINE = {
+    workspace: null, default: 'personal' as string | null, list: ['personal'], begins: 'personal' as string | null,
+    use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [],
+  };
+  const ACCOUNTS = {
+    agents: [{
+      agent: 'claude-code', speaks: true, own: {} as Record<string, unknown>,
+      accounts: [
+        { name: 'personal', running: 1, cooling: { until, stated: true, window: 'weekly', seen: until, assumedZone: false, notBelieved: false } },
+        { name: 'work', running: 0 },
+      ],
+      scopes: [MACHINE],
+    }],
+  };
+  const answer = (roster: unknown, accounts: unknown) =>
+    async (_module: string, type: string, args?: { payload?: { action?: string } }) => {
+      if (type === 'HARNESSES') return roster;
+      if (type === 'ACCOUNTS') return accounts;
+      if (type === 'ACCOUNT_USE') return { harness: 'claude-code', action: args?.payload?.action, ended: true };
+      return WIRING;
+    };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('says an account cooling, and Try now ends its cool-off through the terminal\'s profile ready', async () => {
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="agents" />);
+
+    expect(await screen.findByText(/^Cooling until .+ · in 3h \d+m · the agent said so$/)).toBeTruthy();
+    expect(screen.getByText(/1 of Daoris's sessions running · nothing said yet/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'try personal now' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
+      payload: { harness: 'claude-code', action: 'ready', profile: 'personal' },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^personal is offered again\./)));
+  });
+
+  it('turns Use on through the terminal\'s profile order, and offers no default the list would refuse', async () => {
+    invoke.mockImplementation(answer(ROSTER, ACCOUNTS));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'use work for This machine' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
+      payload: { harness: 'claude-code', action: 'order', accounts: ['personal', 'work'] },
+    });
+    // `work` is outside the machine's list, so *Make default* is offered only on the tool's own row, which clears it.
+    expect(screen.getAllByRole('button', { name: 'Make default' })).toHaveLength(1);
+    expect(screen.getByText(/^Each account's own plan and terms apply\./)).toBeTruthy();
+    expect(screen.queryByText(/^Sessions run on your own sign-in/)).toBeNull();
+  });
+
+  it('says starts run on the tool\'s own sign-in while the machine names no account, with its cool-off', async () => {
+    const shared = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, machineDefault: null, ownAccount: 'someone@example.invalid' }] };
+    const cooling = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!,
+        own: { cooling: { until, stated: false, window: null, seen: until, assumedZone: false, notBelieved: false } },
+        scopes: [{ ...MACHINE, default: null, list: [], begins: null }],
+      }],
+    };
+    invoke.mockImplementation(answer(shared, cooling));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    expect(await screen.findByText(/^Sessions run on your own sign-in, someone@example\.invalid: .+ It is cooling until /)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'try someone@example.invalid now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
+      payload: { harness: 'claude-code', action: 'ready', own: true },
+    });
+  });
+
+  /** A refusal reads as the terminal's, in the reader's language (REV2): the host's code, from the catalogue. */
+  it('says a refused edit in the catalogue\'s words', async () => {
+    const answered = answer(ROSTER, ACCOUNTS);
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (type === 'ACCOUNT_USE') {
+        throw Object.assign(new Error('refused'), {
+          code: 'ACCOUNT_SCOPE_DEFAULT', parameters: { agent: 'claude-code', account: 'personal' },
+        });
+      }
+      return answered(module, type);
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="agents" />);
+
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'use work for This machine' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      expect.stringMatching(/^This machine's default for claude-code is personal, and the list would not hold it/), 'error'));
+  });
+});

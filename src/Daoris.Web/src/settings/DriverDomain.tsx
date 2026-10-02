@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDriver, useSetNotify, useSetStrikes } from '../shell';
+import { useDriver, useSetCoolOff, useSetNotify, useSetStrikes } from '../shell';
 import { Card, CheckField, failure, type Notify, PathText, SettingRow } from '../ui';
 
 /**
@@ -43,6 +43,9 @@ export function DriverDomain({ notify }: { notify: Notify }) {
   // and through "0", and writing either straight to the config would park nothing while the person
   // was still reaching for the second digit.
   const [strikes, setStrikes] = useState<string | null>(null);
+  // The cool-off's minutes as typed (TOOL4g), held as text for the strikes' reason.
+  const setCoolOffMutation = useSetCoolOff();
+  const [coolOff, setCoolOff] = useState<string | null>(null);
   const onError = failure(notify);
 
   return (
@@ -141,6 +144,41 @@ export function DriverDomain({ notify }: { notify: Notify }) {
             </p>
           )}
         </SettingRow>
+
+        {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
+            since an older shell answers no such field and has no route to write it. */}
+        {typeof driver.data?.coolOff === 'number' && (
+          <SettingRow
+            label={t('settings.cooloff.label')}
+            hint={t('settings.cooloff.terminal')}
+            why={t('settings.cooloff.body')}
+            control={(
+              <span className="inline-flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min={1}
+                  aria-label={t('settings.cooloff.label')}
+                  value={coolOff ?? String(driver.data.coolOff)}
+                  onChange={(event) => setCoolOff(event.target.value)}
+                  onBlur={() => {
+                    // As the strikes: passing through is not a write, and less than a minute is the driver's refusal, so
+                    // a value under one, not whole, or the one it holds puts the held value back.
+                    const held = driver.data?.coolOff ?? 60;
+                    const value = coolOff === null || coolOff.trim() === '' ? held : Number(coolOff);
+                    setCoolOff(null);
+                    if (!Number.isInteger(value) || value < 1 || value === held) return;
+                    setCoolOffMutation.mutate({ minutes: value }, {
+                      onSuccess: () => notify(t('settings.cooloff.set', { count: value })),
+                      onError,
+                    });
+                  }}
+                  className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink"
+                />
+                <span className="text-small text-ink-soft">{t('settings.cooloff.minutes')}</span>
+              </span>
+            )}
+          />
+        )}
       </Card>
     </>
   );

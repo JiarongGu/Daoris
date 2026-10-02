@@ -6,7 +6,7 @@ import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
-import { type Consideration, sittingSentence, type TrustHold } from '../signals';
+import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
@@ -209,6 +209,10 @@ export function QuestPage({
           // where there is room. The trust hold stands on its own: it arrives in the same tick as the sentence,
           // and the grant must not wait on a second list having arrived too.
           <Fact name={t('quests.detail.sitting')}>
+            {/* A wait for an account (TOOL4g, D125 §4): not parked, so no Retry; it starts by itself at the reset. */}
+            {waitsForAccount(because) && (
+              <span className="mb-1 block"><Pill tone="neutral">{t('work.waitsForAccount')}</Pill></span>
+            )}
             <Inline text={because ? sittingSentence(because) : t('work.attention.trustWhy')} />
             {/* The one hold only the person can lift, offered where it is read (D73). */}
             {hold && onGrant && onTrusting && !trusting && (
