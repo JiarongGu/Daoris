@@ -8311,3 +8311,49 @@ Held by `SessionGroupsTests` (a table of 44 cases over §1's states, the order, 
 run. **Not built here**: `deletable` (SESSUX1f), *account cooling* (SESSUX1k) and the stop's hold (SESSUX1b, which adds
 its verdict to the reader's table: a quest held by a stop leaves its tree to review). **Not measured**: how long
 `SESSION_GROUPS` takes over a workspace of 29 repositories with their trees (§12).
+
+**As built (SESSUX1b, 2026-10-02): a person's stop holds its quest, and Try again releases it.** The planner's
+`StartVerdict.Stopped` holds a quest, open or taken, whose last session here the person stopped (`stopped`, not
+interrupted: `PriorSession.PersonStopped`), saying *you stopped session `s`; Try again carries it on* (or *starts it
+again*) with the terminal's door, and naming the stop on `Consideration.HeldBy`. `released` in `driver.json` holds each
+release, the quest against the session (twins: `DriverConfig.Released`, `driverconfig.ts`, one table, `twins.md`'s row).
+Released, a taken quest is carried on in the stop's tree, its instruction saying the person stopped it and released it
+(`SessionTarget.Released`), and an open one is planned as a first start. `RETRY_QUEST` reads the planner's verdict (the
+loop's last look, else a fresh plan, as Sessions' groups read it) and marks a parked quest, releases a held one, or
+refuses with `QUEST_NOT_HELD` (both catalogues). Its answer is still the state, with `retried` saying which. Ask
+Daoris's `retry` is judged against the facts' `Held` beside `Parked`, and the room lists the held quests. The room's
+retry row names the quest's page, and a row of its own gives a stop's release. `SessionGroups` exempts `Stopped` in
+`ReviewableTree`, and each row carries `HoldsQuest`, which `SESSION_GROUPS` answers. What the build settled that §3.3
+and §3.4 left open:
+
+- **A stop is the reason its quest sits, before every other.** A hold, an opt-out or the strikes would each say
+  something true, and none of them is what moves the quest. A verdict naming the take would also hide the stop's tree
+  from review.
+- **The terminal names the session.** `daoris driver` talks to nothing (D50), so it cannot see whether a quest is parked
+  or held, or which session holds it. §3.4's *do whichever applies, and refuse when neither does* holds for
+  `RETRY_QUEST` and Ask Daoris, which read the verdict. At a terminal, `retry <quest>` marks, as RETRY1 did, and
+  `retry <quest> --session <id>` releases. The stop's sentence spells the second. The two flags together are refused.
+- **A release moves no mark**, since a stop is not a strike (D58). Strikes forgiven before a stop still count from
+  their mark once it is released.
+- **A stopped quest that waits on a question is held too**; released, it waits or resumes as D79 says.
+
+This amends **RETRY1's reading**: the route took any id and marked it; it now does what the verdict says applies, and
+refuses the rest, as Ask Daoris's `retry` already did. **D58 stands.**
+
+**Not built here.** 🔴 **The service's ledger refuses a released take's carry-on.** `SessionLedger.OpenAsync` carries a
+taken quest on only after `failed`, an answered park or an interrupted stop. A person's stop is *never carried on*
+there. Against a real host the planner plans the carry-on and each look's open is refused (*Quest is Taken*), until the
+ledger takes a person's stop as a carry-on, which the driver now releases. That is the service lane's, for the parent
+to schedule. An open quest's release works end to end. The page's *Try again* on a `Stopped` verdict, and its toast
+for a release, are the web shell's: `QuestPage.tsx` offers it for `Exhausted` only, and until it changes the page shows
+the stop's sentence under *Sitting*, which names the terminal's door. The service's `setting_propose` words still say
+*the quest its failed sessions parked* (`HelpProposalBox.Setting.cs`), and its box takes a held quest's id unchanged.
+
+Held by `PlannerTests`, `ReleasedTests` and `driverconfig.test.ts`, `SessionGroupsTests`' new rows, `ParkedQuestsTests`,
+`AskAndWaitPromptTests`, `HelpSettingProposalsTests`, `HelpRoomMachineNowTests`, `HelpRoomDoorsTests`, the room's golden
+files and `DriverModuleRetryTests`. Each was seen failing first, bar `ReleasedTests`' rows on the driver's side, written
+with the reader they test: the CLI's copy of that table, which parses them cell for cell, was seen failing first.
+`StopHoldTickTests` (the `Process` half, a real stub harness) is written and was not run here. It covers a take
+stopped, held across two looks with nothing spawned, then carried on in its tree once released, and an open quest stopped
+before its take, held, then started. Its stand-in opens any session, so its taken case proves the driver's half only.
+`DriverModuleDriverTests`' retry case now records a parked look first, and was not run here either.
