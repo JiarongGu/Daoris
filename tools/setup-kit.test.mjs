@@ -18,7 +18,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ACP_STUB_AGENT } from './rehearsal-kit.mjs';
 import {
-  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readFollowed, readRegister, readSetup, withFirstOnPath, writeDoctrineLauncher,
+  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup,
+  withFirstOnPath, writeDoctrineLauncher,
 } from './setup-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -195,6 +196,120 @@ test('the machine log\'s `registry.followed` lines are read as a name, a word an
     { repository: 'atlas', outcome: 'unchanged', fields: ['repository', 'outcome', 'root'] },
   ]);
   assert.deepEqual(readFollowed(''), []);
+});
+
+test('the machine log\'s lines of one event are read as the data each carried, in the order written', () => {
+  const logged = [
+    '{"time":"2026-10-02T09:00:00.000Z","source":"driver","level":"info","event":"setup.planned","data":{"workspace":"meridian","repositories":2,"atOnce":1,"pilot":1}}',
+    '{"time":"2026-10-02T09:00:01.000Z","source":"driver","level":"info","event":"setup.published","data":{"workspace":"meridian","repository":"beacon","quest":"q1"}}',
+    'not a line of the log',
+    '{"time":"2026-10-02T09:00:02.000Z","source":"driver","level":"info","event":"setup.paused","data":{"workspace":"meridian","by":"pilot"}}',
+    '{"time":"2026-10-02T09:00:03.000Z","source":"driver","level":"info","event":"setup.published","data":{"workspace":"meridian","repository":"quarry","quest":"q2"}}',
+    '',
+  ].join('\n');
+  assert.deepEqual(readEvents(logged, 'setup.published'), [
+    { workspace: 'meridian', repository: 'beacon', quest: 'q1' },
+    { workspace: 'meridian', repository: 'quarry', quest: 'q2' },
+  ]);
+  assert.deepEqual(readEvents(logged, 'setup.paused'), [{ workspace: 'meridian', by: 'pilot' }]);
+  assert.deepEqual(readEvents(logged, 'setup.stopped'), []);
+});
+
+// What `WorkspaceSetupCommand` writes (WSSETUP6), spelled as it writes it: the list a press works from, with its table
+// padded as C# pads it, then the pacing, the agent and the rule; a press's message and the rules it added; a steer's
+// message and where the plan stands.
+const WORKSPACE_LIST = [
+  'setup: workspace `meridian`, 2 repositories with a checkout here, the ones other work touches first',
+  `${''.padStart(3)}  ${'repository'.padEnd(10)} ${'asked'.padStart(5)}  ${'read'.padStart(4)}  ${'sessions'.padStart(8)}  now`,
+  `${'1'.padStart(3)}  ${'beacon'.padEnd(10)} ${'0'.padStart(5)}  ${'0'.padStart(4)}  ${'0'.padStart(8)}  to go`,
+  `${'2'.padStart(3)}  ${'quarry'.padEnd(10)} ${'3'.padStart(5)}  ${'12'.padStart(4)}  ${'1'.padStart(8)}  to go`,
+  '       refused: `quarry` is not driven here: it is not opted into driving on this machine. `daoris driver drive quarry`.',
+  '  at once   1 (at most 1 while the cap is 2, so other work keeps a slot)',
+  '  pilot     2: once the first 2 have closed, the plan pauses until you resume it',
+  '  agent     acp-stub',
+];
+const WORKSPACE_PLAN = [
+  ...WORKSPACE_LIST,
+  'a press adds to workspace `meridian`\'s rules, once, so each set-up\'s session may run the doctrine tool:',
+  ...SETUP_RULES.map((rule) => `  ${rule}`),
+  '--plan: nothing was written, published or added.',
+  '',
+];
+const WORKSPACE_PRESSED = [
+  ...WORKSPACE_LIST,
+  'setup: the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
+    + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
+  'added to workspace `meridian`\'s rules, so each set-up\'s session may run the doctrine tool:',
+  ...SETUP_RULES.map((rule) => `  ${rule}`),
+  '  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace meridian`.',
+  '',
+];
+const WORKSPACE_RESUMED = [
+  'setup: the plan for workspace `meridian` carries on past its pilot.',
+  'setup: workspace `meridian`, a plan made 2026-10-02: one at a time, a pilot of 1',
+  `${'1'.padStart(3)}  ${'beacon'.padEnd(6)}  waiting for your review — its set-up #q1 is done and waits for your review; once it is merged, *Bring up to date* registers it.`,
+  `${'2'.padStart(3)}  ${'quarry'.padEnd(6)}  to go`,
+  'Setting up — 1 waiting for your review · 1 to go',
+  '',
+];
+
+for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']]) {
+  test(`a workspace plan's list is read back: each row with what touched it and its refusals, the pacing, and the rule (${ending})`, () => {
+    const plan = readWorkspaceSetup(WORKSPACE_PLAN.join(eol));
+    assert.equal(plan.workspace, 'meridian');
+    assert.deepEqual(plan.rows, [
+      { repository: 'beacon', asked: 0, read: 0, sessions: 0, now: 'to go', refusals: [] },
+      {
+        repository: 'quarry', asked: 3, read: 12, sessions: 1, now: 'to go',
+        refusals: ['`quarry` is not driven here: it is not opted into driving on this machine. `daoris driver drive quarry`.'],
+      },
+    ]);
+    assert.equal(plan.atOnce, '1 (at most 1 while the cap is 2, so other work keeps a slot)');
+    assert.equal(plan.pilot, '2: once the first 2 have closed, the plan pauses until you resume it');
+    assert.equal(plan.agent, 'acp-stub');
+    assert.deepEqual(plan.rules, SETUP_RULES);
+    assert.deepEqual(plan.messages, []);
+    assert.equal(plan.nothingWritten, true);
+    assert.deepEqual(plan.standing, []);
+    assert.equal(plan.summary, null);
+  });
+}
+
+test('a workspace press is read as its message and the rules it added, never as a plan', () => {
+  const pressed = readWorkspaceSetup(WORKSPACE_PRESSED.join('\r\n'));
+  assert.equal(pressed.rows.length, 2);
+  assert.deepEqual(pressed.messages, [
+    'the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
+      + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
+  ]);
+  // The line saying where the rules are taken back is no rule.
+  assert.deepEqual(pressed.rules, SETUP_RULES);
+  assert.equal(pressed.nothingWritten, false);
+});
+
+test('a steer is read as its message, where each repository stands, and the head line', () => {
+  const resumed = readWorkspaceSetup(WORKSPACE_RESUMED.join('\r\n'));
+  assert.equal(resumed.workspace, 'meridian');
+  assert.deepEqual(resumed.messages, ['the plan for workspace `meridian` carries on past its pilot.']);
+  assert.deepEqual(resumed.standing, [
+    {
+      repository: 'beacon', state: 'waiting for your review',
+      said: 'its set-up #q1 is done and waits for your review; once it is merged, *Bring up to date* registers it.',
+    },
+    { repository: 'quarry', state: 'to go', said: null },
+  ]);
+  assert.equal(resumed.summary, 'Setting up — 1 waiting for your review · 1 to go');
+  assert.deepEqual(resumed.rows, []);
+  assert.deepEqual(resumed.rules, []);
+});
+
+test('what is not a workspace plan\'s output reads as nothing at all', () => {
+  const nothing = readWorkspaceSetup('setup: name the workspace: `--workspace <name>`.\nusage: daoris-driver setup --workspace <name> [--plan]\n');
+  assert.equal(nothing.workspace, null);
+  assert.deepEqual(nothing.rows, []);
+  assert.deepEqual(nothing.standing, []);
+  assert.deepEqual(nothing.rules, []);
+  assert.equal(nothing.nothingWritten, false);
 });
 
 test('a set-up\'s title is the whole set-up\'s words with a day, and nothing else is', () => {
