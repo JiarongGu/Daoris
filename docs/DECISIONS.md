@@ -7640,6 +7640,49 @@ the row's own root, and sends through the registry door. What the design left op
   rehearsal's check (a set-up under `merge` reads adopted and declared with no `connect`) is the tools lane's and not
   written. Whether a real *Bring up to date* after a real merge registers what a set-up declared is §9's sixth item.
 
+**As built (WSSETUP6, 2026-10-02): the workspace plan** (point 5, design §4.1–§4.3 and §4.5's terminal).
+`daoris-driver setup --workspace <name>` previews and presses (`WorkspaceSetup.PreviewAsync`, `PressAsync`): it writes
+`<home>/setup/<workspace>.json` (`WorkspaceSetupFile`, named by the intake room's rule) and adds the nine verbs once, at the
+workspace's scope. Each look works every plan that is live and not paused (`WorkspaceSetup.TickAsync`), publishing the next
+to go as the single press does (`SetupPress.PlanAsync`, then `PublishAsync`, the ask without a rule). What the build settled:
+- **The tick works the plans before the look reads the quests**, after it follows the moved lines, so a set-up it publishes
+  is planned and started in that same look. A home with no working plan reads nothing.
+- **Each state is read from the facts.** *Set up* is the registry door's own `registered` word (the service's `Registered`:
+  adopted, and a summary, an area owned or a kind of work accepted), read onto `RegistrationRow.Registered` and never
+  recomputed, so there is no twin to keep; absent is no. A set-up quest open or taken, from any door, is *setting
+  up*, or *parked* by the planner's strikes rule. One closed done is *waiting for your review*, one declined is *declined*,
+  and one the plan published that is gone is *deleted*. Else the plan's own record says *skipped*, or it is *to go*. A
+  set-up the single press opened holds its turn and a slot, so no repository is asked twice, and the press's own `open`
+  refusal is the second guard.
+- **A parked set-up frees its slot, and has not closed.** It holds no session and waits on the person, so the plan moves on.
+  The pilot waits for it.
+- **`atOnce` is held to `cap − 1` at every tick**, whatever the file says, and to one at a cap of one. The press refuses more,
+  naming `daoris driver cap`.
+- **The pilot is the first `pilot` set-ups the plan published**, in its order; a skipped repository is not one of them.
+  Nothing more is asked until all of them have closed. Then the plan writes `paused` with `by: pilot` once, says it in the
+  look's report and the log, and a resume sets `pilotResumed`, so the pilot never pauses it again.
+- **A skip keeps the refusal's code and its sentences**, and the repository is not judged again until the person resumes the
+  plan, since a resume clears `skipped`. An ask the service refuses is skipped as `service-refused`.
+- **A refusal of the machine's tools pauses the plan** (`by: tool`) rather than skip every repository in turn, and the press
+  refuses up front on the same refusals.
+- **Stop marks `stopped`.** The quests the plan published stay, and the terminal names each one still open that nobody has
+  started, with `daoris-driver quest delete <id>`. A new press replaces a stopped plan, never a working one.
+- **The order is read at the press, never at a tick.** It counts quests of any status addressed to the repository by anyone
+  but itself, set-ups left out; an ask's quest counts whichever tier routed it, since the quest does not say. It counts reads
+  from each session record's conversation record (`locations` on tool calls) by another repository's session, each call
+  once, with the deepest root owning a path. It counts sessions from the ledger's records, this machine's alone. A row with
+  no checkout here is left out of the order, and the press says so.
+- **The lines** are `setup.planned`, `published`, `skipped`, `paused`, `resumed` and `stopped`, from one catalogue
+  (`SetupLine`). The service client raises them (`SetupLined`) and `SessionLog` writes them. A look's report carries a
+  `setup  <workspace>: …` line for each publish, skip and pause.
+- **The doors.** The terminal is built. Ask Daoris's `workspace`, `pause`, `resume` and `stop` doors are owed to WSSETUP7
+  (`HelpCoverageTests`), and the room names the terminal's forms meanwhile. The screen and its modules route are WSSETUP7's.
+
+**Not covered by a gate run here**: the real world (`WorkspaceSetupWorld`: the git reads, the tools' versions, the service's
+doors), which only a real tick or terminal reaches. The family rehearsal's check (two scratch repositories set up one at a
+time by the stub, pausing after a pilot of one) is the tools lane's, and is not written. Whether one set-up at a time keeps
+pace with the owner's review is §9's fifth item.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and

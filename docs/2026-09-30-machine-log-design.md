@@ -62,6 +62,9 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `session.parked` | desktop, driver | session, kind, repository, workspace | a session that stopped to ask the person (D83): the owner's complaint, counted per week by workspace (WSSETUP11, D124 §7.3) |
 | `session.ended` | desktop | session, state, seconds | how it finished |
 | `registry.followed` | desktop, driver | repository, outcome | a registration followed from a repository's line, by a word from a fixed list (`registered`, `unchanged`, `declares-nothing`, `not-set-up`, `no-line`, `unreadable`, `lanes-unreadable`, `worktree`, `no-checkout`, `not-on-registry`, `refused`), never the sentence its row says: whether set-ups reach the registry once they land (WSSETUP5, D124 §3.4) |
+| `setup.planned` | desktop, driver | workspace, repositories, atOnce, pilot | a workspace plan written by its press: how many it set out to set up, at what pace (WSSETUP6, D124 §4.1) |
+| `setup.published` / `setup.skipped` | desktop, driver | workspace, repository, quest; or refusal, by the press's code | each set-up a plan asked, and each repository its press refused at its turn, by a word, never the sentence |
+| `setup.paused` / `setup.resumed` / `setup.stopped` | desktop, driver | workspace; `by` when paused (`person`, `pilot`, `tool`) | how a plan was steered: whether the pilot's pause is taken up, and how often a plan is stopped |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
 | `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
 | `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
@@ -176,6 +179,14 @@ tests (`SessionLogTests`, `AttentionTests`, `SetupQuestsTests`):
 to, and `SessionLog` writes it in the shell and the headless loop alike; `daoris-driver register` and a terminal's
 `trees land` or `trees sync` write it into the host's own log the same way. One line per repository per follow: its
 name and the outcome's word, never the sentence its row says, a path, or a commit.
+
+**As built (WSSETUP6): the `setup.*` lines** (D124 §4.1), measured against the code and its tests (`SessionLogTests`,
+`WorkspaceSetupTests`): a workspace plan reads its facts through the service client, which raises each line, and
+`SessionLog` writes it in the shell and the headless loop alike; `daoris-driver setup --workspace` writes its press, pause,
+resume and stop into the host's own log the same way. The catalogue is `SetupLine`'s, so every writer writes the same
+fields: names (the workspace, the repository, the quest's id), words (a refusal's code from the press's list or
+`service-refused`, a pause's `by`) and counts, never a sentence or a path. A pilot's pause and a tool's are written once,
+when the plan pauses itself; a resume only when it lifted a pause.
 
 **As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
 (`HookSetLogTests`, `PluginHealthTests`):
