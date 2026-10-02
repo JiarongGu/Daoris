@@ -14,10 +14,14 @@ already paid to learn.
 1. **The repository's own documents.** Find its documentation router — the table or index that maps a
    task to the one or two documents worth reading — and read only the entries that match. Bulk-loading
    defeats the purpose of a router.
-2. **The generated index.** Open the always-loaded rules index. The rules tier is already in context;
-   scan the **knowledge** table's *applies when* column against the task and read every matched
-   document. This index is generated from what is actually on disk, so it is the exhaustive list — any
-   shortcut table elsewhere is a convenience, not the registry.
+2. **The generated index.** The always-loaded doctrine names the index of the on-demand tiers. Read it
+   whole when it is a few dozen rows. When it is longer, search it more than once: the task's words,
+   their synonyms, and the names of the folders and parts the task touches. Read every row the
+   searches return. Where a search over this repository's knowledge is connected, ask it too, since it
+   matches by meaning, which a word search cannot; where none is, the index searches are the whole
+   step. Read every matched document. A search that finds nothing has not shown that nothing applies:
+   the index is generated from what is on disk, so it is the exhaustive list, and any shortcut table
+   elsewhere is a convenience, not the registry.
 3. **Private context.** If the task touches machine specifics, real paths, or another repository by
    name, read the untracked local notes rather than guessing.
 4. **Report** in two to four lines: what you loaded, and the constraints it imposes here. If nothing

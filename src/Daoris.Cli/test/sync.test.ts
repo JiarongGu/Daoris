@@ -317,6 +317,7 @@ test('a lock entry cannot reach outside the target directory', () => {
     keptRules: [],
     mirrors: { writes: [], retire: [], drop: [], edited: [], collisions: [], editedGone: [] },
     rooms: { pointers: [], unpoint: [], drop: [], missing: [], records: [] },
+    index: { path: '.claude/INDEX.md', old: null, content: '# Index\n', state: 'create' as const, collision: false },
     links: [],
     documents: { links: [], missing: [] },
   };
@@ -443,10 +444,11 @@ test('an adopted file identical to the canon is not a collision', () => {
 });
 
 /**
- * The roster is part of the region now, not a file beside it — so it is loaded rather than merely
- * present, which is the whole reason the tier moved.
+ * The rules' roster is part of the region, so it is loaded rather than merely present, which is the
+ * whole reason the tier moved (D59). The documents' is the index beside the tiers, which the region
+ * names (WSSETUP14a, D128 §2).
  */
-test('sync writes the roster into the region, so a synced repo is immediately consistent', () => {
+test('sync writes the roster into the region and the index beside the tiers, so a synced repo is immediately consistent', () => {
   const fx = seed();
   fx.repoFx.write('.claude/knowledge/ours.md', doc('ours'));
   run(fx);
@@ -454,9 +456,11 @@ test('sync writes the roster into the region, so a synced repo is immediately co
   const region = fx.repoFx.region()!;
   assert.match(region, /sensitive-info/);
   assert.match(region, /## Read on demand/);
-  assert.match(region, /storage/);
+  assert.match(region, /\[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/);
+  const index = fx.repoFx.read('.claude/INDEX.md');
+  assert.match(index, /storage/);
   // A document the repository wrote itself is listed and marked, never synced.
-  assert.match(region, /ours.*\(local\)/);
+  assert.match(index, /ours.*\(local\)/);
   fx.canonFx.cleanup();
   fx.repoFx.cleanup();
 });

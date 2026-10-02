@@ -112,15 +112,15 @@ test('drift still fails the check — only the budget is advisory', () => {
 });
 
 /**
- * 🔴 The roster's on-demand rows, rebuilt from disk and compared — offline and canon-free, which is
- * what `check` inside a build gate needs (D8). It catches the case that actually happens: a document
- * added to a tier that IS still files, and the region never re-synced.
+ * 🔴 The index's rows, rebuilt from disk and compared — offline and canon-free, which is what `check`
+ * inside a build gate needs (D8). It catches the case that actually happens: a document added to a
+ * tier that IS still files, and the index never re-synced (WSSETUP14a: the rows left the region).
  *
  * The rules rows are deliberately not checked. They come from frontmatter the span strips on the way
  * in, so nothing without the canon can say what they ought to be — and a canon change is `status`'s
  * report, which is where a canon change belongs.
  */
-test('a roster that no longer matches the on-demand tiers fails the check', () => {
+test('an index that no longer matches the on-demand tiers fails the check', () => {
   const { canonFx, repoFx } = synced();
   assert.equal(look(repoFx).indexStale, false);
 

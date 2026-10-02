@@ -6,7 +6,7 @@ enforces: run the discovery skills before exploring code, actually read what the
 
 # Start a non-trivial task through the discovery skills — and read what they return
 
-**Before exploring code for a non-trivial task, invoke the discovery skills the generated index lists.
+**Before exploring code for a non-trivial task, invoke the discovery skills your agent lists.
 Then read every document they route you to.** Skip the gate only for genuinely trivial edits.
 
 ## Why
@@ -23,8 +23,9 @@ explicit blocking step for it, which is the strongest evidence that it happens t
 
 ## How to apply
 
-- **Consult the generated index for the roster.** It is built from what is on disk, so it is right about
-  which discovery skills this repository actually has — a memorized list is not, and repositories differ.
+- **Find them in your agent's own skill list, or in the generated index.** Both are built from what is on
+  disk, so they are right about which discovery skills this repository actually has — a memorized list
+  is not, and repositories differ.
 - **Run them before any code exploration**, not after forming a hypothesis. A hypothesis formed cold is
   what the step exists to correct, and it is much harder to abandon once written down.
 - **Reading is the point.** If a skill routes you to documents, read them and say which. An unread match

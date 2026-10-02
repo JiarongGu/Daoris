@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1051 CLI tests, 916 service and 50 HTTP host, 3076 driver,
-527 desktop modules, 80 devkit, 2617 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
+**Counts, and this is their one home:** seventeen commands, **1067 CLI tests, 916 service and 50 HTTP host, 3189 driver,
+529 desktop modules, 80 devkit, 2630 web unit, 24 Playwright**, 114/114 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
-documents, 6 skills, 7 packs. The always-loaded core is **24,522 of 26,000 bytes** — a span in
+documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -209,16 +209,52 @@ owner on 1 October.
   driven session resumes the agent's own conversation on the same account and tree, shown as the same session going on;
   a fresh carry-on only when resuming cannot work, said why. Contract: D131 (in flight). Proof: driver tests; a Process
   tick on the stub; the look on the install.
-- [ ] **DRIFT1 — why an ask's decision drifted** (owner, 2026-10-02: AR-2203 asked for the v3 bridge and the common report,
-  and the work did neither; *"we need to investigate why the decision drifted"*). Trace the ask through its intake, quests,
-  sessions and commits to where the requirement was lost, and what Daoris should hold so it is not. Contract: D133 (in
-  flight). Proof: the evidence, de-identified; raw notes untracked.
+- [ ] **ANSWER1b — the service keeps an answered park** (service, tools; in flight). `SessionLedger.AnswerAsync` ends the
+  parked record, so the driver can never reopen it; keep it `awaiting-person` with its answer instead, so the resume
+  ANSWER1a built can happen. Contract: D131 point 6, design §5. Proof: `SessionLedgerTests`; the family rehearsal's
+  STANDDOWN2 answer phase, its stub taught to resume.
+- [ ] **ANSWER1c — the page shows an answered park as carrying on** (driver `SessionGroups`, web-shell; after ANSWER1b and
+  SESSUX1i). Listed under Working until the next look, the card showing the answer and *goes on*. Contract: design §5.
+  Proof: `SessionGroupsTests`; the card's story; both catalogues.
+- [ ] **ANSWER1d — the canary on the install** (the parent's, after b). One park answered on the install shows one row,
+  the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
+- [ ] **DRIFT1a — the owner's words are the ask's record** (service). Every sentence the owner gives on an ask (the ask,
+  each answer, each message typed into a running session) is kept on the ask verbatim, with when and to which session and
+  quest; today they live only in session records. Contract: D133 §1. Proof: service tests reading an answer and a typed
+  message back from the ask, failing first.
+- [ ] **DRIFT1b — every session on an ask is given all of them** (driver; after DRIFT1a). A first start, a resume, a
+  carry-on on any account and a follow-up's session get every one of the ask's words, newest last, not one hop's answer.
+  Contract: D133 §2. Proof: a driver test on the drift's chain (answer, cut-off, cut-off, carry-on elsewhere still quotes it).
+- [ ] **DRIFT1c — a quest's requirements quote the owner** (service, MCP, intake). `quest_publish` takes requirements, each
+  the owner's words plus the check that proves it; words in neither the ask nor an answer are refused; a follow-up inherits
+  them. Contract: D133 §3. Proof: refusal tests; the intake prompt's golden.
+- [ ] **DRIFT1d — a done answers each requirement** (driver, service, web). Each requirement is met, or departed with the
+  reason and the owner's words; a departure holds the follow-up until the owner says yes. Contract: D133 §4. Proof: a held
+  follow-up in service tests; the look.
+- [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
+  is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
+  *Verify*. Contract: D133 §5. Proof: the design, then its rows.
 - [ ] **PAUSE1 — pause and clean up an ask** (owner, 2026-10-02: *"so there is a pause and cleanup feature needed"*). Pause
   holds every quest of an ask and stops its sessions; clean up declines them with a reason, discards their trees and
-  unpushed branches, and archives their sessions, listing first and refusing pushed or landed work. Contract: D132 (in
-  flight). Proof: the design, then its rows.
-- [ ] **SESSUX1i — What needs you holds a parked quest, and a park is said once** (§4.6, §4.7; web-shell, driver, modules;
-  after c).
+  unpushed branches, and archives their sessions, listing first and refusing pushed or landed work. Contract: D132.
+  Proof: the design (landing; its acts are named *Pause* 暂缓 and *Abandon* 放弃, §8.2).
+- [ ] **PAUSE1a — the work, and the pause's file** (driver; cli). `AskWork.Read` answers what an ask's work is (its
+  quests, chain steps, questions it asked, sessions, trees, branches); `pausedAsks` and `pausedQuests` in `driver.json`,
+  both twins. Contract: D132 §1, §2.5. Proof: `AskWorkTests`; the twin tables, both sides.
+- [ ] **PAUSE1b — pause and resume** (driver, modules; after a and SESSUX1g). The `Paused` verdict first, `WORK_PAUSE` and
+  `WORK_RESUME`, the terminal and the log: one press stops an ask's work and keeps its place. Contract: D132 §2, §4.3, §6.1,
+  §7.2–§7.3. Proof: planner, route and group tests; a Process tick paused and resumed in its tree.
+- [ ] **PAUSE1c — a decline that applies only while open** (service; any time). `whileOpen`, so an abandon's decline never
+  lands on a take that reached the remote first. Contract: D132 §5.2. Proof: `QuestLogTests`; the sync suite over the wire.
+- [ ] **PAUSE1d — abandon** (driver, modules; after b and c). One listed press that declines the quests with the person's
+  reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`. Contract: D132 §3, §4,
+  §7.2–§7.3. Proof: `AbandonTests`; a Process case on real git; a family rehearsal phase.
+- [ ] **PAUSE1e — on the screen** (web-shell; after b and d). *Pause…*, *Resume*, *Abandon…* with its list and reason on
+  the ask's and quest's pages and a session's acts. Contract: D132 §6, §7.1, §8. Proof: stories, vitest, the look.
+- [ ] **PAUSE1f — Ask Daoris reaches pause** (driver, service, web-shell; after b and SESSUX1h). The `pause` kind; abandon
+  stays the person's. Contract: D132 §7.4. Proof: proposal and coverage tests; the room's golden files.
+- [ ] **PAUSE1g — looked at on the install** (the parent's, after a–f). An ask paused mid-session and resumed in its tree;
+  one abandoned with a landed session kept. Contract: D132 §12. Proof: a ledger at every width, both themes and languages.
 - [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
 - [ ] **SESSUX1k — waits for an account, in the list** (§2.2; driver, web-shell; after TOOL4c, TOOL4d and c).
 - [ ] **SESSUX1l — looked at on the install** (the parent's, after a republish carrying a–i): real sessions by state, a
@@ -265,11 +301,6 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
   `.claude/` paths, which the quest's bounds forbade it to fix; `AGENTS.md` grew to 61 KB because the index lists all
   169 knowledge documents in the always-loaded region (budget raised to 54,000; one agent reads only 32 KB); 166 old
   documents have no frontmatter. The second repository waits for WSSETUP14.
-- [ ] **WSSETUP14a — the index leaves the region** (after SESSOPT1a; as D129 amends it). `sync` writes `<target>/INDEX.md` with the knowledge
-  and skill tables; the region keeps the rules, a pointer, the rooms and *Where things are*. `doc-loader`, `skills-workflow`
-  and `development-documents` take the review's §4.2–§4.4 words (several wordings; the agent's own skill list first).
-  Contract: D128 §2.2–§2.5, §2.7, as D129 amends them. Proof: a 169-document fixture leaves the region's bytes unchanged;
-  the D48 §2a canon scan widened to a connected search; this repository and both examples re-synced.
 - [ ] **WSSETUP14b — a knowledge folder declared in place** (after 14a). `documents.knowledge` names a folder the index lists
   and the service indexes, which `sync` never writes. Contract: §1.2, §1.3. Proof: the twin tables matched.
 - [ ] **WSSETUP14c — a document without frontmatter, by its heading** (after 14a). Contract: §3.1, §3.2. Proof: `node --test`.
@@ -436,10 +467,6 @@ the ACP door, not a registry**.
   none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
   accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
   waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
-- [ ] **TOOL6b — the walk toward the goal** (driver; after TOOL6a). Every listed account used: fewest of Daoris's
-  sessions first, a weekly reset within a day first, then pace, then least recently started; *order* keeps D125's walk;
-  `windows.json` keeps the weekly resets limits tell; the wait names accounts outside the list. Contract: D130 §16.3,
-  §2, §3, §7. Proof: `AccountRotation` tables for one account and many; a Process tick, cap K over N accounts.
 - [ ] **TOOL6c — what the agents say, read** (driver; after TOOL6b; unblocked: TOOL4b measured the frame). Claude Code's
   `rate_limit_event` `unifiedWindows` (each window's use 0–1 and reset, every frame) on the native door, and the
   protocol door's `usage_update._meta["_claude/rateLimit"]`, kept in `windows.json`, so pace and *switch before the
@@ -636,6 +663,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   met the writer's handle; fixed in that merge (TEST4: read sharing read and write, retried briefly), three runs green.
   **And merging TOOL4e and SESSUX1a**: `HostSupervisorTests.A_host_that_ignores_its_input_ending_is_killed_after_the_bound`
   failed in the modules' Process half and passed alone, under four branches' load.
+  **And merging TOOL6b, SESSUX1i and WSSETUP14a** (2026-10-02): `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how`
+  failed in the driver's Process half and passed alone, with three branches building beside it.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.

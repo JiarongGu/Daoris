@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useAsks, useQuests, useRegistry, useSessions } from '../queries';
-import { useRules, useUntrusted } from '../shell';
+import { useConsidered, useRules, useUntrusted } from '../shell';
 import { Card, CardHeader, Tip } from '../ui';
 import { type Attention, AttentionRow } from './AttentionRow';
 import { needsAPerson } from './attention';
@@ -38,10 +38,12 @@ export function AttentionBand({ doors = {} }: { doors?: AttentionDoors }) {
   const rules = useRules();
   // An older shell never sends proposals, and one that answers RULES with something else sends none.
   const proposals = rules.data?.proposals;
+  // The quests the driver's last look parked on their failed sessions (SESSUX1i) — the shell's tick, so a browser has none.
+  const considered = useConsidered();
 
   const waiting = needsAPerson(
     sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    Array.isArray(proposals) ? proposals : []);
+    Array.isArray(proposals) ? proposals : [], considered.data ?? []);
   if (waiting.length === 0) return null;
 
   return (

@@ -150,7 +150,12 @@ public sealed record HarnessToolchain(
     // by `AccountLimits.Read` and never from the transcript. Declared only by a tool seen hitting one,
     // each pattern standing on a recorded sentence. A door onto another agent reads its owner's (AGT7).
     // Null reads every failure as a failure. Not a twin: the CLI concludes no session.
-    LimitWords? Limits = null)
+    LimitWords? Limits = null,
+    // Whether this tool's maker fixes an account's weekly reset at one time each week (TOOL6b, D130 §16.3 step 4): a weekly
+    // reset a limit told is then carried a week at a time, where otherwise it is dropped at its reset. Declared only where
+    // the maker's own page says so; not in `Limits`, whose entries grow only with a recorded sentence. A door onto another
+    // agent reads its owner's (AGT7).
+    bool WeekFixed = false)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -541,8 +546,9 @@ public sealed partial record HarnessSettings(
     /// <para>🔴 <b>The CLI writes these too</b> (<c>daoris agent profile order</c>), so <see cref="Save"/> writes them,
     /// or a screen edit would delete the person's order. <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c>
     /// hold the reading, the edits, the refusals and the file both write, row for row.</para>
-    /// <para>An account the order does not list is never rotated into, and work resolved to it never moves (§3.1):
-    /// one list, not a list and a mark. <see cref="HarnessRoster.SelectAsync"/> walks it (TOOL4f, <see cref="AccountRotation"/>).</para>
+    /// <para>An account the order does not list is never rotated into (§3.1): one list, not a list and a mark. A start
+    /// reads its one scope instead (<see cref="ResolveScope"/>, TOOL6b, D130 §3.1), where a workspace that names a default
+    /// and no list takes no list at all; this is D125's reading of the file, held by its twin.</para>
     /// </remarks>
     public (IReadOnlyList<string> Order, ChoiceFrom From) ResolveRotationFrom(string agent, string? workspace)
     {
@@ -1430,10 +1436,16 @@ public sealed record HarnessSelection(
     public CoolingEntry? Cooling { get; init; }
 
     /// <summary>
-    /// The account the resolution named and why it was not ready, when this start runs on another account of the
-    /// person's order instead (TOOL4f, D125 §3.3); null when it runs on the account the resolution named.
+    /// The account the start's scope begins at and why the start runs elsewhere (TOOL4f, D125 §3.3; TOOL6b, D130 §13 as
+    /// §16 amends it); null when it runs where its scope begins.
     /// </summary>
     public RotatedStart? Rotated { get; init; }
+
+    /// <summary>
+    /// The step of the goal's walk that chose the account, where a list offered a choice (TOOL6b, D130 §16.4): what the
+    /// start's record says first. Null under <c>use: order</c>, for a pick, and where the scope offered one account.
+    /// </summary>
+    public AccountChoice? Choice { get; init; }
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -1582,7 +1594,45 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
         AccountCooling.Cool(Home, entry, now);
+
+        // A weekly reset the agent named is that account's for the weeks after (TOOL6b, D130 §16.3 step 4): a start spends a
+        // week about to lapse first. Only a named account's, since the tool's own sign-in is never in a list (D125 §3.7).
+        if (profile is not null && seen.Stated && IsWeekly(seen))
+        {
+            try
+            {
+                AccountWindows.Told(Home, agent, profile, seen.Until, now, session);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // A week not kept costs a start's ranking, never the limit's cool-off.
+            }
+        }
+
         return (entry, seen);
+    }
+
+    /// <summary>
+    /// Whether a limit's reset is its account's weekly one: the window its reset named, or, where it named none, what was
+    /// hit (<i>You've hit your weekly limit · resets …</i>).
+    /// </summary>
+    private static bool IsWeekly(LimitSeen seen) =>
+        string.Equals(seen.Window ?? seen.Hit, AccountWindows.Weekly, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether the agent that owns <paramref name="agent"/>'s accounts has its weekly reset fixed by its maker (TOOL6b): its
+    /// own toolchain's word, a door reading its owner's (AGT7).
+    /// </summary>
+    private bool WeekFixed(string agent)
+    {
+        try
+        {
+            return adapters.Names.Contains(agent, StringComparer.OrdinalIgnoreCase) && adapters.Resolve(agent).Toolchain is { WeekFixed: true };
+        }
+        catch (DriverException)
+        {
+            return false;
+        }
     }
 
     /// <summary>
@@ -1762,18 +1812,49 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <b>names the action that fixes it</b> rather than failing bare.
     /// </summary>
     /// <remarks>
-    /// <b>The walk</b> (TOOL4f, D125 §3.3): the account the resolution names runs if it is ready — not cooling, not
-    /// refused, not signed out. If it is not, and a default named it that the person's order lists, the next ready
-    /// account after it in the order runs, wrapping, and the selection says so (<see cref="HarnessSelection.Rotated"/>).
-    /// A pick, the tool's own home and an account outside the order never rotate, and with no order this answers as it
-    /// did before rotation existed. When no account is ready the start waits: before any probe while each is cooling or
-    /// refused, with one sentence naming the first reset.
+    /// <para><b>One scope</b> (TOOL6b, D130 §2 rule 1, §3.1): the start's workspace's, when it names a default or a list
+    /// of its own for the agent, else the machine's (<see cref="HarnessSettings.ResolveScope"/>). Its list is the whole set
+    /// of accounts its starts may run on, begun at its default or else its first. A pick is the one account, never moved;
+    /// a scope that names one account and no list is that account; a scope that names none is the tool's own sign-in.</para>
+    /// <para><b>The walk</b>: <see cref="AccountRotation.Order"/>, by <c>use</c> — the goal's (the default) or D125's —
+    /// and the first account still ready runs: not cooling, not refused, not signed out. It says which step chose it
+    /// (<see cref="HarnessSelection.Choice"/>) and, where it ran somewhere other than where its scope begins, why
+    /// (<see cref="HarnessSelection.Rotated"/>). When no account is ready the start waits: before any probe while each is
+    /// cooling or refused, with one sentence naming the first reset, and the accounts the scope does not list.</para>
+    /// <para><b>Counted as chosen</b>: the goal reads Daoris's sessions as of the driver's last look (<see cref="Look"/>)
+    /// and every start chosen since, so starts in one look spread. A start's choice and its count are made one at a time,
+    /// which a probe may make wait.</para>
     /// </remarks>
     /// <param name="workspace">The repository's circle, for the per-workspace default (D49 §4).</param>
     /// <param name="chosen">The person's pick for this session, when they made one.</param>
-    public async Task<HarnessSelection> SelectAsync(
+    /// <param name="kind">Driven work or a conversation: driven work never starts on the scope's kept account (§4.6).</param>
+    public Task<HarnessSelection> SelectAsync(
         string adapter, DriverConfig config, string? workspace, string? chosen,
-        CancellationToken ct = default)
+        StartKind kind = StartKind.Driven, CancellationToken ct = default) =>
+        ChooseAsync(adapter, config, workspace, chosen, kind, counts: true, ct);
+
+    /// <summary>
+    /// <see cref="SelectAsync"/>, or with <paramref name="counts"/> false the same answer for a panel, which starts nothing
+    /// and so is never counted as a start chosen.
+    /// </summary>
+    private async Task<HarnessSelection> ChooseAsync(
+        string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, CancellationToken ct)
+    {
+        if (!counts) return await WalkAsync(adapter, config, workspace, chosen, kind, counts, ct).ConfigureAwait(false);
+
+        await _walking.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await WalkAsync(adapter, config, workspace, chosen, kind, counts, ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            _walking.Release();
+        }
+    }
+
+    private async Task<HarnessSelection> WalkAsync(
+        string adapter, DriverConfig config, string? workspace, string? chosen, StartKind kind, bool counts, CancellationToken ct)
     {
         var resolved = adapters.Resolve(adapter);
 
@@ -1787,18 +1868,24 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // the owner's login question and key. The pin below stays the door's own — a door is a
         // different package at a different version (ACP2).
         var owner = toolchain.Owner(resolved.Name);
-        var (profile, from) = settings.ResolveFrom(owner, workspace, chosen);
+        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
+        var scope = settings.ResolveScope(owner, circle);
+        var picked = string.IsNullOrWhiteSpace(chosen) ? null : chosen.Trim();
 
-        // The accounts this start may use, in the order it tries them (TOOL4f, D125 §3.3): the one the resolution names,
-        // and, only where a default named it and the person's order lists it, the rest of that order after it. A pick,
-        // the tool's own home and an account outside the order are the one account, which is today's behaviour.
+        // The accounts this start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`). A pick,
+        // a scope that names one account, and the tool's own sign-in are the one account, and nothing more is read.
         var now = Clock();
-        var order = settings.ResolveRotationFrom(owner, workspace).Order;
-        var states = AccountRotation
-            // The accounts here are listed only where an order could walk to one, so a machine with none reads nothing more.
-            .Candidates(profile, from, order, order.Count == 0 ? [] : HarnessSettings.Profiles(Home, owner))
-            .Select(account => Before(owner, account, now))
-            .ToList();
+        var facts = NoFacts;
+        List<string?> order;
+        if (picked is not null) order = [picked];
+        else if (scope.List.Count == 0) order = [scope.Begins];
+        else
+        {
+            facts = Facts(owner, scope.List, now);
+            order = [.. AccountRotation.Order(scope, kind, HarnessSettings.Profiles(Home, owner), facts, now)];
+        }
+
+        var states = order.Select(account => Before(owner, account, now)).ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
         // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
@@ -1807,12 +1894,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (!states.Any(state => state.IsReady))
         {
             // A pick is the person's (§3.3): refused, never rotated, naming what they could pick instead.
-            return from == ChoiceFrom.Picked && states[0].Cooling is { } picked
-                ? new HarnessSelection(RotationWords.Picked(picked, await ReadyAsync(resolved.Name, toolchain, config, picked.Account, now, ct).ConfigureAwait(false), Zone))
+            return picked is not null && states[0].Cooling is { } pick
+                ? new HarnessSelection(RotationWords.Picked(pick, await ReadyAsync(resolved.Name, toolchain, config, pick.Account, now, ct).ConfigureAwait(false), Zone))
                 {
-                    Cooling = picked,
+                    Cooling = pick,
                 }
-                : Unready(owner, states);
+                : Unready(owner, states, picked is null ? scope : null, circle, kind, now);
         }
 
         // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
@@ -1863,7 +1950,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 Home, "claude-code", settings.ResolveVersion("claude-code", workspace, null), ["claude"])
             : null;
 
-        if (profile is null)
+        if (order is [null])
         {
             return new HarnessSelection(null, null, null, report?.Version, managed, claude);
         }
@@ -1908,7 +1995,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             at = i;
         }
 
-        if (at < 0) return Unready(owner, states);
+        if (at < 0) return Unready(owner, states, picked is null ? scope : null, circle, kind, now);
 
         var runs = states[at].Account!;
         var home = HarnessSettings.ProfileHome(Home, owner, runs);
@@ -1920,10 +2007,27 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
 
-        return new HarnessSelection(null, runs, home, report?.Version, managed, claude, key)
+        // Counted from here on as one of this account's sessions, so the next start chosen before the next look spreads.
+        if (counts) Chose(owner, runs);
+
+        var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key);
+        if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
+
+        // Said by whoever opens the record (TOOL4f, §3.6; TOOL6b, §16.4): its first line and `account.rotated`.
+        var choice = AccountRotation.Chose(scope, kind, states, at, facts, now);
+        var passed = states.FirstOrDefault(state => string.Equals(state.Account, begins, StringComparison.OrdinalIgnoreCase));
+        var ran = facts.GetValueOrDefault(runs) ?? new AccountFacts();
+        string Said(WalkChoice said) => RotationWords.Clause(said, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, ran, kind, Zone);
+        return selection with
         {
-            // Said by whoever opens the record (TOOL4f, §3.6): its first line and `account.rotated`.
-            Rotated = at == 0 ? null : new RotatedStart(profile, states[0].Cooling, RotationWords.Why(owner, states[0], Zone)),
+            Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, Said(choice)) : null,
+            Rotated = string.Equals(runs, begins, StringComparison.OrdinalIgnoreCase)
+                ? null
+                : new RotatedStart(begins, passed?.Cooling, Said(choice with { Rest = null }))
+                {
+                    Step = choice.Step,
+                    Scope = scope.From == ChoiceFrom.Workspace ? circle : null,
+                },
         };
     }
 
@@ -1949,11 +2053,142 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// with every account and why; with none cooling, nothing will come ready by itself, so the default's own refusal,
     /// which names the fix, is the answer.
     /// </summary>
-    private HarnessSelection Unready(string owner, IReadOnlyList<AccountState> states)
+    /// <remarks>
+    /// A wait for a time also says what the person could do (TOOL6b, D130 §3.3, §4.6), where it applies: a driven start
+    /// whose kept account is ready says it is kept for conversations; and a scope that names accounts of its own names the
+    /// agent's other accounts that are neither cooling nor refused, with the door that adds one. Read from the cool-offs
+    /// and the refusals alone, as a waiting look starts no process. Daoris never takes one itself. A machine that names no
+    /// list keeps its sentence byte for byte (D125 §3.1's none).
+    /// </remarks>
+    /// <param name="scope">The start's scope, or null for a pick, which says nothing more.</param>
+    private HarnessSelection Unready(
+        string owner, IReadOnlyList<AccountState> states, RotationScope? scope, string? workspace, StartKind kind, DateTimeOffset now)
     {
         var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
-        if (states.Count == 1 || first is null) return new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling };
-        return new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first };
+        var held = states.Count == 1 || first is null
+            ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling }
+            : new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first };
+        if (held.Cooling is null || scope?.Begins is null) return held;
+
+        var sentence = held.Refusal!;
+        if (kind == StartKind.Driven
+            && scope.Use.Keep is { } kept
+            && scope.List.Contains(kept, StringComparer.OrdinalIgnoreCase)
+            && !states.Any(state => string.Equals(state.Account, kept, StringComparison.OrdinalIgnoreCase))
+            && Before(owner, kept, now).IsReady)
+        {
+            sentence += " " + RotationWords.KeptAside(kept);
+        }
+
+        if (scope.From == ChoiceFrom.Workspace || scope.List.Count > 0)
+        {
+            IReadOnlyList<string> listed = scope.List.Count > 0 ? scope.List : [scope.Begins];
+            var outside = HarnessSettings.Profiles(Home, owner)
+                .Where(name => !listed.Contains(name, StringComparer.OrdinalIgnoreCase) && Before(owner, name, now).IsReady)
+                .ToList();
+            if (outside.Count > 0)
+            {
+                sentence += " " + RotationWords.Outside(owner, scope.From == ChoiceFrom.Workspace ? workspace : null, listed, outside);
+            }
+        }
+
+        return held with { Refusal = sentence };
+    }
+
+    // ——— What the goal's walk counts (TOOL6b, D130 §4.2, §16.2): Daoris's sessions as of the driver's last look, and the
+    // starts chosen since. One roster serves the driver and the conversations alike, so both count.
+
+    private static readonly IReadOnlyDictionary<string, AccountFacts> NoFacts =
+        new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
+
+    // One choice and its count at a time, so starts begun together in one look see each other's.
+    private readonly SemaphoreSlim _walking = new(1, 1);
+
+    private readonly object _load = new();
+
+    // The last look's records, each with its adapter's owner (AGT7), and the starts chosen since, numbered as chosen.
+    private IReadOnlyList<(string Owner, SessionStarted Session)> _looked = [];
+    private readonly List<(long Number, string Owner, string Account)> _chosen = [];
+    private long _numbered;
+
+    /// <summary>
+    /// The number of the last start chosen: taken by the driver before it reads a look's records, so <see cref="Look"/>
+    /// keeps every start chosen while they were read.
+    /// </summary>
+    public long Mark()
+    {
+        lock (_load) return _numbered;
+    }
+
+    /// <summary>
+    /// The driver's look read this machine's session records (TOOL6b): what the walk counts from now on, with the starts
+    /// chosen after <paramref name="mark"/>. A look begins only once the last look's starts have opened their records, so
+    /// every start chosen before it is one of them.
+    /// </summary>
+    public void Look(IReadOnlyList<SessionStarted> sessions, long mark)
+    {
+        var owned = sessions.Select(session => (OwnerOf(session.Adapter), session)).ToList();
+        lock (_load)
+        {
+            _looked = owned;
+            _chosen.RemoveAll(start => start.Number <= mark);
+        }
+    }
+
+    /// <summary>A start chosen on an account: one of its sessions until the next look reads the records.</summary>
+    private void Chose(string owner, string account)
+    {
+        lock (_load) _chosen.Add((++_numbered, owner, account));
+    }
+
+    /// <summary>What the walk knows of each account of a list, without its agent's word (§16.4).</summary>
+    private Dictionary<string, AccountFacts> Facts(string owner, IReadOnlyList<string> list, DateTimeOffset now)
+    {
+        var fixedWeek = WeekFixed(owner);
+        var facts = new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
+        lock (_load)
+        {
+            foreach (var account in list)
+            {
+                var sessions = _looked.Where(each => Same(each.Owner, owner) && Same(each.Session.Profile, account)).Select(each => each.Session).ToList();
+                var chosen = _chosen.Where(start => Same(start.Owner, owner) && Same(start.Account, account)).ToList();
+                facts[account] = new AccountFacts(
+                    Running: sessions.Count(session => session.Running) + chosen.Count,
+                    LastStarted: sessions.Select(session => session.Created).Where(created => created is not null).Max(),
+                    Chosen: chosen.Count == 0 ? null : chosen.Max(start => start.Number));
+            }
+        }
+
+        foreach (var account in list)
+        {
+            try
+            {
+                facts[account] = facts[account] with { WeekResets = AccountWindows.WeekOf(Home, owner, account, now, fixedWeek) };
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // A week not read ranks nothing, as one never told does.
+            }
+        }
+
+        return facts;
+
+        static bool Same(string? a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Whose accounts a session on <paramref name="adapter"/> ran as (AGT7): its owner, or the adapter where it is unknown.</summary>
+    private string OwnerOf(string adapter)
+    {
+        try
+        {
+            return adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase) && adapters.Resolve(adapter) is { } resolved
+                ? resolved.Toolchain?.Owner(resolved.Name) ?? resolved.Name
+                : adapter;
+        }
+        catch (DriverException)
+        {
+            return adapter;
+        }
     }
 
     /// <summary>What the agent says about one account's sign-in, from a probe's report; unknown where it says nothing.</summary>
@@ -1985,9 +2220,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// <remarks>
     /// 🔴 <b>Read through <see cref="SelectAsync"/>, never beside it.</b> The design's rule is that the
     /// picture cannot disagree with the loop, and a second resolution is exactly how it would: the
-    /// account is <see cref="HarnessSettings.ResolveFrom"/> — the function <see cref="SelectAsync"/>'s
-    /// <c>Resolve</c> is — and whether the start happens, and at which version, is the selection itself.
-    /// Nothing from the selection's machine-local half (the home, the binary, the key) is kept.
+    /// account is the selection's — its scope is <see cref="HarnessSettings.ResolveScope"/>, the function
+    /// <see cref="SelectAsync"/> reads (TOOL6b) — and whether the start happens, and at which version, is the
+    /// selection itself, asked without being counted as a start chosen. Nothing from the selection's
+    /// machine-local half (the home, the binary, the key) is kept.
     /// </remarks>
     public async Task<StartWiring> WiringAsync(
         string adapter, DriverConfig config, string? workspace, CancellationToken ct = default)
@@ -1997,21 +2233,23 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var owner = toolchain?.Owner(resolved.Name) ?? resolved.Name;
         var settings = Settings;
 
-        var (profile, profileFrom) = toolchain is null
-            ? (null, ChoiceFrom.Unset)
-            : settings.ResolveFrom(owner, workspace, chosen: null);
+        // The start's one scope (TOOL6b, D130 §2 rule 1): where it begins, and whose rung named it; the tool's own sign-in
+        // where it names no account.
+        var scope = toolchain is null ? null : settings.ResolveScope(owner, workspace);
+        var profileFrom = scope?.Begins is null ? ChoiceFrom.Unset : scope.From;
         // The same precedence `SelectAsync` applies: a command `driver.json` names has the last word.
         var commanded = config.Commands.GetValueOrDefault(resolved.Name) is { Count: > 0 };
         var (pinned, versionFrom) = commanded || toolchain is null
             ? (null, ChoiceFrom.Unset)
             : settings.ResolveVersionFrom(resolved.Name, workspace, chosen: null);
 
-        var selection = await SelectAsync(adapter, config, workspace, chosen: null, ct).ConfigureAwait(false);
+        // Asked as a start would ask, and counted as none: a panel starts nothing.
+        var selection = await ChooseAsync(adapter, config, workspace, chosen: null, StartKind.Driven, counts: false, ct).ConfigureAwait(false);
 
-        // A start that rotates takes another account of the order (TOOL4f): that is the account shown, with the one its
-        // rung named beside it, so the panel never shows an account a start would not take.
+        // The account a start would take (TOOL4f, TOOL6b): the walk's, with where the scope begins beside it when that is
+        // another, so the panel never shows an account a start would not take; where begins, when the start is held.
         return new StartWiring(
-            resolved.Name, owner, selection.Rotated is null ? profile : selection.Profile, profileFrom,
+            resolved.Name, owner, selection.Profile ?? scope?.Begins, profileFrom,
             selection.Version ?? pinned, versionFrom, commanded, selection.Refusal)
         {
             RotatedFrom = selection.Rotated?.From,

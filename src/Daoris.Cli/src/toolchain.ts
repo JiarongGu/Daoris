@@ -58,7 +58,7 @@ const USE_FLAGS: ReadonlySet<string> = new Set(['--keep', '--no-keep', '--early'
 
 /**
  * What the terminal says for each *use accounts* choice (D130 §16.6): its name, and what it costs where the screen says
- * so. A choice added to `USE_MODES` is a row here. TOOL6b, which builds `goal`'s walk, adds the step a start follows.
+ * so. A choice added to `USE_MODES` is a row here, and its step in `nextStartLines`.
  */
 export const USE_WORDS: Record<UseMode, { name: string; cost: string | null }> = {
   goal: { name: 'make the most of them', cost: null },
@@ -887,7 +887,7 @@ export function signInNew(
  *
  * @remarks
  * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
- * walk, which TOOL6b builds and then says the step a start follows. *Switch before the limit* passes no account while no
+ * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* passes no account while no
  * session says how near it is (§6): no agent's door carries that word yet, which is a fact today and is said.
  */
 export function useLines(scope: Scope, product: string): { rows: [label: string, value: string][]; notes: string[] } {
@@ -914,6 +914,35 @@ export function useLines(scope: Scope, product: string): { rows: [label: string,
       : `\`${name}\` is a setting this build does not know: nothing here reads it, and it is kept as written`);
   }
   return { rows, notes };
+}
+
+/**
+ * The step the next start of a scope would follow (TOOL6b; D130 §16.3, §16.4, §16.6), in the terminal's words: the goal's
+ * steps as the driver's walk takes them, or the list's order under `order`, and the kept account driven work passes.
+ * With the goal it says, too, that no account has said what it has left, which is true of every agent until a door carries
+ * that word (TOOL6c).
+ *
+ * @remarks
+ * Prose about the driver's walk (`AccountRotation.Order`), not a twin of a file: this command is offline and reads no
+ * session record, so it names the steps rather than the account they would choose. Steps 2 and 5, near and pace, need
+ * the agent's word and are left out until a door carries it.
+ */
+export function nextStartLines(scope: Scope): { row: string; note: string | null } {
+  if (scope.list.length === 1) return { row: `\`${scope.list[0]}\`, the one account this list holds`, note: null };
+
+  const from = `from \`${scope.begins}\`${scope.default !== null && scope.default === scope.begins ? ', its default' : ''}`;
+  const keep = scope.use.keep;
+  const passes = keep !== null && scopeProblem({ default: null, list: scope.list, keep }) === null
+    ? `; driven work passes \`${keep}\`, kept for conversations`
+    : '';
+  return scope.use.use === 'goal'
+    ? {
+      row: 'the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; then the one '
+        + `Daoris started on least recently; then this list's order, ${from}${passes}`,
+      note: 'no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns '
+        + 'each account\'s weekly reset from the limits it meets',
+    }
+    : { row: `the first ready account of this list, ${from}${passes}`, note: null };
 }
 
 /**
@@ -1578,7 +1607,8 @@ export function commandHarness(
       }
 
       // How a scope's list is used (TOOL6a, D130 §2, §9): the machine's, or with `--workspace` one workspace's. Each choice
-      // is written as made; with no flag it prints the scope's settings and what each account last said.
+      // is written as made; with no flag it prints the scope's settings, the step the next start would follow (TOOL6b) and
+      // what each account last said.
       case 'use':
         return useVerb();
 
@@ -1739,7 +1769,10 @@ export function commandHarness(
       return value === 'on';
     }
 
-    /** `profile use`'s print: whose scope it is, its list, how it is used, and what each of its accounts last said. */
+    /**
+     * `profile use`'s print: whose scope it is, its list, how it is used, the step the next start would follow, and what
+     * each of its accounts last said.
+     */
     function printUse(name: string, workspace: string | null, scope: Scope): ExitCode {
       const borrowed = workspace !== null && scope.from === 'machine';
       if (scope.list.length === 0) {
@@ -1763,6 +1796,9 @@ export function commandHarness(
       const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name);
       for (const [label, value] of rows) write(`  ${label.padEnd(24)} ${value}`);
       for (const note of notes) write(`  ${note}`);
+      const next = nextStartLines(scope);
+      write(`  ${'next start'.padEnd(24)} ${next.row}`);
+      if (next.note) write(`  ${next.note}`);
 
       const now = new Date();
       const zone = machineZone();

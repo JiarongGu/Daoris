@@ -15,6 +15,13 @@ public enum AttentionKind
     /// cool-off early, sooner. <see cref="AttentionEvent.Session"/> is empty: no session is concerned.
     /// </summary>
     Waiting,
+
+    /// <summary>
+    /// A quest parked on its failed sessions here (SESSUX1i, D126 §4.7): only the person's *Try again* starts it again.
+    /// <see cref="AttentionEvent.Session"/> is its last session, which a notification opens, and
+    /// <see cref="AttentionEvent.Quest"/> the quest.
+    /// </summary>
+    QuestParked,
 }
 
 /// <param name="State">The state it ended in, for <see cref="AttentionKind.Ended"/>; null for a park.</param>
@@ -26,6 +33,12 @@ public enum AttentionKind
 public sealed record AttentionEvent(
     AttentionKind Kind, string Session, string Repository, string? State = null, string? Note = null)
 {
+    /// <summary>For <see cref="AttentionKind.QuestParked"/>: the quest that parked. Null for every other kind.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>For <see cref="AttentionKind.QuestParked"/>: how many sessions failed, as the planner counted to park it; null where unsaid.</summary>
+    public int? Strikes { get; init; }
+
     /// <summary>
     /// The one line this is worth saying — a toast's title, and a headless console's line.
     /// </summary>
@@ -39,6 +52,12 @@ public sealed record AttentionEvent(
     {
         AttentionKind.Parked => $"{Repository} — a session needs you",
         AttentionKind.Waiting => $"{Repository} — waits for an account",
+        AttentionKind.QuestParked => $"{Repository} — `#{Quest}` parked after " + Strikes switch
+        {
+            null => "its failed sessions",
+            1 => "1 failed session",
+            var count => $"{count} failed sessions",
+        },
         _ => $"{Repository} — a session {State}",
     };
 
@@ -74,6 +93,12 @@ public sealed record AttentionEvent(
 /// use is cooling, from the report's <see cref="TickReport.Waits"/>. Said once per cool-off, since it lasts every look
 /// until its reset; nothing is wrong with the work, and it starts by itself then.</para>
 ///
+/// <para><b>A quest's park is the fourth</b> (SESSUX1i, D126 §4.7): a quest the planner parked on its failed sessions
+/// here, from the parks a door read for that look (<see cref="QuestParkReader"/>). Said once per park, a park being its
+/// last session: a hold that hides it for a look is the same park, and *Try again* then new failures make a new one. Never
+/// for the person's stop, which is no park. Its notice carries the last failure's note, so that failure's own end in the
+/// same look is not said beside it.</para>
+///
 /// <para><b>A conversation's end is deliberately not reported</b>, though a conversation that PARKS
 /// is — parks come from the tick and are blind to how the session was started. The reason is design
 /// §4's own: this exists because nobody should have to watch an <i>unattended</i> session, and a
@@ -91,6 +116,11 @@ public sealed class AttentionWatch
     // reset, and a look that planned no start says nothing of it, so the cool-off — not the look — is what is said once.
     private readonly Dictionary<string, DateTimeOffset> _waits = new(StringComparer.OrdinalIgnoreCase);
 
+    // The quests' parks already said or seen at the first look, by quest, with the last session each park was for
+    // (SESSUX1i). Bounded by what the planner still considers. A null session is a park seen at a first look whose records
+    // were not read, taken as said when they are.
+    private Dictionary<string, string?>? _parks;
+
     /// <summary>The sessions whose state is being remembered — bounded by what is active.</summary>
     public IReadOnlyList<string> Watching => _seen is null ? [] : [.. _seen.Keys.Order(StringComparer.Ordinal)];
 
@@ -103,7 +133,11 @@ public sealed class AttentionWatch
     /// earlier run — so the first observation reports nothing and only records what it saw. A shell
     /// that toasted every parked session on every launch is a shell people close.
     /// </remarks>
-    public IReadOnlyList<AttentionEvent> Observe(TickReport report)
+    /// <param name="parks">
+    /// The quests' parks a door read for this look (<see cref="QuestParkReader.LookAsync"/>), or null where it read none:
+    /// they had not changed, or the records did not answer. Null says nothing of a park, and forgets none.
+    /// </param>
+    public IReadOnlyList<AttentionEvent> Observe(TickReport report, IReadOnlyList<QuestPark>? parks = null)
     {
         var now = report.Active.ToDictionary(
             session => session.Id, session => session.State, StringComparer.Ordinal);
@@ -113,6 +147,8 @@ public sealed class AttentionWatch
 
         // A wait whose cool-off was not said yet (TOOL4d, D125 §4) — recorded on the first look too, which says nothing.
         var waits = report.Waits.Where(Unsaid).ToList();
+        // And a quest's park not said yet (SESSUX1i), the same way.
+        var parked = UnsaidParks(report, parks);
         if (previous is null) return [];
 
         var events = new List<AttentionEvent>();
@@ -128,14 +164,56 @@ public sealed class AttentionWatch
                 AttentionKind.Parked, session.Id, session.Repository, Note: session.Note));
         }
 
+        events.AddRange(parked.Select(park => new AttentionEvent(
+            AttentionKind.QuestParked, park.Session ?? "", park.Repository, Note: park.Note)
+        {
+            Quest = park.Quest,
+            Strikes = park.Strikes,
+        }));
+
+        // The last failure is said by its quest's park, which carries its note.
+        var saidByPark = parked.Select(park => park.Session).OfType<string>().ToHashSet(StringComparer.Ordinal);
         foreach (var ended in report.Concluded)
         {
-            if (ended.ByPerson) continue;
+            if (ended.ByPerson || saidByPark.Contains(ended.Session)) continue;
             events.Add(new AttentionEvent(
                 AttentionKind.Ended, ended.Session, ended.Repository, ended.State, ended.Note));
         }
 
         return events;
+    }
+
+    /// <summary>
+    /// The parks among <paramref name="parks"/> not said yet; each is marked said either way. The first look marks every
+    /// quest the planner parked and says none.
+    /// </summary>
+    private List<QuestPark> UnsaidParks(TickReport report, IReadOnlyList<QuestPark>? parks)
+    {
+        if (_parks is null)
+        {
+            _parks = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var consideration in report.Considerations.Where(c => c.Verdict == StartVerdict.Exhausted))
+            {
+                _parks[consideration.Quest.Id] = null;
+            }
+
+            foreach (var park in parks ?? []) _parks[park.Quest] = park.Session;
+            return [];
+        }
+
+        // A quest the planner no longer considers is done, declined or gone, and its park with it.
+        var considered = report.Considerations.Select(c => c.Quest.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var quest in _parks.Keys.Where(quest => !considered.Contains(quest)).ToList()) _parks.Remove(quest);
+
+        var unsaid = new List<QuestPark>();
+        foreach (var park in parks ?? [])
+        {
+            var said = _parks.TryGetValue(park.Quest, out var session) && (session is null || session == park.Session);
+            _parks[park.Quest] = park.Session;
+            if (!said) unsaid.Add(park);
+        }
+
+        return unsaid;
     }
 
     /// <summary>Whether this wait's cool-off is not yet said; it is marked said either way.</summary>
@@ -145,6 +223,62 @@ public sealed class AttentionWatch
         var said = _waits.TryGetValue(account, out var until) && until == wait.Until;
         _waits[account] = wait.Until;
         return !said;
+    }
+}
+
+/// <summary>
+/// The quests' parks as the doors read them (SESSUX1i, D126 §4.6, §4.7): what the watch says a park with, and what the
+/// tick hands Overview's row. One reader for both doors, the shell's loop and the headless host, so they say one thing.
+/// </summary>
+/// <remarks>
+/// <para><b>Read only when what the planner parked changed.</b> The records are every session ever run (D126 M9), and a
+/// park lasts every look until *Try again*; reading them each look for the same answer would double the look's largest
+/// read. A new park always changes the set: its quest left it to run the sessions that failed.</para>
+///
+/// <para><b>A read that fails is asked again at the next look</b>, and says nothing meanwhile: a park is never lost to one
+/// refused read, nor said from a guess.</para>
+///
+/// <para>Called by one loop, one look at a time, so it holds no lock; <see cref="Latest"/> is read beside it.</para>
+/// </remarks>
+public sealed class QuestParkReader
+{
+    private string? _read;
+    private volatile IReadOnlyList<QuestPark> _latest = [];
+
+    /// <summary>The parks as last read, in the planner's order; none before any read.</summary>
+    public IReadOnlyList<QuestPark> Latest => _latest;
+
+    /// <summary>
+    /// This look's parks, read from the records where the quests the planner parked changed since the last read; null where
+    /// they did not, or where the records could not be read.
+    /// </summary>
+    /// <param name="forgivenAt">RETRY1's mark for a quest (<see cref="DriverConfig.ForgivenAt"/>): the planner counts from it.</param>
+    /// <param name="records">The records door (<see cref="SessionRecords.ReadAsync"/>); a test hands in its own.</param>
+    public async Task<IReadOnlyList<QuestPark>?> LookAsync(
+        TickReport report, Func<string, int> forgivenAt, Func<CancellationToken, Task<string>> records,
+        CancellationToken ct = default)
+    {
+        var parked = report.Considerations.Where(c => c.Verdict == StartVerdict.Exhausted).ToList();
+        var signature = Considerations.Signature(parked);
+        if (signature == _read) return null;
+
+        IReadOnlyList<QuestPark> parks = [];
+        if (parked.Count > 0)
+        {
+            try
+            {
+                parks = SessionGroups.Parks(SessionLook.From(await records(ct).ConfigureAwait(false), [], parked, forgivenAt));
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                              || (error is TaskCanceledException && !ct.IsCancellationRequested))
+            {
+                return null;
+            }
+        }
+
+        _read = signature;
+        _latest = parks;
+        return parks;
     }
 }
 

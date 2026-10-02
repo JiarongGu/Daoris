@@ -153,11 +153,15 @@ test('a lock mirror outside the mirror root, or on a layout with none, is refuse
   fx.cleanup();
 });
 
-/** Additive, as D71 was: a lock on the older layout that uses nothing new is unchanged byte for byte. */
+/**
+ * Additive, as D71 was: a lock on the older layout carries no layout field. Every lock names the index it
+ * wrote since WSSETUP14a (D128 §2.4), on either layout, which is what makes that file Daoris's to rewrite.
+ */
 test('a claude-code lock carries no layout fields; an agents lock carries harness, target and mirrors', () => {
   const old = layoutFixture('layout-desc-lock-old');
   old.sync();
-  assert.deepEqual(Object.keys(JSON.parse(old.repoFx.read('daoris.lock'))), ['version', 'canonVersion', 'source', 'entries']);
+  assert.deepEqual(Object.keys(JSON.parse(old.repoFx.read('daoris.lock'))), ['version', 'canonVersion', 'source', 'entries', 'index']);
+  assert.equal(old.lock().index, '.claude/INDEX.md');
   old.cleanup();
 
   const fresh = layoutFixture('layout-desc-lock-new', 'agents');

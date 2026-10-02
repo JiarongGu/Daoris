@@ -3,7 +3,7 @@
 > The owner's run, 2026-10-02 (WSSETUP12's first repository): the first real set-up (D124, `daoris-driver setup`)
 > wrote good knowledge, a brief and rooms, closed its quest `done`, and left a branch that cannot be merged, for
 > three faults of Daoris's own. This is the contract for the WSSETUP14 rows, and its decision is **D128**. Status:
-> **designed; nothing built.** It amends D124 §2 (the set-up quest), D117 §2.1, §5.4 and §6, D122 §2.7 (the
+> **designed; §2 built by WSSETUP14a** (D128's WSSETUP14a note), the rest not yet. It amends D124 §2 (the set-up quest), D117 §2.1, §5.4 and §6, D122 §2.7 (the
 > `knowledge` role) and D59 (what the region holds). Read with **D7**, **D13**, **D19**, **D32**, **D54** and
 > **D127**.
 

@@ -15,7 +15,9 @@ import { Dot, Inline } from '../ui';
  * quest is addressed to a repository this deployment has no registration for. It will sit forever,
  * and nothing else says so. A `trust` row is a folder the agent has not been trusted in, where the
  * driver is holding a start (D73): only the person can give that grant. A `rule` row is an agent's
- * proposal to widen what agents may do (PERM2, D74), which never applies without the person.
+ * proposal to widen what agents may do (PERM2, D74), which never applies without the person. A
+ * `parked-quest` row is a quest parked on its failed sessions here (SESSUX1i, D126 §4.6), which only the
+ * person's *Try again* starts again; its door is the quest's page, where that press is.
  *
  * A fifth kind belongs here by design §4 — **finished work nobody has looked at** — and is not
  * buildable yet: nothing records that anybody looked. SURF6's *viewed* mark is the person's own and
@@ -25,7 +27,7 @@ import { Dot, Inline } from '../ui';
 export type Attention = {
   /** The session, ask or quest id — what the door opens; for a `trust` row, the folder; for a `rule` row, the proposal. */
   id: string;
-  kind: 'parked' | 'proposal' | 'intake' | 'unanswerable' | 'trust' | 'rule';
+  kind: 'parked' | 'parked-quest' | 'proposal' | 'intake' | 'unanswerable' | 'trust' | 'rule';
   /** A `trust` row's hold: the folder and the agent's own file — exactly what a grant writes. */
   trust?: TrustHold;
   /** What it is, derived: a session's identity, an ask's first line, or a quest's title. */
@@ -35,7 +37,7 @@ export type Attention = {
    * For a `rule` row, who proposed it: the rules are the machine's, so the proposer is the place.
    */
   where: string;
-  /** When it started waiting — a park's last move, an ask's asking, a quest's filing. */
+  /** When it started waiting — a park's last move, a parked quest's last session's end, an ask's asking, a quest's filing. */
   since: string;
   /** The session's analysis, or the sentence explaining what the person is being asked to settle. */
   detail?: string | null;

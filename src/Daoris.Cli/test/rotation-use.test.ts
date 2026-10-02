@@ -261,6 +261,28 @@ test('`profile use` with no flag prints the scope\'s settings and what each acco
   fx.cleanup();
 });
 
+test('`profile use` says the step the next start would follow (TOOL6b), with one account and with many', () => {
+  const fx = makeFixture('rotation-use-next');
+  accounts(fx, 'claude-code', ...many(3));
+  run(['profile', 'order', 'claude-code', ...many(3)], at(fx));
+  run(['profile', 'order', 'claude-code', 'account-3', 'account-1', '--workspace', 'work'], at(fx));
+  run(['profile', 'default', 'claude-code', 'account-1', '--workspace', 'work'], at(fx));
+  run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'solo'], at(fx));
+
+  const goal = run(['profile', 'use', 'claude-code'], at(fx)).out;
+  const kept = run(['profile', 'use', 'claude-code', '--keep', 'account-3'], at(fx)).out;
+  const order = run(['profile', 'use', 'claude-code', 'order', '--workspace', 'work'], at(fx)).out;
+  const one = run(['profile', 'use', 'claude-code', '--workspace', 'solo'], at(fx)).out;
+
+  assert.match(goal, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently; then this list's order, from `account-1`\n/);
+  assert.match(goal, /\n {2}no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns each account's weekly reset from the limits it meets\n/);
+  assert.match(kept, /then this list's order, from `account-1`; driven work passes `account-3`, kept for conversations\n/);
+  assert.match(order, /next start\s+the first ready account of this list, from `account-1`, its default\n/);
+  assert.doesNotMatch(order, /no account has said what it has left yet/);
+  assert.match(one, /next start\s+`account-2`, the one account this list holds\n/);
+  fx.cleanup();
+});
+
 test('`profile use --clear` returns a scope to today\'s defaults, and refuses a setting beside it', () => {
   const fx = makeFixture('rotation-use-clear');
   accounts(fx, 'claude-code', 'account-1', 'account-2');

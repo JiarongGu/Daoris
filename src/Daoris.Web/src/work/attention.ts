@@ -3,7 +3,7 @@ import type { Ask, Quest, Registration, Session } from '../api';
 import { firstLine } from '../asks/AskRow';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
-import type { Consideration, TrustHold } from '../signals';
+import { type Consideration, type TrustHold, sittingSentence } from '../signals';
 import { sessionOrigin, sessionTitle } from './identity';
 import type { Attention } from './AttentionRow';
 
@@ -58,6 +58,12 @@ export function waitingInSessions(
  * will pull it, and "who cannot be asked" is the same question as "who can" (the Projects view
  * already argues this for repositories).
  *
+ * **A quest parked on its failed sessions here sits right after them** (SESSUX1i, D126 §4.6): only the person's
+ * *Try again* starts it again, and on 1 October the owner's work stood there while nothing here said so. It holds no tree
+ * while it waits, so it comes after the parked sessions. It is read from the planner's verdicts the tick hands the page
+ * (`Exhausted`), so a browser has none: its time is when its last session ended, and its detail the driver's sitting
+ * sentence. A person's stop holds its quest too, and is never here: the person caused it.
+ *
  * **A folder waiting on the person's trust (D73) sits after the parked sessions.** The driver is
  * holding a start there because the agent ignores that folder's own permissions until trusted, and
  * the grant is the person's alone. It holds no tree, but nothing it holds can start until it is
@@ -82,6 +88,7 @@ export function needsAPerson(
   asks: readonly Ask[],
   untrusted: readonly TrustHold[] = [],
   proposals: readonly RuleProposal[] = [],
+  considered: readonly Consideration[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -120,6 +127,22 @@ export function needsAPerson(
       since: session.updated,
       detail: session.note,
     }));
+
+  const parkedQuests = considered
+    .filter((consideration) => consideration.verdict === 'Exhausted')
+    .map((consideration): Attention => {
+      const held = quests.find((one) => one.id === consideration.quest);
+      return {
+        id: consideration.quest,
+        kind: 'parked-quest',
+        title: held?.title ?? `#${consideration.quest}`,
+        where: consideration.repository,
+        // When its last session ended, which the tick names; a shell older than that names none, and the quest's last
+        // move is the nearest the page holds.
+        since: consideration.since ?? held?.updated ?? new Date().toISOString(),
+        detail: sittingSentence(consideration),
+      };
+    });
 
   const registered = new Set(registry.map((row) => row.repository.toLowerCase()));
   const unanswerable = quests
@@ -175,6 +198,7 @@ export function needsAPerson(
   const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
   return [
     ...parked.sort(oldestFirst),
+    ...parkedQuests.sort(oldestFirst),
     ...[...folders.values()].sort(oldestFirst),
     ...waitingAsks.sort(oldestFirst),
     ...widenings.sort(oldestFirst),

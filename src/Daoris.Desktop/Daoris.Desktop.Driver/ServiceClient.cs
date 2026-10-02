@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -97,7 +98,11 @@ public sealed class ServiceClient : IDisposable
         // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
         // put a second opinion about it on this side of the wire.
         var records = await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false);
-        return new Snapshot(quests, repositories, active, ReadStrikes(records)) { LastRun = ReadLastRun(records) };
+        return new Snapshot(quests, repositories, active, ReadStrikes(records))
+        {
+            LastRun = ReadLastRun(records),
+            Started = ReadStarted(records, active),
+        };
     }
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
@@ -825,6 +830,29 @@ public sealed class ServiceClient : IDisposable
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// This machine's records as the goal's walk counts them (TOOL6b, D130 §4.2): each one's adapter, account, when it was
+    /// opened, and whether it runs now, which is the active list's word, never re-derived here (as the strikes keep it).
+    /// </summary>
+    /// <remarks>A teammate's record holds nothing here (SYNC4), and a record naming no adapter names no owner to count it for.</remarks>
+    internal static IReadOnlyList<SessionStarted> ReadStarted(string json, IReadOnlyList<SessionView> active)
+    {
+        var running = active.Select(session => session.Id).ToHashSet(StringComparer.Ordinal);
+        using var document = JsonDocument.Parse(json);
+        var started = new List<SessionStarted>();
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (IsTeams(session) || Text(session, "adapter") is not { Length: > 0 } adapter) continue;
+            started.Add(new SessionStarted(
+                adapter,
+                Text(session, "profile"),
+                DateTimeOffset.TryParse(Text(session, "created"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var created) ? created : null,
+                running.Contains(Text(session, "id") ?? "")));
+        }
+
+        return started;
     }
 
     /// <summary>Whether a record says its stop was not the person's (D104) — absent is false, the old reading.</summary>

@@ -12,6 +12,28 @@ network.
 
 ## Unreleased
 
+- **The doctrine region no longer lists knowledge and skills.** They are in `<target>/INDEX.md`, which
+  `sync` writes and `check` keeps true, and the region points to it. The always-loaded region no longer
+  grows with your own documents, and the shared rules sit thousands of bytes higher in `AGENTS.md`.
+  Drawn from the first real set-up, whose 169 knowledge documents made the region 53 KB and put the
+  first rule past the 32,768 bytes one widely used agent reads of that file. Three canon documents
+  change with it:
+  - **`doc-loader`**, step 2, reads the index the region names: whole when it is a few dozen rows, and
+    when it is longer, searched more than once (the task's words, their synonyms, and the folders and
+    parts the task touches). Where a search over the repository's knowledge is connected it is asked
+    too, since it matches by meaning, and where none is, the index searches are the whole step. A
+    search that finds nothing has not shown that nothing applies.
+  - **`skills-workflow`** sends a session to its agent's own skill list first, or to the generated
+    index, since every agent lists its skills and the region no longer does.
+  - **`development-documents`**: an on-demand document is named by something always read, or by the
+    index that lists it, since a list that grows with the repository is read on demand too. And a
+    knowledge document is named by its subject and says when it applies in its first lines, which is
+    how a search finds it where no index is read.
+
+  **Adopting repositories:** run `daoris sync`. A file of your own at `<target>/INDEX.md` is named as a
+  collision; rename it. Until you sync, `check` names the index as absent and the region's pointer as
+  out of date. The region drops by the size of the two tables, less the 24 bytes `skills-workflow`
+  gains: 4,455 bytes in all in the repository this changelog ships from.
 - **`task-lifecycle`**, **`development-documents`** and **`set-up-documents`** say what a session pays
   for: what it reads, on every step after it reads it, so what is read whole stays short by how each
   entry is written, and each fact has one home that every other place names in a line. The rule's

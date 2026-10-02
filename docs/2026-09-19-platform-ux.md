@@ -265,8 +265,9 @@ controls are in the frame design's §3.
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
   quest's page on Quests (FRAME1d); repository rows go to Repositories. Above the tiles, *What needs you* (working surface
-  §4) lists parked sessions, then asks waiting on a person (INT4d), then quests nobody can take, then
-  folders waiting on trust, and it is absent when nothing waits. **The band is live, or it lies**: an
+  §4) lists parked sessions, then quests parked on their failed sessions here (SESSUX1i, a shell's alone), then
+  folders waiting on trust, asks waiting on a person (INT4d), agents' proposals to widen the rules, and quests nobody
+  can take, and it is absent when nothing waits; Overview's badge counts every row. **The band is live, or it lies**: an
   ask made by another door moves nothing else a tick reports, so the shell forwards a tick when the
   asks change and the page refetches them. A wait is a span (*waiting 4d 3h*, U40).
 - **Quests** (on the frame since FRAME1d, D118 §2) — a list pane and a main area. The list's `＋` offers

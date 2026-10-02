@@ -8559,6 +8559,45 @@ failing first, bar the row's tests, rewritten with the rule they draw. **Not bui
 (SESSUX1f) and *Stop…*'s Ask Daoris door (SESSUX1h). **Not measured**: the header at 1280, 888, 680 and 560 px in both
 themes and languages, the long run's toolbar pinned beneath it, and a real stop's ask (§12).
 
+**As built (SESSUX1i, 2026-10-02): What needs you holds a parked quest, and a park is said once.** Overview's band has
+a `parked-quest` row after the parked sessions (`needsAPerson`, from the tick's `Exhausted` verdicts), its door the
+quest's page. `AttentionKind.QuestParked` is said once by `AttentionWatch`: a toast, an OS notification and the headless
+host's line, behind the notify switch. What the build settled that §4.6 and §4.7 left open:
+
+- **A park's facts are read from the records, and only when the parks change.** A verdict names the quest and says the
+  rest in English. The notice needs how many failed and the last failure's note, and the row when the last session
+  ended. `SessionGroups.Parks` reads them from what the list's *parked* row is placed by (the last run, the strikes less
+  RETRY1's mark, the record's end), so the row, the notice and the list count one number. `QuestParkReader` asks the
+  records door only when the quests the planner parked change, since the records are every session ever run (M9) and a
+  park lasts every look. A refused read is asked again at the next look and says nothing meanwhile. The planner and its
+  snapshot were outside this branch's lanes; a count carried on the consideration would save the read.
+- **A park is its last session.** The watch keys each quest's park by its last session here, so a hold that hides it
+  for a look (a held repository outranks the strikes) is the same park, and *Try again* then new failures is a new one.
+  The first look is a baseline, as a session's park is, so a relaunch says nothing. A quest the planner no longer
+  considers is forgotten.
+- **The last failure is said by its park.** The notice carries that failure's note, so the same look's *a session
+  failed* for that session is not said beside it.
+- **The tick carries `strikes` and `since` for a park** (`TickConsideration`), never its session or note. 中文 says the
+  sitting sentence from the number (`work.sitting.Exhausted`; `failed` joins i18n-check's passed facts), and without it
+  the driver's words stand, as for a stop with no `heldBy`. The row waits since the last session ended, else since the
+  quest's last move.
+- **Overview's badge counts every row the band lists.** It had left out the rule proposals (PERM2), and now takes the
+  band's every input.
+- **Names.** `work.attention.parked-quest`, *parked after failed sessions* / 会话失败后挂起, and its door *open the quest
+  to try again* / 打开委托以重试. The notice is the driver's sentence, *engine — `#q` parked after 3 failed sessions*,
+  untranslated as every notice is (D24). The OS notification wears the park's warning, and pressing it attends the last
+  session, whose header offers *Try again*.
+
+Held by `QuestParksTests`, `AttentionTests` (once, a hold between, tried again, the first look, the failure folded, never
+for a stop), `TickConsiderationTests`, `attention.test.ts`, `signals.test.ts`, `AttentionRow.test.tsx`,
+`ShellSignals.test.tsx`, `sessionsBadge.test.tsx` (the band, its door and both badges over a mocked shell) and the
+stories. Each was seen failing first, as a compile error or an assertion, bar one negative case that passed before (no
+parked quest before a tick). The watch's key and fold, the tick's verdict check and the badge's inputs were also seen
+failing under a sabotage. `SessionNotifier` has no test, as before. **Not built here**: the row's short title
+(SESSUX1j), so it shows the quest's title. **Not run here**: the `Process` half and the rehearsals; no rehearsal reads
+the attention lines, which only the watch mode prints. **Not measured**: the row and its 中文 sentence on Overview at
+1280, 888 and 680 px in both themes, and a real park's notification on the install (§12).
+
 ## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
 
 **Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
@@ -8716,6 +8755,26 @@ none of their words.
 wording and asks a connected search too, `skills-workflow` sends a session to its agent's own skill list first, and
 `development-documents` gains a sentence on naming a document by its subject
 (`docs/2026-10-02-knowledge-design-review.md` §4.2–§4.4).
+
+**WSSETUP14a, built 2026-10-02: the index leaves the region.** `sync` writes `<target>/INDEX.md` (`renderIndex`),
+its content decided at plan time over the tiers as the sync leaves them (`planIndex`), so §2.4's *as it would be
+written* is known before anything is. The lock's `index` names it, and `check` rebuilds it offline and names it apart
+from the region (`index`, `roster`). The region keeps the rules table, §2.2's pointer as written (D129 §4.1), the
+mirror sentence, the rooms and *Where things are*; the canon takes the review's §4.2–§4.4 words. Choices the design
+left open:
+- A skill's row names its entry file, `…/SKILL.md`, since an agent opens a row as written.
+- A lock naming an index anywhere but its own root's `INDEX.md` is refused, as D18 refuses a crafted path.
+- A collision at the index yields to `--force` like every collision, and says what it overwrote.
+- `doc-loader` keeps *a shortcut table elsewhere is a convenience, not the registry*, which D129 §4.5 cites.
+
+Measured after the re-sync: this region 24,522 → 20,067 bytes (§2.6's ≈20,100 plus 22, so 55 under), its first rule
+at byte 3,014; each example 19,309, first rule at 2,256; `skills-workflow` +24 bytes as wrapped. Proof:
+`layout-index.test.ts` (each §2.4 cell, the 169-document fixture leaving the region byte for byte, the migration) and
+the D48 §2a scan widened to a connected search (`dogfood.test.ts`), seen failing on `doc-loader` drafted without
+*where none is*. Left to their rows: §3's table (WSSETUP14c), `documents.knowledge` and the service test (14b), and
+`SetupBrief.Twins` and the playbook, which still say *the generated index in `AGENTS.md`* (14d). Not covered: whether
+a session follows the pointer or searches a long index (KNOW3a; every bench session read a 23 KB one whole), and the
+release rehearsal's updated checks, written and not run here.
 
 ## D129 — Knowledge is found from files first: D128's index is the floor, searched in several wordings, with recall by meaning pulled where connected and pushed only where Daoris writes the prompt (2026-10-02)
 
@@ -9129,3 +9188,108 @@ terminal's verbs are PAUSE1b's, and `driver list` names no resume door until one
 pause or an abandon would do with each piece (§2.1, §3.2); that is PAUSE1b's and PAUSE1d's, and `Took` and `BaseCommit`,
 which they need, are not on `SessionRecord` yet. How long a reading takes over a real workspace is not measured. The
 `Process` half, the rehearsals and the screen were not run by this branch.
+**Built 2026-10-02 (TOOL6b): the walk toward the goal** (the goal's points 1–4 and 6, and points 4 and 5; design §3.1, §3.3, §4.6,
+§7, §16.2–§16.4 and §16.6's `order`), held by `AccountRotationWalkTests` (the walk's tables per step, and ⌈K ÷ N⌉ for one
+account to six), `AccountRotationGoalTests` (through `SelectAsync`), `AccountWindowsTests` and, in the `Process` half,
+`AccountGoalTickTests`. As §16.6 says, a machine whose order was written before now follows the goal unless its scope
+says `order`, so *rotation never moves work off a ready account* (D125 §3.3) holds under `order` only. What building it
+settled:
+- **One scope for every start but a pick** (`ResolveScope`, D130 §3.1): a workspace naming a default and no list rotates
+  nowhere; a list begins at its default, else its first, never on the machine's default or the tool's own sign-in; a
+  default outside its list is read with the list winning, where D125 held the start on it.
+- **The count is Daoris's own records and its own choices.** Each look marks the last start chosen, reads this machine's
+  records (`Snapshot.Started`: adapter, account, opened, running) and hands them to the roster (`Look`), which keeps every
+  start chosen after the mark. A look begins only once the last look's starts opened their records, so none is counted
+  twice or lost. Choices and their counts are made one at a time, so starts begun together spread; one held after it was
+  chosen counts until the next look. The wiring panel asks the same walk and counts nothing. A door's sessions count
+  for its owner (AGT7).
+- **Least recently started**: never first, then by when the record opened, and a start chosen since the look is the most
+  recent of all, in the order chosen, whatever the clocks say.
+- **A weekly reset is told by a limit** whose window, or what was hit where it named none, is weekly, at a time the agent
+  named. `windows.json` keeps it (names, times, the session; what it has no field for kept). It is carried a week at a
+  time where the toolchain declares `WeekFixed` (Claude Code, and the stub mirroring it), declared beside `Limits` and not
+  in it, since that table grows only with recorded sentences and this is the maker's page (C1); elsewhere it is dropped
+  at its reset (Codex). Within a day it ranks first; beyond, nothing.
+- **Which step chose it.** `account.rotated` is written when a start ran somewhere other than where its scope begins:
+  `why` is the step that moved it (`kept`, `cooling`, `refused`, `signedOut`, or the goal's `fewest`, `lapsing`,
+  `leastRecent`), `scope` the workspace or null, `said` false. Under the goal every start whose walk had more than one
+  account opens naming its step, against where the scope begins or, where it ran there, against the next account (`list`
+  where nothing told them apart), adds the step among the rest where the first was passed for itself, and ends *No
+  account has said what it has left yet.* Under `order` a rotation alone speaks, in D125's words. A list of one, a pick
+  and a scope with no list say nothing.
+- **Keep**: driven work drops the kept account; under the goal a conversation takes it last, or first where it is the
+  default; under `order` in its place. A kept account that would leave driven work none is read as none.
+- **The wait asks** where the scope names accounts of its own: it adds the agent's other accounts, neither cooling nor
+  refused, and the `profile order` that adds the first; a driven start whose kept account is ready says it is kept. A
+  machine with no list keeps its sentence byte for byte.
+- **`profile use`** prints *next start*: the goal's steps, or the list's order under `order`, and the kept account driven
+  work passes. The CLI reads no session record, so it names the steps, not the account they would choose.
+
+**What the gates do not cover.** `AccountGoalTickTests` and the two updated `AccountRotationTickTests` are the `Process`
+half, written by this branch and not run by it. Near and pace, and `early` and `near`, choose nothing until TOOL6c. Not
+measured: whether a day is the right horizon, or whether spreading meets fewer limits (§16.8). `agent list` and the screen
+say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
+suites, the web's and the rehearsals were not run.
+
+## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
+
+**Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +
+common-report but it's not doing that at all … we need to investigate why the decision drifted"*).** The evidence is
+`docs/2026-10-02-ask-drift-evidence.md`: one ask, its intake, two quests, ten sessions and two branches, read from the
+install's records.
+
+1. **The person's words are the ask's record.** Every sentence the person gives on an ask is kept on the ask verbatim,
+   with when it was said, to which session and on which quest: the ask, each answer to a parked session, and each
+   message added to a running one. A record of the agent's words (a park, last words, a plan, a closing note) never
+   stands in for it.
+2. **Every session on the ask is handed all of them**, newest last, beneath its quest: a first start, a resume, a
+   carry-on after a cut-off or a stop on any account, and a follow-up step's sessions. This replaces the previous
+   session's answer (STANDDOWN2) as the source of what the person said. ANSWER1's resume (D131) keeps the agent's own
+   conversation where it can; these words are what survives where it cannot.
+3. **A quest's requirements quote the person.** The intake names each requirement in the person's own words, with
+   the check that proves it, and the service refuses words found in neither the ask nor a recorded answer, naming
+   them. The intake's paraphrase stays in the body, where it helps a receiver, and is never the requirement. A
+   follow-up step inherits its parent's requirements. A quote is a fact a gate checks with no model (D24, D54).
+4. **A done answers each requirement**: met, or departed, with the reason and the person's words it relied on,
+   quoted. A departure is shown on the quest and holds the follow-up for the person's yes. A reading attributed to the
+   person without their words ("per your answer") is what this ends.
+5. **A follow-up measures against the ask, and a correction goes back to the work.** A verifying session is told that
+   its parent's closing note is the build's account and the requirements are the measure. A correction to what was
+   built becomes a requirement of the quest that built it, which reopens; it is not carried out under the follow-up's
+   title. How the parent reopens, and what the person sees, is the design's.
+
+**Why.** The ask named the v3 bridge; in the report repository the bridge carries common-report reports and has
+carried nothing else. The intake kept the word and lost what it meant. The person then said "common-report" twice, and
+each time it reached one session. Said to the first session mid-turn, it drew a push-back and a two-way question; the
+record kept only the message's closing sentence (PARK1 has since fixed that reading), so the next session was handed
+the answer without the question, read it as a formula, built a dedicated report type and closed the quest "per your
+answer". Said again as an answer on the verification quest, it reached a session the account's spend limit cut off
+before it kept a plan; the four carry-ons after it, the last on another account, were each handed the previous
+session's record, which was now the limit. Two later sessions quoted the build's reading back to the person as their
+decision. Nothing in Daoris held what the person said after the ask, so no repair to one hop would have kept it across
+three.
+
+**Rejected.**
+- **ANSWER1's resume alone.** The conversation lives in the harness's account home: after a limit the carry-on runs on
+  another account and reads none of it (D125 §3.5), and a follow-up quest, or a start after the strikes, has no
+  conversation to resume.
+- **Handing the previous sessions' transcripts.** They are the agents' words, they are long, and the reading that
+  drifted is in them.
+- **A model comparing the intake's paraphrase with the ask.** A quote checks as a fact with none; a comparison by
+  meaning may later report, never gate.
+- **The parent's closing note as the follow-up's measure**, which is what happened by default.
+- **An instruction to re-read the ask, alone.** The words the later sessions needed were nowhere they could re-read.
+- **Asking the intake to paraphrase more carefully.** It read the right document and wrote a true sentence that lost
+  the implication. Only the person's words carry their meaning to a reader who has not read what they read.
+
+**What it amends, when built.** D65: the intake writes requirements in the person's words, and a `then` step carries
+the ask's words and its parent's requirements. D79 and D80: a resume and a carry-on are handed the ask's words, not one
+answer. D125 §3.5: after a limit, the ask's words carry where the conversation cannot. D131 is complementary and
+unchanged. The clean-up of this ask is D132's; the evidence's §7 lists what it must find, four records written in a
+development environment outside the repository among them. The rows are the evidence's §6 (DRIFT1a–DRIFT1e).
+
+**What the checks do not cover.** Documents only, and nothing is built. The account is read from the install's
+records, transcripts, event logs and trees; no session was re-run with the words this would hand it, so whether they
+would have changed the second session's reading is not measured. What the person meant by the first answer is read
+from the question and the answer together, and the owner's later sentence agrees. `verify` checks this entry's place
+and the evidence's links, and none of their words.
