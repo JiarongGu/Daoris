@@ -7784,3 +7784,33 @@ minute, whether a carried-on session on another account finishes, whether an hou
 quest spends windows without landing anything. Found and not filed: AGT3b reads the transcript's last lines for its
 phrase, the hazard this decision refuses for limits; and the ACPEND1 note carries the agent's sentence, zone included,
 to every reader. `verify` checks the log's shape and the design's links, and none of these words.
+
+**Built 2026-10-02 (TOOL4a): the limit table and its reader** (points 1 and 2, design §1.3, §1.5, §2.1).
+`HarnessToolchain.Limits` is a `LimitWords` entry: its markers, its resets, and the recorded sentences they stand on.
+Claude Code declares `ClaudeLimits.Words`, and the stub declares the same entry, as it mirrors `Refused`.
+`AccountLimits.Read(entry, failure, seen, machineZone, coolOff)` in `AccountLimits.cs` is the one reader, and it is
+pure. What building it settled, each held by `AccountLimitsTests`:
+- **An abbreviation is the machine's zone on every platform.** Asking the platform whether a name is a zone was not
+  enough: on Windows, ICU resolves `PST` as a three-letter alias of its own, and Windows resolves its own ids
+  (`Pacific Standard Time`). So a zone is read as named only when it has the IANA shape (`Area/Location`, or `UTC`)
+  and the platform resolves it. `PST`, `CST`, `EST` and `Pacific Standard Time` are the machine's zone, said as
+  assumed. `EST` is a legacy name in tzdata, and is read as the abbreviation it is used as.
+- **`LimitSeen` says when a date was not believed** (`NotBelieved`), apart from a sentence that named no time, since
+  §2.1 says the default is *said so*. Both are `Stated: false`.
+- **The grace looks back across midnight**: a reset at 11:55pm seen at 00:05 is yesterday's, landed, and waits the
+  margin.
+- **The grammar reads** a twelve-hour time (`7am`, `7:50am`, `12am` as midnight), and a three-letter English month, a
+  day and such a time, the comma optional. A 24-hour clock, a full month name, an impossible date or hour are not
+  read, and take the default.
+- **The reset is a clause after the marker**, as every recorded sentence has it.
+- **Observation 2's marker clause is written, not quoted.** The record given to the design kept the note's start and
+  the reset and elided the rest. TOOL4's row names it the spend-limit refusal, so it is written in observation 1's
+  words, and its provenance says so. Observation 4's elided middle is kept as `…`, a clause that matches nothing.
+- **The both-ways check is the test's.** Each marker and reset is matched by a recorded sentence, each recorded
+  sentence by a marker, and an entry holds one at least. A test feeds it an unproven marker, reset and sentence and an
+  empty entry, and it refuses each. A recorded sentence carries `<zone>` once and no zone of its own.
+- **For TOOL4d**: nothing reads `Limits` yet. `acp-stub` declares no toolchain, so no limits: a limit gated over the
+  protocol door with no account needs that door to read the stub's entry as its owner's (AGT7), or to declare one.
+
+**What the gates do not cover.** How Claude Code prints the zone: the five sentences were given with it elided, so
+whether a real one is an IANA name, and so read as named, was not seen. The default as a setting is TOOL4e's.

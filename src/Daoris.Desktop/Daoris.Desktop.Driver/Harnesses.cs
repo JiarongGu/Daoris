@@ -145,7 +145,12 @@ public sealed record HarnessToolchain(
     // The tool's own settings file in an account's configuration home, where the account's model and
     // effort live (AGT6, D98) — declared only where its keys were read from the tool itself. Null means
     // Daoris does not know this tool's settings and offers none. The CLI's `settingsFile` is the twin.
-    string? SettingsFile = null)
+    string? SettingsFile = null,
+    // The words this tool says an account's limit in (TOOL4a, D125 §1.3), read from the door's failure
+    // by `AccountLimits.Read` and never from the transcript. Declared only by a tool seen hitting one,
+    // each pattern standing on a recorded sentence. A door onto another agent reads its owner's (AGT7).
+    // Null reads every failure as a failure. Not a twin: the CLI concludes no session.
+    LimitWords? Limits = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
