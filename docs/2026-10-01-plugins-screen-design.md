@@ -163,8 +163,9 @@ On FRAME1c's `ViewMain`, laid out by its own width.
 **The header** (FRAME1a §3b):
 - **The title** is the plugin's name. Beside it sit its version, its state's pill and, when one waits, *update
   available*.
-- **The meta line** is its id in the mono face. **The one line** is its description (content, cut to one
-  line, whole in its tip).
+- **The meta line** is its id in the mono face. **The one line** is its description (content, shown whole at the
+  reading measure). *Changed by NAME2 (2026-10-02): it was cut to one line, whole in its tip, and on the install a
+  description ended in an ellipsis; every page header's line wraps now.*
 - **Its acts, in this order:**
   1. the switch, a button named for its act: *Turn off* while on, *Turn on* while off;
   2. *Try*, only for a plugin that speaks at a point;

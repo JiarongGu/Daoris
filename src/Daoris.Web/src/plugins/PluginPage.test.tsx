@@ -44,9 +44,11 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('1.2.0')).toBeInTheDocument();
     expect(within(header()).getByText('acme.gate')).toBeInTheDocument();
     const line = within(header()).getByText('Holds quests overnight.');
-    // Cut to one line, whole in its tip.
-    expect(line).toHaveClass('truncate');
-    expect(line).toHaveAttribute('title', 'Holds quests overnight.');
+    // NAME2: its description is content, read whole at the reading measure; the install showed it cut to one
+    // line with an ellipsis.
+    expect(line).not.toHaveClass('truncate');
+    expect(line).toHaveClass('max-w-prose');
+    expect(line).not.toHaveAttribute('title');
     // PLUG10 (P9), as D119 §2 gives it: running is the quiet neutral, never done's green.
     expect(within(header()).getByText('running').className).toMatch(/\bborder-line\b/);
   });
