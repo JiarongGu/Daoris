@@ -1846,11 +1846,94 @@ public sealed class AcpTests
         var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
         await session.OpenAsync("D:/fam/Game", CancellationToken.None);
 
-        var refused = await Assert.ThrowsAsync<DriverException>(() => session.SetConfigOptionAsync("model", "nonsense", CancellationToken.None));
+        var refused = await Assert.ThrowsAsync<AcpRefusal>(() => session.SetConfigOptionAsync("model", "nonsense", CancellationToken.None));
 
         Assert.Contains("Invalid value for config option model: nonsense", refused.Message);
         Assert.Equal("default", session.ConfigOptions.Single(option => option.Id == "model").Current);
         session.Release();
+    }
+
+    // ——— ACPDATA1: a refusal's `data`, kept beside its message (D125 §1.2; limit-signals evidence §3, §4).
+
+    /// <summary>An agent that refuses the prompt with this JSON-RPC error, and answers the rest.</summary>
+    private static FakeAgent RefusingThePrompt(string error) => new((frame, self) =>
+        frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}"""),
+            "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+            "session/prompt" => $$"""{"jsonrpc":"2.0","id":{{frame.GetProperty("id").GetRawText()}},"error":{{error}}}""",
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+
+    private static Task<AcpRefusal> Refused(FakeAgent agent) => Assert.ThrowsAsync<AcpRefusal>(
+        () => new AcpSession(agent.Incoming, agent.Outgoing, _ => { }).RunAsync("D:/fam/Game", "a task", CancellationToken.None));
+
+    /// <summary>
+    /// 🔴 Codex's usage limit, in the shape `codex-acp` sends it (evidence §4): the message is <c>Internal error</c> and
+    /// nothing after it, and the sentence is the data's <c>message</c>. The refusal says the sentence after the message,
+    /// as the protocol's own <c>Internal error: …</c> does, so the conclusion and the limit reader both have it; kept
+    /// alone, the note said <c>Internal error</c> and no entry could ever match.
+    /// </summary>
+    [Fact]
+    public async Task A_refusal_whose_data_carries_the_sentence_says_it_after_the_message()
+    {
+        var agent = RefusingThePrompt("""
+            {"code":-32603,"message":"Internal error","data":{"message":"You’ve hit your usage limit. … Try again at 4:05 PM.","codexErrorInfo":"usageLimitExceeded"}}
+            """);
+
+        var refused = await Refused(agent);
+
+        Assert.Equal("the ACP agent refused the call: Internal error: You’ve hit your usage limit. … Try again at 4:05 PM.", refused.Message);
+        Assert.Equal("You’ve hit your usage limit. … Try again at 4:05 PM.", refused.Said);
+        Assert.Null(refused.ErrorKind);
+    }
+
+    /// <summary>
+    /// Claude Code's adapter puts the sentence in the message and the SDK message's category in <c>data.errorKind</c>
+    /// (evidence §3): the message is said as the agent said it, byte for byte, and the kind is kept beside it. The kind
+    /// here is one the SDK declares; which one a usage limit carries was not read.
+    /// </summary>
+    [Fact]
+    public async Task A_refusal_keeps_its_data_s_error_kind_and_says_its_message_as_the_agent_did()
+    {
+        const string message = "Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit · your weekly limit resets Oct 3, 4pm (UTC)";
+        var agent = RefusingThePrompt($$$"""{"code":-32603,"message":"{{{message}}}","data":{"errorKind":"rate_limit"}}""");
+
+        var refused = await Refused(agent);
+
+        Assert.Equal($"the ACP agent refused the call: {message}", refused.Message);
+        Assert.Equal("rate_limit", refused.ErrorKind);
+        Assert.Null(refused.Said);
+    }
+
+    /// <summary>
+    /// Read without trusting the shape (REV3): a data that is not an object, fields that are not text, a blank message
+    /// and no data at all add nothing, and the call still ends in a refusal.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"code":-32603,"message":"Internal error","data":"a string"}""")]
+    [InlineData("""{"code":-32603,"message":"Internal error","data":[1,2]}""")]
+    [InlineData("""{"code":-32603,"message":"Internal error","data":{"message":42,"errorKind":7}}""")]
+    [InlineData("""{"code":-32603,"message":"Internal error","data":{"message":"   "}}""")]
+    [InlineData("""{"code":-32603,"message":"Internal error","data":null}""")]
+    [InlineData("""{"code":-32603,"message":"Internal error"}""")]
+    public async Task A_data_of_any_other_shape_adds_nothing_to_the_refusal(string error)
+    {
+        var refused = await Refused(RefusingThePrompt(error));
+
+        Assert.Equal("the ACP agent refused the call: Internal error", refused.Message);
+        Assert.Null(refused.Said);
+        Assert.Null(refused.ErrorKind);
+    }
+
+    /// <summary>Words the message already says are kept as the data's, and never said twice.</summary>
+    [Fact]
+    public async Task A_data_message_the_message_already_says_is_kept_and_not_said_twice()
+    {
+        var refused = await Refused(RefusingThePrompt("""{"code":-32603,"message":"Internal error: overloaded","data":{"message":"overloaded"}}"""));
+
+        Assert.Equal("the ACP agent refused the call: Internal error: overloaded", refused.Message);
+        Assert.Equal("overloaded", refused.Said);
     }
 
     /// <summary>Nothing can be set on a session that is not open: there is no session id to name.</summary>
