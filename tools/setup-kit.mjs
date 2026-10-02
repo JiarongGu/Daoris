@@ -13,8 +13,9 @@
  * ## A reading of another program's words
  *
  * `readSetup` reads `SetupCommand`'s output by its shape: the head, the rows of what was read, the quest's
- * words, the rules, the refusals, what a press published. It shares no code with it. `setup-kit.test.mjs`
- * holds the reading against output spelled as `SetupCommand` writes it, so a change to those words is a
+ * words, the rules, the refusals, what a press published. It shares no code with it. The CLI's
+ * `test/setup-kit.test.ts`, which `npm run verify` runs (TEST3), holds the reading against output spelled as
+ * `SetupCommand` writes it, so a change to those words is a
  * change to that test's fixtures too, and the family rehearsal is what runs the two against each other.
  */
 import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
