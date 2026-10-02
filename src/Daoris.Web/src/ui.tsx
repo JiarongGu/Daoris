@@ -13,7 +13,7 @@ import {
   Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
-  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus, Reply,
+  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Reply,
   RotateCw, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, Trash2, TriangleAlert,
   Wrench, X,
 } from 'lucide-react';
@@ -124,6 +124,9 @@ const ICONS = {
   unarchive: ArchiveRestore,
   // A session waiting on the person, answered from its row's menu (SESSUX1d): the reply every mail client draws.
   answer: Reply,
+  // An ask's or a quest's work paused and carried on (PAUSE1e): a player's pause and play, never the stop's square.
+  pause: Pause,
+  resume: Play,
 } as const;
 
 export type IconName = keyof typeof ICONS;

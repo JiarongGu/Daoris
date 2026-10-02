@@ -442,6 +442,22 @@ describe("a row's acts", () => {
     expect(line.getAttribute('title')).toMatch(/Try again/);
   });
 
+  /** PAUSE1e (D132 §6.1): a session whose quest a pause holds says whose pause, before a stop's hold, and why in its tip. */
+  it('says whose pause holds its quest, before a stop’s hold, and offers Resume in its ⋯', async () => {
+    const paused = placed({ group: 'review', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'ask', id: 'a1b2c3' } });
+    const act = vi.fn();
+    render(<SessionRow session={session({ state: 'stopped' })} grouping={paused} acts={['resumeAsk', 'copy']} onAct={act} />);
+    const line = screen.getByText(/paused with ask #a1b2c3/);
+    expect(line.getAttribute('title')).toMatch(/Resume carries it on/);
+    expect(screen.queryByText(/held here until you try again/)).toBeNull();
+
+    const user = userEvent.setup();
+    screen.getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Resume ask' }));
+    expect(act).toHaveBeenCalledWith('resumeAsk', 's1a2b3c4');
+  });
+
   it('says it is archived on its line where it is told to, and why in its tip', () => {
     const { rerender } = render(<SessionRow session={session({ state: 'completed' })} place="engine" archived />);
     const line = screen.getByText(/^engine · archived · driven/);
@@ -458,6 +474,8 @@ describe("a row's acts", () => {
       expect(await items({ acts: ['unarchive', 'copy'] })).toEqual(['取消归档', '复制会话 ID']);
       expect(await items({ acts: ['answer', 'stop', 'retry', 'openFolder', 'terminal'] }))
         .toEqual(['回答…', '停止…', '重试', '打开文件夹', '在此打开终端']);
+      expect(await items({ acts: ['pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk'] }))
+        .toEqual(['暂缓委托…', '暂缓需求…', '恢复委托', '恢复需求']);
     } finally {
       await i18n.changeLanguage('en');
     }

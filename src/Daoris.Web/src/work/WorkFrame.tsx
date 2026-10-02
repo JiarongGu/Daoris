@@ -8,8 +8,10 @@ import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
-  logEvent, useTerminals,
+  logEvent, useTerminals, useRemotes, useWorkPlan,
 } from '../shell';
+import { pauseAsk, wiredFor, type WorkTarget } from './pausing';
+import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
@@ -192,6 +194,8 @@ export function WorkFrame({
   const [stopAsking, setStopAsking] = useState<string | null>(null);
   // The session whose delete asks under the header (SESSUX1f, D126 §5.4), the stop's way: of that session only.
   const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
+  // The session whose pause asks under the header (PAUSE1e, D132 §2.6), with the work it pauses: of that session only.
+  const [pauseAsking, setPauseAsking] = useState<{ session: string; target: WorkTarget } | null>(null);
   // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
   // once per press, including a second press on the same session.
   const [answerFocus, setAnswerFocus] = useState<{ session: string; at: number } | null>(null);
@@ -263,6 +267,8 @@ export function WorkFrame({
   const send = useSendMessage();
   const end = useEndChat();
   const cancelTurn = useCancelTurn();
+  // Which workspaces sync with a remote here: a pause's ask names an open quest another machine may still take (PAUSE1e).
+  const wiring = useRemotes().data;
 
   useErrorNotify(sessions.error, notify);
 
@@ -371,6 +377,7 @@ export function WorkFrame({
   useEffect(() => {
     setStopAsking((asked) => (asked === selected ? asked : null));
     setDeleteAsking((asked) => (asked === selected ? asked : null));
+    setPauseAsking((asked) => (asked?.session === selected ? asked : null));
   }, [selected]);
 
   const resize = (next: number) => {
@@ -754,6 +761,7 @@ export function WorkFrame({
       chosen();
       attend(id);
       setDeleteAsking(null);
+      setPauseAsking(null);
       setStopAsking(id);
     },
     // *Delete…* (SESSUX1f): attended, its ask under its header, as a stop asks.
@@ -761,7 +769,16 @@ export function WorkFrame({
       chosen();
       attend(id);
       setStopAsking(null);
+      setPauseAsking(null);
       setDeleteAsking(id);
+    },
+    // *Pause quest…* and *Pause ask…* (PAUSE1e): attended, the pause's ask under its header, as a stop asks.
+    pause: (id, target) => {
+      chosen();
+      attend(id);
+      setStopAsking(null);
+      setDeleteAsking(null);
+      setPauseAsking({ session: id, target });
     },
     // Its review: attended, with the dock open on its work.
     review: (id) => {
@@ -783,10 +800,25 @@ export function WorkFrame({
   // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
   const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
   const attendedFacts: ActFacts | null = attended
-    ? { session: attended, grouping, root: rootOf(attended.repository), where: where[attended.id] }
+    ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
   const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
   const asked = attended ? stopAsk(attended, quest) : null;
+  // A pause's ask says what it stops from the driver's plan of the work (D132 §2.6); one that stops nothing applies at once.
+  const pausing = pauseAsking && attended?.id === pauseAsking.session ? pauseAsking : null;
+  const pausePlan = useWorkPlan(pausing?.target ?? null);
+  const pauseWired = wiredFor(wiring, quest?.workspace ?? attended?.workspace);
+  const pauseLines = pausePlan.plan ? pauseAsk(pausePlan.plan, { wired: pauseWired }) : null;
+  const pauseQuiet = Boolean(pausing && pausePlan.plan && pauseLines === null);
+  const pausedQuietly = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pausing || !pauseQuiet) return;
+    const key = `${pausing.target.scope}:${pausing.target.id}`;
+    if (pausedQuietly.current === key) return;
+    pausedQuietly.current = key;
+    actions.work.pause(pausing.target, () => setPauseAsking(null));
+  }, [pausing, pauseQuiet, actions.work]);
+  useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
   const pageHead = attended && attendedFacts && (
     <SessionPageHead
       session={attended}
@@ -808,6 +840,16 @@ export function WorkFrame({
           busy={actions.deleting}
           onDelete={() => actions.deleteNow(attended, () => setDeleteAsking(null))}
           onCancel={() => setDeleteAsking(null)}
+        />
+      ) : pausing && !pauseQuiet ? (
+        <PauseAsk
+          className="mt-2.5"
+          target={pausing.target}
+          lines={pauseLines}
+          meanIt={t(pausing.target.scope === 'ask' ? 'asks.record.pauseMeanIt' : 'quests.detail.pauseMeanIt')}
+          busy={actions.work.pausing}
+          onPause={() => actions.work.pause(pausing.target, () => setPauseAsking(null))}
+          onCancel={() => setPauseAsking(null)}
         />
       ) : null}
     />
