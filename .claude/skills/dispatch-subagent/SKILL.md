@@ -89,7 +89,10 @@ Follow the dispatch-subagent skill's subagent half.
      prove it, or "nothing on the window"
    - **test counts** before and after, per suite
    - what was **left out**, and why
-   - **an outcome paragraph** the parent can paste under the row in `docs/task-archive.md`
+   - **the outcome in one line**, and where its detail lives (the decision's note, the design's section,
+     the commits), for the parent to paste under the row in `docs/task-archive.md`. What the note or the
+     commit already says is pointed to, never told again (`task-lifecycle`); a new backlog row it proposes
+     takes the row's shape: what and why in two sentences, its contract by section, its proof (SESSOPT1c)
 
 ## The parent's half
 
@@ -115,7 +118,8 @@ Follow the dispatch-subagent skill's subagent half.
      never let it through unrecorded.
 5. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
-   hand-back's outcome paragraph, add the changelog entry, and update the counts in `TASKS.md`'s State.
+   hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
+   `TASKS.md`'s State. `doc-shapes` reports an outcome or a row over its shape.
    Then commit as `Merge <ROW>: <what>`, with a body and the `Co-Authored-By:` line.
 
 ## Why
