@@ -9147,3 +9147,65 @@ door, and no `allowed_warning`, `rejected` or overage frame anywhere (evidence �
 scope the reading does not carry; each start's line and `account.rotated`'s `why` log every pass. Not measured: whether
 near comes early enough (§11 item 3), or whether pace leaves less at a weekly reset (§16.7). The screen says none of it
 yet (TOOL4g). The modules build against the change; their suites, the web's and the rehearsals were not run.
+## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
+
+**Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +
+common-report but it's not doing that at all … we need to investigate why the decision drifted"*).** The evidence is
+`docs/2026-10-02-ask-drift-evidence.md`: one ask, its intake, two quests, ten sessions and two branches, read from the
+install's records.
+
+1. **The person's words are the ask's record.** Every sentence the person gives on an ask is kept on the ask verbatim,
+   with when it was said, to which session and on which quest: the ask, each answer to a parked session, and each
+   message added to a running one. A record of the agent's words (a park, last words, a plan, a closing note) never
+   stands in for it.
+2. **Every session on the ask is handed all of them**, newest last, beneath its quest: a first start, a resume, a
+   carry-on after a cut-off or a stop on any account, and a follow-up step's sessions. This replaces the previous
+   session's answer (STANDDOWN2) as the source of what the person said. ANSWER1's resume (D131) keeps the agent's own
+   conversation where it can; these words are what survives where it cannot.
+3. **A quest's requirements quote the person.** The intake names each requirement in the person's own words, with
+   the check that proves it, and the service refuses words found in neither the ask nor a recorded answer, naming
+   them. The intake's paraphrase stays in the body, where it helps a receiver, and is never the requirement. A
+   follow-up step inherits its parent's requirements. A quote is a fact a gate checks with no model (D24, D54).
+4. **A done answers each requirement**: met, or departed, with the reason and the person's words it relied on,
+   quoted. A departure is shown on the quest and holds the follow-up for the person's yes. A reading attributed to the
+   person without their words ("per your answer") is what this ends.
+5. **A follow-up measures against the ask, and a correction goes back to the work.** A verifying session is told that
+   its parent's closing note is the build's account and the requirements are the measure. A correction to what was
+   built becomes a requirement of the quest that built it, which reopens; it is not carried out under the follow-up's
+   title. How the parent reopens, and what the person sees, is the design's.
+
+**Why.** The ask named the v3 bridge; in the report repository the bridge carries common-report reports and has
+carried nothing else. The intake kept the word and lost what it meant. The person then said "common-report" twice, and
+each time it reached one session. Said to the first session mid-turn, it drew a push-back and a two-way question; the
+record kept only the message's closing sentence (PARK1 has since fixed that reading), so the next session was handed
+the answer without the question, read it as a formula, built a dedicated report type and closed the quest "per your
+answer". Said again as an answer on the verification quest, it reached a session the account's spend limit cut off
+before it kept a plan; the four carry-ons after it, the last on another account, were each handed the previous
+session's record, which was now the limit. Two later sessions quoted the build's reading back to the person as their
+decision. Nothing in Daoris held what the person said after the ask, so no repair to one hop would have kept it across
+three.
+
+**Rejected.**
+- **ANSWER1's resume alone.** The conversation lives in the harness's account home: after a limit the carry-on runs on
+  another account and reads none of it (D125 §3.5), and a follow-up quest, or a start after the strikes, has no
+  conversation to resume.
+- **Handing the previous sessions' transcripts.** They are the agents' words, they are long, and the reading that
+  drifted is in them.
+- **A model comparing the intake's paraphrase with the ask.** A quote checks as a fact with none; a comparison by
+  meaning may later report, never gate.
+- **The parent's closing note as the follow-up's measure**, which is what happened by default.
+- **An instruction to re-read the ask, alone.** The words the later sessions needed were nowhere they could re-read.
+- **Asking the intake to paraphrase more carefully.** It read the right document and wrote a true sentence that lost
+  the implication. Only the person's words carry their meaning to a reader who has not read what they read.
+
+**What it amends, when built.** D65: the intake writes requirements in the person's words, and a `then` step carries
+the ask's words and its parent's requirements. D79 and D80: a resume and a carry-on are handed the ask's words, not one
+answer. D125 §3.5: after a limit, the ask's words carry where the conversation cannot. D131 is complementary and
+unchanged. The clean-up of this ask is D132's; the evidence's §7 lists what it must find, four records written in a
+development environment outside the repository among them. The rows are the evidence's §6 (DRIFT1a–DRIFT1e).
+
+**What the checks do not cover.** Documents only, and nothing is built. The account is read from the install's
+records, transcripts, event logs and trees; no session was re-run with the words this would hand it, so whether they
+would have changed the second session's reading is not measured. What the person meant by the first answer is read
+from the question and the answer together, and the owner's later sentence agrees. `verify` checks this entry's place
+and the evidence's links, and none of their words.
