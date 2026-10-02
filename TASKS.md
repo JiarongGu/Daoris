@@ -203,6 +203,9 @@ owner on 1 October.
 - [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
+- [ ] **CHATTAKE1 — a chat's take is marked on its record** (service; found by SESSUX1f). `MarkTookAsync` ignores a chat, so a
+  chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
+  Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
 - [ ] **ANSWER1e — the map and Ask Daoris read an answered park** (web-shell; found by ANSWER1c). The map's *parked* mark
   (`map/topology.ts`) and Ask Daoris's waiting count (`help/machine.ts`) still count an answered park for up to one look.
@@ -218,6 +221,10 @@ owner on 1 October.
 - [ ] **DRIFT1d — a done answers each requirement** (driver, service, web). Each requirement is met, or departed with the
   reason and the owner's words; a departure holds the follow-up until the owner says yes. Contract: D133 §4. Proof: a held
   follow-up in service tests; the look.
+- [ ] **DRIFT1d2 — the quest page shows the answers and takes the yes** (web-shell, service, driver; after DRIFT1d). Each
+  answer and departure with the words it quotes, and *Accept the departure* on a held quest, both languages; Ask Daoris
+  proposes the yes as its own card. Contract: D133 §4, its DRIFT1d note. Proof: stories, both catalogues,
+  `HelpProposalKindsTests`, `HelpCoverageTests` turning `AcceptDoor` into a door, the look.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
