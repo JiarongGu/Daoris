@@ -280,11 +280,17 @@ public sealed class QuestAnswerTests : IAsyncLifetime
     {
         var (_, quest) = await Built();
 
+        var question = (await _exchange.PublishAsync(new QuestAsk("reports", "checker", "What does the check need?", "Why."), Now)).Quest!;
+
         var declined = await _exchange.RespondAsync(quest.Id, "decline", "Not ours.", Now, answers: [Met(1), Met(2)]);
+        var waited = await _exchange.RespondAsync(quest.Id, "wait", null, Now, on: question.Id, answers: [Met(1), Met(2)]);
 
         Assert.Equal(QuestRespondRefusal.BadAnswer, declined.Refusal);
         Assert.Contains("closing `done`", declined.Message);
-        Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
+        Assert.Equal(QuestRespondRefusal.BadAnswer, waited.Refusal);
+        var standing = (await _quests.FindAsync(quest.Id))!;
+        Assert.Equal(QuestStatus.Taken, standing.Status);
+        Assert.Null(standing.Awaits);
     }
 
     // ——— The person's yes.

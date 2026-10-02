@@ -857,6 +857,17 @@ public sealed class QuestExchange(
         // How a `done` answers each of the quest's requirements (DRIFT1d, D133 §4).
         IReadOnlyList<QuestAnswer>? answers = null)
     {
+        // Answers are a done's (DRIFT1d): carried by any other verb, a wait included, they would be dropped, and
+        // dropped looks kept.
+        if (answers is { Count: > 0 } && action.ToLowerInvariant() is "take" or "decline" or "wait")
+        {
+            return new(
+                QuestRespondRefusal.BadAnswer,
+                $"Answers are given when closing `done`, one for each requirement; a `{action.ToLowerInvariant()}` carries none. "
+                + "Nothing moved.",
+                Quest: null);
+        }
+
         if (string.Equals(action, "wait", StringComparison.OrdinalIgnoreCase))
         {
             return await WaitAsync(id.TrimStart('#'), on?.TrimStart('#'), now, ct).ConfigureAwait(false);
@@ -883,16 +894,6 @@ public sealed class QuestExchange(
             return new(
                 QuestRespondRefusal.MissingReason,
                 "Declining needs a reason: it is the part the asker can act on.",
-                Quest: null);
-        }
-
-        // Answers are a done's (DRIFT1d): carried by any other verb, they would be dropped, and dropped looks kept.
-        if (answers is { Count: > 0 } && status != QuestStatus.Done)
-        {
-            return new(
-                QuestRespondRefusal.BadAnswer,
-                $"Answers are given when closing `done`, one for each requirement; a `{action.ToLowerInvariant()}` carries none. "
-                + "Nothing moved.",
                 Quest: null);
         }
 
