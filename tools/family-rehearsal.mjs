@@ -24,7 +24,8 @@ import {
   ACP_STUB_AGENT, capture, makeChecker, openTranscript,
 } from './rehearsal-kit.mjs';
 import {
-  SETUP_RULES, SETUP_TITLE, readSetup, withFirstOnPath, writeDoctrineLauncher,
+  SETUP_RULES, SETUP_TITLE, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup, withFirstOnPath,
+  writeDoctrineLauncher,
 } from './setup-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -3702,12 +3703,13 @@ check('it is retired again, so no later phase meets it', unadoptedRetired.status
 
 // -------------------------------------------------- 17c. a repository is set up by its own session
 
-section('17c. A repository nobody adopted is set up by its own session (LAYOUT7, D117 §6, D124 §2)');
+section('17c. A repository nobody adopted is set up by its own session, and registered from its line (LAYOUT7, D117 §6, D124 §2–§3)');
 
 // The set-up press (LAYOUT7): `daoris-driver setup <repository>` reads the repository's LINE as git objects, says
 // every refusal with its door, and publishes one ask to it as the person's, adding the doctrine tool's exact verbs to
 // its rules. Its own session then takes up the doctrine with the tool found by its bare name, in a tree of its own,
-// and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch.
+// and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch. The
+// landing moves the line, and the driver registers what the line now declares, with no `connect` (WSSETUP5).
 //
 // atlas is born here with a README and nothing for agents, outside the family folder as 17b's was, and registered
 // without adopting. The doctrine tool its session finds is the WORKSPACE's CLI behind a launcher first on the PATH
@@ -3863,6 +3865,12 @@ check(
   startsRead.out,
 );
 
+// Registration follows the line (WSSETUP5a, D124 §3). Until the line moves, atlas's row is as the press found it, not
+// adopted and declaring nothing, though its set-up is done: its session ran no `connect`, and the press's rule holds
+// none. Nothing in this phase runs one. The landing below is what moves the line.
+const atlasRow = async () => ((await api('GET', '/api/registry')).json ?? []).find((r) => r.repository === 'atlas') ?? null;
+const rowBeforeLanding = await atlasRow();
+
 // Landed by the person's press, by the workspace's rule (WSR1): merged into the line. A merge commit needs an
 // identity, handed as every git call here is, since the rehearsal runs on machines with no git config.
 const landedSetup = onSetupMachine(`trees land ${setupRecord?.id}`, {
@@ -3886,6 +3894,62 @@ check(
     && run('git cat-file -e main:.agents/knowledge/what-this-repository-owns.md', atlas).code === 0,
   `${landedSetup.out}\n${run('git log --oneline -4 main', atlas).out}`,
 );
+
+// The landing moved the line, so the press followed it at once (`trees land`): `daoris.json` and `daoris.lanes.json`
+// read on the line as git objects, sent through the registry door as `connect` would send them, for the checkout's root.
+const rowAfterLanding = await atlasRow();
+const declared = lineManifest?.domain ?? {};
+const landedAt = `\`main\` at \`${atlasLine.slice(0, 7)}\``;
+const sameWords = (held, wrote) => Array.isArray(wrote) && wrote.length > 0 && JSON.stringify(held) === JSON.stringify(wrote);
+check(
+  'the landing registers atlas from its line at once, and says so, while until then its row was as the press found it: no `connect` was run',
+  rowBeforeLanding?.adopted === false && rowBeforeLanding.registered === false
+    && landedSetup.out.includes(
+      `registry  atlas: registered from its line ${landedAt}: adopted, and declaring what it owns, with no \`connect\` run.`),
+  `${JSON.stringify(rowBeforeLanding)}\n${landedSetup.out}`,
+);
+check(
+  '…and the host\'s registry reads atlas adopted and declared, with the domain its set-up wrote, for its checkout\'s root',
+  rowAfterLanding?.adopted === true && rowAfterLanding.registered === true
+    && Boolean(declared.summary) && rowAfterLanding.summary === declared.summary
+    && sameWords(rowAfterLanding.owns, declared.owns) && sameWords(rowAfterLanding.accepts, declared.accepts)
+    && Boolean(rowAfterLanding.root) && rowAfterLanding.root === rowBeforeLanding?.root,
+  `${JSON.stringify(rowAfterLanding)}\n${JSON.stringify(declared)}`,
+);
+
+// Each outcome is the machine log's `registry.followed`, read through the driver's own door: a name and a word from a
+// fixed list, never a path or a summary (D124 §3.4).
+const atlasFollowed = () => {
+  const read = onSetupMachine('logs --event registry.followed --json');
+  return { code: read.code, lines: readFollowed(read.out).filter((line) => line.repository === 'atlas') };
+};
+const followedOnce = atlasFollowed();
+check(
+  'the machine log has `registry.followed` for atlas, once: its outcome `registered`, and nothing but the name and the word',
+  followedOnce.code === 0 && followedOnce.lines.length === 1 && followedOnce.lines[0].outcome === 'registered'
+    && JSON.stringify(followedOnce.lines[0].fields) === '["repository","outcome"]',
+  JSON.stringify(followedOnce),
+);
+
+// A second follow with nothing changed sends nothing: a registration goes only where the row holds something else.
+// The terminal's door asks for it as the row's *Refresh* would (D124 §3.1).
+const DECLARATION = ['adopted', 'registered', 'summary', 'owns', 'accepts', 'uses', 'packs', 'joined', 'sharesKnowledge', 'workspace', 'root', 'lanes'];
+const declarationOf = (row) => JSON.stringify(DECLARATION.map((field) => row?.[field] ?? null));
+const followAgain = onSetupMachine('register --repository atlas');
+const followedAgain = readRegister(followAgain.out);
+const rowAfterAgain = await atlasRow();
+const followedTwice = atlasFollowed();
+check(
+  'a second follow with nothing changed sends nothing: `register` finds atlas unchanged and registers none, the row is as it was, and the log says so',
+  followAgain.code === 0 && followedAgain.followed.length === 1 && followedAgain.followed[0].repository === 'atlas'
+    && followedAgain.followed[0].outcome === 'unchanged'
+    && followedAgain.followed[0].said === `its row already holds what its line ${landedAt} declares.`
+    && followedAgain.registered === 0 && followedAgain.unchanged === 1 && followedAgain.refused === 0
+    && rowAfterAgain?.registered === true && declarationOf(rowAfterAgain) === declarationOf(rowAfterLanding)
+    && JSON.stringify(followedTwice.lines.map((line) => line.outcome)) === '["registered","unchanged"]',
+  `${followAgain.out}\n${JSON.stringify(rowAfterAgain)}\n${JSON.stringify(followedTwice)}`,
+);
+
 const afterLanding = onSetupMachine('setup atlas --plan');
 const afterRead = readSetup(afterLanding.out);
 check(
@@ -3943,6 +4007,191 @@ check(
   'atlas is retired again and both its trees removed, so no later phase meets it',
   atlasRetired.status === 200 && atlasTrees.every((tree) => tree !== '' && !existsSync(tree)),
   `${atlasRetired.text}\n${treesRemoved.map((removed) => removed.out).join('\n')}`,
+);
+
+// -------------------------------------------------- 17d. a workspace is set up one repository at a time
+
+section('17d. A workspace is set up one repository at a time, pausing after its pilot (WSSETUP6, D124 §4)');
+
+// The workspace plan (WSSETUP6): `daoris-driver setup --workspace <name>` writes a plan of single set-ups and adds the
+// doctrine tool's verbs once, at the workspace's scope; each look of the loop publishes the next to go while fewer than its
+// `atOnce` are open (never the last slot: `cap − 1`), and once its pilot has closed the plan pauses itself until the person
+// resumes it. Nothing in the plan is a count: each state is read from the registry and the quests.
+//
+// Two repositories nobody adopted, each a README and one commit on `main`, registered without adopting in a workspace of
+// their own, so the plan's list is theirs alone. Both drivable here, in trees of their own, on the protocol stub, at a cap
+// of two. The doctrine tool is 17c's launcher, first on the PATH, and the machine log is a home of its own again.
+const PLAN_WORKSPACE = 'meridian';
+const PLANNED = ['beacon', 'quarry'];
+const plannedRoot = (name) => join(scratch, name);
+for (const name of PLANNED) {
+  mkdirSync(plannedRoot(name), { recursive: true });
+  writeFileSync(join(plannedRoot(name), 'README.md'), `# ${name}\n\nPart of the meridian workspace, and set up by its plan.\n`);
+  run('git init -q', plannedRoot(name));
+  run('git symbolic-ref HEAD refs/heads/main', plannedRoot(name));
+  run(`git ${GIT_ID} add -A`, plannedRoot(name));
+  run(`git ${GIT_ID} commit -q -m "${name} is born"`, plannedRoot(name));
+}
+const plannedAdded = [];
+for (const name of PLANNED) {
+  plannedAdded.push(await api('POST', '/api/registry', {
+    body: { repository: name, root: plannedRoot(name), adopted: false, workspace: PLAN_WORKSPACE },
+  }));
+}
+
+const planHome = join(scratch, 'plan-home');
+mkdirSync(planHome, { recursive: true });
+const PLAN_MACHINE = { ...withFirstOnPath(doctrineBin), DAORIS_HOME: planHome };
+const planConfig = join(scratch, 'driver-plan.json');
+writeFileSync(planConfig, `${JSON.stringify({
+  drivable: PLANNED, adapter: 'acp-stub', cap: 2, timeoutMinutes: 2, trees: PLANNED,
+  commands: { 'acp-stub': ['node', acpAgent] },
+}, null, 2)}\n`);
+const onPlanMachine = (mode, env = {}) => driver({ serviceUrl: BASE, config: planConfig, mode, env: { ...PLAN_MACHINE, ...env } });
+// The plan is the driver's file under the home its choices sit in (`<home>/setup/<workspace>.json`), this run's scratch;
+// the press's rule lands beside it in `permissions.json`, under the workspace's key.
+const planFile = join(scratch, 'setup', `${PLAN_WORKSPACE}.json`);
+const readPlan = () => {
+  try {
+    return JSON.parse(readFileSync(planFile, 'utf8'));
+  } catch {
+    return null;
+  }
+};
+const allowsOf = (scope, name) => {
+  const file = join(scratch, 'permissions.json');
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8'))[scope]?.[name]?.allow ?? [] : [];
+};
+const questsTo = async (name) => (await api('GET', `/api/quests?repository=${name}&includeClosed=true`)).json ?? [];
+const setupOf = async (name) => (await questsTo(name)).find((quest) => SETUP_TITLE.test(quest.title ?? '')) ?? null;
+const recordOf = async (name, quest) =>
+  ((await api('GET', `/api/sessions?repository=${name}&includeClosed=true`)).json ?? []).find((s) => s.quest === quest?.id) ?? null;
+const plannedRows = async () => ((await api('GET', '/api/registry')).json ?? []).filter((r) => PLANNED.includes(r.repository));
+const planLog = (event) => readEvents(onPlanMachine(`logs --event ${event} --json`).out, event);
+
+// The list, and nothing written: both rows to go and refused nothing, the pacing at the cap, and the rule a press adds.
+const previewed = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --plan`);
+const preview = readWorkspaceSetup(previewed.out);
+check(
+  '`setup --workspace --plan` lists both repositories, each to go and refused nothing, one at a time at a cap of two, with the rule a press adds — and writes, publishes and adds nothing',
+  plannedAdded.every((added) => added.status === 200) && previewed.code === 0 && preview.workspace === PLAN_WORKSPACE
+    && JSON.stringify(preview.rows.map((row) => row.repository).sort()) === JSON.stringify(PLANNED)
+    && preview.rows.every((row) => row.now === 'to go' && row.refusals.length === 0)
+    && preview.atOnce === '1 (at most 1 while the cap is 2, so other work keeps a slot)'
+    && JSON.stringify(preview.rules) === JSON.stringify(SETUP_RULES) && preview.nothingWritten
+    && !existsSync(planFile) && allowsOf('workspaces', PLAN_WORKSPACE).length === 0
+    && (await questsTo(PLANNED[0])).length === 0 && (await questsTo(PLANNED[1])).length === 0,
+  `${plannedAdded.map((added) => added.text).join('\n')}\n${previewed.out}`,
+);
+
+// The press, with a pilot of one: the plan written, and the nine verbs added once at the workspace's scope.
+const pressedPlan = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --pilot 1`);
+const planPressed = readWorkspaceSetup(pressedPlan.out);
+const writtenPlan = readPlan();
+check(
+  'a press with a pilot of one writes the plan, both repositories one at a time, and adds the nine verbs once to the workspace\'s rules, not each repository\'s — and publishes nothing',
+  pressedPlan.code === 0
+    && planPressed.messages.some((said) => said.startsWith(`the plan for workspace \`${PLAN_WORKSPACE}\` is written: 2 repositories, one at a time, pausing once the first 1 have closed.`))
+    && writtenPlan?.workspace === PLAN_WORKSPACE && JSON.stringify([...(writtenPlan.order ?? [])].sort()) === JSON.stringify(PLANNED)
+    && writtenPlan.atOnce === 1 && writtenPlan.pilot === 1 && writtenPlan.paused === null
+    && Object.keys(writtenPlan.published ?? {}).length === 0
+    && JSON.stringify(planPressed.rules) === JSON.stringify(SETUP_RULES)
+    && SETUP_RULES.every((rule) => allowsOf('workspaces', PLAN_WORKSPACE).includes(rule))
+    && PLANNED.every((name) => allowsOf('repositories', name).length === 0)
+    && (await questsTo(PLANNED[0])).length === 0 && (await questsTo(PLANNED[1])).length === 0,
+  `${pressedPlan.out}\n${JSON.stringify(writtenPlan)}`,
+);
+
+// The pilot goes alone: the loop publishes the first in the plan's order, carries it to done, and asks nothing more.
+const [firstPlanned, secondPlanned] = writtenPlan?.order ?? [];
+const pilotRun = onPlanMachine('drive --until-idle');
+const firstSetup = await setupOf(firstPlanned);
+const firstRecord = await recordOf(firstPlanned, firstSetup);
+const planAfterPilot = readPlan();
+check(
+  'the loop asks only the pilot: the first in the plan\'s order is published and carried to done in a tree of its own, and the second is not asked',
+  pilotRun.code === 0
+    && pilotRun.out.includes(`setup  ${PLAN_WORKSPACE}: asked \`${firstPlanned}\` to set itself up, #${firstSetup?.id} (1 of 1 at once).`)
+    && firstSetup?.status === 'Done' && firstRecord?.state === 'completed' && firstRecord.adapter === 'acp-stub'
+    && (firstRecord.tree ?? '').includes('trees') && !(firstRecord.tree ?? '').includes(plannedRoot(firstPlanned))
+    && planAfterPilot?.published?.[firstPlanned] === firstSetup?.id && !(secondPlanned in (planAfterPilot?.published ?? {}))
+    && (await questsTo(secondPlanned)).length === 0,
+  `${pilotRun.out}\n${JSON.stringify(firstRecord)}\n${JSON.stringify(planAfterPilot)}`,
+);
+
+// Once the pilot has closed, the plan pauses itself, says so in a look's report, and logs it once, by `pilot`.
+const pausedLook = onPlanMachine('drive --once');
+const planPaused = readPlan();
+const pauses = planLog('setup.paused');
+check(
+  'a look then finds the plan paused after its pilot, said in a look\'s report and logged once as `setup.paused` by `pilot`, and the second still not asked',
+  pausedLook.code === 0 && planPaused?.paused?.by === 'pilot'
+    && `${pilotRun.out}\n${pausedLook.out}`.includes(`setup  ${PLAN_WORKSPACE}: paused after the pilot: \`${firstPlanned}\` waiting for your review.`)
+    && pauses.length === 1 && pauses[0].workspace === PLAN_WORKSPACE && pauses[0].by === 'pilot'
+    && (await questsTo(secondPlanned)).length === 0,
+  `${pausedLook.out}\n${JSON.stringify(planPaused)}\n${JSON.stringify(pauses)}`,
+);
+
+// The person resumes it, and the loop asks the second.
+const resumedPlan = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --resume`);
+const resumedRead = readWorkspaceSetup(resumedPlan.out);
+const planResumed = readPlan();
+const restRun = onPlanMachine('drive --until-idle');
+const secondSetup = await setupOf(secondPlanned);
+const secondRecord = await recordOf(secondPlanned, secondSetup);
+check(
+  '`--resume` carries the plan on past its pilot, and the loop then asks the second and carries it to done in a tree of its own',
+  resumedPlan.code === 0 && resumedRead.messages.includes(`the plan for workspace \`${PLAN_WORKSPACE}\` carries on past its pilot.`)
+    && planResumed?.paused === null && planResumed.pilotResumed === true
+    && restRun.code === 0
+    && restRun.out.includes(`setup  ${PLAN_WORKSPACE}: asked \`${secondPlanned}\` to set itself up, #${secondSetup?.id} (1 of 1 at once).`)
+    && secondSetup?.status === 'Done' && secondRecord?.state === 'completed' && (secondRecord.tree ?? '').includes('trees')
+    && readPlan()?.published?.[secondPlanned] === secondSetup?.id,
+  `${resumedPlan.out}\n${restRun.out}\n${JSON.stringify(secondRecord)}`,
+);
+
+const publishedLines = planLog('setup.published');
+check(
+  'the machine log has `setup.published` twice, the pilot first, each naming the workspace, the repository and its quest',
+  JSON.stringify(publishedLines.map((line) => `${line.workspace} ${line.repository} ${line.quest}`)) === JSON.stringify([
+    `${PLAN_WORKSPACE} ${firstPlanned} ${firstSetup?.id}`, `${PLAN_WORKSPACE} ${secondPlanned} ${secondSetup?.id}`]),
+  JSON.stringify(publishedLines),
+);
+
+// Each lands by the workspace's rule, and its line moving registers it (WSSETUP5): no `connect` anywhere in the phase.
+const rowsBeforeLanding = await plannedRows();
+const plannedLandings = [firstRecord, secondRecord].map((record) => onPlanMachine(`trees land ${record?.id}`, {
+  GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
+  GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
+}));
+const rowsAfterLanding = await plannedRows();
+const standingAfter = readWorkspaceSetup(onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --plan`).out);
+check(
+  'both land and are registered from their lines, adopted and declared in their workspace, with no `connect` run, and the plan reads both set up',
+  rowsBeforeLanding.length === 2 && rowsBeforeLanding.every((row) => row.adopted === false && row.registered === false)
+    && [firstPlanned, secondPlanned].every((name, at) => plannedLandings[at].code === 0
+      && plannedLandings[at].out.includes(`registry  ${name}: registered from its line \`main\` at \``))
+    && PLANNED.every((name) => {
+      const row = rowsAfterLanding.find((each) => each.repository === name);
+      return row?.adopted === true && row.registered === true && row.workspace === PLAN_WORKSPACE
+        && row.summary === `${name}, as its README says it is.`
+        && row.root === rowsBeforeLanding.find((each) => each.repository === name)?.root;
+    })
+    && standingAfter.summary === 'Setting up — 2 set up',
+  `${plannedLandings.map((landed) => landed.out).join('\n')}\n${JSON.stringify(rowsAfterLanding)}\n${standingAfter.summary}`,
+);
+
+// Leave nothing for a later phase to meet: the plan stopped, so no later look works it, both trees gone, both retired.
+const stoppedPlan = onPlanMachine(`setup --workspace ${PLAN_WORKSPACE} --stop`);
+const plannedTrees = [firstRecord?.tree ?? '', secondRecord?.tree ?? ''];
+const plannedTreesRemoved = plannedTrees.filter(Boolean).map((tree) => onPlanMachine(`trees remove "${tree}" --force`));
+const plannedRetired = [];
+for (const name of PLANNED) plannedRetired.push(await api('DELETE', `/api/registry/${name}`));
+check(
+  'the plan is stopped, both trees removed and both repositories retired, so no later phase meets them',
+  stoppedPlan.code === 0 && Boolean(readPlan()?.stopped) && plannedTrees.every((tree) => tree !== '' && !existsSync(tree))
+    && plannedRetired.every((retired) => retired.status === 200),
+  `${stoppedPlan.out}\n${plannedTreesRemoved.map((removed) => removed.out).join('\n')}\n${plannedRetired.map((r) => r.text).join('\n')}`,
 );
 
 // -------------------------------------------------- 18. a plugin that declares, and speaks

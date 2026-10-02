@@ -31,12 +31,20 @@ type Env = Record<string, string | undefined>;
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 const { ACP_STUB_AGENT } = await import('../../../tools/rehearsal-kit.mjs') as { ACP_STUB_AGENT: string };
 const {
-  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readSetup, withFirstOnPath, writeDoctrineLauncher,
+  SETUP_RULES, SETUP_TITLE, doctrineLauncher, readEvents, readFollowed, readRegister, readSetup, readWorkspaceSetup,
+  withFirstOnPath, writeDoctrineLauncher,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } = await import('../../../tools/setup-kit.mjs') as {
   SETUP_RULES: string[];
   SETUP_TITLE: RegExp;
   doctrineLauncher: (cliBin: string, platform?: string) => { name: string; text: string };
+  // WSSETUP5a and WSSETUP6a's readers, asserted here by shape: what they read back is held by deepEqual below.
+  readEvents: (out: string, event: string) => Record<string, unknown>[];
+  readFollowed: (out: string) => { repository: unknown; outcome: unknown; fields: string[] }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- read back field by field below
+  readRegister: (out: string) => any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- read back field by field below
+  readWorkspaceSetup: (out: string) => any;
   readSetup: (out: string) => SetupRead;
   withFirstOnPath: (folder: string, env?: Env) => Env;
   writeDoctrineLauncher: (folder: string, cliBin: string, platform?: string) => string;
@@ -148,6 +156,187 @@ test('what is not the command\'s output reads as nothing at all', () => {
   assert.deepEqual(nothing.rules, []);
   assert.deepEqual(nothing.refusals, []);
   assert.equal(nothing.nothingPublished, false);
+});
+
+// What `RegisterCommand` writes (WSSETUP5), spelled as it writes it: a line per repository, two spaces, the outcome
+// padded to sixteen as C#'s `{0,-16}` pads it, a space, the name, two spaces and the sentence; then the counts.
+const followedLine = (outcome: string, repository: string, said: string) => `  ${outcome.padEnd(16)} ${repository}  ${said}`;
+const REGISTER_SENT = [
+  followedLine('registered', 'atlas',
+    'registered from its line `main` at `0123456`: adopted, and declaring what it owns, with no `connect` run.'),
+  followedLine('lanes-unreadable', 'engine',
+    'its daoris.lanes.json on `main` at `89abcde` cannot be read: `lanes` is not a list. Nothing was registered; its row keeps what it held.'),
+  'register: the index was not read again after registering: the service answered 503.',
+  'register: 1 registered, 0 already as their lines say, 1 not registered, each saying why above.',
+  '',
+];
+const REGISTER_UNCHANGED = [
+  followedLine('unchanged', 'atlas', 'its row already holds what its line `main` at `0123456` declares.'),
+  'register: 0 registered, 1 already as their lines say, 0 not registered.',
+  '',
+];
+
+for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']]) {
+  test(`what \`register\` printed is read back: each repository's outcome, name and sentence, and its counts (${ending})`, () => {
+    const sent = readRegister(REGISTER_SENT.join(eol));
+    assert.deepEqual(sent.followed, [
+      {
+        outcome: 'registered', repository: 'atlas',
+        said: 'registered from its line `main` at `0123456`: adopted, and declaring what it owns, with no `connect` run.',
+      },
+      {
+        outcome: 'lanes-unreadable', repository: 'engine',
+        said: 'its daoris.lanes.json on `main` at `89abcde` cannot be read: `lanes` is not a list. Nothing was registered; its row keeps what it held.',
+      },
+    ]);
+    // The refresh's sentence starts as the counts do, and is no count.
+    assert.deepEqual([sent.registered, sent.unchanged, sent.refused], [1, 0, 1]);
+
+    const again = readRegister(REGISTER_UNCHANGED.join(eol));
+    assert.deepEqual(again.followed, [
+      { outcome: 'unchanged', repository: 'atlas', said: 'its row already holds what its line `main` at `0123456` declares.' },
+    ]);
+    assert.deepEqual([again.registered, again.unchanged, again.refused], [0, 1, 0]);
+  });
+}
+
+test('what is not `register`\'s report reads as no repository and no counts', () => {
+  const nothing = readRegister('register: `--repository` takes a repository\'s name.\nusage: daoris-driver register [--repository <name>]\n');
+  assert.deepEqual(nothing.followed, []);
+  assert.deepEqual([nothing.registered, nothing.unchanged, nothing.refused], [null, null, null]);
+  const none = readRegister('register: no repository has a checkout here, so there is nothing to register.\r\n');
+  assert.deepEqual(none.followed, []);
+  assert.equal(none.registered, null);
+});
+
+test('the machine log\'s `registry.followed` lines are read as a name, a word and the fields each carried, and no other event', () => {
+  // As `MachineLog` writes a line and `daoris-driver logs --json` prints it: one JSON object a line.
+  const logged = [
+    '{"time":"2026-10-01T12:00:00.000Z","source":"driver","level":"info","event":"session.started","data":{"session":"s1","repository":"atlas"}}',
+    '{"time":"2026-10-01T12:00:01.000Z","source":"driver","level":"info","event":"registry.followed","data":{"repository":"atlas","outcome":"registered"}}',
+    'logs: 3 lines skipped, not the log\'s shape.',
+    '{"time":"2026-10-01T12:00:02.000Z","source":"driver","level":"info","event":"registry.followed","data":{"repository":"atlas","outcome":"unchanged","root":"/somewhere"}}',
+    '',
+  ].join('\r\n');
+  assert.deepEqual(readFollowed(logged), [
+    { repository: 'atlas', outcome: 'registered', fields: ['repository', 'outcome'] },
+    { repository: 'atlas', outcome: 'unchanged', fields: ['repository', 'outcome', 'root'] },
+  ]);
+  assert.deepEqual(readFollowed(''), []);
+});
+
+test('the machine log\'s lines of one event are read as the data each carried, in the order written', () => {
+  const logged = [
+    '{"time":"2026-10-02T09:00:00.000Z","source":"driver","level":"info","event":"setup.planned","data":{"workspace":"meridian","repositories":2,"atOnce":1,"pilot":1}}',
+    '{"time":"2026-10-02T09:00:01.000Z","source":"driver","level":"info","event":"setup.published","data":{"workspace":"meridian","repository":"beacon","quest":"q1"}}',
+    'not a line of the log',
+    '{"time":"2026-10-02T09:00:02.000Z","source":"driver","level":"info","event":"setup.paused","data":{"workspace":"meridian","by":"pilot"}}',
+    '{"time":"2026-10-02T09:00:03.000Z","source":"driver","level":"info","event":"setup.published","data":{"workspace":"meridian","repository":"quarry","quest":"q2"}}',
+    '',
+  ].join('\n');
+  assert.deepEqual(readEvents(logged, 'setup.published'), [
+    { workspace: 'meridian', repository: 'beacon', quest: 'q1' },
+    { workspace: 'meridian', repository: 'quarry', quest: 'q2' },
+  ]);
+  assert.deepEqual(readEvents(logged, 'setup.paused'), [{ workspace: 'meridian', by: 'pilot' }]);
+  assert.deepEqual(readEvents(logged, 'setup.stopped'), []);
+});
+
+// What `WorkspaceSetupCommand` writes (WSSETUP6), spelled as it writes it: the list a press works from, with its table
+// padded as C# pads it, then the pacing, the agent and the rule; a press's message and the rules it added; a steer's
+// message and where the plan stands.
+const WORKSPACE_LIST = [
+  'setup: workspace `meridian`, 2 repositories with a checkout here, the ones other work touches first',
+  `${''.padStart(3)}  ${'repository'.padEnd(10)} ${'asked'.padStart(5)}  ${'read'.padStart(4)}  ${'sessions'.padStart(8)}  now`,
+  `${'1'.padStart(3)}  ${'beacon'.padEnd(10)} ${'0'.padStart(5)}  ${'0'.padStart(4)}  ${'0'.padStart(8)}  to go`,
+  `${'2'.padStart(3)}  ${'quarry'.padEnd(10)} ${'3'.padStart(5)}  ${'12'.padStart(4)}  ${'1'.padStart(8)}  to go`,
+  '       refused: `quarry` is not driven here: it is not opted into driving on this machine. `daoris driver drive quarry`.',
+  '  at once   1 (at most 1 while the cap is 2, so other work keeps a slot)',
+  '  pilot     2: once the first 2 have closed, the plan pauses until you resume it',
+  '  agent     acp-stub',
+];
+const WORKSPACE_PLAN = [
+  ...WORKSPACE_LIST,
+  'a press adds to workspace `meridian`\'s rules, once, so each set-up\'s session may run the doctrine tool:',
+  ...SETUP_RULES.map((rule) => `  ${rule}`),
+  '--plan: nothing was written, published or added.',
+  '',
+];
+const WORKSPACE_PRESSED = [
+  ...WORKSPACE_LIST,
+  'setup: the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
+    + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
+  'added to workspace `meridian`\'s rules, so each set-up\'s session may run the doctrine tool:',
+  ...SETUP_RULES.map((rule) => `  ${rule}`),
+  '  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace meridian`.',
+  '',
+];
+const WORKSPACE_RESUMED = [
+  'setup: the plan for workspace `meridian` carries on past its pilot.',
+  'setup: workspace `meridian`, a plan made 2026-10-02: one at a time, a pilot of 1',
+  `${'1'.padStart(3)}  ${'beacon'.padEnd(6)}  waiting for your review — its set-up #q1 is done and waits for your review; once it is merged, *Bring up to date* registers it.`,
+  `${'2'.padStart(3)}  ${'quarry'.padEnd(6)}  to go`,
+  'Setting up — 1 waiting for your review · 1 to go',
+  '',
+];
+
+for (const [ending, eol] of [['LF', '\n'], ['CRLF', '\r\n']]) {
+  test(`a workspace plan's list is read back: each row with what touched it and its refusals, the pacing, and the rule (${ending})`, () => {
+    const plan = readWorkspaceSetup(WORKSPACE_PLAN.join(eol));
+    assert.equal(plan.workspace, 'meridian');
+    assert.deepEqual(plan.rows, [
+      { repository: 'beacon', asked: 0, read: 0, sessions: 0, now: 'to go', refusals: [] },
+      {
+        repository: 'quarry', asked: 3, read: 12, sessions: 1, now: 'to go',
+        refusals: ['`quarry` is not driven here: it is not opted into driving on this machine. `daoris driver drive quarry`.'],
+      },
+    ]);
+    assert.equal(plan.atOnce, '1 (at most 1 while the cap is 2, so other work keeps a slot)');
+    assert.equal(plan.pilot, '2: once the first 2 have closed, the plan pauses until you resume it');
+    assert.equal(plan.agent, 'acp-stub');
+    assert.deepEqual(plan.rules, SETUP_RULES);
+    assert.deepEqual(plan.messages, []);
+    assert.equal(plan.nothingWritten, true);
+    assert.deepEqual(plan.standing, []);
+    assert.equal(plan.summary, null);
+  });
+}
+
+test('a workspace press is read as its message and the rules it added, never as a plan', () => {
+  const pressed = readWorkspaceSetup(WORKSPACE_PRESSED.join('\r\n'));
+  assert.equal(pressed.rows.length, 2);
+  assert.deepEqual(pressed.messages, [
+    'the plan for workspace `meridian` is written: 2 repositories, one at a time, pausing once the first 1 have closed. '
+      + 'The driver\'s loop asks the next at each look while fewer are open; with no loop running, nothing is asked until one runs.',
+  ]);
+  // The line saying where the rules are taken back is no rule.
+  assert.deepEqual(pressed.rules, SETUP_RULES);
+  assert.equal(pressed.nothingWritten, false);
+});
+
+test('a steer is read as its message, where each repository stands, and the head line', () => {
+  const resumed = readWorkspaceSetup(WORKSPACE_RESUMED.join('\r\n'));
+  assert.equal(resumed.workspace, 'meridian');
+  assert.deepEqual(resumed.messages, ['the plan for workspace `meridian` carries on past its pilot.']);
+  assert.deepEqual(resumed.standing, [
+    {
+      repository: 'beacon', state: 'waiting for your review',
+      said: 'its set-up #q1 is done and waits for your review; once it is merged, *Bring up to date* registers it.',
+    },
+    { repository: 'quarry', state: 'to go', said: null },
+  ]);
+  assert.equal(resumed.summary, 'Setting up — 1 waiting for your review · 1 to go');
+  assert.deepEqual(resumed.rows, []);
+  assert.deepEqual(resumed.rules, []);
+});
+
+test('what is not a workspace plan\'s output reads as nothing at all', () => {
+  const nothing = readWorkspaceSetup('setup: name the workspace: `--workspace <name>`.\nusage: daoris-driver setup --workspace <name> [--plan]\n');
+  assert.equal(nothing.workspace, null);
+  assert.deepEqual(nothing.rows, []);
+  assert.deepEqual(nothing.standing, []);
+  assert.deepEqual(nothing.rules, []);
+  assert.equal(nothing.nothingWritten, false);
 });
 
 test('a set-up\'s title is the whole set-up\'s words with a day, and nothing else is', () => {
