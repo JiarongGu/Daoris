@@ -226,6 +226,27 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Null(AccountCooling.Of(_home, "fake", "account-1", DateTimeOffset.UtcNow));
     }
 
+    /// <summary>
+    /// TOOL4e: an account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — the next account
+    /// made takes the first free name, which may be this one's, and must not start out cooling.
+    /// </summary>
+    [Fact]
+    public void Removing_an_account_ends_its_cool_off_and_no_other()
+    {
+        var now = DateTimeOffset.UtcNow;
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "account-1"));
+        AccountCooling.Cool(_home, Entry(until: now.AddDays(2)), now);
+        AccountCooling.Cool(_home, Entry(account: "account-2", until: now.AddDays(2)), now);
+        AccountCooling.Cool(_home, Entry(account: "account-3", until: now.AddDays(2)), now);
+
+        Assert.True(HarnessSettings.RemoveProfile(_home, "claude-code", "account-1"));
+        Assert.False(HarnessSettings.RemoveProfile(_home, "claude-code", "account-3"));
+
+        Assert.Null(AccountCooling.Of(_home, "claude-code", "account-1", now));
+        Assert.Null(AccountCooling.Of(_home, "claude-code", "account-3", now));
+        Assert.NotNull(AccountCooling.Of(_home, "claude-code", "account-2", now));
+    }
+
     // ——— The words (§2.4, §4): whose account, until when in the machine's zone, and why.
 
     [Fact]
@@ -246,7 +267,9 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Contains("refresh Settings → Agents", said);
     }
 
+    /// <summary>The CLI's <c>cooling.test.ts</c> parses this theory: <c>daoris agent list</c> says why in the same words (TOOL4e).</summary>
     [Theory]
+    [InlineData(true, false, false, "as the agent said")]
     [InlineData(false, false, false, "Daoris's default: the agent named no time")]
     [InlineData(false, false, true, "Daoris's default: the agent named a date more than 8 days off")]
     [InlineData(true, true, false, "as the agent said, in this machine's zone")]
@@ -385,6 +408,22 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.Equal(Seen, limited.Value.Entry.Seen);
         Assert.Equal("s1", limited.Value.Entry.Session);
         Assert.Equal(limited.Value.Entry, AccountCooling.Of(_home, "fake", "account-1", _now));
+    }
+
+    /// <summary>TOOL4e: the default a limit naming no time takes is the one the caller hands over, the machine's <c>cooloff</c>.</summary>
+    [Fact]
+    public void A_limit_that_names_no_time_cools_for_the_cool_off_handed_over_and_an_hour_without_one()
+    {
+        var roster = Roster(new Adapter("fake", Present(limits: ClaudeLimits.Words)));
+        const string noTime = "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit";
+
+        var handed = roster.Limited("fake", "account-1", noTime, "s1", TimeSpan.FromMinutes(15));
+        var none = roster.Limited("fake", "account-2", noTime, "s2");
+
+        Assert.Equal((Seen.AddMinutes(15), false), (handed!.Value.Entry.Until, handed.Value.Entry.Stated));
+        Assert.Equal(Seen + AccountLimits.DefaultCoolOff, none!.Value.Entry.Until);
+        // A time the agent named is read, whatever the default.
+        Assert.Equal(Until, roster.Limited("fake", "account-3", Refusal, "s3", TimeSpan.FromMinutes(15))!.Value.Entry.Until);
     }
 
     /// <summary>

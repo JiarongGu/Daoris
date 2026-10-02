@@ -33,6 +33,9 @@ public sealed class HelpRoomDoorsTests
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
             // LAYOUT7: the set-up press, which Ask Daoris owes a kind until LAYOUT8.
             "daoris-driver setup <repository> [--plan]",
+            // TOOL4e (D125 §6): the order, *Try now* and the default cool-off, the terminal's doors until TOOL4g.
+            "daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]",
+            "daoris agent profile ready <agent> <profile>|--own", "daoris driver cooloff <minutes>",
         })
         {
             Assert.Contains(command, agents);

@@ -49,6 +49,13 @@ daoris <command> [options]
                                                    --clear names none again: the
                                                    agent's own home, or for a
                                                    workspace the machine's default
+                         profile order <agent> <profile>…|--clear [--workspace W]
+                                                   the accounts rotation may use,
+                                                   in order; one not listed never
+                                                   rotates, into or away
+                         profile ready <agent> <profile>|--own
+                                                   end an account's cool-off now:
+                                                   --own is the tool's own sign-in
                          pin <agent> <version> [--workspace W]
                                                    install that version somewhere
                                                    Daoris owns, and run it. Claude
@@ -109,6 +116,9 @@ daoris <command> [options]
                                                    sessions; 0 never parks
                          retry <quest> [--at <n>]  start a parked quest again
                          timeout <minutes>         how long one session may run
+                         cooloff <minutes>         how long an account cools when
+                                                   its agent names no time for
+                                                   its limit; 60 by default
                          cap <n> · adapter <name>
   plugin [verb]        this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json):
                          list                      each one, what it declares and

@@ -114,12 +114,15 @@ session named; never propose adding one that has not landed.
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
 | start a quest its failed sessions parked again | Quests → the quest's drawer → Try again | `daoris driver retry <quest>` |
 | bound how long one session runs | (no screen yet) | `daoris driver timeout <minutes>` |
+| set how long an account cools when its agent hits a limit and names no time | (no screen yet) | `daoris driver cooloff <minutes>` |
 | bound how many sessions run at once | (no screen yet) | `daoris driver cap <n>` |
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | sign an agent in, or add an account | Settings → Agents | `daoris agent login <agent>` |
 | choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents → Make default, use for a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
+| choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | (no screen yet) | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
+| end an account's cool-off now, after its agent hit a limit | (no screen yet) | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
 | update an agent, or pin it to one version | Settings → Agents → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Settings → Agents → Model & effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
