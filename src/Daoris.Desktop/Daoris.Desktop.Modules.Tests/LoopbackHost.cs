@@ -81,6 +81,21 @@ internal sealed class LoopbackHost : IDisposable
                 }
 
                 var path = request.ToString().Split(' ')[1];
+
+                // A request's own body is read before the answer (PAUSE1b: a record's move is a POST): left unread, closing
+                // the socket resets it, and the client fails before it reads what was answered.
+                var length = request.ToString().Split("\r\n")
+                    .Select(line => line.Split(':', 2))
+                    .Where(header => header.Length == 2 && header[0].Trim().Equals("Content-Length", StringComparison.OrdinalIgnoreCase))
+                    .Select(header => int.TryParse(header[1].Trim(), out var bytes) ? bytes : 0)
+                    .FirstOrDefault();
+                for (var read = 0; read < length;)
+                {
+                    var chunk = await stream.ReadAsync(new byte[length - read], _stop.Token);
+                    if (chunk == 0) break;
+                    read += chunk;
+                }
+
                 byte[]? body;
                 bool stalling;
                 lock (_served)

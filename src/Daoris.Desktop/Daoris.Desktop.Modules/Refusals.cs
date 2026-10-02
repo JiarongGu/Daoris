@@ -148,6 +148,19 @@ public static class Refusals
     public const string QuestNotHeld = "QUEST_NOT_HELD";
 
     /// <summary>
+    /// *Try again* asked of a quest a pause holds (PAUSE1b, D132 §6.1): the pause is the reason before a stop and the strikes,
+    /// and *Resume* is the one press that moves it. Its <c>id</c> names the quest and <c>pause</c> the ask whose pause holds
+    /// it; a quest paused on its own travels as the catalogue's <c>context</c> <c>quest</c>.
+    /// </summary>
+    public const string QuestPaused = "QUEST_PAUSED";
+
+    /// <summary>
+    /// A work asked of an ask this machine has no record of, or a quest not here (PAUSE1b, D132 §7.3): nothing to plan, pause
+    /// or resume. Its <c>id</c> names it; a quest's travels as the catalogue's <c>context</c> <c>quest</c>.
+    /// </summary>
+    public const string WorkUnknown = "WORK_UNKNOWN";
+
+    /// <summary>
     /// *Open folder* or *Open a terminal here* asked of a session whose folder this machine no longer holds (SESSUX1d, D126
     /// §3.5): a tidy or the clean-up took its tree, or it names no tree this home opened and no checkout here, or it is a
     /// teammate's record. The page offers neither where it knows the folder is gone, so this answers a race. Its
