@@ -82,8 +82,9 @@ once per answer taken up: `{session, adapter, resumed, why}`, `why` being the co
 | `refused` | the agent refused the resume otherwise, or the resumed run could not start | *its conversation could not be resumed* |
 | `ended` | the record had already ended: a service from before ANSWER1b | *its record had already ended* |
 
-The first five are known before anything is spawned. The last four are the wire's: the resumed run then ends with
-nothing done, the park is closed as above, and the carry-on starts in the same look. A note travels, so it never names
+`ended`, `adapter`, `account`, `tree`, `unkept` and `unable` are known before anything is spawned, and are judged in that
+order (`Continuations.Judge`). `offered`, `gone` and `refused` are the wire's: the resumed run then ends with nothing
+done, the park is closed as above, and the carry-on starts in the same look. A note travels, so it never names
 an account (TOOL4f) and never quotes the agent's refusal; the agent's own words go to the record's conversation, which
 stays on this machine.
 
