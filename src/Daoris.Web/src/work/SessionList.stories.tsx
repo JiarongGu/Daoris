@@ -166,6 +166,23 @@ export const OneGroup: Story = {
   args: { sessions: SESSIONS.slice(3, 6), groupings: GROUPINGS.slice(3, 6), selected: null },
 };
 
+/**
+ * ANSWER1c (D131): the person answered the park, and for up to one look of the driver's its record is still parked with
+ * the answer set. The reader lists it under *Working*, its row *answered* and quiet, and *Waiting on you* holds only the
+ * quest parked on its failed sessions. Its ⋯ offers no *Answer…*.
+ */
+export const AnsweredGoesOn: Story = {
+  args: {
+    sessions: SESSIONS.map((row) => (row.id === 'p4rk3d00' ? { ...row, answer: 'The second: cap it on the chunk API.' } : row)),
+    groupings: [
+      GROUPINGS[0]!,
+      GROUPINGS[2]!,
+      { session: 'p4rk3d00', group: 'working', shown: 'answered', archived: false, teammate: false },
+      ...GROUPINGS.slice(3),
+    ],
+  },
+};
+
 /** A long *Ended*: twelve, then *Show 3 more* (§4.4). */
 export const LongEnded: Story = {
   args: {

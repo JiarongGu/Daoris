@@ -206,6 +206,12 @@ public sealed class AskAndWaitTickTests : IDisposable
             return new StandIn(listener, url, root);
         }
 
+        /// <summary>
+        /// The person's words on ask <c>a1</c>, which asked <c>q1</c> (DRIFT1b): served on its ask route once set. Until then
+        /// the route is unknown, so a start reads them as not read, as on a host from before them.
+        /// </summary>
+        public JsonArray? Words { get; set; }
+
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         public JsonObject Session(string id)
@@ -265,6 +271,13 @@ public sealed class AskAndWaitTickTests : IDisposable
                         return (200, new JsonArray([.. _quests
                             .Where(q => all || q["status"]!.GetValue<string>() is "Open" or "Taken")
                             .Select(q => q.DeepClone())]).ToJsonString());
+
+                    case ("GET", "/api/asks/a1") when Words is not null:
+                        return (200, new JsonObject
+                        {
+                            ["id"] = "a1", ["workspace"] = "default", ["sentence"] = "Add the note field", ["state"] = "Published",
+                            ["tier"] = "named", ["quests"] = new JsonArray("q1"), ["words"] = Words.DeepClone(),
+                        }.ToJsonString());
 
                     case ("GET", "/api/registry"):
                         return (200, new JsonArray(new JsonObject

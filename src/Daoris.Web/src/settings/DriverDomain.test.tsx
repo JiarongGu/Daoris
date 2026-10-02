@@ -152,6 +152,40 @@ describe('the driver domain', () => {
   });
 
   /**
+   * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris driver cooloff`
+   * edits. Written only when changed to a whole number of at least one, as the strikes are; an older shell that answers no
+   * such field is offered no row.
+   */
+  it('sets the cool-off a limit naming no time takes, and offers nothing to a shell older than it', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      return type === 'SET_COOLOFF' ? { ...DRIVER_STATE, coolOff: 90 } : { ...DRIVER_STATE, coolOff: 60 };
+    });
+    const { unmount } = show(<SettingsView notify={notify} section="driver" />);
+    const field = await screen.findByLabelText('Cool-off when no time is named');
+    expect((field as HTMLInputElement).value).toBe('60');
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '0');
+    await userEvent.tab();
+    expect(invoke.mock.calls.some(([, type]) => type === 'SET_COOLOFF')).toBe(false);
+    expect((field as HTMLInputElement).value).toBe('60');
+
+    await userEvent.clear(field);
+    await userEvent.type(field, '90');
+    await userEvent.tab();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_COOLOFF', { payload: { minutes: 90 } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('An account whose agent names no reset now cools 90 minutes.'));
+    unmount();
+
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    await screen.findByLabelText('Failures before a quest parks');
+    expect(screen.queryByLabelText('Cool-off when no time is named')).toBeNull();
+  });
+
+  /**
    * Notifications (SURF5b): the desktop's door onto the same `driver.json` field
    * `daoris driver notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
    * has to watch is the point of one — and the surface names the other door so a person on a

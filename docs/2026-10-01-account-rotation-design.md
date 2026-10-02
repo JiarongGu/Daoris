@@ -5,9 +5,9 @@
 > enough to answer three questions: what a harness's exhaustion actually looks like in its output, how long a cool-off
 > should be, and whether a rotated session stays reproducible"*, with exhaustion *observed, never read*. The install
 > now holds five observations (§0.2), and they answer all three. This is the contract for the TOOL4 rows, and its
-> decision is **D125**. Status: **designed; TOOL4a, TOOL4c, TOOL4d, TOOL4e, TOOL4f and TOOL4j built** (notes under
-> D125; TOOL4d's says why the native door's failure is not yet handed over; TOOL4e's, that the terminal spells the
-> tool's own sign-in `--own`, and that the screen's *Remove* is still to take an account out of its orders; TOOL4f's,
+> decision is **D125**. Status: **designed; TOOL4a, TOOL4c–TOOL4g and TOOL4j built** (notes under D125, TOOL4g's under
+> D130; TOOL4d's says why the native door's failure is not yet handed over; TOOL4e's, that the terminal spells the
+> tool's own sign-in `--own`, and that the screen's *Remove* was still to take an account out of its orders, which TOOL4g did; TOOL4f's,
 > how a wait over an order holds on the first reset; TOOL4j's, that the protocol stub is a door onto the stub's
 > accounts; and a fix of §2.1, that a time of day gets no grace). **D130** (`docs/2026-10-02-account-use-design.md`,
 > TOOL6) amends §3.1, §3.3, §3.4, §5.1, §6 and §9: a start reads one scope, a workspace's list is the whole set of

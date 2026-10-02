@@ -1,3 +1,4 @@
+import { moment } from './format';
 import i18n from './i18n';
 
 /**
@@ -54,6 +55,17 @@ export interface Consideration {
    * And when its last session ended (SESSUX1i): what *What needs you* counts its wait from. Absent as `strikes` is.
    */
   since?: string;
+  /**
+   * For a quest held at spawn because every account its start may use is cooling (TOOL4g, D125 §4): whose account, which
+   * (null for the tool's own sign-in), until when, and whether the agent named the time. It waits for an account: not
+   * parked, no Retry, and it starts by itself at the reset. Absent for every other hold, and on an older shell.
+   */
+  waitsFor?: { agent: string; account?: string | null; until: string; stated: boolean };
+}
+
+/** Whether a quest waits for an account (TOOL4g, D125 §4): held at spawn on a cooling account, never parked. */
+export function waitsForAccount(sitting: Consideration | null | undefined): boolean {
+  return sitting?.verdict === 'Blocked' && Boolean(sitting.waitsFor);
 }
 
 /**
@@ -105,6 +117,16 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
 export function sittingSentence(sitting: Consideration): string {
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
   if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
+  // A wait for an account (TOOL4g) is a `Blocked` hold the tick names the account of, so it is said from those facts; any
+  // other `Blocked` hold keeps the driver's words, since its sentence names what the tick does not carry.
+  if (sitting.verdict === 'Blocked' && sitting.waitsFor) {
+    const { agent, account, until, stated } = sitting.waitsFor;
+    return i18n.t(account ? 'work.sitting.waitsFor' : 'work.sitting.waitsForOwn', {
+      why: sitting.reason, agent, account, when: moment(until),
+      because: i18n.t(stated ? 'harness.cooling.why.stated' : 'harness.cooling.why.default'),
+      defaultValue: sitting.reason,
+    });
+  }
   return i18n.t(`work.sitting.${sitting.verdict}`, {
     why: sitting.reason, session: sitting.heldBy, quest: sitting.quest, failed: sitting.strikes,
     defaultValue: sitting.reason,

@@ -37,6 +37,16 @@ export function stamp(iso: string): string {
   return new Date(iso).toLocaleString(locale());
 }
 
+/**
+ * A moment as a person reads a reset (TOOL4g, D125 §2.4): its month and day, its clock, and the zone named, in this
+ * machine's zone and written the way the reader's language writes them — `Oct 3, 16:02 GMT+5:45`, `10月3日 16:02 GMT+5:45`.
+ */
+export function moment(iso: string): string {
+  return new Date(iso).toLocaleString(locale(), {
+    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZoneName: 'short',
+  });
+}
+
 /** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
 export function size(bytes: number): string {
   if (bytes < 1024) return `${bytes.toLocaleString(locale())} B`;

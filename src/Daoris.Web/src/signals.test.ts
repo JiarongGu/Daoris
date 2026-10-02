@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import i18n from './i18n';
-import { type Consideration, TOAST_LIMIT, capped, newsFrom, sittingBecause, sittingSentence, withNotice } from './signals';
+import {
+  type Consideration, TOAST_LIMIT, capped, newsFrom, sittingBecause, sittingSentence, waitsForAccount, withNotice,
+} from './signals';
 
 /**
  * The driver's tick lines, as notices. Written from four identical toasts stacked on the deployed
@@ -192,5 +194,41 @@ describe('sittingSentence', () => {
     expect(said).toMatch(/挂起/);
     expect(said).toContain('`daoris driver retry 9a9492`');
     expect(sittingSentence(sits('Exhausted', reason))).toBe(reason);
+  });
+
+  /**
+   * TOOL4g (D125 §4): a quest held because every account its start may use is cooling waits for an account. The tick names
+   * whose account, which and until when, so 中文 says it from those facts; English is the driver's own sentence. Any other
+   * hold at spawn keeps the driver's words in both.
+   */
+  it("says a wait for an account in 中文 from the account the tick names, and the driver's words in English", async () => {
+    const reason = 'the `claude-code` account `account-1` is cooling until Oct 3, 16:02 (Etc/UTC), as the agent said.';
+    const waits: Consideration = {
+      ...sits('Blocked', reason), waitsFor: { agent: 'claude-code', account: 'account-1', until: '2026-10-03T16:02:00Z', stated: true },
+    };
+    const own: Consideration = { ...waits, waitsFor: { ...waits.waitsFor!, account: null, stated: false } };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(waits)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    const said = sittingSentence(waits);
+    expect(said).toContain('claude-code 的账户 account-1');
+    expect(said).toContain('智能体如此说明');
+    expect(said).toContain('无需你处理');
+    expect(sittingSentence(own)).toContain('claude-code 自己的登录');
+    expect(sittingSentence(own)).toContain('Daoris 的默认值');
+    expect(sittingSentence(sits('Blocked', 'the tree is dirty.'))).toBe('the tree is dirty.');
+  });
+});
+
+describe('waitsForAccount', () => {
+  it('is a hold at spawn the tick names an account for, and nothing else', () => {
+    const waitsFor = { agent: 'claude-code', account: 'account-1', until: '2026-10-03T16:02:00Z', stated: true };
+    const base = { quest: 'q1', repository: 'engine', reason: 'cooling.' };
+    expect(waitsForAccount({ ...base, verdict: 'Blocked', waitsFor })).toBe(true);
+    expect(waitsForAccount({ ...base, verdict: 'Blocked' })).toBe(false);
+    expect(waitsForAccount({ ...base, verdict: 'Exhausted', waitsFor })).toBe(false);
+    expect(waitsForAccount(null)).toBe(false);
   });
 });

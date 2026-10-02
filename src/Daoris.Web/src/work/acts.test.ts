@@ -36,6 +36,16 @@ describe('the acts a session is offered', () => {
     expect(offeredActs(waiting, 'header')).not.toContain('answer');
   });
 
+  /** ANSWER1c (D131): answered, the same session goes on at the driver's next look, and there is no box to answer in. */
+  it('offers no answer to a park the person has answered, and keeps its stop', () => {
+    const answered = {
+      session: session({ state: 'awaiting-person', answer: 'Use the second.' }),
+      grouping: placed({ group: 'working', shown: 'answered' }),
+      root: ROOT,
+    };
+    expect(offeredActs(answered, 'row')).toEqual(['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+  });
+
   it('offers a parked quest’s last session Try again, and a stopped one Try again only where its stop holds its quest', () => {
     const parked = { session: session({ state: 'failed' }), grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }), root: ROOT };
     expect(offeredActs(parked, 'row')).toContain('retry');
@@ -103,6 +113,9 @@ describe('what a stop says before it is meant', () => {
     expect(stopAsk(session(), quest('Taken'))).toEqual({ key: 'work.stop.drivenHeld', values: {} });
     expect(stopAsk(session({ state: 'queued' }), quest('Open'))).toEqual({ key: 'work.stop.drivenOpen', values: { quest: 'abc123' } });
     expect(stopAsk(session({ state: 'awaiting-person' }), quest('Taken'))).toEqual({ key: 'work.stop.parked', values: {} });
+    // ANSWER1c: answered, it is not stopped unanswered; it holds its quest as a driven session at work does.
+    expect(stopAsk(session({ state: 'awaiting-person', answer: 'carry on.' }), quest('Taken')))
+      .toEqual({ key: 'work.stop.drivenHeld', values: {} });
     expect(stopAsk(session({ quest: null, kind: 'chat' }), null)).toEqual({ key: 'work.stop.chat', values: {} });
     expect(stopAsk(session({ quest: null, kind: 'chat', ask: '0fda18' }), null)).toEqual({ key: 'work.intake.stopMeans', values: {} });
   });

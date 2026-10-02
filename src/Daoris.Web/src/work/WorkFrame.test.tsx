@@ -1619,6 +1619,38 @@ describe('clearing a parked session', () => {
     expect(JSON.parse(String(init!.body))).toEqual({ answer: 'go ahead with the PUT' });
   });
 
+  /**
+   * ANSWER1c (D131): the answer keeps the park (ANSWER1b), and the same session goes on at the driver's next look. Until
+   * then the record is still parked, with the answer set, and the frame shows it going on: the answer and when, no box
+   * to answer in again, and none of the card's moves. The toast says the same.
+   */
+  it('shows an answered park as going on at the driver\'s next look, with no box and no moves', async () => {
+    const notify = vi.fn();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith('/answer') && init?.method === 'POST') {
+        SESSIONS = [{ ...PARKED, answer: 'go ahead with the PUT', note: `${PARKED.note}\n\nAnswered: go ahead with the PUT` }];
+        return Response.json({ message: 'Answered session `p4rk3d00`.' });
+      }
+      return respond(String(input));
+    }));
+    show('p4rk3d00', notify);
+
+    await userEvent.type(await screen.findByLabelText('Message'), 'go ahead with the PUT');
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
+
+    expect(await screen.findByRole('heading', { name: 'Your answer' })).toBeInTheDocument();
+    expect(screen.getByText("The same session goes on with this answer at the driver's next look.")).toBeInTheDocument();
+    expect(notify).toHaveBeenCalledWith("Answered — the same session goes on with your words at the driver's next look.");
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByText('This one is waiting on you')).toBeNull();
+    for (const name of ['Finish', 'Decline…', 'Carry on with this answer']) expect(screen.queryByRole('button', { name })).toBeNull();
+    // Its stop stays the page header's, saying what a driven session's stop says, never that it stops unanswered.
+    await userEvent.click(within(screen.getByRole('group', { name: 'Session actions' })).getByRole('button', { name: 'Stop…' }));
+    const ask = screen.getByRole('group', { name: 'stop this session' });
+    expect(ask).toHaveTextContent('Stops the session now.');
+    expect(ask).not.toHaveTextContent('unanswered');
+  });
+
   /** The card keeps finish and decline; the stop is the page header's, which asks once (SESSUX1d, D126 §3.3). */
   it('shows the analysis and its moves on the attended session, its stop in the page header', async () => {
     show('p4rk3d00');

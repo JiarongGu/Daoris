@@ -36,6 +36,11 @@ export type DriverState = {
   notify: boolean;
   /** How many failed sessions park a quest (D58); `0` never parks. */
   strikes: number;
+  /**
+   * How long an account cools when its agent names no time, in minutes (TOOL4g, D125 §2.2): the file's, or the hour.
+   * Absent on a shell older than it, and the setting is then not offered.
+   */
+  coolOff?: number;
   /** Quests the person restarted, by id, and the failure count each was restarted at. */
   forgiven: Record<string, number>;
   /**
@@ -188,6 +193,12 @@ export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTI
  * before it existed. The same field `daoris driver strikes <n>` edits.
  */
 export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STRIKES');
+
+/**
+ * How long an account cools when its agent names no time (TOOL4g, D125 §2.2): whole minutes, at least one, the same
+ * `cooloff` `daoris driver cooloff <minutes>` edits; less than one is the driver's refusal.
+ */
+export const useSetCoolOff = () => useDriverChange<{ minutes: number }>('SET_COOLOFF');
 
 /**
  * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one

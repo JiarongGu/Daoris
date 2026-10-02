@@ -22,7 +22,8 @@ export type Resolution = 'completed' | 'declined' | 'stopped';
  *
  * **Unless nothing is left to take a message (STANDDOWN2).** A driven session that took its quest and
  * ended its turn to ask the person has no process: its answer is a move here, handed `onAnswer`. The
- * record ends with the words, and the quest is carried on in the same tree, handed them. Then the
+ * record stays parked with the words (ANSWER1b), and the same session goes on with them at the driver's
+ * next look (D131); until then the head shows `AnsweredPark` in this card's place (ANSWER1c). Then the
  * composer hint would send the person nowhere, and it is not shown.
  *
  * **Declining asks for its reason in place**, the same two-step a quest's page uses and for the
