@@ -68,6 +68,38 @@ export const INTAKE_PARKED: Session = {
   note: 'published nothing: the declarations did not settle ask `#3e4f5a6b7c8d`, so it asks you rather than guess.',
 };
 
+/**
+ * Its sessions asked the person for go-aheads (KNOWUSE1a): the production write approved with the person's words, a
+ * release refused, and the menu entries still waiting, asked by two sessions, the second asking again where the words
+ * could not tell it from the first. A kind this page has no word for is shown as the service wrote it.
+ */
+export const WITH_GO_AHEADS: Ask = {
+  ...PUBLISHED, id: '4b5c6d7e8f90',
+  goAheads: [
+    {
+      number: 1, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'approved',
+      asked: [{ session: 's1a2b3c4', quest: '9a8b7c6d5e4f', at: hoursAgo(5), why: 'The tile reads its target from it.' }],
+      answer: { approved: true, words: 'run the put', at: hoursAgo(4) },
+    },
+    {
+      number: 2, kind: 'release', on: 'production', act: 'comparison report', state: 'refused',
+      asked: [{ session: 's1a2b3c4', quest: '9a8b7c6d5e4f', at: hoursAgo(5), why: 'Ship it.' }],
+      answer: { approved: false, words: 'test it on dev first', at: hoursAgo(4) },
+    },
+    {
+      number: 3, kind: 'write', on: 'production', act: 'menu entries', state: 'asked', near: 1,
+      asked: [
+        { session: 's1a2b3c4', quest: '9a8b7c6d5e4f', at: hoursAgo(3), why: 'The report needs an entry on both sites.' },
+        { session: 's5d6e7f8', quest: '9a8b7c6d5e4f', at: hoursAgo(2), why: 'Still needed.' },
+      ],
+    },
+    {
+      number: 4, kind: 'teleport', on: 'the moon', act: 'the lander', state: 'asked',
+      asked: [{ session: 's5d6e7f8', at: hoursAgo(1), why: 'A newer kind.' }],
+    },
+  ],
+};
+
 /** A CJK sentence, long, so the card's one line and the record's title are both tried. */
 export const LONG_CJK: Ask = {
   ...PROPOSED, id: '8e7d6c5b4a39', workspace: '工作区',

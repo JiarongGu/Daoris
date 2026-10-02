@@ -281,6 +281,58 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// KNOWUSE1a (D135 §2): a go-ahead a session asked is answered on both ask routes as `goAheads`, the act by its kind,
+    /// place and words, with each session's request; the person's answer door keeps their yes or no with their words,
+    /// 200 with the ask as it now stands. An answer that is neither, a go-ahead the ask does not hold and an ask nobody
+    /// holds are refused, and nothing is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_go_ahead_is_read_back_from_the_asks_routes_and_answered_at_its_door()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "The dashboard figure reads zero; fix it.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        Assert.Equal(0, asked.Json.GetProperty("ask").GetProperty("goAheads").GetArrayLength());
+        var id = await RunningAsync(quest, "knowuse1a-go-ahead");
+        await host.Composed.Ledger.AskGoAheadAsync(id, "write", "production", "dashboard configuration", "The tile's target.", DateTimeOffset.UtcNow);
+
+        var read = await host.GetAsync($"/api/asks/{ask}");
+
+        var goAhead = Assert.Single(read.Json.GetProperty("goAheads").EnumerateArray());
+        Assert.Equal(1, goAhead.GetProperty("number").GetInt32());
+        Assert.Equal(["write", "production", "dashboard configuration", "asked"],
+            new[] { "kind", "on", "act", "state" }.Select(field => goAhead.GetProperty(field).GetString()));
+        var request = Assert.Single(goAhead.GetProperty("asked").EnumerateArray());
+        Assert.Equal([id, quest, "The tile's target."], new[] { "session", "quest", "why" }.Select(field => request.GetProperty(field).GetString()));
+        // Absent while it waits, as every null this host answers is.
+        Assert.False(goAhead.TryGetProperty("answer", out _));
+
+        Assert.Contains(("POST", "/api/asks/{id}/go-aheads/{number}"), host.Routes());
+        var answered = await host.PostAsync($"/api/asks/{ask}/go-aheads/1", new { answer = "approved", words = "run the put" });
+
+        Assert.Equal(200, answered.Status);
+        Assert.Contains("approved", answered.Json.GetProperty("message").GetString());
+        var now = Assert.Single(answered.Json.GetProperty("ask").GetProperty("goAheads").EnumerateArray());
+        Assert.Equal("approved", now.GetProperty("state").GetString());
+        Assert.True(now.GetProperty("answer").GetProperty("approved").GetBoolean());
+        Assert.Equal("run the put", now.GetProperty("answer").GetProperty("words").GetString());
+        var listed = (await host.GetAsync("/api/asks?includeClosed=true")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == ask);
+        Assert.Equal("approved", listed.GetProperty("goAheads")[0].GetProperty("state").GetString());
+
+        Assert.Equal(400, (await host.PostAsync($"/api/asks/{ask}/go-aheads/1", new { answer = "maybe" })).Status);
+        Assert.Equal(400, (await host.PostAsync($"/api/asks/{ask}/go-aheads/1", new { answer = "refused", words = new string('x', 2_001) })).Status);
+        var noGoAhead = await host.PostAsync($"/api/asks/{ask}/go-aheads/7", new { answer = "refused" });
+        Assert.Equal(404, noGoAhead.Status);
+        Assert.Contains("go-ahead 7", noGoAhead.Error);
+        Assert.Equal(404, (await host.PostAsync("/api/asks/ffffff/go-aheads/1", new { answer = "refused" })).Status);
+        Assert.Equal("approved", (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("goAheads")[0].GetProperty("state").GetString());
+    }
+
+    /// <summary>
     /// DRIFT1c (D133 §3): the ask's publish door takes requirements, each the person's words with its check.
     /// A quote they never said is refused, 409 with the exchange's sentence naming the words, and nothing is
     /// published; one they said is published, and the quest answers it on the publish and on the list.

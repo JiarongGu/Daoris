@@ -163,6 +163,25 @@ export type Ask = {
    * them. The service's judgement, like a quest's; absent from a host older than the field.
    */
   deletable?: boolean;
+  /**
+   * The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, one per act; absent from a host
+   * older than them.
+   */
+  goAheads?: GoAhead[];
+};
+/** One session's request for a go-ahead: who asked, on which quest, when, and why, in its words. */
+export type GoAheadRequest = { session: string; quest?: string | null; at: string; why: string };
+/**
+ * A go-ahead (KNOWUSE1a): the person's yes for one act outside a repository, asked once on the ask. `kind` is the
+ * service's word (write, release, push, sign-in, run); `on` and `act` are the session's words for where it lands and
+ * what it touches, shown as written. `answer` is absent while it waits on the person.
+ */
+export type GoAhead = {
+  number: number; kind: string; on: string; act: string; state: 'asked' | 'approved' | 'refused';
+  asked: GoAheadRequest[];
+  answer?: { approved: boolean; words?: string | null; at: string } | null;
+  /** The go-ahead whose words it shared where they could not tell, when that is why it was asked again. */
+  near?: number | null;
 };
 export type AskAction = { ask: Ask; message: string; quest?: Quest | null };
 /** What a delete did (D95): the record it removed, and the service's sentence, shown as said. */
@@ -372,6 +391,12 @@ export const api = {
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
   closeAsk: (id: string, reason: string) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
+  // The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a), with their words where they give any;
+  // `daoris-driver ask --go-ahead` is the terminal's twin.
+  answerGoAhead: (id: string, number: number, approved: boolean, words?: string) =>
+    post<AskAction>(`/api/asks/${encodeURIComponent(id)}/go-aheads/${number}`, {
+      answer: approved ? 'approved' : 'refused', ...(words ? { words } : {}),
+    }),
   // Deleting a record made by mistake (D95) — `daoris-driver ask --delete` and `quest delete` are the
   // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.
   deleteAsk: (id: string) => post<Deleted>(`/api/asks/${encodeURIComponent(id)}`, undefined, 'DELETE'),

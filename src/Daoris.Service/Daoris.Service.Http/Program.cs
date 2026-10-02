@@ -666,6 +666,30 @@ if (mode == ServiceMode.Local)
         ComposedService s, HttpContext http, string id, AskCloseRequest body, CancellationToken ct) =>
         AskAnswer(await s.Asks.CloseAsync(id, body.Reason ?? "", DateTimeOffset.UtcNow, ct), s, http));
 
+    // The person answers a go-ahead a session asked on their ask (KNOWUSE1a, D135 §2): yes or no, with their words where
+    // they give any. Local like every ask route; no connector tool answers one, since the production acts stay theirs.
+    app.MapPost("/api/asks/{id}/go-aheads/{number}", async (
+        ComposedService s, HttpContext http, string id, string number, GoAheadAnswerRequest body, CancellationToken ct) =>
+    {
+        if (!int.TryParse(number, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n) || n < 1)
+        {
+            return Results.NotFound(new ErrorResponse($"`{number}` is no go-ahead's number — they are numbered from 1 on their ask."));
+        }
+
+        if (body.Answer is not ("approved" or "refused"))
+        {
+            return Results.BadRequest(new ErrorResponse("answer is `approved` or `refused` — the person's yes or no to the act."));
+        }
+
+        var outcome = await s.Asks.AnswerGoAheadAsync(id, n, body.Answer == "approved", body.Words, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            GoAheadAnswerRefusal.None => Results.Ok(new AskActionResponse(ToAsk(outcome.Ask!, s.Files, MachineLocal(http)), outcome.Message, null)),
+            GoAheadAnswerRefusal.NotFound or GoAheadAnswerRefusal.NoGoAhead => Results.NotFound(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
+
     // Deleting an ask made by mistake, with every quest asked by it, or none of it (D95).
     app.MapDelete("/api/asks/{id}", async (ComposedService s, string id, CancellationToken ct) =>
     {
@@ -1430,7 +1454,13 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
         a.Quests, a.Intake, a.Deletable,
         // The person's words, served as the sentence is: these routes are a local host's alone (DRIFT1a).
         Words: a.Words.Select(w => new AskWordResponse(AskWord.Spell(w.Kind), w.Text, w.At, w.Session, w.Quest)).ToList(),
-        WordsKeptFrom: a.WordsKeptFrom);
+        WordsKeptFrom: a.WordsKeptFrom,
+        // The go-aheads its sessions asked for (KNOWUSE1a), every one, served as the words are.
+        GoAheads: a.GoAheads.Select(g => new GoAheadResponse(
+            g.Number, g.Kind, g.On, g.Act, GoAhead.Spell(g.State),
+            g.Asked.Select(r => new GoAheadRequestResponse(r.Session, r.Quest, r.At, r.Why)).ToList(),
+            g.Answer is { } answer ? new GoAheadAnswerResponse(answer.Approved, answer.Words, answer.At) : null,
+            g.Near)).ToList());
 }
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(

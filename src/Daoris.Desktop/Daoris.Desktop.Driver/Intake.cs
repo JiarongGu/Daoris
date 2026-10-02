@@ -37,6 +37,12 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
 
     /// <summary>For an ask made before its words were kept: from when they are, since nothing is back-filled (DRIFT1a).</summary>
     public DateTimeOffset? WordsKeptFrom { get; init; }
+
+    /// <summary>
+    /// The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, one per act. Null where the host
+    /// answered none, a host from before them.
+    /// </summary>
+    public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 }
 
 public static class Asks

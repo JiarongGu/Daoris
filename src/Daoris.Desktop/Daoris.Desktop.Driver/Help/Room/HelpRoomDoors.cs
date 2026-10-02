@@ -123,6 +123,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`daoris browser favorite add|remove <address>`"),
         ("start a task", "Quests → Ask", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
+        // KNOWUSE1a: a go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris
+        // never answers one: the production acts stay the person's (D135 §2).
+        ("answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on "
+            + "the ask is handed", "Quests → the ask's page → Go-aheads", "`daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]`"),
     ];
 
     public string Render(HelpMachine machine)

@@ -58,7 +58,7 @@
       "budget": { "en": 32, "zh": 12 },
       "case": "sentence",
       "keys": [
-        "asks.group", "asks.record.files", "asks.record.intake", "asks.record.links", "asks.record.proposal",
+        "asks.group", "asks.record.files", "asks.record.goAheads", "asks.record.intake", "asks.record.links", "asks.record.proposal",
         "asks.record.quests", "browser.driving.menu", "chain.title", "convergence.methods.Convergent.label",
         "convergence.methods.Identical.label", "convergence.methods.Restatement.label", "harness.accounts",
         "harness.doors", "harness.title", "harness.use.machine", "harness.use.title", "harness.use.workspace",
@@ -162,7 +162,8 @@
       "budget": { "en": 20, "zh": 8 },
       "case": "sentence",
       "keys": [
-        "asks.ask", "asks.compose.submit", "asks.record.close", "asks.record.closeConfirm",
+        "asks.ask", "asks.compose.submit", "asks.goAhead.approve", "asks.goAhead.change", "asks.goAhead.refuse",
+        "asks.record.close", "asks.record.closeConfirm",
         "asks.record.delete", "asks.record.deleteMeanIt", "asks.record.publish", "asks.record.publishTo",
         "browser.door.open", "carry.choose", "carry.remove", "chain.hide", "chain.show", "code.back",
         "common.*", "convergence.list.close", "convergence.list.open", "convergence.lower", "harness.cooling.tryNow",
@@ -226,7 +227,7 @@
       "budget": { "en": 16, "zh": 5 },
       "case": "lower",
       "keys": [
-        "asks.state.*", "chain.ask", "chain.current", "chain.thisSession", "console.live", "harness.absent",
+        "asks.goAhead.state.*", "asks.state.*", "chain.ask", "chain.current", "chain.thisSession", "console.live", "harness.absent",
         "harness.cooling.pill", "harness.use.begins", "harness.use.kept", "harness.use.near", "work.waitsForAccount",
         "harness.declaredBy", "harness.installed", "harness.login.in", "harness.login.keyed",
         "harness.login.out", "harness.login.unknown", "harness.own",
@@ -305,7 +306,7 @@
       "budget": { "en": 40, "zh": 16 },
       "case": "lower",
       "keys": [
-        "asks.compose.circlePlaceholder", "asks.record.anotherPlaceholder", "asks.record.closeWhy",
+        "asks.compose.circlePlaceholder", "asks.goAhead.words", "asks.record.anotherPlaceholder", "asks.record.closeWhy",
         "harness.pin.placeholder", "harness.profile.keyPlaceholder", "harness.profile.useForPlaceholder",
         "harness.settings.modelIdPlaceholder", "map.find", "plugin.kit.folderPlaceholder",
         "projects.manage.importWorkspacePlaceholder", "projects.manage.workspacePlaceholder",
@@ -389,6 +390,7 @@
     { "term": "ask", "en": "ask", "zh": "需求", "means": "What a person asks of a workspace; the declarations or its intake turn it into quests.", "why": "请求 is every request's word (a pull request's, an HTTP request's, an agent's for more); 需求 names what a person wants made. The owner's call.", "match": "\\bask #|\\b(an|the|this|your|each|no) asks?\\b|^asks?\\b(?! Daoris)|\\b(close|delete) ask\\b", "pair": false, "avoid": { "en": [], "zh": ["请求"] } },
     { "term": "request", "use": "quest", "means": "Not a name on the window: a request to a repository is a quest, and one to a workspace an ask.", "avoid": { "en": [], "zh": [] } },
     { "term": "intake", "en": "intake", "zh": "受理", "means": "What reads an ask and decides which repositories it becomes quests for: the declarations, or a session on an agent.", "match": "\\bintakes?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "go-ahead", "en": "go-ahead", "zh": "放行", "means": "The person's yes for one act outside a repository (a production write, a release, a push, a sign-in), asked once on the ask and handed to every session on it (KNOWUSE1a).", "why": "放行 is to let an act through a gate that was the person's to open; 许可 reads as a licence or a permission rule, which is the agents' permissions.", "match": "\\bgo-aheads?\\b", "avoid": { "en": [], "zh": ["许可"] } },
     { "term": "receiver", "en": "receiver", "zh": "受托方", "means": "The repository a quest is addressed to.", "why": "It pairs with the asker's 委托方, both built on 委托.", "match": "\\breceivers?\\b|\\baddressed to\\b", "avoid": { "en": ["addressed to"], "zh": ["接收方"] } },
     { "term": "asker", "en": "asker", "zh": "委托方", "means": "The repository a quest comes from.", "match": "\\baskers?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "declaration", "en": "declaration", "zh": "声明", "means": "What a repository says of itself in daoris.json: what it is, what it owns and what it accepts.", "match": "\\bdeclarations?\\b", "avoid": { "en": [], "zh": [] } },

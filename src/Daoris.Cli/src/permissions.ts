@@ -58,11 +58,12 @@ export interface PermissionFile {
 
 /**
  * The connector's own tools. Not `knowledge_refresh`: rebuilding the index is the machine's job. And
- * `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person.
+ * `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person. `go_ahead_ask`
+ * (KNOWUSE1a, D135 §2) only ASKS — the act it names still waits for the person's yes.
  */
 const CONNECTOR_TOOLS = [
   'registry', 'knowledge_search', 'knowledge_get', 'knowledge_repositories',
-  'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish', 'permission_propose',
+  'knowledge_convergence', 'quest_list', 'quest_respond', 'quest_publish', 'permission_propose', 'go_ahead_ask',
 ];
 
 /** What Daoris ships. 🔴 The driver's `PermissionRules` (`Permissions.cs`) holds the same table, and a test reads this one. */

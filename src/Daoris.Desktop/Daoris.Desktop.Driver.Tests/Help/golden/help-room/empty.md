@@ -134,6 +134,7 @@ session named; never propose adding one that has not landed.
 | choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |
 | start a task | Quests → Ask | `daoris-driver ask --workspace <name> "…"` |
 | answer what waits on the person | Sessions, and what needs you | `daoris-driver answer` |
+| answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on the ask is handed | Quests → the ask's page → Go-aheads | `daoris-driver ask --go-ahead <id> <n> approve|refuse ["…"]` |
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,

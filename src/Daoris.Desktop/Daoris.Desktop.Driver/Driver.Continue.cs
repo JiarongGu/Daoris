@@ -5,11 +5,17 @@ namespace Daoris.Driver;
 /// conversation, the answer that is its next prompt, and the run's first line; whether the agent would not resume it,
 /// and whether the native door's harness named its conversation at all.
 /// </summary>
-internal sealed class ResumeAsk(string conversation, string answer, string firstLine)
+internal sealed class ResumeAsk(string conversation, string answer, string firstLine, string? prompt = null)
 {
     public string Conversation => conversation;
 
     public string Answer => answer;
+
+    /// <summary>
+    /// What the conversation is resumed with: the answer, verbatim, and after it the answers to the go-aheads it asked, which
+    /// it was not handed at its start (KNOWUSE1a). The record keeps only the answer as the person's words.
+    /// </summary>
+    public string Prompt => prompt ?? answer;
 
     /// <summary>Why the agent would not resume it, said by the door; null while nothing refused.</summary>
     public ContinueReason? Refused { get; set; }
@@ -97,7 +103,12 @@ public sealed partial class Driver
             WritesAcross = across.Writes,
             Session = sessionId,
         };
-        var resume = new ResumeAsk(kept.Conversation, answer, Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion));
+        // The go-aheads it asked, answered since it parked (KNOWUSE1a, D135 §2): its conversation was handed the ask's at its
+        // start, and is told the answers after the person's own words. Unread, or on no ask, it is resumed with the answer alone.
+        var words = await AskWords.ReadAsync(service, quest.From, ct).ConfigureAwait(false);
+        var resume = new ResumeAsk(
+            kept.Conversation, answer, Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion),
+            GoAheadsText.Resumed(answer, words, sessionId));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
 
         try
@@ -106,7 +117,7 @@ public sealed partial class Driver
             // conversation it kept.
             var prepared = adapter.Wire == SessionWire.Acp
                 ? null
-                : adapter.PrepareResume(target, config.Commands.GetValueOrDefault(adapter.Name), kept.Conversation, answer);
+                : adapter.PrepareResume(target, config.Commands.GetValueOrDefault(adapter.Name), kept.Conversation, resume.Prompt);
             var (info, harnessNotice) = Prepare(adapter, target, selection, prepared);
             var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
             hooks?.Log.Served(_catalog, sessionId, servers);

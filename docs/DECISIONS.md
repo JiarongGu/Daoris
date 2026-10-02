@@ -9859,3 +9859,47 @@ KNOWUSE3.
 records, the documents and the owner's later words; the owner did not class them, which is what KNOWUSE2 measures. One
 session was still running and an earlier ticket's ten sessions were not read. No session was re-run with the proposed
 wording. `verify` checks this entry's place and the evidence's links, and none of their words.
+
+**KNOWUSE1a, built 2026-10-03: a go-ahead is asked once and held on the ask.** A session asks through its connector's
+`go_ahead_ask` (`kind`, `on`, `act`, `why`), which the connector default now allows in both twins
+(`Permissions.cs`, `permissions.ts`). `SessionLedger.AskGoAheadAsync` derives the ask as a word's is (DRIFT1a) and keeps
+the request in the ask's `go_aheads` column, read, decided and written in one transaction
+(`AskStore.DecideGoAheadsAsync`). Both ask routes answer `goAheads`. The person answers at
+`POST /api/asks/{id}/go-aheads/{n}` (`approved` or `refused`, with their words), `daoris-driver ask --go-ahead <id> <n>
+approve|refuse ["…"]`, and the ask's page's *Go-aheads*. Every start on the ask (a claim, a D79 resume, a carry-on on any
+account, a follow-up step) is handed them beneath the person's words (`GoAheadsText.Beneath`). A conversation an answer
+resumes (ANSWER1a) is handed the answers to the go-aheads it asked, after the person's answer, while its record keeps only
+the answer as theirs (`GoAheadsText.Resumed`). A quest an ask asked tells its session to ask once, through the tool.
+Choices §2 left open:
+- **How an act is named** (`GoAheadAct`), from the evidence's thirteen asks. There are three parts: the kind, read from
+  five words and their usual names (*put*, *deploy*, *login*); where it lands, an environment's names read as one (*prod*,
+  *live*, *production*); and what it touches, by its words. Case, the small words, a possessive, a plural's ending and its
+  own kind and place said again are set aside. Words only, so no model answers it (D24).
+- **One act** is the same kind, the same place, and every word of the earlier act's: a later request may be more precise
+  (*menu entry*, then *the report's menu entries*). Among several that match, the most precise answers it.
+- **Where text cannot tell**: a request sharing some of an earlier act's words without all of them, a broader one
+  included, is asked once more as its own, with `near` naming the earlier, and the session is told it could not match it.
+  A yes never covers an act the person did not read. Another kind or place, or no word shared, is simply another act.
+- **The answer replaces** an earlier one, since the latest is what the person says now, and is the person's alone: no
+  connector tool and no Ask Daoris kind answers one (HELP9's room names the terminal's door). A request for a refused act
+  joins it and is told not to do it; the same session asking twice adds no second request.
+- **Bounded**: `on` and `act` at most 300 characters, the reason and the person's words 2,000, an ask at most 50
+  go-aheads; the instruction carries 8,000 characters of them and names the rest by number.
+- **Kept as written**: a go-ahead this build cannot read (a newer kind, a half-written entry) is passed over on read, kept
+  by the next write, and numbered past. A store from before gains the column, every ask holding none.
+
+Proof: `GoAheadTests` (a request kept as go-ahead 1; the proof, a carry-on's second request in other words joining the
+first; a more precise one joining; one the words cannot tell asked once more, saying so; another kind, place or thing;
+an answer kept and told to a later request; a refusal and its replacement; the refusals; no ask; a follow-up step; a later
+publish and close; an unreadable entry kept; a store from before; the naming tables), seen failing with the join removed;
+`McpToolsTests` (asked and joined through two sessions' connectors), seen failing without the tool; `LocalHostTests`
+(both ask routes, the answer door's 200, 400 and 404), seen failing with the route moved; `SharedHostTests` (no door on a
+shared host). In the driver, `GoAheadsHandedTests` (the proof, a carry-on handed what was approved, refused and waiting;
+every kind of start and a follow-up; the tool named only on an ask; the bound; the client's read; the resumed prompt; the
+terminal's door), seen failing with the section removed; `PermissionRulesTests` and `permissions.test.ts`, seen failing
+before the tool was allowed; the room's goldens gained the door's row. In the page, `asks.test.tsx` (each listed with the
+person's words, a yes with words, a no, an answer changed, no door, no section), seen failing before the list was drawn;
+`api.test.ts` (the door's path and body). Not covered: no real agent was handed the tool, so whether a harness asks
+through it rather than in its last message is not measured; nothing compares an act's words by meaning, so two wordings
+sharing no word are asked twice; the parked session's page does not show the go-aheads it asked, which are on the ask's
+page; the family rehearsal asks none; the page was not looked at on the window.

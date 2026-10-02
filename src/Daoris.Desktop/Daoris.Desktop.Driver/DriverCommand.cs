@@ -39,7 +39,9 @@ public static class DriverCommand
               a conversation in a repository: stdin is you, stdout the session.
           ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
           ask --publish <id> --to <repo>  ·  ask --close <id> --reason "…"  ·  ask --delete <id>
-              ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake.
+          ask --go-ahead <id> <n> approve|refuse ["…"]
+              ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake; answer a
+              go-ahead a session asked on it, which every session on the ask is handed from then on.
           setup <repository> [--plan]
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan

@@ -1283,8 +1283,9 @@ public sealed partial class Driver(
         // same process; the pipe door reads its text, or its structure where its own wire carries one
         // (D76, CONV3). All of them end the same way: the record is concluded from the exit code and
         // what the session was for, never from what the session said about itself (D46 §4).
-        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target.
-        var prompt = resume?.Answer ?? TargetPrompt.Compose(target);
+        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target. After it, the answers
+        // to the go-aheads it asked since its start (KNOWUSE1a).
+        var prompt = resume?.Prompt ?? TargetPrompt.Compose(target);
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
         // intake's: it is answered through its ask.
         var keepAs = target.Ask is null ? adapter.Name : null;

@@ -198,7 +198,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
@@ -226,7 +226,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}
         An earlier session on this quest needed something only `{answered.To}` could answer, asked it, and
         waited. What it did is in this tree — read its commits before you go on. The question was quest
         `#{answered.Id}`, "{answered.Title}", and {Answer(answered)}
@@ -257,7 +257,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}
         {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
         and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}
 
@@ -298,6 +298,12 @@ public static class TargetPrompt
     /// read; nothing for a quest no ask asked.
     /// </summary>
     private static string Words(SessionTarget target) => AskWordsText.Beneath(target.Words, target.QuestId);
+
+    /// <summary>
+    /// The go-aheads its sessions asked on the ask (KNOWUSE1a, D135 §2), beneath the person's words: what was approved, what
+    /// was refused and what still waits, each by its number. Nothing where the ask holds none, or for a quest no ask asked.
+    /// </summary>
+    private static string GoAheads(SessionTarget target) => GoAheadsText.Beneath(target.Words);
 
     /// <summary>
     /// The most characters of the requirements' words and checks an instruction carries, for the person's words' reason
@@ -426,11 +432,22 @@ public static class TargetPrompt
         in this tree, with its answer.
 
         Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act
-        outside this repository or on a production system, a preference nothing records. Then say exactly
+        outside this repository or on a production system, a preference nothing records.{OnceOnTheAsk(target)} Then say exactly
         what and why, and what you looked at, in your last message, commit what you have, and
         end your turn with the quest still taken, rather than declining. The person answers, and you are
         started again here, in this tree, with their words.
         """;
+
+    /// <summary>
+    /// For a quest an ask asked (KNOWUSE1a, D135 §2): a go-ahead is asked once, on the ask, through the connector, so a
+    /// request for an act already asked joins the first and is told its answer. Nothing for a quest no ask asked, which has
+    /// no ask to hold one, so its instruction reads as it did.
+    /// </summary>
+    private static string OnceOnTheAsk(SessionTarget target) => AskWords.AskOf(target.Asker) is null
+        ? ""
+        : " A go-ahead is asked once, on the ask: where your connector offers `go_ahead_ask`, ask it there, naming the act's "
+          + "kind, where it lands and what it touches, before you stop for it; an act already asked joins the first and tells "
+          + "you its answer.";
 
     /// <summary>
     /// The other checkouts as a source to look in, only where the session may read across (D107), pointed to
