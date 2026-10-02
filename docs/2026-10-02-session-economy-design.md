@@ -21,7 +21,9 @@ Every count is from the committed tree at `7e4cb1c`. A word is a whitespace-sepa
 `tools/doc-budgets.mjs` and `check` count one. A byte is a UTF-8 byte. The scripts that counted are scratch,
 under the gitignored `local/`, and are not tracked: each figure below says what it counted, so it can be
 counted again. The backlog's size in this row's dispatch (*about 7,600 words*) differs from this commit's: at
-`7e4cb1c` it measures 8,503. The parent's uncommitted working copy was not read.
+`7e4cb1c` it measures 8,503. The parent's uncommitted working copy was not read. Main moved to `e4dce8f` while
+this was written. There the backlog measures 8,210 words, the archive 125,970 and `CLAUDE.md` 3,750, and the
+canon, the skills and the region did not change.
 
 ### 1.2 At the start of every session
 
