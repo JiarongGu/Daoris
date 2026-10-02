@@ -155,7 +155,10 @@ check('`sync` exits 0 once the collision is resolved', sync.code === 0, sync.out
 // beside it for the one that reads another name.
 check('the doctrine region is materialized', /<!-- daoris:rules /.test(read('AGENTS.md')));
 check('...carrying the rules themselves', /sensitive-info/.test(read('AGENTS.md')));
-check('...and the roster above them', /## Read on demand/.test(read('AGENTS.md')));
+// The pointer above them names the index of the on-demand tiers, and lists no document (WSSETUP14a, D128 §2).
+check('...and the pointer to the index above them',
+  /## Read on demand\n\nThe knowledge and the skills, each with when it applies, are listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/
+    .test(read('AGENTS.md')) && !/house-deploy|## Invoke by name/.test(read('AGENTS.md')));
 check('the pointer is written', /@AGENTS\.md/.test(read('CLAUDE.md')));
 check('on-demand knowledge is still a file', has('.claude/knowledge/reaching-in.md'));
 check('skills survive packing as directories', has('.claude/skills/doc-loader/SKILL.md'));
@@ -165,11 +168,14 @@ const skill = read('.claude/skills/doc-loader/SKILL.md');
 check('a skill still starts with its frontmatter', skill.startsWith('---\n'), skill.slice(0, 60));
 check('...with the provenance header beneath it', /---\n<!-- daoris: /.test(skill));
 
-// The roster is part of the region now, not a file beside it — so it is loaded rather than merely
-// present, which is the whole reason the tier moved.
-const roster = read('AGENTS.md');
-check("the roster marks the repo's own skill local", /house-deploy.*\(local\)/.test(roster));
-check('the roster lists canonical skills unmarked', /\[doc-loader\]/.test(roster));
+// The knowledge and skills are listed in `<target>/INDEX.md`, which `sync` writes and the lock names
+// (WSSETUP14a, D128 §2.3): the rules stay in the region, and the list that grows with the repository
+// is read on demand.
+const roster = has('.claude/INDEX.md') ? read('.claude/INDEX.md') : '';
+check('the index is written beside the tiers, and the lock names it',
+  roster.startsWith('# Index\n') && /"index": "\.claude\/INDEX\.md"/.test(read('daoris.lock')));
+check("the index marks the repo's own skill local", /`\.claude\/skills\/house-deploy\/SKILL\.md` _\(local\)_/.test(roster));
+check('the index lists canonical skills unmarked', /\| `\.claude\/skills\/doc-loader\/SKILL\.md` \|/.test(roster));
 
 const checkRun = daoris('check');
 check('`check` exits 0 on a freshly synced repo', checkRun.code === 0, checkRun.out);
@@ -356,7 +362,7 @@ writeFileSync(
   '---\nname: house-notes\napplies_when: working on this repo\nenforces: its own notes\n---\n\n# House notes\n',
 );
 check('the local knowledge document is listed before the move', withV2('sync').code === 0
-  && /house-notes.*\(local\)/.test(read('AGENTS.md')));
+  && /house-notes.*\(local\)/.test(read('.claude/INDEX.md')));
 
 writeManifest((m) => { m.harness = 'agents'; m.target = '.agents'; });
 const staleLayout = withV2('check');
@@ -393,8 +399,10 @@ check('...writes a mirror of every skill for Claude Code, its frontmatter still 
 check('...re-roots the lock and records the mirrors',
   /"harness": "agents"/.test(read('daoris.lock')) && /"target": "\.agents"/.test(read('daoris.lock'))
   && /"mirrors"/.test(read('daoris.lock')));
-check('...and the roster points at .agents and says the mirror sentence',
-  /\[doc-loader\]\(\.agents\/skills\/doc-loader\)/.test(read('AGENTS.md')) && /mirrors them/.test(read('AGENTS.md')));
+check('...and the index moves to .agents, listing the skills there, and the region says the mirror sentence',
+  !has('.claude/INDEX.md') && has('.agents/INDEX.md')
+  && /\| `\.agents\/skills\/doc-loader\/SKILL\.md` \|/.test(read('.agents/INDEX.md'))
+  && /\[\.agents\/INDEX\.md\]\(\.agents\/INDEX\.md\)/.test(read('AGENTS.md')) && /mirrors them/.test(read('AGENTS.md')));
 const movedCheck = withV2('check');
 check('`check` is clean after the move', movedCheck.code === 0, movedCheck.out);
 

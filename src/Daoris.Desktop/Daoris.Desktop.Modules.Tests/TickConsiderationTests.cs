@@ -35,6 +35,46 @@ public sealed class TickConsiderationTests
         Assert.DoesNotContain("trees", shape.GetRawText(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// SESSUX1i (D126 §4.6): Overview's *What needs you* holds a quest parked on its failed sessions, waiting since its last
+    /// session ended, and says why in the reader's language. The tick carries both as facts: how many failed and when the
+    /// last one ended. The session and its note stay here.
+    /// </summary>
+    [Fact]
+    public void A_parked_quest_says_how_many_failed_and_since_when()
+    {
+        var parked = new Consideration(Quest, StartVerdict.Exhausted, "3 session(s) have failed on `#q1` without landing anything.");
+        var park = new QuestPark("q1", "engine")
+        {
+            Session = "s3", Strikes = 3, Note = "You've hit your limit.", Since = new DateTimeOffset(2026, 10, 1, 9, 21, 0, TimeSpan.Zero),
+        };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(parked, park), Wire);
+
+        Assert.Equal(3, shape.GetProperty("strikes").GetInt32());
+        Assert.Equal(park.Since, shape.GetProperty("since").GetDateTimeOffset());
+        Assert.DoesNotContain("limit", shape.GetRawText(), StringComparison.Ordinal);
+        Assert.DoesNotContain("s3", shape.GetRawText(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A park the loop has not read the records for yet, and every other verdict, says neither.</summary>
+    [Fact]
+    public void A_quest_with_no_park_read_says_no_number_and_no_time()
+    {
+        var parked = new Consideration(Quest, StartVerdict.Exhausted, "parked after 3 failed sessions.");
+        var waiting = new Consideration(Quest, StartVerdict.RepositoryBusy, "`engine` is busy.");
+
+        foreach (var shape in new[]
+        {
+            JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(parked), Wire),
+            JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(waiting, new QuestPark("q1", "engine") { Strikes = 3 }), Wire),
+        })
+        {
+            Assert.Equal(JsonValueKind.Null, shape.GetProperty("strikes").ValueKind);
+            Assert.Equal(JsonValueKind.Null, shape.GetProperty("since").ValueKind);
+        }
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()

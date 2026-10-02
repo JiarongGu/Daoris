@@ -6,9 +6,10 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// TOOL4f (D125 §3): the next start runs on the next ready account of the person's order. The walk is
-/// <see cref="HarnessRoster.SelectAsync"/>'s: the account the resolution names runs if it is ready; if a default named it
-/// and the order lists it, the next ready account after it in the order runs, wrapping; a pick, the tool's own home and an
-/// account outside the order never rotate; and when no account is ready the start waits for the first reset.
+/// <see cref="HarnessRoster.SelectAsync"/>'s: the account the scope begins at runs if it is ready; if not, the next ready
+/// account of its list runs; a pick, the tool's own home and an account outside the list never rotate; and when no account
+/// is ready the start waits for the first reset. TOOL6b (D130 §3.1, §16) reads one scope and, by default, the goal's walk,
+/// which on a fresh machine with nothing running starts where D125 did: <c>AccountRotationGoalTests</c> holds the rest.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process. The harness is present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>)
@@ -89,34 +90,7 @@ public sealed class AccountRotationTests : IDisposable
 
     private void Wire(Func<HarnessSettings, HarnessSettings> edit) => edit(new HarnessSettings()).Save(Settings);
 
-    // ——— The walk's order (§3.1, §3.3, §3.4): who may be tried, and in which order. Pure.
-
-    public static TheoryData<string?, ChoiceFrom, string[], string[], string?[]> Walks => new()
-    {
-        // A default the order lists: it, then the rest of the order after it, wrapping.
-        { "account-1", ChoiceFrom.Machine, ["account-1", "account-2", "account-3"], ["account-1", "account-2", "account-3"], ["account-1", "account-2", "account-3"] },
-        { "account-2", ChoiceFrom.Machine, ["account-1", "account-2", "account-3"], ["account-1", "account-2", "account-3"], ["account-2", "account-3", "account-1"] },
-        { "account-3", ChoiceFrom.Workspace, ["account-1", "account-2", "account-3"], ["account-1", "account-2", "account-3"], ["account-3", "account-1", "account-2"] },
-        // Names compare as the wiring compares them.
-        { "Account-2", ChoiceFrom.Machine, ["account-1", "account-2"], ["account-1", "account-2"], ["Account-2", "account-1"] },
-        // A person's pick never rotates.
-        { "account-1", ChoiceFrom.Picked, ["account-1", "account-2"], ["account-1", "account-2"], ["account-1"] },
-        // The tool's own home is never in an order, and work resolved to it is never moved.
-        { null, ChoiceFrom.Unset, ["account-1", "account-2"], ["account-1", "account-2"], [null] },
-        // A default the order does not list, or no order: the one account, as today.
-        { "personal", ChoiceFrom.Machine, ["account-1", "account-2"], ["account-1", "account-2", "personal"], ["personal"] },
-        { "account-1", ChoiceFrom.Machine, [], ["account-1", "account-2"], ["account-1"] },
-        // An order naming an account that is not here is never rotated into.
-        { "account-1", ChoiceFrom.Machine, ["account-1", "gone", "account-2"], ["account-1", "account-2"], ["account-1", "account-2"] },
-    };
-
-    [Theory]
-    [MemberData(nameof(Walks))]
-    public void The_walk_is_the_resolved_account_then_the_rest_of_its_order(
-        string? resolved, ChoiceFrom from, string[] order, string[] accounts, string?[] walk)
-    {
-        Assert.Equal(walk, AccountRotation.Candidates(resolved, from, order, accounts));
-    }
+    // ——— The walk's order, by step and under `use: order`, is `AccountRotationWalkTests`' (TOOL6b): pure tables.
 
     // ——— Which account (§3.3): the selection.
 
@@ -294,10 +268,9 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     [Fact]
-    public async Task The_tool_s_own_home_cooling_waits_and_is_never_rotated_into_an_order()
+    public async Task The_tool_s_own_home_cooling_waits_where_no_default_and_no_list_name_an_account()
     {
         Accounts("account-1", "account-2");
-        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
         var own = Cool(account: null);
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
@@ -308,16 +281,37 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(own, selection.Cooling);
     }
 
+    /// <summary>
+    /// TOOL6b (D130 §3.1): a scope with a list begins within it, at its first where it names no default, so the tool's own
+    /// sign-in, cooling or not, never runs where a list names accounts.
+    /// </summary>
     [Fact]
-    public async Task A_cooling_default_the_order_does_not_list_waits_as_it_always_did()
+    public async Task A_list_with_no_default_begins_at_its_first_and_never_on_the_tool_s_own_sign_in()
     {
-        Accounts("account-1", "account-2", "personal");
-        Wire(s => s.WithDefault("fake", "personal").WithRotation("fake", ["account-1", "account-2"]));
-        var cooling = Cool("personal");
+        Accounts("account-1", "account-2");
+        Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
+        Cool(account: null);
 
         var selection = await Present().SelectAsync("fake", Config, null, null);
 
-        Assert.Equal((false, CoolingWords.Hold(cooling, Zone), (RotatedStart?)null), (selection.Allowed, selection.Refusal, selection.Rotated));
+        Assert.Equal(("account-1", (RotatedStart?)null), (selection.Profile, selection.Rotated));
+    }
+
+    /// <summary>
+    /// TOOL6b (D130 §3.1): a default outside its scope's list, which both doors refuse and only a hand edit writes, is read
+    /// with the list winning: the start begins at the list's first and walks it. D125 held such a start on its default.
+    /// </summary>
+    [Fact]
+    public async Task A_default_its_list_does_not_hold_is_read_with_the_list_winning()
+    {
+        Accounts("account-1", "account-2", "personal");
+        Wire(s => s.WithDefault("fake", "personal").WithRotation("fake", ["account-1", "account-2"]));
+        Cool("personal");
+        Cool("account-1");
+
+        var selection = await Present().SelectAsync("fake", Config, null, null);
+
+        Assert.Equal(("account-2", "account-1"), (selection.Profile, selection.Rotated?.From));
     }
 
     [Fact]
@@ -493,7 +487,7 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(RotationWords.Opened("account-2", RotatedSelection().Rotated!), first.Text);
         var line = Assert.Single(lines);
         Assert.Equal(
-            new object?[] { "c7", "claude-code-acp", "account-1", "account-2", null },
+            new object?[] { "c7", "claude-code-acp", "account-1", "account-2", null, "cooling", null, false },
             line.Data.Select(field => field.Value));
     }
 
@@ -545,18 +539,21 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(400_000L, RotatedOpening.ContextOf(usage, events, "s1"));
     }
 
-    // ——— The log (§5.4): `account.rotated`, by profile name and nothing else of an account.
+    // ——— The log (§5.4; D130 §13 as §16 amends it): `account.rotated`, by profile name and nothing else of an account, with
+    // the step that moved the start, the scope whose list it was, and whether any account had said what it has left.
 
     [Fact]
-    public void Account_rotated_carries_the_session_the_adapter_both_accounts_and_the_cut_off_session()
+    public void Account_rotated_carries_the_session_the_adapter_both_accounts_the_cut_off_session_and_the_step()
     {
-        var line = AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: "s1");
+        var line = AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: "s1", WalkStep.Cooling, scope: "work");
 
         Assert.Equal("account.rotated", line.Event);
-        Assert.Equal(["session", "adapter", "from", "to", "carries"], line.Data.Select(field => field.Key));
-        Assert.Equal(new object?[] { "s2", "claude-code-acp", "account-1", "account-2", "s1" }, line.Data.Select(field => field.Value));
-        Assert.Null(AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: null).Data.Single(f => f.Key == "carries").Value);
-        Assert.Null(AccountLine.Rotated("s2", "claude-code-acp", "sk-ant not a name", "account-2", null).Data.Single(f => f.Key == "from").Value);
+        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said"], line.Data.Select(field => field.Key));
+        Assert.Equal(
+            new object?[] { "s2", "claude-code-acp", "account-1", "account-2", "s1", "cooling", "work", false },
+            line.Data.Select(field => field.Value));
+        Assert.Null(AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: null, WalkStep.Fewest, null).Data.Single(f => f.Key == "carries").Value);
+        Assert.Null(AccountLine.Rotated("s2", "claude-code-acp", "sk-ant not a name", "account-2", null, WalkStep.Fewest, null).Data.Single(f => f.Key == "from").Value);
     }
 
     [Fact]
@@ -567,13 +564,13 @@ public sealed class AccountRotationTests : IDisposable
         using var service = ledger.Client();
         using var watch = new SessionLog(log, service, new SessionEvents(Path.Combine(_home, "sessions")), () => _now);
 
-        service.AccountSaid(AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", "s1"));
+        service.AccountSaid(AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", "s1", WalkStep.LeastRecent, null));
 
         var line = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines)
             .Select(text => JsonDocument.Parse(text).RootElement.Clone())
             .Single(entry => entry.GetProperty("event").GetString() == "account.rotated");
         Assert.Equal(
-            """{"session":"s2","adapter":"claude-code-acp","from":"account-1","to":"account-2","carries":"s1"}""",
+            """{"session":"s2","adapter":"claude-code-acp","from":"account-1","to":"account-2","carries":"s1","why":"leastRecent","scope":null,"said":false}""",
             line.GetProperty("data").GetRawText());
     }
 }

@@ -103,6 +103,7 @@
   "work.sitting.Held": "{{why}}",
   "work.sitting.NoRoot": "{{why}}",
   "work.sitting.Stopped": "{{why}}",
+  "work.sitting.Exhausted": "{{why}}",
   "work.frame.attending": "Attending {{title}}",
   "work.frame.open": "Open in Sessions",
   "work.frame.none": "No session is attended. Choose one in Sessions, and its timeline and its review follow it here.",

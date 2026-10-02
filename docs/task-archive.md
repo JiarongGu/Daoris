@@ -9682,3 +9682,42 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > §2.1, evidence §2, §4. Proof: `AccountLimitsTests` rows for each recorded form, failing first.
 
 **Outcome** The reset grammar reads a weekday (no grace) and Codex's `4:05 PM` and `Oct 3rd, 2026 4:05 PM`; `codex-acp` declares Codex's entry from four sentences read in its source. Detail: D125's TOOL4k note (what is still unrecorded), `2ff6458`.
+
+
+## TOOL6b — the walk toward the goal (2026-10-02)
+
+> - [ ] **TOOL6b — the walk toward the goal** (driver; after TOOL6a). Every listed account used: fewest of Daoris's
+> sessions first, a weekly reset within a day first, then pace, then least recently started; *order* keeps D125's walk;
+> `windows.json` keeps the weekly resets limits tell; the wait names accounts outside the list. Contract: D130 §16.3,
+> §2, §3, §7. Proof: `AccountRotation` tables for one account and many; a Process tick, cap K over N accounts.
+
+**Outcome** A start reads one scope and by default walks the goal (keep, fewest of Daoris's sessions, a weekly reset within a day, least recently started, list order); `order` keeps D125's walk; `windows.json` keeps the weekly resets limits tell; each start names its step. Detail: D130's TOOL6b note, `2e4d8e1`.
+
+
+## SESSUX1i — What needs you holds a parked quest, and a park is said once (2026-10-02)
+
+> - [ ] **SESSUX1i — What needs you holds a parked quest, and a park is said once** (§4.6, §4.7; web-shell, driver, modules;
+> after c).
+
+**Outcome** Overview's *What needs you* holds a quest parked on its failed sessions, its door the quest's page, and the park is said once with its count and the last failure's note (toast, OS notice, headless line). Detail: D126's SESSUX1i note, `ffde950`.
+
+
+## WSSETUP14a — the index leaves the region (2026-10-02)
+
+> - [ ] **WSSETUP14a — the index leaves the region** (after SESSOPT1a; as D129 amends it). `sync` writes `<target>/INDEX.md` with the knowledge
+> and skill tables; the region keeps the rules, a pointer, the rooms and *Where things are*. `doc-loader`, `skills-workflow`
+> and `development-documents` take the review's §4.2–§4.4 words (several wordings; the agent's own skill list first).
+> Contract: D128 §2.2–§2.5, §2.7, as D129 amends them. Proof: a 169-document fixture leaves the region's bytes unchanged;
+> the D48 §2a canon scan widened to a connected search; this repository and both examples re-synced.
+
+**Outcome** `sync` writes `<target>/INDEX.md` with the knowledge and skill tables, and the region keeps the rules, a pointer, the rooms and *Where things are* (here 24,522 → 20,067 bytes); the canon takes KNOW2's §4.2–§4.4 words. Detail: D128's WSSETUP14a note, `e70d87b`.
+
+
+## DRIFT1 — why an ask's decision drifted (2026-10-02 → D133)
+
+> - [ ] **DRIFT1 — why an ask's decision drifted** (owner, 2026-10-02: AR-2203 asked for the v3 bridge and the common report,
+> and the work did neither; *"we need to investigate why the decision drifted"*). Trace the ask through its intake, quests,
+> sessions and commits to where the requirement was lost, and what Daoris should hold so it is not. Contract: D133 (in
+> flight). Proof: the evidence, de-identified; raw notes untracked.
+
+**Outcome** Each of the owner's common-report words reached only one session: the intake kept *bridge* and lost its meaning, a parked question did not travel with its answer, and carry-ons keep one hop, lost across an account limit. D133: the ask holds the owner's words and hands them to every session. Detail: `docs/2026-10-02-ask-drift-evidence.md` §6, D133.

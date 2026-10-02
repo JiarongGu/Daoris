@@ -1,5 +1,5 @@
 import type {
-  Canon, CommandArgs, CoreSwitch, Harness, Lock, Manifest, Move, PlannedWrite, Rename, SyncPlan,
+  Canon, CommandArgs, CoreSwitch, Harness, IndexPlan, Lock, Manifest, Move, PlannedWrite, Rename, SyncPlan,
 } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
@@ -10,8 +10,8 @@ import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { refuseNewerLock } from './lockversion.ts';
-import { readTier, rosterExtras } from './indexgen.ts';
-import { renderTier, spanBody, tierRuleBody } from './tierrender.ts';
+import { indexInput, rosterExtras } from './indexgen.ts';
+import { indexPath, renderIndex, renderTier, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
 import { resolveHarness } from './harness.ts';
 import {
@@ -285,6 +285,7 @@ export function planSync(
   });
 
   const rooms = planRooms({ root, manifest, lock, harness });
+  const index = planIndex({ root, harness, lock, from, to, moving, writes, deletes, locked });
   const behind = moving
     ? planLeftBehind({
       root, from, to, was: was.harness, now: harness,
@@ -310,6 +311,8 @@ export function planSync(
       ...(pointerFile ? [pointerFile] : []),
       ...rooms.pointers.flatMap((pointer) => [`${pointer.room}/${harness.pointer!.imports}`, pointer.path]),
       ...rooms.unpoint.map((pointer) => pointer.path),
+      // The index (D128 §2.4's last cell): a link, or a link held as text, refuses like a pointer does.
+      index.path,
     ],
   });
 
@@ -329,7 +332,54 @@ export function planSync(
     writes, deletes, leavesRegion, drifted, collisions, renames, editedRetirements,
     switchedOff: selection.switchedOff, offers: selection.offers, editedSwitchedOff,
     layout: { from: { harness: was.harness.id, target: from }, to: { harness: harness.id, target: to } },
-    moves, moveCollisions, ...behind, mirrors, rooms, links, documents,
+    moves, moveCollisions, ...behind, mirrors, rooms, index, links, documents,
+  };
+}
+
+/**
+ * The index of the on-demand tiers, decided (WSSETUP14a; D128 §2.4, D19 for a file the canon does not
+ * ship).
+ *
+ * @remarks
+ * Generated, as the region's roster is: a file the lock names is rewritten whatever it says, since
+ * `check` named any hand edit stale before. One the lock does not name is the repository's own unless
+ * it is already what this sync would write — so its content is decided here, over the tiers as the
+ * sync will leave them, rather than read back after the writes.
+ *
+ * @throws DaorisError when the lock names an index anywhere but its own root's `INDEX.md` (D18): the
+ * lock is generated, the file nobody reads closely, and a move deletes the path it names.
+ */
+function planIndex(
+  { root, harness, lock, from, to, moving, writes, deletes, locked }:
+  {
+    root: string; harness: Harness; lock: Lock | null; from: string; to: string; moving: boolean;
+    writes: readonly PlannedWrite[]; deletes: readonly string[]; locked: ReadonlyMap<string, unknown>;
+  },
+): IndexPlan {
+  const path = indexPath(to);
+  const recorded = lock?.index;
+  if (recorded !== undefined && recorded !== indexPath(from)) {
+    throw new DaorisError(
+      `daoris.lock records its index at '${recorded}', and daoris writes one only at ${indexPath(from)} — `
+      + 'refusing to touch it.\n  daoris.lock is corrupt or has been tampered with');
+  }
+
+  // Deletes are made at the lock's root, so they thin the listing only when that is the one written.
+  const content = renderIndex(indexInput({
+    root, target: to, lock, harness,
+    overlay: {
+      writes: new Map(writes.filter((write) => !write.in).map((write) => [write.target, write.content])),
+      deletes: new Set(moving ? [] : deletes.filter((target) => locked.has(target))),
+    },
+  }));
+  const abs = join(root, path);
+  const held = isFile(abs) ? readText(abs) : null;
+  return {
+    path,
+    old: recorded !== undefined && recorded !== path ? recorded : null,
+    content,
+    state: held === null ? 'create' : held === content ? 'unchanged' : 'update',
+    collision: recorded !== path && held !== null && held !== content,
   };
 }
 
@@ -500,7 +550,8 @@ export function applySync(
   refuseWhatForceCannot(plan);
 
   const mirrorReader = manifest.harnessDescriptor?.mirror?.reader ?? 'the agent that reads only there';
-  if ((plan.collisions.length || plan.moveCollisions.length || plan.mirrors.collisions.length) && !force) {
+  const indexCollides = plan.index.collision;
+  if ((plan.collisions.length || plan.moveCollisions.length || plan.mirrors.collisions.length || indexCollides) && !force) {
     const lines = [
       ...(plan.collisions.length ? [`this repo already has its own ${plan.collisions.join(', ')}`] : []),
       ...plan.moveCollisions.map((collision) => collision.from
@@ -509,6 +560,11 @@ export function applySync(
       ...(plan.mirrors.collisions.length
         ? [`this repo already has its own ${plan.mirrors.collisions.join(', ')}, at the mirror path(s) daoris `
           + `writes for ${mirrorReader} — a skill kept for that agent alone needs a name no source skill has`]
+        : []),
+      // D128 §2.4: a file of the repository's own where the generated index goes. Renaming it is the
+      // answer the canon's changelog gives an adopter.
+      ...(indexCollides
+        ? [`${plan.index.path} is this repo's own, where daoris writes the index of the knowledge and skills`]
         : []),
     ];
     throw new DaorisError(
@@ -624,8 +680,16 @@ export function applySync(
   const written = new Set([...writes.map(({ abs }) => abs), ...mirrorWrites.map(({ abs }) => abs)]);
   const retired = mirrorRetire.filter((abs) => !written.has(abs));
   for (const abs of retired) rmSync(abs, { force: true });
+
+  // The index, after the tiers it lists are on disk (D128 §2.4): its content was decided over the tiers
+  // as this sync leaves them, and a move writes it at the new root and deletes the one the lock named.
+  const indexAt = contained(root, to, plan.index.path);
+  if (plan.index.state !== 'unchanged' || force) writeTextAtomic(indexAt, plan.index.content);
+  const oldIndex = plan.index.old === null ? null : contained(root, from, plan.index.old);
+  if (oldIndex !== null && oldIndex !== indexAt) rmSync(oldIndex, { force: true });
+
   // A folder a move or a retired mirror emptied goes too, and only when empty (D117 §5.2).
-  pruneEmpty(root, [...(from !== to ? deletes : []), ...retired]);
+  pruneEmpty(root, [...(from !== to ? deletes : []), ...retired, ...(oldIndex !== null ? [oldIndex] : [])]);
 
   const layout = layoutFields(manifest.harnessDescriptor ?? resolveHarness(manifest.harness), to);
   const lock: Lock = {
@@ -645,16 +709,17 @@ export function applySync(
       : {}),
     // Where the files are now, every mirror and every room (D117 §5.1), each only when there is one.
     ...(layout ?? {}),
+    // The index this sync wrote, which makes it Daoris's to rewrite (D128 §2.4).
+    index: plan.index.path,
     ...(plan.mirrors.writes.length
       ? { mirrors: plan.mirrors.writes.map(({ path, of, sha256: digest }) => ({ path, of, sha256: digest })) }
       : {}),
     ...(plan.rooms.records.length ? { rooms: plan.rooms.records } : {}),
   };
 
-  // The region LAST, after the on-demand tiers are on disk: its roster lists what is actually there,
-  // local documents included, and a roster written before the files it names would be a roster of the
-  // previous sync.
-  writeSpans({ root, manifest, spans, canonVersion, lock, off: plan.switchedOff ?? [], from });
+  // The region LAST: its rooms' rows read each room as it stands, and its pointer names the index
+  // this sync just wrote.
+  writeSpans({ root, manifest, spans, canonVersion, off: plan.switchedOff ?? [], from });
   writePointers(root, plan);
   writeLock(root, lock);
   return lock;
@@ -680,9 +745,9 @@ function writePointers(root: string, plan: SyncPlan): void {
  * rewrites of the same file would each re-read what the last one wrote.
  */
 function writeSpans(
-  { root, manifest, spans, canonVersion, lock, off, from }:
+  { root, manifest, spans, canonVersion, off, from }:
   {
-    root: string; manifest: Manifest; spans: PlannedWrite[]; canonVersion: string; lock: Lock;
+    root: string; manifest: Manifest; spans: PlannedWrite[]; canonVersion: string;
     off: CoreSwitch[]; from: string;
   },
 ): void {
@@ -693,8 +758,6 @@ function writeSpans(
     const tier = Object.values(harness.tiers).find((candidate) => candidate.region?.file === file);
     if (!tier?.region) continue;
 
-    const knowledge = harness.tiers.knowledge;
-    const skills = harness.tiers.skills;
     const input = {
       rules: within.map((write) => ({
         file: { pack: write.pack, source: write.source, target: write.target },
@@ -702,18 +765,6 @@ function writeSpans(
         // Carried from `planSync`, where the canon was in hand — a span holds its body alone.
         ...(write.meta ? { meta: write.meta } : {}),
       })),
-      knowledge: knowledge?.dir
-        ? readTier({ root, target: manifest.target, tier: knowledge.dir, lock })
-        : [],
-      skills: skills?.dir
-        ? readTier({
-          root,
-          target: manifest.target,
-          tier: skills.dir,
-          lock,
-          ...(skills.entryFile ? { entryFile: skills.entryFile } : {}),
-        })
-        : [],
       version: canonVersion,
       target: manifest.target,
       // The rows this repository switched off (D71): the session loading the region learns what is
@@ -794,6 +845,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
   const moved = new Set(plan.moves.map((move) => move.target));
   const sayTheLayout = (dry: boolean) => {
     for (const move of plan.moves) write(`  moved     ${move.from} -> ${move.to}`);
+    if (plan.index.old !== null) write(`  moved     ${plan.index.old} -> ${plan.index.path}`);
     for (const pointer of plan.rooms.pointers) {
       if (pointer.state !== 'unchanged') write(`  pointer   ${pointer.path}`);
     }
@@ -822,6 +874,9 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const target of plan.deletes) {
       if (!renamedFrom.has(target) && !offDeletes.has(target)) write(`  retire    ${target}`);
     }
+    if (plan.index.state !== 'unchanged' && plan.index.old === null && !plan.index.collision) {
+      write(`  ${plan.index.state.padEnd(9)} ${plan.index.path}`);
+    }
     sayTheLayout(true);
     sayWhatIsOff();
     for (const problem of plan.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
@@ -834,6 +889,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const target of plan.collisions) write(`  COLLIDES  ${target} (this repo's own)`);
     for (const collision of plan.moveCollisions) write(`  COLLIDES  ${collision.to} (this repo's own)`);
     for (const path of plan.mirrors.collisions) write(`  COLLIDES  ${path} (this repo's own, at a mirror path)`);
+    if (plan.index.collision) write(`  COLLIDES  ${plan.index.path} (this repo's own)`);
     for (const target of plan.editedRetirements) write(`  AT RISK   ${target} (retired, but edited here)`);
     for (const target of plan.editedSwitchedOff) write(`  AT RISK   ${target} (switched off, but edited here)`);
     for (const path of plan.mirrors.editedGone) write(`  AT RISK   ${path} (a mirror of a skill that went, edited here)`);
@@ -854,6 +910,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const collision of plan.moveCollisions) write(`  overwrote ${collision.to} (this repo's own file)`);
     for (const mirror of plan.mirrors.edited) write(`  overwrote ${mirror.path} (edit to a mirror discarded)`);
     for (const path of plan.mirrors.collisions) write(`  overwrote ${path} (this repo's own file)`);
+    if (plan.index.collision) write(`  overwrote ${plan.index.path} (this repo's own file)`);
     for (const target of plan.editedRetirements) write(`  discarded ${target} (retired, edited here)`);
     for (const target of plan.editedSwitchedOff) write(`  discarded ${target} (switched off, edited here)`);
     for (const path of plan.mirrors.editedGone) write(`  discarded ${path} (a mirror of a skill that went, edited here)`);
@@ -871,7 +928,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
 
 /** Whether applying this plan would refuse without `--force` — the dry run's exit code. */
 function refuses(plan: SyncPlan): boolean {
-  return [
+  return plan.index.collision || [
     plan.links, plan.documents.links, plan.leftBehind, plan.bothRoots, plan.rooms.missing, plan.drifted, plan.collisions,
     plan.moveCollisions, plan.editedRetirements, plan.editedSwitchedOff,
     plan.mirrors.edited, plan.mirrors.collisions, plan.mirrors.editedGone,

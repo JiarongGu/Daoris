@@ -64,7 +64,7 @@ screen can set, a terminal can.
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Three things to know before changing anything.** The always-loaded core sits at **24,522 of 26,000
+**Three things to know before changing anything.** The always-loaded core sits at **20,067 of 26,000
 bytes** (CANON7, D28 as amended: this repository's number caps *the canon's core*, a different
 question from the 30000 an adopter starts at). **The budget
 reports and never fails** (D54): a fact gates, a judgement reports. The answer to a full budget is to

@@ -173,4 +173,24 @@ describe('sittingSentence', () => {
     expect(said).toContain('`daoris driver retry 9a9492 --session s1a2b3c4`');
     expect(sittingSentence(sits('Stopped', reason))).toBe(reason);
   });
+
+  /**
+   * SESSUX1i (D126 §4.6): a quest parked on its failed sessions is *What needs you*'s row, and its detail is this
+   * sentence. The tick carries the number the planner parked it at (`strikes`), so 中文 says it, with the terminal's
+   * door. With no number (a shell older than the fact, or a park not read yet), the driver's words stand.
+   */
+  it('says a park in 中文, with the number the tick says failed', async () => {
+    const reason = '3 session(s) have failed on `#9a9492` without landing anything — parked, because trying again spends an account rather than making progress. `daoris driver retry 9a9492` starts it again once you know why.';
+    const parked: Consideration = { ...sits('Exhausted', reason), strikes: 3 };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(parked)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    const said = sittingSentence(parked);
+    expect(said).toMatch(/3 个会话/);
+    expect(said).toMatch(/挂起/);
+    expect(said).toContain('`daoris driver retry 9a9492`');
+    expect(sittingSentence(sits('Exhausted', reason))).toBe(reason);
+  });
 });

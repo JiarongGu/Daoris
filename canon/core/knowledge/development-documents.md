@@ -72,9 +72,13 @@ things to people. Elsewhere it is a document nobody opens, so no repository is r
   agent reads. It is the only file known to reach every agent at the start of a session. A nested file
   is not loaded by all of them, and not every agent reads a second file the first one imports.
 - **On demand**: rooms, knowledge, skill bodies, the router, the design documents. Something always
-  read names each one, because telling is how an on-demand tier reaches an agent.
+  read names each one, or names the index that lists them, because telling is how an on-demand tier
+  reaches an agent. A list that grows with the repository is read on demand too.
 - **By lookup**: decisions, archive, fixes, changelog, glossary. Read for one entry and never whole, so
   they may grow without limit.
+
+Name a knowledge document by its subject, and say when it applies in its first lines. A search finds
+what a file's name and opening say, and that is how a document is found where no index is read.
 
 ### What a session pays for: one home per fact, and entries that point
 

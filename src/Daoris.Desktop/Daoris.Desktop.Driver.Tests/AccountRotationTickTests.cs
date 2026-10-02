@@ -127,18 +127,21 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Contains("It ran on another account, which reached its limit and is cooling", handed);
         Assert.DoesNotContain("account-1", handed);
 
-        // Its conversation record opens saying both accounts, the cut-off session and its refused turn.
+        // Its conversation record opens saying both accounts, the cut-off session and its refused turn, and that no account
+        // has said what it has left (TOOL6b, D130 §16.4): the goal's walk chose it, by the step that passed account-1.
         var opening = new SessionEvents(Path.Combine(_home, "sessions")).After("s2", 0).Events[0];
         Assert.Equal(SessionEventKind.Note, opening.Kind);
         Assert.Equal(
             $"carried on from session `s1` on `account-2`; the `stub` account `account-1` is cooling until Oct 3, 16:02 "
-            + $"({Zone.Id}), as the agent said; its turn 1 was refused.",
+            + $"({Zone.Id}), as the agent said; its turn 1 was refused. No account has said what it has left yet.",
             opening.Text);
 
         lock (lines)
         {
             var rotated = Assert.Single(lines, line => line.Event == "account.rotated");
-            Assert.Equal(new object?[] { "s2", "stub", "account-1", "account-2", "s1" }, rotated.Data.Select(field => field.Value));
+            Assert.Equal(
+                new object?[] { "s2", "stub", "account-1", "account-2", "s1", "cooling", null, false },
+                rotated.Data.Select(field => field.Value));
         }
 
         // Once account-1 is ready again, the next start takes it.
@@ -228,13 +231,15 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(SessionEventKind.Note, opening.Kind);
         Assert.Equal(
             $"carried on from session `s1` on `account-2`; the `stub` account `account-1` is cooling until Oct 3, 16:02 "
-            + $"({Zone.Id}), as the agent said; its turn 1 was refused.",
+            + $"({Zone.Id}), as the agent said; its turn 1 was refused. No account has said what it has left yet.",
             opening.Text);
 
         lock (lines)
         {
             var rotated = Assert.Single(lines, line => line.Event == "account.rotated");
-            Assert.Equal(new object?[] { "s2", "acp-stub", "account-1", "account-2", "s1" }, rotated.Data.Select(field => field.Value));
+            Assert.Equal(
+                new object?[] { "s2", "acp-stub", "account-1", "account-2", "s1", "cooling", null, false },
+                rotated.Data.Select(field => field.Value));
         }
 
         // Once stub account 1 is ready again, the protocol door's next start takes it.

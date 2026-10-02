@@ -6,7 +6,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// The OS notification (SURF5b, working-surface design §4) — a session parked, or one that ended
-/// without the person asking for it.
+/// without the person asking for it, or a quest parked on its failed sessions (SESSUX1i).
 /// </summary>
 /// <remarks>
 /// <para><b>This closes driver design open question 5.</b> That question was whether a session
@@ -77,7 +77,10 @@ public sealed class SessionNotifier : IDisposable
 
         var detail = Read(payload, "Detail");
         var session = Read(payload, "Session");
-        var parked = string.Equals(Read(payload, "Kind"), "Parked", StringComparison.Ordinal);
+        var kind = Read(payload, "Kind");
+        var parked = string.Equals(kind, "Parked", StringComparison.Ordinal);
+        // A quest's park waits on the person too (SESSUX1i), and its session is its last, whose page offers Try again.
+        var questParked = string.Equals(kind, "QuestParked", StringComparison.Ordinal);
 
         _window.BeginInvoke(() =>
         {
@@ -92,10 +95,12 @@ public sealed class SessionNotifier : IDisposable
                 tipTitle: headline,
                 // A balloon with an empty body renders as a title with a gap under it.
                 tipText: string.IsNullOrWhiteSpace(detail)
-                    ? (parked ? "Open Daoris to answer it." : "Open Daoris to see what it did.")
+                    ? (parked ? "Open Daoris to answer it."
+                        : questParked ? "Open Daoris to try it again."
+                        : "Open Daoris to see what it did.")
                     : detail,
                 // Warn for a park: it is the one that is WAITING on somebody. An ending is news.
-                tipIcon: parked ? ToolTipIcon.Warning : ToolTipIcon.Info);
+                tipIcon: parked || questParked ? ToolTipIcon.Warning : ToolTipIcon.Info);
         });
     }
 

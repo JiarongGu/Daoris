@@ -222,6 +222,149 @@ public sealed class AttentionTests
         Assert.Null(new AttentionEvent(AttentionKind.Parked, "s1", "engine", Note: "   ").Detail);
     }
 
+    private static readonly QuestView Q1 = new("q1", "game", "engine", "Expose a streaming budget", "A body.", "Taken");
+
+    private static Consideration Exhausted(QuestView quest) => new(quest, StartVerdict.Exhausted, "3 session(s) have failed.");
+
+    private static TickReport Considered(params Consideration[] considered) => new(considered, [], Progressed: false);
+
+    private static QuestPark Park(string session, int? strikes = 3, string? note = "You've hit your limit.") =>
+        new("q1", "engine") { Session = session, Strikes = strikes, Note = note };
+
+    /// <summary>
+    /// SESSUX1i (D126 §4.7): the owner's work stood parked on 1 October and nothing said so. A quest that parks on its
+    /// failed sessions here is said once, with how many failed and the last failure's note.
+    /// </summary>
+    [Fact]
+    public void A_quest_that_parks_on_its_failed_sessions_is_worth_saying()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Considered(new Consideration(Q1, StartVerdict.Start, "starting")), []);
+
+        var events = watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]);
+
+        var parked = Assert.Single(events);
+        Assert.Equal(AttentionKind.QuestParked, parked.Kind);
+        Assert.Equal("q1", parked.Quest);
+        Assert.Equal("s3", parked.Session);
+        Assert.Equal("engine", parked.Repository);
+        Assert.Equal("engine — `#q1` parked after 3 failed sessions", parked.Headline);
+        Assert.Equal("You've hit your limit.", parked.Detail);
+    }
+
+    /// <summary>
+    /// A park lasts every look until Try again, and a door reads the parks only when they change. Neither a look that
+    /// passed none nor one that passed the same park again is news.
+    /// </summary>
+    [Fact]
+    public void A_quest_s_park_is_said_once_and_not_every_look_for_as_long_as_it_sits()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Considered(), []);
+        Assert.Single(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+
+        Assert.Empty(watch.Observe(Considered(Exhausted(Q1))));
+        Assert.Empty(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+    }
+
+    /// <summary>
+    /// 🔴 A park outranks every hold but the person's own (the planner checks a held repository first), so a quest may read
+    /// held for a look and parked again at the next. That is the same park: its last session has not changed.
+    /// </summary>
+    [Fact]
+    public void A_park_hidden_for_a_look_by_a_hold_is_not_said_again()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Considered(), []);
+        Assert.Single(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+
+        Assert.Empty(watch.Observe(Considered(new Consideration(Q1, StartVerdict.Held, "`engine` is held by the person.")), []));
+        Assert.Empty(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+    }
+
+    /// <summary>Tried again, and parked again by sessions that failed since: a new last session, and news again.</summary>
+    [Fact]
+    public void A_quest_tried_again_that_parks_again_is_worth_saying_again()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Considered(), []);
+        Assert.Single(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+
+        Assert.Empty(watch.Observe(Considered(new Consideration(Q1, StartVerdict.Start, "starting")), []));
+        Assert.Single(watch.Observe(Considered(Exhausted(Q1)), [Park("s6")]));
+    }
+
+    /// <summary>
+    /// Never again on a relaunch (§4.7): a quest already parked when the loop starts is one the person was told about
+    /// before, and the first look is a baseline, never a backlog, as a session's park is. Nor when its records could not
+    /// be read at that first look, and are read at a later one.
+    /// </summary>
+    [Fact]
+    public void A_quest_already_parked_at_the_first_look_is_never_said()
+    {
+        var watch = new AttentionWatch();
+        Assert.Empty(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+        Assert.Empty(watch.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+
+        var unread = new AttentionWatch();
+        Assert.Empty(unread.Observe(Considered(Exhausted(Q1))));
+        Assert.Empty(unread.Observe(Considered(Exhausted(Q1)), [Park("s3")]));
+    }
+
+    /// <summary>
+    /// The park says the last failure's note, so that failure's own end in the same look is not said beside it: one
+    /// thing happened to the person's work, and two notices of one note is the second saying nothing.
+    /// </summary>
+    [Fact]
+    public void The_last_failure_is_said_by_its_quest_s_park_and_not_twice()
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s3", "working")]), []);
+
+        var events = watch.Observe(
+            new TickReport([Exhausted(Q1)], [], Progressed: false,
+                Concluded: [new SessionEnded("s3", "engine", "failed", ByPerson: false, "You've hit your limit.", Quest: "q1"),
+                            new SessionEnded("s4", "tools", "failed", ByPerson: false, "the gate went red.")]),
+            [Park("s3")]);
+
+        Assert.Equal(2, events.Count);
+        Assert.Equal(AttentionKind.QuestParked, events[0].Kind);
+        Assert.Equal("s4", Assert.Single(events, e => e.Kind == AttentionKind.Ended).Session);
+    }
+
+    /// <summary>
+    /// 🔴 Never for a hold the person caused (§4.7): their stop holds its quest until Try again (SESSUX1b), and a notice
+    /// telling them what they just pressed is how people learn to dismiss notices unread. The parks are read from the
+    /// planner's park alone, so a stop never reaches the watch.
+    /// </summary>
+    [Fact]
+    public void A_quest_the_person_s_stop_holds_is_never_said()
+    {
+        var stopped = new Consideration(Q1, StartVerdict.Stopped, "you stopped session `s3`; Try again carries it on.")
+        {
+            HeldBy = new PriorSession("s3", null, "stopped"),
+        };
+        var records = """[{"id":"s3","repository":"engine","state":"stopped","kind":"driven","quest":"q1","created":"2026-10-01T09:00:00Z","updated":"2026-10-01T09:05:00Z"}]""";
+        var watch = new AttentionWatch();
+        watch.Observe(Considered(), []);
+
+        var parks = SessionGroups.Parks(SessionLook.From(records, [], [stopped], _ => 0));
+
+        Assert.Empty(watch.Observe(Considered(stopped), parks));
+    }
+
+    /// <summary>A park the records name no number for still says it parked, and leaves the number unsaid; one says it in the singular.</summary>
+    [Fact]
+    public void A_park_with_no_number_or_one_says_so_in_its_own_words()
+    {
+        Assert.Equal(
+            "engine — `#q1` parked after its failed sessions",
+            new AttentionEvent(AttentionKind.QuestParked, "s3", "engine") { Quest = "q1" }.Headline);
+        Assert.Equal(
+            "engine — `#q1` parked after 1 failed session",
+            new AttentionEvent(AttentionKind.QuestParked, "s3", "engine") { Quest = "q1", Strikes = 1 }.Line);
+    }
+
     /// <summary>
     /// WSSETUP11: the machine log counts a park where the ledger is moved into it (<c>SessionLog</c>), and this
     /// watch says one when it sees it from the active list. Both read <see cref="SessionStates.IsParked"/>, and
