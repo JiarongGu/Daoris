@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Quest, Session, SessionState } from '../api';
+import type { SessionGrouping } from './groups';
 import { SessionRow } from './SessionRow';
 
 // A molecule, so every state below is reached by PASSING it (components plan §2). There is no
@@ -243,6 +244,87 @@ describe('a session row', () => {
     expect(screen.getByText('等你处理')).toBeInTheDocument();
     expect(screen.getAllByText('聊天').length).toBeGreaterThan(0);
     await i18n.changeLanguage('en');
+  });
+});
+
+/**
+ * SESSUX1c, D126 §2.2: a row wears the word the list's reader derived for it, its mark and its hue, and its line says
+ * what the group it is in is about: how many sessions failed before its quest parked, which question its quest waits
+ * on, what its own tree holds to review. By state no group header names a repository, so the row's line does.
+ */
+describe("a row as the list's reader places it", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+  afterEach(() => vi.useRealTimers());
+
+  const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' | 'shown'>): SessionGrouping => ({
+    session: 's1a2b3c4', archived: false, teammate: false, ...over,
+  });
+
+  /** A parked quest's last session waits on the person: open's hue and the waiting mark, never the failure's red. */
+  it('says parked in the waiting hue, and how many sessions failed before its quest parked', () => {
+    render(
+      <SessionRow session={session({ state: 'failed', quest: '7a82cc' })} quest={quest()} grouping={placed({ group: 'you', shown: 'parked', strikes: 3 })} />,
+    );
+
+    const word = screen.getByText('parked');
+    expect(word.className).toContain('text-st-open');
+    expect(screen.queryByText('failed')).toBeNull();
+    expect(screen.getByText(/after 3 failed sessions/)).toBeInTheDocument();
+  });
+
+  it('says a parked quest parked after its failed sessions where the count is not known', () => {
+    render(<SessionRow session={session({ state: 'failed' })} grouping={placed({ group: 'you', shown: 'parked', strikes: null })} />);
+    expect(screen.getByText(/after its failed sessions/)).toBeInTheDocument();
+  });
+
+  it('says awaiting reply, quietly, and the question its quest waits on and who it was asked of', () => {
+    const { rerender } = render(
+      <SessionRow
+        session={session({ state: 'completed', quest: '7a82cc' })}
+        quest={quest()}
+        grouping={placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'game' })}
+      />,
+    );
+
+    expect(screen.getByText('awaiting reply').className).not.toContain('st-open');
+    expect(screen.getByText(/waits on #q9q9q9, asked of game/)).toBeInTheDocument();
+
+    rerender(<SessionRow session={session({ state: 'completed' })} grouping={placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9' })} />);
+    expect(screen.getByText(/waits on #q9q9q9/)).toBeInTheDocument();
+  });
+
+  /** To review keeps its own state's word; its line says what its tree holds that no branch of the person's does. */
+  it('says what a session to review left in its tree, under its own word', () => {
+    const stopped = session({ state: 'stopped' });
+    const { rerender } = render(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } })} />);
+    expect(screen.getByText('stopped')).toBeInTheDocument();
+    expect(screen.getByText(/3 commits to review/)).toBeInTheDocument();
+
+    rerender(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: 0, uncommitted: 2 } })} />);
+    expect(screen.getByText(/uncommitted changes/)).toBeInTheDocument();
+
+    // A count git could not give is still work: said as work, never as nothing.
+    rerender(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: null, uncommitted: null } })} />);
+    expect(screen.getByText(/work to review/)).toBeInTheDocument();
+  });
+
+  it('names its repository first on its line where no group header does', () => {
+    render(<SessionRow session={session()} place="engine" />);
+    expect(screen.getByText(/^engine · driven · /)).toBeInTheDocument();
+  });
+
+  it('says it in 中文 too', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<SessionRow session={session({ state: 'failed' })} place="engine" grouping={placed({ group: 'you', shown: 'parked', strikes: 3 })} />);
+      expect(screen.getByText('已挂起')).toBeInTheDocument();
+      expect(screen.getByText(/^engine · 3 个会话失败后挂起/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
 

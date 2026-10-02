@@ -80,7 +80,9 @@
         "setup.step.agent.title", "setup.step.driven.title", "setup.step.helper.title",
         "setup.step.landing.title", "setup.step.repositories.title", "setup.step.rules.title", "signin.output",
         "signin.title", "signin.titleNew", "usage.title", "wiring.title", "work.attention.title",
-        "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.rail.ended",
+        "work.group.archived", "work.group.ended", "work.group.later", "work.group.review", "work.group.working",
+        "work.group.you", "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.list.groupBy",
+        "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
         "work.sync.inConflict"
       ]
@@ -198,7 +200,8 @@
         "work.conversation.hide", "work.conversation.show", "work.dock.close", "work.dock.full",
         "work.dock.open", "work.dock.unfull", "work.find.firstFailure", "work.find.lastWords", "work.find.next",
         "work.find.previous", "work.frame.goSessions", "work.frame.open", "work.head.noteLess", "work.head.noteMore", "work.head.review",
-        "work.intake.answer", "work.intakeRunning.open", "work.open", "work.panel.hide", "work.panel.show",
+        "work.intake.answer", "work.intakeRunning.open", "work.list.more", "work.list.showMore", "work.open",
+        "work.panel.hide", "work.panel.show",
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
@@ -239,8 +242,8 @@
         "work.status.driverStopped", "work.status.everyWorkspace", "work.status.indexedLabel",
         "work.status.remote", "work.status.remoteLocal", "work.status.remoteWired", "work.status.sessions",
         "work.status.sessionsLabel", "work.status.setup", "work.status.setupLabel", "work.status.tierLabel",
-        "work.status.workspace", "work.sync.label", "work.sync.level", "work.sync.never", "work.sync.walled",
-        "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*"
+        "work.shown.*", "work.status.workspace", "work.sync.label", "work.sync.level", "work.sync.never",
+        "work.sync.walled", "work.terminal.default", "work.terminal.endedMark", "work.tool.status.*"
       ]
     },
     "menu": {
@@ -252,7 +255,8 @@
         "layout.menu.*", "map.fit", "map.kind.*", "map.lines", "map.when.all", "map.when.month",
         "map.when.open", "map.when.week", "map.zoomIn", "map.zoomOut", "menu.about", "menu.agents.*",
         "menu.driver", "menu.language", "menu.plugins", "menu.refresh", "menu.settings", "menu.setup",
-        "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "projects.list.import", "work.menu.*", "work.monitor.detach", "work.rail.menu.copy",
+        "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "projects.list.import",
+        "work.list.byRepository", "work.list.byState", "work.menu.*", "work.monitor.detach", "work.rail.menu.copy",
         "work.rail.menu.review", "work.sync.now", "work.sync.remotes", "work.sync.syncing", "work.views.reset",
         "work.views.toPanel", "work.views.toRight"
       ]
@@ -481,7 +485,7 @@
     { "term": "Daoris home", "en": "Daoris home", "zh": "Daoris 主目录", "means": "The folder that holds everything Daoris keeps on this machine.", "match": "\\bDaoris home\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "side bar", "en": "side bar", "zh": "侧栏", "means": "The region at the window's right, holding Ask Daoris and the attended session's views.", "match": "\\bside bar\\b", "avoid": { "en": ["dock", "right dock"], "zh": [] } },
     { "term": "panel", "en": "panel", "zh": "面板", "means": "The region under the centre, holding the console and the terminal.", "match": "\\bpanel\\b", "avoid": { "en": [], "zh": [] } },
-    { "term": "session list", "en": "session list", "zh": "会话列表", "means": "Sessions' own list at its left, grouped by repository.", "match": "\\bsession list\\b|\\brail\\b", "avoid": { "en": ["rail"], "zh": ["会话栏"] } },
+    { "term": "session list", "en": "session list", "zh": "会话列表", "means": "Sessions' own list at its left, grouped by what each session needs from you (by state), or by repository.", "match": "\\bsession list\\b|\\brail\\b", "avoid": { "en": ["rail"], "zh": ["会话栏"] } },
     { "term": "console", "en": "console", "zh": "控制台", "means": "The raw view of what a session printed.", "match": "\\bconsole\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "terminal", "en": "terminal", "zh": "终端", "means": "A shell of the person's own, in the panel.", "match": "\\bterminals?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "timeline", "en": "timeline", "zh": "时间线", "means": "What was observed of a session: its process, its quest's moves, what landed.", "match": "\\btimeline\\b", "avoid": { "en": [], "zh": [] } },

@@ -24,8 +24,19 @@
   "work.rail.landedGoneTip": "this session's work landed on that branch, which is gone now. Its review says whether the work reads on the line.",
   "work.rail.elapsedTip": "how long this session has been going — not when it last moved",
   "work.rail.moved": "moved {{ago}}",
+  "work.rail.parkedAfter": "after {{count}} failed session",
+  "work.rail.parkedAfter_other": "after {{count}} failed sessions",
+  "work.rail.parkedAfterSome": "after its failed sessions",
+  "work.rail.parkedTip": "Its quest parked after too many failed sessions here, and waits for you: its page says why, and Try again there starts it again.",
+  "work.rail.awaitsOf": "waits on #{{quest}}, asked of {{repository}}",
+  "work.rail.awaits": "waits on #{{quest}}",
+  "work.rail.awaitsTip": "Its quest asked another repository a question, and carries on by itself when the answer comes.",
+  "work.rail.toReview": "{{count}} commit to review",
+  "work.rail.toReview_other": "{{count}} commits to review",
+  "work.rail.uncommitted": "uncommitted changes",
+  "work.rail.workToReview": "work to review",
+  "work.rail.reviewTip": "Its own tree holds work no branch of yours holds yet. Review it to land it, send it back or discard it.",
   "work.rail.empty.headline": "Nothing is running",
-  "work.rail.empty.body": "Sessions appear here as the driver takes quests and as you open conversations, grouped by the repository each one runs in.",
-  "work.rail.ended": "Ended",
-  "work.rail.endedMore": "and {{count}} more, older"
+  "work.rail.empty.body": "Sessions appear here as the driver takes quests and as you open conversations, listed by what each one needs from you.",
+  "work.rail.ended": "Ended"
 }

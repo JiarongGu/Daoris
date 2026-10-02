@@ -354,4 +354,30 @@ describe('what the Sessions badge counts', () => {
       sessions, [quest({ to: 'nobody' })], [registration('engine')], [ask({ intake: '1n7a4e00' })]);
     expect(band.length).toBeGreaterThan(waitingInSessions(sessions));
   });
+
+  /**
+   * D126 §2.5: the badge counts the list's first group, *Waiting on you*: a session parked to ask, and a quest parked on
+   * its failed sessions, whose last session here the list shows *parked*. Read from the planner's verdicts the tick
+   * hands the page, as Overview's band reads them, so both counts read the same two facts and no view off Sessions walks
+   * git in every tree to count it.
+   */
+  it('counts a quest parked on its failed sessions, and nothing else the driver is holding', () => {
+    const sessions = [
+      session({ id: 'c4a7c4a7', kind: 'chat', state: 'awaiting-person' }),
+      session({ id: 'f41led00', quest: 'q1', state: 'failed' }),
+    ];
+    const considered = [
+      { quest: 'q1', repository: 'engine', verdict: 'Exhausted', reason: '3 failed sessions' },
+      { quest: 'q2', repository: 'engine', verdict: 'Busy', reason: 'engine is busy' },
+      { quest: 'q3', repository: 'game', verdict: 'Start', reason: '' },
+    ];
+
+    expect(waitingInSessions(sessions, considered)).toBe(2);
+    expect(waitingInSessions(sessions, [])).toBe(1);
+  });
+
+  /** A teammate's session parked to ask waits on them, and is listed under Working (SESSUX1a): not the person's to count. */
+  it("leaves a teammate's parked session to its own machine", () => {
+    expect(waitingInSessions([session({ id: 'laptop/c4a7c4a7', kind: 'chat', state: 'awaiting-person' })])).toBe(0);
+  });
 });

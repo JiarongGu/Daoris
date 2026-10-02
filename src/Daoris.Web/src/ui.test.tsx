@@ -3,11 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SessionState } from './api';
-import './i18n';
+import i18n from './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
-  SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownState, StripMark, Tile, Tip, WaitingCard,
+  SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile,
+  Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -371,8 +372,9 @@ describe('the session tone map', () => {
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
-  // The nine the wire carries, and the one the page shows a live chat between turns (UX5 U17).
-  const SHOWN = [...STATES, 'idle'];
+  // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), and the two words the
+  // session list's reader derives from the session's quest (D126 §2.2).
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -382,6 +384,34 @@ describe('the session tone map', () => {
     // Idle is quiet: no status hue, and no live mark (U17, the reference console's own reading).
     expect(SESSION_TONE.idle).toBe('neutral');
     expect(SESSION_DOT.idle).toBe('idle');
+  });
+
+  /**
+   * D126 §2.3, audit M6: open's hue means it waits on you, and nothing else in the list wears it. `queued` shared it
+   * and left the word to tell the two apart; it keeps its idle mark and wears no status hue.
+   */
+  it("keeps open's hue for what waits on the person alone", () => {
+    const open = SHOWN.filter((state) => SESSION_TONE[state as keyof typeof SESSION_TONE] === 'open').sort();
+    expect(open).toEqual(['awaiting-person', 'parked']);
+    expect(SESSION_TONE.queued).toBe('neutral');
+    expect(SESSION_DOT.queued).toBe('idle');
+    // A parked quest's last session waits on the person: the waiting mark, never the failure's red (§2.3).
+    expect(SESSION_DOT.parked).toBe('parked');
+    // Awaiting a reply, nothing runs and nothing waits on the person: quiet.
+    expect(SESSION_TONE['awaiting-reply']).toBe('neutral');
+    expect(SESSION_DOT['awaiting-reply']).toBe('idle');
+  });
+
+  /** Each shown state has its word: the record's in `sessionState`, the reader's two in `work.shown` (D126 §8). */
+  it('names every shown state by a key both catalogues hold', () => {
+    expect(shownKey('queued')).toBe('sessionState.queued');
+    expect(shownKey('idle')).toBe('sessionState.idle');
+    expect(shownKey('parked')).toBe('work.shown.parked');
+    expect(shownKey('awaiting-reply')).toBe('work.shown.awaitingReply');
+    for (const state of SHOWN) {
+      expect(i18n.exists(shownKey(state as ShownState), { lng: 'en' })).toBe(true);
+      expect(i18n.exists(shownKey(state as ShownState), { lng: 'zh' })).toBe(true);
+    }
   });
 
   it('marks every session state as a dot too — the pill says which, the dot says whether', () => {

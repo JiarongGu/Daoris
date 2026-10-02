@@ -36,5 +36,13 @@ export const Attended: Story = { args: { selected: true } };
 /** Waiting on the person: the attention mark outranks being busy. */
 export const AwaitingPerson: Story = { args: { session: { ...SESSION, state: 'awaiting-person' } } };
 
+/** A parked quest's last session (SESSUX1c): the waiting mark, and *parked* in its name and tip. */
+export const Parked: Story = {
+  args: {
+    session: { ...SESSION, state: 'failed', kind: 'driven', quest: '7a82cc' },
+    grouping: { session: SESSION.id, group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 },
+  },
+};
+
 /** A repository named in 中文: its first character, whole. */
 export const ChineseName: Story = { args: { session: { ...SESSION, repository: '引擎' } } };

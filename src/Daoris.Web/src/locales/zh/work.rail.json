@@ -24,8 +24,19 @@
   "work.rail.landedGoneTip": "该会话的工作曾落地在那个分支上，那个分支现已不在。它的评审会说明这份工作是否已出现在主线上。",
   "work.rail.elapsedTip": "该会话已经进行了多久——不是它最后一次变动的时间",
   "work.rail.moved": "变动于 {{ago}}",
+  "work.rail.parkedAfter": "{{count}} 个会话失败后挂起",
+  "work.rail.parkedAfter_other": "{{count}} 个会话失败后挂起",
+  "work.rail.parkedAfterSome": "会话多次失败后挂起",
+  "work.rail.parkedTip": "它的委托在这里失败的会话太多，已挂起，等你处理：委托页面会说明原因，在那里按「重试」即可重新开始。",
+  "work.rail.awaitsOf": "等 {{repository}} 答复 #{{quest}}",
+  "work.rail.awaits": "等 #{{quest}} 的答复",
+  "work.rail.awaitsTip": "它的委托向另一个仓库提了问题，答复到了会自己继续。",
+  "work.rail.toReview": "{{count}} 个提交待审阅",
+  "work.rail.toReview_other": "{{count}} 个提交待审阅",
+  "work.rail.uncommitted": "有未提交的修改",
+  "work.rail.workToReview": "有待审阅的工作",
+  "work.rail.reviewTip": "它自己的工作树里有你的分支还没有的工作。审阅它，然后落地、退回或丢弃。",
   "work.rail.empty.headline": "当前没有会话在运行",
-  "work.rail.empty.body": "驱动接下委托、或你开启对话之后，会话会出现在这里，按各自运行所在的仓库分组。",
-  "work.rail.ended": "已结束",
-  "work.rail.endedMore": "另有 {{count}} 个更早的"
+  "work.rail.empty.body": "驱动接下委托、或你开启对话之后，会话会出现在这里，按各自需要你做什么排列。",
+  "work.rail.ended": "已结束"
 }

@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session, SessionState } from '../api';
+import type { SessionGrouping } from './groups';
 import { SessionRow } from './SessionRow';
 
 // Every state of a rail row, on the shipped component (D42 §5) — including the ones real data
@@ -163,4 +164,54 @@ export const AwaitingPerson: Story = {
 /** Finished. The span is its lifetime — measured to where it ended, not to now. */
 export const Finished: Story = {
   args: { session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) } },
+};
+
+/** Where the list's reader placed a row (SESSUX1c): the facts each story below adds to it. */
+const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' | 'shown'>): SessionGrouping => ({
+  session: SESSION.id, archived: false, teammate: false, ...over,
+});
+
+/**
+ * Parked (D126 §2.2): the last session here of a quest parked after three failed sessions. It waits on the person, so
+ * it wears open's hue and the waiting mark, never the failure's red; its line says how many failed.
+ */
+export const Parked: Story = {
+  args: {
+    session: { ...SESSION, state: 'failed', created: at(80), updated: at(25) },
+    grouping: placed({ group: 'you', shown: 'parked', strikes: 3 }),
+    place: 'engine',
+  },
+};
+
+/** Awaiting a reply: its quest asked another repository and resumes by itself. Quiet: nothing runs, nothing waits on you. */
+export const AwaitingReply: Story = {
+  args: {
+    session: { ...SESSION, state: 'completed', created: at(80), updated: at(30) },
+    grouping: placed({ group: 'later', shown: 'awaiting-reply', awaits: 'q9q9q9', awaitsOf: 'game' }),
+    place: 'engine',
+  },
+};
+
+/** To review: its own word, and what its tree holds that no branch of yours does. */
+export const ToReview: Story = {
+  args: {
+    session: { ...SESSION, state: 'stopped', created: at(80), updated: at(30), tree: 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9' },
+    root: 'C:/somewhere/engine',
+    grouping: placed({ group: 'review', shown: 'stopped', work: { commits: 3, uncommitted: 0 } }),
+    place: 'engine',
+  },
+};
+
+/** To review with nothing committed: its tree's uncommitted changes. */
+export const UncommittedToReview: Story = {
+  args: {
+    session: { ...SESSION, state: 'completed', created: at(80), updated: at(30) },
+    grouping: placed({ group: 'review', shown: 'completed', work: { commits: 0, uncommitted: 4 } }),
+    place: 'engine',
+  },
+};
+
+/** Queued: neutral now, keeping its idle mark (D126 §2.3); open's hue is the person's alone. */
+export const Queued: Story = {
+  args: { session: { ...SESSION, state: 'queued', created: at(1), updated: at(1) }, place: 'engine' },
 };

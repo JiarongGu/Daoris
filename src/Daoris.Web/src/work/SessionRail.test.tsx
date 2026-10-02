@@ -1,22 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // An ORGANISM, so this is the layer that holds the hooks and the layer a mocked bridge is for
 // (components plan §2). The bridge is mocked as present, because the Work frame is desktop-only
-// (D55) and the group header's driver facts exist nowhere else.
+// (D55) and the group header's driver facts exist nowhere else; one case takes it away, as a browser has none.
 
-const { invoke, notifyReady } = vi.hoisted(() => ({
+const { invoke, notifyReady, bridge } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
+  bridge: { available: true },
 }));
 
 vi.mock('@shenora/react', () => ({
-  isShenoraAvailable: () => true,
-  getBridge: () => ({ isAvailable: true, invoke, notifyReady }),
-  useShenora: () => ({ isAvailable: true, bridge: { notifyReady } }),
+  isShenoraAvailable: () => bridge.available,
+  getBridge: () => ({ isAvailable: bridge.available, invoke, notifyReady }),
+  useShenora: () => ({ isAvailable: bridge.available, bridge: { notifyReady } }),
   useShenoraEvent: () => {},
 }));
 
@@ -57,6 +58,18 @@ const LIVE = [
   { ...base, id: 'd4e5f6a7', quest: null, repository: 'engine', state: 'completed', created: at(300), updated: at(240) },
 ];
 
+/** The driver's one reader on LIVE (SESSUX1a), in its order: what waits on you, what runs, what ended. */
+let GROUPS: unknown[] = [];
+const LIVE_GROUPS = [
+  { session: 'b2c3d4e5', group: 'you', shown: 'awaiting-person', archived: false, teammate: false },
+  { session: 's1a2b3c4', group: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'c3d4e5f6', group: 'working', shown: 'working', archived: false, teammate: false },
+  { session: 'd4e5f6a7', group: 'ended', shown: 'completed', archived: false, teammate: false },
+];
+
+/** The bridge's answer to each call: the reader's groups, and the driver's state for everything else. */
+const drive = async (_module: string, type: string) => (type === 'SESSION_GROUPS' ? { sessions: GROUPS } : DRIVER_STATE);
+
 function respond(url: string): Response {
   if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
@@ -76,8 +89,10 @@ function show(node: React.ReactElement) {
 describe('the session rail', () => {
   beforeEach(() => {
     SESSIONS = LIVE;
+    GROUPS = LIVE_GROUPS;
+    bridge.available = true;
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
-    invoke.mockImplementation(async () => DRIVER_STATE);
+    invoke.mockImplementation(drive);
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -85,7 +100,7 @@ describe('the session rail', () => {
   });
 
   it('groups what is running by repository, in a stable order', async () => {
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     // The repository groups' headings — not the ended section's, which is a peer of the groups
     // rather than one of them, and lists what is no longer running.
@@ -99,9 +114,10 @@ describe('the session rail', () => {
    * FRAME6: closed to its 56px strip, the rail keeps every running session one press away — its
    * repository's initial and its mark, with the title, the repository and the state as its name, since
    * a strip has no room for the words and a mark is never hue alone (D41 §6). What ended is left to
-   * the open rail; the attended session stays, whatever state it reached.
+   * the open rail; the attended session stays, whatever state it reached. By state (D126 §2.5), what
+   * waits on the person comes first, then what runs, in the open list's order.
    */
-  it('keeps every running session one press away as a strip', async () => {
+  it('keeps every running session one press away as a strip, what waits on you first', async () => {
     const select = vi.fn();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
@@ -113,17 +129,17 @@ describe('the session rail', () => {
     );
 
     const strip = await screen.findByRole('navigation', { name: 'Sessions' });
-    await within(strip).findAllByRole('button');
+    await waitFor(() => expect(within(strip).getAllByRole('button')[0]).toHaveAccessibleName('Chat · tools · waiting on you'));
     const rows = within(strip).getAllByRole('button');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
-      'Expose a streaming budget on the chunk API · engine · working',
       'Chat · tools · waiting on you',
+      'Expose a streaming budget on the chunk API · engine · working',
       'Chat · tools · working',
     ]);
-    expect(rows.map((row) => row.textContent)).toEqual(['e', 't', 't']);
+    expect(rows.map((row) => row.textContent)).toEqual(['t', 'e', 't']);
     expect(rows[2]).toHaveAttribute('aria-current', 'true');
 
-    await userEvent.click(rows[1]!);
+    await userEvent.click(rows[0]!);
     expect(select).toHaveBeenCalledWith('b2c3d4e5');
   });
 
@@ -135,7 +151,7 @@ describe('the session rail', () => {
   describe('names, search and the row menu (RAIL1)', () => {
     const answer = (extra: (type: string, payload: Record<string, unknown>) => unknown) =>
       invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) =>
-        extra(type, options?.payload ?? {}) ?? DRIVER_STATE);
+        extra(type, options?.payload ?? {}) ?? drive(_module, type));
     const rail = (props: Partial<Parameters<typeof SessionRail>[0]> = {}) => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       return render(
@@ -203,7 +219,7 @@ describe('the session rail', () => {
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'hydration');
       const byName = await screen.findByRole('region', { name: 'By name' });
       expect(within(byName).getByText('Cap the hydration per frame')).toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: 'engine' })).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Working (2)' })).toBeNull();
 
       await userEvent.clear(screen.getByRole('searchbox', { name: 'search sessions' }));
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
@@ -215,7 +231,7 @@ describe('the session rail', () => {
       expect(select).toHaveBeenCalledWith('c3d4e5f6');
 
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), '{Escape}');
-      expect(await screen.findByRole('heading', { name: 'engine' })).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Working (2)' })).toBeInTheDocument();
     });
 
     it('opens a session in its own window from its row\'s menu', async () => {
@@ -233,7 +249,7 @@ describe('the session rail', () => {
   });
 
   it('carries the machine\'s standing choices on the header, where the repository\'s facts live', async () => {
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     await screen.findByText('engine');
     expect(screen.getByText('drives here')).toBeInTheDocument();
@@ -242,7 +258,7 @@ describe('the session rail', () => {
 
   /** D51: the tree is the unit of exclusion, so "busy" is a question about a tree, not a repository. */
   it('names the tree an active session is holding', async () => {
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
     expect(await screen.findByText('busy · streaming-budget')).toBeInTheDocument();
   });
 
@@ -256,7 +272,7 @@ describe('the session rail', () => {
       ...base, id: 'i9n8t7k6', quest: null, kind: 'chat', repository: 'ask #0fda18', ask: '0fda18',
       state: 'awaiting-person',
     }];
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     const group = (await screen.findByText('ask #0fda18')).closest('section')!;
     expect(within(group).queryByText('busy')).toBeNull();
@@ -265,14 +281,14 @@ describe('the session rail', () => {
   /** HELP1a: Ask Daoris's conversations group under its own name, never the record's `daoris:help`. */
   it('names Ask Daoris\'s group by its name, not by the repository its records are kept in', async () => {
     SESSIONS = [{ ...base, id: 'h1e1p000', quest: null, kind: 'chat', repository: 'daoris:help', state: 'working' }];
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     expect(await screen.findByRole('heading', { name: 'Ask Daoris' })).toBeInTheDocument();
     expect(screen.queryByText('daoris:help')).toBeNull();
   });
 
   it('says busy without a name when the session holds the registered root', async () => {
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     const tools = (await screen.findByText('tools')).closest('section')!;
     expect(within(tools).getByText('busy')).toBeInTheDocument();
@@ -290,7 +306,7 @@ describe('the session rail', () => {
    * session has none of.
    */
   it('lists what is still running in the groups, and what ended beneath them', async () => {
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     await screen.findByText('engine');
     // engine: the one live session. tools: two. The completed one is not in either group…
@@ -304,7 +320,7 @@ describe('the session rail', () => {
 
   it('opens an ended session when it is chosen, like any other', async () => {
     const onSelect = vi.fn();
-    show(<SessionRail notify={() => {}} onSelect={onSelect} />);
+    show(<SessionRail notify={() => {}} onSelect={onSelect} arrangement="repository" />);
 
     const ended = await screen.findByRole('region', { name: 'Ended' });
     await userEvent.click(rows(ended)[0]!);
@@ -314,7 +330,7 @@ describe('the session rail', () => {
   /** A machine with no live session but an ended one is not empty, and must not say it is. */
   it('does not show the full empty state while there is a record to read', async () => {
     SESSIONS = LIVE.filter((s) => (s as { state: string }).state === 'completed');
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     await screen.findByRole('region', { name: 'Ended' });
     expect(screen.queryByText(/Sessions appear here/)).not.toBeInTheDocument();
@@ -327,7 +343,7 @@ describe('the session rail', () => {
    * list of running things must not do.
    */
   it('keeps the attended session listed after it ends', async () => {
-    show(<SessionRail selected="d4e5f6a7" notify={() => {}} />);
+    show(<SessionRail selected="d4e5f6a7" notify={() => {}} arrangement="repository" />);
 
     expect(await screen.findByText('completed')).toBeInTheDocument();
     const engine = screen.getByText('engine').closest('section')!;
@@ -335,7 +351,7 @@ describe('the session rail', () => {
   });
 
   it('puts the session that needs a person at the top of its group', async () => {
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     const tools = (await screen.findByText('tools')).closest('section')!;
     expect(within(rows(tools)[0]!).getByText('waiting on you')).toBeInTheDocument();
@@ -354,14 +370,14 @@ describe('the session rail', () => {
 
   it('marks a repository that never adopted, where a session is running anyway', async () => {
     SESSIONS = [{ ...base, id: 'e5f6a7b8', quest: null, kind: 'chat', repository: 'sandbox', state: 'working' }];
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     expect(await screen.findByText('not adopted')).toBeInTheDocument();
   });
 
   it('offers a designed nothing rather than an empty column', async () => {
     SESSIONS = [];
-    show(<SessionRail notify={() => {}} />);
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     expect(await screen.findByText('Nothing is running')).toBeInTheDocument();
   });
@@ -375,8 +391,96 @@ describe('the session rail', () => {
       return respond(String(input));
     }));
 
-    show(<SessionRail notify={notify} />);
+    show(<SessionRail notify={notify} arrangement="repository" />);
 
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('the index is rebuilding', 'error'));
+  });
+});
+
+/**
+ * SESSUX1c, D126 §2.1, §4: by state, the default, each session where the driver's one reader places it, asked once
+ * under the sessions' key; a record the reader has not answered for yet by its record alone; and with no driver to ask,
+ * the arrangement the list always had.
+ */
+describe('the session rail by state', () => {
+  beforeEach(() => {
+    SESSIONS = LIVE;
+    GROUPS = LIVE_GROUPS;
+    bridge.available = true;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(drive);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    bridge.available = true;
+  });
+
+  const groupHeadings = () => screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
+
+  it("lists by state by default, in the groups the driver's reader answers", async () => {
+    show(<SessionRail notify={() => {}} />);
+
+    await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+    expect(groupHeadings()).toEqual(['Waiting on you (1)', 'Working (2)', 'Ended (1)']);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {});
+    // No group header names a repository by state, so each row's line does (§4.2).
+    const working = screen.getByRole('heading', { level: 3, name: 'Working (2)' }).closest('section')!;
+    expect(within(working).getByText(/^engine · driven/)).toBeInTheDocument();
+    expect(screen.queryByText('drives here')).toBeNull();
+  });
+
+  /** D126's 1 October, on the list (audit M2): a quest parked on its failed sessions waits on the person, with its count. */
+  it("shows a parked quest's last session where it waits on you, in the reader's words", async () => {
+    SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
+    GROUPS = [
+      LIVE_GROUPS[0],
+      { session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 },
+      ...LIVE_GROUPS.slice(1),
+    ];
+    show(<SessionRail notify={() => {}} />);
+
+    const waiting = (await screen.findByRole('heading', { level: 3, name: 'Waiting on you (2)' })).closest('section')!;
+    expect(within(waiting).getByText('parked')).toBeInTheDocument();
+    expect(within(waiting).getByText(/after 3 failed sessions/)).toBeInTheDocument();
+    expect(screen.queryByText('failed')).toBeNull();
+  });
+
+  /** A session that started after the reader looked is placed by its record until the next answer, never left out. */
+  it('places a session the reader has not answered for by its record alone', async () => {
+    SESSIONS = [...LIVE, { ...base, id: 'e9f8a7b6', quest: null, kind: 'chat', repository: 'engine', state: 'awaiting-person', created: at(3), updated: at(1) }];
+    show(<SessionRail notify={() => {}} />);
+
+    const waiting = (await screen.findByRole('heading', { level: 3, name: 'Waiting on you (2)' })).closest('section')!;
+    expect(within(waiting).getAllByText('waiting on you')).toHaveLength(2);
+  });
+
+  /** A browser has no driver to ask (D47 §4): the list is the arrangement it always had, and asks no reader. */
+  it('keeps the arrangement by repository where there is no driver to ask', async () => {
+    bridge.available = false;
+    show(<SessionRail notify={() => {}} />);
+
+    expect(await screen.findByRole('region', { name: 'Ended' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', expect.anything());
+  });
+
+  /** The monitor's list is the present tense only and draws no group, so it asks the reader nothing. */
+  it("asks the reader nothing for the monitor's list", async () => {
+    show(<SessionRail notify={() => {}} live />);
+
+    expect(await screen.findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', expect.anything());
+  });
+
+  /** Group by repository, chosen in the list's ⋯, is today's arrangement with the reader's words (§4.3). */
+  it('draws the list by repository when that is chosen, parked with waiting on you', async () => {
+    SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
+    GROUPS = [...LIVE_GROUPS, { session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }];
+    show(<SessionRail notify={() => {}} arrangement="repository" />);
+
+    const engine = (await screen.findByRole('heading', { level: 3, name: 'engine' })).closest('section')!;
+    await within(engine).findByText('parked');
+    expect(within(rows(engine)[0]!).getByText('parked')).toBeInTheDocument();
   });
 });

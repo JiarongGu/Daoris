@@ -2,41 +2,48 @@ import { Fragment, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
-import { partition, waitingFirst } from './rail';
-import { type SessionHit, useDriver, useOpenWindow, useSessionOpenings, useSessionSearch, useSessionWhere } from '../shell';
-import { EmptyState, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import {
+  type SessionHit, useDriver, useOpenWindow, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
+} from '../shell';
+import { Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
-import { RepositoryGroup } from './RepositoryGroup';
-import { SessionRow, SessionStripRow } from './SessionRow';
+import type { SessionArrangement } from './groups';
+import { SessionRow } from './SessionRow';
+import { type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
 import { isIntake, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
 import { sessionWindowName } from './window';
 
 /**
- * The rail: everything running, grouped by the repository it runs in (design §3).
+ * The rail: Sessions' list, by state or by repository (SESSUX1c, D126 §4), and its search (RAIL1).
  *
  * @remarks
  * **An organism — it holds the hooks so the molecules below it hold none** (components plan §2).
- * That is the whole arrangement: a row and a group header are reviewable in every state without a
- * service or a driver, and this file is the one place that knows where their props come from.
+ * That is the whole arrangement: `SessionList`, its rows and its group headers are reviewable in every
+ * state without a service or a driver, and this file is the one place that knows where their props come from.
  *
  * **Selection is not held here.** The rail is told which session is attended and reports a choice,
  * because one selection binds every region of the Work frame (IDE study §3) and a frame cannot
  * bind a selection its rail keeps to itself.
  *
- * **What it lists is what is still running** — plus the attended session, whatever state it reached.
- * A session that finished while its person was reading it must not vanish out from under them, and
- * reviewing finished work is a surface of its own (SURF6), not a growing list here.
+ * **By state, a session is where the driver's one reader places it** (`useSessionGroups`, D126 §2.4): the page asks
+ * and never derives a group of its own. A record the reader has not answered for yet, or every record while no answer
+ * has come, is placed by its record alone (`groups.ts`) until the next answer. **A browser has no driver to ask**, so
+ * its list is the arrangement it always had, by repository (D47 §4); and the monitor's list, the present tense only,
+ * asks nothing and keeps it too.
  */
-export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview, taking = {}, lastTurns = {}, live = false }: {
+export function SessionRail({
+  selected = null, onSelect, notify, compact = false, onReview, taking = {}, lastTurns = {}, live = false,
+  arrangement = 'state', archived = false,
+}: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
   onSelect?: (id: string) => void;
   notify: Notify;
   /**
-   * The rail closed to its 56px strip (FRAME6): every running session as its initial and its mark,
-   * in the open rail's order. What ended is left to the open rail.
+   * The rail closed to its 56px strip (FRAME6): what waits on the person, then what runs, as its initial and its mark,
+   * in the open rail's order (D126 §2.5). What ended is left to the open rail.
    */
   compact?: boolean;
   /** Review a session's work — the frame's, since the dock is (RAIL1's row menu). */
@@ -52,9 +59,13 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
   /**
    * The present tense only: no ended section, and a search that finds only what is running. The
    * monitor's, whose tiles are the running sessions a press scrolls to; an ended row there scrolled
-   * to a tile that is not there (UX5 U70).
+   * to a tile that is not there (UX5 U70). By repository, and asking no reader.
    */
   live?: boolean;
+  /** By state, the default, or by repository (D126 §4.1): the list's ⋯, remembered by the frame. */
+  arrangement?: SessionArrangement;
+  /** Whether archived sessions are shown (D126 §4.1). */
+  archived?: boolean;
 }) {
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
@@ -64,14 +75,20 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
   const registry = useRegistry();
   const driver = useDriver();
   const openWindow = useOpenWindow();
+  // Where each session is listed by state (SESSUX1a): the driver's one reader, asked under the sessions' key, so every
+  // tick that asks the records again asks this too. The monitor's list draws no group and asks nothing.
+  const groups = useSessionGroups(undefined, { enabled: !live });
+  // A query that is not asking and has never answered is one with no driver to ask: a browser (D47 §4).
+  const noReader = live || (groups.fetchStatus === 'idle' && groups.status === 'pending');
+  const drawn: SessionArrangement = noReader ? 'repository' : arrangement;
+  const groupings = live ? undefined : groups.data;
   // A conversation's name is what was first said in it (RAIL1), from this machine's record.
   const openings = useSessionOpenings(sessions.data);
-  // Live sessions grouped by repository, and beneath them the ones that ended — reachable after a
-  // restart, which §7 of the working-surface design promises and which this rail did not keep until
-  // the deployed application showed four empty-state sentences over four real records (`rail.ts`).
-  const { active: shown, ended, hiddenEnded } = partition(sessions.data ?? [], selected);
-  // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows shown.
-  const where = useSessionWhere([...shown, ...ended]);
+  // What the list holds: every record, or where the rail is live, what runs and the attended session, whatever state it
+  // reached.
+  const listed = (sessions.data ?? []).filter((session) => !live || SESSION_ACTIVE.has(session.state) || session.id === selected);
+  // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows listed.
+  const where = useSessionWhere(listed);
   // Searching (RAIL1): by name at once, and by what was said once the typing settles.
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 250);
@@ -84,7 +101,71 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
   const titleOf = (session: Session) =>
     sessionTitle(session, session.quest ? questFor.get(session.quest) : null, openings[session.id]);
 
-  // What every row of the open rail carries: its name, and its menu.
+  // What a search may find: everything the list holds, or only what is running where the rail is live.
+  const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
+  // Each row the list holds, with what it is drawn from besides its record.
+  const rows: SessionRowFacts[] = listed.map((session) => ({
+    session,
+    quest: session.quest ? questFor.get(session.quest) : null,
+    opening: openings[session.id],
+    taking: taking[session.id],
+    lastTurn: lastTurns[session.id],
+    root: registered.get(session.repository)?.root,
+    where: where[session.id],
+  }));
+  const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
+
+  const acts = {
+    onSelect,
+    onDetach: (id: string) => openWindow.mutate(sessionWindowName(id)),
+    onReview,
+    onCopy: (id: string) => {
+      void navigator.clipboard?.writeText(id).then(() => notify(t('work.rail.menu.copied', { id })), () => {});
+    },
+  };
+
+  // A repository group's facts (by repository): the driver answers only where a shell is attached (D46 §6); with no
+  // answer these stay undefined, and the header asserts nothing rather than reading silence as "no".
+  const repositoryFacts = (repository: string, members: readonly Session[]): RepositoryFacts => {
+    // A parked session holds its working tree, and a parked INTAKE holds nothing: it has asked and ended, and the room's
+    // lock is the process (INT4b), so it claims no busy (INT4g).
+    const holding = members.find((session) => SESSION_ACTIVE.has(session.state)
+      && !(isIntake(session) && session.state === 'awaiting-person'));
+    const registration = registered.get(repository);
+    return {
+      // Ask Daoris's records are kept in `daoris:help`, which is no repository and no name (HELP1a).
+      label: repository === HELP_REPOSITORY ? t('help.title') : undefined,
+      drivable: driver.data && driver.data.drivable.includes(repository),
+      held: driver.data && driver.data.holds.includes(repository),
+      busy: holding ? (ownTree(holding, registration?.root) ?? true) : null,
+      adopted: registration?.adopted,
+      // A root is answered only to a caller on the machine that holds it (D48 §7), so the question is only ASKED where a
+      // driver answered — otherwise every registration would look like a teammate's, which is a claim rather than an absence.
+      hasCheckout: driver.data && registration ? Boolean(registration.root) : undefined,
+    };
+  };
+
+  if (compact) {
+    if (sessions.isPending) return null;
+    return (
+      <SessionStrip
+        arrangement={drawn}
+        rows={rows}
+        groupings={groupings}
+        selected={selected}
+        archived={archived}
+        live={live}
+        label={t('work.rail.label')}
+        onSelect={onSelect}
+      />
+    );
+  }
+
+  if (sessions.isPending) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;
+
+  const searching = query.trim().length > 0;
+
+  // What every row a search found carries: its name, its reader's word, and its menu.
   const row = (session: Session) => (
     <SessionRow
       key={session.id}
@@ -95,90 +176,33 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
       lastTurn={lastTurns[session.id]}
       root={registered.get(session.repository)?.root}
       where={where[session.id]}
+      grouping={live ? null : placed.get(session.id)}
       selected={session.id === selected}
-      onSelect={onSelect}
-      onDetach={(id) => openWindow.mutate(sessionWindowName(id))}
-      onReview={onReview}
-      onCopy={(id) => {
-        void navigator.clipboard?.writeText(id).then(() => notify(t('work.rail.menu.copied', { id })), () => {});
-      }}
+      {...acts}
     />
   );
-
-  // What a search may find: everything the list holds, or only what is running where the rail is live.
-  const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
-
-  const groups = new Map<string, Session[]>();
-  for (const session of shown) {
-    const rows = groups.get(session.repository) ?? [];
-    rows.push(session);
-    groups.set(session.repository, rows);
-  }
-
-  // Repository order is the name, so the rail does not reshuffle itself as states change. Inside a
-  // group, the session that needs a person comes first — the one ordering that earns its keep.
-  const ordered = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-  for (const [, rows] of ordered) {
-    rows.sort(waitingFirst);
-  }
-
-  if (compact) {
-    if (sessions.isPending) return null;
-    return (
-      <nav aria-label={t('work.rail.label')}>
-        <ul className="m-0 grid list-none justify-items-center gap-1 px-0 py-1.5">
-          {ordered.flatMap(([, rows]) => rows).map((session) => (
-            <SessionStripRow
-              key={session.id}
-              session={session}
-              quest={session.quest ? questFor.get(session.quest) : null}
-              opening={openings[session.id]}
-              taking={taking[session.id]}
-              selected={session.id === selected}
-              onSelect={onSelect}
-            />
-          ))}
-        </ul>
-      </nav>
-    );
-  }
-
-  if (sessions.isPending) return <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>;
-
-  // The full empty state only when there is truly nothing — a machine with no live session but
-  // four ended ones is not empty, and saying so at the top of a list of records reads as "these
-  // records are nothing", which is the misreading this whole change removes.
-  if (!shown.length && !ended.length) {
-    return (
-      <EmptyState
-        icon="inbox"
-        headline={t('work.rail.empty.headline')}
-        body={t('work.rail.empty.body')}
-      />
-    );
-  }
-
-  const searching = query.trim().length > 0;
 
   return (
     <nav aria-label={t('work.rail.label')}>
       {/* Searching (RAIL1): on the open rail only — the strip has no room to type in. Escape clears it,
-          and the rail's own list comes back. */}
-      <div className="px-2 pb-1 pt-1.5">
-        <label className="flex items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 py-1 text-ink-faint focus-within:border-accent">
-          <Icon name="search" size={12} className="shrink-0" />
-          <input
-            type="search"
-            value={query}
-            aria-label={t('work.rail.search.label')}
-            placeholder={t('work.rail.search.placeholder')}
-            onChange={(event) => setQuery(event.target.value)}
-            // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
-            onKeyDown={(event) => { if (event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
-            className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
-          />
-        </label>
-      </div>
+          and the rail's own list comes back. The list's full empty state has no search above it. */}
+      {rows.length > 0 && (
+        <div className="px-2 pb-1 pt-1.5">
+          <label className="flex items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 py-1 text-ink-faint focus-within:border-accent">
+            <Icon name="search" size={12} className="shrink-0" />
+            <input
+              type="search"
+              value={query}
+              aria-label={t('work.rail.search.label')}
+              placeholder={t('work.rail.search.placeholder')}
+              onChange={(event) => setQuery(event.target.value)}
+              // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
+              onKeyDown={(event) => { if (event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
+              className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
+            />
+          </label>
+        </div>
+      )}
 
       {searching && (
         <SearchResults
@@ -197,54 +221,17 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
         />
       )}
 
-      {!searching && !shown.length && (
-        <p className="px-3 py-2 text-small text-ink-faint">{t('work.rail.empty.headline')}</p>
-      )}
-      {!searching && ordered.map(([repository, rows]) => {
-        // A parked session holds its working tree, and a parked INTAKE holds nothing: it has asked
-        // and ended, and the room's lock is the process (INT4b), so it claims no busy (INT4g).
-        const holding = rows.find((session) => SESSION_ACTIVE.has(session.state)
-          && !(isIntake(session) && session.state === 'awaiting-person'));
-        const registration = registered.get(repository);
-        return (
-          <RepositoryGroup
-            key={repository}
-            repository={repository}
-            // Ask Daoris's records are kept in `daoris:help`, which is no repository and no name (HELP1a).
-            label={repository === HELP_REPOSITORY ? t('help.title') : undefined}
-            count={rows.length}
-            // The driver answers only where a shell is attached (D46 §6); with no answer these stay
-            // undefined, and the header asserts nothing rather than reading silence as "no".
-            drivable={driver.data && driver.data.drivable.includes(repository)}
-            held={driver.data && driver.data.holds.includes(repository)}
-            busy={holding ? (ownTree(holding, registration?.root) ?? true) : null}
-            adopted={registration?.adopted}
-            // A root is answered only to a caller on the machine that holds it (D48 §7), so the
-            // question is only ASKED where a driver answered — otherwise every registration would
-            // look like a teammate's, which is a claim rather than an absence.
-            hasCheckout={driver.data && registration ? Boolean(registration.root) : undefined}
-          >
-            {rows.map(row)}
-          </RepositoryGroup>
-        );
-      })}
-
-      {/* 🔴 The ended sessions — the driver's record of what it actually did. No repository group
-          headers here: those carry live facts (drivable, held, which tree is busy) and an ended
-          session has none to state; the row's own derived title already names its repository.
-          Newest first, capped, and the remainder COUNTED rather than silently cut. */}
-      {!live && !searching && ended.length > 0 && (
-        <section aria-label={t('work.rail.ended')} className="mt-2 border-t border-line pt-2">
-          <h3 className="px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint">
-            {t('work.rail.ended')}
-          </h3>
-          {ended.map(row)}
-          {hiddenEnded > 0 && (
-            <p className="px-3 py-1.5 text-small text-ink-faint">
-              {t('work.rail.endedMore', { count: hiddenEnded })}
-            </p>
-          )}
-        </section>
+      {!searching && (
+        <SessionList
+          arrangement={drawn}
+          rows={rows}
+          groupings={groupings}
+          selected={selected}
+          archived={archived}
+          live={live}
+          repositoryFacts={repositoryFacts}
+          {...acts}
+        />
       )}
     </nav>
   );
