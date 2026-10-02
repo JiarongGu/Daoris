@@ -47,6 +47,15 @@ using Daoris.Driver;
 //                 exact verbs; --plan prints what was read, the rule, the landing, the agent and the quest's text,
 //                 and publishes nothing.
 //
+//   setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]
+//   setup --workspace <name> --pause | --resume | --stop
+//                 set a whole workspace up (WSSETUP6, D124 §4): a press writes <home>/setup/<workspace>.json, a plan of
+//                 single set-ups in the order other work touches them, and adds the doctrine tool's verbs to the
+//                 workspace's rules once; the loop then publishes each in turn, one at a time by default and never
+//                 the cap's last slot, skipping a repository the press refuses and saying why, and pausing once a
+//                 pilot of two has closed. --plan prints the list and each refusal (or, with a plan working, where it
+//                 stands); --pause, --resume (which judges the skipped again) and --stop steer it.
+//
 //   register [--repository <name>]
 //                 register each repository with a checkout here, or the one named, from what its LINE declares
 //                 (WSSETUP5, D124 §3): daoris.json and daoris.lanes.json read as git objects, sent as `connect` would
@@ -137,10 +146,11 @@ try
 
     // A set-up asked of a repository from a terminal (LAYOUT7, D117 §6.1, D50): one ask to one repository, as the
     // person's, with the rule its session needs. Repositories' *Set up for agents* and Ask Daoris's `setup` kind are
-    // LAYOUT8's doors to the same press.
+    // LAYOUT8's doors to the same press. With `--workspace`, a whole workspace's plan (WSSETUP6, D124 §4.5), whose lines
+    // go to this host's log; its screen and its Ask Daoris doors are WSSETUP7's.
     if (args is ["setup", .. var setupArgs])
     {
-        return await Daoris.Driver.Host.SetupConsole.RunAsync(setupArgs);
+        return await Daoris.Driver.Host.SetupConsole.RunAsync(setupArgs, log);
     }
 
     // Registration followed from each line when the person asks (WSSETUP5, D124 §3.1, D50): the repository row's

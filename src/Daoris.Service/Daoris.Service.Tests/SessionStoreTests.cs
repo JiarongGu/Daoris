@@ -81,6 +81,47 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.False((await _sessions.FindAsync(persons.Id))!.Interrupted);
     }
 
+    /// <summary>
+    /// TOOL4c (D125 §5.2): a failure an account's limit made is kept on the record as a limit — read back as
+    /// written, and false for every failure that did not say so.
+    /// </summary>
+    [Fact]
+    public async Task A_limit_is_kept_on_the_failed_record()
+    {
+        var limited = await Create();
+        var crashed = await Create();
+
+        await _sessions.SetStateAsync(limited.Id, SessionState.Working, null, null, null, Now);
+        await _sessions.SetStateAsync(
+            limited.Id, SessionState.Failed, "the ACP agent refused the call: You've hit your weekly limit", null, null, Now,
+            limit: true);
+        await _sessions.SetStateAsync(crashed.Id, SessionState.Failed, "exit 2", null, null, Now);
+
+        Assert.True((await _sessions.FindAsync(limited.Id))!.Limit);
+        Assert.False((await _sessions.FindAsync(crashed.Id))!.Limit);
+        Assert.False((await _sessions.FindAsync(limited.Id))!.Interrupted);
+    }
+
+    /// <summary>A teammate's record keeps its limit when mirrored, on its first copy and on each later one.</summary>
+    [Fact]
+    public async Task A_mirrored_record_keeps_its_limit()
+    {
+        var fed = new Session(
+            "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code",
+            SessionState.Working, null, null, null, Now, Now);
+
+        await _sessions.MirrorAsync(fed);
+        Assert.False((await _sessions.FindAsync(fed.Id))!.Limit);
+
+        await _sessions.MirrorAsync(fed with { State = SessionState.Failed, Updated = Now.AddHours(1), Limit = true });
+        Assert.True((await _sessions.FindAsync(fed.Id))!.Limit);
+
+        await _sessions.MirrorAsync(new Session(
+            "bob-desktop/ef56ab78", "abc123", "Owner", "claude-code",
+            SessionState.Failed, null, null, null, Now, Now) { Limit = true });
+        Assert.True((await _sessions.FindAsync("bob-desktop/ef56ab78"))!.Limit);
+    }
+
     /// <summary>An attachment set earlier survives a later move that does not mention it.</summary>
     [Fact]
     public async Task An_unmentioned_attachment_is_kept_not_erased()
@@ -350,6 +391,8 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         // …and a record from before D104 says nothing about being interrupted: the old reading, a stop
         // that was the person's.
         Assert.False(elder.Interrupted);
+        // …nor about an account's limit (TOOL4c): the old reading, a failure like any other.
+        Assert.False(elder.Limit);
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

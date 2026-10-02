@@ -422,9 +422,13 @@ public sealed class SessionLedger(
     /// That a stop was not the person's (D104): the orphan sweep's, or the driver's shutdown. Only a move
     /// to <c>stopped</c> may say so, since it says whose decision a stop was.
     /// </param>
+    /// <param name="limit">
+    /// That an account's limit refused the turn (TOOL4c, D125 §5.2), as the driver read it from the door's
+    /// failure. Only a move to <c>failed</c> may say so, since it says why a turn failed.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -441,6 +445,15 @@ public sealed class SessionLedger(
             return new(
                 SessionAdvanceRefusal.InvalidMove,
                 $"Only a move to stopped can be interrupted — it says a stop was not the person's, and "
+                + $"session `{id}` was asked to move to {Spell(target.Value)}.",
+                Session: null);
+        }
+
+        if (limit && target != SessionState.Failed)
+        {
+            return new(
+                SessionAdvanceRefusal.InvalidMove,
+                $"Only a move to failed can say an account's limit — it says why a turn failed, and "
                 + $"session `{id}` was asked to move to {Spell(target.Value)}.",
                 Session: null);
         }
@@ -472,7 +485,7 @@ public sealed class SessionLedger(
                     Session: null);
             }
 
-            var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, inside, interrupted)
+            var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, inside, interrupted, limit)
                 .ConfigureAwait(false);
 
             return new SessionAdvanceOutcome(

@@ -16,7 +16,10 @@ searchable. The ledger side grew with it: a session record keys on the **working
 (D51), not on the repository that owns it, and carries the diff a review reads (SURF6a). A `stopped`
 record says whether it was **interrupted** (D104): ended by the driver's orphan sweep or its shutdown,
 not by the person. The ledger carries an interrupted take on as it does a failed one (D80), and never a
-person's stop; the column arrives by `SchemaColumns`, so an older record reads as the person's.
+person's stop; the column arrives by `SchemaColumns`, so an older record reads as the person's. A
+`failed` record says whether an account's **limit** refused its turn (TOOL4c, D125 §5.2), as the driver
+read it from the door's failure. It names no account, so it is answered to every caller and travels with
+the record both ways; an older record, or a feed from a build before it, reads false.
 
 Since **D117** (LAYOUT4) the scanner reads the layout a repository's lock was written under, never an
 assumed `.claude`: the lock's root before the manifest's, and the root a layout moved from; both
@@ -260,7 +263,7 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `POST /api/quests/{id}/conflicts/dismiss` | a person dismisses a conflict: `{ machine, sequence }` names one, and naming none dismisses every one the quest carries. It is an operation the next pass carries, so every machine drops it. It moves no status (SYNC6c) |
 | `GET /api/asks` · `POST /api/asks` · `POST /api/asks/{id}/publish` · `POST /api/asks/{id}/close` | local mode only: an ask made at a workspace (D65 §1a), the quest a person turns it into, and closing it with a reason |
 | `GET /api/quests/{id}/attachments/{sha256}` | local mode, loopback only: a kept file, served sandboxed (`Content-Security-Policy: sandbox`, `nosniff`), and anything but an image, a PDF or text as a download, so an attached page never runs on the platform's origin |
-| `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46); a move to `stopped` may say `interrupted: true` (D104), and a move anywhere else that says it is refused |
+| `GET /api/sessions` · `POST /api/sessions` · `POST /api/sessions/{id}/state` | the driver's session records (D46); a move to `stopped` may say `interrupted: true` (D104), and a move to `failed` may say `limit: true` (TOOL4c); a move anywhere else that says either is refused |
 | `POST /api/sessions/chat` · `/api/sessions/intake` · `/api/sessions/help` | the record a conversation opens: a chat in a repository (D49 §3); and, local mode only, an intake for an ask (D65 §1b) and Ask Daoris's conversation in its room (HELP1a, D89), recorded in `daoris:help`, one running per room |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
 | `POST /api/feed/sessions` · `/api/feed/entries` · `/api/feed/code-map` | shared mode only: what a desktop's sync feeds up (D47, MAP3b) |

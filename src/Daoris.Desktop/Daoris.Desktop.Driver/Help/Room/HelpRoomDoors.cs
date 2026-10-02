@@ -28,6 +28,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
             "(no screen yet)", "`daoris-driver setup <repository> [--plan]`"),
+        // WSSETUP6: the workspace plan's terminal door; its screen and Ask Daoris's doors are WSSETUP7's, owed meanwhile.
+        ("set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, "
+            + "pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it",
+            "(no screen yet)",
+            "`daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, "
+            + "`daoris-driver setup --workspace <name> --pause|--resume|--stop`"),
         // WSSETUP5: registration follows the line on its own (a start, a line Daoris moves); this is the person's ask. The
         // row's *Refresh* and Ask Daoris's `register` door are WSSETUP7's, owed meanwhile.
         ("register a repository from what its line declares, as `connect` would, without running it: after a set-up's "

@@ -163,7 +163,9 @@ public sealed record SessionResponse(
     bool Took = false,
     string? Answer = null,
     // D104: a stop that was not the person's — the sweep's, or a shutdown's — which the driver carries on.
-    bool Interrupted = false);
+    bool Interrupted = false,
+    // TOOL4c (D125 §5.2): a failure an account's limit made. It names no account, so every caller is told.
+    bool Limit = false);
 // STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
 public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
@@ -181,9 +183,10 @@ public sealed record OpenIntakeRequest(
 // Ask Daoris (HELP1a, D89): the room its conversation runs in, the driver's to name.
 public sealed record OpenHelpRequest(
     string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
-// `Interrupted` (D104): a move to `stopped` that was not the person's. Silence is the old reading.
+// `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
+// that an account's limit made. Silence is the old reading of both.
 public sealed record AdvanceSessionRequest(
-    string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null);
+    string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for
