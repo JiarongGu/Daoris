@@ -8876,5 +8876,7 @@ screen names each account's own plan and terms, and Daoris claims nothing about 
 
 **What *in parallel* means (the owner, 2026-10-02):** *"paralle mostly means if we running multi repo or multi
 sessions"*. It is the sessions running at once, across repositories or within one, that spread over the accounts,
-each start going to the account running the fewest. A quest's carry-on still stays on its last account while
-that is ready, as point 6 says. TOOL6b builds it so; TOOL6a's words for the setting say so.
+each start going to the account running the fewest. A quest's carry-on stays on its last account while that is
+ready, as point 6 says, and moves to the next account when that one hits its limit (the owner: *"a quest can be
+running on different account if one account runs out of the limit"*), as TOOL4f's first real rotation did on 2 October.
+TOOL6b builds it so; TOOL6a's words for the setting say so.
