@@ -36,6 +36,8 @@
   "work.rail.uncommitted": "uncommitted changes",
   "work.rail.workToReview": "work to review",
   "work.rail.reviewTip": "Its own tree holds work no branch of yours holds yet. Review it to land it, send it back or discard it.",
+  "work.rail.archived": "archived",
+  "work.rail.archivedTip": "Archived on this machine: kept whole, and out of the list unless Show archived, in the list’s ⋯, is ticked.",
   "work.rail.empty.headline": "Nothing is running",
   "work.rail.empty.body": "Sessions appear here as the driver takes quests and as you open conversations, listed by what each one needs from you.",
   "work.rail.ended": "Ended"

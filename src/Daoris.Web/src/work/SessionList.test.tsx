@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import type { Session } from '../api';
 import type { SessionGrouping } from './groups';
-import { type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
+import { ArchiveEndedAsk, type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
 
 // Sessions' list (SESSUX1c, D126 §2.1, §4) as a molecule: by state, by repository, the strip and a long Ended group,
 // each reached by passing it. No bridge and no query client: the rail above it holds them.
@@ -144,6 +144,154 @@ describe("Sessions' list by state", () => {
       expect(headings()).toEqual(['等你处理（2）', '待审阅（1）', '工作中（1）', '稍后继续（1）', '已结束（2）']);
       expect(screen.getByText('已挂起')).toBeInTheDocument();
       expect(screen.getByText('等回复')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
+/**
+ * SESSUX1e, D126 §4.1, §5.2: *Show archived* draws Archived last, its rows Unarchive-able, and says when nothing is
+ * archived; an archived row under no Archived heading says it is archived on its line (by repository).
+ */
+describe("Sessions' list, archived", () => {
+  const marked = [...GROUPINGS.slice(0, 6), placed({ session: 'd0ne0000', group: 'archived', shown: 'completed', archived: true })];
+
+  it('says nothing is archived under Archived when it is shown and empty', () => {
+    list({ archived: true });
+
+    expect(headings().at(-1)).toBe('Archived (0)');
+    const section = screen.getByRole('heading', { level: 3, name: 'Archived (0)' }).closest('section')!;
+    expect(within(section).getByText('Nothing archived')).toBeInTheDocument();
+    // Nothing a row's arrows would stop on.
+    expect(section.querySelectorAll('[data-list-row]')).toHaveLength(0);
+  });
+
+  it('draws no empty Archived group while archived is hidden', () => {
+    list();
+    expect(screen.queryByText('Nothing archived')).toBeNull();
+  });
+
+  /** Under the Archived heading the heading says it; a row's line need not say it again. */
+  it('lists the archived under Archived, their lines quiet about it, each offering Unarchive', async () => {
+    const unarchive = vi.fn();
+    list({ archived: true, groupings: marked, onUnarchive: unarchive, onArchive: () => {} });
+
+    const [row] = groupRows('Archived (1)');
+    expect(within(row!).queryByText(/· archived ·/)).toBeNull();
+    const user = userEvent.setup();
+    within(row!).getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Unarchive' }));
+    expect(unarchive).toHaveBeenCalledWith('d0ne0000');
+  });
+
+  it('offers Archive on what ended, and on nothing that waits on you', async () => {
+    const archive = vi.fn();
+    list({ onArchive: archive, onCopy: () => {} });
+    const user = userEvent.setup();
+
+    within(groupRows('Waiting on you (2)')[1]!).getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.queryByRole('menuitem', { name: 'Archive' })).toBeNull();
+    await user.keyboard('{Escape}');
+
+    within(groupRows('Ended (2)')[0]!).getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
+    expect(archive).toHaveBeenCalledWith('d0ne0001');
+  });
+
+  /** By repository an archived row sits among the ended with no heading of its own, so its line says it. */
+  it('says an archived row is archived on its line by repository', () => {
+    list({ arrangement: 'repository', archived: true, groupings: marked });
+
+    const ended = screen.getByRole('region', { name: 'Ended' });
+    expect(within(ended).getByText(/^archived · driven · /)).toBeInTheDocument();
+  });
+
+  it('names Archived and its empty state in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      list({ archived: true });
+      expect(headings().at(-1)).toBe('已归档（0）');
+      expect(screen.getByText('没有已归档的会话')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
+/**
+ * SESSUX1e, D126 §5.3: *Archive what ended…* lists first, under the list's header, what it would take and what stays,
+ * and archives on a second press exactly what the first listed, since a list is a fact about a moment.
+ */
+describe("Archive what ended's first press", () => {
+  const ask = (props: Partial<Parameters<typeof ArchiveEndedAsk>[0]> = {}) => render(
+    <ArchiveEndedAsk going={['d0ne0001', 'd0ne0000']} kept={{ you: 2, review: 1 }} onArchive={() => {}} onCancel={() => {}} {...props} />,
+  );
+
+  it('says what it would archive and what it keeps, and archives what it said on the second press', async () => {
+    const archive = vi.fn();
+    ask({ onArchive: archive });
+
+    const group = screen.getByRole('group', { name: 'Archive what ended…' });
+    expect(group).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 2 waiting on you, 1 to review.');
+    await userEvent.click(within(group).getByRole('button', { name: 'Archive 2' }));
+    expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000']);
+  });
+
+  /** The reader answers on every tick; the second press sends what the first listed, never a later answer's list. */
+  it('sends only what its first press listed, whatever the list says since', async () => {
+    const archive = vi.fn();
+    const { rerender } = ask({ onArchive: archive });
+
+    rerender(<ArchiveEndedAsk going={['d0ne0001', 'd0ne0000', 'n3wly000']} kept={{ you: 0, review: 0 }} onArchive={archive} onCancel={() => {}} />);
+    expect(screen.getByRole('group', { name: 'Archive what ended…' })).toHaveTextContent('Archives 2 sessions that ended.');
+    await userEvent.click(screen.getByRole('button', { name: 'Archive 2' }));
+    expect(archive).toHaveBeenCalledWith(['d0ne0001', 'd0ne0000']);
+  });
+
+  it('names only what it keeps, one session in the singular', () => {
+    const { unmount } = ask({ going: ['d0ne0001'], kept: { you: 0, review: 3 } });
+    expect(screen.getByText('Archives 1 session that ended. Kept in the list: 3 to review.')).toBeInTheDocument();
+    unmount();
+
+    ask({ kept: { you: 0, review: 0 } });
+    expect(screen.getByText('Archives 2 sessions that ended.')).toBeInTheDocument();
+  });
+
+  /** Nothing to archive: it says so, and offers no press that would archive nothing. */
+  it('says when nothing has ended to archive, and offers only to close', async () => {
+    const cancel = vi.fn();
+    ask({ going: [], kept: { you: 1, review: 0 }, onCancel: cancel });
+
+    const group = screen.getByRole('group', { name: 'Archive what ended…' });
+    expect(group).toHaveTextContent('Nothing that ended is left to archive. Kept in the list: 1 waiting on you.');
+    expect(within(group).getAllByRole('button').map((button) => button.textContent)).toEqual(['Close']);
+    await userEvent.click(within(group).getByRole('button', { name: 'Close' }));
+    expect(cancel).toHaveBeenCalled();
+  });
+
+  it('never minds', async () => {
+    const cancel = vi.fn();
+    ask({ onCancel: cancel });
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+    expect(cancel).toHaveBeenCalled();
+  });
+
+  it('holds its presses while the archive is on its way', () => {
+    ask({ busy: true });
+    expect(screen.getByRole('button', { name: 'Archive 2' })).toBeDisabled();
+  });
+
+  it('asks in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      ask();
+      const group = screen.getByRole('group', { name: '归档已结束的会话…' });
+      expect(group).toHaveTextContent('将归档 2 个已结束的会话。仍留在列表中：2 个等你处理，1 个待审阅。');
+      expect(within(group).getByRole('button', { name: '归档 2 个' })).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }

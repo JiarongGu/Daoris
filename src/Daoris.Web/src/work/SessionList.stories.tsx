@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../api';
-import type { SessionArrangement, SessionGrouping } from './groups';
+import { endedToArchive, type SessionArrangement, type SessionGrouping } from './groups';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { ListMore, ListPane } from './ListPane';
-import { type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
+import { ArchiveEndedAsk, type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
 
 // Sessions' list (SESSUX1c, D126 §2.1, §4) on its list pane, in every state the design names: by state with every
 // group, by repository, one group only, a long Ended group and its press, archived shown, empty, loading, 中文 titles,
@@ -77,10 +77,15 @@ type Args = {
   archived?: boolean;
   layout?: ListLayout;
   loading?: boolean;
+  /** *Archive what ended…*'s first press, under the list's header (SESSUX1e), listed from these sessions. */
+  asking?: boolean;
 };
 
-/** The list as Sessions hands it to its pane: its ＋, its ⋯ with *Group by*, its strip and its body. */
-function SessionsListPane({ arrangement, sessions, groupings, selected = null, archived = false, layout = open(LIST_BOUNDS.sessions.initial), loading = false }: Args) {
+/** The list as Sessions hands it to its pane: its ＋, its ⋯ with *Group by* and the archive's items, its strip and its body. */
+function SessionsListPane({
+  arrangement, sessions, groupings, selected = null, archived = false, layout = open(LIST_BOUNDS.sessions.initial), loading = false,
+  asking = false,
+}: Args) {
   const rows = facts(sessions);
   return (
     <ListPane
@@ -96,6 +101,10 @@ function SessionsListPane({ arrangement, sessions, groupings, selected = null, a
             label: 'Group by', value: arrangement, onChoose: () => {},
             options: [{ value: 'state', label: 'State' }, { value: 'repository', label: 'Repository' }],
           }}
+          items={[
+            { id: 'archived', label: 'Show archived', checked: archived },
+            { id: 'archiveEnded', label: 'Archive what ended…', rule: true },
+          ]}
         />
       )}
       strip={<SessionStrip arrangement={arrangement} rows={rows} groupings={groupings} selected={selected} archived={archived} label="Sessions" />}
@@ -106,6 +115,7 @@ function SessionsListPane({ arrangement, sessions, groupings, selected = null, a
       onResize={() => {}}
     >
       <nav aria-label="Sessions">
+        {asking && <ArchiveEndedAsk {...endedToArchive(sessions, groupings)} onArchive={() => {}} onCancel={() => {}} />}
         <SessionList
           arrangement={arrangement}
           rows={rows}
@@ -115,6 +125,8 @@ function SessionsListPane({ arrangement, sessions, groupings, selected = null, a
           repositoryFacts={(repository) => ({ drivable: repository !== 'tools', held: repository === 'tools', busy: repository === 'game' ? true : null })}
           onSelect={() => {}}
           onReview={() => {}}
+          onArchive={() => {}}
+          onUnarchive={() => {}}
           onCopy={() => {}}
         />
       </nav>
@@ -162,12 +174,35 @@ export const LongEnded: Story = {
   },
 };
 
-/** Archived shown: last, after *Ended* (§4.1). Hidden unless shown. */
+/** Archived shown: last, after *Ended* (§4.1), each row's ⋯ offering *Unarchive*. Hidden unless shown. */
 export const ArchivedShown: Story = {
   args: {
     archived: true,
     groupings: [...GROUPINGS.slice(0, 8), { session: 'd0ne0001', group: 'archived', shown: 'declined', archived: true, teammate: false }],
   },
+};
+
+/** *Show archived* ticked with nothing archived (SESSUX1e): the group says so, rather than the tick seeming to do nothing. */
+export const ArchivedEmpty: Story = { args: { archived: true } };
+
+/** By repository with archived shown: an archived row sits among the ended, and its line says it is archived (§4.5). */
+export const ArchivedByRepository: Story = {
+  args: {
+    arrangement: 'repository',
+    archived: true,
+    groupings: [...GROUPINGS.slice(0, 8), { session: 'd0ne0001', group: 'archived', shown: 'declined', archived: true, teammate: false }],
+  },
+};
+
+/**
+ * *Archive what ended…*'s first press (§5.3), under the list's header: what the second press would archive, and what
+ * stays because it needs the person: two waiting on you, one to review.
+ */
+export const ArchiveWhatEnded: Story = { args: { asking: true, selected: null } };
+
+/** The first press with nothing ended to archive: it says so, keeps what needs you, and offers only to close. */
+export const NothingToArchive: Story = {
+  args: { asking: true, selected: null, sessions: SESSIONS.slice(0, 6), groupings: GROUPINGS.slice(0, 6) },
 };
 
 /** Nothing at all: the list's empty state. */

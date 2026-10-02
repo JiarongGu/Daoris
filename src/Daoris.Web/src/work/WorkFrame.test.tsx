@@ -198,6 +198,52 @@ describe('the Work frame', () => {
     expect(window.localStorage.getItem('daoris.list.sessions.filters')).toBeNull();
   });
 
+  /**
+   * SESSUX1e, D126 §4.1: *Show archived* is a toggle in the list's ⋯, ticked as it stands and remembered beside the
+   * arrangement; below a rule, *Archive what ended…* lists under the list's header before anything is archived.
+   */
+  it('shows archived sessions from the list’s ⋯, remembered, and says when nothing is archived', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    show();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+
+    const user = userEvent.setup();
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Show archived' })).toHaveAttribute('aria-checked', 'false');
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Show archived' }));
+
+    expect(await within(list).findByRole('heading', { level: 3, name: 'Archived (0)' })).toBeInTheDocument();
+    expect(within(list).getByText('Nothing archived')).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ archived: true });
+
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Show archived' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Show archived' }));
+    await waitFor(() => expect(within(list).queryByText('Nothing archived')).toBeNull());
+    expect(window.localStorage.getItem('daoris.list.sessions.filters')).toBeNull();
+  });
+
+  it('lists what Archive what ended would take under the list’s header, and closes it on Close', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    show();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
+
+    const user = userEvent.setup();
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Archive what ended…' }));
+
+    // The reader here answers no session, so nothing it placed in Ended is listed; what waits on you is kept.
+    const ask = await within(list).findByRole('group', { name: 'Archive what ended…' });
+    expect(ask).toHaveTextContent('Nothing that ended is left to archive. Kept in the list: 1 waiting on you.');
+    await user.click(within(ask).getByRole('button', { name: 'Close' }));
+    expect(within(list).queryByRole('group', { name: 'Archive what ended…' })).toBeNull();
+  });
+
   it('opens on the arrangement this viewer chose last', async () => {
     window.localStorage.setItem('daoris.list.sessions.filters', JSON.stringify({ group: 'repository' }));
     SESSIONS = [DRIVEN, PARKED];

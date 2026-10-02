@@ -163,6 +163,10 @@ the derived title is free and true, and a rename is a store column plus a surfac
 > state, a row's line names its repository and no group header carries a repository's facts. **Grouping by
 > repository**, as above, stays a choice in the list's ⋯, remembered, and *parked* sorts with *waiting on you* there.
 > *Ended* shows twelve, then *Show N more*. `docs/2026-10-02-session-management-design.md` §2 and §4 are the contract.
+>
+> **And by SESSUX1e (2026-10-02).** A row's menu also offers *Archive* on an ended row and *Unarchive* on an archived
+> one, so it no longer holds only what has no other home. The list's ⋯ shows archived sessions as *Archived* and
+> offers *Archive what ended…*, which lists before it archives (the design's §5.2, §5.3).
 
 **The attended session has three parts and a composer.**
 

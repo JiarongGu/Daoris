@@ -284,6 +284,26 @@ describe('the list pane\'s ⋯', () => {
     await user.click(await screen.findByRole('menuitemcheckbox', { name: 'Include closed' }));
     expect(onChoose).toHaveBeenCalledWith('closed');
   });
+
+  /** SESSUX1e, D126 §4.1: a rule sets an act apart from the filters above it (*Archive what ended…* below *Show archived*). */
+  it('sets an item apart from those above it by a rule, where it asks for one', async () => {
+    pane(OPEN, {
+      more: (
+        <ListMore
+          label="More actions"
+          items={[{ id: 'archived', label: 'Show archived', checked: false }, { id: 'ended', label: 'Archive what ended…', rule: true }]}
+        />
+      ),
+    });
+    const user = userEvent.setup();
+    within(screen.getByText('Sessions').closest('header')!).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+
+    const menu = await screen.findByRole('menu');
+    const parts = [...menu.querySelectorAll('[role="menuitemcheckbox"], [role="separator"], [role="menuitem"]')]
+      .map((part) => part.getAttribute('role'));
+    expect(parts).toEqual(['menuitemcheckbox', 'separator', 'menuitem']);
+  });
 });
 
 describe('the list pane, named', () => {

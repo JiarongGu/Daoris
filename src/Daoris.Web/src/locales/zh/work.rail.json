@@ -36,6 +36,8 @@
   "work.rail.uncommitted": "有未提交的修改",
   "work.rail.workToReview": "有待审阅的工作",
   "work.rail.reviewTip": "它自己的工作树里有你的分支还没有的工作。审阅它，然后落地、退回或丢弃。",
+  "work.rail.archived": "已归档",
+  "work.rail.archivedTip": "已在本机归档：完整保留；只有在列表的 ⋯ 中勾选「显示已归档」时才会列出。",
   "work.rail.empty.headline": "当前没有会话在运行",
   "work.rail.empty.body": "驱动接下委托、或你开启对话之后，会话会出现在这里，按各自需要你做什么排列。",
   "work.rail.ended": "已结束"

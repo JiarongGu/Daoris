@@ -37,11 +37,13 @@ export type RepositoryFacts = {
   hasCheckout?: boolean;
 };
 
-/** The row's menu, the rail's (RAIL1): each told the session it was pressed for. */
+/** The row's menu, the rail's (RAIL1, D126 §3.1): each told the session it was pressed for. */
 type RowActs = {
   onSelect?: (id: string) => void;
   onDetach?: (id: string) => void;
   onReview?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
   onCopy?: (id: string) => void;
 };
 
@@ -60,6 +62,8 @@ type RowActs = {
  * - **By repository** (§4.3): a group per repository with its facts, *waiting on you* first and *parked* with it, and
  *   *Ended* beneath. Live (the monitor's), it lists only what is running (UX5 U70).
  * - **Ended** shows twelve and then *Show N more* (§4.4), and never cuts the attended session out of its group.
+ * - **Archived** (SESSUX1e, §5.2) is drawn while *Show archived* is ticked, and says so where nothing is archived. An
+ *   archived row under no Archived heading (by repository) says it is archived on its line.
  */
 export function SessionList({
   arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, ...acts
@@ -92,14 +96,17 @@ export function SessionList({
     return facts.session.repository;
   };
 
-  const row = (session: Session, byState: boolean) => {
+  // `underArchived`: the row is drawn under the Archived heading, which already says what its line would (§4.5).
+  const row = (session: Session, byState: boolean, underArchived = false) => {
     const facts = factsOf.get(session.id) ?? { session };
+    const grouping = live ? null : placed.get(session.id);
     return (
       <SessionRow
         key={session.id}
         {...facts}
-        grouping={live ? null : placed.get(session.id)}
+        grouping={grouping}
         place={byState ? placeOf(facts) : null}
+        archived={Boolean(grouping?.archived) && !underArchived}
         selected={session.id === selected}
         {...acts}
       />
@@ -107,11 +114,11 @@ export function SessionList({
   };
 
   // The rest of a long Ended group, on a press (§4.4): counted, never silently cut.
-  const ended = (all: readonly Session[], byState: boolean): ReactNode => {
+  const ended = (all: readonly Session[], byState: boolean, underArchived = false): ReactNode => {
     const { rows: shown, hidden } = cutEnded(all, { limit: ENDED_SHOWN, open: allEnded, keep: selected });
     return (
       <>
-        {shown.map((session) => row(session, byState))}
+        {shown.map((session) => row(session, byState, underArchived))}
         {hidden > 0 && (
           <li className="px-1.5 py-1">
             <Button variant="ghost" onClick={() => setAllEnded(true)} className="text-small">
@@ -133,9 +140,18 @@ export function SessionList({
       <>
         {groups.map(({ group, sessions: members }) => (
           <ListGroup key={group} title={t(`work.group.${group}`, { count: members.length })}>
-            {group === 'ended' || group === 'archived' ? ended(members, true) : members.map((session) => row(session, true))}
+            {group === 'ended' || group === 'archived'
+              ? ended(members, true, group === 'archived')
+              : members.map((session) => row(session, true))}
           </ListGroup>
         ))}
+        {/* Shown and empty (SESSUX1e): the group the tick asked for, saying it holds nothing, rather than no answer. Not a
+            row, so the list's arrows pass it by. */}
+        {archived && !groups.some(({ group }) => group === 'archived') && (
+          <ListGroup title={t('work.group.archived', { count: 0 })}>
+            <li className="px-2.5 pb-2 text-small text-ink-faint">{t('work.archived.none')}</li>
+          </ListGroup>
+        )}
       </>
     );
   }
@@ -161,6 +177,54 @@ export function SessionList({
         </section>
       )}
     </>
+  );
+}
+
+/**
+ * *Archive what ended…*'s first press (SESSUX1e, D126 §5.3): under the list's header, what the second press would
+ * archive and what stays because it needs the person, listed before anything is archived, as the clean-up lists (D88).
+ *
+ * @remarks
+ * **The second press archives what the first listed.** A list is a fact about a moment, and the reader answers again on
+ * every tick, so what this said when it opened is held and sent, never a later answer's list; the host judges each
+ * again as it goes. Nothing to archive is said, with no press that would archive nothing (D119 §3.2).
+ */
+export function ArchiveEndedAsk({ going, kept, busy = false, onArchive, onCancel }: {
+  /** The sessions it would archive, as `endedToArchive` lists them. */
+  going: readonly string[];
+  /** How many stay under *Waiting on you* and *To review*. */
+  kept: { you: number; review: number };
+  /** An archive on its way: the presses wait for it. */
+  busy?: boolean;
+  onArchive: (ids: readonly string[]) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const [listed] = useState(() => ({ going: [...going], kept: { ...kept } }));
+  const count = listed.going.length;
+  const { you, review } = listed.kept;
+  const takes = count > 0 ? t('work.archive.ask', { count }) : t('work.archive.none');
+  const keeps = you > 0 && review > 0 ? t('work.archive.keptBoth', { you, review })
+    : you > 0 ? t('work.archive.keptYou', { count: you })
+      : review > 0 ? t('work.archive.keptReview', { count: review })
+        : null;
+
+  return (
+    <div
+      role="group"
+      aria-label={t('work.list.archiveEnded')}
+      className="mx-2 mb-1 mt-1.5 grid gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+    >
+      <p className="m-0 text-small text-ink-soft">{keeps ? t('work.archive.join', { first: takes, second: keeps }) : takes}</p>
+      <div className="flex flex-wrap gap-2">
+        {count > 0 && (
+          <Button variant="primary" disabled={busy} onClick={() => onArchive(listed.going)}>
+            {t('work.list.archiveMeanIt', { count })}
+          </Button>
+        )}
+        <Button variant="ghost" disabled={busy} onClick={onCancel}>{t(count > 0 ? 'common.cancel' : 'common.close')}</Button>
+      </div>
+    </div>
   );
 }
 

@@ -8508,3 +8508,41 @@ blank line when the next line is indented, since a reader sees that paragraph as
 831 words, not §1.4's 769. An archive heading with no date is counted as undated and is not measured. Proof:
 `doc-shapes.test.ts`, ten cases, each seen failing against a stub first. Not covered: the adopter's own record
 formats, which stay out of `check` (§3.2).
+
+**As built (SESSUX1e, 2026-10-02): archive on the screen.** A row's ⋯ offers *Archive* where the reader placed the
+session in Ended and *Unarchive* wherever its mark stands. Sessions' ⋯ gains *Show archived*, the filter's `archived`
+kept beside the arrangement, and below a rule (`MoreItem.rule`) *Archive what ended…*. `SessionRail` sends each through
+`useArchiveSessions`. `ArchiveEndedAsk`, a molecule in `work/SessionList.tsx`, is the bulk's first press, listed by
+`endedToArchive` in `work/groups.ts`. What the build settled that §3.1 and §5 left open:
+
+- **The acts are the rail's until the header exists.** §3.1 gives every act one module, `work/sessionActs.ts`, for the
+  row and the header to share. The header is SESSUX1d's, after SESSUX1b, so the row's two archive acts and the bulk's
+  second press live in `SessionRail` for now, and SESSUX1d moves them when the header gives them a second door.
+- **Archive is offered only where the reader placed a session in Ended.** A record the reader has not answered for is
+  placed in Ended by its record alone (SESSUX1c's note), and may yet be to review, so it offers no *Archive* and the
+  bulk does not take it. *Unarchive* is offered wherever the mark stands, on a row that waits on you too, since the
+  reader keeps a session that needs the person in its group whatever its mark says.
+- **The bulk's first press holds what it listed.** It opens once the reader has answered. It says how many it would
+  take, and how many stay under *Waiting on you* and *To review*, counted as those headings count within the page's
+  scope. The second press sends exactly the ids the first listed, held from when the ask opened, since the reader
+  answers again on every tick. With nothing to take it says so and offers only *Close*, never a press that archives
+  nothing.
+- **What the second press kept is counted, not listed.** The route archives what may go and returns each kept session
+  with its code. The toast says *Archived N of M; the rest changed since the list*, and each kept row stands in the
+  group that now holds it. Asked of one session, a bulk list of one included, the route's refusal is the answer, said
+  in the catalogue's words, `SESSION_NEEDS_YOU`'s group through its context.
+- **An archived row says so where no heading does.** Under *Archived* the heading says it. By repository and in a
+  search (§4.5), the row's line starts with *archived*, and its tip says how it comes back. *Show archived* with
+  nothing archived draws *Archived (0)* and *Nothing archived*, so the tick never seems to do nothing.
+- **The glossary gains *archive*** (归档; its inverse 取消归档; never 存档 or 隐藏). The Chinese refusal SESSUX1a wrote
+  said 归档从不隐藏…, and now says 归档绝不会把需要你处理的会话移出列表, so the term's own avoid list holds of the
+  sentences `names-check --all` reads.
+
+Held by `groups.test.ts` (what the bulk takes), `SessionRow.test.tsx` (each act offered or absent by group, the line's
+mark, 中文), `SessionList.test.tsx` (Archived and its empty state, the ask's two presses, nothing to archive),
+`ListPane.test.tsx` (the rule), `SessionRail.test.tsx` (each act and refusal over a mocked bridge, the bulk's kept count,
+a search's mark), `WorkFrame.test.tsx` (the ⋯, remembered, and the ask opened from it), and the stories. Each was seen
+failing first. Two negative cases passed before the build: no *Archive* on a live, waiting or to-review row, and no
+Archived group while hidden. Each was then seen failing under a sabotage of the rule it holds. **Not built here**: the
+header's *Archive* and *Unarchive* (SESSUX1d) and *Delete…* (SESSUX1f). **Not measured**: the bulk's ask at 1280 and
+680 px, and *Archived* in both languages and both themes, which the window decides (§12).

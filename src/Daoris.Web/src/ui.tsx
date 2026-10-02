@@ -10,7 +10,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus,
@@ -119,6 +119,9 @@ const ICONS = {
   terminal: Terminal,
   // A folder of Daoris's own, opened in the file manager (LOG1c): the machine log's.
   folder: FolderOpen,
+  // An ended session taken out of the list and brought back (SESSUX1e): the box, not the bin, since it is kept whole.
+  archive: Archive,
+  unarchive: ArchiveRestore,
 } as const;
 
 export type IconName = keyof typeof ICONS;
