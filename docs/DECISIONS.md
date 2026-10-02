@@ -9858,3 +9858,24 @@ history, judging a tear by two facts (a heading twice, a side's line under anoth
 per-decision replay merged each decision's section with `git merge-file`, not `merge-tree`. Whether a session read a
 torn entry before its repair is in no record. `verify` checks this entry's place and the design's links, and none of
 their words.
+
+**Built 2026-10-03 (DOC8b): the check for a folder of decisions** (point 4, design §3.4). `tools/doc-duplicates.mjs`
+reads the record where `daoris.json` declares it and checks whichever it finds: a file as before, for a number twice;
+a folder for the four facts, each failing `verify`, held by `doc-duplicates.test.ts` on fixture folders. What building
+it settled:
+- **The union record is named as the attribute names it.** `records(root)` gives a folder as `<folder>/*.md`, so the
+  test that holds the union records to the checked ones passes on both shapes, today's and DOC8a's.
+- **A note's label** is a form §1.3 counted, with a date on its line, or one of the commonest, which count without:
+  `**Built`, `**As built`, `**Fixed`, `**Read`, `**Amended`, and `*As built`, `*Built`, `*Amended`. An emphasised
+  sentence such as `**Proven without the rehearsal**` is not one. A fence's lines are neither a heading nor a label;
+  a conflict marker counts on any line.
+- **The page is the record's old path**, checked only once the record is a folder. While the record is that file the
+  folder's facts do not apply to it, so today's record passes unchanged. A passing run over a folder says how many
+  files it read.
+- **A dry run of the split** (each heading to its own file, in scratch) read 133 files, every heading its own and the
+  opening clean as a page, and found one fact: D119's `*As built (PLUGUI1d, 2026-10-01)` note follows the paragraph
+  above it with no blank line. With that blank line the split passes. DOC8a meets it.
+
+**What the gates do not cover.** The folder's facts ran on fixtures and a scratch split; the repository's own folder
+is DOC8a's. A tear that keeps every blank line and heading, a note in its right file at the wrong place in it, is not
+seen.
