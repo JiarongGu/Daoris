@@ -2160,6 +2160,10 @@ one broken quest must keep working the rest.
 *Amended by D104 (DRV8, 2026-09-30): a `stopped` record that says it was interrupted — the orphan sweep's
 or a shutdown's, not the person's — counts as a strike too. The person's own stop still never does.*
 
+*Amended by D125 (TOOL4d, 2026-10-02): a `failed` record that says `limit` — an account's limit refused its turn —
+is not a strike. The account cools until the reset the agent named, and the quest's carry-on waits for it rather
+than being parked for it.*
+
 ## D59 — The always-loaded tier lives in `AGENTS.md`, inside a region Daoris owns (2026-09-22)
 
 **Decision.** `sync` stops writing `.claude/rules/` and writes the core rules into a marked region of
@@ -8015,3 +8019,51 @@ building it settled:
 
 **What the gates do not cover.** Nothing sends `limit` yet: the driver's client is TOOL4d's. The page shows nothing
 new (TOOL4g), and no rehearsal was run by this change.
+
+**Built 2026-10-02 (TOOL4d): the cool-off and the hold** (points 2, 3, 6 and 7; design §2, §4, §5.2, §5.4). What
+building it settled, each held by `AccountCoolingTests`, `AccountLimitHoldTests` and `StrikeTests`:
+- **`cooling.json` sits beside `harnesses.json`**, in the roster's home, as the accounts and their keys do
+  (`AccountCooling`). An entry is `until`, `stated`, `window`, `seen` and `session`, with `assumedZone` and
+  `notBelieved` written only when true, every moment UTC to the second. A moment is read as ISO 8601 and nothing else:
+  a lenient parse read *Oct 3* as this year's, which would make a hand-mangled entry an account cooling. One writer at
+  a time in the process; the next write drops a passed or unreadable entry and keeps what it has no field for, since
+  TOOL4e's CLI reads and ends entries too.
+- **The failure read is the door's** (`turnFailed`, ACPEND1), through `HarnessRoster.Limited`, which reads the door's
+  own entry or else its owner's (AGT7). A driven session and an intake read it at the conclusion, for `failed` alone
+  (`Driver.AccountLimited`): the record moves with `limit`, which the client sends only when true, and its note gains
+  *The account it ran on is cooling until Oct 3, 16:02 (<zone>), as the agent said*, naming no account. A
+  conversation's refused turn reads it too (`ChatRunner.Limited`): the account cools, the record gets a note, and the
+  conversation goes on.
+- **D58 amended**: `ReadStrikes` passes a `limit` record. A quest parked on its strikes before this stays parked
+  behind Retry.
+- **`SelectAsync` reads the cool-off first**, a file read before AGT3b's refused-key check and before any probe, and
+  holds with §4's sentence and the cool-off on the selection (`HarnessSelection.Cooling`). A start held so is `Blocked`
+  with that sentence and never `Exhausted`, and the look's report carries one `Waits` entry per account: the adapter,
+  the agent, the account, the workspace where the held starts share one, the reset, and the quests, asks and
+  repositories held.
+- **The early ends**: `HarnessRoster.Ready`, the driver's half of *Try now*; a sign-in that exits 0 through
+  `HarnessActions.LoginAsync`, which both of the screen's sign-ins call (`AccountCooling.SignedIn` reads the account
+  from the directory's place under the home); a key made by `HarnessKeys.Add`; and the roster's refresh, which ends
+  every tool's own home's cool-off and no named account's.
+- **Said once**: the attention watch's `Waiting` kind, *<repository> — waits for an account*, once per
+  cool-off, its first look a baseline as for parks; `starts.waiting` once per cool-off, which the roster remembers;
+  `account.limited` per limit, its `turn` the turns the record ended plus one. Each names an account by its profile
+  name, and a name that is not an identifier is null.
+- **The protocol stub reads the stub's words as its owner's** (TOOL4a's hand-back). `acp-stub` keeps no toolchain:
+  one would make it an agent with accounts to probe and list, and the modules refuse a default on it because it has
+  none. `ISessionAdapter.LimitsOf` names the agent a door with no toolchain reads limits as, and whose own sign-in a
+  limit on it cools; it is `acp-stub`'s alone. The protocol stub's starts and the pipe stub's share that cool-off, as
+  Claude Code's two doors share theirs. Two stub accounts on the protocol door, TOOL4h's rehearsal, need that door to
+  run as the stub's accounts, which this does not give.
+- **The native door's failed result is not handed to the conclusion.** The row said *an empty table: no change*, but
+  an entry is per agent, not per door: `claude-code` declares its entry for its protocol door's sake, and handing the
+  native door's failure to it would read sentences on a door none was recorded on (§1.2). It waits for TOOL4b's
+  evidence. The default is the constant `AccountLimits.DefaultCoolOff` until TOOL4e's `cooloff`.
+
+**What the gates do not cover.** The `Process` half was not run by this branch: `AccountLimitTickTests` replays
+observation 4 through real ticks (a cut-off, then a carry-on refused by the recorded sentence; the account cools until
+Oct 3, 16:02 in the test's zone; the next looks spawn nothing and park nothing; the wait is said once; at the reset the
+carry-on closes the quest), and `AcpTurnFailureTickTests` was changed with it: its first case now says `limit`, and its
+carry-on case is cut off by a refusal no table knows. A sign-in's end through `LoginAsync` is reached only by a real
+process, which no test runs. The note's time names the machine's zone, which travels with the note as the agent's own
+sentence already did. Nothing on the screen shows any of it yet (TOOL4g).
