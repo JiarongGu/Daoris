@@ -10138,7 +10138,7 @@ reads what `codex-acp` 2.1.1, `codex exec` at `rust-v0.159.3` and Claude Code's 
 9. **Codex.** `codex-acp` resumes (`session/resume` is `thread/resume` with no history; `session/load` replays), names
    the conversation by Codex's thread id, and refuses a thread another Codex client holds with
    `data.reason: "thread_active_writer"`, which Daoris reads as a new code, `elsewhere`. Its next-step door is
-   `_session/steering`, which Codex drains at the next step as read, built only after one measured turn. A native Codex
+   `_session/steering`, which Codex drains at the next step as read, built only after STEER3's measured turn. A native Codex
    door would resume with `codex exec resume <thread-uuid>`, the id from `thread.started`, its words waiting for the
    run's end.
 10. **Both doors.** The screen's box on every session that takes words, and a line saying why where none does; *Send

@@ -99,7 +99,7 @@ read for it.
   taken. Claude Code is installed; reading its help made no model call, and no conversation was resumed.
 - **Codex's steer** cutting a step short (§1.3), **Codex's lock** across processes (the adapter's sentence is read, not
   Codex's code), and **the native door's stream-json input** folding at the next step (STEER1 §4) are each one turn to
-  measure before the row that needs it is built (§8: MSG1h, MSG1i).
+  measure, STEER3's, before the row that needs it is built (§8: MSG1h, MSG1i).
 - **A resumed conversation in a tree other than its own.** The adapter allows it (§1.4); the model never asks for it
   (§2.3).
 
@@ -425,8 +425,9 @@ says where the box is and names `daoris-driver sessions say`; `HelpCoverageTests
 
 ## 8. The build
 
-Order: MSG1a, then MSG1b ∥ MSG1c, then MSG1d, then MSG1e ∥ MSG1f; MSG1g after MSG1b; MSG1h and MSG1i each after its
-turn is measured; MSG1j last. Each row is its own branch.
+Order: MSG1a, then MSG1b ∥ MSG1c, then MSG1d, then MSG1e ∥ MSG1f; MSG1g after MSG1b; MSG1h and MSG1i each after
+STEER3 measures its turn; MSG1j last. Each row is its own branch. STEER2 (*Send now* over the steering extension) is
+D136's and stands beside these.
 
 - [ ] **MSG1a — the record keeps the person's words and reopens** (service). `said` replaces a single `answer`, and the
   ledger's one move out of an ended state takes words waiting, on this machine's record only. Contract: §2.3, §2.4,
@@ -451,12 +452,12 @@ turn is measured; MSG1j last. Each row is its own branch.
 - [ ] **MSG1g — a resume asks for its own account** (driver). The selection names the record's account, a cool-off
   holds the words with *Go on in a new session*, and an account that cannot run there carries on at once. Contract:
   §2.2's account paragraph. Proof: plan tests, `AccountRotationTickTests` (the parent's).
-- [ ] **MSG1h — Codex hears words at its next step** (driver; needs Codex installed). One measured turn of
-  `_session/steering` on `codex-acp`, then the next-step door for it, steering only while a turn is live. Contract:
-  §1.3, §2.1. Proof: the measurement, then `AcpSteerTests` rows.
-- [ ] **MSG1i — the native door hears words at its next step** (driver). One measured driven turn on `--input-format
-  stream-json` with `--replay-user-messages`, then driven and chat runs that take words on stdin, which removes the
-  argument's bound. Contract: §2.1, §2.4. Proof: the measurement, then native tests.
+- [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn, which needs Codex installed).
+  The next-step door for `codex-acp` over `_session/steering`, steering only while a turn is live and waiting for a
+  turn it started. Contract: §1.3, §2.1. Proof: STEER3's measurement, then `AcpSteerTests` rows.
+- [ ] **MSG1i — the native door hears words at its next step** (driver; after STEER3's native turn, with
+  `--replay-user-messages`). Driven and chat runs that take words on stdin, which removes the argument's bound.
+  Contract: §2.1, §2.4. Proof: STEER3's measurement, then native tests.
 - [ ] **MSG1j — the canary on the install** (the parent's, after a republish carrying a–f). A session in *To review*
   written to goes on in its own row; a stopped one too; a chat from yesterday goes on. Contract: §9. Proof: the run,
   `session.reopened` with `resumed` true.
