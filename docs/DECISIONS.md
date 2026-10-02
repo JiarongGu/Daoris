@@ -7691,6 +7691,29 @@ and the log's second line says `unchanged`. `tools/setup-kit.mjs` gains `readReg
 and the driver's formats. 31 breakages, each of one claim, were each caught by the check that owns the claim.
 **Not run in the branch**: the family rehearsal itself, which the parent runs at the merge.
 
+**As built (WSSETUP6a, 2026-10-02): the family rehearsal sets a workspace up one repository at a time.** Phase 17d
+registers two repositories that hold only a README, without adopting them, in a workspace of their own. Both are drivable,
+each in a tree of its own, on the protocol stub, at a cap of two. Its checks:
+- **The list.** `setup --workspace meridian --plan` lists both, each to go and refused nothing, one at a time, with the
+  nine verbs a press adds. It writes no plan, publishes no quest and adds no rule.
+- **The press.** `--pilot 1` writes `<home>/setup/meridian.json` with both, one at a time and a pilot of one, and publishes
+  nothing. The nine verbs land in `permissions.json` under `workspaces.meridian.allow`, and under neither repository.
+- **The pilot.** `drive --until-idle` publishes the first in the plan's order and carries it to done in its own tree. It
+  does not ask the second.
+- **The pause.** A look then finds the plan paused by `pilot`. A look's report says so, and the log holds one
+  `setup.paused` with `by: pilot`.
+- **The rest.** `--resume` carries the plan on past its pilot, and `drive --until-idle` sets up the second. `logs --event
+  setup.published` shows two lines, the pilot's first.
+- **Registration.** Both land under `merge` and are registered from their lines, adopted and declared, still in their
+  workspace, with no `connect`. The plan then reads `Setting up — 2 set up`.
+Last, the plan is stopped, so no later look works it, and both repositories are retired. `tools/setup-kit.mjs` gains
+`readWorkspaceSetup` and `readEvents`, held in `tools/setup-kit.test.mjs` against output spelled as
+`WorkspaceSetupCommand` and `MachineLog` write it.
+**Proven without the rehearsal**, as WSSETUP5a's were: the phase was run against stand-ins in the formats WSSETUP6's code
+writes, and 44 breakages, each of one claim, were each caught by the check that owns the claim.
+**Not run in the branch**: the family rehearsal. This branch does not carry WSSETUP6's code: the phase was written from
+that branch's sources, read and not merged, so it needs WSSETUP6 merged first.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
