@@ -229,8 +229,34 @@ public sealed partial class DriverModule
             var config = DriverConfig.Load(module._loop.ConfigPath);
             var toolchain = module._loop.Harnesses.Toolchain(harness)
                 ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-            module.ProfileDefault(toolchain.Owner(harness), account, workspace);
+            try
+            {
+                module.ProfileDefault(toolchain.Owner(harness), account, workspace);
+            }
+            catch (ShenoraException refused)
+            {
+                // The route's refusal in its words, as the driver's, so the card settles refused with them (TOOL4g).
+                throw new DriverException(refused.Message);
+            }
+
             await module._loop.Harnesses.RosterAsync(config, refresh: true, ct).ConfigureAwait(false);
+        }
+
+        // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.
+        public Task SetAccountUseAsync(string harness, UseChange change, string? workspace, CancellationToken ct)
+        {
+            var owner = module.OwnerOf(harness);
+            try
+            {
+                UseEdited(module._loop.Harnesses.Settings, owner, change, workspace).Save(module._loop.Harnesses.SettingsPath);
+            }
+            catch (ShenoraException refused)
+            {
+                throw new DriverException(refused.Message);
+            }
+
+            module._loop.Nudge();
+            return Task.CompletedTask;
         }
 
         // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
@@ -387,6 +413,8 @@ public sealed partial class DriverModule
                         SettingsKnown = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile is { Length: > 0 },
                     };
                 })],
+                // A default's scope and a use's list, as ACCOUNT_USE and profile-default read them (TOOL4g).
+                Wiring = settings,
             };
         }
 

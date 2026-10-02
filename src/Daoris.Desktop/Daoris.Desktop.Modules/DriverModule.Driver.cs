@@ -63,6 +63,17 @@ public sealed partial class DriverModule
         return State();
     }
 
+    // How long an account cools when its agent names no time (TOOL4g, D125 §2.2, §6): whole minutes, at least one, the same
+    // `cooloff` `daoris driver cooloff <minutes>` edits — one truth, two doors (D50). Less than one is the driver's refusal.
+    [DriverRoute("SET_COOLOFF")]
+    private object? SetCoolOff(IpcRequest request)
+    {
+        var minutes = Number(request, "minutes")
+            ?? throw new DriverException(DriverConfig.CoolOffRefusal);
+        Change(config => config.WithCoolOff((int)Math.Clamp(minutes, int.MinValue, int.MaxValue)));
+        return State();
+    }
+
     // Which harness answers asks with an intake session (INT4b), or null for none — the same
     // file `daoris driver intake <adapter>|off` edits: one truth, two doors (D50).
     [DriverRoute("SET_INTAKE")]
@@ -204,6 +215,8 @@ public sealed partial class DriverModule
             config.PollSeconds,
             config.Notify,
             config.Strikes,
+            // The cool-off a limit naming no time takes, in minutes (TOOL4g): the file's, or the hour when it sets none.
+            CoolOff = (int)config.CoolOff.TotalMinutes,
             config.Forgiven,
             // The stops the person released (SESSUX1b), the quest against the session, as the terminal lists them.
             config.Released,

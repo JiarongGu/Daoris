@@ -9650,6 +9650,48 @@ terminal's verbs are PAUSE1b's, and `driver list` names no resume door until one
 pause or an abandon would do with each piece (§2.1, §3.2); that is PAUSE1b's and PAUSE1d's, and `Took` and `BaseCommit`,
 which they need, are not on `SessionRecord` yet. How long a reading takes over a real workspace is not measured. The
 `Process` half, the rehearsals and the screen were not run by this branch.
+**Built 2026-10-03 (TOOL4g): the screen and Ask Daoris** (points 3, 4, 11 and 12 and the goal's point 7; D125 points 5, 6
+and 8; design §3.2, §9, §16.4, §16.6; D125 §2.4, §3.7, §4, §6), held by the modules' `DriverModuleAccountsTests` and
+`TickConsiderationTests`, the driver's `HelpAgentProposalsTests` and `HelpCoverageTests`, and the web's `accounts.test.ts`,
+`AccountUse.test.tsx`, `AgentsDomain.test.tsx`, `DriverDomain.test.tsx` and `signals.test.ts`, with a story per state. What
+building it settled:
+- **One read for the screen, never a probe.** `ACCOUNTS` answers each agent by its accounts' owner (AGT7): whether its
+  sessions say how near their limits are, the tool's own sign-in's cool-off, each account's cool-off, what its agent last
+  said per window (`AccountWindows.SaidOf`), the week it knows and Daoris's live sessions on it, and each scope, the
+  machine's then each workspace's own, with where it begins, how it is used, a hand-edited conflict and the accounts near by
+  its own *near*. The count is the live records naming the account, a teammate's excluded; with the service down it is null,
+  and the row says nothing rather than a zero. The page asks it again at every tick.
+- **Each edit is the terminal's door's twin, refused by its rules** (`ACCOUNT_USE`): `order` (`HarnessSettings.OrderProblem`,
+  then `ScopeProblem.Of`), `use` (a scope with no list of its own, a value this build does not take, a kept account outside
+  the list or alone in it), `ready` (*Try now*, `own` for the tool's own sign-in, through `HarnessRoster.Ready`) and
+  `inherit`, a workspace's default, list and settings cleared at once for *This machine's accounts*. Each refusal is a code
+  the page translates (nine, `ACCOUNT_*`), with the workspace as the catalogue's context.
+- **What the terminal refuses, the screen does not offer.** *Use* off is disabled on a scope's default and its kept account,
+  with its tip; *Make default* and *use for a workspace…* are not offered for an account the scope's own list does not hold;
+  *Keep for conversations* is offered only to a list of two or more. A workspace returned to this machine's accounts asks
+  once, since it clears what the person built.
+- **TOOL6a's two notes**: `profile-default` asks `ScopeProblem.Of` before it writes (`DriverModule.DefaultAllowed`), and
+  Ask Daoris's `default` door asks the same rule against the wiring the screen reads (`HelpMachineFacts.Wiring`); *Remove*
+  calls `WithoutAccount`, so no default, list or kept account names a removed account.
+- **The `use` door is judged and applied on this side, and not yet offered.** `HelpAgentProposals` reads `use`, `keep` (JSON
+  null keeps none), `early` and `near` from the file, judges them as `profile use` does, and applies through the screen's
+  own write (`IHelpDoors.SetAccountUseAsync`). It is not in the kind's `Doors`: a door listed there is one the service's
+  `agent_propose` writes, held by `HelpProposalKindsTests`, and the service was another branch's. `order`, `ready`, the
+  inherit and the `setting` kind's `cooloff` are doors owed on the same ground (`HelpCoverageTests`).
+- **A wait for an account** rides the tick: a `Blocked` consideration a look's wait holds names the agent, the account
+  (null for the tool's own sign-in), the reset and whether it was stated (`waitsFor`). The quest's page wears *waits for an
+  account* and no *Try again*; English is the driver's sentence, and 中文 says it from those facts.
+- **The words**: *Use*, *Use accounts* (*Make the most of them*, *One by one, in order*), *Keep for conversations*, *Switch
+  before the limit*, *Near at*, *This machine's accounts*, *Its own accounts*, *near its limit*, *kept for conversations*,
+  *starts here*, *cooling*, *waits for an account* and *Try now*, in both catalogues and the glossary's kinds; *Try now* is a
+  term of its own (立即尝试), neither a plugin's trial nor a retry. Six names over their kind's budget are accepted with why.
+  The room's four account doors name their screen now.
+
+**What the gates do not cover.** The window: the look was taken in Storybook only (the stories at 1280, 888 and 680, light
+and dark, en and 中文), never on the assembled shell. Not built, and left to their rows: the *What needs you* row for a wait
+and its *Let … run …* door (§3.3), the conversation picker's split (§3.2), a session head's *your own sign-in*, the service's
+writer of the `use`, `order`, `ready` and `cooloff` doors, and a start's first line in 中文. The `Process` half and the
+rehearsals were not run by this branch.
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 

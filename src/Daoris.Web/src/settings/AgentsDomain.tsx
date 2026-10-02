@@ -4,7 +4,9 @@ import { figure } from '../format';
 import { useHarnessRun } from '../harnessRuns';
 import { useRegistry } from '../queries';
 import { SessionConsole } from '../SessionConsole';
-import { useHarnessAction, useHarnesses, useRefreshHarnesses, useSetAgentSettings, useUsage } from '../shell';
+import {
+  useAccountUse, useAccounts, useHarnessAction, useHarnesses, useRefreshHarnesses, useSetAgentSettings, useUsage,
+} from '../shell';
 import { SignIn } from '../SignIn';
 import { byTool } from '../tools';
 import {
@@ -12,7 +14,11 @@ import {
   SettingRow, Tip, useErrorNotify,
 } from '../ui';
 import { workspacesOf } from '../workspaces';
+import { agentOf, listedIn, machineScope, workspaceScope } from './accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
+import {
+  type AccountChoice, AccountFactsLines, CoolingLine, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope,
+} from './AccountUse';
 import { DomainLoading } from './DomainLoading';
 import { namer } from './namer';
 
@@ -47,6 +53,10 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
   const tune = useSetAgentSettings();
   // What each account has carried (TOOL3). Beside the roster because it is about the same accounts.
   const usage = useUsage();
+  // How each agent's accounts are used (TOOL4g): each scope's list and settings, each account's cool-off, what its agent
+  // last said and the sessions running on it, read from the files and asked again at each tick.
+  const accountsAnswer = useAccounts();
+  const accountUse = useAccountUse();
   // The circles this machine has, so an account can be chosen for one (D49 §4) — the terminal
   // could already do it (`daoris agent profile default … --workspace`), and the screen could not.
   const registry = useRegistry('machine');
@@ -60,7 +70,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
   // another account runs for (D66 §3). Held above every view (SIGNIN1), so a sign-in outlives
   // leaving this domain: its panel is here on the way back, and its end is said wherever you are.
   const { running, runningProfile, signingInNew, busy: acting, run } = useHarnessRun();
-  const busy = acting || act.isPending;
+  const busy = acting || act.isPending || accountUse.isPending;
   // Which tool has its API-key field open, and what is typed in it (AGT3, D67 §1). The draft lives
   // here only until it is sent, and is dropped the moment it is — sent or taken back.
   const [keying, setKeying] = useState<string | null>(null);
@@ -108,6 +118,23 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
   if (!answered && roster.isFetching) return <DomainLoading />;
   if (!answered || !harnesses) return null;
   const nameOf = namer(t, harnesses);
+  const onError = failure(notify);
+  // The screen's edits to how a tool's accounts are used, each through the tool's account-owning door (AGT7).
+  const actsFor = (harness: string): ScopeActs => ({
+    onOrder: (workspace, list) => accountUse.mutate(
+      { harness, action: 'order', accounts: list, ...(workspace ? { workspace } : {}) }, { onError }),
+    onUse: (workspace, change) => accountUse.mutate(
+      { harness, action: 'use', ...(workspace ? { workspace } : {}), ...change }, { onError }),
+    onInherit: (workspace) => accountUse.mutate({ harness, action: 'inherit', workspace }, { onError }),
+  });
+  // *Try now* (D125 §2.3, §6): an account's cool-off ended early, or the tool's own sign-in's with none named.
+  const tryNow = (harness: string, profile: string | null, label: string) => accountUse.mutate(
+    { harness, action: 'ready', ...(profile ? { profile } : { own: true }) },
+    {
+      onSuccess: (answer) => notify(t(answer.ended ? 'harness.cooling.ready' : 'harness.cooling.notCooling', { account: label })),
+      onError,
+    },
+  );
 
   return (
     <Card className="mt-3.5">
@@ -129,7 +156,26 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
           has one Claude Code and one account for it; whether Daoris holds the session over a pipe or
           over the protocol is Daoris's business, not a second tool. `byTool` reads that off
           `accountOf` and `wire`, both of which have said it all along. */}
-      {byTool(harnesses).map((tool) => (
+      {byTool(harnesses).map((tool) => {
+        const door = tool.doors[0]!.harness;
+        const use = agentOf(accountsAnswer.data, tool.name);
+        const machine = use ? machineScope(use) : null;
+        const factsOf = (name: string) => use?.accounts.find((account) => account.name === name) ?? null;
+        const choices: AccountChoice[] = tool.accounts.map((profile) => ({
+          name: profile.name, label: named(profile), login: profile.login, keyed: Boolean(profile.key),
+        }));
+        // D130 §3.1: a scope with a list of its own takes a default only from it, so a press the list would refuse is not
+        // offered, the machine's or a workspace's.
+        const mayDefault = (name: string, workspace?: string) => {
+          const scope = use ? (workspace ? workspaceScope(use, workspace) : machine) : null;
+          return !scope || scope.list.length === 0 || scope.list.includes(name);
+        };
+        // D125 §3.7: a start runs on the tool's own sign-in where the machine names no default and no list.
+        const sharesOwn = tool.present && tool.machineDefault === null && (machine?.list.length ?? 0) === 0;
+        const scopeWorkspaces = [...new Set([
+          ...workspaces, ...(use?.scopes.map((scope) => scope.workspace).filter((name): name is string => Boolean(name)) ?? []),
+        ])].sort();
+        return (
         <div
           key={tool.name}
           className="mt-3 rounded-card border border-line bg-page/60 p-3 first:mt-3.5"
@@ -179,6 +225,14 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                   )}
                 </span>
                 <span className="text-meta text-ink-faint">{t('harness.ownHome')}</span>
+                {use?.own.cooling && (
+                  <CoolingLine
+                    cooling={use.own.cooling}
+                    label={tool.ownAccount ?? t('harness.own')}
+                    busy={busy}
+                    onTryNow={() => tryNow(door, null, tool.ownAccount ?? t('harness.own'))}
+                  />
+                )}
               </span>
               <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
                 {/* Naming NO profile clears the default — "use the tool's own home again". */}
@@ -248,11 +302,13 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                       )}
                       {/* And which circles run as it (D49 §4) — one chip per circle, the same fact
                           worded the same way. */}
-                      {tool.workspaceDefaults
-                        .filter((circle) => circle.profile === profile.name)
-                        .map((circle) => (
-                          <Chip accent key={circle.workspace}>
-                            {t('harness.profile.workspaceUses', { workspace: circle.workspace })}
+                      {/* And which workspaces may run on it (D130 §3.2): a workspace defaulting to it, or listing it. */}
+                      {[...new Set([
+                        ...tool.workspaceDefaults.filter((circle) => circle.profile === profile.name).map((circle) => circle.workspace),
+                        ...(use ? listedIn(use, profile.name) : []),
+                      ])].map((workspace) => (
+                          <Chip accent key={workspace}>
+                            {t('harness.profile.workspaceUses', { workspace })}
                           </Chip>
                         ))}
                     </span>
@@ -262,6 +318,15 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                     {/* What the account runs on, by the tool's own file under it (AGT6), where Daoris
                         knows that file. The owner could see a session's model only inside the session. */}
                     {profile.settings && <AccountSettingsSummary settings={profile.settings} />}
+                    {/* Its cool-off, what its agent last said, its week and the sessions on it (TOOL4g). */}
+                    {factsOf(profile.name) && (
+                      <AccountFactsLines
+                        facts={factsOf(profile.name)!}
+                        label={named(profile)}
+                        busy={busy}
+                        onTryNow={() => tryNow(door, profile.name, named(profile))}
+                      />
+                    )}
                     {/* 🔴 What the next step IS and what it will do, on the row that needs it. After
                         "Add" there was a name, a "not logged in" pill and a button, and nothing
                         about the browser window about to open or where the output would go. */}
@@ -283,7 +348,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                         {t(profile.login === 'in' ? 'harness.login.again' : 'harness.login.action')}
                       </Button>
                     )}
-                    {tool.machineDefault !== profile.name && (
+                    {tool.machineDefault !== profile.name && mayDefault(profile.name) && (
                       <Button
                         variant="ghost"
                         disabled={busy}
@@ -318,7 +383,8 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                         value=""
                         onChange={(workspace) =>
                           run(tool.doors[0]!.harness, 'profile-default', profile.name, undefined, workspace)}
-                        options={workspaces.map((workspace) => ({ value: workspace, label: workspace }))}
+                        options={workspaces.filter((workspace) => mayDefault(profile.name, workspace))
+                          .map((workspace) => ({ value: workspace, label: workspace }))}
                         placeholder={t('harness.profile.useForPlaceholder')}
                         ariaLabel={t('harness.profile.useFor', { profile: named(profile) })}
                       />
@@ -373,6 +439,19 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                 </li>
               ))}
             </ul>
+          {/* While a start would run on the tool's own sign-in, the screen says so, and what giving Daoris accounts of its
+              own does (D125 §3.7). */}
+          {sharesOwn && (
+            <OwnSignInLine
+              who={tool.ownAccount}
+              cooling={use?.own.cooling}
+              signsIn={tool.doors[0]!.signsIn !== false}
+              busy={busy || !tool.present}
+              onSignIn={() => run(door, 'login-new')}
+            />
+          )}
+          {tool.accounts.length > 0 && <TermsLine />}
+
           {/* A tool whose own settings Daoris does not know is offered none, and says so once (AGT6):
               inventing its keys would be a guess written into somebody else's file. */}
           {tool.settingsChoices === null && (
@@ -447,6 +526,36 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                 </Button>
               )}
             </div>
+          )}
+
+          {/* How the accounts are used (TOOL4g; D130 §3.2, §9, §16.6): this machine's list and settings, then each
+              workspace on this machine's accounts or its own. Only where Daoris holds accounts of its own to list. */}
+          {use && machine && tool.accounts.length > 0 && (
+            <section aria-label={t('harness.use.title')} className="mt-3 border-t border-line pt-2">
+              <p className="m-0 text-small font-semibold text-ink-soft">{t('harness.use.title')}</p>
+              <p className="m-0 mt-2 text-small font-medium text-ink">{t('harness.use.machine')}</p>
+              <ScopeEditor
+                agent={use}
+                product={tool.product ?? tool.name}
+                scope={machine}
+                accounts={choices}
+                busy={busy}
+                acts={actsFor(door)}
+              />
+              {scopeWorkspaces.map((workspace) => (
+                <WorkspaceScope
+                  key={workspace}
+                  agent={use}
+                  product={tool.product ?? tool.name}
+                  workspace={workspace}
+                  scope={workspaceScope(use, workspace)}
+                  machine={machine}
+                  accounts={choices}
+                  busy={busy}
+                  acts={actsFor(door)}
+                />
+              ))}
+            </section>
           )}
 
           {/* 🔴 The ways in, beneath the tool rather than beside it. Each is installed, versioned
@@ -587,7 +696,8 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
             </div>
           ))}
         </div>
-      ))}
+        );
+      })}
 
       {/* What each account has carried (TOOL3/D57 §4) — the question "multiple accounts with usage
           management" actually asks. Derived from the sessions, so the two can never disagree, and
