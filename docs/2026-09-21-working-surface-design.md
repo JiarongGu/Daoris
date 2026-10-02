@@ -157,6 +157,13 @@ the derived title is free and true, and a rename is a store column plus a surfac
 > said over the bridge (`SESSION_SEARCH`), and each row has a small menu holding only what has no
 > other home: its own window, its review, its id. The session's verbs keep one owner each (D56).
 
+> **Amended by D126 (SESSUX1c, 2026-10-02).** The list is grouped **by state** by default, in the order the person
+> acts on it: *Waiting on you* (a session parked to ask, and a quest parked on its failed sessions, shown *parked*),
+> *To review*, *Working*, *Resumes later* and *Ended*, each placed by the driver's one reader (`SESSION_GROUPS`). By
+> state, a row's line names its repository and no group header carries a repository's facts. **Grouping by
+> repository**, as above, stays a choice in the list's ⋯, remembered, and *parked* sorts with *waiting on you* there.
+> *Ended* shows twelve, then *Show N more*. `docs/2026-10-02-session-management-design.md` §2 and §4 are the contract.
+
 **The attended session has three parts and a composer.**
 
 - **The head** — the record: state pill, repository, tree, the quest it serves, the tool and the

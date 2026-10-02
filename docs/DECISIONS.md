@@ -8387,3 +8387,39 @@ Held by `SessionLedgerTests`: a released stop of the session that took, and of a
 seen failing first; a stop before the take with the quest then taken by another machine or by nobody here, refused,
 which passed before and was seen failing under the rule without `took`; a stand-down and a decline after a released
 carry-on, refused. And `HelpSettingProposalTests`' retry rows and the tool's words, seen failing first.
+**As built (SESSUX1c, 2026-10-02): the list by state.** `SessionRail` asks `useSessionGroups` and hands `SessionList`
+and `SessionStrip` (molecules, `work/SessionList.tsx`) the records and the reader's answer; `work/groups.ts` draws
+the groups in the reader's order, the list by repository, *Ended*'s twelve and the strip, and took over `partition`.
+`SESSION_TONE` and `SESSION_DOT` gain *parked* (open's hue, the waiting mark) and *awaiting reply* (neutral), and
+`queued` is neutral. Sessions' ⋯ is `ListMore` with *Group by*, kept in `daoris.list.sessions.filters` as
+`{ group, archived }`, the default kept as nothing. What the build settled that §2 and §4 left open:
+
+- **The badge reads the tick, not the reader.** Group 1 is counted as this machine's sessions parked to ask plus the
+  quests the planner's last look parked (`useConsidered`, verdict `Exhausted`), the facts Overview's band reads for
+  SESSUX1i. Asking `SESSION_GROUPS` from the activity bar would walk git in every tree to review on every view, every
+  tick, for a count that needs no tree. A teammate's parked session is not counted: the reader lists it under Working.
+- **A record the reader has not answered for is placed by its record alone**: one that started after the reader
+  looked, or every one while no answer has come. Live and parked to ask on this machine is Waiting on you, any other
+  live one Working, an ended one Ended, ahead of the reader's ended rows since it ended after the look. That is the
+  reader's first step and nothing more; parked, to review and resumes later are only ever the reader's.
+- **No reader, no grouping by state.** A browser asks no driver, so its list is the arrangement it always had, by
+  repository. The monitor's list is the present tense only and asks the reader nothing. A failed answer is not
+  toasted, as `SESSION_WHERE`'s and `SESSION_OPENINGS`' are not: the list keeps the records' placement, and a refusal
+  while the driver comes up is asked again when it says it is ready (LOOK2a).
+- **The page draws what its scope holds.** The reader answers for every record on the machine; a session outside the
+  chosen workspace is not drawn.
+- **The attended session is never cut out**: past *Ended*'s twelve it stays listed, and archived while archived is
+  hidden it is listed under Archived alone. *Show N more* is not remembered.
+- **A row's line.** Parked says how many sessions failed, or *after its failed sessions* where the count is null;
+  awaiting reply names the question, and who it was asked of where the service still lists it; to review says its
+  commits, its uncommitted changes only where the commits are a proven zero, and *work to review* where git could
+  not count, since a count git cannot give is kept as work.
+- **The Archived group is drawn when the filter says so**, last, from the reader's sixth group; the ⋯'s *Show
+  archived* and its empty state are SESSUX1e's. `work.rail.endedMore` is retired for `work.list.showMore`.
+
+Held by `groups.test.ts`, `SessionList.test.tsx`, `SessionRail.test.tsx` (by state over a stubbed `SESSION_GROUPS`,
+a browser's and the monitor's lists asking nothing), `SessionRow.test.tsx`, `ui.test.tsx` (open's hue),
+`attention.test.ts` and `sessionsBadge.test.tsx` (the badge), `WorkFrame.test.tsx` (the ⋯, remembered), and the
+stories. Each was seen failing first, `groups.test.ts` only as a module not yet written. **Not built here**: a stopped session's line *held here until you try again*,
+which needs SESSUX1b's verdict in the reader, and *account cooling* (SESSUX1k). **Not measured**: the groups'
+headings and the rows' lines at 888 and 680 px in both languages, which the window decides (§12).

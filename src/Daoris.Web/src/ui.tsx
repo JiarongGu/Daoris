@@ -192,10 +192,14 @@ export const QUEST_TONE: Record<Quest['status'], keyof typeof PILL_TONE> = {
  *
  * `awaiting-person` wears the waiting tone deliberately: it is the one state nothing but a person
  * can clear, so it should not sit quietly among the running ones, and it is not an outcome, so it
- * does not wear declined's red (UX5 U1). It shares its hue with `queued`; the word tells them apart.
+ * does not wear declined's red (UX5 U1).
+ *
+ * **Open's hue is the person's alone** (D126 §2.3, audit M6): *waiting on you* and *parked* wear it, and
+ * nothing else does. `queued` shared it and left the word to tell the two apart; it is neutral now,
+ * keeping its idle mark. *Awaiting reply* is neutral too: nothing runs, and nothing waits on the person.
  */
 export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
-  'queued': 'open',
+  'queued': 'neutral',
   'starting': 'taken',
   'working': 'taken',
   'awaiting-person': 'open',
@@ -205,14 +209,31 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'failed': 'declined',
   'stopped': 'neutral',
   'idle': 'neutral',
+  'parked': 'open',
+  'awaiting-reply': 'neutral',
 };
 
 /**
- * What the page shows a session as: the nine states the record carries, and **idle** — a live chat
- * whose turn has ended, waiting for the person's next message (UX5 U17). The record says `working`
- * for a chat's whole life, since its process is; whether a turn is in flight is the driver's to say.
+ * What the page shows a session as: the nine states the record carries; **idle** — a live chat
+ * whose turn has ended, waiting for the person's next message (UX5 U17); and the two words the session
+ * list's reader derives from the session's quest (D126 §2.2): **parked**, the last session here of a quest
+ * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
+ * question asked of another repository. Neither is a record state: no new session state (D126 §2).
+ *
+ * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
+ * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle';
+export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply';
+
+/**
+ * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's two
+ * derived words in `work.shown` (D126 §8). One place, so a row, a strip mark and a page header say one word.
+ */
+export function shownKey(shown: ShownState): string {
+  if (shown === 'parked') return 'work.shown.parked';
+  if (shown === 'awaiting-reply') return 'work.shown.awaitingReply';
+  return `sessionState.${shown}`;
+}
 
 /**
  * A session as the page shows it (UX5 U17, decided by the reference console, which draws a running
@@ -258,6 +279,9 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'failed': 'ended',
   'stopped': 'ended',
   'idle': 'idle',
+  // A parked quest's last session waits on the person, whatever its record's ending (D126 §2.3).
+  'parked': 'parked',
+  'awaiting-reply': 'idle',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */

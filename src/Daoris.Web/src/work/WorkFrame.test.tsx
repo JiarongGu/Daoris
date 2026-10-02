@@ -171,6 +171,44 @@ describe('the Work frame', () => {
    * jsdom lays nothing out, so this holds the absence of a cap and the window holds the look.
    */
   /**
+   * SESSUX1c, D126 §4.1: Sessions' list gains its ⋯, which it never had. *Group by* is a choice of two, *State* the
+   * default and *Repository* the arrangement the list had before, ticked, and remembered for this viewer in the list's
+   * filters (D118 §3f); the default is nothing kept.
+   */
+  it('groups the session list by state or by repository from its ⋯, and remembers the choice', async () => {
+    SESSIONS = [DRIVEN, PARKED];
+    show();
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    expect(await within(list).findByRole('heading', { level: 3, name: 'Waiting on you (1)' })).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('group', { name: 'Group by' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'State' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('menuitemradio', { name: 'Repository' }));
+
+    expect(await within(list).findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.sessions.filters')!)).toEqual({ group: 'repository' });
+
+    within(list).getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitemradio', { name: 'State' }));
+    expect(await within(list).findByRole('heading', { level: 3, name: 'Working (1)' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.sessions.filters')).toBeNull();
+  });
+
+  it('opens on the arrangement this viewer chose last', async () => {
+    window.localStorage.setItem('daoris.list.sessions.filters', JSON.stringify({ group: 'repository' }));
+    SESSIONS = [DRIVEN, PARKED];
+    show();
+
+    const list = await screen.findByRole('complementary', { name: 'Sessions' });
+    expect(await within(list).findByRole('heading', { level: 3, name: 'engine' })).toBeInTheDocument();
+    expect(within(list).queryByRole('heading', { level: 3, name: /^Waiting on you/ })).toBeNull();
+  });
+
+  /**
    * One right region: on
    * Sessions, Ask Daoris is a tab of the right dock beside the timeline and the review, as VS Code's
    * chat is a view of its one right side bar — never a second column beside the dock.
