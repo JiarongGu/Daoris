@@ -38,6 +38,23 @@ describe('the plugin list', () => {
     expect(headings()).toEqual(['Waiting on you (1)', 'On (1)', 'Off (1)', "Daoris's own plugins (1)"]);
   });
 
+  /**
+   * NAME2: 关闭 is close's word (an ask's, a quest's 已关闭), so a plugin switched off read as closed. A
+   * plugin is 启用 and 停用 in Chinese, wherever its state is said.
+   */
+  it('names the groups and the off word in 中文 by the switch, never by close', async () => {
+    const { default: i18n } = await import('../i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+      expect(headings()).toEqual(['等你处理（1）', '已启用（1）', '已停用（1）', 'Daoris 自带的插件（1）']);
+      expect(within(screen.getByRole('button', { name: /Quiet hours/ })).getByText('已停用')).toBeInTheDocument();
+      expect(screen.queryByText(/关闭|开启/)).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('leaves out a group with none', () => {
     render(<PluginList groups={pluginGroups([plugin()], [])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 

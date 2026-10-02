@@ -339,6 +339,11 @@ names NAME1b gives the catalogues, which the owner approved on 2026-10-01. A plu
 README are content, never renamed. A count is English characters and Chinese units (D116 §4). Every row is
 within its budget. Existing keys keep their key and are marked *(exists)*.
 
+*Renamed by NAME2 (2026-10-02), as the arrows below show: the switch is 启用 and 停用, and the off state 已停用. 开启
+and 关闭 paired the switch with close's name (an ask's and a quest's 已关闭), and on the install the page's 关闭 read
+as close. The glossary's terms `turn on` and `turn off` hold every label that names the switch; the English pair is
+unchanged.*
+
 | Key | Kind | English | 中文 | Measured / budget |
 |---|---|---|---|---|
 | `nav.plugins` | nav | Plugins | 插件 | 7, 2 / 16, 5 |
@@ -350,8 +355,8 @@ within its budget. Existing keys keep their key and are marked *(exists)*.
 | `plugin.list.openFolder` | menu | Open the plugins folder | 打开插件文件夹 | 23, 7 / 24, 10 |
 | `plugin.page.ask` | menu | Ask Daoris | 问道衍 | 10, 3 / 24, 10 |
 | `plugin.group.waiting` | section | Waiting on you ({{count}}) | 等你处理（{{count}}） | 19, 7 / 32, 12 |
-| `plugin.group.on` | section | On ({{count}}) | 已开启（{{count}}） | 7, 6 / 32, 12 |
-| `plugin.group.off` | section | Off ({{count}}) | 已关闭（{{count}}） | 8, 6 / 32, 12 |
+| `plugin.group.on` | section | On ({{count}}) | 已开启 → **已启用**（{{count}}） | 7, 6 / 32, 12 |
+| `plugin.group.off` | section | Off ({{count}}) | 已关闭 → **已停用**（{{count}}） | 8, 6 / 32, 12 |
 | `plugin.offers.title` *(exists)* | section | Daoris's own plugins | Daoris 自带的插件 | 20, 8.5 / 32, 12 |
 | `plugin.section.points` | section | Points | 挂点 | 6, 2 / 32, 12 |
 | `plugin.section.agents` | section | Agents | 智能体 | 6, 3 / 32, 12 |
@@ -388,7 +393,7 @@ within its budget. Existing keys keep their key and are marked *(exists)*.
 | `plugin.period.day` | choice | Last day | 最近一天 | 8, 4 / 16, 6 |
 | `plugin.period.week` | choice | Last 7 days | 最近 7 天 | 11, 4.5 / 16, 6 |
 | `plugin.period.month` | choice | Last 30 days | 最近 30 天 | 12, 5 / 16, 6 |
-| `plugin.enable`, `plugin.disable` *(exist)* | button | Turn on, Turn off | 开启, 关闭 | 8, 2 / 20, 8 |
+| `plugin.enable`, `plugin.disable` *(exist)* | button | Turn on, Turn off | 开启, 关闭 → **启用, 停用** | 8, 2 / 20, 8 |
 | `plugin.kit.try` *(exists)* | button | Try | 试运行 | 3, 3 / 20, 8 |
 | `plugin.update.ask`, `.apply`, `.cancel` *(exist)* | button | Update…, Update now, Not now | 更新…, 立即更新, 暂不 | 10, 4 / 20, 8 |
 | `plugin.forget` *(exists)* | button | Remove → **Remove…** | 移除 → **移除…** | 7, 3 / 20, 8 |
@@ -401,7 +406,7 @@ within its budget. Existing keys keep their key and are marked *(exists)*.
 | `plugin.page.toAgents` | button | Open Agents | 打开智能体 | 11, 5 / 20, 8 |
 | `plugin.page.toLanding` | button | Open How work lands | 打开落地方式 | 19, 6 / 20, 8 |
 | `plugin.settings.open` | button | Open Plugins | 打开插件 | 12, 4 / 20, 8 |
-| `plugin.running`, `plugin.off` *(exist)* | status | running, off | 运行中, 已关闭 | 7, 3 / 16, 5 |
+| `plugin.running`, `plugin.off` *(exist)* | status | running, off | 运行中, 已关闭 → **已停用** | 7, 3 / 16, 5 |
 | `plugin.health.ready` | status | ready | 就绪 | 5, 2 / 16, 5 |
 | `plugin.health.failing` | status | failing | 异常 | 7, 2 / 16, 5 |
 | `plugin.health.refused` | status | refused | 未载入 | 7, 3 / 16, 5 |

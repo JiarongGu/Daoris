@@ -279,6 +279,32 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
+   * NAME2, seen on the install: a plugin's switch read 关闭, close's word, so *Turn off* said *close* as much
+   * as *turn off*, and an off plugin wore a closed quest's 已关闭. The glossary settles the pair, and the
+   * check holds every label whose English turns a plugin on or off to it.
+   */
+  it("name a plugin's switch 启用 and 停用, never close's 关闭", () => {
+    const byTerm = new Map(glossary.terms.map((term) => [term.term, term]));
+    expect([byTerm.get('turn on')?.en, byTerm.get('turn on')?.zh]).toEqual(['turn on', '启用']);
+    expect([byTerm.get('turn off')?.en, byTerm.get('turn off')?.zh]).toEqual(['turn off', '停用']);
+    expect(byTerm.get('turn off')?.avoid.zh).toContain('关闭');
+    const named: Record<string, [string, string]> = {
+      'plugin.enable': ['Turn on', '启用'],
+      'plugin.disable': ['Turn off', '停用'],
+      'plugin.off': ['off', '已停用'],
+      'plugin.group.on': ['On ({{count}})', '已启用（{{count}}）'],
+      'plugin.group.off': ['Off ({{count}})', '已停用（{{count}}）'],
+    };
+    for (const [key, [english, chinese]] of Object.entries(named)) expect([en[key], zh[key]], key).toEqual([english, chinese]);
+    expect(zh['plugin.enabled']).toMatch(/^\{\{id\}\} 已启用。/);
+    expect(zh['plugin.disabled']).toMatch(/^\{\{id\}\} 已停用。/);
+    const found = check(glossary, en, zh, { all: true });
+    for (const key of [...Object.keys(named), 'plugin.enabled', 'plugin.disabled']) {
+      expect(rules(found, key).filter((rule) => !rule.startsWith('budget')), key).toEqual([]);
+    }
+  });
+
+  /**
    * NAME1b turned the facts' half to a gate: the build runs `--strict` beside the parity check, and it
    * passes, because no label breaks the glossary, its form or its door. The budgets still report and never
    * gate (D54): a character count estimates a width, and the window is where a width is a fact.

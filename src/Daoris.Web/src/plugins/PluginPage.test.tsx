@@ -91,6 +91,26 @@ describe("a plugin's page", () => {
     expect(onSwitch).toHaveBeenCalledWith('acme.gate', 'enable');
   });
 
+  /**
+   * NAME2, seen on the install in 中文: the switch read 关闭, which says *close* as much as *turn off*. Its
+   * acts are 停用 and 启用, and its off state 已停用; the English pair stays *Turn off* and *Turn on*.
+   */
+  it('names its switch in 中文 by what it does to the plugin, never by close', async () => {
+    const { default: i18n } = await import('../i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const { unmount } = page();
+      expect(acts()).toEqual(['停用', '试运行', '更新…', '移除…']);
+      unmount();
+      page({ plugin: { ...PLUGIN, enabled: false, running: false } });
+      expect(acts()[0]).toBe('启用');
+      expect(within(header()).getByText('已停用')).toBeInTheDocument();
+      expect(within(header()).queryByText(/关闭|开启/)).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try (D119 §3.2). */
   it('leads with the driver\'s sentence for a refused plugin, on a warn rail', () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });
