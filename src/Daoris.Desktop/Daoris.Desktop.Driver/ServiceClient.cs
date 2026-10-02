@@ -814,7 +814,12 @@ public sealed class ServiceClient : IDisposable
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
             last[quest] = (new PriorSession(
                 Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-                Text(session, "repository"), Text(session, "answer"), Interrupted(session)), at);
+                Text(session, "repository"), Text(session, "answer"), Interrupted(session))
+            {
+                // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
+                Profile = Text(session, "profile"),
+                Limit = Limit(session),
+            }, at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);

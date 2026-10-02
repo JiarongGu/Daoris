@@ -532,7 +532,7 @@ public sealed record HarnessSettings(
     /// or a screen edit would delete the person's order. <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c>
     /// hold the reading, the edits, the refusals and the file both write, row for row.</para>
     /// <para>An account the order does not list is never rotated into, and work resolved to it never moves (§3.1):
-    /// one list, not a list and a mark. Nothing reads an order to choose an account until TOOL4f.</para>
+    /// one list, not a list and a mark. <see cref="HarnessRoster.SelectAsync"/> walks it (TOOL4f, <see cref="AccountRotation"/>).</para>
     /// </remarks>
     public (IReadOnlyList<string> Order, ChoiceFrom From) ResolveRotationFrom(string agent, string? workspace)
     {
@@ -1398,7 +1398,17 @@ public sealed record HarnessSelection(
     /// The account's cool-off when that is why this spawn must not happen (TOOL4d, D125 §4), and null otherwise: a
     /// hold that waits for a time, where every other refusal waits for a person.
     /// </summary>
+    /// <remarks>
+    /// Held over an order (TOOL4f), it is the cool-off of the account that is ready first, which is when the start may
+    /// run again; for a pick refused, the pick's own.
+    /// </remarks>
     public CoolingEntry? Cooling { get; init; }
+
+    /// <summary>
+    /// The account the resolution named and why it was not ready, when this start runs on another account of the
+    /// person's order instead (TOOL4f, D125 §3.3); null when it runs on the account the resolution named.
+    /// </summary>
+    public RotatedStart? Rotated { get; init; }
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -1432,7 +1442,15 @@ public enum ChoiceFrom
 /// <param name="Refusal">Why a start would be held, in the driver's own words; null when it would run.</param>
 public sealed record StartWiring(
     string Adapter, string Owner, string? Profile, ChoiceFrom ProfileFrom,
-    string? Version, ChoiceFrom VersionFrom, bool Commanded, string? Refusal);
+    string? Version, ChoiceFrom VersionFrom, bool Commanded, string? Refusal)
+{
+    /// <summary>
+    /// The account <see cref="ProfileFrom"/>'s rung named, when the start runs on another account of the person's order
+    /// because that one is not ready (TOOL4f, D125 §3.3): <see cref="Profile"/> is then the account the start takes, so
+    /// the panel never shows an account a start would not take. Null when nothing rotated.
+    /// </summary>
+    public string? RotatedFrom { get; init; }
+}
 
 /// <summary>
 /// What this machine's harnesses are, and which account a spawn runs as (D49 §4) — <b>one judgement
@@ -1719,6 +1737,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// deliberately — a missing binary and a logged-out profile are the same kind of answer, and each
     /// <b>names the action that fixes it</b> rather than failing bare.
     /// </summary>
+    /// <remarks>
+    /// <b>The walk</b> (TOOL4f, D125 §3.3): the account the resolution names runs if it is ready — not cooling, not
+    /// refused, not signed out. If it is not, and a default named it that the person's order lists, the next ready
+    /// account after it in the order runs, wrapping, and the selection says so (<see cref="HarnessSelection.Rotated"/>).
+    /// A pick, the tool's own home and an account outside the order never rotate, and with no order this answers as it
+    /// did before rotation existed. When no account is ready the start waits: before any probe while each is cooling or
+    /// refused, with one sentence naming the first reset.
+    /// </remarks>
     /// <param name="workspace">The repository's circle, for the per-workspace default (D49 §4).</param>
     /// <param name="chosen">The person's pick for this session, when they made one.</param>
     public async Task<HarnessSelection> SelectAsync(
@@ -1743,17 +1769,32 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // the owner's login question and key. The pin below stays the door's own — a door is a
         // different package at a different version (ACP2).
         var owner = toolchain.Owner(resolved.Name);
-        var profile = settings.Resolve(owner, workspace, chosen);
+        var (profile, from) = settings.ResolveFrom(owner, workspace, chosen);
+
+        // The accounts this start may use, in the order it tries them (TOOL4f, D125 §3.3): the one the resolution names,
+        // and, only where a default named it and the person's order lists it, the rest of that order after it. A pick,
+        // the tool's own home and an account outside the order are the one account, which is today's behaviour.
+        var now = Clock();
+        var order = settings.ResolveRotationFrom(owner, workspace).Order;
+        var states = AccountRotation
+            // The accounts here are listed only where an order could walk to one, so a machine with none reads nothing more.
+            .Candidates(profile, from, order, order.Count == 0 ? [] : HarnessSettings.Profiles(Home, owner))
+            .Select(account => Before(owner, account, now))
+            .ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
         // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
-        // fault was its account. Nothing is spawned or probed while it cools.
-        if (AccountCooling.Of(Home, owner, profile, Clock()) is { } cooling) return Cooled(cooling);
-
-        // An account its provider already refused is not spent again (AGT3b).
-        if (_refused.TryGetValue(AccountKey(owner, profile), out var refused))
+        // fault was its account. An account its provider already refused is not spent again (AGT3b). So when no account
+        // the start may use is ready on either count, nothing is spawned or probed: the start waits.
+        if (!states.Any(state => state.IsReady))
         {
-            return new HarnessSelection(refused);
+            // A pick is the person's (§3.3): refused, never rotated, naming what they could pick instead.
+            return from == ChoiceFrom.Picked && states[0].Cooling is { } picked
+                ? new HarnessSelection(RotationWords.Picked(picked, await ReadyAsync(resolved.Name, toolchain, config, picked.Account, now, ct).ConfigureAwait(false), Zone))
+                {
+                    Cooling = picked,
+                }
+                : Unready(owner, states);
         }
 
         // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
@@ -1809,43 +1850,115 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             return new HarnessSelection(null, null, null, report?.Version, managed, claude);
         }
 
-        var home = HarnessSettings.ProfileHome(Home, owner, profile);
         // The account's state is its owner's answer when this build carries the owner — a door
         // declares no login question of its own, which is what `accountOf` says.
         var asker = AccountAgent(resolved.Name, toolchain);
         var accounts = asker.Name == resolved.Name
             ? report
             : await ReportAsync(asker.Name, config, refresh: false, ct).ConfigureAwait(false);
-        var login = accounts?.Profiles.FirstOrDefault(
-            p => string.Equals(p.Name, profile, StringComparison.OrdinalIgnoreCase))?.Login
-            ?? LoginState.Unknown;
 
-        if (login == LoginState.Out)
+        // The walk (TOOL4f, D125 §3.3): the first account still ready once the agent has said who is signed in, in the
+        // order the start tries them. Signed out (a key gone included) is walked past as cooling and refused are.
+        var asked = false;
+        var at = -1;
+        for (var i = 0; i < states.Count && at < 0; i++)
         {
-            // Same re-ask as above, and for the same reason: the person may have just logged in.
-            accounts = await ReportAsync(asker.Name, config, refresh: true, ct).ConfigureAwait(false);
-            login = accounts?.Profiles.FirstOrDefault(
-                p => string.Equals(p.Name, profile, StringComparison.OrdinalIgnoreCase))?.Login
-                ?? LoginState.Unknown;
+            if (!states[i].IsReady) continue;
+            var account = states[i].Account!;
+            var login = LoginOf(accounts, account);
+            if (login == LoginState.Out && !asked)
+            {
+                // Same re-ask as above, and for the same reason: the person may have just signed in. Once per start.
+                accounts = await ReportAsync(asker.Name, config, refresh: true, ct).ConfigureAwait(false);
+                asked = true;
+                login = LoginOf(accounts, account);
+            }
+
+            if (login == LoginState.Out)
+            {
+                states[i] = states[i] with
+                {
+                    Readiness = AccountReadiness.SignedOut,
+                    Refusal = $"the `{owner}` account `{account}` is not signed in, so a session would have "
+                        + $"nothing to run as — `daoris agent login {owner} --profile {account}` runs "
+                        + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
+                        + "credential stays in the agent's own store.",
+                };
+                continue;
+            }
+
+            at = i;
         }
 
-        if (login == LoginState.Out)
-        {
-            return new HarnessSelection(
-                $"the `{owner}` account `{profile}` is not signed in, so a session would have "
-                + $"nothing to run as — `daoris agent login {owner} --profile {profile}` runs "
-                + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
-                + "credential stays in the agent's own store.");
-        }
+        if (at < 0) return Unready(owner, states);
+
+        var runs = states[at].Account!;
+        var home = HarnessSettings.ProfileHome(Home, owner, runs);
 
         // An account that is a key is handed its key through the tool's own variable (AGT3) — the
         // owner's variable, for a door, since the door runs the owner's tool.
         var key = asker.Toolchain.KeyVariable is { Length: > 0 } variable
-            && HarnessKeys.Of(Home, owner, profile) is { } held
+            && HarnessKeys.Of(Home, owner, runs) is { } held
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
 
-        return new HarnessSelection(null, profile, home, report?.Version, managed, claude, key);
+        return new HarnessSelection(null, runs, home, report?.Version, managed, claude, key)
+        {
+            // Said by whoever opens the record (TOOL4f, §3.6): its first line and `account.rotated`.
+            Rotated = at == 0 ? null : new RotatedStart(profile, states[0].Cooling, RotationWords.Why(owner, states[0], Zone)),
+        };
+    }
+
+    /// <summary>
+    /// What a start on this account would meet before any probe (TOOL4f, D125 §3.3): its cool-off, a file read, then a
+    /// refusal its provider gave (AGT3b), held in memory; otherwise ready, until the agent says it is signed out.
+    /// </summary>
+    private AccountState Before(string owner, string? account, DateTimeOffset now)
+    {
+        if (AccountCooling.Of(Home, owner, account, now) is { } cooling)
+        {
+            return new AccountState(account, AccountReadiness.Cooling, cooling, CoolingWords.Hold(cooling, Zone));
+        }
+
+        return _refused.TryGetValue(AccountKey(owner, account), out var refused)
+            ? new AccountState(account, AccountReadiness.Refused, Refusal: refused)
+            : new AccountState(account, AccountReadiness.Ready);
+    }
+
+    /// <summary>
+    /// No account the start may use is ready (TOOL4f, D125 §4). One account is held as it always was: its own sentence,
+    /// and its cool-off where that is why. Over an order, the start waits for the first reset when one is cooling, said
+    /// with every account and why; with none cooling, nothing will come ready by itself, so the default's own refusal,
+    /// which names the fix, is the answer.
+    /// </summary>
+    private HarnessSelection Unready(string owner, IReadOnlyList<AccountState> states)
+    {
+        var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
+        if (states.Count == 1 || first is null) return new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling };
+        return new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first };
+    }
+
+    /// <summary>What the agent says about one account's sign-in, from a probe's report; unknown where it says nothing.</summary>
+    private static LoginState LoginOf(HarnessReport? report, string account) =>
+        report?.Profiles.FirstOrDefault(p => string.Equals(p.Name, account, StringComparison.OrdinalIgnoreCase))?.Login
+        ?? LoginState.Unknown;
+
+    /// <summary>
+    /// The agent's other accounts a person could pick instead of a cooling one (D125 §3.3): not cooling, not refused, and
+    /// not signed out, as the probe the conversation was about to make says. A person's start, so asking is fine.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> ReadyAsync(
+        string adapter, HarnessToolchain toolchain, DriverConfig config, string? picked, DateTimeOffset now, CancellationToken ct)
+    {
+        var owner = toolchain.Owner(adapter);
+        var others = HarnessSettings.Profiles(Home, owner)
+            .Where(name => !string.Equals(name, picked, StringComparison.OrdinalIgnoreCase))
+            .Where(name => Before(owner, name, now).IsReady)
+            .ToList();
+        if (others.Count == 0) return [];
+
+        var report = await ReportAsync(AccountAgent(adapter, toolchain).Name, config, refresh: false, ct).ConfigureAwait(false);
+        return report is { Present: false } ? [] : [.. others.Where(name => LoginOf(report, name) != LoginState.Out)];
     }
 
     /// <summary>
@@ -1884,9 +1997,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         var selection = await SelectAsync(adapter, config, workspace, chosen: null, ct).ConfigureAwait(false);
 
+        // A start that rotates takes another account of the order (TOOL4f): that is the account shown, with the one its
+        // rung named beside it, so the panel never shows an account a start would not take.
         return new StartWiring(
-            resolved.Name, owner, profile, profileFrom,
-            selection.Version ?? pinned, versionFrom, commanded, selection.Refusal);
+            resolved.Name, owner, selection.Rotated is null ? profile : selection.Profile, profileFrom,
+            selection.Version ?? pinned, versionFrom, commanded, selection.Refusal)
+        {
+            RotatedFrom = selection.Rotated?.From,
+        };
     }
 }
 

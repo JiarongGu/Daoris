@@ -127,6 +127,8 @@ internal sealed class StandInLedger : HttpMessageHandler
                         ["id"] = $"s{_sessions.Count + 1}", ["quest"] = quest, ["repository"] = to,
                         ["state"] = "queued", ["kind"] = "driven", ["adapter"] = body["adapter"]?.GetValue<string>(),
                         ["tree"] = body["tree"]?.GetValue<string>(), ["created"] = _clock.ToString("O"),
+                        // The account it runs on, as the service answers it on loopback (TOOL4f reads it back).
+                        ["profile"] = body["profile"]?.GetValue<string>(),
                     };
                     _sessions.Add(session);
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "queued" });

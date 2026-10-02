@@ -191,6 +191,10 @@ public sealed class ChatRunner(
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
 
+        // A new conversation holds no context yet, so it rotates like a start (TOOL4f, D125 §3.3), and only here, at its
+        // opening: its account is its process's home, set at spawn. Its first line says which account and why.
+        RotatedOpening.Say(service, _events, sessionId, resolved.Name, selection, carried: null);
+
         // What it may reach outside its tree (D107), as a driven session in this repository would.
         var across = AcrossRules.Reach(config, snapshot.Repositories, known.Repository, known.Workspace);
 
@@ -268,6 +272,9 @@ public sealed class ChatRunner(
             .OpenHelpAsync(resolved.Name, room, selection.Version, selection.Profile, ct)
             .ConfigureAwait(false);
         if (sessionId is null) return new(null, message);
+
+        // Ask Daoris's opening rotates like a start, on the machine's order (TOOL4f, D125 §3.2), and says so first.
+        RotatedOpening.Say(service, _events, sessionId, resolved.Name, selection, carried: null);
 
         return await RunAsync(
             sessionId, message, resolved, selection, config,

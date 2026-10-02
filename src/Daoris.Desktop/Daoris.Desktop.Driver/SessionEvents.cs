@@ -493,6 +493,30 @@ public sealed class SessionEvents(string directory)
         }
     }
 
+    /// <summary>
+    /// The agent's plan as the record last kept it (TOOL4f, D125 §3.5): the newest plan event's entries, whole, since a
+    /// plan is written whole each time it changes. Empty for no plan, no record, an unreadable one, or an id that is not
+    /// one.
+    /// </summary>
+    public IReadOnlyList<PlanEntry> LastPlan(string sessionId)
+    {
+        if (!IsId(sessionId)) return [];
+        try
+        {
+            IReadOnlyList<PlanEntry> plan = [];
+            foreach (var e in Lines(PathOf(sessionId)))
+            {
+                if (e.Kind == SessionEventKind.Plan && e.Entries is { } entries) plan = entries;
+            }
+
+            return plan;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+
     /// <summary>Each call once, by the title its updates last gave it, at the sequence where it began.</summary>
     private static IEnumerable<(long Seq, string Kind, string Text)> Calls(string path)
     {

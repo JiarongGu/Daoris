@@ -53,7 +53,18 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 /// </param>
 public sealed record PriorSession(
     string Session, string? Tree, string State = "", string? Note = null, string? Repository = null,
-    string? Answer = null, bool Interrupted = false);
+    string? Answer = null, bool Interrupted = false)
+{
+    /// <summary>
+    /// The account it ran on, as its record names it, or null for the tool's own home (D49 §4): what a carry-on is
+    /// compared with, to say whether it runs on another account (TOOL4f, D125 §3.5). Served on loopback alone, which is
+    /// where this machine's driver reads its own records.
+    /// </summary>
+    public string? Profile { get; init; }
+
+    /// <summary>Its record says an account's limit made its failure (TOOL4c): what a carry-on is told after one (TOOL4f).</summary>
+    public bool Limit { get; init; }
+}
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
