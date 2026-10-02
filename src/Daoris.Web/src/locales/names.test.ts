@@ -264,6 +264,21 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
+   * NAME2: DEV4 put a quest's lanes on the window (D115 §2.2) after NAME1's glossary was written, so the
+   * concept had no term and the drawer's *Lanes* no kind. A lane is 泳道 wherever either language names it.
+   */
+  it('name a lane 泳道 wherever it is said, and read the drawer\'s Lanes as a field', () => {
+    const lane = glossary.terms.find((term) => term.term === 'lane');
+    expect([lane?.en, lane?.zh]).toEqual(['lane', '泳道']);
+    expect(kindOf(glossary)('quests.detail.lanes')).toBe('field');
+    const found = check(glossary, en, zh, { all: true });
+    for (const key of ['quests.detail.lanes', 'quests.card.lanes', 'quests.card.lanes_other', 'quests.card.lanesHint']) {
+      expect(zh[key], key).toMatch(/泳道/);
+      expect(rules(found, key), key).toEqual([]);
+    }
+  });
+
+  /**
    * NAME1b turned the facts' half to a gate: the build runs `--strict` beside the parity check, and it
    * passes, because no label breaks the glossary, its form or its door. The budgets still report and never
    * gate (D54): a character count estimates a width, and the window is where a width is a fact.
