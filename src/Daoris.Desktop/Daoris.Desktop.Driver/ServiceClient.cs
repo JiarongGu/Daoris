@@ -253,6 +253,31 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Tell the service what the person added to a running session (DRIFT1a2, D133 §1), which keeps it on the ask that
+    /// session's work is for: the words verbatim, by the session's own id. Whether it was kept is an answer, never an
+    /// exception: <c>kept: false</c> is a session on no ask, with the service's sentence, and a refusal or a host without
+    /// the door (one older than DRIFT1a, or a shared one) is false with a sentence saying which.
+    /// </summary>
+    public async Task<(bool Kept, string Message)> AddedToSessionAsync(string id, string text, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("text", text);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/added", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return (false, $"the service at {_base} has no door for what the person adds ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return (false, Text(answered, "error") ?? payload);
+        return (Flag(answered, "kept"), Text(answered, "message") ?? "");
+    }
+
+    /// <summary>
     /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>

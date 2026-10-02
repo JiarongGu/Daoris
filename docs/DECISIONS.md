@@ -9500,3 +9500,22 @@ the service's `AskDesk.AskOf`; the intake. In the `Process` half, `AccountRotati
 rotated carry-on handed an answer the stand-in's ask holds (written, not run). Not covered: no real agent was handed
 the words, so whether they keep a session's reading on the ask is not measured (the evidence's §8); the family
 rehearsal's sessions read them from the real service, and it checks none of them.
+
+**DRIFT1a2, built 2026-10-02: a typed message reaches its ask.** The modules' `SESSION_INPUT` posts the person's words
+to `POST /api/sessions/{id}/added`, by the session's own id, once the session has taken them: a driven session's inbox
+holding them (SESS3), or a conversation told them (`Chat.Say` true). The service judges which ask, if any (DRIFT1a),
+through `ServiceClient.AddedToSessionAsync`. Choices:
+- **Never awaited by the page's answer**, which stays whether the session took the message. `kept: false` (a session on
+  no ask), a refusal, a host without the door and one that does not answer change nothing the person is told, and the
+  words are still in the session's own record.
+- **Only once taken.** A message the session no longer takes (its inbox closed as it ends) reached nobody, so nothing is
+  kept for it.
+- **The words alone**: not its files, and not where the person is (HELP1b's preface), which is Daoris's framing.
+- **An intake still takes no messages** (INT4h): its line is refused before either door. So the `Chat.Say` path posts
+  for a conversation, which the service answers `kept: false` unless its record is on an ask.
+
+Proof: `DriverModuleAddedTests` (a held message posts once, with its session's id and its words; one its inbox no longer
+takes posts nothing; `kept: false`, a refusal, a failure and an unreachable service leave it sent), seen failing on a
+client that posted nothing; `SessionAddedTests` (the body, `kept` and its sentence, a refusal, a host without the door).
+Not covered: no test drives the `Chat.Say` path, since a conversation that takes a message needs a real process; nothing
+is drawn, so there is no look.
