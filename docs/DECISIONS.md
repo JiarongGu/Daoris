@@ -8880,3 +8880,8 @@ each start going to the account running the fewest. A quest's carry-on stays on 
 ready, as point 6 says, and moves to the next account when that one hits its limit (the owner: *"a quest can be
 running on different account if one account runs out of the limit"*), as TOOL4f's first real rotation did on 2 October.
 TOOL6b builds it so; TOOL6a's words for the setting say so.
+
+**The goal, in the owner's words (2026-10-02):** *"so the goal is to optimize the limit and usage of multiple
+accounts"*. Every setting above serves it: work keeps moving when one account is spent, and no account sits idle while
+another is cut off. It is judged by TOOL4h's report (the limits each account met, the sessions each ran, the starts a
+setting moved) and TOOL4i's run, never by a number Daoris made up.
