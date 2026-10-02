@@ -184,6 +184,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `needsAPerson(sessions, quests, registry, asks)` | what is waiting, parked first (SURF5); asks waiting on a person since INT4d | one derivation for the band and the Work switch's count — two answers to "how many need me" disagree the first time either is edited |
 | `sessionTimeline(session, quest?)` | the observed events, oldest first (SURF4c) | the record carries no event log, so what a timeline may honestly say is a derivation — and one place to change when the record grows one |
 | `readEvidence(evidence)` | the driver's sentence, and the commits inside it (SURF4c) | reads the bundle's **shape**, never its words: no English literal is matched, so a reworded header is harmless rather than a silently empty list |
+| `work/groups.ts` | Sessions' list by state as the driver's one reader answers it (`SESSION_GROUPS`), by repository as it was, a long *Ended* group's cut, the strip's order, a row's shown word, and the list's filters as kept (SESSUX1c, D126 §2.1, §4) | the list, the strip and the rows read one answer; a record the reader has not answered for yet is placed by its record alone, never by a second copy of the reader's rule |
 | `listPanes.ts` | each view's list memory: its closing, its width, its chosen item, its filters, keeping Sessions' and Settings' keys (FRAME1c, D118 §3f); and the monitor window's rail's, apart from the main window's (FRAME1h) | per view, beside `closings.ts`, which keeps what the frame remembers for every view, and a detached session's console for every detached window (`useDetachedPanel`, FRAME1h) |
 | `opener.ts` | the opener's plan: a view, the item its list chooses, and the form a door opens (FRAME1c, D118 §3i); since FRAME1d a record is only the chosen item, which the view's main area shows; since FRAME1e the code map a door opens the Map on, which is no chosen item | one opener for every door, planned as a value so each door's effect is an assertion |
 | `plugins/catalog.ts` | a plugin's state on today's answers, the list's groups in the person's reading order, and what the chosen item names (`offer:<id>` for an offer) (PLUGUI1b, D119 §3.1) | the list, the strip and the page read one answer |
@@ -196,7 +197,8 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 
 | Molecule | What | Story states |
 |---|---|---|
-| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55); a conversation named by its first line, and a menu of its own window, its review and its id (RAIL1) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · **its own tree** · running three hours |
+| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55); a conversation named by its first line, and a menu of its own window, its review and its id (RAIL1); the reader's word and its line's facts, and its repository first on its line by state (SESSUX1c) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · **its own tree** · running three hours · parked · awaiting reply · to review · uncommitted to review · queued |
+| `SessionList`, `SessionStrip` | Sessions' list by state (*Waiting on you*, *To review*, *Working*, *Resumes later*, *Ended*, and *Archived* where shown) or by repository, *Show N more* for a long *Ended*; and its strip, what waits on the person first (SESSUX1c, D126 §2.1, §2.5, §4) | by state · by repository · one group · a long Ended · archived shown · empty · loading · 中文 · no reader · the strip · laid over |
 | `RepositoryGroup` | the rail's group header | drivable, held, busy, not adopted, no root |
 | `SessionHead` | the attended session's record: state, repo, tree, quest, tool + account, age | driven, chat, parked-with-analysis, ended, `--real` tree vs session tree |
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |
@@ -236,7 +238,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 
 | Organism | What | Held by |
 |---|---|---|
-| `SessionRail` | sessions grouped by repository, selection, empty state | mocked-bridge vitest |
+| `SessionRail` | Sessions' list and its search: the records, the reader's groups (`useSessionGroups`), and what each row needs, handed to `SessionList`; by repository where no driver answers (SESSUX1c) | mocked-bridge vitest |
 | `AttendedSession` | head + stream + timeline + composer, for one session | mocked-bridge vitest |
 | ~~`SessionTimeline`~~ → **a molecule** (SURF4c) | the observed audit layer beside the stream | props-only vitest · a story per kind |
 | `SessionConsole` | **exists** — promoted out of the drawer, otherwise unchanged | its current tests |
