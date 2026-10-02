@@ -694,18 +694,6 @@ public interface ISessionAdapter
     HarnessToolchain? Toolchain => null;
 
     /// <summary>
-    /// For a door Daoris manages no toolchain for: the agent whose limit table it reads, and whose own sign-in a limit
-    /// on it cools (TOOL4d, D125 §1.3) — AGT7's rule, that a door's limits are its owner's, for a door with no
-    /// <see cref="HarnessToolchain.AccountOf"/> to say it. Null, the default, reads none, and a door WITH a toolchain
-    /// reads its owner's through <c>AccountOf</c>, never through this.
-    /// </summary>
-    /// <remarks>
-    /// The protocol stub's alone, so the family rehearsal gates a limit over the protocol door with no account behind
-    /// it: the pipe stub's door carries text alone, and a limit is never read from text (D125 §1.2, §1.4).
-    /// </remarks>
-    string? LimitsOf => null;
-
-    /// <summary>
     /// A reader of this harness's own structured stdout on the pipe door (D76 §1), new per session — or
     /// null when the door carries text, which is every adapter until its harness's wire is checked.
     /// </summary>
@@ -843,6 +831,9 @@ public sealed class StubAdapter : ISessionAdapter
 {
     public string Name => "stub";
 
+    /// <summary>The stub's configuration-home variable: its own, and its protocol twin's, which runs as its accounts (TOOL4j).</summary>
+    public const string ConfigVariable = "DAORIS_STUB_CONFIG_DIR";
+
     /// <summary>
     /// Interactive, so the whole conversation loop can be gated with no model in it (D46 §8's argument,
     /// one layer on): a scripted exchange is a real spawn, a real stdin, a real stream and a real exit.
@@ -865,7 +856,7 @@ public sealed class StubAdapter : ISessionAdapter
     public HarnessToolchain? Toolchain => new(
         Binary: [],
         VersionArguments: ["--version"],
-        ProfileVariable: "DAORIS_STUB_CONFIG_DIR",
+        ProfileVariable: ConfigVariable,
         // A login flow too, so signing in to another account (D66 §3) can be gated with no account:
         // whatever the configured command does with `--login` is the stub's sign-in.
         LoginArguments: ["--login"],
@@ -917,11 +908,22 @@ public sealed class AcpStubAdapter : ISessionAdapter
         Spawning.ChatInRoot(target, Resolve(command)[0], Resolve(command).Skip(1));
 
     /// <summary>
-    /// The stub's words for an account's limit, read as its owner's (TOOL4d, D125 §1.3): the stub mirrors Claude Code,
-    /// and this door mirrors Claude Code's protocol door, which reads Claude Code's. A limit here cools the stub's own
-    /// sign-in. Declared here rather than as a toolchain, which would make this door an agent with accounts to manage.
+    /// A door onto the stub's accounts (TOOL4j, D125 §1.3 rule 4), as Claude Code's protocol door is onto Claude Code's
+    /// (AGT7): the stub's directories through the stub's variable, the stub's default and order, and the stub's words for
+    /// a limit, so a limit on this door cools the stub account it ran as and the carry-on rotates over the stub's order.
     /// </summary>
-    public string? LimitsOf => "stub";
+    /// <remarks>
+    /// Present by a file look (<see cref="HarnessToolchain.ProbeByPresence"/>): the agent a rehearsal names here waits on
+    /// its stdin for frames, so asking it a version would stall the probe. No binary of its own, as the stub has none, so
+    /// a machine that names no command for it lists no such door. No sign-in, login question or limit table of its own:
+    /// <c>AccountOf</c> says each is the stub's.
+    /// </remarks>
+    public HarnessToolchain? Toolchain => new(
+        Binary: [],
+        VersionArguments: [],
+        ProfileVariable: StubAdapter.ConfigVariable,
+        AccountOf: "stub",
+        ProbeByPresence: true);
 
     private static IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
