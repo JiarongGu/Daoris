@@ -332,6 +332,8 @@ public sealed partial class DriverModule
         Work = row.Work is { } work ? new { work.Commits, work.Uncommitted } : null,
         // SESSUX1b (D126 §2.2): its stop holds its quest here, which its line says.
         row.HoldsQuest,
+        // PAUSE1b (D132 §6.1): whose pause holds its quest, which its line says and whose *Resume* stands in *Try again*'s place.
+        PausedBy = row.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
         // SESSUX1f (D126 §5.4): *Delete…* is offered only where it would be taken.
         row.Deletable,
     };

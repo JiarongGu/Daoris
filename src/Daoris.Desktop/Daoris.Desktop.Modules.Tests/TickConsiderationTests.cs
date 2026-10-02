@@ -36,6 +36,27 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
+    /// PAUSE1b (D132 §2.3): a quest a pause holds names whose pause, its scope and id, as facts beside the driver's sentence,
+    /// so the page says it in the reader's language; every other verdict names none.
+    /// </summary>
+    [Fact]
+    public void A_quest_a_pause_holds_names_whose_pause()
+    {
+        var paused = new Consideration(Quest, StartVerdict.Paused, "paused with ask `#a1`; Resume carries it on — `daoris-driver ask --resume a1`.")
+        {
+            PausedBy = new PausedBy(WorkScope.Ask, "a1"),
+        };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(paused), Wire);
+        var other = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(new Consideration(Quest, StartVerdict.Start, "starting.")), Wire);
+
+        Assert.Equal("Paused", shape.GetProperty("verdict").GetString());
+        Assert.Equal("ask", shape.GetProperty("pausedBy").GetProperty("scope").GetString());
+        Assert.Equal("a1", shape.GetProperty("pausedBy").GetProperty("id").GetString());
+        Assert.Equal(JsonValueKind.Null, other.GetProperty("pausedBy").ValueKind);
+    }
+
+    /// <summary>
     /// SESSUX1i (D126 §4.6): Overview's *What needs you* holds a quest parked on its failed sessions, waiting since its last
     /// session ended, and says why in the reader's language. The tick carries both as facts: how many failed and when the
     /// last one ended. The session and its note stay here.

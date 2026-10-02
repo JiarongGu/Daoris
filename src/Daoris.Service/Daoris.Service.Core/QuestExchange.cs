@@ -106,7 +106,7 @@ public enum QuestRespondRefusal
 {
     None,
 
-    /// <summary>Not take, done, or decline.</summary>
+    /// <summary>Not take, done, decline or wait — or <c>whileOpen</c> on anything but a decline (PAUSE1c).</summary>
     UnknownAction,
 
     /// <summary>Declining needs a reason: it is the part the asker can act on.</summary>
@@ -855,7 +855,9 @@ public sealed class QuestExchange(
         // The question a `wait` waits on (D79): a quest the waiting session asked another repository.
         string? on = null,
         // How a `done` answers each of the quest's requirements (DRIFT1d, D133 §4).
-        IReadOnlyList<QuestAnswer>? answers = null)
+        IReadOnlyList<QuestAnswer>? answers = null,
+        // A decline that applies only while the quest is open (PAUSE1c, D132 point 10): an abandon's.
+        bool whileOpen = false)
     {
         // Answers are a done's (DRIFT1d): carried by any other verb, a wait included, they would be dropped, and
         // dropped looks kept.
@@ -865,6 +867,16 @@ public sealed class QuestExchange(
                 QuestRespondRefusal.BadAnswer,
                 $"Answers are given when closing `done`, one for each requirement; a `{action.ToLowerInvariant()}` carries none. "
                 + "Nothing moved.",
+                Quest: null);
+        }
+
+        // The flag is a decline's (PAUSE1c): carried by any other verb it would be dropped, and dropped looks kept.
+        if (whileOpen && !string.Equals(action, "decline", StringComparison.OrdinalIgnoreCase))
+        {
+            return new(
+                QuestRespondRefusal.UnknownAction,
+                "`whileOpen` is a decline's: it makes the decline apply only while the quest is open, and a "
+                + $"`{action.ToLowerInvariant()}` declines nothing. Nothing moved.",
                 Quest: null);
         }
 
@@ -911,7 +923,7 @@ public sealed class QuestExchange(
 
         // Every verb commits here, shared or not (D68): the next sync carries it to the remote, where the
         // first push wins and a later one is kept as a conflict rather than lost (design §5).
-        var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct, answered)
+        var move = await quests.MoveAsync(id.TrimStart('#'), status.Value, reason, now, ct, answered, whileOpen)
             .ConfigureAwait(false);
 
         if (move.Quest is null)
@@ -932,8 +944,25 @@ public sealed class QuestExchange(
             return new(
                 QuestRespondRefusal.None,
                 $"Quest `#{move.Quest.Id}` is now {move.Quest.Status}.{await AnsweredAsync(move.Quest, ct).ConfigureAwait(false)}"
+                // Only the next sync can say whether another machine took it first (PAUSE1c), so the answer says
+                // what that would mean; a quest nobody shares has no other machine to take it.
+                + (whileOpen && await SharedAtAsync(move.Quest, ct).ConfigureAwait(false) is not null
+                    ? " It applies only while it is open: if another machine's take reached the remote first, the next "
+                      + "sync keeps this decline on the quest as a conflict, and the take stands."
+                    : "")
                 + Then(move.FollowUp),
                 move.Quest);
+        }
+
+        // A decline made while open, refused because somebody took the quest first (PAUSE1c): said as the decline it
+        // is, never as the take race's stand-down, which is a taker's sentence.
+        if (whileOpen && move.Quest.Status == QuestStatus.Taken)
+        {
+            return new(
+                QuestRespondRefusal.AlreadyTaken,
+                $"Quest `#{move.Quest.Id}` is Taken: this decline applies only while it is open, so nothing was declined "
+                + "and the take stands. Its work is its taker's; decline it without `whileOpen` if you mean to stop that work.",
+                Quest: null);
         }
 
         // The store refused the transition; the quest comes back unchanged so the answer can name the

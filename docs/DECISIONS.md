@@ -9566,6 +9566,82 @@ pause or an abandon would do with each piece (§2.1, §3.2); that is PAUSE1b's a
 which they need, are not on `SessionRecord` yet. How long a reading takes over a real workspace is not measured. The
 `Process` half, the rehearsals and the screen were not run by this branch.
 
+**Built 2026-10-03 (PAUSE1b): pause and resume** (points 2–5 and 11; design §2, §4.3, §6.1, §7.2, §7.3). The planner's
+`StartVerdict.Paused` comes first, naming the pause and its door on `Consideration.PausedBy`. The look reads the paused set
+(`PausedWork`), and so does a fresh plan (`SessionGroups.VerdictsAsync`). `WorkPausing` plans, pauses and resumes for both
+doors: `WORK_PLAN`, `WORK_PAUSE` and `WORK_RESUME` (`DriverModule.Work.cs`), and `daoris-driver ask --pause|--resume` and
+`quest pause|resume` (`WorkCommand`). The log gains `work.paused` and `work.resumed` (the machine log design's §4).
+What building it settled:
+- **The verdict covers only what the planner would plan.** That is an open quest, or a take whose last session here is a
+  stop, a cut-off, an answered park or a question's asker. A take this machine never ran gets no verdict, and neither does
+  a quest whose session runs or waits on you. Coming first, a paused quest spends no slot and no repository's turn, so it
+  keeps its place. A quest's own pause is named before its ask's.
+- **The look asks the service more only while `driver.json` holds a pause**, and a read that fails fails the look. A
+  paused work read as no work would start what the person paused.
+- **The pause writes itself first**, then stops, then records each stop (`stopped`). The stopped record's note names the
+  pause (*paused with ask `#a`.*): it is carried by `SessionProcesses.Stop`'s note and by the request's `note`, as
+  `by: pause`. An orphan's record keeps `Orphans.Note`, which is the fact. A move the service did not take leaves the pause
+  standing and names that session.
+- **Each piece is a word from a list**, so the page says it in the reader's language. A quest is `paused`, `closed` or
+  `elsewhere`; a session `stopped`, `parked`, `intake`, `teammate` or `ended`. A session not stopped is kept with its why:
+  `parked`, `intake` or `teammate` by design, or `elsewhere`, `not-running` or `unanswered`, which the terminal exits 2 on.
+- **Resume reads the file before the service**, so the pause of an ask since deleted still resumes. What still holds is
+  read from the planner's verdicts (`Paused`, `Stopped`, `Exhausted`, `Held`, `NotDrivable`, `NotAdopted`, `NoRoot`) over a
+  fresh look. It is null where the look could not be read. An account's cool-off is held at spawn and is not the planner's,
+  so the answer does not name it.
+- **Nothing to pause, and a resume of what is not paused, are information** (D48 §6). A paused ask's intake does not
+  start, and the look writes no line for it. `RETRY_QUEST` on a paused quest refuses with `QUEST_PAUSED`, which names the
+  pause, with `context` `quest` for a quest's own.
+- **`WORK_PLAN` answers the pause's half and never a path**: a tree is its repository and branch. Abandon's half is
+  PAUSE1d's, and the sitting reason is the tick's. The tick, `SESSION_GROUPS` and `sessions --json` carry `pausedBy`
+  (scope and id), and the `sessions` line says the pause and its door.
+- **§13's rewording**: `DriverConfig.Holds`, `StartVerdict.Held`, the room's doors row and the CLI's `driver` help say
+  *hold*. The room's doors gain the terminal's pause row, a door owed to PAUSE1f. `daoris driver list` names each pause's
+  resume door.
+
+**What the gates do not cover.** `work.sitting.Paused` is not in the catalogues yet. The page would have to hand
+`pausedBy` to `sittingSentence` first, which is PAUSE1e's, so both languages show the driver's English meanwhile. There is
+no `bridge/work.ts`: the routes are held by `DriverModuleWorkTests` and the README's `work` row. Held by `PlannerTests`,
+`SessionGroupsTests`, `WorkPausingTests`, `DriverModuleWorkTests`, `DriverModuleRetryTests`, `TickConsiderationTests`,
+`HelpCoverageTests`, the room's golden files, `driverconfig.test.ts` and the CLI's help fixture. These were seen failing
+first: the planner's and the groups' cases (against a stub), `WorkPausingTests` (against stubbed bodies, its parse cases
+apart), `DriverModuleWorkTests` (routes unmarked), the golden files and the CLI's list. The tick's `pausedBy`, the retry
+refusal and the owed door were written after their code. `PauseTickTests` (the `Process` half: a session paused while it
+works, its quest held with nothing spawned, then carried on in its tree after *Resume*; and an open quest paused before
+any session) is written and was not run here. **Not built**: §2.6's ask, the pages' and a session's acts (PAUSE1e), and
+Ask Daoris's `pause` kind and the room's list of what is paused (PAUSE1f).
+**Built 2026-10-03 (PAUSE1c): a decline that applies only while open** (point 10; design §5.2). A decline carries
+`whileOpen` on the operation (`QuestOperation.WhileOpen`), in the log, on the wire (`QuestWire`) and through the replay.
+`QuestLog.Applies` applies such a decline only to an open quest. So the store refuses it on a quest taken here, a rebase
+keeps one that lands after another machine's take as a conflict with its reason, and a remote refuses one it judges on a
+taken quest. The local respond door takes it (`POST /api/quests/{id}/respond`, `whileOpen: true`) through
+`QuestExchange.RespondAsync`; no MCP tool does. Held by `QuestLogTests`; `QuestSyncTests` over the real wire (take first,
+decline first, an older record, an older remote); `QuestShareTests`; `LocalHostTests`. What building it settled:
+- **The flag rides the log's payload, not a column.** Every field an operation carries beyond its kind (a note, an
+  attempt, a dismissal's conflict, a done's answers) is in the payload. So the design's *store's column* is the
+  payload's `whileOpen`, written only when set, and a plain decline's record is byte for byte what it was.
+- **The store judges a move by the replay's own rule** (`QuestLog.Applies`) rather than the table beside it, so it
+  refuses exactly what a rebase or a remote would not apply.
+- **A refusal here is the lock's state, said as the decline it is**: `AlreadyTaken`, 409 at the door, saying the decline
+  applies only while open and the take stands, never the take race's stand-down. On a shared quest the answer says what
+  a take that came first would make of it, since only the next sync can know. `whileOpen` on another verb is refused.
+- **A lost decline's conflict drops the flag**, kept as any losing move is: attempting `Declined`, with the reason. The
+  pass's conflicts (`/api/sync`'s `conflicts`, `attempted: "Declined"`) are how the abandon's pass (§3.4 step 4) tells
+  a lost decline from a confirmed one.
+- **A malformed flag on the wire is half an operation** and does not cross: read as plain, it would decline over a take.
+- 🔴 **An older remote does not decide the race.** A remote built before PAUSE1c reads the flag as absent, keeps the
+  decline plain and hands it back plain. Take first or decline first, the race still ends in a conflict and the take
+  stands. This machine's rebase judges the flag before it pushes, and a remote judges a push only when nothing reached
+  the quest after the base it was rebased on. What differs is the remote's own second judgement: given a push nobody
+  rebased, which no machine of this build sends, an older remote keeps the decline over a take where this build refuses
+  it. So this decision's gate note and the design's §5.2 and §13 (*a remote built before this applies it over a take*) claim
+  more than the code does, and no refusal or conflict a person reads carries that warning, since none can show it.
+
+**What the gates do not cover.** Nothing sends the flag yet: the abandon (PAUSE1d) does, through the driver's
+`ServiceClient`, which this branch did not touch. Reading each decline's answer from the pass is the abandon's. No real
+remote ran, an older one included: the older remote here is the real store behind the real wire with the flag taken
+out. The rehearsals were not run by this branch.
+
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
 **Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +
@@ -9868,3 +9944,144 @@ hand-off, the inbox's sending and the run's waiting were each seen failing with 
 `DrivenSessionInputTests`' process test now asserts the words kept twice; it is the parent's to run. Not covered: no
 driven session on the install has heard a word mid-turn yet (only the evidence's session, outside Daoris); a fold that
 waits for a long tool is read, not seen.
+## D134 — The decisions record is one file per decision, its notes under it, merged by union per file; `docs/DECISIONS.md` stays as a page that says where they are (2026-10-03)
+
+**Decision (DOC8, from the parent's account of 2026-10-02 and 03: four integrations in a row left this record torn by
+their union merges, and D130–D133 were rebuilt by script three times).** The contract is
+`docs/2026-10-03-decisions-record-design.md`: what was measured (§1), the four options weighed (§2), the shape (§3),
+the migration (§4) and the build (§5).
+
+1. **Each decision is its own file**, `docs/decisions/D<n>.md`, the number unpadded so the path is the citation. It
+   holds the entry as written, its `## D<n> — …` heading first. Its notes are appended at its end, as the canon puts an
+   amendment under the entry it amends.
+2. **`docs/DECISIONS.md` stays as a fixed page**: what the record is, that each decision is its own file, that D114 was
+   never taken, and how to list them. It holds no rows, so no branch edits it, and a citation that names it with a
+   number reaches the decision in one hop. There is no index, hand-kept or generated.
+3. **Union per file.** `.gitattributes` marks `docs/decisions/*.md merge=union`, and no longer the page. Two notes
+   written under one decision at once are both kept whole, in merge order.
+4. **A check for the folder, and it fails** (D54): each file holds one heading, its own; no conflict marker; no note
+   label after a non-blank line; no decision or note in the page. `doc-duplicates` reads the folder in place of the
+   file, and its test still holds the union records to the checked ones.
+5. **The service reads the declared folder** as DOC5 built it: one entry per decision, id
+   `Daoris:docs/decisions/D<n>.md`, titled by its first heading once DOC8c lands.
+6. **The migration is one commit, the parent's**, made when no branch in flight holds a change to the record. Its
+   proof: the files, concatenated in the old order, equal the old record byte for byte.
+7. **The canon does not recommend the shape yet.** It already allows a folder for the decisions role (D122 §2.1). What
+   tore is this repository's union merge (D106), and one repository's measurement is below the canon's bar of two
+   sources. It is reconsidered when a second repository reports a record torn by parallel merges.
+
+**Why.** Replayed through git's own merge at `155882ec` (design §1): of the 134 merges since the union whose two
+sides both changed the record, 33 came out torn, 27 were committed that way, and 17 repairs followed, by hand and by
+script; on 2026-10-03, five merges of eight. The tears had four shapes. A note under the newest decision and a new
+decision after it share one insertion point (17 merges). A decision was moved to keep the numbers in order (3). One
+decision was added on both sides of a criss-cross with different notes (7). A side was already torn (6). One file per
+decision removes the insertion point, the order and the copies, and leaves no first tear to carry on. Replayed per
+decision, the same merges lose no line, and 12 decision files keep a note whose blank line went, which the check
+sees. A lookup reads one file whose path is its number: one call and the entry's bytes, where today it is two calls
+and a window 4.1 times the entry at the median.
+
+**Rejected** (design §7):
+- **A merge driver.** Its configuration is not tracked, and without it git falls back to conflict markers (tried on
+  git 2.53). On every merge it must find where a note ends, which no note says.
+- **A file per note.** One decision read in up to fourteen files after a search, against the canon's amendment rule,
+  and a second path for the service to read as decisions.
+- **Union, plus a check that a note sits under its own decision.** No note names its decision, so 178 notes go
+  unchecked, and it finds a quarter of merges torn and repairs none of them.
+- **A plain merge per file**: 62 of the 64 shared decisions measured would conflict. Also **an index**, **padded or
+  slugged names**, **promoting each heading** and **serialising the merges**.
+- **Moving the other union records**: none of them takes notes from many branches under an older entry.
+
+**What it amends.** D106: *one file per decision* moves from rejected to decided; its reason, every anchor that cites
+one, measured nothing to break, since no link points into the record. D117 §2.4: the condition it named for reopening,
+union merge failing again, is met; and the number is a decision's name, so no map is needed.
+`docs/2026-09-30-parallel-development-design.md` §7, the same. The dispatch skill: the parent reserves the number after
+the highest file in `docs/decisions/`, and a brief names the file to write. The rows are the design's §5: DOC8b, DOC8a
+and DOC8c.
+
+**What the checks do not cover.** Documents only, and nothing is built. The counts are scratch scripts' over the
+history, judging a tear by two facts (a heading twice, a side's line under another decision), so they are a floor; the
+per-decision replay merged each decision's section with `git merge-file`, not `merge-tree`. Whether a session read a
+torn entry before its repair is in no record. `verify` checks this entry's place and the design's links, and none of
+their words.
+
+**Built 2026-10-03 (DOC8b): the check for a folder of decisions** (point 4, design §3.4). `tools/doc-duplicates.mjs`
+reads the record where `daoris.json` declares it and checks whichever it finds: a file as before, for a number twice;
+a folder for the four facts, each failing `verify`, held by `doc-duplicates.test.ts` on fixture folders. What building
+it settled:
+- **The union record is named as the attribute names it.** `records(root)` gives a folder as `<folder>/*.md`, so the
+  test that holds the union records to the checked ones passes on both shapes, today's and DOC8a's.
+- **A note's label** is a form §1.3 counted, with a date on its line, or one of the commonest, which count without:
+  `**Built`, `**As built`, `**Fixed`, `**Read`, `**Amended`, and `*As built`, `*Built`, `*Amended`. An emphasised
+  sentence such as `**Proven without the rehearsal**` is not one. A fence's lines are neither a heading nor a label;
+  a conflict marker counts on any line.
+- **The page is the record's old path**, checked only once the record is a folder. While the record is that file the
+  folder's facts do not apply to it, so today's record passes unchanged. A passing run over a folder says how many
+  files it read.
+- **A dry run of the split** (each heading to its own file, in scratch) read 133 files, every heading its own and the
+  opening clean as a page, and found one fact: D119's `*As built (PLUGUI1d, 2026-10-01)` note follows the paragraph
+  above it with no blank line. With that blank line the split passes. DOC8a meets it.
+
+**What the gates do not cover.** The folder's facts ran on fixtures and a scratch split; the repository's own folder
+is DOC8a's. A tear that keeps every blank line and heading, a note in its right file at the wrong place in it, is not
+seen.
+
+## D135 — Sessions ask the person too often because a go-ahead is asked again and a reading is put as a question, not because they skip the knowledge: a go-ahead is held once, a standing answer is kept, every item names its source, and a model's review is measured before it is shown (2026-10-03)
+
+**Decision (KNOWUSE1, the owner's: *"I found [the repository] itself is kind of ignoring the repo's knowledge docs?
+since a lot asks back to me should not be there? … that will need LLM/AI to involve"*).** The evidence is
+`docs/2026-10-03-knowledge-use-evidence.md`: every question 33 driven sessions of the owner's work repository put to the
+owner, 46 items, classed by what could have answered each, against what each session read and was told.
+
+1. **The knowledge is not the cause.** The repository's own discovery gate ran in 20 of 22 working sessions, and every
+   document that answered a question, or told the session to ask, had been read. Finishing the set-up and pushing
+   recall into the prompt (KNOW2b) are not this problem's fix; each stays on its own reason (D128, D129).
+2. **A go-ahead is asked once and held on the ask.** A session that needs the person's yes for an act outside the
+   repository records it as one pending go-ahead named by the act; later sessions are handed it and its answer, and
+   do not re-list it. The production acts stay the person's (D37, D52).
+3. **A standing answer is kept for the repository.** An answer the person marks as outliving its quest (which
+   environment to test in, which writes are allowed) is handed to every later session there, beneath its quest. It is
+   the person's, on this machine, and set at both doors (D50); it is never written into the repository (D32).
+4. **A closing note separates what needs the person from the readings taken, and every item names its source**: the
+   ticket's line, the document and its line, the code path. The look names the indexes the repository's own
+   instructions name. A question that names nothing it checked has not been looked into.
+5. **An attributed reading is not a requirement.** The person's words quoted in a document, a closed quest's note or a
+   commit are someone's reading unless the ask's record holds them (D133 §1), and a session relying on one says so.
+6. **A model's review is measured before it is shown, and never answers in the person's place until it is.** Beside
+   each item a park or closing note brings, the review shows what may already answer it. The floor needs no model: a
+   word search over the repository's knowledge and the ask's words, saying *words only*. The model tier is a short check
+   session on the deployment's own harness and account, which quotes a source, says *needs the person*, or says *a
+   reading*, and the review names the tier that classed each item (D24). It is built after a replay bench over recorded
+   questions, this evidence's 46 first, shows it classes them as a person did.
+7. **A repository document that requires the person's agreement stands.** The session asks once and names the
+   document. A conflict between such a document and the person's later words is the person's to settle, as a request
+   to that repository.
+
+**Why.** 25 of the 46 needed the owner, and 13 of those were asks for three production acts, because the repository's
+knowledge routes verification through production and nothing held a go-ahead between sessions. The owner's
+development-first answer was given once and read by no later session. 10 were settled by the ticket, the code or a
+read-only look, five of them readings put to the owner as decisions without the ticket's line they rested on;
+6 came from drift, one of them now written into the repository's knowledge as the owner's decision; 3 were asked
+because the repository's own documents say to ask. Only 2 were answered by a document the session had read, and neither stopped work. So a review against the
+knowledge alone would have caught 2 of 46, and a review that also reads the ask's words and the ticket reaches about 16
+more. That is worth measuring, and not worth trusting unmeasured.
+
+**Rejected.**
+- **Finishing the set-up as the fix.** The repository's own gate already ran, and the pilot's branch replaced its
+  richer routing skill with the canon's.
+- **Pushing recall into the prompt as the fix.** Every governing document was already read, and this install's
+  service answers by words only.
+- **A model that answers parked questions from the knowledge, unmeasured.** It would have answered almost none here,
+  and would have answered one from the drifted document.
+- **Naming the repository's index as a fix of its own.** Sessions found the indexes through the repository's
+  instructions; it rides in point 4's wording.
+- **Editing the repository's documents that require asking.** That is the repository's own work (D32).
+
+**What it amends, when built.** WSSETUP9's `TargetPrompt.Asking` (points 4 and 5). D133: the ask holds pending
+go-aheads beside the person's words (point 2). D129 §6's push stays held. WSSETUP14f's close shows the canon's discovery
+skill still reaches a repository's own routing. The rows are the evidence's §6, KNOWUSE1a–KNOWUSE1d, KNOWUSE2 and
+KNOWUSE3.
+
+**What the checks do not cover.** Documents only, and nothing is built. The classes are this evidence's reading of the
+records, the documents and the owner's later words; the owner did not class them, which is what KNOWUSE2 measures. One
+session was still running and an earlier ticket's ten sessions were not read. No session was re-run with the proposed
+wording. `verify` checks this entry's place and the evidence's links, and none of their words.

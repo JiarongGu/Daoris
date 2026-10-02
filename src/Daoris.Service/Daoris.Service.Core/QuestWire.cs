@@ -24,7 +24,7 @@ public static class QuestWire
         "every operation names its machine, sequence, quest, kind and time; a publish carries from, to, title and "
         + "body, every file its name, sha256 and size, every step its to, title and body, and every requirement "
         + "its quote and check; a done's every answer names its requirement and says met or departed, a departure "
-        + "with its quote; a conflict names "
+        + "with its quote; a decline's whileOpen, where it says one, is true or false; a conflict names "
         + "what it attempted; a dismissal names the conflict's machine and sequence";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
@@ -133,6 +133,9 @@ public static class QuestWire
         writer.WriteString("kind", operation.Kind.ToString().ToLowerInvariant());
         writer.WriteString("at", operation.At.ToString("O"));
         if (operation.Note is not null) writer.WriteString("note", operation.Note);
+        // Only when set, and only on a decline (PAUSE1c): a plain decline crosses exactly as it did, and an older
+        // build reads a flagged one as a plain one.
+        if (operation is { WhileOpen: true, Kind: QuestOperationKind.Declined }) writer.WriteBoolean("whileOpen", true);
         // Only when it answers some (DRIFT1d): a done on a quest with none crosses exactly as it did.
         if (operation.Answers is { Count: > 0 } answers)
         {
@@ -333,9 +336,18 @@ public static class QuestWire
             }
         }
 
+        // A decline's flag (PAUSE1c) is true or false. Anything else is half of one, and read as plain it would
+        // decline over a take — the one thing the flag exists to stop.
+        var whileOpen = false;
+        if (kind == QuestOperationKind.Declined && item.TryGetProperty("whileOpen", out var open))
+        {
+            if (open.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) return null;
+            whileOpen = open.ValueKind == JsonValueKind.True;
+        }
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen);
     }
 
 }

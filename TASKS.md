@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 993 service and 60 HTTP host, 3520 driver,
-578 desktop modules, 80 devkit, 2711 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
+**Counts, and this is their one home:** seventeen commands, **1086 CLI tests, 1008 service and 61 HTTP host, 3560 driver,
+589 desktop modules, 80 devkit, 2711 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -182,14 +182,31 @@ install in both themes and both languages.
 > need other resouce location"*
 
 
-### Knowledge that sessions actually use (owner, 2026-10-03)
+### Knowledge that sessions actually use (owner, 2026-10-03) — D135
 
-- [ ] **KNOWUSE1 — why report-ui's sessions ask what its knowledge answers** (owner, 2026-10-03: *"I found report-ui itself
-  is kind of ignoring the repo's knowledge docs? since a lot asks back to me should not be there? … we need to check the
-  process properly or the initialize of daoris system still not 100% working and that will need llm/ai to involve"*).
-  Every question sessions put to the owner, classed by what could have answered it (knowledge, code, history, only the
-  owner), against what each session read and was told; then the fix, model-backed where text matching cannot judge.
-  Contract: D135 (in flight). Proof: the evidence, de-identified; raw notes untracked.
+KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
+3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
+
+- [ ] **KNOWUSE1a — a go-ahead is asked once and held on the ask** (service, driver, web). Three prod acts drew 13 asks;
+  a request for an act already asked joins the first, and every session on the ask is handed its answer. Contract: D135.
+  Proof: a second request for one act joins the first; a carry-on is handed it.
+- [ ] **KNOWUSE1b — a standing answer kept per repository** (driver, modules, both doors). *Dev writes allowed, test
+  locally against dev, prod only on a yes*: kept on this machine, never written into the repository, handed to every
+  session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
+- [ ] **KNOWUSE1c — a closing note says what needs you apart from readings, each citing its source** (driver). Ticket line,
+  doc line or code path beside every item; the look names the repository's own indexes. Contract: D135. Proof:
+  `AskAndWaitPromptTests`; a canary turn.
+- [ ] **KNOWUSE1d — the owner's words quoted second-hand are a reading** (driver; beside DRIFT1). A quote in a doc, a closed
+  note or a commit is attributed only if the ask's record holds it. Contract: D135. Proof: prompt goldens.
+- [ ] **KNOWUSE2 — a bench for checking a question before it reaches the owner** (tools). Replays the 46 recorded
+  questions through the no-model floor (word search, labelled *words only*) and a model tier on the deployment's own
+  harness, scored against their classes. Contract: D135. Proof: script tests; the model tier is the owner's run.
+- [ ] **KNOWUSE3 — the review beside each item** (web, driver; held on KNOWUSE2). Says which tier found each hint and never
+  answers in the owner's place. Contract: D135. Proof: stories; the look.
+- [ ] **KNOWUSE4 — a request the owner may publish to the work repository** (the owner's). Its comparison document
+  records a misread answer as *the owner also settled the calculation*; correct it, and reconcile its *fix the config,
+  not the shared component* rule with the owner's *add it into the common-report module*. Contract: the evidence §4.
+
 
 ### The desktop's own surfaces (owner, 2026-10-03)
 
@@ -260,11 +277,6 @@ owner on 1 October.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
-- [ ] **PAUSE1b — pause and resume** (driver, modules; after a and SESSUX1g). The `Paused` verdict first, `WORK_PAUSE` and
-  `WORK_RESUME`, the terminal and the log: one press stops an ask's work and keeps its place. Contract: D132 §2, §4.3, §6.1,
-  §7.2–§7.3. Proof: planner, route and group tests; a Process tick paused and resumed in its tree.
-- [ ] **PAUSE1c — a decline that applies only while open** (service; any time). `whileOpen`, so an abandon's decline never
-  lands on a take that reached the remote first. Contract: D132 §5.2. Proof: `QuestLogTests`; the sync suite over the wire.
 - [ ] **PAUSE1d — abandon** (driver, modules; after b and c). One listed press that declines the quests with the person's
   reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`; its declines send
   `whileOpen` (PAUSE1c), and D132 §5.2 and §13's older-remote sentence takes PAUSE1c's reading. Contract: D132 §3, §4,
@@ -344,11 +356,12 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
   `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
   both doors; the composed settings' tests.
-- [ ] **DOC8 — the decisions record stops tearing under union merges** (found 2026-10-03, four integrations running).
-  Branches append notes under an older decision and move decisions to keep order, so the union merge leaves a decision
-  twice and another's notes under it; the parent rebuilt D130–D133 by script three times. Weigh one file per decision (a
-  record read by lookup has no ceiling) against a merge driver for the file. Contract: a short design, then D-number.
-  Proof: four branches noting four decisions merge with nothing twice and nothing moved.
+- [ ] **DOC8a — the decisions record, one file per decision** (the parent's; no branch in flight on the record). The record
+  becomes `docs/decisions/D<n>.md`, `docs/DECISIONS.md` a fixed page, and the attributes, the manifest, the dogfood rule
+  and the lines naming the record move with it; D119's glued note gets its blank line after the proof. Contract: D134
+  §3.1–§3.5, §4. Proof: the concatenation check in the commit body; `verify`; the service suite and family rehearsal.
+- [ ] **DOC8c — a folder's record titled by its heading** (service; after DOC8a). The scanner titles a record in a declared
+  folder by its first heading, so search shows *D130 — …*. Contract: D134 §3.5. Proof: `RepositoryScannerTests`.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
   a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
   (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.

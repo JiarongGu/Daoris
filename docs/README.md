@@ -64,6 +64,7 @@ changes no row (D127).
 | `2026-10-02-account-use-design.md` | contract | Account use, for any number of accounts: which may run each workspace, as the person states; by default the most work from all of them (§16), one by one as an override; what is left, by the agent's word (TOOL6) | Designed (D130); nothing built. Amends D125 §3, §6 and four TOOL4 rows |
 | `2026-10-02-answer-continues-design.md` | contract | An answer continues the session: the parked record reopens and its harness conversation resumes on the same account, adapter and tree; otherwise today's carry-on, saying why (ANSWER1) | Designed (D131); building, and D131's notes say what each build settled |
 | `2026-10-02-pause-and-clean-up-design.md` | contract | Pausing and abandoning an ask or a quest: a pause that stops what runs and keeps its place, and an abandon listed first that declines with the person's reason and discards only what nothing else holds (PAUSE1) | Designed (D132); nothing built. Amends D126 §3.3, D88's removal and D68 rule 2 |
+| `2026-10-03-decisions-record-design.md` | contract | The decisions record under parallel merges: how often union merges tore it and in which shapes, four options weighed, one file per decision with its notes, a check per file, and the migration (DOC8) | Designed (D134); nothing built. Amends D106's and D117 §2.4's rejection of a file per decision |
 
 ## Studies and evidence
 
@@ -92,6 +93,7 @@ changes no row (D127).
 | `2026-10-02-limit-signals-evidence.md` | evidence | TOOL4b, for D125 and D130: what each door says about an account's limits, read keylessly, one turn measured. Claude Code's frame gives each window's use on every turn; its protocol door forwards it in `_meta`; `codex-acp` forwards none, and its limit error's message is `Internal error` alone |
 | `2026-10-02-ask-drift-evidence.md` | evidence | D133, DRIFT1: one ask's two requirements traced through its intake, two quests and ten sessions. The intake kept a word and lost its meaning; each correction reached one session, then a one-hop carry-on and an account's limit dropped it; a closing note became the requirement. §6 proposes the rows |
 | `2026-10-03-steer-evidence.md` | evidence | D136, STEER1: what a word sent to a running session does on each door, read keylessly and one session measured. A second `session/prompt` reaches Claude Code at its next step and splits the turn there; `_session/steering` interrupts the step in flight; a stop while words are on their way loses their answer; `codex-acp` must not be sent a second prompt |
+| `2026-10-03-knowledge-use-evidence.md` | evidence | D135, KNOWUSE1: the 46 questions 33 sessions of the owner's work repository put to the owner, classed by what could answer each. Sessions read their knowledge; 2 items were answered by a document they read, 25 needed the owner, 13 of them asks for three production acts. §6 proposes the rows |
 
 ## Records
 

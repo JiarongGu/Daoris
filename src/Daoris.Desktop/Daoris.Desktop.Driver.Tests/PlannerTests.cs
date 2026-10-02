@@ -849,4 +849,152 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Start, released.Verdict);
         Assert.Equal("s3", released.Resumes!.Session);
     }
+
+    // ── the pause (PAUSE1b, D132 points 2–4, design §2.3) ─────────────────────────────────────────────────────
+    //
+    // A pause stops an ask's work, or one quest's, on this machine and keeps everything: the look hands the planner the quests
+    // of each paused work, and the planner's `Paused` verdict is the reason each sits, before every other, the person's stop
+    // included. Its sentence names the pause and Resume, with the terminal's line.
+
+    private static readonly PausedBy ByAsk = new(WorkScope.Ask, "a1");
+
+    private static Snapshot Paused(Snapshot snapshot, params (string Quest, PausedBy By)[] paused) =>
+        snapshot with { Paused = paused.ToDictionary(p => p.Quest, p => p.By, StringComparer.OrdinalIgnoreCase) };
+
+    /// <summary>An open quest of a paused ask sits, naming the pause and the door that starts it again.</summary>
+    [Fact]
+    public void An_open_quest_of_a_paused_ask_sits_naming_the_pause_and_its_door()
+    {
+        var only = Assert.Single(Planner.Plan(Paused(Ran([Quest()]), ("q1", ByAsk)), Config()));
+
+        Assert.Equal(StartVerdict.Paused, only.Verdict);
+        Assert.Equal("paused with ask `#a1`; Resume starts it — `daoris-driver ask --resume a1`.", only.Reason);
+        Assert.Equal(ByAsk, only.PausedBy);
+        Assert.Null(only.HeldBy);
+        Assert.Null(only.Root);
+    }
+
+    /// <summary>A take the pause stopped sits too: its take, its tree and its strikes stay, and Resume carries it on.</summary>
+    [Fact]
+    public void A_take_the_pause_stopped_sits_and_Resume_carries_it_on()
+    {
+        var snapshot = Paused(Ran([Quest(status: "Taken")], ("q1", PersonStop)), ("q1", ByAsk));
+
+        var only = Assert.Single(Planner.Plan(snapshot, Config()));
+
+        Assert.Equal(StartVerdict.Paused, only.Verdict);
+        Assert.Equal("paused with ask `#a1`; Resume carries it on — `daoris-driver ask --resume a1`.", only.Reason);
+        Assert.Null(only.Resumes);
+    }
+
+    /// <summary>A quest paused on its own names itself and the quest's own door.</summary>
+    [Fact]
+    public void A_quest_paused_on_its_own_names_itself_and_its_own_door()
+    {
+        var byQuest = new PausedBy(WorkScope.Quest, "q1");
+
+        var open = Assert.Single(Planner.Plan(Paused(Ran([Quest()]), ("q1", byQuest)), Config()));
+        var taken = Assert.Single(Planner.Plan(Paused(Ran([Quest(status: "Taken")], ("q1", PersonStop)), ("q1", byQuest)), Config()));
+
+        Assert.Equal("you paused `#q1`; Resume starts it — `daoris-driver quest resume q1`.", open.Reason);
+        Assert.Equal("you paused `#q1`; Resume carries it on — `daoris-driver quest resume q1`.", taken.Reason);
+        Assert.Equal(byQuest, taken.PausedBy);
+    }
+
+    /// <summary>
+    /// 🔴 The pause comes before every other reason, the person's stop included (design §2.3, amending SESSUX1b's note): while
+    /// it holds, a release of a stop starts nothing, and Resume is the one press that moves the quest.
+    /// </summary>
+    [Fact]
+    public void A_pause_is_the_reason_a_quest_sits_before_any_other_the_persons_stop_included()
+    {
+        var snapshot = Paused(Ran([Quest(status: "Taken")], ("q1", PersonStop)), ("q1", ByAsk))
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 9 } };
+
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config())).Verdict);
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config().WithReleased("q1", "s1"))).Verdict);
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config(holds: ["Game"]))).Verdict);
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config(drivable: []))).Verdict);
+        Assert.Equal(StartVerdict.Paused, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+    }
+
+    /// <summary>
+    /// What an answer would start, a carry-on or the answered park going on (D131), and a waiting quest's resume once its
+    /// question is answered, each wait for Resume (design §2.1, §2.2).
+    /// </summary>
+    [Fact]
+    public void An_answered_park_and_an_answered_wait_each_wait_for_Resume()
+    {
+        var answered = new PriorSession("s1", "D:/trees/s1", "awaiting-person", Answer: "use the second one");
+        var waited = new PriorSession("s1", "D:/trees/s1", "completed");
+
+        Assert.Equal(
+            StartVerdict.Paused,
+            Assert.Single(Planner.Plan(Paused(Ran([Quest(status: "Taken")], ("q1", answered)), ("q1", ByAsk)), Config())).Verdict);
+        Assert.Equal(
+            StartVerdict.Paused,
+            Assert.Single(Planner.Plan(Paused(Ran([WaitingOn("q9")], ("q1", waited)), ("q1", ByAsk)), Config())).Verdict);
+    }
+
+    /// <summary>
+    /// A paused quest keeps its place and takes nobody else's: it spends no slot of the cap and no turn of its repository, so
+    /// the next quest starts where it would have, and on Resume the paused one starts first again, being the older.
+    /// </summary>
+    [Fact]
+    public void A_paused_quest_spends_no_slot_and_no_turn_so_the_next_starts_where_it_would_have()
+    {
+        var plan = Planner.Plan(Paused(Ran([Quest("q1"), Quest("q2")]), ("q1", ByAsk)), Config(cap: 1));
+
+        Assert.Equal(StartVerdict.Paused, Assert.Single(plan, c => c.Quest.Id == "q1").Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(plan, c => c.Quest.Id == "q2").Verdict);
+        Assert.Equal(["q1", "q2"], Planner.Plan(Ran([Quest("q1"), Quest("q2")]), Config(cap: 1)).Select(c => c.Quest.Id));
+        Assert.Equal(StartVerdict.Start, Planner.Plan(Ran([Quest("q1"), Quest("q2")]), Config(cap: 1))[0].Verdict);
+    }
+
+    /// <summary>
+    /// A take this machine never ran, another machine's or one made outside Daoris, is still not this planner's: a pause
+    /// changes nothing there, so no verdict is said of it (design §2.1). A parked session's quest, which waits on the
+    /// person, is not planned either: the pause leaves it parked.
+    /// </summary>
+    [Fact]
+    public void A_paused_quest_this_machine_would_not_plan_gets_no_verdict()
+    {
+        var parked = new PriorSession("s1", "D:/trees/s1", "awaiting-person");
+
+        Assert.Empty(Planner.Plan(Paused(Ran([Quest(status: "Taken")]), ("q1", ByAsk)), Config()));
+        Assert.Empty(Planner.Plan(Paused(Ran([Quest(status: "Taken")], ("q1", parked)), ("q1", ByAsk)), Config()));
+    }
+
+    /// <summary>The look's paused set, from the work (design §2.3): every quest of each paused ask's work, and of each paused quest's.</summary>
+    [Fact]
+    public void The_paused_set_is_every_quest_of_each_paused_work()
+    {
+        QuestView Asked(string id, string from, string status = "Open") => new(id, from, "Game", $"Ask {id}", "Body.", status);
+        var look = new AskWorkLook(
+            [Asked("q1", "ask #a1", "Done"), Asked("q2", "ask #a1"), Asked("q3", "Game") with { PublishedBy = "s1" },
+             Asked("q4", "ask #b2"), Asked("q5", "Asker"), Asked("q6", "Asker")],
+            [new SessionRecord("s1", "Game", "completed") { Quest = "q1" }]);
+        var config = Config()
+            .WithPausedAsk("a1", new WorkPause(null, new Dictionary<string, string>()))
+            .WithPausedQuest("q5", new WorkPause(null, new Dictionary<string, string>()));
+
+        var paused = PausedWork.Set(look, config);
+
+        Assert.Equal(["q1", "q2", "q3", "q5"], paused.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(new PausedBy(WorkScope.Ask, "a1"), paused["q3"]);
+        Assert.Equal(new PausedBy(WorkScope.Quest, "q5"), paused["Q5"]);
+        Assert.Empty(PausedWork.Set(look, Config()));
+    }
+
+    /// <summary>A quest paused on its own inside a paused ask's work is said by its own pause: the narrower, which the person made of it.</summary>
+    [Fact]
+    public void A_quests_own_pause_is_said_before_its_asks()
+    {
+        var look = new AskWorkLook([new QuestView("q1", "ask #a1", "Game", "Ask q1", "Body.", "Open")], []);
+        var config = Config()
+            .WithPausedAsk("a1", new WorkPause(null, new Dictionary<string, string>()))
+            .WithPausedQuest("q1", new WorkPause(null, new Dictionary<string, string>()));
+
+        Assert.Equal(new PausedBy(WorkScope.Quest, "q1"), PausedWork.Set(look, config)["q1"]);
+    }
 }
