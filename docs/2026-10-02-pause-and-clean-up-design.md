@@ -78,11 +78,11 @@ asked a second before the pause, joins the work as it appears, so nothing slips 
 |---|---|---|
 | A live session of the work, this machine's (`queued`, `starting`, `working`) | **stopped**, as the person's stop (not interrupted, D104), through today's routes; the pause records it as its own | it is the work in flight |
 | A live session another Daoris process on this home runs (`STOP_SESSION`'s *elsewhere*) | stopped through SESSUX1g's request folder, as `daoris-driver sessions stop` stops it | one home, one answer |
-| A session waiting on you (`awaiting-person`) | **left parked**; an answer to it is kept, and the carry-on waits for *Resume* | nothing runs, and stopping it would end the question it asked |
+| A session waiting on you (`awaiting-person`) | **left parked**; an answer to it is kept, and whatever the answer starts (a carry-on, or the conversation going on once ANSWER1 lands, D131) waits for *Resume* | nothing runs, and stopping it would end the question it asked |
 | A running intake | **left running**; every quest it publishes joins the work and is paused with it | an ask has one intake (D65, INT4b), so a stopped intake could not come back on *Resume* |
 | An ask whose intake has not started | its intake does not start | nothing of a paused ask starts |
 | An open quest | **paused**: the driver here starts nothing for it | a pause holds this machine only (§5.1) |
-| A taken quest | **paused**: no carry-on, resume or answer's carry-on starts; it stays taken here | the take is the lock (D68), and it stays this machine's |
+| A taken quest | **paused**: no carry-on, resume, or start an answer would make; it stays taken here | the take is the lock (D68), and it stays this machine's |
 | A teammate's session (`Origin` set) | untouched, named | its process is on their machine (D47 §4) |
 | A closed quest, a tree, a branch, a record, an archive mark | untouched | a pause changes no work |
 
@@ -648,7 +648,9 @@ This change is documents only, and nothing is built.
   and driver routes, and the Ask Daoris kinds; the CLI's `driverconfig.ts`, which keeps what it does not edit; the
   web's `AskPage.tsx`, `QuestPage.tsx` and `ViewMain.tsx`; both catalogues and the glossary.
 - **The owner's case** is as the dispatch records it; no record or transcript was read here.
-- **Assumed, not read**: that SESSUX1g's request folder will be built as D126 §7.1 says. PAUSE1b waits on it.
+- **Assumed, not read**: that SESSUX1g's request folder will be built as D126 §7.1 says, and PAUSE1b waits on it.
+  D131 (ANSWER1) and D133 (DRIFT1) were in flight and not read; §2.1 holds whatever an answer starts, in either
+  shape.
 - **An older remote applies a `whileOpen` decline as a plain one** (§5.2). The two versions of one workspace's
   machines and remote are not held to agree by anything here.
 - **Found while reading, and filed rather than decided here**:
