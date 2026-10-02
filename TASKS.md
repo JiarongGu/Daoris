@@ -437,7 +437,8 @@ the ACP door, not a registry**.
 - [ ] **TOOL6 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
   how switch works and how to optimize the account use since there are 3 accounts"*; then: all three may run the work
   workspace, by the allowance each has left, one by one, in parallel or by other logic, configurable; any number of
-  accounts, three is only today's). Modes, which
+  accounts, three is only today's; the goal: *"to optimize the limit and usage of multiple accounts"*, the rules and
+  defaults designed around it, D130's amendment in flight). Modes, which
   accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130.
   Proof: the design (landing).
 - [ ] **TOOL6a — the settings and their terminal doors** (cli; driver). `prefer`, `parallel`, `keep`, `early` and `near`
