@@ -9855,3 +9855,15 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > and decline through the requests the running loop honours; archive, unarchive, delete.
 
 **Outcome** `daoris-driver sessions` lists by group, and stops, finishes and declines through a request folder every loop watches (built for PAUSE1b); archive, unarchive and delete go through the screen's owners. Detail: D126's SESSUX1g note, `7df769e3`.
+
+
+## KNOWUSE1 — why the work repository's sessions ask what its knowledge answers (2026-10-03 → D135)
+
+> - [ ] **KNOWUSE1 — why report-ui's sessions ask what its knowledge answers** (owner, 2026-10-03: *"I found report-ui itself
+> is kind of ignoring the repo's knowledge docs? since a lot asks back to me should not be there? … we need to check the
+> process properly or the initialize of daoris system still not 100% working and that will need llm/ai to involve"*).
+> Every question sessions put to the owner, classed by what could have answered it (knowledge, code, history, only the
+> owner), against what each session read and was told; then the fix, model-backed where text matching cannot judge.
+> Contract: D135 (in flight). Proof: the evidence, de-identified; raw notes untracked.
+
+**Outcome** 46 questions classed: sessions do read their knowledge; most asks come from prod go-aheads asked again and again, readings put as questions, and drift. D135: go-aheads held once, standing answers, cited sources, and a model review measured before it is shown. Detail: `docs/2026-10-03-knowledge-use-evidence.md`, D135.
