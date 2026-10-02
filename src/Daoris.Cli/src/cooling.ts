@@ -70,7 +70,7 @@ export function endCooling(home: string, agent: string, account: string | null, 
   if (held === null || accountKey === null) return false;
 
   const entry = asEntry(held[accountKey]);
-  const until = entry === null ? null : moment(entry['until']);
+  const until = entry === null ? null : isoMoment(entry['until']);
   const ended = until !== null && until.getTime() > now.getTime();
   delete held[accountKey];
 
@@ -79,7 +79,7 @@ export function endCooling(home: string, agent: string, account: string | null, 
     if (kept === null) continue;
     for (const [owned, node] of Object.entries(kept)) {
       const read = asEntry(node);
-      const at = read === null ? null : moment(read['until']);
+      const at = read === null ? null : isoMoment(read['until']);
       if (at === null || at.getTime() <= now.getTime()) delete kept[owned];
     }
     if (Object.keys(kept).length === 0) delete root[name];
@@ -143,11 +143,11 @@ function entries(root: Node): CoolingEntry[] {
     if (held === null) continue;
     for (const [account, node] of Object.entries(held)) {
       const entry = asEntry(node);
-      const until = entry === null ? null : moment(entry['until']);
+      const until = entry === null ? null : isoMoment(entry['until']);
       if (entry === null || until === null) continue;
       found.push({
         agent, account: account.length === 0 ? null : account, until, stated: entry['stated'] === true,
-        window: text(entry['window']), seen: moment(entry['seen']) ?? until, session: text(entry['session']),
+        window: text(entry['window']), seen: isoMoment(entry['seen']) ?? until, session: text(entry['session']),
         assumedZone: entry['assumedZone'] === true, notBelieved: entry['notBelieved'] === true,
       });
     }
@@ -179,8 +179,11 @@ function compare(a: string, b: string): number {
 /** The ISO 8601 forms the driver reads: to the second, with a fraction or not, in UTC or at an offset. */
 const ISO_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(Z|[+-]\d{2}:\d{2})$/;
 
-/** A moment as ISO 8601 writes it, and only so (rule 2); a date that does not exist is none. */
-function moment(value: unknown): Date | null {
+/**
+ * A moment as ISO 8601 writes it, and only so (rule 2); a date that does not exist is none. A pause's time in `driver.json`
+ * is read by the same forms (PAUSE1a, `driverconfig.ts`), as the driver's `DriverConfig` reads it.
+ */
+export function isoMoment(value: unknown): Date | null {
   if (typeof value !== 'string') return null;
   const match = ISO_MOMENT.exec(value);
   if (!match) return null;
