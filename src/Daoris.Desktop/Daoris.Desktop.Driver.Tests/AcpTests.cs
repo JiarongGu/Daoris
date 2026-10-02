@@ -1400,6 +1400,47 @@ public sealed class AcpTests
         Assert.Null(outcome.Usage);
     }
 
+    /// <summary>
+    /// TOOL6c (limit-signals evidence §3): Claude Code's adapter forwards each <c>rate_limit_event</c> as a
+    /// <c>usage_update</c> whose <c>_meta["_claude/rateLimit"]</c> is the frame's <c>rate_limit_info</c>, unchanged. The door
+    /// tells its listener each one, and measures the context beside it as before; a <c>_meta</c> that carries no such object
+    /// tells nothing, and a listener that throws costs a console line, never the turn.
+    /// </summary>
+    [Fact]
+    public async Task A_usage_update_s_rate_limit_meta_is_told_and_the_context_is_measured_beside_it()
+    {
+        var info = AccountReadingsTests.Recorded(DateTimeOffset.UtcNow);
+        var agent = new FakeAgent((frame, self) =>
+        {
+            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+            if (method != "session/prompt")
+            {
+                return frame.TryGetProperty("id", out _)
+                    ? Ok(frame, method == "session/new" ? """{"sessionId":"s-1"}""" : "{}")
+                    : null;
+            }
+
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":48000,"size":200000,"_meta":{"_claude/rateLimit":"""
+                      + info + ""","_claude/model":"m"}}}}""");
+            // Before the turn has a real answer the adapter drops the frame (§3); a `_meta` without one says nothing.
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":900,"size":200000,"_meta":{"_claude/model":"m"}}}}""");
+            self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","_meta":{"_claude/rateLimit":"allowed"}}}}""");
+            return Ok(frame, """{"stopReason":"end_turn"}""");
+        });
+        var told = new List<JsonElement>();
+        var lines = new List<string>();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, lines.Add);
+        session.LimitsSaid += told.Add;
+        session.LimitsSaid += _ => throw new InvalidOperationException("a listener that fails");
+
+        var outcome = await session.RunAsync("D:/fam/Game", "measure me", CancellationToken.None);
+
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.Equal(48000, outcome.Usage?.Used);
+        Assert.Equal("five_hour", Assert.Single(told).GetProperty("rateLimitType").GetString());
+        Assert.Contains(lines, line => line.Contains("could not be kept: a listener that fails", StringComparison.Ordinal));
+    }
+
     // ── the servers the door hands over (ACP4) ────────────────────────────────────────────────────
     //
     // 🔴 Measured in ACP2's first real driven run: the session came up, streamed "I'll start by

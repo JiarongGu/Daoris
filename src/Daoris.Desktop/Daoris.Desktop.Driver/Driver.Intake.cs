@@ -207,6 +207,7 @@ public sealed partial class Driver
                 preamble: JoinNotices(preamble, browserNotice),
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
+                said: Said(adapter, selection, sessionId),
                 conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)

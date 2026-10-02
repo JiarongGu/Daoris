@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace Daoris.Driver;
 
@@ -447,7 +448,20 @@ public sealed class ChatRunner(
         void Measured(AcpUsage used) => _usage.Record(new UsageEntry(
             sessionId, place.Name, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
 
-        var watch = WatchAsync(sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser);
+        // What its door says about its account's windows is kept for the next start's walk (TOOL6c), as a driven session's is.
+        void Said(JsonElement info)
+        {
+            try
+            {
+                _harnesses.Said(resolved.Name, selection.Profile, info, sessionId);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Nothing kept is nothing said: the account reads as unknown, as it did before the door spoke.
+            }
+        }
+
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser, Said);
         _watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -675,11 +689,12 @@ public sealed class ChatRunner(
     /// <param name="native">The conversation's turns on the native door's structured wire (CONV4a), or null.</param>
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
     /// <param name="drivesBrowser">Whether it was handed a server that drives Daoris's browser (BRW8), kept beside its process.</param>
+    /// <param name="said">Told what its door says about its account's windows (TOOL6c), on either structured door.</param>
     private async Task WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured = null,
         string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null,
-        string? servers = null, bool drivesBrowser = false)
+        string? servers = null, bool drivesBrowser = false, Action<JsonElement>? said = null)
     {
         // Declared first, so it is disposed LAST — after the process is untracked and every map that
         // talks to it has let go (REV3: nothing disposed a conversation's process or its pipes).
@@ -697,7 +712,7 @@ public sealed class ChatRunner(
         {
             // The conversation's messages are recorded as the person sends them (`Say`), so the
             // capture opens with no composed prompt of its own.
-            var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat) : null;
+            var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat, said) : null;
             Task capture = protocol
                 ?? (mapper is not null
                     ? Driver.CaptureStructuredAsync(
@@ -707,7 +722,8 @@ public sealed class ChatRunner(
                         observed: e =>
                         {
                             if (e.Kind == SessionEventKind.Turn) native?.TurnEnded();
-                        })
+                        },
+                        said: said)
                     : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None));
             await service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
@@ -781,7 +797,8 @@ public sealed class ChatRunner(
     /// failure is what the record concludes with — the driver saw it, and it is not the person's.
     /// </remarks>
     /// <returns>The session's high-water context, or null when it reported none.</returns>
-    private async Task<AcpUsage?> CaptureProtocolAsync(string sessionId, Process process, string transcript, ProtocolChat chat)
+    private async Task<AcpUsage?> CaptureProtocolAsync(
+        string sessionId, Process process, string transcript, ProtocolChat chat, Action<JsonElement>? said = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
         var closed = false;
@@ -807,6 +824,8 @@ public sealed class ChatRunner(
             streams: output is null ? null : new SessionStreams(output, sessionId),
             // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
             onOptions: options => OptionsChanged?.Invoke(sessionId, ThePersons(options)));
+        // What it says about its account's windows, kept as it says it (TOOL6c).
+        if (said is not null) session.LimitsSaid += said;
         // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a).
         using var stops = output is null ? null : processes.OpenTaskStops(sessionId, session.StopTaskAsync);
 

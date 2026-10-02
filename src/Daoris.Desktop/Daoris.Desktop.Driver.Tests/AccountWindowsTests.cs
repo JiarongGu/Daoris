@@ -116,6 +116,97 @@ public sealed class AccountWindowsTests : IDisposable
         Assert.Equal(Reset, AccountWindows.WeekOf(_home, "claude-code", "account-2", Seen, fixedWeek: true));
     }
 
+    // ——— What an agent said about its windows (TOOL6c, D130 §5.2): kept per window, the newest replacing the older, a
+    // floor as of when it was said, and gone at its reset; the weekly window's reset is the account's week for step 4.
+
+    private static readonly DateTimeOffset Said = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
+
+    private static IReadOnlyList<WindowReading> Frame(double session, double weekly, string standing = "clear") =>
+    [
+        new WindowReading("session", session, Said.AddHours(2), standing),
+        new WindowReading("weekly", weekly, Said.AddHours(105)),
+    ];
+
+    [Fact]
+    public void Each_window_said_is_kept_with_its_use_reset_standing_when_and_where_and_read_back()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.88, 0.14), Said, "s1");
+
+        var read = AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddMinutes(20));
+
+        Assert.Equal(
+            [
+                new WindowSaid("session", 0.88, Said.AddHours(2), "clear", false, Said, "s1"),
+                new WindowSaid("weekly", 0.14, Said.AddHours(105), null, false, Said, "s1"),
+            ],
+            read!.Windows);
+        Assert.Null(AccountWindows.SaidOf(_home, "claude-code", "account-2", Said));
+        Assert.Equal(
+            """{"session":{"reset":"2026-10-02T14:00:00Z","used":0.88,"standing":"clear","seen":"2026-10-02T12:00:00Z","session":"s1"},"weekly":{"reset":"2026-10-06T21:00:00Z","used":0.14,"seen":"2026-10-02T12:00:00Z","session":"s1"}}""",
+            JsonNode.Parse(System.IO.File.ReadAllText(File))!["claude-code"]!["account-1"]!.ToJsonString());
+    }
+
+    [Fact]
+    public void The_newest_reading_of_a_window_replaces_the_older_and_a_window_it_leaves_out_stands()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.40, 0.10), Said, "s1");
+        AccountWindows.Said(_home, "claude-code", "account-1", [new WindowReading("session", 0.95, Said.AddHours(2), "near", Credits: true)], Said.AddMinutes(30), "s2");
+
+        var read = AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddMinutes(31))!;
+
+        Assert.Equal(new WindowSaid("session", 0.95, Said.AddHours(2), "near", true, Said.AddMinutes(30), "s2"), read.Of("session"));
+        Assert.Equal(new WindowSaid("weekly", 0.10, Said.AddHours(105), null, false, Said, "s1"), read.Of("weekly"));
+    }
+
+    [Fact]
+    public void A_reading_is_gone_at_its_reset_and_the_account_is_unknown_for_that_window()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.88, 0.14), Said, "s1");
+
+        Assert.Equal(["weekly"], AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddHours(2))!.Windows.Select(w => w.Window));
+        Assert.Null(AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddHours(105)));
+    }
+
+    [Fact]
+    public void The_weekly_window_s_reset_is_the_account_s_week_carried_a_week_where_the_maker_fixes_it_and_its_use_is_not()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.88, 0.14), Said, "s1");
+
+        Assert.Equal(Said.AddHours(105), AccountWindows.WeekOf(_home, "claude-code", "account-1", Said, fixedWeek: true));
+        var after = Said.AddHours(106);
+        Assert.Equal(Said.AddHours(105).AddDays(7), AccountWindows.WeekOf(_home, "claude-code", "account-1", after, fixedWeek: true));
+        Assert.Null(AccountWindows.SaidOf(_home, "claude-code", "account-1", after));
+    }
+
+    [Fact]
+    public void A_weekly_limit_told_after_a_reading_replaces_the_week_and_says_no_use()
+    {
+        AccountWindows.Said(_home, "claude-code", "account-1", Frame(0.88, 0.14), Said, "s1");
+        AccountWindows.Told(_home, "claude-code", "account-1", Said.AddHours(100), Said.AddHours(1), "s2");
+
+        var read = AccountWindows.SaidOf(_home, "claude-code", "account-1", Said.AddHours(1))!;
+
+        Assert.Null(read.Of("weekly"));
+        Assert.Equal(0.88, read.Of("session")!.Used);
+        Assert.Equal(Said.AddHours(100), AccountWindows.WeekOf(_home, "claude-code", "account-1", Said.AddHours(1), fixedWeek: true));
+    }
+
+    [Fact]
+    public void A_frame_on_a_door_is_kept_for_the_account_it_ran_as_by_its_owner_s_table_and_never_for_the_own_sign_in()
+    {
+        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Said, Zone = Zone };
+        var frame = System.Text.Json.JsonDocument.Parse(AccountReadingsTests.Recorded(Said)).RootElement.Clone();
+
+        Assert.NotNull(roster.Said("claude-code-acp", "account-2", frame, "s4"));
+        Assert.Null(roster.Said("claude-code", null, frame, "s5"));
+        // Codex's door forwards none of Codex's limits (evidence §4), so it has no table and keeps nothing.
+        Assert.Null(roster.Said("codex-acp", "account-1", frame, "s6"));
+
+        var read = AccountWindows.SaidOf(_home, "claude-code", "account-2", Said)!;
+        Assert.Equal([("session", 0.88, "s4"), ("weekly", 0.14, "s4")], read.Windows.Select(w => (w.Window, w.Used!.Value, w.Session!)));
+        Assert.Null(AccountWindows.SaidOf(_home, "codex", "account-1", Said));
+    }
+
     // ——— Told by a limit, through the roster's reader (D125 §2): only a weekly reset the agent named.
 
     private sealed class Adapter(string name, HarnessToolchain? toolchain) : ISessionAdapter

@@ -325,16 +325,26 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
     /// <param name="why">The step that moved it, by its word (<c>cooling</c>, <c>kept</c>, <c>fewest</c>, <c>leastRecent</c>, …).</param>
     /// <param name="scope">The workspace whose list it was, or null for this machine's.</param>
     /// <param name="said">
-    /// Whether any account of the list had said what it has left (§16.4). False until a door carries the agent's word about
-    /// its windows (TOOL6c), which today none does.
+    /// Whether any account of the list had said what it has left (§16.4): read from <c>windows.json</c>, where a door that
+    /// carries the agent's word about its windows kept it (TOOL6c).
     /// </param>
+    /// <param name="fromSaid">
+    /// What <paramref name="from"/> last said, by Daoris's word only (TOOL6c): <c>refused</c>, <c>near</c> or <c>clear</c>,
+    /// or null where it said nothing. Never a number or the agent's words.
+    /// </param>
+    /// <param name="toSaid">What <paramref name="to"/> last said, as <paramref name="fromSaid"/> names it.</param>
     public static AccountLine Rotated(
-        string session, string adapter, string from, string to, string? carries, WalkStep why, string? scope, bool said = false) =>
+        string session, string adapter, string from, string to, string? carries, WalkStep why, string? scope, bool said = false,
+        string? fromSaid = null, string? toSaid = null) =>
         new("account.rotated",
         [
             ("session", session), ("adapter", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
-            ("why", Word(why)), ("scope", Profile(scope)), ("said", said),
+            ("why", Word(why)), ("scope", Profile(scope)), ("said", said), ("fromSaid", Standing(fromSaid)), ("toSaid", Standing(toSaid)),
         ]);
+
+    /// <summary>A standing in a line: one of Daoris's three words, or null.</summary>
+    private static string? Standing(string? word) =>
+        word is AccountReadings.ClearWord or AccountReadings.NearWord or AccountReadings.RefusedWord ? word : null;
 
     /// <summary>A step by its word in a line: <c>signedOut</c>, <c>leastRecent</c>.</summary>
     private static string Word(WalkStep step) => System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(step.ToString());
