@@ -51,8 +51,8 @@ test('sync renders Where things are into the region: one row per declared path, 
   assert.ok(region.includes(WHERE_TABLE), region);
   // The brief has a ceiling and no path: it is the file this region sits in, so it has no row.
   assert.doesNotMatch(region, /\| brief \|/);
-  // After the on-demand tables, before the first rule.
-  assert.ok(region.indexOf('## Invoke by name') < region.indexOf('## Where things are'));
+  // After the pointer to the index, before the first rule.
+  assert.ok(region.indexOf('## Read on demand') < region.indexOf('## Where things are'));
   assert.ok(region.indexOf('## Where things are') < region.indexOf('<!-- daoris: core/core/rules/'));
   assert.equal(fx.cli('check').code, 0, fx.cli('check').out);
   fx.cleanup();
@@ -189,7 +189,7 @@ test('check fails when the table differs from the manifest, and names the table'
   const stale = fx.cli('check');
   assert.equal(stale.code, 1, stale.out);
   assert.match(stale.out, /where\s+the region's Where things are table differs from daoris\.json's documents — run 'daoris sync'/);
-  assert.doesNotMatch(stale.out, /roster/, 'the knowledge and skills tables did not move');
+  assert.doesNotMatch(stale.out, /roster|index /, 'the pointer, the rooms and the index did not move');
 
   fx.sync();
   assert.equal(fx.cli('check').code, 0);

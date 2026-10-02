@@ -276,8 +276,8 @@ test('own documents in an old on-demand tier refuse the move, each named with th
   rmSync(join(fx.repoFx.root, '.claude/knowledge/ours.md'));
   rmSync(join(fx.repoFx.root, '.claude/skills/house'), { recursive: true });
   fx.sync();
-  assert.match(fx.repoFx.region()!, /\[ours\]\(\.agents\/knowledge\/ours\.md\) _\(local\)_/);
-  assert.match(fx.repoFx.region()!, /\[house\]\(\.agents\/skills\/house\) _\(local\)_/);
+  assert.match(fx.repoFx.read('.agents/INDEX.md'), /\| `\.agents\/knowledge\/ours\.md` _\(local\)_ \|/);
+  assert.match(fx.repoFx.read('.agents/INDEX.md'), /\| `\.agents\/skills\/house\/SKILL\.md` _\(local\)_ \|/);
   fx.cleanup();
 });
 

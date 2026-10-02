@@ -22,7 +22,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "cce226b675b4cae17cf1fbeb53c55585912dd89b1c74c9366dea2a4dc11906dd"
+      "sha256": "aa7b02b2edd090aec2303bb70e07f2b7f095ee46d1342a2e47ee101fe78845fb"
     },
     {
       "pack": "core",
@@ -98,7 +98,7 @@
       "source": "core/rules/skills-workflow.md",
       "target": "rules/skills-workflow.md",
       "canonVersion": "0.0.1",
-      "sha256": "4d8231e48066e5a6f0f2ba544d639d2e84d54cd2f56c1a9dc52757c025de8b2a",
+      "sha256": "d30e9d6937a1d4333f190468ed3410e4e77d86b7c5df60c1874ad22d0a5c34f8",
       "in": "AGENTS.md"
     },
     {
@@ -121,7 +121,7 @@
       "source": "core/skills/doc-loader/SKILL.md",
       "target": "skills/doc-loader/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "3e4e1d55527a270e0ec7ba8bc8410328572abef8bf5ef3dc5f83bb471f139c37"
+      "sha256": "b5b4ab7e0d285e2b0ec4b0fd63065f6768ad2ddf9720be898f13f9064d76e70d"
     },
     {
       "pack": "core",
@@ -200,5 +200,6 @@
       "canonVersion": "0.0.1",
       "sha256": "573dd259c4ec6345c5759674ffd652f8495189e4d10e6c85a81a400b1a4191f0"
     }
-  ]
+  ],
+  "index": ".claude/INDEX.md"
 }

@@ -228,15 +228,21 @@ test('mirror cell: in the lock, absent, source gone — the entry is dropped', (
   fx.cleanup();
 });
 
-/** §5.3: the roster points at the source, and says once where the copy is and which to edit. */
-test('the region lists skills at .agents and says the mirror sentence once', () => {
+/**
+ * §5.3: the roster points at the source, and says once where the copy is and which to edit. Since
+ * WSSETUP14a the rows are the index's, and the sentence stays in the region beside its pointer.
+ */
+test('the index lists skills at .agents, and the region says the mirror sentence once', () => {
   const fx = agentsRepo('mirror-roster');
   fx.sync();
 
   const region = fx.repoFx.region()!;
+  const index = fx.repoFx.read('.agents/INDEX.md');
 
-  assert.match(region, /\[finder\]\(\.agents\/skills\/finder\)/);
-  assert.match(region, /\[storage\]\(\.agents\/knowledge\/storage\.md\)/);
+  assert.match(index, /\| `\.agents\/skills\/finder\/SKILL\.md` \|/);
+  assert.match(index, /\| `\.agents\/knowledge\/storage\.md` \|/);
+  assert.doesNotMatch(index, /\.claude\/skills/, 'a mirror is a copy, listed once as its source');
+  assert.match(region, /listed in \[\.agents\/INDEX\.md\]\(\.agents\/INDEX\.md\)/);
   assert.match(region, /Skills live in `\.agents\/skills\/`; `\.claude\/skills\/` mirrors them for the agent that reads only there — edit the source\./);
   assert.equal(region.match(/mirrors them/g)!.length, 1);
   fx.cleanup();

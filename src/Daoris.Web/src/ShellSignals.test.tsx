@@ -160,6 +160,22 @@ describe('the shell push channel (ShellSignals)', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions });
   });
 
+  /**
+   * SESSUX1i (D126 §4.7): a quest parked on its failed sessions waits on the person's Try again, so it wears the park's
+   * tone. Its sentence is the driver's, verbatim, as every notice's is.
+   */
+  it("a quest's park is a demand, in the driver's own words", () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+
+    eventHandlers.get('DAORIS.SESSION_ATTENTION')!({
+      kind: 'QuestParked', session: 's3a2b3c4', quest: '7a82cc', repository: 'engine',
+      headline: 'engine — `#7a82cc` parked after 3 failed sessions', detail: "You've hit your limit.",
+    });
+
+    expect(notify).toHaveBeenCalledWith("engine — `#7a82cc` parked after 3 failed sessions: You've hit your limit.", 'error');
+  });
+
   it('an ending is news rather than a demand, and a session that said nothing still says something', () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);

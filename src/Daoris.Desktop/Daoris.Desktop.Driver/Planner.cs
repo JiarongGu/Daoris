@@ -157,6 +157,13 @@ public sealed record SessionView(
     public string? Quest { get; init; }
 }
 
+/// <summary>
+/// One of this machine's session records as the goal's walk counts it (TOOL6b, D130 §4.2, §16.2): the adapter it ran on,
+/// the account (null for the tool's own sign-in), when it was opened, and whether it runs now. Read on loopback alone,
+/// where the record names its account (D47 §4); a teammate's record is not this machine's.
+/// </summary>
+public sealed record SessionStarted(string Adapter, string? Profile, DateTimeOffset? Created, bool Running);
+
 public static class ActiveSessions
 {
     /// <summary>
@@ -195,6 +202,12 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, PriorSession> LastRun { get; init; } =
         new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Every record this machine keeps, as the goal's walk counts them (TOOL6b): which account each ran on, when, and
+    /// whether it runs now — derived from the same records, never kept. The roster reads it at each look.
+    /// </summary>
+    public IReadOnlyList<SessionStarted> Started { get; init; } = [];
 }
 
 public enum StartVerdict

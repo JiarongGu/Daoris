@@ -98,7 +98,8 @@ public sealed partial class Driver
         try
         {
             adapter = _adapters.Resolve(adapterName);
-            selection = await _harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, ct)
+            // An intake is driven work (D130 §4.6): it never starts on an account kept for conversations.
+            selection = await _harnesses.SelectAsync(adapterName, config, ask.Workspace, chosen: null, StartKind.Driven, ct)
                 .ConfigureAwait(false);
         }
         catch (DriverException error)

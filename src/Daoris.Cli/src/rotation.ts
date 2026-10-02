@@ -45,7 +45,8 @@
 //   8. Refused at a door (§3.1, §4.6): a scope's default and its kept account are of its list, and a kept account leaves
 //      driven work another — the first problem said. Nothing counts accounts: no list is refused for its length.
 //
-// The driver only stores and reads these here; nothing chooses an account by them until TOOL6b.
+// The driver's walk reads them (TOOL6b): `use` and `keep` choose a start's account; `early` and `near` choose nothing until a
+// door carries the agent's word about its windows (TOOL6c).
 
 import type { HarnessSettings } from './toolchain.ts';
 
@@ -185,7 +186,7 @@ export function withoutAccount(settings: HarnessSettings, agent: string, profile
 // ——— How a scope's list is used (TOOL6a; D130 §2, §14, §16.6): rules 5 to 8 above.
 
 /**
- * *Use accounts*' choices (§16.6): `goal`, make the most of them (§16.3, the walk TOOL6b builds), and `order`, one by one in
+ * *Use accounts*' choices (§16.6): `goal`, make the most of them (§16.3, the driver's walk), and `order`, one by one in
  * the list's order (D125's walk). A new choice is a row here, and its words in the terminal's `USE_WORDS` (`toolchain.ts`).
  */
 export const USE_MODES = ['goal', 'order'] as const;

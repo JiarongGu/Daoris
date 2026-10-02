@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderTier, tierRuleBody } from '../src/tierrender.ts';
+import { renderIndex, renderTier, tierRuleBody } from '../src/tierrender.ts';
 import type { CanonFile } from '../src/types.ts';
 
 /**
@@ -15,9 +15,9 @@ import type { CanonFile } from '../src/types.ts';
  *    table, which is where it was always being read from anyway.
  * 2. **Provenance stays.** The per-rule header is what keeps drift and `upstream` per RULE inside one
  *    region, which design §4 rests on.
- * 3. **The knowledge and skills rows stay in the table**, because those tiers are not loaded and the
- *    table is the only way an agent learns they exist. The rules rows stay too — cheap, and they
- *    carry the `applies_when`/`enforces` the stripped frontmatter held.
+ * 3. **The rules rows stay in the table** — cheap, and they carry the `applies_when`/`enforces` the
+ *    stripped frontmatter held. The knowledge and skills rows moved to `<target>/INDEX.md`, which the
+ *    region names (WSSETUP14a, D128 §2): they grew with the repository, and pushed the rules down.
  */
 
 const file = (name: string): CanonFile => ({
@@ -37,7 +37,7 @@ const two = [
 ];
 
 test('each rule arrives with its frontmatter gone and its provenance kept', () => {
-  const region = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
+  const region = renderTier({ rules: two, version: '0.0.1' });
 
   // The prose is there…
   assert.match(region, /# Sensitive info/);
@@ -50,7 +50,7 @@ test('each rule arrives with its frontmatter gone and its provenance kept', () =
 });
 
 test('the table carries what the stripped frontmatter held', () => {
-  const region = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
+  const region = renderTier({ rules: two, version: '0.0.1' });
 
   assert.match(region, /\| `sensitive-info` \| writing any tracked file \| no machine paths \|/);
 });
@@ -61,7 +61,7 @@ test('the table carries what the stripped frontmatter held', () => {
  * `---` under a line of text silently turns that line into a heading.
  */
 test('nothing in the region can be mistaken for a frontmatter fence', () => {
-  const region = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
+  const region = renderTier({ rules: two, version: '0.0.1' });
 
   assert.doesNotMatch(region, /^---\s*$/m);
 });
@@ -74,7 +74,7 @@ test('nothing in the region can be mistaken for a frontmatter fence', () => {
  * arbitrary markdown, fenced blocks included, or a rule is corrupted on its way back out.
  */
 test('the region is flat, because a body rewritten on the way in cannot be compared on the way out', () => {
-  const region = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
+  const region = renderTier({ rules: two, version: '0.0.1' });
 
   assert.match(region, /^# Doctrine$/m);
   // The rules' own headings arrive exactly as the canon wrote them.
@@ -83,12 +83,13 @@ test('the region is flat, because a body rewritten on the way in cannot be compa
 });
 
 /**
- * The tiers that are NOT loaded are the reason the table exists at all: an agent cannot discover
- * `.claude/knowledge/` by reading a file that does not mention it.
+ * The tiers that are NOT loaded are the reason an index exists at all: an agent cannot discover
+ * `.claude/knowledge/` by reading a file that does not mention it. The region names the index, and the
+ * index names every document (WSSETUP14a, D128 §2.2–§2.3).
  */
-test('knowledge and skills are listed with their paths, because nothing loads them', () => {
-  const region = renderTier({
-    rules: [],
+test('the region points at the index, and the index lists knowledge and skills by their paths', () => {
+  const region = renderTier({ rules: [], version: '0.0.1' });
+  const index = renderIndex({
     knowledge: [{
       file: { pack: 'core', source: 'core/knowledge/reaching-in.md', target: 'knowledge/reaching-in.md' },
       text: '---\nname: reaching-in\napplies_when: you have written into another repository\nenforces: stop and report\n---\n\nbody',
@@ -97,19 +98,19 @@ test('knowledge and skills are listed with their paths, because nothing loads th
       file: { pack: 'core', source: 'core/skills/fix-log/SKILL.md', target: 'skills/fix-log/SKILL.md' },
       text: '---\nname: fix-log\ndescription: Record a fix after landing it.\n---\n\nbody',
     }],
-    version: '0.0.1',
   });
 
-  assert.match(region, /\.claude\/knowledge\/reaching-in\.md/);
-  assert.match(region, /\.claude\/skills\/fix-log/);
-  // A skill is named by its DIRECTORY; `SKILL.md` is an implementation detail no roster should show.
-  assert.doesNotMatch(region, /fix-log\/SKILL\.md\)/);
+  assert.match(region, /listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\), generated from the files/);
+  assert.doesNotMatch(region, /reaching-in|fix-log/);
+  assert.match(index, /^\| `\.claude\/knowledge\/reaching-in\.md` \| you have written into another repository \| stop and report \|$/m);
+  // A skill is named by its entry file: an agent whose skill roots hold nothing activates it by reading it.
+  assert.match(index, /^\| `\.claude\/skills\/fix-log\/SKILL\.md` \| Record a fix after landing it\. \|$/m);
 });
 
 /** Deterministic, or every sync is a diff and every drift check is a lie. */
 test('the same input renders the same bytes', () => {
-  const once = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
-  const twice = renderTier({ rules: [...two], knowledge: [], skills: [], version: '0.0.1' });
+  const once = renderTier({ rules: two, version: '0.0.1' });
+  const twice = renderTier({ rules: [...two], version: '0.0.1' });
 
   assert.equal(once, twice);
 });
@@ -120,7 +121,7 @@ test('the same input renders the same bytes', () => {
  * has drifted all eight rules, and `upstream <file>` has nothing to extract.
  */
 test('a single rule can be read back out of a rendered region', () => {
-  const region = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
+  const region = renderTier({ rules: two, version: '0.0.1' });
 
   assert.equal(tierRuleBody(region, 'core/core/rules/sensitive-info.md'), '# Sensitive info\n\nKeep it out.');
   assert.equal(tierRuleBody(region, 'core/core/rules/task-lifecycle.md'), '# Task lifecycle\n\nMove it.');
@@ -133,7 +134,7 @@ test('a single rule can be read back out of a rendered region', () => {
  * body-comparison in `planSync` were both written from.
  */
 test('what is rendered is what reads back, for every rule', () => {
-  const region = renderTier({ rules: two, knowledge: [], skills: [], version: '0.0.1' });
+  const region = renderTier({ rules: two, version: '0.0.1' });
 
   for (const { file: canonFile, text } of two) {
     assert.equal(tierRuleBody(region, `${canonFile.pack}/${canonFile.source}`), tierBodyOf(text));

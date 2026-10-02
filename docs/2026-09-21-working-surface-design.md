@@ -245,7 +245,9 @@ not the mechanism.
 - **Overview keeps the landing** (D40 — "is anything sitting" is still the first question) and gains
   one band: **what needs you.** Parked sessions first, then finished-and-unreviewed work, then quests
   sitting that nobody can take. Every row is a door. *Amended 2026-09-24 (INT4d):* an ask waiting
-  on a person comes after the parked sessions and before the quests (intake design §1h).
+  on a person comes after the parked sessions and before the quests (intake design §1h). *Amended 2026-10-02 (D126,
+  SESSUX1i):* a quest parked on its failed sessions here comes right after the parked sessions, waiting since its last
+  session ended; its door is the quest's page, where *Try again* is.
 - **`AwaitingPerson` gets a surface at last.** It has meant "only the person can clear this" since
   D46 and has never been rendered anywhere. In Work it wears the warn treatment in the rail, its
   analysis sits at the top of the head — options, recommendation, reason, as `autonomous-development`
@@ -266,7 +268,9 @@ not the mechanism.
   toast telling you what you just pressed is how people learn to dismiss toasts unread. Per machine,
   off in one click, and off by default for nothing. This **closes driver design open question 5**: the
   runtime ships no toast API and deliberately never learns what an operation is, so this is the
-  shell's own code over the window toolkit it already has.
+  shell's own code over the window toolkit it already has. *Amended 2026-10-02 (D126, SESSUX1i):* and once when a
+  quest parks on its failed sessions here, with how many failed and the last failure's note, behind the same switch;
+  never for the person's stop.
 
 ## 5. Review: the diff is the missing piece
 

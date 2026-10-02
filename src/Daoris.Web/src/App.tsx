@@ -200,8 +200,11 @@ export function App() {
   // asked about. The band's row opens the question; only the person's press grants it.
   const untrusted = useUntrusted();
   // The planner's verdicts as of the last tick: Sessions' badge counts the quests parked on their failed sessions
-  // (SESSUX1c, D126 §2.5). Empty in a browser, where no tick arrives.
+  // (SESSUX1c, D126 §2.5), and Overview's, which counts the band, does too (SESSUX1i). Empty in a browser.
   const considered = useConsidered();
+  // What agents proposed about the rules (PERM2): the menus count those waiting, and the band lists them.
+  const rules = useRules();
+  const proposals = Array.isArray(rules.data?.proposals) ? rules.data.proposals : [];
   const grantTrust = useTrustFolder();
   const [trusting, setTrusting] = useState<TrustHold | null>(null);
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
@@ -319,10 +322,12 @@ export function App() {
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : 'absent';
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
-  // Overview's badge, from the one derivation the band uses — two answers to "how many need me" would
-  // disagree the first time either was edited. Sessions' badge is its own sessions only (U20).
+  // Overview's badge, from the one derivation the band uses and every input it reads, the rule proposals and the parked
+  // quests among them (SESSUX1i) — two answers to "how many need me" would disagree the first time either was edited.
+  // Sessions' badge is its own sessions only (U20).
   const waiting = needsAPerson(
-    running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? []).length;
+    running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
+    proposals, considered.data ?? []).length;
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
@@ -400,13 +405,11 @@ export function App() {
   });
 
   // The menus by domain (D75), as data. The count waiting is the rules' own, where they are answered.
-  const rules = useRules();
   const menus = appMenus({
     attached,
     workspaces: holdings.data ?? [],
     scope: scope.workspace,
-    waiting: (Array.isArray(rules.data?.proposals) ? rules.data.proposals : [])
-      .filter((proposal) => proposal.state === 'waiting').length,
+    waiting: proposals.filter((proposal) => proposal.state === 'waiting').length,
   });
   const onMenu = (_menu: string, item: string) => {
     const action = menuAction(item);
@@ -557,6 +560,8 @@ export function App() {
     proposal: (item) => openAsk(item.id),
     intake: (item) => openAsk(item.id),
     unanswerable: (item) => openQuest(item.id),
+    // A quest parked on its failed sessions (SESSUX1i) opens its page, where Try again is, and its session from there.
+    'parked-quest': (item) => openQuest(item.id),
     // A folder waiting on the person's trust (D73) opens the question itself. Only a shell has one.
     ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
     // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is

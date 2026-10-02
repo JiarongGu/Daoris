@@ -184,6 +184,27 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 }
 
 /// <summary>
+/// A quest the planner parked on its failed sessions here (DRV6, <see cref="StartVerdict.Exhausted"/>), with what its park
+/// is said by (SESSUX1i, D126 §4.6, §4.7): Overview's *What needs you* row and the park's notice.
+/// </summary>
+/// <param name="Quest">Its id.</param>
+/// <param name="Repository">The repository it is addressed to.</param>
+public sealed record QuestPark(string Quest, string Repository)
+{
+    /// <summary>Its last session here, which failed or was cut off; null where the records show no session of this machine's on it.</summary>
+    public string? Session { get; init; }
+
+    /// <summary>How many sessions failed since its last *Try again*, as the planner counted to park it; null where the records no longer say.</summary>
+    public int? Strikes { get; init; }
+
+    /// <summary>What its last session's record said about its end: the last failure's note. Null is a state, not a gap.</summary>
+    public string? Note { get; init; }
+
+    /// <summary>When its last session ended: what the park has waited since. Null where that record is not listed.</summary>
+    public DateTimeOffset? Since { get; init; }
+}
+
+/// <summary>
 /// Everything one look at the sessions reads (D126 §2.4): the records, the quests and the planner's verdicts, each quest's
 /// last session here and its strikes as the planner's own readers derive them, the trees' judgement and the marks.
 /// </summary>
@@ -259,6 +280,40 @@ public static class SessionGroups
             .ToList();
 
         return [.. SessionGroup.Order.SelectMany(group => Ordered(group, placed.Where(each => each.Row.Group == group))).Select(each => each.Row)];
+    }
+
+    /// <summary>
+    /// The quests the planner parked on their failed sessions, each with its last session here, its number, that session's
+    /// note and when it ended (SESSUX1i, D126 §4.6, §4.7), in the planner's order.
+    /// </summary>
+    /// <remarks>
+    /// Read from the facts a *parked* row is placed by (the planner's verdict, the last run, the strikes), so Overview's row,
+    /// the park's notice and the list's row name one session and count one number. A person's stop is no park: it holds
+    /// its quest by <see cref="StartVerdict.Stopped"/>, which the person caused (§4.7).
+    /// </remarks>
+    public static IReadOnlyList<QuestPark> Parks(SessionLook look)
+    {
+        var records = look.Records
+            .GroupBy(record => record.Id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        return [.. look.Considered
+            .Where(consideration => consideration.Verdict == StartVerdict.Exhausted)
+            .DistinctBy(consideration => consideration.Quest.Id, StringComparer.OrdinalIgnoreCase)
+            .Select(consideration =>
+            {
+                var quest = consideration.Quest.Id;
+                var last = look.LastRun.TryGetValue(quest, out var run) ? run : null;
+                var ended = last is not null && records.TryGetValue(last.Session, out var record) && record.Updated != DateTimeOffset.MinValue
+                    ? record.Updated
+                    : (DateTimeOffset?)null;
+                return new QuestPark(quest, consideration.Quest.To)
+                {
+                    Session = last?.Session,
+                    Strikes = look.Strikes.TryGetValue(quest, out var strikes) ? strikes : null,
+                    Note = string.IsNullOrWhiteSpace(last?.Note) ? null : last.Note.Trim(),
+                    Since = ended,
+                };
+            })];
     }
 
     /// <summary>

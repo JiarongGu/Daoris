@@ -142,7 +142,7 @@ public sealed class ChatRunner(
         // `interactive` question is asked, and for the same reason. The circle comes from the registry
         // row, which is the machine's own wiring and the only honest source for it (D48 §2).
         var selection = await _harnesses
-            .SelectAsync(resolved.Name, config, known!.Workspace, profile, ct)
+            .SelectAsync(resolved.Name, config, known!.Workspace, profile, StartKind.Conversation, ct)
             .ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
@@ -255,7 +255,7 @@ public sealed class ChatRunner(
         }
 
         // The account the default circle names, then the machine's (D89): Ask Daoris belongs to no workspace.
-        var selection = await _harnesses.SelectAsync(resolved.Name, config, null, null, ct).ConfigureAwait(false);
+        var selection = await _harnesses.SelectAsync(resolved.Name, config, null, null, StartKind.Conversation, ct).ConfigureAwait(false);
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
         string room;

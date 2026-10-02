@@ -95,9 +95,10 @@ export function ShellSignals({ notify, onAttend }: {
 
   /**
    * What is worth interrupting the person for (SURF5b): a session that parked, or one that ended
-   * without them asking. The same event the shell turns into an OS balloon while nobody is looking
-   * at the window — so this is the half for when somebody IS, and the two never both fire because
-   * the shell tests the foreground before raising one.
+   * without them asking; and a quest parked on its failed sessions (SESSUX1i), which waits on their
+   * *Try again* as a park waits on their answer. The same event the shell turns into an OS balloon
+   * while nobody is looking at the window — so this is the half for when somebody IS, and the two
+   * never both fire because the shell tests the foreground before raising one.
    *
    * The sentence is the driver's own and is rendered verbatim, like every other sentence it
    * writes (D24): it is composed once in `AttentionWatch` so a toast here and a line on a headless
@@ -109,7 +110,7 @@ export function ShellSignals({ notify, onAttend }: {
       notify(
         item.detail ? `${item.headline}: ${item.detail}` : item.headline,
         // A park is the one that is WAITING on somebody; an ending is news.
-        item.kind === 'Parked' ? 'error' : 'ok');
+        item.kind === 'Parked' || item.kind === 'QuestParked' ? 'error' : 'ok');
       void client.invalidateQueries({ queryKey: keys.allSessions });
     });
 
