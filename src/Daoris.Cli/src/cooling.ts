@@ -179,6 +179,11 @@ function compare(a: string, b: string): number {
 /** The ISO 8601 forms the driver reads: to the second, with a fraction or not, in UTC or at an offset. */
 const ISO_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(Z|[+-]\d{2}:\d{2})$/;
 
+/** A moment as ISO 8601 writes it, and only so, as the driver reads one; `windows.ts` reads its moments with it too. */
+export function isoMoment(value: unknown): Date | null {
+  return moment(value);
+}
+
 /** A moment as ISO 8601 writes it, and only so (rule 2); a date that does not exist is none. */
 function moment(value: unknown): Date | null {
   if (typeof value !== 'string') return null;
