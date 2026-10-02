@@ -164,6 +164,34 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True(await ListedAsync(quest));
     }
 
+    /// <summary>
+    /// A decline made while open (PAUSE1c) is the respond door's too, so an abandon reaches it from the driver: an
+    /// open quest is declined with the flag kept, and a taken one answers 409, the lock's shape, with the exchange's
+    /// sentence, and stays taken.
+    /// </summary>
+    [Fact]
+    public async Task A_decline_made_while_open_declines_an_open_quest_and_is_refused_with_409_on_a_taken_one()
+    {
+        var open = await PublishAsync("A quest an abandon declines");
+        var taken = await PublishAsync("A quest somebody took before the abandon");
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{taken}/respond", new { action = "take" })).Status);
+
+        var declined = await host.PostAsync(
+            $"/api/quests/{open}/respond", new { action = "decline", reason = "Abandoned.", whileOpen = true });
+        var refused = await host.PostAsync(
+            $"/api/quests/{taken}/respond", new { action = "decline", reason = "Abandoned.", whileOpen = true });
+
+        Assert.Equal(200, declined.Status);
+        Assert.Equal("Declined", declined.Json.GetProperty("quest").GetProperty("status").GetString());
+        Assert.True((await host.Composed.Quests.HistoryAsync(open))[^1].WhileOpen);
+        Assert.Equal(409, refused.Status);
+        Assert.Contains("only while", refused.Error);
+        Assert.Equal(
+            (await host.Composed.Exchange.RespondAsync(taken, "decline", "Abandoned.", DateTimeOffset.UtcNow, whileOpen: true)).Message,
+            refused.Error);
+        Assert.Equal(QuestStatus.Taken, (await host.Composed.Quests.FindAsync(taken))!.Status);
+    }
+
     [Fact]
     public async Task A_quest_that_is_not_held_answers_404()
     {

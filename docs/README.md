@@ -64,6 +64,7 @@ changes no row (D127).
 | `2026-10-02-account-use-design.md` | contract | Account use, for any number of accounts: which may run each workspace, as the person states; by default the most work from all of them (§16), one by one as an override; what is left, by the agent's word (TOOL6) | Designed (D130); nothing built. Amends D125 §3, §6 and four TOOL4 rows |
 | `2026-10-02-answer-continues-design.md` | contract | An answer continues the session: the parked record reopens and its harness conversation resumes on the same account, adapter and tree; otherwise today's carry-on, saying why (ANSWER1) | Designed (D131); building, and D131's notes say what each build settled |
 | `2026-10-02-pause-and-clean-up-design.md` | contract | Pausing and abandoning an ask or a quest: a pause that stops what runs and keeps its place, and an abandon listed first that declines with the person's reason and discards only what nothing else holds (PAUSE1) | Designed (D132); nothing built. Amends D126 §3.3, D88's removal and D68 rule 2 |
+| `2026-10-03-decisions-record-design.md` | contract | The decisions record under parallel merges: how often union merges tore it and in which shapes, four options weighed, one file per decision with its notes, a check per file, and the migration (DOC8) | Designed (D134); nothing built. Amends D106's and D117 §2.4's rejection of a file per decision |
 
 ## Studies and evidence
 

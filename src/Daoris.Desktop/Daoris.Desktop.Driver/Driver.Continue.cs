@@ -233,7 +233,8 @@ public sealed partial class Driver
         var conclusion = stoppedFor is not null
             ? new SessionConclusion("stood-down", stoppedFor)
             : _processes.WasStopRequested(sessionId)
-            ? new SessionConclusion("stopped", "the person stopped it.")
+            // A pause's stop names the pause (PAUSE1b, design §4.1), as a first run's does.
+            ? new SessionConclusion("stopped", _processes.StopNote(sessionId) ?? "the person stopped it.")
             : exitCode is int code
                 // It carried on a take this machine already held, so ending with it still taken is a park, not a stand-down.
                 ? Observation.Conclude(

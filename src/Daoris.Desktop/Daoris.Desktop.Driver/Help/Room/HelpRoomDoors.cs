@@ -22,7 +22,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "what is driven, how work lands, what agents may do", "Settings → Setup (the Daoris menu's *Setup*)",
             "(each step shows its own command there)"),
         ("drive a repository, or stop", "Repositories", "`daoris driver drive|undrive <repository>`"),
-        ("pause one, or release it", "Repositories", "`daoris driver hold|resume <repository>`"),
+        // PAUSE1b (D132 §13): a repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
+        ("hold one, so nothing new starts there, or resume it", "Repositories", "`daoris driver hold|resume <repository>`"),
         ("give its sessions their own tree", "Repositories", "`daoris driver trees <repository> on|off`"),
         // LAYOUT7: the set-up press's terminal door; its screen and Ask Daoris's `setup` kind are LAYOUT8's, owed meanwhile.
         ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
@@ -107,6 +108,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
         ("set an account's own model and effort", "Settings → Agents → Model & effort",
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
+        // PAUSE1b (D132 §7.2): the terminal's doors; the pages' and a session's acts are PAUSE1e's, and Ask Daoris's `pause` kind
+        // PAUSE1f's, owed meanwhile (HelpCoverageTests).
+        ("pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it "
+            + "starts until you resume it, which carries it on where it stood", "(no screen yet)",
+            "`daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
         // DRIFT1d: the person's yes to a done's departure, the terminal's door; the quest page's yes and Ask Daoris's are

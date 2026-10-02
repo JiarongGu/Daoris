@@ -92,7 +92,7 @@ daoris <command> [options]
   driver [verb]        what this machine drives ($DAORIS_HOME/driver.json):
                          list                      adapter, cap, what is opted in
                          drive|undrive <repo>      opt a repository in, or out
-                         hold|resume <repo>        pause one, or release it
+                         hold|resume <repo>        hold one, or resume it
                          trees <repo> on|off       sessions there open their own
                                                    worktree (D51) — your dirty
                                                    root stops holding the driver

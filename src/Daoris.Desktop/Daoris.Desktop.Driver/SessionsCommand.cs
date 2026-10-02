@@ -74,7 +74,7 @@ public static class SessionsCommand
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "deletable"];
+        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "deletable"];
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -193,6 +193,18 @@ public static class SessionsCommand
                 }
 
                 writer.WriteBoolean("holdsQuest", row.HoldsQuest);
+                if (row.PausedBy is { } pause)
+                {
+                    writer.WriteStartObject("pausedBy");
+                    writer.WriteString("scope", pause.Word);
+                    writer.WriteString("id", pause.Id);
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("pausedBy");
+                }
+
                 writer.WriteBoolean("deletable", row.Deletable);
                 writer.WriteEndObject();
             }
@@ -322,6 +334,13 @@ public static class SessionsCommand
         }
 
         if (row.HoldsQuest && record.Quest is { } quest) yield return $"held here until you try again: daoris driver retry {quest} --session {row.Session}";
+        // PAUSE1b (D132 §6.1): a pause, never a hold, in its words: Resume is the press that moves it.
+        if (row.PausedBy is { } pause)
+        {
+            yield return pause.Scope == WorkScope.Ask
+                ? $"paused with ask #{pause.Id}; Resume carries it on: {pause.Door}"
+                : $"paused with quest #{pause.Id}; Resume carries it on: {pause.Door}";
+        }
         if (row.Archived && row.Group != SessionGroup.Archived) yield return "archived";
     }
 

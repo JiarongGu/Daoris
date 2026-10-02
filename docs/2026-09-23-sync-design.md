@@ -109,6 +109,11 @@ A losing take whose session is still running is stopped by its own machine's dri
 in the record (*another machine's take reached the remote first*). A driver stops only its own
 processes (D47 §6 unchanged).
 
+*Amended by D132 (PAUSE1c, 2026-10-03): a decline made while open loses to a take that came first.* An
+abandon's decline carries `whileOpen` and applies only to an open quest, so one that reaches the remote
+after another machine's take becomes a conflict, kept with its reason, and the take stands. A plain
+decline still lands over a take. D132's PAUSE1c note says why a remote's build does not change this.
+
 ## 6. When it runs — decided: automatic, and on demand
 
 - **Every driver tick**: fetch, rebase, push for each wired workspace, like auto-fetch. A session

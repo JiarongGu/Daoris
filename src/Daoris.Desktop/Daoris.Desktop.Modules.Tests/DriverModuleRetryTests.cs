@@ -72,6 +72,29 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         Assert.False(File.Exists(DriverConfigPath));
     }
 
+    /// <summary>
+    /// PAUSE1b (D132 §6.1): a pause is the reason before a stop and the strikes, so *Try again* on a paused quest is refused
+    /// naming the pause, Resume being the one press that moves it, and nothing is written. A quest's own pause says so by
+    /// the catalogue's context.
+    /// </summary>
+    [Fact]
+    public async Task A_paused_quest_is_refused_naming_its_pause_and_nothing_is_written()
+    {
+        var byAsk = Looked(new Consideration(Taken, StartVerdict.Paused, "paused with ask `#a1`") { PausedBy = new PausedBy(WorkScope.Ask, "a1") });
+        var byQuest = Looked(new Consideration(Taken, StartVerdict.Paused, "you paused `#q1`") { PausedBy = new PausedBy(WorkScope.Quest, "q1") });
+
+        var ask = await RefusalAsync(byAsk, "RETRY_QUEST", new { quest = "q1" });
+        var quest = await RefusalAsync(byQuest, "RETRY_QUEST", new { quest = "q1" });
+
+        Assert.Contains(Refusals.QuestPaused, ask);
+        Assert.Contains("id=q1", ask);
+        Assert.Contains("pause=a1", ask);
+        Assert.DoesNotContain("context=", ask);
+        Assert.Contains(Refusals.QuestPaused, quest);
+        Assert.Contains("context=quest", quest);
+        Assert.False(File.Exists(DriverConfigPath));
+    }
+
     [Fact]
     public async Task A_quest_the_last_look_never_considered_is_refused()
     {

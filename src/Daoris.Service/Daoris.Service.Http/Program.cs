@@ -470,8 +470,10 @@ app.MapPost("/api/quests/{id}/respond", async (
     var answers = (body.Answers ?? [])
         .Select(a => new QuestAnswer(a?.Requirement ?? 0, a?.Met, a?.Departed, a?.Quote))
         .ToList();
+    // `whileOpen` (PAUSE1c) is an abandon's decline, sent by the driver; the exchange judges it like any respond.
     var outcome = await s.Exchange.RespondAsync(
-        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On, answers: answers);
+        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On, answers: answers,
+        whileOpen: body.WhileOpen == true);
 
     return outcome.Refusal switch
     {

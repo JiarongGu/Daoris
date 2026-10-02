@@ -920,7 +920,7 @@ test('a verb that knows nothing of pauses keeps them as written, and a file with
   fx.cleanup();
 });
 
-test('list shows each pause, when it was made and the stops it made', () => {
+test('list shows each pause, when it was made, the stops it made and the door that resumes it', () => {
   const fx = makeFixture('driver-paused-list');
   writeFileSync(at(fx), JSON.stringify({
     pausedAsks: { a1b2c3: { at: '2026-10-02T14:02:11Z', stopped: { q7f3e1: 's-1a2b3c4d', q2: 's-2' } } },
@@ -930,6 +930,9 @@ test('list shows each pause, when it was made and the stops it made', () => {
   const out = run(['list'], at(fx)).out;
   assert.match(out, /paused\s+ask #a1b2c3\s+\(since 2026-10-02T14:02:11Z; its pause stopped #q2's session s-2, #q7f3e1's session s-1a2b3c4d\)/);
   assert.match(out, /paused\s+quest #q9d0aa\s+\(when is not recorded\)/);
+  // PAUSE1b: the resume is daoris-driver's, which reads the work and reaches the running loop (D132 §7.2); `driver` names it.
+  assert.match(out, /paused\s+ask #a1b2c3 .*— resume: daoris-driver ask --resume a1b2c3\n/);
+  assert.match(out, /paused\s+quest #q9d0aa .*— resume: daoris-driver quest resume q9d0aa\n/);
   // A pause's words say paused, never held (design §8.1).
   assert.doesNotMatch(out.split('\n').filter((line) => line.includes('paused')).join('\n'), /held/);
   fx.cleanup();

@@ -157,6 +157,12 @@ before the answer returns. A quest that never left simply goes. The `deletable` 
 asks a local host lists (and on a quest a publish, a response or a dismissal answers with) is the same
 judgement, so a page offers the verb only where the door would take it.
 
+**A decline may apply only while the quest is open** (PAUSE1c, D132 point 10): `whileOpen: true` on
+`POST /api/quests/{id}/respond`, which an abandon sends, and no MCP tool does. It is refused, 409, on a
+quest taken here. It travels with the flag, and one that reaches the remote after another machine's
+take becomes a conflict on the quest, as a losing take does, so the take stands. A decline without it
+is the plain one, which lands over a take as it always has.
+
 Four states, because anything finer is status for its own sake. A quest is **taken**, not assigned,
 which is the property that keeps declining a real answer. **An adopted repository, or one registered
 here with a root, can be addressed** (D70): registered is addressable, adopted is disciplined. Anything

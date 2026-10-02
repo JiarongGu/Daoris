@@ -42,6 +42,9 @@ public static class DriverCommand
           ask --go-ahead <id> <n> approve|refuse ["…"]
               ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake; answer a
               go-ahead a session asked on it, which every session on the ask is handed from then on.
+          ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>
+              stop what of an ask's work, or a quest's, runs on this machine and start nothing of it until
+              you resume it, which carries it on where it stood.
           setup <repository> [--plan]
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan

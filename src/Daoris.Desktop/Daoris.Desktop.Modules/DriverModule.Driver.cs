@@ -168,6 +168,14 @@ public sealed partial class DriverModule
                 // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.
                 Change(config => config.WithReleased(quest, stop.Session));
                 return State(new { Quest = quest, Did = "released", Session = (string?)stop.Session });
+            case { Verdict: StartVerdict.Paused, PausedBy: { } pause }:
+                // A pause is the reason before a stop and the strikes (PAUSE1b, D132 §6.1): Resume moves it, and nothing is written.
+                throw pause.Scope == WorkScope.Ask
+                    ? Refusals.Because(
+                        Refusals.QuestPaused, $"#{quest} is paused with ask #{pause.Id}; Resume carries it on.", ("id", quest), ("pause", pause.Id))
+                    : Refusals.Because(
+                        Refusals.QuestPaused, $"#{quest} is paused on its own; Resume carries it on.", ("id", quest), ("pause", pause.Id),
+                        ("context", "quest"));
             default:
                 throw Refusals.Because(
                     Refusals.QuestNotHeld,

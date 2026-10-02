@@ -98,7 +98,7 @@ session named; never propose adding one that has not landed.
 |---|---|---|
 | walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (the Daoris menu's *Setup*) | (each step shows its own command there) |
 | drive a repository, or stop | Repositories | `daoris driver drive|undrive <repository>` |
-| pause one, or release it | Repositories | `daoris driver hold|resume <repository>` |
+| hold one, so nothing new starts there, or resume it | Repositories | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories | `daoris driver trees <repository> on|off` |
 | set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing) | (no screen yet) | `daoris-driver setup <repository> [--plan]` |
 | set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris-driver setup --workspace <name> --pause|--resume|--stop` |
@@ -128,6 +128,7 @@ session named; never propose adding one that has not landed.
 | end an account's cool-off now, after its agent hit a limit | Settings → Agents → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
 | update an agent, or pin it to one version | Settings → Agents → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Settings → Agents → Model & effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
+| pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | (no screen yet) | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
 | accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | (no screen yet) | `daoris-driver quest accept <id>` |
 | add a plugin that has landed, or switch one on or off | Settings → Plugins (its switch) | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
