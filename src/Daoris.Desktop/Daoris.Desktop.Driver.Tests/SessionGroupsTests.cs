@@ -45,6 +45,11 @@ public sealed class SessionGroupsTests
 
     private static Consideration Verdict(QuestView quest, StartVerdict verdict) => new(quest, verdict, "the planner's sentence");
 
+    private static readonly PausedBy ByAsk = new(WorkScope.Ask, "a1");
+
+    /// <summary>The planner's <c>Paused</c> verdict (PAUSE1b), naming ask <c>a1</c>'s pause.</summary>
+    private static Consideration PausedVerdict(QuestView quest) => Verdict(quest, StartVerdict.Paused) with { PausedBy = ByAsk };
+
     private static SessionLook Look(
         JsonObject[] records, QuestView[]? quests = null, Consideration[]? considered = null,
         (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null,
@@ -147,6 +152,45 @@ public sealed class SessionGroupsTests
                 "s1", SessionGroup.Review, "stopped")
             {
                 Also = row => Assert.True(row.HoldsQuest),
+            },
+        // PAUSE1b (D132 §6.1): a session the pause stopped is grouped as a stop's is, since nothing goes back into its tree
+        // until Resume, and the person paused it to look; its line names the pause rather than a stop.
+        ["a session the pause stopped leaves its tree to review, naming the pause"] =
+            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [PausedVerdict(Taken)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Review, "stopped")
+            {
+                Also = row =>
+                {
+                    Assert.Equal(ByAsk, row.PausedBy);
+                    Assert.False(row.HoldsQuest);
+                },
+            },
+        ["a session the pause stopped with nothing in its tree is ended, naming the pause"] =
+            new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [PausedVerdict(Taken)], [(Tree, new TreeWork(0, 0))]),
+                "s1", SessionGroup.Ended, "stopped")
+            {
+                Also = row => Assert.Equal(ByAsk, row.PausedBy),
+            },
+        ["the asker of a paused waiting quest rests ended, naming the pause, and its tree is to review"] =
+            new(Look([Record("s1", "completed", "q1", Tree)], [Asking, Question], [PausedVerdict(Asking)], [(Tree, new TreeWork(3, 0))]),
+                "s1", SessionGroup.Review, "completed")
+            {
+                Also = row =>
+                {
+                    Assert.Equal(ByAsk, row.PausedBy);
+                    Assert.Null(row.Awaits);
+                },
+            },
+        ["an earlier session of a paused quest does not name the pause"] =
+            new(Look([Record("s1", "failed", "q1"), Record("s2", "stopped", "q1", at: 10)], [Taken], [PausedVerdict(Taken)]),
+                "s1", SessionGroup.Ended, "failed")
+            {
+                Also = row => Assert.Null(row.PausedBy),
+            },
+        ["a parked session of a paused ask still waits on you"] =
+            new(Look([Record("s1", "awaiting-person", "q1")], [Taken], [PausedVerdict(Taken)]), "s1", SessionGroup.You, "awaiting-person")
+            {
+                Also = row => Assert.Null(row.PausedBy),
             },
         ["a released stop whose carry-on is planned is ended, not to review"] =
             new(Look([Record("s1", "stopped", "q1", Tree)], [Taken], [Verdict(Taken, StartVerdict.Start)], [(Tree, new TreeWork(2, 0))]),

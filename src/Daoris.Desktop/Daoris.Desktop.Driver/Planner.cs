@@ -229,6 +229,14 @@ public sealed record Snapshot(
     /// whether it runs now — derived from the same records, never kept. The roster reads it at each look.
     /// </summary>
     public IReadOnlyList<SessionStarted> Started { get; init; } = [];
+
+    /// <summary>
+    /// The quests of every paused work on this machine, each against the pause that holds it (PAUSE1b, D132 point 3): the
+    /// look computes it from <c>driver.json</c>'s pauses and <see cref="AskWork"/> (<see cref="PausedWork.LookAsync"/>), as it
+    /// derives <see cref="LastRun"/>, so the planner never holds a second copy of the work's rule. Absent is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, PausedBy> Paused { get; init; } =
+        new Dictionary<string, PausedBy>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -239,7 +247,7 @@ public enum StartVerdict
     /// <summary>The receiver has not opted into driving on this machine — the person's choice (D46 §2).</summary>
     NotDrivable,
 
-    /// <summary>The person paused this repository.</summary>
+    /// <summary>The person holds this repository: drivable, and nothing new starts there until they resume it (D46 §3).</summary>
     Held,
 
     /// <summary>
@@ -284,6 +292,14 @@ public enum StartVerdict
     /// (<see cref="DriverConfig.Released"/>). A stop is not a strike (D58), and another machine may still take an open one.
     /// </summary>
     Stopped,
+
+    /// <summary>
+    /// In the work of an ask or a quest the person paused on this machine (PAUSE1b, D132 points 2–3): nothing of it starts
+    /// here until *Resume*, which releases the stops the pause made. The reason the quest sits before every other, a
+    /// person's stop included, so a release of a stop starts nothing while it holds. A pause is this machine's: another
+    /// machine may still take an open one, and a taken one stays taken here, its take, tree and strikes kept.
+    /// </summary>
+    Paused,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -311,6 +327,13 @@ public sealed record Consideration(
     /// again* names to release it (SESSUX1b). Null for every other verdict.
     /// </summary>
     public PriorSession? HeldBy { get; init; }
+
+    /// <summary>
+    /// For a quest a pause holds (<see cref="StartVerdict.Paused"/>): whose pause, an ask's or the quest's own, which
+    /// *Resume* names (PAUSE1b), so the page says the sentence from facts as it says a stop's from <see cref="HeldBy"/>.
+    /// Null for every other verdict.
+    /// </summary>
+    public PausedBy? PausedBy { get; init; }
 }
 
 public static class Considerations
@@ -382,6 +405,15 @@ public static class Planner
         // first" one implementation rather than two that drift.
         foreach (var quest in snapshot.Quests)
         {
+            // 🔴 A pause holds every quest of its work this planner would plan (PAUSE1b, D132 point 3), before every other reason,
+            // the person's stop included: Resume is the one press that moves it, so a released stop starts nothing meanwhile.
+            // First, too, so a paused quest spends no slot and no repository's turn, and the next starts where it would have.
+            if (snapshot.Paused.TryGetValue(quest.Id, out var pause) && Plans(quest))
+            {
+                considerations.Add(Paused(quest, pause));
+                continue;
+            }
+
             // 🔴 A person's stop holds its quest, open or taken, until they release that stop (SESSUX1b, D126 §3.3). Before
             // everything else, since it is the one reason the quest sits that the person must act on: a taken one was never
             // looked at again and sat with no sentence, and an open one was planned again at the next look (M3).
@@ -432,6 +464,32 @@ public static class Planner
         }
 
         return considerations;
+
+        // Whether the loop below says anything of this quest: every open one, and a taken one whose last session here is
+        // a stop, a cut-off, an answered park or the asker of a question (the branches below). A take this machine never ran,
+        // and one whose session runs or waits on the person, is not planned, so a pause says nothing of it either.
+        bool Plans(QuestView quest) =>
+            quest.Status == "Open"
+            || (quest.Status == "Taken"
+                && snapshot.LastRun.TryGetValue(quest.Id, out var run)
+                && (quest.Awaits is { Length: > 0 }
+                    || run.AnsweredPark
+                    || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
+                    || run is { State: "completed", Answer: not null }));
+
+        // Held by a pause (PAUSE1b, design §2.3): the sentence names the pause, what Resume does and the terminal's door. It
+        // says paused, never held, since a hold is a repository's and stops nothing that runs (design §8.1).
+        static Consideration Paused(QuestView quest, PausedBy pause)
+        {
+            var resumes = quest.Status == "Taken" ? "carries it on" : "starts it";
+            return new(quest, StartVerdict.Paused, pause.Scope == WorkScope.Ask
+                ? $"paused with ask `#{pause.Id}`; Resume {resumes} — `daoris-driver ask --resume {pause.Id}`."
+                : $"you paused `#{pause.Id}`; Resume {resumes} — `daoris-driver quest resume {pause.Id}`.")
+            {
+                PausedBy = pause,
+            };
+        }
 
         // Held by the person's stop (SESSUX1b, D126 §3.3): the sentence says whose stop, what Try again does, and the
         // terminal's door, which names the session since `daoris driver` cannot see this verdict (D50).

@@ -212,6 +212,12 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     public bool HoldsQuest { get; init; }
 
     /// <summary>
+    /// Whose pause holds this session's quest (PAUSE1b, D132 §6.1), where it is its quest's last session here: its line says
+    /// *paused with ask `#a`; Resume carries it on*, and *Resume* stands where *Try again* would. Null otherwise.
+    /// </summary>
+    public PausedBy? PausedBy { get; init; }
+
+    /// <summary>
     /// Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): the ledger would delete its record, and this machine holds
     /// neither its tree nor a landing of it. The page offers the act only here, D95's way.
     /// </summary>
@@ -401,7 +407,10 @@ public static class SessionGroups
     /// <param name="door">The configured adapter's wire, which decides whether a repository that never adopted can be driven (D70).</param>
     public static async Task<IReadOnlyList<Consideration>> VerdictsAsync(
         ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default) =>
-        lastLook ?? Planner.Plan(await service.SnapshotAsync(ct).ConfigureAwait(false), config, door);
+        // A fresh plan reads the pauses as the loop's look does (PAUSE1b), so the list and a tick say one verdict.
+        lastLook ?? Planner.Plan(
+            await PausedWork.LookAsync(service, config, await service.SnapshotAsync(ct).ConfigureAwait(false), ct).ConfigureAwait(false),
+            config, door);
 
     /// <summary>
     /// One look at the sessions, gathered for the reader (D126 §2.4): the records, every quest, the planner's verdicts, the
@@ -508,8 +517,9 @@ public static class SessionGroups
             if (record.Teammate) return Rest(row);
 
             var verdict = VerdictOnLast(record);
-            // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests.
-            row = row with { HoldsQuest = verdict?.Verdict == StartVerdict.Stopped };
+            // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests; and PAUSE1b (D132
+            // §6.1), that a pause does, since a pause is the reason before a stop.
+            row = row with { HoldsQuest = verdict?.Verdict == StartVerdict.Stopped, PausedBy = verdict?.PausedBy };
             if (verdict?.Verdict == StartVerdict.Exhausted)
             {
                 return row with
@@ -553,9 +563,10 @@ public static class SessionGroups
 
             // Parked comes first, and a quest the planner still considers while it is taken goes back into this
             // session's tree: its carry-on (D80) or its resume (D79), whatever holds that start for now. Bar the person's
-            // stop (SESSUX1b): nothing goes back into its tree until they release it, so its work is theirs to review.
+            // stop (SESSUX1b): nothing goes back into its tree until they release it, so its work is theirs to review. And bar
+            // a pause (PAUSE1b, D132 §6.1): nothing goes back in until Resume, and the person paused the work to look at it.
             return VerdictOnLast(record) is { } verdict
-                   && verdict.Verdict != StartVerdict.Stopped
+                   && verdict.Verdict is not (StartVerdict.Stopped or StartVerdict.Paused)
                    && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken")
                 ? null
                 : tree;
