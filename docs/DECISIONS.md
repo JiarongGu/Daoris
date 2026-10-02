@@ -8977,6 +8977,225 @@ accounts"*. Every setting above serves it: work keeps moving when one account is
 another is cut off. It is judged by TOOL4h's report (the limits each account met, the sessions each ran, the starts a
 setting moved) and TOOL4i's run, never by a number Daoris made up.
 
+**The rules around the goal (2026-10-02).** The owner: *"you can design the rules around this purpose"*. So the
+defaults are re-decided on the goal: the most work from the accounts' combined allowance, the fewest stalls, and no
+allowance left unused at a reset (design §16).
+
+1. **Every listed account is used toward the goal by default** (`use: goal`). *List order, one by one* is an override
+   (`use: order`), D125's walk, kept for a person who wants their accounts used in their order.
+2. **No start is held** while an account it may use is ready and a slot is free, so allowance lapses only where there
+   was no work or no slot for it.
+3. **The default walk** (design §16.3), each step stable: a driven start drops the kept account; an account its agent
+   said is near goes last; fewest of Daoris's sessions running first; an account whose known weekly reset falls within
+   the next day first, sooner first; furthest behind its week's pace first, where the agent said; least recently
+   started first; the list's order last. While every account is ready, none runs more than ⌈K ÷ N⌉ at once.
+4. **With nothing said** (today), steps 2 and 5 are inert. The walk spreads by Daoris's own sessions and over time,
+   and learns each account's weekly reset from the weekly limits it meets, carried a week at a time where the maker
+   fixes it (Claude, C1). It says so on the screen, in `daoris agent list` and in each start's first line, and no
+   number stands in for a reading.
+5. **Switching before the limit is on by default**, inert until a door carries the agent's word. A kept account stays
+   an option, off by default.
+6. **A quest's next session goes where the walk sends it.** A carry-on carries no conversation, so its account buys
+   only readability, which its first line gives. This amends point 6 and the note on *in parallel* above.
+7. **The settings are the list, `use`, `keep`, `early` and `near`**, per agent and scope, for any number of accounts.
+   TOOL6a's vocabulary changes: `prefer` and `parallel` are gone; `use` (`goal` or `order`, absent `goal`) is new;
+   `early` is on when absent and off only when `false`; `keep` and `near` are unchanged. The terminal door is `daoris
+   agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>]
+   [--workspace W]`, and Ask Daoris's `use` door takes the same four. A machine with an order written before changes
+   to `goal` when TOOL6b lands.
+8. **It is judged** by TOOL4h's report per account and week: sessions landed, hours waited, limit cut-offs, allowance
+   left at each weekly reset where the agent's word shows it (*not measured* where not), the limits met, the starts
+   each step moved, and whether the cap rather than the accounts was the limit; and by TOOL4i's run under `goal`.
+
+**Why.** One by one meets a limit as soon as the load passes one account's five-hour window while the others sit idle,
+and that limit cuts off every session on the account; spreading meets none while the load fits all accounts together,
+and a limit cuts off at most ⌈K ÷ N⌉. A week recovers in days and five hours in hours, so the week's risks, lapsing and
+running ahead, rank above any five-hour order, and the five-hour window is a gate: passed when near, kept below its
+limit by spreading. A week is ranked by its reset only in its last day, when what is left is at risk of lapsing;
+ranked so all week, it would pile one account's work onto it while the others' weeks went by. Pace keeps every week
+moving, but alone it would pass a small leftover about to lapse, so it ranks below the last day. The fallbacks use only
+what Daoris knows: its own sessions, its own starts, and the resets the agents named.
+
+**Rejected** (design §16.5 and §16.9):
+- **Keeping *list order, one by one* as the default**: the most cautious choice, and the goal argues against it on
+  every measure.
+- **The five-hour window's reset as an order above the week**: unknown without the agent's word, and it would spend a
+  week to save hours.
+- **Ranking every week by its reset all week**, and **holding work to pace a week**.
+- **A quest kept on its account**, and **a cached prompt as a reason to keep it** (no page read says one counts less).
+- **Keeping `prefer` and `parallel` beside `use`**, and **a cap per account or a cap raised to use more windows**.
+
+**What it amends.** D130 points 3 (the settings), 6 (the walk), 7 (`left` and `soonest` fold into pace and the lapsing
+week), 8 (on by default), 10 (spreading is the default), 11 (the `use` door's fields), and the note on *in parallel*
+(a quest's carry-on no longer stays on its last account). The design's §2, §4, §6–§10 and §12–§14 carry notes, and the
+TOOL6a–d, TOOL4g, TOOL4h and TOOL4i rows in its §10 are amended in place. D125 §3.3 and §3.4 are the walk under
+`order`. Unchanged: eligibility (point 4), the wait that asks (point 5), what is left by the agent's own word and
+absent never zero (point 7's rule), the cool-off, a limit not a strike, D57, D49 §4 and D66 §3.
+
+**What the checks do not cover.** Documents only, and nothing is built. The arithmetic of spreading is an argument,
+not a measurement: neither an account's allowance nor the load is known, and §16.8 names what only a real run shows,
+the day's horizon among them. The first real rotation and its weekly sentence are the fix log's and D125's notes, not
+re-read here. `verify` checks this note's place and the design's links, and none of their words.
+
+**Built 2026-10-02 (TOOL6a): the settings and their terminal door** (points 2, 4 and 11 and the goal's point 7; design
+§2, §3.1, §4.6, §14, §16.6), held by `RotationUseTwinTests` and `RotationTwinTests` on the driver's side and, cell for
+cell, by the CLI's `rotation-use.test.ts` and `rotation.test.ts`. What building it settled:
+- **A value or a default changes by a row.** Today's defaults live in one place (`USE_DEFAULTS`, `RotationUse.Default`)
+  and the ways to use accounts in one list (`USE_MODES`, `RotationUse.Modes`). A value the reader does not know reads as
+  today's default and is said by `agent list` and `profile use`; a setting it has no name for is kept as written and
+  said. `prefer` and `parallel` are skipped and gone at the next write (§16.6).
+- **A choice is written as made**, one equal to today's default included, so a later default never overturns what a
+  person chose; only absence means the default. Known settings go out in one order, normalised, then the rest as read;
+  both writers write the same bytes.
+- **A scope's settings come with its list.** Clearing a list clears its settings; an account removed is kept nowhere.
+  `profile use` refuses a scope with no list of its own, naming the `order` that gives it one. `--clear` returns a
+  scope to today's defaults.
+- **One rule binds a scope** (`scopeProblem`, `ScopeProblem.Of`): its default and its kept account are of its list,
+  compared exactly, and a kept account leaves driven work another. `profile order` refuses all three, naming both sides
+  and the fix; `profile default` the first, where its scope has a list of its own (a workspace with none takes any
+  account and is then that account alone); `profile use --keep` the kept ones. The order door's two kept-account
+  refusals keep §4.6's state unreachable by the back door. Tested with one account and with six.
+- **`agent list`** prints beneath each list how it is used, a default outside it, a kept account alone in it, and what
+  the build does not know. `profile use` with the agent alone adds what each account last said, which today is its
+  cool-off or nothing: no door carries the agent's word about its windows yet (§5.3), and the switch says so.
+- **The room names the door** (`HelpRoomDoors`, *no screen yet*).
+
+**What the gates do not cover.** Nothing reads these settings to choose an account: `SelectAsync` still walks D125's
+order, and `ResolveScope` waits for TOOL6b. §3.1's refusal is the terminal's alone: the screen's `profile-default`
+route (`DriverModule.DefaultEdited`, modules) and Ask Daoris's `default` door do not ask `ScopeProblem.Of` yet (TOOL4g,
+or a modules row). The `Process` half, the rehearsals and the screen were not run by this branch.
+
+**Built 2026-10-02 (TOOL6b): the walk toward the goal** (the goal's points 1–4 and 6, and points 4 and 5; design §3.1, §3.3, §4.6,
+§7, §16.2–§16.4 and §16.6's `order`), held by `AccountRotationWalkTests` (the walk's tables per step, and ⌈K ÷ N⌉ for one
+account to six), `AccountRotationGoalTests` (through `SelectAsync`), `AccountWindowsTests` and, in the `Process` half,
+`AccountGoalTickTests`. As §16.6 says, a machine whose order was written before now follows the goal unless its scope
+says `order`, so *rotation never moves work off a ready account* (D125 §3.3) holds under `order` only. What building it
+settled:
+- **One scope for every start but a pick** (`ResolveScope`, D130 §3.1): a workspace naming a default and no list rotates
+  nowhere; a list begins at its default, else its first, never on the machine's default or the tool's own sign-in; a
+  default outside its list is read with the list winning, where D125 held the start on it.
+- **The count is Daoris's own records and its own choices.** Each look marks the last start chosen, reads this machine's
+  records (`Snapshot.Started`: adapter, account, opened, running) and hands them to the roster (`Look`), which keeps every
+  start chosen after the mark. A look begins only once the last look's starts opened their records, so none is counted
+  twice or lost. Choices and their counts are made one at a time, so starts begun together spread; one held after it was
+  chosen counts until the next look. The wiring panel asks the same walk and counts nothing. A door's sessions count
+  for its owner (AGT7).
+- **Least recently started**: never first, then by when the record opened, and a start chosen since the look is the most
+  recent of all, in the order chosen, whatever the clocks say.
+- **A weekly reset is told by a limit** whose window, or what was hit where it named none, is weekly, at a time the agent
+  named. `windows.json` keeps it (names, times, the session; what it has no field for kept). It is carried a week at a
+  time where the toolchain declares `WeekFixed` (Claude Code, and the stub mirroring it), declared beside `Limits` and not
+  in it, since that table grows only with recorded sentences and this is the maker's page (C1); elsewhere it is dropped
+  at its reset (Codex). Within a day it ranks first; beyond, nothing.
+- **Which step chose it.** `account.rotated` is written when a start ran somewhere other than where its scope begins:
+  `why` is the step that moved it (`kept`, `cooling`, `refused`, `signedOut`, or the goal's `fewest`, `lapsing`,
+  `leastRecent`), `scope` the workspace or null, `said` false. Under the goal every start whose walk had more than one
+  account opens naming its step, against where the scope begins or, where it ran there, against the next account (`list`
+  where nothing told them apart), adds the step among the rest where the first was passed for itself, and ends *No
+  account has said what it has left yet.* Under `order` a rotation alone speaks, in D125's words. A list of one, a pick
+  and a scope with no list say nothing.
+- **Keep**: driven work drops the kept account; under the goal a conversation takes it last, or first where it is the
+  default; under `order` in its place. A kept account that would leave driven work none is read as none.
+- **The wait asks** where the scope names accounts of its own: it adds the agent's other accounts, neither cooling nor
+  refused, and the `profile order` that adds the first; a driven start whose kept account is ready says it is kept. A
+  machine with no list keeps its sentence byte for byte.
+- **`profile use`** prints *next start*: the goal's steps, or the list's order under `order`, and the kept account driven
+  work passes. The CLI reads no session record, so it names the steps, not the account they would choose.
+
+**What the gates do not cover.** `AccountGoalTickTests` and the two updated `AccountRotationTickTests` are the `Process`
+half, written by this branch and not run by it. Near and pace, and `early` and `near`, choose nothing until TOOL6c. Not
+measured: whether a day is the right horizon, or whether spreading meets fewer limits (§16.8). `agent list` and the screen
+say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
+suites, the web's and the rehearsals were not run.
+
+**Built 2026-10-02 (TOOL6c): what the agents say, read** (the goal's points 3–5 and point 7's rule; design §4.4, §4.5, §5.2,
+§5.3, §6, §16.3 steps 2, 4 and 5, and §16.4, as `docs/2026-10-02-limit-signals-evidence.md` corrects them), held by
+`AccountReadingsTests` (the table and the frame), `AccountWindowsTests` and `WindowsTwinTests` (the file, twinned with the
+CLI's `windows.test.ts`), `AccountRotationWalkTests` and `AccountRotationGoalTests` (near and pace, per step and through
+`SelectAsync`), the doors' `ClaudeStreamJsonTests` and `AcpTests`, and, in the `Process` half, `AccountReadingTickTests`.
+What building it settled:
+- **One reader, a table per agent, both doors.** `AccountReadings.Read` reads Claude Code's `rate_limit_info`, which the
+  native door's `rate_limit_event` carries and its protocol door forwards unchanged as `usage_update._meta["_claude/rateLimit"]`
+  (evidence §1, §3), by the agent's `HarnessToolchain.Windows`. `ClaudeWindows.Words` names `five_hour` the `session` window
+  and `seven_day` the `weekly` one; `allowed`, `allowed_warning` and `rejected` clear, near and refused; the scale, a
+  fraction; and `isUsingOverage`, drawing on usage credits. Each stands on the evidence's recorded frame, and the two
+  unmeasured words on the SDK's declaration, said so. A door reads its owner's table (AGT7); Codex's door forwards none of
+  Codex's limits (§4), so it has none. A window the table does not name, or with no reset, says nothing.
+- **Kept as the door carries it, per window, by every session on an account**: driven starts, intakes, conversations and
+  Ask Daoris, on either door. `windows.json` keeps each window's newest reading (its use, its reset, the standing and
+  credits on the window the frame named, when, and which session) and drops it at its reset. The weekly window's reading is
+  the account's week for step 4 too, carried a week on as a limit's is; its use is not. A week a limit told says no use. The
+  tool's own sign-in keeps nothing.
+- **Near, as the evidence corrects §6**: the agent's warning word or its word that a limit was reached, drawing on usage
+  credits, or any window's use at or over the scope's *near*. §6 had the word win over the number, on C11's reading that
+  Claude Code's word comes without one; the evidence found a number on every frame and the word `allowed` at 88% with two
+  hours left (§1.3), so either passes. A near account goes last (step 2) under `goal` and under `order`, unless *switch
+  before the limit* is off: a pass, never a wait.
+- **Pace** (step 5): the share of the week gone, the seven days before its reset, less the share of its weekly limit said
+  used; furthest behind first. An account that said nothing about its week ranks as on pace, between behind and ahead. Below
+  fewest running and a week lapsing, above least recently started; nothing under `order`.
+- **What it says.** Under the goal every start's first line ends with what each account of its list said, `What each
+  account said: …`, each with its age and numbers or `nothing yet`, and says *No account has said what it has left yet.*
+  only while none has; under `order` a rotated start adds it where one has. Near names the account passed and what it said;
+  pace the account behind, or the one ahead. `account.rotated` gains `why` `near` and `pace`, `said` true where any account
+  of the list had said, and `fromSaid` and `toSaid`: Daoris's word for what each of its two accounts said (`refused`,
+  `near`, `clear`, or null), never a number.
+- **The CLI reads the file through its twin**, `windows.ts`: `agent list` says each account's last reading and its age
+  beneath it, and `profile use` the same against the scope's *near*, dropping the sentence once one has said. The
+  toolchain's `windows`, twin of `Windows`, says whose sessions speak; any other agent's switch still says its sessions do
+  not. This amends §14's *not a twin*: the file is read by both.
+
+**What the gates do not cover.** `AccountReadingTickTests`, and the two `AccountRotationTickTests` rows updated for the
+log's new fields, are the `Process` half, written by this branch and not run by it. No frame was recorded on Daoris's own
+door, and no `allowed_warning`, `rejected` or overage frame anywhere (evidence §7): those rows rest on the declaration.
+`account.near` (§13) is not written: near by number is a scope's own threshold, so *once per account and window* needs a
+scope the reading does not carry; each start's line and `account.rotated`'s `why` log every pass. Not measured: whether
+near comes early enough (§11 item 3), or whether pace leaves less at a weekly reset (§16.7). The screen says none of it
+yet (TOOL4g). The modules build against the change; their suites, the web's and the rehearsals were not run.
+
+**Built 2026-10-03 (TOOL4g): the screen and Ask Daoris** (points 3, 4, 11 and 12 and the goal's point 7; D125 points 5, 6
+and 8; design §3.2, §9, §16.4, §16.6; D125 §2.4, §3.7, §4, §6), held by the modules' `DriverModuleAccountsTests` and
+`TickConsiderationTests`, the driver's `HelpAgentProposalsTests` and `HelpCoverageTests`, and the web's `accounts.test.ts`,
+`AccountUse.test.tsx`, `AgentsDomain.test.tsx`, `DriverDomain.test.tsx` and `signals.test.ts`, with a story per state. What
+building it settled:
+- **One read for the screen, never a probe.** `ACCOUNTS` answers each agent by its accounts' owner (AGT7): whether its
+  sessions say how near their limits are, the tool's own sign-in's cool-off, each account's cool-off, what its agent last
+  said per window (`AccountWindows.SaidOf`), the week it knows and Daoris's live sessions on it, and each scope, the
+  machine's then each workspace's own, with where it begins, how it is used, a hand-edited conflict and the accounts near by
+  its own *near*. The count is the live records naming the account, a teammate's excluded; with the service down it is null,
+  and the row says nothing rather than a zero. The page asks it again at every tick.
+- **Each edit is the terminal's door's twin, refused by its rules** (`ACCOUNT_USE`): `order` (`HarnessSettings.OrderProblem`,
+  then `ScopeProblem.Of`), `use` (a scope with no list of its own, a value this build does not take, a kept account outside
+  the list or alone in it), `ready` (*Try now*, `own` for the tool's own sign-in, through `HarnessRoster.Ready`) and
+  `inherit`, a workspace's default, list and settings cleared at once for *This machine's accounts*. Each refusal is a code
+  the page translates (nine, `ACCOUNT_*`), with the workspace as the catalogue's context.
+- **What the terminal refuses, the screen does not offer.** *Use* off is disabled on a scope's default and its kept account,
+  with its tip; *Make default* and *use for a workspace…* are not offered for an account the scope's own list does not hold;
+  *Keep for conversations* is offered only to a list of two or more. A workspace returned to this machine's accounts asks
+  once, since it clears what the person built.
+- **TOOL6a's two notes**: `profile-default` asks `ScopeProblem.Of` before it writes (`DriverModule.DefaultAllowed`), and
+  Ask Daoris's `default` door asks the same rule against the wiring the screen reads (`HelpMachineFacts.Wiring`); *Remove*
+  calls `WithoutAccount`, so no default, list or kept account names a removed account.
+- **The `use` door is judged and applied on this side, and not yet offered.** `HelpAgentProposals` reads `use`, `keep` (JSON
+  null keeps none), `early` and `near` from the file, judges them as `profile use` does, and applies through the screen's
+  own write (`IHelpDoors.SetAccountUseAsync`). It is not in the kind's `Doors`: a door listed there is one the service's
+  `agent_propose` writes, held by `HelpProposalKindsTests`, and the service was another branch's. `order`, `ready`, the
+  inherit and the `setting` kind's `cooloff` are doors owed on the same ground (`HelpCoverageTests`).
+- **A wait for an account** rides the tick: a `Blocked` consideration a look's wait holds names the agent, the account
+  (null for the tool's own sign-in), the reset and whether it was stated (`waitsFor`). The quest's page wears *waits for an
+  account* and no *Try again*; English is the driver's sentence, and 中文 says it from those facts.
+- **The words**: *Use*, *Use accounts* (*Make the most of them*, *One by one, in order*), *Keep for conversations*, *Switch
+  before the limit*, *Near at*, *This machine's accounts*, *Its own accounts*, *near its limit*, *kept for conversations*,
+  *starts here*, *cooling*, *waits for an account* and *Try now*, in both catalogues and the glossary's kinds; *Try now* is a
+  term of its own (立即尝试), neither a plugin's trial nor a retry. Six names over their kind's budget are accepted with why.
+  The room's four account doors name their screen now.
+
+**What the gates do not cover.** The window: the look was taken in Storybook only (the stories at 1280, 888 and 680, light
+and dark, en and 中文), never on the assembled shell. Not built, and left to their rows: the *What needs you* row for a wait
+and its *Let … run …* door (§3.3), the conversation picker's split (§3.2), a session head's *your own sign-in*, the service's
+writer of the `use`, `order`, `ready` and `cooloff` doors, and a start's first line in 中文. The `Process` half and the
+rehearsals were not run by this branch.
+
 ## D131 — An answer continues the session: its record reopens and its harness conversation resumes where the account, the adapter and the tree are the same; otherwise today's carry-on, saying why (2026-10-02)
 
 **Decision (ANSWER1).** The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input
@@ -9228,403 +9447,6 @@ remote applies a `whileOpen` decline as a plain one. Found while reading and fil
 nothing that runs, so by this glossary it is a hold, for WSSETUP7 to name. The code's comments call a repository's
 hold *paused*, which PAUSE1b rewords. Not measured: every item of the design's §12. `verify` checks this entry's shape
 and the design's links, and none of their words.
-**The rules around the goal (2026-10-02).** The owner: *"you can design the rules around this purpose"*. So the
-defaults are re-decided on the goal: the most work from the accounts' combined allowance, the fewest stalls, and no
-allowance left unused at a reset (design §16).
-
-1. **Every listed account is used toward the goal by default** (`use: goal`). *List order, one by one* is an override
-   (`use: order`), D125's walk, kept for a person who wants their accounts used in their order.
-2. **No start is held** while an account it may use is ready and a slot is free, so allowance lapses only where there
-   was no work or no slot for it.
-3. **The default walk** (design §16.3), each step stable: a driven start drops the kept account; an account its agent
-   said is near goes last; fewest of Daoris's sessions running first; an account whose known weekly reset falls within
-   the next day first, sooner first; furthest behind its week's pace first, where the agent said; least recently
-   started first; the list's order last. While every account is ready, none runs more than ⌈K ÷ N⌉ at once.
-4. **With nothing said** (today), steps 2 and 5 are inert. The walk spreads by Daoris's own sessions and over time,
-   and learns each account's weekly reset from the weekly limits it meets, carried a week at a time where the maker
-   fixes it (Claude, C1). It says so on the screen, in `daoris agent list` and in each start's first line, and no
-   number stands in for a reading.
-5. **Switching before the limit is on by default**, inert until a door carries the agent's word. A kept account stays
-   an option, off by default.
-6. **A quest's next session goes where the walk sends it.** A carry-on carries no conversation, so its account buys
-   only readability, which its first line gives. This amends point 6 and the note on *in parallel* above.
-7. **The settings are the list, `use`, `keep`, `early` and `near`**, per agent and scope, for any number of accounts.
-   TOOL6a's vocabulary changes: `prefer` and `parallel` are gone; `use` (`goal` or `order`, absent `goal`) is new;
-   `early` is on when absent and off only when `false`; `keep` and `near` are unchanged. The terminal door is `daoris
-   agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>]
-   [--workspace W]`, and Ask Daoris's `use` door takes the same four. A machine with an order written before changes
-   to `goal` when TOOL6b lands.
-8. **It is judged** by TOOL4h's report per account and week: sessions landed, hours waited, limit cut-offs, allowance
-   left at each weekly reset where the agent's word shows it (*not measured* where not), the limits met, the starts
-   each step moved, and whether the cap rather than the accounts was the limit; and by TOOL4i's run under `goal`.
-
-**Why.** One by one meets a limit as soon as the load passes one account's five-hour window while the others sit idle,
-and that limit cuts off every session on the account; spreading meets none while the load fits all accounts together,
-and a limit cuts off at most ⌈K ÷ N⌉. A week recovers in days and five hours in hours, so the week's risks, lapsing and
-running ahead, rank above any five-hour order, and the five-hour window is a gate: passed when near, kept below its
-limit by spreading. A week is ranked by its reset only in its last day, when what is left is at risk of lapsing;
-ranked so all week, it would pile one account's work onto it while the others' weeks went by. Pace keeps every week
-moving, but alone it would pass a small leftover about to lapse, so it ranks below the last day. The fallbacks use only
-what Daoris knows: its own sessions, its own starts, and the resets the agents named.
-
-**Rejected** (design §16.5 and §16.9):
-- **Keeping *list order, one by one* as the default**: the most cautious choice, and the goal argues against it on
-  every measure.
-- **The five-hour window's reset as an order above the week**: unknown without the agent's word, and it would spend a
-  week to save hours.
-- **Ranking every week by its reset all week**, and **holding work to pace a week**.
-- **A quest kept on its account**, and **a cached prompt as a reason to keep it** (no page read says one counts less).
-- **Keeping `prefer` and `parallel` beside `use`**, and **a cap per account or a cap raised to use more windows**.
-
-**What it amends.** D130 points 3 (the settings), 6 (the walk), 7 (`left` and `soonest` fold into pace and the lapsing
-week), 8 (on by default), 10 (spreading is the default), 11 (the `use` door's fields), and the note on *in parallel*
-(a quest's carry-on no longer stays on its last account). The design's §2, §4, §6–§10 and §12–§14 carry notes, and the
-TOOL6a–d, TOOL4g, TOOL4h and TOOL4i rows in its §10 are amended in place. D125 §3.3 and §3.4 are the walk under
-`order`. Unchanged: eligibility (point 4), the wait that asks (point 5), what is left by the agent's own word and
-absent never zero (point 7's rule), the cool-off, a limit not a strike, D57, D49 §4 and D66 §3.
-
-**What the checks do not cover.** Documents only, and nothing is built. The arithmetic of spreading is an argument,
-not a measurement: neither an account's allowance nor the load is known, and §16.8 names what only a real run shows,
-the day's horizon among them. The first real rotation and its weekly sentence are the fix log's and D125's notes, not
-re-read here. `verify` checks this note's place and the design's links, and none of their words.
-
-**Built 2026-10-02 (TOOL6a): the settings and their terminal door** (points 2, 4 and 11 and the goal's point 7; design
-§2, §3.1, §4.6, §14, §16.6), held by `RotationUseTwinTests` and `RotationTwinTests` on the driver's side and, cell for
-cell, by the CLI's `rotation-use.test.ts` and `rotation.test.ts`. What building it settled:
-- **A value or a default changes by a row.** Today's defaults live in one place (`USE_DEFAULTS`, `RotationUse.Default`)
-  and the ways to use accounts in one list (`USE_MODES`, `RotationUse.Modes`). A value the reader does not know reads as
-  today's default and is said by `agent list` and `profile use`; a setting it has no name for is kept as written and
-  said. `prefer` and `parallel` are skipped and gone at the next write (§16.6).
-- **A choice is written as made**, one equal to today's default included, so a later default never overturns what a
-  person chose; only absence means the default. Known settings go out in one order, normalised, then the rest as read;
-  both writers write the same bytes.
-- **A scope's settings come with its list.** Clearing a list clears its settings; an account removed is kept nowhere.
-  `profile use` refuses a scope with no list of its own, naming the `order` that gives it one. `--clear` returns a
-  scope to today's defaults.
-- **One rule binds a scope** (`scopeProblem`, `ScopeProblem.Of`): its default and its kept account are of its list,
-  compared exactly, and a kept account leaves driven work another. `profile order` refuses all three, naming both sides
-  and the fix; `profile default` the first, where its scope has a list of its own (a workspace with none takes any
-  account and is then that account alone); `profile use --keep` the kept ones. The order door's two kept-account
-  refusals keep §4.6's state unreachable by the back door. Tested with one account and with six.
-- **`agent list`** prints beneath each list how it is used, a default outside it, a kept account alone in it, and what
-  the build does not know. `profile use` with the agent alone adds what each account last said, which today is its
-  cool-off or nothing: no door carries the agent's word about its windows yet (§5.3), and the switch says so.
-- **The room names the door** (`HelpRoomDoors`, *no screen yet*).
-
-**What the gates do not cover.** Nothing reads these settings to choose an account: `SelectAsync` still walks D125's
-order, and `ResolveScope` waits for TOOL6b. §3.1's refusal is the terminal's alone: the screen's `profile-default`
-route (`DriverModule.DefaultEdited`, modules) and Ask Daoris's `default` door do not ask `ScopeProblem.Of` yet (TOOL4g,
-or a modules row). The `Process` half, the rehearsals and the screen were not run by this branch.
-
-**Built 2026-10-02 (TOOL6b): the walk toward the goal** (the goal's points 1–4 and 6, and points 4 and 5; design §3.1, §3.3, §4.6,
-§7, §16.2–§16.4 and §16.6's `order`), held by `AccountRotationWalkTests` (the walk's tables per step, and ⌈K ÷ N⌉ for one
-account to six), `AccountRotationGoalTests` (through `SelectAsync`), `AccountWindowsTests` and, in the `Process` half,
-`AccountGoalTickTests`. As §16.6 says, a machine whose order was written before now follows the goal unless its scope
-says `order`, so *rotation never moves work off a ready account* (D125 §3.3) holds under `order` only. What building it
-settled:
-- **One scope for every start but a pick** (`ResolveScope`, D130 §3.1): a workspace naming a default and no list rotates
-  nowhere; a list begins at its default, else its first, never on the machine's default or the tool's own sign-in; a
-  default outside its list is read with the list winning, where D125 held the start on it.
-- **The count is Daoris's own records and its own choices.** Each look marks the last start chosen, reads this machine's
-  records (`Snapshot.Started`: adapter, account, opened, running) and hands them to the roster (`Look`), which keeps every
-  start chosen after the mark. A look begins only once the last look's starts opened their records, so none is counted
-  twice or lost. Choices and their counts are made one at a time, so starts begun together spread; one held after it was
-  chosen counts until the next look. The wiring panel asks the same walk and counts nothing. A door's sessions count
-  for its owner (AGT7).
-- **Least recently started**: never first, then by when the record opened, and a start chosen since the look is the most
-  recent of all, in the order chosen, whatever the clocks say.
-- **A weekly reset is told by a limit** whose window, or what was hit where it named none, is weekly, at a time the agent
-  named. `windows.json` keeps it (names, times, the session; what it has no field for kept). It is carried a week at a
-  time where the toolchain declares `WeekFixed` (Claude Code, and the stub mirroring it), declared beside `Limits` and not
-  in it, since that table grows only with recorded sentences and this is the maker's page (C1); elsewhere it is dropped
-  at its reset (Codex). Within a day it ranks first; beyond, nothing.
-- **Which step chose it.** `account.rotated` is written when a start ran somewhere other than where its scope begins:
-  `why` is the step that moved it (`kept`, `cooling`, `refused`, `signedOut`, or the goal's `fewest`, `lapsing`,
-  `leastRecent`), `scope` the workspace or null, `said` false. Under the goal every start whose walk had more than one
-  account opens naming its step, against where the scope begins or, where it ran there, against the next account (`list`
-  where nothing told them apart), adds the step among the rest where the first was passed for itself, and ends *No
-  account has said what it has left yet.* Under `order` a rotation alone speaks, in D125's words. A list of one, a pick
-  and a scope with no list say nothing.
-- **Keep**: driven work drops the kept account; under the goal a conversation takes it last, or first where it is the
-  default; under `order` in its place. A kept account that would leave driven work none is read as none.
-- **The wait asks** where the scope names accounts of its own: it adds the agent's other accounts, neither cooling nor
-  refused, and the `profile order` that adds the first; a driven start whose kept account is ready says it is kept. A
-  machine with no list keeps its sentence byte for byte.
-- **`profile use`** prints *next start*: the goal's steps, or the list's order under `order`, and the kept account driven
-  work passes. The CLI reads no session record, so it names the steps, not the account they would choose.
-
-**What the gates do not cover.** `AccountGoalTickTests` and the two updated `AccountRotationTickTests` are the `Process`
-half, written by this branch and not run by it. Near and pace, and `early` and `near`, choose nothing until TOOL6c. Not
-measured: whether a day is the right horizon, or whether spreading meets fewer limits (§16.8). `agent list` and the screen
-say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
-suites, the web's and the rehearsals were not run.
-
-**Built 2026-10-02 (TOOL6c): what the agents say, read** (the goal's points 3–5 and point 7's rule; design §4.4, §4.5, §5.2,
-§5.3, §6, §16.3 steps 2, 4 and 5, and §16.4, as `docs/2026-10-02-limit-signals-evidence.md` corrects them), held by
-`AccountReadingsTests` (the table and the frame), `AccountWindowsTests` and `WindowsTwinTests` (the file, twinned with the
-CLI's `windows.test.ts`), `AccountRotationWalkTests` and `AccountRotationGoalTests` (near and pace, per step and through
-`SelectAsync`), the doors' `ClaudeStreamJsonTests` and `AcpTests`, and, in the `Process` half, `AccountReadingTickTests`.
-What building it settled:
-- **One reader, a table per agent, both doors.** `AccountReadings.Read` reads Claude Code's `rate_limit_info`, which the
-  native door's `rate_limit_event` carries and its protocol door forwards unchanged as `usage_update._meta["_claude/rateLimit"]`
-  (evidence §1, §3), by the agent's `HarnessToolchain.Windows`. `ClaudeWindows.Words` names `five_hour` the `session` window
-  and `seven_day` the `weekly` one; `allowed`, `allowed_warning` and `rejected` clear, near and refused; the scale, a
-  fraction; and `isUsingOverage`, drawing on usage credits. Each stands on the evidence's recorded frame, and the two
-  unmeasured words on the SDK's declaration, said so. A door reads its owner's table (AGT7); Codex's door forwards none of
-  Codex's limits (§4), so it has none. A window the table does not name, or with no reset, says nothing.
-- **Kept as the door carries it, per window, by every session on an account**: driven starts, intakes, conversations and
-  Ask Daoris, on either door. `windows.json` keeps each window's newest reading (its use, its reset, the standing and
-  credits on the window the frame named, when, and which session) and drops it at its reset. The weekly window's reading is
-  the account's week for step 4 too, carried a week on as a limit's is; its use is not. A week a limit told says no use. The
-  tool's own sign-in keeps nothing.
-- **Near, as the evidence corrects §6**: the agent's warning word or its word that a limit was reached, drawing on usage
-  credits, or any window's use at or over the scope's *near*. §6 had the word win over the number, on C11's reading that
-  Claude Code's word comes without one; the evidence found a number on every frame and the word `allowed` at 88% with two
-  hours left (§1.3), so either passes. A near account goes last (step 2) under `goal` and under `order`, unless *switch
-  before the limit* is off: a pass, never a wait.
-- **Pace** (step 5): the share of the week gone, the seven days before its reset, less the share of its weekly limit said
-  used; furthest behind first. An account that said nothing about its week ranks as on pace, between behind and ahead. Below
-  fewest running and a week lapsing, above least recently started; nothing under `order`.
-- **What it says.** Under the goal every start's first line ends with what each account of its list said, `What each
-  account said: …`, each with its age and numbers or `nothing yet`, and says *No account has said what it has left yet.*
-  only while none has; under `order` a rotated start adds it where one has. Near names the account passed and what it said;
-  pace the account behind, or the one ahead. `account.rotated` gains `why` `near` and `pace`, `said` true where any account
-  of the list had said, and `fromSaid` and `toSaid`: Daoris's word for what each of its two accounts said (`refused`,
-  `near`, `clear`, or null), never a number.
-- **The CLI reads the file through its twin**, `windows.ts`: `agent list` says each account's last reading and its age
-  beneath it, and `profile use` the same against the scope's *near*, dropping the sentence once one has said. The
-  toolchain's `windows`, twin of `Windows`, says whose sessions speak; any other agent's switch still says its sessions do
-  not. This amends §14's *not a twin*: the file is read by both.
-
-**What the gates do not cover.** `AccountReadingTickTests`, and the two `AccountRotationTickTests` rows updated for the
-log's new fields, are the `Process` half, written by this branch and not run by it. No frame was recorded on Daoris's own
-door, and no `allowed_warning`, `rejected` or overage frame anywhere (evidence §7): those rows rest on the declaration.
-`account.near` (§13) is not written: near by number is a scope's own threshold, so *once per account and window* needs a
-scope the reading does not carry; each start's line and `account.rotated`'s `why` log every pass. Not measured: whether
-near comes early enough (§11 item 3), or whether pace leaves less at a weekly reset (§16.7). The screen says none of it
-yet (TOOL4g). The modules build against the change; their suites, the web's and the rehearsals were not run.
-
-## D131 — An answer continues the session: its record reopens and its harness conversation resumes where the account, the adapter and the tree are the same; otherwise today's carry-on, saying why (2026-10-02)
-
-**Decision (ANSWER1).** The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input
-and after I input it starts a new session? isn't this should be continue"*. Seen on the install the same day: a driven
-session on `claude-code-acp` 0.84.0 parked to ask, the person answered, and the driver started a new session in the
-same tree, the agent's own conversation gone and a second row on the screen. Read from the code at `32cbf03`, the
-answer ends the parked record `completed` (D83) and the planner opens a new one (D80's carry-on); nothing resumes an
-agent's own conversation, though the adapter offers `session/resume` and `session/load` and the ledger already allows
-`awaiting-person` → `working`. The contract is `docs/2026-10-02-answer-continues-design.md`.
-
-1. **Resume when it can work.** An answered park is continued by its own record: `awaiting-person` → `working`, the
-   harness's own conversation resumed in the same tree, and the answer its next prompt, verbatim. The protocol door
-   sends `session/resume` where the agent advertises it (no replay, since the record already holds the conversation),
-   else `session/load` with its replay not kept again; the native door runs `claude -p <answer> --resume <id>`. The
-   conversation's id is kept the moment the wire says it, beside the transcript, never read from the agent's home.
-2. **It needs** the record still parked with its answer, the same adapter, the same account (the conversation lives
-   in that account's configuration home, and a record names one account), the same tree standing, a kept id, and a
-   door that can resume. A changed harness version is said on the resumed run's first line, never refused.
-3. **Otherwise, today's carry-on, said why.** The park ends `completed` with its answer and the reason, and a new
-   record carries the quest on in the same tree with the answer, the last plan and the last words. The reason is one
-   line on its note, by a code: `account`, `adapter`, `unkept`, `tree`, `unable`, `offered`, `gone`, `refused` or
-   `ended` (design §2). A note never names an account nor quotes the agent's refusal. The machine log writes
-   `session.answered` {session, adapter, resumed, why} once per answer taken up.
-4. **One Daoris record for one harness conversation.** A resume reopens the record that parked; a fallback is a new
-   record because it is a new conversation.
-5. **The other entries stay new sessions**: *Try again* after a person's stop, a carry-on after a time-out, a crash,
-   a refused turn or an interrupted take, and D79's resume, which is the same shape and held. Each one's record is
-   finished, and a finished record does not move.
-6. **The service and the page follow** (design §5): ANSWER1b keeps an answered record parked, and clears `answer` on a
-   move into `awaiting-person`; ANSWER1c shows an answered park as carrying on. Until ANSWER1b, the driver carries every
-   answer on as today, saying `ended`.
-
-**Why.** The person answered a question, and a conversation that asked it is the one that should hear the answer: a
-new session rebuilds from a handed summary what the first one knew, and the screen shows the person a second session
-for one piece of work. D46 held resume as an adapter capability until a real run asked for it, and D90 already keeps
-a working session's context for what the person adds; a park the person answers is the same need after the turn has
-ended. The record is the authority (D46 §4), so one record standing for one conversation is what makes the page, the
-log, the review and a teammate's view show one session without each learning a fold.
-
-**Rejected.**
-- **A linked record that the page folds into one thread.** It leaves the ledger alone, but every reader of records
-  would have to learn the fold, one conversation would have two homes, the log would count two sessions, and a
-  teammate would see two rows unless the link travelled as a new field.
-- **Reopening a finished record.** A finished record does not move, has travelled, and is what the strikes count.
-- **Resuming the conversation in a new record** for a fallback, a stop or a cut-off. That is the linked shape: one
-  conversation over two records.
-- **`session/load` first.** It replays the whole history, which the record already holds; `session/resume` sends none.
-- **Checking for the conversation in the agent's home before resuming.** A read inside an account's directory (D66 §3);
-  the agent's own refusal is the answer, and the fallback takes it.
-- **Refusing a resume across a harness version.** The native `claude` updates itself, so nearly every answer would
-  fall back; the run says its version instead.
-
-**This amends:** D83 (an answer no longer ends the record, once ANSWER1b lands, and a continued park is not a new
-session), D80 and STANDDOWN2's carry-on (now the fallback, said why), D46's held resume (built for an answered park),
-and D94 §4 (`session.answered`). D51, D58, D79, D90, D104, D125 and D130 stand.
-
-**What the gates do not cover.** This entry's statements about today were read from the code at `32cbf03` and from
-the adapter's and SDK's published packages at their pinned versions; no real agent was resumed. The native door's
-`--resume` and its `init` line are the maker's published shapes, not a run on this machine. `verify` checks this
-entry's shape and the design's links, and none of their words.
-
-**Built 2026-10-02 (ANSWER1a): the driver's half** (points 1–4; design §1–§3), held by `ContinuationTests`,
-`AnswerContinuesPlanTests`, `HarnessConversationsTests`, `AcpResumeTests`, `NativeResumeTests` and `SessionLogTests`.
-What building it settled:
-- **The id is kept at the wire's first word.** `AcpSession` tells `session/new`'s id as it arrives (`onConversation`), so
-  a turn that then fails or parks still leaves it; the native door keeps its `init` line's `session_id` once its output
-  ends. Both land in `HarnessConversations`, for a quest's session only, since an intake is answered through its ask.
-- **A refusal keeps its code and the agent's own sentence** beside ACPDATA1's data (`AcpRefusal.Code`, `.Words`): a
-  resume refused `resource_not_found` is `gone`, any other `refused`. A load's replay is dropped by its `sessionId`
-  while the load is answered.
-- **The judgement's order is the record, the adapter, the account, the tree, the kept id, then the door**
-  (`Continuations.Judge`), so the line said is the first a person can act on.
-- **The planner continues through the carry-on's verdict**, `continuing`: the park is not busy with its own tree, quest
-  or repository, and already holds its slot of the cap. The person's hold and the strikes still stand.
-- **A refusal on the wire ends the record from `working`**, since a run moves its record to working at spawn; the park's
-  note keeps what it asked and adds why, and the carry-on starts in the same look, taking the starting hold (LEFT2) again
-  until its own record holds the tree. A resumed run that could not start ends the park the same way, as `refused`,
-  whose line became *its conversation could not be resumed* to cover it.
-- **The resumed run's evidence counts from the record's own base commit**, so the review's range is the whole session's.
-- **An answer that keeps its park tells the watchers nothing** (`ServiceClient.AnswerSessionAsync`): the log would
-  otherwise write a second park, or an ending that did not happen.
-- **`session.answered` rides the account lines' channel**, which writes a catalogued line as it is given; the machine
-  log design's §4 lists it.
-
-**What the gates do not cover.** The `Process` half was not run by this branch: `AnswerContinuesTickTests` runs three
-real ticks on a protocol stub that speaks `session/resume`. An answer resumes the parked record's own conversation, with
-one record from start to end. A conversation the stub no longer has is carried on in a new session in the same tree,
-saying why. An answer on another stub account never asks the stub to resume. Its stand-in service models ANSWER1b, and
-the real service still ends the record as it takes the answer, so until ANSWER1b lands every answer reads `ended` and
-is carried on as before. The page still shows an answered park as waiting on the person for up to one look (ANSWER1c).
-The family rehearsal's protocol stub was not taught `session/resume`: no rehearsal reaches a resume before ANSWER1b.
-
-**Built 2026-10-02 (ANSWER1b): the service's half** (point 6; design §5), held by `SessionLedgerTests`,
-`SessionStoreTests` and `LocalHostTests`, and the family rehearsal's 17a and section 4. What building it settled:
-- **The answer keeps the park in one step**, under the store's write lock as a move is (REV3), so a second answer and
-  the driver taking the park up never both read it parked. It is a new revision, so its note travels as a move's does;
-  the words themselves are still answered to this machine only.
-- **A second answer replaces the first** on the record and on the note. The note's *Answered:* line is replaced only
-  where it ends the note and quotes the answer held, so nothing else the note says is ever cut.
-- **Clearing is the ledger's to say** (`SetStateAsync`'s `clearAnswer`), on a move into `awaiting-person` alone: working
-  keeps the answer while it is worked on, and `completed` keeps it for the fallback's open, which still carries on a
-  `completed` record with an answer.
-- **The reply is the session as it stands**, still parked, which is how `ServiceClient.AnswerSessionAsync` tells the
-  watchers nothing moved; its sentence says it carries the quest on at the driver's next look. An answer once the
-  driver has taken the park up is refused naming the state the record is in.
-- **The rehearsal's park is a carry-on's.** The protocol stub takes through the service's HTTP door, which marks no
-  session as the taker, so a first session ending with its quest taken reads as a stand-down; a session carrying a
-  take on parks (D80). So 17a makes the cut-off through the doors as section 4 does, the driver carries it on, its
-  session asks, `daoris-driver answer` answers, and the next look resumes the same record's conversation over
-  `session/resume`. The stub advertises `resume` as the real adapter does, and resumes whatever conversation it is
-  asked, keeping no history.
-
-**What the gates do not cover.** The family rehearsal was written, not run: it is the parent's to run at the merge,
-with `AnswerContinuesTickTests`. A take through a connector, which a real agent's first session parks on, is
-`McpToolsTests`' (STANDDOWN2), not 17a's. Words in lanes this branch does not hold still say an answer ends the
-record: the headless host's usage for `answer`, and the comments on the page's answer box, its query and its frame
-(ANSWER1c's lane).
-
-## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
-
-**Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
-is a pause and cleanup feature needed"*. The parent paused it by hand: `daoris driver hold <repository>` held every new
-start in the whole repository, and *Stop…* on the running session held its one quest (D126, SESSUX1b). Nothing paused
-the ask, every quest and session of it at once. Nothing removed what it left: quests open or taken, trees under the
-home, `daoris/*` branches with commits nobody pushed, and sessions in the list. *Close ask* writes only the ask's row,
-and its quests go on. `docs/2026-10-02-pause-and-clean-up-design.md` is the contract; its §0 is what was true at
-`32cbf03`. It settles:
-
-1. **An ask's work is one thing, read by one reader.** It is the quests asked by the ask, chain steps included; every
-   quest a session of the work published, which brings in a question asked of another repository (D79), applied
-   again to what that adds; their sessions and the ask's intake; and their trees, branches and landings here. A
-   quest's work starts from that quest. `AskWork.Read` answers it for both doors (`WORK_PLAN`, `daoris-driver`), and the
-   look reads it again each time, so a step or a question that appears after a pause is paused too.
-2. **Pause stops the work on this machine and keeps everything.** It stops every live session of the work as the
-   person's stop, starts nothing of it (the ask's intake included), and keeps each open quest's place in the queue and
-   each taken quest's take, tree, wait and strikes. **It takes nothing *Resume* cannot give back**, so a session waiting
-   on you stays parked, and a running intake goes on, its publishes paused with the rest. It asks once when it ends
-   work in flight.
-3. **The planner's `Paused` verdict comes before every other**, a person's stop included. Its sentence names the pause
-   and *Resume*, with its terminal line. The look computes the paused set and the planner reads it.
-4. **Resume releases the pause and every stop it made** (`released`, SESSUX1b's field), so a taken quest is carried on
-   in its tree and an open one starts in its place. What still holds (a stop made before the pause, the strikes, a
-   repository's hold, an account's cool-off, another pause) is named, never released.
-5. **A pause is kept in `driver.json`** as `pausedAsks` and `pausedQuests`, each with when it was made and the stops it
-   made. They are twins (`DriverConfig.cs`, `driverconfig.ts`). `daoris driver list` shows them; `daoris-driver` pauses
-   and resumes, since it reads the work and reaches the running loop.
-6. **Abandon is listed first and done on the second press, with the person's reason**, as *Archive what ended…* is.
-   The second press sends exactly what the first listed, and judges each piece again. In order, it pauses the scope,
-   stops and ends the work's sessions, declines each open quest and each quest this machine's session took with the
-   reason, closes the ask with it, syncs, discards trees and branches, archives sessions, tidies `driver.json`, and
-   writes the record.
-7. **Abandon discards a tree and its branch only when nothing it holds is anywhere else**: no commit after the
-   session's base on any ref but this machine's local `daoris/*` branches. Landed, a branch of the person's, a branch
-   a landing made, a tag, and **pushed, a remote `daoris/*` branch included**, each keep it, named. So does a session a
-   landing names, standing or a trace, and a count git cannot give. Uncommitted changes in Daoris's tree go, named on
-   the first press. This is D88's proof inverted: the clean-up removes what is proven elsewhere, abandon what is
-   proven nowhere else, and a branch partly elsewhere is kept by both.
-8. **Abandon takes only what Daoris made for the work on this machine.** A quest taken on another machine, or taken here
-   outside Daoris, is kept and named. A done quest keeps its record. A branch of the person's, the line, a remote
-   branch, the intake's room, kept files, the usage and the log are never touched. Records are archived, never
-   deleted.
-9. **What the record keeps.** Each declined quest's note is the person's reason, verbatim, and travels. The ask's close
-   note is the same reason. `<home>/abandoned.json` keeps, per abandon, what went (each tree's repository, branch, tip
-   and counts) and what stayed with its reason, and never a path. The log gains `work.paused`, `work.resumed` and
-   `work.abandoned`, names and counts only.
-10. **A pause is this machine's; a decline travels.** A teammate's driver may still take an open quest of paused work,
-    and their running sessions are not reached (D47 §4). A taken quest's pause holds everywhere, because its take
-    does. **A decline the abandon makes of an open quest carries `whileOpen`**: it applies only to an open quest, so
-    pushed after another machine's take it becomes a conflict on the quest (D68 rule 2) and the take stands. The
-    abandon runs a sync pass before it answers, and says which declines were confirmed, lost or unconfirmed. A remote
-    has no pause or abandon route.
-11. **The doors.** Pause, *Resume* and *Abandon…* are on the ask's page and the quest's page. *Pause quest…*, *Pause
-    ask…* and *Resume* are also on a session's header and row, where work going wrong is met. Abandon is on the two
-    pages only, where an ask or a quest is decided. At a terminal: `daoris-driver ask --pause|--resume|--abandon` and
-    `quest pause|resume|abandon`, an abandon listing until `--reason` and `--yes`. Ask Daoris gains a `pause` kind
-    (`pause`, `resume`). Abandon is exempt there, since its reason is the person's answer (D37).
-12. **Names.** *Pause* is 暂缓 and its inverse *Resume* 恢复. *Abandon* is 放弃, never *clean up*: the glossary's *clean
-    up* (清理) keeps exactly the work this throws away, and a destructive press must not wear a safe press's name.
-    Both are new glossary terms.
-
-The build is PAUSE1a–g, the design's §9.
-
-**Why.** The owner's work went wrong in one ask, and every act they had reached either too far (a whole repository) or
-too little (one session, one quest). A pause that stops what runs and keeps the take, the tree and the place is the
-act a person reaches for when they want to look before they decide. Once they decide, giving the work up should be one
-listed press. That press must throw away only what nobody else can have: unpushed commits and uncommitted changes in
-Daoris's own trees. Anything that reached a branch of theirs, the line or a remote has left Daoris's hands, and is
-named, not touched.
-
-**This amends:**
-- **D126 §3.3 and SESSUX1b's note**: a pause is the reason its quest sits before a stop, and *Try again* is not offered
-  while it holds; `RETRY_QUEST` refuses with `QUEST_PAUSED`.
-- **D51 rule 7 as D88 amended it**: a second removal by a person's press, behind the inverse proof.
-- **D68 rule 2 and the sync design's §5**: a `whileOpen` decline after another machine's take is a conflict.
-- **D65**: an ask's close leaves its quests, and its page now says so; abandon closes it and declines them.
-- **D94 §4**: three events. **D110**: the `pause` kind; abandon exempt. **D116's glossary**: *pause* and *abandon*.
-
-**D46 §3–§4 (no new state), D58 (a stop is no strike), D68's one lock, D95, D47 §4 and D32 stand.**
-
-**Rejected.**
-- **Naming the second act *Clean up***, as the owner and the dispatch did. The glossary's *clean up* is D88's removal of
-  what landed, the safe press in Settings, and it keeps exactly what this one throws away.
-- **A pause that travels.** It would be a new operation every machine's planner obeys, a second lock beside the take.
-- **Stopping a running intake, or a parked session, on pause.** Neither comes back on *Resume*: one intake per ask, and a
-  parked session's question would be lost.
-- **Narrowing a repository's hold with a filter.** A hold leaves what runs running, and `holds` is read by two twins.
-- **Deleting the quests nobody started**, as D95 allows. A delete says the ask was a mistake; abandon keeps the reason.
-- **Discarding the unlanded half of a partly landed branch.** It would decide which half the person meant; its review
-  does.
-- **Abandon judging landed work, or declining a quest taken elsewhere or outside Daoris.** Neither is Daoris's work
-  here; *Decline…* on the quest's page is one deliberate answer.
-- **Prefixing each decline's note with Daoris's words.** It would put English into content; the abandon record says
-  what went.
-- **Ask Daoris abandoning**, **several asks at once**, **an undo**, and **a new ask state** for *paused* or *abandoned*.
-
-**What the gate does not cover.** This decision is documents only. The code was read at `32cbf03`, as the design's
-§13 lists. That SESSUX1g's request folder is built as D126 §7.1 says is assumed, and PAUSE1b waits on it. An older
-remote applies a `whileOpen` decline as a plain one. Found while reading and filed: D124's set-up plan *Pause* stops
-nothing that runs, so by this glossary it is a hold, for WSSETUP7 to name. The code's comments call a repository's
-hold *paused*, which PAUSE1b rewords. Not measured: every item of the design's §12. `verify` checks this entry's shape
-and the design's links, and none of their words.
 
 **Built 2026-10-02 (PAUSE1a): the work, and the pause's file** (points 1 and 5; design §1, §2.5). `AskWork.Read` reads an
 ask's work or one quest's from the service's quests and records and this machine's landings, held by `AskWorkTests`.
@@ -9650,48 +9472,6 @@ terminal's verbs are PAUSE1b's, and `driver list` names no resume door until one
 pause or an abandon would do with each piece (§2.1, §3.2); that is PAUSE1b's and PAUSE1d's, and `Took` and `BaseCommit`,
 which they need, are not on `SessionRecord` yet. How long a reading takes over a real workspace is not measured. The
 `Process` half, the rehearsals and the screen were not run by this branch.
-**Built 2026-10-03 (TOOL4g): the screen and Ask Daoris** (points 3, 4, 11 and 12 and the goal's point 7; D125 points 5, 6
-and 8; design §3.2, §9, §16.4, §16.6; D125 §2.4, §3.7, §4, §6), held by the modules' `DriverModuleAccountsTests` and
-`TickConsiderationTests`, the driver's `HelpAgentProposalsTests` and `HelpCoverageTests`, and the web's `accounts.test.ts`,
-`AccountUse.test.tsx`, `AgentsDomain.test.tsx`, `DriverDomain.test.tsx` and `signals.test.ts`, with a story per state. What
-building it settled:
-- **One read for the screen, never a probe.** `ACCOUNTS` answers each agent by its accounts' owner (AGT7): whether its
-  sessions say how near their limits are, the tool's own sign-in's cool-off, each account's cool-off, what its agent last
-  said per window (`AccountWindows.SaidOf`), the week it knows and Daoris's live sessions on it, and each scope, the
-  machine's then each workspace's own, with where it begins, how it is used, a hand-edited conflict and the accounts near by
-  its own *near*. The count is the live records naming the account, a teammate's excluded; with the service down it is null,
-  and the row says nothing rather than a zero. The page asks it again at every tick.
-- **Each edit is the terminal's door's twin, refused by its rules** (`ACCOUNT_USE`): `order` (`HarnessSettings.OrderProblem`,
-  then `ScopeProblem.Of`), `use` (a scope with no list of its own, a value this build does not take, a kept account outside
-  the list or alone in it), `ready` (*Try now*, `own` for the tool's own sign-in, through `HarnessRoster.Ready`) and
-  `inherit`, a workspace's default, list and settings cleared at once for *This machine's accounts*. Each refusal is a code
-  the page translates (nine, `ACCOUNT_*`), with the workspace as the catalogue's context.
-- **What the terminal refuses, the screen does not offer.** *Use* off is disabled on a scope's default and its kept account,
-  with its tip; *Make default* and *use for a workspace…* are not offered for an account the scope's own list does not hold;
-  *Keep for conversations* is offered only to a list of two or more. A workspace returned to this machine's accounts asks
-  once, since it clears what the person built.
-- **TOOL6a's two notes**: `profile-default` asks `ScopeProblem.Of` before it writes (`DriverModule.DefaultAllowed`), and
-  Ask Daoris's `default` door asks the same rule against the wiring the screen reads (`HelpMachineFacts.Wiring`); *Remove*
-  calls `WithoutAccount`, so no default, list or kept account names a removed account.
-- **The `use` door is judged and applied on this side, and not yet offered.** `HelpAgentProposals` reads `use`, `keep` (JSON
-  null keeps none), `early` and `near` from the file, judges them as `profile use` does, and applies through the screen's
-  own write (`IHelpDoors.SetAccountUseAsync`). It is not in the kind's `Doors`: a door listed there is one the service's
-  `agent_propose` writes, held by `HelpProposalKindsTests`, and the service was another branch's. `order`, `ready`, the
-  inherit and the `setting` kind's `cooloff` are doors owed on the same ground (`HelpCoverageTests`).
-- **A wait for an account** rides the tick: a `Blocked` consideration a look's wait holds names the agent, the account
-  (null for the tool's own sign-in), the reset and whether it was stated (`waitsFor`). The quest's page wears *waits for an
-  account* and no *Try again*; English is the driver's sentence, and 中文 says it from those facts.
-- **The words**: *Use*, *Use accounts* (*Make the most of them*, *One by one, in order*), *Keep for conversations*, *Switch
-  before the limit*, *Near at*, *This machine's accounts*, *Its own accounts*, *near its limit*, *kept for conversations*,
-  *starts here*, *cooling*, *waits for an account* and *Try now*, in both catalogues and the glossary's kinds; *Try now* is a
-  term of its own (立即尝试), neither a plugin's trial nor a retry. Six names over their kind's budget are accepted with why.
-  The room's four account doors name their screen now.
-
-**What the gates do not cover.** The window: the look was taken in Storybook only (the stories at 1280, 888 and 680, light
-and dark, en and 中文), never on the assembled shell. Not built, and left to their rows: the *What needs you* row for a wait
-and its *Let … run …* door (§3.3), the conversation picker's split (§3.2), a session head's *your own sign-in*, the service's
-writer of the `use`, `order`, `ready` and `cooloff` doors, and a start's first line in 中文. The `Process` half and the
-rehearsals were not run by this branch.
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
