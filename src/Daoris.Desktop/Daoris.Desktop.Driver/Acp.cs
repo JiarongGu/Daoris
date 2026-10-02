@@ -198,7 +198,11 @@ public sealed record AcpOutcome(
 /// them, as an answer to a change, and as the agent's own <c>config_option_update</c>. Null where nobody
 /// asks.
 /// </param>
-public sealed class AcpSession(
+/// <param name="onConversation">
+/// Told the id <c>session/new</c>'s answer names, the moment it arrives (ANSWER1a, D131 §1): what an answer
+/// to a park resumes, kept before the first turn can fail or park. Null where nobody keeps it.
+/// </param>
+public sealed partial class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
     Action<string> onLine,
@@ -208,7 +212,8 @@ public sealed class AcpSession(
     Action<SessionEvent>? onEvent = null,
     TimeSpan? quiet = null,
     SessionStreams? streams = null,
-    Action<IReadOnlyList<AcpConfigOption>>? onOptions = null)
+    Action<IReadOnlyList<AcpConfigOption>>? onOptions = null,
+    Action<string>? onConversation = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -316,13 +321,19 @@ public sealed class AcpSession(
     /// once. Null for a session nobody may tell anything — an intake (INT4h).
     /// </param>
     /// <param name="asked">Told each held word as it is handed over, so the record keeps it as the person's.</param>
+    /// <param name="resume">
+    /// The harness conversation an answer continues (ANSWER1a, D131 §1), resumed rather than a new session opened, with
+    /// <paramref name="prompt"/> — the answer — as its next turn. Null opens a new session, as every start does.
+    /// </param>
+    /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
-        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null)
+        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null)
     {
         try
         {
-            await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+            if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+            else await ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
             inbox?.Attach(CancelTurnAsync);
             var stopReason = await PromptAsync(prompt, ct).ConfigureAwait(false);
             // The person's words, one prompt each, in the order said — the session keeps its context,
@@ -359,11 +370,48 @@ public sealed class AcpSession(
     /// </remarks>
     public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
     {
+        await HandshakeAsync(ct).ConfigureAwait(false);
+        var offered = Offer(servers);
+
+        // The rules composed for this session ride here when the adapter takes them (PERM1) —
+        // and a session given none sends exactly what it sent before they existed.
+        var created = await RequestAsync(
+            "session/new",
+            meta is null
+                ? new { cwd, mcpServers = offered }
+                : (object)new { cwd, mcpServers = offered, _meta = meta },
+            ct).ConfigureAwait(false);
+        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
+        // names this client's own failures, and a conversation waited for a session that never came.
+        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
+                     && id.ValueKind == JsonValueKind.String
+            ? id.GetString()
+            : null;
+        if (string.IsNullOrEmpty(_sessionId))
+        {
+            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
+        }
+
+        // What an answer to a park resumes (ANSWER1a), told before the first turn can fail or park.
+        Told(_sessionId);
+
+        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
+        // kept as it said them, so a person may be offered the ones that are theirs.
+        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
+            ? AcpConfigOption.Read(offeredOptions)
+            : []);
+
+        await SetPostureAsync(created, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The reader started and the handshake answered: what every session asks before it is one. The agent's answer.</summary>
+    private async Task<JsonElement> HandshakeAsync(CancellationToken ct)
+    {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
         if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet);
         _pump = PumpAsync(_pumpStop.Token);
 
-        await RequestAsync(
+        return await RequestAsync(
             "initialize",
             new
             {
@@ -372,7 +420,11 @@ public sealed class AcpSession(
                 clientInfo = new { name = "daoris-driver", version = "0" },
             },
             ct).ConfigureAwait(false);
+    }
 
+    /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
+    private static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
+    {
         // 🔴 The session's VOICE (ACP4). The composed target tells every session to claim and
         // close its quest over its own connector, and the pipe door only manages that because the
         // repository's own `.mcp.json` wires it — which an adopted repository may not have, and
@@ -396,33 +448,7 @@ public sealed class AcpSession(
                 .Select(pair => new { name = pair.Key, value = pair.Value })
                 .ToArray(),
         }).ToArray();
-
-        // The rules composed for this session ride here when the adapter takes them (PERM1) —
-        // and a session given none sends exactly what it sent before they existed.
-        var created = await RequestAsync(
-            "session/new",
-            meta is null
-                ? new { cwd, mcpServers = offered }
-                : (object)new { cwd, mcpServers = offered, _meta = meta },
-            ct).ConfigureAwait(false);
-        // Read without trusting the shape (REV3): an id of the wrong kind threw past every catch that
-        // names this client's own failures, and a conversation waited for a session that never came.
-        _sessionId = created.ValueKind == JsonValueKind.Object && created.TryGetProperty("sessionId", out var id)
-                     && id.ValueKind == JsonValueKind.String
-            ? id.GetString()
-            : null;
-        if (string.IsNullOrEmpty(_sessionId))
-        {
-            throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
-        }
-
-        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
-        // kept as it said them, so a person may be offered the ones that are theirs.
-        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
-            ? AcpConfigOption.Read(offeredOptions)
-            : []);
-
-        await SetPostureAsync(created, ct).ConfigureAwait(false);
+        return offered;
     }
 
     /// <summary>What this client asks of the agent at <c>initialize</c>.</summary>
@@ -684,6 +710,9 @@ public sealed class AcpSession(
         if (name == "session/update" && frame.TryGetProperty("params", out var p)
             && p.TryGetProperty("update", out var update))
         {
+            // A load's replay of the history (ANSWER1a): the record already holds it, so it is not kept a second time.
+            if (Replayed(p)) return;
+
             Interlocked.Increment(ref _updates);
 
             // 🔴 Routed by whose it is (CONSOLE2): a subagent speaks under its own session id, and a
@@ -746,7 +775,10 @@ public sealed class AcpSession(
                           && m.ValueKind == JsonValueKind.String
                 ? m.GetString()
                 : error.GetRawText();
-            waiting.TrySetException(new DriverException($"the ACP agent refused the call: {message}"));
+            // A resume's refusal keeps its code (ANSWER1a): `resource_not_found` is a conversation gone, any other a refusal.
+            waiting.TrySetException(_coded.TryRemove(key, out _)
+                ? new AcpCallRefused(message ?? "", Code(error))
+                : new DriverException($"the ACP agent refused the call: {message}"));
             return;
         }
 
@@ -1196,22 +1228,31 @@ public sealed class AcpSession(
     }
 
     /// <param name="sent">Told once the request is on the wire, before its answer is awaited.</param>
-    private async Task<JsonElement> RequestAsync(string method, object parameters, CancellationToken ct, Action? sent = null)
+    /// <param name="coded">A refusal of this call keeps its code, as an <see cref="AcpCallRefused"/> (ANSWER1a).</param>
+    private async Task<JsonElement> RequestAsync(string method, object parameters, CancellationToken ct, Action? sent = null, bool coded = false)
     {
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending[id] = waiting;
+        if (coded) _coded[id] = 0;
 
-        await SendAsync(new JsonObject
+        try
         {
-            ["jsonrpc"] = "2.0",
-            ["id"] = id,
-            ["method"] = method,
-            ["params"] = JsonSerializer.SerializeToNode(parameters),
-        }).ConfigureAwait(false);
-        sent?.Invoke();
+            await SendAsync(new JsonObject
+            {
+                ["jsonrpc"] = "2.0",
+                ["id"] = id,
+                ["method"] = method,
+                ["params"] = JsonSerializer.SerializeToNode(parameters),
+            }).ConfigureAwait(false);
+            sent?.Invoke();
 
-        return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
+            return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            if (coded) _coded.TryRemove(id, out _);
+        }
     }
 
     private Task NotifyAsync(string method, object parameters) => SendAsync(new JsonObject
