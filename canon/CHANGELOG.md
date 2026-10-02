@@ -12,6 +12,21 @@ network.
 
 ## Unreleased
 
+- **`task-lifecycle`**, **`development-documents`** and **`set-up-documents`** say what a session pays
+  for: what it reads, on every step after it reads it, so what is read whole stays short by how each
+  entry is written, and each fact has one home that every other place names in a line. The rule's
+  backlog row is what and why in two sentences, its contract and its proof; its archive outcome is a
+  line or three, saying what changed and where the detail lives, where it had said one line while the
+  skill's template asked for a paragraph. The knowledge document gains the failure (a record written
+  twice, and paid for on every step), the shapes of a backlog row, an archive entry, a router row and a
+  decision's amendment, *look up by identifier*, and the shapes' sizes beside the ceilings: 60 words
+  for a row and for an outcome, reported like every ceiling. The template asks for the short outcome,
+  and the skill's step 4 moves a long row's excess to the record that holds it. Drawn from a repository
+  whose backlog was trimmed twice and grew back both times, and whose archive outcomes retold, in other
+  words, three quarters of the facts already in the decisions they cited.
+  **Adopting repositories:** nothing to rewrite. Old entries stand as written; new ones take the shape.
+  The always-loaded region grows by about 460 bytes, the rule's new sentences and the knowledge
+  document's longer index row.
 - **`autonomous-development`** gains *Look before you ask*: a question the task's own material, the
   repository's documents, code and history, or a neighbour's documents can settle is the agent's to
   settle, with its evidence kept for the hand-over; a reading the evidence leans to is taken and stated at

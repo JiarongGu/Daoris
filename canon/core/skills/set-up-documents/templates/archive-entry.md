@@ -2,4 +2,4 @@
 
 > <The row's words, exactly as they stood in the backlog.>
 
-**Outcome.** <One paragraph: what was built, what proved it, and anything left out, with why.>
+**Outcome.** <A line or three: what changed, and where its detail lives (the decision, the design's section, the commits). What those already say is pointed to, not told again.>

@@ -1,7 +1,7 @@
 ---
 name: development-documents
-applies_when: setting a repository up for agents, adding, moving or splitting one of its documents, or when a session had to search for where something is written
-enforces: a short brief every agent reads, detail on demand, records in places the always-read file names; a document read whole has a ceiling and a record read by lookup has none; what may run unasked is a declaration a tool reads, never a sentence
+applies_when: setting a repository up for agents, adding, moving or splitting one of its documents, writing an entry into one, or when a session had to search for where something is written
+enforces: a short brief every agent reads, detail on demand, records in places the always-read file names; a document read whole has a ceiling and a record read by lookup has none; an entry points to its detail; what may run unasked is a declaration a tool reads, never a sentence
 ---
 
 # The development documents — what a repository keeps so a session works unasked
@@ -28,6 +28,10 @@ Each failure this prevents is silent.
 - **The search before the work.** The doctrine names records by their job (the backlog, the decisions,
   the fix log) and never by their path, which is right for doctrine and costs every session in every
   repository a search. A session that guesses wrong writes to the wrong one.
+- **A record written twice, and paid for on every step.** A document's cost is its size times the steps
+  that follow it: a session carries what it read into every step after, and a cache makes the repeat
+  cheaper, never free. A retold entry costs every later reader and tells them nothing the first copy
+  did not. A backlog trimmed without changing how its rows are written grows back.
 
 The agents' makers reached the same answers independently: one short file every agent reads, holding
 only what cannot be derived from the code; exact commands and one check that means done; detail moved
@@ -72,6 +76,24 @@ things to people. Elsewhere it is a document nobody opens, so no repository is r
 - **By lookup**: decisions, archive, fixes, changelog, glossary. Read for one entry and never whole, so
   they may grow without limit.
 
+### What a session pays for: one home per fact, and entries that point
+
+A session pays for what it reads on every step after it reads it. So what is read whole stays short by
+how each entry is written, and what is long is read by lookup. Each fact has one home, and every other
+place names that home in a line.
+
+- **A backlog row**: an identifier; what and why in two sentences; its contract, by name and section;
+  its proof. Never the design's own text, a log of sightings or a history: those are records, and the
+  row points to them.
+- **An archive entry**: the row as it stood, the date, and the outcome in a line or three: what
+  changed, and where its detail lives.
+- **A router row**: the document, its kind, what it is for, and where it stands in a line, naming the
+  decision that changed it. What was built under it is that decision's.
+- **A decision's amendment**: under the entry it amends, headed by the work that made it.
+- **Look up by identifier.** A record is searched for the identifier a row or a decision names and read
+  at that entry; a design is read at the section a row names. Reading a record whole to find one entry
+  pays for every other entry in it.
+
 ### What goes in the brief
 
 **A fact goes in the brief only if nearly every task needs it and a reader could not derive it from the
@@ -95,6 +117,9 @@ are paid for:
 - **Words and lines, for attention.** Starting ceilings, each with headroom over what a document
   measures when written: the brief, 1,500 words and 200 lines; a room, 600 words; the router, 2,500
   words; the backlog, 5,000 words.
+
+An entry has a shape beside them, in words, whether its record is read whole or by lookup: a backlog
+row or a router row, 60 words; an archive entry's outcome, 60 words. They report, like every ceiling.
 
 **A ceiling reports and never fails**, because whether a document says too much is a judgement. When one
 goes over, relocate what belongs in another tier, then condense, and only then raise the number,
