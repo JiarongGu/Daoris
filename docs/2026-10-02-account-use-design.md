@@ -7,8 +7,8 @@
 > paralle or other logic should be configable"*, and then: *"3 is becau I only have 3 not limited to account
 > numbers"*. D125 (`docs/2026-10-01-account-rotation-design.md`) has one policy: walk the person's order when the
 > default is not ready. This is the contract for what the person sets beyond that, and for what Daoris does to use
-> the accounts well, for any number of accounts. Its decision is **D130**, which amends D125. Status: **designed;
-> nothing built.** 🔴 **§16, *the rules around the goal* (2026-10-02), re-decides the defaults** on the owner's goal:
+> the accounts well, for any number of accounts. Its decision is **D130**, which amends D125. Status: **designed; TOOL6a
+> and TOOL6b built**, and D130's notes say what each settled. 🔴 **§16, *the rules around the goal* (2026-10-02), re-decides the defaults** on the owner's goal:
 > the most work from the accounts' combined allowance, the fewest stalls, and no allowance left unused at a reset. By
 > default every listed account is used toward it; *one by one, in order* is an override. Where §16 and §2–§10
 > disagree, §16 wins, and each place it changes says so. Read with **D125** and its TOOL4a–TOOL4j notes, **D57**,
