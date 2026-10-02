@@ -8357,3 +8357,34 @@ with the reader they test: the CLI's copy of that table, which parses them cell 
 stopped, held across two looks with nothing spawned, then carried on in its tree once released, and an open quest stopped
 before its take, held, then started. Its stand-in opens any session, so its taken case proves the driver's half only.
 `DriverModuleDriverTests`' retry case now records a parked look first, and was not run here either.
+
+**As built (SESSUX1b2, 2026-10-02): the ledger carries on a released stop.** `SessionLedger.OpenAsync` opens a session
+on a taken quest whose last session here ended `stopped` by the person, as it does after a cut-off, when a session of
+this machine's took the quest (`SessionStore.TookHereAsync`, STANDDOWN2's `took`). The driver holds such a quest until
+*Try again* releases it, so an open that reaches the ledger is the release. The ledger reads no `driver.json`, which is
+the driver's and machine-local. What the build settled:
+
+- **The take must be this machine's.** A person's stop before its session took the quest leaves no take here. Taken
+  since, the quest is somebody else's: another machine's driver, whose record arrives without its `took`, or a person
+  working outside the driver, who leaves no record. Carried on as a cut-off is, the release would start a second session
+  on that work. So the stopped record, or an earlier one of this machine's on the quest, must have taken it. An earlier
+  one counts because a carry-on takes nothing itself.
+- **Nothing else moved.** A stand-down and a declined quest still refuse, with this machine's take on record. A cut-off,
+  an interrupted stop and an answered park carry on as before, with no `took` asked. The strikes are the driver's, and
+  the ledger counts none (D58, D125 §3).
+- **The door's answer keeps its shape.** `POST /api/sessions` maps the same refusals. No HTTP test was added: the HTTP
+  door cannot mark a take (only a session's connector does, over MCP), and a test reaching into the store proves no more
+  than the ledger's.
+- **Ask Daoris's `retry`** names the quest its failed sessions parked *or the person's stop holds*, in the box's
+  refusal, its target and `setting_propose`'s description.
+
+**Not covered.** A take its connector did not mark (a build before STANDDOWN2, or a take through the HTTP door) is still
+refused after a person's stop, as before. A cut-off's carry-on asks no `took` (D80), so a start that failed before its
+take, on a quest taken elsewhere since, is still opened; that is D80's as it stands, and this build left it. A take
+this machine made offline and lost (D68 §5), stopped by the person before the driver stood it down, would be carried on
+once released.
+
+Held by `SessionLedgerTests`: a released stop of the session that took, and of a carry-on whose earlier session took,
+seen failing first; a stop before the take with the quest then taken by another machine or by nobody here, refused,
+which passed before and was seen failing under the rule without `took`; a stand-down and a decline after a released
+carry-on, refused. And `HelpSettingProposalTests`' retry rows and the tool's words, seen failing first.
