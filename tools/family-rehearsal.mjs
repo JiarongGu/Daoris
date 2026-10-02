@@ -419,8 +419,10 @@ const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQu
 check('…and once its last session stood down, the take is somebody else’s and nothing opens', afterStandDown.status === 409, afterStandDown.text);
 await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'done', reason: 'Profiled.' } });
 
-// Answering a session that parked to ask the person (STANDDOWN2): the record ends with their words,
-// and the quest it held is then carried on — a session opens on the taken quest, as after a cut-off.
+// Answering a session that parked to ask the person (STANDDOWN2): the answer KEEPS the park (ANSWER1b, D131), its
+// words kept and said on its note, for the driver's next look to go on with that same record — 17a drives that look
+// over the protocol door. While it is parked nothing new opens on its quest. Where the driver cannot go on with it, its
+// fallback ends the park with the answer kept (D131 §2), and a session then opens on the taken quest, as after a cut-off.
 const askingQuest = await api('POST', '/api/quests', {
   body: { from: 'game', to: 'engine', title: 'Check the budget on the device', body: 'It needs a sign-in first.' },
 });
@@ -434,12 +436,35 @@ await api('POST', `/api/quests/${askingQuestId}/respond`, { body: { action: 'tak
 await api('POST', `/api/sessions/${askingId}/state`, { body: { state: 'awaiting-person', note: 'it needs a sign-in.' } });
 const answered = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
 check(
-  'a session parked to ask the person is answered, and its record keeps the words',
-  answered.status === 200 && answered.json?.session?.state === 'completed' && answered.json?.session?.answer === 'Signed in.',
+  'a session parked to ask the person is answered, and its record stays parked with the words, said on its note',
+  answered.status === 200 && answered.json?.session?.state === 'awaiting-person' && answered.json?.session?.answer === 'Signed in.'
+    && answered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.',
   answered.text,
 );
+const reanswered = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in on the device.' } });
+check(
+  '…a second answer before the driver looks replaces the first, on the record and on its note',
+  reanswered.status === 200 && reanswered.json?.session?.state === 'awaiting-person'
+    && reanswered.json?.session?.answer === 'Signed in on the device.'
+    && reanswered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in on the device.',
+  reanswered.text,
+);
+const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
+check('…and nothing new opens on its quest while the park holds it', whileParked.status === 409, whileParked.text);
+await api('POST', `/api/sessions/${askingId}/state`, {
+  body: {
+    state: 'completed',
+    note: 'it needs a sign-in.\n\nAnswered: Signed in on the device.\n\nCarried on in a new session, because its tree is gone.',
+  },
+});
 const afterAnswer = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
-check('…and its taken quest is carried on — a session opens on it', afterAnswer.status === 200, afterAnswer.text);
+const endedPark = ((await api('GET', '/api/sessions?repository=engine&includeClosed=true')).json ?? [])
+  .find((s) => s.id === askingId);
+check(
+  '…and once the driver’s fallback ends the park, its answer kept, a session opens on the taken quest to carry it on',
+  afterAnswer.status === 200 && endedPark?.state === 'completed' && endedPark?.answer === 'Signed in on the device.',
+  `${afterAnswer.text}\n${JSON.stringify(endedPark)}`,
+);
 await api('POST', `/api/sessions/${afterAnswer.json?.session?.id}/state`, { body: { state: 'stopped' } });
 await api('POST', `/api/quests/${askingQuestId}/respond`, { body: { action: 'done', reason: 'Checked.' } });
 
@@ -3599,6 +3624,104 @@ check(
     && existsSync(keptFolder) && readdirSync(keptFolder).some((name) => name.endsWith('-crash.log'))
     && !run('git status --porcelain', newcomer).out.includes('crash.log'),
   `${JSON.stringify(attachAsked)}\n${existsSync(keptFolder) ? readdirSync(keptFolder).join(', ') : '(no folder)'}`,
+);
+
+// -------------------------------------------------- 17a. an answer continues the session that asked
+
+section('17a. An answer continues the session that asked — its own record and its own conversation (D131/ANSWER1)');
+
+// The person answers a session that parked to ask, and the driver's next look goes on with THAT session: its record
+// moves back to working, the stub's own conversation is resumed over `session/resume` with the answer as its next
+// prompt, and the work is done there. One record, one conversation, one transcript that goes on.
+//
+// The stub takes through the service's HTTP door, which marks no session as the taker, so a first session's ending
+// would read as a stand-down; a session that carries a take on parks (D80, STANDDOWN2). So the cut-off is made through
+// the doors as section 4's is, the driver carries it on, and that session asks which port, holding the quest.
+const portAsk = await api('POST', '/api/quests', {
+  body: {
+    from: 'game', to: 'newcomer',
+    title: 'Ask the person first: which port should the report listen on?',
+    body: 'The report is served on whichever port the person names: ask them, then serve it there.',
+  },
+});
+const portQuestId = portAsk.json?.quest?.id ?? '';
+const portCut = await api('POST', '/api/sessions', { body: { quest: portQuestId, adapter: 'acp-stub' } });
+const portCutId = portCut.json?.session?.id ?? '';
+for (const state of ['starting', 'working']) {
+  await api('POST', `/api/sessions/${portCutId}/state`, { body: { state } });
+}
+await api('POST', `/api/quests/${portQuestId}/respond`, { body: { action: 'take', reason: null } });
+await api('POST', `/api/sessions/${portCutId}/state`, { body: { state: 'failed', note: 'timed out after 2 minutes and was killed.' } });
+
+const portRecords = async () => ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .filter((s) => s.quest === portQuestId);
+const portParkRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--once' });
+const portPark = (await portRecords()).find((s) => s.id !== portCutId) ?? null;
+let portKept = null;
+try {
+  portKept = JSON.parse(readFileSync(join(scratch, 'sessions', `${portPark?.id}.harness.json`), 'utf8'));
+} catch {
+  // Not kept, or not JSON: the check below says so.
+}
+check(
+  'the driver carries the cut-off on, and that session asks which port and parks holding the quest, its conversation id kept',
+  portCut.status === 200 && portParkRun.code === 0 && portPark?.state === 'awaiting-person'
+    && /Which port should the report listen on\?/.test(portPark?.note ?? '')
+    && portKept?.adapter === 'acp-stub' && portKept?.conversation === 'acp-session-1',
+  `${portParkRun.out}\n${JSON.stringify(portPark)}\n${JSON.stringify(portKept)}`,
+);
+
+const portAnswer = driver({ serviceUrl: BASE, config: acpConfig, mode: `answer ${portPark?.id} "Port 8080."` });
+const portAnswered = (await portRecords()).find((s) => s.id === portPark?.id) ?? null;
+check(
+  '`daoris-driver answer` answers it, and the record stays parked with the words for the driver’s next look',
+  portAnswer.code === 0 && /it carries on with `#[^`]+` at the driver's next look/.test(portAnswer.out)
+    && portAnswered?.state === 'awaiting-person' && portAnswered?.answer === 'Port 8080.',
+  `${portAnswer.out}\n${JSON.stringify(portAnswered)}`,
+);
+
+const portResumeRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--once' });
+const portAfter = await portRecords();
+const portGoneOn = portAfter.find((s) => s.id === portPark?.id) ?? null;
+const portQuest = ((await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((q) => q.id === portQuestId);
+check(
+  'the next look goes on with the SAME session: one record, reopened, ends completed, and the quest is done by it',
+  portResumeRun.code === 0 && /\[resumed its conversation\]/.test(portResumeRun.out)
+    && portAfter.length === 2 && portGoneOn?.state === 'completed' && portQuest?.status === 'Done',
+  `${portResumeRun.out}\n${JSON.stringify(portAfter)}\n${JSON.stringify(portQuest)}`,
+);
+
+const portTranscript = existsSync(portGoneOn?.transcript ?? '') ? readFileSync(portGoneOn.transcript, 'utf8') : '';
+const portAsked = portTranscript.indexOf('Which port should the report listen on?');
+check(
+  '…its own conversation resumed, never opened anew, and its transcript goes on: the question, the resumed run, the work',
+  (portTranscript.match(/acp-agent: session on/g) ?? []).length === 1
+    && /acp-agent: resumed conversation acp-session-1/.test(portTranscript)
+    && portAsked >= 0 && portAsked < portTranscript.indexOf('resumed on `acp-stub`')
+    && portTranscript.indexOf('resumed on `acp-stub`') < portTranscript.indexOf('Serving on the port you named: Port 8080.'),
+  portTranscript.slice(-1600) || `${portGoneOn?.transcript}`,
+);
+
+const portEvents = join(scratch, 'sessions', `${portGoneOn?.id}.events.jsonl`);
+const portPersonSaid = existsSync(portEvents)
+  ? readFileSync(portEvents, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    .filter((e) => e.kind === 'user' && e.origin === 'person')
+  : [];
+check(
+  '…the record’s conversation holds the person’s answer once, as theirs, and the work is in newcomer’s history',
+  portPersonSaid.length === 1 && portPersonSaid[0].text === 'Port 8080.'
+    && new RegExp(`acp: serve the report where the person said \\(quest ${portQuestId}\\)`).test(run('git log --oneline', newcomer).out),
+  `${JSON.stringify(portPersonSaid)}\n${run('git log --oneline -3', newcomer).out}`,
+);
+
+const portAnsweredLines = readEvents(driver({ serviceUrl: BASE, config: acpConfig, mode: 'logs --event session.answered --json' }).out, 'session.answered')
+  .filter((data) => data.session === portGoneOn?.id);
+check(
+  'the machine log has `session.answered` for it once: resumed, on `acp-stub`, with no reason to give',
+  portAnsweredLines.length === 1 && portAnsweredLines[0].resumed === true && portAnsweredLines[0].adapter === 'acp-stub'
+    && (portAnsweredLines[0].why ?? null) === null,
+  JSON.stringify(portAnsweredLines),
 );
 
 // -------------------------------------------------- 17b. registered is drivable over the protocol door

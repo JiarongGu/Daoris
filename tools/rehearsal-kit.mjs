@@ -91,6 +91,11 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
  * (LAYOUT7a) is done as its body says: the doctrine tool run by its bare name from the PATH the driver
  * handed the session, each verb said on stderr with whether the body asks for it, then a commit.
  *
+ * It resumes a conversation (ANSWER1b, D131): `initialize` advertises `session/resume`, and a resumed
+ * conversation's next prompt is the person's answer. A quest titled to ask the person first asks which
+ * port and ends its turn holding the quest; resumed, it serves the report on the port it was told. The
+ * stub keeps no history, so it resumes whichever conversation it is asked, and says which on stderr.
+ *
  * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
  */
@@ -207,8 +212,35 @@ async function setUp(sessionId) {
   return 'end_turn';
 }
 
-async function work(sessionId) {
+// A quest that asks the person first (ANSWER1b, D131 §1). Not resumed, the session takes the quest, asks which port and
+// ends its turn holding it. A take through the service's HTTP door marks no session as its taker, so the driver reads
+// that ending as a park only from a session that carries a take on (D80); a first session's would read as a stand-down.
+// Resumed, the prompt is the person's answer, verbatim, and the report is served where it says, then committed and done.
+const ASKS_FIRST = 'Ask the person first: ';
+
+async function askFirst(sessionId, said) {
+  if (!resumed) {
+    // Carried on, the quest is already this machine's take, and a refused take is the answer expected here.
+    await respond('take', null);
+    update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Which port should the report listen on?' } });
+    say('asked the person which port, holding quest ' + id);
+    return 'end_turn';
+  }
+
+  say('the answer, as the resumed conversation heard it: ' + said);
+  update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Serving on the port you named: ' + said } });
+  writeFileSync('acp-port-' + id + '.md', '# the report\\n\\nIt listens where the person said: ' + said + '\\n');
+  const git = 'git -c user.name="ACP Session" -c user.email="acp@example.invalid"';
+  execSync(git + ' add -A', { stdio: 'ignore' });
+  execSync(git + ' commit -q -m "acp: serve the report where the person said (quest ' + id + ')"', { stdio: 'ignore' });
+  const done = await respond('done', 'Serving the report on the port the person named.');
+  say('done:', done.ok);
+  return 'end_turn';
+}
+
+async function work(sessionId, said) {
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(SET_UP)) return setUp(sessionId);
+  if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(ASKS_FIRST)) return askFirst(sessionId, said);
   update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'taking quest ' + id } });
 
   const taken = await respond('take', null);
@@ -251,6 +283,8 @@ async function work(sessionId) {
 const lines = createInterface({ input: process.stdin });
 let session = null;
 let holding = null;
+// Whether this process resumed a conversation rather than opening one: its next prompt is then the person's answer.
+let resumed = false;
 
 // Frames are handled WITHOUT awaiting inside the reader, and that is not a style choice: the prompt's
 // work asks the client for a permission decision and must keep reading while it waits for the answer.
@@ -269,7 +303,16 @@ const handle = async (line) => {
 
   switch (frame.method) {
     case 'initialize':
-      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+      // session/resume, in the shape the real adapter advertises it (ANSWER1b): the driver resumes only what is offered.
+      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: { sessionCapabilities: { resume: {} } } } });
+      break;
+    case 'session/resume':
+      // The conversation the driver kept, resumed rather than opened (D131 §1). Nothing is replayed, as the real
+      // adapter's resume replays nothing, and the transcript keeps which conversation it was.
+      session = frame.params?.sessionId ?? session;
+      resumed = true;
+      say('resumed conversation', session, 'on', frame.params?.cwd);
+      send({ jsonrpc: '2.0', id: frame.id, result: {} });
       break;
     case 'session/new': {
       session = 'acp-session-1';
@@ -309,7 +352,8 @@ const handle = async (line) => {
       // A turn that fails is ANSWERED as a failure, the way a real agent's would be: an unanswered
       // prompt is a driver waiting on its timeout, which is a hang dressed as a session.
       try {
-        const stopReason = await work(frame.params?.sessionId ?? session);
+        const said = (frame.params?.prompt ?? []).map((block) => block.text ?? '').join('\\n');
+        const stopReason = await work(frame.params?.sessionId ?? session, said);
         send({ jsonrpc: '2.0', id: frame.id, result: { stopReason } });
       } catch (error) {
         say('turn failed:', error.message);

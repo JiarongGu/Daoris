@@ -789,8 +789,9 @@ app.MapPost("/api/sessions/{id}/state", async (
     };
 });
 
-// The person answers a driven session that parked to ask them (STANDDOWN2): the record ends with their
-// words, and the quest it holds is carried on in the same tree at the driver's next tick.
+// The person answers a driven session that parked to ask them (STANDDOWN2): the record stays parked with
+// their words, and the reply is the session as it now stands, for the driver's next look to go on with
+// (ANSWER1b, D131) — its own conversation resumed, or its quest carried on in the same tree.
 app.MapPost("/api/sessions/{id}/answer", async (
     ComposedService s, HttpContext http, string id, AnswerSessionRequest body, CancellationToken ct) =>
 {

@@ -371,33 +371,115 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.False(await _ledger.MarkTookAsync(session.Id, quest.Id));
     }
 
-    /// <summary>
-    /// STANDDOWN2: a driven session that parked to ask the person is answered, its record ends with
-    /// their words, and its taken quest may then be carried on — the answer is what the next session
-    /// is handed. Only a parked record answers; anything else is told why not.
-    /// </summary>
-    [Fact]
-    public async Task Answering_a_parked_session_ends_it_with_the_words_and_lets_its_quest_carry_on()
+    /// <summary>A driven session that took its quest and parked to ask the person, as the driver parks one (STANDDOWN2).</summary>
+    private async Task<(Quest Quest, Session Parked)> Parked(string? asked = "needs a merge, a sign-in and a go-ahead.")
     {
         var quest = await Publish();
-        var parked = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        var session = await Working(quest, Now);
         await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
-        foreach (var state in new[] { "starting", "working" })
-        {
-            await _ledger.AdvanceAsync(parked.Id, state, null, null, null, Now);
-        }
+        Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(session.Id, "awaiting-person", asked, null, null, Now)).Refusal);
+        return (quest, session);
+    }
 
-        Assert.Equal(SessionAdvanceRefusal.InvalidMove, (await _ledger.AnswerAsync(parked.Id, "merged", Now)).Refusal);
-        await _ledger.AdvanceAsync(parked.Id, "awaiting-person", "needs a merge, a sign-in and a go-ahead.", null, null, Now);
-        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now)).Refusal);
+    /// <summary>
+    /// ANSWER1b (D131 §5): the person's answer keeps the park. Its record stays `awaiting-person` with their words kept
+    /// and said on its note beneath what it asked, and the answer replies with it, so the driver's next look goes on with
+    /// this same record and its conversation (D131 §1). Nothing new opens on its quest meanwhile: the park still holds
+    /// it. Only a parked record answers; anything else is told why not.
+    /// </summary>
+    [Fact]
+    public async Task Answering_a_parked_session_keeps_it_parked_with_the_words_on_its_note()
+    {
+        var quest = await Publish();
+        var working = await Working(quest, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, (await _ledger.AnswerAsync(working.Id, "merged", Now)).Refusal);
+        await _ledger.AdvanceAsync(working.Id, "awaiting-person", "needs a merge, a sign-in and a go-ahead.", null, null, Now);
 
-        var answered = await _ledger.AnswerAsync(parked.Id, "Signed in; apply to dev.", Now.AddMinutes(5));
+        var answered = await _ledger.AnswerAsync(working.Id, "  Signed in; apply to dev. ", Now.AddMinutes(5));
 
         Assert.Equal(SessionAdvanceRefusal.None, answered.Refusal);
-        var record = (await _sessions.FindAsync(parked.Id))!;
-        Assert.Equal(SessionState.Completed, record.State);
+        Assert.Equal($"Answered session `{working.Id}`: it carries on with `#{quest.Id}` at the driver's next look.", answered.Message);
+        var record = (await _sessions.FindAsync(working.Id))!;
+        Assert.Equal(record, answered.Session);
+        Assert.Equal(SessionState.AwaitingPerson, record.State);
         Assert.Equal("Signed in; apply to dev.", record.Answer);
+        Assert.Equal("needs a merge, a sign-in and a go-ahead.\n\nAnswered: Signed in; apply to dev.", record.Note);
+        Assert.Equal(Now.AddMinutes(5), record.Updated);
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
+    }
+
+    /// <summary>ANSWER1b: an answer with no words is "carry on.", and a park that said nothing is noted as having asked.</summary>
+    [Fact]
+    public async Task An_answer_without_words_carries_on_beneath_a_park_that_said_nothing()
+    {
+        var (_, parked) = await Parked(asked: null);
+
+        var answered = await _ledger.AnswerAsync(parked.Id, "   ", Now.AddMinutes(1));
+
+        Assert.Equal((SessionState.AwaitingPerson, "carry on."), (answered.Session!.State, answered.Session.Answer));
+        Assert.Equal("It stopped to ask the person; its question is in its transcript.\n\nAnswered: carry on.", answered.Session.Note);
+    }
+
+    /// <summary>
+    /// ANSWER1b: a second answer before the driver looks replaces the first, on the record and on its note, so what the
+    /// session goes on with is what the person said last and the note never holds an answer it will not hear.
+    /// </summary>
+    [Fact]
+    public async Task A_second_answer_replaces_the_first()
+    {
+        var (_, parked) = await Parked();
+        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+
+        var again = await _ledger.AnswerAsync(parked.Id, "Port 9090, not 8080.", Now.AddMinutes(2));
+
+        Assert.Equal(SessionAdvanceRefusal.None, again.Refusal);
+        var record = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal((SessionState.AwaitingPerson, "Port 9090, not 8080."), (record.State, record.Answer));
+        Assert.Equal("needs a merge, a sign-in and a go-ahead.\n\nAnswered: Port 9090, not 8080.", record.Note);
+    }
+
+    /// <summary>
+    /// ANSWER1b (D131 §5): a move into `awaiting-person` clears the answer, so a session that goes on and parks again
+    /// asks anew and is never taken up with the words it already heard. A move to working keeps it while the answer is
+    /// worked on, and so does a move to `completed`, which the driver's fallback makes (D131 §2): the quest is then
+    /// carried on in a new session, handed the answer, as STANDDOWN2's carry-on always was.
+    /// </summary>
+    [Fact]
+    public async Task A_new_park_clears_the_answer_and_an_ending_keeps_it_for_the_carry_on()
+    {
+        var (quest, parked) = await Parked();
+        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+
+        await _ledger.AdvanceAsync(parked.Id, "working", "resumed with your answer.", null, null, Now.AddMinutes(2));
+        Assert.Equal("Port 8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
+        await _ledger.AdvanceAsync(parked.Id, "awaiting-person", "and which host?", null, null, Now.AddMinutes(3));
+
+        var reparked = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal((SessionState.AwaitingPerson, null, "and which host?"), (reparked.State, reparked.Answer, reparked.Note));
+
+        await _ledger.AnswerAsync(parked.Id, "localhost.", Now.AddMinutes(4));
+        var ended = await _ledger.AdvanceAsync(
+            parked.Id, "completed", "and which host?\n\nAnswered: localhost.\n\nCarried on in a new session, because its tree is gone.",
+            null, null, Now.AddMinutes(5));
+
+        Assert.Equal((SessionState.Completed, "localhost."), (ended.Session!.State, ended.Session.Answer));
         Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
+    }
+
+    /// <summary>ANSWER1b: once the driver has taken the park up, an answer is refused, naming the state it is in.</summary>
+    [Fact]
+    public async Task An_answer_to_a_park_already_going_on_is_refused()
+    {
+        var (_, parked) = await Parked();
+        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+        await _ledger.AdvanceAsync(parked.Id, "working", null, null, null, Now.AddMinutes(2));
+
+        var late = await _ledger.AnswerAsync(parked.Id, "Port 9090.", Now.AddMinutes(3));
+
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, late.Refusal);
+        Assert.Equal($"Session `{parked.Id}` is working, not waiting on you — there is nothing to answer.", late.Message);
+        Assert.Equal("Port 8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
     }
 
     [Fact]
