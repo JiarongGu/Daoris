@@ -259,13 +259,38 @@ public static partial class SetupPress
         var added = Rules.Where(rule => !held.Contains(rule)).ToList();
         PermissionRules.Save(home, added.Aggregate(file, (rules, rule) => PermissionRules.Add(rules, RuleScope.Repository, plan.Repository, RuleList.Allow, rule)));
 
-        var answer = await world.PublishAsync(plan.Workspace, plan.Sentence!, plan.Repository, ct).ConfigureAwait(false);
-        if (answer.Ok) return new(true, answer.Message, answer.AskId, answer.QuestId, added);
+        var asked = await PublishAsync(plan, world, ct).ConfigureAwait(false);
+        if (asked.Published) return asked with { Added = added };
 
         var after = PermissionRules.Load(home);
         PermissionRules.Save(home, added.Aggregate(after, (rules, rule) => PermissionRules.Remove(rules, RuleScope.Repository, plan.Repository, rule)));
-        return new(false, answer.Message, answer.AskId, null, []);
+        return asked;
     }
+
+    /// <summary>
+    /// The ask alone, as a workspace plan's tick publishes it (WSSETUP6): its rule is the workspace's, added once by the plan's
+    /// press (D124 §4.3), so nothing is added here. A plan that is not pressable is never asked.
+    /// </summary>
+    public static async Task<SetupOutcome> PublishAsync(SetupPlan plan, ISetupWorld world, CancellationToken ct = default)
+    {
+        if (!plan.Pressable || plan.Workspace is null)
+        {
+            return new(false, plan.Refusals.Count > 0 ? plan.Refusals[0].Sentence : "nothing to ask.", null, null, []);
+        }
+
+        var answer = await world.PublishAsync(plan.Workspace, plan.Sentence!, plan.Repository, ct).ConfigureAwait(false);
+        return new(answer.Ok, answer.Message, answer.AskId, answer.Ok ? answer.QuestId : null, []);
+    }
+
+    /// <summary>
+    /// The refusals the tools a child finds earn (D124 §2.1): the machine's, not any one repository's, so a workspace plan
+    /// pauses on them rather than skip every repository in turn (WSSETUP6).
+    /// </summary>
+    public static IReadOnlyList<SetupRefusal> ToolRefusals(SetupTools tools) =>
+        [.. new[] { NodeRefusal(tools), ToolRefusal(tools) }.OfType<SetupRefusal>()];
+
+    /// <summary>Whether a refusal is the machine's tools' rather than the repository's (<see cref="ToolRefusals"/>).</summary>
+    public static bool IsToolRefusal(SetupRefusal refusal) => refusal.Code is SetupRefusals.NoNode or SetupRefusals.NoTool;
 
     /// <summary>
     /// Which set-up the line calls for: none adopted is the whole; the older layout, or a move the lock has not

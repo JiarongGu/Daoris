@@ -48,6 +48,16 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Tell the watchers what following one repository came to (<see cref="RegistryFollowed"/>).</summary>
     public void Followed(RegistrationFollowed what) => Raise(RegistryFollowed, what);
 
+    /// <summary>
+    /// A workspace plan's line (WSSETUP6, D124 §4.1): a plan written, a set-up published or skipped, a pause, a resume, a
+    /// stop. Every plan on this machine reads its facts through this client, so a watcher here logs each line as it logs the
+    /// opens and moves, without the plan knowing the log.
+    /// </summary>
+    public event Action<SetupLine>? SetupLined;
+
+    /// <summary>Tell the watchers a plan's line (<see cref="SetupLined"/>).</summary>
+    public void SetupSaid(SetupLine line) => Raise(SetupLined, line);
+
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 
@@ -110,7 +120,11 @@ public sealed class ServiceClient : IDisposable
                     ? [.. lanes.EnumerateArray()
                         .Where(lane => lane.ValueKind == JsonValueKind.Object && Text(lane, "id") is { Length: > 0 })
                         .Select(lane => new LaneView(Text(lane, "id")!, Text(lane, "title") ?? "", Text(lane, "summary") ?? "", Flag(lane, "steward")))]
-                    : [])),
+                    : [])
+            {
+                // The service's own word (WSSETUP6): a workspace plan's *set up*, never recomputed on this side.
+                Registered = Flag(repo, "registered"),
+            }),
         ];
     }
 
@@ -133,6 +147,30 @@ public sealed class ServiceClient : IDisposable
     {
         var (ok, status, payload, root) = await PostJsonAsync("/api/refresh", "{}", ct).ConfigureAwait(false);
         return ok ? null : (root is { } refused ? Text(refused, "error") : null) ?? $"the refresh door answered {status}: {payload}";
+    }
+
+    /// <summary>
+    /// How many sessions failed on each quest (DRV6), as <see cref="SnapshotAsync"/> derives them: what a workspace plan reads a
+    /// parked set-up by (WSSETUP6), without the rest of a snapshot.
+    /// </summary>
+    public async Task<IReadOnlyDictionary<string, int>> StrikesAsync(CancellationToken ct = default) =>
+        ReadStrikes(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+
+    /// <summary>
+    /// Every session record this machine keeps, closed ones included, with the repository it ran in: what a workspace plan
+    /// counts the sessions run in each repository by, and whose conversation records it reads (WSSETUP6, D124 §4.2). A
+    /// teammate's record says nothing of this machine's work, and is left out as the strikes leave it.
+    /// </summary>
+    public async Task<IReadOnlyList<SessionRun>> SessionRunsAsync(CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        return
+        [
+            .. document.RootElement.EnumerateArray()
+                .Where(session => !IsTeams(session))
+                .Select(session => new SessionRun(Text(session, "id") ?? "", Text(session, "repository") ?? ""))
+                .Where(run => run.Session.Length > 0 && run.Repository.Length > 0),
+        ];
     }
 
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>

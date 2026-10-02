@@ -440,6 +440,32 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// WSSETUP6 (D124 §4.1): a workspace plan's lines, each with its fields only (names, words and counts, never a sentence
+    /// or a path); and none once the watch has let go. A terminal's press writes the same lines through the static writer.
+    /// </summary>
+    [Fact]
+    public void A_workspace_plans_lines_carry_their_words_and_never_a_sentence()
+    {
+        using var w = Watch();
+
+        w.Client.SetupSaid(SetupLine.Planned("work", 29, 1, 2));
+        w.Client.SetupSaid(SetupLine.Published("work", "atlas", "q1"));
+        w.Client.SetupSaid(SetupLine.Skipped("work", "billing", SetupRefusals.NotDriven));
+        w.Client.SetupSaid(SetupLine.Paused("work", SetupPausedBy.Pilot));
+        w.Client.SetupSaid(SetupLine.Resumed("work"));
+        w.Watch.Dispose();
+        w.Client.SetupSaid(SetupLine.Stopped("work"));
+
+        Assert.Equal("""{"workspace":"work","repositories":29,"atOnce":1,"pilot":2}""", Data(Assert.Single(Named("setup.planned"))).GetRawText());
+        Assert.Equal("""{"workspace":"work","repository":"atlas","quest":"q1"}""", Data(Assert.Single(Named("setup.published"))).GetRawText());
+        Assert.Equal("""{"workspace":"work","repository":"billing","refusal":"not-driven"}""", Data(Assert.Single(Named("setup.skipped"))).GetRawText());
+        Assert.Equal("""{"workspace":"work","by":"pilot"}""", Data(Assert.Single(Named("setup.paused"))).GetRawText());
+        Assert.Equal("""{"workspace":"work"}""", Data(Assert.Single(Named("setup.resumed"))).GetRawText());
+        Assert.Empty(Named("setup.stopped"));
+        Assert.Equal("info", Assert.Single(Named("setup.published")).GetProperty("level").GetString());
+    }
+
+    /// <summary>
     /// WSSETUP11 (D124 §7.3): what a set-up costs is measured per turn, as METER1 splits it: the tokens read
     /// anew, from the cache and written, a turn's tool calls, and the context at its high-water against the
     /// window. Each count is the wire's, null where it said none, and a call's later updates are the same call.

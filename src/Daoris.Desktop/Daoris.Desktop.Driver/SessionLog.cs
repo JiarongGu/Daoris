@@ -22,7 +22,8 @@ namespace Daoris.Driver;
 /// <c>session.parked</c> {session, kind, repository, workspace} as the record is moved to wait on the person;
 /// <c>session.ended</c> {session, state, seconds} as the record reaches a closed state; and
 /// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
-/// (UNBLOCK5, D122 §3.10).</para>
+/// (UNBLOCK5, D122 §3.10). Beside the sessions, what the client says of the registry and of the workspace
+/// plans: <c>registry.followed</c> (WSSETUP5) and the <c>setup.*</c> lines (WSSETUP6).</para>
 ///
 /// <para><b>A park is counted where it is made</b> (WSSETUP11, D124 §7.3): a session that stopped to ask the
 /// person (D83) is what setting a workspace up is meant to make rarer, so parks per week are its measure. Only
@@ -83,7 +84,25 @@ public sealed class SessionLog : IDisposable
         service.Opened += OnOpened;
         service.Moved += OnMoved;
         service.RegistryFollowed += OnFollowed;
+        service.SetupLined += OnSetup;
         events.Evented += OnEvented;
+    }
+
+    /// <summary>
+    /// A workspace plan's line (WSSETUP6, D124 §4.1): <c>setup.planned</c>, <c>setup.published</c>, <c>setup.skipped</c>,
+    /// <c>setup.paused</c>, <c>setup.resumed</c> or <c>setup.stopped</c>, each with the fields <see cref="SetupLine"/>'s
+    /// catalogue gives it and nothing else. A terminal's press, pause, resume or stop writes the same line through here.
+    /// </summary>
+    public static void WriteSetup(MachineLog log, SetupLine line) => log.Write("info", line.Event, line.Data);
+
+    private void OnSetup(SetupLine line)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+        }
+
+        WriteSetup(_log, line);
     }
 
     /// <summary>
@@ -116,6 +135,7 @@ public sealed class SessionLog : IDisposable
         _service.Opened -= OnOpened;
         _service.Moved -= OnMoved;
         _service.RegistryFollowed -= OnFollowed;
+        _service.SetupLined -= OnSetup;
         _events.Evented -= OnEvented;
     }
 

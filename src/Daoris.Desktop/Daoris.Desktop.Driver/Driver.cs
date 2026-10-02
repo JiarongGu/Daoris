@@ -114,6 +114,12 @@ public sealed partial class Driver(
     /// </summary>
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
+    /// <summary>
+    /// The world a look's workspace plans read (WSSETUP6): <see cref="WorkspaceSetupWorld"/> over this driver's client, unless
+    /// a test hands in a stand-in, since every real press reads a line with git and asks the tools their version.
+    /// </summary>
+    internal Func<IWorkspaceSetupWorld>? SetupPlans { get; init; }
+
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
@@ -242,6 +248,10 @@ public sealed partial class Driver(
         // git, or asked of the service, unless a line moved.
         await FollowMovedLinesAsync(events, ct).ConfigureAwait(false);
 
+        // The workspace plans (WSSETUP6, D124 §4.1), worked before this look reads the quests, so a set-up a plan publishes now
+        // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
+        await WorkSetupPlansAsync(events, ct).ConfigureAwait(false);
+
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
@@ -346,6 +356,26 @@ public sealed partial class Driver(
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {
             events.Add($"registry  the lines Daoris moved could not be followed this look, and are tried again at the next: {error.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Every workspace plan under the home worked once (WSSETUP6): the next set-up published while fewer than its
+    /// <c>atOnce</c> are open, a refusal skipped, the pilot's pause taken, each said in <paramref name="events"/>. A plan the
+    /// service could not answer for is said, and tried again at the next look: a plan is never a dead look.
+    /// </summary>
+    private async Task WorkSetupPlansAsync(List<string> events, CancellationToken ct)
+    {
+        try
+        {
+            var world = SetupPlans?.Invoke() ?? new WorkspaceSetupWorld(service, home);
+            events.AddRange(await WorkspaceSetup.TickAsync(
+                world, config, Door(), home, DateOnly.FromDateTime(DateTime.Now), DateTimeOffset.UtcNow, ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                          or IOException or UnauthorizedAccessException)
+        {
+            events.Add($"setup  the workspace plans could not be worked this look, and are tried again at the next: {error.Message}");
         }
     }
 
