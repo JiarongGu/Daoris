@@ -2102,6 +2102,10 @@ its binary is resolved, so a bare name is found on the tools' `PATH`. The resolu
 held to one way rather than layered. A package pin's `npm` is the npm the tools resolve, and `agent install` keeps the
 system's.*
 
+*Amended by D125 (TOOL4, 2026-10-02): §b's hold on rotation is lifted. Five observed limits answered its three
+questions, and rotation is designed in `docs/2026-10-01-account-rotation-design.md`, which replaces the toolchain
+design's §2 part 4 and §6.*
+
 ## D58 — An unattended driver stops after three failures on one quest, and the count is derived (2026-09-22)
 
 **Decision.** A quest that has failed **three** times on this machine is **parked**: the driver stops
@@ -7698,3 +7702,85 @@ and swapped in whole. What the design left open, settled here:
   release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
   moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
   source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.
+
+## D125 — An account's limit is read from the agent's own words, cools that account until the reset it names, and is never a strike; rotation moves the next start to the next account of the person's order (2026-10-02)
+
+**Decision (TOOL4).** The owner, 2026-10-01, continuing after their own assistant hit its weekly limit and they signed
+in to another account: *"this is also good to test for account switch"*. D57 §b held rotation until real output
+answered three questions. Five observations now do (design §0.2): Claude Code's ACP adapter refusing `session/prompt`
+in driven sessions on 27 and 29 September and 1 October, and the same maker's CLI refusing with an HTTP 429 outside
+Daoris on 1 and 2 October. Every one is one sentence shape, *You've hit your <what> limit · … · [your <window>
+limit ]resets <when> (<zone>)*, and every one names its reset: a time of day within a day, a date when days away. On
+1 October a driven quest was carried on twice into the same refusal, three events each, and parked on its strikes in
+seconds; and the person's sign-in to another account at their terminal moved Daoris's next session with it, since the
+session named no account. The contract is `docs/2026-10-01-account-rotation-design.md`.
+
+1. **The signal is the door's failure, read by a table.** A turn the harness refused, on a door that carries the
+   refusal apart from the agent's words (today the protocol door's JSON-RPC error; the native door's failed `result`
+   once recorded), whose words an entry on the agent's toolchain recognises. An entry grows only with a recorded
+   sentence, held by a test both ways. Never the transcript or the agent's output, never a provider query, never token
+   counts; a field beats a sentence where a door carries one.
+2. **The cool-off is the reset the agent named**, read in its zone (the machine's own when the zone is not an IANA
+   name), plus a 2-minute margin, with a 15-minute grace for clocks that disagree and nothing believed past 8 days.
+   Otherwise 60 minutes, settable (`cooloff`). Kept per account in `cooling.json` under the home, on disk, with no words
+   and no route; ended early only by *Try now*, a sign-in or key into that account, and, for the tool's own home, the
+   roster's refresh.
+3. **A limit is not a strike** (amends D58). The record says `limit`, naming no account. The quest waits for the reset
+   or rotates, and is never carried on into the same refusal nor parked for it.
+4. **Rotation is at a start, by the person's order.** `rotation` and `workspaceRotation` in `harnesses.json`, resolved
+   workspace, then machine, then none; none is today's behaviour. The resolved account runs if ready; if not, and a
+   default named it and the order lists it, the next ready account in the order runs. A person's pick, the tool's own
+   home, an account outside the order and a running session never rotate. A carry-on rotated keeps its tree and is
+   handed the cut-off session's last plan and last words from Daoris's own record (amends D80); the harness's own
+   conversation stays in the first account's home, never read.
+5. **Rotation needs accounts of Daoris's own.** Daoris chooses an account only by its directory; the tool's own home is
+   whichever account the person last signed in to, which Daoris neither chooses nor sees change. The screen says so
+   while starts run there, and offers *Sign in to another account*.
+6. **When every account a start may use is cooling, starts wait**: held at spawn with one sentence naming the first
+   reset, no process started, said once by the attention and *What needs you*, the queue unchanged.
+7. **Reproducible from Daoris's records.** Each record names its account (loopback only) and version; the carried-on
+   session's conversation opens with a note naming both accounts, the cut-off session and its refused turn; the log
+   writes `account.limited`, `account.rotated` and `starts.waiting` by profile name, never a key, a handle, who signed
+   in or the agent's words. The travelling note never names another account, since the scrubber knows only the
+   record's own.
+8. **Two doors and Ask Daoris** (D50, D110): `daoris agent profile order|ready`, `daoris driver cooloff`, `daoris agent
+   list`'s cool-offs, and the same on Settings → Agents and → Driver.
+
+**Why.** The agent says when its limit lifts, so the cool-off is read rather than guessed, and D57 §b's worry, a string
+match on someone else's text written blind, is answered by writing it against five recorded sentences and refusing an
+entry without one. A strike says trying again spends an account without progress; a limit is the account's state with
+its own reset, so counting it parked a healthy quest in seconds. Rotation at a start, by an order the person wrote,
+moves only work that would have started anyway, and the records already name each session's account, which is what
+makes rotated work reproducible. The tool's own home cannot be rotated because Daoris cannot choose it: the 1 October
+sign-in showed it moving under Daoris unseen.
+
+**This lifts D57 §b's hold on TOOL4**, because the evidence it waited for exists: what a limit looks like (§0.2), how
+long a cool-off is (the agent says), and whether rotated work stays reproducible (yes, from Daoris's records, for named
+accounts). The toolchain design's §2 part 4 and §6 are replaced by the new design.
+
+**Rejected** (the design's §9 has the full list):
+- **Reading the transcript or the agent's output**: a session that quotes a limit would cool an account not spent.
+- **Asking the provider what is left, guessing from token counts, or a 429 reader**: a credential and an API Daoris
+  holds none of (D49 §4), what was used is not what is left, and no door of Daoris's sees a status.
+- **One cool-off for every limit, or exponential backoff**: the reset is stated.
+- **Spreading work across accounts**, **rotating inside a running session**, and **copying the harness's conversation
+  between account homes** (a read inside an account's directory, D66 §3).
+- **A limit counted as a strike, or a separate count that parks after some number.**
+- **The cool-offs in `harnesses.json` or in memory**; **a do-not-rotate list beside the order**.
+- **Rotating the tool's own home, giving its sessions a profile silently, or keying its cool-off by who signed in.**
+- **Sleeping the loop or reordering the queue while it waits**; **`StartVerdict.Exhausted` for a cooling account**.
+
+**What it amends, when built.** D57 §b (lifted), D58 (a limit is no strike), D80 (a carry-on gains the last plan and
+last words), D94 §4 (three events), D110 (three doors), D66 §3 and AGT3b (an account action ends that account's
+cool-off). Unchanged: D49 §4, D48 §2a, D67 §1, D73. Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about today were
+read from the code at `4f65cd3`: the conclusion and the protocol door's failure, the native door's mapper, AGT3b's
+refusal and the roster, the profile resolution and its environment seam, the planner and the strikes, the attention
+watch, the usage record, the conversation runner, the service's record and its note scrubber, the CLI's toolchain and
+`agent` usage. The observations are the install's and the owner's, given to the branch, not read from its records. Not
+measured: the protocol door's words for a bare weekly limit, the native door's words, whether a reset lands at its
+minute, whether a carried-on session on another account finishes, whether an hour is a good default, and whether a
+quest spends windows without landing anything. Found and not filed: AGT3b reads the transcript's last lines for its
+phrase, the hazard this decision refuses for limits; and the ACPEND1 note carries the agent's sentence, zone included,
+to every reader. `verify` checks the log's shape and the design's links, and none of these words.

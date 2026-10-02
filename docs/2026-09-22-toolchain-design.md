@@ -14,6 +14,12 @@
 > **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
 > (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user
 > profile. The tree beneath it is unchanged.
+>
+> **Amended by D125 (2026-10-02): rotation is designed, and no longer held.** §2's part 4 and §6 are
+> replaced by `docs/2026-10-01-account-rotation-design.md`: five observed limits answered §6's three
+> questions. A limit is read from the agent's own words on the door that refused, its account cools
+> until the reset it names, it is never a strike, and the next start runs on the next ready account
+> of the person's order. §4's measurement is unchanged, and §7 still holds.
 
 ## 1. What is true today, measured before anything was proposed
 
@@ -330,6 +336,9 @@ Daoris the thing that knows about models, which is precisely what D24 says the d
 The owner asked for native *support*, not a native *catalogue*.
 
 ## 6. Rotation — designed, and deliberately not built
+
+*Replaced by D125 (2026-10-02) and `docs/2026-10-01-account-rotation-design.md`, whose §0.2 answers the three
+questions below from five observed limits. Kept as it was written.*
 
 Held until measurement exists, on the owner's "measurement first".
 
