@@ -1278,6 +1278,24 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
 
     public IStreamMapper StructuredOutput() => new ClaudeStreamJson();
 
+    /// <summary>The harness's own resume (ANSWER1a, D131 §1): <c>--resume &lt;id&gt;</c>, the id its <c>init</c> line named.</summary>
+    public bool Resumes => true;
+
+    /// <summary>
+    /// <c>claude -p &lt;answer&gt; --resume &lt;id&gt;</c>, with the posture and the structured output a start has. The answer is
+    /// the conversation's next turn as it is: the conversation already holds the target, so it is not sent again.
+    /// 🔴 The flag is the maker's documented one, not yet run on this machine by a driven session (design §6).
+    /// </summary>
+    public ProcessStartInfo PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt)
+    {
+        var resolved = Resolve(command);
+        var arguments = resolved.Skip(1)
+            .Concat(["-p", prompt, "--resume", conversation, "--permission-mode", "acceptEdits"])
+            .Concat(StreamJsonOut);
+
+        return Spawning.InRoot(target, resolved[0], arguments);
+    }
+
     /// <summary>
     /// A person's message as one `stream-json` user line — the shape the binary took on stdin, one turn
     /// per line, in the probe the evidence records.
