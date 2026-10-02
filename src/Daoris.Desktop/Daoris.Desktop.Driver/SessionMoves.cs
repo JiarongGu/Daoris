@@ -17,10 +17,14 @@ public static class SessionMoves
     /// record ended as the person's stop (<see cref="Orphans"/>); else it is another Daoris process's here, said so.
     /// </summary>
     /// <param name="service">The loop's service, or null before it answers: an orphan cannot be ended then.</param>
+    /// <param name="note">
+    /// What the record of a process stopped here says in place of the plain stop: a pause's names the pause (PAUSE1b). An
+    /// orphan's record says nothing ran it, which is the fact.
+    /// </param>
     public static async Task<StopAnswer> StopAsync(
-        SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default)
+        SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default, string? note = null)
     {
-        var stopped = processes.Stop(id);
+        var stopped = processes.Stop(id, note: note);
         var orphan = !stopped
             && service is not null
             && (await Orphans.EndAsync(service, processes, only: id, ct: ct).ConfigureAwait(false)).Count > 0;

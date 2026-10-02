@@ -222,6 +222,8 @@ public sealed class DriverLoop(
             Verdict = consideration.Verdict.ToString(),
             consideration.Reason,
             HeldBy = consideration.HeldBy?.Session,
+            // Whose pause holds it (PAUSE1b, D132 §2.3): the scope and the id, so the page says it from facts. Null otherwise.
+            PausedBy = consideration.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
             parked?.Strikes,
             parked?.Since,
             WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Until, waiting.Stated },

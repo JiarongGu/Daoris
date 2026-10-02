@@ -97,6 +97,16 @@ public sealed partial class HelpCoverageTests
         + "DRIFT1d2's kind: the service's box and tool, the driver's judge against the quest as it stands, and the card.");
 
     /// <summary>
+    /// PAUSE1b's <c>daoris-driver ask --pause|--resume</c> and <c>quest pause|resume</c> (D132 §7.2), verbs of the headless host:
+    /// doors Ask Daoris owes until PAUSE1f gives it the <c>pause</c> kind, its doors <c>pause</c> and <c>resume</c>, beside the
+    /// pages' and a session's acts PAUSE1e builds.
+    /// </summary>
+    private static readonly Owed PauseDoor = new(
+        "pausing stops what of an ask's or a quest's work runs on this machine and resuming carries it on, each a change the "
+        + "person applies as a card, so Ask Daoris should propose them; that is PAUSE1f's `pause` kind, its doors `pause` and "
+        + "`resume`, judged against this machine's pauses and each work's live sessions (D132 §7.4).");
+
+    /// <summary>
     /// WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5), a verb of the headless host: the press, and its pause,
     /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
     /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
@@ -441,6 +451,20 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("accept"));
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal));
         Assert.Contains("DRIFT1d2", AcceptDoor.Reason);
+    }
+
+    /// <summary>
+    /// PAUSE1b: the headless host's pause and resume are doors owed to PAUSE1f's <c>pause</c> kind (D132 §7.4) while the host's
+    /// usage spells them and no kind of that name is built; the room names them meanwhile, so the helper can point at them.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_pause_and_resume_are_doors_owed_to_the_pause_kind()
+    {
+        Assert.Contains("ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("pause"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --pause|--resume <id>`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris-driver quest pause|resume <id>`", StringComparison.Ordinal));
+        Assert.Contains("PAUSE1f", PauseDoor.Reason);
     }
 
     /// <summary>

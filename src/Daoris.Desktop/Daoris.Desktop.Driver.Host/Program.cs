@@ -38,6 +38,12 @@ using Daoris.Driver;
 //                 `intakeAdapter` (`daoris driver intake <adapter>`), the loop answers an ask the
 //                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
 //                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
+//   ask --pause <id> · ask --resume <id> · quest pause <id> · quest resume <id>
+//                 pause an ask's work, or one quest's, on this machine (PAUSE1b, D132 §2): the pause is written to
+//                 driver.json first, then every live session of it this machine runs is stopped as your stop (one another
+//                 Daoris process runs through the request in <home>/sessions/requests/ its loop takes, `by: pause`), and
+//                 nothing of it starts until you resume it, which releases each stop the pause made and names what still
+//                 holds a quest. A session waiting on you stays parked, a running intake goes on, and a teammate's is named.
 //
 //   setup <repository> [--plan]
 //                 ask a repository's own session to set it up for every agent (LAYOUT7; D117 §6, D124 §2): take up
@@ -152,6 +158,13 @@ try
         return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
     }
 
+    // Pausing and resuming an ask's work from a terminal (PAUSE1b, D132 §7.2, D50): the ask's page is the other door. Asked
+    // for before the ask's other words, which would take `--pause` as the words of a new ask.
+    if (args is ["ask", .. var workArgs] && WorkCommand.Asks(WorkScope.Ask, workArgs))
+    {
+        return await Daoris.Driver.Host.WorkConsole.RunAsync(WorkScope.Ask, workArgs, log);
+    }
+
     // An ask from a terminal (D65 §1a, D50): the page's composer at workspace scope is the other door.
     if (args is ["ask", .. var askArgs])
     {
@@ -175,12 +188,18 @@ try
     }
 
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
-    // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed.
+    // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing
+    // and resuming one quest's work (PAUSE1b, D132 §7.2): the quest's page is the other door.
     if (args is ["quest", .. var questArgs])
     {
+        if (WorkCommand.Asks(WorkScope.Quest, questArgs))
+        {
+            return await Daoris.Driver.Host.WorkConsole.RunAsync(WorkScope.Quest, questArgs, log);
+        }
+
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
-            Console.Error.WriteLine("usage: daoris-driver quest delete <id>  ·  daoris-driver quest accept <id>");
+            Console.Error.WriteLine("usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest pause <id>  ·  quest resume <id>");
             return 2;
         }
 
