@@ -211,6 +211,10 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
   cases set the environment they assume whatever the parent shell spells.
 - [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
   objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
+- [ ] **WSSETUP5a — the family rehearsal checks registration from the line** (WSSETUP5's hand-back; tools): after
+  phase 17c lands, the row reads adopted and declared with no `connect`; and the install note in `desktop-publish.mjs`
+  says Daoris's own children find `app/bin/` first. Also (records): the PLUGDIST1a note sits after D123, a union
+  artefact; move it under D120.
 - [ ] **WSSETUP6 — the workspace plan** (§4.1–§4.3; driver; after LAYOUT7): the plan file, the tick, the order,
   `atOnce` at most `cap − 1`, the pilot pause, pause, resume and stop.
 - [ ] **WSSETUP7 — the workspace on the screen and in Ask Daoris** (§4.4, §4.5; modules, web-shell, service, driver;
