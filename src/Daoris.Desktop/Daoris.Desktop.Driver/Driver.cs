@@ -22,7 +22,8 @@ public sealed record SessionEnded(
 /// <param name="Opened">Whether a session record was opened for it — what a look counts as progress.</param>
 /// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
 /// <param name="Held">The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict.</param>
-internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null);
+/// <param name="Cooling">The account's cool-off, when that is what held it (TOOL4d): what the report's waits are gathered from.</param>
+internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null);
 
 /// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
 /// <param name="Events">
@@ -65,6 +66,14 @@ public sealed record TickReport(
     /// this says it for a screen, which offers the person the grant and nothing wider.
     /// </summary>
     public IReadOnlyList<TrustHold> Untrusted { get; init; } = [];
+
+    /// <summary>
+    /// The starts this look held because the account each would run on is cooling (TOOL4d, D125 §4), one per account:
+    /// the agent, the account, the first ready time and what was held. <see cref="Events"/> says each hold for a person;
+    /// this says the wait for a screen, which shows those quests as waiting for an account rather than parked, and for
+    /// the attention watch, which says it once.
+    /// </summary>
+    public IReadOnlyList<AccountWait> Waits { get; init; } = [];
 }
 
 /// <summary>
@@ -309,10 +318,13 @@ public sealed partial class Driver(
         // is in the ledger before the next look plans. The rest of each run is the running set's.
         var run = Runner ?? ((start, opened, token) => RunAsync(start, snapshot.Repositories, untrusted, opened, token));
         var begun = await Task.WhenAll(
-                starts.Select(start => BeginAsync(start.Quest.Id, opened => run(start, opened, ct)))
-                    .Concat(intakes.Select(ask => BeginAsync(null, opened => RunIntakeAsync(ask, untrusted, opened, ct)))))
+                starts.Select(start => BeginAsync(
+                        new Begun(start.Quest.Id, null, start.Quest.To, start.Workspace, config.Adapter), opened => run(start, opened, ct)))
+                    .Concat(intakes.Select(ask => BeginAsync(
+                        new Begun(null, ask.Id, $"ask #{ask.Id}", ask.Workspace, config.IntakeAdapter!),
+                        opened => RunIntakeAsync(ask, untrusted, opened, ct)))))
             .ConfigureAwait(false);
-        foreach (var (quest, came) in begun)
+        foreach (var (started, came) in begun)
         {
             // Null is a session opened, and running on: its ending joins a later look's report.
             if (came is null)
@@ -324,18 +336,58 @@ public sealed partial class Driver(
             events.Add(came.Line);
             progressed |= came.Opened;
             if (came.Ended is not null) concluded.Add(came.Ended);
-            if (quest is not null && came.Held is not null) heldAt[quest] = came.Held;
+            if (started.Quest is { } quest && came.Held is not null) heldAt[quest] = came.Held;
         }
+
+        var waits = Waits(begun);
 
         await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
 
         return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded)
         {
             Untrusted = untrusted,
+            Waits = waits,
         };
 
-        async Task<(string? Quest, StartRun? Came)> BeginAsync(string? quest, Func<Action, Task<StartRun>> start) =>
-            (quest, await _runs.StartAsync(start).ConfigureAwait(false));
+        async Task<(Begun Started, StartRun? Came)> BeginAsync(Begun started, Func<Action, Task<StartRun>> start) =>
+            (started, await _runs.StartAsync(start).ConfigureAwait(false));
+    }
+
+    /// <summary>What one start of a look was: a quest's or an ask's intake, where it would run, and on which adapter.</summary>
+    private sealed record Begun(string? Quest, string? Ask, string Where, string? Workspace, string Adapter);
+
+    /// <summary>
+    /// The starts this look held on a cooling account, one wait per account (TOOL4d, D125 §4), each written to the
+    /// machine log the first look it appears in and never again until a new cool-off.
+    /// </summary>
+    private IReadOnlyList<AccountWait> Waits(IEnumerable<(Begun Started, StartRun? Came)> begun)
+    {
+        var waits = begun
+            .Where(each => each.Came?.Cooling is not null)
+            .GroupBy(each => $"{each.Came!.Cooling!.Agent}/{each.Came.Cooling.Account ?? ""}", StringComparer.OrdinalIgnoreCase)
+            .Select(account =>
+            {
+                var held = account.ToList();
+                var cooling = held[0].Came!.Cooling!;
+                var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                return new AccountWait(
+                    held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
+                    cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, _harnesses.Zone))
+                {
+                    Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
+                    Asks = [.. held.Select(each => each.Started.Ask).OfType<string>()],
+                    Repositories = [.. held.Select(each => each.Started.Where).Distinct(StringComparer.OrdinalIgnoreCase)],
+                };
+            })
+            .ToList();
+
+        foreach (var wait in waits.Where(wait => _harnesses.NewWait(wait.Agent, wait.Account, wait.Until)))
+        {
+            service.AccountSaid(AccountLine.Waiting(
+                wait.Adapter, wait.Account, wait.Workspace, wait.Until, wait.Quests.Count + wait.Asks.Count));
+        }
+
+        return waits;
     }
 
     /// <summary>
@@ -609,7 +661,9 @@ public sealed partial class Driver(
 
         if (!selection.Allowed)
         {
-            return Hold(selection.Refusal!);
+            // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
+            // the quest waiting for an account. Nothing was spawned or probed to learn it.
+            return Hold(selection.Refusal!) with { Cooling = selection.Cooling };
         }
 
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
@@ -845,10 +899,11 @@ public sealed partial class Driver(
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+                    (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
                     await service.AdvanceAsync(
-                        sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct).ConfigureAwait(false);
+                        sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited).ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that
@@ -1034,6 +1089,55 @@ public sealed partial class Driver(
         }
 
         return (file, adapter.AcpSessionMeta(file));
+    }
+
+    /// <summary>
+    /// 🔴 A turn the door refused for an account's limit (TOOL4d, D125 §2, §5.2), read from the door's failure by the
+    /// adapter's table and never from the transcript: the account the session ran as cools until the reset the agent
+    /// named, the record says <c>limit</c> — which is never a strike — and its note says until when, naming no account.
+    /// </summary>
+    /// <remarks>
+    /// Only a <c>failed</c> conclusion: a refused turn after the work reached its close or its wait ended as that, the
+    /// person's stop is theirs, and a timeout carries no door failure. A failure no table recognises is a failure as
+    /// today, and the strikes bound it.
+    /// </remarks>
+    /// <param name="turnFailed">What the protocol door said refusing the turn (ACPEND1), or null.</param>
+    /// <param name="used">The context the door reported, for the log; null where it reported none.</param>
+    internal (SessionConclusion Conclusion, bool Limit) AccountLimited(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed, string sessionId,
+        AcpUsage? used)
+    {
+        if (conclusion.State != "failed" || turnFailed is not { Length: > 0 }) return (conclusion, false);
+
+        (CoolingEntry Entry, LimitSeen Seen)? limited;
+        try
+        {
+            limited = _harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The cool-off could not be written: the record still says the agent's words, and the strikes bound it.
+            return (conclusion, false);
+        }
+
+        if (limited is not { } read) return (conclusion, false);
+
+        var (entry, seen) = read;
+        service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, TurnsEnded(_events, sessionId) + 1, used?.Used));
+        return (conclusion with { Note = $"{conclusion.Note} {CoolingWords.Note(entry, _harnesses.Zone)}" }, true);
+    }
+
+    /// <summary>The turns a session's record says ended — what a refused turn is counted after (D125 §3.6). Unreadable is none.</summary>
+    internal static long TurnsEnded(SessionEvents events, string sessionId)
+    {
+        try
+        {
+            return events.After(sessionId, 0).Events.LongCount(e => e.Kind == SessionEventKind.Turn);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            return 0;
+        }
     }
 
     /// <summary>

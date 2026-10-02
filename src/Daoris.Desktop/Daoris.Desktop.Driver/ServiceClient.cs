@@ -58,6 +58,16 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Tell the watchers a plan's line (<see cref="SetupLined"/>).</summary>
     public void SetupSaid(SetupLine line) => Raise(SetupLined, line);
 
+    /// <summary>
+    /// An account's line (TOOL4d, D125 §5.4): a limit met, or starts waiting on a cooling account. Every driven session,
+    /// intake and conversation on this machine is concluded through this client, so a watcher here logs each line as it
+    /// logs the opens and moves, without the driver knowing the log.
+    /// </summary>
+    public event Action<AccountLine>? AccountLined;
+
+    /// <summary>Tell the watchers an account's line (<see cref="AccountLined"/>).</summary>
+    public void AccountSaid(AccountLine line) => Raise(AccountLined, line);
+
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 
@@ -545,9 +555,14 @@ public sealed class ServiceClient : IDisposable
     /// That a stop was not the person's (D104): the orphan sweep's, or this driver's shutdown — so a take it
     /// ended is carried on. A host older than the field ignores it, and the stop reads as the person's.
     /// </param>
+    /// <param name="limit">
+    /// That an account's limit refused the turn of a session moved to <c>failed</c> (TOOL4d, D125 §5.2) — which is never
+    /// a strike. Sent only where true, so a host older than the field reads it as any failure; the ledger refuses it on
+    /// a move to any other state (TOOL4c). It names no account.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default, bool interrupted = false)
+        CancellationToken ct = default, bool interrupted = false, bool limit = false)
     {
         var body = WriteJson(writer =>
         {
@@ -557,6 +572,7 @@ public sealed class ServiceClient : IDisposable
             if (evidence is not null) writer.WriteString("evidence", evidence);
             if (transcript is not null) writer.WriteString("transcript", transcript);
             if (interrupted) writer.WriteBoolean("interrupted", true);
+            if (limit) writer.WriteBoolean("limit", true);
             writer.WriteEndObject();
         });
 
@@ -750,6 +766,10 @@ public sealed class ServiceClient : IDisposable
     /// quest first — the race resolving as designed, not a failure. A <c>declined</c> one is a real
     /// answer and closes the quest anyway. A <c>stopped</c> one the person stopped was theirs. Counting
     /// any of those would park quests for succeeding.
+    /// <para>🔴 <b>A failure that says <c>limit</c> is not a strike either</b> (TOOL4d, D125 §5.2, amending D58). A strike
+    /// says trying again spends an account without progress; a limit is the account's state, with its own reset, and
+    /// the cool-off bounds it. Counted, three refusals by one spent account parked a healthy quest in seconds on
+    /// 1 October.</para>
     /// </remarks>
     internal static IReadOnlyDictionary<string, int> ReadStrikes(string json)
     {
@@ -761,7 +781,7 @@ public sealed class ServiceClient : IDisposable
             // says nothing about whether THIS machine's next try would fail.
             if (IsTeams(session)) continue;
             var state = Text(session, "state");
-            var cutOff = string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase)
+            var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
             if (!cutOff) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
@@ -803,6 +823,10 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Whether a record says its stop was not the person's (D104) — absent is false, the old reading.</summary>
     private static bool Interrupted(JsonElement session) =>
         session.TryGetProperty("interrupted", out var interrupted) && interrupted.ValueKind == JsonValueKind.True;
+
+    /// <summary>Whether a record says an account's limit made its failure (TOOL4c) — absent is false, the old reading.</summary>
+    private static bool Limit(JsonElement session) =>
+        session.TryGetProperty("limit", out var limit) && limit.ValueKind == JsonValueKind.True;
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;

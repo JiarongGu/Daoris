@@ -423,7 +423,8 @@ public sealed class ChatRunner(
         {
             chat = new ProtocolChat(
                 place.Posture ?? resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
-                stopped: () => processes.WasStopRequested(sessionId));
+                stopped: () => processes.WasStopRequested(sessionId),
+                limited: failure => Limited(sessionId, resolved, selection.Profile, failure));
             _turned[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -632,6 +633,30 @@ public sealed class ChatRunner(
         ? new SessionEvent { Kind = SessionEventKind.Note, Text = $"told where the person is: {preface}" }
         : null;
 
+    /// <summary>
+    /// A conversation's turn the door refused, read for an account's limit (TOOL4d, D125 §2.3): where the adapter's table
+    /// recognises it, the account the conversation runs as cools, the log says so, and the sentence for its record comes
+    /// back. Null is a refusal as today. The conversation goes on: the process is still there, and so is the person.
+    /// </summary>
+    internal string? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure)
+    {
+        (CoolingEntry Entry, LimitSeen Seen)? limited;
+        try
+        {
+            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        if (limited is not { } read) return null;
+
+        service.AccountSaid(AccountLine.Limited(
+            sessionId, adapter.Name, profile, read.Seen, Driver.TurnsEnded(_events, sessionId) + 1, used: null));
+        return CoolingWords.Conversation(read.Entry, _harnesses.Zone);
+    }
+
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
     private void Record(string sessionId, SessionEvent e) => _events.Keep(sessionId, e, say: null);
 
@@ -837,14 +862,19 @@ public sealed class ChatRunner(
     {
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
+        private readonly Func<string, string?>? _limited;
         private Action<string> _line = _ => { };
         private Action<SessionEvent> _record = _ => { };
 
+        /// <param name="limited">
+        /// A refused turn's failure, read for an account's limit (TOOL4d): the sentence its record takes, or null.
+        /// </param>
         public ProtocolChat(
             string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
-            Action<ChatQueue> changed, Func<bool> stopped)
+            Action<ChatQueue> changed, Func<bool> stopped, Func<string, string?>? limited = null)
         {
             _stopped = stopped;
+            _limited = limited;
             Posture = posture;
             Meta = meta;
             Cwd = cwd;
@@ -903,6 +933,15 @@ public sealed class ChatRunner(
 
                 _line($"— the turn could not be taken: {error.Message}");
                 _record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the turn could not be taken: {error.Message}" });
+
+                // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
+                // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4).
+                if (error is DriverException && _limited?.Invoke(error.Message) is { } cooling)
+                {
+                    _line($"— {cooling}");
+                    _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling });
+                }
+
                 // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
                 // one drew *working…* under this very note until the next message — while the composer,
                 // told by the queue that nothing was taking, offered to send.

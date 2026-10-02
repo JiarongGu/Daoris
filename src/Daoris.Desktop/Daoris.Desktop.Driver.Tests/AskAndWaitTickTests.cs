@@ -299,6 +299,8 @@ public sealed class AskAndWaitTickTests : IDisposable
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                        // Kept once said, as the service keeps it (TOOL4c).
+                        if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 

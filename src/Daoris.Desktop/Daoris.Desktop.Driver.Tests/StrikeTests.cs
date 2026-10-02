@@ -69,6 +69,24 @@ public sealed class StrikeTests
         Assert.Equal(["q1"], strikes.Keys);
     }
 
+    /// <summary>
+    /// D125 §5.2, amending D58: a failure an account's limit made is the account's state, with its own reset, and the
+    /// cool-off bounds it, so it is never a strike. A failure that does not say `limit`, or says it false, still is.
+    /// </summary>
+    [Fact]
+    public void A_failure_an_account_s_limit_made_is_never_a_strike()
+    {
+        var strikes = ServiceClient.ReadStrikes("""
+            [{ "id": "s1", "quest": "q1", "repository": "Game", "state": "failed", "limit": true },
+             { "id": "s2", "quest": "q1", "repository": "Game", "state": "failed", "limit": false },
+             { "id": "s3", "quest": "q1", "repository": "Game", "state": "failed" },
+             { "id": "s4", "quest": "q2", "repository": "Game", "state": "failed", "limit": true }]
+            """);
+
+        Assert.Equal(2, strikes["q1"]);
+        Assert.Equal(["q1"], strikes.Keys);
+    }
+
     /// <summary>The last run says whether its stop was interrupted — what the planner carries on from.</summary>
     [Fact]
     public void The_last_run_says_whether_its_stop_was_interrupted()

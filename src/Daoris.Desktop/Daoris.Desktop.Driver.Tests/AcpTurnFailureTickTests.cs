@@ -47,17 +47,23 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         Assert.Equal("Taken", service.Status("q1"));
         Assert.Equal("failed", record["state"]!.GetValue<string>());
         Assert.Contains("spend limit", record["note"]!.GetValue<string>());
+        // The table knows these words (TOOL4d): the failure is a limit, and so not a strike.
+        Assert.True(record["limit"]!.GetValue<bool>());
     }
 
     /// <summary>
     /// D80, the rest of the measured run: the quest a cut-off left taken is carried on at the next tick,
     /// in the tree the cut-off session worked in, by a session told it is carrying on — which closes it.
     /// </summary>
+    /// <remarks>
+    /// Cut off by a refusal no limit table knows, since a limit's carry-on waits for the reset the agent named
+    /// (TOOL4d): that wait is <c>AccountLimitTickTests</c>'.
+    /// </remarks>
     [Fact]
     public async Task The_next_tick_carries_the_quest_on_in_the_same_tree_and_the_quest_closes()
     {
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
-        var driver = Driver(service, trees: true);
+        var driver = Driver(service, trees: true, refusal: "Internal error: the connection was reset");
 
         await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
         var cutOff = service.Session("s1");
@@ -73,7 +79,9 @@ public sealed class AcpTurnFailureTickTests : IDisposable
             Path.GetFullPath(carried["tree"]!.GetValue<string>()), ignoreCase: true);
     }
 
-    private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, bool trees = false)
+    private const string SpendLimit = "Internal error: You've hit your individual spend limit · your session limit resets 7am";
+
+    private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, bool trees = false, string refusal = SpendLimit)
     {
         var config = DriverConfig.Empty with
         {
@@ -82,7 +90,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
             Adapter = "acp-stub",
             TimeoutMinutes = 1,
             PollSeconds = 1,
-            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent()] },
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), refusal] },
         };
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
@@ -92,8 +100,9 @@ public sealed class AcpTurnFailureTickTests : IDisposable
 
     /// <summary>
     /// The protocol door's stand-in for the measured run: it takes its quest through the service, then
-    /// answers the prompt with the error the real adapter sent, and exits 0 when its stdin closes. Told
-    /// it is carrying the quest on, it closes the quest done and ends its turn as a real one would.
+    /// answers the prompt with the error the real adapter sent (or the refusal it is handed as its last
+    /// argument), and exits 0 when its stdin closes. Told it is carrying the quest on, it closes the quest
+    /// done and ends its turn as a real one would.
     /// </summary>
     private string Agent()
     {
@@ -102,6 +111,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
             import { createInterface } from 'node:readline';
             if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
             if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
+            const refusal = process.argv[2];
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
             const respond = (body) => fetch(`${process.env.DAORIS_SERVICE_URL}/api/quests/q1/respond`, {
               method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -118,8 +128,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
                   send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
                 } else {
                   await respond({ action: 'take' });
-                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603,
-                    message: "Internal error: You've hit your individual spend limit · your session limit resets 7am" } });
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: refusal } });
                 }
               } else if (frame.id !== undefined && frame.method) {
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
