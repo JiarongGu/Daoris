@@ -13,21 +13,19 @@ import { Button } from '../ui';
  *
  * **Where an answer goes.** An intake that cannot tell whose an ask is asks by PARKING, and then the
  * answer is on the ask (INT4g's `AwaitingIntake`). So the door here opens the ask — a look, not an
- * answer, since nothing is being asked yet — and the stop the composer used to carry stays, saying
- * what it leaves: the ask as a proposal.
+ * answer, since nothing is being asked yet.
  *
- * A molecule: handed the ask and two moves. Where nothing can act (a story, a mirrored record) it is
- * handed neither, and still says why there is no box.
+ * **Its stop is the page header's** (SESSUX1d, D126 §3.3): the session's stop has one owner, and the sentence this card
+ * said beside it, that the ask stays a proposal, is what the header's stop asks with.
+ *
+ * A molecule: handed the ask and its door. Where nothing can act (a story, a mirrored record) it is
+ * handed none, and still says why there is no box.
  */
-export function RunningIntake({ ask, pending = false, onOpen, onStop }: {
+export function RunningIntake({ ask, onOpen }: {
   /** The ask this intake serves — the id the door opens. */
   ask: string;
-  /** A stop is in flight. The door is never held: opening a record changes nothing. */
-  pending?: boolean;
   /** Open the ask's record. Absent where nothing can open it. */
   onOpen?: (ask: string) => void;
-  /** Cut the intake off. Absent where nothing can reach the process's machine. */
-  onStop?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -36,20 +34,11 @@ export function RunningIntake({ ask, pending = false, onOpen, onStop }: {
       <h3 className="m-0 text-small font-semibold">{t('work.intakeRunning.title', { ask })}</h3>
       <p className="m-0 mt-1.5 text-small text-ink-soft">{t('work.intakeRunning.hint')}</p>
 
-      {(onOpen || onStop) && (
+      {onOpen && (
         <div className="mt-2.5 flex flex-wrap gap-2">
-          {onOpen && (
-            <Button onClick={() => onOpen(ask)}>{t('work.intakeRunning.open', { ask })}</Button>
-          )}
-          {onStop && (
-            <Button variant="danger" disabled={pending} onClick={onStop}>
-              {t('work.awaiting.stop')}
-            </Button>
-          )}
+          <Button onClick={() => onOpen(ask)}>{t('work.intakeRunning.open', { ask })}</Button>
         </div>
       )}
-
-      {onStop && <p className="m-0 mt-2 text-small text-ink-faint">{t('work.intake.stopMeans')}</p>}
     </section>
   );
 }

@@ -71,7 +71,13 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
+  focus = 0,
 }: {
+  /**
+   * Bumped to put the focus in the box (D126 §3.1: *Answer…* from a session's row attends it and opens its box with the
+   * focus). Zero is no ask.
+   */
+  focus?: number;
   /** The conversation's model and effort as its agent offered them (AGT6b). Absent or empty, none is offered. */
   offered?: SessionOption[];
   /** A change to one is on its way to the agent. */
@@ -120,7 +126,11 @@ export function Composer({
   /** The words and the files attached to them. */
   onSend: (text: string, files: File[]) => void;
   onFinish: () => void;
-  onStop: () => void;
+  /**
+   * The session's stop, where this form owns it: Ask Daoris's panel, which holds its conversation on every view. In
+   * Sessions the stop's one owner is the page header (D126 §3.3), so absent there, and no stop is drawn.
+   */
+  onStop?: () => void;
   onStopTurn?: () => void;
 }) {
   const { t } = useTranslation();
@@ -162,6 +172,11 @@ export function Composer({
     field.current?.setSelectionRange(placeCaret.current, placeCaret.current);
     placeCaret.current = null;
   }, [text]);
+
+  // Told to take the focus (D126 §3.1's *Answer…*): once per telling, a new one each press.
+  useEffect(() => {
+    if (focus > 0) field.current?.focus();
+  }, [focus]);
 
   const follow = (box: HTMLTextAreaElement) => {
     // 🔴 While a taken file is on its way into the box, the box still holds the text before it. React
@@ -376,9 +391,11 @@ export function Composer({
             <Tip content={t('work.composer.finishTip')}>
               <Button type="button" onClick={onFinish}>{t('work.composer.finish')}</Button>
             </Tip>
-            <Tip content={t('work.composer.stopTip')}>
-              <Button type="button" variant="danger" onClick={onStop}>{t('work.composer.stop')}</Button>
-            </Tip>
+            {onStop && (
+              <Tip content={t('work.composer.stopTip')}>
+                <Button type="button" variant="danger" onClick={onStop}>{t('work.composer.stop')}</Button>
+              </Tip>
+            )}
           </>
         )}
         {/* The conversation's model and effort (AGT6b), and how full its context is (CONV5), at the

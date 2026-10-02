@@ -10,6 +10,8 @@
   "work.head.branch": "branch",
   "work.head.itsWork": "Its work",
   "work.head.review": "Review",
+  "work.head.more": "More actions",
+  "work.head.acts": "Session actions",
   "work.head.noteMore": "Show all",
   "work.head.noteLess": "Show less",
   "work.head.landed.empty": "nothing beyond {{line}}",

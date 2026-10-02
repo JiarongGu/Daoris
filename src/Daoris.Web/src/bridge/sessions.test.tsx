@@ -17,7 +17,7 @@ vi.mock('@shenora/react', () => ({
 import { sentence } from '../format';
 import i18n from '../i18n';
 import { keys } from '../queries';
-import { useArchiveSessions, useSessionGroups, type SessionGrouping } from './sessions';
+import { useArchiveSessions, useOpenSessionFolder, useSessionGroups, type SessionGrouping } from './sessions';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -87,6 +87,30 @@ describe('the sessions domain', () => {
       await i18n.changeLanguage('zh');
       expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's3', group: 'you', context: 'you' }))).toMatch(/s3 正在等你处理/);
       expect(sentence(refusal('SESSION_NEEDS_YOU', { session: 's4', group: 'review', context: 'review' }))).toMatch(/s4 有待审阅的工作/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  /**
+   * SESSUX1d (D126 §3.5): *Open folder* names the session and nothing else, since the module names the folder from its
+   * record; a folder this machine no longer holds is said in the catalogue, as is an id no record has.
+   */
+  it('opens a session’s folder on DAORIS.DRIVER by its id alone, and says a gone folder in the catalogue', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invoke.mockImplementation(async () => ({ opened: true }));
+    const { result } = renderHook(() => useOpenSessionFolder(), { wrapper: wrapper(client) });
+
+    expect(await result.current.mutateAsync('s1')).toEqual({ opened: true });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPEN_FOLDER', { payload: { id: 's1' } });
+
+    const refusal = (code: string, parameters: Record<string, string>) => Object.assign(new Error(code), { code, parameters });
+    try {
+      await i18n.changeLanguage('en');
+      expect(sentence(refusal('SESSION_FOLDER_GONE', { session: 's1' }))).toMatch(/^The folder s1 worked in is not on this machine/);
+      expect(sentence(refusal('SESSION_UNKNOWN', { session: 's9', context: 'folder' }))).toMatch(/no folder to open/);
+      await i18n.changeLanguage('zh');
+      expect(sentence(refusal('SESSION_FOLDER_GONE', { session: 's1' }))).toMatch(/^s1 工作过的文件夹不在本机/);
     } finally {
       await i18n.changeLanguage('en');
     }

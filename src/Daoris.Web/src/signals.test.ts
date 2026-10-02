@@ -153,4 +153,24 @@ describe('sittingSentence', () => {
     const unheardOf = sits('SomethingNew', 'a reason this page has never seen.');
     expect(sittingSentence(unheardOf)).toBe(unheardOf.reason);
   });
+
+  /**
+   * SESSUX1b, SESSUX1d (D126 §3.3): a quest the person's stop holds says so in 中文 too, naming the session from the
+   * tick's `heldBy` rather than out of the driver's English, with the terminal's door that releases it. With no session
+   * named (a shell older than the fact), the driver's words stand.
+   */
+  it('says a stop’s hold in 中文, naming the session the tick says holds it', async () => {
+    const reason = 'you stopped session `s1a2b3c4`; Try again carries it on — `daoris driver retry 9a9492 --session s1a2b3c4`.';
+    const held: Consideration = { ...sits('Stopped', reason), heldBy: 's1a2b3c4' };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(held)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    const said = sittingSentence(held);
+    expect(said).toMatch(/你停止了会话 `s1a2b3c4`/);
+    expect(said).toMatch(/重试/);
+    expect(said).toContain('`daoris driver retry 9a9492 --session s1a2b3c4`');
+    expect(sittingSentence(sits('Stopped', reason))).toBe(reason);
+  });
 });

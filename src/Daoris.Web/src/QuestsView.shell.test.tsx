@@ -41,15 +41,21 @@ describe('a driven quest in the shell', () => {
     window.localStorage.clear();
   });
 
-  it('a running session offers stop, and stop names the session', async () => {
-    show(<QuestsView notify={() => {}} />);
+  /**
+   * SESSUX1d (D126 §3.3, §3.6): the stop has one owner, the session's page header in Sessions. The quest's page keeps
+   * the session's record and its door into Sessions, and offers no stop of its own.
+   */
+  it('a running session is stopped in Sessions: its quest’s page keeps the record and the door, and no stop', async () => {
+    const onAttend = vi.fn();
+    show(<QuestsView notify={() => {}} onAttend={onAttend} />);
 
     const page = await chooseRow('Expose a streaming budget');
-    await userEvent.click(within(page).getByRole('button', { name: 'Stop session' }));
+    const ran = within(page).getByRole('region', { name: 'Session' });
+    expect(within(ran).queryByRole('button', { name: /^Stop/ })).toBeNull();
+    await userEvent.click(within(ran).getByRole('button', { name: 'Open in Sessions' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', {
-      payload: { id: 's1a2b3c4' },
-    });
+    expect(onAttend).toHaveBeenCalledWith('s1a2b3c4');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
   });
 });
 
@@ -140,6 +146,31 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RETRY_QUEST', { payload: { quest: 'abc123' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('#abc123')));
+  });
+
+  /**
+   * SESSUX1b, SESSUX1d (D126 §3.4): a quest the person's stop holds offers *Try again* on its page too, one act on both
+   * pages; the driver answers that it released the stop, and the toast says so rather than counting strikes.
+   */
+  it('a quest the person’s stop holds offers Try again on its page, and says the stop was released', async () => {
+    const notify = vi.fn();
+    const client = holding([]);
+    client.setQueryData(keys.considered, [{
+      quest: 'abc123', repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',
+      reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris driver retry abc123 --session s1a2b3c4`.',
+    }]);
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'RETRY_QUEST'
+      ? { ...DRIVER_STATE, retried: { quest: 'abc123', did: 'released', session: 's1a2b3c4' } }
+      : DRIVER_STATE));
+    show(<QuestsView notify={notify} />, client);
+
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).getByText(/you stopped session/)).toBeInTheDocument();
+    await userEvent.click(within(page).getByRole('button', { name: 'Try again' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RETRY_QUEST', { payload: { quest: 'abc123' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Released #abc123 from your stop of s1a2b3c4: the driver takes it up again at its next look.'));
   });
 
   it('a quest sitting for any other reason offers no retry', async () => {

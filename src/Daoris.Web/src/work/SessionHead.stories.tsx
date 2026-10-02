@@ -96,7 +96,7 @@ export const IntakeAsking: Story = {
   },
 };
 
-/** A RUNNING intake (INT4h): no box to type in, its stop and its ask's door in the head. */
+/** A RUNNING intake (INT4h): no box to type in, its ask's door in the head; its stop is the page header's (SESSUX1d). */
 export const IntakeRunning: Story = {
   args: {
     session: {
@@ -115,7 +115,6 @@ export const IntakeRunning: Story = {
     },
     quest: null,
     onAnswerAsk: () => {},
-    onStop: () => {},
   },
 };
 

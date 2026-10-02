@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Quest, Session } from '../api';
+import { offeredActs } from './acts';
 import { endedToArchive, type SessionArrangement, type SessionGrouping } from './groups';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { ListMore, ListPane } from './ListPane';
@@ -124,10 +125,9 @@ function SessionsListPane({
           archived={archived}
           repositoryFacts={(repository) => ({ drivable: repository !== 'tools', held: repository === 'tools', busy: repository === 'game' ? true : null })}
           onSelect={() => {}}
-          onReview={() => {}}
-          onArchive={() => {}}
-          onUnarchive={() => {}}
-          onCopy={() => {}}
+          // Each row's acts as the one rule offers them (SESSUX1d), as the rail hands them.
+          actsFor={(row) => offeredActs({ session: row, grouping: groupings?.find((each) => each.session === row.id) }, 'row')}
+          onAct={() => {}}
         />
       </nav>
     </ListPane>
