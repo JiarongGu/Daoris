@@ -47,6 +47,18 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public bool Deletable { get; init; }
 
+    /// <summary>
+    /// The commit its tree stood at when the spawn began (SURF6), or null: what an abandon judges a tree's commits from
+    /// (PAUSE1d, D132 §3.3). The service answers it to this machine only, beside the tree.
+    /// </summary>
+    public string? BaseCommit { get; init; }
+
+    /// <summary>
+    /// Whether it took its own quest through its own connector (STANDDOWN2): a quest this machine took with no record that
+    /// says so was taken here outside Daoris (PAUSE1d, D132 §3.2).
+    /// </summary>
+    public bool Took { get; init; }
+
     /// <summary>A record that came down from the team (SYNC4): its process is on another machine, and nothing here reaches it.</summary>
     public bool Teammate => Id.Contains('/');
 
@@ -89,6 +101,9 @@ public static class SessionRecords
                 Answer = Text(session, "answer") is { Length: > 0 } answer ? answer : null,
                 // A host older than the field says nothing, and nothing is no delete (SESSUX1f).
                 Deletable = session.TryGetProperty("deletable", out var deletable) && deletable.ValueKind == JsonValueKind.True,
+                BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
+                // Absent is no take of its own: a host older than STANDDOWN2, or a teammate's record (PAUSE1d).
+                Took = session.TryGetProperty("took", out var took) && took.ValueKind == JsonValueKind.True,
             });
         }
 

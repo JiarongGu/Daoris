@@ -53,6 +53,9 @@ public sealed record WorkPlan(WorkPieces Pieces, IReadOnlyList<WorkPlanQuest> Qu
 
     /// <summary>Whether a pause would hold anything: a quest open or taken here, or for an ask still proposed, its intake.</summary>
     public bool Pausable { get; init; }
+
+    /// <summary>The ask itself, for an ask's work, as the service answered it; null for a quest's.</summary>
+    public AskView? Ask { get; init; }
 }
 
 /// <summary>What a pause or a resume reads and touches: the service, the home, <c>driver.json</c> and this machine's processes.</summary>
@@ -75,6 +78,22 @@ public sealed record WorkWorld(ServiceClient Service, string Home, string Config
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);
 
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// How an abandon judges a tree and its branch, and discards them (PAUSE1d, D132 §3.3): this home's
+    /// <see cref="SessionTrees"/>, which asks git; null is that. A test hands in its own.
+    /// </summary>
+    public IWorkTrees? Trees { get; init; }
+
+    /// <summary>
+    /// One sync pass of a workspace (D69), as the door runs it (PAUSE1d, D132 §3.4 step 4): the loop's own pass at the screen,
+    /// the terminal's set at a terminal. A null answer is a workspace with no remote here; a null delegate is a machine with
+    /// none wired, whose declines travel nowhere.
+    /// </summary>
+    public Func<string, CancellationToken, Task<SyncReport?>>? Sync { get; init; }
+
+    /// <summary>The trees an abandon judges and discards: <see cref="Trees"/>, or this home's own.</summary>
+    internal IWorkTrees TreesHere => Trees ?? new SessionTrees(Home);
 }
 
 /// <summary>How a pause came out.</summary>
@@ -242,7 +261,10 @@ public static class WorkPausing
             Landings = new LandedBranches(world.Home).Entries(),
         };
         var config = DriverConfig.Load(world.ConfigPath);
-        return Plan(AskWork.Read(look, scope, named, new SessionTrees(world.Home).Holds), config, PausedWork.Set(look, config), ask);
+        return Plan(AskWork.Read(look, scope, named, new SessionTrees(world.Home).Holds), config, PausedWork.Set(look, config), ask) with
+        {
+            Ask = ask,
+        };
     }
 
     /// <summary>
@@ -279,7 +301,7 @@ public static class WorkPausing
                     string? why;
                     try
                     {
-                        why = await StopAsync(world, record, note, ct).ConfigureAwait(false);
+                        why = await StopAsync(world, record, note, RequestDoor.Pause, ct).ConfigureAwait(false);
                     }
                     catch (Exception error) when (error is DriverException or HttpRequestException)
                     {
@@ -417,12 +439,13 @@ public static class WorkPausing
     public static WorkPause? Entry(DriverConfig config, WorkScope scope, string id) =>
         scope == WorkScope.Ask ? config.PausedAsk(id) : config.PausedQuest(id);
 
-    private static DriverConfig WithPause(DriverConfig config, WorkScope scope, string id, WorkPause? pause) =>
+    /// <summary>The file with this scope's pause written, or with null taken away: the pause's and the abandon's one writer.</summary>
+    internal static DriverConfig WithPause(DriverConfig config, WorkScope scope, string id, WorkPause? pause) =>
         scope == WorkScope.Ask ? config.WithPausedAsk(id, pause) : config.WithPausedQuest(id, pause);
 
     /// <summary>An id as a person writes it, without its <c>#</c>.</summary>
     /// <exception cref="DriverException">A blank id: a pause names what it pauses.</exception>
-    private static string Named(string id) =>
+    internal static string Named(string id) =>
         id?.Trim().TrimStart('#').Trim() is { Length: > 0 } named
             ? named
             : throw new DriverException("a pause names the ask or the quest it pauses.");
@@ -432,25 +455,39 @@ public static class WorkPausing
     private static string On(string? quest) => quest is null ? "" : $" on #{quest}";
 
     /// <summary>When, to the second, as <c>driver.json</c> writes a pause's time (PAUSE1a).</summary>
-    private static DateTimeOffset ToSecond(DateTimeOffset at)
+    internal static DateTimeOffset ToSecond(DateTimeOffset at)
     {
         var utc = at.ToUniversalTime();
         return new DateTimeOffset(utc.Year, utc.Month, utc.Day, utc.Hour, utc.Minute, utc.Second, TimeSpan.Zero);
     }
 
     /// <summary>
-    /// Stop one live session as the person's, with the pause's words on its record: null when it stopped, else why not. One
-    /// this registry runs is stopped here; one nothing here runs is ended as an orphan; one another Daoris process here runs
-    /// is asked through the request its loop takes (SESSUX1g), and waited for.
+    /// Stop one live session as the person's, with the pause's or the abandon's words on its record: null when it stopped,
+    /// else why not. One this registry runs is stopped here; one nothing here runs is ended as an orphan; one another Daoris
+    /// process here runs is asked through the request its loop takes (SESSUX1g), and waited for. A session waiting on you
+    /// (an abandon's, PAUSE1d) is ended <c>stopped</c> unanswered, as <c>RESOLVE_SESSION</c> ends it, its process first.
     /// </summary>
-    private static async Task<string?> StopAsync(WorkWorld world, SessionRecord record, string note, CancellationToken ct)
+    /// <param name="by">Who asks, as the request names it: <see cref="RequestDoor.Pause"/> or <see cref="RequestDoor.Abandon"/>.</param>
+    internal static async Task<string?> StopAsync(WorkWorld world, SessionRecord record, string note, string by, CancellationToken ct)
     {
-        var answer = await SessionMoves.StopAsync(world.Processes, world.Service, record.Id, ct, note).ConfigureAwait(false);
-        if (answer.Stopped) return null;
-        if (!answer.Elsewhere) return NotRunning;
+        var parked = record.State == "awaiting-person";
+        // A parked session this registry runs, or one nothing on this machine runs: its process (if any) goes, then its record.
+        if (parked && (world.Processes.Running.Contains(record.Id, StringComparer.OrdinalIgnoreCase)
+                || !world.Processes.AliveOnThisMachine(record.Id)))
+        {
+            await SessionMoves.ResolveAsync(id => world.Processes.Stop(id), world.Service, record.Id, "stopped", note, ct).ConfigureAwait(false);
+            return null;
+        }
+
+        if (!parked)
+        {
+            var answer = await SessionMoves.StopAsync(world.Processes, world.Service, record.Id, ct, note).ConfigureAwait(false);
+            if (answer.Stopped) return null;
+            if (!answer.Elsewhere) return NotRunning;
+        }
 
         var requests = new SessionRequests(world.Home);
-        requests.Write(new SessionRequest(record.Id, SessionMove.Stop, world.Clock()) { By = RequestDoor.Pause, Note = note });
+        requests.Write(new SessionRequest(record.Id, SessionMove.Stop, world.Clock()) { By = by, Note = note, Parked = parked });
         var waited = Stopwatch.StartNew();
         while (waited.Elapsed < world.Wait)
         {

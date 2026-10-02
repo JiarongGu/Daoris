@@ -110,6 +110,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it "
             + "starts until you resume it, which carries it on where it stood", "(no screen yet)",
             "`daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>`"),
+        // PAUSE1d (D132 §7.4): exempt from Ask Daoris, since its reason is the person's answer (D37), as Decline… is; the pages'
+        // acts are PAUSE1e's.
+        ("abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what "
+            + "only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer)",
+            "(no screen yet)",
+            "`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`, `daoris-driver quest abandon <id> [--reason \"…\" --yes]`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
         // DRIFT1d: the person's yes to a done's departure, the terminal's door; the quest page's yes and Ask Daoris's are

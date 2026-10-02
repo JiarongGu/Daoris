@@ -111,6 +111,22 @@ public sealed record DriverConfig(
     }
 
     /// <summary>
+    /// This quest's release and its restart mark dropped (PAUSE1d, D132 §3.4 step 7): once a quest is closed it is never
+    /// planned again (D46 §3), so neither says anything any more. Unchanged where it has neither.
+    /// </summary>
+    public DriverConfig WithoutQuest(string questId)
+    {
+        var quest = questId.Trim().TrimStart('#');
+        bool Same(string key) => string.Equals(key, quest, StringComparison.OrdinalIgnoreCase);
+        if (!Released.Keys.Any(Same) && !Forgiven.Keys.Any(Same)) return this;
+        return this with
+        {
+            Released = Released.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+            Forgiven = Forgiven.Where(pair => !Same(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase),
+        };
+    }
+
+    /// <summary>
     /// The asks the person paused on this machine (PAUSE1a, D132 point 5, design §2.5), each with when and the stops its pause
     /// made. Absent is none, written only when set. The look holds each paused work's quests (<see cref="PausedWork"/>,
     /// <see cref="StartVerdict.Paused"/>), and <see cref="WorkPausing"/> alone writes it (PAUSE1b). The CLI's

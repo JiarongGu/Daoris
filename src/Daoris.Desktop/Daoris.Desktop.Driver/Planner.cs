@@ -31,6 +31,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     public string? Note { get; init; }
 
     /// <summary>
+    /// The circle it is held in (D48), as the service answered it, or the default where a host answers none: which
+    /// workspace's pass carries an abandon's decline of it (PAUSE1d, D132 §3.4 step 4).
+    /// </summary>
+    public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
+
+    /// <summary>
     /// Whether the service would delete it (D95): its own reading, the one the drawer's Delete is shown by.
     /// Absent is false — a host from before the delete door offers none.
     /// </summary>

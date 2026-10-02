@@ -107,6 +107,14 @@ public sealed partial class HelpCoverageTests
         + "`resume`, judged against this machine's pauses and each work's live sessions (D132 §7.4).");
 
     /// <summary>
+    /// PAUSE1d's <c>daoris-driver ask --abandon</c> and <c>quest abandon</c> (D132 §7.2), verbs of the headless host: exempt, since
+    /// an abandon declines quests with the person's reason, which is their answer (D37), as D126 §7.3 exempted *Decline…*.
+    /// </summary>
+    private static readonly Exempt AbandonDoor = new(
+        "abandoning declines quests with the person's reason, which is their answer (D37), as *Decline…* is exempt (D126 §7.3); "
+        + "Ask Daoris names the ask's page and the terminal line, and never writes the reason (D132 §7.4).");
+
+    /// <summary>
     /// WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5), a verb of the headless host: the press, and its pause,
     /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
     /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
@@ -377,6 +385,7 @@ public sealed partial class HelpCoverageTests
             .Append(AcceptDoor)
             .Append(SessionDeleteDoor)
             .Append(SessionsVerbDoor)
+            .Append(AbandonDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -465,6 +474,21 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --pause|--resume <id>`", StringComparison.Ordinal)
             && door.Terminal.Contains("`daoris-driver quest pause|resume <id>`", StringComparison.Ordinal));
         Assert.Contains("PAUSE1f", PauseDoor.Reason);
+    }
+
+    /// <summary>
+    /// PAUSE1d: the headless host's abandon is exempt from Ask Daoris (D132 §7.4) while its usage spells it; the room names it,
+    /// marked exempt with its reason, so the helper points the person at the ask's page and the terminal line instead.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_abandon_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("ask --abandon <id> [--reason \"…\" --yes]  ·  quest abandon <id> [--reason \"…\" --yes]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("abandon"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris-driver quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("D37", AbandonDoor.Reason);
     }
 
     /// <summary>

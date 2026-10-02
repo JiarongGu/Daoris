@@ -26,6 +26,9 @@ public static class RequestDoor
 
     /// <summary>A pause stopping what of its work another process runs (PAUSE1b, D132 §2.1): <see cref="WorkPausing"/>.</summary>
     public const string Pause = "pause";
+
+    /// <summary>An abandon stopping or ending what of its work another process runs (PAUSE1d, D132 §3.4): <see cref="WorkAbandoning"/>.</summary>
+    public const string Abandon = "abandon";
 }
 
 /// <summary>One move asked of one session, for whichever loop on the home runs it.</summary>
