@@ -7766,3 +7766,72 @@ network: a package source is PLUGDIST1c's. What the design left open, settled he
 - **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
   for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
   answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
+
+## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
+
+**Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
+its about how we optimize the session and this should also belong to doctrine too"*).** The contract is
+`docs/2026-10-02-session-economy-design.md`: what a session here reads and writes, measured (§1), the doctrine
+(§2), the report (§3), this repository's practice (§4) and the build (§6). It folds in DOC7.
+
+1. **The principle is doctrine.** A session pays for what it reads on every step after it reads it, so what is read
+   whole stays short by how each entry is written, and what is long is read by lookup. Each fact has one home, and
+   every other place names it in a line.
+2. **The canon says it in the two documents that already own the subject.** `task-lifecycle` gains one sentence of
+   why and the shapes in its bullets: a row is what and why in two sentences, its contract and its proof; an outcome
+   is a line or three, saying what changed and where its detail lives; what a decision, a design or a commit already
+   says is pointed to. `development-documents` gains the failure, the shapes of a backlog row, an archive entry, a
+   router row and a decision's amendment, *look up by identifier*, and the shapes' numbers beside the ceilings (60
+   words for a row, 60 for an outcome). `set-up-documents`' archive-entry template asks a line or three. No new
+   knowledge document.
+3. **A report holds the shapes, and never fails** (D54). `tools/doc-shapes.mjs`, in `verify`, reads the declared
+   backlog, archive and router, and prints rows, router rows and archive outcomes past the cut-over over 60 words. A
+   configuration it cannot read fails. It stays this repository's, not `check`'s.
+4. **This repository writes records that way.** The dispatch skill's hand-back carries the outcome in one line and
+   where its detail lives. `TASKS.md` is trimmed by moving each line to its home, never by deleting what nothing else
+   says: logs of sightings to open entries in the fix log, histories and held reasoning to their records, owner
+   quotations to the designs that already open with them, traps to the folder they are about. The router's
+   *Where it stands* becomes a line naming its decision.
+5. **The archive is neither split nor compacted.** Its 349 entries stand as written. From the cut-over, every new
+   entry takes the shape.
+6. **DOC7's line carries what economy needs**: `session.read {session, adapter, role, how, call}`, where `how` is
+   whole, part or search (null where the door does not say) and `call` the read's place among the session's calls.
+
+**Why.** Measured at `7e4cb1c` (design §1). Every session here starts with 48,554 bytes of `CLAUDE.md` and
+`AGENTS.md`. Picking work reads `TASKS.md` whole: 8,503 words over a 6,600 ceiling, trimmed twice and grown back
+both times. Its length is logs, histories and quotations, not rows of work: its rows copy almost nothing from the
+designs (a median of 3% of their six-word runs). The archive's 149 outcome paragraphs have a median of 214 words in
+September and 190 in October, and a median of 75% of the code spans in an outcome are in the decision it cites (80%
+since 2026-10-01): a second account of the note, in other words. The canon asked for that paragraph in its own
+template, while its always-loaded rule asked for a line. The one long driven turn on record re-read about 103 tokens
+from its cache for every token it read anew (COST1, METER1), which is the mechanism: a harness carries what was read
+into every request after.
+
+**Rejected** (design §8 has each with its reason):
+- **Splitting the archive.** A reader by lookup pays per entry, not per file, so a split changes no session's read
+  and breaks every link to it.
+- **Compacting the 349 entries.** Only part of their detail is provably elsewhere, no session reads the file whole,
+  and old entries stand as written (`set-up-documents`). What it would take, if chosen, is in §8.
+- **A new core knowledge document**: an index row in every adopter, and one subject split in two.
+- **Changing `task-lifecycle`'s frontmatter**: its body is in the region whole, so the row only repeats it.
+- **A shape that fails** (D54), **the report in `check` now** (it would guess at every adopter's record format;
+  reconsidered when a second repository keeps the template's shape), **raising the backlog's ceiling**, **trimming
+  without a shape**, **deleting what a long row holds**, and **changing `persist-working-state`**.
+
+**What it amends, when built.**
+- The canon's `task-lifecycle`, `development-documents` and `set-up-documents` (SESSOPT1a). The region grows 458 bytes
+  in this repository and in each example, measured on the drafts: 24,064 → 24,522 of 26,000 here.
+- D122 §2.5: an archive entry's outcome is a line or three, not a paragraph. D122 §1.5 and §6: DOC7's line gains
+  `how` and `call`.
+- D115 §5: the steward's archive entry carries the outcome line, and FLAKE lines go to the fix log's FLAKE1 entry.
+- The dispatch skill's hand-back (MOD9).
+- D117 §4.2: LAYOUT6's brief is held to the brief's content test as it moves.
+- D106's *no moving counters in always-read files* reaches the backlog's row count.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The measures are scratch
+scripts' over the tree at `7e4cb1c`, untracked, and the design says what each counted. Repetition is measured by
+proxies, six-word runs for words and code spans for facts, which read no meaning. The region's bytes were measured
+by syncing scratch copies against drafted canon text, which the build may reword. No token was counted, and what
+sessions here open, and when, is not measured (DOC7). Whether a line or three is enough for a later reader is
+judgement, read from the first entries after the cut-over. `verify` checks this entry's shape and the design's links
+and budget, and none of their words.
