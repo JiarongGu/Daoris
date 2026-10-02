@@ -9561,6 +9561,51 @@ pause or an abandon would do with each piece (§2.1, §3.2); that is PAUSE1b's a
 which they need, are not on `SessionRecord` yet. How long a reading takes over a real workspace is not measured. The
 `Process` half, the rehearsals and the screen were not run by this branch.
 
+**Built 2026-10-03 (PAUSE1b): pause and resume** (points 2–5 and 11; design §2, §4.3, §6.1, §7.2, §7.3). The planner's
+`StartVerdict.Paused` comes first, naming the pause and its door on `Consideration.PausedBy`. The look reads the paused set
+(`PausedWork`), and so does a fresh plan (`SessionGroups.VerdictsAsync`). `WorkPausing` plans, pauses and resumes for both
+doors: `WORK_PLAN`, `WORK_PAUSE` and `WORK_RESUME` (`DriverModule.Work.cs`), and `daoris-driver ask --pause|--resume` and
+`quest pause|resume` (`WorkCommand`). The log gains `work.paused` and `work.resumed` (the machine log design's §4).
+What building it settled:
+- **The verdict covers only what the planner would plan.** That is an open quest, or a take whose last session here is a
+  stop, a cut-off, an answered park or a question's asker. A take this machine never ran gets no verdict, and neither does
+  a quest whose session runs or waits on you. Coming first, a paused quest spends no slot and no repository's turn, so it
+  keeps its place. A quest's own pause is named before its ask's.
+- **The look asks the service more only while `driver.json` holds a pause**, and a read that fails fails the look. A
+  paused work read as no work would start what the person paused.
+- **The pause writes itself first**, then stops, then records each stop (`stopped`). The stopped record's note names the
+  pause (*paused with ask `#a`.*): it is carried by `SessionProcesses.Stop`'s note and by the request's `note`, as
+  `by: pause`. An orphan's record keeps `Orphans.Note`, which is the fact. A move the service did not take leaves the pause
+  standing and names that session.
+- **Each piece is a word from a list**, so the page says it in the reader's language. A quest is `paused`, `closed` or
+  `elsewhere`; a session `stopped`, `parked`, `intake`, `teammate` or `ended`. A session not stopped is kept with its why:
+  `parked`, `intake` or `teammate` by design, or `elsewhere`, `not-running` or `unanswered`, which the terminal exits 2 on.
+- **Resume reads the file before the service**, so the pause of an ask since deleted still resumes. What still holds is
+  read from the planner's verdicts (`Paused`, `Stopped`, `Exhausted`, `Held`, `NotDrivable`, `NotAdopted`, `NoRoot`) over a
+  fresh look. It is null where the look could not be read. An account's cool-off is held at spawn and is not the planner's,
+  so the answer does not name it.
+- **Nothing to pause, and a resume of what is not paused, are information** (D48 §6). A paused ask's intake does not
+  start, and the look writes no line for it. `RETRY_QUEST` on a paused quest refuses with `QUEST_PAUSED`, which names the
+  pause, with `context` `quest` for a quest's own.
+- **`WORK_PLAN` answers the pause's half and never a path**: a tree is its repository and branch. Abandon's half is
+  PAUSE1d's, and the sitting reason is the tick's. The tick, `SESSION_GROUPS` and `sessions --json` carry `pausedBy`
+  (scope and id), and the `sessions` line says the pause and its door.
+- **§13's rewording**: `DriverConfig.Holds`, `StartVerdict.Held`, the room's doors row and the CLI's `driver` help say
+  *hold*. The room's doors gain the terminal's pause row, a door owed to PAUSE1f. `daoris driver list` names each pause's
+  resume door.
+
+**What the gates do not cover.** `work.sitting.Paused` is not in the catalogues yet. The page would have to hand
+`pausedBy` to `sittingSentence` first, which is PAUSE1e's, so both languages show the driver's English meanwhile. There is
+no `bridge/work.ts`: the routes are held by `DriverModuleWorkTests` and the README's `work` row. Held by `PlannerTests`,
+`SessionGroupsTests`, `WorkPausingTests`, `DriverModuleWorkTests`, `DriverModuleRetryTests`, `TickConsiderationTests`,
+`HelpCoverageTests`, the room's golden files, `driverconfig.test.ts` and the CLI's help fixture. These were seen failing
+first: the planner's and the groups' cases (against a stub), `WorkPausingTests` (against stubbed bodies, its parse cases
+apart), `DriverModuleWorkTests` (routes unmarked), the golden files and the CLI's list. The tick's `pausedBy`, the retry
+refusal and the owed door were written after their code. `PauseTickTests` (the `Process` half: a session paused while it
+works, its quest held with nothing spawned, then carried on in its tree after *Resume*; and an open quest paused before
+any session) is written and was not run here. **Not built**: §2.6's ask, the pages' and a session's acts (PAUSE1e), and
+Ask Daoris's `pause` kind and the room's list of what is paused (PAUSE1f).
+
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
 **Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +
