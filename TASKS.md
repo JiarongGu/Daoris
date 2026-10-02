@@ -457,7 +457,9 @@ the ACP door, not a registry**.
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
 - [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL6b;
-  with D130 §3.2, §9: a workspace's own list, *Use*, *Start on*, *Sessions at once*, *Keep for conversations*, the terms line):
+  with D130 §3.2, §9, §16.6: a workspace's own list, *Use* (goal or order), *Keep for conversations*, *Switch before the
+  limit*, the terms line; the screen's `profile-default` route and Ask Daoris's `default` door call `ScopeProblem.Of`, as
+  the terminal does since TOOL6a):
   the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
   the cool-off setting, the doors; both languages (D116); the look on the window. The modules' *Remove* must call
   `HarnessSettings.WithoutAccount`, as the terminal now does (TOOL4e).
