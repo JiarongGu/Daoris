@@ -35,6 +35,9 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
         ledger.Serve("/api/sessions/w0rk1ng0/state", Bytes("""{"session":{"id":"w0rk1ng0","state":"stopped"},"message":"Session is now stopped."}"""));
         ledger.Serve("/api/asks/a1", Bytes("""{"id":"a1","workspace":"aurora","sentence":"Add the note field","state":"Published","tier":"named"}"""));
         ledger.Serve("/api/registry", Bytes($$"""[{"repository":"engine","adopted":true,"registered":true,"root":"{{Home.Replace('\\', '/')}}/engine","workspace":"aurora"}]"""));
+        // Whose take each taken quest is (PAUSE1d): q2 this machine's, with no record that took it; q3 another machine's.
+        ledger.Serve("/api/quests/q2/claim", Bytes("""{"quest":"q2","claim":"held"}"""));
+        ledger.Serve("/api/quests/q3/claim", Bytes("""{"quest":"q3","claim":"none"}"""));
         return ledger;
     }
 
@@ -176,5 +179,123 @@ public sealed class DriverModuleWorkTests : DriverModuleBridge
     public async Task Before_the_service_answers_it_is_still_coming_up()
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "WORK_PAUSE", new { ask = "a1" }));
+    }
+
+    /// <summary>
+    /// The plan answers the abandon's half too (PAUSE1d, design §3.1, §3.2): each piece's key and act, why it keeps what it
+    /// keeps, the keys the second press sends back, and a tree by its repository and branch, never a path.
+    /// </summary>
+    [Fact]
+    public async Task The_plan_answers_what_an_abandon_takes_and_keeps_and_never_a_path()
+    {
+        using var ledger = Ledger();
+        var module = await UpAsync(ledger);
+
+        var plan = await AnswerAsync(module, "WORK_PLAN", new { ask = "a1" });
+
+        var abandon = plan.GetProperty("abandon");
+        Assert.True(abandon.GetProperty("abandonable").GetBoolean());
+        Assert.Equal(
+            ["q1:decline:", "q2:keep:taken-outside", "q3:keep:taken-elsewhere"],
+            plan.GetProperty("quests").EnumerateArray().Select(q =>
+                $"{q.GetProperty("quest").GetString()}:{q.GetProperty("abandon").GetString()}:{q.GetProperty("kept").GetString()}"));
+        Assert.Equal(
+            ["earl1er0:archive", "w0rk1ng0:stop", "p4rk3d00:end"],
+            plan.GetProperty("sessions").EnumerateArray().Select(s => $"{s.GetProperty("session").GetString()}:{s.GetProperty("abandon").GetString()}"));
+        // The tree's folder is not on this machine and the registry's checkout is no repository: git cannot say, so it is kept.
+        var tree = Assert.Single(plan.GetProperty("trees").EnumerateArray());
+        Assert.Equal(("keep", "unknown", "tree:engine:daoris/s-1a2b3c4d"),
+            (tree.GetProperty("abandon").GetString(), tree.GetProperty("kept").GetString(), tree.GetProperty("key").GetString()));
+        Assert.Contains("quest:q1", abandon.GetProperty("pieces").EnumerateArray().Select(piece => piece.GetString()));
+        Assert.Contains("ask:a1", abandon.GetProperty("pieces").EnumerateArray().Select(piece => piece.GetString()));
+        Assert.Equal("a1", abandon.GetProperty("closes").GetString());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, abandon.GetProperty("abandoned").ValueKind);
+        Assert.DoesNotContain("trees/aurora", plan.GetRawText());
+        Assert.DoesNotContain(Home.Replace('\\', '/'), plan.GetRawText().Replace("\\\\", "/"));
+    }
+
+    /// <summary>An abandon with no reason is <c>WORK_REASON</c>, before anything is asked or written: each declined quest keeps it.</summary>
+    [Fact]
+    public async Task An_abandon_without_a_reason_is_refused_and_writes_nothing()
+    {
+        using var ledger = Ledger();
+        var module = await UpAsync(ledger);
+
+        var blank = await RefusalAsync(module, "WORK_ABANDON", new { ask = "a1", reason = "  ", pieces = new[] { "quest:q1" } });
+        var none = await RefusalAsync(module, "WORK_ABANDON", new { ask = "a1", pieces = new[] { "quest:q1" } });
+
+        Assert.Contains(Refusals.WorkReason, blank);
+        Assert.Contains(Refusals.WorkReason, none);
+        Assert.False(File.Exists(DriverConfigPath));
+        Assert.False(File.Exists(new AbandonRecord(Home).FilePath));
+    }
+
+    /// <summary>An abandon of an ask or a quest this machine does not have is <c>WORK_UNKNOWN</c>, as the other work routes say.</summary>
+    [Fact]
+    public async Task An_abandon_of_an_unknown_ask_or_quest_is_refused_naming_it()
+    {
+        using var ledger = Ledger();
+        var module = await UpAsync(ledger);
+
+        var ask = await RefusalAsync(module, "WORK_ABANDON", new { ask = "zz", reason = "gone wrong", pieces = Array.Empty<string>() });
+        var quest = await RefusalAsync(module, "WORK_ABANDON", new { quest = "q99", reason = "gone wrong", pieces = Array.Empty<string>() });
+
+        Assert.Contains(Refusals.WorkUnknown, ask);
+        Assert.Contains("id=zz", ask);
+        Assert.Contains("context=quest", quest);
+    }
+
+    /// <summary>A second press must send the list it held: no <c>pieces</c> is the driver's refusal, in its words.</summary>
+    [Fact]
+    public async Task An_abandon_that_sends_no_list_is_refused()
+    {
+        using var ledger = Ledger();
+        var module = await UpAsync(ledger);
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "WORK_ABANDON", new { ask = "a1", reason = "gone wrong" }));
+    }
+
+    /// <summary>
+    /// The second press sends the list it held, with the reason (design §3.1, §7.3): the open quest declined with the reason,
+    /// only while open, the ask closed with it, and what went said from facts; the record is written and the machine log
+    /// counts it as the screen's. An empty list abandons nothing, said as information (D48 §6).
+    /// </summary>
+    [Fact]
+    public async Task The_second_press_declines_closes_and_records_what_went()
+    {
+        using var ledger = new LoopbackHost();
+        var quest = """{"id":"q1","from":"ask #a1","to":"engine","title":"The work of #q1","body":"A body.","status":"Open","workspace":"aurora"}""";
+        ledger.Serve("/api/quests?includeClosed=true", Bytes($"[{quest}]"));
+        ledger.Serve("/api/quests", Bytes($"[{quest}]"));
+        ledger.Serve("/api/sessions?includeClosed=true", Bytes("[]"));
+        ledger.Serve("/api/sessions", Bytes("[]"));
+        ledger.Serve("/api/asks/a1", Bytes("""{"id":"a1","workspace":"aurora","sentence":"Add the note field","state":"Published","tier":"named"}"""));
+        ledger.Serve("/api/asks?includeClosed=true", Bytes("""[{"id":"a1","workspace":"aurora","sentence":"Add the note field","state":"Published","tier":"named"}]"""));
+        ledger.Serve("/api/registry", Bytes("[]"));
+        ledger.Serve("/api/quests/q1/respond", Bytes($$"""{"quest":{{quest}},"message":"Quest `#q1` is now Declined."}"""));
+        ledger.Serve("/api/asks/a1/close", Bytes("""{"ask":{"id":"a1","workspace":"aurora","sentence":"Add the note field","state":"Closed","tier":"named"},"message":"Ask `#a1` is closed."}"""));
+        var log = new MachineLog(Home, "desktop");
+        var module = await UpAsync(ledger, log);
+
+        var listed = await AnswerAsync(module, "WORK_PLAN", new { ask = "a1" });
+        var pieces = listed.GetProperty("abandon").GetProperty("pieces").EnumerateArray().Select(piece => piece.GetString()!).ToArray();
+        var went = await AnswerAsync(module, "WORK_ABANDON", new { ask = "a1", reason = "It went the wrong way.", pieces });
+        var nothing = await AnswerAsync(module, "WORK_ABANDON", new { ask = "a1", reason = "It went the wrong way.", pieces = Array.Empty<string>() });
+
+        Assert.Equal(["quest:q1", "ask:a1"], pieces);
+        Assert.Equal(("abandoned", 2, 2), (went.GetProperty("did").GetString(), went.GetProperty("listed").GetInt32(), went.GetProperty("went").GetInt32()));
+        Assert.Equal(["q1"], went.GetProperty("declined").EnumerateArray().Select(q => q.GetString()));
+        Assert.True(went.GetProperty("closed").GetBoolean());
+        Assert.False(went.GetProperty("stillPaused").GetBoolean());
+        Assert.Equal("nothing", nothing.GetProperty("did").GetString());
+        var entry = Assert.Single(new AbandonRecord(Home).Entries());
+        Assert.Equal(("screen", "It went the wrong way.", true), (entry.Door, entry.Reason, entry.Closed));
+        Assert.Null(DriverConfig.Load(DriverConfigPath).PausedAsk("a1"));
+
+        log.Dispose();
+        var line = Assert.Single(Directory.GetFiles(Path.Combine(Home, MachineLog.Folder)).SelectMany(File.ReadAllLines),
+            each => each.Contains("\"work.abandoned\"", StringComparison.Ordinal));
+        Assert.Contains("\"door\":\"screen\"", line);
+        Assert.Contains("\"declined\":1", line);
     }
 }
