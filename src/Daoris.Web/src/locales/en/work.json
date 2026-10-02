@@ -129,7 +129,7 @@
   "work.detached.gone.body": "It is not in this workspace's ledger — it may have been in another workspace, or this window outlived it.",
   "work.options.group": "this conversation's model and effort, as its agent offers them",
   "work.options.label": "this conversation's {{name}}",
-  "work.steer.placeholder": "tell it something while it works — it reads this when its current turn ends. Enter queues, Shift+Enter makes a newline.",
+  "work.steer.placeholder": "tell it something while it works — the conversation shows when it reads it. Enter queues, Shift+Enter makes a newline.",
   "work.steer.now": "Send now",
   "work.steer.nowTip": "stop the turn it is on so what you added goes now — the session keeps going, and keeps what it has done.",
   "work.steer.sending": "Stopping its turn: what you added goes next.",

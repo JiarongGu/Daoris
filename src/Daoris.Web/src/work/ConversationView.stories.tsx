@@ -62,6 +62,18 @@ const STOPPED: SessionEvent[] = [
   ev({ kind: 'turn', stopReason: 'cancelled' }),
 ];
 
+/**
+ * STEER1 (D136): a driven session told two things while it works — one its agent reads at its next step, one at its
+ * turn's end — waiting where they were said, the run in hand still going.
+ */
+const TOLD: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget".' }),
+  ev({ kind: 'message', text: 'Running the gates before I commit.' }),
+  ev({ kind: 'tool', id: 'c30', title: 'cargo test', toolKind: 'execute', status: 'in_progress' }),
+  ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'The budget lives in level.json, not config.json.', files: ['level.json'] }),
+  ev({ kind: 'user', origin: 'person', id: 'said-2', reaches: 'turn-end', text: 'And cap it at 64 KiB.' }),
+];
+
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
@@ -81,6 +93,7 @@ export const DrivenAndFinished: Story = { args: { turns: toTurns(DRIVEN).turns }
 export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: true } };
 export const FailedAndCancelled: Story = { args: { turns: toTurns(FAILED).turns } };
 export const Stopped: Story = { args: { turns: toTurns(STOPPED).turns } };
+export const ToldWhileWorking: Story = { args: { turns: toTurns(TOLD).turns, live: true } };
 export const WithEarlierTurns: Story = { args: { turns: toTurns(DRIVEN).turns, earlier: true, onLoadEarlier: () => {} } };
 export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };
