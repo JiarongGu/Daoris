@@ -536,6 +536,9 @@ public sealed partial class SessionTrees
                 pulls.Add(pull.Moves
                     ? await PullAsync(root, pull, inRoot, ct).ConfigureAwait(false)
                     : new PullResult(pull, false, only is null ? SyncWords.Describe(pull) : $"{SyncWords.Describe(pull)} — {LeftSince}"));
+                // A line Daoris moved is followed by the registry at the next look (WSSETUP5, D124 §3.1): under the `branch`
+                // rule this fast-forward is when a merged set-up first reaches this machine.
+                if (pulls[^1].Moved) RegistryFollowing.Moved(home, repository, DateTimeOffset.UtcNow);
             }
 
             // (c) Replay what still works on it, onto the line as it now stands — with the repository's trees held

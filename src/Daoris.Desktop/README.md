@@ -44,6 +44,7 @@ that domain's row here.
 | `agents` | The toolchain (`HARNESSES`, `HARNESS_ACTION` relayed under `<harness>:<action>`, its input and cancel, `HARNESS_INPUT` and `HARNESS_CANCEL`), what a start would run on (`STARTS`), an account's own model and effort (`SET_AGENT_SETTINGS`), and usage (`USAGE`) |
 | `plugins` | The catalogue and the install's offers (`PLUGINS`, each plugin with its servers, hook, the points its process listens on, health and whether an update waits), a plugin's page and its activity (`PLUGIN`, `PLUGIN_ACTIVITY`), enable, disable and remove (`PLUGIN_ACTION`), an update (`PLUGIN_UPDATE`), an offer installed (`PLUGIN_INSTALL`), a folder read and installed from (`PLUGIN_READ`, `PLUGIN_ADD`), a plugin's folders or the plugins folder opened (`PLUGIN_OPEN_FOLDER`), and the kit's `PLUGIN_NEW` and `PLUGIN_TRY` |
 | `rules` | Permission rules and agents' proposals about them (`RULES`, `RULE_ACTION`, `RULE_PROPOSAL`) |
+| `registry` | A repository registered from what its line declares, the row's *Refresh* (`REGISTRY_REFRESH` {repository}, WSSETUP5): `daoris.json` and `daoris.lanes.json` read on its line as git objects and sent as `connect` would send them, only where the row holds something else, answered with the outcome's word and the sentence the row says; a refusal is an answer. `daoris-driver register` is the terminal's door. The row and its button are WSSETUP7's |
 | `tools` | Settings → Tools (TOOLS7, D121 §4.1): each tool's way, its file, the versions downloaded and those the lists offer for this machine, the locations and the list built in (`TOOLS_LIST`, with `ask` the version each file answers), a way written to the `tools.json` `daoris tool` edits (`TOOLS_USE`: the system's, a named file that answers a version, or managed), a download (`TOOLS_DOWNLOAD`) answered once started, relayed under `tools:<tool>` and ended by `TOOLS_ENDED`, and stopped (`TOOLS_STOP`), a version deleted (`TOOLS_DELETE`), the locations looked at, added and removed (`TOOLS_LOOK`, `TOOLS_LOCATION`), what a switch of git changes (`TOOLS_GIT`), and the system's file picker (`TOOLS_PICK`) |
 
 These doors are the shell's alone: machine-local facts never reach a browser (D47 §4), so none of
@@ -89,8 +90,15 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
 `app/shell-files.txt`, which the next publish removes before placing its own), which is Daoris's
 browser too (CHR8: the `app/daoris-browser/` an older publish wrote is removed by name), and the
-service host with its bundle under `app/daoris-knowledge-http/`; the
-install's own `data/` once it has run, and an `INSTALLED.md` saying so. **`data/` is the Daoris
+service host with its bundle under `app/daoris-knowledge-http/`; **the doctrine tool** (WSSETUP2,
+D124 §1.2), the CLI package the release packs laid out as npm lays one out in
+`app/cli/node_modules/daoris/`, with a launcher for each shell in `app/bin/` (`daoris` for Git Bash,
+`daoris.cmd` for Command Prompt and PowerShell), run on the `node` a child's `PATH` finds; the
+install's own `data/` once it has run, and an `INSTALLED.md` saying so. **Every process the driver and
+the modules start finds that `daoris` first** (WSSETUP3, D124 §1.3): the tools' environment puts the
+`app/bin/` beside the home ahead of the tools' folders, so a session, a conversation, a hook and the
+terminal's shells run the install's own doctrine tool by its bare name. The account's `PATH` is never
+touched, so a terminal of the person's own still runs whatever `daoris` they installed. **`data/` is the Daoris
 home** (D63): on first start the shell sets `DAORIS_HOME` to it for its own process — every host and
 session it spawns inherits it — and, once, for the account when it has none, so a terminal's `daoris`
 meets the same machine. A second or moved install runs on its own `data/` even when the account's
@@ -176,6 +184,9 @@ the workspace built, and that gate publishes the shell to a scratch folder and d
 — a window that finds its host without being told where it is, a session transcript compared as
 bytes, and a conversation open when the window closes, whose record must carry the close's own note
 (DEPLOY5: the gate starts the install with `run --install`'s debug port to open it over the bridge).
+Its phase 8 runs the doctrine tool the install carries (WSSETUP2): with the install's `app/bin/` first
+on `PATH`, `daoris` by its bare name from Command Prompt, PowerShell and Git Bash where the runner has
+one, prints the canon's version, and `init`, `sync` and `check` run clean in a scratch repository.
 Everything this loop provides is what hid two of the first deployment's four defects.
 
 | command | what |

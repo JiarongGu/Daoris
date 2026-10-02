@@ -42,7 +42,8 @@ public sealed class SetupWorld(ServiceClient service, string home) : ISetupWorld
 
     /// <summary>
     /// The <c>node</c> Tools resolves and the <c>daoris</c> the <c>PATH</c> a child starts with finds (TOOLS5's one
-    /// environment, D124 §1.3), each asked its version as a child would ask it.
+    /// environment, D124 §1.3), each asked its version as a child would ask it. In an install that <c>PATH</c> begins
+    /// with the install's own launchers (WSSETUP3), so the <c>daoris</c> found is the install's.
     /// </summary>
     public async Task<SetupTools> ToolsAsync(CancellationToken ct)
     {

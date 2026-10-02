@@ -38,6 +38,16 @@ public sealed class ServiceClient : IDisposable
     /// <summary>A session record this client moved, raised once the ledger said yes (LOG1b).</summary>
     public event Action<SessionMoved>? Moved;
 
+    /// <summary>
+    /// A repository's registration followed from its line (WSSETUP5, D124 §3.4), whatever it came to: every follow on this
+    /// machine goes through this client's registry door, so a watcher here logs each outcome as it logs the opens and
+    /// moves (<c>registry.followed</c>), without the follower knowing the log.
+    /// </summary>
+    public event Action<RegistrationFollowed>? RegistryFollowed;
+
+    /// <summary>Tell the watchers what following one repository came to (<see cref="RegistryFollowed"/>).</summary>
+    public void Followed(RegistrationFollowed what) => Raise(RegistryFollowed, what);
+
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 
@@ -73,6 +83,57 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
     public async Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct = default) =>
         ReadRegistry(await GetAsync("/api/registry", ct).ConfigureAwait(false));
+
+    /// <summary>
+    /// Every repository this host holds, with the declaration each row holds (WSSETUP5): what following a line compares
+    /// against, so a registration is sent only where the row holds something else.
+    /// </summary>
+    public async Task<IReadOnlyList<RegistrationRow>> RegistrationsAsync(CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/registry", ct).ConfigureAwait(false));
+        return
+        [
+            .. document.RootElement.EnumerateArray().Select(repo => new RegistrationRow(
+                Text(repo, "repository") ?? "",
+                RemoteTarget.Workspace(Text(repo, "workspace")),
+                Text(repo, "root"),
+                Flag(repo, "adopted"),
+                Text(repo, "summary"),
+                Strings(repo, "owns"),
+                Strings(repo, "accepts"),
+                Strings(repo, "uses"),
+                Strings(repo, "packs"),
+                Flag(repo, "joined"),
+                Flag(repo, "sharesKnowledge"),
+                // Absent is none: a host from before lanes answers without them.
+                repo.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
+                    ? [.. lanes.EnumerateArray()
+                        .Where(lane => lane.ValueKind == JsonValueKind.Object && Text(lane, "id") is { Length: > 0 })
+                        .Select(lane => new LaneView(Text(lane, "id")!, Text(lane, "title") ?? "", Text(lane, "summary") ?? "", Flag(lane, "steward")))]
+                    : [])),
+        ];
+    }
+
+    /// <summary>
+    /// Register a repository through the registry door, with the body <c>connect</c> would send (WSSETUP5, D124 §3.3): taken,
+    /// or refused in the service's own words.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> RegisterAsync(System.Text.Json.Nodes.JsonObject body, CancellationToken ct = default)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync("/api/registry", body.ToJsonString(), ct).ConfigureAwait(false);
+        if (ok) return (true, "");
+        return (false, (root is { } refused ? Text(refused, "error") : null) ?? $"the registry door answered {status}: {payload}");
+    }
+
+    /// <summary>
+    /// Ask the host to read the index again (the refresh every door has): registering does not re-index (D124 §3.3). Null
+    /// when it did; else why not, in the service's words.
+    /// </summary>
+    public async Task<string?> RefreshAsync(CancellationToken ct = default)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync("/api/refresh", "{}", ct).ConfigureAwait(false);
+        return ok ? null : (root is { } refused ? Text(refused, "error") : null) ?? $"the refresh door answered {status}: {payload}";
+    }
 
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>

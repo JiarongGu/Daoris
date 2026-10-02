@@ -193,6 +193,10 @@ built from it**, in each artefact:
 
   Nothing else changes. With every tool the system's and no git setting set, the environment is the inherited
   one exactly.
+
+  *Amended by D124 (WSSETUP3): an install's `app/bin/` beside the home comes first of all, before the tools'
+  folders, so every child finds the install's `daoris`. With no install beside the home, the above holds byte for
+  byte.*
 - **"Every child" is every process the driver and the modules start**: a driven session on either door, a chat,
   an intake, Ask Daoris's helper, a probe, an agent action, a hook, a landing plugin, a plugin's trial, and each
   of the terminal's shells.

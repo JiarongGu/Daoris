@@ -44,6 +44,9 @@ public static class DriverCommand
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
               prints what was read, the rule and the quest, and publishes nothing.
+          register [--repository <name>]
+              register each repository with a checkout here, or the one named, from what its line declares,
+              as `connect` would; a start and a line Daoris moves do the same on their own.
           quest delete <id>
               delete a quest nobody has started on.
           answer <session> ["…"]
