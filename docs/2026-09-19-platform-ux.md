@@ -365,13 +365,15 @@ controls are in the frame design's §3.
     It searches by name at once and by what was said when typing settles, archived sessions included and marked. A
     row's menu holds the session's acts where its row is (SESSUX1d, D126 §3.1), each where it applies: *Answer…*,
     *Stop…*, *Try again*, *Review*, *Open folder*, *Open a terminal here*, its own window, *Archive* on an ended row or
-    *Unarchive* on an archived one (SESSUX1e), and its id. The ⋯ shows archived sessions as *Archived*, last, and
+    *Unarchive* on an archived one (SESSUX1e), *Delete…* on a conversation that served no quest (SESSUX1f), and its id. The ⋯ shows archived sessions as *Archived*, last, and
     *Archive what ended…* lists what it would take and what stays before its second press archives.
   - **The attended session has a page header, pinned** (SESSUX1d, D126 §3.2): its title on one line, whole in its tip,
     its word on its pill and its id; then its loud act where its state has one (*Try again*, *Review*), *Stop…* while
     it is live, and ⋯ with the rest. The conversation scrolls under it, and the long run's way through pins beneath it.
     Below 560 px of main area its acts take their own line. **A session's stop has one owner, this header**: *Stop…*
-    asks once under it, saying what follows by what the session is, then *Stop session* or *Never mind*. The parked
+    asks once under it, saying what follows by what the session is, then *Stop session* or *Never mind*. *Delete…*, in
+    its ⋯ only where the driver says the delete would be taken, asks the same way: what goes, and that nothing brings it
+    back. The parked
     card keeps *Finish* and *Decline…*, a chat's composer *Finish* and *Stop turn*, and a quest's page its door into
     Sessions; Ask Daoris's panel keeps its own, since the side bar holds that conversation on every view.
   - **The centre is the record, then the conversation**, one scroll, following the centre's width

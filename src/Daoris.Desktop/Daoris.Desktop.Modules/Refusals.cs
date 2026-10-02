@@ -81,6 +81,33 @@ public static class Refusals
     public const string SessionNeedsYou = "SESSION_NEEDS_YOU";
 
     /// <summary>
+    /// A delete asked of a teammate's record (SESSUX1f, D126 §5.4): it ran on their machine, and its record is theirs, so
+    /// it may only be archived here. Its <c>machine</c> names where it ran.
+    /// </summary>
+    public const string SessionNotOurs = "SESSION_NOT_OURS";
+
+    /// <summary>
+    /// A delete asked of a session that served a quest (SESSUX1f): its record is that work's, and the quest's strikes and
+    /// carry-ons are read from it, so archive is how it is cleared. Its <c>quest</c> names the work.
+    /// </summary>
+    public const string SessionServedQuest = "SESSION_SERVED_QUEST";
+
+    /// <summary>
+    /// A delete asked of a session something names (SESSUX1f): an ask as its intake, a quest it published, or a landing.
+    /// Which travels as the catalogue's <c>context</c> (<c>ask</c>, <c>quest</c>, <c>landing</c>), with the id it names.
+    /// </summary>
+    public const string SessionNamed = "SESSION_NAMED";
+
+    /// <summary>A delete asked of a conversation whose own tree is still on this machine (SESSUX1f): discarded or cleaned up first.</summary>
+    public const string SessionTreeHere = "SESSION_TREE_HERE";
+
+    /// <summary>
+    /// A delete asked of a record pushed to a workspace's remote (SESSUX1f): a session record does not travel as a
+    /// deletion, so the team's copy would stay. Its <c>workspace</c> names whose remote holds it.
+    /// </summary>
+    public const string SessionOnRemote = "SESSION_ON_REMOTE";
+
+    /// <summary>
     /// *Try again* asked of a quest the driver's last look neither parked on its failed sessions nor held by the person's
     /// stop (SESSUX1b, D126 §3.4): nothing to mark and no stop to release, and forgiving it would let it run past its
     /// strikes (D110). Its <c>id</c> names the quest.

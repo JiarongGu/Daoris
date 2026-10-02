@@ -92,6 +92,15 @@ public sealed partial class HelpCoverageTests
         + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
         + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
 
+    /// <summary>
+    /// SESSUX1f's <c>useDeleteSession</c> (D126 §7.3), the bridge hook Sessions' *Delete…* presses: a door Ask Daoris owes,
+    /// until SESSUX1h gives the <c>delete</c> kind its <c>session</c> door, judged by §5.4.
+    /// </summary>
+    private static readonly Owed SessionDeleteDoor = new(
+        "deleting a conversation that served no quest removes its record and what this machine kept of it, a removal the "
+        + "person applies as a card, so Ask Daoris should propose it; that is the `delete` kind's `session` door, judged by "
+        + "the same two halves, which SESSUX1h builds (D126 §7.3).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -310,6 +319,7 @@ public sealed partial class HelpCoverageTests
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionArchiveDoor)
+            .Append(SessionDeleteDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -386,6 +396,20 @@ public sealed partial class HelpCoverageTests
         Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
         Assert.Null(HelpProposalKinds.Find("session"));
         Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
+    }
+
+    /// <summary>
+    /// SESSUX1f: the delete's bridge hook changes something, and the `delete` kind takes no `session` door yet, so it is a door
+    /// owed to SESSUX1h (D126 §7.3). When the door lands, this owed door becomes it.
+    /// </summary>
+    [Fact]
+    public void The_session_delete_is_a_door_owed_to_the_delete_kinds_session_door()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useDeleteSession", out var delete) && delete.Changes);
+        Assert.DoesNotContain("session", HelpProposalKinds.Find("delete")!.Doors);
+        Assert.Contains("SESSUX1h", SessionDeleteDoor.Reason);
     }
 
     /// <summary>

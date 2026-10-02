@@ -321,6 +321,85 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.DoesNotContain("account-limited-here", (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Body);
     }
 
+    /// <summary>A chat in <c>Keeper</c>, in a tree of its own so it holds nothing another test opens, ended <c>completed</c>.</summary>
+    private async Task<string> EndedChatAsync(string tree)
+    {
+        var opened = await host.PostAsync("/api/sessions/chat", new { repository = "Keeper", adapter = "stub", tree = host.RootOf(tree) });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working", "completed" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        return id;
+    }
+
+    private async Task<JsonElement?> ListedSessionAsync(string id) =>
+        (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray()
+            .Cast<JsonElement?>().SingleOrDefault(row => row!.Value.GetProperty("id").GetString() == id);
+
+    /// <summary>
+    /// SESSUX1f (D126 §5.4): a conversation that served no quest is listed as deletable and goes, with the ledger's
+    /// sentence; the judgement alone, which the driver asks before its own half, answers the same and deletes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_that_served_no_quest_is_deletable_and_deleted()
+    {
+        var id = await EndedChatAsync("keeper-chat-deleted");
+        Assert.True((await ListedSessionAsync(id))!.Value.GetProperty("deletable").GetBoolean());
+
+        var judged = await host.GetAsync($"/api/sessions/{id}/deletable");
+        Assert.Equal(200, judged.Status);
+        Assert.True(judged.Json.GetProperty("deletable").GetBoolean());
+        Assert.NotNull(await ListedSessionAsync(id));
+
+        var deleted = await host.DeleteAsync($"/api/sessions/{id}");
+
+        Assert.Equal(200, deleted.Status);
+        Assert.Equal(id, deleted.Json.GetProperty("id").GetString());
+        Assert.Equal($"Deleted session `{id}`: its record is gone from this machine.", deleted.Json.GetProperty("message").GetString());
+        Assert.Null(await ListedSessionAsync(id));
+    }
+
+    /// <summary>
+    /// SESSUX1f: a session that served a quest is listed as not deletable, and its delete is a 409 carrying the ledger's
+    /// sentence verbatim and the refusal's word and facts, which the driver reads instead of the sentence. The judgement
+    /// answers the same refusal.
+    /// </summary>
+    [Fact]
+    public async Task A_session_that_served_a_quest_is_refused_with_409_its_word_and_the_ledgers_sentence()
+    {
+        var quest = await PublishAsync("A quest whose session is that work's record");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub", tree = host.RootOf("keeper-served") });
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "failed" })).Status);
+        Assert.False((await ListedSessionAsync(id))!.Value.GetProperty("deletable").GetBoolean());
+
+        var refused = await host.DeleteAsync($"/api/sessions/{id}");
+
+        Assert.Equal(409, refused.Status);
+        Assert.Equal((await host.Composed.Ledger.JudgeDeleteAsync(id)).Message, refused.Error);
+        Assert.Equal(("served-quest", quest), (refused.Json.GetProperty("refusal").GetString(), refused.Json.GetProperty("quest").GetString()));
+        Assert.NotNull(await ListedSessionAsync(id));
+
+        var judged = await host.GetAsync($"/api/sessions/{id}/deletable");
+        Assert.Equal(200, judged.Status);
+        Assert.False(judged.Json.GetProperty("deletable").GetBoolean());
+        Assert.Equal(("served-quest", refused.Error), (judged.Json.GetProperty("refusal").GetString(), judged.Json.GetProperty("error").GetString()));
+    }
+
+    [Fact]
+    public async Task A_session_that_is_not_held_answers_404_to_a_delete_and_its_judgement()
+    {
+        var missing = await host.DeleteAsync("/api/sessions/nope1234");
+        var judged = await host.GetAsync("/api/sessions/nope1234/deletable");
+
+        Assert.Equal((404, 404), (missing.Status, judged.Status));
+        Assert.Contains("`nope1234`", missing.Error);
+        Assert.Equal("not-found", missing.Json.GetProperty("refusal").GetString());
+    }
+
     /// <summary>
     /// The page is served here — which is what makes the shared host's 404 for the same file a refusal
     /// rather than a missing file.

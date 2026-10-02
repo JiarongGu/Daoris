@@ -568,6 +568,23 @@ public sealed class SessionEvents(string directory)
         return $"{(start > 0 ? "…" : "")}{window}{(end < text.Length ? "…" : "")}";
     }
 
+    /// <summary>
+    /// Remove a session's kept conversation (SESSUX1f, D126 §5.4), once its record is deleted, and forget where its numbering
+    /// stood. True when there was a file to remove; an id that names no session removes nothing.
+    /// </summary>
+    public bool Forget(string sessionId)
+    {
+        if (!IsId(sessionId)) return false;
+        lock (_gate)
+        {
+            _latest.Remove(sessionId);
+            var path = PathOf(sessionId);
+            if (!File.Exists(path)) return false;
+            File.Delete(path);
+            return true;
+        }
+    }
+
     /// <summary>Where a session's events are kept — refused for anything that is not an id.</summary>
     public string PathOf(string sessionId)
     {

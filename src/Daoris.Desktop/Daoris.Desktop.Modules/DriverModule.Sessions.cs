@@ -251,23 +251,63 @@ public sealed partial class DriverModule
         };
     }
 
-    /// <summary>One look at the sessions, gathered for the reader: what both routes judge by.</summary>
+    /// <summary>One look at the sessions, gathered by the driver library's one gatherer, which the terminal's <c>sessions</c> reads too.</summary>
     private async Task<(SessionLook Look, IReadOnlyList<SessionGrouping> Grouped)> GroupsAsync(
         IReadOnlyCollection<string>? only, CancellationToken cancellationToken)
     {
         var service = _loop.Service ?? throw NotReady();
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var records = await SessionRecords.ReadAsync(
-            service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false);
-        var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
-        var considered = await SessionGroups.VerdictsAsync(service, config, Door(config), _loop.Look.Latest, cancellationToken)
-            .ConfigureAwait(false);
-        var trees = new SessionTrees(_loop.Home);
-        var look = await SessionGroups.JudgeAsync(
-                SessionLook.From(records, quests, considered, config.ForgivenAt) with { Archived = new SessionArchive(_loop.Home).Marks() },
-                trees.Holds, trees.WorkAsync, only, cancellationToken)
+        var look = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
             .ConfigureAwait(false);
         return (look, SessionGroups.Read(look, only));
+    }
+
+    /// <summary>
+    /// Delete a conversation that served no quest (SESSUX1f, D126 §5.4): its record through the ledger, then what this
+    /// machine kept of it, by the driver library's one owner, which the terminal's <c>sessions delete</c> calls too.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The ledger's half is said first</b>: whose the record is, whether it runs, whether it served a quest, what
+    /// names it and whether a remote holds it; then this machine's, its tree and a landing. Each refusal is a code in
+    /// <see cref="Refusals"/> said in the catalogue's words, read by the ledger's word, never its sentence. The page offers
+    /// the act only where <c>SESSION_GROUPS</c> says <c>deletable</c>, so a refusal answers a race.</para>
+    ///
+    /// <para><b>Nothing machine-local comes back</b>: the id and the names of what went. <c>session.deleted</c> is written
+    /// to the machine log with no word of it.</para>
+    /// </remarks>
+    [DriverRoute("SESSION_DELETE")]
+    private async Task<object?> SessionDeleteAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var service = _loop.Service ?? throw NotReady();
+        var outcome = await new SessionDeletion(_loop.Home)
+            .DeleteAsync(service, id, PluginEvents.Screen, _loop.Log, _loop.Events, cancellationToken)
+            .ConfigureAwait(false);
+        if (outcome.Verdict != DeleteVerdict.Deleted) throw NotDeleted(outcome);
+
+        _loop.Nudge();
+        return new { Deleted = id, outcome.Removed };
+    }
+
+    /// <summary>
+    /// A delete refused, as the catalogue says it: the session, and the fact its sentence names. Which named it, and the
+    /// archive's two codes asked of a delete, travel as the catalogue's <c>context</c>.
+    /// </summary>
+    private static Exception NotDeleted(DeleteOutcome outcome)
+    {
+        var session = ("session", outcome.Session);
+        return outcome.Verdict switch
+        {
+            DeleteVerdict.Unknown => Refusals.Because(Refusals.SessionUnknown, outcome.Message, session, ("context", "delete")),
+            DeleteVerdict.Live => Refusals.Because(Refusals.SessionLive, outcome.Message, session, ("context", "delete")),
+            DeleteVerdict.NotOurs => Refusals.Because(Refusals.SessionNotOurs, outcome.Message, session, ("machine", outcome.Machine ?? "")),
+            DeleteVerdict.ServedQuest => Refusals.Because(Refusals.SessionServedQuest, outcome.Message, session, ("quest", outcome.Quest ?? "")),
+            DeleteVerdict.Named => Refusals.Because(
+                Refusals.SessionNamed, outcome.Message, session, ("context", outcome.NamedBy ?? SessionDeletion.ByAsk),
+                ("ask", outcome.Ask ?? ""), ("quest", outcome.Quest ?? "")),
+            DeleteVerdict.TreeHere => Refusals.Because(Refusals.SessionTreeHere, outcome.Message, session),
+            _ => Refusals.Because(Refusals.SessionOnRemote, outcome.Message, session, ("workspace", outcome.Workspace ?? "")),
+        };
     }
 
     /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
@@ -302,6 +342,8 @@ public sealed partial class DriverModule
         Work = row.Work is { } work ? new { work.Commits, work.Uncommitted } : null,
         // SESSUX1b (D126 §2.2): its stop holds its quest here, which its line says.
         row.HoldsQuest,
+        // SESSUX1f (D126 §5.4): *Delete…* is offered only where it would be taken.
+        row.Deletable,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

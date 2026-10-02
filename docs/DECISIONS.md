@@ -8605,6 +8605,51 @@ failing under a sabotage. `SessionNotifier` has no test, as before. **Not built 
 the attention lines, which only the watch mode prints. **Not measured**: the row and its 中文 sentence on Overview at
 1280, 888 and 680 px in both themes, and a real park's notification on the install (§12).
 
+**As built (SESSUX1f, 2026-10-03): delete a conversation that served no quest.** The ledger judges the record's half
+(`SessionLedger.JudgeDeleteAsync`, `DeleteAsync`, `DeletableAsync`), behind a local host's `DELETE /api/sessions/{id}` and
+`GET /api/sessions/{id}/deletable`; `GET /api/sessions` answers `deletable` per record, false at a shared deployment.
+The driver library's `SessionDeletion` judges the machine's half and removes the files; `SESSION_DELETE` and, in SESSUX1g,
+the terminal call it. `SESSION_GROUPS` answers `deletable` as the record's half and the machine's together
+(`SessionLook.Kept`). The header's ⋯ and a row's ⋯ offer *Delete…* through `work/sessionActs.ts`; `DeleteAsk` asks once
+under the header. What the build settled that §5.4 left open:
+
+- **The ledger's refusal is said before the machine's.** §5.4 has the driver judge the tree and the landing first. A driven
+  session with its tree here would then be told to discard a tree it would still not be deleted for. So the driver asks
+  the ledger's judgement first, through the route that deletes nothing, then judges its own half, then deletes, and the
+  ledger judges the record again as it deletes.
+- **Held by a remote is a mark on the record**, `pushed`, which the sync sets when a push took the record and which later
+  moves keep. A store from before the mark reads it once from its push cursor: a record at or before what its workspace
+  pushed is marked, and so is a record of a repository that had not joined, which errs toward refusing. The mark never
+  travels.
+- **A teammate's record is refused by the driver, from its id.** An `origin/id` cannot be named in the ledger's path
+  doors, so the driver says `SESSION_NOT_OURS` with the machine the id carries. The ledger refuses it too, for any other
+  caller.
+- **A refusal travels as a word.** The 409 carries the ledger's sentence as `error` beside `refusal` (`not-ours`, `live`,
+  `served-quest`, `named`, `on-remote`) and the quest, ask, machine or workspace it names. The driver reads the word,
+  never the sentence. `SESSION_NAMED` says which named it through the catalogue's context (`ask`, `quest`, `landing`).
+  `SESSION_LIVE` and `SESSION_UNKNOWN` keep their codes with the `delete` context.
+- **What goes**: the record, its conversation (`SessionEvents.Forget`, which also forgets its numbering), its transcript,
+  its files folder, its kept conversation id, a leftover process marker, its archive mark, and on the page its draft.
+  The tree, a branch, the usage and the log stay, and the log gains `session.deleted` (`session`, `kind`, `door`), the
+  machine log design's §4 row.
+- **One sentence asks for every delete.** The page offers *Delete…* only where it would be taken, so only conversations
+  that served no quest reach the ask.
+- **D110**: `useDeleteSession` is a door owed to SESSUX1h's `delete` kind `session` door (`HelpCoverageTests`).
+
+Held by `SessionDeleteTests` (each refusal of the record's half, the judgement deleting nothing, a list's `deletable`),
+`SessionStoreTests` (the mark without a new revision, a delete, the mark derived on upgrade), `SessionSyncTests`,
+`LocalHostTests` and `SharedHostTests` (no door at a shared deployment), `SessionDeletionTests` (the files gone and kept,
+the tree, the landing, each ledger word, a teammate's, a refusal at the delete itself, the line with no words),
+`SessionGroupsTests`' four new rows, `DriverModuleSessionsTests`, `HelpCoverageTests`, and on the page `acts.test.ts`,
+`sessionActs.test.tsx`, `SessionPageHead.test.tsx`, `SessionRow.test.tsx`, `WorkFrame.test.tsx`,
+`bridge/sessions.test.tsx` and the stories. Each was seen failing first, as a compile error or an assertion, bar two: the
+shared host's negative case and a driven session's ⋯ offering none, which passed before. The sync's mark and the route
+were also seen failing under a sabotage. **Not covered**: a chat that took a quest through its own connector leaves no
+mark on its record (STANDDOWN2 marks only a session's own quest), so the ledger reads it as serving none. A record pushed
+and then moved before the upgrade reads unpushed until its next push. The frame's own copy of the drafts can write a
+deleted session's draft back if another is typed before a reload. **Not measured**: *Delete…* and its ask in both themes
+and languages at 1280, 888 and 680 px (§12).
+
 ## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
 
 **Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split

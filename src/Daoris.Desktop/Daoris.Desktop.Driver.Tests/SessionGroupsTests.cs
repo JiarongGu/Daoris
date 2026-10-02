@@ -22,8 +22,10 @@ public sealed class SessionGroupsTests
 
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
-        string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null) => new()
+        string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
+        bool deletable = false) => new()
         {
+            ["deletable"] = deletable,
             ["id"] = id,
             ["repository"] = repository,
             ["adapter"] = "claude-code",
@@ -45,11 +47,13 @@ public sealed class SessionGroupsTests
 
     private static SessionLook Look(
         JsonObject[] records, QuestView[]? quests = null, Consideration[]? considered = null,
-        (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null) =>
+        (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null,
+        string[]? kept = null) =>
         SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)) with
         {
             Trees = (trees ?? []).ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase),
             Archived = (archived ?? []).ToDictionary(id => id, _ => T0, StringComparer.Ordinal),
+            Kept = new HashSet<string>(kept ?? [], StringComparer.Ordinal),
         };
 
     /// <summary>One row of the table: what is on the machine, the session asked about, and where it is shown.</summary>
@@ -251,6 +255,28 @@ public sealed class SessionGroupsTests
                 "s1", SessionGroup.Review, "completed"),
         ["an archived live session stays working"] =
             new(Look([Record("s1", "working", "q1")], [Taken], archived: ["s1"]), "s1", SessionGroup.Working, "working"),
+
+        // SESSUX1f (D126 §5.4): deletable where the ledger would delete the record and this machine holds nothing of it.
+        ["a conversation the ledger would delete is deletable"] =
+            new(Look([Record("s1", "completed", kind: "chat", deletable: true)]), "s1", SessionGroup.Ended, "completed")
+            {
+                Also = row => Assert.True(row.Deletable),
+            },
+        ["an archived conversation the ledger would delete is deletable"] =
+            new(Look([Record("s1", "stopped", kind: "chat", deletable: true)], archived: ["s1"]), "s1", SessionGroup.Archived, "stopped")
+            {
+                Also = row => Assert.True(row.Deletable),
+            },
+        ["a conversation whose tree or landing is still here is not deletable"] =
+            new(Look([Record("s1", "completed", kind: "chat", deletable: true)], kept: ["s1"]), "s1", SessionGroup.Ended, "completed")
+            {
+                Also = row => Assert.False(row.Deletable),
+            },
+        ["a session the ledger keeps is not deletable"] =
+            new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Ended, "completed")
+            {
+                Also = row => Assert.False(row.Deletable),
+            },
     };
 
     public static TheoryData<string> CaseNames => [.. Cases.Keys];

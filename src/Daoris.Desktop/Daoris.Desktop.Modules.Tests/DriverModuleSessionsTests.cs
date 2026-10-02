@@ -350,6 +350,118 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// SESSUX1f (D126 §5.4): a conversation that served no quest is listed deletable, and its delete removes its record
+    /// through the ledger and what this machine kept of it, its words included; the answer says what went and names no
+    /// path. A row the ledger keeps is not deletable.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_that_served_no_quest_is_listed_deletable_and_deleted_with_what_this_machine_kept()
+    {
+        using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = """{"deletable":true}""" });
+        var loop = await UpAsync(ledger);
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "a plan of mine" });
+        File.WriteAllText(Path.Combine(Home, "sessions", "chat1.log"), "the transcript");
+        var module = new DriverModule(Bus, loop);
+
+        var rows = (await AnswerAsync(module, "SESSION_GROUPS", null)).GetProperty("sessions").EnumerateArray()
+            .ToDictionary(row => row.GetProperty("session").GetString()!);
+        Assert.True(rows["chat1"].GetProperty("deletable").GetBoolean());
+        Assert.False(rows["done1"].GetProperty("deletable").GetBoolean());
+
+        var deleted = await AnswerAsync(module, "SESSION_DELETE", new { id = "chat1" });
+
+        Assert.Equal("chat1", deleted.GetProperty("deleted").GetString());
+        Assert.Equal(["record", "conversation", "transcript"], deleted.GetProperty("removed").EnumerateArray().Select(each => each.GetString()));
+        Assert.False(File.Exists(Path.Combine(Home, "sessions", "chat1.events.jsonl")));
+        Assert.False(File.Exists(Path.Combine(Home, "sessions", "chat1.log")));
+        Assert.Empty(loop.Events.Openings(["chat1"]));
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), deleted.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static TheoryData<string, string, string> DeleteRefusals => new()
+    {
+        { """{"deletable":false,"error":"it worked on #q4","refusal":"served-quest","quest":"q4"}""", Refusals.SessionServedQuest, "quest=q4" },
+        { """{"deletable":false,"error":"the remote holds it","refusal":"on-remote","workspace":"aurora"}""", Refusals.SessionOnRemote, "workspace=aurora" },
+        { """{"deletable":false,"error":"ask #a1 names it","refusal":"named","ask":"a1"}""", Refusals.SessionNamed, "context=ask" },
+        { """{"deletable":false,"error":"#q9 was published by it","refusal":"named","quest":"q9"}""", Refusals.SessionNamed, "context=quest" },
+        { """{"deletable":false,"error":"still running","refusal":"live"}""", Refusals.SessionLive, "context=delete" },
+    };
+
+    /// <summary>
+    /// Each refusal the ledger gives is the catalogue's code with the facts its sentence names, read by its word and never
+    /// its sentence; nothing is removed.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(DeleteRefusals))]
+    public async Task A_delete_the_ledger_refuses_is_said_in_the_catalogues_words(string judged, string code, string fact)
+    {
+        using var ledger = DeleteLedger(new Dictionary<string, string> { ["chat1"] = judged });
+        var loop = await UpAsync(ledger);
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "kept" });
+
+        var refusal = await RefusalAsync(new DriverModule(Bus, loop), "SESSION_DELETE", new { id = "chat1" });
+
+        Assert.Contains(code, refusal);
+        Assert.Contains("session=chat1", refusal);
+        Assert.Contains(fact, refusal);
+        Assert.True(File.Exists(Path.Combine(Home, "sessions", "chat1.events.jsonl")));
+    }
+
+    /// <summary>
+    /// This machine's half, said in the catalogue's words: a tree of its own still here, a landing that names it, a
+    /// teammate's record, and an id no record has.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_this_machine_keeps_is_said_in_the_catalogues_words()
+    {
+        var tree = Path.Combine(new SessionTrees(Home).TreesRoot, "aurora", "engine", "s-1a2b3c4d");
+        Directory.CreateDirectory(tree);
+        File.WriteAllText(Path.Combine(tree, "work.txt"), "work");
+        new SessionTrees(Home).Recorded.Record(new LandedBranch(
+            "engine", "aurora", "daoris/s-landed00", "main", "abc123", "landed1", null, "work", DateTimeOffset.UtcNow));
+        using var ledger = DeleteLedger(
+            new Dictionary<string, string> { ["treed1"] = """{"deletable":true}""", ["landed1"] = """{"deletable":true}""" }, tree);
+        var module = new DriverModule(Bus, await UpAsync(ledger));
+
+        var treed = await RefusalAsync(module, "SESSION_DELETE", new { id = "treed1" });
+        Assert.Contains(Refusals.SessionTreeHere, treed);
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), treed, StringComparison.OrdinalIgnoreCase);
+        var landed = await RefusalAsync(module, "SESSION_DELETE", new { id = "landed1" });
+        Assert.Contains(Refusals.SessionNamed, landed);
+        Assert.Contains("context=landing", landed);
+        var theirs = await RefusalAsync(module, "SESSION_DELETE", new { id = "laptop/chat9" });
+        Assert.Contains(Refusals.SessionNotOurs, theirs);
+        Assert.Contains("machine=laptop", theirs);
+        var nobody = await RefusalAsync(module, "SESSION_DELETE", new { id = "nobody" });
+        Assert.Contains(Refusals.SessionUnknown, nobody);
+        Assert.Contains("context=delete", nobody);
+    }
+
+    /// <summary>
+    /// The records a delete reads, and the ledger's judgement of each it is asked about (its delete answers yes, since this
+    /// stand-in answers a path whatever the verb): a conversation <c>chat1</c>, one with its tree here, one a landing names,
+    /// a teammate's, and the main ledger's done session.
+    /// </summary>
+    private LoopbackHost DeleteLedger(IReadOnlyDictionary<string, string> judged, string? tree = null)
+    {
+        var ledger = Ledger();
+        string Chat(string id, string? at = null) =>
+            $$"""{"id":"{{id}}","repository":"engine","adapter":"claude-code","state":"completed","kind":"chat","deletable":true,{{(at is null ? "" : $"\"tree\":\"{at.Replace('\\', '/')}\",")}}"created":"2026-10-02T10:00:00Z","updated":"2026-10-02T10:05:00Z"}""";
+        var records = $"[{Chat("chat1")},{Chat("treed1", tree)},{Chat("landed1")},"
+                      + $$"""{"id":"laptop/chat9","repository":"engine","adapter":"claude-code","state":"completed","kind":"chat"},"""
+                      + """{"id":"done1","quest":"q4","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z"}]""";
+        ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(records));
+        foreach (var (id, answer) in judged)
+        {
+            ledger.Serve($"/api/sessions/{id}/deletable", System.Text.Encoding.UTF8.GetBytes(answer));
+            ledger.Serve($"/api/sessions/{id}", System.Text.Encoding.UTF8.GetBytes(
+                answer.Contains("\"refusal\"", StringComparison.Ordinal) ? answer : $$"""{"id":"{{id}}","message":"Deleted session `{{id}}`."}"""));
+        }
+
+        return ledger;
+    }
+
+    /// <summary>
     /// The records a folder is named from: a session in its own tree, one whose tree is gone, one in its repository's
     /// checkout, one that names a folder this home did not open, and a teammate's.
     /// </summary>

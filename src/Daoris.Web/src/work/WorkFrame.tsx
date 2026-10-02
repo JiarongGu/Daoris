@@ -28,7 +28,7 @@ import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, offeredActs, primaryAct, stopAsk } from './acts';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
-import { SessionPageHead, StopAsk } from './SessionPageHead';
+import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
 import { StartSession, type StartChoice } from './StartSession';
@@ -190,6 +190,8 @@ export function WorkFrame({
   // The session whose stop asks under the header (SESSUX1d, D126 §3.3), from the header's *Stop…* or its row's: a
   // question asked now, of that session only, so attending another closes it.
   const [stopAsking, setStopAsking] = useState<string | null>(null);
+  // The session whose delete asks under the header (SESSUX1f, D126 §5.4), the stop's way: of that session only.
+  const [deleteAsking, setDeleteAsking] = useState<string | null>(null);
   // *Answer…* from a row (D126 §3.1): the session it was pressed for, and a count, so the box at its foot takes the focus
   // once per press, including a second press on the same session.
   const [answerFocus, setAnswerFocus] = useState<{ session: string; at: number } | null>(null);
@@ -368,6 +370,7 @@ export function WorkFrame({
   // puts it down, so coming back later does not find it still open.
   useEffect(() => {
     setStopAsking((asked) => (asked === selected ? asked : null));
+    setDeleteAsking((asked) => (asked === selected ? asked : null));
   }, [selected]);
 
   const resize = (next: number) => {
@@ -750,7 +753,15 @@ export function WorkFrame({
     stop: (id) => {
       chosen();
       attend(id);
+      setDeleteAsking(null);
       setStopAsking(id);
+    },
+    // *Delete…* (SESSUX1f): attended, its ask under its header, as a stop asks.
+    delete: (id) => {
+      chosen();
+      attend(id);
+      setStopAsking(null);
+      setDeleteAsking(id);
     },
     // Its review: attended, with the dock open on its work.
     review: (id) => {
@@ -791,6 +802,12 @@ export function WorkFrame({
           busy={actions.stopping}
           onStop={() => actions.stopNow(attended, () => setStopAsking(null))}
           onCancel={() => setStopAsking(null)}
+        />
+      ) : deleteAsking === attended.id && headActs.includes('delete') ? (
+        <DeleteAsk
+          busy={actions.deleting}
+          onDelete={() => actions.deleteNow(attended, () => setDeleteAsking(null))}
+          onCancel={() => setDeleteAsking(null)}
         />
       ) : null}
     />
@@ -859,7 +876,7 @@ export function WorkFrame({
         archived={sessionsFilters.archived}
         archiveEnded={archivingEnded}
         onArchiveEnded={() => setArchivingEnded(false)}
-        // A row's acts that are this frame's: answering, asking to stop, reviewing, a terminal there (SESSUX1d).
+        // A row's acts that are this frame's: answering, asking to stop or to delete, reviewing, a terminal there (SESSUX1d, SESSUX1f).
         doors={doors}
       />
     ),

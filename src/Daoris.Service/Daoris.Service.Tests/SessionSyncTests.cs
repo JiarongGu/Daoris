@@ -84,6 +84,22 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Equal("a@one", atRemote.Origin);
     }
 
+    /// <summary>
+    /// SESSUX1f (D126 §5.4): a record that went up is marked pushed, so a delete here can say the team's copy would stay;
+    /// one of a repository that has not joined stayed home and is not.
+    /// </summary>
+    [Fact]
+    public async Task A_record_that_went_up_is_marked_pushed_and_one_that_stayed_home_is_not()
+    {
+        var sent = await _a.CreateAsync(null, "Shared", "stub", Now, kind: SessionKind.Chat);
+        var home = await _a.CreateAsync(null, "Homebody", "stub", Now, kind: SessionKind.Chat);
+
+        await SyncAsync(_a, "a@one");
+
+        Assert.True((await _a.FindAsync(sent.Id))!.Pushed);
+        Assert.False((await _a.FindAsync(home.Id))!.Pushed);
+    }
+
     /// <summary>Silence means local (D47 §4): a record of a repository that has not joined never leaves.</summary>
     [Fact]
     public async Task A_record_of_a_repository_that_has_not_joined_stays_home()

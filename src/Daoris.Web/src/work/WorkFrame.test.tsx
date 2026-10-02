@@ -1916,6 +1916,63 @@ describe('a session’s page header and its acts', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
   });
 
+  /**
+   * SESSUX1f (D126 §5.4): an ended conversation the reader says is deletable offers *Delete…* in its header's ⋯; it asks
+   * once under the header, deletes nothing until its second press, and a driven session's ⋯ offers none.
+   */
+  it('deletes an ended conversation from its header’s ⋯, asking once, and offers a driven session none', async () => {
+    const ended = { ...CHAT, state: 'completed' };
+    SESSIONS = [ended, { ...DRIVEN, state: 'completed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [
+          { session: 'c0ffee11', group: 'ended', shown: 'completed', archived: false, teammate: false, deletable: true },
+          { session: 's1a2b3c4', group: 'ended', shown: 'completed', archived: false, teammate: false, deletable: false },
+        ] };
+      }
+      if (type === 'SESSION_DELETE') return { deleted: 'c0ffee11', removed: ['record'] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('c0ffee11', notify);
+
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
+
+    const ask = screen.getByRole('group', { name: 'delete this session' });
+    expect(ask).toHaveTextContent('Nothing brings it back.');
+    await user.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(screen.queryByRole('group', { name: 'delete this session' })).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', expect.anything());
+
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Delete…' }));
+    await user.click(screen.getByRole('button', { name: 'Delete session' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 'c0ffee11' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^Deleted c0ffee11/)));
+  });
+
+  it('offers a driven session that served a quest no Delete… in its header', async () => {
+    SESSIONS = [{ ...DRIVEN, state: 'completed' }];
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'
+      ? { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'completed', archived: false, teammate: false, deletable: false }] }
+      : DRIVER_STATE));
+    show('s1a2b3c4');
+
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await screen.findByRole('menuitem', { name: 'Archive' });
+    expect(screen.queryByRole('menuitem', { name: 'Delete…' })).toBeNull();
+  });
+
   /** The record head below opens on the quest's whole title and says neither its word nor its id again (§3.2). */
   it('names the session in its header, and says its word and its id there alone', async () => {
     show('s1a2b3c4');

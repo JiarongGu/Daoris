@@ -277,6 +277,21 @@ export const ParkedWithTryAgain: Story = {
   },
 };
 
+/**
+ * An ended conversation that served no quest (SESSUX1f, D126 §5.4): its ⋯ offers *Delete…*, which attends it and asks
+ * under its header. Hover for the ⋯.
+ */
+export const DeletableConversation: Story = {
+  args: {
+    session: { ...SESSION, quest: null, kind: 'chat', state: 'completed', created: at(95), updated: at(50) },
+    quest: null,
+    grouping: placed({ group: 'ended', shown: 'completed', deletable: true }),
+    place: 'engine',
+    acts: ['openFolder', 'terminal', 'detach', 'archive', 'delete', 'copy'],
+    onAct: () => {},
+  },
+};
+
 /** A person's stop that holds its quest (SESSUX1b): its line says so, and its ⋯ offers *Try again*. */
 export const StoppedHoldingItsQuest: Story = {
   args: {

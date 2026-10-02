@@ -165,7 +165,15 @@ public sealed record SessionResponse(
     // D104: a stop that was not the person's — the sweep's, or a shutdown's — which the driver carries on.
     bool Interrupted = false,
     // TOOL4c (D125 §5.2): a failure an account's limit made. It names no account, so every caller is told.
-    bool Limit = false);
+    bool Limit = false,
+    // SESSUX1f (D126 §5.4): whether the ledger would delete its record, D95's way, so the driver offers *Delete…* only
+    // where it would be taken. False at a shared deployment, which has no delete door.
+    bool Deletable = false);
+// SESSUX1f (D126 §5.4): a session delete refused, or its judgement alone. `error` is the ledger's sentence, the field every
+// reader already knows; `refusal` its word, which a reader acts on instead of the sentence; and the facts the word names.
+public sealed record SessionDeletionResponse(
+    bool Deletable, string? Error = null, string? Refusal = null,
+    string? Quest = null, string? Ask = null, string? Origin = null, string? Workspace = null);
 // STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
 public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
@@ -273,6 +281,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(OpenHelpRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
+[JsonSerializable(typeof(SessionDeletionResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedCodeMapRequest))]
