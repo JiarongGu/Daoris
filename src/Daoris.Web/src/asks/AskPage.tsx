@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
-import { Button, Icon, Pill, SelectField, SESSION_TONE } from '../ui';
+import { Button, Icon, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
+import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
+import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 
 /**
@@ -35,10 +37,17 @@ import { ASK_TONE, firstLine, tierWords } from './AskRow';
  * The ask's files are named and never located: the host answers their path to this machine only, and a
  * page does not show a machine path (D47 §4, D65 §2).
  *
+ * **Its work is paused, resumed and abandoned here** (PAUSE1e, D132 §7.1), from this machine's driver's plan of it, each
+ * act where it applies and absent where it does not: *Pause…* while a pause would hold something, asking once where it
+ * ends work in flight (§2.6); *Resume*, the loud act, while it is paused, with *paused* beside its state; *Abandon…*,
+ * quiet, while the abandon would take anything, listing first and abandoning on its second press with the person's reason
+ * (§3.1). After an abandon it says when, *What went* and *What stayed* (§4.2). Closing says it leaves the quests (§6.5). A
+ * browser has no driver, so it offers none of the three and names the terminal's commands.
+ *
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function AskPage({
-  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest,
+  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, work,
 }: {
   ask: Ask;
   /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
@@ -55,24 +64,53 @@ export function AskPage({
   /** Delete the ask with every quest asked by it (D95) — absent where there is no door to do it. */
   onDelete?: () => void;
   onOpenQuest: (id: string) => void;
+  /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
+  work?: WorkDoor;
 }) {
   const { t } = useTranslation();
   const [another, setAnother] = useState('');
-  const [closing, setClosing] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  // One question asks under the header at a time: closing, deleting, pausing, or the abandon's list.
+  const [asking, setAsking] = useState<'close' | 'delete' | 'pause' | 'abandon' | null>(null);
+  // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
+  const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
   const live = ask.state !== 'Closed';
   const deletable = ask.deletable === true && onDelete !== undefined;
   const rest = ask.sentence.split('\n').slice(1).join('\n').trim();
+  const target: WorkTarget = { scope: 'ask', id: ask.id };
+  const offers = workOffers(work?.plan);
+  const waiting = busy || work?.busy === true;
+  const pauseLines = work?.plan ? pauseAsk(work.plan, { wired: work.wired }) : null;
+  const abandoned = lastAbandon(work);
+  const closing = asking === 'close';
+  const deleting = asking === 'delete';
 
-  // The acts in the header (D118 §3b); while one asks under it, its first press is not offered twice.
-  const acts = (live || deletable) && (
+  // A pause that stops nothing applies at once, with its notice, since nothing is lost (§2.6).
+  const onPauseFirst = () => {
+    if (pauseLines === null) work?.onPause(() => {});
+    else setAsking('pause');
+  };
+
+  // The acts in the header (D118 §3b); while one asks under it, its first press is not offered twice. The loud act is the
+  // next step: *Resume* while paused (§7.1).
+  const acts = (live || deletable || offers.pause || offers.resume || offers.abandon) && (
     <>
+      {offers.resume && (
+        <Button variant="primary" disabled={waiting} onClick={() => work?.onResume()}>{t('asks.record.resume')}</Button>
+      )}
+      {offers.pause && asking !== 'pause' && (
+        <Button disabled={waiting} onClick={onPauseFirst}>{t('asks.record.pause')}</Button>
+      )}
       {live && !closing && (
-        <Button disabled={busy} onClick={() => { setClosing(true); setDeleting(false); }}>{t('asks.record.close')}</Button>
+        <Button disabled={waiting} onClick={() => setAsking('close')}>{t('asks.record.close')}</Button>
+      )}
+      {offers.abandon && asking !== 'abandon' && (
+        <Button variant="ghost" disabled={waiting} onClick={() => { setListed(work!.plan); setAsking('abandon'); }}>
+          {t('asks.record.abandon')}
+        </Button>
       )}
       {deletable && !deleting && (
-        <Button variant="ghost" disabled={busy} onClick={() => { setDeleting(true); setClosing(false); }}>
+        <Button variant="ghost" disabled={waiting} onClick={() => setAsking('delete')}>
           <Icon name="remove" size={13} />
           {t('asks.record.delete')}
         </Button>
@@ -83,7 +121,13 @@ export function AskPage({
   const head = (
     <PageHead
       title={firstLine(ask.sentence)}
-      pills={<Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>}
+      pills={(
+        <>
+          <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
+          {/* The ask keeps its state, and says it is paused beside it (§2.2): a pause is this machine's, never a state. */}
+          {offers.paused && <span title={t('asks.record.pausedTip')}><Pill tone="neutral">{t('asks.record.paused')}</Pill></span>}
+        </>
+      )}
       id={`#${ask.id}`}
       acts={acts || undefined}
     />
@@ -91,6 +135,30 @@ export function AskPage({
 
   return (
     <ViewMain header={head}>
+      {asking === 'pause' && work && pauseLines && (
+        <PauseAsk
+          className="mb-4 max-w-3xl"
+          target={target}
+          lines={pauseLines}
+          meanIt={t('asks.record.pauseMeanIt')}
+          busy={waiting}
+          onPause={() => work.onPause(() => setAsking(null))}
+          onCancel={() => setAsking(null)}
+        />
+      )}
+
+      {asking === 'abandon' && work && listed && (
+        <AbandonAsk
+          target={target}
+          plan={listed}
+          meanIt={t('asks.record.abandonMeanIt')}
+          placeholder={t('asks.record.abandonWhy')}
+          busy={waiting}
+          onAbandon={(why) => work.onAbandon(why, listed.abandon.pieces, () => { setAsking(null); setListed(null); })}
+          onCancel={() => { setAsking(null); setListed(null); }}
+        />
+      )}
+
       {deleting && deletable && (
         /* 🔴 Nothing gives a deleted record back (D95): the first press only asks, and says the quests
            go too, the way removing an account says what it deletes. */
@@ -100,15 +168,17 @@ export function AskPage({
           className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
         >
           <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('asks.record.deleteConfirm')}</span>
-          <Button variant="danger" disabled={busy} onClick={() => { setDeleting(false); onDelete!(); }}>
+          <Button variant="danger" disabled={busy} onClick={() => { setAsking(null); onDelete!(); }}>
             {t('asks.record.deleteMeanIt')}
           </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
+          <Button variant="ghost" disabled={busy} onClick={() => setAsking(null)}>{t('common.cancel')}</Button>
         </div>
       )}
 
       {live && closing && (
         <div className="mb-4 grid max-w-prose gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
+          {/* A close is the person's word that the ask is answered, and leaves its quests as they are (§6.5). */}
+          <span className="text-small text-ink-soft">{t('asks.record.closeLeaves')}</span>
           <textarea
             aria-label={t('asks.record.closeWhy')}
             placeholder={t('asks.record.closeWhy')}
@@ -120,7 +190,7 @@ export function AskPage({
             <Button variant="danger" disabled={busy || !reason.trim()} onClick={() => onClose(reason.trim())}>
               {t('asks.record.closeConfirm')}
             </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => { setClosing(false); setReason(''); }}>
+            <Button variant="ghost" disabled={busy} onClick={() => { setAsking(null); setReason(''); }}>
               {t('common.cancel')}
             </Button>
           </div>
@@ -151,7 +221,25 @@ export function AskPage({
             <dd className="m-0 whitespace-pre-wrap">{ask.note}</dd>
           </>
         )}
+        {abandoned && (
+          /* When it was abandoned on this machine (§4.2); the reason is the close's note above, verbatim. */
+          <>
+            <dt className="text-ink-faint">{t('asks.record.abandonedAt')}</dt>
+            <dd className="m-0">{stamp(abandoned.at)} · {ago(abandoned.at)}</dd>
+          </>
+        )}
       </dl>
+
+      {abandoned && (
+        <div className="mb-4">
+          <AbandonedWork target={target} outcome={abandoned.outcome} went={t('asks.record.went')} stayed={t('asks.record.stayed')} />
+        </div>
+      )}
+
+      {!work && live && (
+        /* A browser has no driver (D47 §4): none of the three is offered, and the terminal's commands are named. */
+        <Prose className="mb-4 text-small"><Inline text={t('asks.record.noDriver', { id: ask.id })} /></Prose>
+      )}
 
       {ask.intake && (
         /* Who answered (INT4d): the session the intake ran as — its state, then its tool, and its note,

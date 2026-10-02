@@ -93,6 +93,24 @@ export const WAITS_FOR_ACCOUNT: Consideration = {
   waitsFor: { agent: 'claude-code', account: 'account-1', until: '2026-10-03T16:02:00Z', stated: true },
 };
 
+/** Paused with its ask (PAUSE1b, D132 §2.3): the tick names the ask whose pause holds it, and *Resume* is on the ask. */
+export const PAUSED_WITH_ASK: Consideration = {
+  quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'ask', id: 'a1b2c3' },
+  reason: 'paused with ask `#a1b2c3`; Resume starts it — `daoris-driver ask --resume a1b2c3`.',
+};
+
+/** Paused on its own: *Resume* stands where *Try again* would. */
+export const PAUSED_ITSELF: Consideration = {
+  quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'quest', id: OPEN.id },
+  reason: 'you paused `#abc123`; Resume starts it — `daoris-driver quest resume abc123`.',
+};
+
+/** A question its asker's pause holds: the quest whose pause it is, a door away. */
+export const PAUSED_WITH_QUEST: Consideration = {
+  quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'quest', id: 'def456' },
+  reason: 'you paused `#def456`; Resume starts it — `daoris-driver quest resume def456`.',
+};
+
 /** A start the driver holds for the agent's trust (D73). */
 export const TRUST: TrustHold = {
   folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json', quest: OPEN.id,
