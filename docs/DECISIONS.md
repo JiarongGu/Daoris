@@ -8460,6 +8460,45 @@ a browser's and the monitor's lists asking nothing), `SessionRow.test.tsx`, `ui.
 stories. Each was seen failing first, `groups.test.ts` only as a module not yet written. **Not built here**: a stopped session's line *held here until you try again*,
 which needs SESSUX1b's verdict in the reader, and *account cooling* (SESSUX1k). **Not measured**: the groups'
 headings and the rows' lines at 888 and 680 px in both languages, which the window decides (§12).
+
+**As built (SESSUX1d, 2026-10-02): the page header, and every act where its session is.** Sessions' main area has a
+pinned `SessionPageHead` with the acts by state and `StopAsk` under it. A row's ⋯ draws the same acts. The parked
+card, the intake cards, a chat's composer and the quest page lose their stops. The quest page's *Try again* also
+takes a `Stopped` verdict. `SESSION_OPEN_FOLDER` is on `DriverModule.Sessions.cs`. What the build settled that §3
+left open:
+
+- **One rule and one owner, in two files.** `work/acts.ts` is the rule, pure, which the molecules read
+  (`offeredActs`, `primaryAct`, `folderOf`, `stopAsk`). `work/sessionActs.ts` is the owner both doors call
+  (`useSessionActs`), an organism. A molecule imports no hook, so the rule could not live beside the bridge. What only
+  the frame can do (attend and answer, attend and ask to stop, review, a terminal there) goes through its `doors`, and
+  the monitor's list, which has none, offers its window and its id.
+- **A teammate's record offers Archive, Unarchive and its id at both doors.** §3.2's *Copy alone* rests on nothing
+  reaching its process, and an archive mark is this machine's (§5.2).
+- **Review is offered where there is work to read**: a tree its record names here, a landing, or *To review*. RAIL1
+  offered it on every row. **Open folder and a terminal** are offered where `folderOf` finds the tree, else the
+  checkout, never for an intake or Ask Daoris. The route opens only a tree this home opened or the registry's
+  checkout. Anything else, a teammate's record included, is `SESSION_FOLDER_GONE`. A system that will not open it is
+  `SESSION_FOLDER_NOT_OPENED`, as the log's and a plugin's are, and an id no record has is `SESSION_UNKNOWN` with
+  the `folder` context.
+- **A driven session whose quest the page holds as open has not taken it**, so its ask says another machine may.
+- **One toast per outcome on both pages**: `retryNotice` reads `RETRY_QUEST`'s `retried.did`, so a mark is
+  `quests.detail.retried` and a release `quests.detail.released`.
+- **中文 says a stop's hold with the session the tick names.** `DriverLoop.TickConsideration` adds `heldBy`, and
+  `work.sitting.Stopped` reads it, never the driver's English. `i18n-check`'s `PASSED_FACTS` lets a passed-through
+  sentence's other language say the facts the page hands beside it. With no `heldBy`, the driver's words stand.
+- **SESSUX1c's leftover line**, *held here until you try again*, is built: `holdsQuest` reaches the page's grouping,
+  and *Try again* reads it too.
+- **Names.** 中文 `work.act.stopMeanIt` is 确认停止会话, not §8's 确认停止: the names check holds a button that says
+  *session* to say 会话. `work.composer.stop` stays for Ask Daoris's panel, §3.3's exception. `work.awaiting.stop`,
+  `quests.session.stop` and `work.rail.menu.review` are retired, since the review is `work.head.review` on both doors.
+  The glossary gains *try again* 重试.
+
+Held by `acts.test.ts`, `sessionActs.test.tsx`, `SessionPageHead.test.tsx`, `SessionRow`, `SessionList`,
+`SessionRail`, `WorkFrame`, `Composer`, the cards' tests, `QuestsView.shell.test.tsx`, `signals.test.ts`,
+`bridge/sessions.test.tsx`, `DriverModuleSessionsTests` and `TickConsiderationTests`, and the stories. Each was seen
+failing first, bar the row's tests, rewritten with the rule they draw. **Not built here**: the header's *Delete…*
+(SESSUX1f) and *Stop…*'s Ask Daoris door (SESSUX1h). **Not measured**: the header at 1280, 888, 680 and 560 px in both
+themes and languages, the long run's toolbar pinned beneath it, and a real stop's ask (§12).
 ## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
 
 **Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
