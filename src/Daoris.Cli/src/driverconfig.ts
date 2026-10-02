@@ -808,12 +808,14 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     }
 
     // PAUSE1a (D132 §2.5): each pause this machine keeps, when it was made and the stops it made. Its words say paused,
-    // never held (design §8.1): a hold stops nothing that runs, and a pause does.
+    // never held (design §8.1): a hold stops nothing that runs, and a pause does. PAUSE1b: and the door that resumes it,
+    // daoris-driver's, which reads the work and reaches the running loop (§7.2), since this command talks to nothing (D50).
     for (const [scope, pauses] of [['ask', choices.pausedAsks], ['quest', choices.pausedQuests]] as const) {
       for (const [id, pause] of Object.entries(pauses)) {
         const when = pause.at === null ? 'when is not recorded' : `since ${pause.at.toISOString().replace(/\.\d{3}Z$/, 'Z')}`;
         const stops = Object.keys(pause.stopped).sort().map((quest) => `#${quest}'s session ${pause.stopped[quest]}`);
-        write(`  paused     ${scope} #${id}  (${when}${stops.length > 0 ? `; its pause stopped ${stops.join(', ')}` : ''})`);
+        const resume = scope === 'ask' ? `daoris-driver ask --resume ${id}` : `daoris-driver quest resume ${id}`;
+        write(`  paused     ${scope} #${id}  (${when}${stops.length > 0 ? `; its pause stopped ${stops.join(', ')}` : ''}) — resume: ${resume}`);
       }
     }
 
