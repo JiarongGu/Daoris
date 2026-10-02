@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1032 CLI tests, 916 service and 50 HTTP host, 2899 driver,
-523 desktop modules, 80 devkit, 2522 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
+**Counts, and this is their one home:** seventeen commands, **1032 CLI tests, 916 service and 50 HTTP host, 2959 driver,
+523 desktop modules, 80 devkit, 2563 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,522 of 26,000 bytes** — a span in
@@ -204,7 +204,6 @@ owner on 1 October.
   header, Stop… asking once, Try again, Open folder, a terminal here, the row's ⋯; the stop's other owners go.
   With SESSUX1b: the quest page's Try again for a `Stopped` verdict (today only `Exhausted`), its toast, and zh
   `work.sitting.Stopped`.
-- [ ] **SESSUX1e — archive on the screen** (§5.2, §5.3, §4.5; web-shell; after a, c).
 - [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
@@ -229,8 +228,6 @@ is what it reads and what it is led to read.
 
 - [ ] **SESSOPT1d — the backlog, trimmed by the rule** (the steward's, after b and c). Each over-long line moves to §4.3's
   home; FLAKE1, TEST1 and REH1 get open fix-log entries. Proof: `doc-budgets` ≤ 5,300 words; no row over 60.
-- [ ] **SESSOPT1e — the router's rows, by shape** (after b). Each *Where it stands* becomes a line naming its decision.
-  Contract: §4.4. Proof: no router row over 60; the router under 2,500 words.
 - [ ] **DOC7 — what sessions read, measured** (folded into D127 §6.1): `session.read` and `session.skill` in the machine
   log; the usage report gives reads per role, whole or not.
 
@@ -259,24 +256,34 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
   `.claude/` paths, which the quest's bounds forbade it to fix; `AGENTS.md` grew to 61 KB because the index lists all
   169 knowledge documents in the always-loaded region (budget raised to 54,000; one agent reads only 32 KB); 166 old
   documents have no frontmatter. The second repository waits for WSSETUP14.
-- [ ] **KNOW2 — the knowledge design, reviewed** (owner, 2026-10-02: whether the index is the right design at all, and
-  whether Lyntai's file mode is better). Compares the index, an index file, knowledge as skills, rooms, search-first, path rules,
-  per-prompt recall and Lyntai's file storage from the makers' documentation. Contract: D129 (in flight). Proof: the review.
-- [ ] **KNOW3 — the discovery bench** (owner, 2026-10-02: "run subagent test for a good design"). Real headless sessions
-  over this repository's docs measure each design's hit rate, calls and tokens per hit. Contract: the bench results
-  document (in flight). Proof: `tools/knowledge-bench.mjs`, its tests, and the run.
-- [ ] **WSSETUP14a — the index leaves the region** (**paused for KNOW2 and KNOW3**; after SESSOPT1a). `sync` writes `<target>/INDEX.md` with the knowledge
-  and skill tables; the region keeps the rules, a pointer, the rooms and *Where things are*. Contract: D128 §2.2–§2.5, §2.7.
-  Proof: a 169-document fixture leaves the region's bytes unchanged; this repository and both examples re-synced.
+- [ ] **WSSETUP14a — the index leaves the region** (after SESSOPT1a; as D129 amends it). `sync` writes `<target>/INDEX.md` with the knowledge
+  and skill tables; the region keeps the rules, a pointer, the rooms and *Where things are*. `doc-loader`, `skills-workflow`
+  and `development-documents` take the review's §4.2–§4.4 words (several wordings; the agent's own skill list first).
+  Contract: D128 §2.2–§2.5, §2.7, as D129 amends them. Proof: a 169-document fixture leaves the region's bytes unchanged;
+  the D48 §2a canon scan widened to a connected search; this repository and both examples re-synced.
 - [ ] **WSSETUP14b — a knowledge folder declared in place** (after 14a). `documents.knowledge` names a folder the index lists
   and the service indexes, which `sync` never writes. Contract: §1.2, §1.3. Proof: the twin tables matched.
 - [ ] **WSSETUP14c — a document without frontmatter, by its heading** (after 14a). Contract: §3.1, §3.2. Proof: `node --test`.
 - [ ] **WSSETUP14d — the set-up keeps the checks green** (after 14b). Checks first and at the close; knowledge kept in place;
-  only a moved path rewritten; never `done` red. Contract: §1.1, §1.4–§1.6, §3.3. Proof: `SetupBriefTests`, the playbook twin.
+  only a moved path rewritten; never `done` red. As D129 amends it: the close names each hand-written index, deletes none,
+  and new documents are named by their subject. Contract: §1.1, §1.4–§1.6, §3.3; D129's review §4.5. Proof:
+  `SetupBriefTests`, the playbook twin.
 - [ ] **WSSETUP14e — the follow-up for a set-up's branch** (after 14d). *Finish setting up this repository*, with the exact
   merge rule. Contract: §4.2. Proof: composer and press tests; the family rehearsal's set-up phase.
 - [ ] **WSSETUP14f — the pilot, finished** (the owner's run, after a republish). Checks green before and after, knowledge
   declared, the root file under 32,768 bytes, the budget back to the default. Contract: §4. Then WSSETUP13.
+- [ ] **KNOW3a — the bench at 169 documents, with opaque names** (KNOW3's hand-back). Whether D128's index is still read
+  whole at 54 KB, whether a harness shortens a long skill listing, and how the control fares when names say nothing.
+  Contract: the bench results §5, §6.1. Proof: a re-run with `tools/knowledge-bench.mjs`; its tests join `verify`.
+- [ ] **KNOW2a — the service's own recall, probed** (needed: KNOW3's push ranked by BM25, 5 of 12 in its top 5). Paraphrase
+  probes through searches of `INDEX.md` and through `knowledge_search`, recall at 3 and 5. Contract: D129's review §2.G,
+  §4.6. Proof: an evidence note and the script's tests; the meaning half is the owner's run (D24).
+- [ ] **KNOW2b — headlines in the driven prompt** (after KNOW2a and DOC7). Up to five recalled headlines in the target
+  prompt, a slot reserved per tier, nothing when the service is silent. Contract: review §4.6 items 1–3, 5. Proof:
+  driver tests; DOC7's knowledge reads before the first edit, before and after.
+- [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
+  `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
+  both doors; the composed settings' tests.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
   a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
   (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
@@ -422,8 +429,15 @@ the ACP door, not a registry**.
   waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
 - [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2): `rate_limit_event` and a limit's failed `result`,
   read keylessly from the maker's SDK declarations and labelled unmeasured; the first real one recorded.
-- [ ] **TOOL4f — rotation** (driver; §3; after TOOL4e): `SelectAsync`'s walk; a pick and the tool's own home never
-  rotated; a conversation only at its opening; the carry-on handed the last plan and last words; `account.rotated`.
+- [ ] **TOOL4j — the protocol stub on the stub's accounts** (driver; after TOOL4f, before TOOL4h; in flight). A limit read on
+  the protocol door cools a named stub account and the carry-on rotates. Contract: D125 §1.3 rule 4, §8. Proof: a
+  fast-half selection on `acp-stub` with an order; the real-process carry-on onto stub account 2.
+- [ ] **TOOL5 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
+  how switch works and how to optimize the account use since there are 3 accounts"*; then: all three may run the work
+  workspace, by the allowance each has left, one by one, in parallel or by other logic, configurable; any number of
+  accounts, three is only today's). Modes, which
+  accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130 (in
+  flight). Proof: the design.
 - [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL4f):
   the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
   the cool-off setting, the doors; both languages (D116); the look on the window. The modules' *Remove* must call

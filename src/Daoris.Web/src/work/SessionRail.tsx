@@ -3,14 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
-  type SessionHit, useDriver, useOpenWindow, useSessionGroups, useSessionOpenings, useSessionSearch, useSessionWhere,
+  type SessionHit, useArchiveSessions, useDriver, useOpenWindow, useSessionGroups, useSessionOpenings, useSessionSearch,
+  useSessionWhere,
 } from '../shell';
-import { Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
+import { failure, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
-import type { SessionArrangement } from './groups';
+import { endedToArchive, type SessionArrangement } from './groups';
 import { SessionRow } from './SessionRow';
-import { type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
+import { ArchiveEndedAsk, type RepositoryFacts, SessionList, type SessionRowFacts, SessionStrip } from './SessionList';
 import { isIntake, ownTree, sessionTitle } from './identity';
 import { byName, marked, readable } from './railSearch';
 import { sessionWindowName } from './window';
@@ -32,10 +33,13 @@ import { sessionWindowName } from './window';
  * has come, is placed by its record alone (`groups.ts`) until the next answer. **A browser has no driver to ask**, so
  * its list is the arrangement it always had, by repository (D47 §4); and the monitor's list, the present tense only,
  * asks nothing and keeps it too.
+ *
+ * **Archive is sent from here** (SESSUX1e, D126 §5.2, §5.3): a row's *Archive* and *Unarchive*, and *Archive what
+ * ended…*'s two presses, each through `useArchiveSessions`, the host judging every session as it is asked.
  */
 export function SessionRail({
   selected = null, onSelect, notify, compact = false, onReview, taking = {}, lastTurns = {}, live = false,
-  arrangement = 'state', archived = false,
+  arrangement = 'state', archived = false, archiveEnded = false, onArchiveEnded,
 }: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
@@ -66,6 +70,12 @@ export function SessionRail({
   arrangement?: SessionArrangement;
   /** Whether archived sessions are shown (D126 §4.1). */
   archived?: boolean;
+  /**
+   * *Archive what ended…* pressed in the list's ⋯ (SESSUX1e, D126 §5.3): its first press, listed under the list's header
+   * until it archives or the person never minds, which `onArchiveEnded` tells the frame.
+   */
+  archiveEnded?: boolean;
+  onArchiveEnded?: () => void;
 }) {
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
@@ -89,6 +99,7 @@ export function SessionRail({
   const listed = (sessions.data ?? []).filter((session) => !live || SESSION_ACTIVE.has(session.state) || session.id === selected);
   // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows listed.
   const where = useSessionWhere(listed);
+  const archive = useArchiveSessions();
   // Searching (RAIL1): by name at once, and by what was said once the typing settles.
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 250);
@@ -115,10 +126,32 @@ export function SessionRail({
   }));
   const placed = new Map((groupings ?? []).map((row) => [row.session, row]));
 
+  // Archive and unarchive one session from its row (SESSUX1e, D126 §5.2). Asked of one, a refusal is the host's answer,
+  // said in the catalogue's words with the group that kept it; one that was not archived is information (D48 §6).
+  const archiveOne = (id: string, mark: boolean) => archive.mutate({ ids: [id], archived: mark }, {
+    onSuccess: (answer) => notify(t(mark ? 'work.archive.done'
+      : answer?.notArchived?.includes(id) ? 'work.archive.wasNot' : 'work.archive.back')),
+    onError: failure(notify),
+  });
+  // *Archive what ended…*'s second press (§5.3): what its first listed, each judged again by the host as it goes. What
+  // changed since the list is kept and counted, never refused as a whole.
+  const archiveListed = (ids: readonly string[]) => archive.mutate({ ids, archived: true }, {
+    onSuccess: (answer) => {
+      const kept = answer?.kept?.length ?? 0;
+      notify(kept > 0
+        ? t('work.archive.endedKept', { archived: ids.length - kept, count: ids.length })
+        : t('work.archive.ended', { count: ids.length }));
+      onArchiveEnded?.();
+    },
+    onError: failure(notify),
+  });
+
   const acts = {
     onSelect,
     onDetach: (id: string) => openWindow.mutate(sessionWindowName(id)),
     onReview,
+    onArchive: (id: string) => archiveOne(id, true),
+    onUnarchive: (id: string) => archiveOne(id, false),
     onCopy: (id: string) => {
       void navigator.clipboard?.writeText(id).then(() => notify(t('work.rail.menu.copied', { id })), () => {});
     },
@@ -177,13 +210,28 @@ export function SessionRail({
       root={registered.get(session.repository)?.root}
       where={where[session.id]}
       grouping={live ? null : placed.get(session.id)}
+      // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
+      archived={!live && Boolean(placed.get(session.id)?.archived)}
       selected={session.id === selected}
       {...acts}
     />
   );
 
+  // *Archive what ended…*'s first press (§5.3), once the reader has answered: what it says is what it lists, and a list
+  // read before the answer would say nothing ended.
+  const asking = archiveEnded && !live && groupings !== undefined;
+
   return (
     <nav aria-label={t('work.rail.label')}>
+      {asking && (
+        <ArchiveEndedAsk
+          {...endedToArchive(listed, groupings)}
+          busy={archive.isPending}
+          onArchive={archiveListed}
+          onCancel={() => onArchiveEnded?.()}
+        />
+      )}
+
       {/* Searching (RAIL1): on the open rail only — the strip has no room to type in. Escape clears it,
           and the rail's own list comes back. The list's full empty state has no search above it. */}
       {rows.length > 0 && (

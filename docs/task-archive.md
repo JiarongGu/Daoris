@@ -9571,3 +9571,44 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > its detail lives. Contract: §4.1. Proof: the next merge's archive entry is 60 words or fewer.
 
 **Outcome** The dispatch skill's hand-back carries a one-line outcome and where its detail lives; doc-shapes' archive cut-over is 2026-10-02. Detail: D127 §4.1, commit `65de273`.
+
+
+## SESSUX1e — archive on the screen (2026-10-02)
+
+> - [ ] **SESSUX1e — archive on the screen** (§5.2, §5.3, §4.5; web-shell; after a, c).
+
+**Outcome** Archive and Unarchive on a session's row, Show archived and Archive what ended… (listed first, archived on the second press) in the list's ⋯, each refusal in the catalogue's words. Detail: D126's SESSUX1e note, commit `75ea84a`.
+
+
+## SESSOPT1e — the router's rows, by shape (2026-10-02)
+
+> - [ ] **SESSOPT1e — the router's rows, by shape** (after b). Each *Where it stands* becomes a line naming its decision.
+> Contract: §4.4. Proof: no router row over 60; the router under 2,500 words.
+
+**Outcome** Each router row's *Where it stands* is one line naming its decision, so a build edits no row: 0 of 72 over 60 words, the router 2,246 words from 3,415. Detail: `fa031e3`'s body (where each list now lives; WSSETUP10's note under D124).
+
+
+## KNOW2 — the knowledge design, reviewed (2026-10-02 → D129)
+
+> - [ ] **KNOW2 — the knowledge design, reviewed** (owner, 2026-10-02: whether the index is the right design at all, and
+> whether Lyntai's file mode is better). Compares the index, an index file, knowledge as skills, rooms, search-first, path rules,
+> per-prompt recall and Lyntai's file storage from the makers' documentation. Contract: D129 (in flight). Proof: the review.
+
+**Outcome** Reviewed from the makers' documentation: D128's index stays as the floor, recall by meaning is pulled where connected and pushed only where Daoris writes the prompt, and Lyntai's file store is declined as the store. Detail: D129, the review's §4–§5, `d6b0280`.
+
+
+## KNOW3 — the discovery bench (2026-10-02)
+
+> - [ ] **KNOW3 — the discovery bench** (owner, 2026-10-02: "run subagent test for a good design"). Real headless sessions
+> over this repository's docs measure each design's hit rate, calls and tokens per hit. Contract: the bench results
+> document (in flight). Proof: `tools/knowledge-bench.mjs`, its tests, and the run.
+
+**Outcome** 72 real headless sessions over six designs all found every document; the region's table costs 9,447 tokens on every request, D128's index one more call (read whole each time), and a pushed top 5 was cheapest when ranked right. Detail: `docs/2026-10-02-knowledge-bench-results.md` §3, §6.
+
+
+## TOOL4f — rotation (2026-10-02)
+
+> - [ ] **TOOL4f — rotation** (driver; §3; after TOOL4e): `SelectAsync`'s walk; a pick and the tool's own home never
+> rotated; a conversation only at its opening; the carry-on handed the last plan and last words; `account.rotated`.
+
+**Outcome** A start whose default account is not ready runs on the next ready account of the person's order, said in its record and logged as `account.rotated`; a carry-on is handed the last plan and last words. Detail: D125's TOOL4f note, `0498853`.

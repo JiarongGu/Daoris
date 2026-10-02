@@ -286,6 +286,8 @@ public sealed class AskAndWaitTickTests : IDisposable
                             ["id"] = $"s{_sessions.Count + 1}", ["quest"] = body["quest"]!.GetValue<string>(),
                             ["repository"] = "engine", ["state"] = "queued", ["kind"] = "drive",
                             ["tree"] = body["tree"]?.GetValue<string>(),
+                            // The account it runs on, as the service answers it on loopback (TOOL4f reads it back).
+                            ["profile"] = body["profile"]?.GetValue<string>(),
                             ["created"] = DateTimeOffset.UtcNow.AddMinutes(_sessions.Count).ToString("O"),
                         };
                         _sessions.Add(session);

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
+import { Fragment, type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
 import { Button, EmptyState, Icon, Menu, SkeletonRows, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';
@@ -246,8 +246,11 @@ export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
   );
 }
 
-/** One of the ⋯'s items: an act, or a toggle where it says whether it is on (a filter: *Include closed*). */
-export type MoreItem = { id: string; label: string; checked?: boolean };
+/**
+ * One of the ⋯'s items: an act, or a toggle where it says whether it is on (a filter: *Include closed*). `rule` draws a
+ * rule above it, setting an act apart from the filters before it (Sessions' *Archive what ended…*, D126 §4.1).
+ */
+export type MoreItem = { id: string; label: string; checked?: boolean; rule?: boolean };
 
 /** One value among several, a filter's (*Receiver*): named above its options, the chosen one ticked. */
 export type MoreChoice = {
@@ -300,17 +303,22 @@ export function ListMore({ label, items = [], choice, onChoose }: {
             {items.length > 0 && <Menu.Separator />}
           </>
         )}
-        {items.map((item) => (item.checked === undefined
-          ? (
-            <Menu.Item key={item.id} tick={ticks ? false : undefined} onSelect={() => onChoose?.(item.id)}>
-              {item.label}
-            </Menu.Item>
-          )
-          : (
-            <Menu.CheckboxItem key={item.id} checked={item.checked} onCheckedChange={() => onChoose?.(item.id)}>
-              {item.label}
-            </Menu.CheckboxItem>
-          )))}
+        {items.map((item) => (
+          <Fragment key={item.id}>
+            {item.rule && <Menu.Separator />}
+            {item.checked === undefined
+              ? (
+                <Menu.Item tick={ticks ? false : undefined} onSelect={() => onChoose?.(item.id)}>
+                  {item.label}
+                </Menu.Item>
+              )
+              : (
+                <Menu.CheckboxItem checked={item.checked} onCheckedChange={() => onChoose?.(item.id)}>
+                  {item.label}
+                </Menu.CheckboxItem>
+              )}
+          </Fragment>
+        ))}
       </Menu.Content>
     </Menu.Root>
   );

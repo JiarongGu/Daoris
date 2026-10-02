@@ -266,10 +266,12 @@ public static class CoolingWords
     public static string When(DateTimeOffset moment, TimeZoneInfo zone) =>
         $"{TimeZoneInfo.ConvertTime(moment, zone).ToString("MMM d, HH:mm", CultureInfo.InvariantCulture)} ({ZoneName(zone)})";
 
-    private static string Who(CoolingEntry entry) =>
+    /// <summary>Whose account: by its owner and profile name, or the tool's own sign-in. Read by <see cref="RotationWords"/> too (TOOL4f).</summary>
+    internal static string Who(CoolingEntry entry) =>
         entry.Account is { } account ? $"the `{entry.Agent}` account `{account}`" : $"`{entry.Agent}`'s own sign-in";
 
-    private static string Why(CoolingEntry entry) =>
+    /// <summary>Why it lasts until then: the agent said so, or Daoris's default stood in.</summary>
+    internal static string Why(CoolingEntry entry) =>
         entry.Stated ? (entry.AssumedZone ? "as the agent said, in this machine's zone" : "as the agent said")
         : entry.NotBelieved ? "Daoris's default: the agent named a date more than 8 days off"
         : "Daoris's default: the agent named no time";
@@ -282,7 +284,8 @@ public static class CoolingWords
 }
 
 /// <summary>
-/// The machine log's account lines (TOOL4d, D125 §5.4, D94 §4): <c>account.limited</c> and <c>starts.waiting</c>, each with
+/// The machine log's account lines (TOOL4d, D125 §5.4, D94 §4): <c>account.limited</c>, <c>starts.waiting</c> and, since TOOL4f,
+/// <c>account.rotated</c>, each with
 /// the fields its catalogue gives it and nothing else. An account is its profile name, null for the tool's own home:
 /// never a key, a key's handle, who signed in, or the agent's sentence.
 /// </summary>
@@ -309,6 +312,18 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
         [
             ("adapter", adapter), ("account", Profile(account)), ("workspace", workspace), ("until", AccountCooling.Stamp(until)),
             ("quests", quests),
+        ]);
+
+    /// <summary>
+    /// A start that ran on another account of the person's order because its own was not ready (TOOL4f, D125 §5.4).
+    /// </summary>
+    /// <param name="from">The account the resolution named.</param>
+    /// <param name="to">The account the start ran on.</param>
+    /// <param name="carries">The cut-off session a carry-on carries on, or null for any other start.</param>
+    public static AccountLine Rotated(string session, string adapter, string from, string to, string? carries) =>
+        new("account.rotated",
+        [
+            ("session", session), ("adapter", adapter), ("from", Profile(from)), ("to", Profile(to)), ("carries", carries),
         ]);
 
     private static string? Profile(string? account) => account is not null && Name.IsMatch(account) ? account : null;

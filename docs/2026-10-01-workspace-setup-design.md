@@ -178,6 +178,11 @@ the command at the lock's version. D124's note has the rest.*
 
 ## 2. The set-up quest, for a repository nobody adopted
 
+> **Amended by D128** (`docs/2026-10-02-setup-pilot-lessons-design.md`, WSSETUP14), to be built as WSSETUP14d–e: the
+> repository's checks run first and are compared at the close, and one gone red never closes `done` (§2.3, §2.7); its
+> knowledge stays where it is, declared (§2.5); §2.6's bounds are that design's §1.5; and a set-up's branch standing
+> unlanded is a follow-up's case, not a refusal (§2.1).
+
 ### 2.1 Who may be set up: the refusals
 
 The set-up's subject is a row that is addressable and neither adopted nor declared: every repository in the

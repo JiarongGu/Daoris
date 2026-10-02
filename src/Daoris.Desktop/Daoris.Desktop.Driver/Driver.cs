@@ -786,12 +786,29 @@ public sealed partial class Driver(
         starting?.Dispose();
         onOpened();
 
+        // A start on another account of the order (TOOL4f, D125 §3.6): its record's first line names both accounts and,
+        // for a carry-on, the cut-off session and the turn a limit refused; the log says `account.rotated`.
+        var prior = carryingOn ? start.Resumes : null;
+        RotatedOpening.Say(
+            service, _events, sessionId, config.Adapter, selection,
+            prior is null
+                ? null
+                : new RotatedOpening.Carried(
+                    prior.Session,
+                    prior.Limit ? TurnsEnded(_events, prior.Session) + 1 : null,
+                    prior.Limit ? RotatedOpening.ContextOf(usage, _events, prior.Session) : null));
+
         try
         {
             var adapter = _adapters.Resolve(config.Adapter);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
             // every harness's instruction carries.
             var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
+            // What the cut-off session left in Daoris's own record (TOOL4f, D125 §3.5): its last plan and its last words,
+            // which every carry-on is handed, since a cut-off for any reason loses the same thread. And whether it ran on
+            // another account that is now cooling, which only a limit makes so.
+            var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
+            var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with
             {
                 ReadsAcross = across.Reads,
@@ -813,6 +830,9 @@ public sealed partial class Driver(
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
                 // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
                 Released = carryingOn && start.Resumes!.PersonStopped,
+                LastPlan = lastPlan,
+                LastWords = lastWords,
+                AccountChanged = elsewhere && prior!.Limit && _harnesses.CoolingOf(config.Adapter, prior.Profile) is not null,
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
@@ -831,6 +851,9 @@ public sealed partial class Driver(
                                 : start.Resumes.PersonStopped
                                     ? $"carries `#{quest.Id}` on: you stopped session `{start.Resumes.Session}`, and released it"
                                     : $"carries `#{quest.Id}` on after session `{start.Resumes.Session}` was cut off")
+                              // 🔴 Which account, never (TOOL4f, D125 §3.6): the note travels, and its scrubber elides
+                              // only the record's own account, so another account's name here would reach a teammate.
+                              + (elsewhere ? ", on another account" : "")
                               + (resumedIn is null ? "." : ", in the tree it worked in.")
                             : null),
                 ct: ct).ConfigureAwait(false);
@@ -1465,6 +1488,25 @@ public sealed partial class Driver(
         foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
         return carried;
     }
+
+    /// <summary>
+    /// What a carry-on is handed of the session it carries on (TOOL4f, D125 §3.5), from Daoris's own record of it (D76):
+    /// its plan as the record last kept it, and its last words, bounded as a parked session's are. Never a path: a
+    /// machine path lands in whatever a session commits.
+    /// </summary>
+    internal static (IReadOnlyList<PlanEntry> Plan, string? Words) CarriedFrom(SessionEvents events, string home, string session)
+    {
+        // An id that is not one names no record, and never a path under the home.
+        if (!SessionEvents.IsId(session)) return ([], null);
+        return (events.LastPlan(session), ParkedWords(events, session, Path.Combine(home, "sessions", $"{session}.log")));
+    }
+
+    /// <summary>
+    /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
+    /// against the selection's, compared as the wiring compares names, null being the tool's own home.
+    /// </summary>
+    internal static bool OnAnotherAccount(PriorSession prior, string? profile) =>
+        !string.Equals(prior.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>
     internal const int LastWordsLimit = 4000;

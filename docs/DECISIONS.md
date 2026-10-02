@@ -3628,6 +3628,11 @@ ended the same way, on an account limit (ACPEND1).
 *Amended by D104 (DRV8, 2026-09-30): a last session that ended `stopped` and interrupted — by the orphan
 sweep or the driver's shutdown, not the person — is a cut-off too, carried on and counted the same way.*
 
+*Amended by D125 (TOOL4f, 2026-10-02): the instruction also carries the cut-off session's last plan and last words,
+from Daoris's own record of it, and after an account's limit says the last session ran on another account, now
+cooling. The carry-on may run on the next account of the person's order; the harness's own conversation stays in the
+first account's home and is never read.*
+
 ## D81 — A driven session works in its harness's own judged mode, as a regular session would (2026-09-27)
 
 **Decision.** On the protocol door, Claude Code sessions drive in `auto`, the harness's own mode in
@@ -4162,6 +4167,11 @@ and times: an answer is its word (`allow`, `hold`, `pushed`…), never its reaso
 plugin wrote to stderr reaches a line, since no writer takes words as a parameter. `stopped` and `failed` carry `by`
 as `started` does, so a reader can tell the loop's process from a landing's one frame. `tested` has its shape and no
 writer until PLUGUI1g. The machine-log design's §4 says, as built, what each line measures.*
+
+*Amended by D125 (TOOL4d and TOOL4f, 2026-10-02): the catalogue gains three account events, `account.limited`,
+`starts.waiting` and `account.rotated` {session, adapter, from, to, carries}, each naming an account by its profile
+name and never a key, its handle, who signed in or the agent's sentence. The machine-log design's §4 says, as built,
+what each line measures.*
 
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
@@ -7779,6 +7789,10 @@ writes, and 44 breakages, each of one claim, were each caught by the check that 
 **Not run in the branch**: the family rehearsal. This branch does not carry WSSETUP6's code: the phase was written from
 that branch's sources, read and not merged, so it needs WSSETUP6 merged first.
 
+*Built by WSSETUP10 (2026-10-01): §6.3, the canon's line.* The canon's `autonomous-development` gained *Look before
+you ask*, with an entry under the canon changelog's Unreleased, and this repository and both examples were re-synced in
+the same commit. Its archive entry has the rest.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
@@ -7962,25 +7976,6 @@ and swapped in whole. What the design left open, settled here:
   WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
   desktop tree.
 
-**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
-`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
-`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
-`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
-- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
-  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
-  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
-  older than the lock.
-- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
-  version to read is left to the refusals that already name it.
-- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
-  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
-  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
-- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
-- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
-  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
-  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
-  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.
-
 ## D125 — An account's limit is read from the agent's own words, cools that account until the reset it names, and is never a strike; rotation moves the next start to the next account of the person's order (2026-10-02)
 
 **Decision (TOOL4).** The owner, 2026-10-01, continuing after their own assistant hit its weekly limit and they signed
@@ -8155,6 +8150,48 @@ carry-on closes the quest), and `AcpTurnFailureTickTests` was changed with it: i
 carry-on case is cut off by a refusal no table knows. A sign-in's end through `LoginAsync` is reached only by a real
 process, which no test runs. The note's time names the machine's zone, which travels with the note as the agent's own
 sentence already did. Nothing on the screen shows any of it yet (TOOL4g).
+
+**Built 2026-10-02 (TOOL4f): rotation** (points 4, 6 and 7; design §3, §3.7, §4, §5.4), held by `AccountRotationTests`,
+`AccountRotationHoldTests` and `CarryOnHandedTests`. What building it settled:
+- **The walk is a list, then a look.** `AccountRotation.Candidates` is pure: the resolved account, and only where a
+  default named it and the applicable order lists it, the rest of the order after it, wrapping. An order naming an
+  account with no directory here is never rotated into, since a start there would fail where it should wait.
+  `SelectAsync` reads each candidate's cool-off and AGT3b's refusals first, and probes only when one is ready on both
+  counts; signed out is read from the probe, re-asked once per start, and walked past alike. The first ready runs,
+  and the selection carries `Rotated`: the account the default named and why, as a clause naming it.
+- **A wait over an order holds on the first reset.** The selection's `Cooling` is the cool-off that ends first, so the
+  look's wait, `starts.waiting` and the attention name that account and time. The sentence says every account is
+  cooling, or lists each account and why when some are refused or signed out. With none cooling, nothing comes ready
+  by itself, so the default's own refusal, which names its fix, is the answer.
+- **A pick on a cooling account** is refused with the hold's sentence and the accounts ready now, by name. Naming them
+  asks the probe the conversation was about to make, since a pick is a person's start, never a look.
+- **Every rotated start says it once its record opens** (`RotatedOpening.Say`): its conversation record's first line
+  names the account it opened on and why, and `account.rotated` is written. That covers a driven start, a carry-on,
+  an intake, a conversation and Ask Daoris's opening. A carry-on's line adds the cut-off session and, after a limit,
+  its refused turn and its context: usage's high-water, else the record's own usage reports. `carries` is the
+  cut-off session for a carry-on alone.
+- **The carry-on is handed what Daoris kept** (D80 amended): its record's last plan, at most 50 steps, each with its
+  status in the wire's word; and its last words, bounded as a parked session's card bounds them, from the record or
+  else the transcript's last plain lines. After a limit it is told the last session ran on another account, now
+  cooling, which needs three facts: the record says `limit`, it ran on another account (`PriorSession.Profile`, read on
+  loopback with `Limit`), and that account still cools. None of it names an account. With nothing kept, the
+  instruction reads as it did, byte for byte.
+- **The note, which travels, says `on another account`** where a carry-on runs on a different account than the cut-off
+  session did, and names neither.
+- **The wiring panel shows the account a start takes**: `StartWiring.Profile` is the rotated account, and
+  `RotatedFrom` the one its rung named, so MAP1b's rule holds. The modules' `STARTS` route does not send
+  `RotatedFrom` yet.
+- **The words are the driver's, verbatim** (D24), in one place (`RotationWords`), with the glossary's names: an
+  account, signed in, the tool's own sign-in. The page shows them as it shows every driver sentence. Saying them in
+  both languages needs a code and parameters, which is the modules' and the web's (TOOL4g).
+
+**What the gates do not cover.** The `Process` half was not run by this branch. `AccountRotationTickTests` runs a
+carry-on on the pipe stub with two accounts, account-1 cooling, and checks the result: it runs on account-2 in the
+cut-off session's tree, its record names account-2, its note names the cut-off session and no account, it is handed
+the last words, its record opens naming both accounts, the log line is written, and account-1 takes the next start
+once ready. It also walks past a signed-out account through a real probe. The limit there is replayed as the driver records one, since the protocol
+stub reads the stub's table but runs on its own sign-in alone (TOOL4d): TOOL4h's two stub accounts on the protocol
+door need that door to run on the stub's accounts, a driver change no row holds yet. A real rotation is TOOL4i's.
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
@@ -8508,3 +8545,174 @@ blank line when the next line is indented, since a reader sees that paragraph as
 831 words, not §1.4's 769. An archive heading with no date is counted as undated and is not measured. Proof:
 `doc-shapes.test.ts`, ten cases, each seen failing against a stub first. Not covered: the adopter's own record
 formats, which stay out of `check` (§3.2).
+
+**As built (SESSUX1e, 2026-10-02): archive on the screen.** A row's ⋯ offers *Archive* where the reader placed the
+session in Ended and *Unarchive* wherever its mark stands. Sessions' ⋯ gains *Show archived*, the filter's `archived`
+kept beside the arrangement, and below a rule (`MoreItem.rule`) *Archive what ended…*. `SessionRail` sends each through
+`useArchiveSessions`. `ArchiveEndedAsk`, a molecule in `work/SessionList.tsx`, is the bulk's first press, listed by
+`endedToArchive` in `work/groups.ts`. What the build settled that §3.1 and §5 left open:
+
+- **The acts are the rail's until the header exists.** §3.1 gives every act one module, `work/sessionActs.ts`, for the
+  row and the header to share. The header is SESSUX1d's, after SESSUX1b, so the row's two archive acts and the bulk's
+  second press live in `SessionRail` for now, and SESSUX1d moves them when the header gives them a second door.
+- **Archive is offered only where the reader placed a session in Ended.** A record the reader has not answered for is
+  placed in Ended by its record alone (SESSUX1c's note), and may yet be to review, so it offers no *Archive* and the
+  bulk does not take it. *Unarchive* is offered wherever the mark stands, on a row that waits on you too, since the
+  reader keeps a session that needs the person in its group whatever its mark says.
+- **The bulk's first press holds what it listed.** It opens once the reader has answered. It says how many it would
+  take, and how many stay under *Waiting on you* and *To review*, counted as those headings count within the page's
+  scope. The second press sends exactly the ids the first listed, held from when the ask opened, since the reader
+  answers again on every tick. With nothing to take it says so and offers only *Close*, never a press that archives
+  nothing.
+- **What the second press kept is counted, not listed.** The route archives what may go and returns each kept session
+  with its code. The toast says *Archived N of M; the rest changed since the list*, and each kept row stands in the
+  group that now holds it. Asked of one session, a bulk list of one included, the route's refusal is the answer, said
+  in the catalogue's words, `SESSION_NEEDS_YOU`'s group through its context.
+- **An archived row says so where no heading does.** Under *Archived* the heading says it. By repository and in a
+  search (§4.5), the row's line starts with *archived*, and its tip says how it comes back. *Show archived* with
+  nothing archived draws *Archived (0)* and *Nothing archived*, so the tick never seems to do nothing.
+- **The glossary gains *archive*** (归档; its inverse 取消归档; never 存档 or 隐藏). The Chinese refusal SESSUX1a wrote
+  said 归档从不隐藏…, and now says 归档绝不会把需要你处理的会话移出列表, so the term's own avoid list holds of the
+  sentences `names-check --all` reads.
+
+Held by `groups.test.ts` (what the bulk takes), `SessionRow.test.tsx` (each act offered or absent by group, the line's
+mark, 中文), `SessionList.test.tsx` (Archived and its empty state, the ask's two presses, nothing to archive),
+`ListPane.test.tsx` (the rule), `SessionRail.test.tsx` (each act and refusal over a mocked bridge, the bulk's kept count,
+a search's mark), `WorkFrame.test.tsx` (the ⋯, remembered, and the ask opened from it), and the stories. Each was seen
+failing first. Two negative cases passed before the build: no *Archive* on a live, waiting or to-review row, and no
+Archived group while hidden. Each was then seen failing under a sabotage of the rule it holds. **Not built here**: the
+header's *Archive* and *Unarchive* (SESSUX1d) and *Delete…* (SESSUX1f). **Not measured**: the bulk's ask at 1280 and
+680 px, and *Archived* in both languages and both themes, which the window decides (§12).
+## D128 — A set-up keeps the repository's checks green, and the doctrine region lists only what the canon bounds: knowledge and skills are an index read on demand (2026-10-02)
+
+**Decision (WSSETUP14, from the first real set-up, WSSETUP12's).** On the report repository, the set-up's own
+session wrote good knowledge, a brief and rooms, closed its quest `done`, and left a branch that cannot be merged.
+It had moved 169 knowledge documents that its CI and a hook read by path, its region grew to 53,398 bytes with a
+row per document, and 166 rows read *needs frontmatter*. The contract is
+`docs/2026-10-02-setup-pilot-lessons-design.md`: checks kept green (§1), the index (§2), a document without
+frontmatter (§3), the pilot's branch (§4) and the build (§6).
+
+1. **Move only what an agent needs moved.** The repository's own knowledge stays where it is, declared as
+   `documents.knowledge`: a folder the index lists, the service indexes and `sync` never writes. Its skills move to
+   `.agents/skills/`, and the mirror keeps their old paths readable. Nothing else a check, script, hook or CI
+   configuration reads by path moves. Where a move still breaks a reader, the set-up rewrites that path, and only it.
+2. **A set-up runs the repository's checks before its first change and at its close.** One that passed before and
+   fails after means it does not close `done`. If the fix is outside its bounds, it stops and asks.
+3. **The bounds are rewritten** (design §1.5): a moved path is the one change allowed in a source, build or CI file,
+   and a set-up adds no frontmatter to a document the repository already had.
+4. **The region holds what the canon bounds**: the rules table, a pointer, the rooms, *Where things are* and every
+   rule in full. The knowledge and skill tables move to `<target>/INDEX.md`, which `sync` writes, `check` keeps true
+   and the lock names. `doc-loader` reads it, whole when short and by search when long.
+5. **A knowledge document without frontmatter is listed by its first heading**, in a table of its own, and `check`
+   reports how many once, never failing.
+6. **The pilot's branch is never merged red.** When the press finds a set-up's branch standing and not on the line,
+   it composes *Finish setting up this repository*: the checks first, that branch merged by one exact rule, the
+   knowledge put back and declared, a re-sync, and the same close.
+
+**Why.** The quest moved the documents and forbade repairing what the move broke, and nothing asked whether the
+checks still passed. Knowledge is reached through the index wherever it lives, while skills are read by folder
+(Claude Code `.claude/skills/`, codex and dsh `.agents/skills/`, from the entry-point evidence). So moving the
+knowledge bought no agent anything. `renderRoster` writes every knowledge and skill row before the rules. Measured on
+a fixture shaped like the pilot (design §0.3): a region of 46,279 bytes whose first rule starts at byte 37,046, past
+the 32,768 one agent reads; 63,527 had every document been described, so fixing frontmatter first makes it worse.
+The proposed region is 19,010 bytes with no knowledge of its own and with 169 documents. Here it drops from 24,064
+to about 19,650 bytes, which is what lets LAYOUT6's brief fit under 32,768.
+
+**Rejected** (design §1.7, §2.8, §3.4 and §4.3 have each with its reason):
+- **Rewriting every reader and keeping the move**: a large diff in files a doctrine change is not about, for
+  knowledge no agent reads by folder.
+- **Declaring skills in place**: a skill outside an agent's skill root reaches no agent.
+- **Only *red never closes done***: every repository with its own knowledge folder would stop the same way.
+- **A knowledge mirror or a link at the old path**, and **the canonical knowledge in the declared folder**.
+- **The canonical rows in the region and the repository's own on demand**, **knowledge by folder**, **a cap**,
+  **shorter rows**, **the rules before the tables**, and **raising the budget**.
+- **The set-up describing every old document**, **a capped number**, **a description guessed from the heading**,
+  and **keeping the warning**.
+- **Growing the follow-up's tree from the red branch**, and **repairing it by hand**.
+- D59's rejection of a pointer in place of the rules stands: this moves the list of the on-demand tiers, not a tier.
+
+**What it amends, when built.**
+- D124 §2.1 (the follow-up's case), §2.3 (the checks first, the knowledge in place), §2.5, §2.6 (the bounds) and
+  §2.7 (the close).
+- D117 §2.1 and §5.4 (a declared knowledge folder is read in place), §6.2's steps, and `LayoutFacts.Clean`.
+- D122 §2.7 (DOC3): `knowledge` takes a folder; `skill` stays refused.
+- D59, and D7 through it: the region's on-demand tables move to `<target>/INDEX.md`.
+- The canon's `doc-loader` (step 2) and `development-documents` (one sentence), with a changelog entry for every
+  adopter; the adoption playbook (local); BUDGET1's arithmetic.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The pilot's facts are the
+owner's report: the repository is private and was not read. The fixtures were synced by today's CLI in a gitignored
+scratch folder, and their names are shorter than the pilot's. *Proposed* bytes are the rendered region with its
+tables cut and a drafted pointer put in, never rendered by built code. No token was counted. What each agent lists
+and reads is the entry-point evidence's reading of shipped code, not a turn. Whether a real session runs the checks
+first and keeps them green is WSSETUP14f's to show. `verify` checks this entry's shape and the design's links, and
+none of their words.
+
+**Amended 2026-10-02 (KNOW2, D129).** The split stands. `doc-loader` step 2 searches a long index in more than one
+wording and asks a connected search too, `skills-workflow` sends a session to its agent's own skill list first, and
+`development-documents` gains a sentence on naming a document by its subject
+(`docs/2026-10-02-knowledge-design-review.md` §4.2–§4.4).
+
+## D129 — Knowledge is found from files first: D128's index is the floor, searched in several wordings, with recall by meaning pulled where connected and pushed only where Daoris writes the prompt (2026-10-02)
+
+**Measured (KNOW3, `docs/2026-10-02-knowledge-bench-results.md` §3, §6).** 72 real headless sessions over 73
+documents, one harness and one model: every design found every document, the control too, so the designs differ in
+cost, not recall. The region's table took the fewest calls and cost 9,447 tokens on every request (about 21,800 at
+169). D128's index cost one more call, and every session read it whole rather than searching it. A pushed keyword top
+5 was cheapest per hit when its ranking was right, which was 5 of 12 times. That confirms the index leaving the region
+and recall as an accelerator over a floor that finds without it. It leaves two things open, for KNOW3a: whether a
+54 KB index is still read whole, and whether a ranker by meaning lifts the push's 5 of 12.
+
+**Decision (KNOW2, the owner's question whether D128's index is the best knowledge design, and whether Lyntai's file
+storage is better).** The contract is `docs/2026-10-02-knowledge-design-review.md`: what each agent does today (§1),
+eight candidates (§2), the comparison for the 169-document repository (§3), the recommendation (§4) and the build
+(§5).
+
+1. **D128's split stands as the floor.** The region keeps the rules, the pointer, the rooms and *Where things are*;
+   `<target>/INDEX.md` lists the knowledge and the skills, generated by `sync` and held by `check`. It is the only
+   design that is bounded in the region, reaches every agent, needs nothing running and proves the list whole.
+2. **A long index is searched in more than one wording**: the task's words, their synonyms, and the folders it
+   touches. Where a search over the repository's knowledge is connected, it is asked too, beside the index searches.
+   A search that finds nothing has not shown that nothing applies.
+3. **A document is findable without the index**: named by its subject, with when it applies in its first lines.
+4. **`skills-workflow` names the agent's own skill list first** (+22 bytes in every region), since every agent lists
+   its skills and the region no longer does.
+5. **A set-up's close names each hand-written index** the repository keeps and how it differs from the generated
+   one, and deletes none.
+6. **Recall by meaning is the driver's accelerator, held for measurement**: up to five headlines in the driven
+   target prompt, one slot reserved for the best keyword match and one for the best meaning match, failing open;
+   then a prompt hook for chat sessions on Claude Code. Never in the canon or a committed file.
+7. **Lyntai's file storage is declined as the knowledge store**, the first-goal study §3's three reasons re-tested and
+   standing. Its reserved slots go into the recall's ranking; *headlines, then expand* is already Daoris's shape.
+
+**Why.** The makers converge on a headline per entry always loaded and the body on demand, each capping the headlines
+in its own budget by use, which a committed file cannot know; so the headlines go on demand, in one checked file. Every agent's own search is lexical, and on the owner's own memory store keyword search fell from 9 of 12 at 16
+entries to 4 of 13 at 112, while keyword and meaning together found 11 of 13. So D128's *search it when it is long*
+inherits the miss rate that grows with the store, and recall by meaning is the one channel cheap per find and robust
+to wording, which needs a running service and so can only accelerate. The owner's install shows sessions reading
+knowledge (25 of 89 reads in one session) and opening hand-written index files unprompted. The prompt Daoris composes
+reaches every agent on both doors, where a hook reaches one or two.
+
+**Rejected** (the review's §2 and §7 have each with its reason):
+- **The index in the region**: it grows with the repository, and the rules fall past codex's cut.
+- **Knowledge as skills**: the catalogs shed descriptions at 169 entries, and it is the move D128 forbids, mirrored.
+- **Knowledge in rooms as the mechanism**: cross-cutting knowledge has no folder, and codex never loads a room.
+- **Search with no index**: nothing proves the list whole, and an undescribed document escapes a frontmatter search.
+- **Path-scoped rules**: one format per agent, none on codex or dsh.
+- **Lyntai's file store**: one owner where git and every branch write, sequential ids, no vectors, and a .NET process
+  between the doctrine and its offline `check`.
+- **Push as doctrine or a committed hook** (D48 §2a, D32), **a threshold that moves the table in and out of the
+  region**, and **a cap on the index**.
+
+**What it amends, when built.** D128 §2.5 and the rows WSSETUP14a and WSSETUP14d; D124 §2.7 through D128 §1.6 (the
+close names hand-written indexes); the D48 §2a canon scan, which gains a connected search beside *quest*. The
+first-goal study §3 stands, re-tested. Each row that builds a piece notes the amendment where it lands.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The install's counts, the
+owner's store and its measurements, and Lyntai's lock and scan facts are the parent's reports, not re-run here. The
+makers' cells are their documentation as fetched on 2026-10-02, or the entry-point evidence's reading of shipped code;
+dsh's skill budget and prompt hooks, and hooks under codex-acp and in Daoris's composed settings, are not measured.
+Whether recall by meaning beats word searches on repository knowledge is KNOW3's to show, and its numbers were not in
+hand when this was written. `verify` checks this entry's shape and the review's links, and none of their words.

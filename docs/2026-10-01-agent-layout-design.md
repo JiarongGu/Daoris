@@ -428,6 +428,10 @@ The source's provenance header is unchanged (D14). A mirror's `SKILL.md` carries
 
 ### 5.4 The state space: D19, for a move
 
+> **Amended by D128** (`docs/2026-10-02-setup-pilot-lessons-design.md` §1.3, WSSETUP14b): a repository's own
+> knowledge in a folder declared as `documents.knowledge`, the old tier's among them, is read in place and never
+> moved or refused.
+
 A **move** is a repository whose manifest names a root or a descriptor other than the one its lock
 was written under. D19's table still applies to every document at its new root; the tables below are
 what the move adds. They are enumerated before implementation, as D19 says.

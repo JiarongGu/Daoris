@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../api';
 import {
-  cutEnded, GROUP_ORDER, keptSessionFilters, sessionFilters, type SessionGrouping, sessionsByRepository, sessionsByState,
+  cutEnded, endedToArchive, GROUP_ORDER, keptSessionFilters, sessionFilters, type SessionGrouping, sessionsByRepository, sessionsByState,
   shownOf, stripSessions, waitsOnYou,
 } from './groups';
 
@@ -109,6 +109,53 @@ describe('the list by state', () => {
 
   it('survives nothing at all', () => {
     expect(sessionsByState([], [], { selected: null, archived: false })).toEqual([]);
+  });
+});
+
+/**
+ * SESSUX1e, D126 §5.3: *Archive what ended…* takes every session the reader placed in Ended that is not archived, and
+ * says what stays in the list because it needs the person, by the headings the person sees.
+ */
+describe('what Archive what ended takes', () => {
+  const sessions = [
+    session({ id: 'p1', state: 'awaiting-person' }),
+    session({ id: 'f1', state: 'failed', quest: 'q1' }),
+    session({ id: 'r1', state: 'stopped' }),
+    session({ id: 'w1', state: 'working' }),
+    session({ id: 'a1', state: 'completed', quest: 'q2' }),
+    session({ id: 'c1', state: 'completed', updated: at(30) }),
+    session({ id: 'c2', state: 'declined', updated: at(5) }),
+    session({ id: 'x1', state: 'completed', updated: at(90) }),
+  ];
+  const groupings = [
+    grouping({ session: 'p1', group: 'you', shown: 'awaiting-person' }),
+    grouping({ session: 'f1', group: 'you', shown: 'parked', strikes: 3 }),
+    grouping({ session: 'r1', group: 'review', shown: 'stopped', work: { commits: 1, uncommitted: 0 } }),
+    grouping({ session: 'w1', group: 'working', shown: 'working' }),
+    grouping({ session: 'a1', group: 'later', shown: 'awaiting-reply', awaits: 'q9' }),
+    grouping({ session: 'c2', group: 'ended', shown: 'declined' }),
+    grouping({ session: 'c1', group: 'ended', shown: 'completed' }),
+    grouping({ session: 'x1', group: 'archived', shown: 'completed', archived: true }),
+  ];
+
+  /** Never a live session, never what needs the person, never one already archived: only Ended, in its order. */
+  it('takes what the reader placed in Ended, and counts what stays because it needs you', () => {
+    expect(endedToArchive(sessions, groupings)).toEqual({ going: ['c2', 'c1'], kept: { you: 2, review: 1 } });
+  });
+
+  /** A record the reader has not answered for may yet be to review, so the list that archives leaves it to the next look. */
+  it('leaves a session the reader has not answered for', () => {
+    const since = session({ id: 'n1', state: 'completed', updated: at(0) });
+    expect(endedToArchive([...sessions, since], groupings).going).toEqual(['c2', 'c1']);
+  });
+
+  /** The page's scope: a session the page does not hold is not archived from it. */
+  it('takes only what the page holds', () => {
+    expect(endedToArchive([sessions[5]!], groupings)).toEqual({ going: ['c1'], kept: { you: 0, review: 0 } });
+  });
+
+  it('takes nothing where no reader answered', () => {
+    expect(endedToArchive(sessions, undefined)).toEqual({ going: [], kept: { you: 1, review: 0 } });
   });
 });
 
