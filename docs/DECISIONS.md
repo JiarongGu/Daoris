@@ -9070,6 +9070,33 @@ saying why. An answer on another stub account never asks the stub to resume. Its
 the real service still ends the record as it takes the answer, so until ANSWER1b lands every answer reads `ended` and
 is carried on as before. The page still shows an answered park as waiting on the person for up to one look (ANSWER1c).
 The family rehearsal's protocol stub was not taught `session/resume`: no rehearsal reaches a resume before ANSWER1b.
+
+**Built 2026-10-02 (ANSWER1b): the service's half** (point 6; design §5), held by `SessionLedgerTests`,
+`SessionStoreTests` and `LocalHostTests`, and the family rehearsal's 17a and section 4. What building it settled:
+- **The answer keeps the park in one step**, under the store's write lock as a move is (REV3), so a second answer and
+  the driver taking the park up never both read it parked. It is a new revision, so its note travels as a move's does;
+  the words themselves are still answered to this machine only.
+- **A second answer replaces the first** on the record and on the note. The note's *Answered:* line is replaced only
+  where it ends the note and quotes the answer held, so nothing else the note says is ever cut.
+- **Clearing is the ledger's to say** (`SetStateAsync`'s `clearAnswer`), on a move into `awaiting-person` alone: working
+  keeps the answer while it is worked on, and `completed` keeps it for the fallback's open, which still carries on a
+  `completed` record with an answer.
+- **The reply is the session as it stands**, still parked, which is how `ServiceClient.AnswerSessionAsync` tells the
+  watchers nothing moved; its sentence says it carries the quest on at the driver's next look. An answer once the
+  driver has taken the park up is refused naming the state the record is in.
+- **The rehearsal's park is a carry-on's.** The protocol stub takes through the service's HTTP door, which marks no
+  session as the taker, so a first session ending with its quest taken reads as a stand-down; a session carrying a
+  take on parks (D80). So 17a makes the cut-off through the doors as section 4 does, the driver carries it on, its
+  session asks, `daoris-driver answer` answers, and the next look resumes the same record's conversation over
+  `session/resume`. The stub advertises `resume` as the real adapter does, and resumes whatever conversation it is
+  asked, keeping no history.
+
+**What the gates do not cover.** The family rehearsal was written, not run: it is the parent's to run at the merge,
+with `AnswerContinuesTickTests`. A take through a connector, which a real agent's first session parks on, is
+`McpToolsTests`' (STANDDOWN2), not 17a's. Words in lanes this branch does not hold still say an answer ends the
+record: the headless host's usage for `answer`, and the comments on the page's answer box, its query and its frame
+(ANSWER1c's lane).
+
 ## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
 
 **Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
@@ -9304,123 +9331,6 @@ measured: whether a day is the right horizon, or whether spreading meets fewer l
 say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
 suites, the web's and the rehearsals were not run.
 
-## D131 — An answer continues the session: its record reopens and its harness conversation resumes where the account, the adapter and the tree are the same; otherwise today's carry-on, saying why (2026-10-02)
-
-**Decision (ANSWER1).** The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input
-and after I input it starts a new session? isn't this should be continue"*. Seen on the install the same day: a driven
-session on `claude-code-acp` 0.84.0 parked to ask, the person answered, and the driver started a new session in the
-same tree, the agent's own conversation gone and a second row on the screen. Read from the code at `32cbf03`, the
-answer ends the parked record `completed` (D83) and the planner opens a new one (D80's carry-on); nothing resumes an
-agent's own conversation, though the adapter offers `session/resume` and `session/load` and the ledger already allows
-`awaiting-person` → `working`. The contract is `docs/2026-10-02-answer-continues-design.md`.
-
-1. **Resume when it can work.** An answered park is continued by its own record: `awaiting-person` → `working`, the
-   harness's own conversation resumed in the same tree, and the answer its next prompt, verbatim. The protocol door
-   sends `session/resume` where the agent advertises it (no replay, since the record already holds the conversation),
-   else `session/load` with its replay not kept again; the native door runs `claude -p <answer> --resume <id>`. The
-   conversation's id is kept the moment the wire says it, beside the transcript, never read from the agent's home.
-2. **It needs** the record still parked with its answer, the same adapter, the same account (the conversation lives
-   in that account's configuration home, and a record names one account), the same tree standing, a kept id, and a
-   door that can resume. A changed harness version is said on the resumed run's first line, never refused.
-3. **Otherwise, today's carry-on, said why.** The park ends `completed` with its answer and the reason, and a new
-   record carries the quest on in the same tree with the answer, the last plan and the last words. The reason is one
-   line on its note, by a code: `account`, `adapter`, `unkept`, `tree`, `unable`, `offered`, `gone`, `refused` or
-   `ended` (design §2). A note never names an account nor quotes the agent's refusal. The machine log writes
-   `session.answered` {session, adapter, resumed, why} once per answer taken up.
-4. **One Daoris record for one harness conversation.** A resume reopens the record that parked; a fallback is a new
-   record because it is a new conversation.
-5. **The other entries stay new sessions**: *Try again* after a person's stop, a carry-on after a time-out, a crash,
-   a refused turn or an interrupted take, and D79's resume, which is the same shape and held. Each one's record is
-   finished, and a finished record does not move.
-6. **The service and the page follow** (design §5): ANSWER1b keeps an answered record parked, and clears `answer` on a
-   move into `awaiting-person`; ANSWER1c shows an answered park as carrying on. Until ANSWER1b, the driver carries every
-   answer on as today, saying `ended`.
-
-**Why.** The person answered a question, and a conversation that asked it is the one that should hear the answer: a
-new session rebuilds from a handed summary what the first one knew, and the screen shows the person a second session
-for one piece of work. D46 held resume as an adapter capability until a real run asked for it, and D90 already keeps
-a working session's context for what the person adds; a park the person answers is the same need after the turn has
-ended. The record is the authority (D46 §4), so one record standing for one conversation is what makes the page, the
-log, the review and a teammate's view show one session without each learning a fold.
-
-**Rejected.**
-- **A linked record that the page folds into one thread.** It leaves the ledger alone, but every reader of records
-  would have to learn the fold, one conversation would have two homes, the log would count two sessions, and a
-  teammate would see two rows unless the link travelled as a new field.
-- **Reopening a finished record.** A finished record does not move, has travelled, and is what the strikes count.
-- **Resuming the conversation in a new record** for a fallback, a stop or a cut-off. That is the linked shape: one
-  conversation over two records.
-- **`session/load` first.** It replays the whole history, which the record already holds; `session/resume` sends none.
-- **Checking for the conversation in the agent's home before resuming.** A read inside an account's directory (D66 §3);
-  the agent's own refusal is the answer, and the fallback takes it.
-- **Refusing a resume across a harness version.** The native `claude` updates itself, so nearly every answer would
-  fall back; the run says its version instead.
-
-**This amends:** D83 (an answer no longer ends the record, once ANSWER1b lands, and a continued park is not a new
-session), D80 and STANDDOWN2's carry-on (now the fallback, said why), D46's held resume (built for an answered park),
-and D94 §4 (`session.answered`). D51, D58, D79, D90, D104, D125 and D130 stand.
-
-**What the gates do not cover.** This entry's statements about today were read from the code at `32cbf03` and from
-the adapter's and SDK's published packages at their pinned versions; no real agent was resumed. The native door's
-`--resume` and its `init` line are the maker's published shapes, not a run on this machine. `verify` checks this
-entry's shape and the design's links, and none of their words.
-
-**Built 2026-10-02 (ANSWER1a): the driver's half** (points 1–4; design §1–§3), held by `ContinuationTests`,
-`AnswerContinuesPlanTests`, `HarnessConversationsTests`, `AcpResumeTests`, `NativeResumeTests` and `SessionLogTests`.
-What building it settled:
-- **The id is kept at the wire's first word.** `AcpSession` tells `session/new`'s id as it arrives (`onConversation`), so
-  a turn that then fails or parks still leaves it; the native door keeps its `init` line's `session_id` once its output
-  ends. Both land in `HarnessConversations`, for a quest's session only, since an intake is answered through its ask.
-- **A refusal keeps its code and the agent's own sentence** beside ACPDATA1's data (`AcpRefusal.Code`, `.Words`): a
-  resume refused `resource_not_found` is `gone`, any other `refused`. A load's replay is dropped by its `sessionId`
-  while the load is answered.
-- **The judgement's order is the record, the adapter, the account, the tree, the kept id, then the door**
-  (`Continuations.Judge`), so the line said is the first a person can act on.
-- **The planner continues through the carry-on's verdict**, `continuing`: the park is not busy with its own tree, quest
-  or repository, and already holds its slot of the cap. The person's hold and the strikes still stand.
-- **A refusal on the wire ends the record from `working`**, since a run moves its record to working at spawn; the park's
-  note keeps what it asked and adds why, and the carry-on starts in the same look, taking the starting hold (LEFT2) again
-  until its own record holds the tree. A resumed run that could not start ends the park the same way, as `refused`,
-  whose line became *its conversation could not be resumed* to cover it.
-- **The resumed run's evidence counts from the record's own base commit**, so the review's range is the whole session's.
-- **An answer that keeps its park tells the watchers nothing** (`ServiceClient.AnswerSessionAsync`): the log would
-  otherwise write a second park, or an ending that did not happen.
-- **`session.answered` rides the account lines' channel**, which writes a catalogued line as it is given; the machine
-  log design's §4 lists it.
-
-**What the gates do not cover.** The `Process` half was not run by this branch: `AnswerContinuesTickTests` runs three
-real ticks on a protocol stub that speaks `session/resume`. An answer resumes the parked record's own conversation, with
-one record from start to end. A conversation the stub no longer has is carried on in a new session in the same tree,
-saying why. An answer on another stub account never asks the stub to resume. Its stand-in service models ANSWER1b, and
-the real service still ends the record as it takes the answer, so until ANSWER1b lands every answer reads `ended` and
-is carried on as before. The page still shows an answered park as waiting on the person for up to one look (ANSWER1c).
-The family rehearsal's protocol stub was not taught `session/resume`: no rehearsal reaches a resume before ANSWER1b.
-
-**Built 2026-10-02 (ANSWER1b): the service's half** (point 6; design §5), held by `SessionLedgerTests`,
-`SessionStoreTests` and `LocalHostTests`, and the family rehearsal's 17a and section 4. What building it settled:
-- **The answer keeps the park in one step**, under the store's write lock as a move is (REV3), so a second answer and
-  the driver taking the park up never both read it parked. It is a new revision, so its note travels as a move's does;
-  the words themselves are still answered to this machine only.
-- **A second answer replaces the first** on the record and on the note. The note's *Answered:* line is replaced only
-  where it ends the note and quotes the answer held, so nothing else the note says is ever cut.
-- **Clearing is the ledger's to say** (`SetStateAsync`'s `clearAnswer`), on a move into `awaiting-person` alone: working
-  keeps the answer while it is worked on, and `completed` keeps it for the fallback's open, which still carries on a
-  `completed` record with an answer.
-- **The reply is the session as it stands**, still parked, which is how `ServiceClient.AnswerSessionAsync` tells the
-  watchers nothing moved; its sentence says it carries the quest on at the driver's next look. An answer once the
-  driver has taken the park up is refused naming the state the record is in.
-- **The rehearsal's park is a carry-on's.** The protocol stub takes through the service's HTTP door, which marks no
-  session as the taker, so a first session ending with its quest taken reads as a stand-down; a session carrying a
-  take on parks (D80). So 17a makes the cut-off through the doors as section 4 does, the driver carries it on, its
-  session asks, `daoris-driver answer` answers, and the next look resumes the same record's conversation over
-  `session/resume`. The stub advertises `resume` as the real adapter does, and resumes whatever conversation it is
-  asked, keeping no history.
-
-**What the gates do not cover.** The family rehearsal was written, not run: it is the parent's to run at the merge,
-with `AnswerContinuesTickTests`. A take through a connector, which a real agent's first session parks on, is
-`McpToolsTests`' (STANDDOWN2), not 17a's. Words in lanes this branch does not hold still say an answer ends the
-record: the headless host's usage for `answer`, and the comments on the page's answer box, its query and its frame
-(ANSWER1c's lane).
 **Built 2026-10-02 (TOOL6c): what the agents say, read** (the goal's points 3–5 and point 7's rule; design §4.4, §4.5, §5.2,
 §5.3, §6, §16.3 steps 2, 4 and 5, and §16.4, as `docs/2026-10-02-limit-signals-evidence.md` corrects them), held by
 `AccountReadingsTests` (the table and the frame), `AccountWindowsTests` and `WindowsTwinTests` (the file, twinned with the
