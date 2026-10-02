@@ -98,6 +98,12 @@ public sealed class LandedBranches(string home)
     public IReadOnlyList<LandedBranch> PushedBy(string plugin) =>
         [.. Everything().Where(entry => entry.Pushed && string.Equals(entry.Plugin, plugin, StringComparison.OrdinalIgnoreCase))];
 
+    /// <summary>
+    /// Every entry, standing and traces, in the order they landed: what a work reads for the landings that name its sessions
+    /// (PAUSE1a, <see cref="AskWork"/>), since a session a landing names keeps its tree whatever git says (D132 point 7).
+    /// </summary>
+    public IReadOnlyList<LandedBranch> Entries() => Everything();
+
     /// <summary>Every entry, standing and traces, in the order they landed.</summary>
     private IReadOnlyList<LandedBranch> Everything()
     {
