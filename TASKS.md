@@ -427,24 +427,43 @@ the ACP door, not a registry**.
   none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
   accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
   waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
-- [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2): `rate_limit_event` and a limit's failed `result`,
-  read keylessly from the maker's SDK declarations and labelled unmeasured; the first real one recorded.
+- [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2; as D130 amends it): `rate_limit_event` and a limit's
+  failed `result`, on an ordinary turn and at a warning, whether the protocol door forwards them, and Codex's `rate_limits`;
+  read keylessly, labelled unmeasured, then the first real frame recorded. TOOL6c builds only on it. Contract: D130 §0.3,
+  §5.1–§5.2.
 - [ ] **TOOL4j — the protocol stub on the stub's accounts** (driver; after TOOL4f, before TOOL4h; in flight). A limit read on
   the protocol door cools a named stub account and the carry-on rotates. Contract: D125 §1.3 rule 4, §8. Proof: a
   fast-half selection on `acp-stub` with an order; the real-process carry-on onto stub account 2.
-- [ ] **TOOL5 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
+- [ ] **TOOL6 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
   how switch works and how to optimize the account use since there are 3 accounts"*; then: all three may run the work
   workspace, by the allowance each has left, one by one, in parallel or by other logic, configurable; any number of
   accounts, three is only today's). Modes, which
-  accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130 (in
-  flight). Proof: the design.
-- [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL4f):
+  accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130.
+  Proof: the design (landing).
+- [ ] **TOOL6a — the settings and their terminal doors** (cli; driver). `prefer`, `parallel`, `keep`, `early` and `near`
+  per scope in `harnesses.json`, both twins, `daoris agent profile use`, and the refusals on `order` and `default`, so the
+  choices have a file and a terminal before anything reads them. Contract: D130 §2, §3.1, §4.6, §9, §14. Proof: twin
+  tables both sides, none by a list's length.
+- [ ] **TOOL6b — the walk reads one scope and its settings** (driver; after TOOL6a). The list is the whole set; *in
+  parallel* starts on the account running fewest sessions; a quest decides once; the wait names accounts outside the
+  list. Contract: D130 §2, §3, §4.1–§4.3, §4.6, §5.3, §7. Proof: `AccountRotation` tables for one account and many; a
+  Process tick, cap K over N accounts.
+- [ ] **TOOL6c — what the agents say, read** (driver; after TOOL4b's frame and TOOL6b). `windows.json`, *most left* and
+  *soonest reset* by the agents' own readings, and *switch before the limit*: how many tokens are left. Contract: D130
+  §4.4, §4.5, §5.2, §5.3, §6. Proof: fast-half tables; a Process tick replaying a recorded frame.
+- [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
+  offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
+  and vitest tests; the look in both languages.
+- [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL6b;
+  with D130 §3.2, §9: a workspace's own list, *Use*, *Start on*, *Sessions at once*, *Keep for conversations*, the terms line):
   the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
   the cool-off setting, the doors; both languages (D116); the look on the window. The modules' *Remove* must call
   `HarnessSettings.WithoutAccount`, as the terminal now does (TOOL4e).
-- [ ] **TOOL4h — the rehearsal and the report** (tools; §8, §2.2; after TOOL4f): two stub accounts; the usage report's
-  limits section.
-- [ ] **TOOL4i — a real rotation on the install** (the owner's run, after a republish carrying TOOL4a and TOOL4c–TOOL4f).
+- [ ] **TOOL4h — the rehearsal and the report** (tools; §8, §2.2; after TOOL4j): two stub accounts; the usage report's
+  limits section per account and window, *Daoris's sessions only*; *in parallel* over N stub accounts (D130 §5.4).
+- [ ] **TOOL4i — a real rotation on the install** (the owner's run). *One by one* seen 2026-10-02: a spend limit on the
+  work account cooled it and the carry-on opened on the next account (`account.limited`, `account.rotated`), and it found
+  the time-of-day reset defect (FIX-LOG). Still owed: *in parallel* over every account, and what one limit cuts off (D130 §11).
 - [ ] **AGT3c — two readings that trust what a session printed** (found designing D125): AGT3b's 401 detection reads the
   transcript's last lines, so a session whose own output ends with `API Error: 401` holds its account; and the ACPEND1
   note carries the agent's sentence, zone included, to every machine (`SessionNote.ForAnotherMachine` removes no zone).
