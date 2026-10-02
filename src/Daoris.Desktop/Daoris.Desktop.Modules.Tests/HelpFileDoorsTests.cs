@@ -12,17 +12,17 @@ public sealed class HelpFileDoorsTests : Bridge
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));
 
     /// <summary>
-    /// A default on an agent Daoris manages no accounts for is refused in <c>HARNESS_ACTION</c>'s own words, before
-    /// anything is written.
+    /// A default on the protocol stub is written as its owner's, as one on <c>claude-code-acp</c> is (AGT7): since
+    /// TOOL4j the stub's door runs as the stub's accounts, so no built-in agent is left without a toolchain.
     /// </summary>
     [Fact]
-    public async Task A_default_on_an_agent_with_no_toolchain_is_refused_as_the_agents_screens_route_refuses_it()
+    public async Task A_default_on_the_protocol_stub_is_written_as_the_stubs()
     {
-        var refused = await Assert.ThrowsAsync<DriverException>(() =>
-            Module().HelpDoors(null).SetDefaultAccountAsync("acp-stub", "work", null, CancellationToken.None));
+        await Module().HelpDoors(null).SetDefaultAccountAsync("acp-stub", "work", null, CancellationToken.None);
 
-        Assert.Contains("Daoris manages no toolchain for `acp-stub`", refused.Message);
-        Assert.False(File.Exists(HarnessSettingsPath));
+        var settings = HarnessSettings.Load(HarnessSettingsPath);
+        Assert.Equal("work", settings.Defaults["stub"]);
+        Assert.False(settings.Defaults.ContainsKey("acp-stub"));
     }
 
     /// <summary>
