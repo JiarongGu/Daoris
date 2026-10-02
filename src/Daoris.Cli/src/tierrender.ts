@@ -9,9 +9,11 @@
 //      rules and stray key-value prose. What it carried becomes the table.
 //   2. PROVENANCE STAYS, per rule. It is what keeps drift and `upstream` per RULE inside one region,
 //      which design §4 rests on — without it a person improving one sentence has drifted all eight.
-//   3. THE TABLE KEEPS EVERY TIER. Knowledge and skills are not loaded, so the table is the only way
-//      an agent learns they exist; the rules rows are cheap and carry the `applies_when`/`enforces`
-//      the stripped frontmatter held.
+//   3. THE TABLE KEEPS THE RULES, AND POINTS AT THE REST (WSSETUP14a, D128 §2). The rules rows are
+//      cheap and carry the `applies_when`/`enforces` the stripped frontmatter held. Knowledge and
+//      skills grow with the repository, so their tables live in `<target>/INDEX.md`, read on demand,
+//      and the region says where: a row per document put the pilot's first rule past the byte at which
+//      one agent stops reading.
 
 import type { CanonFile, Harness, LockEntry } from './types.ts';
 import { existsSync } from 'node:fs';
@@ -34,12 +36,11 @@ export interface TierDocument {
   local?: boolean;
 }
 
+/** What the region renders: the rules, the pointer to the index, and what the manifest declares. */
 export interface TierInput {
   rules: TierDocument[];
-  knowledge: TierDocument[];
-  skills: TierDocument[];
   version: string;
-  /** Where the on-demand tiers live, for the rows that point at them. */
+  /** Where the on-demand tiers live, for the pointer to their index. */
   target?: string;
   /** The core rows this repository switched off, and the pack that offered each (D71). */
   off?: readonly { target: string; by: string }[];
@@ -51,14 +52,32 @@ export interface TierInput {
   documents?: readonly { role: string; path: string; job: string }[];
 }
 
+/** What the index renders: the on-demand tiers as they are on disk (D128 §2.3). */
+export interface IndexInput {
+  knowledge: TierDocument[];
+  skills: TierDocument[];
+  /** Where the on-demand tiers live, so each row names its document from the repository's root. */
+  target?: string;
+}
+
 const RULE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
-const KNOWLEDGE_HEAD = '| Knowledge | Applies when | Enforces |\n|---|---|---|';
+const KNOWLEDGE_HEAD = '| Document | Applies when | Enforces |\n|---|---|---|';
 const SKILL_HEAD = '| Skill | Use when |\n|---|---|';
 const ROOM_HEAD = '| Room | About |\n|---|---|';
 const WHERE_HEAD = '| Role | Where | Its job |\n|---|---|---|';
 
 /** The heading of the roster's last table, which `check` compares on its own (D122 §2.8). */
 export const WHERE_HEADING = '## Where things are';
+
+/** The index's file name, at the target's root beside the tiers rather than inside one (D128 §2.3). */
+export const INDEX_FILE = 'INDEX.md';
+
+/**
+ * Where the index of the on-demand tiers is, repository-relative: at the target's root, where no tier
+ * lists it as a document, the service does not read it, and a repository's own `knowledge/INDEX.md`
+ * cannot collide with it.
+ */
+export const indexPath = (target: string): string => (target === '' ? INDEX_FILE : `${target}/${INDEX_FILE}`);
 
 /** A document's name — the filename, which is what every rule's frontmatter `name` must match. */
 function nameOf(file: CanonFile): string {
@@ -98,14 +117,18 @@ export function renderTier(input: TierInput): string {
 }
 
 /**
- * The roster half: what applies when, across all three tiers.
+ * The roster half: the rules table, the pointer to the index, the rooms and where the records are.
  *
  * @remarks
- * Split out because `check` rebuilds the **knowledge and skills** rows from disk to tell whether the
- * region has gone stale — a local document added and never synced — and it does that offline, with no
- * canon. The rules rows are not rebuildable offline, because the frontmatter they come from is
- * stripped on the way in; a canon change is `status`'s report and `sync`'s job, which is where a
- * canon change belongs.
+ * Split out because `check` rebuilds everything below the rules table from the disk and the manifest to
+ * tell whether the region has gone stale, and it does that offline, with no canon. The rules rows are
+ * not rebuildable offline, because the frontmatter they come from is stripped on the way in; a canon
+ * change is `status`'s report and `sync`'s job, which is where a canon change belongs.
+ *
+ * 🔴 Nothing here grows with the repository's documents (WSSETUP14a, D128 §2.1). The knowledge and
+ * skill tables did, and on the first real set-up they put the first rule past byte 32,768 of the file,
+ * where one agent stops reading. They are `renderIndex`'s now, and the region carries one sentence
+ * naming the file, with no count in it: a count would change the region with every document.
  */
 export function renderRoster(input: TierInput): string {
   const target = input.target ?? HARNESSES[DEFAULT_HARNESS]!.defaultTarget;
@@ -146,30 +169,16 @@ export function renderRoster(input: TierInput): string {
     lines.push('', `Switched off here, by a pack and confirmed in \`daoris.json\`: ${rows.join(', ')}.`);
   }
 
-  lines.push('', '## Read on demand', '', KNOWLEDGE_HEAD);
-  for (const document of input.knowledge) {
-    const meta = metaOf(document);
-    // Linked, because these point at real files the reader has to go and open.
-    const link = `[${nameOf(document.file)}](${target}/${document.file.target})${mark(document)}`;
-    lines.push(meta
-      ? `| ${link} | ${meta.applies_when} | ${meta.enforces} |`
-      : `| ${link} | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
-  }
-
-  lines.push('', '## Invoke by name', '');
-  // Said once, where the skills are listed: the copy exists for the agent that reads only there, and
-  // an edit made to it is refused (D117 §3.3), so the reader learns which file to open before editing.
+  // The pointer (D128 §2.2), linked because it names a real file the reader has to go and open.
+  const index = indexPath(target);
+  lines.push('', '## Read on demand', '',
+    `The knowledge and the skills, each with when it applies, are listed in [${index}](${index}), generated `
+    + 'from the files: read it before a non-trivial task, and search it when it is long.');
+  // Said once, beside the pointer: the copy exists for the agent that reads only there, and an edit
+  // made to it is refused (D117 §3.3), so the reader learns which file to open before editing.
   if (input.mirror) {
-    lines.push(`Skills live in \`${input.mirror.source}/\`; \`${input.mirror.root}/\` mirrors them for the agent `
-      + 'that reads only there — edit the source.', '');
-  }
-  lines.push(SKILL_HEAD);
-  for (const document of input.skills) {
-    const meta = parseFrontmatter(document.text, SKILL_FIELDS).meta;
-    // A skill is a DIRECTORY; `SKILL.md` is an implementation detail no roster should show.
-    const dir = document.file.target.replace(/\/[^/]+$/, '');
-    lines.push(`| [${dir.replace(/^.*\//, '')}](${target}/${dir})${mark(document)} | ${
-      meta?.description ? summarize(meta.description) : '⚠ needs frontmatter'} |`);
+    lines.push('', `Skills live in \`${input.mirror.source}/\`; \`${input.mirror.root}/\` mirrors them for the agent `
+      + 'that reads only there — edit the source.');
   }
 
   // 🔴 Telling, not loading (D117 §2.2). D59 rejected telling for the RULES, which every task needs; a
@@ -196,6 +205,45 @@ export function renderRoster(input: TierInput): string {
   }
 
   return lines.join('\n');
+}
+
+/**
+ * `<target>/INDEX.md`: the knowledge and skills, each with when it applies (WSSETUP14a, D128 §2.3).
+ *
+ * @remarks
+ * Every document is named by its path from the repository's root, as a code span rather than a link:
+ * an agent opens it as written, and a renderer shows no broken link from a file one folder down. A
+ * skill is named by its entry file for the same reason, since an agent whose skill roots hold nothing
+ * still activates one by reading that file. Rebuilt by `check` from the disk alone, offline and
+ * without the canon, so it must be a function of the files and the lock and nothing else.
+ */
+export function renderIndex(input: IndexInput): string {
+  const target = input.target ?? HARNESSES[DEFAULT_HARNESS]!.defaultTarget;
+  const at = (document: TierDocument) => `\`${target === '' ? '' : `${target}/`}${document.file.target}\`${mark(document)}`;
+  const lines: string[] = [
+    '# Index',
+    '',
+    'Generated by daoris from the files. Edit the documents, not this: `daoris sync` rewrites it, and'
+    + ' `daoris check` fails when it is behind.',
+    '',
+    '## Knowledge',
+    '',
+    KNOWLEDGE_HEAD,
+  ];
+  for (const document of input.knowledge) {
+    const meta = metaOf(document);
+    lines.push(meta
+      ? `| ${at(document)} | ${meta.applies_when} | ${meta.enforces} |`
+      : `| ${at(document)} | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
+  }
+
+  lines.push('', '## Skills', '', SKILL_HEAD);
+  for (const document of input.skills) {
+    const meta = parseFrontmatter(document.text, SKILL_FIELDS).meta;
+    lines.push(`| ${at(document)} | ${meta?.description ? summarize(meta.description) : '⚠ needs frontmatter'} |`);
+  }
+
+  return `${lines.join('\n')}\n`;
 }
 
 /**

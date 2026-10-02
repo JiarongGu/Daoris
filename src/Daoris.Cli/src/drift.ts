@@ -4,9 +4,9 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { digestBytes, listMarkdown, readText, sha256 } from './fsx.ts';
 import { readLock, readManifest } from './config.ts';
-import { rosterFromDisk } from './indexgen.ts';
+import { indexFromDisk, rosterFromDisk } from './indexgen.ts';
 import { findRegion, hasImport, removeRegion } from './region.ts';
-import { spanBody, WHERE_HEADING } from './tierrender.ts';
+import { indexPath, spanBody, WHERE_HEADING } from './tierrender.ts';
 import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from './documents.ts';
 import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from './harness.ts';
 import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from './layout.ts';
@@ -14,7 +14,7 @@ import { canonicalOnDisk, mirrorDigest, mirrorSources } from './mirror.ts';
 import { linkProblems, shortLink } from './links.ts';
 
 /**
- * The roster's on-demand half — everything from the knowledge table to the first rule.
+ * The roster's on-demand half — everything from the pointer to the index to the first rule.
  *
  * @remarks
  * Comparing only this half is what keeps the staleness check offline and canon-free. The rules rows
@@ -152,6 +152,7 @@ export function inspect(
       ...new Set(Object.values(harness.tiers).flatMap((tier) => (tier.region ? [tier.region.file] : []))),
       ...(pointer ? [pointer.file] : []),
       ...(manifest.rooms ?? []).flatMap((room) => [`${room}/${instructions}`, ...(pointer ? [`${room}/${pointer.file}`] : [])]),
+      indexPath(target),
     ],
   });
 
@@ -196,27 +197,32 @@ export function inspect(
   }
   const overBudget = coreBytes > manifest.coreBudgetBytes;
 
-  // 🔴 The roster's KNOWLEDGE and SKILLS rows, rebuilt from disk and compared. Offline and canon-free,
-  // which is what `check` inside a build gate requires (D8). The rules rows are deliberately not
-  // checked: they come from frontmatter the span strips, so nothing offline can rebuild them, and a
-  // canon change is `status`'s report. What this catches is the case that actually happens — a local
-  // document added and the region never re-synced.
-  // The roster's two kinds of table, compared apart (D122 §2.8): the tiers' rows rebuilt from disk, and
-  // the records' table from the manifest, so a stale one is named as itself.
+  // 🔴 The KNOWLEDGE and SKILLS rows, rebuilt from disk and compared with `<target>/INDEX.md` (WSSETUP14a,
+  // D128 §2.4). Offline and canon-free, which is what `check` inside a build gate requires (D8). What
+  // this catches is the case that actually happens — a local document added and the index never
+  // re-synced. A lock that does not name the index has not had one written yet (D128 §2.4).
+  const index = indexPath(target);
+  const indexText = isFile(join(root, index)) ? readText(join(root, index)) : null;
+  const indexStale = lock?.index !== index || indexText !== indexFromDisk({ root, target, lock, harness });
+
+  // The region's half, two kinds of table compared apart (D122 §2.8): the pointer, the mirror sentence
+  // and the rooms rebuilt from the disk, and the records' table from the manifest, so a stale one is
+  // named as itself. The rules rows are deliberately not checked: they come from frontmatter the span
+  // strips, so nothing offline can rebuild them, and a canon change is `status`'s report.
   const documents = manifest.documents ?? [];
-  let indexStale = false;
+  let rosterStale = false;
   let documentsStale = false;
   for (const name of alwaysLoadedTiers(harness)) {
     const tier = harness.tiers[name]!;
     if (!tier.region) continue;
     const body = regionBody(tier.region.file, tier.region.name);
     if (body === null) {
-      indexStale = true;
+      rosterStale = true;
       continue;
     }
     const held = splitWhere(onDemandHalf(body));
-    const wanted = splitWhere(onDemandHalf(rosterFromDisk({ root, target, lock, harness, rooms: manifest.rooms ?? [], documents })));
-    if (held.tiers !== wanted.tiers) indexStale = true;
+    const wanted = splitWhere(onDemandHalf(rosterFromDisk({ root, target, harness, rooms: manifest.rooms ?? [], documents })));
+    if (held.tiers !== wanted.tiers) rosterStale = true;
     if (held.where !== wanted.where) documentsStale = true;
   }
 
@@ -264,12 +270,13 @@ export function inspect(
   // build over a judgement gets its number raised rather than read — which is the failure D28
   // predicted in its own words about noise. The number stays and is stated on every run, because a
   // signal nobody can see is not a signal.
-  const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !staleSwitches.length
+  const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !rosterStale
+    && !staleSwitches.length
     && !staleLayout && !mirrorsDrifted.length && !mirrorsMissing.length && !mirrorsBehind.length
     && !roomsWithoutInstructions.length && !roomPointersMissing.length && !links.length
     && !documentsStale && !documentsMissing.length && !documentLinksFound.length;
   return {
-    drifted, missing, stalePacks, coreBytes, overBudget, indexStale, switchedOff, staleSwitches,
+    drifted, missing, stalePacks, coreBytes, overBudget, index, indexStale, rosterStale, switchedOff, staleSwitches,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
     links, agentsBytes, unlisted, readAlone,
     documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, ceilingsUnmeasured, recordsUndeclared,
@@ -298,7 +305,10 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
     );
   }
   if (report.indexStale) {
-    write("  roster    the doctrine region's on-demand tables are out of date — run 'daoris sync'");
+    write(`  index     ${report.index} is ${isFile(join(root, report.index)) ? 'out of date' : 'absent'} — run 'daoris sync'`);
+  }
+  if (report.rosterStale) {
+    write("  roster    the doctrine region's pointer or rooms are out of date — run 'daoris sync'");
   }
   // The layout's facts (D117 §5.2): each fails, and each says which file to open.
   if (report.staleLayout) write(`  stale     layout: ${report.staleLayout} — run 'daoris sync' to move them`);

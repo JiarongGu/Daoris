@@ -6,7 +6,8 @@ export const command: CliCommand = {
   name: 'index',
   kind: 'doctrine',
   usage: [
-    '  index                say where the roster went: the AGENTS.md region sync writes',
+    '  index                say where the roster is: the rules in AGENTS.md, the',
+    '                       knowledge and skills in the INDEX.md sync writes',
   ],
   run: commandIndex,
 };

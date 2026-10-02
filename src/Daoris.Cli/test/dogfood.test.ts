@@ -188,29 +188,72 @@ test('no canon file names a private sibling project or a machine path', () => {
  *
  * This fails silently without a check, which is why there is one: nothing breaks, no gate goes red,
  * and a contributor's agent simply has nothing to do when it reaches that line.
+ *
+ * Two mechanisms since WSSETUP14a (D129 §2): a quest, and a search over the repository's knowledge
+ * that a connected service answers by meaning. Each is held to its own carve-out, so a file that
+ * degrades one cannot stand in for the other.
  */
-test('no canon file instructs a service-only action without its tool-absent path', () => {
-  const canon = readCanon(join(repoRoot, 'canon'));
-  // The one service-shaped mechanism the canon names. Deliberately not a broad vocabulary scan: the
-  // audit that wrote this rule first "fixed" a rule naming the generated index, which needed nothing,
-  // because it matched on family words instead of on what actually needs a process running.
-  const serviceOnly = /\bquests?\b/i;
-  // The carve-out, in any of the shapes it is reasonable to write. A rewording that drops all three
-  // fails here — a loud false positive, which is the right trade for a guarantee that is otherwise
-  // invisible, and it forces the next author to decide rather than drift.
-  const degrades = /where (?:none|it) (?:does|exists)|where none does not|where the quest system does not/i;
+const SERVICE_ONLY = [
+  {
+    what: 'a quest',
+    // Deliberately not a broad vocabulary scan: the audit that wrote this rule first "fixed" a rule
+    // naming the generated index, which needed nothing, because it matched on family words instead of
+    // on what actually needs a process running.
+    names: /\bquests?\b/i,
+    // The carve-out, in any of the shapes it is reasonable to write. A rewording that drops all three
+    // fails here — a loud false positive, which is the right trade for a guarantee that is otherwise
+    // invisible, and it forces the next author to decide rather than drift.
+    degrades: /where (?:none|it) (?:does|exists)|where none does not|where the quest system does not/i,
+    absent: 'where no quest system exists',
+  },
+  {
+    what: 'a connected search',
+    // A search that is CONNECTED is a service: one sentence asks it beside the word searches a file
+    // allows. A word search over the index or the folders needs nothing running and is not matched.
+    names: /\bsearch\b[^.\n]{0,80}\bconnected\b|\bconnected\b[^.\n]{0,40}\bsearch\b/i,
+    degrades: /where none is\b|where (?:none|no search) is connected/i,
+    absent: 'where no such search is connected',
+  },
+] as const;
 
-  for (const pack of canon.packs.values()) {
-    for (const file of pack.files) {
-      const text = readText(join(repoRoot, 'canon', file.source));
-      if (!serviceOnly.test(text)) continue;
-
-      assert.ok(
-        degrades.test(text),
-        `${file.source} instructs a quest without naming what to do where no quest system exists. `
-        + 'Doctrine must not hard-require Daoris (D48 §2a) — name the alternative in the same breath.');
+/** Each service-only mechanism a file names without its tool-absent path, as problems. */
+function serviceOnlyProblems(files: readonly { source: string; text: string }[]): string[] {
+  const problems: string[] = [];
+  for (const { source, text } of files) {
+    for (const mechanism of SERVICE_ONLY) {
+      if (mechanism.names.test(text) && !mechanism.degrades.test(text)) {
+        problems.push(`${source} instructs ${mechanism.what} without naming what to do ${mechanism.absent}`);
+      }
     }
   }
+  return problems;
+}
+
+test('the service-only scan finds a connected search without its tool-absent path, and passes one with it', () => {
+  // D129 §4.2's doc-loader step 2, drafted without its last clause and then with it.
+  const draft = '2. **The generated index.** Read it whole when it is a few dozen rows. When it is longer, search it '
+    + "more than once. Where a search over this repository's knowledge is connected, ask it too, since it matches by "
+    + 'meaning, which a word search cannot.';
+  const whole = `${draft.slice(0, -1)}; where none is, the index searches are the whole step.`;
+
+  assert.deepEqual(serviceOnlyProblems([{ source: 'draft', text: draft }]),
+    ['draft instructs a connected search without naming what to do where no such search is connected']);
+  assert.deepEqual(serviceOnlyProblems([{ source: 'whole', text: whole }]), []);
+  // A word search needs nothing running, and a quest's carve-out is no carve-out for the search.
+  assert.deepEqual(serviceOnlyProblems([{ source: 'words', text: 'Search the index for the task\'s words.' }]), []);
+  assert.deepEqual(serviceOnlyProblems([{ source: 'both', text: `Publish a quest where it exists. ${draft}` }]),
+    ['both instructs a connected search without naming what to do where no such search is connected']);
+  assert.deepEqual(serviceOnlyProblems([{ source: 'quest', text: 'Publish a quest.' }]),
+    ['quest instructs a quest without naming what to do where no quest system exists']);
+});
+
+test('no canon file instructs a service-only action without its tool-absent path', () => {
+  const canon = readCanon(join(repoRoot, 'canon'));
+  const files = [...canon.packs.values()].flatMap((pack) => pack.files)
+    .map((file) => ({ source: file.source, text: readText(join(repoRoot, 'canon', file.source)) }));
+
+  assert.deepEqual(serviceOnlyProblems(files), [],
+    'Doctrine must not hard-require Daoris (D48 §2a) — name the alternative in the same breath.');
 });
 
 /**

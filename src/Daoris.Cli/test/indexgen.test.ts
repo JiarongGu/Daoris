@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeFixture } from './_fixture.ts';
-import { rosterFromDisk } from '../src/indexgen.ts';
+import { indexFromDisk, rosterFromDisk } from '../src/indexgen.ts';
 
 const doc = (name: string) => `---
 name: ${name}
@@ -41,12 +41,12 @@ const LOCK = {
   ],
 };
 
-test('the roster lists the on-demand tiers in separate tables', () => {
+test('the index lists the on-demand tiers in separate tables', () => {
   const fx = seedRepo();
-  const text = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
 
-  assert.match(text, /## Read on demand/);
-  assert.match(text, /## Invoke by name/);
+  assert.match(text, /^## Knowledge$/m);
+  assert.match(text, /^## Skills$/m);
   assert.match(text, /what storage enforces/);
   fx.cleanup();
 });
@@ -57,27 +57,24 @@ test('the roster lists the on-demand tiers in separate tables', () => {
  * — and generating it is what lets a canonical workflow rule point at a roster
  * it cannot know in advance.
  */
-test('the index lists skills by directory name and description', () => {
+test('the index lists skills by their entry file and description', () => {
   const fx = seedRepo();
-  const text = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
-  assert.match(text, /## Invoke by name/);
-  // The link points at the skill's DIRECTORY, from the region at the repository root.
-  assert.match(text, /\[doc-loader\]\(\.claude\/skills\/doc-loader\)/);
-  assert.match(text, /what doc-loader is for/);
+  const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  // The path from the repository's root, as a code span: an agent opens it as written (D128 §2.3).
+  assert.match(text, /^\| `\.claude\/skills\/doc-loader\/SKILL\.md` \| what doc-loader is for \|$/m);
   assert.match(text, /what ef-migration is for/);
-  // A skill's SKILL.md is an implementation detail; the directory is its name.
-  assert.equal(/\| \[SKILL\]/.test(text), false);
+  // A skill's supporting files are not skills.
+  assert.equal(/\| \[/.test(text), false, 'named, never linked');
   fx.cleanup();
 });
 
 /**
- * The index is always-loaded, and a skill's `description` is the harness's TRIGGER text — long by
- * design, because it has to match against whatever a person asks. Copying it whole into the index
- * pays for it twice: once where the harness reads it, once on every session that loads the index.
- * Measured on the second adoption, the skills table was 46% of an index that had become the largest
- * always-loaded file in the repository.
+ * A skill's `description` is the harness's TRIGGER text — long by design, because it has to match
+ * against whatever a person asks. Copying it whole pays for it twice: once where the harness reads it,
+ * once in every session that reads the index. Measured on the second adoption, the skills table was 46%
+ * of an index that had become the largest always-loaded file in the repository.
  *
- * The roster needs to say what each skill IS. What it triggers on stays in the skill.
+ * The index needs to say what each skill IS. What it triggers on stays in the skill.
  */
 test('the index summarizes a skill rather than repeating its whole trigger', () => {
   const fx = seedRepo();
@@ -86,9 +83,9 @@ test('the index summarizes a skill rather than repeating its whole trigger', () 
     + 'and an unread match is a missing contract, which is the failure this exists to prevent.';
   fx.write('.claude/skills/verbose/SKILL.md', `---\nname: verbose\ndescription: ${long}\n---\n\nSteps.\n`);
 
-  const row = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK })
+  const row = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK })
     .split('\n')
-    .find((line) => line.includes('[verbose]'));
+    .find((line) => line.includes('skills/verbose/'));
 
   assert.ok(row, 'the skill must still be listed');
   assert.match(row, /Load the documents a task needs before touching code/);
@@ -99,7 +96,7 @@ test('the index summarizes a skill rather than repeating its whole trigger', () 
 
 test("a repo's own skill is marked local, a canonical one is not", () => {
   const fx = seedRepo();
-  const text = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
   assert.match(text, /ef-migration.*\(local\)/);
   assert.equal(/doc-loader.*\(local\)/.test(text), false);
   fx.cleanup();
@@ -109,43 +106,43 @@ test("a repo's own skill is marked local, a canonical one is not", () => {
  * A knowledge document, because that tier is still files. A repository's own always-loaded rules now
  * live in its instruction file outside the region (D59) — its own prose, which nothing enumerates.
  */
-test('files not in the lock are marked local', () => {
+test('files not in the lock are marked local, and an old rules folder is not listed', () => {
   const fx = seedRepo();
-  const text = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
   assert.match(text, /legacy.*\(local\)/);
-  assert.equal(/sensitive-info.*\(local\)/.test(text), false);
+  assert.equal(/sensitive-info|house-style/.test(text), false);
   fx.cleanup();
 });
 
 test('a file without frontmatter is listed with a warning, never dropped', () => {
   const fx = seedRepo();
-  const text = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const text = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
   assert.match(text, /legacy.*needs frontmatter/);
   fx.cleanup();
 });
 
 test('output is deterministic', () => {
   const fx = seedRepo();
-  const first = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
-  const second = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const first = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const second = indexFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
 
   assert.equal(first, second);
   fx.cleanup();
 });
 
 /**
- * 🔴 The roster read from disk has NO rules rows, and that is the point: the rules live in the
- * region, their frontmatter is stripped on the way in, and nothing offline can rebuild those rows.
- * This is the half `check` compares to catch the case that actually happens — a local knowledge
- * document or skill added and the region never re-synced.
+ * 🔴 The region's roster read from disk has NO rules rows and NO document rows. The rules' frontmatter
+ * is stripped on the way in, so nothing offline can rebuild those rows; the documents are the index's
+ * (WSSETUP14a, D128 §2.2). What is left is what `check` compares: the pointer, and what the manifest
+ * declares.
  */
-test('the disk half is the on-demand tiers only, which is what keeps check offline', () => {
+test('the region\'s disk half is the pointer and what the manifest declares, which is what keeps check offline', () => {
   const fx = seedRepo();
-  const roster = rosterFromDisk({ root: fx.root, target: '.claude', lock: LOCK });
+  const roster = rosterFromDisk({ root: fx.root, target: '.claude' });
 
   assert.match(roster, /## Read on demand/);
-  assert.match(roster, /## Invoke by name/);
+  assert.match(roster, /listed in \[\.claude\/INDEX\.md\]\(\.claude\/INDEX\.md\)/);
   // The rules table's header is there; its rows are not, because the canon is not.
-  assert.equal(/sensitive-info/.test(roster), false);
+  assert.equal(/sensitive-info|storage|doc-loader/.test(roster), false);
   fx.cleanup();
 });
