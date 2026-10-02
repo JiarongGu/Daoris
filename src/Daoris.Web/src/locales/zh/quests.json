@@ -13,7 +13,7 @@
   "quests.addressedTo": "受托方",
   "quests.everyone": "所有人",
   "quests.includeClosed": "包含已关闭",
-  "quests.groups.open": "待接——等待有人接下（{{count}}）",
+  "quests.groups.open": "待接——等人接下（{{count}}）",
   "quests.groups.progress": "已接下（{{count}}）",
   "quests.groups.closed": "已关闭（{{count}}）",
   "quests.card.filed": "{{ago}} 发起",

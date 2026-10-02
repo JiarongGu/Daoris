@@ -15,7 +15,8 @@
 // (facts) and never on a budget (a judgement: a character count estimates a width, and the window is where
 // a width is a fact, D54). NAME1b renamed what NAME1a's audit found and put `--strict` in the web's build,
 // beside the parity check; `--all` also reads every sentence for the words a term must not be called, and
-// reports.
+// reports. A budget judgement looked at and kept is the glossary's `accepted`, with the name it accepted and
+// why (NAME2): it stops being reported while the name stands, and a rename brings it back to be judged again.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -128,7 +129,25 @@ export function validate(glossary, en, zh) {
   for (const { door, opens } of glossary.doors ?? []) {
     for (const key of [door, opens]) if (!(key in en) || !(key in zh)) problems.push(`door ${door}: ${key} is not a key in both catalogues`);
   }
+  // An acceptance names a label the catalogues hold, the name it accepted in one language or both, and why.
+  const kindFor = kindOf({ ...glossary, kinds });
+  for (const { key, en: english, zh: chinese, why } of glossary.accepted?.names ?? []) {
+    if (!(key in en) || !(key in zh)) problems.push(`accepted: ${key} is not a key in both catalogues`);
+    else if (!kinds[kindFor(key)]?.budget) problems.push(`accepted: ${key} is a ${kindFor(key)}, which has no budget to accept`);
+    if (english === undefined && chinese === undefined) problems.push(`accepted: ${key} names neither language's name`);
+    if (!why || !String(why).trim()) problems.push(`accepted: ${key} gives no reason`);
+  }
   return problems;
+}
+
+/** The glossary's acceptances, by key and language: the name each accepted, and why. */
+function acceptances(glossary) {
+  const held = new Map();
+  for (const { key, en, zh, why } of glossary.accepted?.names ?? []) {
+    if (en !== undefined) held.set(`${key}|en`, { name: en, why });
+    if (zh !== undefined) held.set(`${key}|zh`, { name: zh, why });
+  }
+  return held;
 }
 
 /** Everything the glossary finds in the catalogues: one finding a key, a rule and a language. */
@@ -141,6 +160,7 @@ export function check(glossary, en, zh, { all = false } = {}) {
   const proper = [...glossary.properNouns, ...Object.keys(en).filter((key) => kindFor(key) === 'nav').map((key) => en[key])]
     .filter((name) => /^[A-Z]/.test(name))
     .sort((a, b) => b.length - a.length);
+  const accepted = acceptances(glossary);
   const findings = new Map();
   const note = (key, kind, rule, language, message) => {
     const at = `${key}|${rule}|${language}`;
@@ -181,13 +201,21 @@ export function check(glossary, en, zh, { all = false } = {}) {
     }
     if (!label) continue;
 
-    // The budget, from the room the frame gives the kind.
+    // The budget, from the room the frame gives the kind. A name the glossary accepted over it is not
+    // reported while it stands; a plural form says its stem's name, so the stem's acceptance covers it.
     const budget = glossary.kinds[kind]?.budget;
     for (const language of ['en', 'zh']) {
       const value = language === 'en' ? en[key] : zh[key] ?? '';
       const length = measure(kind === 'menu' || kind === 'command' ? nameOf(value, language) : value, language, glossary.measure);
-      if (budget && length > budget[language]) {
-        note(key, kind, 'budget', language, `${length} ${language === 'en' ? 'characters' : 'units'}, over the ${kind} budget of ${budget[language]}`);
+      const over = Boolean(budget) && length > budget[language];
+      const unit = language === 'en' ? 'characters' : 'units';
+      const kept = accepted.get(`${key.replace(PLURAL, '')}|${language}`);
+      if (kept && kept.name === value) {
+        if (!over) note(key, kind, 'budget', language, `accepted over the ${kind} budget, and within it now at ${length} ${unit}: the acceptance can go`);
+      } else if (kept) {
+        note(key, kind, 'budget', language, `${over ? `${length} ${unit}, over the ${kind} budget of ${budget[language]}; ` : ''}accepted as ${JSON.stringify(kept.name)}, which it no longer says: judge it again`);
+      } else if (over) {
+        note(key, kind, 'budget', language, `${length} ${unit}, over the ${kind} budget of ${budget[language]}`);
       }
     }
 
@@ -243,11 +271,12 @@ export function check(glossary, en, zh, { all = false } = {}) {
 }
 
 /** The findings as a person reads them: the count per rule, then each finding, labels by kind. */
-export function report(findings, { labels } = {}) {
+export function report(findings, { labels, accepted } = {}) {
   const count = (rule, language) => findings.filter((finding) => finding.rule === rule && (!language || finding.language === language)).length;
   const lines = [
     `names-check: ${labels ?? '?'} label keys; ${findings.length} findings — `
-      + ['glossary', 'budget', 'form', 'door'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', '),
+      + ['glossary', 'budget', 'form', 'door'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', ')
+      + (accepted === undefined ? '' : `; ${accepted} budget judgements accepted in the glossary`),
     'Under --strict (the build runs it) a glossary, form or door finding fails; the budgets are a report and never fail (D54).',
   ];
   const order = (finding) => `${KINDS.indexOf(finding.kind).toString().padStart(2, '0')}|${finding.key}|${finding.rule}|${finding.language}`;
@@ -273,6 +302,7 @@ if (isMain(import.meta.url)) {
   const findings = check(glossary, en, zh, { all: flags.has('--all') });
   const kindFor = kindOf(glossary);
   const labels = Object.keys(en).filter((key) => LABELS.has(kindFor(key)) && !PLURAL.test(key)).length;
-  console.log(flags.has('--json') ? JSON.stringify(findings, null, 2) : report(findings, { labels }));
+  const accepted = acceptances(glossary).size;
+  console.log(flags.has('--json') ? JSON.stringify(findings, null, 2) : report(findings, { labels, accepted }));
   process.exit(verdict(findings, { strict: flags.has('--strict') }));
 }

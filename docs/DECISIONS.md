@@ -6416,6 +6416,21 @@ check went from 519 findings (glossary 84, form 288, door 16, budget 131) to 107
 placeholders. The Playwright specs were edited to the new names and **not run** in the branch (the parent runs
 `test:web`); what they pin was read against Playwright's matching (case-insensitive substrings unless `exact`). The
 107 budgets are the window's to judge, and nothing looked at the window in this branch either.
+
+*Noted by NAME2 (2026-10-02): what the build settled that the design left open.*
+- **An accepted budget judgement is kept in the glossary** (`accepted`: the key, the name accepted per language, and
+  why). The design said the window decides each judgement but not where a decision lives, so NAME1b's 107 came back
+  on every run. The check stops reporting a name while it is the one accepted. A rename lapses the acceptance, and a
+  name that fits again is reported so the acceptance can go. Both are reports (D54). Rejected: a fifteenth kind for a
+  select's option, the commonest acceptance, which would amend the kinds rather than fill what was left open; and
+  recording acceptances in the audit, which the check cannot read.
+- **A plugin's switch is 启用 and 停用**, and its off state 已停用, held by the terms `turn on` and `turn off`.
+  关闭 is close's name, so the press read as close and an off plugin wore a closed quest's 已关闭. The English pair
+  stays *Turn on* and *Turn off*, the driver's room says *switch one on or off*, and the CLI's verbs are typed words.
+- **A lane is 泳道** (the term `lane`), which DEV4 put on the window before the glossary had a term.
+- **What the gates do not cover.** The acceptances' rooms are read from the code (classes, a menu's width, a row
+  that wraps), not measured, and the seven judgements left on the report are the window's. Nothing looked at the
+  window in this branch.
 ## D119 — Plugins get a view of their own: a list by what they need, a page per plugin, and Settings keeps where they are looked for (2026-10-01)
 
 **Decision (PLUGUI1a).** The owner, 2026-10-01: *"because plugin will be a big part of daoris so it need to have a

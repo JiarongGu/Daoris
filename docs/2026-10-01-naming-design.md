@@ -220,7 +220,7 @@ each item on one line; a long toast on two lines, uncut.
 
 `src/Daoris.Web/src/locales/glossary.json` is the authority. It sits beside the language folders and in
 neither, so it is never merged into a catalogue (`locales/index.ts` reads `./en/*.json` and `./zh/*.json`).
-It holds three things:
+It holds three things, and since NAME2 a fourth (`accepted`, §6):
 
 - **`terms`**: one entry per concept. Its `en` and `zh` are the names, chosen as names; `means` is its
   one-line definition; `avoid` lists, per language, the words it must not be called; `match` is how its
@@ -234,6 +234,7 @@ It holds three things:
   declaration that needs no key renamed: a naming convention on key names would have meant renaming
   hundreds of structural keys to carry a fact the map states in one line each.
 - **`doors`**: each door and the key naming its destination (§3c).
+- **`accepted`**: each budget judgement looked at and kept, with the name it accepted and why (§6, NAME2).
 
 **Adding a label key** is two lines in one change: the key in both catalogues, and the key (or a prefix
 already covering it) in its kind. **Adding a concept** is a term: its names in both languages, the
@@ -270,6 +271,19 @@ width, and the window is where a width is a fact. The parity gate itself is unch
 still reports the eight sentences the audit found to say another thing's word (a browser's or Windows'
 *profile*, git's credential *helper*, a request's value no application *accepts*, a process that
 *ended*).
+
+**An accepted judgement** (NAME2, 2026-10-02). The design said the window decides each budget judgement, and not
+where a decision is kept, so NAME1b's 107 came back on every run. A judgement looked at and kept is the glossary's
+`accepted`: the key, the name it accepted in each language it accepts, and why, naming the room the code gives the
+element (an icon control's tip, a select's field, a menu wider than a strip menu, a row that wraps) or the value a
+placeholder really holds. The check does not report a name while it is the one accepted, and a plural form is
+covered by its stem's. **A rename lapses it**: the finding comes back saying what had been accepted, so a new name is
+judged again. An accepted name that fits its budget again is reported too, so the acceptance can go. Both stay
+reports. The report counts what is accepted beside what is left. An acceptance naming a key the catalogues lack, a
+key with no budget, neither language or no reason makes the glossary malformed. Accept a judgement only when the
+length is the name. Where a shorter name says the same as well, rename instead. Where only the window can say whether
+it fits, leave it on the report. NAME2 renamed seven names and removed a key nothing rendered, accepted ninety-six key
+and language pairs, and left seven judgements for the window.
 
 **What NAME1b learned building it.** A word a term must not be called may sit inside another term's
 name: *like a git remote* says 远程仓库, git remote's name, which holds the 远程 a workspace's remote must

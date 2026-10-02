@@ -167,6 +167,71 @@ describe('the budgets', () => {
     expect(found.map(({ key, language }) => `${key}:${language}`).sort()).toEqual(['nav.long:en', 'nav.wide:zh']);
   });
 
+  /**
+   * NAME2: a judgement looked at and kept is recorded in the glossary with its reason, and the report stops
+   * repeating it; the acceptance holds the name it accepted, so a rename is judged again.
+   */
+  describe('accepted in the glossary', () => {
+    const accepting = (names: NonNullable<Glossary['accepted']>['names']): Glossary => ({ ...fixture(), accepted: { names } });
+    const budgets = (glossary: Glossary, entries: Record<string, [string, string]>) => {
+      const { en, zh } = catalogues(entries);
+      return check(glossary, en, zh).filter(({ rule }) => rule === 'budget');
+    };
+
+    it('is not reported, in the language it was accepted in, while the name is the one accepted', () => {
+      const glossary = accepting([{ key: 'nav.long', en: 'Agents and accounts', why: 'The list wraps it.' }]);
+      expect(budgets(glossary, { 'nav.long': ['Agents and accounts', 'Daoris 自身的 AI'] })
+        .map(({ key, language }) => `${key}:${language}`)).toEqual(['nav.long:zh']);
+    });
+
+    it('covers a plural form that says the name it accepted', () => {
+      const glossary = accepting([{ key: 'nav.long', en: 'Agents and accounts', why: 'The list wraps it.' }]);
+      expect(budgets(glossary, {
+        'nav.long': ['Agents and accounts', '智能体'],
+        'nav.long_other': ['Agents and accounts', '智能体'],
+      })).toEqual([]);
+    });
+
+    it('lapses once the name changes, and says what it had accepted', () => {
+      const glossary = accepting([{ key: 'nav.long', en: 'Agents and accounts', why: 'The list wraps it.' }]);
+      const found = budgets(glossary, { 'nav.long': ['Agents and their accounts', '智能体'] });
+      expect(found.map(({ key, language }) => `${key}:${language}`)).toEqual(['nav.long:en']);
+      expect(found[0]!.message).toMatch(/over the nav budget of 16/);
+      expect(found[0]!.message).toMatch(/accepted as "Agents and accounts"/);
+    });
+
+    it('says an accepted name back within its budget can go, still as a report', () => {
+      const glossary = { ...accepting([{ key: 'nav.long', en: 'Agents and accounts', why: 'The list wraps it.' }]) };
+      glossary.kinds = { ...glossary.kinds, nav: kind({ en: 24, zh: 5 }, 'sentence', ['nav.*']) };
+      const found = budgets(glossary, { 'nav.long': ['Agents and accounts', '智能体'] });
+      expect(found.map(({ key, language }) => `${key}:${language}`)).toEqual(['nav.long:en']);
+      expect(found[0]!.message).toMatch(/within/);
+      expect(verdict(found, { strict: true })).toBe(0);
+    });
+
+    it('is malformed naming a key the catalogues lack, a name with no budget, no language, or no reason', () => {
+      const glossary = accepting([
+        { key: 'nav.gone', en: 'Gone', why: 'r' },
+        { key: 'elsewhere.body', en: 'A sentence.', why: 'r' },
+        { key: 'nav.long', why: 'r' },
+        { key: 'nav.wide', zh: 'Daoris 自身的 AI', why: '' },
+      ]);
+      const { en, zh } = catalogues({
+        'nav.long': ['Agents and accounts', '智能体'], 'nav.wide': ['Agents', 'Daoris 自身的 AI'], 'elsewhere.body': ['A sentence.', '一句话。'],
+        'menu.go': ['Open quests', '打开委托'], 'nav.quests': ['Quests', '委托'],
+      });
+      const problems = validate(glossary, en, zh).join('\n');
+      expect(problems).toMatch(/nav\.gone/);
+      expect(problems).toMatch(/elsewhere\.body.*sentence/);
+      expect(problems).toMatch(/nav\.long.*neither/);
+      expect(problems).toMatch(/nav\.wide.*reason/);
+    });
+
+    it('is counted in the report, apart from what is still reported', () => {
+      expect(report([], { labels: 3, accepted: 2 })).toMatch(/2 budget judgements accepted in the glossary/);
+    });
+  });
+
   it('measures a palette row by its name, since the gloss after its dash is a sentence', () => {
     const { en, zh } = catalogues({
       'palette.browser': ["Open Daoris's browser — sign in where sessions will look", '打开 Daoris 浏览器——在会话会看的地方登录'],
@@ -302,6 +367,35 @@ describe('the real glossary and catalogues', () => {
     for (const key of [...Object.keys(named), 'plugin.enabled', 'plugin.disabled']) {
       expect(rules(found, key).filter((rule) => !rule.startsWith('budget')), key).toEqual([]);
     }
+  });
+
+  /**
+   * NAME2 went through the budget judgements NAME1b left by kind: a shorter name where it says the same as
+   * well, an acceptance with its reason where the length is the name, and the rest left for the window.
+   */
+  it('name the budget judgements NAME2 renamed by the shorter names that say the same', () => {
+    const renamed: Record<string, [string, string]> = {
+      'help.proposal.titleHand': ['Ask Daoris proposes a hand-off', '问道衍提议交接一个分支'],
+      'help.proposal.titleSync': ['Ask Daoris proposes updates', '问道衍提议更新到最新'],
+      'quests.groups.open': ['Open — waiting to be taken ({{count}})', '待接——等人接下（{{count}}）'],
+      'work.intakeRunning.title': ['This intake is reading ask #{{ask}}', '受理会话正在读需求 #{{ask}}'],
+      'scope.none': ['no workspace yet', '尚无工作区'],
+      'harness.pin.missing': ['pinned {{version}} — not installed', '已固定 {{version}}——未安装'],
+      'asks.record.anotherPlaceholder': ['any repository in workspace {{circle}}', '工作区 {{circle}} 中的任一仓库'],
+    };
+    for (const [key, [english, chinese]] of Object.entries(renamed)) expect([en[key], zh[key]], key).toEqual([english, chinese]);
+    // A key nothing renders is no name to judge, so it went rather than being shortened.
+    expect('harness.machineDefault' in en || 'harness.machineDefault' in zh).toBe(false);
+  });
+
+  it('leave on the report only the budget judgements the window must make', () => {
+    const left = check(glossary, en, zh).filter(({ rule }) => rule === 'budget').map(({ key, language }) => `${key}:${language}`).sort();
+    expect(left).toEqual([
+      'help.setup:en', 'help.setup:zh',
+      'scope.every:en', 'scope.every:zh',
+      'signin.titleNew:en', 'signin.titleNew:zh',
+      'work.group.noCheckout:en',
+    ]);
   });
 
   /**
