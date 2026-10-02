@@ -141,7 +141,8 @@ public static class ActiveSessions
 /// How many sessions have <b>failed</b> on each quest, by quest id — <b>derived</b> from the session
 /// records this machine already wrote, never a tally the driver keeps (DRV6). Only `failed` counts, and a
 /// stop that was not the person's (D104): a stand-down means somebody else got there first, a decline is
-/// a real answer, and the person's stop was theirs. A quest nobody has failed is simply absent.
+/// a real answer, and the person's stop was theirs. A failure an account's limit made is not counted
+/// either (D125 §5.2): the account cools, and the quest waits for it. A quest nobody has failed is simply absent.
 /// </param>
 public sealed record Snapshot(
     IReadOnlyList<QuestView> Quests,
@@ -333,7 +334,8 @@ public static class Planner
         // A cut-off (D80): this machine's session took the quest and failed before closing it — timed
         // out, refused, crashed, or ended by the sweep or a shutdown (D104) — so the take is still here
         // and the work is in its tree. Carried on like a failed start is retried: the strikes count every
-        // cut-off, and the third parks it.
+        // cut-off, and the third parks it — bar one an account's limit made, which is no strike: its carry-on is
+        // planned as any is, and held at spawn while the account cools (TOOL4d, D125 §4).
         Consideration CarryOn(QuestView quest, PriorSession cutOff)
         {
             var considered = Consider(quest, into: cutOff);

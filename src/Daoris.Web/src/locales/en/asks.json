@@ -42,7 +42,7 @@
   "asks.record.matched": "shares {{words}}",
   "asks.record.publishTo": "Publish to {{repository}}",
   "asks.record.another": "publish to another",
-  "asks.record.anotherPlaceholder": "any repository in workspace {{circle}} that can be asked",
+  "asks.record.anotherPlaceholder": "any repository in workspace {{circle}}",
   "asks.record.publish": "Publish",
   "asks.record.links": "Links",
   "asks.record.files": "Files",

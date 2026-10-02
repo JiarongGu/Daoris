@@ -81,6 +81,17 @@ public sealed partial class HelpCoverageTests
         + "itself, so Ask Daoris should propose it; that is the `session` kind's `archive` and `unarchive` doors, which "
         + "SESSUX1h builds once Sessions' screen presses them (D126 §7.3).");
 
+    /// <summary>
+    /// WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5), a verb of the headless host: the press, and its pause,
+    /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
+    /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
+    /// </summary>
+    private static readonly Owed WorkspaceDoor = new(
+        "setting a workspace up writes a plan that publishes a quest to each repository in turn and adds a rule at the "
+        + "workspace's scope, a widening the person applies as a card, and pausing, resuming or stopping it changes only what "
+        + "the person already said, so Ask Daoris should propose each; that waits on WSSETUP7's `workspace`, `pause`, `resume` "
+        + "and `stop` doors of LAYOUT8's `setup` kind, judged against the same plan (D124 §4.5).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -293,6 +304,7 @@ public sealed partial class HelpCoverageTests
             .Append(SetupDoor)
             .Append(RegisterDoor)
             .Append(SessionArchiveDoor)
+            .Append(WorkspaceDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -353,6 +365,22 @@ public sealed partial class HelpCoverageTests
         Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
         Assert.Null(HelpProposalKinds.Find("session"));
         Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
+    }
+
+    /// <summary>
+    /// WSSETUP6: the headless host's <c>setup --workspace</c>, its press and its pause, resume and stop, are doors owed to the
+    /// <c>setup</c> kind (D124 §4.5) while the host's usage spells them and no kind of that name is built; the room names both
+    /// forms meanwhile, so the helper can point the person at them. The screen's route is WSSETUP7's too.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_workspace_plan_is_a_door_owed_to_the_setup_kind()
+    {
+        Assert.Contains("setup --workspace <name> [--plan]", DriverCommand.Usage);
+        Assert.Contains("setup --workspace <name> --pause | --resume | --stop", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("setup"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup --workspace <name> [--plan]", StringComparison.Ordinal)
+            && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
+        Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
     }
 
     /// <summary>

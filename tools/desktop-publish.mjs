@@ -421,9 +421,12 @@ session.** \`daoris driver list\` shows what this machine will drive.
 PowerShell. Each runs the \`daoris\` package this install carries in \`${CLI_HOME.join('/')}/\`, packed from the same
 build as the application, as the release packs the one it publishes to npm (\`daoris --version\` says
 which), on the \`node\` your PATH finds: it needs Node.js 22 or later.
-Nothing puts \`${CLI_BIN.join('/')}/\` on your account's PATH, so a terminal of yours still runs whatever \`daoris\`
-you installed; run this one by its path, from the repository it should look at. A re-publish replaces both
-folders whole.
+Every program Daoris starts finds it by its bare name: a driven session, a conversation, an intake, a hook,
+a landing plugin and every shell of its terminal panel begin their PATH with \`${CLI_BIN.join('/')}/\`, because
+this install's home, \`${HOME}/\`, sits beside \`${CLI_BIN[0]}/\` (D124).
+Nothing puts \`${CLI_BIN.join('/')}/\` on your account's PATH, so a terminal of yours outside Daoris still runs whatever
+\`daoris\` you installed; run this one by its path there, from the repository it should look at. A re-publish
+replaces both folders whole.
 
 ## Pinning it to the taskbar
 

@@ -4,8 +4,9 @@
 > person a question its own repository's notes and code could answer. The owner's diagnosis is that the
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
-> WSSETUP2, WSSETUP3, WSSETUP4, WSSETUP5, WSSETUP8, WSSETUP9, WSSETUP11, LAYOUT7 as amended and LAYOUT7a built**
-> (§1.2, §1.3, §1.4, §3, §5, §6.1, §7.3, §2; D124's notes say what each build settled), the rest not.
+> WSSETUP2, WSSETUP3, WSSETUP4, WSSETUP5, WSSETUP6, WSSETUP8, WSSETUP9, WSSETUP11, LAYOUT7 as amended and LAYOUT7a
+> built** (§1.2, §1.3, §1.4, §3, §4.1–§4.3 with §4.5's terminal, §5, §6.1, §7.3, §2; D124's notes say what each build
+> settled), the rest not.
 > It builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
 > the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools' environment of
 > `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read with **D13**,
@@ -437,6 +438,15 @@ repository nothing touches may never need a set-up (§7).
 
 The workspace press adds §2.4's rule once, at workspace scope, rather than one rule per repository. It says so
 before it is pressed. The verbs are the same offline commands, each writing only in the tree it runs in.
+
+*As built (WSSETUP6): the plan is `<home>/setup/<workspace>.json`, named by the intake's room's rule, and the tick works
+it after following the moved lines and before reading the quests, so a set-up it publishes starts in that same look.
+`paused` says who paused it (the person, the pilot, or the machine's doctrine tool) and why; `pilotResumed` keeps the
+pilot from pausing it twice; `stopped` ends it, and a new press may replace a stopped plan; `skipped` keeps each refusal
+met at a turn, which a resume judges again. A repository is set up when the registry's own `registered` word says so,
+read and never recomputed. A set-up open from any door holds its turn and a slot, and a parked one frees the slot. A
+refusal of the machine's tools pauses the plan rather than skip every repository in turn. The press refuses a second
+working plan, `--at-once` above `cap − 1`, and a machine whose children find no doctrine tool. D124's note has the rest.*
 
 ### 4.4 What the person sees as each lands
 

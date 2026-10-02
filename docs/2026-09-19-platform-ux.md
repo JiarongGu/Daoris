@@ -110,7 +110,9 @@ controls are in the frame design's §3.
 - **Prose has a measure of its own.** Explanatory text goes in `Prose` (65ch, font-relative): a
   paragraph inheriting the column's width ran to about 190 characters a line, roughly triple what the
   eye tracks. This is for the console EXPLAINING itself; a quest's body, a knowledge entry, a
-  repository's summary and a session's note are **content**, and content is shown as it is.
+  repository's summary and a session's note are **content**, and content is shown as it is. So a page header's
+  line (a plugin's description, a repository's summary) wraps at the measure, whole, and is never cut to one
+  line with its words in a tip (NAME2).
 - **Status leads.** A row reads `pill · title · route · how long`: identity first, the secondary marks
   at the right. A pill pushed to the far edge sat a thousand pixels from the title it described.
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +

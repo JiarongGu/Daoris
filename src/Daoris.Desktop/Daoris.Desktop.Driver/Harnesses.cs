@@ -145,7 +145,12 @@ public sealed record HarnessToolchain(
     // The tool's own settings file in an account's configuration home, where the account's model and
     // effort live (AGT6, D98) — declared only where its keys were read from the tool itself. Null means
     // Daoris does not know this tool's settings and offers none. The CLI's `settingsFile` is the twin.
-    string? SettingsFile = null)
+    string? SettingsFile = null,
+    // The words this tool says an account's limit in (TOOL4a, D125 §1.3), read from the door's failure
+    // by `AccountLimits.Read` and never from the transcript. Declared only by a tool seen hitting one,
+    // each pattern standing on a recorded sentence. A door onto another agent reads its owner's (AGT7).
+    // Null reads every failure as a failure. Not a twin: the CLI concludes no session.
+    LimitWords? Limits = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -702,6 +707,18 @@ public static class HarnessKeys
         if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
         held[account] = trimmed;
         Write(home, keys);
+
+        // A new key into an account ends a cool-off its name still carried (TOOL4d, D125 §2.3): whatever was spent, it
+        // was not this key. Never the reason a key is not kept.
+        try
+        {
+            AccountCooling.End(home, harness, account, DateTimeOffset.UtcNow);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // The key is kept; the cool-off ends at its reset instead.
+        }
+
         return account;
     }
 
@@ -1140,6 +1157,12 @@ public sealed record HarnessSelection(
     IReadOnlyDictionary<string, string>? Environment = null)
 {
     public bool Allowed => Refusal is null;
+
+    /// <summary>
+    /// The account's cool-off when that is why this spawn must not happen (TOOL4d, D125 §4), and null otherwise: a
+    /// hold that waits for a time, where every other refusal waits for a person.
+    /// </summary>
+    public CoolingEntry? Cooling { get; init; }
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -1219,6 +1242,82 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             ? Toolchain(adapter)?.Owner(adapters.Resolve(adapter).Name) ?? adapter
             : adapter;
         _refused[AccountKey(owner, profile)] = reason;
+    }
+
+    // The waits already written to the machine log, by account, with the cool-off each was for (TOOL4d): a wait is
+    // written once, however many looks it lasts, and a new cool-off on the account is a new wait.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _waited =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>What time it is, for reading and writing cool-offs (TOOL4d); the system's, unless a test's.</summary>
+    public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
+
+    /// <summary>
+    /// This machine's zone (D125 §2.1): it stands in for a zone a limit's sentence names that is not an IANA name, and
+    /// every cool-off is said in it, with the zone named.
+    /// </summary>
+    public TimeZoneInfo Zone { get; init; } = TimeZoneInfo.Local;
+
+    /// <summary>
+    /// Whose accounts a cool-off on this adapter belongs to: its owner, as its accounts are (AGT7), or the agent a door
+    /// with no toolchain reads limits as (<see cref="ISessionAdapter.LimitsOf"/>); null for one that reads none.
+    /// </summary>
+    private string? CoolingAgent(ISessionAdapter resolved) =>
+        resolved.Toolchain is { } toolchain ? toolchain.Owner(resolved.Name) : resolved.LimitsOf;
+
+    /// <summary>
+    /// The words this adapter says an account's limit in (TOOL4a, D125 §1.3): its own entry, else its owner's, since a
+    /// door's limits are its owner's as its accounts are (AGT7). Null reads every failure as a failure.
+    /// </summary>
+    public LimitWords? LimitsOf(string adapter)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain?.Limits is { } own) return own;
+        return CoolingAgent(resolved) is { } owner
+               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
+               && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
+            ? adapters.Resolve(owner).Toolchain?.Limits
+            : null;
+    }
+
+    /// <summary>The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.</summary>
+    public CoolingEntry? CoolingOf(string adapter, string? profile) =>
+        CoolingAgent(adapters.Resolve(adapter)) is { } agent ? AccountCooling.Of(Home, agent, profile, Clock()) : null;
+
+    /// <summary>
+    /// The door's failure, read for an account's limit (TOOL4d, D125 §1, §2): where the adapter's table recognises it, the
+    /// account the session ran as cools until the reset the agent named, and what was read is returned. Null is a
+    /// failure as today, and nothing is written.
+    /// </summary>
+    /// <param name="failure">What the door carried apart from the agent's words; never the transcript (D125 §1.4).</param>
+    public (CoolingEntry Entry, LimitSeen Seen)? Limited(string adapter, string? profile, string? failure, string session)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (CoolingAgent(resolved) is not { } agent) return null;
+
+        var now = Clock();
+        // The default is a constant until `cooloff` in `driver.json` is TOOL4e's.
+        if (AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, AccountLimits.DefaultCoolOff) is not { } seen) return null;
+
+        var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
+        AccountCooling.Cool(Home, entry, now);
+        return (entry, seen);
+    }
+
+    /// <summary>
+    /// End an account's cool-off early: the person's <i>Try now</i>, since they may know the limit was raised (D125 §2.3).
+    /// True when it was cooling; one that was not is told so, and nothing changes.
+    /// </summary>
+    public bool Ready(string adapter, string? profile) =>
+        CoolingAgent(adapters.Resolve(adapter)) is { } agent && AccountCooling.End(Home, agent, profile, Clock());
+
+    /// <summary>Whether this wait is new — an account, and the cool-off it is waiting out — so it is written once.</summary>
+    internal bool NewWait(string agent, string? account, DateTimeOffset until)
+    {
+        var key = AccountKey(agent, account);
+        var said = _waited.TryGetValue(key, out var was) && was == until;
+        _waited[key] = until;
+        return !said;
     }
 
     /// <summary>The adapters this roster answers for — the build's, plus whatever plugins declare (D64).</summary>
@@ -1342,8 +1441,21 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public async Task<IReadOnlyList<HarnessReport>> RosterAsync(
         DriverConfig config, bool refresh = false, CancellationToken ct = default)
     {
-        // A person looking again is asking to try again (AGT3b): a refused account is let through.
-        if (refresh) _refused.Clear();
+        // A person looking again is asking to try again (AGT3b): a refused account is let through. And the tool's own
+        // home's cool-off ends (D125 §3.7): it means whoever was signed in there when the limit came, and a sign-in at
+        // the person's own terminal since is not something Daoris sees. A named account's reset stands.
+        if (refresh)
+        {
+            _refused.Clear();
+            try
+            {
+                AccountCooling.EndOwnHomes(Home, Clock());
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // A cool-off that could not be ended costs a start's wait, never the roster.
+            }
+        }
 
         var reports = new List<HarnessReport>();
         foreach (var name in Known)
@@ -1378,10 +1490,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // An adapter that declares no toolchain has nothing to check: it spawns exactly as it did
         // before this existed. Purely additive, which is what lets a new adapter arrive without
-        // answering questions about installers it may not have.
+        // answering questions about installers it may not have. One that reads another agent's limits
+        // (the protocol stub, TOOL4d) runs on that agent's own sign-in, and its cool-off holds it.
         if (resolved.Toolchain is not { } toolchain)
         {
-            return new HarnessSelection(Refusal: null);
+            return resolved.LimitsOf is { } limitsOf && AccountCooling.Of(Home, limitsOf, null, Clock()) is { } spent
+                ? Cooled(spent)
+                : new HarnessSelection(Refusal: null);
         }
 
         var settings = Settings;
@@ -1390,6 +1505,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         // different package at a different version (ACP2).
         var owner = toolchain.Owner(resolved.Name);
         var profile = settings.Resolve(owner, workspace, chosen);
+
+        // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
+        // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
+        // fault was its account. Nothing is spawned or probed while it cools.
+        if (AccountCooling.Of(Home, owner, profile, Clock()) is { } cooling) return Cooled(cooling);
 
         // An account its provider already refused is not spent again (AGT3b).
         if (_refused.TryGetValue(AccountKey(owner, profile), out var refused))
@@ -1488,6 +1608,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         return new HarnessSelection(null, profile, home, report?.Version, managed, claude, key);
     }
+
+    /// <summary>
+    /// A start held because its account is cooling: §4's sentence, and the cool-off itself, so a look can say the wait
+    /// once and a screen can show the quest waiting for an account rather than parked.
+    /// </summary>
+    private HarnessSelection Cooled(CoolingEntry cooling) =>
+        new(CoolingWords.Hold(cooling, Zone)) { Cooling = cooling };
 
     /// <summary>
     /// What a start in this workspace would run on, and where each part came from (MAP1b, D67 §3).
@@ -1891,14 +2018,37 @@ public static class HarnessActions
     /// Run the harness's own login flow INTO a profile. The directory is Daoris's; everything that
     /// lands in it is the harness's.
     /// </summary>
-    public static Task<int> LoginAsync(
+    /// <remarks>
+    /// A sign-in that ends well ends that account's cool-off (TOOL4d, D125 §2.3): the directory may now hold another
+    /// account. Both the screen's sign-ins come through here.
+    /// </remarks>
+    public static async Task<int> LoginAsync(
         HarnessToolchain toolchain, IReadOnlyList<string>? command, string profileHome,
-        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null) =>
-        toolchain.LoginArguments is { Count: > 0 } login
-            ? RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)
-            : throw new DriverException(
+        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null)
+    {
+        if (toolchain.LoginArguments is not { Count: > 0 } login)
+        {
+            throw new DriverException(
                 "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
                 + "configuration-home variable at the account's directory.");
+        }
+
+        var code = await RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)
+            .ConfigureAwait(false);
+        if (code == 0)
+        {
+            try
+            {
+                AccountCooling.SignedIn(profileHome, DateTimeOffset.UtcNow);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // The sign-in stands; the cool-off ends at its reset instead.
+            }
+        }
+
+        return code;
+    }
 
     /// <summary>
     /// Spawn and relay. Both streams, line by line, in the order they arrive — the same shape the

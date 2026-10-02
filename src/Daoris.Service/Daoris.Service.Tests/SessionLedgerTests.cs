@@ -192,6 +192,51 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit, and the record keeps it. The
+    /// ledger still opens the carry-on (D80); waiting for the reset is the driver's, at spawn (TOOL4d).
+    /// </summary>
+    [Fact]
+    public async Task A_failure_may_say_it_was_an_accounts_limit_and_the_record_keeps_it()
+    {
+        var quest = await Publish();
+        var first = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _ledger.AdvanceAsync(first.Id, "starting", null, null, null, Now);
+        await _ledger.AdvanceAsync(first.Id, "working", null, null, null, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+
+        var failed = await _ledger.AdvanceAsync(
+            first.Id, "failed", "the ACP agent refused the call: You've hit your weekly limit", null, null,
+            Now.AddMinutes(5), limit: true);
+
+        Assert.Equal(SessionAdvanceRefusal.None, failed.Refusal);
+        Assert.True(failed.Session!.Limit);
+        Assert.True((await _sessions.FindAsync(first.Id))!.Limit);
+        Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
+    }
+
+    /// <summary>
+    /// A limit says why a turn FAILED, so only a failure carries it: a move anywhere else asking for it is
+    /// refused, and the record does not move.
+    /// </summary>
+    [Theory]
+    [InlineData("stopped")]
+    [InlineData("completed")]
+    [InlineData("stood-down")]
+    public async Task Only_a_failure_may_say_limit(string state)
+    {
+        var quest = await Publish();
+        var session = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _ledger.AdvanceAsync(session.Id, "starting", null, null, null, Now);
+        await _ledger.AdvanceAsync(session.Id, "working", null, null, null, Now);
+
+        var refused = await _ledger.AdvanceAsync(session.Id, state, null, null, null, Now, limit: true);
+
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, refused.Refusal);
+        Assert.Contains("failed", refused.Message);
+        Assert.Equal(SessionState.Working, (await _sessions.FindAsync(session.Id))!.State);
+    }
+
+    /// <summary>
     /// 🔴 A stand-down means somebody else has the quest, so the take is not this machine's — and a
     /// taken quest nobody here ran is somebody else's too. Neither is carried on.
     /// </summary>

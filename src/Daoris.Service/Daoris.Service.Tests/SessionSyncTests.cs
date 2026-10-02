@@ -177,6 +177,29 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.DoesNotContain(await _remote.ListAsync(includeClosed: true), s => s.Id.StartsWith("a@one/b@two", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// TOOL4c (D125 §5.2): a limit names no account, so it travels, up with this machine's own record and
+    /// down to a teammate's machine. The account the session ran as still stays home.
+    /// </summary>
+    [Fact]
+    public async Task A_limit_crosses_both_ways_and_the_account_it_ran_as_does_not()
+    {
+        var session = await _a.CreateAsync("q1", "Shared", "stub", Now, profile: "janes-own-account");
+        await _a.SetStateAsync(session.Id, SessionState.Working, null, null, null, Now);
+        await _a.SetStateAsync(session.Id, SessionState.Failed, "the ACP agent refused the call.", null, null, Now, limit: true);
+        var remote = Remote("a@one");
+
+        await SyncAsync(_a, "a@one", remote);
+        await SyncAsync(_b, "b@two");
+
+        Assert.Contains("\"limit\":true", remote.LastFeed);
+        Assert.DoesNotContain("janes-own-account", remote.LastFeed);
+        Assert.True((await _remote.FindAsync($"a@one/{session.Id}"))!.Limit);
+        var there = (await _b.FindAsync($"a@one/{session.Id}"))!;
+        Assert.True(there.Limit);
+        Assert.Null(there.Profile);
+    }
+
     /// <summary>A teammate's session moving on its own machine arrives here as the same record, moved.</summary>
     [Fact]
     public async Task A_teammates_record_that_moves_comes_down_again_moved()
