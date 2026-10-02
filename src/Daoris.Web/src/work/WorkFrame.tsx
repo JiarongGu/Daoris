@@ -181,6 +181,9 @@ export function WorkFrame({
   // Why the last start was refused, said in the start form until it closes or starts again (UX5 U68).
   const [startRefusal, setStartRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  // *Archive what ended…* pressed in the list's ⋯ (SESSUX1e): its first press stands under the list's header until it
+  // archives or the person never minds. Not remembered: it is a question asked now.
+  const [archivingEnded, setArchivingEnded] = useState(false);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLElement>(null);
   // Which dock surface each session has up (FRAME6: tabs per session). Not remembered across launches:
@@ -737,7 +740,8 @@ export function WorkFrame({
     name: t('work.rail.label'),
     labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
     make: { label: t('work.start.title'), onMake: () => setStarting(true) },
-    // The list's ⋯, which it never had (SESSUX1c): how it is grouped, a choice of two, remembered (D118 §3f).
+    // The list's ⋯, which it never had (SESSUX1c): how it is grouped, a choice of two, and whether archived sessions
+    // are shown, both remembered (D118 §3f); then, below a rule, *Archive what ended…*, which lists first (SESSUX1e).
     more: (
       <ListMore
         label={t('work.list.more')}
@@ -751,6 +755,16 @@ export function WorkFrame({
           onChoose: (value) => listed.setFilters('sessions', keptSessionFilters({
             ...sessionsFilters, group: value === 'repository' ? 'repository' : 'state',
           })),
+        }}
+        items={[
+          { id: 'archived', label: t('work.list.showArchived'), checked: sessionsFilters.archived },
+          { id: 'archiveEnded', label: t('work.list.archiveEnded'), rule: true },
+        ]}
+        onChoose={(id) => {
+          if (id === 'archiveEnded') setArchivingEnded(true);
+          else if (id === 'archived') {
+            listed.setFilters('sessions', keptSessionFilters({ ...sessionsFilters, archived: !sessionsFilters.archived }));
+          }
         }}
       />
     ),
@@ -777,6 +791,8 @@ export function WorkFrame({
         lastTurns={lastTurns}
         arrangement={sessionsFilters.group}
         archived={sessionsFilters.archived}
+        archiveEnded={archivingEnded}
+        onArchiveEnded={() => setArchivingEnded(false)}
         // A row's menu reviews that session: attended, with the dock open on its work.
         onReview={(id) => {
           chosen();

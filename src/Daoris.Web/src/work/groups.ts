@@ -3,8 +3,9 @@ import { SESSION_ACTIVE, type ShownState, shownState } from '../ui';
 import { sessionOrigin } from './identity';
 
 // The session list by state (SESSUX1c, D126 §2.1, §4): the groups the driver's one reader answers, as the list
-// draws them; the list by repository as it was; the strip; and what the list remembers. Pure, so every list a person
-// could have is an argument, and the list, the strip and the badge read one answer.
+// draws them; the list by repository as it was; the strip; what the list remembers; and what *Archive what ended…*
+// would take (SESSUX1e). Pure, so every list a person could have is an argument, and the list, the strip and the badge
+// read one answer.
 
 /**
  * The groups the session list shows by state (D126 §2.1), in the order the person acts on them, and Archived: the
@@ -126,6 +127,28 @@ export function sessionsByState(
   }
 
   return GROUP_ORDER.map((group) => ({ group, sessions: rows.get(group)! })).filter((group) => group.sessions.length > 0);
+}
+
+/** What *Archive what ended…* would take, and how many stay in the list because they need the person (D126 §5.3). */
+export type EndedToArchive = { going: string[]; kept: { you: number; review: number } };
+
+/**
+ * What *Archive what ended…*'s first press lists (SESSUX1e, D126 §5.3): every session the reader placed in Ended that is
+ * not archived, in its order, and how many stay under *Waiting on you* and *To review*, counted as their headings are.
+ *
+ * @remarks
+ * A record the reader has not answered for is placed in Ended by its record alone, and the reader may yet say it is to
+ * review, so it is left to the next look. Only what the page holds is taken: the person archives what they can see.
+ * The host judges each again at the second press, so this is a list, never a promise.
+ */
+export function endedToArchive(sessions: readonly Session[], groupings: readonly SessionGrouping[] | undefined): EndedToArchive {
+  const groups = sessionsByState(sessions, groupings, { selected: null, archived: false });
+  const placed = new Map((groupings ?? []).map((row): [string, SessionGrouping] => [row.session, row]));
+  const of = (group: SessionGroupName) => groups.find((row) => row.group === group)?.sessions ?? [];
+  return {
+    going: of('ended').filter((row) => placed.get(row.id)?.group === 'ended').map((row) => row.id),
+    kept: { you: of('you').length, review: of('review').length },
+  };
 }
 
 /** The list by repository: a group per repository with live work, by name, and the ended beneath. */

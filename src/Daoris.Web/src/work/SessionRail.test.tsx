@@ -473,6 +473,169 @@ describe('the session rail by state', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', expect.anything());
   });
 
+  /**
+   * SESSUX1e, D126 §5.2: an ended row archived from its ⋯ goes to the driver as one session, and the person is told
+   * where it went; refused, the host's code is said in the person's words from the catalogue, naming which group kept it.
+   */
+  describe('archive (SESSUX1e)', () => {
+    const DONE = 'd4e5f6a7';
+    const ENDED_TWO = { ...base, id: 'e0e0e0e0', quest: null, repository: 'engine', state: 'declined', created: at(500), updated: at(400) };
+
+    /** The bridge's answer, with SESSION_ARCHIVE's own; every other call as the rail's suite answers it. */
+    const answering = (archive: (payload: Record<string, unknown>) => unknown) =>
+      invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Record<string, unknown> }) =>
+        (type === 'SESSION_ARCHIVE' ? archive(options?.payload ?? {}) : drive(module, type)));
+
+    const rail = (props: Partial<Parameters<typeof SessionRail>[0]> & { notify?: (text: string, kind?: string) => void } = {}) => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      return render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><SessionRail notify={() => {}} {...props} /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+    };
+
+    const menuOf = async (section: string) => {
+      const group = (await screen.findByRole('heading', { level: 3, name: section })).closest('section')!;
+      const user = userEvent.setup();
+      within(group).getAllByRole('button', { name: /^more for / })[0]!.focus();
+      await user.keyboard('{Enter}');
+      return user;
+    };
+
+    it('archives an ended row from its ⋯, and says Show archived brings it back', async () => {
+      const notify = vi.fn();
+      answering(() => ({ archived: [{ session: DONE, at: '2026-10-02T12:00:00Z' }], kept: [] }));
+      rail({ notify });
+
+      const user = await menuOf('Ended (1)');
+      await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
+
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', { payload: { ids: [DONE], archived: true } });
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Archived. Show archived, in the list’s ⋯, brings it back.'));
+    });
+
+    /** Asked of one session, a refusal is the answer: said in the catalogue's words, with the group that kept it. */
+    it('says a refusal in the catalogue, naming the group that kept the session', async () => {
+      const notify = vi.fn();
+      answering(() => {
+        throw Object.assign(new Error('refused'), {
+          code: 'SESSION_NEEDS_YOU', parameters: { session: DONE, group: 'review', context: 'review' },
+        });
+      });
+      rail({ notify });
+
+      const user = await menuOf('Ended (1)');
+      await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
+
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(
+        `${DONE} has work to review, so it was not archived: archive never hides what needs you. Land its work or discard its tree first.`,
+        'error',
+      ));
+    });
+
+    it('says a live session refused as the host names it', async () => {
+      const notify = vi.fn();
+      answering(() => {
+        throw Object.assign(new Error('refused'), { code: 'SESSION_LIVE', parameters: { session: DONE } });
+      });
+      rail({ notify });
+
+      const user = await menuOf('Ended (1)');
+      await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
+
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(`${DONE} is still running, so it was not archived. Stop it first.`, 'error'));
+    });
+
+    /** Unarchive brings a session back to the group its state puts it in, as the reader answers once asked again. */
+    it('brings an archived row back to its group with Unarchive', async () => {
+      const notify = vi.fn();
+      GROUPS = [...LIVE_GROUPS.slice(0, 3), { session: DONE, group: 'archived', shown: 'completed', archived: true, teammate: false }];
+      answering((payload) => {
+        expect(payload).toEqual({ ids: [DONE], archived: false });
+        GROUPS = LIVE_GROUPS;
+        return { archived: [], notArchived: [] };
+      });
+      rail({ notify, archived: true });
+
+      const user = await menuOf('Archived (1)');
+      await user.click(screen.getByRole('menuitem', { name: 'Unarchive' }));
+
+      expect(await screen.findByRole('heading', { level: 3, name: 'Ended (1)' })).toBeInTheDocument();
+      // Archived is still shown, and now says it holds nothing.
+      expect(screen.getByRole('heading', { level: 3, name: 'Archived (0)' })).toBeInTheDocument();
+      expect(notify).toHaveBeenCalledWith('Unarchived. It is back in the list.');
+    });
+
+    /** One that was not archived is information, never a refusal (D48 §6). */
+    it('says a session that was not archived was not, as information', async () => {
+      const notify = vi.fn();
+      GROUPS = [...LIVE_GROUPS.slice(0, 3), { session: DONE, group: 'archived', shown: 'completed', archived: true, teammate: false }];
+      answering(() => ({ archived: [], notArchived: [DONE] }));
+      rail({ notify, archived: true });
+
+      const user = await menuOf('Archived (1)');
+      await user.click(screen.getByRole('menuitem', { name: 'Unarchive' }));
+
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('It was not archived, so nothing changed.'));
+    });
+
+    /** §4.5: a search finds archived sessions too, each marked archived, since a search is how one is found without the tick. */
+    it('finds an archived session in a search, marked archived', async () => {
+      GROUPS = [...LIVE_GROUPS.slice(0, 3), { session: DONE, group: 'archived', shown: 'completed', archived: true, teammate: false }];
+      answering(() => undefined);
+      rail();
+      await screen.findByRole('heading', { level: 3, name: 'Working (2)' });
+      expect(screen.queryByRole('heading', { level: 3, name: /^Ended/ })).toBeNull();
+
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'Session');
+      const byName = await screen.findByRole('region', { name: 'By name' });
+      expect(within(byName).getByText(/^archived · driven · /)).toBeInTheDocument();
+    });
+
+    /** §5.3: the first press lists under the list's header; the second archives what it listed, and the ask closes. */
+    it('archives what ended on the second press of Archive what ended, and says where they went', async () => {
+      const notify = vi.fn();
+      const closed = vi.fn();
+      SESSIONS = [...LIVE, ENDED_TWO];
+      GROUPS = [...LIVE_GROUPS, { session: ENDED_TWO.id, group: 'ended', shown: 'declined', archived: false, teammate: false }];
+      answering(() => ({ archived: [{ session: DONE, at: 'x' }, { session: ENDED_TWO.id, at: 'x' }], kept: [] }));
+      rail({ notify, archiveEnded: true, onArchiveEnded: closed });
+
+      const ask = await screen.findByRole('group', { name: 'Archive what ended…' });
+      expect(ask).toHaveTextContent('Archives 2 sessions that ended. Kept in the list: 1 waiting on you.');
+      await userEvent.click(within(ask).getByRole('button', { name: 'Archive 2' }));
+
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', { payload: { ids: [DONE, ENDED_TWO.id], archived: true } });
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Archived 2 sessions that ended. Show archived, in the list’s ⋯, brings them back.'));
+      expect(closed).toHaveBeenCalled();
+    });
+
+    /** Each is judged again as it goes (§5.3): what changed since the list stays, and the person is told how many went. */
+    it('says how many of the listed went where some changed since the list', async () => {
+      const notify = vi.fn();
+      SESSIONS = [...LIVE, ENDED_TWO];
+      GROUPS = [...LIVE_GROUPS, { session: ENDED_TWO.id, group: 'ended', shown: 'declined', archived: false, teammate: false }];
+      answering(() => ({ archived: [{ session: DONE, at: 'x' }], kept: [{ session: ENDED_TWO.id, code: 'SESSION_NEEDS_YOU', group: 'review' }] }));
+      rail({ notify, archiveEnded: true });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Archive 2' }));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(
+        'Archived 1 of 2; the rest changed since the list. Show archived, in the list’s ⋯, brings them back.',
+      ));
+    });
+
+    it('closes the ask on Never mind, archiving nothing', async () => {
+      const closed = vi.fn();
+      answering(() => { throw new Error('archived on Never mind'); });
+      rail({ archiveEnded: true, onArchiveEnded: closed });
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Never mind' }));
+      expect(closed).toHaveBeenCalled();
+      expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_ARCHIVE', expect.anything());
+    });
+  });
+
   /** Group by repository, chosen in the list's ⋯, is today's arrangement with the reader's words (§4.3). */
   it('draws the list by repository when that is chosen, parked with waiting on you', async () => {
     SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];

@@ -215,3 +215,33 @@ export const UncommittedToReview: Story = {
 export const Queued: Story = {
   args: { session: { ...SESSION, state: 'queued', created: at(1), updated: at(1) }, place: 'engine' },
 };
+
+/**
+ * Ended, with *Archive* on its ⋯ (SESSUX1e, D126 §5.2): the reader placed it in Ended, so the menu offers it beside its
+ * window, its review and its id. Hover the row for the ⋯.
+ */
+export const Archivable: Story = {
+  args: {
+    session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) },
+    grouping: placed({ group: 'ended', shown: 'completed' }),
+    place: 'engine',
+    onDetach: () => {},
+    onReview: () => {},
+    onArchive: () => {},
+    onCopy: () => {},
+  },
+};
+
+/**
+ * Archived, as a search or the list by repository shows it (§4.5): its line says so, its tip says how it comes back, and
+ * its ⋯ offers *Unarchive*.
+ */
+export const Archived: Story = {
+  args: {
+    session: { ...SESSION, state: 'completed', created: at(95), updated: at(50) },
+    grouping: placed({ group: 'archived', shown: 'completed', archived: true }),
+    archived: true,
+    onUnarchive: () => {},
+    onCopy: () => {},
+  },
+};

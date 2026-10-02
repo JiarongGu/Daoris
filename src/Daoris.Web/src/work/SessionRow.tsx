@@ -66,7 +66,8 @@ export type SessionWhere = {
 };
 
 export function SessionRow({
-  session, quest, opening, root, where, taking, lastTurn, grouping, place, selected = false, onSelect, onDetach, onReview, onCopy,
+  session, quest, opening, root, where, taking, lastTurn, grouping, place, archived = false, selected = false, onSelect, onDetach,
+  onReview, onArchive, onUnarchive, onCopy,
 }: {
   session: Session;
   /**
@@ -100,14 +101,26 @@ export function SessionRow({
    * the group it sits in says it.
    */
   place?: string | null;
+  /**
+   * Whether its line says it is archived (SESSUX1e, D126 §4.5): where the reader's mark stands and no heading above it
+   * says so, as in a search and by repository. Under the Archived heading the heading says it.
+   */
+  archived?: boolean;
   selected?: boolean;
   onSelect?: (id: string) => void;
   /**
-   * The row's menu (RAIL1): what has no other home — its own window, its review, its id. Absent, no
-   * menu. The session's verbs are never here: finish and stop have one owner each (D56).
+   * The row's menu (RAIL1): its own window, its review, its id, and since D126 §3.1 the session's acts where its row is,
+   * each offered only where it applies. Absent, no menu. Finish and stop keep one owner each (D56).
    */
   onDetach?: (id: string) => void;
   onReview?: (id: string) => void;
+  /**
+   * *Archive* (SESSUX1e, D126 §5.2): offered on a row the reader placed in Ended, and on nothing live or waiting on the
+   * person, since archive never hides what needs them. Absent where the reader has not placed it.
+   */
+  onArchive?: (id: string) => void;
+  /** *Unarchive*: offered wherever the reader says the mark stands. */
+  onUnarchive?: (id: string) => void;
   onCopy?: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -127,6 +140,7 @@ export function SessionRow({
   // group is about (SESSUX1c), since a cut line keeps its start.
   const meta = [
     place ?? null,
+    archived ? t('work.rail.archived') : null,
     placed ? t(placed.line, placed.values) : null,
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g).
     t(isIntake(session) ? 'work.intake.kind' : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
@@ -139,15 +153,21 @@ export function SessionRow({
   // Only the unusual facts explain themselves: a tip that appeared on every row would be one
   // people stop reading.
   const tip = [
+    archived ? t('work.rail.archivedTip') : null,
     placed ? t(placed.tip) : null,
     landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,
     origin ? t('work.rail.onTip') : null,
   ].filter(Boolean).join(' ');
 
+  // Archive where the reader placed it in Ended, Unarchive where its mark stands (D126 §3.1): each absent where it does
+  // not apply, never disabled (D119 §3.2).
+  const archivable = grouping?.group === 'ended' && !grouping.archived;
   const actions = [
     onDetach && { label: t('work.monitor.detach'), icon: 'external' as const, act: onDetach },
     onReview && { label: t('work.rail.menu.review'), icon: 'diff' as const, act: onReview },
+    onArchive && archivable && { label: t('work.act.archive'), icon: 'archive' as const, act: onArchive },
+    onUnarchive && grouping?.archived && { label: t('work.act.unarchive'), icon: 'unarchive' as const, act: onUnarchive },
     onCopy && { label: t('work.rail.menu.copy'), icon: 'copy' as const, act: onCopy },
   ].filter((action) => Boolean(action)) as Array<{ label: string; icon: IconName; act: (id: string) => void }>;
 
