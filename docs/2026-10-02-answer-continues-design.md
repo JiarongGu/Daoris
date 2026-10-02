@@ -2,8 +2,8 @@
 
 > The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input and after I input it
 > starts a new session? isn't this should be continue"*. This is the contract for what an answer does. Its decision is
-> **D131**. Status: **designed; the driver's half (ANSWER1a) and the service's (ANSWER1b) built; the page's (ANSWER1c)
-> is a row.** Read with **D46 §4**, **D51**, **D79**, **D80**, **D83**, **D90**, **D104**, **D125** and
+> **D131**. Status: **designed; the driver's half (ANSWER1a), the service's (ANSWER1b) and the page's (ANSWER1c)
+> built.** Read with **D46 §4**, **D51**, **D79**, **D80**, **D83**, **D90**, **D104**, **D125** and
 > **D130**.
 
 ## 0. What happened, and what is true today
@@ -143,6 +143,10 @@ ANSWER1b is built (2026-10-02): an answered park stays parked on the real servic
 service from before it still ends the record as it takes the answer, and the driver carries that answer on as before,
 with the `ended` line. The family rehearsal's 17a drives an answer through the real service and resumes the same
 record's conversation; D131's ANSWER1b note says what building it settled.
+
+ANSWER1c is built (2026-10-02): until the driver's next look an answered park is listed under *Working* as *answered*,
+and its head shows the answer and that the same session goes on with it, asking nothing. The Sessions badge and
+Overview's band count it no longer. D131's ANSWER1c note says what building it settled.
 
 ## 6. The build (ANSWER1a) and what its gates do not cover
 

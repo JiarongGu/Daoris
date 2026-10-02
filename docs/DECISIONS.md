@@ -9228,6 +9228,36 @@ with `AnswerContinuesTickTests`. A take through a connector, which a real agent'
 record: the headless host's usage for `answer`, and the comments on the page's answer box, its query and its frame
 (ANSWER1c's lane).
 
+**Built 2026-10-02 (ANSWER1c): the page and the groups** (point 6; design §5), held by `SessionGroupsTests`, and on the
+page by `AnsweredPark.test.tsx`, `SessionHead.test.tsx`, `WorkFrame.test.tsx`, `groups.test.ts`, `attention.test.ts`,
+`acts.test.ts` and `ui.test.tsx`, with the card's stories (`Work/Attention` *Answered*, `Work/SessionHead` *Answered*,
+`Work/SessionList` *AnsweredGoesOn*). What building it settled:
+- **An answered park is the record's fact, not the quest's**: `awaiting-person` with an answer, which the service
+  answers to this machine only (`SessionRecord.Answered`, the page's `answeredPark`). A teammate's park, or one read
+  over a keyed remote, carries no answer and stays as its record says. An empty answer is none: the service keeps a
+  blank one as *carry on.*
+- **It has a word of its own, *answered*** (`ShownState.Answered`, `work.shown.answered`; 已回答), listed under
+  *Working*. Under *Working* the record's own word would have read *waiting on you*. The page's `shownState` derives the
+  same word from the record, so the head, the strip and a monitor tile say it before the reader has looked. It is
+  quiet: neutral, with the idle mark, as a queued session waits on the driver. Open's hue stays the person's alone
+  (D126 §2.3). An archive mark moves it nowhere while it is live, as for any live session.
+- **The head shows the answer, not the question** (`AnsweredPark`): *Your answer*, the words verbatim, and that the same
+  session goes on with them at the driver's next look. It has no box, no *Finish* or *Decline…*, and no waiting card,
+  wherever the frame could act. The question stays in the conversation below and, since the head no longer shows the
+  note, in the timeline (`noteIsInTheHead`). The page never cuts the note's *Answered:* line, so it reads no rule of the
+  service's.
+- **What follows the list follows it too**: the Sessions badge and Overview's band count no answered park, a row's ⋯
+  offers no *Answer…*, and its stop says what a driven session's stop says, not *stops it unanswered*.
+- **The words**: the toast and the answer box's placeholder say the same session goes on, in both catalogues. The
+  host's usage for `answer`, in the header of its `Program.cs` and in the usage it prints (`DriverCommand.Usage`), says
+  the record stays parked and the same session goes on. So do the comments on the page's answer call, its query and
+  its frame.
+
+**What the gates do not cover.** No window was run by this branch: the card, the row and the badge in both themes and
+both languages are the parent's to look at. Whether an answer through the window reaches a resumed conversation on a
+real agent is ANSWER1d's canary. The map's *parked* mark and Ask Daoris's count of sessions waiting on you still read
+the record's state, so for up to one look they count an answered park.
+
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
 **Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +
