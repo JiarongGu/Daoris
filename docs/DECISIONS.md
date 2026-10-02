@@ -8744,6 +8744,26 @@ wording and asks a connected search too, `skills-workflow` sends a session to it
 `development-documents` gains a sentence on naming a document by its subject
 (`docs/2026-10-02-knowledge-design-review.md` §4.2–§4.4).
 
+**WSSETUP14a, built 2026-10-02: the index leaves the region.** `sync` writes `<target>/INDEX.md` (`renderIndex`),
+its content decided at plan time over the tiers as the sync leaves them (`planIndex`), so §2.4's *as it would be
+written* is known before anything is. The lock's `index` names it, and `check` rebuilds it offline and names it apart
+from the region (`index`, `roster`). The region keeps the rules table, §2.2's pointer as written (D129 §4.1), the
+mirror sentence, the rooms and *Where things are*; the canon takes the review's §4.2–§4.4 words. Choices the design
+left open:
+- A skill's row names its entry file, `…/SKILL.md`, since an agent opens a row as written.
+- A lock naming an index anywhere but its own root's `INDEX.md` is refused, as D18 refuses a crafted path.
+- A collision at the index yields to `--force` like every collision, and says what it overwrote.
+- `doc-loader` keeps *a shortcut table elsewhere is a convenience, not the registry*, which D129 §4.5 cites.
+
+Measured after the re-sync: this region 24,522 → 20,067 bytes (§2.6's ≈20,100 plus 22, so 55 under), its first rule
+at byte 3,014; each example 19,309, first rule at 2,256; `skills-workflow` +24 bytes as wrapped. Proof:
+`layout-index.test.ts` (each §2.4 cell, the 169-document fixture leaving the region byte for byte, the migration) and
+the D48 §2a scan widened to a connected search (`dogfood.test.ts`), seen failing on `doc-loader` drafted without
+*where none is*. Left to their rows: §3's table (WSSETUP14c), `documents.knowledge` and the service test (14b), and
+`SetupBrief.Twins` and the playbook, which still say *the generated index in `AGENTS.md`* (14d). Not covered: whether
+a session follows the pointer or searches a long index (KNOW3a; every bench session read a 23 KB one whole), and the
+release rehearsal's updated checks, written and not run here.
+
 ## D129 — Knowledge is found from files first: D128's index is the floor, searched in several wordings, with recall by meaning pulled where connected and pushed only where Daoris writes the prompt (2026-10-02)
 
 **Measured (KNOW3, `docs/2026-10-02-knowledge-bench-results.md` §3, §6).** 72 real headless sessions over 73
