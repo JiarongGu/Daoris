@@ -44,9 +44,11 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('1.2.0')).toBeInTheDocument();
     expect(within(header()).getByText('acme.gate')).toBeInTheDocument();
     const line = within(header()).getByText('Holds quests overnight.');
-    // Cut to one line, whole in its tip.
-    expect(line).toHaveClass('truncate');
-    expect(line).toHaveAttribute('title', 'Holds quests overnight.');
+    // NAME2: its description is content, read whole at the reading measure; the install showed it cut to one
+    // line with an ellipsis.
+    expect(line).not.toHaveClass('truncate');
+    expect(line).toHaveClass('max-w-prose');
+    expect(line).not.toHaveAttribute('title');
     // PLUG10 (P9), as D119 §2 gives it: running is the quiet neutral, never done's green.
     expect(within(header()).getByText('running').className).toMatch(/\bborder-line\b/);
   });
@@ -89,6 +91,26 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('off')).toBeInTheDocument();
     await userEvent.click(within(header()).getByRole('button', { name: 'Turn on' }));
     expect(onSwitch).toHaveBeenCalledWith('acme.gate', 'enable');
+  });
+
+  /**
+   * NAME2, seen on the install in 中文: the switch read 关闭, which says *close* as much as *turn off*. Its
+   * acts are 停用 and 启用, and its off state 已停用; the English pair stays *Turn off* and *Turn on*.
+   */
+  it('names its switch in 中文 by what it does to the plugin, never by close', async () => {
+    const { default: i18n } = await import('../i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      const { unmount } = page();
+      expect(acts()).toEqual(['停用', '试运行', '更新…', '移除…']);
+      unmount();
+      page({ plugin: { ...PLUGIN, enabled: false, running: false } });
+      expect(acts()[0]).toBe('启用');
+      expect(within(header()).getByText('已停用')).toBeInTheDocument();
+      expect(within(header()).queryByText(/关闭|开启/)).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try (D119 §3.2). */

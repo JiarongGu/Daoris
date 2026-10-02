@@ -42,7 +42,7 @@
   "asks.record.matched": "共同词：{{words}}",
   "asks.record.publishTo": "发布给 {{repository}}",
   "asks.record.another": "发布给其他仓库",
-  "asks.record.anotherPlaceholder": "工作区 {{circle}} 中任一可被委托的仓库",
+  "asks.record.anotherPlaceholder": "工作区 {{circle}} 中的任一仓库",
   "asks.record.publish": "发布",
   "asks.record.links": "链接",
   "asks.record.files": "文件",

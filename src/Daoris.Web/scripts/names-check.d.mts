@@ -31,6 +31,11 @@ export type Glossary = {
     use?: string;
     avoid: { en: string[]; zh: string[] };
   }[];
+  /** Budget judgements looked at and kept (NAME2): each holds the name it accepted, per language, and why. */
+  accepted?: {
+    _why?: string;
+    names: { key: string; en?: string; zh?: string; why: string }[];
+  };
 };
 
 export type Finding = {
@@ -47,5 +52,5 @@ export function kindOf(glossary: Glossary): (key: string) => string;
 export function measure(text: string, language: Language, rules: Glossary['measure']): number;
 export function validate(glossary: Glossary, en: Catalogue, zh: Catalogue): string[];
 export function check(glossary: Glossary, en: Catalogue, zh: Catalogue, options?: { all?: boolean }): Finding[];
-export function report(findings: Finding[], options?: { labels?: number }): string;
+export function report(findings: Finding[], options?: { labels?: number; accepted?: number }): string;
 export function verdict(findings: Finding[], options: { strict: boolean }): 0 | 1;
