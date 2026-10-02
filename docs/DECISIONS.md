@@ -8234,3 +8234,70 @@ manage with. What ended had nowhere to go but further down.
 - **Ask Daoris answering a parked session.** The answer is the person's (D37).
 - **The grouping as a helper on the page.** It needs the planner's verdict and a git judgement, which only the driver
   has, and a terminal twin would make it a twin of an eleven-case rule.
+
+## D128 — A set-up keeps the repository's checks green, and the doctrine region lists only what the canon bounds: knowledge and skills are an index read on demand (2026-10-02)
+
+**Decision (WSSETUP14, from the first real set-up, WSSETUP12's).** On the report repository, the set-up's own
+session wrote good knowledge, a brief and rooms, closed its quest `done`, and left a branch that cannot be merged.
+It had moved 169 knowledge documents that its CI and a hook read by path, its region grew to 53,398 bytes with a
+row per document, and 166 rows read *needs frontmatter*. The contract is
+`docs/2026-10-02-setup-pilot-lessons-design.md`: checks kept green (§1), the index (§2), a document without
+frontmatter (§3), the pilot's branch (§4) and the build (§6).
+
+1. **Move only what an agent needs moved.** The repository's own knowledge stays where it is, declared as
+   `documents.knowledge`: a folder the index lists, the service indexes and `sync` never writes. Its skills move to
+   `.agents/skills/`, and the mirror keeps their old paths readable. Nothing else a check, script, hook or CI
+   configuration reads by path moves. Where a move still breaks a reader, the set-up rewrites that path, and only it.
+2. **A set-up runs the repository's checks before its first change and at its close.** One that passed before and
+   fails after means it does not close `done`. If the fix is outside its bounds, it stops and asks.
+3. **The bounds are rewritten** (design §1.5): a moved path is the one change allowed in a source, build or CI file,
+   and a set-up adds no frontmatter to a document the repository already had.
+4. **The region holds what the canon bounds**: the rules table, a pointer, the rooms, *Where things are* and every
+   rule in full. The knowledge and skill tables move to `<target>/INDEX.md`, which `sync` writes, `check` keeps true
+   and the lock names. `doc-loader` reads it, whole when short and by search when long.
+5. **A knowledge document without frontmatter is listed by its first heading**, in a table of its own, and `check`
+   reports how many once, never failing.
+6. **The pilot's branch is never merged red.** When the press finds a set-up's branch standing and not on the line,
+   it composes *Finish setting up this repository*: the checks first, that branch merged by one exact rule, the
+   knowledge put back and declared, a re-sync, and the same close.
+
+**Why.** The quest moved the documents and forbade repairing what the move broke, and nothing asked whether the
+checks still passed. Knowledge is reached through the index wherever it lives, while skills are read by folder
+(Claude Code `.claude/skills/`, codex and dsh `.agents/skills/`, from the entry-point evidence). So moving the
+knowledge bought no agent anything. `renderRoster` writes every knowledge and skill row before the rules. Measured on
+a fixture shaped like the pilot (design §0.3): a region of 46,279 bytes whose first rule starts at byte 37,046, past
+the 32,768 one agent reads; 63,527 had every document been described, so fixing frontmatter first makes it worse.
+The proposed region is 19,010 bytes with no knowledge of its own and with 169 documents. Here it drops from 24,064
+to about 19,650 bytes, which is what lets LAYOUT6's brief fit under 32,768.
+
+**Rejected** (design §1.7, §2.8, §3.4 and §4.3 have each with its reason):
+- **Rewriting every reader and keeping the move**: a large diff in files a doctrine change is not about, for
+  knowledge no agent reads by folder.
+- **Declaring skills in place**: a skill outside an agent's skill root reaches no agent.
+- **Only *red never closes done***: every repository with its own knowledge folder would stop the same way.
+- **A knowledge mirror or a link at the old path**, and **the canonical knowledge in the declared folder**.
+- **The canonical rows in the region and the repository's own on demand**, **knowledge by folder**, **a cap**,
+  **shorter rows**, **the rules before the tables**, and **raising the budget**.
+- **The set-up describing every old document**, **a capped number**, **a description guessed from the heading**,
+  and **keeping the warning**.
+- **Growing the follow-up's tree from the red branch**, and **repairing it by hand**.
+- D59's rejection of a pointer in place of the rules stands: this moves the list of the on-demand tiers, not a tier.
+
+**What it amends, when built.**
+- D124 §2.1 (the follow-up's case), §2.3 (the checks first, the knowledge in place), §2.5, §2.6 (the bounds) and
+  §2.7 (the close).
+- D117 §2.1 and §5.4 (a declared knowledge folder is read in place), §6.2's steps, and `LayoutFacts.Clean`.
+- D122 §2.7 (DOC3): `knowledge` takes a folder; `skill` stays refused.
+- D59, and D7 through it: the region's on-demand tables move to `<target>/INDEX.md`.
+- The canon's `doc-loader` (step 2) and `development-documents` (one sentence), with a changelog entry for every
+  adopter; the adoption playbook (local); BUDGET1's arithmetic.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The pilot's facts are the
+owner's report: the repository is private and was not read. The fixtures were synced by today's CLI in a gitignored
+scratch folder, and their names are shorter than the pilot's. *Proposed* bytes are the rendered region with its
+tables cut and a drafted pointer put in, never rendered by built code. No token was counted. What each agent lists
+and reads is the entry-point evidence's reading of shipped code, not a turn. Whether a real session runs the checks
+first and keeps them green is WSSETUP14f's to show. `verify` checks this entry's shape and the design's links, and
+none of their words.
