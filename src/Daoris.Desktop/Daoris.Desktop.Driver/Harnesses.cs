@@ -209,6 +209,10 @@ public sealed record HarnessReport(
 /// against no CLI and the CLI has no .NET. The twins move together, the same rule the remotes map's
 /// three copies established (WSP3).</para>
 ///
+/// <para><b>Each writer keeps the other's sections</b> (TOOL4e): the four here, the orders (<see cref="Rotation"/>,
+/// <see cref="WorkspaceRotation"/>), and whatever a newer build wrote (<see cref="Kept"/>). For the same wiring the two
+/// write the same bytes, which <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c> hold row for row.</para>
+///
 /// <para><b>Silence means the harness's own home.</b> A machine that has never named a profile spawns
 /// exactly as it did before this existed — the environment seam is not set at all, and the harness
 /// uses the configuration home it always has. That is what keeps "Daoris works alone" (D48 §2a) true
@@ -242,11 +246,29 @@ public sealed record HarnessSettings(
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceVersions { get; init; } =
         WorkspaceVersions ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Agent → the accounts rotation may use on this machine, in order (TOOL4e, D125 §3.1). See <see cref="ResolveRotationFrom"/>.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Rotation { get; init; } =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Workspace → agent → order: a work circle rotates among its own accounts, a personal one staying out.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>> WorkspaceRotation { get; init; } =
+        new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// What the file held that this build has no field for, in the order written (TOOL4e): an editor keeps what it has
+    /// no field for, as the CLI's writer keeps its <c>rest</c>, so a section a newer build writes outlives this one's save.
+    /// </summary>
+    public IReadOnlyList<KeyValuePair<string, JsonElement>> Kept { get; init; } = [];
+
     /// <summary>
     /// Why the file could not be read — null when it could, or when there was none. Carried through
     /// every <c>With…</c> so an edit made over the empty read is refused at <see cref="Save"/> (REV3).
     /// </summary>
     public string? Problem { get; init; }
+
+    /// <summary>The sections this build reads and writes; anything else is <see cref="Kept"/>. Spelled as the CLI's are.</summary>
+    private static readonly HashSet<string> Sections =
+        new(StringComparer.Ordinal) { "defaults", "workspaces", "versions", "workspaceVersions", "rotation", "workspaceRotation" };
 
     public const string PathVariable = "DAORIS_HARNESS_CONFIG";
 
@@ -294,7 +316,14 @@ public sealed record HarnessSettings(
             return new HarnessSettings(
                 defaults, workspaces,
                 ReadMap(document.RootElement, "versions"),
-                ReadCircles(document.RootElement, "workspaceVersions"));
+                ReadCircles(document.RootElement, "workspaceVersions"))
+            {
+                Rotation = ReadOrders(document.RootElement, "rotation"),
+                WorkspaceRotation = ReadOrderCircles(document.RootElement, "workspaceRotation"),
+                Kept = [.. document.RootElement.EnumerateObject()
+                    .Where(property => !Sections.Contains(property.Name))
+                    .Select(property => KeyValuePair.Create(property.Name, property.Value.Clone()))],
+            };
         }
         catch (Exception error)
             when (error is JsonException or IOException or UnauthorizedAccessException)
@@ -322,9 +351,17 @@ public sealed record HarnessSettings(
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
 
         using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        // LF on every platform, as the CLI's writer writes it: both write this file, the same wiring as the same bytes.
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true, NewLine = "\n" }))
         {
             writer.WriteStartObject();
+
+            // What this build has no field for goes first, as the CLI's writer puts its `rest` first (TOOL4e).
+            foreach (var (name, value) in Kept)
+            {
+                writer.WritePropertyName(name);
+                value.WriteTo(writer);
+            }
 
             writer.WriteStartObject("defaults");
             foreach (var (harness, profile) in Defaults.OrderBy(e => e.Key, StringComparer.Ordinal))
@@ -347,6 +384,30 @@ public sealed record HarnessSettings(
 
             writer.WriteEndObject();
             WriteCircles(writer, "workspaceVersions", WorkspaceVersions);
+
+            // 🔴 The orders go out too (TOOL4e), or a screen edit DELETES what `daoris agent profile order` wrote, the
+            // way a save that knew only profiles once would have deleted the pins. Written only when set: absent is no
+            // rotation, and a file that never chose an order should not start carrying an empty one.
+            if (Rotation.Any(order => order.Value.Count > 0))
+            {
+                writer.WriteStartObject("rotation");
+                WriteOrders(writer, Rotation);
+                writer.WriteEndObject();
+            }
+
+            if (WorkspaceRotation.Any(circle => circle.Value.Any(order => order.Value.Count > 0)))
+            {
+                writer.WriteStartObject("workspaceRotation");
+                foreach (var (workspace, orders) in WorkspaceRotation.OrderBy(e => e.Key, StringComparer.Ordinal))
+                {
+                    if (!orders.Any(order => order.Value.Count > 0)) continue;
+                    writer.WriteStartObject(workspace);
+                    WriteOrders(writer, orders);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndObject();
+            }
 
             writer.WriteEndObject();
         }
@@ -461,6 +522,102 @@ public sealed record HarnessSettings(
         return this with { WorkspaceVersions = circles };
     }
 
+    /// <summary>
+    /// Which accounts a start may rotate to, per agent, in the person's order: <c>rotation</c> for the machine and
+    /// <c>workspaceRotation</c> for one workspace (TOOL4e, D125 §3.1). Resolved as a default is: the workspace's order
+    /// for the agent, else the machine's, else none — and none is no rotation at all.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>The CLI writes these too</b> (<c>daoris agent profile order</c>), so <see cref="Save"/> writes them,
+    /// or a screen edit would delete the person's order. <c>RotationTwinTests</c> and the CLI's <c>rotation.test.ts</c>
+    /// hold the reading, the edits, the refusals and the file both write, row for row.</para>
+    /// <para>An account the order does not list is never rotated into, and work resolved to it never moves (§3.1):
+    /// one list, not a list and a mark. Nothing reads an order to choose an account until TOOL4f.</para>
+    /// </remarks>
+    public (IReadOnlyList<string> Order, ChoiceFrom From) ResolveRotationFrom(string agent, string? workspace)
+    {
+        if (!string.IsNullOrWhiteSpace(workspace)
+            && WorkspaceRotation.TryGetValue(workspace.Trim(), out var circle)
+            && circle.TryGetValue(agent, out var own) && own.Count > 0)
+        {
+            return (own, ChoiceFrom.Workspace);
+        }
+
+        return Rotation.TryGetValue(agent, out var machine) && machine.Count > 0
+            ? (machine, ChoiceFrom.Machine)
+            : ([], ChoiceFrom.Unset);
+    }
+
+    /// <summary>
+    /// Set an agent's order, the machine's or one workspace's, replacing it whole; null or none clears it, and a
+    /// workspace left with no order is dropped. The names are kept trimmed; whether each is an account here, once, is
+    /// <see cref="OrderProblem"/>'s question, which a door asks first.
+    /// </summary>
+    public HarnessSettings WithRotation(string agent, IReadOnlyList<string>? order, string? workspace = null)
+    {
+        IReadOnlyList<string> kept = order is null ? [] : [.. order.Select(name => name.Trim()).Where(name => name.Length > 0)];
+        if (string.IsNullOrWhiteSpace(workspace)) return this with { Rotation = Ordered(Rotation, agent, kept) };
+
+        var circles = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(
+            WorkspaceRotation, StringComparer.OrdinalIgnoreCase);
+        var circle = Ordered(circles.GetValueOrDefault(workspace.Trim()) ?? new Dictionary<string, IReadOnlyList<string>>(), agent, kept);
+        if (circle.Count == 0) circles.Remove(workspace.Trim());
+        else circles[workspace.Trim()] = circle;
+        return this with { WorkspaceRotation = circles };
+    }
+
+    /// <summary>
+    /// Why an order cannot be written, or null when it can (D125 §3.1): the first name that is no account here — the
+    /// directories that exist, compared exactly, as a default's name is — or the first named twice, in any case.
+    /// </summary>
+    /// <param name="accounts">The agent's accounts on this machine: <see cref="Profiles"/>.</param>
+    public static RotationProblem? OrderProblem(IReadOnlyCollection<string> accounts, IReadOnlyList<string> order)
+    {
+        var named = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in order)
+        {
+            var name = raw.Trim();
+            if (!accounts.Contains(name, StringComparer.Ordinal)) return new RotationProblem(name, Twice: false);
+            if (!named.Add(name)) return new RotationProblem(name, Twice: true);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The wiring with an account removed gone from it (D66 §3): no default names it, the machine's or a workspace's,
+    /// and no order does. The rest of each order keeps its place, and an order or a workspace left naming none goes.
+    /// </summary>
+    public HarnessSettings WithoutAccount(string agent, string profile)
+    {
+        var settings = this;
+        if (Defaults.TryGetValue(agent, out var machine) && machine == profile) settings = settings.WithDefault(agent, null);
+        foreach (var (workspace, circle) in Workspaces)
+        {
+            if (circle.TryGetValue(agent, out var held) && held == profile) settings = settings.WithWorkspaceDefault(workspace, agent, null);
+        }
+
+        if (Rotation.TryGetValue(agent, out var order)) settings = settings.WithRotation(agent, [.. order.Where(name => name != profile)]);
+        foreach (var (workspace, circle) in WorkspaceRotation)
+        {
+            if (circle.TryGetValue(agent, out var own))
+            {
+                settings = settings.WithRotation(agent, [.. own.Where(name => name != profile)], workspace);
+            }
+        }
+
+        return settings;
+    }
+
+    private static Dictionary<string, IReadOnlyList<string>> Ordered(
+        IReadOnlyDictionary<string, IReadOnlyList<string>> orders, string agent, IReadOnlyList<string> order)
+    {
+        var next = new Dictionary<string, IReadOnlyList<string>>(orders, StringComparer.OrdinalIgnoreCase);
+        if (order.Count == 0) next.Remove(agent);
+        else next[agent] = order;
+        return next;
+    }
+
     /// <summary>Where a managed version of a harness lives. Daoris owns this location, binary and all.</summary>
     public static string ManagedHome(string home, string harness, string version) =>
         Path.Combine(home, "toolchain", Name(harness, "agent name"), Name(version, "version"));
@@ -564,6 +721,7 @@ public sealed record HarnessSettings(
         {
             // A key whose directory someone removed by hand still goes: nothing is left behind here.
             HarnessKeys.Remove(home, harness, profile);
+            AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
             return false;
         }
 
@@ -583,8 +741,10 @@ public sealed record HarnessSettings(
         }
 
         Directory.Delete(directory, recursive: true);
-        // An account that was a key goes with its key (AGT3): a removed account keeps nothing here.
+        // An account that was a key goes with its key (AGT3): a removed account keeps nothing here. Nor its cool-off
+        // (TOOL4e): the next account made takes the first free name, which may be this one's.
         HarnessKeys.Remove(home, harness, profile);
+        AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
         return true;
     }
 
@@ -648,6 +808,68 @@ public sealed record HarnessSettings(
         writer.WriteEndObject();
     }
 
+    /// <summary>
+    /// One agent → order map (TOOL4e): each list's names trimmed, a blank or a name that is not text skipped, a name
+    /// written twice in any case read once where first written; a list that is not one, or names nobody, is none.
+    /// </summary>
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> ReadOrders(JsonElement parent, string? property)
+    {
+        var orders = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        var element = parent;
+        if (property is not null
+            && (!parent.TryGetProperty(property, out element) || element.ValueKind != JsonValueKind.Object))
+        {
+            return orders;
+        }
+
+        foreach (var entry in element.EnumerateObject())
+        {
+            if (entry.Value.ValueKind != JsonValueKind.Array) continue;
+            var order = new List<string>();
+            foreach (var item in entry.Value.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String && item.GetString()!.Trim() is { Length: > 0 } name
+                    && !order.Contains(name, StringComparer.OrdinalIgnoreCase))
+                {
+                    order.Add(name);
+                }
+            }
+
+            if (order.Count > 0) orders[entry.Name] = order;
+        }
+
+        return orders;
+    }
+
+    /// <summary>One workspace → agent → order map, read as <see cref="ReadOrders"/> reads each; a workspace naming none is none.</summary>
+    private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadOrderCircles(
+        JsonElement root, string property)
+    {
+        var circles = new Dictionary<string, IReadOnlyDictionary<string, IReadOnlyList<string>>>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(property, out var element) || element.ValueKind != JsonValueKind.Object) return circles;
+
+        foreach (var circle in element.EnumerateObject())
+        {
+            if (circle.Value.ValueKind != JsonValueKind.Object) continue;
+            var orders = ReadOrders(circle.Value, null);
+            if (orders.Count > 0) circles[circle.Name] = orders;
+        }
+
+        return circles;
+    }
+
+    /// <summary>The write half of <see cref="ReadOrders"/>: agents in order of name, each list in the person's order.</summary>
+    private static void WriteOrders(Utf8JsonWriter writer, IReadOnlyDictionary<string, IReadOnlyList<string>> orders)
+    {
+        foreach (var (agent, order) in orders.OrderBy(e => e.Key, StringComparer.Ordinal))
+        {
+            if (order.Count == 0) continue;
+            writer.WriteStartArray(agent);
+            foreach (var name in order) writer.WriteStringValue(name);
+            writer.WriteEndArray();
+        }
+    }
+
     private static IReadOnlyDictionary<string, string> ReadMap(JsonElement parent, string? property)
     {
         var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -669,6 +891,20 @@ public sealed record HarnessSettings(
 
         return map;
     }
+}
+
+/// <summary>
+/// Why an order was refused (TOOL4e, D125 §3.1): the account it names that is not on this machine, or the one it names
+/// twice. Both doors refuse it — the terminal's <c>daoris agent profile order</c> and the screen's — as
+/// <c>profile default</c> refuses a name that does not exist.
+/// </summary>
+public sealed record RotationProblem(string Account, bool Twice)
+{
+    /// <summary>The refusal a person reads: which account, and what is there to name instead.</summary>
+    public string Sentence(string agent, IReadOnlyCollection<string> accounts) => Twice
+        ? $"`{Account}` is named twice — an order names each account once, in the order rotation tries them."
+        : $"`{agent}` has no account `{Account}` on this machine, so an order cannot name it — accounts there: "
+          + $"{(accounts.Count > 0 ? string.Join(", ", accounts) : "(none)")}.";
 }
 
 /// <summary>
@@ -1290,14 +1526,17 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// failure as today, and nothing is written.
     /// </summary>
     /// <param name="failure">What the door carried apart from the agent's words; never the transcript (D125 §1.4).</param>
-    public (CoolingEntry Entry, LimitSeen Seen)? Limited(string adapter, string? profile, string? failure, string session)
+    /// <param name="coolOff">
+    /// How long the account cools when the agent named no time this reads: the machine's <c>cooloff</c>
+    /// (<see cref="DriverConfig.CoolOff"/>, TOOL4e), or <see cref="AccountLimits.DefaultCoolOff"/> when none is handed over.
+    /// </param>
+    public (CoolingEntry Entry, LimitSeen Seen)? Limited(string adapter, string? profile, string? failure, string session, TimeSpan? coolOff = null)
     {
         var resolved = adapters.Resolve(adapter);
         if (CoolingAgent(resolved) is not { } agent) return null;
 
         var now = Clock();
-        // The default is a constant until `cooloff` in `driver.json` is TOOL4e's.
-        if (AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, AccountLimits.DefaultCoolOff) is not { } seen) return null;
+        if (AccountLimits.Read(LimitsOf(resolved.Name), failure, now, Zone, coolOff ?? AccountLimits.DefaultCoolOff) is not { } seen) return null;
 
         var entry = new CoolingEntry(agent, profile, seen.Until, seen.Stated, seen.Window, now, session, seen.AssumedZone, seen.NotBelieved);
         AccountCooling.Cool(Home, entry, now);

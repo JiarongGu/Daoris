@@ -23,6 +23,10 @@
 //   5. An account made by signing in takes the first free `account-N`; who it is, is the tool's answer.
 //   6. An account that is an API key keeps its key in `keys.json` under the home, beside the account.
 //   7. A door's accounts, defaults and keys are its owner's (`accountOf`); its pin is its own.
+//   8. The order rotation may use (`rotation`, `workspaceRotation`) is read, resolved and edited by `rotation.ts`, and
+//      each writer keeps the other's sections — for the same wiring both write the same bytes (TOOL4e).
+//   9. An account's cool-off (`cooling.json`) is the driver's to write; here it is read, listed and ended — by
+//      `profile ready`, a sign-in or a key into the account, and the account's removal (`cooling.ts`, TOOL4e).
 //
 // It is a MANAGEMENT command and it opens no socket. It does spawn processes — that is the whole
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
@@ -57,6 +61,12 @@ import { installFromChannel, latestVersion, refuseVersion } from './channels.ts'
 import { commandRules } from './permissions.ts';
 import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
 import { grantTrust, TRUST_FILE } from './trust.ts';
+import {
+  readOrderCircles, readOrders, resolveRotation, rotationProblem, rotationRefusal, withRotation, withoutAccount,
+  writtenOrderCircles, writtenOrders,
+} from './rotation.ts';
+import type { Orders } from './rotation.ts';
+import { coolingLine, coolingOf, endCooling, machineZone, readCooling } from './cooling.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -311,6 +321,13 @@ export interface HarnessSettings {
   versions: Record<string, string>;
   /** @see versions */
   workspaceVersions: Record<string, Record<string, string>>;
+  /**
+   * Which accounts rotation may use, per agent, in the person's order (TOOL4e, D125 §3.1): the machine's, and one
+   * workspace's. `rotation.ts` reads, resolves and edits them; absent is no rotation.
+   */
+  rotation: Orders;
+  /** @see rotation */
+  workspaceRotation: Record<string, Orders>;
   /** Everything else the file held, preserved — this is an editor, not the file's owner. */
   rest: Record<string, unknown>;
 }
@@ -325,13 +342,13 @@ export interface HarnessSettings {
  */
 export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
   const empty: HarnessSettings = {
-    defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {},
+    defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {},
   };
   // Unreadable reads as empty, for a session about to spawn; an EDIT over it is refused by the writer.
   const { value: parsed } = readJsonObject(path);
   if (parsed === null) return empty;
 
-  const { defaults, workspaces, versions, workspaceVersions, ...rest } = parsed;
+  const { defaults, workspaces, versions, workspaceVersions, rotation, workspaceRotation, ...rest } = parsed;
   return {
     defaults: stringMap(defaults),
     workspaces: Object.fromEntries(
@@ -339,16 +356,27 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
     versions: stringMap(versions),
     workspaceVersions: Object.fromEntries(
       Object.entries(asObject(workspaceVersions)).map(([circle, map]) => [circle, stringMap(map)])),
+    rotation: readOrders(rotation),
+    workspaceRotation: readOrderCircles(workspaceRotation),
     rest,
   };
 }
 
-/** Write it back, preserving anything this build did not put there. */
+/**
+ * Write it back, preserving anything this build did not put there.
+ *
+ * @remarks
+ * 🔴 The driver's `HarnessSettings.Save` is the other writer of this file, and for the same wiring the two write the same
+ * bytes (TOOL4e, `rotation.test.ts` and `RotationTwinTests` hold it): what neither knows first, then the four sections,
+ * then the orders only where one is set.
+ */
 export function writeHarnessSettings(path: string, settings: HarnessSettings): void {
   const circles = (map: Record<string, Record<string, string>>) => Object.fromEntries(
     Object.entries(map)
       .filter(([, inner]) => Object.keys(inner).length > 0)
       .sort(([a], [b]) => (a < b ? -1 : 1)));
+  const rotation = writtenOrders(settings.rotation);
+  const workspaceRotation = writtenOrderCircles(settings.workspaceRotation);
 
   writeJsonAtomic(path, {
     ...settings.rest,
@@ -356,6 +384,8 @@ export function writeHarnessSettings(path: string, settings: HarnessSettings): v
     workspaces: circles(settings.workspaces),
     versions: sorted(settings.versions),
     workspaceVersions: circles(settings.workspaceVersions),
+    ...(Object.keys(rotation).length > 0 ? { rotation } : {}),
+    ...(Object.keys(workspaceRotation).length > 0 ? { workspaceRotation } : {}),
   });
 }
 
@@ -521,6 +551,8 @@ export function removeProfile(home: string, harness: string, profile: string): b
   const where = profileHome(home, harness, profile);
   // An account that was a key goes with its key (AGT3), even when its directory went by hand.
   removeKey(home, harness, profile);
+  // And with its cool-off (TOOL4e): the next account made takes the first free name, which may be this one's.
+  endCooling(home, harness, profile, new Date());
   if (!existsSync(where)) return false;
   rmSync(where, { recursive: true, force: true, maxRetries: 3 });
   return true;
@@ -594,6 +626,8 @@ export function addKeyAccount(
   // The key first: a `keys.json` it cannot read refuses here, before an account directory exists.
   writeKeys(home, keys);
   mkdirSync(profileHome(home, harness, account), { recursive: true });
+  // A key made into an account ends a cool-off its name still carries (D125 §2.3), as the driver's `HarnessKeys.Add` does.
+  endCooling(home, harness, account, new Date());
 
   write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
   write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
@@ -781,6 +815,9 @@ export function signInNew(
       removeProfile(home, harness, name);
       write('daoris: nothing was signed in, so nothing was kept — the account opened for it is gone again.');
     } else {
+      // A sign-in into an account ends its cool-off (D125 §2.3), as the driver's `LoginAsync` ends one: the directory
+      // may hold another account now.
+      endCooling(home, harness, name, new Date());
       write(said.account
         ? `daoris: signed in as ${said.account} — this machine lists it as \`${name}\`.`
         : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${name}\`.`);
@@ -789,6 +826,63 @@ export function signInNew(
   }
 
   return code === 0 ? 0 : 2;
+}
+
+/**
+ * What `agent list` says under one agent about its accounts (D49 §4, D66 §3, TOOL4e): each account and what marks it,
+ * each one's cool-off under it, the tool's own sign-in's cool-off, the order rotation may use, and — where a start would
+ * run on the person's own sign-in — that it does, and how to give Daoris an account of its own (D125 §2.4, §3.7).
+ *
+ * @remarks
+ * A door's accounts, defaults, orders and cool-offs are its owner's (twin rule 7). The own sign-in's line is said only for
+ * an agent that is here and signs in by its own flow: an agent that is not installed starts nothing.
+ */
+export function accountLines(
+  name: string, toolchain: Toolchain, report: HarnessReport, settings: HarnessSettings, home: string, now: Date, zone: string,
+): string[] {
+  const indent = `  ${''.padEnd(14)} `;
+  const owner = toolchain.accountOf ?? name;
+  const lines: string[] = [];
+
+  if (report.profiles.length === 0) lines.push(`${indent}no accounts — sessions run in the agent's own configuration home`);
+
+  for (const profile of report.profiles) {
+    const marks = [
+      report.machineDefault === profile.name ? 'machine default' : null,
+      ...Object.entries(settings.workspaces)
+        .filter(([, map]) => map[owner] === profile.name)
+        .map(([circle]) => `default in ${circle}`),
+    ].filter(Boolean);
+
+    // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
+    lines.push(
+      `${indent}${profile.name.padEnd(16)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
+      + `${profile.account ? ` ${profile.account}` : ''}`
+      + `${profile.key ? ` API key ${profile.key}` : ''}`
+      + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
+
+    const cooled = coolingOf(home, owner, profile.name, now);
+    if (cooled) lines.push(`${indent}${''.padEnd(16)} ${coolingLine(cooled, now, zone)}`);
+  }
+
+  const ownCooling = coolingOf(home, owner, null, now);
+  if (ownCooling) lines.push(`${indent}its own sign-in: ${coolingLine(ownCooling, now, zone)}`);
+
+  const order = resolveRotation(settings, owner, null);
+  if (order.from === 'machine') lines.push(`${indent}rotation         ${order.order.join(', then ')}`);
+  for (const [circle, orders] of Object.entries(settings.workspaceRotation)) {
+    if (orders[owner]) lines.push(`${indent}rotation in ${circle.padEnd(4)} ${orders[owner].join(', then ')}`);
+  }
+
+  if (!toolchain.accountOf && toolchain.login && report.present && !report.machineDefault) {
+    const named = Object.entries(settings.workspaces).filter(([, map]) => map[owner]).map(([circle]) => circle);
+    lines.push(`${indent}starts run on your own sign-in, the account \`${name}\` uses at your own terminal`
+      + `${named.length > 0 ? ` (outside ${named.join(', ')})` : ''}:`);
+    lines.push(`${indent}signing in to another account there moves Daoris's sessions with it, their records cannot say`);
+    lines.push(`${indent}which account ran, and Daoris cannot rotate it — \`daoris agent login ${name} --new\` gives Daoris an account of its own`);
+  }
+
+  return lines;
 }
 
 /**
@@ -882,7 +976,10 @@ export function commandHarness(
       write(`  ${where}`);
       write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by');
       write('  the agent, in its own store, under your OS account — Daoris never sees it.');
-      return relay([...toolchain.binary, ...login], where, toolchain, write);
+      const signed = relay([...toolchain.binary, ...login], where, toolchain, write);
+      // A sign-in that finished ends that account's cool-off (D125 §2.3): the directory may hold another account now.
+      if (signed === 0) endCooling(home, name, profile, new Date());
+      return signed;
     }
 
     // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.
@@ -1182,26 +1279,7 @@ export function commandHarness(
         if (map[name]) write(`  ${''.padEnd(14)} pinned ${map[name]} for the \`${circle}\` workspace`);
       }
 
-      if (report.profiles.length === 0) {
-        write(`  ${''.padEnd(14)} no accounts — sessions run in the agent's own configuration home`);
-        continue;
-      }
-
-      for (const profile of report.profiles) {
-        const marks = [
-          report.machineDefault === profile.name ? 'machine default' : null,
-          ...Object.entries(settings.workspaces)
-            .filter(([, map]) => map[name] === profile.name)
-            .map(([circle]) => `default in ${circle}`),
-        ].filter(Boolean);
-
-        // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
-        write(
-          `  ${''.padEnd(14)} ${profile.name.padEnd(16)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
-          + `${profile.account ? ` ${profile.account}` : ''}`
-          + `${profile.key ? ` API key ${profile.key}` : ''}`
-          + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
-      }
+      for (const line of accountLines(name, toolchain, report, settings, home, new Date(), machineZone())) write(line);
     }
 
     // The harnesses this machine's plugins declare (D64): configurations of the ACP door, listed
@@ -1272,21 +1350,85 @@ export function commandHarness(
         // rule kept any directory the harness would not call signed out, so a removed account
         // stayed listed and signed in. The desktop's Remove is the same verb.
         const removed = removeProfile(home, name, profile);
-        const cleared = { ...settings, defaults: { ...settings.defaults } };
-        if (cleared.defaults[name] === profile) delete cleared.defaults[name];
-        cleared.workspaces = Object.fromEntries(
-          Object.entries(settings.workspaces).map(([circle, map]) => {
-            if (map[name] !== profile) return [circle, map];
-            const copy = { ...map };
-            delete copy[name];
-            return [circle, copy];
-          }));
-        writeHarnessSettings(path, cleared);
+        // No default and no order names it afterwards (TOOL4e), as the driver's `WithoutAccount` leaves the wiring.
+        writeHarnessSettings(path, withoutAccount(settings, name, profile));
 
         write(removed
           ? `daoris: removed the \`${name}\` account \`${profile}\` — the directory and the sign-in in it are gone: ${where}`
           : `daoris: \`${name}\` has no account \`${profile}\` on this machine — there was nothing to remove.`);
-        write(`  It is no longer a default for \`${name}\` anywhere on this machine.`);
+        write(`  It is no longer a default for \`${name}\` anywhere on this machine: no default and no order names it.`);
+        return 0;
+      }
+
+      // The accounts rotation may use, in order (TOOL4e, D125 §3.1, §6): the machine's, or with `--workspace` one
+      // workspace's. An account not listed never rotates, into or away; `--clear` names none again.
+      case 'order': {
+        const name = accountsOf(operand(argv, 2), 'profile order');
+        const flagged = flagValue(argv, '--workspace');
+        const workspace = flagged ? normalizeWorkspace(flagged) : null;
+        const named = operands(argv, AGENT_VALUED).slice(3);
+        if (argv.includes('--clear')) {
+          if (named.length > 0) {
+            throw new DaorisError(
+              `\`--clear\` names no account — \`daoris agent profile order ${name} --clear\` clears the order, and `
+              + `\`daoris agent profile order ${name} ${named.join(' ')}\` sets it.`);
+          }
+          return clearOrder(name, workspace);
+        }
+
+        if (named.length === 0) {
+          throw new DaorisError(
+            `\`agent profile order\` needs the accounts, in order, or --clear — e.g. \`daoris agent profile order ${name} `
+            + 'account-1 account-2`.');
+        }
+
+        // Refused rather than written, as `profile default` refuses a name that does not exist (§3.1): a typo in an
+        // order is an account rotation would walk past without saying why.
+        const existing = profiles(home, name);
+        const problem = rotationProblem(existing, named);
+        if (problem !== null) throw new DaorisError(rotationRefusal(name, problem, existing));
+
+        writeHarnessSettings(path, withRotation(settings, name, named, workspace));
+        const spelled = named.map((account) => account.trim()).join(', then ');
+        write(workspace
+          ? `daoris: in \`${workspace}\`, \`${name}\`'s rotation is ${spelled}.`
+          : `daoris: on this machine, \`${name}\`'s rotation is ${spelled}.`);
+        write('  An account not in it is never rotated into, and work resolved to it never moves (D125 §3.1).');
+        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+        return 0;
+      }
+
+      // The terminal's *Try now* (TOOL4e, D125 §2.3, §6): an account's cool-off ended early, since the person may know
+      // its limit was raised. `--own` is the tool's own sign-in.
+      case 'ready': {
+        const name = accountsOf(operand(argv, 2), 'profile ready');
+        const own = argv.includes('--own');
+        const account = operand(argv, 3) ?? null;
+        if (own && account !== null) {
+          throw new DaorisError(
+            `\`--own\` names no account — \`daoris agent profile ready ${name} --own\` is the tool's own sign-in, and `
+            + `\`daoris agent profile ready ${name} ${account}\` is that account.`);
+        }
+        if (!own && account === null) {
+          throw new DaorisError(
+            `\`agent profile ready\` needs <agent> <profile>|--own — e.g. \`daoris agent profile ready ${name} account-1\`, `
+            + 'or `--own` for the tool\'s own sign-in.');
+        }
+
+        const now = new Date();
+        const who = account === null ? `\`${name}\`'s own sign-in` : `the \`${name}\` account \`${account}\``;
+        if (endCooling(home, name, account, now)) {
+          write(`daoris: ${who} is offered again: no start waits on its limit now.`);
+          write('  If the limit still holds, the agent refuses the next start at once, and the account cools again until');
+          write('  the time it names.');
+          return 0;
+        }
+
+        const others = readCooling(home, now).filter((entry) => entry.agent.toLowerCase() === name.toLowerCase());
+        write(`daoris: ${who} is not cooling, so nothing changed — `
+          + (others.length > 0
+            ? `cooling now: ${others.map((entry) => entry.account ?? 'its own sign-in').join(', ')}.`
+            : `no account of \`${name}\` is cooling.`));
         return 0;
       }
 
@@ -1320,7 +1462,30 @@ export function commandHarness(
 
       default:
         throw new DaorisError(
-          `unknown agent profile verb '${action}' — one of: list, add, remove, default`);
+          `unknown agent profile verb '${action}' — one of: list, add, remove, default, order, ready`);
+    }
+
+    /**
+     * `profile order <agent> --clear [--workspace <name>]`: the order gone, the machine's or one workspace's, saying which
+     * order applies now, since a workspace with none takes the machine's.
+     */
+    function clearOrder(name: string, workspace: string | null): ExitCode {
+      const after = withRotation(settings, name, null, workspace);
+      writeHarnessSettings(path, after);
+
+      if (workspace) {
+        const machine = resolveRotation(after, name, null).order;
+        write(machine.length > 0
+          ? `daoris: \`${workspace}\` names no order for \`${name}\` now: the machine's applies there, ${machine.join(', then ')}.`
+          : `daoris: \`${workspace}\` names no order for \`${name}\` now, and neither does this machine.`);
+      } else {
+        write(`daoris: \`${name}\` has no order on this machine now.`);
+        const scoped = Object.entries(after.workspaceRotation).filter(([, orders]) => orders[name]).map(([circle]) => circle);
+        if (scoped.length > 0) write(`  A workspace's own still applies there: ${scoped.join(', ')}.`);
+      }
+
+      write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+      return 0;
     }
 
     /**

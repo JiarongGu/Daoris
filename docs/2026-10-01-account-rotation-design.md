@@ -5,8 +5,10 @@
 > enough to answer three questions: what a harness's exhaustion actually looks like in its output, how long a cool-off
 > should be, and whether a rotated session stays reproducible"*, with exhaustion *observed, never read*. The install
 > now holds five observations (§0.2), and they answer all three. This is the contract for the TOOL4 rows, and its
-> decision is **D125**. Status: **designed; TOOL4a, TOOL4c and TOOL4d built** (notes under D125; TOOL4d's says how
-> the protocol stub reads a limit, and why the native door's failure is not yet handed over). It replaces the
+> decision is **D125**. Status: **designed; TOOL4a, TOOL4c, TOOL4d and TOOL4e built** (notes under D125; TOOL4d's says
+> how the protocol stub reads a limit, and why the native door's failure is not yet handed over; TOOL4e's, that the
+> terminal spells the tool's own sign-in `--own`, and that the screen's *Remove* is still to take an account out of
+> its orders). It replaces the
 > toolchain design's §2 part 4 and §6 (`docs/2026-09-22-toolchain-design.md`, noted at its head). Read with
 > **D49 §4**, **D57**, **D58**, **D66 §3**, **D67 §1**, **D73**, **D76**, **D80**, **D94**, **D104**, **D110** and
 > **D116**.
