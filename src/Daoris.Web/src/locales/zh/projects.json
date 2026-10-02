@@ -83,5 +83,15 @@
   "projects.driver.label": "驱动",
   "projects.driver.drive": "在本机驱动",
   "projects.driver.hold": "暂停",
-  "projects.driver.trees": "每个会话独立工作树"
+  "projects.driver.trees": "每个会话独立工作树",
+  "projects.standing.label": "长期答复",
+  "projects.standing.none": "还没有。写下对这里每个会话都成立的话，比如允许写入哪里、在哪里测试，会话就不会再来问你。",
+  "projects.standing.set": "{{ago}} 设定",
+  "projects.standing.add": "添加",
+  "projects.standing.edit": "编辑",
+  "projects.standing.clear": "清除",
+  "projects.standing.save": "保存",
+  "projects.standing.placeholder": "允许写入开发环境；在本地对开发环境测试；生产环境须经你同意",
+  "projects.standing.tooLong": "{{count}} / {{most}} 个字符：长期答复最多 {{most}} 个字符。",
+  "projects.standing.hint": "你的原话会附在这个仓库每个会话的委托下方。只保存在本机，绝不写入仓库。"
 }

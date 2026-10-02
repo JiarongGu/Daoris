@@ -138,6 +138,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
+| keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Standing answer | `daoris driver standing <repository> "…"|--clear` |
 | sign an agent in, or add an account | Settings → Agents | `daoris agent login <agent>` |
 | choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents → Make default, use for a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
 | choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Settings → Agents → How accounts are used → Use, up and down, and a workspace's Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
@@ -153,6 +154,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |
 | start a task | Quests → Ask | `daoris-driver ask --workspace <name> "…"` |
 | answer what waits on the person | Sessions, and what needs you | `daoris-driver answer` |
+| answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on the ask is handed | Quests → the ask's page → Go-aheads | `daoris-driver ask --go-ahead <id> <n> approve|refuse ["…"]` |
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and
 `{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,

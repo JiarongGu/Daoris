@@ -48,6 +48,9 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("across", "plugins", null, "write-to engine --clear")]
     [InlineData("cap", null, null, "3")]
     [InlineData("adapter", null, null, "claude-code-acp")]
+    // KNOWUSE1b: a standing answer for a repository, in the person's words, or cleared.
+    [InlineData("standing", "engine", null, "dev writes allowed; test locally against dev; prod only on a yes")]
+    [InlineData("standing", "engine", null, "--clear")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
@@ -129,6 +132,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("adapter", null, null, null, "an agent")]
     [InlineData("adapter", null, null, "two words", "an agent")]
+    [InlineData("standing", null, null, "dev only", "names the repository it holds for")]
+    [InlineData("standing", "engine", "work", "dev only", "names the repository it holds for")]
+    [InlineData("standing", "engine", null, null, "the person's words, or `--clear`")]
+    [InlineData("standing", "engine", null, "  ", "the person's words, or `--clear`")]
     [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]

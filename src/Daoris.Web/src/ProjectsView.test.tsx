@@ -152,6 +152,30 @@ describe('the shell-attached platform', () => {
   });
 
   /**
+   * KNOWUSE1b (D135 §3): a repository's standing answer on its page, beside the driver's other choices for it, in the
+   * person's words as this machine keeps them; edited and cleared over the same file the terminal edits, on DAORIS.DRIVER.
+   */
+  it("shows a repository's standing answer on its page, and edits and clears it on DAORIS.DRIVER", async () => {
+    invoke.mockImplementation(async () => ({
+      ...DRIVER_STATE, standing: [{ repository: 'Engine', says: 'dev writes allowed; prod only on a yes', at: '2026-10-03T09:00:00Z' }],
+    }));
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+
+    expect(await within(page).findByText('dev writes allowed; prod only on a yes')).toBeInTheDocument();
+    await userEvent.click(within(page).getByRole('button', { name: 'Edit' }));
+    const field = within(page).getByRole('textbox', { name: 'Standing answer' });
+    await userEvent.clear(field);
+    await userEvent.type(field, 'dev only');
+    await userEvent.click(within(page).getByRole('button', { name: 'Save' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_STANDING', { payload: { repository: 'engine', says: 'dev only' } });
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Clear' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_STANDING', { payload: { repository: 'engine' } });
+  });
+
+  /**
    * The rail's words for a repository's standing on this machine (RepositoryGroup), on its row and its page's
    * head: held outranks *drives here*, and a registration with no checkout here says so.
    */

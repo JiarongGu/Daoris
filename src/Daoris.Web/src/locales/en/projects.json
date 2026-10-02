@@ -83,5 +83,15 @@
   "projects.driver.label": "Driver",
   "projects.driver.drive": "Drive on this machine",
   "projects.driver.hold": "Hold",
-  "projects.driver.trees": "A tree per session"
+  "projects.driver.trees": "A tree per session",
+  "projects.standing.label": "Standing answer",
+  "projects.standing.none": "None yet. Say what holds for every session here, such as which writes are allowed and where to test, so no session asks you again.",
+  "projects.standing.set": "set {{ago}}",
+  "projects.standing.add": "Add",
+  "projects.standing.edit": "Edit",
+  "projects.standing.clear": "Clear",
+  "projects.standing.save": "Save",
+  "projects.standing.placeholder": "dev writes allowed; test locally against dev; prod only on a yes",
+  "projects.standing.tooLong": "{{count}} of {{most}} characters: a standing answer is at most {{most}}.",
+  "projects.standing.hint": "Your words are handed to every session in this repository, beneath its quest. Kept on this machine, never written into the repository."
 }

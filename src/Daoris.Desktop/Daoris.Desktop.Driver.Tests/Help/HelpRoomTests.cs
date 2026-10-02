@@ -202,6 +202,36 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("/work/console-ui", HelpRoom.Render(unread));
     }
 
+    /// <summary>
+    /// KNOWUSE1b: each repository's standing answer is in the room, the person's words as this machine keeps them, so the
+    /// helper can say what a repository's sessions are handed and propose changing it; a workspace with none says nothing.
+    /// </summary>
+    [Fact]
+    public void The_room_carries_each_repositorys_standing_answer_in_the_persons_words()
+    {
+        var machine = HelpRoomFixture.Machine with
+        {
+            Repositories =
+            [
+                .. HelpRoomFixture.Machine.Repositories.Select(repository => repository.Name == "console-ui"
+                    ? repository with { Standing = "dev writes allowed; prod only on a yes" }
+                    : repository),
+            ],
+        };
+
+        var room = HelpRoom.Render(machine);
+
+        Assert.Contains("Standing answers in `work`, each handed to every session in its repository beneath its quest", room);
+        Assert.Contains("- `console-ui`: \"dev writes allowed; prod only on a yes\"", room);
+        Assert.DoesNotContain("Standing answers in `default`", room);
+        Assert.DoesNotContain("Standing answers", HelpRoom.Render(HelpRoomFixture.Machine));
+
+        var described = HelpRoom.Describe(
+            DriverConfig.Empty.WithStanding("Engine", "dev only", DateTimeOffset.UnixEpoch),
+            new Snapshot([], [new RepoView("engine", Adopted: true, Root: null)], []), [], [], _ => null, asks: 0, []);
+        Assert.Equal("dev only", Assert.Single(described.Repositories).Standing);
+    }
+
     /// <summary>A twin (`twins.md`): the service's `SessionLedger.HelpRepository` and the page's spell it too.</summary>
     [Fact]
     public void Its_sessions_are_recorded_in_a_repository_no_folder_can_be_called()

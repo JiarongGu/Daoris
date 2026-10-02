@@ -84,6 +84,11 @@ export type DriverState = {
   workspaceReadAcross?: { workspace: string; read: boolean }[];
   /** The declared relationships (D107): what each repository's sessions may also write into. */
   writeAcross?: { repository: string; to: string[] }[];
+  /**
+   * Each repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, and when they
+   * set them, or null where the file does not say — absent on a shell older than it.
+   */
+  standing?: { repository: string; says: string; at?: string | null }[];
 };
 
 export const useDriver = () => {
@@ -282,3 +287,8 @@ export const useSetDrivable = () => useDriverChange<{ repository: string; drivab
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
 /** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */
 export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
+/**
+ * A repository's standing answer (KNOWUSE1b): the person's words, or none to clear it — the same `standing` `daoris driver
+ * standing <repo> "…"|--clear` edits. Blank words or words past the bound are the driver's refusal, its sentence verbatim.
+ */
+export const useSetStanding = () => useDriverChange<{ repository: string; says?: string }>('SET_STANDING');
