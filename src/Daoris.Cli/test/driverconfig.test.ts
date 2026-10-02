@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices,
+  DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices, releasedFor,
 } from '../src/driverconfig.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -666,6 +666,86 @@ test('the cool-off is set from a terminal, listed, and left alone until it is', 
     assert.match(captureError(() => run(['cooloff', bad], at(fx))).message, /whole number of minutes, at least 1/);
   }
   assert.match(captureError(() => run(['cooloff'], at(fx))).message, /needs a name|whole number of minutes/);
+  fx.cleanup();
+});
+
+/**
+ * `released` (SESSUX1b, D126 §3.4): the quests the person released from their stop, each against the session they stopped, so
+ * a later stop holds the quest again. 🔴 A TWIN with the driver's `DriverConfig.Released`: `ReleasedTests.cs` holds this table
+ * row for row, and the test below holds it to this one, cell for cell.
+ */
+const RELEASED_ROWS: [name: string, file: string, quest: string, session: string | null][] = [
+  ['absent is no release', '{}', 'q1', null],
+  ['a quest against the session it stopped is a release', '{"released":{"q1":"s1"}}', 'q1', 's1'],
+  ['a quest is matched in any case', '{"released":{"Q1":"s1"}}', 'q1', 's1'],
+  ['a session is read without the spaces around it', '{"released":{"q1":" s1 "}}', 'q1', 's1'],
+  ['a blank session names no stop', '{"released":{"q1":"  "}}', 'q1', null],
+  ['a session that is not text is not read', '{"released":{"q1":7}}', 'q1', null],
+  ['a quest written twice in any case is read where first written', '{"released":{"q1":"s1","Q1":"s2"}}', 'q1', 's1'],
+  ['another quest\'s release is not this one\'s', '{"released":{"q2":"s1"}}', 'q1', null],
+  ['a list is not a map', '{"released":["q1"]}', 'q1', null],
+  ['null is absent', '{"released":null}', 'q1', null],
+];
+
+test('a release reads as the driver reads it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-released-read');
+  for (const [name, file, quest, session] of RELEASED_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    assert.equal(releasedFor(readDriverChoices(at(fx)), quest), session, name);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s release table is this table, row for row and in this order', () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+    'Daoris.Desktop.Driver.Tests', 'ReleasedTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(csharpRows(source, 'Released_reads_as_the_cli_reads_it', {}, 'ReleasedTests'), RELEASED_ROWS);
+});
+
+/**
+ * The terminal's Try again for a stop (D126 §3.4, §7.1). `daoris driver` talks to nothing (D50), so it cannot see whether the
+ * driver parked a quest or a stop holds it: the stop's sentence names the session, `--session` releases that stop, and a
+ * retry without it marks the strikes as RETRY1 always did. A stop is not a strike, so a release moves no mark.
+ */
+test('retry --session releases a stop, and a retry without it still marks the strikes', () => {
+  const fx = makeFixture('driver-release');
+
+  const said = run(['retry', 'q1', '--session', 's1'], at(fx));
+  const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual(written.released, { q1: 's1' });
+  assert.equal(written.forgiven.q1, undefined);
+  assert.match(said.out, /#q1` is released from your stop of session `s1`/);
+  assert.match(said.out, /A later stop holds it again/);
+
+  // One release per quest, under the spelling first written; a `#` is no part of the id.
+  run(['retry', '#Q1', '--session', 's2'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).released, { q1: 's2' });
+
+  run(['retry', 'q2', '--at', '3'], at(fx));
+  const marked = readDriverChoices(at(fx));
+  assert.equal(marked.forgiven.q2, 3);
+  assert.equal(releasedFor(marked, 'q2'), null);
+  assert.equal(releasedFor(marked, 'q1'), 's2');
+
+  assert.match(run(['list'], at(fx)).out, /released\s+#q1\s+\(your stop of session s2\)/);
+  assert.match(captureError(() => run(['retry', 'q1', '--session'], at(fx))).message, /`--session` needs the session your stop ended/);
+  // A flag's value is never the quest (REV3), `--session`'s included.
+  assert.match(captureError(() => run(['retry', '--session', 's1'], at(fx))).message, /needs a name/);
+  assert.match(captureError(() => run(['retry', 'q1', '--session', 's1', '--at', '2'], at(fx))).message, /either/);
+  fx.cleanup();
+});
+
+test('a release is written only once set, and a verb that knows nothing of it preserves it', () => {
+  const fx = makeFixture('driver-released-preserve');
+  run(['drive', 'engine'], at(fx));
+  assert.equal('released' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+
+  run(['retry', 'q1', '--session', 's1'], at(fx));
+  run(['hold', 'engine'], at(fx));
+  run(['strikes', '5'], at(fx));
+
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).released, { q1: 's1' });
   fx.cleanup();
 });
 
