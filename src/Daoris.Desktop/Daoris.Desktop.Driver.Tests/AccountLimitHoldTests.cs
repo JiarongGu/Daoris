@@ -182,7 +182,41 @@ public sealed class AccountLimitHoldTests : IDisposable
         Assert.Equal(3L, Assert.Single(lines).Data.Single(field => field.Key == "turn").Value);
     }
 
+    /// <summary>A refusal the stub's table recognises that names no time: the default stands in for one (§2.2).</summary>
+    private const string NoTime =
+        "the ACP agent refused the call: Internal error: You've hit your individual spend limit · run /usage-credits to ask "
+        + "your admin for a higher limit";
+
+    /// <summary>TOOL4e: a limit that names no time cools for the machine's <c>cooloff</c>, not the constant TOOL4d left.</summary>
+    [Fact]
+    public void A_driven_limit_that_names_no_time_cools_for_the_machine_s_cool_off()
+    {
+        using var service = _ledger.Client();
+        var roster = Roster();
+        var driver = new Daoris.Driver.Driver(service, Config.WithCoolOff(90), AdapterSet.Built(), _home, harnesses: roster);
+
+        var (_, limit) = driver.AccountLimited(
+            new SessionConclusion("failed", "refused."), AdapterSet.Built().Resolve("acp-stub"), new HarnessSelection(null),
+            NoTime, "s1", used: null);
+
+        Assert.True(limit);
+        var cooling = roster.CoolingOf("acp-stub", null)!;
+        Assert.Equal((Seen.AddMinutes(90), false), (cooling.Until, cooling.Stated));
+    }
+
     // ——— A conversation (§2.3): its refused turn cools the account it runs on; the conversation goes on.
+
+    [Fact]
+    public void A_conversation_s_limit_that_names_no_time_cools_for_the_cool_off_it_is_handed()
+    {
+        using var service = _ledger.Client();
+        var roster = Roster();
+        using var runner = new ChatRunner(service, AdapterSet.Built(), _home, new SessionProcesses(), harnesses: roster);
+
+        Assert.NotNull(runner.Limited("c1", AdapterSet.Built().Resolve("acp-stub"), profile: null, NoTime, TimeSpan.FromMinutes(25)));
+
+        Assert.Equal(Seen.AddMinutes(25), roster.CoolingOf("acp-stub", null)!.Until);
+    }
 
     [Fact]
     public void A_conversation_s_refused_turn_cools_its_account_and_says_so_without_naming_it()

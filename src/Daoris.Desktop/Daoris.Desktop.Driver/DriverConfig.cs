@@ -99,6 +99,26 @@ public sealed record DriverConfig(
     /// </summary>
     public string? HelperAdapter { get; init; }
 
+    /// <summary>
+    /// How long an account cools, in minutes, when its agent's limit names no time this reads, or one it does not believe
+    /// (TOOL4e, D125 §2.2): <c>cooloff</c>, a whole number of at least 1. Null — absent, or anything else in the file —
+    /// is the default, <see cref="AccountLimits.DefaultCoolOff"/>. The CLI's <c>driverconfig.ts</c> reads it the same way
+    /// (<c>CoolOffTests</c>, held row for row by its <c>driverconfig.test.ts</c>).
+    /// </summary>
+    public int? CoolOffMinutes { get; init; }
+
+    /// <summary>The cool-off a limit naming no time takes on this machine: <see cref="CoolOffMinutes"/>, or the hour.</summary>
+    public TimeSpan CoolOff => CoolOffMinutes is { } minutes ? TimeSpan.FromMinutes(minutes) : AccountLimits.DefaultCoolOff;
+
+    /// <summary>The refusal both doors say for less than a minute.</summary>
+    public const string CoolOffRefusal =
+        "a cool-off is a whole number of minutes, at least 1 — a zero cool-off would start a spent account again at every look.";
+
+    /// <summary>Set the cool-off a limit naming no time takes, or clear it with null to take the default.</summary>
+    /// <exception cref="DriverException">Less than a minute: a zero cool-off is a spin (D125 §6).</exception>
+    public DriverConfig WithCoolOff(int? minutes) =>
+        minutes is < 1 ? throw new DriverException(CoolOffRefusal) : this with { CoolOffMinutes = minutes };
+
     /// <summary>Which harness Ask Daoris runs on here, or null for none.</summary>
     public DriverConfig WithHelper(string? adapter) =>
         this with { HelperAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
@@ -277,6 +297,8 @@ public sealed record DriverConfig(
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
             writer.WriteNumber("strikes", Strikes);
+            // Written only when set (TOOL4e): absent is the default, and an edit elsewhere must not pin today's default.
+            if (CoolOffMinutes is { } coolOff) writer.WriteNumber("cooloff", coolOff);
             writer.WriteStartObject("forgiven");
             foreach (var (quest, mark) in Forgiven.OrderBy(f => f.Key, StringComparer.Ordinal))
             {
@@ -506,6 +528,9 @@ public sealed record DriverConfig(
             IntakeAdapter = String(root, "intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             // Absent means OFF, as the intake's does (D89).
             HelperAdapter = String(root, "helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
+            // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
+            CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
+                && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Landings = RuleMap(root, "landings"),

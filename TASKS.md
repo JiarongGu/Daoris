@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **988 CLI tests, 910 service and 50 HTTP host, 2702 driver,
-507 desktop modules, 80 devkit, 2458 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
+**Counts, and this is their one home:** seventeen commands, **1018 CLI tests, 910 service and 50 HTTP host, 2861 driver,
+516 desktop modules, 80 devkit, 2462 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
-documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
+documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** (24,522 once SESSOPT1a lands) — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -113,9 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Seventy-seven rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** TOOL4e, SESSUX1a. **Building:** SESSUX1c, SESSOPT1's design (D127). **Running:** the report-ui pilot
-  (WSSETUP12), quest `#b466447ce4d3`.
+**Eighty-three rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** SESSUX1b with SESSUX1b2, SESSUX1c, SESSOPT1a/b/c. **Building:** SESSUX1e, WSSETUP14's design (D128).
+  The pilot (WSSETUP12) ran; its branch waits for WSSETUP14.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -197,16 +197,22 @@ Order: SESSUX1a ∥ SESSUX1j; the driver lane a → b → g; the web shell lane 
 FRAME1i; k after TOOL4c, TOOL4d and c; then the look (l). b alone ends the silent stop; i alone would have told the
 owner on 1 October.
 
-- [ ] **SESSUX1a — the reader of a session's group, and the archive marks** (§2.4, §5.2; driver, modules, web-shell for
-  the refusals' catalogues): `SessionGroups.Read`, `SessionArchive`, `SESSION_GROUPS`, `SESSION_ARCHIVE`.
 - [ ] **SESSUX1b — a person's stop holds its quest; Try again releases it** (§3.3, §3.4; driver, cli, modules): the
   `Stopped` verdict, `released` in `driver.json` (twins), `retry` doing whichever applies; the room's retry row's place
   (it still says "the quest's drawer", which FRAME1d made a page); and SESSUX1a's reader must exempt `Stopped` in
   `SessionGroups.Facts.ReviewableTree`, or a stopped session's work drops out of To review (a row in `SessionGroupsTests`).
+- [ ] **SESSUX1b2 — the ledger carries on a released stop** (service; SESSUX1b's hand-back): `SessionLedger.OpenAsync`
+  refuses a carry-on after a person's stop, so a released taken quest is refused "Quest is Taken" every look; and the
+  help box's `retry` wording names a held quest too.
+- [ ] **CARRY1 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
+  cut-off without asking whose take the quest is, so a start that failed before its take carries on over someone else's.
+  Contract: D80, D126's SESSUX1b2 note. Proof: a ledger row refused, seen failing first.
 - [ ] **SESSUX1c — the list by state** (§2.1–§2.5, §4.1–§4.4; web-shell; after a): five groups, the words and marks,
   `queued` neutral, Group by in the list's ⋯, Show N more, the strip and Sessions' badge.
 - [ ] **SESSUX1d — the page header, and every act where its session is** (§3; web-shell, modules; after b, c): the pinned
   header, Stop… asking once, Try again, Open folder, a terminal here, the row's ⋯; the stop's other owners go.
+  With SESSUX1b: the quest page's Try again for a `Stopped` verdict (today only `Exhausted`), its toast, and zh
+  `work.sitting.Stopped`.
 - [ ] **SESSUX1e — archive on the screen** (§5.2, §5.3, §4.5; web-shell; after a, c).
 - [ ] **SESSUX1f — delete a conversation that served no quest** (§5.4; service, driver, modules, web-shell; after a, e).
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
@@ -230,12 +236,19 @@ repository's own `dispatch-subagent` skill asks each subagent for "an outcome pa
 backlog, which every session reads whole, is 7,600 words of its 6,600, its rows pasted long. What a session pays for
 is what it reads and what it is led to read.
 
-- [ ] **SESSOPT1 — the design** (D127, building): measure what a session reads at its start and per task here and on
-  the pilot repository (DOC7's question, folded in); the doctrine: `task-lifecycle` and `development-documents` say
-  why a record's entry is short and where its detail lives, what an always-read document holds and its ceiling, a
-  backlog row's shape; this repository's practice: the dispatch skill's hand-back, the backlog trimmed, the archive's
-  entries from now on, and whether old entries are compacted; a check that reports an entry or a row over its shape.
-  The archive is not split (that answered the wrong question).
+- [ ] **SESSOPT1a — the doctrine, in the canon.** `task-lifecycle`, `development-documents` and the archive-entry template
+  say a session pays for what it reads, so rows and entries point to their detail. Contract: D127 §2. Proof: `verify`
+  (the region within 100 bytes of +458); the family rehearsal; `examples/` re-synced in the same commit.
+- [ ] **SESSOPT1b — the shape report.** `tools/doc-shapes.mjs` reports backlog rows, router rows and new archive outcomes
+  over 60 words, from the declared roles, and exits 0. Contract: §3. Proof: `doc-shapes.test.ts`, failing first.
+- [ ] **SESSOPT1c — the hand-back is a line** (after a). The dispatch skill's hand-back carries a one-line outcome and where
+  its detail lives. Contract: §4.1. Proof: the next merge's archive entry is 60 words or fewer.
+- [ ] **SESSOPT1d — the backlog, trimmed by the rule** (the steward's, after b and c). Each over-long line moves to §4.3's
+  home; FLAKE1, TEST1 and REH1 get open fix-log entries. Proof: `doc-budgets` ≤ 5,300 words; no row over 60.
+- [ ] **SESSOPT1e — the router's rows, by shape** (after b). Each *Where it stands* becomes a line naming its decision.
+  Contract: §4.4. Proof: no router row over 60; the router under 2,500 words.
+- [ ] **DOC7 — what sessions read, measured** (folded into D127 §6.1): `session.read` and `session.skill` in the machine
+  log; the usage report gives reads per role, whole or not.
 
 ### A workspace that knows itself (owner, 2026-10-01) — D124
 
@@ -256,6 +269,16 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **WSSETUP12 — the pilot** (the owner's run, after a republish carrying WSSETUP2, 3, 5, 6, 9 and LAYOUT7): two
   repositories; what each wrote, its review, its cost, its registration, and a canary: a neighbour's session finds
   the answer by search and does not park.
+  **Ran 2026-10-02 on the report repository** (quest `#b466447ce4d3`, one turn: 52.3M cached reads, 464K new, 170K out):
+  done on its own branch, 7 commits, not pushed; its three knowledge documents cite every fact by file and line. Not
+  mergeable as it stands, by three faults of Daoris's own (WSSETUP14): CI and 218 links still read the moved
+  `.claude/` paths, which the quest's bounds forbade it to fix; `AGENTS.md` grew to 61 KB because the index lists all
+  169 knowledge documents in the always-loaded region (budget raised to 54,000; one agent reads only 32 KB); 166 old
+  documents have no frontmatter. The second repository waits for WSSETUP14.
+- [ ] **WSSETUP14 — what the pilot taught** (design, D128): a set-up leaves the repository's own checks green (it may
+  update what reads the paths it moved, or it keeps the knowledge where it is and declares it); the always-loaded index
+  does not grow with the knowledge count (the knowledge tier indexed on demand); a document without frontmatter. Then
+  the report repository's branch is amended, not merged as it stands.
 - [ ] **WSSETUP13 — the rest** (the owner's run): the plan resumed with the pilot's numbers; parks per week before and
   after.
 
@@ -297,7 +320,7 @@ UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the 
 - [ ] **UNBLOCK2 — the declaration and its judge** (§3.1–§3.3, after DEV5): `safe` beside `gates`, read from the line.
 - [ ] **UNBLOCK3 — the person's one yes** (§3.4, §3.5, after UNBLOCK2 and a week of UNBLOCK5): the `declare`
   proposal, exact rules on both Claude Code doors.
-- [ ] **DOC6 — the example family keeps the standard**; **DOC7 — what sessions read, measured** (§1.5).
+- [ ] **DOC6 — the example family keeps the standard** (DOC7 is folded into D127).
 - [ ] **UNBLOCK6 — the screen and Ask Daoris for a declaration**, both languages; **UNBLOCK7 — codex and dsh
   measured before anything is handed**; **UNBLOCK8 — the first real declaration** (the owner's: asks a week
   before and after).
@@ -398,9 +421,6 @@ the ACP door, not a registry**.
   waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
 - [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2): `rate_limit_event` and a limit's failed `result`,
   read keylessly from the maker's SDK declarations and labelled unmeasured; the first real one recorded.
-- [ ] **TOOL4e — the twins and the terminal** (cli, driver; §3.1, §6; after TOOL4d): `rotation` and `workspaceRotation` in
-  `harnesses.json` on both twins (🔴 `HarnessSettings.Save` must write them, or a screen edit deletes the order);
-  `daoris agent profile order|ready`; cool-offs in `daoris agent list`; `cooloff` in `driver.json`.
 - [ ] **TOOL4f — rotation** (driver; §3; after TOOL4e): `SelectAsync`'s walk; a pick and the tool's own home never
   rotated; a conversation only at its opening; the carry-on handed the last plan and last words; `account.rotated`.
 - [ ] **TOOL4g — the screen and Ask Daoris** (modules, web-settings, web-shell, driver; §2.4, §3.7, §4, §6; after TOOL4f):
@@ -584,6 +604,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   failed in the modules' Process half and passed alone. And `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`
   failed twice, alone too: its read of a heartbeat file the child rewrites every 100 ms asked to share only reading and
   met the writer's handle; fixed in that merge (TEST4: read sharing read and write, retried briefly), three runs green.
+  **And merging TOOL4e and SESSUX1a**: `HostSupervisorTests.A_host_that_ignores_its_input_ending_is_killed_after_the_bound`
+  failed in the modules' Process half and passed alone, under four branches' load.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.

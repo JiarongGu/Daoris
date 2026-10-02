@@ -1112,7 +1112,7 @@ public sealed partial class Driver(
         (CoolingEntry Entry, LimitSeen Seen)? limited;
         try
         {
-            limited = _harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId);
+            limited = _harnesses.Limited(adapter.Name, selection.Profile, turnFailed, sessionId, config.CoolOff);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

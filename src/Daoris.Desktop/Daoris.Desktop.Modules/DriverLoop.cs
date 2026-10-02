@@ -198,6 +198,12 @@ public sealed class DriverLoop(
     /// </summary>
     public ParkedQuests Parked { get; } = new();
 
+    /// <summary>
+    /// Everything the last tick considered (SESSUX1a): the planner's verdicts Sessions' groups read, so a session's
+    /// *parked* or *awaiting reply* is what the loop decided. Null before the first tick, when a fresh plan is read.
+    /// </summary>
+    public LastLook Look { get; } = new();
+
     /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
     private RemoteSyncSet? _sync;
 
@@ -395,6 +401,9 @@ public sealed class DriverLoop(
                 // And what it parked by its strikes (HELP10), replaced whole the same way, so Ask Daoris proposes a
                 // retry only of a quest the drawer would offer Retry on.
                 Parked.Record(report.Considerations);
+
+                // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts.
+                Look.Record(report.Considerations);
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,

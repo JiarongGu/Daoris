@@ -87,7 +87,7 @@ test('a profile is the pick, then the workspace default, then the machine defaul
     workspaces: { aurora: { 'claude-code': 'work' } },
     versions: {},
     workspaceVersions: {},
-    rest: {},
+    rotation: {}, workspaceRotation: {}, rest: {},
   };
 
   assert.equal(resolveProfile(settings, 'claude-code', 'aurora', 'picked'), 'picked');
@@ -100,7 +100,7 @@ test('a profile is the pick, then the workspace default, then the machine defaul
 // ——— Twin rule 3: none means the harness's OWN home. This is the one that must never regress.
 
 test('no profile named anywhere means the harness’s own configuration home', () => {
-  const empty = { defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {} };
+  const empty = { defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {} };
 
   // Null, not `"default"`: pointing someone who never asked for profiles at a fresh configuration
   // home would log them out of their own tool, which is the loudest way to break "Daoris works alone".
@@ -126,7 +126,7 @@ test('a managed harness lives under a version of its own, and the name may not e
 
 test('the pin is the pick, then the workspace default, then the machine default, then none', () => {
   const settings = {
-    defaults: {}, workspaces: {}, rest: {},
+    defaults: {}, workspaces: {}, rotation: {}, workspaceRotation: {}, rest: {},
     versions: { 'claude-code': '1.2.3' },
     workspaceVersions: { aurora: { 'claude-code': '2.0.0' } },
   };
@@ -144,7 +144,7 @@ test('the pin is the pick, then the workspace default, then the machine default,
  * Nothing pinned means `PATH` — not an empty managed directory, and not a refusal.
  */
 test('no version pinned anywhere means whatever the machine has on PATH', () => {
-  const empty = { defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rest: {} };
+  const empty = { defaults: {}, workspaces: {}, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {} };
 
   assert.equal(resolveVersion(empty, 'claude-code', 'aurora', null), null);
   assert.equal(managedBinary('/home', 'claude-code', null, ['claude']), null);
@@ -279,7 +279,7 @@ const DEFAULT_EDITS: [why: string, before: Pick<HarnessSettings, 'defaults' | 'w
 
 test('an account\'s default is set and cleared as the screen\'s own write sets and clears it (the twin\'s table)', () => {
   for (const [why, before, owner, profile, workspace, after] of DEFAULT_EDITS) {
-    const edited = withDefault({ ...before, versions: {}, workspaceVersions: {}, rest: {} }, owner, profile, workspace);
+    const edited = withDefault({ ...before, versions: {}, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {} }, owner, profile, workspace);
     assert.deepEqual({ defaults: edited.defaults, workspaces: edited.workspaces }, after, why);
   }
 });
@@ -799,7 +799,7 @@ test('a pinned harness probes as present, on the pin rather than on PATH', () =>
   if (!windows) chmodSync(shim, 0o755);
 
   const settings = {
-    defaults: {}, workspaces: {}, versions: { 'claude-code': '1.2.3' }, workspaceVersions: {}, rest: {},
+    defaults: {}, workspaces: {}, versions: { 'claude-code': '1.2.3' }, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {},
   };
   const report = probe('claude-code', TOOLCHAINS['claude-code']!, home, settings);
 
@@ -828,7 +828,7 @@ test('a pinned binary is asked with its updates off, and the machine’s own is 
   assert.deepEqual(TOOLCHAINS['claude-code']!.pinnedEnv, { DISABLE_UPDATES: '1' });
 
   const settings = {
-    defaults: {}, workspaces: {}, versions: { 'claude-code': '1.2.3' }, workspaceVersions: {}, rest: {},
+    defaults: {}, workspaces: {}, versions: { 'claude-code': '1.2.3' }, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {},
   };
   assert.match(probe('claude-code', TOOLCHAINS['claude-code']!, home, settings).version ?? '', /updates:1/);
 
@@ -850,7 +850,7 @@ test('a pinned binary is asked with its updates off, and the machine’s own is 
 test('a pin with nothing installed at it probes as absent rather than as PATH', () => {
   const fx = makeFixture('harness-probe-pin-missing');
   const settings = {
-    defaults: {}, workspaces: {}, versions: { 'claude-code': '9.9.9' }, workspaceVersions: {}, rest: {},
+    defaults: {}, workspaces: {}, versions: { 'claude-code': '9.9.9' }, workspaceVersions: {}, rotation: {}, workspaceRotation: {}, rest: {},
   };
 
   const report = probe('claude-code', TOOLCHAINS['claude-code']!, join(fx.root, 'home'), settings);

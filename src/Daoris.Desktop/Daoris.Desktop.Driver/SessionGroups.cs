@@ -1,0 +1,450 @@
+using System.Globalization;
+using System.Text.Json;
+
+namespace Daoris.Driver;
+
+/// <summary>
+/// A session record as the service answers it (D46), closed ones included: what <see cref="SessionGroups"/> places, read
+/// from <c>/api/sessions?includeClosed=true</c>. Never what a session printed.
+/// </summary>
+/// <param name="Id">Its id. A teammate's record came down with the sync keyed <c>origin/id</c> (SYNC4).</param>
+/// <param name="Repository">Where it ran: a repository's name, <c>ask #a</c> for an intake, <c>daoris:help</c> for Ask Daoris.</param>
+/// <param name="State">The record's state in its public spelling (<c>awaiting-person</c>, <c>stood-down</c>).</param>
+public sealed record SessionRecord(string Id, string Repository, string State)
+{
+    /// <summary>The quest it serves, or null for a conversation's or an intake's.</summary>
+    public string? Quest { get; init; }
+
+    /// <summary><c>driven</c> or <c>chat</c>, as the record says.</summary>
+    public string Kind { get; init; } = "driven";
+
+    /// <summary>The tree it held (D51), or null: a teammate's record names none over loopback that is ours to look at.</summary>
+    public string? Tree { get; init; }
+
+    /// <summary>The ask an intake answers (D65 §1b), or null.</summary>
+    public string? Ask { get; init; }
+
+    public DateTimeOffset Created { get; init; }
+
+    /// <summary>When the record last moved: when a parked session began to wait, or when an ended one ended.</summary>
+    public DateTimeOffset Updated { get; init; }
+
+    /// <summary>A record that came down from the team (SYNC4): its process is on another machine, and nothing here reaches it.</summary>
+    public bool Teammate => Id.Contains('/');
+
+    /// <summary>
+    /// Whether it still runs or waits: anything that is not one of the five endings. A state this build does not know is
+    /// counted live, so nothing archives a session a newer host says is still going.
+    /// </summary>
+    public bool Live => !Endings.Contains(State);
+
+    private static readonly HashSet<string> Endings = new(StringComparer.Ordinal)
+    {
+        "completed", "declined", "failed", "stopped", "stood-down",
+    };
+}
+
+/// <summary>The service's session records, closed ones included (SESSUX1a): asked of its door, and read.</summary>
+public static class SessionRecords
+{
+    /// <summary>The door the records are read by: every record, closed ones included, as the page reads them.</summary>
+    public const string Door = "/api/sessions?includeClosed=true";
+
+    /// <summary>Every record the answer holds, in its order; one with no id is skipped.</summary>
+    public static IReadOnlyList<SessionRecord> Parse(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var records = new List<SessionRecord>();
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return records;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || Text(session, "id") is not { Length: > 0 } id) continue;
+            records.Add(new SessionRecord(id, Text(session, "repository") ?? "", Text(session, "state") ?? "")
+            {
+                Quest = Text(session, "quest") is { Length: > 0 } quest ? quest : null,
+                Kind = Text(session, "kind") ?? "driven",
+                Tree = Text(session, "tree") is { Length: > 0 } tree ? tree : null,
+                Ask = Text(session, "ask"),
+                Created = Time(session, "created"),
+                Updated = Time(session, "updated"),
+            });
+        }
+
+        return records;
+    }
+
+    /// <summary>
+    /// The records as the service answers them, over a client of this reader's own. A refusal is the driver's sentence
+    /// (<see cref="DriverException"/>), as every read through <see cref="DriverHttp"/> says it.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ServiceClient"/> reads these records for the strikes and each quest's last run and keeps them to itself;
+    /// its file is another branch's while this one is built (TOOL4d), so the reader asks the same door with the same key
+    /// rather than growing that class. Moving it onto the client later changes no answer.
+    /// </remarks>
+    /// <param name="handler">The test seam, as <see cref="DriverHttp.Client"/>'s; production passes none.</param>
+    public static async Task<string> ReadAsync(
+        string baseUrl, string? key, HttpMessageHandler? handler = null, CancellationToken ct = default)
+    {
+        using var http = DriverHttp.Client(key, handler);
+        return await DriverHttp.GetAsync(http, baseUrl.TrimEnd('/') + Door, ct).ConfigureAwait(false);
+    }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+    private static DateTimeOffset Time(JsonElement element, string name) =>
+        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+            ? at
+            : DateTimeOffset.MinValue;
+}
+
+/// <summary>
+/// What one session's own tree holds that no branch of the person's does, by D88's proof: its unlanded commits and its
+/// uncommitted paths. Null in either is git unable to say.
+/// </summary>
+public sealed record TreeWork(int? Commits, int? Uncommitted)
+{
+    /// <summary>
+    /// Whether there is work nobody has accepted yet. Only a proven zero is none: a count git could not give is kept, as
+    /// the clean-up keeps what it cannot clear (D88).
+    /// </summary>
+    public bool Holds => Commits != 0 || Uncommitted != 0;
+}
+
+/// <summary>
+/// The groups a session is listed in by state (D126 §2.1), in the order the person acts on them, and Archived: the
+/// public spelling the page and <c>daoris-driver sessions --group</c> share.
+/// </summary>
+public static class SessionGroup
+{
+    /// <summary>Waiting on you: only the person's press moves it.</summary>
+    public const string You = "you";
+
+    /// <summary>To review: an ended session whose own tree holds work no branch of the person's holds.</summary>
+    public const string Review = "review";
+
+    /// <summary>Working: queued, starting, working, and a live chat between turns.</summary>
+    public const string Working = "working";
+
+    /// <summary>Resumes later: it moves by itself when what it waits on arrives.</summary>
+    public const string Later = "later";
+
+    /// <summary>Ended: a record.</summary>
+    public const string Ended = "ended";
+
+    /// <summary>Archived: out of the way on this machine, kept whole (§5.2).</summary>
+    public const string Archived = "archived";
+
+    /// <summary>The groups in the order a list shows them.</summary>
+    public static IReadOnlyList<string> Order { get; } = [You, Review, Working, Later, Ended, Archived];
+}
+
+/// <summary>
+/// The words a row shows that are not a record state (D126 §2.2): each a fact about the session's quest, derived here and
+/// never written back to the record, so there is no new session state.
+/// </summary>
+public static class ShownState
+{
+    /// <summary>The last session here of a quest parked on its failed sessions (DRV6).</summary>
+    public const string Parked = "parked";
+
+    /// <summary>The last session here of a quest taken and waiting on a question asked of another repository (D79).</summary>
+    public const string AwaitingReply = "awaiting-reply";
+}
+
+/// <summary>Where one session is listed, and what its row's second line says (D126 §2.2, §2.4).</summary>
+/// <param name="Group">One of <see cref="SessionGroup"/>.</param>
+/// <param name="Shown">The record's state, or one of <see cref="ShownState"/>.</param>
+public sealed record SessionGrouping(string Session, string Group, string Shown)
+{
+    /// <summary>Whether this machine's archive mark stands. A session that needs the person is shown in its group whatever the mark says.</summary>
+    public bool Archived { get; init; }
+
+    /// <summary>A teammate's record (SYNC4): read here, and acted on from its own machine.</summary>
+    public bool Teammate { get; init; }
+
+    /// <summary>For a parked session: how many sessions failed since the quest's last *Try again*, as the planner counted to park it.</summary>
+    public int? Strikes { get; init; }
+
+    /// <summary>For a session awaiting reply: the quest its quest waits on.</summary>
+    public string? Awaits { get; init; }
+
+    /// <summary>And the repository that quest was asked of, where the service still lists it.</summary>
+    public string? AwaitsOf { get; init; }
+
+    /// <summary>For a session to review: what its own tree holds.</summary>
+    public TreeWork? Work { get; init; }
+}
+
+/// <summary>
+/// Everything one look at the sessions reads (D126 §2.4): the records, the quests and the planner's verdicts, each quest's
+/// last session here and its strikes as the planner's own readers derive them, the trees' judgement and the marks.
+/// </summary>
+public sealed record SessionLook(
+    IReadOnlyList<SessionRecord> Records, IReadOnlyList<QuestView> Quests, IReadOnlyList<Consideration> Considered)
+{
+    /// <summary>The session this machine last ran on each quest (D79): <see cref="ServiceClient.ReadLastRun"/>, the planner's own reading.</summary>
+    public IReadOnlyDictionary<string, PriorSession> LastRun { get; init; } =
+        new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Each quest's failed sessions since its last *Try again* (DRV6, RETRY1), counted as the planner counts them.</summary>
+    public IReadOnlyDictionary<string, int> Strikes { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>What each judged tree holds, by <see cref="SessionGroups.Normal"/>; a tree not here was not judged, and holds nothing to review.</summary>
+    public IReadOnlyDictionary<string, TreeWork> Trees { get; init; } = new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>This machine's archive marks (§5.2), by session.</summary>
+    public IReadOnlyDictionary<string, DateTimeOffset> Archived { get; init; } = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
+    /// planner's own readers, never a second copy of either rule.
+    /// </summary>
+    /// <param name="forgivenAt">RETRY1's mark for a quest (<see cref="DriverConfig.ForgivenAt"/>): the planner counts strikes from it.</param>
+    public static SessionLook From(
+        string recordsJson, IReadOnlyList<QuestView> quests, IReadOnlyList<Consideration> considered, Func<string, int> forgivenAt) =>
+        new(SessionRecords.Parse(recordsJson), quests, considered)
+        {
+            LastRun = ServiceClient.ReadLastRun(recordsJson),
+            Strikes = ServiceClient.ReadStrikes(recordsJson)
+                .ToDictionary(pair => pair.Key, pair => pair.Value - forgivenAt(pair.Key), StringComparer.OrdinalIgnoreCase),
+        };
+}
+
+/// <summary>
+/// The one reader of a session's group (SESSUX1a, D126 §2.4): which of the five groups each session is in, or Archived,
+/// the word its row shows, and what its second line says. <c>SESSION_GROUPS</c> hands it to the page and the terminal's
+/// <c>sessions</c> prints it, so the two cannot disagree.
+/// </summary>
+/// <remarks>
+/// <para><b>Pure.</b> <see cref="Read"/> decides from a <see cref="SessionLook"/> and touches nothing; what it reads is
+/// gathered by the door that asks (<see cref="JudgeAsync"/>, <see cref="VerdictsAsync"/>), so the table of cases holds
+/// the rule without a process.</para>
+///
+/// <para><b>A session is in the first group it qualifies for</b>: Waiting on you, To review, Working, Resumes later,
+/// Ended. Parked and awaiting reply are the planner's verdicts on the session's quest (<see cref="StartVerdict.Exhausted"/>,
+/// <see cref="StartVerdict.Waiting"/>), read for the quest's last session here only; nothing here counts strikes or
+/// decides a wait a second way.</para>
+///
+/// <para><b>To review is the tree's work, once nothing will go back into the tree.</b> Only the newest session on a tree
+/// stands for it; a tree a live session holds is in use, as D88's proof keeps a tree in use; and a tree whose quest is
+/// still taken and considered by the planner is the one its carry-on or resume goes back into (D79, D80), so its asker
+/// rests in Resumes later or Ended. Read literally, the order would put every awaiting reply with a commit in To review
+/// and offer a review of a tree a carry-on is writing.</para>
+///
+/// <para><b>A teammate's record is grouped by its state only.</b> Its park waits on them, its tree is on their machine,
+/// and the planner's verdicts and the strikes are this machine's (D47 §6, as the park notification already reads it).</para>
+///
+/// <para><b>Archive never hides what needs the person</b>: a mark moves a session to Archived from Resumes later or
+/// Ended only; one waiting on you, to review or still live is shown in its group with its mark said.</para>
+/// </remarks>
+public static class SessionGroups
+{
+    /// <summary>Every session's place, in the order a list shows them; with <paramref name="only"/>, those sessions' alone.</summary>
+    /// <param name="only">The sessions asked about. The rest still decide theirs: a tree is one session's to review.</param>
+    public static IReadOnlyList<SessionGrouping> Read(SessionLook look, IReadOnlyCollection<string>? only = null)
+    {
+        var facts = new Facts(look);
+        var placed = look.Records
+            .Where(record => only is null || only.Contains(record.Id, StringComparer.Ordinal))
+            .Select(record => (Record: record, Row: facts.Place(record)))
+            .ToList();
+
+        return [.. SessionGroup.Order.SelectMany(group => Ordered(group, placed.Where(each => each.Row.Group == group))).Select(each => each.Row)];
+    }
+
+    /// <summary>
+    /// The trees <see cref="Read"/> would put to review if they held work: an ended session's own tree, this home's, the
+    /// newest session on it, held by nothing live and gone back into by no quest. Only these are worth a git walk.
+    /// </summary>
+    /// <param name="held">Whether a path is a tree this home opened (<see cref="SessionTrees.Holds"/>): the only kind looked at.</param>
+    public static IReadOnlyList<string> TreesToJudge(
+        SessionLook look, Func<string, bool> held, IReadOnlyCollection<string>? only = null)
+    {
+        var facts = new Facts(look);
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var trees = new List<string>();
+        foreach (var record in look.Records)
+        {
+            if (only is not null && !only.Contains(record.Id, StringComparer.Ordinal)) continue;
+            if (facts.ReviewableTree(record) is not { } tree || !seen.Add(Normal(tree)) || !Held(held, tree)) continue;
+            trees.Add(tree);
+        }
+
+        return trees;
+    }
+
+    /// <summary>The look with each tree <see cref="TreesToJudge"/> names judged once (D88's proof): a tree the judge cannot speak for holds nothing to review.</summary>
+    /// <param name="judge"><see cref="SessionTrees.WorkAsync"/>, the git walk; a test hands in its own.</param>
+    public static async Task<SessionLook> JudgeAsync(
+        SessionLook look, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> judge,
+        IReadOnlyCollection<string>? only = null, CancellationToken ct = default)
+    {
+        var judged = new Dictionary<string, TreeWork>(look.Trees, StringComparer.OrdinalIgnoreCase);
+        foreach (var tree in TreesToJudge(look, held, only))
+        {
+            if (await judge(tree, ct).ConfigureAwait(false) is { } work) judged[Normal(tree)] = work;
+        }
+
+        return look with { Trees = judged };
+    }
+
+    /// <summary>
+    /// The planner's verdict on each quest, never a second copy of its rules: the loop's last look where a loop has
+    /// looked, and the planner over a fresh snapshot where none has (a terminal, or a desktop waiting on another driver's
+    /// lock, DRV8a).
+    /// </summary>
+    /// <param name="door">The configured adapter's wire, which decides whether a repository that never adopted can be driven (D70).</param>
+    public static async Task<IReadOnlyList<Consideration>> VerdictsAsync(
+        ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, CancellationToken ct = default) =>
+        lastLook ?? Planner.Plan(await service.SnapshotAsync(ct).ConfigureAwait(false), config, door);
+
+    /// <summary>A tree path as one tree: separators and a trailing one aside, compared without case, as Windows sees it.</summary>
+    public static string Normal(string tree) => tree.Replace('\\', '/').TrimEnd('/');
+
+    private static bool Held(Func<string, bool> held, string tree)
+    {
+        try
+        {
+            return held(tree);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            // A path no folder could have is no tree of this home's.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// A group's rows in its order (D126 §2.1): waiting and resuming oldest first, the longest wait first; to review and
+    /// working by repository then start, so rows do not reshuffle as their states move; ended and archived newest first.
+    /// </summary>
+    private static IEnumerable<(SessionRecord Record, SessionGrouping Row)> Ordered(
+        string group, IEnumerable<(SessionRecord Record, SessionGrouping Row)> rows) => group switch
+        {
+            SessionGroup.You or SessionGroup.Later => rows
+                .OrderBy(each => each.Record.Updated).ThenBy(each => each.Record.Id, StringComparer.Ordinal),
+            SessionGroup.Review or SessionGroup.Working => rows
+                .OrderBy(each => each.Record.Repository, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(each => each.Record.Created).ThenBy(each => each.Record.Id, StringComparer.Ordinal),
+            _ => rows.OrderByDescending(each => each.Record.Updated).ThenBy(each => each.Record.Id, StringComparer.Ordinal),
+        };
+
+    /// <summary>What every session's place is read against, gathered once per look.</summary>
+    private sealed class Facts
+    {
+        private readonly SessionLook _look;
+        private readonly Dictionary<string, Consideration> _verdicts;
+        private readonly Dictionary<string, QuestView> _quests;
+        private readonly HashSet<string> _liveTrees;
+        private readonly Dictionary<string, string> _newestOnTree;
+
+        public Facts(SessionLook look)
+        {
+            _look = look;
+            _verdicts = look.Considered
+                .GroupBy(consideration => consideration.Quest.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+            _quests = look.Quests
+                .GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
+            var ours = look.Records.Where(record => !record.Teammate && record.Tree is not null).ToList();
+            _liveTrees = new HashSet<string>(
+                ours.Where(record => record.Live).Select(record => Normal(record.Tree!)), StringComparer.OrdinalIgnoreCase);
+            _newestOnTree = ours
+                .GroupBy(record => Normal(record.Tree!), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.OrderByDescending(record => record.Created).ThenByDescending(record => record.Id, StringComparer.Ordinal).First().Id,
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        public SessionGrouping Place(SessionRecord record)
+        {
+            var archived = _look.Archived.ContainsKey(record.Id);
+            var row = new SessionGrouping(record.Id, SessionGroup.Ended, record.State) { Archived = archived, Teammate = record.Teammate };
+
+            if (record.Live)
+            {
+                // A teammate's park waits on them: nothing this window sends reaches its process (D47 §6).
+                return row with { Group = record.State == "awaiting-person" && !record.Teammate ? SessionGroup.You : SessionGroup.Working };
+            }
+
+            if (record.Teammate) return Rest(row);
+
+            var verdict = VerdictOnLast(record);
+            if (verdict?.Verdict == StartVerdict.Exhausted)
+            {
+                return row with
+                {
+                    Group = SessionGroup.You,
+                    Shown = ShownState.Parked,
+                    Strikes = _look.Strikes.TryGetValue(record.Quest!, out var strikes) ? strikes : null,
+                };
+            }
+
+            if (ReviewableTree(record) is { } tree && _look.Trees.TryGetValue(Normal(tree), out var work) && work.Holds)
+            {
+                return row with { Group = SessionGroup.Review, Work = work };
+            }
+
+            if (verdict is { Verdict: StartVerdict.Waiting, Quest.Awaits: { Length: > 0 } awaits })
+            {
+                return Rest(row with
+                {
+                    Group = SessionGroup.Later,
+                    Shown = ShownState.AwaitingReply,
+                    Awaits = awaits,
+                    AwaitsOf = _quests.TryGetValue(awaits, out var question) ? question.To : null,
+                });
+            }
+
+            return Rest(row);
+
+            SessionGrouping Rest(SessionGrouping resting) => archived ? resting with { Group = SessionGroup.Archived } : resting;
+        }
+
+        /// <summary>
+        /// The tree an ended session of this machine's would be reviewed in, were there work in it: its own, the newest
+        /// session on it, held by nothing live, its quest not parked and not going back into it. Null for any other.
+        /// </summary>
+        public string? ReviewableTree(SessionRecord record)
+        {
+            if (record.Live || record.Teammate || record.Tree is not { } tree) return null;
+            var key = Normal(tree);
+            if (!_newestOnTree.TryGetValue(key, out var newest) || newest != record.Id || _liveTrees.Contains(key)) return null;
+
+            // Parked comes first, and a quest the planner still considers while it is taken goes back into this
+            // session's tree: its carry-on (D80) or its resume (D79), whatever holds that start for now.
+            return VerdictOnLast(record) is { } verdict
+                   && (verdict.Verdict == StartVerdict.Exhausted || verdict.Quest.Status == "Taken")
+                ? null
+                : tree;
+        }
+
+        /// <summary>The planner's verdict on this session's quest, where this session is that quest's last here; null otherwise.</summary>
+        private Consideration? VerdictOnLast(SessionRecord record) =>
+            record.Quest is { } quest
+            && _look.LastRun.TryGetValue(quest, out var last)
+            && string.Equals(last.Session, record.Id, StringComparison.Ordinal)
+            && _verdicts.TryGetValue(quest, out var verdict)
+                ? verdict
+                : null;
+    }
+}
+
+/// <summary>
+/// The considerations the loop's last look made, whole (SESSUX1a): the planner's verdicts <see cref="SessionGroups"/>
+/// reads, so the list says what the loop decided rather than a second plan of its own.
+/// </summary>
+/// <remarks>Kept as <see cref="ParkedQuests"/> is, and replaced whole each look, so nothing older than the last look is read.</remarks>
+public sealed class LastLook
+{
+    private volatile IReadOnlyList<Consideration>? _latest;
+
+    /// <summary>What the last look considered, in its order; null before any look, which is when a fresh plan is read instead.</summary>
+    public IReadOnlyList<Consideration>? Latest => _latest;
+
+    public void Record(IEnumerable<Consideration> considered) => _latest = [.. considered];
+}
