@@ -9798,3 +9798,63 @@ real agent was handed the requirements or asked to answer them, so whether a har
 each met is not measured, and nothing compares a met answer with the work, since a fact gates and a judgement reports
 (D54); the family rehearsal publishes no requirements, so no rehearsal drives an answered done through the real host;
 the page shows neither the answers nor the yes, so there is no look.
+
+## D134 — The decisions record is one file per decision, its notes under it, merged by union per file; `docs/DECISIONS.md` stays as a page that says where they are (2026-10-03)
+
+**Decision (DOC8, from the parent's account of 2026-10-02 and 03: four integrations in a row left this record torn by
+their union merges, and D130–D133 were rebuilt by script three times).** The contract is
+`docs/2026-10-03-decisions-record-design.md`: what was measured (§1), the four options weighed (§2), the shape (§3),
+the migration (§4) and the build (§5).
+
+1. **Each decision is its own file**, `docs/decisions/D<n>.md`, the number unpadded so the path is the citation. It
+   holds the entry as written, its `## D<n> — …` heading first. Its notes are appended at its end, as the canon puts an
+   amendment under the entry it amends.
+2. **`docs/DECISIONS.md` stays as a fixed page**: what the record is, that each decision is its own file, that D114 was
+   never taken, and how to list them. It holds no rows, so no branch edits it, and a citation that names it with a
+   number reaches the decision in one hop. There is no index, hand-kept or generated.
+3. **Union per file.** `.gitattributes` marks `docs/decisions/*.md merge=union`, and no longer the page. Two notes
+   written under one decision at once are both kept whole, in merge order.
+4. **A check for the folder, and it fails** (D54): each file holds one heading, its own; no conflict marker; no note
+   label after a non-blank line; no decision or note in the page. `doc-duplicates` reads the folder in place of the
+   file, and its test still holds the union records to the checked ones.
+5. **The service reads the declared folder** as DOC5 built it: one entry per decision, id
+   `Daoris:docs/decisions/D<n>.md`, titled by its first heading once DOC8c lands.
+6. **The migration is one commit, the parent's**, made when no branch in flight holds a change to the record. Its
+   proof: the files, concatenated in the old order, equal the old record byte for byte.
+7. **The canon does not recommend the shape yet.** It already allows a folder for the decisions role (D122 §2.1). What
+   tore is this repository's union merge (D106), and one repository's measurement is below the canon's bar of two
+   sources. It is reconsidered when a second repository reports a record torn by parallel merges.
+
+**Why.** Replayed through git's own merge at `155882ec` (design §1): of the 134 merges since the union whose two
+sides both changed the record, 33 came out torn, 27 were committed that way, and 17 repairs followed, by hand and by
+script; on 2026-10-03, five merges of eight. The tears had four shapes. A note under the newest decision and a new
+decision after it share one insertion point (17 merges). A decision was moved to keep the numbers in order (3). One
+decision was added on both sides of a criss-cross with different notes (7). A side was already torn (6). One file per
+decision removes the insertion point, the order and the copies, and leaves no first tear to carry on. Replayed per
+decision, the same merges lose no line, and 12 decision files keep a note whose blank line went, which the check
+sees. A lookup reads one file whose path is its number: one call and the entry's bytes, where today it is two calls
+and a window 4.1 times the entry at the median.
+
+**Rejected** (design §7):
+- **A merge driver.** Its configuration is not tracked, and without it git falls back to conflict markers (tried on
+  git 2.53). On every merge it must find where a note ends, which no note says.
+- **A file per note.** One decision read in up to fourteen files after a search, against the canon's amendment rule,
+  and a second path for the service to read as decisions.
+- **Union, plus a check that a note sits under its own decision.** No note names its decision, so 178 notes go
+  unchecked, and it finds a quarter of merges torn and repairs none of them.
+- **A plain merge per file**: 62 of the 64 shared decisions measured would conflict. Also **an index**, **padded or
+  slugged names**, **promoting each heading** and **serialising the merges**.
+- **Moving the other union records**: none of them takes notes from many branches under an older entry.
+
+**What it amends.** D106: *one file per decision* moves from rejected to decided; its reason, every anchor that cites
+one, measured nothing to break, since no link points into the record. D117 §2.4: the condition it named for reopening,
+union merge failing again, is met; and the number is a decision's name, so no map is needed.
+`docs/2026-09-30-parallel-development-design.md` §7, the same. The dispatch skill: the parent reserves the number after
+the highest file in `docs/decisions/`, and a brief names the file to write. The rows are the design's §5: DOC8b, DOC8a
+and DOC8c.
+
+**What the checks do not cover.** Documents only, and nothing is built. The counts are scratch scripts' over the
+history, judging a tear by two facts (a heading twice, a side's line under another decision), so they are a floor; the
+per-decision replay merged each decision's section with `git merge-file`, not `merge-tree`. Whether a session read a
+torn entry before its repair is in no record. `verify` checks this entry's place and the design's links, and none of
+their words.
