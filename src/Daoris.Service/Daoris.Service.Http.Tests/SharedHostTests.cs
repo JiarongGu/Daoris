@@ -266,4 +266,14 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         var listed = await host.GetAsync("/api/quests", key: key);
         Assert.Contains(listed.Json.EnumerateArray(), row => row.GetProperty("id").GetString() == id);
     }
+
+    /// <summary>
+    /// DRIFT1d (D133 §4): the person's yes to a departure is said on their own machine, and travels from there as an
+    /// operation, as a delete does — a shared host has no accept door.
+    /// </summary>
+    [Fact]
+    public void The_accept_door_does_not_exist_on_a_shared_host()
+    {
+        Assert.DoesNotContain(("POST", "/api/quests/{id}/accept"), host.Routes());
+    }
 }

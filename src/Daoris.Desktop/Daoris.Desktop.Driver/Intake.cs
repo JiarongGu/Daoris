@@ -389,6 +389,15 @@ public static class IntakePrompt
         text.Append("plainly one lane's, address that lane as `repository:lane` (several as `repository:lane+lane`);\n");
         text.Append("otherwise address the repository.\n\n");
 
+        // DRIFT1c (D133 §3): a paraphrase kept a word and lost what it meant where the work lived, so a
+        // requirement is the person's words, which the service checks, and the reading stays in the body.
+        text.Append("Name what the person requires as the quest's `requirements`: each one their own words, copied\n");
+        text.Append("exactly from the ask or from what they said on it since, with the check that proves the work\n");
+        text.Append("meets them. A word they use means what it means where the work lives: where that repository's\n");
+        text.Append("documents give it a meaning, quote the word and say in the check what it requires there. Your\n");
+        text.Append("reading of their words belongs in the body, never in a requirement; a quote they did not say is\n");
+        text.Append("refused, naming it. A `then` step carries the quest's requirements with it.\n\n");
+
         text.Append("When they do not settle it — nothing points at one repository, or more than one could —\n");
         text.Append("do not guess, and publish nothing. End by saying plainly what you would need to know; the\n");
         text.Append("person decides.\n\n");

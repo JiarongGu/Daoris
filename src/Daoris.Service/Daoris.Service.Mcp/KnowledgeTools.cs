@@ -371,6 +371,12 @@ public sealed partial class KnowledgeTools(
             + "the same asker; a decline stops the chain. Write {parent} in a step's title or body for "
             + "the id of the quest it follows.")]
         ChainStep[]? then = null,
+        [Description(
+            "What the person requires, for a quest an ask asks: each one their own words, quoted exactly as they "
+            + "gave them in the ask or said on it since, with the check that proves the work meets them. A quote "
+            + "they never said is refused, naming it; your reading of their words belongs in the body. Every step "
+            + "of the chain inherits them. A quest one repository asks of another carries none.")]
+        Requirement[]? requirements = null,
         CancellationToken ct = default)
     {
         // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
@@ -385,6 +391,8 @@ public sealed partial class KnowledgeTools(
         }
 
         var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList();
+        // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c).
+        var required = (requirements ?? []).Select(r => new QuestRequirement(r.Quote ?? "", r.Check ?? "")).ToList();
 
         // An intake publishes AS ITS ASK (D65 §1b): the room is no repository, so `from` could name
         // nothing addressable — the ask is the asker, in its own circle, carrying its own links and
@@ -393,7 +401,7 @@ public sealed partial class KnowledgeTools(
         {
             var answered = await asks.PublishAsync(
                     askId, to, DateTimeOffset.UtcNow, ct,
-                    new AskDraft(title, body) { Links = links ?? [], Uploads = uploads, Then = steps },
+                    new AskDraft(title, body) { Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required },
                     intake.Session)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
@@ -410,6 +418,7 @@ public sealed partial class KnowledgeTools(
                     Links = links ?? [],
                     Uploads = uploads,
                     Then = steps,
+                    Requirements = required,
                     // Which session asked (SESS1), as the driver named it on this connector (PERM2).
                     PublishedBy = intake?.Session,
                 },
@@ -461,8 +470,28 @@ public sealed partial class KnowledgeTools(
                 // Ask and wait (D79): what its taker waits on.
                 if (quest.Awaits is { } awaits) text.AppendLine($"  waits on `#{awaits}`");
                 foreach (var step in quest.Then) text.AppendLine($"  then → `{step.To}`: {step.Title}");
+                // What the person requires (DRIFT1c): their words as quoted, and the check, whole.
+                foreach (var requirement in quest.Requirements)
+                {
+                    text.AppendLine($"  requires \"{requirement.Quote}\" — check: {requirement.Check}");
+                }
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
+
+                // How its done answered each (DRIFT1d), and whether a departure holds it for the person's yes.
+                foreach (var answer in quest.Answers)
+                {
+                    text.AppendLine(answer.IsDeparture
+                        ? $"  requirement {answer.Requirement} departed: {answer.Departed} Quoting \"{answer.Quote}\"."
+                        : $"  requirement {answer.Requirement} met: {answer.Met}");
+                }
+
+                if (quest.Held) text.AppendLine("  ⚠ held for the person's yes: what follows it waits until they accept the departure.");
+                if (quest.Accepted is { } accepted)
+                {
+                    text.AppendLine("  the person accepted the departure "
+                        + accepted.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
+                }
             }
 
             text.AppendLine();
@@ -475,7 +504,8 @@ public sealed partial class KnowledgeTools(
     [Description(
         "Answer a quest addressed to the repository you are working in: take it, finish it, or decline "
         + "it. Declining is a real answer and often the right one — it needs a reason, because a bare "
-        + "refusal gives the asker nothing to act on. When your work needs something another repository "
+        + "refusal gives the asker nothing to act on. Finishing a quest that carries the person's requirements "
+        + "answers each one (answers). When your work needs something another repository "
         + "owns — a change there, or a fact about its code — publish the question to it with "
         + "quest_publish, then WAIT on that question here (action wait, on the question's id) and end "
         + "your turn: your quest stays yours, and the driver resumes you in the same tree with the answer.")]
@@ -484,9 +514,19 @@ public sealed partial class KnowledgeTools(
         [Description("take, done, decline, or wait.")] string action,
         [Description("Required to decline; worth giving when finishing.")] string? reason = null,
         [Description("For wait: the id of the question you published to another repository.")] string? on = null,
+        [Description(
+            "For done, on a quest that carries the person's requirements: one answer for each, by its number. Met, saying "
+            + "how its check was met; or departed, with the reason and the person's own words it turns on (quote), "
+            + "copied exactly. A done that leaves one unanswered is refused. A departure is shown to the person, and "
+            + "what follows the quest waits for their yes. A quest with no requirements takes none.")]
+        RequirementAnswer[]? answers = null,
         CancellationToken ct = default)
     {
-        var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct, on: on)
+        // A number left out arrives as 0, and a half left out blank: the exchange refuses each, naming which (DRIFT1d).
+        var answered = (answers ?? [])
+            .Select(answer => new QuestAnswer(answer.Requirement ?? 0, answer.Met, answer.Departed, answer.Quote))
+            .ToList();
+        var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered)
             .ConfigureAwait(false);
 
         // A take by a session the driver started is written on its record (STANDDOWN2): how its end is
@@ -582,3 +622,29 @@ public sealed record ChainStep(
     string? Title,
     [property: Description("Why, and how to tell it is done — e.g. where to look in the browser. {parent} works here too.")]
     string? Body);
+
+/// <summary>
+/// One requirement as an agent writes it (DRIFT1c) — nullable for the chain step's reason: the exchange
+/// refuses one missing a half, naming which, rather than the door dropping it.
+/// </summary>
+public sealed record Requirement(
+    [property: Description("The person's own words, copied exactly from what they asked or said since — never reworded.")]
+    string? Quote,
+    [property: Description("How to tell the work meets them, in the terms of the repository asked.")]
+    string? Check);
+
+/// <summary>
+/// How a done answers one requirement, as an agent writes it (DRIFT1d) — nullable for the chain step's reason: the
+/// exchange refuses an answer that names no requirement, or says both or neither, naming which.
+/// </summary>
+public sealed record RequirementAnswer(
+    [property: Description("The requirement's number, from 1, in the order quest_list lists them.")]
+    int? Requirement,
+    [property: Description("How its check was met. Leave empty when the work departed from it.")]
+    string? Met,
+    [property: Description("Why the work departed from it, instead of meeting it. Leave empty when it was met.")]
+    string? Departed,
+    [property: Description(
+        "With departed only: the person's own words the departure turns on, copied exactly from what they asked or "
+        + "said since. Your reading of their words is the reason, never their words.")]
+    string? Quote);

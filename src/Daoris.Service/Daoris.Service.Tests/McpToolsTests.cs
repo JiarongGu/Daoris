@@ -173,6 +173,132 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// DRIFT1c (D133 §3): an intake names what the person requires, each in their own words with the check
+    /// that proves it. A quote they said is published and listed on the quest; one they never said is
+    /// refused, naming the words, and nothing is published.
+    /// </summary>
+    [Fact]
+    public async Task An_intakes_requirements_quote_the_person_and_one_they_never_said_is_refused()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "the report will need the v3 bridge"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var session = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+
+        var refused = await tools.PublishQuestAsync(
+            "intake", "Owner", "Build the report", "Reached through the bridge.",
+            requirements: [new Requirement("make it reachable through the bridge", "It opens in the older shell.")]);
+        Assert.Contains("\"make it reachable through the bridge\"", refused);
+        Assert.Empty(await _quests.ListAsync());
+
+        var published = await tools.PublishQuestAsync(
+            "intake", "Owner", "Build the report", "Reached through the bridge.",
+            requirements: [new Requirement("will need the v3 bridge", "The report opens through the bridge's route.")]);
+
+        Assert.Contains("Published quest", published);
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        Assert.Equal([new QuestRequirement("will need the v3 bridge", "The report opens through the bridge's route.")], quest.Requirements);
+        var listed = await tools.ListQuestsAsync("Owner");
+        Assert.Contains("requires \"will need the v3 bridge\"", listed);
+        Assert.Contains("The report opens through the bridge's route.", listed);
+    }
+
+    /// <summary>
+    /// A requirement the agent leaves half of reaches the exchange half-made and is refused there, naming
+    /// which — a missing half is never published blank.
+    /// </summary>
+    [Fact]
+    public async Task A_requirement_missing_its_check_is_refused_naming_which()
+    {
+        var answer = await _tools.PublishQuestAsync(
+            "Asker", "Owner", "Read the field names from config", "b", requirements: [new Requirement("the field names", null)]);
+
+        Assert.Contains("Requirement 1", answer);
+        Assert.Empty(await _quests.ListAsync());
+    }
+
+    /// <summary>
+    /// A quest an intake published with the person's requirements, taken by the receiving repository's connector
+    /// (DRIFT1d): the receiver's tools, over the same exchange, which holds the asks a departure is checked against.
+    /// </summary>
+    private async Task<(KnowledgeTools Owner, Quest Quest)> RequiredQuestAsync()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "the report will need the v3 bridge and the common-report"), DateTimeOffset.UtcNow)).Ask!;
+        var published = await desk.PublishAsync(ask.Id, "Owner", DateTimeOffset.UtcNow, draft: new AskDraft("Build the report", "Through the bridge.")
+        {
+            Requirements =
+            [
+                new QuestRequirement("will need the v3 bridge", "The report opens through the bridge's route."),
+                new QuestRequirement("the common-report", "The report is a common-report configuration."),
+            ],
+        });
+        var owner = new KnowledgeTools(_service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")));
+        Assert.Contains("is now Taken", await owner.RespondToQuestAsync(published.Quest!.Id, "take"));
+        return (owner, published.Quest);
+    }
+
+    /// <summary>
+    /// DRIFT1d (D133 §4): `quest_respond`'s done answers each requirement by its number. One left unanswered is
+    /// refused naming it, and nothing closes; each met closes the quest, and the list says how each was met.
+    /// </summary>
+    [Fact]
+    public async Task A_done_over_the_connector_answers_each_requirement_and_one_left_is_refused_naming_it()
+    {
+        var (owner, quest) = await RequiredQuestAsync();
+
+        var refused = await owner.RespondToQuestAsync(
+            quest.Id, "done", "Built.", answers: [new RequirementAnswer(1, "Opened it through the bridge's route.", null, null)]);
+        Assert.Contains("requirement 2: \"the common-report\"", refused);
+        Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
+
+        var closed = await owner.RespondToQuestAsync(
+            quest.Id, "done", "Built.",
+            answers:
+            [
+                new RequirementAnswer(1, "Opened it through the bridge's route.", null, null),
+                new RequirementAnswer(2, "It is a common-report configuration.", null, null),
+            ]);
+
+        Assert.Contains("is now Done", closed);
+        var listed = await owner.ListQuestsAsync("Owner", includeClosed: true);
+        Assert.Contains("requirement 1 met: Opened it through the bridge's route.", listed);
+        Assert.Contains("requirement 2 met: It is a common-report configuration.", listed);
+    }
+
+    /// <summary>
+    /// A departure over the connector quotes the person's words, is kept on the quest and holds it for their yes:
+    /// the outstanding list shows it, saying it departed and from which of their words, and that it waits.
+    /// </summary>
+    [Fact]
+    public async Task A_departure_over_the_connector_is_held_and_listed_as_waiting_for_the_persons_yes()
+    {
+        var (owner, quest) = await RequiredQuestAsync();
+
+        var closed = await owner.RespondToQuestAsync(
+            quest.Id, "done", "Built.",
+            answers:
+            [
+                new RequirementAnswer(1, "Opened it through the bridge's route.", null, null),
+                new RequirementAnswer(2, null, "The calculation needed a type of its own.", "the common-report"),
+            ]);
+
+        Assert.Contains("held for the person's yes", closed);
+        var listed = await owner.ListQuestsAsync("Owner");
+        Assert.Contains($"`#{quest.Id}`", listed);
+        Assert.Contains("requirement 2 departed: The calculation needed a type of its own. Quoting \"the common-report\".", listed);
+        Assert.Contains("held for the person's yes", listed);
+    }
+
+    /// <summary>
     /// The driver names the session on every connector it hands over (PERM2), so a rule proposal says
     /// who made it. With no ask that changes nothing about a publish: only an intake publishes as its ask.
     /// </summary>

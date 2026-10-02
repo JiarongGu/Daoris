@@ -93,6 +93,66 @@ public sealed record Quest(
     /// on reading one.
     /// </summary>
     public IReadOnlyList<string> Lanes { get; init; } = [];
+
+    /// <summary>
+    /// What the person requires of it (DRIFT1c, D133 §3), each in their own words with the check that
+    /// proves it, in the order given. Empty for a quest that names none, which is every quest from before.
+    /// </summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
+
+    /// <summary>
+    /// How its close answered each requirement (DRIFT1d, D133 §4), in the order given: met, or departed with the
+    /// reason and the person's words it turns on. Empty for a quest not closed done, and for one with none.
+    /// </summary>
+    public IReadOnlyList<QuestAnswer> Answers { get; init; } = [];
+
+    /// <summary>When the person accepted its departure (DRIFT1d), or null while none was accepted.</summary>
+    public DateTimeOffset? Accepted { get; init; }
+
+    /// <summary>
+    /// Whether it waits for the person's yes (DRIFT1d, D133 §4): closed done departing from what they required, and
+    /// not yet accepted. What follows it, a chain's next step or a quest waiting on it, waits with it.
+    /// </summary>
+    public bool Held => Status == QuestStatus.Done && Accepted is null && Answers.Any(answer => answer.IsDeparture);
+}
+
+/// <summary>
+/// How a done answers one requirement (DRIFT1d, D133 §4): <see cref="Met"/>, saying how its check was met, or
+/// <see cref="Departed"/>, with the reason and the person's own words the departure turns on, quoted. One shape at
+/// every door, in the log and on the wire; the exchange judges that exactly one of the two is said.
+/// </summary>
+/// <param name="Requirement">Which requirement it answers: its number, from 1, in the order the quest lists them.</param>
+/// <param name="Met">How its check was met — null for a departure.</param>
+/// <param name="Departed">Why the work departed from it — null for one met.</param>
+/// <param name="Quote">A departure's: the person's own words it turns on, quoted from what they said on the ask.</param>
+public sealed record QuestAnswer(int Requirement, string? Met, string? Departed = null, string? Quote = null)
+{
+    /// <summary>Whether the work departed from its requirement rather than met it.</summary>
+    public bool IsDeparture => Departed is not null;
+}
+
+/// <summary>
+/// One thing the person requires of a quest (DRIFT1c, D133 §3): their own words, quoted, and the check that
+/// proves the work meets them.
+/// </summary>
+/// <param name="Quote">The person's words, verbatim, found in what they said on the ask the quest is asked by.</param>
+/// <param name="Check">How to tell the work meets them — written by whoever composed the quest.</param>
+public sealed record QuestRequirement(string Quote, string Check)
+{
+    /// <summary>
+    /// Whether <paramref name="quote"/> stands in <paramref name="words"/> verbatim, whitespace and case aside
+    /// (DRIFT1c): every run of white space reads as one space and the ends are trimmed, so a line break or a
+    /// doubled space the person typed is not a different word, and neither is a capital. Nothing else is
+    /// forgiven — a reworded quote is a paraphrase, and a paraphrase is what drifted.
+    /// </summary>
+    public static bool QuotedIn(string quote, string words)
+    {
+        var folded = Folded(quote);
+        return folded.Length > 0 && Folded(words).Contains(folded, StringComparison.Ordinal);
+    }
+
+    private static string Folded(string text) =>
+        string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 }
 
 /// <summary>One step of a chain: whom to ask next, and what (D65 §4).</summary>
@@ -316,7 +376,11 @@ public sealed class QuestStore
                   conflicts   TEXT NOT NULL DEFAULT '[]',
                   awaits      TEXT NULL,
                   published_by TEXT NULL,
-                  lanes       TEXT NOT NULL DEFAULT '[]'
+                  lanes       TEXT NOT NULL DEFAULT '[]',
+                  requirements TEXT NOT NULL DEFAULT '[]',
+                  answers     TEXT NOT NULL DEFAULT '[]',
+                  accepted    TEXT NULL,
+                  held        INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -342,6 +406,13 @@ public sealed class QuestStore
             ("quests", "published_by", "published_by TEXT NULL"),
             // The lanes it addresses (D115 §2.2); a quest from before asked the whole repository.
             ("quests", "lanes", "lanes TEXT NOT NULL DEFAULT '[]'"),
+            // What the person requires (DRIFT1c); a quest from before named none.
+            ("quests", "requirements", "requirements TEXT NOT NULL DEFAULT '[]'"),
+            // How a done answered them, and the person's yes to a departure (DRIFT1d); a quest from before has
+            // neither, and nothing it carries waits. `held` is the replay's own reading, kept so a list can ask it.
+            ("quests", "answers", "answers TEXT NOT NULL DEFAULT '[]'"),
+            ("quests", "accepted", "accepted TEXT NULL"),
+            ("quests", "held", "held INTEGER NOT NULL DEFAULT 0"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -505,6 +576,7 @@ public sealed class QuestStore
     /// <param name="then">The chain after this quest (D65 §4), already judged by the exchange.</param>
     /// <param name="publishedBy">The session whose connector published it, when one did (SESS1).</param>
     /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange (D115 §2.2).</param>
+    /// <param name="requirements">What the person requires, already judged by the exchange against their words (DRIFT1c).</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
@@ -513,7 +585,8 @@ public sealed class QuestStore
         IReadOnlyList<QuestStep>? then = null,
         CancellationToken ct = default,
         string? publishedBy = null,
-        IReadOnlyList<string>? lanes = null)
+        IReadOnlyList<string>? lanes = null,
+        IReadOnlyList<QuestRequirement>? requirements = null)
     {
         var sorted = (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         var id = MakeId(from, to, title, lanes: sorted);
@@ -533,6 +606,7 @@ public sealed class QuestStore
                 Then = then ?? [],
                 PublishedBy = string.IsNullOrWhiteSpace(publishedBy) ? null : publishedBy.Trim(),
                 Lanes = sorted,
+                Requirements = requirements ?? [],
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -555,7 +629,8 @@ public sealed class QuestStore
     /// </summary>
     private async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
-        SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null)
+        SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
+        IReadOnlyList<QuestAnswer>? answers = null)
     {
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
@@ -570,14 +645,15 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$kind", KindText(kind));
         command.Parameters.AddWithValue("$machine", Machine);
         command.Parameters.AddWithValue("$at", at.ToString("O"));
-        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null, dismisses));
+        command.Parameters.AddWithValue("$payload", PayloadJson(note, published, attempted: null, dismisses, answers));
         var sequence = Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
 
         // Handed back as it will read back: a publish carries the quest as asked, open from this moment.
         return new QuestOperation(
             quest, kind, Machine, sequence, at, note,
             published is null ? null : published with { Status = QuestStatus.Open, Note = null, Filed = at, Updated = at, Conflicts = [] },
-            Dismisses: dismisses);
+            Dismisses: dismisses,
+            Answers: answers is { Count: > 0 } ? answers : null);
     }
 
     /// <summary>
@@ -602,7 +678,7 @@ public sealed class QuestStore
         command.Parameters.AddWithValue("$sequence", operation.Sequence);
         command.Parameters.AddWithValue("$at", operation.At.ToString("O"));
         command.Parameters.AddWithValue(
-            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, operation.Dismisses));
+            "$payload", PayloadJson(operation.Note, operation.Published, operation.Attempted, operation.Dismisses, operation.Answers));
         command.Parameters.AddWithValue("$remote", (object?)number ?? DBNull.Value);
         return Convert.ToInt64(await command.ExecuteScalarAsync(ct).ConfigureAwait(false));
     }
@@ -630,17 +706,23 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
               workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
-              awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes
+              awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes,
+              requirements = excluded.requirements, answers = excluded.answers, accepted = excluded.accepted,
+              held = excluded.held
             """;
         command.Parameters.AddWithValue("$publishedBy", (object?)quest.PublishedBy ?? DBNull.Value);
         command.Parameters.AddWithValue("$lanes", LinksJson(quest.Lanes));
+        command.Parameters.AddWithValue("$requirements", RequirementsJson(quest.Requirements));
+        command.Parameters.AddWithValue("$answers", AnswersJson(quest.Answers));
+        command.Parameters.AddWithValue("$accepted", (object?)quest.Accepted?.ToString("O") ?? DBNull.Value);
+        command.Parameters.AddWithValue("$held", quest.Held ? 1 : 0);
         command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
@@ -686,7 +768,9 @@ public sealed class QuestStore
 
     /// <summary>
     /// The chain's next step as the close of <paramref name="parent"/> publishes it: asked on behalf of
-    /// the same asker, of the step's receiver, with <c>{parent}</c> expanded, carrying the rest.
+    /// the same asker, of the step's receiver, with <c>{parent}</c> expanded, carrying the rest and the
+    /// parent's requirements (DRIFT1c, D133 §3) — a step is measured by what the person asked, not by the
+    /// closing note of the work it follows.
     /// </summary>
     private static Quest? NextStep(Quest parent, DateTimeOffset now)
     {
@@ -700,6 +784,7 @@ public sealed class QuestStore
         {
             Then = parent.Then.Skip(1).ToList(),
             Parent = parent.Id,
+            Requirements = parent.Requirements,
         };
     }
 
@@ -714,8 +799,13 @@ public sealed class QuestStore
     /// The quest as it now stands and whether this call moved it; a null quest means no such id.
     /// A refused move returns the row unchanged, so the caller can name the state that refused it.
     /// </returns>
+    /// <param name="answers">
+    /// How a done answers the quest's requirements (DRIFT1d, D133 §4), already judged by the exchange. A departure
+    /// among them holds the chain's next step: it is published by the person's yes (<see cref="AcceptAsync"/>), not here.
+    /// </param>
     public Task<QuestMove> MoveAsync(
-        string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default) =>
+        string id, QuestStatus status, string? note, DateTimeOffset now, CancellationToken ct = default,
+        IReadOnlyList<QuestAnswer>? answers = null) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var held = await FindAsync(id, transaction, inside).ConfigureAwait(false);
@@ -741,22 +831,60 @@ public sealed class QuestStore
                 return new QuestMove(held, Moved: false);
             }
 
-            var operation = await AppendAsync(id, kind, now, note, null, transaction, inside).ConfigureAwait(false);
+            var operation = await AppendAsync(
+                id, kind, now, note, null, transaction, inside,
+                answers: status == QuestStatus.Done ? answers : null).ConfigureAwait(false);
             var moved = QuestLog.Replay([.. history, operation])!;
             await WriteCacheAsync(moved, transaction, inside).ConfigureAwait(false);
 
             // A close that finishes a chain's step publishes the next one IN THE SAME TRANSACTION
             // (D65 §4): there is no moment at which the work is done and the chain lost, and a close
             // another host wins publishes nothing here. A step already published is the one that
-            // stands — the id is the ask.
+            // stands — the id is the ask. A departure holds it for the person's yes (DRIFT1d).
             Quest? followUp = null;
-            if (status == QuestStatus.Done && NextStep(moved, now) is { } next)
+            if (status == QuestStatus.Done && !moved.Held)
             {
-                followUp = await FindAsync(next.Id, transaction, inside).ConfigureAwait(false)
-                           ?? await PublishInAsync(next, transaction, inside).ConfigureAwait(false);
+                followUp = await PublishNextAsync(moved, now, transaction, inside).ConfigureAwait(false);
             }
 
             return new QuestMove(moved, Moved: true, followUp);
+        }, ct);
+
+    /// <summary>
+    /// The chain's next step after <paramref name="closed"/>, published in the caller's transaction — or the one
+    /// already published, since the id is the ask — or null when the chain ends here.
+    /// </summary>
+    private async Task<Quest?> PublishNextAsync(Quest closed, DateTimeOffset now, SqliteTransaction transaction, CancellationToken ct) =>
+        NextStep(closed, now) is { } next
+            ? await FindAsync(next.Id, transaction, ct).ConfigureAwait(false)
+              ?? await PublishInAsync(next, transaction, ct).ConfigureAwait(false)
+            : null;
+
+    /// <summary>
+    /// The person accepts a done's departure from what they required (DRIFT1d, D133 §4): an
+    /// <see cref="QuestOperationKind.Accepted"/> operation, judged against the replayed history inside the write as
+    /// every move is, and the chain's next step it held published in the same transaction, as a close publishes one.
+    /// </summary>
+    /// <returns>
+    /// The quest as it now stands, whether this call accepted it — false for a quest no departure holds — and the
+    /// step it published; a null quest means no such id.
+    /// </returns>
+    public Task<QuestMove> AcceptAsync(string id, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } quest)
+            {
+                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
+            }
+
+            if (!quest.Held) return new QuestMove(quest, Moved: false);
+
+            var operation = await AppendAsync(
+                id, QuestOperationKind.Accepted, now, note: null, published: null, transaction, inside).ConfigureAwait(false);
+            var accepted = QuestLog.Step(quest, operation)!;
+            await WriteCacheAsync(accepted, transaction, inside).ConfigureAwait(false);
+            return new QuestMove(accepted, Moved: true, await PublishNextAsync(accepted, now, transaction, inside).ConfigureAwait(false));
         }, ct);
 
     /// <summary>
@@ -1007,12 +1135,19 @@ public sealed class QuestStore
                 continue;
             }
 
-            if (operation.Kind == QuestOperationKind.Deleted)
+            if (operation.Kind is QuestOperationKind.Deleted or QuestOperationKind.Accepted)
             {
                 // A delete that lost to a take, or that another machine's delete already made (D95):
                 // its condition, that nobody has taken the quest, no longer holds, and it carries no
-                // work for a person to reconcile. The third thing a rebase drops.
+                // work for a person to reconcile. The third thing a rebase drops. A yes to a departure
+                // that no longer waits (DRIFT1d) is the same: its done lost, or another machine's yes came
+                // first, and a second yes is the first. A step it published goes as a lost close's does.
                 await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                if (operation.Kind == QuestOperationKind.Accepted && quest is not { Accepted: not null })
+                {
+                    await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
+                }
+
                 continue;
             }
 
@@ -1464,7 +1599,9 @@ public sealed class QuestStore
     /// </summary>
     /// <remarks>
     /// Open and taken first: what is outstanding is the question worth asking, and a finished queue
-    /// pushing live work off the end is how a list stops being read.
+    /// pushing live work off the end is how a list stops being read. A done that a departure holds for the
+    /// person's yes is outstanding too (DRIFT1d): it waits on someone, and what follows it waits with it — the
+    /// driver keeps a quest waiting on it waiting because it is listed here.
     /// </remarks>
     public async Task<IReadOnlyList<Quest>> ListAsync(
         string? receiver = null, bool includeClosed = false, string? workspace = null,
@@ -1475,7 +1612,7 @@ public sealed class QuestStore
             SELECT * FROM quests
             WHERE ($receiver IS NULL OR receiver = $receiver)
               AND ($workspace IS NULL OR workspace = $workspace COLLATE NOCASE)
-              {(includeClosed ? "" : "AND status IN ('Open', 'Taken')")}
+              {(includeClosed ? "" : "AND (status IN ('Open', 'Taken') OR held = 1)")}
             ORDER BY CASE status WHEN 'Open' THEN 0 WHEN 'Taken' THEN 1 ELSE 2 END, filed
             """;
         command.Parameters.AddWithValue("$receiver", (object?)receiver ?? DBNull.Value);
@@ -1528,6 +1665,11 @@ public sealed class QuestStore
         Awaits = reader.IsDBNull(reader.GetOrdinal("awaits")) ? null : reader.GetString(reader.GetOrdinal("awaits")),
         PublishedBy = reader.IsDBNull(reader.GetOrdinal("published_by")) ? null : reader.GetString(reader.GetOrdinal("published_by")),
         Lanes = ReadLinks(reader.GetString(reader.GetOrdinal("lanes"))),
+        Requirements = ReadRequirements(reader.GetString(reader.GetOrdinal("requirements"))),
+        Answers = ReadAnswers(reader.GetString(reader.GetOrdinal("answers"))),
+        Accepted = reader.IsDBNull(reader.GetOrdinal("accepted"))
+            ? null
+            : DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("accepted")), System.Globalization.CultureInfo.InvariantCulture),
     };
 
     /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
@@ -1561,6 +1703,8 @@ public sealed class QuestStore
                 PublishedBy = payload.TryGetProperty("publishedBy", out var by) ? by.GetString() : null,
                 // Absent from every publish before lanes, which asked the whole repository (D115 §2.2).
                 Lanes = payload.TryGetProperty("lanes", out var lanes) ? ReadLinks(lanes) : [],
+                // Absent from every publish before requirements, and from one that names none (DRIFT1c).
+                Requirements = payload.TryGetProperty("requirements", out var required) ? ReadRequirements(required) : [],
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -1569,7 +1713,9 @@ public sealed class QuestStore
 
         return new QuestOperation(
             quest, kind, reader.GetString(2), reader.GetInt64(3), at, note, published, attempted,
-            reader.IsDBNull(6) ? null : reader.GetInt64(6), dismisses);
+            reader.IsDBNull(6) ? null : reader.GetInt64(6), dismisses,
+            // Absent from every done before answers, and from one on a quest with no requirements (DRIFT1d).
+            payload.TryGetProperty("answers", out var answered) ? ReadAnswers(answered) : null);
     }
 
     /// <summary>How a kind is written in the log: its name in lowercase, as the design names it.</summary>
@@ -1580,7 +1726,8 @@ public sealed class QuestStore
     /// a replay needs to make the quest, on this machine or another — and a move carries its note.
     /// </summary>
     private static string PayloadJson(
-        string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null) => JsonFields.Written(writer =>
+        string? note, Quest? published, QuestStatus? attempted, QuestOperationRef? dismisses = null,
+        IReadOnlyList<QuestAnswer>? answers = null) => JsonFields.Written(writer =>
     {
         if (dismisses is not null)
         {
@@ -1625,11 +1772,65 @@ public sealed class QuestStore
                 writer.WritePropertyName("lanes");
                 WriteLinks(writer, published.Lanes);
             }
+
+            // Only when it names some (DRIFT1c), for the lanes' reason: a publish with none reads as it did.
+            if (published.Requirements.Count > 0)
+            {
+                writer.WritePropertyName("requirements");
+                WriteRequirements(writer, published.Requirements);
+            }
         }
 
         if (note is not null) writer.WriteString("note", note);
+
+        // Only when it answers some (DRIFT1d), for the lanes' reason: a done on a quest with none reads as it did.
+        if (answers is { Count: > 0 })
+        {
+            writer.WritePropertyName("answers");
+            WriteAnswers(writer, answers);
+        }
+
         writer.WriteEndObject();
     });
+
+    private static string AnswersJson(IReadOnlyList<QuestAnswer> answers) =>
+        JsonFields.Written(writer => WriteAnswers(writer, answers));
+
+    /// <summary>
+    /// A done's answers, one shape in the cache, its log's payload and on the wire (DRIFT1d): each its requirement's
+    /// number and either <c>met</c>, or <c>departed</c> with the <c>quote</c> it turns on.
+    /// </summary>
+    internal static void WriteAnswers(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestAnswer> answers)
+    {
+        writer.WriteStartArray();
+        foreach (var answer in answers)
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("requirement", answer.Requirement);
+            if (answer.Met is not null) writer.WriteString("met", answer.Met);
+            if (answer.Departed is not null) writer.WriteString("departed", answer.Departed);
+            if (answer.Quote is not null) writer.WriteString("quote", answer.Quote);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static IReadOnlyList<QuestAnswer> ReadAnswers(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return ReadAnswers(document.RootElement);
+    }
+
+    // The store's own column and log, which only this service writes; the wire judges what it reads instead.
+    private static IReadOnlyList<QuestAnswer> ReadAnswers(System.Text.Json.JsonElement answers) =>
+        answers.EnumerateArray()
+            .Select(item => new QuestAnswer(
+                item.GetProperty("requirement").GetInt32(),
+                item.TryGetProperty("met", out var met) ? met.GetString() : null,
+                item.TryGetProperty("departed", out var departed) ? departed.GetString() : null,
+                item.TryGetProperty("quote", out var quote) ? quote.GetString() : null))
+            .ToList();
 
     private static string ConflictsJson(IReadOnlyList<QuestConflict> conflicts) => JsonFields.Written(writer =>
     {
@@ -1691,6 +1892,38 @@ public sealed class QuestStore
                 item.GetProperty("to").GetString() ?? "",
                 item.GetProperty("title").GetString() ?? "",
                 item.GetProperty("body").GetString() ?? ""))
+            .ToList();
+
+    private static string RequirementsJson(IReadOnlyList<QuestRequirement> requirements) =>
+        JsonFields.Written(writer => WriteRequirements(writer, requirements));
+
+    /// <summary>A quest's requirements, one shape in its column, its log's payload and on the wire (DRIFT1c).</summary>
+    internal static void WriteRequirements(System.Text.Json.Utf8JsonWriter writer, IReadOnlyList<QuestRequirement> requirements)
+    {
+        writer.WriteStartArray();
+        foreach (var requirement in requirements)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("quote", requirement.Quote);
+            writer.WriteString("check", requirement.Check);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
+
+    private static IReadOnlyList<QuestRequirement> ReadRequirements(string json)
+    {
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        return ReadRequirements(document.RootElement);
+    }
+
+    // The store's own column and log, which only this service writes; the wire judges what it reads instead.
+    private static IReadOnlyList<QuestRequirement> ReadRequirements(System.Text.Json.JsonElement requirements) =>
+        requirements.EnumerateArray()
+            .Select(item => new QuestRequirement(
+                item.GetProperty("quote").GetString() ?? "",
+                item.GetProperty("check").GetString() ?? ""))
             .ToList();
 
     // Written and read by hand rather than through the reflection serializer, for the same reason the

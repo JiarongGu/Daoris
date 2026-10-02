@@ -9616,3 +9616,97 @@ takes posts nothing; `kept: false`, a refusal, a failure and an unreachable serv
 client that posted nothing; `SessionAddedTests` (the body, `kept` and its sentence, a refusal, a host without the door).
 Not covered: no test drives the `Chat.Say` path, since a conversation that takes a message needs a real process; nothing
 is drawn, so there is no look.
+
+**DRIFT1c, built 2026-10-03: a quest's requirements quote the person.** `quest_publish`, `POST /api/quests` and
+`POST /api/asks/{id}/publish` take `requirements`, each a `quote` and a `check`. Every quest answers them on both quest
+routes, the publish answers and `quest_list`. The exchange judges them for every door (`JudgeRequirementShape`,
+`JudgeQuotesAsync`). Each quote must stand in one of the person's words on the ask that asks the quest: its sentence, an
+answer or an added message (DRIFT1a's `Words`). It is matched verbatim, every run of whitespace read as one space and case
+aside (`QuestRequirement.QuotedIn`). A refusal lists each quote not found as `requirement N: "…"`, and nothing is
+published. A chain step inherits its parent's requirements (`NextStep`), so each step after it carries them too. The
+intake's instruction asks for them in this shape (`IntakePrompt`), and a golden pins it whole. Choices §3 left open:
+- **Only the asker's ask.** A quest a repository asks is on no ask, and requirements on it are refused, saying to put
+  what is needed in the body. Which ask a repository's session works for is its record's (`KeepOnAskAsync` derives it),
+  and is not read at publish. A host that keeps no asks refuses rather than keep a quote unchecked.
+- **Within one word.** A quote stands in one thing the person said: two of their sentences joined are words they never
+  said together.
+- **Nothing else is forgiven.** Quotation marks around a quote are not stripped. A fragment of their words matches,
+  since it is still their words.
+- **Bounded**: at most 20 requirements, both halves required, each at most 2,000 characters, trimmed at the ends and
+  otherwise kept as given.
+- **An ask from before DRIFT1a** holds no earlier answers. Its refusal says from when its words are kept, and that what
+  was said before is in its sessions' records. A session's `Answer` is not searched: it holds only the latest answer, and
+  parking again clears it.
+- **Written only when there are some**, in the log's payload, the cache and on the wire, as lanes are. A quest with none
+  crosses as it did, and an older build reads one with them as the quest it always was. A remote holds no asks, so it
+  checks only the halves and the bounds (`JudgeReceived`).
+- **The body is unchanged**, and the receiving session's instruction does not show them yet: it reads them through
+  `quest_list` and the routes. Handing them to its instruction, and answering each at done, is DRIFT1d's.
+
+Proof: `QuestRequirementTests`, seen failing on stubs that kept and judged nothing: the sentence, spacing and case, an
+answer and an added message quoted; an unsaid quote refused naming it with nothing published, each unsaid one named and
+no other, and one across two words refused; a missing half, the bounds, a repository's quest and a host with no asks; a
+publish with none as before; a chain inherited two steps down and in its history; the log and the wire, a half-made
+requirement on the wire, a remote's check, and an ask from before its words were kept. The inheritance was seen failing
+again with its line removed. `McpToolsTests` (an intake's publish refused, then published and listed; a missing half) and
+`LocalHostTests` (the ask's door: 409 naming the quote, then the quest's requirements on the publish and the list; the
+quest door: `[]` for an old client, 400 on no ask) were seen failing first. `IntakePromptGoldenTests` pinned the
+instruction for two asks as it was, then the golden gained the paragraph and failed before the instruction did. Not
+covered: no real intake was handed the instruction, so whether a harness quotes rather than paraphrases is not measured;
+the family rehearsal's stub intake publishes no requirements, so no rehearsal drives them through the real host; nothing
+is drawn, so there is no look.
+
+**DRIFT1d, built 2026-10-03: a done answers each requirement, and a departure waits for the person's yes.** The session
+working a quest is handed its requirements beneath it and beside the ask's words, on a first start, a resume and a
+carry-on alike (`TargetPrompt.Required`): each numbered, the person's words quoted verbatim, its check, then how a done
+answers. `quest_respond`'s done and `POST /api/quests/{id}/respond` take `answers`, one per requirement by its number:
+`met`, with how its check was met, or `departed`, with the reason and the person's words it turns on (`quote`). The
+exchange judges them for every door (`JudgeAnswersAsync`): one left unanswered is refused naming each with its words and
+check (`Unanswered`), and nothing closes. A departure closes the quest done and holds it (`Quest.Held`): the chain's next
+step is not published, the quest stays on the outstanding list, and its ask does not read done. The person's yes is an
+`Accepted` operation, which publishes the held step in the same transaction (`QuestStore.AcceptAsync`), through
+`POST /api/quests/{id}/accept` and `daoris-driver quest accept <id>`. Choices §4 left open:
+- **By number**, in the order the quest lists them, which is the order `quest_list`, the routes and the instruction show.
+- **A met answer quotes nothing**: its requirement already quotes the person. A quote on one is refused, so the record
+  holds one reading of each. So is an answer naming no requirement or one twice, saying both or neither, departing without
+  its reason or words, or longer than 2,000 characters (`BadAnswer`).
+- **A departure's words are checked as a requirement's are** (`QuotedIn`): against the person's words on the ask where this
+  host holds it, and always against the quest's own requirements, which crossed with the quest already checked. On a host
+  that does not hold the ask only those count, and the refusal says so (`NotQuoted`). A departure may quote the
+  requirement it departs from. "Per your answer" without the answer's words is what this refuses.
+- **Held whatever follows.** A departure with no next step and no quest waiting on it still holds the quest, so its ask
+  does not read done before the person has seen the departure: what the drift lacked was the person's look, not a chain.
+- **A held quest is outstanding**, listed without `includeClosed` at every door (the store's `held` column, the replay's
+  own reading). That is how the driver keeps a quest waiting on it waiting, with no new read: the planner sees the
+  question, and its sentence names the person's yes and the terminal's door.
+- **The yes is an operation**, which travels like every verb (D68). It applies only while a departure holds the quest, so
+  two yeses are one, and a later one rebases away. A yes whose done lost rebases away with the step it published. It is a
+  local door alone, as a delete is, and no connector tool says it: the yes is the person's.
+- **Answers are a done's.** A take, decline or wait carrying them is refused rather than dropping them. A quest with no
+  requirements closes word for word as before, and takes no answers.
+- **Bounded in the instruction** at 8,000 characters of words and checks, for the person's words' reason (DRIFT1b): those
+  left out are named, with `quest_list` as where each is whole.
+- **What it does not carry**: a done that loses a race keeps its note and attempted move as a conflict, not its answers.
+  A build from before this reads a done's answers as absent, and refuses a page holding an `accepted` operation as not
+  whole, as it did `waited` and `deleted` when they were new.
+
+The doors: the terminal's is built. The quest page's yes and Ask Daoris's are owed to a row of their own, DRIFT1d2: the
+page showing each answer, a departure with the words it quotes and the yes on a held quest, in both languages; and Ask
+Daoris's kind, with the service's box and tool, the driver's judge and the card (`HelpCoverageTests`' `AcceptDoor`).
+
+Proof: `QuestAnswerTests`, seen failing on stubs that judged and held nothing: one left unanswered and none answered,
+named; each met closes with its answers and the chain goes on; a departure holds the step and stays listed; an unsaid
+departure refused; the ask's words or, where the ask is not held, the requirements; nine shapes of answer refused; a
+quest with none as before; answers off a done; the yes publishing the step, refused for a quest nothing holds, releasing
+a waiting quest and the ask; the history, the wire and a half-made answer on it. The hold and the listing were each seen
+failing again with their line removed. `QuestSyncTests` (two yeses are one; a yes on a lost done goes with its step) were
+seen failing with the rebase's forgetting removed. `McpToolsTests` (one left refused, then each met and listed; a
+departure held and listed) and `LocalHostTests` (400 naming it, 200 with `held`, the accept door 200, 409, 404) were seen
+failing first, and `SharedHostTests` failed with the accept door's local guard removed. `QuestRequirementTests`' chain now
+answers its requirement. In the driver, `RequirementsHandedTests` (every kind of start, numbered and quoted, none as
+before, the bound, the client's read, the accept door) and `PlannerTests` (a waiting quest held with its question) were
+seen failing on stubs; `HelpCoverageTests` holds the owed door, and the room's goldens gained its row. Not covered: no
+real agent was handed the requirements or asked to answer them, so whether a harness departs honestly rather than marking
+each met is not measured, and nothing compares a met answer with the work, since a fact gates and a judgement reports
+(D54); the family rehearsal publishes no requirements, so no rehearsal drives an answered done through the real host;
+the page shows neither the answers nor the yes, so there is no look.

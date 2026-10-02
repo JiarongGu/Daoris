@@ -442,6 +442,12 @@ public sealed record AskDraft(string? Title, string? Body)
 
     /// <summary>What to ask next once this closes done (D65 §4) — judged by the exchange, like any chain.</summary>
     public IReadOnlyList<QuestStep> Then { get; init; } = [];
+
+    /// <summary>
+    /// What the person requires, in their own words with the check that proves each (DRIFT1c, D133 §3) —
+    /// judged by the exchange against the ask's words.
+    /// </summary>
+    public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
 }
 
 /// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
@@ -564,6 +570,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// <remarks>
     /// A quest deleted (D95), here or on another machine, leaves the record as if the ask had never
     /// become it; a published ask left with none is a proposal again, for a person to publish or close.
+    /// A quest closed done departing from what the person required has not closed for the ask (DRIFT1d,
+    /// D133 §4): it waits for their yes, and an ask reading done would say they had agreed.
     /// </remarks>
     /// <param name="asked">Every quest asked by this ask — chain steps included, closed ones included.</param>
     public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked)
@@ -572,7 +580,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var standing = ask.Quests.All(held.Contains) ? ask : ask with { Quests = [.. ask.Quests.Where(held.Contains)] };
         if (standing.State != AskState.Published) return standing;
         if (asked.Count == 0) return standing with { State = AskState.Proposed };
-        return asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined)
+        return asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined && !quest.Held)
             ? standing with { State = AskState.Done }
             : standing;
     }
@@ -790,6 +798,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
                 Links = [.. ask.Links.Concat(draft?.Links ?? []).Distinct(StringComparer.Ordinal)],
                 Uploads = [.. uploads, .. draft?.Uploads ?? []],
                 Then = draft?.Then ?? [],
+                // The person's words, each with its check (DRIFT1c): the exchange judges them against this ask's.
+                Requirements = draft?.Requirements ?? [],
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it (SESS1): the intake that read the ask.
                 PublishedBy = session,

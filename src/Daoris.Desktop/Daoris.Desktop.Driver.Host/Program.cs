@@ -66,8 +66,11 @@ using Daoris.Driver;
 //                 delete a quest made by mistake (D95): only one nobody has started on — open, with no
 //                 session record naming it — goes, and the service's refusal says what to do instead.
 //                 A shared quest's delete travels to its remote as an operation. The drawer's Delete is
-//                 the other door; there is no other quest verb here, since a quest is answered by the
-//                 session that takes it.
+//                 the other door.
+//   quest accept <id>
+//                 accept a done's departure from what you required (DRIFT1d, D133 §4): what the departure
+//                 held — the chain's next step, a quest waiting on it — goes on, and the yes travels like any
+//                 verb. Nothing else answers a quest here, since a quest is answered by the session that takes it.
 //
 //   answer <session> ["…"]
 //                 answer a driven session that parked to ask you (STANDDOWN2): its record stays parked with
@@ -162,19 +165,22 @@ try
         return await Daoris.Driver.Host.RegisterConsole.RunAsync(registerArgs, log);
     }
 
-    // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door.
+    // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
+    // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed.
     if (args is ["quest", .. var questArgs])
     {
-        if (questArgs is not ["delete", var questId])
+        if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
-            Console.Error.WriteLine("usage: daoris-driver quest delete <id>");
+            Console.Error.WriteLine("usage: daoris-driver quest delete <id>  ·  daoris-driver quest accept <id>");
             return 2;
         }
 
         using var client = ServiceClient.FromEnvironment();
-        var (ok, message) = await client.DeleteQuestAsync(questId);
+        var (ok, message) = verb == "delete"
+            ? await client.DeleteQuestAsync(questId)
+            : await client.AcceptDepartureAsync(questId);
         Console.WriteLine($"daoris-driver: {message}");
-        // A refusal — something stands on the quest — is an answer, not a tool error.
+        // A refusal — something stands on the quest, or nothing waits for a yes — is an answer, not a tool error.
         return ok ? 0 : 1;
     }
 

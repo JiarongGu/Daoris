@@ -32,7 +32,10 @@
    resume runs in the same tree when it still stands, and its instruction says the quest is already
    the session's own, so it must not take it again or stand down. It carries the answer: the awaited
    quest's repository, its outcome and its closing words. The ledger opens a session on a taken
-   quest only in this case.
+   quest only in this case. *(Amended by D133 §4, DRIFT1d, 2026-10-03: an awaited quest closed done
+   departing from what the person required has not closed for this: it is held for their yes, stays on
+   the open list, and the waiting quest sits saying so until they accept it. D133's DRIFT1d note has the
+   rest.)*
 3. **The session that waited ended well.** Its record concludes `completed`, noting that it asked
    and waits. It is not a failure, and it costs no strike. A resumed session that ends with the old
    wait still standing concludes `failed`. As a stand-down it would be resumed on every tick, since

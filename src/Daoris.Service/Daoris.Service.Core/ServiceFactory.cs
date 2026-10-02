@@ -250,8 +250,9 @@ public static class ServiceFactory
         }
 
         // The session records ride along for one question only: whether a session was started for a
-        // quest someone wants to delete (D95).
-        var exchange = new QuestExchange(service, quests, remotes, files, sessions);
+        // quest someone wants to delete (D95). The asks for one too: what the person said on the ask a
+        // quest is asked by, which a requirement must quote (DRIFT1c).
+        var exchange = new QuestExchange(service, quests, remotes, files, sessions, asks);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which

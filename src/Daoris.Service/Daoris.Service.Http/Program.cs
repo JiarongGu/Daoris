@@ -447,6 +447,7 @@ app.MapPost("/api/quests", async (
             // The chain (D65 §4). A step missing its words arrives blank and is refused by the
             // exchange naming which step — the same sentence every door gives.
             Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+            Requirements = RequirementsOf(body.Requirements),
         },
         DateTimeOffset.UtcNow, ct);
 
@@ -464,8 +465,13 @@ app.MapPost("/api/quests", async (
 app.MapPost("/api/quests/{id}/respond", async (
     ComposedService s, HttpContext http, string id, RespondQuestRequest body, CancellationToken ct) =>
 {
+    // A done's answers (DRIFT1d): a number left out arrives as 0, a half left out blank, and the exchange refuses
+    // each naming which — the same sentence every door gives.
+    var answers = (body.Answers ?? [])
+        .Select(a => new QuestAnswer(a?.Requirement ?? 0, a?.Met, a?.Departed, a?.Quote))
+        .ToList();
     var outcome = await s.Exchange.RespondAsync(
-        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On);
+        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On, answers: answers);
 
     return outcome.Refusal switch
     {
@@ -479,6 +485,26 @@ app.MapPost("/api/quests/{id}/respond", async (
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
+
+// The person's yes to a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on — the
+// chain's next step is published, and a quest waiting on it resumes. LOCAL mode only, as a delete is: the person
+// says yes on their own machine, and the operation travels from there like any verb (D68). No connector tool reaches
+// it, since the yes is the person's, never an agent's.
+if (mode == ServiceMode.Local)
+{
+    app.MapPost("/api/quests/{id}/accept", async (ComposedService s, HttpContext http, string id, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.AcceptAsync(id, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Nothing waits for a yes: a state, the lock's own shape.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+}
 
 // A person dismissing a conflict (SYNC6c): committed here like any verb, and carried by the next pass,
 // so the conflict goes on every machine. It moves no status, which is why it is not a `respond`
@@ -621,13 +647,14 @@ if (mode == ServiceMode.Local)
         // A person's publish names a receiver and nothing else; an intake's carries its own words (D65
         // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
         var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
-            || uploads.Count > 0 || body.Then is { Count: > 0 };
+            || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 };
         var draft = drafted
             ? new AskDraft(body.Title, body.Body)
             {
                 Links = body.Links ?? [],
                 Uploads = uploads,
                 Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
+                Requirements = RequirementsOf(body.Requirements),
             }
             : null;
 
@@ -1337,7 +1364,16 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.Awaits,
     q.PublishedBy,
     deletable,
-    q.Lanes);
+    q.Lanes,
+    q.Requirements.Select(r => new QuestRequirementWire(r.Quote, r.Check)).ToList(),
+    q.Answers.Select(a => new QuestAnswerWire(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
+    q.Held,
+    q.Accepted);
+
+// Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
+// blank and is refused there naming which — the same sentence every door gives.
+static IReadOnlyList<QuestRequirement> RequirementsOf(IReadOnlyList<QuestRequirementWire?>? given) =>
+    (given ?? []).Select(r => new QuestRequirement(r?.Quote ?? "", r?.Check ?? "")).ToList();
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

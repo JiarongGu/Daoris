@@ -88,6 +88,15 @@ public sealed partial class HelpCoverageTests
         + "line (D124 §4.5).");
 
     /// <summary>
+    /// DRIFT1d's <c>daoris-driver quest accept</c> (D133 §4), a verb of the headless host: the person's yes to a done's
+    /// departure, a door Ask Daoris owes until DRIFT1d2 gives it a kind of its own, with the quest page's yes beside it.
+    /// </summary>
+    private static readonly Owed AcceptDoor = new(
+        "accepting a departure releases what it held, the chain's next step and a quest waiting on it, so Ask Daoris should "
+        + "propose it and the person apply it as a card, the departure and the words it quotes shown; that waits on "
+        + "DRIFT1d2's kind: the service's box and tool, the driver's judge against the quest as it stands, and the card.");
+
+    /// <summary>
     /// WSSETUP6's <c>daoris-driver setup --workspace</c> (D124 §4.5), a verb of the headless host: the press, and its pause,
     /// resume and stop, doors Ask Daoris owes until WSSETUP7 gives LAYOUT8's <c>setup</c> kind its <c>workspace</c>,
     /// <c>pause</c>, <c>resume</c> and <c>stop</c> doors, and the screen its route.
@@ -336,6 +345,7 @@ public sealed partial class HelpCoverageTests
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionArchiveDoor)
+            .Append(AcceptDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -397,6 +407,19 @@ public sealed partial class HelpCoverageTests
         Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup --workspace <name> [--plan]", StringComparison.Ordinal)
             && door.Terminal.Contains("--pause|--resume|--stop", StringComparison.Ordinal));
         Assert.Contains("WSSETUP7", WorkspaceDoor.Reason);
+    }
+
+    /// <summary>
+    /// DRIFT1d: the headless host's <c>quest accept</c> is a door owed to DRIFT1d2's kind (D133 §4) while the host's usage
+    /// spells it and no kind of that name is built; the room names it meanwhile, so the helper can point the person at it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_quest_accept_is_a_door_owed_to_a_kind_of_its_own()
+    {
+        Assert.Contains("quest accept <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("accept"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal));
+        Assert.Contains("DRIFT1d2", AcceptDoor.Reason);
     }
 
     /// <summary>
