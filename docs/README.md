@@ -63,6 +63,7 @@ changes no row (D127).
 | `2026-10-02-knowledge-design-review.md` | contract | The knowledge design reviewed: what each agent loads, eight candidates, and the index as the floor with recall by meaning on top (KNOW2) | Reviewed (D129, pending KNOW3's measurement); nothing built |
 | `2026-10-02-account-use-design.md` | contract | Account use, for any number of accounts: which may run each workspace, as the person states; by default the most work from all of them (§16), one by one as an override; what is left, by the agent's word (TOOL6) | Designed (D130); nothing built. Amends D125 §3, §6 and four TOOL4 rows |
 | `2026-10-02-answer-continues-design.md` | contract | An answer continues the session: the parked record reopens and its harness conversation resumes on the same account, adapter and tree; otherwise today's carry-on, saying why (ANSWER1) | Designed (D131); building, and D131's notes say what each build settled |
+| `2026-10-02-pause-and-clean-up-design.md` | contract | Pausing and abandoning an ask or a quest: a pause that stops what runs and keeps its place, and an abandon listed first that declines with the person's reason and discards only what nothing else holds (PAUSE1) | Designed (D132); nothing built. Amends D126 §3.3, D88's removal and D68 rule 2 |
 
 ## Studies and evidence
 

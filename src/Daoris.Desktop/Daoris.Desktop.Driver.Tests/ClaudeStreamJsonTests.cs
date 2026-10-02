@@ -382,6 +382,44 @@ public sealed class ClaudeStreamJsonTests
         }
     }
 
+    /// <summary>
+    /// TOOL6c (limit-signals evidence §1.1): the native door's <c>rate_limit_event</c> is the account's windows, handed on
+    /// apart from the conversation — neither a console line nor an event — and the capture tells its listener, which keeps
+    /// it for the walk. A frame with no <c>rate_limit_info</c> object hands on nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_rate_limit_event_is_handed_on_for_the_account_s_windows_and_is_not_the_conversation()
+    {
+        var info = AccountReadingsTests.Recorded(DateTimeOffset.UtcNow);
+        var frame = $$"""{"type":"rate_limit_event","rate_limit_info":{{info}},"uuid":"…","session_id":"c1"}""";
+
+        var mapped = new ClaudeStreamJson().Read(frame);
+        Assert.Empty(mapped.Lines);
+        Assert.Empty(mapped.Events);
+        Assert.Equal("allowed", mapped.Limits!.Value.GetProperty("status").GetString());
+        Assert.Null(new ClaudeStreamJson().Read("""{"type":"rate_limit_event","rate_limit_info":"allowed"}""").Limits);
+        Assert.Null(new ClaudeStreamJson().Read(Init).Limits);
+
+        var home = Path.Combine(Path.GetTempPath(), "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var told = new List<System.Text.Json.JsonElement>();
+            var events = new SessionEvents(home);
+            await Daoris.Driver.Driver.CaptureStructuredAsync(
+                new StringReader(string.Join('\n', Init, Whole, frame, Result)), new StringReader(""), Path.Combine(home, "s1.log"), "s1",
+                output: null, events, new ClaudeStreamJson(), prompt: "take quest #q1", CancellationToken.None, said: told.Add);
+
+            Assert.Equal(0.88, Assert.Single(told).GetProperty("unifiedWindows").GetProperty("five_hour").GetProperty("utilization").GetDouble());
+            Assert.DoesNotContain("rate_limit", File.ReadAllText(Path.Combine(home, "s1.log")));
+            Assert.DoesNotContain(events.Page("s1").Events, e => e.Kind == SessionEventKind.Raw);
+        }
+        finally
+        {
+            Directory.Delete(home, recursive: true);
+        }
+    }
+
     /// <summary>What is not a frame is shown as itself, and a type this build does not know is kept raw.</summary>
     [Fact]
     public void A_line_that_is_not_a_frame_is_shown_and_an_unknown_type_is_kept_raw()

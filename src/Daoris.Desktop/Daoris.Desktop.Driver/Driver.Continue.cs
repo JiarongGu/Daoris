@@ -124,6 +124,9 @@ public sealed partial class Driver
                 preamble: browserNotice,
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
+                // A resumed run is on the account it parked on, so what it says about that account's windows is kept
+                // as any run's is (TOOL6c with ANSWER1a).
+                said: Said(adapter, selection, sessionId),
                 resume: resume,
                 workingNote: Continuations.Working,
                 conclude: (exitCode, used, turnFailed) =>

@@ -9721,3 +9721,35 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > flight). Proof: the evidence, de-identified; raw notes untracked.
 
 **Outcome** Each of the owner's common-report words reached only one session: the intake kept *bridge* and lost its meaning, a parked question did not travel with its answer, and carry-ons keep one hop, lost across an account limit. D133: the ask holds the owner's words and hands them to every session. Detail: `docs/2026-10-02-ask-drift-evidence.md` §6, D133.
+
+
+## TOOL6c — what the agents say, read (2026-10-02)
+
+> - [ ] **TOOL6c — what the agents say, read** (driver; after TOOL6b; unblocked: TOOL4b measured the frame). Claude Code's
+> `rate_limit_event` `unifiedWindows` (each window's use 0–1 and reset, every frame) on the native door, and the
+> protocol door's `usage_update._meta["_claude/rateLimit"]`, kept in `windows.json`, so pace and *switch before the
+> limit* act on what is left. Contract: D130 §4.4, §4.5, §5.2, §16.3, as the evidence corrects them. Proof: fast-half
+> tables over the recorded frames; a Process tick replaying one.
+
+**Outcome** Each account's agent reports its windows on both doors; Daoris keeps them in `windows.json`, passes a near account and ranks by weekly pace, and every start, `account.rotated`, `agent list` and `profile use` say what each said. Detail: D130's TOOL6c note, `aecfa68`.
+
+
+## ANSWER1 — an answer continues the session: designed, and the driver half (2026-10-02 → D131)
+
+> - [ ] **ANSWER1 — an answer continues the session** (owner, 2026-10-02: *"whenever I input anything say the session was
+> waiting for my input and after I input it starts a new session? isn't this should be continue"*). An answer to a parked
+> driven session resumes the agent's own conversation on the same account and tree, shown as the same session going on;
+> a fresh carry-on only when resuming cannot work, said why. Contract: D131 (in flight). Proof: driver tests; a Process
+> tick on the stub; the look on the install.
+
+**Outcome** Designed as D131, and its driver half built: an answer reopens the parked record and resumes its own harness conversation (`session/resume` or `load`, the native `--resume`) on the same account, adapter and tree, else carries on in a new session with the reason. Detail: D131's ANSWER1a note, design §1–§6.
+
+
+## PAUSE1 — pause and clean up an ask, designed (2026-10-02 → D132)
+
+> - [ ] **PAUSE1 — pause and clean up an ask** (owner, 2026-10-02: *"so there is a pause and cleanup feature needed"*). Pause
+> holds every quest of an ask and stops its sessions; clean up declines them with a reason, discards their trees and
+> unpushed branches, and archives their sessions, listing first and refusing pushed or landed work. Contract: D132.
+> Proof: the design (landing; its acts are named *Pause* 暂缓 and *Abandon* 放弃, §8.2).
+
+**Outcome** Designed as D132: an ask's or a quest's work is paused and resumed whole on this machine, and abandoned on a listed second press that declines its quests with the person's reason and discards only what nothing else holds. Detail: `docs/2026-10-02-pause-and-clean-up-design.md` §1–§9.
