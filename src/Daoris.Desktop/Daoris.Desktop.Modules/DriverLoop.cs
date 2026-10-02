@@ -196,15 +196,30 @@ public sealed class DriverLoop(
     /// <b>Whose stop holds it</b> (SESSUX1d, D126 §3.3): a <c>Stopped</c> verdict names the session stopped, so the page
     /// can say the sentence in the reader's language and name the session as a fact rather than reading it out of the
     /// driver's English. Null for every other verdict, which the bridge leaves out. The stop's tree stays here.
+    /// <para><b>How many failed, and since when</b> (SESSUX1i, D126 §4.6): an <c>Exhausted</c> verdict, with its park read,
+    /// carries the number the planner parked it at, so the page says why in the reader's language, and when its last
+    /// session ended, which *What needs you* counts its wait from. Null for every other verdict and a park not read yet.
+    /// The last session and its note stay here, as the stop's tree does.</para>
     /// </remarks>
-    public static object TickConsideration(Consideration consideration) => new
+    /// <param name="park">The quest's park as the loop last read it (<see cref="QuestParkReader"/>), or null.</param>
+    public static object TickConsideration(Consideration consideration, QuestPark? park = null)
     {
-        Quest = consideration.Quest.Id,
-        Repository = consideration.Quest.To,
-        Verdict = consideration.Verdict.ToString(),
-        consideration.Reason,
-        HeldBy = consideration.HeldBy?.Session,
-    };
+        var parked = consideration.Verdict == StartVerdict.Exhausted
+                     && park is not null
+                     && string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase)
+            ? park
+            : null;
+        return new
+        {
+            Quest = consideration.Quest.Id,
+            Repository = consideration.Quest.To,
+            Verdict = consideration.Verdict.ToString(),
+            consideration.Reason,
+            HeldBy = consideration.HeldBy?.Session,
+            parked?.Strikes,
+            parked?.Since,
+        };
+    }
 
     /// <summary>
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
@@ -373,6 +388,8 @@ public sealed class DriverLoop(
         if (held is null) return;
 
         var attention = new AttentionWatch();
+        // A quest's park is said with its last session's facts, and Overview's row waits from its end (SESSUX1i).
+        var parks = new QuestParkReader();
         string? lastConsidered = null;
         string? lastAsked = null;
         string? lastActive = null;
@@ -387,7 +404,10 @@ public sealed class DriverLoop(
 
                 // Observed either way, so turning notifications back on does not then announce
                 // everything that happened while they were off — the switch is about being TOLD.
-                var attend = attention.Observe(report);
+                var read = await parks.LookAsync(
+                    report, ticked.ForgivenAt, token => SessionRecords.ReadAsync(service.BaseUrl, key, ct: token), ct)
+                    .ConfigureAwait(false);
+                var attend = attention.Observe(report, read);
                 if (ticked.Notify)
                 {
                     foreach (var item in attend)
@@ -400,6 +420,8 @@ public sealed class DriverLoop(
                             item.State,
                             item.Headline,
                             item.Detail,
+                            // The quest a park names (SESSUX1i); null for a session's own news.
+                            item.Quest,
                         }).ConfigureAwait(false);
                     }
                 }
@@ -410,7 +432,9 @@ public sealed class DriverLoop(
                 // page, and a stable set must not: every tick the page receives refetches four
                 // queries, and a machine with one held quest would otherwise send one every poll.
                 var considered = Considerations.Signature(report.Considerations);
-                var changed = considered != lastConsidered;
+                // …or the parks were read again (SESSUX1i): a park read a look after its verdict, its first read refused,
+                // still has to reach the row its wait and its number are said on.
+                var changed = considered != lastConsidered || read is not null;
                 lastConsidered = considered;
 
                 // What this tick held for trust, kept for the screen's grant to be checked against
@@ -462,7 +486,10 @@ public sealed class DriverLoop(
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
                     {
                         Events = report.Events,
-                        Considered = report.Considerations.Select(TickConsideration).ToArray(),
+                        Considered = report.Considerations
+                            .Select(consideration => TickConsideration(consideration, parks.Latest.FirstOrDefault(park =>
+                                string.Equals(park.Quest, consideration.Quest.Id, StringComparison.OrdinalIgnoreCase))))
+                            .ToArray(),
                         // The trust holds as facts (D73): machine-local paths, so over this bridge only.
                         // A hold's `quest` or `ask`, whichever it is not, is left out by the bridge.
                         Untrusted = report.Untrusted.Select(hold => new
