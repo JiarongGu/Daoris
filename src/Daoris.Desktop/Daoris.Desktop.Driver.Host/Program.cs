@@ -125,6 +125,13 @@ using Daoris.Driver;
 //                 one readable line each, or as written with --json. A line that cannot be read is
 //                 skipped and counted. Settings → Logs is the screen's door to the same reading.
 //
+//   trace <commit|session|quest> · trace commit|session|quest <id>
+//                 one read back to the ask (TRACE1, D143): from a commit (a landing's tip, or in a session's evidence), a
+//                 session or a quest, the ask and the person's words and go-aheads, the quest's requirements and answers,
+//                 each session's agent, account, harness, tree and base commit, its instruction by event and size, its rules,
+//                 its landing, and what stood when it started, each from the store that keeps it, and a link nothing keeps
+//                 said missing. It writes nothing; the screen's door to the same read is a row of its own.
+//
 //   update [--install <folder>] · update --when-idle | --now | --cancel [--install <folder>]
 //                 an install's update (UPDATE1, D139): what `publish:desktop --stage` put beside the install, what holds
 //                 for it and how the last swap ended; or the word on it, written to <home>/update.json as the window's
@@ -160,6 +167,13 @@ using Daoris.Driver;
 if (OperatingSystem.IsWindows())
 {
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+}
+
+// One read from a commit, a session or a quest back to its ask (TRACE1, D143, D50). Routed before the machine log opens,
+// since that open prunes old files and the trace writes nothing anywhere; it keeps its own catch for the same reason.
+if (args is ["trace", .. var traceArgs])
+{
+    return await Daoris.Driver.Host.TraceConsole.RunAsync(traceArgs);
 }
 
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its

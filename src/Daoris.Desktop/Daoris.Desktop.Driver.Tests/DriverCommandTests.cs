@@ -225,6 +225,29 @@ public sealed class DriverCommandTests
         Assert.Contains("SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)", console);
     }
 
+    /// <summary>
+    /// TRACE1 (D143, D50): one read back to the ask is a door the usage names, routed by the host to its console before the
+    /// machine log opens, since that open prunes old files and the trace writes nothing anywhere. The words are the library's,
+    /// which <c>TraceTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_trace_and_the_host_routes_it_before_anything_is_written()
+    {
+        Assert.Contains("\n  trace <commit|session|quest>  ·  trace commit|session|quest <id>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.StartsWith("usage: daoris-driver trace <commit|session|quest>  ·  trace commit|session|quest <id>", TraceCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var trace = program.IndexOf("if (args is [\"trace\", .. var traceArgs])", StringComparison.Ordinal);
+        var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
+        Assert.True(trace > 0 && log > trace, $"the trace routed at {trace}, the machine log opened at {log}");
+        Assert.Contains("TraceConsole.RunAsync(traceArgs)", program);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TraceConsole.cs"));
+        Assert.Contains("TraceCommand.Read(args, out var problem)", console);
+        Assert.Contains("TraceCommand.RunAsync(", console);
+        Assert.DoesNotContain("MachineLog", console);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);
