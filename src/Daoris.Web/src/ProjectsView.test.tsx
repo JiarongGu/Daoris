@@ -537,9 +537,9 @@ describe('the shell-attached registry management', () => {
     const init = within(page).getByText(code('daoris init'));
     expect(init.tagName).toBe('CODE');
     expect(init.parentElement).not.toHaveClass('font-mono');
-    // Prose keeps its measure once the column follows the window (UX5 U59): uncapped, the sentence
-    // ran about two hundred characters on one line.
-    expect(init.parentElement).toHaveClass('max-w-prose');
+    // It wraps at the page's edge with every block of it (D141): a 65ch sentence beside blocks that ran
+    // the pane gave the page two edges.
+    expect(init.parentElement!.className).not.toMatch(/\bmax-w-/);
   });
 
   /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */

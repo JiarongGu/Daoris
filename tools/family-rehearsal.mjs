@@ -626,6 +626,19 @@ run('git init -q', newcomer);
 run(`git ${GIT_ID} add -A`, newcomer);
 run(`git ${GIT_ID} commit -q -m "the newcomer is born"`, newcomer);
 
+// What the person requires, in their own words (DRIFT1c2, D133 §3–§4): the intake's stub quotes a fragment of an ask's
+// own sentence below (a fragment of their words is still their words) with the check it names, and first tries a quote
+// the person never said, which the host refuses naming it. A wave is the departure's ask: the working stub answers its
+// requirement departed, with the reason and the quote, and every other requirement met.
+const SETTLED_SENTENCE = 'the newcomer should say hello, and a check should follow';
+const SAID_QUOTE = 'should say hello';
+const UNSAID_QUOTE = 'say hello in every language';
+const WAVE_SENTENCE = 'the newcomer should wave, and a check should follow';
+const WAVE_QUOTE = 'should wave';
+const REQUIRED_CHECK = "The newcomer's history holds a commit answering the quest.";
+const MET = 'The stub landed a commit answering the quest.';
+const DEPARTED = 'The stub cannot wave, so it landed a commit instead.';
+
 // The stub agent: a session with real mechanics and no model (D46 §8). It claims its own quest
 // through the same HTTP door a real session's connector would use, works (a commit), and closes —
 // or declines when the ask says to, because judging the ask is the session's job, not the driver's.
@@ -669,29 +682,54 @@ if (intakeFor) {
     process.exit(0);
   }
 
-  const published = await fetch(url + '/api/asks/' + intakeFor + '/publish', {
+  // What the person requires rides the publish in their own words, with its check (DRIFT1c, D133 §3). An ask to wave
+  // is the departure's (DRIFT1d): its quest's title is the working stub's cue to depart, as a title asking to be
+  // declined is its cue to decline.
+  const waving = /should wave/i.test(process.env.DAORIS_TARGET ?? '');
+  const publish = (quote) => fetch(url + '/api/asks/' + intakeFor + '/publish', {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...(key ? { authorization: 'Bearer ' + key } : {}) },
     body: JSON.stringify({
       to: 'newcomer',
-      title: 'Say hello, as the intake decided',
+      title: waving ? 'Wave, though the stub departs from it' : 'Say hello, as the intake decided',
       body: 'The intake read the circle, and the newcomer is who this belongs to.',
-      then: [{ to: 'newcomer', title: 'Verify {parent} said hello', body: 'Check what {parent} landed.' }],
+      then: [{
+        to: 'newcomer',
+        title: waving ? 'Verify {parent} waved' : 'Verify {parent} said hello',
+        body: 'Check what {parent} landed.',
+      }],
       session,
+      requirements: [{ quote, check: ${JSON.stringify(REQUIRED_CHECK)} }],
     }),
   });
+
+  // A quote the person never said is refused, naming it, and nothing is published (DRIFT1c). The stub says what the
+  // host answered, so the gate reads the refusal out of the intake's own transcript.
+  if (!waving) {
+    const unsaid = await publish(${JSON.stringify(UNSAID_QUOTE)});
+    const answered = await unsaid.text();
+    let error = answered;
+    try { error = JSON.parse(answered).error ?? answered; } catch { /* not JSON: the text is the answer */ }
+    console.log('stub: a requirement the person never said answered ' + unsaid.status);
+    for (const line of error.split('\\n').filter((text) => /never said|^- requirement/.test(text))) {
+      console.log('stub: refused: ' + line);
+    }
+  }
+
+  const published = await publish(waving ? ${JSON.stringify(WAVE_QUOTE)} : ${JSON.stringify(SAID_QUOTE)});
   console.log('stub: intake publish answered ' + published.status);
   process.exit(published.ok ? 0 : 1);
 }
 
-const respond = async (action, reason) => {
+const respond = async (action, reason, answers) => {
   const response = await fetch(url + '/api/quests/' + id + '/respond', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       ...(key ? { authorization: 'Bearer ' + key } : {}),
     },
-    body: JSON.stringify({ action, reason }),
+    // A done's answers to the quest's requirements (DRIFT1d), sent only when there are some.
+    body: JSON.stringify({ action, reason, ...(answers ? { answers } : {}) }),
   });
   return { ok: response.ok, status: response.status, text: await response.text() };
 };
@@ -749,6 +787,16 @@ if (attachments) {
 } else if (/not on this machine/.test(target)) {
   console.log('stub: a file is named and not here');
 }
+// What the person requires of the quest (DRIFT1d, D133 §4), as its target hands it beneath the quest: each by its
+// number, their words quoted line by line. Said back, so the gate reads the words the session was handed.
+const required = [...target.replace(/\\r\\n/g, '\\n').matchAll(/^- Requirement (\\d+):\\n\\n((?: {2}>.*\\n?)+)/gm)]
+  .map((match) => ({
+    number: Number(match[1]),
+    quote: match[2].split('\\n').filter((line) => line.length > 0).map((line) => line.replace(/^ {2}> ?/, '')).join('\\n'),
+  }));
+for (const requirement of required) {
+  console.log('stub: handed requirement ' + requirement.number + ': "' + requirement.quote + '"');
+}
 
 if (/decline/i.test(title)) {
   await respond('decline', 'The stub declines what asks to be declined.');
@@ -759,7 +807,25 @@ writeFileSync('answered-' + id + '.md', '# ' + title + '\\n\\nAnswered by the st
 const git = 'git -c user.name="Stub Session" -c user.email="stub@example.invalid"';
 execSync(git + ' add -A', { stdio: 'ignore' });
 execSync(git + ' commit -q -m "stub: answer quest ' + id + '"', { stdio: 'ignore' });
-const doneAnswer = await respond('done', 'Landed by the stub session.');
+
+// A done answers each requirement by its number (DRIFT1d). One answering none is refused, naming each, and nothing
+// closes; then each is met, or departed where the title asks the stub to depart, with the reason and the person's
+// words it turns on, which holds what follows the quest until the person's yes.
+let answers;
+if (required.length > 0) {
+  const none = await respond('done', 'Landed by the stub session.');
+  let error = none.text;
+  try { error = JSON.parse(none.text).error ?? none.text; } catch { /* not JSON: the text is the answer */ }
+  console.log('stub: a done answering none answered ' + none.status);
+  for (const line of error.split('\\n').filter((text) => text.startsWith('- requirement'))) {
+    console.log('stub: refused: ' + line);
+  }
+  const departing = /depart/i.test(title);
+  answers = required.map((requirement) => (departing
+    ? { requirement: requirement.number, departed: ${JSON.stringify(DEPARTED)}, quote: requirement.quote }
+    : { requirement: requirement.number, met: ${JSON.stringify(MET)} }));
+}
+const doneAnswer = await respond('done', 'Landed by the stub session.', answers);
 if (!doneAnswer.ok) throw new Error('done failed: ' + doneAnswer.text);
 `);
 
@@ -969,7 +1035,7 @@ const intakeDrive = (mode = '--until-idle') => driver({ serviceUrl: BASE, config
 const intakesOf = async (askId) =>
   ((await api('GET', '/api/sessions?includeClosed=true')).json ?? []).filter((s) => s.ask === askId);
 
-const settledAsk = askVerb('--workspace default "the newcomer should say hello, and a check should follow"');
+const settledAsk = askVerb(`--workspace default "${SETTLED_SENTENCE}"`);
 const settledAskId = /ask\s+#([0-9a-f]{6})/.exec(settledAsk.out)?.[1] ?? '';
 const intakeRun = intakeDrive();
 const [intakeSession, ...extraIntakes] = await intakesOf(settledAskId);
@@ -1005,6 +1071,97 @@ check(
   intakeQuest?.status === 'Done' && intakeStep?.status === 'Done' && intakeStep.from === `ask #${settledAskId}`
     && intakeStep.title === `Verify #${intakeQuest.id} said hello`,
   `${intakeRun.out}\n${JSON.stringify({ intakeQuest, intakeStep })}`,
+);
+
+// WHAT THE PERSON REQUIRES, IN THEIR WORDS (DRIFT1c2, D133 §3): the intake names the requirement as words of the ask's
+// own sentence, judged by the real host. It first quoted words the person never said: refused at the publish door,
+// naming them, with nothing published. The words they did say are kept on the quest with their check, and the chain's
+// step inherits them.
+const stubLines = (said) => said.split('\n').filter((line) => line.startsWith('stub:')).join('\n');
+const requiredAs = (quote) => JSON.stringify([{ quote, check: REQUIRED_CHECK }]);
+const askedBySettled = newcomerQuests.filter((q) => q.from === `ask #${settledAskId}`);
+check(
+  'a requirement quoting words the person never said is refused at the intake’s publish, naming them, and nothing of it is published',
+  intakeSaid.includes('stub: a requirement the person never said answered 409')
+    && intakeSaid.includes(`never said on ask \`#${settledAskId}\``)
+    && intakeSaid.includes(`stub: refused: - requirement 1: "${UNSAID_QUOTE}"`)
+    && intakeSaid.includes('stub: intake publish answered 200') && askedBySettled.length === 2,
+  `${stubLines(intakeSaid)}\n${JSON.stringify(askedBySettled.map((q) => ({ id: q.id, title: q.title })))}`,
+);
+check(
+  '…while words the person did say are the quest’s requirement, with its check, and the chain’s step inherits them',
+  JSON.stringify(intakeQuest?.requirements) === requiredAs(SAID_QUOTE)
+    && JSON.stringify(intakeStep?.requirements) === requiredAs(SAID_QUOTE),
+  JSON.stringify({ quest: intakeQuest?.requirements, step: intakeStep?.requirements }),
+);
+
+// …AND A DONE ANSWERS IT (DRIFT1d, D133 §4): each session working the quest and its step was handed the requirement in
+// the person's words beneath the quest, saw a done answering none refused naming it, and closed answering it met. The
+// record keeps the answer and holds nothing, which is why the chain went on and the ask reads done above.
+const newcomerRecords = (await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [];
+const transcriptOf = (questId) => {
+  const record = newcomerRecords.find((s) => s.quest === questId);
+  return existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '';
+};
+const workSaid = [transcriptOf(intakeQuest?.id), transcriptOf(intakeStep?.id)];
+check(
+  'the sessions on the quest and on its step were handed the requirement in the person’s words, and a done answering none was refused, naming it',
+  workSaid.every((said) => said.includes(`stub: handed requirement 1: "${SAID_QUOTE}"`)
+    && said.includes('stub: a done answering none answered 400')
+    && said.includes(`stub: refused: - requirement 1: "${SAID_QUOTE}"`)),
+  workSaid.map(stubLines).join('\n--\n'),
+);
+const answeredMet = (quest) => quest?.answers?.length === 1 && quest.answers[0].requirement === 1
+  && quest.answers[0].met === MET && !quest.answers[0].departed && !quest.answers[0].quote && quest.held === false;
+check(
+  '…then each closed done answering it met, on the record, holding nothing',
+  answeredMet(intakeQuest) && answeredMet(intakeStep),
+  JSON.stringify({ quest: [intakeQuest?.answers, intakeQuest?.held], step: [intakeStep?.answers, intakeStep?.held] }),
+);
+
+// A DEPARTURE WAITS FOR THE PERSON'S YES (DRIFT1d, D133 §4): an ask to wave, whose intake publishes a quest the working
+// stub departs from, answering its requirement with the reason and the person's words it turns on. The departure closes
+// the quest done and HOLDS it: still outstanding, its chain's step unpublished, its ask not done. The person's yes from a
+// terminal publishes the step, which inherits the requirement; a second yes is refused, since nothing waits for one; and
+// the loop drives the step to done, met, so the ask reads done.
+const waveAsk = askVerb(`--workspace default "${WAVE_SENTENCE}"`);
+const waveAskId = /ask\s+#([0-9a-f]{6})/.exec(waveAsk.out)?.[1] ?? '';
+const waveRun = intakeDrive();
+const askedByWave = async () => ((await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [])
+  .filter((q) => q.from === `ask #${waveAskId}`);
+const [waveQuest, ...waveMore] = await askedByWave();
+const waveOutstanding = ((await api('GET', '/api/quests?repository=newcomer')).json ?? []).some((q) => q.id === waveQuest?.id);
+const waveHeldAsk = (await api('GET', `/api/asks/${waveAskId}`)).json;
+check(
+  'a done departing from the person’s words closes done and is HELD: the departure and their words on the record, the quest outstanding, its step unpublished, its ask not done',
+  waveAskId !== '' && waveMore.length === 0 && waveQuest?.status === 'Done' && waveQuest.held === true
+    && waveQuest.answers?.length === 1 && waveQuest.answers[0].requirement === 1
+    && waveQuest.answers[0].departed === DEPARTED && waveQuest.answers[0].quote === WAVE_QUOTE
+    && waveOutstanding && waveHeldAsk?.state === 'Published',
+  `${waveAsk.out}\n${waveRun.out}\n${JSON.stringify({ waveQuest, waveMore, ask: waveHeldAsk?.state })}`,
+);
+const acceptWave = () => driver({ serviceUrl: BASE, config: intakeConfig, mode: `quest accept ${waveQuest?.id ?? ''}` });
+const waveYes = acceptWave();
+const waveAfterYes = await askedByWave();
+const waveAccepted = waveAfterYes.find((q) => q.id === waveQuest?.id);
+const waveStep = waveAfterYes.find((q) => q.parent === waveQuest?.id);
+check(
+  '`daoris-driver quest accept` is the person’s yes: what the departure held goes on, its step published with the requirement it inherits',
+  waveYes.code === 0 && waveYes.out.includes(`Accepted the departure on quest \`#${waveQuest?.id}\``)
+    && waveAccepted?.held === false && typeof waveAccepted.accepted === 'string'
+    && waveStep?.status === 'Open' && waveStep.title === `Verify #${waveQuest?.id} waved`
+    && JSON.stringify(waveStep.requirements) === requiredAs(WAVE_QUOTE),
+  `${waveYes.out}\n${JSON.stringify({ waveAccepted, waveStep })}`,
+);
+const waveYesAgain = acceptWave();
+const waveStepRun = intakeDrive();
+const waveStepDone = (await askedByWave()).find((q) => q.id === waveStep?.id);
+const waveDoneAsk = (await api('GET', `/api/asks/${waveAskId}`)).json;
+check(
+  '…a second yes is refused, nothing waiting for one, and the step is driven to done answering the requirement met, so the ask reads done',
+  waveYesAgain.code === 1 && /already accepted/.test(waveYesAgain.out)
+    && waveStepDone?.status === 'Done' && answeredMet(waveStepDone) && waveDoneAsk?.state === 'Done',
+  `${waveYesAgain.out}\n${waveStepRun.out}\n${JSON.stringify({ waveStepDone, ask: waveDoneAsk?.state })}`,
 );
 
 const unsettledAsk = askVerb('--workspace default "an unsettled question nobody has declared an answer to"');
@@ -1175,6 +1332,18 @@ check(
   'a quest deleted before the restart is still gone',
   !(after.json ?? []).some((q) => q.id === mistakenId),
   after.text,
+);
+// The person's words, a done's answers and a departure's yes are logged with their moves (DRIFT1c, DRIFT1d), so the
+// store replayed from the log still holds them.
+const requiredAfter = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
+const helloAfter = requiredAfter.find((q) => q.id === intakeQuest?.id);
+const waveAfter = requiredAfter.find((q) => q.id === waveQuest?.id);
+check(
+  '…and so are a quest’s requirement, the answer its done gave, and a departure with the person’s yes',
+  JSON.stringify(helloAfter?.requirements) === requiredAs(SAID_QUOTE) && answeredMet(helloAfter)
+    && waveAfter?.answers?.[0]?.departed === DEPARTED && waveAfter.answers[0].quote === WAVE_QUOTE
+    && waveAfter.held === false && typeof waveAfter.accepted === 'string',
+  JSON.stringify({ helloAfter, waveAfter }),
 );
 const registryAfter = await api('GET', '/api/registry');
 check(
@@ -1687,6 +1856,20 @@ check(
   'the remote knows the file by NAME — and has no path for it, because it has no bytes',
   crossingAtRemote?.attachments?.[0]?.name === 'crossing.txt' && !('path' in (crossingAtRemote.attachments[0] ?? {})),
   JSON.stringify(crossingAtRemote),
+);
+// What the person required crosses the sync wire with its quest (DRIFT1c), and so do a done's answers and a departure's
+// yes (DRIFT1d): the newcomer's history went up once it joined, and the remote, which holds no ask, keeps the words as
+// machine a judged them.
+const requiredAtRemote = (await api('GET', '/api/quests?includeClosed=true', { base: REMOTE_BASE, key: keyA })).json ?? [];
+const helloAtRemote = requiredAtRemote.find((q) => q.id === intakeQuest?.id);
+const waveAtRemote = requiredAtRemote.find((q) => q.id === waveQuest?.id);
+check(
+  'a quest’s requirement, its done’s answer and a departure with the person’s yes cross the sync wire to the remote',
+  JSON.stringify(helloAtRemote?.requirements) === requiredAs(SAID_QUOTE) && answeredMet(helloAtRemote)
+    && JSON.stringify(waveAtRemote?.requirements) === requiredAs(WAVE_QUOTE)
+    && waveAtRemote?.answers?.[0]?.departed === DEPARTED && waveAtRemote.answers[0].quote === WAVE_QUOTE
+    && waveAtRemote.held === false && typeof waveAtRemote.accepted === 'string',
+  JSON.stringify({ helloAtRemote, waveAtRemote }),
 );
 const crossingOnA = (await api('GET', '/api/quests?repository=borealis')).json?.find((q) => q.id === crossingId);
 check(

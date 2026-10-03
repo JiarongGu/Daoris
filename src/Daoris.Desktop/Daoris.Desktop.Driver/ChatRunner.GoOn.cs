@@ -20,6 +20,10 @@ namespace Daoris.Driver;
 /// <para><b>What holds it rather than refusing it</b> leaves the words waiting and unmarked, said in its conversation: an
 /// account the selection will not start, a replay holding its repository's trees, the ledger refusing the move (another
 /// session holds its tree, D51). The next word said to it tries again.</para>
+///
+/// <para><b>Words nobody heard</b> (MSG1c2): words kept on an ended chat while no shell ran are taken up as the shell comes
+/// up (<see cref="TakeUpAsync"/>), and a chat taken up by itself announces its end (<see cref="TakenUpEnded"/>), since no
+/// route that started it is there to hear it.</para>
 /// </remarks>
 public sealed partial class ChatRunner
 {
@@ -83,6 +87,70 @@ public sealed partial class ChatRunner
     }
 
     /// <summary>
+    /// A conversation this runner took up by itself ended (MSG1c2): the session and the state its record took, as a start's
+    /// <c>onEnded</c> is told, or the state it went back to where its agent would not resume it. No route started it, so no
+    /// route hears its end: the shell announces it as the page's <c>SESSION_ENDED</c>.
+    /// </summary>
+    public event Action<string, string>? TakenUpEnded;
+
+    /// <summary>A chat taken up by itself tells its end to whoever listens (MSG1c2), as the <c>onEnded</c> its run is handed.</summary>
+    private Task Announce(string session, string state)
+    {
+        TakenUpEnded?.Invoke(session, state);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// The ended chats whose words wait on their record from while no runner heard them (MSG1c2): words kept while no shell
+    /// ran, or before this runner listened, are taken up as words shown now would be, one chat at a time, each judged as
+    /// MSG1c judges it and its end announced. A record whose every waiting word was already judged unable to go on (its
+    /// marks) waits for a word said since, as a look leaves it (MSG1b). Called by the shell once, as its loop comes up.
+    /// </summary>
+    /// <returns>What became of each chat it took up, in the records' order; none where the service did not answer.</returns>
+    public async Task<IReadOnlyList<ChatStart>> TakeUpAsync(CancellationToken ct = default)
+    {
+        string json;
+        IReadOnlyList<SessionRecord> records;
+        try
+        {
+            json = await _service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+            records = SessionRecords.Parse(json);
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or System.Text.Json.JsonException
+                                          or ObjectDisposedException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            // Nothing is taken up now: the words stay waiting as said, and the next word said to each tries again.
+            return [];
+        }
+
+        var taken = new List<ChatStart>();
+        foreach (var each in records)
+        {
+            if (_closing || ct.IsCancellationRequested) break;
+            if (each.Kind != "chat" || each.Teammate || !Ended.Contains(each.State)
+                || string.Equals(each.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (ServiceClient.ReadRecord(json, each.Id) is not { WordsWaiting: true } record) continue;
+            if (GoOnMarks.Judged(record, _marks.Read(each.Id))) continue;
+
+            try
+            {
+                taken.Add(await GoOnAsync(each.Id, onEnded: Announce, ct: ct).ConfigureAwait(false));
+            }
+            catch (Exception error) when (error is not OperationCanceledException || !ct.IsCancellationRequested)
+            {
+                // Said in its conversation wherever it could be, as a word taken up says it; the next chat is still taken up.
+            }
+        }
+
+        return taken;
+    }
+
+    /// <summary>
     /// A record event (MSG1d's shown words): the person's words with the reach <c>resume</c>, said to a session nothing here
     /// runs, are taken up at once where it is an ended chat of this machine's. A driven record is the planner's (MSG1b), and
     /// its record says so: reading it here costs one look and starts nothing.
@@ -95,7 +163,8 @@ public sealed partial class ChatRunner
         {
             try
             {
-                await GoOnAsync(session).ConfigureAwait(false);
+                // No route started it, so its end is announced (MSG1c2).
+                await GoOnAsync(session, onEnded: Announce).ConfigureAwait(false);
             }
             catch (Exception)
             {

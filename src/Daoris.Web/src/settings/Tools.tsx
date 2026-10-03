@@ -210,7 +210,7 @@ export function ToolCard({
 
       {/* The way set cannot run, in the driver's own words: it never falls back to PATH (D121 §2.3). */}
       {tool.refused && tool.problem && (
-        <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           <Inline text={tool.problem} />
         </p>
       )}
@@ -424,7 +424,7 @@ export function GitSwitch({ asking, busy = false, onConfirm, onCancel }: {
       )}
       {!asking.reading && !problem && answer && answer.keys.length > 0 && (
         <>
-          <p className="m-0 mt-1 max-w-prose text-small text-ink-soft">{t('settings.tools.switch.differs')}</p>
+          <p className="m-0 mt-1 text-small text-ink-soft">{t('settings.tools.switch.differs')}</p>
           <ul className="m-0 mt-1.5 list-none p-0">
             {answer.keys.map((key) => (
               <li key={key.key} className="text-small text-ink">
@@ -504,10 +504,10 @@ export function ToolLocations({
         )}
         {/* What could not be fetched or read, in the driver's own words: the address and the reason are the person's to act on. */}
         {look && look.outcome !== 'fetched' && (
-          <p className="m-0 mt-1 max-w-prose text-small text-ink-soft"><Inline text={look.sentence} /></p>
+          <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={look.sentence} /></p>
         )}
         {list.problem && (
-          <p className="m-0 mt-1 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-small text-ink-soft">
+          <p className="m-0 mt-1 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-small text-ink-soft">
             <Inline text={list.problem} />
           </p>
         )}

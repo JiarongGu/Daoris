@@ -93,7 +93,7 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
 
       {/* The file both doors edit does not read: every tool is refused until it is fixed, in the driver's own words. */}
       {state.problem && (
-        <p className="mt-3 max-w-prose border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
           <Inline text={t('settings.tools.fileProblem', { problem: state.problem })} />
         </p>
       )}

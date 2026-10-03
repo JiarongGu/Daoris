@@ -102,7 +102,7 @@ export function ConversationView({
     const sentence = structured && chat
       ? t(live ? 'work.conversation.nothingYet' : 'work.conversation.nothingSaid')
       : t('work.conversation.textOnly');
-    return <p className="m-0 mt-2 max-w-prose text-small text-ink-faint">{sentence}</p>;
+    return <p className="m-0 mt-2 text-small text-ink-faint">{sentence}</p>;
   }
 
   return (

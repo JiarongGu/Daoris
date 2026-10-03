@@ -817,8 +817,8 @@ describe('the harness roster', () => {
     const usage = screen.getByText('Usage').parentElement!;
     expect(within(usage).getByText("this machine's own")).toBeTruthy();
     expect(within(usage).getByText('work').getAttribute('class')).not.toContain('accent');
-    // Its note keeps a reading measure once the column follows the window (UX5 U59: 142 a line).
-    expect(within(usage).getByText(/Measured, not billed/)).toHaveClass('max-w-prose');
+    // Its note wraps at the card's edge with every block of the domain (D141), where it kept 65ch.
+    expect(within(usage).getByText(/Measured, not billed/).className).not.toMatch(/\bmax-w-/);
     // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
     expect(screen.queryByText(/[$£€]/)).toBeNull();
   });
@@ -1024,6 +1024,32 @@ describe('how accounts are used', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
       payload: { harness: 'claude-code', action: 'ready', own: true },
     });
+  });
+
+  /**
+   * TOOL6e: each scope says which account its next start takes and why, with what holds the others, the account named as
+   * a person knows it; and the tool's own sign-in, offered again since its cool-off ended, says so on its row.
+   */
+  it('says which account the next start takes and why, and since when an account is offered again', async () => {
+    const offered = new Date(Date.now() - 58 * 60_000).toISOString();
+    const next = {
+      agents: [{
+        ...ACCOUNTS.agents[0]!,
+        own: { offered },
+        scopes: [{
+          ...MACHINE, list: ['personal', 'work'],
+          next: { account: 'work', reason: 'onlyReady', over: null, when: null, others: [{ account: 'personal', hold: 'cooling', until }] },
+        }],
+      }],
+    };
+    const named = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, profiles: [ROSTER.harnesses[0]!.profiles[0]!, { ...ROSTER.harnesses[0]!.profiles[1]!, account: 'work@example.invalid' }] }] };
+    invoke.mockImplementation(answer(named, next));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    expect(await screen.findByText('The next start takes work@example.invalid: it is the only account here that is ready.')).toBeTruthy();
+    expect(screen.getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
+    expect(screen.getByText(/^offered again since /)).toBeTruthy();
   });
 
   /** A refusal reads as the terminal's, in the reader's language (REV2): the host's code, from the catalogue. */

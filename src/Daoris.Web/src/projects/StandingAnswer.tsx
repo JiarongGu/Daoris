@@ -32,7 +32,7 @@ export function StandingAnswer({ says, at = null, busy = false, onSave }: {
   const open = () => { setDraft(says ?? ''); setEditing(true); };
 
   return (
-    <div className="mt-3 grid max-w-prose gap-1.5">
+    <div className="mt-3 grid gap-1.5">
       <p className="m-0 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="min-w-12 text-meta text-ink-faint">{t('projects.standing.label')}</span>
         {!editing && says !== null && at && <span className="font-mono text-meta text-ink-faint">{t('projects.standing.set', { ago: ago(at) })}</span>}

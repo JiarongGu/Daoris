@@ -27,7 +27,6 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
     <PageHead
       icon={<PluginIcon id={offer.id} name={offer.name} icon={offer.icon} size="page" />}
       title={offer.name || offer.id}
-      measure={false}
       version={offer.version}
       pills={<Pill tone="neutral">{t('plugin.offers.notInstalled')}</Pill>}
       id={offer.id}

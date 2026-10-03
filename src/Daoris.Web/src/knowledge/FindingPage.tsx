@@ -37,7 +37,7 @@ export function FindingPage({ finding, readings }: {
 
   return (
     <ViewMain header={head}>
-      <p className="m-0 max-w-prose rounded-control bg-accent-soft px-3 py-2.5 text-body"><Inline text={finding.suggestion} /></p>
+      <p className="m-0 rounded-control bg-accent-soft px-3 py-2.5 text-body"><Inline text={finding.suggestion} /></p>
       {finding.entries.map((entry) => {
         const reading = readings[entry.id] ?? { state: 'loading' };
         const read = reading.state === 'read' ? reading.entry : null;

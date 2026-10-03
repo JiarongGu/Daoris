@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { code } from '../test/code';
+import { cappedBlocks } from '../test/measure';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
 
@@ -33,10 +34,10 @@ describe("an offer's page", () => {
     expect(onInstall).toHaveBeenCalledWith('land-github');
   });
 
-  /** D140 §2 (LAYOUT11 sets the rule): the detail's blocks share the pane's width, none keeping a measure of its own. */
+  /** D140 §2 and D141: the detail's blocks share the pane's width, none keeping a measure of its own. */
   it('lets every block take the pane\'s width', () => {
     const { container } = render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
-    expect(container.querySelectorAll('.max-w-prose')).toHaveLength(0);
+    expect(cappedBlocks(container)).toEqual([]);
   });
 
   /** D140 §2: an offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */

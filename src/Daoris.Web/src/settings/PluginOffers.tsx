@@ -76,13 +76,13 @@ export function PluginOffersCard({ offers, busy = false, onInstall }: {
         >
           {/* The driver's own sentence for one that cannot be installed as it stands: content, not chrome. */}
           {offer.problem && (
-            <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+            <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
               <Inline text={offer.problem} />
             </p>
           )}
           {/* What it needs, in its README's words, which a person sets up themselves: content, not chrome. */}
           {!offer.problem && offer.needs.length > 0 && (
-            <div className="max-w-prose text-small text-ink-soft">
+            <div className="text-small text-ink-soft">
               <p className="m-0 font-medium">{t('plugin.offers.needs')}</p>
               <ul aria-label={t('plugin.offers.needsOf', { id: offer.id })} className="m-0 mt-0.5 list-disc pl-5">
                 {offer.needs.map((need) => <li key={need} className="break-words"><Inline text={need} /></li>)}

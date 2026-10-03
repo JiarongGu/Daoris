@@ -7,6 +7,7 @@ import '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
+import { cappedBlocks } from '../test/measure';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
 
@@ -48,9 +49,9 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('acme.gate')).toBeInTheDocument();
     const line = within(header()).getByText('Holds quests overnight.');
     // NAME2: its description is content, read whole; the install showed it cut to one line with an ellipsis. D140 §2:
-    // it takes the pane's width, as every block of the detail does, and LAYOUT11 sets the one rule.
+    // it takes the pane's width, as every block of every page does (D141).
     expect(line).not.toHaveClass('truncate');
-    expect(line).toHaveClass('max-w-none');
+    expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
     // PLUG10 (P9), as D119 §2 gives it: running is the quiet neutral, never done's green.
     expect(within(header()).getByText('running').className).toMatch(/\bborder-line\b/);
@@ -73,13 +74,17 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * D140 §2, from the install (LAYOUT11): the detail's blocks share one width, the pane's. A paragraph capped at 65ch
-   * beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs.
+   * D140 §2, from the install (LAYOUT11, D141): the detail's blocks share one width, the pane's. A paragraph capped at
+   * 65ch beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs. An
+   * update's refused plan, drawn by Settings' `PluginUpdatePlan`, kept the cap after the page's own went.
    */
   it('lets every block of its detail take the pane\'s width: no paragraph keeps a measure of its own', () => {
-    const { container } = page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.' } });
+    const { container } = page({
+      plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.' },
+      plan: { id: PLUGIN.id, applied: false, refusal: 'The source asks for plugin API 99, and this build speaks 1.', changes: [] },
+    });
 
-    expect(container.querySelectorAll('.max-w-prose')).toHaveLength(0);
+    expect(cappedBlocks(container)).toEqual([]);
   });
 
   /** An update waits on nobody, so it is a neutral pill beside the state's, never a state (D119 §2, D140 §2). */
