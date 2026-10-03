@@ -21,7 +21,7 @@ changes no row (D127).
 | `2026-08-05-knowledge-service-design.md` | contract | the service | Built. Its banner names what later decisions answered, D123's pieces of a long entry among them; §3–§4, the disclosure classes, still bind |
 | `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change, D104's interrupted stop, PAR1's sessions side by side in trees, DEV3's sessions outliving their tick (§9), D131's resumed answer (§10) and D137's reopened record (§4) noted |
 | `2026-09-19-platform-design.md` | contract | the platform (D38) | Current in shape; the views it names have moved since (D55, D66, D75) |
-| `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
+| `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at. D141 retired *prose at 65ch*: a page wraps at its pane's edge |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |
 | `2026-09-20-workspace-design.md` | contract | workspaces (D48, WSP) | Current |
 | `2026-09-20-interactive-design.md` | contract | chat, console, managed harnesses (D49, SES) | Current, with D67, CONSOLE2's streams and D98 (§7 reversed) noted |
