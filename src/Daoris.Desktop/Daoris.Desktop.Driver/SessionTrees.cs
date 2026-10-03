@@ -372,7 +372,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// fails once the branch is made leaves the branch standing, and the sentence says its step failed and
     /// how the person does it by hand. Nothing here pushes: the plugin's process does.
     /// </remarks>
-    public async Task<TreeLanding> LandAsync(string path, LandingSubject subject, CancellationToken ct = default)
+    /// <param name="inUse">
+    /// The trees sessions still running or waiting name, asked when the rule's tidy reaches the other session branches the
+    /// landed work holds (LAND3); null keeps every one of those that still has a tree, since nobody asked.
+    /// </param>
+    public async Task<TreeLanding> LandAsync(
+        string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
@@ -428,8 +433,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // The tidy the person's rule asked for (D88): the tree and its branch go once the work lands, behind
         // the same proof an unforced removal makes — never forced.
         if (!landed.Landed || !landing.Rule.Tidy) return landed;
+        // Read before the tree goes (LAND3): the repository it belongs to and the branch it was on.
+        var (factsCode, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
+            .ConfigureAwait(false);
+        var (_, pressedOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
         var tidied = await RemoveAsync(path, force: false, ct).ConfigureAwait(false);
-        return landed with
+        landed = landed with
         {
             // 🔴 The sentence that the tree stays goes when the tidy removed it: the message said both
             // (found landing AR-2202, 2026-09-29).
@@ -437,6 +446,17 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 ? landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" Cleaned up, as the rule says: {tidied.Message}"
                 : landed.Message + $" The rule says to clean up, and the tree stays: {tidied.Message}",
         };
+        if (factsCode != 0) return landed with { Tidied = [] };
+
+        // LAND3: every other session branch the landed work holds goes too — a chain's earlier step, whose commits rode
+        // into this one, stayed behind on the owner's install. The ref is the branch made, or the line a merge went into.
+        var root = Path.GetDirectoryName(commonDir.Trim())!;
+        var into = landing.Rule.Form == LandingForm.Branch
+            ? landed.Branch
+            : (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        if (into is null) return landed with { Tidied = [] };
+        var held = await TidyHeldAsync(root, repository, workspace, $"refs/heads/{into}", pressedOut.Trim(), inUse, ct).ConfigureAwait(false);
+        return landed with { Message = landed.Message + TidiedSaid(held, into), Tidied = held };
     }
 
     /// <summary>
@@ -827,7 +847,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         // branch the branch form had landed. A branch left behind would resurrect "never reused" as a pile.
         if (branch is not "" and not "HEAD")
         {
-            await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
+            var (deleted, _, _) = await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
+            // The record drops what is gone (LAND3): a name no branch has is never judged by a start it no longer has.
+            if (deleted == 0) Forget(OwnerOf(full).Repository, branch);
         }
 
         return new(true, $"removed the session tree at {path} (branch `{branch}`)." + (left is null ? "" : $" {left}"));

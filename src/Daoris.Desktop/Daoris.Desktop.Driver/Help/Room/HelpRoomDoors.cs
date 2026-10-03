@@ -54,6 +54,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Settings → Workspace → Session branches → Updates", "`daoris-driver trees sync [--repository <name>] [--all] [--yes]`"),
         ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
             "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
+        // LAND3: a failed or superseded attempt's branch holds commits on no branch of the person's, so only they discard it.
+        ("discard a failed or superseded session's branch, with its tree where it is still here",
+            "Sessions → the session's review → Discard, while its tree is here",
+            "`daoris-driver trees remove <session|branch> [--repository <name>] --force`"),
         // WSR5b: a landed branch handed to a landing plugin after its landing.
         ("hand a branch a landing made to a landing plugin, to push it and open the pull request",
             "Sessions → the session's review → Hand to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`"),

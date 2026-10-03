@@ -401,7 +401,8 @@ public sealed partial class DriverModule
             return new { Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem };
         }
 
-        var landed = await trees.LandAsync(tree, subject, cancellationToken);
+        // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
+        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token));
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         _loop.Nudge();

@@ -61,7 +61,12 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
 /// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
-public sealed record TreeLanding(bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null);
+/// <param name="Tidied">
+/// What the rule's tidy did with the other session branches the landed work holds (LAND3), each removed or kept and why —
+/// null where no tidy ran. The message says the same, so the landing's note keeps it.
+/// </param>
+public sealed record TreeLanding(
+    bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null, IReadOnlyList<TidiedBranch>? Tidied = null);
 
 /// <summary>
 /// What a plugin answered at a landing (WSR4, D100): whether it pushed the branch, the pull request it
