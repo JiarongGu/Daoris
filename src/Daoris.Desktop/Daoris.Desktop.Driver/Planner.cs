@@ -115,7 +115,42 @@ public sealed record PriorSession(
     /// where it can. An answer a service from before ANSWER1b took has already ended the record, and is a carry-on.
     /// </summary>
     public bool AnsweredPark => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase) && Answer is not null;
+
+    /// <summary>
+    /// The person's words waiting on its record for it to go on with (MSG1a, D137 §2.4), in the order said; null where the
+    /// host answers no <c>said</c>, one from before MSG1a, and empty where nothing waits.
+    /// </summary>
+    public IReadOnlyList<SaidWordView>? Said { get; init; }
+
+    /// <summary>The ask an intake answers (D65 §1b), or null for every other record: an intake never goes on (D137 §2.2).</summary>
+    public string? Ask { get; init; }
+
+    /// <summary>Waiting on the person (D83): <c>awaiting-person</c>, the one state a record goes on from without leaving an ended one.</summary>
+    public bool Parked => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A record that came down from the team, keyed <c>origin/id</c> (D47 §6): never this machine's to go on with.</summary>
+    public bool Teammate => Session.Contains('/');
+
+    /// <summary>
+    /// Whether the person's words wait for it to go on with (MSG1b, D137 §2.2): its <c>said</c> holds any, parked or ended;
+    /// from a host before <c>said</c>, an answered park is the one case that waits.
+    /// </summary>
+    public bool WordsWaiting => Said is { } said ? said.Count > 0 : AnsweredPark;
+
+    /// <summary>The words it goes on with, in order: each of <see cref="Said"/>, or a host's answer from before <c>said</c>.</summary>
+    public IReadOnlyList<SaidWordView> Waiting =>
+        Said is { } said ? said
+        : Answer is { } answer ? [new SaidWordView(null, answer, DateTimeOffset.MinValue, [], false)]
+        : [];
 }
+
+/// <summary>
+/// One of the person's words waiting on a record (MSG1a, D137 §2.4), as the service answers it to this machine: its id,
+/// which the record's events say again where the session took it, the words, when, its files' names, and whether it was
+/// said after the record ended.
+/// </summary>
+/// <param name="Id">Its id on the record; null for an answer a host from before <c>said</c> kept, which has none.</param>
+public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
