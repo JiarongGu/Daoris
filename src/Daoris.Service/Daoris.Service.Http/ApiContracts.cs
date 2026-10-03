@@ -101,15 +101,27 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 // `Words` (DRIFT1a, D133 §1) is every word the person gave on it, oldest first: its sentence, then each
 // answer and each message added to a session, with when, the session and its quest. `WordsKeptFrom` is
 // said only of an ask made before the words were kept: from when they are, since nothing is back-filled.
+// `GoAheads` (KNOWUSE1a, D135 §2) is every go-ahead its sessions asked the person for, oldest first, one per act.
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
     IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
-    IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null);
+    IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null,
+    IReadOnlyList<GoAheadResponse>? GoAheads = null);
 // One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
 // went on with it); the ask's own sentence names no session.
 public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
+// One go-ahead (KNOWUSE1a): the act by its `kind` (write, release, push, sign-in, run), where it lands (`on`) and what it
+// touches (`act`); `state` is `asked`, `approved` or `refused`; `asked` is each session's request, oldest first; `answer`
+// the person's, absent while it waits; `near` the go-ahead whose words it shared where they could not tell.
+public sealed record GoAheadResponse(
+    int Number, string Kind, string On, string Act, string State, IReadOnlyList<GoAheadRequestResponse> Asked,
+    GoAheadAnswerResponse? Answer, int? Near);
+public sealed record GoAheadRequestResponse(string Session, string? Quest, DateTimeOffset At, string Why);
+public sealed record GoAheadAnswerResponse(bool Approved, string? Words, DateTimeOffset At);
+// The person's answer to a go-ahead (KNOWUSE1a): `answer` is `approved` or `refused`; `words` theirs, where they give any.
+public sealed record GoAheadAnswerRequest(string? Answer, string? Words);
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 // DRIFT1a: what the person added to a running session, as its driver reports it.
 public sealed record AddedRequest(string? Text);
@@ -309,6 +321,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(AskActionResponse))]
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(IEnumerable<AskResponse>))]
+[JsonSerializable(typeof(GoAheadAnswerRequest))]
 [JsonSerializable(typeof(AddedRequest))]
 [JsonSerializable(typeof(AddedResponse))]
 [JsonSerializable(typeof(QuestActionResponse))]

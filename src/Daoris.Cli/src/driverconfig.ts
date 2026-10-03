@@ -85,8 +85,22 @@ export interface DriverChoices {
   workspaceReadAcross: Record<string, boolean>;
   /** The declared relationships (D107): the repositories each repository's sessions may also write into. */
   writeAcross: Record<string, string[]>;
+  /**
+   * What the person has told this machine holds for every session in a repository (KNOWUSE1b, D135 §3), in their words, with
+   * when it was set. The driver's `DriverConfig.Standing` is the twin, read by the same table.
+   */
+  standing: Record<string, StandingAnswer>;
   rest: Record<string, unknown>;
 }
+
+/** A standing answer (KNOWUSE1b): the person's words, and when they set them, or null where the file does not say. */
+export interface StandingAnswer {
+  says: string;
+  at: Date | null;
+}
+
+/** The most characters a standing answer holds — the driver's `DriverConfig.StandingLimit`, a deliberate copy. */
+export const STANDING_LIMIT = 2_000;
 
 /**
  * One pause of an ask's work or a quest's (PAUSE1a, design §2.5): when the person made it, or null where the file does not
@@ -110,7 +124,7 @@ export const DEFAULT_COOLOFF_MINUTES = 60;
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
-  landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
+  landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, rest: {},
 };
 
 /**
@@ -250,13 +264,13 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   if (parsed === null) {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
-      workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
+      workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, rest: {},
     };
   }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
-    cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, ...rest
+    cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -303,6 +317,8 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     readAcross: flagMap(readAcross),
     workspaceReadAcross: flagMap(workspaceReadAcross),
     writeAcross: targetMap(writeAcross),
+    // The person's words by repository, as the driver reads them (KNOWUSE1b): an answer the driver would not read is not listed.
+    standing: standings(standing),
     rest,
   };
 }
@@ -339,6 +355,15 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: choices.readAcross } : {}),
     ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: choices.workspaceReadAcross } : {}),
     ...(Object.keys(choices.writeAcross).length > 0 ? { writeAcross: choices.writeAcross } : {}),
+    // Written only when set (KNOWUSE1b), each moment in UTC to the second, as the driver writes it: absent is none.
+    ...(Object.keys(choices.standing).length > 0
+      ? {
+          standing: Object.fromEntries(Object.entries(choices.standing).map(([repository, answer]) => [repository, {
+            says: answer.says,
+            ...(answer.at ? { at: answer.at.toISOString().replace(/\.\d{3}Z$/, 'Z') } : {}),
+          }])),
+        }
+      : {}),
   });
 }
 
@@ -786,10 +811,45 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
         + '`daoris driver across plugins write-to engine`.');
     }
 
+    // A standing answer (KNOWUSE1b, D135 §3): what the person says holds for every session in a repository, in their words,
+    // handed to each one beneath its quest. Kept on this machine and never written into the repository (D32); the
+    // repository's page and Ask Daoris's `setting` kind are its other doors (D50).
+    case 'standing': {
+      const clear = argv.includes('--clear');
+      const [, repository, ...words] = operands(argv, new Set());
+      const says = words.join(' ').trim();
+      if (!repository || (!clear && says.length === 0)) {
+        throw new DaorisError(
+          '`driver standing` needs <repository>, then the answer in your words, or --clear — e.g. '
+          + '`daoris driver standing work-app "dev writes allowed; test locally against dev; prod only on a yes"`.');
+      }
+
+      if (!clear && says.length > STANDING_LIMIT) {
+        throw new DaorisError(`a standing answer is your words, at most 2,000 characters — these are ${says.length}.`);
+      }
+
+      // The repository's spelling first written, when it has one in another case: one entry, never two.
+      const key = Object.keys(choices.standing).find((name) => name.toLowerCase() === repository.toLowerCase()) ?? repository;
+      const rest = Object.fromEntries(Object.entries(choices.standing).filter(([name]) => name !== key));
+      writeDriverChoices(path, { ...choices, standing: clear ? rest : { ...rest, [key]: { says, at: new Date() } } });
+
+      if (clear) {
+        write(`daoris: \`${key}\` keeps no standing answer; its sessions are handed none.`);
+      } else {
+        write(`daoris: every session in \`${key}\` is handed your standing answer, beneath its quest:`);
+        write(`  > ${says}`);
+        write('  A quest\'s own words, and yours on its ask, are newer and win where they differ. It is kept on this');
+        write('  machine and never written into the repository.');
+      }
+
+      write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+      return 0;
+    }
+
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, notify, `
-        + 'strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
+        + 'notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -889,6 +949,12 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       write(`  across     ${repository}  writes into ${targets.join(', ')}  (declared by you)`);
     }
 
+    // KNOWUSE1b: each repository's standing answer, in the person's words, handed to every session there.
+    for (const [repository, answer] of Object.entries(choices.standing)) {
+      const when = answer.at === null ? '' : `  (set ${answer.at.toISOString().replace(/\.\d{3}Z$/, 'Z')})`;
+      write(`  standing   ${repository}  "${answer.says}"${when}`);
+    }
+
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
     // and is not. Reported even when NOTHING is drivable — which is exactly the machine where a
     // person is most likely to believe a hold is what is stopping things.
@@ -941,6 +1007,36 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 export function releasedFor(choices: DriverChoices, quest: string): string | null {
   const key = Object.keys(choices.released).find((name) => name.toLowerCase() === quest.toLowerCase());
   return key === undefined ? null : choices.released[key]!;
+}
+
+/**
+ * This repository's standing answer on this machine (KNOWUSE1b), or null: the name matched without case, as the driver's
+ * `DriverConfig.StandingFor` matches it.
+ */
+export function standingFor(choices: DriverChoices, repository: string): StandingAnswer | null {
+  const named = repository.trim().toLowerCase();
+  const key = Object.keys(choices.standing).find((name) => name.toLowerCase() === named);
+  return key === undefined ? null : choices.standing[key]!;
+}
+
+/**
+ * The standing answers, as the driver reads them (KNOWUSE1b): each repository an object whose `says` is text, read without the
+ * spaces around it, and read where first written in any case. Its `at` is read only as ISO 8601 writes a moment, and a time
+ * that does not read leaves the answer standing with its time unknown. Blank words, an entry that is not an object, and a map
+ * that is not one are none.
+ */
+function standings(value: unknown): Record<string, StandingAnswer> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, StandingAnswer> = {};
+  for (const [repository, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry) || repository.trim().length === 0) continue;
+    const { says, at } = entry as Record<string, unknown>;
+    if (typeof says !== 'string' || says.trim().length === 0) continue;
+    if (Object.keys(held).some((name) => name.toLowerCase() === repository.toLowerCase())) continue;
+    held[repository] = { says: says.trim(), at: isoMoment(at) };
+  }
+
+  return held;
 }
 
 /** This ask's pause on this machine (PAUSE1a), or null: the id as a person writes it, matched without case, as the driver's `PausedAsk` matches it. */

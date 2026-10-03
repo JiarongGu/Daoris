@@ -39,7 +39,9 @@ public static class DriverCommand
               a conversation in a repository: stdin is you, stdout the session.
           ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
           ask --publish <id> --to <repo>  ·  ask --close <id> --reason "…"  ·  ask --delete <id>
-              ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake.
+          ask --go-ahead <id> <n> approve|refuse ["…"]
+              ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake; answer a
+              go-ahead a session asked on it, which every session on the ask is handed from then on.
           ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>
               stop what of an ask's work, or a quest's, runs on this machine and start nothing of it until
               you resume it, which carries it on where it stood.

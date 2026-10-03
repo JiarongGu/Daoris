@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AskPage } from './AskPage';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED,
-  UNKNOWN_TIER, UNMATCHED,
+  UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
 // An ask's page (INT4c; FRAME1d, D118 §3d): its record in Quests' main area, where it was a drawer, with *Close ask*
@@ -58,3 +58,10 @@ export const ByIntakeInABrowser: Story = { args: { ask: BY_INTAKE, intake: INTAK
 export const IntakeAsked: Story = { args: { ask: INTAKE_ASKED, intake: INTAKE_PARKED, onAttend: nothing } };
 /** An intake the page has not loaded: named by its id, and no door that would open nothing. */
 export const IntakeUnloaded: Story = { args: { ask: BY_INTAKE, intake: null, onAttend: nothing } };
+/**
+ * Its sessions asked for go-aheads (KNOWUSE1a): one approved with the person's words, one refused, one waiting that two
+ * sessions asked, the second where its words could not be told from the first's, and a kind this page has no word for.
+ */
+export const GoAheads: Story = { args: { ask: WITH_GO_AHEADS, onAnswerGoAhead: nothing } };
+/** The same go-aheads where there is no door to answer them: what became of each, and nothing offered. */
+export const GoAheadsWithNoDoor: Story = { args: { ask: WITH_GO_AHEADS } };

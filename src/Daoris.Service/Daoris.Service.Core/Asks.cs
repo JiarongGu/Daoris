@@ -95,6 +95,13 @@ public sealed record Ask(
     /// running session once its driver reports it (`POST /api/sessions/{id}/added`).
     /// </remarks>
     public DateTimeOffset? WordsKeptFrom { get; init; }
+
+    /// <summary>
+    /// The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), one per act, oldest first, each with every
+    /// session's request for it and the person's answer: kept beside their words, so a later session is handed what was
+    /// approved and refused rather than asking it again.
+    /// </summary>
+    public IReadOnlyList<GoAhead> GoAheads { get; init; } = [];
 }
 
 /// <summary>How the person gave a word on an ask (DRIFT1a, D133 §1).</summary>
@@ -181,6 +188,11 @@ public sealed class AskStore
             mark.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
             await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
+
+        // KNOWUSE1a (D135 §2): the go-aheads its sessions asked for, beside the person's words. A store from before keeps
+        // every ask it had, each holding none: nothing was ever asked on one in a way a later session could be handed.
+        await SchemaColumns.EnsureAsync(connection, "asks", "go_aheads", "go_aheads TEXT NOT NULL DEFAULT '[]'", ct)
+            .ConfigureAwait(false);
 
         return store;
     }
@@ -325,6 +337,56 @@ public sealed class AskStore
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
     }
 
+    /// <summary>
+    /// Read the ask's go-aheads, decide, and write what was decided, as one step across hosts (KNOWUSE1a): two sessions
+    /// asking for one act at once, or a request beside the person's answer, would otherwise each write what they read and
+    /// drop the other's. The column alone is written, for REV3's reason.
+    /// </summary>
+    /// <param name="decide">
+    /// Given every entry as stored, each with what this build reads of it: the entries to write back (an entry it could not
+    /// read kept as it was), or null to write nothing; and what to answer.
+    /// </param>
+    /// <returns>Whether an ask has that id, and what <paramref name="decide"/> answered; nothing is decided for none.</returns>
+    public async Task<(bool Found, T? Result)> DecideGoAheadsAsync<T>(
+        string id,
+        Func<IReadOnlyList<(JsonElement Raw, GoAhead? Read)>, (IReadOnlyList<(JsonElement Raw, GoAhead? Read)>? Next, T Result)> decide,
+        DateTimeOffset now, CancellationToken ct = default)
+    {
+        var gate = ConnectionGate.For(_connection);
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await using var transaction = _connection.BeginTransaction(deferred: false);
+            string? stored;
+            await using (var read = _connection.CreateCommand())
+            {
+                read.CommandText = "SELECT go_aheads FROM asks WHERE id = $id";
+                read.Parameters.AddWithValue("$id", id.TrimStart('#'));
+                stored = await read.ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false) as string;
+            }
+
+            if (stored is null) return (false, default);
+
+            var (next, result) = decide(GoAheads.Entries(stored));
+            if (next is not null)
+            {
+                await using var write = _connection.CreateCommand();
+                write.CommandText = "UPDATE asks SET go_aheads = $goAheads, updated = $updated WHERE id = $id";
+                write.Parameters.AddWithValue("$id", id.TrimStart('#'));
+                write.Parameters.AddWithValue("$goAheads", GoAheads.Written(next));
+                write.Parameters.AddWithValue("$updated", now.ToString("O"));
+                await write.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+            }
+
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+            return (true, result);
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<Ask?> FindAsync(string id, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
@@ -372,6 +434,7 @@ public sealed class AskStore
             Intake = Maybe("intake"),
             Later = LaterWords(Text("words")),
             WordsKeptFrom = Maybe("words_kept_from") is { } from ? DateTimeOffset.Parse(from) : null,
+            GoAheads = GoAheads.Read(Text("go_aheads")),
         };
     }
 
@@ -502,7 +565,7 @@ public sealed record AskOutcome(AskRefusal Refusal, string Message, Ask? Ask, Qu
 /// for a repository, it names the record a reader can follow back to the person's words, and the
 /// exchange places it in the ask's own circle, because an ask has no registry row to say it (D48 §4).
 /// </remarks>
-public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files)
+public sealed partial class AskDesk(KnowledgeService service, AskStore asks, QuestExchange exchange, QuestFiles? files)
 {
     /// <summary>The folder under the home an ask keeps its files in, until it becomes quests.</summary>
     public const string Folder = "asks";

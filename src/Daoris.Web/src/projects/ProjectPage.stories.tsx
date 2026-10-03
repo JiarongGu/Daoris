@@ -46,6 +46,23 @@ export const Driven: Story = { args: { driving: driving({ drivable: true, ownTre
 /** Held by the person: *held* outranks *drives here*, which it suspends; the hold is lifted from the row below. */
 export const Held: Story = { args: { driving: driving({ drivable: true, held: true }) } };
 
+/**
+ * Its standing answer on this machine (KNOWUSE1b): the person's words under the driver's choices, handed to every session
+ * here beneath its quest.
+ */
+export const WithAStandingAnswer: Story = {
+  args: {
+    driving: driving({
+      drivable: true,
+      standing: { says: 'dev writes allowed; test locally against dev; prod only on a yes', at: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+      onStanding: () => {},
+    }),
+  },
+};
+
+/** None kept yet: what one is for, and *Add*. */
+export const WithNoStandingAnswer: Story = { args: { driving: driving({ drivable: true, standing: null, onStanding: () => {} }) } };
+
 /** Its line, as the driver resolves it (WSR2): the branch its work grows from and lands on, and what set it. */
 export const WithALine: Story = { args: { line: LINE } };
 

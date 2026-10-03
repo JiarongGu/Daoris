@@ -206,7 +206,7 @@ public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string M
 /// sessions in one tree collide by construction rather than by string comparison, and what keeps
 /// behaviour identical for every caller that has not learned about trees yet.</para>
 /// </remarks>
-public sealed class SessionLedger(
+public sealed partial class SessionLedger(
     QuestStore quests, SessionStore sessions, KnowledgeService? registry = null, AskStore? asks = null)
 {
     /// <summary>
