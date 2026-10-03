@@ -12,6 +12,7 @@ import {
 import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
+import { COOLING_FILE, coolingWhen, machineZone } from '../src/cooling.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
 import { TAR_END, tarEntry } from './_tar.ts';
@@ -645,6 +646,106 @@ test('list says which version is pinned, and whether it is actually installed', 
   // And say what the driver does about it, which is refuse — never run whatever PATH has (REV3 CLI F13).
   assert.equal(/fall back to PATH/i.test(out), false, out);
   assert.match(out, /refuse/i, out);
+  fx.cleanup();
+});
+
+// ——— `agent list`'s next start (TOOL6f; D130's TOOL6e note, design §16.4): beneath each list, the walk's steps as
+// `profile use` names them, each account of it held now and until when, and where the account it takes is named. This
+// command reads no session record, so it never names that account where a step would choose it (D57, D143). Every agent
+// is pinned to a version nothing installed, so the listing asks no tool anything.
+
+function listedWith(fx: { root: string }, wiring: Record<string, unknown>, held: Record<string, unknown> = {}): string {
+  const nowhere = { 'claude-code': '0.0.0-none', 'claude-code-acp': '0.0.0-none', codex: '0.0.0-none', 'codex-acp': '0.0.0-none', dsh: '0.0.0-none' };
+  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify(held), 'utf8');
+  writeFileSync(at(fx), JSON.stringify({ versions: nowhere, ...wiring }), 'utf8');
+  return run(['list'], at(fx)).out;
+}
+
+function claudeAccounts(fx: { root: string }, ...names: string[]): void {
+  for (const name of names) mkdirSync(profileHome(fx.root, 'claude-code', name), { recursive: true });
+}
+
+/** A moment `hours` from now, as the driver writes `until`, and as `agent list` says it in this machine's zone. */
+function moment(hours: number): { until: string; said: string } {
+  const until = new Date(Math.floor((Date.now() + hours * 3_600_000) / 60_000) * 60_000).toISOString().replace(/\.\d+Z$/, 'Z');
+  return { until, said: coolingWhen(new Date(until), machineZone()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') };
+}
+
+const POINTER = 'Settings → Agents names the account it takes, from the sessions Daoris runs and its last starts, which this '
+  + 'terminal does not read';
+
+test('`agent list` says the next start\'s steps beneath each list, and where the account it takes is named (TOOL6f)', () => {
+  const fx = makeFixture('harness-list-next');
+  claudeAccounts(fx, 'account-1', 'account-2', 'account-3');
+
+  const out = listedWith(fx, {
+    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
+    workspaceRotation: { work: { 'claude-code': ['account-2', 'account-1'] } },
+    workspaceRotationUse: { work: { 'claude-code': { use: 'order' } } },
+  });
+
+  assert.match(out, new RegExp('rotation\\s+account-1, then account-2, then account-3\\n(?:.*\\n)*?'
+    + '\\s+next start: the ready account its agent did not say is near; then the one running the fewest of Daoris\'s sessions; '
+    + 'then one whose week resets within a day; then the one furthest behind its week\'s pace; then the one Daoris started on '
+    + 'least recently; then this list\'s order, from `account-1`\\n'
+    + '\\s+no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns each '
+    + 'account\'s weekly reset from the limits it meets\\n'
+    + `\\s+${POINTER}\\n`));
+  assert.match(out, new RegExp('rotation in work account-2, then account-1\\n(?:.*\\n)*?'
+    + '\\s+next start: the first ready account of this list, from `account-2`; one its agent said is near goes last\\n'
+    + `\\s+${POINTER}\\n`));
+  // Never a guessed account: nothing is held, and no line names the account a step would choose.
+  assert.doesNotMatch(out, /held now|waits until|next start takes|next start runs on/);
+  fx.cleanup();
+});
+
+test('`agent list` names each account of a list held now and until when, and the wait when none is ready (TOOL6f)', () => {
+  const fx = makeFixture('harness-list-held');
+  claudeAccounts(fx, 'account-1', 'account-2');
+  const wiring = { rotation: { 'claude-code': ['account-1', 'account-2'] } };
+  const later = moment(5);
+  const sooner = moment(2);
+
+  const one = listedWith(fx, wiring, { 'claude-code': { 'account-2': { until: later.until, stated: true } } });
+  const both = listedWith(fx, wiring, {
+    'claude-code': { 'account-1': { until: later.until, stated: true }, 'account-2': { until: sooner.until, stated: false } },
+  });
+
+  assert.match(one, new RegExp(`next start: [^\\n]+\\n(?:.*\\n)*?\\s+held now: \`account-2\` is cooling until ${later.said}\\n\\s+${POINTER}\\n`));
+  assert.doesNotMatch(one, /held now: `account-1`|waits until/);
+  assert.match(both, new RegExp(`held now: \`account-1\` is cooling until ${later.said}; \`account-2\` is cooling until ${sooner.said}\\n`
+    + `\\s+every account of this list is cooling, so the next start waits until ${sooner.said}\\n`));
+
+  // A kept account ready while every other cools: driven work waits, and a conversation is not said to.
+  claudeAccounts(fx, 'account-3');
+  const kept = listedWith(fx, {
+    rotation: { 'claude-code': ['account-1', 'account-2', 'account-3'] },
+    rotationUse: { 'claude-code': { keep: 'account-3' } },
+  }, { 'claude-code': { 'account-1': { until: later.until, stated: true }, 'account-2': { until: sooner.until, stated: true } } });
+  assert.match(kept, new RegExp(`held now: \`account-1\` is cooling until ${later.said}; \`account-2\` is cooling until ${sooner.said}\\n`
+    + `\\s+every account but \`account-3\`, kept for conversations, is cooling, so driven work waits until ${sooner.said}\\n`));
+  assert.doesNotMatch(kept, /every account of this list is cooling/);
+  fx.cleanup();
+});
+
+test('`agent list` says the machine\'s next start where it has no list: its default alone, or nothing more (TOOL6f)', () => {
+  const fx = makeFixture('harness-list-nolist');
+  claudeAccounts(fx, 'account-1', 'account-2');
+  const held = moment(3);
+
+  const named = listedWith(fx, { defaults: { 'claude-code': 'account-1' } });
+  const cooling = listedWith(fx, { defaults: { 'claude-code': 'account-1' } }, {
+    'claude-code': { 'account-1': { until: held.until, stated: true } },
+  });
+  const none = listedWith(fx, {});
+
+  // Its one account is the settings', not a step's choice, so it is named; no walk, so no pointer.
+  assert.match(named, /\n\s+next start\s+`account-1`, this machine's default — with no list, the one account its starts run on\n/);
+  assert.doesNotMatch(named, /Settings → Agents|held now|waits until/);
+  assert.match(cooling, new RegExp(`next start\\s+\`account-1\`[^\\n]+\\n\\s+held now: \`account-1\` is cooling until ${held.said}, `
+    + 'so the next start waits until then\\n'));
+  // No default and no list: the tool's own sign-in, which its own lines say; nothing is guessed here.
+  assert.doesNotMatch(none, /next start/);
   fx.cleanup();
 });
 

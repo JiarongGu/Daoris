@@ -3,23 +3,24 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
-import { UpdateSection, type UpdateStanding } from './Update';
+import type { UpdateState } from '../update/UpdateBanner';
+import { UpdateSection } from './Update';
 
 // UPDATE1b (D139 §3, §6): the install's update as Settings' row draws it, from props alone. The Driver domain's suite
 // holds it over the mocked bridge; this holds the words a state carries and the states the bridge rarely shows.
 
 const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
 
-const standing = (extra: Partial<UpdateStanding>): UpdateStanding => ({
-  state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, ...extra,
+const standing = (extra: Partial<UpdateState>): UpdateState => ({
+  state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null, ...extra,
 });
 
-const draw = (update: UpdateStanding | undefined, busy = false) => {
+const draw = (update: UpdateState | undefined, busy = false) => {
   const onSay = vi.fn();
-  const { container } = render(
+  const { container, unmount } = render(
     <Tooltip.Provider><UpdateSection update={update} busy={busy} onSay={onSay} /></Tooltip.Provider>,
   );
-  return { onSay, container };
+  return { onSay, container, unmount };
 };
 
 describe("Settings' update row", () => {
@@ -62,7 +63,9 @@ describe("Settings' update row", () => {
     expect(onSay).not.toHaveBeenCalled();
   });
 
-  it('prefers the swap `last` keeps to the outcome the banner still shows', () => {
+  // UPDATE1d: the row tells the swap `last` carries, the journal's record told or not, and never the banner's once-said
+  // `outcome`, which a dismissal puts away while the terminal still says the swap (D50).
+  it('says the last swap from `last`, never from the outcome the banner says once', () => {
     draw(standing({
       outcome: { phase: 'installed', build: 'old', version: '0.0.1', commit: 'aaa1111' },
       last: { phase: 'rolled-back', build: 'new', version: '0.0.2', commit: 'bbb2222', reason: 'start' },
@@ -72,11 +75,22 @@ describe("Settings' update row", () => {
     expect(screen.queryByText(/updated to 0\.0\.1/)).toBeNull();
   });
 
+  it('after a dismissal, still says the last swap; with no journal, has no row for one', () => {
+    const { unmount } = draw(standing({ last: { phase: 'installed', build: 'b1', version: '0.0.1', commit: 'abc1234' } }));
+
+    expect(screen.getByText('Last update')).toBeTruthy();
+    expect(screen.getByText('Daoris was updated to 0.0.1 (abc1234).')).toBeTruthy();
+    unmount();
+
+    draw(standing({ outcome: { phase: 'installed', build: 'b1', version: '0.0.1', commit: 'abc1234' } }));
+    expect(screen.queryByText('Last update')).toBeNull();
+  });
+
   it('speaks 中文: waiting after Not now, and a swap refused', async () => {
     await i18n.changeLanguage('zh');
     draw(standing({
       state: 'waiting', staged: STAGED, mode: 'not-now',
-      outcome: { phase: 'refused', build: 'x', version: '0.0.1', commit: 'abc1234', reason: 'size' },
+      last: { phase: 'refused', build: 'x', version: '0.0.1', commit: 'abc1234', reason: 'size' },
     }));
 
     expect(screen.getByText('暂不')).toBeTruthy();

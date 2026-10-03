@@ -12,14 +12,20 @@ public sealed record UpdateBuild(string Id, string Version, string? Commit, Date
 /// <summary>Why the staged build is not being installed: the check's code, which the page words, and the driver's sentence.</summary>
 public sealed record UpdateProblem(string Code, string Message);
 
-/// <summary>How the last swap ended, said once at the start after it (D139 §6) and kept until dismissed.</summary>
+/// <summary>How a swap ended (D139 §6): its phase — installed, rolled back or refused — the build, and the reason.</summary>
 public sealed record UpdateOutcome(string Phase, string? Build, string? Version, string? Commit, string? Reason, string? Detail);
 
 /// <summary>Where an install's update stands, whole — what the banner renders and <c>UPDATE_STATE</c> carries.</summary>
 /// <param name="State"><see cref="UpdateStates"/>'s words.</param>
 /// <param name="Mode">The mode that holds for the staged build (<see cref="UpdateMode"/>), or null when none is staged.</param>
+/// <param name="Outcome">The last swap, said once at the start after it and kept until the banner's *Dismiss*.</param>
+/// <param name="Last">
+/// The last swap as the journal records it, told or not, on every state (UPDATE1d): what Settings → Driver's row says
+/// and the terminal's plain <c>daoris-driver update</c> says (D50). Null with no journal, and while a swap is under way.
+/// </param>
 public sealed record UpdateState(
-    string State, UpdateBuild? Staged, string? Mode, int Driven, int Turns, UpdateProblem? Problem, UpdateOutcome? Outcome);
+    string State, UpdateBuild? Staged, string? Mode, int Driven, int Turns, UpdateProblem? Problem, UpdateOutcome? Outcome,
+    UpdateOutcome? Last);
 
 /// <summary>The states an update is in, as the page reads them.</summary>
 public static class UpdateStates
@@ -76,8 +82,9 @@ public sealed class InstallUpdater(
     private readonly CancellationTokenSource _stopping = new();
     private readonly SemaphoreSlim _poke = new(0);
 
-    private UpdateState _state = new(UpdateStates.None, null, null, 0, 0, null, null);
+    private UpdateState _state = new(UpdateStates.None, null, null, 0, 0, null, null, null);
     private UpdateOutcome? _outcome;
+    private UpdateOutcome? _last;
     private readonly Dictionary<string, UpdateProblem> _refused = new(StringComparer.Ordinal);
     private string? _seen;
     private string? _drainedFor;
@@ -152,7 +159,7 @@ public sealed class InstallUpdater(
     /// <summary>One look: what is staged, what holds for it, what runs — and the update applied when its moment has come.</summary>
     public UpdateState Look()
     {
-        if (install is null) return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome()));
+        if (install is null) return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome(), Last()));
 
         lock (_gate)
         {
@@ -165,6 +172,10 @@ public sealed class InstallUpdater(
         // The build a finished swap left behind (UPDATE1): the launcher cannot delete its own running launcher inside it.
         StagedBuild.ClearPrevious(install);
 
+        // Read at every look, as the terminal reads it at every `update` (UPDATE1d): a dismissal puts away the outcome only.
+        var last = Ended(StagedBuild.ReadJournal(install));
+        lock (_gate) _last = last;
+
         var manifest = StagedBuild.Read(install, out var unread);
         if (manifest is null && unread is null)
         {
@@ -174,14 +185,14 @@ public sealed class InstallUpdater(
                 _drainSince = null;
             }
 
-            return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome()));
+            return Publish(new UpdateState(UpdateStates.None, null, null, 0, 0, null, Outcome(), Last()));
         }
 
         var id = manifest?.Id ?? $"unread:{unread!.Code}";
         var staged = manifest is null ? null : new UpdateBuild(manifest.Id, manifest.Version, manifest.Commit, manifest.At);
         UpdateProblem? known;
         lock (_gate) known = _refused.GetValueOrDefault(id);
-        if (known is not null) return Publish(new UpdateState(UpdateStates.Refused, staged, null, 0, 0, known, Outcome()));
+        if (known is not null) return Publish(new UpdateState(UpdateStates.Refused, staged, null, 0, 0, known, Outcome(), Last()));
 
         if (unread is not null) return Refuse(id, staged, null, new UpdateProblem(unread.Code, unread.Sentence));
 
@@ -200,7 +211,7 @@ public sealed class InstallUpdater(
                 _drainSince = null;
             }
 
-            return Publish(new UpdateState(UpdateStates.Waiting, staged, mode, 0, 0, null, Outcome()));
+            return Publish(new UpdateState(UpdateStates.Waiting, staged, mode, 0, 0, null, Outcome(), Last()));
         }
 
         var now = work();
@@ -218,7 +229,7 @@ public sealed class InstallUpdater(
 
         return InstallUpdate.Idle(now.Driven, now.Turns)
             ? Apply(id, staged, mode, now, "idle")
-            : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome()));
+            : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last()));
     }
 
     /// <summary>
@@ -249,7 +260,7 @@ public sealed class InstallUpdater(
         return Look();
     }
 
-    /// <summary>The outcome the banner shows, said and put away.</summary>
+    /// <summary>The outcome the banner shows, said and put away; the last swap stays, as the journal keeps it (UPDATE1d).</summary>
     public UpdateState Dismiss()
     {
         lock (_gate) _outcome = null;
@@ -319,7 +330,7 @@ public sealed class InstallUpdater(
             waited = _drainSince is { } since ? Math.Max(0, (Now - since).TotalSeconds) : 0;
         }
 
-        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome()));
+        var applying = Publish(new UpdateState(UpdateStates.Applying, staged, mode, now.Driven, now.Turns, null, Outcome(), Last()));
         if (!relaunch())
         {
             lock (_gate) _applying = false;
@@ -344,7 +355,7 @@ public sealed class InstallUpdater(
         }
 
         log.Warn("update.refused", ("build", staged?.Id), ("reason", problem.Code));
-        return Publish(new UpdateState(UpdateStates.Refused, staged, mode, 0, 0, problem, Outcome()));
+        return Publish(new UpdateState(UpdateStates.Refused, staged, mode, 0, 0, problem, Outcome(), Last()));
     }
 
     private UpdateOutcome? Outcome()
@@ -352,8 +363,25 @@ public sealed class InstallUpdater(
         lock (_gate) return _outcome;
     }
 
+    private UpdateOutcome? Last()
+    {
+        lock (_gate) return _last;
+    }
+
     private static UpdateOutcome Outcome(SwapRecord record) =>
         new(record.Phase, record.Id, record.Version, record.Commit, record.Reason, record.Detail);
+
+    /// <summary>
+    /// How the journal's swap ended, told or not (UPDATE1d): installed, rolled back or refused as written; confirmed by this
+    /// start, installed, as <see cref="Started"/> says it before the launcher finishes; and none while one is under way or
+    /// there is no journal, since the page words only an ending.
+    /// </summary>
+    private static UpdateOutcome? Ended(SwapRecord? record) => record?.Phase switch
+    {
+        SwapPhase.Installed or SwapPhase.RolledBack or SwapPhase.Refused => Outcome(record),
+        SwapPhase.Confirmed => Outcome(record with { Phase = SwapPhase.Installed }),
+        _ => null,
+    };
 
     /// <summary>The state, kept, and told to the page when it changed.</summary>
     private UpdateState Publish(UpdateState state)
