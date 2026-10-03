@@ -1,6 +1,8 @@
 import { createRef } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { cappedBlocks } from '../test/measure';
+import { Prose } from '../ui';
 import { PageHead, ViewMain } from './ViewMain';
 
 // The main area (D118 §3b): props only, since a molecule imports no hook. jsdom lays nothing out, so what
@@ -64,20 +66,47 @@ describe('the main area', () => {
     render(<ViewMain header={<h1>Overview</h1>}><p>the page</p></ViewMain>);
     expect(screen.getByRole('main').className).not.toMatch(/\bmax-w-/);
   });
+
+  /**
+   * D141 (LAYOUT11): the main area is the page's one column and the one place a line's length could be set, and it
+   * sets none. On the install a quest's title ran the pane while its body stopped at 65ch, with 750 px empty beside it,
+   * and a plugin's detail wrapped at two edges: so neither the column nor a block it holds keeps a measure, the header's
+   * line and the console's own explanation (`Prose`) included.
+   */
+  it('is the page\'s one column, and neither it nor a block it holds keeps a measure', () => {
+    render(
+      <ViewMain
+        header={<PageHead title="Expose a streaming budget" id="#19c0de" line="Taken: its receiver is working on it." />}
+        gone={GONE}
+      >
+        <Prose>Nothing on this machine can carry it out yet; the terminal can.</Prose>
+        <p className="m-0 whitespace-pre-wrap text-body">The ask itself, as the asker wrote it.</p>
+      </ViewMain>,
+    );
+    const main = screen.getByRole('main');
+    expect(cappedBlocks(main)).toEqual([]);
+    expect(main.className).not.toMatch(/\bmax-w-/);
+  });
+
+  it('caps no block in Sessions\' column either', () => {
+    render(<ViewMain gutters="session"><Prose>From before conversations were kept.</Prose></ViewMain>);
+    expect(cappedBlocks(screen.getByRole('main'))).toEqual([]);
+  });
 });
 
 describe("a page's header", () => {
   /**
    * NAME2: a plugin's description, a repository's summary and a quest's state line are content, shown as they
    * are (platform language §4). Cut to one line, the install showed a plugin's description ending in an
-   * ellipsis; it wraps at the reading measure instead, whole.
+   * ellipsis; it wraps whole instead, and at the column's edge as every block of the page does (D141).
    */
-  it('shows its line whole, wrapping at the reading measure', () => {
+  it('shows its line whole, wrapping at the column\'s edge', () => {
     const description = 'Holds every quest that arrives after hours until the morning, then lets the driver start them in the order they came.';
     render(<PageHead title="Acme gate" id="acme.gate" line={description} />);
     const line = screen.getByText(description);
     expect(line).not.toHaveClass('truncate');
-    expect(line).toHaveClass('max-w-prose', 'wrap-anywhere');
+    expect(line).toHaveClass('wrap-anywhere');
+    expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
   });
 });

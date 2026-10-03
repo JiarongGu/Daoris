@@ -125,7 +125,7 @@ export function ProjectPage({
       {adopted && !summary && (
         /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but an asker deserves to
            know they would be guessing. */
-        <p className="m-0 mb-4 max-w-prose border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+        <p className="m-0 mb-4 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
           <Inline text={t('projects.undeclared')} />
         </p>
       )}
@@ -220,7 +220,7 @@ export function ProjectPage({
             <span className="mt-0.5 shrink-0"><WhyGlyph why={t('projects.outside.body')} /></span>
           </div>
           {/* A sentence with its commands as code — it was all monospace, prose included (POLISH4). */}
-          <p className="mt-3 mb-0 max-w-prose rounded-control bg-accent-soft px-3 py-2.5 text-small">
+          <p className="mt-3 mb-0 rounded-control bg-accent-soft px-3 py-2.5 text-small">
             <Inline text={t('projects.outside.join')} />
           </p>
         </PageSection>

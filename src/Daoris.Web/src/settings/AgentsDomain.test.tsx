@@ -817,8 +817,8 @@ describe('the harness roster', () => {
     const usage = screen.getByText('Usage').parentElement!;
     expect(within(usage).getByText("this machine's own")).toBeTruthy();
     expect(within(usage).getByText('work').getAttribute('class')).not.toContain('accent');
-    // Its note keeps a reading measure once the column follows the window (UX5 U59: 142 a line).
-    expect(within(usage).getByText(/Measured, not billed/)).toHaveClass('max-w-prose');
+    // Its note wraps at the card's edge with every block of the domain (D141), where it kept 65ch.
+    expect(within(usage).getByText(/Measured, not billed/).className).not.toMatch(/\bmax-w-/);
     // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
     expect(screen.queryByText(/[$£€]/)).toBeNull();
   });

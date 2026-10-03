@@ -437,6 +437,69 @@ describe('dates and counts', () => {
   });
 });
 
+/**
+ * 🔴 **A page is one column, and the column is its pane** (D141, LAYOUT11). A quest's body wore `max-w-prose`, 65ch:
+ * on the install at 1600 px its title ran the pane while its body stopped at 456 px, a plugin's detail wrapped at two
+ * edges, and in 中文 the 65 Latin digits held about 32 glyphs. Every block of a page now takes the column's width, and
+ * the column (`ViewMain`) is the one place a line's length could be set; it sets none.
+ *
+ * So no source names a line's measure: Tailwind's `max-w-prose`, or a width counted in `ch` or `em`. A cap, if one is
+ * ever set, goes on the column once, in `em` (D141 §3), and `work/ViewMain.tsx` is then the one file this check lets
+ * name it. A named width (`max-w-3xl`, 48rem) capped five blocks of a quest's and an ask's pages beside blocks that ran
+ * the pane, so no product source names one either; a story's frame stands in for the column a part is drawn in, and
+ * is not read. That the column itself sets none is `ViewMain.test.tsx`'s to hold, on what it renders.
+ */
+const LINE_MEASURE = /(?<![\w-])max-w-(?:prose|\[[\d.]+(?:ch|em)\])(?![\w-])/g;
+const NAMED_WIDTH = /(?<![\w-])max-w-(?:xs|sm|md|lg|xl|[2-7]xl)(?![\w-])/g;
+
+/** A named width that is no page's block, each with its reason. */
+const NAMED_WIDTH_HOMES: Record<string, string> = {
+  './work/CommandCenter.tsx': "the strip's command center, a control in the title bar, never a page's block",
+};
+
+export function lineMeasures(files: [path: string, source: string][]): string[] {
+  return files.flatMap(([path, source]) =>
+    (source.match(LINE_MEASURE) ?? []).map((hit) => `${path} sets a line's measure: ${hit}`));
+}
+
+export function namedWidths(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => !/\.stories\.tsx$/.test(path) && !(path in NAMED_WIDTH_HOMES))
+    .flatMap(([path, source]) =>
+      (source.match(NAMED_WIDTH) ?? []).map((hit) => `${path} caps a block at a named width: ${hit}`));
+}
+
+describe("the page's measure", () => {
+  it("catches a line's measure — the check itself, in the shapes the quest's body and the setup card's note took", () => {
+    expect(lineMeasures([['./quests/QuestPage.tsx', '<p className="m-0 max-w-prose whitespace-pre-wrap">']]))
+      .toEqual(["./quests/QuestPage.tsx sets a line's measure: max-w-prose"]);
+    expect(lineMeasures([['./settings/GetStarted.tsx', '<Prose className="max-w-[28ch] text-small">']])).toHaveLength(1);
+    // Behind a variant, and in the unit a future cap would take, which belongs on the column alone.
+    expect(lineMeasures([['./x.tsx', 'className="md:max-w-prose"']])).toHaveLength(1);
+    expect(lineMeasures([['./x.tsx', "cn('max-w-[72em]')"]])).toHaveLength(1);
+    // And what must keep passing: a form's own size in rem, a width relative to the column, a word holding the prefix.
+    expect(lineMeasures([['./x.tsx', 'className="max-w-[48rem] max-w-full max-w-none max-w-[min(36rem,100%)] data-max-w-prose"']]))
+      .toEqual([]);
+  });
+
+  it('catches a block capped at a named width, and leaves a story its frame', () => {
+    expect(namedWidths([['./quests/QuestPage.tsx', '<div className="mt-4 max-w-3xl">']]))
+      .toEqual(['./quests/QuestPage.tsx caps a block at a named width: max-w-3xl']);
+    expect(namedWidths([['./asks/GoAheadList.tsx', 'className="m-0 grid max-w-xl list-none"']])).toHaveLength(1);
+    expect(namedWidths([['./work/SessionHead.stories.tsx', '<div className="max-w-3xl"><Story /></div>']])).toEqual([]);
+    expect(namedWidths([['./work/CommandCenter.tsx', "'flex w-full min-w-0 max-w-md'"]])).toEqual([]);
+    expect(namedWidths([['./x.tsx', 'className="max-w-[48rem] text-xl"']])).toEqual([]);
+  });
+
+  it("holds: no source names a line's measure, so every block of a page wraps at the column's edge", () => {
+    expect(lineMeasures([...components, ...modules])).toEqual([]);
+  });
+
+  it('holds: no product source caps a block at a named width', () => {
+    expect(namedWidths([...components, ...modules])).toEqual([]);
+  });
+});
+
 describe('the form controls', () => {
   it('catches a native select, checkbox or radio, and leaves ui.tsx its own', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);

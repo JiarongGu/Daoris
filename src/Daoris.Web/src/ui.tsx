@@ -628,23 +628,21 @@ export function PageHeader({ title, description, action }: {
 }
 
 /**
- * Explanatory text, at a measure a person can actually read.
+ * Explanatory text: the console explaining itself, in the secondary ink.
  *
  * @remarks
- * **The column follows the window and prose does not.** Cards, tiles and tables take the column's
- * whole width (UX5 U59: it was capped at 72rem, and a maximized window left every view a third
- * empty) — but a paragraph inheriting it ran to about **190 characters a line** even under
- * the old cap, roughly triple the 45–75 the eye tracks without losing its place. Measured in the
- * real window before this existed: every sentence on the Machine view was one of those lines.
+ * **It wraps at the column's edge, as every block of a page does** (D141, LAYOUT11). It carried
+ * Tailwind's prose width, 65ch, from UX5's first pass, when a paragraph in a column nothing stood
+ * beside ran to about 190 characters a line. A measure per paragraph gave every page two edges: on
+ * the install a quest's title ran the pane while its body stopped at 456 px, and in 中文 the 65
+ * Latin digits held about 32 glyphs. The page's column (`ViewMain`) is the one place a line's length
+ * is set, and it sets none; the person sizes the pane with the list's edge and the side bar.
  *
- * `max-w-prose` is 65ch and font-relative, so it stays right if the scale moves again — which is
- * exactly the property the hardcoded type sizes did not have (D56).
- *
- * This is for the console EXPLAINING itself. It is not for data: a quest's body, a knowledge entry
- * and a session's note are content, and content is shown as it is.
+ * A quest's body, a knowledge entry and a session's note are content, shown as they are, and they
+ * wrap at the same edge.
  */
 export function Prose({ className, children }: { className?: string; children: ReactNode }) {
-  return <p className={cn('m-0 max-w-prose text-body text-ink-soft', className)}>{children}</p>;
+  return <p className={cn('m-0 text-body text-ink-soft', className)}>{children}</p>;
 }
 
 /**
@@ -1228,7 +1226,7 @@ export function CountBadge({ count, tone = 'accent' }: {
  * 🔴 The machine's settings were a long list, and the screenshot said what "long" meant: five
  * cards, each opening with a four-line paragraph, the first control 580px below the title at the
  * D56 scale and the second a full screen down — a settings page laid out as an essay, with the
- * right 60% of every card empty because the prose measure is 65ch and the column was 72rem. A setting
+ * right 60% of every card empty because the prose measure was 65ch and the column was 72rem. A setting
  * is a row, the way every settings surface a person already knows lays one out: the label leads, the
  * hint is one line, the control sits where the eye expects it. The paragraph that motivated the
  * setting is still there, on the info glyph, for the person who asks why.
@@ -1274,7 +1272,7 @@ export function SettingRow({ label, hint, why, control, children }: {
             {why && <WhyGlyph why={why} />}
           </div>
           {hint && (
-            <div className="mt-0.5 max-w-prose text-small text-ink-faint">
+            <div className="mt-0.5 text-small text-ink-faint">
               {typeof hint === 'string' ? <Inline text={hint} /> : hint}
             </div>
           )}

@@ -14,7 +14,7 @@ export { PageHead, PageSection };
 
 /**
  * A warn-railed sentence a plugin's page leads with: the driver's own, verbatim, since it is content (D119 §3.2). Like
- * every block of the detail it takes the pane's width (D140 §2; LAYOUT11 sets the rule).
+ * every block of a page it takes the column's width (D140 §2, D141).
  */
 export function Lead({ text }: { text: string }) {
   return (
@@ -25,8 +25,8 @@ export function Lead({ text }: { text: string }) {
 }
 
 /**
- * A paragraph of the detail, at the pane's width: a plugin's detail keeps no measure per paragraph (D140 §2, from the
- * install: a 65ch paragraph beside a full-width line wrapped one page at two edges). LAYOUT11 sets the one rule.
+ * A paragraph of the detail, in the small face, at the column's width: no paragraph keeps a measure of its own (D140 §2,
+ * from the install: a 65ch paragraph beside a full-width line wrapped one page at two edges; D141 for every page).
  */
 export function Body({ className, children }: { className?: string; children: ReactNode }) {
   return <p className={cn('m-0 text-small text-ink-soft', className)}>{children}</p>;
@@ -159,7 +159,6 @@ export function PluginPage({
       )}
       id={plugin.id}
       line={plugin.description}
-      measure={false}
       acts={acts}
     />
   );

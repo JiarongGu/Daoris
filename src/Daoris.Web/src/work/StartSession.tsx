@@ -111,7 +111,7 @@ export function StartSession({
         />
       </label>
       {/* What lets a busy one start after all, said where it is chosen (UX5 U68). */}
-      {held && <p className="m-0 max-w-prose text-small text-ink-soft">{t('work.start.busy', { repository: chosen })}</p>}
+      {held && <p className="m-0 text-small text-ink-soft">{t('work.start.busy', { repository: chosen })}</p>}
 
       {harnesses.length > 1 && (
         <label className="grid gap-1 text-meta text-ink-faint">
@@ -175,7 +175,7 @@ export function StartSession({
       {/* The driver's own sentence, whole, where the start was pressed (UX5 U68): it names what to do,
           and a paraphrase of an instruction is a different instruction (D46 §3). */}
       {refusal && (
-        <p role="alert" className="m-0 max-w-prose whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+        <p role="alert" className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
           {/* Its code marks as code, as the toast drew them: `engine` is a name, not punctuation. */}
           <Inline text={refusal} />
         </p>

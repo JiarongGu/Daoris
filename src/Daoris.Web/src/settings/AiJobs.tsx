@@ -70,7 +70,7 @@ export function AiJobs({ search, intake, helper }: { search?: SearchTier; intake
           ? <Pill>{search.tier}</Pill>
           : <span className="text-small text-ink-faint">{t('settings.ai.unknown')}</span>}
       >
-        {search?.note && <p className="m-0 max-w-prose text-small text-ink-soft">{search.note}</p>}
+        {search?.note && <p className="m-0 text-small text-ink-soft">{search.note}</p>}
       </SettingRow>
 
       {intake && <Intake intake={intake} />}
@@ -105,7 +105,7 @@ function Intake({ intake }: { intake: IntakeJob }) {
         />
       )}
     >
-      <p className="m-0 max-w-prose text-small text-ink-soft">
+      <p className="m-0 text-small text-ink-soft">
         {intake.adapter
           ? t('settings.ai.intake.tierOn', { agent: intake.adapter })
           : t('settings.ai.intake.tierOff')}
@@ -137,7 +137,7 @@ function Intake({ intake }: { intake: IntakeJob }) {
               </span>
               {/* The driver's sentence, verbatim (D46 §3): it names what to run. */}
               {start.refusal && (
-                <p className="m-0 max-w-prose whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-ink-soft">
+                <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-ink-soft">
                   {start.refusal}
                 </p>
               )}
@@ -177,7 +177,7 @@ function Helper({ helper }: { helper: HelperJob }) {
         />
       )}
     >
-      <p className="m-0 max-w-prose text-small text-ink-soft">
+      <p className="m-0 text-small text-ink-soft">
         {helper.adapter ? t('settings.ai.helper.tierOn', { agent: helper.adapter }) : t('settings.ai.helper.tierOff')}
       </p>
     </SettingRow>

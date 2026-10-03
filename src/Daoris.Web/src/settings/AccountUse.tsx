@@ -99,7 +99,7 @@ export function OwnSignInLine({ who, cooling, signsIn, busy, onSignIn }: {
 /** Each account's own plan and terms apply (D130 point 12): said once, under the agent's accounts. */
 export function TermsLine() {
   const { t } = useTranslation();
-  return <p className="m-0 mt-2 max-w-prose text-meta text-ink-faint">{t('harness.terms')}</p>;
+  return <p className="m-0 mt-2 text-meta text-ink-faint">{t('harness.terms')}</p>;
 }
 
 /** What a scope's editor is handed to change it: each press is the terminal's door's twin (D50). */
@@ -213,17 +213,17 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
           })}
         </ol>
         {!listed && (
-          <p className="m-0 mt-1 max-w-prose text-small text-ink-faint">
+          <p className="m-0 mt-1 text-small text-ink-faint">
             {t('harness.use.empty', { fallback: scope.default ? labelOf(scope.default) : t('harness.use.emptyOwn') })}
           </p>
         )}
         {scope.problem && (
-          <p className="m-0 mt-1.5 max-w-prose border-l-[3px] border-warn bg-page/60 px-3 py-1.5 text-small text-ink-soft">
+          <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-1.5 text-small text-ink-soft">
             {t(`harness.use.problem.${scope.problem.kind}`, { account: labelOf(scope.problem.account) })}
           </p>
         )}
         {scope.unknown.length > 0 && (
-          <p className="m-0 mt-1 max-w-prose text-meta text-ink-faint">{t('harness.use.unknown', { settings: scope.unknown.join(', ') })}</p>
+          <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.use.unknown', { settings: scope.unknown.join(', ') })}</p>
         )}
       </SettingRow>
 
@@ -245,10 +245,10 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
               />
             )}
           >
-            <p className="m-0 max-w-prose text-small text-ink-soft">
+            <p className="m-0 text-small text-ink-soft">
               {t(scope.use.use === 'order' ? 'harness.use.mode.orderSays' : 'harness.use.mode.goalSays')}
             </p>
-            {nothingSaid(agent, scope) && <p className="m-0 mt-1 max-w-prose text-small text-ink-faint">{t('harness.use.unsaid')}</p>}
+            {nothingSaid(agent, scope) && <p className="m-0 mt-1 text-small text-ink-faint">{t('harness.use.unsaid')}</p>}
           </SettingRow>
 
           <SettingRow
@@ -269,7 +269,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
               />
             ) : undefined}
           >
-            {scope.list.length < 2 && <p className="m-0 max-w-prose text-small text-ink-faint">{t('harness.use.keep.needsTwo')}</p>}
+            {scope.list.length < 2 && <p className="m-0 text-small text-ink-faint">{t('harness.use.keep.needsTwo')}</p>}
           </SettingRow>
 
           <SettingRow
@@ -287,7 +287,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
             )}
           >
             {!agent.speaks && (
-              <p className="m-0 max-w-prose text-small text-ink-faint">{t('harness.use.early.silent', { product })}</p>
+              <p className="m-0 text-small text-ink-faint">{t('harness.use.early.silent', { product })}</p>
             )}
           </SettingRow>
 
@@ -389,7 +389,7 @@ export function WorkspaceScope({ agent, product, workspace, scope, machine, acco
           />
         )}
       >
-        {!own && <p className="m-0 max-w-prose text-small text-ink-soft">{inherits}</p>}
+        {!own && <p className="m-0 text-small text-ink-soft">{inherits}</p>}
         {confirming && scope !== null && (
           <div
             role="group"

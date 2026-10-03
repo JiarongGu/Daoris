@@ -71,7 +71,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
             control={<PathText path={driver.data.home} className="text-small text-ink-soft" />}
           >
             {driver.data.homeNotice && (
-              <p className="max-w-prose border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              <p className="border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
                 {driver.data.homeNotice}
               </p>
             )}
@@ -80,7 +80,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
                 existed to hear it, which is how the second deployment showed a new window, an old
                 page, and no surface saying so. */}
             {driver.data.hostNotice && (
-              <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
                 {driver.data.hostNotice}
               </p>
             )}
@@ -139,7 +139,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
         >
           {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
           {Number(strikes ?? driver.data?.strikes ?? 3) === 0 && (
-            <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+            <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
               {t('settings.strikes.zero')}
             </p>
           )}
