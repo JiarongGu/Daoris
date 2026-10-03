@@ -88,6 +88,12 @@ export const keys = {
    * files. Under the sessions' key, so whatever asks the listing again (a landing, a clean-up, a tick) asks this too.
    */
   sessionsWhere: (ids: string[]) => ['sessions', 'where', ...ids] as const,
+  /**
+   * What a word said now to one session would do (MSG1d, D137 §5.3) — shell-only, the driver's answer. By its state and
+   * whether its inbox listens, so it is asked again as the session moves; under the sessions' key, so a word kept or a
+   * tick asks it again too.
+   */
+  sessionReach: (id: string, state: string, listening: boolean) => ['sessions', 'reach', id, state, listening] as const,
   allAsks: ['asks'] as const,
   asks: (includeClosed: boolean, workspace: string | null) => ['asks', includeClosed, workspace ?? '*'] as const,
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null) =>

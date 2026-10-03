@@ -226,7 +226,7 @@
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
-        "work.review.sendBack", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
+        "work.review.sendBack", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open"
       ]
     },
@@ -326,7 +326,7 @@
         "settings.across.addWritePlaceholder", "settings.browser.favorites.titlePlaceholder",
         "settings.lines.eachCheckout", "settings.lines.unnamed", "settings.tools.filePlaceholder",
         "settings.tools.locations.placeholder", "settings.wiring.workspacePlaceholder",
-        "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder"
+        "signin.codePlaceholder", "work.find.placeholder", "work.rail.search.placeholder", "work.say.placeholder"
       ]
     },
     "toast": {
@@ -535,6 +535,7 @@
     { "term": "favorite", "en": "favorite", "zh": "收藏", "means": "A page Daoris keeps for you, in a folder on its browser's bookmarks bar.", "match": "\\bfavorites?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "attend", "en": "attending", "zh": "当前", "zhForms": ["选中"], "means": "The session shown in Sessions' centre.", "match": "\\battend(s|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "stand down", "en": "stand down", "zh": "让位", "means": "A session gives its quest back, since another holds its repository.", "match": "\\bst(and|ood)[ -]downs?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "go on", "en": "go on", "zh": "继续", "zhForms": ["接续"], "means": "What a session does with the person's words after its turn, its park or its end: the same session goes on in its own conversation (MSG1, D137).", "why": "Resume stays the code's word and the press that undoes a pause or a hold (恢复, D132); on the window a conversation goes on (继续) or is continued (接续), never resumed (D137 §5.1).", "match": "\\bgo(es)? on\\b|\\bgoing on\\b|\\bwent on\\b", "avoid": { "en": [], "zh": ["恢复"] } },
     { "term": "settings", "en": "settings", "zh": "设置", "means": "The application's own page of domains, and what is true about this machine.", "match": "\\bsettings\\b", "avoid": { "en": [], "zh": [] } }
   ],
 
@@ -583,6 +584,8 @@
       { "key": "settings.sync.apply", "en": "Bring up to date ({{count}})", "why": "The term's own name and its count, the second press under Updates (NAME1b); with a count of one digit it is 20 characters." },
       { "key": "setup.ask.button", "en": "Set up with Ask Daoris", "why": "The one primary control in Setup's head, not the side bar (NAME1a's audit kept it)." },
       { "key": "work.awaiting.answerConfirm", "en": "Carry on with this answer", "why": "The confirming press alone on its row: in the parked band's form under the session's head, and as the answer composer's send, which has no endings or attachments beside it." },
+      { "key": "work.say.placeholder", "en": "write to it — the same session goes on with your words", "zh": "写给它——同一个会话会带着你的话继续", "why": "The hint in the box at the foot of a session's page, which is the centre's width, never narrower than its 400px floor; the design names it so (D137 §5.1), and what the words will do is the whole of it." },
+      { "key": "work.say.startChat", "en": "Start a conversation with these words", "why": "The one press under the line saying the words cannot go on, alone on its row in the conversation's column at the centre's width; the design names it so (D137 §5.1), since a new conversation, not this one, is what it starts." },
       { "key": "work.awaiting.declineConfirm", "en": "Decline with this reason", "why": "The confirming press in the parked band's form under the session's head, a row that wraps." },
       { "key": "work.dock.unfull", "en": "Back beside the session", "why": "An icon control's tip and accessible name in the side bar's head; nothing lays the words out." },
       { "key": "work.rail.close", "en": "Hide the session list", "why": "An icon control's tip and accessible name, the session list's close; nothing lays the words out, and every view's list names its pair alike." },

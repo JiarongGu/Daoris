@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createElement, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
 // A session's conversation over the bridge (D76, CONV1): the history read once, live batches merged
@@ -19,7 +21,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { useChatTurns, useSessionEvents } from '../shell';
+import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../shell';
 import { mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
@@ -120,6 +122,103 @@ describe('toTurns', () => {
     expect(taken.turns[1]!.items.map((b) => b.text)).toEqual(['alpha bravo PINEAPPLE']);
     // A jump to the words lands where they now are.
     expect(taken.where[3]).toBe('e5');
+  });
+
+  /**
+   * MSG1f (D137 §3.1): words to a session that parked or ended show at once as a new turn waiting at its foot, never in
+   * the run that ended before them. Where the resumed run took them, the same words under the same id are its ask, and
+   * the waiting turn goes, keeping the driver's note that the run opened with.
+   */
+  it('shows words said after a record ended as a turn waiting at its foot, then as the asks of the run that took them', () => {
+    const ended = [
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
+      e(2, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it at 64 KiB', door: 'screen' }),
+      e(4, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'and say so in the notes' }),
+    ];
+    const waiting = toTurns(ended);
+
+    expect(waiting.turns).toHaveLength(2);
+    expect(waiting.turns[0]!.items.map((b) => b.kind)).toEqual(['tool']);
+    expect(waiting.turns[1]).toMatchObject({ waiting: true });
+    expect(waiting.turns[1]!.ask).toBeUndefined();
+    expect(waiting.turns[1]!.items.map((b) => [b.kind, b.reaches, b.text])).toEqual([
+      ['held', 'resume', 'also cap it at 64 KiB'],
+      ['held', 'resume', 'and say so in the notes'],
+    ]);
+
+    const taken = toTurns([
+      ...ended,
+      e(5, { kind: 'note', text: '— your words are the next turn of its own conversation, resumed on `claude-code-acp`.' }),
+      e(6, { kind: 'user', origin: 'person', id: 'w1', text: 'also cap it at 64 KiB' }),
+      e(7, { kind: 'user', origin: 'person', id: 'w2', text: 'and say so in the notes' }),
+      e(8, { kind: 'message', text: 'Capped.' }),
+    ]);
+
+    expect(taken.turns.map((turn) => turn.ask?.text ?? null)).toEqual([
+      'take quest #q1', null, 'also cap it at 64 KiB', 'and say so in the notes',
+    ]);
+    // The waiting turn keeps the driver's opening line, and no word waits any more.
+    expect(taken.turns[1]!.items.map((b) => b.kind)).toEqual(['note']);
+    expect(taken.turns.flatMap((turn) => turn.items).some((b) => b.kind === 'held')).toBe(false);
+    expect(taken.where[3]).toBe('e6');
+  });
+
+  it('leaves no empty turn behind where the words were taken with no line before them', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'go' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'one more thing' }),
+      e(4, { kind: 'user', origin: 'person', id: 'w1', text: 'one more thing' }),
+    ]);
+
+    expect(turns.map((turn) => turn.ask?.text)).toEqual(['go', 'one more thing']);
+  });
+
+  /**
+   * MSG1f (D137 §3.1): where a fallback handed the words to a new session, the driver's note names their ids, that
+   * session and why by code. The note is the words' line, said once: the words stay as written and no longer wait.
+   */
+  it('pairs the note that the words went to a new session with the words, which wait no longer', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'go' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
+      e(4, { kind: 'note', text: '— your words went to session `n3wn3w00`, because its tree is gone.', words: ['w1'], to: 'n3wn3w00', why: 'tree' }),
+    ]);
+
+    const items = turns[1]!.items;
+    expect(items.map((b) => b.kind)).toEqual(['held', 'note']);
+    expect(items[0]).toMatchObject({ settled: true });
+    expect(items[1]).toMatchObject({ to: 'n3wn3w00', why: 'tree', words: ['w1'], said: ['also cap it'] });
+  });
+
+  /**
+   * MSG1f (D137 §2.2): words a closed quest's session or a chat cannot go on with stay as said, and the note names them
+   * and why. The words it pairs with are handed to the note, which is what a new conversation would start with.
+   */
+  it('pairs the note that the words cannot go on here with the words, in the order said', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'go' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      e(4, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+      e(5, { kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' }),
+    ]);
+
+    const items = turns[1]!.items;
+    expect(items.map((b) => [b.kind, b.settled ?? false])).toEqual([['held', true], ['held', true], ['note', false]]);
+    expect(items[2]).toMatchObject({ why: 'refused', said: ['first', 'second'] });
+  });
+
+  it('hands a note no words where it names a word the page does not hold', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+      e(2, { kind: 'note', text: '— It cannot go on in this session, because its tree is gone.', words: ['w1', 'w2'], why: 'tree' }),
+    ]);
+
+    expect(turns[0]!.items[1]).toMatchObject({ why: 'tree' });
+    expect(turns[0]!.items[1]!.said).toBeUndefined();
   });
 
   /** A tool call and its updates are one card, where it first appeared, carrying its latest state. */
@@ -350,6 +449,23 @@ describe('settle', () => {
     expect(live[0]!.items[0]!.unreached).toBeUndefined();
   });
 
+  /**
+   * MSG1f (D137 §2.2): words said after a record ended wait for it to go on, so its end is not theirs: they are never
+   * *it ended before reading this*, and the turn waiting at its foot is not a run the session ended inside. The run before
+   * them still says it was cut where the wire never said its turn ended.
+   */
+  it('leaves words said after the end waiting, and judges the run before them as it ended', () => {
+    const turns = settle(run(
+      { kind: 'user', origin: 'target', text: 'go' },
+      { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' },
+      { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'one more thing' },
+    ), false);
+
+    expect(turns[0]).toMatchObject({ cut: true });
+    expect(turns[1]!.cut).toBeUndefined();
+    expect(turns[1]!.items[0]!.unreached).toBeUndefined();
+  });
+
   it('leaves a live session and a finished turn as they are', () => {
     const open = run({ kind: 'user', text: 'go' }, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' });
     expect(settle(open, true)[0]!.cut).toBeUndefined();
@@ -563,5 +679,53 @@ describe('useChatTurns', () => {
 
     expect(result.current).toEqual({});
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * MSG1f (D137 §5.3): what a word said now would do, from `SESSION_QUEUE`'s `reaches` and `why`, asked again as the session
+ * moves; and what the person's words did, read defensively, a null the bridge left out read as none.
+ */
+describe('the words’ answers', () => {
+  const wrapper = ({ children }: { children: ReactNode }) => createElement(
+    QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }, children);
+
+  it('reads what a word said now would do, and asks again when the session moves', async () => {
+    invoke.mockResolvedValueOnce({ session: 's1', queued: [], taking: true, reaches: 'next-step' })
+      .mockResolvedValueOnce({ session: 's1', queued: [], taking: false, reaches: 'resume' });
+    const { result, rerender } = renderHook(({ state }) => useSessionReach({ id: 's1', state }, true), {
+      wrapper, initialProps: { state: 'working' },
+    });
+    await waitFor(() => expect(result.current).toEqual({ reaches: 'next-step', why: null }));
+
+    rerender({ state: 'completed' });
+    await waitFor(() => expect(result.current).toEqual({ reaches: 'resume', why: null }));
+    expect(invoke).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads a never’s code, and an older shell’s answer as nothing taking words and nothing refusing', async () => {
+    invoke.mockResolvedValueOnce({ session: 's1', queued: [], taking: false, why: 'teammate' });
+    const { result } = renderHook(() => useSessionReach({ id: 's1', state: 'completed' }), { wrapper });
+    await waitFor(() => expect(result.current).toEqual({ reaches: null, why: 'teammate' }));
+
+    invoke.mockResolvedValueOnce({ session: 's2', queued: [], taking: false });
+    const older = renderHook(() => useSessionReach({ id: 's2', state: 'completed' }), { wrapper });
+    await waitFor(() => expect(older.result.current).toEqual({ reaches: null, why: null }));
+  });
+
+  it('asks nothing with no session', () => {
+    const { result } = renderHook(() => useSessionReach(null), { wrapper });
+    expect(result.current).toBeUndefined();
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('says what the words did, through SESSION_INPUT, whatever the answer left out', async () => {
+    invoke.mockResolvedValueOnce({ sent: true, reaches: 'resume' });
+    const { result } = renderHook(() => useSay(), { wrapper });
+    await act(async () => {
+      await expect(result.current.mutateAsync({ id: 's1', text: 'also cap it' })).resolves
+        .toEqual({ sent: true, reaches: 'resume', why: null });
+    });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1', text: 'also cap it' } });
   });
 });

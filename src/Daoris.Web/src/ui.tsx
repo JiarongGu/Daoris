@@ -221,6 +221,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'awaiting-reply': 'neutral',
   // Answered, it waits on the driver's next look, as a queued session does, and no longer on the person (ANSWER1c).
   'answered': 'neutral',
+  // Going on, its run is opening with the person's words, and nothing waits on the person (MSG1f): answered's twin.
+  'going-on': 'neutral',
 };
 
 /**
@@ -228,13 +230,14 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * whose turn has ended, waiting for the person's next message (UX5 U17); the two words the session
  * list's reader derives from the session's quest (D126 §2.2): **parked**, the last session here of a quest
  * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
- * question asked of another repository; and **answered**, a park the person answered, which the same session
- * goes on from at the driver's next look (ANSWER1c, D131). None is a record state: no new session state (D126 §2).
+ * question asked of another repository; **answered**, a park the person answered, which the same session
+ * goes on from at the driver's next look (ANSWER1c, D131); and **going-on**, a record going on with the person's
+ * words, its run opening (MSG1f, D137 §3.2). None is a record state: no new session state (D126 §2).
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered';
+export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -244,6 +247,7 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'parked') return 'work.shown.parked';
   if (shown === 'awaiting-reply') return 'work.shown.awaitingReply';
   if (shown === 'answered') return 'work.shown.answered';
+  if (shown === 'going-on') return 'work.shown.goingOn';
   return `sessionState.${shown}`;
 }
 
@@ -263,11 +267,16 @@ export function answeredPark(session: { state: SessionState; answer?: string | n
  * driver says no turn is in flight, and working while one is; a turn the driver has not answered for
  * is the record's own word, never a guess. Driven work is one long turn, so it is never idle. A park the
  * person answered is **answered** (ANSWER1c), read from its own record, as the list's reader reads it.
+ *
+ * A live record that still keeps the person's words is **going on** (MSG1f, D137 §3.2): it went on with them, and
+ * its run's first prompt has not taken them yet. An ended record with words waiting is the list's reader's to say,
+ * since words it cannot take stay waiting there too, and only the reader knows which.
  */
 export function shownState(
   session: { kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null }, taking: boolean | undefined,
 ): ShownState {
   if (answeredPark(session)) return 'answered';
+  if (session.state !== 'awaiting-person' && SESSION_ACTIVE.has(session.state) && session.answer) return 'going-on';
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
 }
 
@@ -308,6 +317,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'awaiting-reply': 'idle',
   // Answered, nothing runs yet and nothing waits on the person: quiet until the driver's next look (ANSWER1c).
   'answered': 'idle',
+  // Going on, its run is opening and no turn runs yet (MSG1f): quiet until its first prompt goes.
+  'going-on': 'idle',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */

@@ -71,8 +71,13 @@ export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
-  focus = 0,
+  focus = 0, accepts,
 }: {
+  /**
+   * Whether these words may go (MSG1f, D137 §2.4): false keeps them in the box, unsent, and the caller says why — a door
+   * that takes fewer characters at once than they hold. Absent, every message may go.
+   */
+  accepts?: (text: string) => boolean;
   /**
    * Bumped to put the focus in the box (D126 §3.1: *Answer…* from a session's row attends it and opens its box with the
    * focus). Zero is no ask.
@@ -236,6 +241,8 @@ export function Composer({
   const say = () => {
     const message = text.trim();
     if ((!message && files.length === 0) || !live || sending) return;
+    // Words the door could not take stay in the box, unsent; the caller says why (MSG1f, D137 §2.4).
+    if (accepts && !accepts(message)) return;
     onSend(message, files);
     setText('');
     setCarry(NO_CARRY);

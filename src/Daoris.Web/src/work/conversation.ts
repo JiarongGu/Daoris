@@ -39,9 +39,24 @@ export type SessionEvent = {
   /**
    * For the person's words to a working driven session (STEER1, D136): when they reach it, `next-step` or `turn-end`, on
    * the event that shows them the moment they are said. The same words come again, under the same `id` and without
-   * this, where the session took them.
+   * this, where the session took them. `resume` (MSG1d, D137 §3.1) is words to a session that parked or ended, which
+   * its record keeps until the same session goes on with them.
    */
   reaches?: string | null;
+  /** For the person's words shown the moment they are said (MSG1d): the door they were said at, `screen` or `terminal`. */
+  door?: string | null;
+  /**
+   * For the driver's note about the person's words (MSG1d, D137 §3.1): the ids of the words it speaks of, so it pairs
+   * with where they were shown.
+   */
+  words?: string[] | null;
+  /** For the driver's note that the words went to a new session (MSG1d): that session's id, which the page links. */
+  to?: string | null;
+  /**
+   * For the driver's note about the person's words (MSG1d, D137 §5.1): why they did not go on in this session, by code.
+   * A reason is chrome, so the page says it in its own words from the code; the note's line is the driver's English.
+   */
+  why?: string | null;
   /** For `user`: the names of the files the person attached (CONV4c). */
   files?: string[] | null;
   title?: string | null;
@@ -99,12 +114,28 @@ export type Block = {
   at: string;
   text?: string | null;
   id?: string | null;
-  /** For `held`: when the words reach the session, `next-step` or `turn-end`. */
+  /** For `held`: when the words reach the session, `next-step`, `turn-end` or `resume` (MSG1f). */
   reaches?: string | null;
   /** For `held`: the names of what the person attached. */
   files?: string[];
   /** For `held`: the session ended without taking the words (STEER1) — said, never left waiting for ever. */
   unreached?: boolean;
+  /**
+   * For `held`: a driver's note below says where the words went, or that they cannot go on here (MSG1f, D137 §3.1). The
+   * words stay as written and wait no longer; the note is their line, said once.
+   */
+  settled?: boolean;
+  /** For a `note` about the person's words (MSG1f): the session they went to, which the page links. */
+  to?: string | null;
+  /** For a `note` about the person's words (MSG1f): why they did not go on in this session, by code. */
+  why?: string | null;
+  /** For a `note` about the person's words (MSG1f): the ids it names. */
+  words?: string[];
+  /**
+   * For a `note` about the person's words (MSG1f): what they said, in the order said, where the page holds every word
+   * the note names — what *Start a conversation with these words* starts with. Absent where it holds only some.
+   */
+  said?: string[];
   title?: string | null;
   toolKind?: string | null;
   status?: string | null;
@@ -151,6 +182,11 @@ export type ChatMessage = { text: string; files: string[] };
 export type Turn = {
   key: string;
   ask?: Ask;
+  /**
+   * The person's words to a session that parked or ended, waiting at its foot for the same session to go on (MSG1f, D137
+   * §3.1): no run of the agent's, so never *working…* and never a turn the session ended inside.
+   */
+  waiting?: boolean;
   /** Events between the ask and the items are not held yet (SESS1): the page began past the ask. */
   gap?: boolean;
   /** The session ended inside this turn, with the wire never saying the turn did (SESS1 S4). */
@@ -187,6 +223,13 @@ export type Usage = { used: number; size: number; most: number };
  *   `reaches` is a block in the turn it was said in, never a turn of its own, since the agent is still
  *   on that turn. The same words under the same id are the ask of the turn that took them, and the
  *   waiting block goes.
+ * - **Words to a session that parked or ended wait at its foot** (MSG1f, D137 §3.1): `resume` words open
+ *   a turn of their own after the run that ended, holding nothing of the agent's, since that run was
+ *   over before they were said. A waiting turn the resumed run took every word from, and that holds
+ *   nothing else, goes.
+ * - **A driver's note about the words is their line** (MSG1f): a note naming their ids, that they went
+ *   to a new session or cannot go on here, settles the words it names, which stay as written and wait
+ *   no longer, and carries what they said where the page holds every one.
  */
 export function toTurns(
   events: readonly SessionEvent[], { opening }: { opening?: SessionEvent | null } = {},
@@ -204,6 +247,8 @@ export function toTurns(
     return turn;
   };
   const here = (key: string): Turn => current ?? open(key);
+  // Where words said after the record ended wait (MSG1f): the turn already waiting at its foot, or a new one.
+  const foot = (key: string): Turn => (current?.waiting ? current : Object.assign(open(key), { waiting: true }));
   const asked = (event: SessionEvent, key: string): Ask => ({
     key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
     ...(event.files?.length ? { files: event.files } : {}),
@@ -216,20 +261,23 @@ export function toTurns(
     where[opening.seq] = `e${opening.seq}`;
   }
 
-  // The person's words waiting to reach a working session (STEER1), by their id: where each was said.
-  const waiting = new Map<string, { turn: Turn; key: string; seq: number }>();
+  // The person's words waiting to reach a session (STEER1, MSG1f), by their id: where each was said, and its block.
+  const waiting = new Map<string, { turn: Turn; key: string; seq: number; block: Block }>();
 
   for (const event of events) {
     const key = `e${event.seq}`;
     switch (event.kind) {
       case 'user': {
         if (event.reaches) {
-          const turn = here(key);
-          turn.items.push({
+          // After the record ended (MSG1f): at its foot, in the turn already waiting there or a new one, never in the
+          // run that ended before the words were said.
+          const turn = event.reaches === 'resume' ? foot(key) : here(key);
+          const block: Block = {
             key, kind: 'held', at: event.at, text: event.text ?? '', id: event.id, reaches: event.reaches,
             ...(event.files?.length ? { files: event.files } : {}),
-          });
-          if (event.id) waiting.set(event.id, { turn, key, seq: event.seq });
+          };
+          turn.items.push(block);
+          if (event.id) waiting.set(event.id, { turn, key, seq: event.seq, block });
           where[event.seq] = key;
           break;
         }
@@ -242,6 +290,8 @@ export function toTurns(
           was.turn.items = was.turn.items.filter((item) => item.key !== was.key);
           where[was.seq] = key;
           waiting.delete(event.id!);
+          // A turn that only waited, with nothing left in it, was the words' alone.
+          if (was.turn.waiting && was.turn.items.length === 0) turns.splice(turns.indexOf(was.turn), 1);
         }
         break;
       }
@@ -316,11 +366,26 @@ export function toTurns(
           usage = { used: event.used, size: event.size, most: Math.max(usage?.most ?? 0, event.used) };
         }
         break;
-      case 'note':
+      case 'note': {
+        // A note about the person's words (MSG1f) names them: they went elsewhere or cannot go on here, so they wait no
+        // longer, and the note carries what they said where every one of them is held.
+        const named = event.words ?? [];
+        const held = named.map((id) => waiting.get(id));
+        for (const [index, was] of held.entries()) {
+          if (!was) continue;
+          was.block.settled = true;
+          waiting.delete(named[index]!);
+        }
+        const said = named.length > 0 && held.every(Boolean) ? held.map((was) => was!.block.text ?? '') : undefined;
         // A note about one call carries its id (SESS1 S6), so it folds with that call's run.
-        here(key).items.push({ key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}) });
+        here(key).items.push({
+          key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}),
+          ...(event.to ? { to: event.to } : {}), ...(event.why ? { why: event.why } : {}),
+          ...(named.length > 0 ? { words: named } : {}), ...(said ? { said } : {}),
+        });
         where[event.seq] = key;
         break;
+      }
       default:
         here(key).items.push({ key, kind: 'raw', at: event.at, title: event.title, text: event.text, raw: event.raw });
         where[event.seq] = key;
@@ -342,14 +407,20 @@ export function toTurns(
  * it ended, was cut — and the calls it left open never finished, so they read *stopped*, never
  * *running* for good. The person's words still waiting never reached it (STEER1). A live session is
  * left as it is: its last turn may simply be going on.
+ *
+ * Words said after it ended (MSG1f, `resume`) wait for it to go on, so its end is not theirs, and the
+ * turn they wait in at its foot is no run: the last run before it is the one judged.
  */
 export function settle(turns: Turn[], live: boolean): Turn[] {
   if (live) return turns;
-  const unreached = (turn: Turn): Turn => (turn.items.some((item) => item.kind === 'held')
-    ? { ...turn, items: turn.items.map((item) => (item.kind === 'held' ? { ...item, unreached: true } : item)) }
+  const missed = (item: Block) => item.kind === 'held' && item.reaches !== 'resume' && !item.settled;
+  const unreached = (turn: Turn): Turn => (turn.items.some(missed)
+    ? { ...turn, items: turn.items.map((item) => (missed(item) ? { ...item, unreached: true } : item)) }
     : turn);
-  const settled = turns.some((turn) => turn.items.some((item) => item.kind === 'held')) ? turns.map(unreached) : turns;
-  const last = settled[settled.length - 1];
+  const settled = turns.some((turn) => turn.items.some(missed)) ? turns.map(unreached) : turns;
+  let at = settled.length - 1;
+  while (at >= 0 && settled[at]!.waiting) at -= 1;
+  const last = settled[at];
   if (!last || last.ended) return settled;
   const cut: Turn = {
     ...last,
@@ -358,7 +429,7 @@ export function settle(turns: Turn[], live: boolean): Turn[] {
       ? { ...item, stopped: true }
       : item)),
   };
-  return [...settled.slice(0, -1), cut];
+  return [...settled.slice(0, at), cut, ...settled.slice(at + 1)];
 }
 
 /** What a turn draws, in order: a block on its own, or a run of work folded to a line that counts it. */

@@ -6,6 +6,7 @@ import { Icon } from '../ui';
 import { settle, toTurns, type Turn, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
 import { ConversationView } from './ConversationView';
+import type { ReasonValues } from './say';
 import { useFollowTail } from './followTail';
 
 /** How many blocks a conversation holds before it is offered a way through (SESS1 S9). */
@@ -26,7 +27,15 @@ const LONG = 20;
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
-export function SessionConversation({ session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage }: {
+export function SessionConversation({
+  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onSession, onStartFrom, reasons,
+}: {
+  /** Attend the session the person's words went to (MSG1f); absent, it is named as text. */
+  onSession?: (id: string) => void;
+  /** Start a conversation with words that cannot go on here (MSG1f, D137 §2.2); absent, no press is offered. */
+  onStartFrom?: (words: string[]) => void;
+  /** What a reason the driver gave by code may name (D137 §5.1). */
+  reasons?: ReasonValues;
   session: string;
   /** The harness it runs on — whose declaration says whether its door keeps a conversation (D76 §1). */
   adapter?: string;
@@ -132,6 +141,9 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
         earlier={earlier}
         onLoadEarlier={() => void loadEarlier()}
         reveal={reveal?.key}
+        onSession={onSession}
+        onStartFrom={onStartFrom}
+        reasons={reasons}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}

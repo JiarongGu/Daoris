@@ -291,6 +291,17 @@ describe('a row as the list shows it', () => {
     expect(shownOf(session({ id: 'p2', state: 'awaiting-person' }), null, undefined)).toBe('awaiting-person');
   });
 
+  /**
+   * MSG1f (D137 §3.2): a record going on with the person's words shows *going on*, by the reader's word (an ended record
+   * whose words it will take up, which only the reader can say) or, while its run opens, by its own record.
+   */
+  it('shows a record going on with the person\'s words as going on, by the reader or by its record', () => {
+    const ended = session({ id: 'e1', state: 'completed', answer: 'also cap it' });
+    expect(shownOf(ended, grouping({ session: 'e1', group: 'working', shown: 'going-on' }), undefined)).toBe('going-on');
+    expect(shownOf(ended, null, undefined)).toBe('completed');
+    expect(shownOf(session({ id: 'w1', state: 'working', answer: 'also cap it' }), null, undefined)).toBe('going-on');
+  });
+
   it('says what waits on the person: a session parked to ask, or a parked quest\'s last session', () => {
     expect(waitsOnYou(session({ id: 'p1', state: 'awaiting-person' }), null)).toBe(true);
     expect(waitsOnYou(session({ id: 'f1', state: 'failed' }), grouping({ session: 'f1', group: 'you', shown: 'parked' }))).toBe(true);
