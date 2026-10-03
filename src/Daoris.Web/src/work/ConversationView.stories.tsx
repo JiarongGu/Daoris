@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
+import { CLAIMED } from './handedFixtures';
 
 // Every state of a conversation (D76, CONV2), built by the same fold the organism uses, so what a
 // reviewer designs against is what a session shows: a finished turn folded, a running one open, a
-// driven session's composed target, the kinds a tool call can be, a plan, the driver's own note, an
-// update this version does not know, a door that carries only text, and 中文.
+// driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
+// can be, a plan, the driver's own note, an update this version does not know, a door that carries only
+// text, and 中文.
 
 let seq = 0;
 // A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
@@ -13,7 +15,7 @@ const ev = (over: Partial<SessionEvent>): SessionEvent =>
   ({ seq: ++seq, at: new Date(Date.UTC(2026, 8, 25, 9) + seq * 1500).toISOString(), kind: 'message', ...over });
 
 const DRIVEN: SessionEvent[] = [
-  ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget" — with `quest_respond`, do the work in this repository, commit it, and close the quest.\n\nThe game needs a per-frame cap on chunk hydration.' }),
+  ev({ kind: 'user', origin: 'target', account: CLAIMED, text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget" — with `quest_respond`, do the work in this repository, commit it, and close the quest.\n\nThe game needs a per-frame cap on chunk hydration.' }),
   ev({ kind: 'plan', entries: [
     { content: 'Read the streamer', status: 'completed' },
     { content: 'Cap hydration per frame', status: 'in_progress' },

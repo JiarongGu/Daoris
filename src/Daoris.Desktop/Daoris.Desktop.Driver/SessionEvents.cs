@@ -207,6 +207,13 @@ public sealed record SessionEvent
     /// <summary>For <see cref="SessionEventKind.Turn"/>: what the turn consumed, where the wire said (CONV5).</summary>
     public TurnTokens? Tokens { get; init; }
 
+    /// <summary>
+    /// For the instruction the driver composed (origin <c>target</c>): what it was handed, section by section (CONTEXT1, D143
+    /// point 1): each section's size, its source and what its bound left out, and what was handed beside it. Null on every
+    /// other event, and on an instruction handed before the account was kept.
+    /// </summary>
+    public InstructionAccount? Account { get; init; }
+
     /// <summary>What an unknown or unreadable frame said, compact and bounded.</summary>
     public string? Raw { get; init; }
 }
@@ -270,7 +277,8 @@ public sealed class SessionEvents(string directory)
     /// <summary>The largest page anyone may ask for.</summary>
     public const int MaxPage = 1000;
 
-    private static readonly JsonSerializerOptions Json = new()
+    /// <summary>How the record spells an event: camel-cased, absent fields left out, a Chinese sentence kept readable.</summary>
+    internal static readonly JsonSerializerOptions Json = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

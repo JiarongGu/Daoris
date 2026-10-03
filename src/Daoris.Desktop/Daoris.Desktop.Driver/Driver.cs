@@ -1122,13 +1122,16 @@ public sealed partial class Driver(
     /// What it may reach outside its tree (D107): a read of each checkout it may read, an edit in each declared
     /// target, and a refusal everywhere else — beside the person's rules, whose denies still win.
     /// </param>
-    /// <returns>The file, which goes when the session does, and what the protocol door carries.</returns>
-    private (string? File, object? Meta) HandRules(
+    /// <returns>
+    /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
+    /// account (CONTEXT1), which outlives the file.
+    /// </returns>
+    private (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
-        if (!adapter.TakesSettings) return (null, null);
+        if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
@@ -1150,15 +1153,64 @@ public sealed partial class Driver(
         var file = SpawnSettings.Write(
             home, sessionId, composed, PermissionRules.HardDeny(rules),
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
-        if (file is null) return (null, null);
+        var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
+        if (file is null) return (null, null, handed);
 
         if (adapter.Wire == SessionWire.Pipe)
         {
             adapter.HandSettings(info, file);
-            return (file, null);
+            return (file, null, handed);
         }
 
-        return (file, adapter.AcpSessionMeta(file));
+        return (file, adapter.AcpSessionMeta(file), handed);
+    }
+
+    /// <summary>
+    /// The permission rules a session was handed beside its instruction (CONTEXT1, D143 point 1), kept in its instruction's
+    /// account: how many in each list, the scopes they were composed for, the hard denials and the tree guard. The rules file
+    /// goes when the run does (TRACE1), and the account keeps what it held by count past that.
+    /// </summary>
+    /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="ISessionAdapter.TakesSettings"/>).</param>
+    /// <param name="handed">The rules as handed: the composition, with any read of the quest's files, reach across and job's own.</param>
+    internal static HandedSection RulesHanded(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository)
+    {
+        const string Name = HandedSections.Rules;
+        const string Source = HandedSources.Permissions;
+        if (!takes)
+        {
+            return new HandedSection(Name, Source, "the permission rules: none handed, since its agent takes no rules from Daoris")
+            {
+                Shown = 0,
+                None = HandedNones.Agent,
+            };
+        }
+
+        var count = handed.Allow.Count + handed.Ask.Count + handed.Deny.Count;
+        var hard = PermissionRules.HardDeny(file).Count;
+        var guard = PermissionRules.GuardsTree(file);
+        if (count == 0 && hard == 0 && !guard)
+        {
+            return new HandedSection(Name, Source, "the permission rules: none handed, since none were composed for it")
+            {
+                Shown = 0,
+                None = HandedNones.Empty,
+            };
+        }
+
+        var scope = $"workspace `{RemoteTarget.Workspace(workspace)}`" + (repository is { Length: > 0 } named ? $" and repository `{named}`" : "");
+        var beside = new List<string>();
+        if (hard > 0) beside.Add(InstructionAccounting.Plural(hard, "hard denial"));
+        if (guard) beside.Add("the tree guard");
+        return new HandedSection(
+            Name, Source,
+            $"the permission rules: {count} handed beside it ({handed.Allow.Count} allow, {handed.Ask.Count} ask, {handed.Deny.Count} deny), "
+            + $"composed from this machine's rules for {scope}" + (beside.Count > 0 ? "; " + InstructionAccounting.Joined(beside) : ""))
+        {
+            Shown = count,
+            Cuts = file.Problem is null
+                ? null
+                : [new HandedCut(HandedCuts.RulesUnread, "this machine's rules file could not be read, so only the defaults were handed")],
+        };
     }
 
     /// <summary>
@@ -1350,7 +1402,7 @@ public sealed partial class Driver(
     /// <param name="working">Told once the ledger has moved the record to working, and so holds its tree (LEFT2, MSG1b).</param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
-        string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
+        string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
@@ -1378,7 +1430,13 @@ public sealed partial class Driver(
         // what the session was for, never from what the session said about itself (D46 §4).
         // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target. After it, the answers
         // to the go-aheads it asked since its start (KNOWUSE1a).
-        var prompt = resume?.Prompt ?? TargetPrompt.Compose(target);
+        var composed = resume is null ? TargetPrompt.Composed(target) : null;
+        var prompt = resume?.Prompt ?? composed!.Text;
+        // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
+        // a resume composes nothing, so its record keeps none.
+        var account = composed is null ? null
+            : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
+            : composed.Account;
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
         // intake's: it is answered through its ask.
         var keepAs = target.Ask is null ? adapter.Name : null;
@@ -1402,9 +1460,9 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said, keepAs, resume)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said, keepAs, resume, account)
             : null;
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume) : null;
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         await service.AdvanceAsync(
@@ -1475,15 +1533,16 @@ public sealed partial class Driver(
     /// </summary>
     /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
     /// <param name="resume">The conversation an answer continues: the record's transcript and conversation go on.</param>
+    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event.</param>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
         CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
-        string? keepAs = null, ResumeAsk? resume = null) =>
+        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
                 resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
-                opened: resume?.Opening(), append: resume is not null, said: said), sessionId, keepAs, resume)
+                opened: resume?.Opening(), append: resume is not null, said: said, account: account), sessionId, keepAs, resume)
             : null;
 
     /// <summary>
@@ -1504,21 +1563,22 @@ public sealed partial class Driver(
     }
 
     /// <summary>
-    /// A session's opening in its record: the target the driver composed, then — for a carry-on the person
-    /// answered (STANDDOWN2) — their answer, as theirs.
+    /// A session's opening in its record: the target the driver composed, with the composer's account of it beside it
+    /// (CONTEXT1), then — for a carry-on the person answered (STANDDOWN2) — their answer, as theirs.
     /// </summary>
     /// <remarks>
     /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The words travelled only inside the target, which the conversation folds, so the one thing the person
     /// said was nowhere they would look.
     /// </remarks>
-    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid) =>
+    /// <param name="account">What the target was composed of, kept on its event; null where none was composed here.</param>
+    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid, InstructionAccount? account = null) =>
         personSaid is { Length: > 0 } said
             ?
             [
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt },
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account },
                 new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said },
             ]
-            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt }];
+            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account }];
 
     /// <summary>
     /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
@@ -1560,12 +1620,13 @@ public sealed partial class Driver(
     /// The conversation an answer continues (ANSWER1a): resumed rather than opened, the record's transcript and
     /// conversation going on, and an agent that would not resume it told to the resume, never as a turn that failed.
     /// </param>
+    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
-        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null)
+        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null)
     {
         await using var file = new StreamWriter(transcript, append: resume is not null);
 
@@ -1602,7 +1663,7 @@ public sealed partial class Driver(
             }
             else
             {
-                foreach (var opening in Opening(prompt, personSaid)) Event(opening);
+                foreach (var opening in Opening(prompt, personSaid, account)) Event(opening);
             }
 
             // What this harness is doing that daoris has not been able to govern (ACP3). On the
@@ -1903,12 +1964,13 @@ public sealed partial class Driver(
     /// The record's opening where it is not a prompt's (ANSWER1a): a resumed run's first line and the person's answer.
     /// </param>
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
+    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
         IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
-        Action<string>? named = null)
+        Action<string>? named = null, InstructionAccount? account = null)
     {
         await using var file = new StreamWriter(transcript, append);
         // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
@@ -1924,7 +1986,7 @@ public sealed partial class Driver(
         void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
 
         if (preamble is { Length: > 0 }) Line(preamble);
-        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid)))
+        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account)))
         {
             // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
             if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);

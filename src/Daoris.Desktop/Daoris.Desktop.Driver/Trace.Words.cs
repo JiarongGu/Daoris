@@ -17,7 +17,8 @@ namespace Daoris.Driver;
 /// answer replaces the one before.</para>
 ///
 /// <para><b>An instruction by its event and size, never its words</b>: what a session was handed is transcript-class and stays
-/// in its record (D76, D47 §4), where the session's page shows it.</para>
+/// in its record (D76, D47 §4), where the session's page shows it. Its sections are read from the account kept beside it
+/// (CONTEXT1): sizes, sources and what each bound left out, in the driver's words.</para>
 /// </remarks>
 internal static partial class TraceWords
 {
@@ -365,6 +366,7 @@ internal static partial class TraceWords
         if (instructions.Count > 0)
         {
             text.Append($"    instruction handed: {string.Join("; then ", instructions.Select(Size))} (its words stay in the record and are not printed)\n");
+            foreach (var instruction in instructions) Sections(text, instruction);
         }
         else
         {
@@ -378,6 +380,33 @@ internal static partial class TraceWords
             .ToList();
         foreach (var note in accepted) text.Append($"    {When(note.At)} · {OneLine(note.Text!)}\n");
         return accepted;
+    }
+
+    /// <summary>
+    /// What an instruction was composed of (CONTEXT1, D143 point 1), from the account kept beside it on its event: each section
+    /// in the driver's words with what its bound left out, what was handed beside it, then what could have been handed and was
+    /// not. An instruction from before the account was kept says so (point 3), and nothing is rebuilt from what stands now.
+    /// </summary>
+    private static void Sections(StringBuilder text, SessionEvent instruction)
+    {
+        if (instruction.Account is not { } account)
+        {
+            text.Append("    its sections: not kept, since it was handed before the driver kept an account of them\n");
+            return;
+        }
+
+        text.Append($"    its sections, as the driver composed them (event {instruction.Seq}, {Count(account.Chars)} characters):\n");
+        void Section(HandedSection section, string indent)
+        {
+            text.Append($"{indent}{OneLine(section.Said)}\n");
+            foreach (var cut in section.Cuts ?? []) text.Append($"{indent}  left out: {OneLine(cut.Said)}\n");
+        }
+
+        foreach (var section in account.Sections.Where(section => section.None is null)) Section(section, "      ");
+        var absent = account.Sections.Where(section => section.None is not null).ToList();
+        if (absent.Count == 0) return;
+        text.Append("      not handed:\n");
+        foreach (var section in absent) Section(section, "        ");
     }
 
     /// <summary>One instruction by its event and its size: the length written, or, where the record cut it, the length it said.</summary>

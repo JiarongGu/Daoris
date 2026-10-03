@@ -4,6 +4,7 @@ import { compact, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Tip } from '../ui';
 import { type Ask, type Block, type PlanEntry, runCount, segments, type Turn } from './conversation';
+import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
 import { reasonOf, type ReasonValues } from './say';
 import { ToolCard } from './ToolCard';
@@ -234,7 +235,10 @@ function TurnMeter({ turn }: { turn: Turn }) {
   );
 }
 
-/** What the person asked, or the target the driver composed — the latter folded, since it is long. */
+/**
+ * What the person asked, or the target the driver composed — the latter folded, since it is long, with what it was composed
+ * of beneath it (CONTEXT1).
+ */
 function AskView({ ask }: { ask: Ask }) {
   const { t } = useTranslation();
   const target = ask.origin === 'target';
@@ -261,6 +265,8 @@ function AskView({ ask }: { ask: Ask }) {
         <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
       )}
       <Attached files={ask.files} />
+      {/* What the target was composed of, section by section (CONTEXT1), beside the words it composed. */}
+      {target && <HandedAccount account={ask.account} />}
     </div>
   );
 }

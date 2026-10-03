@@ -55,6 +55,11 @@ public sealed class SessionEventRecordTests : IDisposable
         Assert.Equal(SessionEventKind.User, target.Kind);
         Assert.Equal("target", target.Origin);
         Assert.Contains("q1", target.Text);
+        // What it was composed of, kept beside it on the same event through the protocol door's capture (CONTEXT1), and
+        // the rules handed beside it, said whether or not this agent takes any.
+        Assert.Equal(target.Text!.Length, target.Account!.Chars);
+        Assert.Equal(HandedSections.Quest, target.Account.Sections[0].Name);
+        Assert.Single(target.Account.Sections, section => section.Name == HandedSections.Rules);
 
         Assert.Contains(SessionEventKind.Message, kinds);
         Assert.Equal("looking at the budget", page.Events.First(e => e.Kind == SessionEventKind.Message).Text);
