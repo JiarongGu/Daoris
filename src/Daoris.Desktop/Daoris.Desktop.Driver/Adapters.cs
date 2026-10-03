@@ -747,7 +747,14 @@ public static class TargetPrompt
 /// A chat carries no quest (D49 §3) — that is the whole point: it is for work not yet shaped as an
 /// ask. It may take one mid-conversation through its own connector, exactly as a driven session does.
 /// </remarks>
-public sealed record ChatTarget(string Repository, string Root, string ServiceUrl);
+public sealed record ChatTarget(string Repository, string Root, string ServiceUrl)
+{
+    /// <summary>
+    /// The harness conversation an ended chat goes on in (MSG1c, D137 §4.2), by the id Daoris kept for its record; null for
+    /// a new conversation. A native door hands it to its harness's own resume; a protocol door resumes on its wire.
+    /// </summary>
+    public string? Resume { get; init; }
+}
 
 /// <summary>How the driver talks to the spawned process once it is running (D53).</summary>
 public enum SessionWire
@@ -1542,11 +1549,13 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         var resolved = Resolve(command);
         // A conversation on the harness's structured wire (CONV3): each message a `stream-json` line on
-        // stdin, one turn each, until input ends — the same two endings the chat door keeps.
+        // stdin, one turn each, until input ends — the same two endings the chat door keeps. One that goes on
+        // (MSG1c) resumes its own conversation by the id kept for its record, never `--continue` (D137 §4.2).
         return Spawning.ChatInRoot(
             target, resolved[0],
             resolved.Skip(1)
                 .Concat(["-p", "--input-format", "stream-json", "--permission-mode", "acceptEdits"])
+                .Concat(target.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : [])
                 .Concat(StreamJsonOut));
     }
 

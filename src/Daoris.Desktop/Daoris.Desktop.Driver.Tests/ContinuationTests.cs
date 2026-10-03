@@ -425,6 +425,36 @@ public sealed class ContinuationTests : IDisposable
             carried.Data);
     }
 
+    /// <summary>An ended chat the person wrote to says so on the same line (MSG1c, D137 §3.3): its kind is the record's.</summary>
+    [Fact]
+    public void A_chats_reopen_line_names_its_kind()
+    {
+        var line = Continuations.Reopened("c1", "acp-stub", "completed", why: null, door: "screen", kind: "chat");
+
+        Assert.Contains(("kind", (object?)"chat"), line.Data);
+        Assert.Contains(("resumed", (object?)true), line.Data);
+    }
+
+    /// <summary>
+    /// 🔴 A chat's record is judged as a driven one's (MSG1c, D137 §2.2): its conversation goes on only on the adapter that
+    /// opened it, the account it ran on, the tree it ran in, by the id kept for it. A chat whose agent named no conversation
+    /// cannot go on, and says Daoris kept no id.
+    /// </summary>
+    [Fact]
+    public void A_chats_record_goes_on_only_by_the_id_kept_for_it()
+    {
+        var chat = new PriorSession("c1", _tree, "completed", "the conversation ended; its commits are its record.", "engine")
+        {
+            Kind = "chat",
+            Adapter = "acp-stub",
+            Said = [new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true)],
+        };
+
+        Assert.Null(Continuations.Judge(chat, "acp-stub", doorResumes: true, profile: null, new HarnessConversation("acp-stub", "acp-chat")));
+        Assert.Equal(ContinueWhy.Unkept, Continuations.Judge(chat, "acp-stub", doorResumes: true, profile: null, kept: null)!.Code);
+        Assert.Equal(ContinueWhy.Ended, Continuations.Judge(chat with { Said = [] }, "acp-stub", true, null, null)!.Code);
+    }
+
     /// <summary>
     /// MSG1d (D137 §3.1, §5.1): the driver's notes about the person's words carry their ids and the reason's code beside the
     /// line, since a reason is chrome the page words itself: where they went, naming the session, and where they cannot go on.

@@ -125,6 +125,12 @@ public sealed record PriorSession(
     /// <summary>The ask an intake answers (D65 §1b), or null for every other record: an intake never goes on (D137 §2.2).</summary>
     public string? Ask { get; init; }
 
+    /// <summary>
+    /// <c>driven</c> or <c>chat</c>, as the record says: an ended chat the person wrote to goes on through the chat runner
+    /// (MSG1c), never the planner, which plans a quest's sessions.
+    /// </summary>
+    public string Kind { get; init; } = "driven";
+
     /// <summary>Waiting on the person (D83): <c>awaiting-person</c>, the one state a record goes on from without leaving an ended one.</summary>
     public bool Parked => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase);
 
