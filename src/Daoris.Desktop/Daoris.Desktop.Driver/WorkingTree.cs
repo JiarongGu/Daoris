@@ -322,8 +322,11 @@ public static class WorkingTree
     /// <para><b>The bound is applied as the answer comes</b>, exactly as each file's own read applied it, in the files'
     /// order: a patch is kept while less than <see cref="PatchBudget"/> is spent, cut at <see cref="PatchCap"/>; once the
     /// budget is spent every later file is counted, and git is stopped there rather than read to the end.</para>
+    ///
+    /// <para>Internal since GIT1b: a commit's page and a compare read their changes through this same reader, over the range
+    /// they name, rather than through a second one. A caller proves <paramref name="root"/> is a repository's top first.</para>
     /// </remarks>
-    private static async Task<TreeDiff?> RangeAsync(
+    internal static async Task<TreeDiff?> RangeAsync(
         string root, string before, string range, string rest, GitRead git, CancellationToken ct)
     {
         var split = new RangeSplit();

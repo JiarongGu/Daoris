@@ -4178,9 +4178,12 @@ check(
 );
 
 const goingOn = sayFromTerminal(heardId, 'and say where it lives');
+// The verb polls the record: a stub fast enough to take the words, work and end between two polls is read as taken and
+// moved on, which is as true; the next check proves it was the same record that went on (merging LAND2c, 2026-10-04).
 check(
   'with the headless loop running, words said to it are taken up by the SAME session, and the verb says so: going on, exit 0',
-  goingOn.code === 0 && /sessions: going on: the same session took it\./.test(goingOn.out),
+  goingOn.code === 0
+    && /sessions: (going on: the same session took it\.|taken: the session took it, and has moved since)/.test(goingOn.out),
   goingOn.out,
 );
 const workedAgain = await heardSettled('and say where it lives');

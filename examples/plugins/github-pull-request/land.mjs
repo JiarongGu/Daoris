@@ -72,11 +72,16 @@ const safe = (text) => (process.platform === 'win32'
   ? text.replace(/"/g, "'").replace(/%/g, ' percent').replace(/[\r\n]+/g, ' ')
   : text);
 
+/** Who accepted the work, as the frame says it: a person's press, or the rule's switch at the quest's done (LAND2c). */
+const accepted = (p) => (p.acceptedBy === 'auto'
+  ? 'accepted automatically when its quest was done'
+  : 'accepted by the person who reviewed it');
+
 /** The pull request's body: the quest it answers, the session that did it, the commits it carries. */
 function body(p) {
   const lines = [];
   if (p.quest) lines.push(`Quest \`#${p.quest.id}\`${p.quest.title ? `: ${p.quest.title}` : ''}.`, '');
-  lines.push(`Work from Daoris session \`${p.session}\` in \`${p.repository}\`, accepted by the person who reviewed it.`);
+  lines.push(`Work from Daoris session \`${p.session}\` in \`${p.repository}\`, ${accepted(p)}.`);
   if (p.commits?.length) {
     lines.push('', 'Commits:', '');
     for (const commit of p.commits) lines.push(`- ${commit.subject} (${commit.sha.slice(0, 8)})`);
@@ -84,8 +89,53 @@ function body(p) {
   return `${lines.join('\n')}\n`;
 }
 
+/** The state of the pull request at an address, as `gh` reads it: open, or the word GitHub gives it, or why it could not say. */
+function state(pullRequest, root) {
+  const read = run('gh', ['pr', 'view', pullRequest, '--json', 'state'], root);
+  if (!read.ok) return { error: read.why };
+  try {
+    const word = String(JSON.parse(read.out).state ?? '');
+    return word ? { open: word === 'OPEN', word: word.toLowerCase() } : { error: 'gh answered no state' };
+  } catch {
+    return { error: 'gh answered something that is not JSON' };
+  }
+}
+
+/**
+ * An advance (LAND2c, D149): Daoris moved the chain's branch on to a later step's work, and `pullRequest` is the one open from
+ * it. Push only while it is open, and open no second one: commits pushed to a pull request that is merged or closed would ride
+ * none, and a second one from this branch would carry the first's work again.
+ */
+function advance(p) {
+  const read = state(p.pullRequest, p.root);
+  if (read.error) {
+    return {
+      pushed: false,
+      pullRequest: p.pullRequest,
+      message: `could not read the state of its pull request ${p.pullRequest} — ${read.error}; nothing was pushed, since commits pushed to one that is not open would ride no pull request.`,
+    };
+  }
+  if (!read.open) {
+    return {
+      pushed: false,
+      pullRequest: p.pullRequest,
+      message: `its pull request ${p.pullRequest} is ${read.word}, so nothing was pushed: commits pushed now would ride no pull request. Open a new one for this work.`,
+    };
+  }
+
+  const pushed = run('git', ['push', '--quiet', 'origin', p.branch], p.root);
+  if (!pushed.ok) return { pushed: false, pullRequest: p.pullRequest, message: `git push to origin failed — ${pushed.why}` };
+  return {
+    pushed: true,
+    pullRequest: p.pullRequest,
+    message: `pushed \`${p.branch}\` to origin; its pull request carries the new commits, and no second one was opened.`,
+  };
+}
+
 /** The landing: push, then open the pull request. Each failure is the answer's own sentence. */
 function land(p) {
+  if (p.pullRequest) return advance(p);
+
   const pushed = run('git', ['push', '--quiet', '-u', 'origin', p.branch], p.root);
   if (!pushed.ok) return { pushed: false, message: `git push to origin failed — ${pushed.why}` };
 

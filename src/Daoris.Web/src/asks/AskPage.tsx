@@ -3,12 +3,15 @@ import { useTranslation } from 'react-i18next';
 import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
+import type { Consideration } from '../signals';
 import { Button, Icon, type IconName, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
+import { AskWork } from './AskWork';
+import { workTree } from './workTree';
 import { GoAheadList } from './GoAheadList';
 
 /** The acts in an ask's header (CTX1, D138 §4): its buttons and its page's right-click draw this one list. */
@@ -62,11 +65,16 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  * (§3.1). After an abandon it says when, *What went* and *What stayed* (§4.2). Closing says it leaves the quests (§6.5). A
  * browser has no driver, so it offers none of the three and names the terminal's commands.
  *
+ * **It shows its work** (PAUSE1h, §7.1): once the plan answers, the quests section lists each quest of the work with its
+ * state and why it sits, the questions its sessions asked under the quest whose session asked them, and those sessions as
+ * doors into Sessions (`AskWork`), so what a pause or an abandon reaches is seen before either is pressed. While the plan is
+ * on its way, and in a browser, it lists the quests the ask became, as the service names them.
+ *
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work,
+  work, considered = [],
 }: {
   ask: Ask;
   /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
@@ -87,6 +95,8 @@ export function AskPage({
   onAnswerGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
+  /** The driver's last look at each quest (the tick's `considered`), which says why one of its work sits (PAUSE1h). */
+  considered?: readonly Consideration[];
 }) {
   const { t } = useTranslation();
   const [another, setAnother] = useState('');
@@ -103,6 +113,8 @@ export function AskPage({
   const waiting = busy || work?.busy === true;
   const pauseLines = work?.plan ? pauseAsk(work.plan, { wired: work.wired }) : null;
   const abandoned = lastAbandon(work);
+  // Its work as the plan answers it (PAUSE1h); none while the plan is on its way, or in a browser.
+  const items = work?.plan ? workTree(work.plan) : [];
   const closing = asking === 'close';
   const deleting = asking === 'delete';
 
@@ -312,7 +324,14 @@ export function AskPage({
         </PageSection>
       )}
 
-      {ask.quests.length > 0 && (
+      {items.length > 0 ? (
+        /* What a pause or an abandon reaches, before either is pressed (PAUSE1h, D132 §7.1). */
+        <PageSection title={t('asks.record.quests')}>
+          <AskWork
+            items={items} ask={ask.id} considered={considered} questTitles={questTitles} onOpenQuest={onOpenQuest} onAttend={onAttend}
+          />
+        </PageSection>
+      ) : ask.quests.length > 0 && (
         <PageSection title={t('asks.record.quests')}>
           <ul className="m-0 grid list-none gap-1 p-0">
             {ask.quests.map((id) => (

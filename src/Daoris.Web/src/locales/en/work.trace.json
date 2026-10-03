@@ -156,6 +156,7 @@
   "work.trace.try.held": "its quest is held for your yes",
   "work.trace.try.uncommitted": "its tree holds uncommitted work",
   "work.trace.try.exists": "the branch already stands, and Daoris does not move it",
+  "work.trace.try.completed": "the chain's branch is already merged, so moving it on would push work no pull request carries",
   "work.trace.try.plugin-unready": "landed; its plugin cannot land work here, so nothing was pushed",
   "work.trace.try.plugin-failed": "landed; its plugin did not push it",
   "work.trace.try.already": "its work reached a branch of yours another way",

@@ -300,6 +300,217 @@ public sealed class LandingTests : IDisposable
         Assert.Equal(TargetPrompt.Compose(target), TargetPrompt.Compose(target with { LandsOn = new LandingPlan(LandingForm.Merge, "main", LandingSource.Default) }));
     }
 
+    // ——— LAND2c: a chain lands on one branch (D145 §3, D149)
+
+    /// <summary>
+    /// A chain's later step lands by moving the chain's branch on, as a fast-forward, from the commit the first landing made it
+    /// at: the owner's AR-2203 shape, where a follow-up ask's drill-down follows the first ask's quest. It is named for the
+    /// chain's first quest whichever ask published it, the record keeps the advance, the later session finds the landing as its
+    /// own, and the checkout is not touched.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_following_the_chain_from_another_ask_moves_the_chains_branch_on()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var quests = new Dictionary<string, QuestView>
+        {
+            ["q1"] = new("q1", "ask #a1", "engine", "Fix the gap", "", "Done"),
+            ["q3"] = new("q3", "ask #a2", "engine", "Drill down into the gap", "", "Done") { Parent = "q1" },
+        };
+        Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
+        var trees = new SessionTrees(_home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
+        var landed = await trees.LandAsync(first.Path, await LandingRules.SubjectAsync("s1", "q1", Find, null));
+        Assert.True(landed.Landed, landed.Message);
+        var tip = (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim();
+
+        var drill = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
+        await CommitAsync(drill.Path, "drill.txt", "the drill-down", "the drill-down");
+        var head = (await GitAsync(drill.Path, "rev-parse", "HEAD")).Trim();
+        var advanced = await trees.LandAsync(drill.Path, await LandingRules.SubjectAsync("s3", "q3", Find, null));
+
+        Assert.True(advanced.Landed, advanced.Message);
+        Assert.Equal("feature/q1-fix-the-gap", advanced.Branch);
+        Assert.Equal(tip, advanced.AdvancedFrom);
+        Assert.Contains("moved `feature/q1-fix-the-gap` on from", advanced.Message);
+        Assert.Contains("1 more commit(s), 2 from `main` in all", advanced.Message);
+        Assert.Equal(head, (await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim());
+        Assert.Equal("main", (await GitAsync(root, "rev-parse", "--abbrev-ref", "HEAD")).Trim());
+        Assert.Single((await GitAsync(root, "branch", "--list", "feature/*")).Trim().Split('\n'));
+
+        var entry = trees.Recorded.Landing("s3")!;
+        Assert.Equal(("s1", head), (entry.Session, entry.Tip));
+        var advance = Assert.Single(entry.Advances);
+        Assert.Equal((tip, head, "s3", AcceptedBy.Person), (advance.From, advance.To, advance.Session, advance.AcceptedBy));
+    }
+
+    /// <summary>
+    /// An advance refuses, each in its own words and moving nothing: a session whose work does not grow from the branch, a branch
+    /// that moved since its landing, and one a working tree has checked out.
+    /// </summary>
+    [Fact]
+    public async Task An_advance_is_refused_where_the_work_grows_apart_the_branch_moved_or_a_tree_stands_on_it()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
+        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        const string chain = "feature/q1-fix-the-gap";
+        var tip = (await GitAsync(root, "rev-parse", chain)).Trim();
+
+        // Grown from the line, not from the chain's work: no fast-forward.
+        var apart = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(apart.Path, "apart.txt", "work beside the chain", "work beside");
+        var grewApart = await trees.LandAsync(apart.Path, new LandingSubject("s2", "q1", "Fix the gap"));
+        Assert.False(grewApart.Landed);
+        Assert.Equal(AutoLandingCode.Exists, grewApart.Refusal);
+        Assert.Contains("does not grow from `feature/q1-fix-the-gap`", grewApart.Message);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
+
+        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
+        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
+
+        // Somebody moved it since its landing.
+        var tree = (await GitAsync(root, "rev-parse", $"{tip}^{{tree}}")).Trim();
+        var theirs = (await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture",
+            "commit-tree", tree, "-p", tip, "-m", "somebody's commit")).Trim();
+        await GitAsync(root, "update-ref", $"refs/heads/{chain}", theirs);
+        var moved = await trees.LandAsync(next.Path, new LandingSubject("s3", "q1", "Fix the gap"));
+        Assert.False(moved.Landed);
+        Assert.Contains("moved since Daoris landed on it", moved.Message);
+        Assert.Equal(theirs, (await GitAsync(root, "rev-parse", chain)).Trim());
+
+        // Checked out in a working tree of the person's.
+        await GitAsync(root, "update-ref", $"refs/heads/{chain}", tip);
+        var elsewhere = Path.Combine(_scratch, "elsewhere");
+        await GitAsync(root, "worktree", "add", "--quiet", elsewhere, chain);
+        var standing = await trees.LandAsync(next.Path, new LandingSubject("s3", "q1", "Fix the gap"));
+        Assert.False(standing.Landed);
+        Assert.Contains("is checked out at", standing.Message);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
+        Assert.Empty(trees.Recorded.Of("engine", chain)!.Advances);
+    }
+
+    /// <summary>
+    /// D149 point 3: a chain's branch whose pull request was merged — every commit on the line, or, after a squash, every file it
+    /// changed reading there as it left it — is not moved on, since commits added now would ride no pull request.
+    /// </summary>
+    [Theory]
+    [InlineData("merge")]
+    [InlineData("squash")]
+    public async Task A_chains_branch_whose_work_already_reads_on_the_line_is_not_moved_on(string how)
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"));
+        var trees = new SessionTrees(_home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
+        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        const string chain = "feature/q1-fix-the-gap";
+        var tip = (await GitAsync(root, "rev-parse", chain)).Trim();
+        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
+        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
+
+        // The platform completed the first pull request into the line.
+        var identity = new[] { "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture" };
+        if (how == "merge") await GitAsync(root, [.. identity, "merge", "--no-ff", "--no-edit", chain]);
+        else
+        {
+            await GitAsync(root, "merge", "--squash", chain);
+            await GitAsync(root, [.. identity, "commit", "-m", "the first work, squashed"]);
+        }
+
+        var refused = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
+
+        Assert.False(refused.Landed);
+        Assert.Equal(AutoLandingCode.Completed, refused.Refusal);
+        Assert.Contains("already reads on `main` — its pull request was merged", refused.Message);
+        Assert.Equal(tip, (await GitAsync(root, "rev-parse", chain)).Trim());
+    }
+
+    /// <summary>
+    /// D82 as D145 amends it: with the rule's tidy, the step before's session branch goes at its landing, so the next step grows
+    /// from the chain's landed branch, says so, and its done moves that branch on.
+    /// </summary>
+    [Fact]
+    public async Task A_next_step_grows_from_the_chains_branch_once_the_tidy_took_the_step_befores()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: true));
+        var trees = new SessionTrees(_home);
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
+        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        Assert.Empty((await GitAsync(root, "branch", "--list", first.Branch)).Trim());
+        const string chain = "feature/q1-fix-the-gap";
+
+        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch, landed: chain);
+
+        Assert.Equal(chain, next.GrewFrom);
+        Assert.Contains($"`{chain}`, the branch its chain landed on", next.BasedOn);
+        Assert.Equal((await GitAsync(root, "rev-parse", chain)).Trim(), (await GitAsync(next.Path, "rev-parse", "HEAD")).Trim());
+        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
+        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"));
+        Assert.True(advanced.Landed, advanced.Message);
+        Assert.NotNull(advanced.AdvancedFrom);
+        Assert.False(Directory.Exists(next.Path), "the rule's tidy follows an advance as it follows a landing");
+    }
+
+    /// <summary>
+    /// D149 point 4: at an advance the rule's plugin is told the pull request its first landing opened, and who accepted this
+    /// work, so it pushes and opens no second one; an answer naming no pull request keeps the one the record holds.
+    /// </summary>
+    [Fact]
+    public async Task The_plugin_is_told_the_open_pull_request_at_an_advance_and_who_accepted_it()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "example.lands", AutoAccept: true));
+        Plugin("example.lands", """{ "id": "example.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
+        var frames = new List<System.Text.Json.JsonElement>();
+        var trees = new SessionTrees(_home, new LandingPlugins(_home, start: (_, _, _) => Task.FromResult<IHookChannel>(new FakeLander(frame =>
+        {
+            var said = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(frame)).RootElement.Clone();
+            frames.Add(said);
+            return said.GetProperty("pullRequest").ValueKind == System.Text.Json.JsonValueKind.Null
+                ? new PluginLanding("example.lands", true, "https://example.test/pull/7", "pushed it and opened a pull request.")
+                : new PluginLanding("example.lands", true, null, "pushed it; its pull request carries the new commits.");
+        }))));
+        var first = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(first.Path, "work.txt", "the first session's work", "the first work");
+        Assert.True((await trees.LandAsync(first.Path, new LandingSubject("s1", "q1", "Fix the gap"))).Landed);
+        var next = await trees.OpenAsync(root, "engine", "aurora", from: first.Branch);
+        await CommitAsync(next.Path, "next.txt", "the next step", "the next step");
+
+        var advanced = await trees.LandAsync(next.Path, new LandingSubject("s2", "q1", "Fix the gap"), acceptedBy: AcceptedBy.Auto);
+
+        Assert.True(advanced.Landed, advanced.Message);
+        Assert.Equal(2, frames.Count);
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, frames[0].GetProperty("pullRequest").ValueKind);
+        Assert.Equal(AcceptedBy.Person, frames[0].GetProperty("acceptedBy").GetString());
+        Assert.Equal("https://example.test/pull/7", frames[1].GetProperty("pullRequest").GetString());
+        Assert.Equal(AcceptedBy.Auto, frames[1].GetProperty("acceptedBy").GetString());
+        Assert.Equal(2, frames[1].GetProperty("commits").GetArrayLength());
+        var entry = trees.Recorded.Of("engine", "feature/q1-fix-the-gap")!;
+        Assert.Equal("https://example.test/pull/7", entry.PullRequest);
+        Assert.Equal((await GitAsync(root, "rev-parse", "feature/q1-fix-the-gap")).Trim(), entry.PushedTip);
+        Assert.Equal(AutoLandingCode.Advanced, AutoLandingRules.CodeOf(advanced));
+    }
+
+    /// <summary>A plugin faked on the wire's channel: nothing reaches a network or a platform.</summary>
+    private sealed class FakeLander(Func<object, PluginLanding> land) : IHookChannel
+    {
+        public IReadOnlyList<string> Points => [HookPoints.Land];
+        public bool Alive => true;
+        public Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct) => Task.FromResult(HookDecision.Allow);
+        public Task EndedAsync(object payload, CancellationToken ct) => Task.CompletedTask;
+        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => Task.FromResult(land(payload));
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
     private void Plugin(string id, string manifest)
     {
         var folder = Path.Combine(_home, "plugins", id);
@@ -340,16 +551,21 @@ public sealed class LandingTests : IDisposable
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(info)!;
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.StandardError.ReadToEndAsync();
+        // 🔴 Both streams are read at once, before the wait: read one after the other, a git that writes more than a pipe's
+        // worth of warnings to the second blocks on it while the first is still being read (FIX-LOG 2026-10-04).
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        await Task.WhenAll(stdout, stderr);
         await process.WaitForExitAsync();
-        return stdout;
+        return await stdout;
     }
 
+    /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>
     private static string RepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git")))
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, ".git"))
+               && !File.Exists(Path.Combine(directory.FullName, ".git")))
         {
             directory = directory.Parent;
         }

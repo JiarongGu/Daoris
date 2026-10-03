@@ -6,7 +6,7 @@ import { sentence } from '../format';
 import { askItem } from '../opener';
 import { useAnswerGoAhead, useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
-import { useDriver, useNudge, useRemotes, useWorkPlan } from '../shell';
+import { useConsidered, useDriver, useNudge, useRemotes, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { freshest } from '../quests/records';
@@ -50,6 +50,8 @@ export type AsksPart = {
  * **Its work is paused, resumed and abandoned on its page** (PAUSE1e, D132 §7.1): the chosen ask's plan is asked of this
  * machine's driver while Quests is in front, and each press goes to the one owner (`workActs.ts`). An abandon's answer is
  * kept for the page until the record says the same. A browser has no driver, and its page names the terminal's commands.
+ * The page lists that work with the driver's last look at each quest (the tick's `considered`), which says why one sits
+ * (PAUSE1h).
  *
  * The organism: it holds the hooks so the row, the page and the composer below it hold none (components §2).
  */
@@ -101,6 +103,8 @@ export function useAsksPart({
   const work = useWorkPlan(chosen ? { scope: 'ask', id: chosen } : null, { enabled: active });
   const wiring = useRemotes().data;
   const workActs = useWorkActs({ notify });
+  // The driver's last look at each quest, which says why one of the chosen ask's work sits (PAUSE1h).
+  const considered = useConsidered().data ?? [];
   // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
 
@@ -216,6 +220,7 @@ export function useAsksPart({
           onOpenQuest={(id) => onChoose(id)}
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
           work={workDoor(shown)}
+          considered={considered}
         />
       )
       : <QuestsMainNotice state={every.data === undefined && !every.error ? 'loading' : 'gone'} gone="ask" />;

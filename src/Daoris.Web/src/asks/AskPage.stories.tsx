@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { WorkDoor } from '../work/pausing';
 import {
-  ABANDON_ANSWER, ABANDONED_ASK, ABANDONED_ENTRY, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK, SPENT_ASK,
+  ABANDON_ANSWER, ABANDONED_ASK, ABANDONED_ENTRY, LISTED_ASK, LISTED_CONSIDERED, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK,
+  PAUSED_LISTED_ASK, PAUSED_LISTED_CONSIDERED, SPENT_ASK,
 } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
 import {
@@ -112,3 +113,30 @@ export const WorkJustAbandoned: Story = {
 export const WorkPartlyElsewhere: Story = { args: { ask: WORKING, work: work({ plan: MIXED_ASK }) } };
 /** In a browser: none of the three, and the terminal's commands named. */
 export const WorkInABrowser: Story = { args: { ask: WORKING } };
+
+// ——— Its work listed (PAUSE1h, D132 §7.1): each quest of the plan with its state and why it sits, the questions its sessions
+// asked under the quest whose session asked them, and those sessions as doors into Sessions.
+
+const LISTED = { ...WORKING, quests: ['9a8b7c', '5e4f3d', '2d3e4f', '3c2b1a'] };
+const LISTED_TITLES = {
+  '9a8b7c': 'Cap chunk hydration per frame', '5e4f3d': 'Expose the streaming budget to the HUD',
+  '2d3e4f': 'Document the budget in the HUD guide', '3c2b1a': 'Tune the frame-time histogram buckets',
+};
+
+/**
+ * Its work in flight: a quest waiting on its question, whose sessions asked two of other repositories (one a teammate works
+ * on another machine, one answered); one working here; one open in a held repository; one paused on its own.
+ */
+export const WorkListed: Story = {
+  args: { ask: LISTED, questTitles: LISTED_TITLES, onAttend: nothing, work: work({ plan: LISTED_ASK }), considered: LISTED_CONSIDERED },
+};
+/** Paused: each quest the ask's pause holds says so briefly; its own pause, and a take elsewhere it does not reach, as they are. */
+export const WorkListedPaused: Story = {
+  args: {
+    ask: LISTED, questTitles: LISTED_TITLES, onAttend: nothing, work: work({ plan: PAUSED_LISTED_ASK }), considered: PAUSED_LISTED_CONSIDERED,
+  },
+};
+/** Its work where Sessions is not: each session named, never a door, and only the quests the page holds open their pages. */
+export const WorkListedWithNoDoors: Story = {
+  args: { ask: LISTED, questTitles: { '9a8b7c': LISTED_TITLES['9a8b7c'] }, work: work({ plan: LISTED_ASK }), considered: LISTED_CONSIDERED },
+};

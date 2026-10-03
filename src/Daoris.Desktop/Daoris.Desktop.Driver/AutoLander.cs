@@ -59,9 +59,10 @@ public sealed record AutoChosen(IReadOnlyList<AutoChoice> Chosen, IReadOnlyList<
 /// made only once either moves (<see cref="AutoLandingRules.ShouldTry"/>), or the person's press lands it, which the look
 /// then reads as <see cref="AutoLandingCode.Already"/>.</para>
 ///
-/// <para><b>LAND2c will change one thing</b>: a later step's done in the same repository advances the chain's branch rather
-/// than meeting it as <see cref="AutoLandingCode.Exists"/>, and a correction's new commits advance the session's own. Today
-/// each done session lands as Accept would, on the branch its pattern names.</para>
+/// <para><b>A chain lands on one branch</b> (LAND2c, D149): a later step's done in the same repository moves the chain's branch
+/// on as <see cref="AutoLandingCode.Advanced"/>, and so does a session's done after words went on with it past its landing
+/// (D137), each through the press's own path. One whose pull request was merged waits as
+/// <see cref="AutoLandingCode.Completed"/>.</para>
 /// </remarks>
 /// <param name="log">Where a try's <c>landing.auto</c> line goes (D94): the service client's watchers, which write the machine log.</param>
 public sealed class AutoLander(
@@ -93,9 +94,10 @@ public sealed class AutoLander(
                 continue;
             }
 
-            // Landed since another way: the person's press lands it at once, whatever the last try was (design §2).
+            // Landed since another way: the person's press lands it at once, whatever the last try was (design §2). A press that
+            // moved a chain's branch on lands it too, so its own acceptance is what is compared (LAND2c).
             var since = entry.Last is { } last && last.At > entry.DueAt ? last.At : entry.DueAt;
-            if (trees.Recorded.Landing(entry.Session) is { } landing && landing.LandedAt >= since)
+            if (trees.Recorded.Landing(entry.Session) is { } landing && landing.AcceptedAt(entry.Session) >= since)
             {
                 said.Add(Closed(entry, AutoLandingCode.Already, branch: landing.Branch));
                 continue;
@@ -221,7 +223,7 @@ public sealed class AutoLander(
             Tip = tip,
             Status = status,
             Uncommitted = uncommitted,
-            Branch = made ?? (code is AutoLandingCode.Exists or AutoLandingCode.Already ? named : null),
+            Branch = made ?? (code is AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Already ? named : null),
             Commits = made is null ? null : commits,
         }, AutoLandingCode.Closes(code));
 

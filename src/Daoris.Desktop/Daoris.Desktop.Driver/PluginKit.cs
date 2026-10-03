@@ -120,7 +120,9 @@ public static partial class PluginKit
             "Once a landing has made its branch (only then, and only where a workspace's branch landing rule "
             + "names this plugin), it is started for that one landing, told the branch, and stopped. It pushes "
             + "the branch and opens the pull request for its platform, in `root`, with whatever that "
-            + "platform's tools are signed in as. Daoris itself never pushes.",
+            + "platform's tools are signed in as. Daoris itself never pushes. Where `pullRequest` is set, that pull "
+            + "request is already open from the branch, which has moved on since: read its state, push only while "
+            + "it is open, and open no second one. `acceptedBy` is `person` or `auto`.",
             """`{ "pushed": true, "pullRequest": "https://…", "message": "…" }`. `pushed` is required; the pull """
             + "request is an absolute web address, or null; the message is the plugin's own sentence, or null. "
             + "The branch stands whatever it answers.",

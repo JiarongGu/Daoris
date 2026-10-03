@@ -156,6 +156,7 @@
   "work.trace.try.held": "它的委托在等你采纳",
   "work.trace.try.uncommitted": "它的工作树中有未提交的改动",
   "work.trace.try.exists": "该分支已存在，Daoris 不会移动它",
+  "work.trace.try.completed": "委托链的分支已合并，再前移会推送没有拉取请求承载的工作",
   "work.trace.try.plugin-unready": "已落地；它的插件此处无法落地，因此没有推送",
   "work.trace.try.plugin-failed": "已落地；它的插件没有推送",
   "work.trace.try.already": "它的工作已通过别的方式到了你的某个分支",
