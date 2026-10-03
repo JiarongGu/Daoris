@@ -1,6 +1,7 @@
 # Daoris's own git, built in — branches, history and blame, organised by where work is
 
-> GIT1, decided as D147 (2026-10-04). Nothing is built. The owner: *"since Daoris will need to use git anyway we will
+> GIT1, decided as D147 (2026-10-04). GIT1a–c are built (the branch list, the reads behind a page, the terminal's
+> read door); their notes are under D147. The owner: *"since Daoris will need to use git anyway we will
 > need a self-managed git, also since we will have self-managed git then we probably need to do a built-in git more
 > like VS Code with GitLens"*. `Dnn` is `docs/decisions/Dnn.md`. LAND2 is D145, being designed beside this: it lands
 > done work onto `feature/` branches and opens their pull requests through a plugin. This design places those branches
