@@ -30,10 +30,27 @@ az repos pr create --source-branch <branch> --title <title> --output json --targ
 
 The organization, project and repository are the ones `az` detects from the checkout's `origin`
 (`--detect`, on by default), so nothing here names them. The title is the quest's (or what you first
-said in a conversation); the description names the quest, the session and the commits, one line per
-value, as `--description` takes them. `--target-branch` is the line the work grew from; with none,
-Azure Repos uses the repository's default branch. The pull request's web address is read from the
-JSON `az` prints and comes back to the review and the terminal.
+said in a conversation); the description names the quest, the session, who accepted the work (the
+person who reviewed it, or automatically when its quest was done, as the frame's `acceptedBy` says)
+and the commits, one line per value, as `--description` takes them. `--target-branch` is the line the
+work grew from; with none, Azure Repos uses the repository's default branch. The pull request's web
+address is read from the JSON `az` prints and comes back to the review and the terminal.
+
+## When a chain's branch moves on
+
+A chain lands on one branch (D145 §3, D149): a later step's work, such as its verify step's, moves the
+branch the first landing made on, and Daoris tells this plugin the pull request it opened then, as the
+frame's `pullRequest`. Then it opens no second one. It reads that pull request's status, by the number
+its address ends in, and pushes only while it is `active`:
+
+```sh
+az repos pr show --id <number> --output json
+git push --quiet origin <branch>
+```
+
+A pull request that is completed or abandoned, or a status `az` cannot read, answers *not pushed*,
+saying which: commits pushed to it now would ride no pull request. The branch stands, and a new pull
+request for the rest is yours to open.
 
 ## What it needs
 
@@ -54,4 +71,4 @@ quotes become single ones and a percent sign is spelled out, because cmd would r
 
 `land.mjs` is the whole of it; `src/Daoris.Cli/test/landing-plugins.test.ts` drives it against a bare
 repository and a fake `az`, never a network. It has not been run against a real Azure DevOps
-organisation: the arguments are `az repos pr create`'s documented ones.
+organisation: the arguments are `az repos pr create`'s and `az repos pr show`'s documented ones.

@@ -28,9 +28,27 @@ gh pr create --head <branch> --title <title> --body-file <file> --base <base>
 ```
 
 The title is the quest's (or what you first said in a conversation). The body names the quest, the
-session and the commits, and is written to the plugin's data folder (`plugins/.data/github-pull-request/`)
-before `gh` reads it. `--base` is the line the work grew from; with none, `gh` uses the repository's
-default branch. The pull request's address `gh` prints comes back to the review and the terminal.
+session, who accepted the work (the person who reviewed it, or automatically when its quest was done,
+as the frame's `acceptedBy` says) and the commits, and is written to the plugin's data folder
+(`plugins/.data/github-pull-request/`) before `gh` reads it. `--base` is the line the work grew from;
+with none, `gh` uses the repository's default branch. The pull request's address `gh` prints comes
+back to the review and the terminal.
+
+## When a chain's branch moves on
+
+A chain lands on one branch (D145 §3, D149): a later step's work, such as its verify step's, moves the
+branch the first landing made on, and Daoris tells this plugin the pull request it opened then, as the
+frame's `pullRequest`. Then it opens no second one. It reads that pull request's state and pushes only
+while it is open:
+
+```sh
+gh pr view <pullRequest> --json state
+git push --quiet origin <branch>
+```
+
+A pull request that is merged or closed, or a state `gh` cannot read, answers *not pushed*, saying which:
+commits pushed to it now would ride no pull request. The branch stands, and a new pull request for the
+rest is yours to open.
 
 ## What it needs
 
@@ -50,4 +68,4 @@ quotes become single ones and a percent sign is spelled out.
 No remote, organisation or repository is named here: `gh` takes them from the checkout's `origin`.
 `land.mjs` is the whole of it; `src/Daoris.Cli/test/landing-plugins.test.ts` drives it against a bare
 repository and a fake `gh`, never a network. It has not been run against a real GitHub repository: the
-arguments are `gh pr create`'s documented ones.
+arguments are `gh pr create`'s and `gh pr view`'s documented ones.
