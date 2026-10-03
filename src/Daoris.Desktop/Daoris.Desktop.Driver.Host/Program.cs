@@ -107,9 +107,10 @@ using Daoris.Driver;
 //                 home, a driven session's words are kept on its record for the next, and a conversation's refused.
 //                 It waits up to ten seconds and prints where the words stand. The session's box is the other door.
 //
-//   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
-//         | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]
-//                 the session worktrees this machine has grown (D51): list them, or remove one —
+//   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--yes]
+//         | land <session> [--plan] | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]
+//                 the session worktrees this machine has grown (D51): list them, or remove one, or a session's
+//                 branch by the session or the branch (LAND3) —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced —
 //                 or list every session branch and, with --yes, remove the empty and landed (D88),
 //                 or accept a session's work as the review's Accept does, by the workspace's rule (D87),

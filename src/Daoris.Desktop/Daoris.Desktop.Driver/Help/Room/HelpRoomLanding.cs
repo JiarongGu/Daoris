@@ -31,6 +31,11 @@ internal sealed class HelpRoomLanding : IHelpRoomSection
         // HELP8: a branch rule may name a plugin (D100), and the helper can only name one it can see.
         text.Append("A branch rule may add `--plugin <id>`: once Daoris has made the branch, that plugin pushes it and\n");
         text.Append("opens the pull request, as the person's own platform tools are signed in.\n");
+        // LAND2a (D145 point 5): the switch is the person's standing say-so for a push with no press, so the helper
+        // proposes it only when they ask for it.
+        text.Append("A branch rule may also add `--auto-accept`: a quest's done then lands its work with no press, and the\n");
+        text.Append("rule's plugin pushes it and opens a pull request without asking each time. It is the person's standing\n");
+        text.Append("say-so for that push, so propose it only when they ask for it, and never on a merge.\n");
         var offeredLanders = machine.Offers.Where(offer => offer.Points.Contains(HookPoints.Land, StringComparer.Ordinal)).Select(offer => $"`{offer.Id}`").ToList();
         text.Append(machine.LandingPlugins.Count > 0
             ? $"Plugins that can land work here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"

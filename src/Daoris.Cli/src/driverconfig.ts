@@ -205,6 +205,25 @@ export interface LandingRule {
   tidy?: boolean;
   /** The plugin a branch rule hands its new branch to, spoken to on `work/land` (D100). Absent is the person. */
   plugin?: string;
+  /**
+   * *Accept automatically* (LAND2a, D145): a quest's done lands its work with no press, and the rule's plugin pushes it
+   * and opens the pull request. Only a branch rule takes it; absent is the person's press. The driver's
+   * `LandingRule.AutoAccept` is the twin. Nothing acts on it until LAND2b.
+   */
+  autoAccept?: boolean;
+}
+
+/**
+ * What a door says as *Accept automatically* is set (D145 point 5, design §6): the person's standing say-so for a push
+ * with no press, and with no plugin the warning that nothing leaves the machine — the driver's
+ * `LandingRules.AutoAcceptSays`, word for word.
+ */
+export function autoAcceptSays(plugin: string | undefined): string {
+  return plugin !== undefined
+    ? `when a quest here is done, its work is put on its branch, and \`${plugin}\` pushes it and opens a pull request without `
+      + 'asking you each time. The pull request is where it is judged. Switch it off to accept each one yourself.'
+    : 'when a quest here is done, its work is put on its branch, and nothing leaves this machine: no plugin opens a pull '
+      + 'request, so each done\'s branch waits here for you to push it. Switch it off to accept each one yourself.';
 }
 
 /** The point a plugin lands work on — the driver's `HookPoints.Land`. */
@@ -227,9 +246,16 @@ const SAMPLE: Record<string, string> = { quest: '0fda18', session: 's1a2b3c4', s
 export function landingProblem(rule: LandingRule): string | null {
   if (rule.form === 'merge') {
     // A merge makes no branch, and the plugin starts from the branch Daoris made (D100).
-    return rule.plugin === undefined ? null
-      : 'only a branch rule hands its work to a plugin — the plugin pushes the branch Daoris made, and a merge '
+    if (rule.plugin !== undefined) {
+      return 'only a branch rule hands its work to a plugin — the plugin pushes the branch Daoris made, and a merge '
         + 'makes none. `branch <pattern> --plugin <id>` is the form that does.';
+    }
+    // A merge writes into the person's checkout, and with no press nothing would stand between the work and the line
+    // (D145 point 1, D51 rule 6).
+    return rule.autoAccept
+      ? 'only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would '
+        + 'stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.'
+      : null;
   }
   if (rule.form !== 'branch') {
     return `\`${rule.form}\` is not a way work lands here — \`merge\` or \`branch\`. `
@@ -731,8 +757,9 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     // How work lands (WSR1, D87) — for one repository, or with `--workspace` for every repository in
     // it that sets none of its own: `merge` into the line, or `branch <pattern>` for the person to push,
-    // or for the plugin `--plugin` names to push and open the pull request from (WSR4, D100). Unset, it
-    // is the merge it always was. Daoris itself never pushes.
+    // or for the plugin `--plugin` names to push and open the pull request from (WSR4, D100), and on a branch
+    // `--auto-accept` for a quest's done to land it with no press (LAND2a, D145). Unset, it is the merge it
+    // always was. Daoris itself never pushes.
     case 'landing': {
       const workspace = flagValue(argv, '--workspace');
       const clear = argv.includes('--clear');
@@ -743,7 +770,8 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
         throw new DaorisError(
           '`driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — '
           + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`, and on a branch '
-          + '`--plugin <id>` for an installed plugin that pushes it and opens the pull request.');
+          + '`--plugin <id>` for an installed plugin that pushes it and opens the pull request, and `--auto-accept` '
+          + 'for a quest\'s done to land it with no press.');
       }
 
       const pluginAt = argv.indexOf('--plugin');
@@ -753,11 +781,19 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
           + '`daoris plugin list` shows what there is.');
       }
 
+      // *Accept automatically* (LAND2a, D145): on with `--auto-accept`; `--no-auto-accept` says off out loud, which is a
+      // repository's own rule overriding a workspace that accepts automatically, since a rule replaces the one above whole.
+      const autoAccept = argv.includes('--auto-accept');
+      if (autoAccept && argv.includes('--no-auto-accept')) {
+        throw new DaorisError('a rule accepts automatically or waits for your Accept — say `--auto-accept` or `--no-auto-accept`, not both.');
+      }
+
       const rule: LandingRule | null = clear ? null : {
         form: form!,
         ...(pattern !== undefined ? { pattern } : {}),
         ...(argv.includes('--tidy') ? { tidy: true } : {}),
         ...(plugin !== undefined ? { plugin } : {}),
+        ...(autoAccept ? { autoAccept: true } : {}),
       };
       const problem = rule === null ? null : landingProblem(rule);
       if (problem !== null) throw new DaorisError(problem);
@@ -789,6 +825,13 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       if (rule?.tidy) {
         write('  Once a press lands the work, its tree and its branch go — only where git proves the work is on a');
         write('  branch of yours. Without --tidy the tree stays until you discard it.');
+      }
+
+      // The person's standing say-so for a push with no press, said as it is given (D145 point 5, design §6).
+      if (rule?.autoAccept) {
+        write(`  Accept automatically: ${autoAcceptSays(rule.plugin)}`);
+      } else if (rule?.form === 'branch' && argv.includes('--no-auto-accept')) {
+        write('  Done work there waits for your Accept — a repository\'s own rule replaces its workspace\'s whole, the switch with it.');
       }
 
       if (rule !== null && workspace) {
@@ -1038,7 +1081,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     const spelled = (rule: LandingRule) =>
       (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form)
-      + (rule.plugin ? `, plugin ${rule.plugin}` : '') + (rule.tidy ? ', tidy' : '');
+      + (rule.plugin ? `, plugin ${rule.plugin}` : '') + (rule.tidy ? ', tidy' : '') + (rule.autoAccept ? ', accept automatically' : '');
     for (const [repository, rule] of Object.entries(choices.landings)) {
       write(`  landing    ${repository}  ${spelled(rule)}`);
     }
@@ -1314,13 +1357,15 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, tidy, plugin } = rule as Record<string, unknown>;
+    const { form, pattern, tidy, plugin, autoAccept } = rule as Record<string, unknown>;
     const read: LandingRule = {
       form: typeof form === 'string' ? form : '',
       ...(typeof pattern === 'string' ? { pattern } : {}),
       ...(tidy === true ? { tidy: true } : {}),
       // An empty name is no name, as the driver reads it.
       ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
+      // Only JSON `true` (LAND2a): `"true"` or 1 is not the person's say-so for a push with no press.
+      ...(autoAccept === true ? { autoAccept: true } : {}),
     };
     if (landingProblem(read) === null) held[name] = kept(read);
   }
@@ -1329,14 +1374,15 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
 }
 
 /**
- * A rule as it is kept: a merge carries no pattern, a plugin only on a branch, and the tidy only when
- * on — the driver keeps it the same way.
+ * A rule as it is kept: a merge carries no pattern, a plugin only on a branch, and the tidy and the automatic
+ * acceptance only when on, in that order — the driver keeps it the same way.
  */
 function kept(rule: LandingRule): LandingRule {
   return {
     ...(rule.form === 'merge' ? { form: 'merge' } : { form: rule.form, pattern: rule.pattern! }),
     ...(rule.form !== 'merge' && rule.plugin ? { plugin: rule.plugin } : {}),
     ...(rule.tidy ? { tidy: true } : {}),
+    ...(rule.form !== 'merge' && rule.autoAccept ? { autoAccept: true } : {}),
   };
 }
 

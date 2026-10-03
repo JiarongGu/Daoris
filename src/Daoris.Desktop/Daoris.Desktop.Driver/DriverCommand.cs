@@ -78,10 +78,11 @@ public static class DriverCommand
           sessions say <id> "…" [--file <path>]…
               say something to a session of this machine's: read at its next step or when its turn ends while it
               works, or, parked or ended, the same session goes on with it. Prints where the words stand.
-          trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
-                | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
+          trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--yes]
+                | land <session> [--plan] | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | sync [--repository <name>] [--all] [--yes]]
-              this machine's session trees and the branches its landings made; sync brings each
+              this machine's session trees and the branches its landings made; remove takes a failed or
+              superseded attempt's branch, with its tree where it is still here, on --force; sync brings each
               repository up to date after a pull request merged, listed first (it fetches, never pushes):
               those holding Daoris's branches, every one with --all.
           sync [status | dismiss <quest>] [--workspace <name>]

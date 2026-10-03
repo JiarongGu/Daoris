@@ -27,6 +27,64 @@ internal static class TreesConsole
         _ => item.Kind,
     };
 
+    /// <summary>The door offered beside a kept branch a failed or superseded attempt left (LAND3), or null.</summary>
+    internal static string? Offered(SweepItem item) => SessionTrees.RemovalOffered(item);
+
+    /// <summary>A tree named by its path, as `remove` always took one, rather than a session or its branch (LAND3).</summary>
+    internal static bool LooksLikePath(string named) => SessionTrees.NamesAPath(named);
+
+    /// <summary>
+    /// A session branch the person removes by its door (LAND3): named by the branch (<c>daoris/s-…</c> or <c>s-…</c>), found in
+    /// the record of where branches grew from, or by the session, whose record names its tree. Its tree goes with it while
+    /// it is here. The checkout is the registry's, so the service is asked.
+    /// </summary>
+    private static async Task<TreeRemoval> RemoveSessionBranchAsync(SessionTrees trees, string named, string? repository, bool force)
+    {
+        using var service = ServiceClient.FromEnvironment();
+        string? owner;
+        string branch;
+        if (named.StartsWith("daoris/", StringComparison.Ordinal) || named.StartsWith("s-", StringComparison.Ordinal))
+        {
+            var found = trees.FindBranches(named, repository);
+            var owners = found.Select(entry => entry.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (owners.Count > 1)
+            {
+                return new(false, $"`{named}` names a session branch in {string.Join(", ", owners.Select(r => $"`{r}`"))} — say which with "
+                    + "`--repository <name>`.");
+            }
+
+            owner = owners.FirstOrDefault() ?? repository;
+            branch = found.FirstOrDefault()?.Branch ?? (named.StartsWith("daoris/", StringComparison.Ordinal) ? named : $"daoris/{named}");
+            if (owner is null)
+            {
+                return new(false, $"`{named}` names no session branch this machine recorded — say which repository holds it with "
+                    + "`--repository <name>`.");
+            }
+        }
+        else
+        {
+            var (tree, _) = await service.SessionGroundAsync(named).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(tree))
+            {
+                return new(false, $"session `{named}` names no working tree on this machine, so it left no session branch here.");
+            }
+
+            if (Directory.Exists(tree)) return await trees.RemoveAsync(tree, force).ConfigureAwait(false);
+            if (trees.BranchOfTree(tree) is not { } of)
+            {
+                return new(false, $"session `{named}`'s tree is not one this machine's trees home holds, so Daoris removes nothing for it.");
+            }
+
+            (owner, branch) = (of.Repository, of.Branch);
+        }
+
+        var root = (await service.RegistryAsync().ConfigureAwait(false))
+            .FirstOrDefault(row => string.Equals(row.Repository, owner, StringComparison.OrdinalIgnoreCase))?.Root;
+        return string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)
+            ? new(false, $"`{owner}` has no checkout here, so its branch `{branch}` cannot be removed from this machine.")
+            : await trees.RemoveBranchAsync(root, owner, branch, force).ConfigureAwait(false);
+    }
+
     /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
     internal static string Planned(string session, LandingPlan plan)
     {
@@ -88,10 +146,15 @@ internal static class TreesConsole
                 return 0;
             }
 
-            case ["remove", var path, ..]:
+            // A tree by its path, as it always was; or a session's branch by the session or the branch (LAND3): a failed or
+            // superseded attempt's, which no landing's tidy and no clean-up takes since its commits are on no branch of the
+            // person's. Its tree goes with it where it is still here. --force means it.
+            case ["remove", var named, ..]:
             {
-                var removal = await trees.RemoveAsync(path, force: args.Contains("--force"))
-                    .ConfigureAwait(false);
+                var force = args.Contains("--force");
+                var removal = LooksLikePath(named)
+                    ? await trees.RemoveAsync(named, force).ConfigureAwait(false)
+                    : await RemoveSessionBranchAsync(trees, named, Option(args, "--repository"), force).ConfigureAwait(false);
                 Console.WriteLine($"trees: {removal.Message}");
                 // A refusal that preserves work is policy doing its job, not a tool error.
                 return removal.Removed ? 0 : 1;
@@ -120,7 +183,11 @@ internal static class TreesConsole
                         return 0;
                     }
 
-                    foreach (var item in plan.Sessions) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
+                    foreach (var item in plan.Sessions)
+                    {
+                        Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
+                        if (Offered(item) is { } offer) Console.WriteLine($"         {offer}");
+                    }
                     // The branches landings made (WSR5), in a group of their own: each goes where its work reached the line.
                     if (plan.Landed.Count > 0) Console.WriteLine("  landed branches — each goes once its work reads on the line:");
                     foreach (var item in plan.Landed) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {LandedWords.Describe(item)}");
@@ -280,7 +347,10 @@ internal static class TreesConsole
                     return 0;
                 }
 
-                var landed = await landing.LandAsync(tree, subject).ConfigureAwait(false);
+                // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
+                var landed = await landing.LandAsync(tree, subject, inUse: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
+                    .Select(each => each.Tree).OfType<string>().Where(each => each.Length > 0)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase)).ConfigureAwait(false);
                 Console.WriteLine($"trees: {landed.Message}");
                 // Kept where the conversation is kept, as the review's press keeps it (D100).
                 if (landed.Landed) events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
@@ -345,16 +415,20 @@ internal static class TreesConsole
             }
 
             default:
-                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]");
+                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
+                Console.Error.WriteLine("                           | clean [--yes] | land <session> [--plan]");
                 Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
                 Console.Error.WriteLine("                           | sync [--repository <name>] [--all] [--yes]]");
                 Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
                 Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
+                Console.Error.WriteLine("  A session or its branch removes a failed or superseded attempt's branch,");
+                Console.Error.WriteLine("  with its tree where it is still here (LAND3).");
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
                 Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88), and every");
                 Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");
                 Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
-                Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule naming a");
+                Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule that tidies");
+                Console.Error.WriteLine("  also removes every other session branch the landed work holds (LAND3). A rule naming a");
                 Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
                 Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
                 Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");

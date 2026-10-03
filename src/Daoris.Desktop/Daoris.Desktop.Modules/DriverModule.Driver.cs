@@ -254,9 +254,9 @@ public sealed partial class DriverModule
                 .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
             // The landing rules as set (WSR1), as rows for the same reason.
             Landings = config.Landings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin }).ToArray(),
+                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept }).ToArray(),
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin }).ToArray(),
+                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin, p.Value.AutoAccept }).ToArray(),
             // Reading and writing across as set (D107), as rows for the same reason.
             ReadAcross = config.ReadAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, Read = p.Value }).ToArray(),

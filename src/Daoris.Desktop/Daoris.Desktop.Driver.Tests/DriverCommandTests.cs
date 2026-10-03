@@ -104,6 +104,21 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// LAND3: a failed or superseded attempt's branch is removed from a terminal by the session or the branch, a door the
+    /// usage names and the host reads; the clean-up's list offers it beside such a row, and a landing asks which sessions run.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_removing_a_sessions_branch_by_the_session_or_the_branch()
+    {
+        Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", DriverCommand.Usage);
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        Assert.Contains("remove <path|session|branch> [--repository <name>] [--force]", program);
+        Assert.Contains("RemoveSessionBranchAsync(trees, named, Option(args, \"--repository\"), force)", program);
+        Assert.Contains("if (Offered(item) is { } offer)", program);
+        Assert.Contains("landing.LandAsync(tree, subject, inUse:", program);
+    }
+
+    /// <summary>
     /// PLUGDIST1a: a plugin package is installed from a terminal, a door the usage names, and the host asks for it
     /// before the `plugins` words the kit answers, which would otherwise take it.
     /// </summary>

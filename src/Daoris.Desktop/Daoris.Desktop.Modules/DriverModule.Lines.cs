@@ -77,6 +77,7 @@ public sealed partial class DriverModule
                     pair.landing.Rule.Pattern,
                     pair.landing.Rule.Tidy,
                     pair.landing.Rule.Plugin,
+                    pair.landing.Rule.AutoAccept,
                     pair.landing.Source,
                 })
                 .ToArray(),
@@ -107,8 +108,9 @@ public sealed partial class DriverModule
             throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
         }
 
+        // *Accept automatically* rides the rule (LAND2a, D145): a save that dropped it would switch it off unasked.
         var rule = Optional(request, "form") is { } form
-            ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"))
+            ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"), Flag(request, "autoAccept"))
             : null;
         // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100);
         // the shape is the file's own question, asked first by the edit below.

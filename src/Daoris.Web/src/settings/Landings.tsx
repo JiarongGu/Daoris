@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Button, Card, CheckField, Chip, Inline, Prose, SectionTitle, Segmented, SelectField, SettingRow } from '../ui';
 
 /**
  * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names —
- * whether its tree and branch go once a press lands it (D88), and for a branch the plugin that pushes
- * it and opens the pull request (WSR4, D100).
+ * whether its tree and branch go once a press lands it (D88), for a branch the plugin that pushes
+ * it and opens the pull request (WSR4, D100), and whether a quest's done lands it with no press (LAND2a, D145).
  */
-export type LandingRule = { form: string; pattern?: string; tidy?: boolean; plugin?: string };
+export type LandingRule = { form: string; pattern?: string; tidy?: boolean; plugin?: string; autoAccept?: boolean };
 
 /** Where a repository's rule came from: set for it, set for its workspace, or the default merge. */
 export type LandingSource = 'repository' | 'workspace' | 'default';
@@ -17,7 +17,9 @@ export type LandingSource = 'repository' | 'workspace' | 'default';
 export type RepositoryLanding = { repository: string; workspace: string; source: LandingSource } & LandingRule;
 
 /** A change to a rule: a repository's or a workspace's, cleared when it names no form. */
-export type LandingChange = { repository?: string; workspace?: string; form?: string; pattern?: string; tidy?: boolean; plugin?: string };
+export type LandingChange = {
+  repository?: string; workspace?: string; form?: string; pattern?: string; tidy?: boolean; plugin?: string; autoAccept?: boolean;
+};
 
 const MERGE: LandingRule = { form: 'merge' };
 
@@ -28,7 +30,8 @@ const EXAMPLE = 'feature/{quest}-{slug}';
 const NO_PLUGIN = '-';
 
 const same = (a?: LandingRule, b?: LandingRule) =>
-  a?.form === b?.form && (a?.form !== 'branch' || (a?.pattern === b?.pattern && a?.plugin === b?.plugin))
+  a?.form === b?.form
+  && (a?.form !== 'branch' || (a?.pattern === b?.pattern && a?.plugin === b?.plugin && Boolean(a?.autoAccept) === Boolean(b?.autoAccept)))
   && Boolean(a?.tidy) === Boolean(b?.tidy);
 
 /**
@@ -61,7 +64,8 @@ export function LandingList({ landings, workspaceLandings, landers = [], busy, o
     if (landing.source === 'default') return t('settings.landing.from.default');
     const rule = landing.form === 'branch' ? 'branch' : 'merge';
     const said = t(`settings.landing.from.${landing.source}.${rule}`, { pattern: landing.pattern, workspace: landing.workspace });
-    return landing.form === 'branch' && landing.plugin ? `${said} ${t('settings.landing.byPlugin', { plugin: landing.plugin })}` : said;
+    const pushed = landing.form === 'branch' && landing.plugin ? `${said} ${t('settings.landing.byPlugin', { plugin: landing.plugin })}` : said;
+    return landing.form === 'branch' && landing.autoAccept ? `${pushed} ${t('settings.landing.byAuto')}` : pushed;
   };
 
   return (
@@ -75,35 +79,27 @@ export function LandingList({ landings, workspaceLandings, landers = [], busy, o
         const shared = workspaceLandings.find((w) => w.workspace === workspace);
         return (
           <section key={workspace} aria-label={workspace} className="mt-3 border-t border-line pt-3">
-            <SettingRow
+            <LandingRow
               label={<Chip accent>{workspace}</Chip>}
               hint={t('settings.landing.workspaceHint')}
-              control={(
-                <LandingField
-                  name={workspace}
-                  set={shared}
-                  inherited={MERGE}
-                  landers={landers}
-                  busy={busy}
-                  onSave={(rule) => onSet({ workspace, ...rule })}
-                />
-              )}
+              name={workspace}
+              set={shared}
+              inherited={MERGE}
+              landers={landers}
+              busy={busy}
+              onSave={(rule) => onSet({ workspace, ...rule })}
             />
             {landings.filter((landing) => landing.workspace === workspace).map((landing) => (
-              <SettingRow
+              <LandingRow
                 key={landing.repository}
                 label={landing.repository}
                 hint={says(landing)}
-                control={(
-                  <LandingField
-                    name={landing.repository}
-                    set={landing.source === 'repository' ? landing : undefined}
-                    inherited={landing.source === 'repository' ? shared ?? MERGE : landing}
-                    landers={landers}
-                    busy={busy}
-                    onSave={(rule) => onSet({ repository: landing.repository, ...rule })}
-                  />
-                )}
+                name={landing.repository}
+                set={landing.source === 'repository' ? landing : undefined}
+                inherited={landing.source === 'repository' ? shared ?? MERGE : landing}
+                landers={landers}
+                busy={busy}
+                onSave={(rule) => onSet({ repository: landing.repository, ...rule })}
               />
             ))}
           </section>
@@ -113,12 +109,10 @@ export function LandingList({ landings, workspaceLandings, landers = [], busy, o
   );
 }
 
-/**
- * One rule's control: merge or branch, the pattern and who pushes it when it is a branch, and a clear
- * only where a rule is set — the row keeps the clear's room either way, so every row's control sits in
- * one column.
- */
-function LandingField({ name, set, inherited, landers, busy, onSave }: {
+/** What a draft that accepts automatically does: the plugin that pushes it, or none. Null where it does not. */
+type Accepting = { plugin?: string } | null;
+
+type FieldProps = {
   name: string;
   set?: LandingRule;
   /** What stands without this row's own rule — what the control starts from when none is set. */
@@ -126,11 +120,45 @@ function LandingField({ name, set, inherited, landers, busy, onSave }: {
   landers: string[];
   busy?: boolean;
   onSave: (rule?: LandingRule) => void;
+};
+
+/**
+ * One rule's row: its control, and beneath it, while the control accepts automatically, the sentence that says what that
+ * gives (LAND2a, D145 point 5): the person's standing say-so for a push with no press is said where it is given, and
+ * with no plugin, that nothing leaves this machine.
+ */
+function LandingRow({ label, hint, ...field }: { label: ReactNode; hint: string } & FieldProps) {
+  const { t } = useTranslation();
+  const [accepting, setAccepting] = useState<Accepting>(null);
+  return (
+    <SettingRow label={label} hint={hint} control={<LandingField {...field} onAccepting={setAccepting} />}>
+      {accepting && (
+        <p className={cn('m-0 text-small', accepting.plugin ? 'text-ink-soft' : 'text-warn')}>
+          <Inline text={accepting.plugin
+            ? t('settings.landing.autoAcceptSays', { plugin: accepting.plugin })
+            : t('settings.landing.autoAcceptAlone')}
+          />
+        </p>
+      )}
+    </SettingRow>
+  );
+}
+
+/**
+ * One rule's control: merge or branch, the pattern, who pushes it and whether it accepts automatically when it is a
+ * branch, and a clear only where a rule is set — the row keeps the clear's room either way, so every row's control sits
+ * in one column.
+ */
+function LandingField({ name, set, inherited, landers, busy, onSave, onAccepting }: FieldProps & {
+  /** What the draft accepts automatically through, said beneath the row by its owner. */
+  onAccepting: (accepting: Accepting) => void;
 }) {
   const { t } = useTranslation();
   const start = set ?? inherited;
   const [form, setForm] = useState(start.form);
   const [tidy, setTidy] = useState(Boolean(start.tidy));
+  // A choice like the tidy, which starts from what stands, set here or above (LAND2a).
+  const [auto, setAuto] = useState(Boolean(start.autoAccept));
   // Only a pattern SET on this row is a value; an inherited one is the placeholder, and must not read
   // as set — in dark the two looked alike on the lines card (seen on the window).
   const [pattern, setPattern] = useState(set?.pattern ?? '');
@@ -142,15 +170,23 @@ function LandingField({ name, set, inherited, landers, busy, onSave }: {
     setTidy(Boolean(start.tidy));
     setPattern(set?.pattern ?? '');
     setPlugin(start.plugin ?? NO_PLUGIN);
-  }, [start.form, start.tidy, start.plugin, set?.pattern]);
+    setAuto(Boolean(start.autoAccept));
+  }, [start.form, start.tidy, start.plugin, start.autoAccept, set?.pattern]);
 
   // What an empty field means: the pattern this row inherits, else the example.
   const fallback = inherited.form === 'branch' && inherited.pattern ? inherited.pattern : EXAMPLE;
+  // Only a branch accepts automatically (D145 point 1): a merge would write into the checkout with no press.
+  const accepts = form === 'branch' && auto;
   const draft: LandingRule = {
     ...(form === 'branch' ? { form, pattern: pattern.trim() || fallback } : MERGE),
     ...(form === 'branch' && plugin !== NO_PLUGIN ? { plugin } : {}),
     ...(tidy ? { tidy: true } : {}),
+    ...(accepts ? { autoAccept: true } : {}),
   };
+  const through = accepts ? (plugin !== NO_PLUGIN ? plugin : '') : null;
+  useEffect(() => {
+    onAccepting(through === null ? null : through ? { plugin: through } : {});
+  }, [through, onAccepting]);
   const changed = !same(draft, set ?? inherited);
   // The plugins here that land work, and the one the rule names even where it no longer does — the
   // driver's sentence says why, and the chooser must still show what stands.
@@ -195,6 +231,15 @@ function LandingField({ name, set, inherited, landers, busy, onSave }: {
             { value: NO_PLUGIN, label: t('settings.landing.pluginNone') },
             ...choices.map((id) => ({ value: id, label: t('settings.landing.pluginNamed', { plugin: id }) })),
           ]}
+        />
+      )}
+      {form === 'branch' && (
+        <CheckField
+          label={t('settings.landing.autoAccept')}
+          checked={auto}
+          onChange={setAuto}
+          disabled={busy}
+          className="text-small"
         />
       )}
       <CheckField
