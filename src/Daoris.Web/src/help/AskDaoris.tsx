@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useSessions } from '../queries';
-import { useAskConversation } from './AskConversation';
+import { type AskOpening, useAskConversation } from './AskConversation';
 import { AskPanel } from './AskPanel';
 import { setupProgress, setupSteps } from './setup';
 import { type StarterDoor, starters } from './starters';
@@ -20,9 +20,9 @@ export function AskDaoris({
   where?: Omit<HelpWhere, 'session'>;
   /**
    * A question already asked, from the palette (DOCK1d) or the setup guide (SETUP1b): sent once per id,
-   * as a typed one is.
+   * as a typed one is; or a draft for the box, from a right-click's *Ask Daoris about it* (CTX1).
    */
-  opening?: { text: string; id: number } | null;
+  opening?: AskOpening | null;
   /** Told once the opening is sent, so its holder lets it go and a later drawing does not send it again. */
   onOpened?: () => void;
   /** The session attended, found here among every session — an ended one is still what the person reads. */

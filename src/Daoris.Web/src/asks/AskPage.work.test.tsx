@@ -1,10 +1,12 @@
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render as rtlRender, screen, within } from '@testing-library/react';
+import { cleanup, render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../api';
 import i18n from '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDON_ANSWER, ABANDONED_ASK, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
@@ -134,5 +136,56 @@ describe('pausing and abandoning an ask', () => {
     await i18n.changeLanguage('zh');
     page(door());
     expect(headerActs()).toEqual(['暂缓…', '关闭需求', '放弃…', '删除…']);
+  });
+});
+
+/** CTX1 (D138, design §4): a right-click on an ask's page offers its header's acts, then its id, each pressed as its button is. */
+describe("an ask's page on a right-click", () => {
+  const copy = vi.fn();
+  const withMenus = (work?: WorkDoor) => {
+    const props = page(work);
+    render(<ContextMenus doors={{ copy }} />);
+    return props;
+  };
+  const onPage = () => rightClick(screen.getByText(/Seen on the test rig/));
+
+  afterEach(async () => {
+    vi.clearAllMocks();
+    await i18n.changeLanguage('en');
+  });
+
+  it('offers its header’s acts, then its id, named for the ask', async () => {
+    withMenus(door());
+    onPage();
+    expect(await menuActs('Actions for The chunk streamer stalls on a cold cache — cap its hydration per frame.'))
+      .toEqual(['Pause…', 'Close ask', 'Abandon…', 'Delete…', 'Copy ask ID']);
+  });
+
+  it('presses each as its button does: Close ask asks its reason, Resume resumes', async () => {
+    withMenus(door());
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Close ask' }));
+    expect(await screen.findByRole('textbox', { name: /why/i })).toBeInTheDocument();
+    cleanup();
+
+    const work = door({ plan: PAUSED_ASK });
+    withMenus(work);
+    onPage();
+    expect((await menuActs())[0]).toBe('Resume');
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Resume' }));
+    expect(work.onResume).toHaveBeenCalledOnce();
+  });
+
+  it('copies its id through the window’s copy, and names its acts in 中文', async () => {
+    withMenus();
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Copy ask ID' }));
+    expect(copy).toHaveBeenCalledWith('a1b2c3');
+    cleanup();
+
+    await i18n.changeLanguage('zh');
+    withMenus(door());
+    onPage();
+    expect(await menuActs()).toEqual(['暂缓…', '关闭需求', '放弃…', '删除…', '复制需求 ID']);
   });
 });

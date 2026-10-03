@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import type { Entry } from '../api';
 import { EntryMainNotice, EntryPage } from './EntryPage';
 
@@ -69,5 +72,18 @@ describe("Search's main area with no entry", () => {
     render(<EntryMainNotice state="loading" />);
     expect(screen.getByRole('main')).toHaveAttribute('aria-busy', 'true');
     expect(screen.queryByText('Choose a result')).toBeNull();
+  });
+});
+
+/** CTX1 (D138, design §4): an entry's page offers its path on a right-click. */
+describe("an entry's page on a right-click", () => {
+  it('offers Copy path', async () => {
+    const copy = vi.fn();
+    show();
+    render(<ContextMenus doors={{ copy }} />);
+    rightClick(screen.getByRole('heading', { level: 1, name: 'world-streaming' }));
+    expect(await menuActs('Actions for world-streaming')).toEqual(['Copy path']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Copy path' }));
+    expect(copy).toHaveBeenCalledWith('.claude/knowledge/world-streaming.md');
   });
 });

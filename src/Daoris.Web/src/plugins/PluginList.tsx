@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Pill, StripMark } from '../ui';
+import { Button, Inline, type MenuAct, Pill, StripMark } from '../ui';
 import { cn } from '../lib/cn';
+import { type ContextOffer, contextOffer } from '../menus/press';
 import { offerItem, type OfferShown, type PluginGroups, type PluginShown, type PluginState, pluginState, stripOrder } from './catalog';
 
 /**
@@ -59,7 +60,7 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
         const word = STATE_WORD[pluginState(plugin)];
         const adds = plugin.problem ? '' : fragments(plugin) || t('plugin.quiet');
         return (
-          <li key={plugin.id} data-list-row="">
+          <li key={plugin.id} data-list-row="" {...contextOffer(rowMenu(t, plugin.name || plugin.id, plugin.id, () => onChoose(plugin.id)))}>
             <RowDoor chosen={chosen === plugin.id} onPress={() => onChoose(plugin.id)}>
               <span className="flex min-w-0 items-baseline gap-2">
                 <span className={cn('min-w-0 truncate text-body', plugin.enabled ? 'text-ink' : 'text-ink-soft')}>{plugin.name}</span>
@@ -86,6 +87,21 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
       )}
     </div>
   );
+}
+
+/**
+ * What a plugin's row offers a right-click (CTX1, D138 §4): opening it, its row's own act (an offer's *Install*), and its
+ * id. What is done to a plugin is its page's.
+ */
+function rowMenu(t: (key: string) => string, name: string, id: string, open: () => void, own?: MenuAct): ContextOffer {
+  return {
+    label: name,
+    acts: [
+      { id: 'open', label: t('contextMenu.act.open'), onSelect: open },
+      ...(own ? [own] : []),
+      { id: 'copy', label: t('contextMenu.act.copyPlugin'), icon: 'copy', copy: id },
+    ],
+  };
 }
 
 /** A group's header and its rows, as the session rail draws a repository's (`RepositoryGroup`). */
@@ -123,8 +139,12 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
 }) {
   const { t } = useTranslation();
   const item = offerItem(offer.id);
+  // Its Install, where its row offers one, is its right-click's too (CTX1).
+  const install = offer.problem
+    ? undefined
+    : { id: 'install', label: t('plugin.offers.install'), icon: 'plus' as const, disabled: installing, onSelect: () => onInstall(offer.id) };
   return (
-    <li data-list-row="" className="flex items-center">
+    <li data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, offer.name || offer.id, offer.id, () => onChoose(item), install))}>
       <div className="min-w-0 flex-1">
         <RowDoor chosen={chosen === item} onPress={() => onChoose(item)}>
           <span className="flex min-w-0 items-baseline gap-2">

@@ -3,6 +3,7 @@ import type { Registration } from '../api';
 import { figure } from '../format';
 import { Inline, Pill } from '../ui';
 import { cn } from '../lib/cn';
+import { contextOffer } from '../menus/press';
 import { ListGroup, ListRowDoor } from '../work/ListPane';
 
 /**
@@ -71,8 +72,16 @@ export function ProjectList({ adopted, outside, chosen, unanswered = null, onCho
 
   const row = (facts: RepositoryRowFacts, line: string | null, faint: boolean) => {
     const { repository } = facts.registration;
+    // A row offers what it does on a right-click (CTX1, D138 §4): opening it, and its name.
+    const menu = {
+      label: repository,
+      acts: [
+        { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onChoose(repository) },
+        { id: 'copy', label: t('contextMenu.act.copyRepository'), icon: 'copy' as const, copy: repository },
+      ],
+    };
     return (
-      <li key={repository} aria-label={repository} data-list-row="">
+      <li key={repository} aria-label={repository} data-list-row="" {...contextOffer(menu)}>
         <ListRowDoor chosen={chosen === repository} onPress={() => onChoose(repository)}>
           <span className="flex min-w-0 items-baseline gap-2">
             <span className={cn('min-w-0 truncate text-body', faint ? 'text-ink-soft' : 'text-ink')}>{repository}</span>

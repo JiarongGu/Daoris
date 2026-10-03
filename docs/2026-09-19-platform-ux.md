@@ -209,6 +209,11 @@ controls are in the frame design's §3.
   nothing typed) gets no composer, and the line the box would have taken says why.
 - **A move offered where the answer is not is a dead end**, and a move that stays says what it does
   not do. A move that lived on a removed control moves with it.
+- **A right-click is a door to the acts already there** (D138, `docs/2026-10-03-context-menu-design.md`): the page's own
+  menu at the pointer, MENU1's, offering a surface's acts from the owner it has (a row what it does, its ⋯'s where it has
+  one; a page what is done to its record), then copying its name, after selected words', a link's and a code span's
+  own. A text field keeps the engine's menu, the strip's own space the window's system menu, and everywhere else with
+  nothing to offer the engine's is suppressed: its acts are a web page's.
 - **An arrow is a direction, never a menu** (the owner, 2026-09-30: *"instead of using the up down
   arrow all over the entire design we can use more '...' or options"*). A region's own menu is "⋯",
   as VS Code's *Views and More Actions* is. A setting with a value, such as a size, is a menu behind
@@ -480,6 +485,8 @@ controls are in the frame design's §3.
 ## 6. Accessibility
 
 Focus rings on everything interactive (accent, 2px, offset); drawers are `role="dialog"` with
-`aria-modal`, ESC to close, focus moved in on open; icons are decorative (`aria-hidden`) beside real
+`aria-modal`, ESC to close, focus moved in on open; the right-click menu is a `menu` named by what it is for, opened
+on the menu key and Shift+F10 with its first act focused, ESC closing it and the focus going back where it was (D138);
+icons are decorative (`aria-hidden`) beside real
 labels; status is text plus hue, never hue alone; hit targets ≥ 28px; both themes are first-class —
 the dark status palette is its own validated set, not a filter.

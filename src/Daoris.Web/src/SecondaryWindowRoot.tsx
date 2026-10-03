@@ -1,11 +1,14 @@
 import { useShenora } from '@shenora/react';
+import { useTranslation } from 'react-i18next';
 import { App } from './App';
 import { LinkOpener } from './links';
+import { ContextMenus } from './menus/ContextMenu';
+import { clipped } from './menus/press';
 import { ShellSignals } from './ShellSignals';
-import { Toasts, useToasts } from './ui';
+import { failure, Toasts, useToasts } from './ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
-import { useLinkOpener, useSecondaryWindowTheme } from './shell';
+import { useLinkOpener, useOpenBrowser, useSecondaryWindowTheme } from './shell';
 import { MONITOR_WINDOW, type SecondaryWindow, sessionWindowName } from './work/window';
 
 /**
@@ -33,6 +36,8 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
   useSecondaryWindowTheme(which.kind === 'monitor' ? MONITOR_WINDOW : sessionWindowName(which.id));
   // A detached conversation's links go where the application's do (BRW7).
   const linkOpener = useLinkOpener(notify);
+  const { t } = useTranslation();
+  const openBrowser = useOpenBrowser();
 
   if (!isAvailable) return <App />;
 
@@ -43,6 +48,16 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
         : <DetachedSession id={which.id} notify={notify} />}
 
       <Toasts items={toasts} onClose={dismiss} />
+      {/* The right-click menu here too (CTX1, D138 §6): no Search and no Quick Ask in this window, so a selection is
+          offered its copy alone; a link opens in Daoris's browser as the application's does. */}
+      <ContextMenus
+        doors={{
+          copy: (text) => {
+            void navigator.clipboard?.writeText(text).then(() => notify(t('contextMenu.copied', { what: clipped(text) })), () => {});
+          },
+          openInBrowser: (address) => openBrowser.mutate(address, { onError: failure(notify) }),
+        }}
+      />
       <ShellSignals notify={notify} />
     </LinkOpener.Provider>
   );

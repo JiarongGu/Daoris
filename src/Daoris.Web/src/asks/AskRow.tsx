@@ -3,6 +3,7 @@ import type { Ask, AskState, Session } from '../api';
 import { ago } from '../format';
 import { Dot, Pill } from '../ui';
 import { CarriedCount } from '../compose/carry';
+import { contextOffer } from '../menus/press';
 import { ListRowDoor } from '../work/ListPane';
 
 /**
@@ -77,7 +78,17 @@ export function AskRow({ ask, intake = null, chosen = false, onOpen }: {
   const askedYou = live && intake === 'awaiting-person';
 
   return (
-    <li data-list-row="">
+    // A row offers what it does on a right-click (CTX1, D138 §4): opening it, and its id.
+    <li
+      data-list-row=""
+      {...contextOffer({
+        label: title,
+        acts: [
+          { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onOpen(ask) },
+          { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy', copy: ask.id },
+        ],
+      })}
+    >
       <ListRowDoor chosen={chosen} dimmed={askEnded(ask)} onPress={() => onOpen(ask)}>
         <span className="flex items-baseline justify-between gap-2">
           <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>

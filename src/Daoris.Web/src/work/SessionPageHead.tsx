@@ -2,7 +2,7 @@ import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../api';
 import { Button, Icon, Inline, Menu, Pill, SESSION_TONE, type ShownState, shownKey } from '../ui';
-import { ACT_LOOK, type SessionActId } from './acts';
+import { ACT_LOOK, actMenu, headerActs, type SessionActId } from './acts';
 
 /**
  * **A session's page header** (SESSUX1d, D126 §3.2): Sessions' main area gains the header every view's chosen item has
@@ -44,9 +44,8 @@ export function SessionPageHead({ session, title, shown, acts, primary = null, b
   const { t } = useTranslation();
   const own = useRef<HTMLElement>(null);
   const offered = onAct ? acts : [];
-  const lead = primary && offered.includes(primary) ? primary : null;
-  const stop = offered.includes('stop');
-  const rest = offered.filter((act) => act !== lead && act !== 'stop' && act !== 'answer');
+  // The one split the page's right-click offers whole (CTX1), so the header and the menu never disagree.
+  const { lead, stop, rest } = headerActs(offered, primary);
 
   // Its height, told to the scroll box it is pinned in, so what pins beneath it (the long run's toolbar) sits below it.
   useLayoutEffect(() => {
@@ -99,12 +98,7 @@ export function SessionPageHead({ session, title, shown, acts, primary = null, b
                   </Button>
                 </Menu.Trigger>
                 <Menu.Content side="bottom" align="end" className="min-w-48">
-                  {rest.map((act) => (
-                    <Menu.Item key={act} onSelect={() => onAct?.(act)}>
-                      <Icon name={ACT_LOOK[act].icon} size={12} className="shrink-0 text-ink-faint" />
-                      {t(ACT_LOOK[act].label)}
-                    </Menu.Item>
-                  ))}
+                  <Menu.Acts acts={actMenu(rest, t, (act) => onAct?.(act))} />
                 </Menu.Content>
               </Menu.Root>
             )}

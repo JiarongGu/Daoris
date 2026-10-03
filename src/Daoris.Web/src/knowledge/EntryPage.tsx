@@ -1,7 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import type { Entry } from '../api';
 import { Inline, Pill, Prose } from '../ui';
+import type { ContextOffer } from '../menus/press';
 import { type MainNotice, PageHead, ViewMain } from '../work/ViewMain';
+
+/** A document's right-click (CTX1, D138 §4): its path, copied, since the page is read and nothing is done to it here. */
+export function documentMenu(t: (key: string) => string, entry: { title: string; path: string }): ContextOffer {
+  return { label: entry.title, acts: [{ id: 'copy', label: t('contextMenu.act.copyPath'), icon: 'copy', copy: entry.path }] };
+}
 
 /**
  * An entry's text, **as it is written** (UX5 U43): the source, monospaced and unrendered. Doctrine is read as it is
@@ -37,11 +43,15 @@ export const entryPlace = (entry: Pick<Entry, 'repository' | 'path'>) => `${entr
  *
  * @remarks
  * **A molecule**: the entry arrives read, and the page holds nothing. It adds no acts: doctrine is changed where its
- * repository keeps it (D31), never from here.
+ * repository keeps it (D31), never from here. A right-click copies its path (CTX1).
  */
 export function EntryPage({ entry }: { entry: Entry }) {
+  const { t } = useTranslation();
   return (
-    <ViewMain header={<PageHead title={entry.title} pills={<EntryPills kind={entry.kind} provenance={entry.provenance} />} id={entryPlace(entry)} />}>
+    <ViewMain
+      header={<PageHead title={entry.title} pills={<EntryPills kind={entry.kind} provenance={entry.provenance} />} id={entryPlace(entry)} />}
+      menu={documentMenu(t, entry)}
+    >
       <EntryText body={entry.body} />
     </ViewMain>
   );

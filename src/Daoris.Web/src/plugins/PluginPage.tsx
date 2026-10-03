@@ -112,6 +112,22 @@ export function PluginPage({
       {!asking && <Button variant="danger" disabled={acting} onClick={() => onAskRemove(plugin.id)}>{t('plugin.forget')}</Button>}
     </>
   );
+  // A right-click on the page offers its header's acts, as its buttons press them, then its id (CTX1, D138 §4).
+  const menu = {
+    label: plugin.name || plugin.id,
+    acts: [
+      {
+        id: 'switch', label: t(plugin.enabled ? 'plugin.disable' : 'plugin.enable'), icon: 'plug' as const, disabled: acting,
+        onSelect: () => onSwitch(plugin.id, plugin.enabled ? 'disable' : 'enable'),
+      },
+      ...(tryable ? [{ id: 'try', label: t('plugin.kit.try'), icon: 'execute' as const, disabled: trying, onSelect: () => onTry(plugin.id) }] : []),
+      ...(updatable(plugin.source)
+        ? [{ id: 'update', label: t('plugin.update.ask'), icon: 'refresh' as const, disabled: updating, onSelect: () => onAskUpdate(plugin.id) }]
+        : []),
+      ...(!asking ? [{ id: 'remove', label: t('plugin.forget'), icon: 'remove' as const, disabled: acting, onSelect: () => onAskRemove(plugin.id) }] : []),
+      { id: 'copy', label: t('contextMenu.act.copyPlugin'), icon: 'copy' as const, copy: plugin.id },
+    ],
+  };
 
   const head = (
     <PageHead
@@ -125,7 +141,7 @@ export function PluginPage({
   );
 
   return (
-    <ViewMain header={head}>
+    <ViewMain header={head} menu={menu}>
       {/* Status leads (platform language §4): a refused plugin's sentence comes first. */}
       {plugin.problem && <Lead text={plugin.problem} />}
 

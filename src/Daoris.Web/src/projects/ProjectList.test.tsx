@@ -4,6 +4,8 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { CJK, ELSEWHERE, ENGINE, GAME, NEWBIE, UNDECLARED } from './fixtures';
 import { ProjectList } from './ProjectList';
 
@@ -74,6 +76,22 @@ describe("Repositories' list", () => {
     list({ adopted: [{ registration: CJK }], outside: [] });
 
     expect(screen.getByRole('listitem', { name: '渲染管线' })).toHaveTextContent('渲染管线');
+  });
+
+  /** CTX1 (D138, design §4): a repository's row offers what it does on a right-click, opening it and its name. */
+  it('offers Open and its name on a right-click', async () => {
+    const copy = vi.fn();
+    const onChoose = list();
+    render(<ContextMenus doors={{ copy }} />);
+
+    rightClick(screen.getByRole('listitem', { name: 'game' }).querySelector('button')!);
+    expect(await menuActs('Actions for game')).toEqual(['Open', 'Copy repository name']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Open' }));
+    expect(onChoose).toHaveBeenCalledWith('game');
+
+    rightClick(screen.getByRole('listitem', { name: 'engine' }).querySelector('button')!);
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Copy repository name' }));
+    expect(copy).toHaveBeenCalledWith('engine');
   });
 
   /** D118 §3h: a list that never had an answer says the sentence in place, and is never blank. */

@@ -42,7 +42,7 @@ function isStripSpace(target: EventTarget, strip: EventTarget) {
  */
 export function AppStrip({
   scope, center, menus, trailing, captionRoom,
-  stripRef, onDragStart, onToggleMaximize, onResizeTop,
+  stripRef, onDragStart, onToggleMaximize, onResizeTop, onSystemMenu,
 }: {
   /** The workspace switcher, or nothing while the deployment holds one circle (WSP5). */
   scope?: ReactNode;
@@ -61,10 +61,18 @@ export function AppStrip({
   onDragStart?: () => void;
   onToggleMaximize?: () => void;
   onResizeTop?: () => void;
+  /** A right-click on the strip's own space opens the window's system menu, as a caption's does (CTX1, D138 §4). */
+  onSystemMenu?: () => void;
 }) {
   return (
     <header
       ref={stripRef}
+      onContextMenu={(event) => {
+        // Only the strip's own space is the caption; a control's right-click is the page's to answer.
+        if (!onSystemMenu || !isStripSpace(event.target, event.currentTarget)) return;
+        event.preventDefault();
+        onSystemMenu();
+      }}
       // The title bar's own gesture. `onPointerDown` rather than a click: the OS move loop has to
       // start while the button is still down, which is also why the host dispatches it inline.
       onPointerDown={(event) => {

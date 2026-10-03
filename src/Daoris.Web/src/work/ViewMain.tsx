@@ -1,6 +1,7 @@
 import type { ReactNode, Ref } from 'react';
 import { EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
+import { type ContextOffer, contextOffer } from '../menus/press';
 
 /**
  * A page's header in the main area (D118 §3b, D119 §3.2): its title, with what is beside it (a version, its pills); its
@@ -78,10 +79,15 @@ const GUTTERS = {
  * **A molecule**: every state is reached by its props. A first load is skeleton rows, never the empty
  * state, which read as *Nothing attended* while the list that held the attended session was still on its
  * way (audit SE11).
+ *
+ * **A right-click on the page offers what is done to its record** (CTX1, D138 §2): `menu`, the page's header's acts and
+ * its body's, from the owner each already has. A field, a link, a selection and a code span on it add their own.
  */
-export function ViewMain({ header, state = 'chosen', none, gone, gutters = 'page', ref, children }: {
+export function ViewMain({ header, state = 'chosen', none, gone, gutters = 'page', menu, ref, children }: {
   /** The page header: the chosen item's title, its line and its acts, or the view's own where it has no list. */
   header?: ReactNode;
+  /** What a right-click on the page offers, while it shows its record. */
+  menu?: ContextOffer | null;
   state?: MainState;
   /** What nothing chosen says, and the list's `＋`. */
   none?: MainNotice;
@@ -100,6 +106,7 @@ export function ViewMain({ header, state = 'chosen', none, gone, gutters = 'page
       data-main-state={state}
       aria-busy={state === 'loading' || undefined}
       className={cn('@container/main relative min-h-0 min-w-0 flex-1 overflow-y-auto', GUTTERS[gutters])}
+      {...contextOffer(state === 'chosen' ? menu : null)}
     >
       {header}
       {state === 'loading'
