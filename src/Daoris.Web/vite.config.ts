@@ -6,7 +6,12 @@ import tailwindcss from '@tailwindcss/vite';
 // deployment — which is what makes CORS unnecessary there, and what lets the desktop shell host
 // exactly the same bytes rather than a second copy built differently.
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  // WEBFAST1: Tailwind stays out of the unit tests (vitest sets VITEST before it reads this file).
+  // `css: false` below hands every test an empty stylesheet, so Tailwind's output was thrown away;
+  // under the vm pool its scan also had vite transform files no test imports, the node scripts
+  // among them, and a full run printed a vite warning 187 times about `scripts/e2e-host.mjs`. The
+  // tests that check `tokens.css` read it from disk.
+  plugins: [react(), process.env.VITEST ? null : tailwindcss()],
   build: {
     outDir: '../Daoris.Service/Daoris.Service.Http/wwwroot',
     emptyOutDir: true,
@@ -22,6 +27,13 @@ export default defineConfig({
   // sibling's proven arrangement, shims included. Playwright stays the outer loop over examples/.
   test: {
     environment: 'jsdom',
+    // WEBFAST1: workers outlive a file. Under the default pool (`forks`, isolated) each of the 225
+    // files started a fresh process that loaded jsdom and vitest again, a third of the tracked time.
+    // A vm pool keeps the worker and runs each file in a fresh jsdom window as its own vm context,
+    // with its own module instances, so no file sees another's DOM, globals or module state. The
+    // cost is memory: a worker holds its files' contexts until it passes `vmMemoryLimit` (by default
+    // an equal share of the machine's memory per worker) and is replaced.
+    pool: 'vmThreads',
     globals: true,
     setupFiles: ['./src/test/setup.tsx'],
     include: ['src/**/*.test.{ts,tsx}'],
