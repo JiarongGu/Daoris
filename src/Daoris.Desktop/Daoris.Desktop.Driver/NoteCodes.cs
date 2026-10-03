@@ -339,6 +339,15 @@ public static class NoteCodes
     public static readonly NoteCode AccountRefused = new("account.refused", ["owner"]);
     public static readonly NoteCode AccountRefusedOwn = new("account.refused-own", ["owner"]);
 
+    // ——— Why the account a resume asked for could not carry the person's words (MSG1g), after a line whose reason is
+    // `account`: by TOOL6e's holds, naming no account, since the note travels.
+    public static readonly NoteCode AccountResumeSignedOut = new("account.resume-signed-out", []);
+    public static readonly NoteCode AccountResumeRefused = new("account.resume-refused", []);
+    public static readonly NoteCode AccountResumeGone = new("account.resume-gone", []);
+    public static readonly NoteCode AccountResumeOutside = new("account.resume-outside", []);
+    public static readonly NoteCode AccountResumeKept = new("account.resume-kept", []);
+    public static readonly NoteCode AccountResumeNewSession = new("account.resume-new-session", []);
+
     // ——— While it starts and works, replaced by its end (D51 rule 4).
     public static readonly NoteCode StartedTree = new("started.tree", ["branch", "basedOn"]);
     public static readonly NoteCode StartedTreeUnrecorded = new("started.tree-unrecorded", []);
