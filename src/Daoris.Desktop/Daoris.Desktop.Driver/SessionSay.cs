@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -43,6 +45,40 @@ public static class WordsNever
 }
 
 /// <summary>
+/// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session's door
+/// holds the words, they go to the service's door for them by the session's own id, and the service judges which ask, if
+/// any. The one rule a loop keeps them by: the headless host's <see cref="LoopWords"/> (MSG1e4) and the shell's judge, the
+/// modules' <c>SessionWords</c> (MSG1e5), both call it.
+/// </summary>
+/// <remarks>
+/// Never awaited by the answer: the words have reached their session whatever the service says, so <c>kept: false</c> (a
+/// session on no ask), a refusal and a service that does not answer change nothing the person is told. Only the words travel,
+/// never the files or where the person is (DRIFT1a keeps words alone). Words a record kept after it ended are not these: the
+/// service keeps those on the ask itself once they are taken, as <c>reopened</c> (MSG1a).
+/// </remarks>
+public static class WordsOnAsk
+{
+    /// <summary>Keep the words on the session's ask, in the background. The task never faults, so a caller need not await it.</summary>
+    /// <param name="service">The loop's service; null while it is not answering yet, which keeps nothing.</param>
+    public static Task Keep(ServiceClient? service, string session, string text)
+    {
+        if (service is null) return Task.CompletedTask;
+        return Task.Run(async () =>
+        {
+            try
+            {
+                await service.AddedToSessionAsync(session, text).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or OperationCanceledException or DriverException
+                                              or JsonException or ObjectDisposedException or InvalidOperationException)
+            {
+                // The words are still in the session's own record; the ask misses one of them, and nothing else does.
+            }
+        });
+    }
+}
+
+/// <summary>
 /// What a loop did with words a terminal said to a session (MSG1e, D137 §5.2), written beside the request for the door that
 /// asked: the shape the screen's routes answer (<c>{sent, reaches, why}</c>), with the id a record gave words it kept.
 /// </summary>
@@ -79,9 +115,10 @@ public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
 
 /// <summary>
 /// A loop's half of a terminal's <c>sessions say</c> (MSG1e, D137 §5.2), as the driver library can do it: a session this loop
-/// runs hears the words at its door, as the screen's box hands them (D90, D136; MSG1b's native door); one nothing on this
-/// machine runs has them kept on its record by the service's say door (MSG1a), shown in its conversation where the loop handed
-/// its record, and the loop nudged, so its look goes on with them (MSG1b).
+/// runs hears the words at its door, as the screen's box hands them (D90, D136; MSG1b's native door), and they are kept on its
+/// ask as the box's are (<see cref="WordsOnAsk"/>, MSG1e4); one nothing on this machine runs has them kept on its record by the
+/// service's say door (MSG1a), shown in its conversation where the loop handed its record, and the loop nudged, so its look
+/// goes on with them (MSG1b).
 /// </summary>
 /// <remarks>
 /// <para><b>The screen's judge is the modules' <c>SessionWords</c></b>, which this library cannot reach. The shell hands the
@@ -109,9 +146,11 @@ public sealed class LoopWords(SessionProcesses processes, Func<ServiceClient?> s
         var id = request.Session;
         var text = request.Text ?? "";
 
-        // A driven session this loop runs, on the protocol door or the native door's run (MSG1b): its inbox holds them.
+        // A driven session this loop runs, on the protocol door or the native door's run (MSG1b): its inbox holds them, and
+        // they are the person's words on its ask (D133 §1), which the headless loop missed until MSG1e4.
         if (processes.InboxOf(id) is { } inbox && inbox.Hold(new ChatMessage(text, [])))
         {
+            _ = WordsOnAsk.Keep(service(), id, text);
             return new WordsHeld(true, Spelled(inbox.Reach), null);
         }
 

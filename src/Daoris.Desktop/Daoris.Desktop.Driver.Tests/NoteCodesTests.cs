@@ -19,8 +19,11 @@ public sealed class NoteCodesTests
         return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
-    /// <summary>A language's whole catalogue: one file per area under <c>locales/&lt;language&gt;/</c>, merged as the page merges them.</summary>
-    private static JsonElement Catalogue(string language)
+    /// <summary>
+    /// A language's whole catalogue: one file per area under <c>locales/&lt;language&gt;/</c>, merged as the page merges them.
+    /// Shared with <c>ChatTurnsTests</c>, which holds a conversation note's codes to the same catalogues (MSG1c3).
+    /// </summary>
+    internal static JsonElement Catalogue(string language)
     {
         var folder = Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src", "locales", language);
         var merged = new JsonObject();
@@ -32,10 +35,10 @@ public sealed class NoteCodesTests
         return JsonDocument.Parse(merged.ToJsonString()).RootElement.Clone();
     }
 
-    private static IReadOnlySet<string> Placeholders(string text) =>
+    internal static IReadOnlySet<string> Placeholders(string text) =>
         Regex.Matches(text, @"\{\{\s*([\w.]+)[^}]*\}\}").Select(match => match.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
 
-    private static string Entry(JsonElement catalogue, string key, string language)
+    internal static string Entry(JsonElement catalogue, string key, string language)
     {
         Assert.True(
             catalogue.TryGetProperty(key, out var text) && !string.IsNullOrWhiteSpace(text.GetString()),

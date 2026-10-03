@@ -11,6 +11,16 @@
  * read the same as an absence.
  */
 
+/**
+ * The codes a driver's note in a conversation carries, each the key the page words it by (MSG1c3, D142 point 1): the
+ * driver's `SessionEventCodes`, a twin held code for code by `conversation.test.ts`, which parses the driver's declarations.
+ * A code not here leaves the driver's English line.
+ */
+export const CONVERSATION_CODES: Readonly<Record<string, string>> = {
+  /** A word the person's stop cut off on its way (MSG1c, STEER1 §3): it may have been read, its answer not kept. */
+  lost: 'work.conversation.lost',
+};
+
 /** Daoris's event kinds — `SessionEventKind` in the driver. */
 export type SessionEventKind =
   | 'user' | 'message' | 'thought' | 'tool' | 'plan' | 'usage' | 'turn' | 'note' | 'raw';
@@ -57,6 +67,12 @@ export type SessionEvent = {
    * A reason is chrome, so the page says it in its own words from the code; the note's line is the driver's English.
    */
   why?: string | null;
+  /**
+   * For a driver's note the page words itself (MSG1c3, D142 point 1): a code of the driver's `SessionEventCodes`, which
+   * `CONVERSATION_CODES` keys. Daoris's own line is chrome, said in the reader's language; `text` beside it is the driver's
+   * English, which stands for a code this page does not know.
+   */
+  code?: string | null;
   /** For `user`: the names of the files the person attached (CONV4c). */
   files?: string[] | null;
   title?: string | null;
@@ -183,6 +199,8 @@ export type Block = {
   why?: string | null;
   /** For a `note` about the person's words (MSG1f): the ids it names. */
   words?: string[];
+  /** For a `note` the page words itself (MSG1c3): its code, a key of `CONVERSATION_CODES`. */
+  code?: string | null;
   /**
    * For a `note` about the person's words (MSG1f): what they said, in the order said, where the page holds every word
    * the note names — what *Start a conversation with these words* starts with. Absent where it holds only some.
@@ -286,7 +304,8 @@ export type Usage = { used: number; size: number; most: number };
  *   nothing else, goes.
  * - **A driver's note about the words is their line** (MSG1f): a note naming their ids, that they went
  *   to a new session or cannot go on here, settles the words it names, which stay as written and wait
- *   no longer, and carries what they said where the page holds every one.
+ *   no longer, and carries what they said where the page holds every one. So does the note that a stop
+ *   cut a word off on its way (MSG1c3), which carries the code the page words it by.
  */
 export function toTurns(
   events: readonly SessionEvent[], { opening }: { opening?: SessionEvent | null } = {},
@@ -441,6 +460,7 @@ export function toTurns(
           key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}),
           ...(event.to ? { to: event.to } : {}), ...(event.why ? { why: event.why } : {}),
           ...(named.length > 0 ? { words: named } : {}), ...(said ? { said } : {}),
+          ...(event.code ? { code: event.code } : {}),
         });
         where[event.seq] = key;
         break;

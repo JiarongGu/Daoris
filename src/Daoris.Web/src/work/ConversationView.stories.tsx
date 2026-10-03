@@ -101,6 +101,18 @@ const CANNOT: SessionEvent[] = [
   ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1'], why: 'refused' }),
 ];
 
+/**
+ * MSG1c3 (D142 point 1): a chat's word handed to its turn at the next step, then the person's stop while it was on its
+ * way: the agent may have read it, and the line says so in the reader's language, from its code.
+ */
+const CUT_OFF: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'person', text: 'Read the five level files and list their budgets.' }),
+  ev({ kind: 'tool', id: 'c40', title: 'Read levels/one.json', toolKind: 'read', status: 'completed' }),
+  ev({ kind: 'user', origin: 'person', id: 'said-3', reaches: 'next-step', text: 'And say which is the largest.' }),
+  ev({ kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['said-3'], code: 'lost' }),
+  ev({ kind: 'turn', stopReason: 'cancelled' }),
+];
+
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
@@ -125,6 +137,7 @@ export const WrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRIT
 export const ChatWrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false), chat: true } };
 export const WordsWentToANewSession: Story = { args: { turns: settle(toTurns(WENT).turns, false), onSession: () => {} } };
 export const WordsCannotGoOnHere: Story = { args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {} } };
+export const WordCutOffByAStop: Story = { args: { turns: toTurns(CUT_OFF).turns, chat: true } };
 export const WithEarlierTurns: Story = { args: { turns: toTurns(DRIVEN).turns, earlier: true, onLoadEarlier: () => {} } };
 export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };

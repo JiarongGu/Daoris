@@ -167,7 +167,9 @@ public sealed class WorkPausingTests : IDisposable
         await using var loop = new SessionRequestWatch(
             _home, runsHere: id => id == "w0rk1ng0",
             stop: (string id, Noted? note) => { heard = note; ledger.Move(id, "stopped", note?.Note ?? "the person stopped it."); return true; },
-            service: () => null);
+            // The pause stamps its request with the test's fixed clock, so the watch measures its age by the same one:
+            // the real clock found every request older than its minute from the day after.
+            service: () => null, clock: () => Now);
         var honoured = new List<SessionRequest>();
         using var honouring = new CancellationTokenSource();
         var honour = Task.Run(async () =>

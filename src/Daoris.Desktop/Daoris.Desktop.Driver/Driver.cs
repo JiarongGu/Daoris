@@ -1122,25 +1122,29 @@ public sealed partial class Driver(
     /// What it may reach outside its tree (D107): a read of each checkout it may read, an edit in each declared
     /// target, and a refusal everywhere else — beside the person's rules, whose denies still win.
     /// </param>
+    /// <param name="said">
+    /// The folder THIS session keeps the files the person said with their words in (MSG1d3, D137 §2.4), where a resumed run
+    /// is handed them; null for none. A read of it, as of <paramref name="kept"/>, and of nothing else under the home.
+    /// </param>
     /// <returns>
     /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
     /// account (CONTEXT1), which outlives the file.
     /// </returns>
     private (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
-        string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null)
+        string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null, string? said = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
-        if (kept is { Length: > 0 })
+        foreach (var folder in new[] { kept, said }.OfType<string>().Where(folder => folder.Length > 0))
         {
-            composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(kept)] };
+            composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(folder)] };
         }
 
-        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? ""]));
+        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? "", said ?? ""]));
 
         // 🔴 What the session's job needs, beside the person's rules (FG5): an intake's room names its tools
         // in its own settings file, and over the protocol door only what is handed at spawn counts. The
@@ -1722,7 +1726,9 @@ public sealed partial class Driver(
                     resume: resume?.Conversation,
                     // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
                     blocks: resume?.Blocks,
-                    prompted: resume is null ? null : () => resume.Prompted = true)
+                    prompted: resume is null ? null : () => resume.Prompted = true,
+                    // The files said with them, a link each after the blocks (MSG1d3, D137 §2.4).
+                    files: resume?.Files)
                 .ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
