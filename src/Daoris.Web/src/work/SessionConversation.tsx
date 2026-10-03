@@ -5,7 +5,7 @@ import { useHarnesses, useSessionEvents, useSessionSearch } from '../shell';
 import { Icon } from '../ui';
 import { settle, toTurns, type Turn, type Usage } from './conversation';
 import { ConversationFind } from './ConversationFind';
-import { ConversationView } from './ConversationView';
+import { type Cooling, ConversationView } from './ConversationView';
 import type { ReasonValues } from './say';
 import { useFollowTail } from './followTail';
 
@@ -28,8 +28,10 @@ const LONG = 20;
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
 export function SessionConversation({
-  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onSession, onStartFrom, reasons,
+  session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage, onSession, onStartFrom, reasons, cooling,
 }: {
+  /** The account the person's words wait for cools, and *Go on in a new session* (MSG1g2) — `ConversationView`'s. */
+  cooling?: Cooling;
   /** Attend the session the person's words went to (MSG1f); absent, it is named as text. */
   onSession?: (id: string) => void;
   /** Start a conversation with words that cannot go on here (MSG1f, D137 §2.2); absent, no press is offered. */
@@ -144,6 +146,7 @@ export function SessionConversation({
         onSession={onSession}
         onStartFrom={onStartFrom}
         reasons={reasons}
+        cooling={cooling}
         toolbar={long ? (
           <ConversationFind
             hasFailure={firstFailure !== null}
