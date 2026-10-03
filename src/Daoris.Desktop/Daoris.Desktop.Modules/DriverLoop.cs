@@ -577,17 +577,39 @@ public sealed class DriverLoop(
     /// tests hold what the page is told.</para>
     ///
     /// <para><b>Its conversations come up with it</b> (D49 §3): a chat needs the service that holds its record, so the
-    /// runner is handed over here, and the routes and a terminal's words (MSG1e2) reach it from now.</para>
+    /// runner is handed over here, and the routes and a terminal's words (MSG1e2) reach it from now. Two things only the
+    /// loop does for them (MSG1c2): a chat the runner takes up by itself announces its end, since no route that started it
+    /// is there to hear it; and the words kept on an ended chat while no shell ran are taken up now, in the background, so
+    /// no look waits on them.</para>
     /// </remarks>
     /// <param name="chat">The loop's conversations, built over <paramref name="service"/>; null keeps none.</param>
     public async Task ComeUpAsync(ServiceClient service, ChatRunner? chat = null)
     {
         // Words held while a session winds up are tried the moment its record moves here (MSG1d).
         service.Moved += Words.OnMoved;
-        if (chat is not null) Chat = chat;
+        if (chat is not null)
+        {
+            chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
+            Chat = chat;
+        }
+
         Service = service;
         await eventBus.EmitAsync("DAORIS", "DRIVER_READY", new { Ready = true }).ConfigureAwait(false);
+
+        if (chat is not null)
+        {
+            var stopping = _stopping.Token;
+            _ = Task.Run(() => chat.TakeUpAsync(stopping), stopping);
+        }
     }
+
+    /// <summary>
+    /// A conversation's end, as the page's one event for it (D49 §3): the session and the state its record took. One writer,
+    /// since the shape is the page's contract: the routes that start a conversation hand it to their runs, and a chat the
+    /// runner took up by itself is announced by it (MSG1c2).
+    /// </summary>
+    internal static Task Ended(IEventBus bus, string session, string state) =>
+        bus.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state });
 
     /// <summary>
     /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and

@@ -43,8 +43,7 @@ public sealed partial class DriverModule
             repository, adapter, config,
             // The end of a conversation is news the page wants without asking: the drawer is
             // probably open, and a record that moved silently reads as one that hung.
-            onEnded: (session, state) =>
-                _events.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state }),
+            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
             // The per-session picker (D49 §4). Absent takes the workspace's default, then the
             // machine's, then the harness's own configuration home.
             profile: Optional(request, "profile"),
