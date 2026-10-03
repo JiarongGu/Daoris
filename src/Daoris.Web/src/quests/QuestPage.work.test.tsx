@@ -8,7 +8,7 @@ import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
-import { OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN } from './fixtures';
+import { FAILED, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN } from './fixtures';
 import { QuestPage } from './QuestPage';
 
 // A quest's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header, beside *Decline…*;
@@ -209,5 +209,41 @@ describe("a quest's page on a right-click", () => {
     withMenus({ work: door() });
     onPage();
     expect(await menuActs()).toEqual(['接下', '标为完成', '暂缓…', '谢绝…', '放弃…', '复制委托 ID']);
+  });
+});
+
+/**
+ * LANG1b (D142 points 1, 4, 5): its driven session's record words Daoris's lines in the reader's language, keeps the
+ * agent's words as written, and shows a record from before parts as it was kept, marked *shown as recorded*.
+ */
+describe("a quest's page words its session's note", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it('in the reader’s language, with the agent’s words as written beneath their lead-in', async () => {
+    await i18n.changeLanguage('zh');
+    page({
+      quest: TAKEN,
+      session: {
+        ...FAILED,
+        note: 'The agent’s turn failed with the quest still taken: rate limited',
+        noteParts: [
+          { code: 'ended.turn-failed-taken', values: {}, text: 'The agent’s turn failed with the quest still taken:' },
+          { words: 'rate limited until 16:00', by: 'agent' },
+        ],
+      },
+    });
+
+    const record = screen.getByRole('region', { name: '会话' });
+    expect(within(record).getByText('智能体这一轮失败，委托仍已接下：')).toBeInTheDocument();
+    expect(within(record).getByText('rate limited until 16:00').closest('blockquote')).not.toBeNull();
+    expect(within(record).queryByText('按原文显示')).toBeNull();
+  });
+
+  it('shows a record from before parts as it was kept, marked', () => {
+    page({ quest: TAKEN, session: FAILED });
+
+    const record = screen.getByRole('region', { name: 'Session' });
+    expect(within(record).getByText('the first attempt died')).toBeInTheDocument();
+    expect(within(record).getByText('shown as recorded')).toBeInTheDocument();
   });
 });

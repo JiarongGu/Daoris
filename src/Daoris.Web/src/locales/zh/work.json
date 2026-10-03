@@ -82,6 +82,8 @@
   "work.meter.tookFirst": "按本机时钟，用时 {{took}}；{{first}} 后给出第一个回应。",
   "work.meter.tokens": "以智能体报告为准：输入 {{input}} 个 token（新 {{fresh}}，写入缓存 {{written}}），读自缓存 {{read}} 个，输出 {{output}} 个。",
   "work.meter.join": "{{first}}{{second}}",
+  "work.note.join": "{{first}}{{second}}",
+  "work.note.recorded": "按原文显示",
   "work.code.copy": "复制",
   "work.code.copied": "已复制",
   "work.code.plain": "文本",

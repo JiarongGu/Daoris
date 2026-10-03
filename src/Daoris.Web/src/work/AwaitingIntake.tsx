@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import type { NotePart } from '../api';
 import { Button, WaitingCard } from '../ui';
+import { Note } from './Note';
 
 /**
  * A parked INTAKE, and where its answer is (INT4g).
@@ -24,11 +26,13 @@ import { Button, WaitingCard } from '../ui';
  * A molecule: it is handed the ask and the question and reports its door. Where nothing can act
  * (a story, a mirrored record) it is handed none, and still says where the answer lives.
  */
-export function AwaitingIntake({ ask, note, onAnswer }: {
+export function AwaitingIntake({ ask, note, parts, onAnswer }: {
   /** The ask this intake serves — the id the record's door opens. */
   ask: string;
-  /** The intake's own parked note, rendered word for word. */
+  /** The intake's parked note: its English, shown as kept where it has no parts. */
   note?: string | null;
+  /** Its lines (LANG1a), Daoris's worded in the reader's language and the agent's as written (LANG1b, `Note`). */
+  parts?: readonly NotePart[] | null;
   /** Open the ask's record, where it is answered. Absent where nothing can open it. */
   onAnswer?: (ask: string) => void;
 }) {
@@ -37,9 +41,7 @@ export function AwaitingIntake({ ask, note, onAnswer }: {
   return (
     <WaitingCard title={t('work.intake.waiting')}>
 
-      {note && (
-        <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{note}</p>
-      )}
+      <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />
 
       <p className="m-0 mt-2 text-small text-ink-faint">{t('work.intake.hint')}</p>
 
