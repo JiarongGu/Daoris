@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useSyncExternalStore } from 'react';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
-import type { SessionDiff } from '../work/diff';
+import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../work/diff';
 import type { TreeFile } from '../work/preview';
 import { call, pluginBound } from './call';
 
@@ -12,6 +13,120 @@ export type { TreeFile } from '../work/preview';
 
 // A session's tree on this machine (MOD3): what it did, the files in it, and the acts on it once
 // reviewed: land it by its repository's rule, hand its branch on, or discard it (D51, WSR1, WSR5).
+
+/** How long the page waits for a review (REVIEW4): the page's patience, named in minutes beside the shape. */
+export const reviewBound = REVIEW_BOUND_MINUTES * 60_000;
+
+/** How long a review nobody looks at stays held: a return within it is served from it (REVIEW4). */
+const REVIEW_KEPT = 30 * 60_000;
+
+/** How long a live session's review is fresh: the moment every view's query is (`main.tsx`). */
+const LIVE_FRESH = 15_000;
+
+/** A review asked of the host and not answered yet: the one read per session, and when it began. */
+type Reading = { answer: Promise<SessionDiff>; since: number };
+
+/**
+ * The reads in flight, by session, for each query cache (REVIEW4). The bridge cannot stop a call it has sent, so git
+ * reads on after the person leaves; a return within that read waits on it rather than starting a second, and counts
+ * from its start. Kept beside the cache whose answer it becomes, so a second cache (a test's) never meets another's.
+ */
+const reads = new WeakMap<QueryClient, Map<string, Reading>>();
+const readsOf = (client: QueryClient): Map<string, Reading> => {
+  let held = reads.get(client);
+  if (!held) {
+    held = new Map();
+    reads.set(client, held);
+  }
+  return held;
+};
+
+/** Who is told when a read begins or ends: the panes that say for how long. */
+const readers = new Set<() => void>();
+const tell = () => readers.forEach((reader) => reader());
+const listen = (reader: () => void) => {
+  readers.add(reader);
+  return () => {
+    readers.delete(reader);
+  };
+};
+
+/**
+ * When the host's read of this session's review began, while one is in flight (REVIEW4): the review counts from it, so
+ * a return to a read still running says how long it has really been.
+ *
+ * @remarks Observed rather than read once: the query says it is fetching before its read begins (its first answer is
+ * optimistic), so nothing about the query changes when the read does, and a pane that read the start once kept null.
+ */
+export const useReadingSince = (session: string | null): number | null => {
+  const client = useQueryClient();
+  return useSyncExternalStore(listen, () => (session ? readsOf(client).get(session)?.since ?? null : null), () => null);
+};
+
+/**
+ * The review's answer, waited on until the person leaves (REVIEW4).
+ *
+ * @remarks
+ * **Leaving cancels the page's wait, not git.** The query hands its signal here, so a review that unmounts mid-read is
+ * cancelled and reverts: no clock runs and no state is held for a pane nobody looks at. The host's read goes on, since
+ * nothing on the bridge stops it, and what it answers with nobody waiting is put where a return reads first: it is the
+ * answer that return would otherwise ask git for again. A refusal with nobody waiting is dropped; a return asks.
+ *
+ * **An act that changed the tree asks afresh.** A landing or a discard invalidates the review; a read begun before it
+ * answers for the tree as it was, so the read again starts its own, and the earlier one's answer is dropped.
+ */
+function readDiff(client: QueryClient, session: string, signal: AbortSignal): Promise<SessionDiff> {
+  const reading = readsOf(client);
+  const key = keys.diff(session);
+  let held = reading.get(session);
+  if (!held || client.getQueryState(key)?.isInvalidated) {
+    const entry: Reading = {
+      answer: call<SessionDiff>('SESSION_DIFF', { id: session }, { timeoutMs: reviewBound }),
+      since: Date.now(),
+    };
+    held = entry;
+    reading.set(session, entry);
+    tell();
+    const settle = () => {
+      if (reading.get(session) !== entry) return;
+      reading.delete(session);
+      tell();
+    };
+    entry.answer.then(
+      (diff) => {
+        // A read a newer one replaced answers for an older tree: never laid over what the newer one says.
+        const current = reading.get(session) === entry;
+        settle();
+        // Registered before any wait below, so a wait still running sees this first and its own resolve sets the data.
+        if (current && client.getQueryState(key)?.fetchStatus !== 'fetching') client.setQueryData(key, diff);
+      },
+      settle,
+    );
+  }
+
+  const answer = held.answer;
+  return new Promise<SessionDiff>((resolve, reject) => {
+    const leave = () => reject(signal.reason);
+    if (signal.aborted) {
+      leave();
+      return;
+    }
+    signal.addEventListener('abort', leave, { once: true });
+    answer.then(
+      (diff) => {
+        signal.removeEventListener('abort', leave);
+        resolve(diff);
+      },
+      (error: unknown) => {
+        signal.removeEventListener('abort', leave);
+        reject(error);
+      },
+    );
+  });
+}
+
+/** What the review keeps a session's answer by: its record's last move, and whether it still runs. */
+export type ReviewRecord = { updated: string; live: boolean };
 
 /**
  * What a session actually did (SURF6, design §5).
@@ -25,20 +140,46 @@ export type { TreeFile } from '../work/preview';
  * changes far more often than anyone opens a review — so this is keyed by session and left to the
  * pane that renders it, never prefetched alongside the record.
  *
- * A refusal is the host's own sentence and reaches the person verbatim: "no tree here", "no range
- * recorded", "git could not read it" are three different facts, and each names which.
+ * **An ended session's answer is kept** (REVIEW4): its committed range does not move once it ended, so a
+ * second open is the first's answer, at once, for as long as nothing has moved since — an answer read
+ * before the record's last move (it ended, it parked) is read again. A live session's is read again on
+ * an open once the moment every view is fresh for has passed, the last answer held beneath it meanwhile;
+ * and the record moving past the answer while the review is open reads it again then. A landing and a
+ * discard ask again of their own accord. The page waits {@link reviewBound}, not the bridge's 30 seconds.
+ *
+ * A refusal's code is what the page words it by: "no tree here", "no range recorded", "git could not
+ * read it" are different facts with different next moves, and the review says each (`ReviewFailed`).
  */
-export const useSessionDiff = (session: string | null) => {
+export const useSessionDiff = (session: string | null, record?: ReviewRecord | null) => {
   const { isAvailable } = useShenora();
-  return useQuery({
+  const client = useQueryClient();
+  const moved = record ? Date.parse(record.updated) : Number.NaN;
+  const settled = record && !record.live ? moved : null;
+  const query = useQuery({
     queryKey: keys.diff(session ?? ''),
-    queryFn: () => call<SessionDiff>('SESSION_DIFF', { id: session }),
+    queryFn: ({ signal }) => readDiff(client, session!, signal),
     enabled: isAvailable && Boolean(session),
+    // Final once it ended and read after that, and read again on the next open if it was read before. A live session's
+    // is fresh for the moment every view's is (`main.tsx`), so a glance at another tab and back does not run git again.
+    staleTime: (held) => {
+      if (settled === null) return LIVE_FRESH;
+      return held.state.dataUpdatedAt >= settled ? Infinity : 0;
+    },
+    gcTime: REVIEW_KEPT,
     // A landed session's work does not change under the reader; a running one's does, but a review
     // is read at the end. Refetching on focus would re-run git every time the window is touched.
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+  // The record moved past the answer while the review is open (it ended, parked or went on): read it again now. Only
+  // a move of the record asks again, never the answer's own arrival, so the effect follows `moved` alone.
+  const { refetch, dataUpdatedAt, isFetching } = query;
+  useEffect(() => {
+    if (!isFetching && dataUpdatedAt > 0 && moved > dataUpdatedAt) void refetch({ cancelRefetch: false });
+  }, [moved]);
+
+  return query;
 };
 
 /** The files a person may `@` in a session's tree, and how many more the host's bound left out. */
@@ -95,9 +236,11 @@ export const useTreeFile = (session: string | null, path: string | null) => {
  * the review says nothing of changes rather than running a diff of its own.
  */
 export const useReviewedPatch = (session: string | null, path: string | null): string | null => {
+  const client = useQueryClient();
   const reviewed = useQuery({
     queryKey: keys.diff(session ?? ''),
-    queryFn: () => call<SessionDiff>('SESSION_DIFF', { id: session }),
+    // The review's own read, should anything ever run it from here: one read per session, within the review's bound.
+    queryFn: ({ signal }) => readDiff(client, session!, signal),
     // Never asked from here: the review asks, and this reads what it was answered.
     enabled: false,
   });

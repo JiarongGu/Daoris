@@ -4,6 +4,53 @@
 // imports, not their erasure — and it would be right to, because a molecule that knows where its
 // data comes from is one refactor away from fetching it.
 
+import type { Session } from '../api';
+import { sessionOrigin, treeName } from './identity';
+import { readEvidence } from './timeline';
+
+/**
+ * How long the page waits for a review, in minutes (REVIEW4): the bridge's own 30 seconds stopped waiting for a diff the
+ * host took most of a minute to read, and the host bounds no git call of a review, so this is the page's patience, not a
+ * twin of a host bound. The review's sentence for a wait that ran out names it.
+ */
+export const REVIEW_BOUND_MINUTES = 3;
+
+/**
+ * What the page knows of a session before its review answers (REVIEW4): read from the record, never from git, so the
+ * review's frame stands at once while git reads the range — which took most of a minute on a session of seventy files.
+ */
+export type ReviewKnown = {
+  /** The session's title, or null where something above the review already names it. */
+  title: string | null;
+  repository: string | null;
+  /** Its own branch, where it holds a tree of its own here: `daoris/` and the tree's folder, as the trees name it. */
+  branch: string | null;
+  /** The commit the record says its tree stood at when it began. */
+  base: string | null;
+  /** How many commits its evidence lists, or null where it has listed none yet. */
+  commits: number | null;
+  /** The machine it ran on, where that is not this one. */
+  machine: string | null;
+};
+
+/**
+ * The review's frame from a session's record (REVIEW4). The branch only where the tree is its own: a session in the
+ * repository's checkout has no branch of its own to name. The commits are the evidence's `git log` lines, read by shape
+ * as the timeline reads them; none listed is left unsaid, since *nothing landed* is the review's answer to give.
+ */
+export function reviewKnown(session: Session, { title, ownTree }: { title: string | null; ownTree: boolean }): ReviewKnown {
+  const folder = ownTree ? treeName(session.tree) : null;
+  const commits = session.evidence ? readEvidence(session.evidence).commits.length : 0;
+  return {
+    title,
+    repository: session.repository,
+    branch: folder ? `daoris/${folder}` : null,
+    base: session.baseCommit || null,
+    commits: commits > 0 ? commits : null,
+    machine: sessionOrigin(session),
+  };
+}
+
 /** One file in a session's landed work, exactly as git described it. */
 export type DiffFile = {
   path: string;

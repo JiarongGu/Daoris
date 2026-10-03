@@ -1,13 +1,18 @@
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Session } from '../api';
 import { sentence } from '../format';
+import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
 import { store, stored } from '../lib/stored';
-import { useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useSessionDiff } from '../shell';
-import { Button, EmptyState, Inline, Segmented, SkeletonRows } from '../ui';
-import { DiffFileRow } from './DiffFileRow';
+import {
+  useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useReadingSince, useSessionDiff,
+} from '../shell';
+import { Button, EmptyState, Inline, SESSION_ACTIVE } from '../ui';
+import { reviewKnown } from './diff';
 import { LandedNote } from './LandedNote';
 import type { DiffLayout } from './PatchView';
+import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
 const LAYOUT = 'daoris.reviewLayout';
@@ -34,8 +39,9 @@ const LAYOUT = 'daoris.reviewLayout';
  * is what makes the tree layer refuse and name what would be lost; only then is the destructive press
  * offered. Destroying work is never a side effect of tidying (D51 rule 7).
  *
- * **A refusal renders verbatim** — "no tree here", "no range recorded" and "the checkout is not
- * clean" are different facts with different next moves, and only the host knows which.
+ * **An act's refusal renders verbatim** — "the checkout is not clean" and "the tree holds commits
+ * nobody merged" are different facts with different next moves, and only the host knows which. The
+ * review's own refusal ("no tree here", "no range recorded") is worded by its code (REVIEW4).
  *
  * **A landed session reads as landed** (REVIEW2, D113). Where this machine's landing record holds the
  * session's landing, the review says where the work landed, above what it reads; once a tidy took the
@@ -43,10 +49,23 @@ const LAYOUT = 'daoris.reviewLayout';
  * landed — the branch stands, or the tree is gone — accepting and sending back are not offered, and
  * discarding only where a tree is still here; the hand-off stays where one applies.
  *
+ * **It says what it is doing while git reads** (REVIEW4). The frame stands at once with what the record holds —
+ * the title, the repository, its own branch, the base and the commits it reported — and the files and the patch as
+ * a skeleton under words that say what is read and, after a moment, for how long. A refusal is worded from its code
+ * with the person's next move. An ended session's answer is kept, so a second open is the first's; a live one's is
+ * read again behind the last answer, held dimmed. Leaving cancels the wait; what git answers after is kept.
+ *
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
-export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
+export function DiffPane({ session, record, title = null, hasTree = false, onSendBack, onPreview }: {
   session: string | null;
+  /**
+   * The attended session's record (REVIEW4): what the review's frame says before git answers, and whether its answer
+   * is final — an ended session's range does not move. Absent, the frame says what the answer says.
+   */
+  record?: Session | null;
+  /** The session's title for the frame, or null where something above the review already names it. */
+  title?: string | null;
   /**
    * Whether this session holds a working tree OF ITS OWN on this machine (D51) — which is what the
    * acts act on. The record carries it and only a loopback caller is told, so the page can ask this
@@ -61,7 +80,15 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
   onPreview?: (path: string) => void;
 }) {
   const { t } = useTranslation();
-  const diff = useSessionDiff(session);
+  // The record is the attended one only while it is this session's: a frame never says another session's facts.
+  const own = record && record.id === session ? record : null;
+  const diff = useSessionDiff(session, own ? { updated: own.updated, live: SESSION_ACTIVE.has(own.state) } : null);
+  // A first read, or a read again after a refusal: the review is reading, not failed (REVIEW4).
+  const reading = diff.isPending || (diff.isError && diff.isFetching);
+  // A newer read behind an answer already shown: that answer is held, dimmed (D41's loading rule).
+  const refreshing = diff.isSuccess && diff.isFetching;
+  const started = useReadingSince(session);
+  const since = diff.isFetching ? started : null;
   // Where this session's work landed, where this machine's landing record holds it (REVIEW2, D113).
   const landed = diff.data?.landed ?? null;
   // The host decides whether the review reads as landed — its landed branch stands, or its tree is gone — and
@@ -70,7 +97,7 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
   // A tree the host could not read, or says is gone: nothing to land or discard there (UX5 U66).
   const treeGone = diff.data?.source === 'branch'
     || (diff.error as { code?: unknown } | null)?.code === 'SESSION_TREE_GONE';
-  const treeHere = hasTree && !diff.isPending && !treeGone;
+  const treeHere = hasTree && !reading && !treeGone;
   const canAccept = treeHere && !asLanded;
   const sendBack = asLanded ? undefined : onSendBack;
   const land = useLandSessionTree();
@@ -153,10 +180,25 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
     );
   }
 
-  if (diff.isPending) return <div className="p-3"><SkeletonRows rows={4} /></div>;
+  // What the frame says (REVIEW4): the record's facts from the first frame, and the range the answer measured from
+  // once it has one, since bringing a tree up to date moves it (WSR6).
+  const known = own
+    ? reviewKnown(own, { title, ownTree: hasTree })
+    : { title, repository: null, branch: null, base: null, commits: null, machine: null };
+  const head = <ReviewHead {...known} base={diff.data?.base || known.base} refreshing={refreshing ? since : null} />;
+
+  // Git is reading: the frame, then what is read and for how long over the skeleton. Nothing acts on a tree whose
+  // state the answer has not said yet.
+  if (reading) {
+    return (
+      <section className="flex min-h-0 flex-col" aria-busy="true">
+        {head}
+        <ReviewReading repository={known.repository} since={since} />
+      </section>
+    );
+  }
 
   const files = diff.data?.files ?? [];
-  const done = files.filter((file) => viewed[file.path]).length;
 
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
   // worth discarding, and one whose record travelled here holds none at all. Sending the work back
@@ -264,12 +306,20 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
     </footer>
   );
 
-  // The host's own sentence about why there is no diff — and the acts beneath it where a tree is
-  // still here, because "I cannot read the range" and "there is nothing to discard" are different.
+  // Why there is no diff, worded from its code with what the person can do next (REVIEW4) — and the acts beneath it
+  // where a tree is still here, because "I cannot read the range" and "there is nothing to discard" are different.
   if (diff.error) {
     return (
       <section className="flex min-h-0 flex-col">
-        <p className="m-0 min-h-0 flex-1 px-3 py-4 text-small text-ink-soft">{sentence(diff.error)}</p>
+        {head}
+        <div className="min-h-0 flex-1">
+          <ReviewFailed
+            error={diff.error}
+            machine={known.machine}
+            onRetry={() => void diff.refetch()}
+            retrying={diff.isFetching}
+          />
+        </div>
         {acts}
       </section>
     );
@@ -278,12 +328,23 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
   // Where the work landed (REVIEW2), above whatever is read: the landed branch's changes, or the tree's.
   const note = landed ? <LandedNote landed={landed} source={diff.data?.source ?? 'tree'} /> : null;
 
+  // The answer below the frame: held at reduced opacity while a newer read is on its way, so nothing jumps (D41).
+  const body = (content: ReactNode) => (
+    <div
+      aria-busy={refreshing ? true : undefined}
+      className={cn('flex min-h-0 flex-1 flex-col', refreshing && 'opacity-60')}
+    >
+      {content}
+    </div>
+  );
+
   // A landed branch with nothing to read — gone since, rebased, no checkout here — is said in the note alone:
   // "nothing landed" would be false, since it did.
   if (landed && diff.data?.source === 'branch' && files.length === 0) {
     return (
       <section className="flex min-h-0 flex-col">
-        <div className="min-h-0 flex-1">{note}</div>
+        {head}
+        {body(<div className="min-h-0 flex-1">{note}</div>)}
         {acts}
       </section>
     );
@@ -294,14 +355,19 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
   if (files.length === 0) {
     return (
       <section className="flex min-h-0 flex-col">
-        {note}
-        <div className="min-h-0 flex-1">
-          <EmptyState
-            icon="check"
-            headline={t('work.review.empty.headline')}
-            body={t('work.review.empty.body')}
-          />
-        </div>
+        {head}
+        {body(
+          <>
+            {note}
+            <div className="min-h-0 flex-1">
+              <EmptyState
+                icon="check"
+                headline={t('work.review.empty.headline')}
+                body={t('work.review.empty.body')}
+              />
+            </div>
+          </>,
+        )}
         {acts}
       </section>
     );
@@ -309,53 +375,23 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
 
   return (
     <section className="flex min-h-0 flex-col">
-      {note}
-      <header className="flex shrink-0 items-baseline gap-2 border-b border-line px-3 py-1.5">
-        <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
-          {t('work.review.files', { count: files.length })}
-        </span>
-        {done > 0 && (
-          <span className="text-meta tabular-nums text-ink-faint">
-            {t('work.review.progress', { done, total: files.length })}
-          </span>
-        )}
-        {/* The range, stated: a review that does not say what it is measured from is an opinion. */}
-        <span className="ml-auto truncate font-mono text-meta text-ink-faint">
-          {t('work.review.since', { base: diff.data!.base.slice(0, 8) })}
-        </span>
-        <Segmented
-          label={t('work.review.layout')}
-          value={layout}
-          options={[
-            { value: 'unified', label: t('work.review.unified') },
-            { value: 'split', label: t('work.review.split') },
-          ]}
-          onChange={chooseLayout}
-        />
-      </header>
-
-      <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0">
-        {files.map((file) => (
-          <DiffFileRow
-            key={file.path}
-            file={file}
-            open={open[file.path] ?? false}
-            viewed={viewed[file.path] ?? false}
+      {head}
+      {body(
+        <>
+          {note}
+          <ReviewFiles
+            files={files}
+            open={open}
+            viewed={viewed}
             layout={layout}
-            onToggle={() => setOpen((was) => ({ ...was, [file.path]: !was[file.path] }))}
-            onViewed={(next) => setViewed((was) => ({ ...was, [file.path]: next }))}
-            onPreview={onPreview ? () => onPreview(file.path) : undefined}
+            onLayout={chooseLayout}
+            onToggle={(path) => setOpen((was) => ({ ...was, [path]: !was[path] }))}
+            onViewed={(path, next) => setViewed((was) => ({ ...was, [path]: next }))}
+            onPreview={onPreview}
+            truncated={diff.data?.truncated}
           />
-        ))}
-      </ul>
-
-      {/* The bound is the host's sentence, shown rather than summarised — it names where the rest is. */}
-      {diff.data?.truncated && (
-        <p className="m-0 shrink-0 border-t border-line px-3 py-2 text-meta text-ink-faint">
-          {diff.data.truncated}
-        </p>
+        </>,
       )}
-
       {acts}
     </section>
   );
