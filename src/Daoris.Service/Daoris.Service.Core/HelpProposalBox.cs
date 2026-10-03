@@ -46,6 +46,7 @@ public sealed partial class HelpProposalBox(string? home)
         ("hand", "hand_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
+        ("accept", "accept_propose"),
     ];
 
     public string? Home { get; } = home;
