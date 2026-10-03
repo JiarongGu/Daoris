@@ -11,18 +11,15 @@ import { type ContextOffer, contextOffer } from '../menus/press';
  * Shared by every view's page since FRAME1d: PLUGUI1b drew it for a plugin, and a quest's and an ask's wear it. A
  * repository's has no id line (FRAME1e): its name is its id, and a title said twice is noise.
  *
- * **The line is shown whole, at the reading measure** (NAME2): content is shown as it is (platform language §4), and
- * cut to one line a plugin's description ended in an ellipsis on the install, its tip the only place it could be read.
+ * **The line is shown whole** (NAME2): content is shown as it is (platform language §4), and cut to one line a plugin's
+ * description ended in an ellipsis on the install, its tip the only place it could be read. It wraps at the column's
+ * edge, as the page's every block does (D141): a plugin's page asked for that alone (D140 §2), and every page has it.
  *
  * **An icon leads it where the record has one** (PLUGUI2, D140 §2): a plugin's, beside its title, decoration the title
  * names.
- *
- * **`measure={false}` lets the line take the page's width**, as a plugin's detail asks (D140 §2): its blocks share the
- * pane's width, and LAYOUT11 sets the one rule for every page.
  */
-export function PageHead({ title, version, pills, id, line, acts, icon, measure = true }: {
+export function PageHead({ title, version, pills, id, line, acts, icon }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode; icon?: ReactNode;
-  measure?: boolean;
 }) {
   return (
     <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
@@ -35,7 +32,7 @@ export function PageHead({ title, version, pills, id, line, acts, icon, measure 
             {pills}
           </div>
           {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
-          {line && <Prose className={cn('mt-1 wrap-anywhere', !measure && 'max-w-none')}>{line}</Prose>}
+          {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
         </div>
       </div>
       {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
@@ -82,6 +79,11 @@ const GUTTERS = {
  * inside it follows it (`@4xl/main:grid-cols-2`), since the list and the side bar narrow it while the
  * window stays as wide (audit A4). USE1's container query on Overview's repository rows was the rule's
  * first instance.
+ *
+ * **It is the page's one column, and the column is its pane** (D141, LAYOUT11). Every block of a page
+ * takes its width, so a page wraps at one edge in every language; it is the one place a line's length
+ * could be capped, and it caps none. A cap, if the window ever shows one is wanted, goes here once, in
+ * `em` (D141 §3), never on a paragraph.
  *
  * **It scrolls by itself**, and is the block anything positioned inside it is placed in: an `sr-only` label
  * far down a long page otherwise took the viewport as its block and grew a second scrollbar (PERM1).

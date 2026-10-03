@@ -66,7 +66,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           /* The service's own sentence, whole: it names the first rule the file broke (§3). */
           <Card>
             <p className="m-0 mb-2 text-body font-semibold text-ink">{t('code.refused')}</p>
-            <p className="m-0 max-w-prose whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-body text-ink-soft">
+            <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-body text-ink-soft">
               {answer.problem}
             </p>
           </Card>

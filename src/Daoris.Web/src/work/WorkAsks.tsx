@@ -117,7 +117,7 @@ export function AbandonAsk({ target, plan, meanIt, placeholder, busy = false, on
     <div
       role="group"
       aria-label={t('work.abandon.title')}
-      className="mb-4 grid max-w-3xl gap-3 rounded-control border border-line bg-sunken px-3 py-2.5"
+      className="mb-4 grid gap-3 rounded-control border border-line bg-sunken px-3 py-2.5"
     >
       {nothing ? (
         <>
@@ -145,7 +145,7 @@ export function AbandonAsk({ target, plan, meanIt, placeholder, busy = false, on
             rows={2}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="max-w-prose resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+            className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
           <div className="flex flex-wrap gap-2">
             {/* Abandoning without a reason is refused (`WORK_REASON`); the form does not offer the mistake. */}
@@ -176,7 +176,7 @@ export function AbandonedWork({ target, outcome, went, stayed }: {
     <>
       {outcome.went.length > 0 && (
         <PageSection title={went}>
-          <ul className="m-0 grid max-w-prose list-none gap-1.5 p-0">
+          <ul className="m-0 grid list-none gap-1.5 p-0">
             {outcome.went.map((line, i) => (
               <li key={`${line.key}-${i}`} className="wrap-anywhere text-body text-ink-soft"><Inline text={say(t, line, target)} /></li>
             ))}
@@ -186,7 +186,7 @@ export function AbandonedWork({ target, outcome, went, stayed }: {
       {(outcome.stayed.length > 0 || outcome.stillPaused) && (
         <PageSection title={stayed}>
           {outcome.stayed.length > 0 && (
-            <ul className="m-0 grid max-w-prose list-none gap-2 p-0">
+            <ul className="m-0 grid list-none gap-2 p-0">
               {outcome.stayed.map((row, i) => <Staying key={`${row.piece}-${i}`} row={row} target={target} />)}
             </ul>
           )}

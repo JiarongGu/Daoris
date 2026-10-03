@@ -229,7 +229,7 @@ export function QuestPage({
     <ViewMain header={head} menu={menu}>
       {asking === 'pause' && work && pauseLines && (
         <PauseAsk
-          className="mb-4 max-w-3xl"
+          className="mb-4"
           target={target}
           lines={pauseLines}
           meanIt={t('quests.detail.pauseMeanIt')}
@@ -268,7 +268,7 @@ export function QuestPage({
       )}
 
       {declining && moving && (
-        <div className="mb-4 flex max-w-3xl flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
           <input
             autoFocus
             aria-label={t('quests.detail.declinePlaceholder')}
@@ -384,7 +384,7 @@ export function QuestPage({
       )}
 
       {hold && onGrant && trusting && (
-        <div className="mb-4 max-w-3xl">
+        <div className="mb-4">
           <TrustAsk hold={hold} busy={granting} onCancel={onTrusting && (() => onTrusting(false))} onGrant={() => onGrant(hold)} />
         </div>
       )}
@@ -394,7 +394,7 @@ export function QuestPage({
            it sits above the body — it is what this quest is waiting on. The note is that session's own words. */
         <section
           aria-label={t('quests.detail.conflicts')}
-          className="mb-4 max-w-3xl rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
+          className="mb-4 rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
         >
           <SectionTitle>{t('quests.detail.conflicts')}</SectionTitle>
           <p className="m-0 mb-2 text-small text-ink-soft">{t('quests.detail.conflictsHint')}</p>
@@ -420,8 +420,9 @@ export function QuestPage({
         </section>
       )}
 
-      {/* The ask itself, as the asker wrote it: content, at a measure a person can read. */}
-      <p className="m-0 max-w-prose whitespace-pre-wrap text-body leading-relaxed">{quest.body}</p>
+      {/* The ask itself, as the asker wrote it: content, wrapping at the column's edge with the title above it (D141: a
+          65ch body beside a title that ran the pane left 750 px empty on the install). */}
+      <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{quest.body}</p>
 
       {(quest.links?.length ?? 0) > 0 && (
         /* The asker's addresses, as links — the service accepted only http and https, so each is an address
@@ -485,7 +486,7 @@ export function QuestPage({
       {chain.length > 1 && (
         /* The chain this quest belongs to (MAP1): the ask, the steps before and after it, what its close will
            still publish (D65 §4, `{parent}` as the asker wrote it), and on what each step ran. */
-        <div className="mt-4 max-w-3xl">
+        <div className="mt-4">
           <ChainStrip
             chain={chain}
             onQuest={(other) => onOpenQuest(other.id)}
@@ -494,7 +495,7 @@ export function QuestPage({
         </div>
       )}
 
-      {quest.note && <p className="mt-4 max-w-prose rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>}
+      {quest.note && <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>}
 
       {session && (
         /* The driven session's RECORD (D46 §4) — read-only here: a quest is decided on its page, and its sessions
@@ -509,7 +510,7 @@ export function QuestPage({
               {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
             </span>
           </div>
-          {session.note && <p className="mt-2 mb-0 max-w-prose text-body text-ink-soft">{session.note}</p>}
+          {session.note && <p className="mt-2 mb-0 text-body text-ink-soft">{session.note}</p>}
           {session.evidence && (
             <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line-strong bg-raised px-3 py-2.5 font-mono text-small">
               {session.evidence}

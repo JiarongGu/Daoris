@@ -390,9 +390,10 @@ describe('the views, in a browser', () => {
 
   /**
    * UX5 U59: content did not follow the window. The column was capped at 72rem, so a maximized window left every view but Sessions a third
-   * empty. Content follows the window; prose keeps its own measure (`Prose`), a form its own size.
+   * empty. Content follows the window, and since D141 (LAYOUT11) prose wraps at the same edge: a 65ch paragraph beside blocks that ran the
+   * pane gave one page two edges.
    */
-  it('lets every view follow the window, capping no content column', async () => {
+  it('lets every view follow the window, capping no content column and no paragraph', async () => {
     shell();
     await screen.findByRole('navigation', { name: 'Views' });
 
@@ -400,8 +401,8 @@ describe('the views, in a browser', () => {
     for (const element of [main, ...main.querySelectorAll(':scope > *')]) {
       expect(element.getAttribute('class') ?? '').not.toMatch(/\bmax-w-/);
     }
-    // And prose keeps its measure: uncapped, the repositories' key ran 121 characters a line.
-    expect(await screen.findByText(/adopted — it carries its own declaration/)).toHaveClass('max-w-prose');
+    // The repositories' key, which wore the 65ch measure, wraps at its card's edge.
+    expect((await screen.findByText(/adopted — it carries its own declaration/)).className).not.toMatch(/\bmax-w-/);
   });
 
   /**

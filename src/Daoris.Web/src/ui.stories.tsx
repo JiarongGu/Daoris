@@ -57,7 +57,7 @@ export const SettingRows: StoryObj = {
         why="One quest whose session could not start ran eighteen times, and every run spent an account."
         control={<input type="number" defaultValue={0} className="w-[4.5rem] rounded-control border border-line-strong bg-raised px-2.5 py-1 text-right text-body text-ink" />}
       >
-        <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           Zero means it keeps trying.
         </p>
       </SettingRow>
