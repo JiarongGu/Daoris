@@ -21,6 +21,55 @@ A host the person starts, or a shared one, runs in production and never served t
 
 **Verification.** `desktop-tool.test.ts`: the new case failed (no such export), then passed, 41/41. The running install
 keeps the old environment until it is next started.
+## Every account signed out about ten seconds after the application started (2026-10-04)
+
+**Symptom.** On the install, all three `claude-code` accounts read signed out (`auth status`: `loggedIn: false`). Each
+account's `.credentials.json` still held `claudeAiOauth`, with its access and refresh tokens empty strings, which the
+agent writes when it signs an account out. account-1 and account-2 were blanked 2 s apart, 13 s after the application
+was started by the dev loop's `run --install`; Gmail 9 s after the staged update's swap started the new build. The intake
+for two asks then waited on Gmail's cool-off and named neither signed-out account (TOOL6g). The next day, watching the
+install's processes while two starts were refused at every look on signed-out accounts, `Daoris.Desktop.exe` started
+`claude auth status` at 08:58:13, 08:58:17 and 08:58:37 local; with both asks paused, none in the next 60 s. In that same
+window the parent's own Claude Code sign-in, the machine's default one, expired (*Login expired · Please run /login*) and
+three subagents stopped.
+
+**Root cause.** Three things Daoris did, read from the code and held by tests:
+1. **A refused start asked the agent about every account, and the person's own sign-in, at every look.** The walk met a
+   cached word that an account was signed out and called `ReportAsync(refresh: true)` once per start, and the probe asked
+   each account's status and then the tool's own home's, with the configuration-home variable unset, which is the
+   person's default sign-in. `SignedOutLooksTests` replays it through real looks: with that call put back, five looks
+   held on two signed-out accounts and a cooling one probed the agent six times (once to start, then once a look).
+2. **Nothing kept two status questions off one account.** `HarnessRoster.ReportAsync` cached each harness's probe in a
+   plain dictionary with nothing between a miss and the probe, so the page's roster, Settings → Agents, a start's walk
+   and a wiring panel missing it together at start ran separate probes over the same directories.
+3. **No probe kept off an account a session of Daoris's ran on.**
+
+The reading, **reproduced with a stand-in and not confirmed on the install**: asked its status with an access token
+expired, the agent refreshes it; two at once spend one single-use refresh token twice; one wins, the other is refused and
+signs the account out, the winner's new tokens with it. `ProbeRaceTests` makes that runnable with an agent that refreshes
+an expired token when asked and spends a refresh token once: two status questions at once sign its account out (the
+control), and two `ReportAsync` calls at once did too before the fix. **Not proven**: that the real agent refreshes on
+`auth status`; that the install's blanking came from two probes rather than a probe beside a session; and that the
+parent's expired default sign-in was this probe at all (the 08:58 questions are consistent with it, and nothing more).
+The protocol door (`claude-code-acp`) asks no status question of its own (no login question declared), so two adapters
+onto one account did not widen the window.
+
+**Fix.** No probe per look: a start held on a signed-out account believes the agent's word once per sign-out, and asks
+that account alone again only when a sign-in or key through Daoris's doors marks it (`harnesses/.probing/<agent>/
+<account>.signed-in`, written by the driver's `LoginAsync` and `HarnessKeys.Add` and the CLI's `login` and `key`), or
+after an hour's backstop (`HarnessRoster.SignedOutAskedAgain`). The tool's own sign-in is asked only at the person's
+press (the roster's refresh, a sign-in or key on the screen, `daoris agent list`), never by the loop. One status question
+per configuration home at a time (`ProbeLock`): a gate per home in the process, and a lock file under
+`harnesses/.probing/` taken by creating it new, which the CLI takes too (`probelock.ts`, a twin). A probe in flight is
+shared by every caller (`ReportAsync`). An account a session of Daoris's runs on, or a start was just chosen on, is not
+asked and keeps its last answer, and a start waits out a question being asked of its account before it counts itself.
+
+**Verification.** `SignedOutLooksTests` (2, `Process`): five looks, one probe, every account asked once, the own sign-in
+never; a terminal sign-in's mark asked about at the next look, that account alone. `ProbeRaceTests` (6, `Process`): four
+of its first five failed before the fix (blanked tokens, or an account asked twice), all pass after; the sixth counts a
+signed-out account's questions across looks, a mark, the backstop and the person's press, and failed with the bound
+sabotaged. Each `Process` class was run alone, filtered, on this branch. `ProbeLockTests` (17) and `probelock.test.ts`
+(7) hold the lock's and the mark's rows on both sides.
 
 ## The deployment rehearsal failed after all 110 checks passed (2026-10-04)
 

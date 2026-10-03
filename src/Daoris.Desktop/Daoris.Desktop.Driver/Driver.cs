@@ -24,7 +24,11 @@ public sealed record SessionEnded(
 /// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
 /// <param name="Held">The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict.</param>
 /// <param name="Cooling">The account's cool-off, when that is what held it (TOOL4d): what the report's waits are gathered from.</param>
-internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null);
+internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null, CoolingEntry? Cooling = null)
+{
+    /// <summary>The accounts a held start passed because they are not signed in (TOOL6g), or null.</summary>
+    public SignedOutAccounts? SignedOut { get; init; }
+}
 
 /// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
 /// <param name="Events">
@@ -285,6 +289,8 @@ public sealed partial class Driver(
         // the report's considerations, so "why is this sitting" is answered for the holds a real
         // machine actually hits, not only the ones the planner can see.
         var heldAt = new Dictionary<string, string>(StringComparer.Ordinal);
+        // The accounts each held quest's start passed not signed in (TOOL6g), said beside its hold.
+        var signedOutAt = new Dictionary<string, SignedOutAccounts>(StringComparer.Ordinal);
 
         // The holds that are the harness's trust (D73), as facts: the screen offers exactly these.
         var untrusted = new List<TrustHold>();
@@ -349,6 +355,7 @@ public sealed partial class Driver(
             progressed |= came.Opened;
             if (came.Ended is not null) concluded.Add(came.Ended);
             if (started.Quest is { } quest && came.Held is not null) heldAt[quest] = came.Held;
+            if (started.Quest is { } passed && came.SignedOut is not null) signedOutAt[passed] = came.SignedOut;
         }
 
         var waits = Waits(begun);
@@ -359,7 +366,7 @@ public sealed partial class Driver(
         // as the service now holds it. The look chooses; the landings run beside it, as its starts do.
         await LandDueAsync(events, ct).ConfigureAwait(false);
 
-        return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded)
+        return new TickReport(Considerations.Blocked(plan, heldAt, signedOutAt), events, progressed, snapshot.Active, concluded)
         {
             Untrusted = untrusted,
             Waits = waits,
@@ -393,17 +400,36 @@ public sealed partial class Driver(
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
                     Asks = [.. held.Select(each => each.Started.Ask).OfType<string>()],
                     Repositories = [.. held.Select(each => each.Started.Where).Distinct(StringComparer.OrdinalIgnoreCase)],
+                    SignedOut = SignedOutOf(held),
                 };
             })
             .ToList();
 
-        foreach (var wait in waits.Where(wait => _harnesses.NewWait(wait.Agent, wait.Account, wait.Until)))
+        foreach (var wait in waits.Where(wait => _harnesses.NewWait(wait.Agent, wait.Account, wait.Until, wait.SignedOut)))
         {
             service.AccountSaid(AccountLine.Waiting(
-                wait.Adapter, wait.Account, wait.Workspace, wait.Until, wait.Quests.Count + wait.Asks.Count));
+                wait.Adapter, wait.Account, wait.Workspace, wait.Until, wait.Quests.Count + wait.Asks.Count, wait.SignedOut));
+        }
+
+        // A start held on accounts not signed in with none cooling waits for a person, not a time (TOOL6g): the line is written
+        // with no time, once per agent and set of accounts.
+        foreach (var agent in begun
+                     .Where(each => each.Came is { Cooling: null, SignedOut: not null })
+                     .GroupBy(each => each.Came!.SignedOut!.Agent, StringComparer.OrdinalIgnoreCase))
+        {
+            var held = agent.ToList();
+            var accounts = SignedOutOf(held);
+            // Kept apart from a cool-off of the tool's own sign-in, whose account is null too: no profile name has a colon.
+            if (!_harnesses.NewWait(agent.Key, ":signed-out", null, accounts)) continue;
+            var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            service.AccountSaid(AccountLine.Waiting(
+                held[0].Started.Adapter, null, workspaces.Count == 1 ? workspaces[0] : null, until: null, held.Count, accounts));
         }
 
         return waits;
+
+        static IReadOnlyList<string> SignedOutOf(IEnumerable<(Begun Started, StartRun? Came)> held) =>
+            [.. held.SelectMany(each => each.Came?.SignedOut?.Accounts ?? []).Distinct(StringComparer.OrdinalIgnoreCase)];
     }
 
     /// <summary>
@@ -736,8 +762,8 @@ public sealed partial class Driver(
         if (!selection.Allowed)
         {
             // A cooling account's hold carries its cool-off (TOOL4d), so the look says the wait once and a screen shows
-            // the quest waiting for an account. Nothing was spawned or probed to learn it.
-            return Hold(selection.Refusal!) with { Cooling = selection.Cooling };
+            // the quest waiting for an account; and the accounts it passed not signed in (TOOL6g), so both say the sign-in.
+            return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
         }
 
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for

@@ -227,6 +227,8 @@ public sealed class DriverLoop(
     /// is cooling waits for an account, not parked and with no Retry. The wait names whose account, which (null for the tool's
     /// own sign-in), until when, and whether the agent named the time, so the page says it in the reader's language. Null where
     /// no wait of the look holds this quest. A profile name rides this bridge only (D47 §4).</para>
+    /// <para><b>Which accounts it passed not signed in</b> (TOOL6g): beside a wait or with none cooling, whose and which, so the
+    /// page names each with its sign-in. Null where it passed none.</para>
     /// </remarks>
     /// <param name="park">The quest's park as the loop last read it (<see cref="QuestParkReader"/>), or null.</param>
     /// <param name="wait">The look's wait on a cooling account, where it holds this quest (<see cref="TickReport.Waits"/>), or null.</param>
@@ -250,6 +252,8 @@ public sealed class DriverLoop(
             parked?.Strikes,
             parked?.Since,
             WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Until, waiting.Stated },
+            // The accounts its start passed not signed in (TOOL6g), whose: the page says each with its sign-in. Null otherwise.
+            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts } : null,
             // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
             ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
         };

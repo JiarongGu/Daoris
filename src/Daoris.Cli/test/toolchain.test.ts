@@ -674,6 +674,22 @@ function moment(hours: number): { until: string; said: string } {
 const POINTER = 'Settings → Agents names the account it takes, from the sessions Daoris runs and its last starts, which this '
   + 'terminal does not read';
 
+/**
+ * TOOL6g: one account list per tool. A door onto another agent's accounts (`claude-code-acp`) listed the same accounts
+ * again, with states its owner had already said (`unknown` beside `out`). It now names whose accounts it runs on, once.
+ */
+test('`agent list` lists a tool\'s accounts once, under the tool, and a door names whose it runs on', () => {
+  const fx = makeFixture('harness-list-one');
+  claudeAccounts(fx, 'account-1', 'account-2');
+
+  const out = listedWith(fx, { rotation: { 'claude-code': ['account-1', 'account-2'] } });
+
+  assert.equal(out.match(/^\s+account-1\s/gm)?.length, 1, out);
+  assert.equal(out.match(/rotation\s+account-1, then account-2/g)?.length, 1, out);
+  assert.match(out, /claude-code-acp[^\n]*\n(?:\s{17}[^\n]*\n)*?\s{17}its accounts are Claude Code's, listed under `claude-code`: this is another way Claude Code runs on them\n/);
+  fx.cleanup();
+});
+
 test('`agent list` says the next start\'s steps beneath each list, and where the account it takes is named (TOOL6f)', () => {
   const fx = makeFixture('harness-list-next');
   claudeAccounts(fx, 'account-1', 'account-2', 'account-3');

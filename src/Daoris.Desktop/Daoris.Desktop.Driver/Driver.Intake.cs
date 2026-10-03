@@ -109,8 +109,9 @@ public sealed partial class Driver
             return Hold(error.Message);
         }
 
-        // A cooling account's hold carries its cool-off (TOOL4d), as a quest's does.
-        if (!selection.Allowed) return Hold(selection.Refusal!) with { Cooling = selection.Cooling };
+        // A cooling account's hold carries its cool-off (TOOL4d), and the accounts it passed not signed in (TOOL6g), as a
+        // quest's does.
+        if (!selection.Allowed) return Hold(selection.Refusal!) with { Cooling = selection.Cooling, SignedOut = selection.SignedOut };
 
         // The room, written from the circle's declarations as they stand now.
         string room;

@@ -18,6 +18,13 @@ public enum AccountReadiness
     SignedOut,
 }
 
+/// <summary>
+/// The accounts a held start passed because they are not signed in (TOOL6g): whose, and which, in the order the walk tried
+/// them. Machine-local, as every account name is: the page says them in the reader's language, and the log by name.
+/// </summary>
+/// <param name="Agent">Whose accounts: the owner a door runs as (AGT7), which `daoris agent login` takes.</param>
+public sealed record SignedOutAccounts(string Agent, IReadOnlyList<string> Accounts);
+
 /// <summary>What a start is, for the walk (TOOL6b, D130 §4.6, §16.3): driven work never starts on a kept account.</summary>
 public enum StartKind
 {
@@ -574,8 +581,29 @@ public static class RotationWords
         var every = states.All(state => state.Readiness == AccountReadiness.Cooling)
             ? $"every `{agent}` account this start may use is cooling"
             : $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, zone)))}";
-        return $"{every}; {when}. Daoris starts nothing on them until then.";
+        // TOOL6g: an account not signed in waits for a person, never for the reset, so its sign-in is said beside the wait.
+        return $"{every}; {when}. Daoris starts nothing on them until then." + SignIn(agent, SignedOut(states), "A sign-in starts it sooner");
     }
+
+    /// <summary>
+    /// No account a start may use is ready and none is cooling, over a list of more than one (TOOL6g): nothing comes ready
+    /// by itself, so each account is named with why, and every one not signed in with its sign-in.
+    /// </summary>
+    public static string NoneReady(string agent, IReadOnlyList<AccountState> states) =>
+        $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, TimeZoneInfo.Utc)))}."
+        + SignIn(agent, SignedOut(states), "A sign-in starts it");
+
+    /// <summary>The accounts of a walk not signed in, in the order it tried them.</summary>
+    public static IReadOnlyList<string> SignedOut(IReadOnlyList<AccountState> states) =>
+        [.. states.Where(state => state.Readiness == AccountReadiness.SignedOut && state.Account is not null).Select(state => state.Account!)];
+
+    /// <summary>
+    /// The sign-in for each account not signed in, after <paramref name="lead"/>, both doors named (D50): the terminal's for
+    /// each account, and the screen's. Empty where none is.
+    /// </summary>
+    private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead) => accounts.Count == 0
+        ? ""
+        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --profile {account}`"))}, or Settings → Agents.";
 
     /// <summary>
     /// A conversation the person started on an account they picked, which is cooling (§3.3): refused, since the person

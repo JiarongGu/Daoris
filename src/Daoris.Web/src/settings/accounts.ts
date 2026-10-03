@@ -279,7 +279,12 @@ function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) =
 export function nextLine(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
   if (next.reason === 'own') return i18n.t('harness.next.own');
   if (next.reason === 'waits' || !next.account) {
-    return next.when ? i18n.t('harness.next.waitsUntil', { when: moment(next.when) }) : i18n.t('harness.next.waits');
+    const waits = next.when ? i18n.t('harness.next.waitsUntil', { when: moment(next.when) }) : i18n.t('harness.next.waits');
+    // TOOL6g: an account not signed in waits for a person, never for the reset, so a wait says a sign-in frees it.
+    const signedOut = next.others.filter((held) => held.hold === 'signedOut' && held.account).map((held) => labelOf(held.account!));
+    if (signedOut.length === 0) return waits;
+    const accounts = signedOut.join(i18n.t('harness.next.comma'));
+    return `${waits}${i18n.t('harness.said.sentences')}${i18n.t(next.when ? 'harness.next.signInSooner' : 'harness.next.signIn', { accounts })}`;
   }
   return i18n.t('harness.next.takes', { account: labelOf(next.account), why: nextWhy(next, scope, labelOf) });
 }
