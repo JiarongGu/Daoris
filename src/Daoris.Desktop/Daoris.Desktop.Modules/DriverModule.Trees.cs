@@ -112,6 +112,8 @@ public sealed partial class DriverModule
             landed.Entry.Plugin,
             landed.Entry.Pushed,
             landed.Entry.PullRequest,
+            // Who accepted it (LAND2b, D145 point 4): `person`, `auto`, or null for a landing from before it was kept.
+            landed.Entry.AcceptedBy,
             landed.State,
             AsLanded = landed.ReadsAsLanded(treeGone),
             Reads = landed.Reads is { } reads ? new { reads.Kind, reads.Where, reads.Files, reads.Detail } : null,
