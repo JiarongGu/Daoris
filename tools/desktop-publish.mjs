@@ -11,10 +11,19 @@
  *   node tools/desktop-publish.mjs --to <install> --service --stage
  *                                                           …beside a running install, in update/staged/,
  *                                                           which the desktop installs when idle (D139)
+ *   … --force-ungated                                       …a tree the full set of gates has not passed
+ *                                                           (GATE3, below): the person's call
  *
  * 🔴 **`--to` is required and has no default.** A machine path in a tracked file is exactly what
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
  * same reason.
+ *
+ * 🔴 **It publishes only a tree the full set of gates passed** (GATE3). A merge runs only the gates its
+ * lanes reach (`tools/merge-branch.mjs`), so this is where the rest is owed: before anything is built it
+ * asks `merge-branch --passed`, and refuses, naming each gate that has not passed and the command that
+ * runs them all (`node tools/merge-branch.mjs --full`). `--force-ungated` is the person's explicit
+ * override, and the publish says it is ungated. A folder under the workspace's `_fixtures` is never
+ * asked: the deployment rehearsal publishes there, and it is one of the gates being run.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
  * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
@@ -38,10 +47,10 @@
  * `ServiceHostLocator`, which looks beside the shell first. `--service` publishes a copy there, so
  * the folder is self-sufficient.
  */
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
+import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
 import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
@@ -587,6 +596,60 @@ Re-publishing over this folder with the application closed still works; nothing 
 `;
 }
 
+// ---------------------------------------------------------------------------------------------
+// GATE3: the full set before the install
+
+/** The command that runs every gate on the checkout as it stands: what a refusal names. `merge-branch`'s `FULL_COMMAND`. */
+export const GATE_COMMAND = 'node tools/merge-branch.mjs --full';
+
+/**
+ * Whether `to` is the workspace's scratch, `_fixtures` or a folder inside it: where the deployment rehearsal
+ * publishes. Compared by path, so a sibling whose name starts the same is not inside; case-blind on Windows.
+ */
+export function insideFixtures(to, repoRoot) {
+  const rel = relative(join(resolve(repoRoot), '_fixtures'), resolve(to));
+  return rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
+}
+
+/**
+ * Ask the merge tool whether the full set passed the checkout as it stands: its exit (0 passed, 1 not,
+ * anything else could not tell) and what it printed, gate by gate. A process rather than an import, so
+ * nothing the deployment rehearsal runs imports the merge tool.
+ */
+export function askGates(repoRoot, tool = join(dirname(fileURLToPath(import.meta.url)), 'merge-branch.mjs')) {
+  const asked = spawnSync(process.execPath, [tool, '--passed'], { cwd: repoRoot, encoding: 'utf8', windowsHide: true });
+  if (asked.error) return { code: 2, out: `node could not start: ${asked.error.message}` };
+  return { code: asked.status ?? 2, out: `${asked.stdout ?? ''}${asked.stderr ?? ''}`.trim() };
+}
+
+const indented = (text) => text.split(/\r?\n/).filter((line) => line.trim()).map((line) => `  ${line.trimEnd()}`).join('\n');
+
+/**
+ * What stops a publish into `to` for want of gates (GATE3), as the sentence to print, and what to say when it
+ * goes ahead: nothing is asked for a folder under `_fixtures`; a tree the full set passed publishes; any other
+ * is refused, naming what has not passed and the command that runs it all, unless `force` (`--force-ungated`,
+ * the person's explicit override), when it publishes and says it is ungated.
+ */
+export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates } = {}) {
+  if (insideFixtures(to, repoRoot)) return { refusal: null, note: null };
+  const { code, out } = ask(repoRoot);
+  if (code === 0) return { refusal: null, note: `desktop-publish: ${out.split(/\r?\n/)[0].replace(/^merge-branch: /, '')}` };
+  const why = code === 1
+    ? 'the full set of gates has not passed this checkout'
+    : 'could not tell whether the full set passed this checkout';
+  if (force) {
+    return { refusal: null, note: `desktop-publish: publishing ungated (--force-ungated): ${why}.\n${indented(out)}` };
+  }
+  // The tool's own last line names the command too; it is said once, below.
+  const said = out.split(/\r?\n/).filter((line) => !line.includes(GATE_COMMAND)).join('\n');
+  return {
+    refusal: `desktop-publish: ${why}, so it is not published to \`${to}\`.\n${indented(said)}\n`
+      + `  A merge runs only the gates its lanes reach (GATE3); run every gate on this checkout: ${GATE_COMMAND}\n`
+      + '  Or, as your explicit call, publish it ungated with --force-ungated.',
+    note: null,
+  };
+}
+
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
   const marker = join(folder, MARKER);
@@ -670,6 +733,13 @@ async function main() {
     console.error(refused);
     process.exit(2);
   }
+  // GATE3: only a tree the full set passed is built into an install, before anything is built.
+  const gated = ungatedRefusal(to, repoRoot, { force: flag('--force-ungated') });
+  if (gated.refusal) {
+    console.error(gated.refusal);
+    process.exit(2);
+  }
+  if (gated.note) console.log(gated.note);
   const root = stage ? join(to, ...STAGE, '.staging') : to;
   if (stage) {
     rmSync(root, { recursive: true, force: true });
