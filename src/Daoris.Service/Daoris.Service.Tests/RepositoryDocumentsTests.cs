@@ -119,7 +119,8 @@ public sealed class RepositoryDocumentsTests : IDisposable
 
     /// <summary>
     /// A declared path may be a folder (DOC3): a folder of decision records is the decisions role (§2.1),
-    /// one record per file, below it too, each read whole since its headings are the record's own parts.
+    /// one record per file, below it too, each read whole since its headings are the record's own parts,
+    /// and titled by its first (DOC8c).
     /// </summary>
     [Fact]
     public void A_declared_folder_is_one_record_per_file()
@@ -132,7 +133,7 @@ public sealed class RepositoryDocumentsTests : IDisposable
         var decisions = Scan().Where(e => e.Kind == EntryKind.Decision).ToList();
 
         Assert.Equal(
-            ["0001-one @ docs/adr/0001-one.md", "0002-two @ docs/adr/done/0002-two.md"],
+            ["One @ docs/adr/0001-one.md", "Two @ docs/adr/done/0002-two.md"],
             Of(decisions, EntryKind.Decision));
         Assert.Contains("## Decision", decisions[0].Body);
         Assert.All(decisions, d => Assert.Null(d.Anchor));
@@ -256,7 +257,7 @@ public sealed class RepositoryDocumentsTests : IDisposable
 
         Assert.Empty(Of(entries, EntryKind.Decision));
         Assert.Empty(Of(entries, EntryKind.Knowledge));
-        Assert.Equal(["one @ records/fixes/one.md"], Of(entries, EntryKind.Fix));
+        Assert.Equal(["One @ records/fixes/one.md"], Of(entries, EntryKind.Fix));
     }
 
     // ── the twin table ─────────────────────────────────────────────────────────────────────────────

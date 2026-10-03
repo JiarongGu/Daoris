@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
+import { code } from '../test/code';
 import { AcrossList, type RepositoryAcross } from './Across';
 
 // READ1 (D107): whether agents read each repository's checkout, as the driver resolved it with what said
@@ -34,7 +35,7 @@ describe('the reading and writing across card', () => {
   it('draws the commands its body names as code, never as backticks', () => {
     draw();
 
-    expect(screen.getByText('git status', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code('git status'))).toBeInTheDocument();
     expect(screen.queryByText(/`git status`/)).not.toBeInTheDocument();
   });
 

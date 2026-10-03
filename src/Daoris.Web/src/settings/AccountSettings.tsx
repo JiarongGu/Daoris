@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, SelectField } from '../ui';
+import { Button, CodeText, SelectField } from '../ui';
 import type { AccountSettings, AccountSettingsChange, SettingsChoices } from '../tools';
 
 /** A choice that is not a value: the tool's own default, a model the aliases do not name, a key not set. */
@@ -139,7 +139,7 @@ export function AccountSettingsForm({
       <p className="m-0 max-w-prose text-meta text-ink-faint">{t('harness.settings.hint')}</p>
       <p className="m-0 flex flex-wrap items-baseline gap-1.5 text-meta text-ink-faint">
         <span>{t('harness.settings.terminal')}</span>
-        <code className="font-mono">{`daoris agent settings ${harness} --account ${account} model <model> effort <effort>`}</code>
+        <CodeText text={`daoris agent settings ${harness} --account ${account} model <model> effort <effort>`} />
       </p>
 
       <div className="flex flex-wrap items-center gap-2">

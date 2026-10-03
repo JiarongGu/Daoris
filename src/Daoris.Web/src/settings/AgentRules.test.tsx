@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
+import { code } from '../test/code';
 import { AgentRules, type AgentRulesState, type RuleProposal } from './AgentRules';
 
 // PERM1 (D72): what an agent Daoris starts may do — Claude Code's own rules in Daoris's scopes, the
@@ -50,7 +51,7 @@ describe('What agents may do', () => {
   it('names the file the terminal edits, and says the rules are Claude Code\'s own', () => {
     show();
     expect(screen.getByText('C:/somewhere/data/permissions.json')).toBeTruthy();
-    expect(screen.getByText(/daoris agent rules/)).toBeTruthy();
+    expect(screen.getByText(code(/daoris agent rules/))).toBeTruthy();
   });
 
   /** A default is Daoris's, with its reason — switched on or off, and removable by nothing else. */

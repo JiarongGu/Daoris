@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type SetupState, type SetupStep, setupProgress } from '../help/setup';
 import type { StarterDoor } from '../help/starters';
-import { Button, Card, CheckField, Icon, Pill, Prose } from '../ui';
+import { Button, Card, CheckField, CodeText, Icon, Pill, Prose } from '../ui';
 
 const TONE: Record<Exclude<SetupState, 'desktop'>, 'done' | 'open' | 'neutral'> = {
   done: 'done',
@@ -117,7 +117,7 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
               <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                 {step.commands.map((command) => (
                   <span key={command} className="inline-flex min-w-0 items-center gap-1">
-                    <code className="font-mono text-meta text-ink-soft wrap-anywhere">{command}</code>
+                    <CodeText text={command} className="text-meta text-ink-soft" />
                     <button
                       type="button"
                       aria-label={t('setup.copy', { command })}

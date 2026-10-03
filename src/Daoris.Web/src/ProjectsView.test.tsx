@@ -25,6 +25,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import { code } from './test/code';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, show } from './test/shellHarness';
 import { chooseRepository, ProjectsView, repositoryList, repositoryMain, repositoryRow } from './test/projectsView';
 
@@ -69,7 +70,7 @@ describe('the shell-attached platform', () => {
     show(<ProjectsView notify={() => {}} />);
 
     expect(await within(repositoryList()).findByText('No repository is registered yet')).toBeInTheDocument();
-    expect(within(repositoryList()).getByText(/daoris import/).tagName).toBe('CODE');
+    expect(within(repositoryList()).getByText(code(/daoris import/))).toBeInTheDocument();
     // The list's ＋ and its empty state's: the second is where the eye already is.
     expect(within(repositoryList()).getAllByRole('button', { name: 'Add repository' })).toHaveLength(2);
   });
@@ -533,7 +534,7 @@ describe('the shell-attached registry management', () => {
     show(<ProjectsView notify={() => {}} />);
     const page = await chooseRepository('lone');
 
-    const init = within(page).getByText('daoris init');
+    const init = within(page).getByText(code('daoris init'));
     expect(init.tagName).toBe('CODE');
     expect(init.parentElement).not.toHaveClass('font-mono');
     // Prose keeps its measure once the column follows the window (UX5 U59): uncapped, the sentence

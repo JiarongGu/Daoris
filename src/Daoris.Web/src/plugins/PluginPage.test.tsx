@@ -6,6 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
+import { code } from '../test/code';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
 
@@ -271,8 +272,8 @@ describe("a plugin's page", () => {
   /** The two doors stay in sight (D50): only the terminal's verbs that exist today. */
   it('ends with its terminal twins, naming it', () => {
     page();
-    expect(screen.getByText(/daoris plugin enable\|disable\|update\|remove acme\.gate/)).toBeInTheDocument();
-    expect(screen.getByText(/daoris-driver plugins try acme\.gate/)).toBeInTheDocument();
+    expect(screen.getByText(code(/daoris plugin enable\|disable\|update\|remove acme\.gate/))).toBeInTheDocument();
+    expect(screen.getByText(code(/daoris-driver plugins try acme\.gate/))).toBeInTheDocument();
   });
 });
 

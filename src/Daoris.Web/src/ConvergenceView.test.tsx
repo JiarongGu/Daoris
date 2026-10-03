@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { findingId } from './knowledge/records';
+import { code } from './test/code';
 import { chooseRow, listOf, mainArea, pageTitled, showConvergence } from './test/knowledgeViews';
 
 // The view over a stubbed service, like SearchView's: the shapes the endpoint returns, no host. Since FRAME1f the view
@@ -78,7 +79,7 @@ describe('Convergence', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(within(page).getByText(/A copy that has drifted/)).toBeInTheDocument();
-    expect(within(page).getByText('daoris upstream <file>').tagName).toBe('CODE');
+    expect(within(page).getByText(code('daoris upstream <file>'))).toBeInTheDocument();
     const engine = within(page).getAllByRole('region', { name: 'a' })[0]!;
     expect(await within(engine).findByText(/The engine says \*\*this\*\*/)).toHaveProperty('tagName', 'PRE');
     expect(await within(page).findByText(/The game says \*\*this\*\*, and a little more/)).toBeInTheDocument();

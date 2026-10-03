@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Session } from '../api';
+import { code } from '../test/code';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 
 // The session's page header (SESSUX1d, D126 §3.2) and its stop's ask (§3.3), as molecules: every state is reached by
@@ -102,7 +103,7 @@ describe('the stop’s ask', () => {
     render(<StopAsk sentence="Stops the session now. Run `daoris driver retry abc123` later." onStop={stop} onCancel={cancel} />);
 
     const ask = screen.getByRole('group', { name: 'stop this session' });
-    expect(within(ask).getByText('daoris driver retry abc123').tagName).toBe('CODE');
+    expect(within(ask).getByText(code('daoris driver retry abc123'))).toBeInTheDocument();
     expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['Stop session', 'Never mind']);
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
     expect(cancel).toHaveBeenCalledOnce();
