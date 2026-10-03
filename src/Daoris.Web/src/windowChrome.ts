@@ -7,8 +7,9 @@ import { effectiveDark, subscribeTheme } from './theme';
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from './work/caption';
 
 // The window's own chrome, page side (SURF7 / D56). The strip that D56 built as a region becomes the
-// title bar: it drags the window, double-click maximizes it, a strip at its very top resizes, and the
-// room reserved at its right is handed to the OS as real caption buttons.
+// title bar: a drag on it moves the window, a still click does nothing, double-click maximizes it
+// (FRAME2), a strip at its very top resizes, and the room reserved at its right is handed to the OS
+// as real caption buttons.
 //
 // **The window paints those buttons; the page only reserves and reports their rectangles** (D56 as
 // amended, which has the reason).
@@ -134,8 +135,12 @@ export function useWindowChrome() {
     stripRef,
     maximized,
     /**
-     * The strip's own pointer-down: hand off to the OS move loop. Restores first when maximized,
-     * because that is what a native caption drag does and what the host's refusal expects.
+     * A drag on the strip's own space has begun: hand off to the OS move loop. The strip calls it once
+     * a press travels past the drag distance, never on the press itself (FRAME2), so a still click on
+     * a maximized window leaves it maximized. Restores first when maximized, because that is what a
+     * native caption drag does and what the host's refusal expects. The restored window goes back to
+     * its own restore bounds rather than under the pointer: neither `TOGGLE_MAXIMIZE` nor `START_DRAG`
+     * takes a position, so the page has no way to place it.
      */
     onDragStart: useCallback(() => {
       if (maximized) fire((commands) => commands.toggleMaximize().then(() => commands.startDrag()));
