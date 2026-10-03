@@ -120,6 +120,45 @@ public sealed class ChatGoesOnProcessTests : IDisposable
     }
 
     /// <summary>
+    /// MSG1c2: words kept on an ended chat while no runner heard them (the shell was not running) are taken up by the next
+    /// runner as it comes up. The same record goes on in its own conversation with them as its first turn, and its end is
+    /// announced, since no route that started it is there to hear it.
+    /// </summary>
+    [Fact]
+    public async Task Words_kept_on_an_ended_chat_while_no_runner_heard_them_go_on_when_one_comes_up()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        var config = Config("acp-stub", "node", Agent(), Heard);
+        var events = Events;
+        using var client = ledger.Client();
+        string id;
+        using (var first = Runner(client, events))
+        {
+            id = (await first.StartAsync("engine", "acp-stub", config)).SessionId!;
+            await Poll.Until(() => ledger.State(id) == "working", () => Seen(ledger, events, id));
+            Assert.True(first.Finish(id));
+            await Poll.Until(() => ledger.State(id) == "completed", () => Seen(ledger, events, id));
+        }
+
+        Say(ledger, events, id, ("w1", "Also log the port."));
+        using var next = Runner(client, events);
+        var ended = new List<(string Session, string State)>();
+        next.TakenUpEnded += (session, state) => { lock (ended) ended.Add((session, state)); };
+
+        var taken = await next.TakeUpAsync();
+
+        Assert.Equal(id, Assert.Single(taken).SessionId);
+        await Poll.Until(() => ledger.Taken.Count == 1 && HeardLines().Contains("prompt: Also log the port."), () => Seen(ledger, events, id));
+        Assert.True(next.Finish(id));
+        await Poll.Until(() => { lock (ended) return ended.Count == 1; }, () => Seen(ledger, events, id));
+
+        lock (ended) Assert.Equal([(id, "completed")], ended);
+        Assert.Contains("session/resume: conv-1", HeardLines());
+        Assert.Equal(1, ledger.Count);
+        Assert.Empty(ledger.Said(id));
+    }
+
+    /// <summary>
     /// An agent that no longer has the conversation refuses to resume it (<c>resource_not_found</c>): nothing went, so the
     /// record goes back to how it ended, its note saying why; the words stay waiting, marked; and its conversation says it
     /// cannot go on in it, by the code the page words (`gone`), with the words' ids.
