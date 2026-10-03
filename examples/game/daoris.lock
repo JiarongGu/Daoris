@@ -8,7 +8,7 @@
       "source": "core/knowledge/autonomous-development.md",
       "target": "knowledge/autonomous-development.md",
       "canonVersion": "0.0.1",
-      "sha256": "aa7cfc371d403e05e25838ca86bda09db85becd8dcd72e9517ee04d782a829eb"
+      "sha256": "facdf8b06db92a85dcc5b4b3fe98b62cb5bea222acf139dd3f756827cc9c1bd8"
     },
     {
       "pack": "core",

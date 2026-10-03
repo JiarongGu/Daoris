@@ -36,6 +36,12 @@ why.
 - **Done means gates green plus a reviewable record.** The tests, the drift and budget checks, the
   repository's own verification — and the diff, with the task and decision records updated. That
   bundle is what the person verifies, in one sitting, at the end.
+- **Verify in proportion, and in full once at the boundary.** While working, run the checks the change
+  can reach: the tests beside what it touched, the fast suites. Run the whole set once, where the work
+  leaves the run (a merge, a landing, a release). After a fix, re-run what failed, not every gate
+  again. A round of checks this change cannot fail spends time and allowance and proves nothing. When
+  the full set grows slow, measure which check costs the time and make that one faster; skipping it at
+  the boundary is not the answer.
 - **The carve-outs sit at the outward boundary.** A commit is part of the run: it is local,
   reversible, and lands per task once gates are green, so the landed history *is* the reviewable
   record. What remains explicitly human is everything that cannot be taken back or that leaves the

@@ -12,6 +12,12 @@ network.
 
 ## Unreleased
 
+- **`autonomous-development` says how often to verify.** Run the checks a change can reach while working,
+  the whole set once where the work leaves the run, and after a fix only what failed; when the full set
+  grows slow, measure the slowest check and make it faster rather than skipping it. An agent that re-ran
+  every suite each round spent time and account allowance on checks the change could not fail. Nothing to
+  do but read it: if your repository's own documents tell an agent to run everything on every step, this
+  is the line to point them at.
 - **The doctrine region no longer lists knowledge and skills.** They are in `<target>/INDEX.md`, which
   `sync` writes and `check` keeps true, and the region points to it. The always-loaded region no longer
   grows with your own documents, and the shared rules sit thousands of bytes higher in `AGENTS.md`.
