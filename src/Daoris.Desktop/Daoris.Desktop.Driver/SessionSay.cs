@@ -47,8 +47,8 @@ public static class WordsNever
 /// <summary>
 /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session's door
 /// holds the words, they go to the service's door for them by the session's own id, and the service judges which ask, if
-/// any. The one rule a loop keeps them by: the headless host's <see cref="LoopWords"/> (MSG1e4), and the shell's judge, the
-/// modules' <c>SessionWords</c>, can read this one instead of its own copy.
+/// any. The one rule a loop keeps them by: the headless host's <see cref="LoopWords"/> (MSG1e4) and the shell's judge, the
+/// modules' <c>SessionWords</c> (MSG1e5), both call it.
 /// </summary>
 /// <remarks>
 /// Never awaited by the answer: the words have reached their session whatever the service says, so <c>kept: false</c> (a
