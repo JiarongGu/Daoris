@@ -19,6 +19,9 @@
   --ink-soft: #5b5a55;
   --ink-faint: #8a887f;
   --page: #faf9f6;
+  /* One step below the page (LOOK6): the box a move asks once in (stop, pause, delete, remove), and the command
+     center on the strip. tokens.test.ts holds it under the page in both themes, and every ink readable on it. */
+  --sunken: #f3f1ec;
   --raised: #ffffff;
   --overlay: #ffffff;
   --line: #e3e0d8;
@@ -51,6 +54,7 @@
     --ink-soft: #a9a69c;
     --ink-faint: #7a7770;
     --page: #16161a;
+    --sunken: #0f0f12;
     --raised: #1e1e23;
     --overlay: #24242a;
     --line: #2e2e34;
@@ -86,6 +90,7 @@
   --ink-soft: #5b5a55;
   --ink-faint: #8a887f;
   --page: #faf9f6;
+  --sunken: #f3f1ec;
   --raised: #ffffff;
   --overlay: #ffffff;
   --line: #e3e0d8;
@@ -112,6 +117,7 @@
   --ink-soft: #a9a69c;
   --ink-faint: #7a7770;
   --page: #16161a;
+  --sunken: #0f0f12;
   --raised: #1e1e23;
   --overlay: #24242a;
   --line: #2e2e34;
@@ -139,6 +145,7 @@
 @theme inline {
   --color-*: initial;
   --color-page: var(--page);
+  --color-sunken: var(--sunken);
   --color-raised: var(--raised);
   --color-overlay: var(--overlay);
   --color-line: var(--line);
