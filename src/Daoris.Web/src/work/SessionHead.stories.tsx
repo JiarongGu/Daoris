@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { GoAhead, Quest, Session } from '../api';
 import { SessionHead } from './SessionHead';
 
 // The record in every shape it really arrives in: driven, a conversation, parked with its analysis,
@@ -87,6 +87,53 @@ export const Answered: Story = {
     },
     onResolve: () => {},
     onAnswerSession: () => {},
+  },
+};
+
+/** Two go-aheads a parked session asked on its quest's ask (KNOWUSE1a), both still waiting on the person. */
+const GO_AHEADS: GoAhead[] = [
+  {
+    number: 1, kind: 'write', on: 'production', act: 'chunk budget configuration', state: 'asked',
+    asked: [{ session: SESSION.id, quest: QUEST.id, at: at(14), why: 'The cap is read from the live configuration.' }],
+  },
+  {
+    number: 2, kind: 'release', on: 'production', act: 'streaming budget build', state: 'asked',
+    asked: [{ session: SESSION.id, quest: QUEST.id, at: at(12), why: 'The quest asks for it shipped.' }],
+  },
+];
+
+/**
+ * Parked asking for go-aheads (KNOWUSE1a2, D135 §2): what it asked stands beneath its card, each with *Approve* and
+ * *Refuse*, and answering one there answers the park too, so the same session goes on with one press.
+ */
+export const ParkedAskingGoAheads: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      state: 'awaiting-person',
+      created: at(52),
+      updated: at(11),
+      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production. Both are listed on the ask.',
+    },
+    goAheads: GO_AHEADS,
+    onResolve: () => {},
+    onGoAhead: () => {},
+  },
+};
+
+/**
+ * The same park once the person approved the first (KNOWUSE1a2): its blank answer is kept, so it goes on at the driver's
+ * next look, and the second, still waiting, can be answered before it does.
+ */
+export const AnsweredWithAGoAheadWaiting: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(1), answer: 'carry on.',
+      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production.\n\nAnswered: carry on.',
+    },
+    goAheads: [{ ...GO_AHEADS[0]!, state: 'approved', answer: { approved: true, words: 'dev first', at: at(1) } }, GO_AHEADS[1]!],
+    onResolve: () => {},
+    onGoAhead: () => {},
   },
 };
 

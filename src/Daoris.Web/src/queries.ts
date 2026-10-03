@@ -179,11 +179,13 @@ export const useWorkspaceHoldings = () =>
   });
 
 /** Asks (D65 §1a), scoped like every other cross-repository read — an ask is made in a circle. */
-export const useAsks = (includeClosed: boolean) => {
+/** The asks in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a park's go-aheads). */
+export const useAsks = (includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
   return useQuery({
     queryKey: keys.asks(includeClosed, workspace),
     queryFn: ({ signal }) => api.asks(includeClosed, workspace, signal),
+    enabled,
   });
 };
 

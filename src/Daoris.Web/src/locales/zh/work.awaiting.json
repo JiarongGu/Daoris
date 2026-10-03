@@ -11,5 +11,11 @@
   "work.awaiting.answerConfirm": "以此回答继续",
   "work.awaiting.answered": "已回答——同一个会话会在驱动的下一轮带着你的话继续。",
   "work.awaiting.yourAnswer": "你的回答",
-  "work.awaiting.goesOn": "同一个会话会在驱动的下一轮带着这个回答继续。"
+  "work.awaiting.goesOn": "同一个会话会在驱动的下一轮带着这个回答继续。",
+  "work.awaiting.goAheads": "它请求的放行",
+  "work.awaiting.goAheadsLead": "在这里答复其中一项，也就回答了这个会话：同一个会话会在驱动的下一轮带着你的答复继续。这个需求上的每个会话都会拿到它。",
+  "work.awaiting.goAheadApproved": "已放行 #{{number}}；同一个会话会在驱动的下一轮带着它继续。",
+  "work.awaiting.goAheadRefused": "已拒绝放行 #{{number}}；同一个会话会在驱动的下一轮带着它继续。",
+  "work.awaiting.goAheadOnly": "已答复放行 #{{number}}。",
+  "work.awaiting.goAheadNotWaiting": "这个会话已不再等你，所以这个需求会保留你的答复，交给之后的每次启动。"
 }
