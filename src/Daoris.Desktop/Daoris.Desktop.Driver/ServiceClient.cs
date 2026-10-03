@@ -995,6 +995,15 @@ public sealed class ServiceClient : IDisposable
                     : [],
                 // Whether a departure holds it for the person's yes (DRIFT1d). Absent is false: a host from before answers.
                 Held = Flag(quest, "held"),
+                // How its done answered each requirement (DRIFT1d), which an accept shows before the yes (DRIFT1d2). Absent
+                // is none: a quest no done answered, or a host from before answers. A number left out reads as 0, no requirement's.
+                Answers = quest.TryGetProperty("answers", out var answered) && answered.ValueKind == JsonValueKind.Array
+                    ? answered.EnumerateArray()
+                        .Select(a => new QuestAnswerView(
+                            a.TryGetProperty("requirement", out var number) && number.ValueKind == JsonValueKind.Number ? number.GetInt32() : 0,
+                            Text(a, "met"), Text(a, "departed"), Text(a, "quote")))
+                        .ToList()
+                    : [],
             });
         }
 
