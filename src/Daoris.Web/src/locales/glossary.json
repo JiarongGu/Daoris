@@ -244,7 +244,7 @@
         "harness.pin.fromPath", "harness.pin.fromPathAbsent", "harness.pin.missing", "harness.pin.pinned",
         "harness.profile.sessionsUse", "harness.profile.workspaceUses", "harness.spawns", "harness.wire.*",
         "kind.*", "map.parked", "map.when.short.*", "map.working", "palette.scope", "plugin.health.*", "plugin.kit.failed",
-        "plugin.kit.ok", "plugin.off", "plugin.offers.notInstalled", "plugin.running", "projects.manage.adopted", "projects.manage.git", "projects.manage.noGit", "projects.manage.notAdopted",
+        "plugin.kit.ok", "plugin.off", "plugin.offers.notInstalled", "plugin.running", "plugin.update.waits", "projects.manage.adopted", "projects.manage.git", "projects.manage.noGit", "projects.manage.notAdopted",
         "provenance.*", "quests.card.sat", "quests.card.waits", "scope.none", "sessionState.*",
         "settings.ai.unknown", "settings.logs.level.*", "settings.rules.list.*", "settings.rules.off",
         "settings.rules.on", "settings.rules.proposals.state.*", "settings.sweep.goes", "settings.sweep.kept",

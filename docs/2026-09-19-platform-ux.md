@@ -434,13 +434,19 @@ controls are in the frame design's §3.
   - **A detached session's console is the output panel** (FRAME1h, D118 §4): grown, hidden, and Ctrl+J,
     kept for every detached window apart from the main window's panel. It offers no views menu, since
     the window has no side bar to move one to, and no stop, since nothing in it acts.
-- **Plugins** (D119) — the activity bar's place after Search, shell-only, on the frame. Its list groups the plugins by what each needs from the person: *Waiting on you* (refused while on),
-  *On*, *Off*, then *Daoris's own plugins* not installed, each with *Install* on its row. Its strip marks each
-  installed plugin: the waiting mark, a faint initial for off, nothing for on. A plugin's page heads with its
-  switch, *Try*, *Update…* and *Remove…*, which asks once. A refused one's sentence leads, then Points, Agents,
-  Tests (its last trial here), Data folder and Source, and its terminal twins at its foot. *Running* is the neutral
-  pill, never done's green. The `＋` asks Ask Daoris for a plugin first, then *Make a plugin…*, the kit in a drawer;
-  the ⋯ holds *Try a folder…*.
+- **Plugins** (D119; a catalogue since D140) — the activity bar's place after Search, shell-only, on the frame. Its
+  list is a catalogue: *Installed*, those waiting on the person first, then on, then off; then *Daoris's own plugins*
+  not installed, each with *Install* on its row; then, with packages, *Available*. A row is the plugin's icon, its
+  name, version and state's word, its description cut to the row, and a meta line: where it came from, what it adds,
+  *update available*. **A plugin wears its own icon or a monogram**: the icon is its manifest's, handed to the page as
+  its bytes and drawn as an image, never markup; the monogram is its name's first character on one of six identity
+  hues (`--ident-*`) picked by its id, computed to 4.5:1 on its field and ΔE 20 from every state, so it is identity and
+  never a status. Its strip marks each installed plugin by its icon: the waiting mark, faint for off, nothing for on.
+  A plugin's page heads with its icon, its switch, *Try*, *Update…* and *Remove…*, which asks once, and *update
+  available* beside its state. A refused one's sentence leads, then Points, Agents, Tests (its last trial here), Data
+  folder and Source, and its terminal twins at its foot; every block of the detail takes the pane's width (LAYOUT11
+  sets the measure). *Running* is the neutral pill, never done's green. The `＋` asks Ask Daoris for a plugin first,
+  then *Make a plugin…*, the kit in a drawer; the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
   *Driver*, *Agents*, *Tools*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,

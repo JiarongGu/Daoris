@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
+import { InTheme, SVG_ICON } from './storyIcons';
 
-// One of Daoris's own plugins, not installed here (PLUGUI1b, D119 §3.2): with what it needs, and with a problem.
+// One of Daoris's own plugins, not installed here (PLUGUI1b, D119 §3.2): with what it needs, with a problem, and with its
+// icon in both themes (PLUGUI2, D140 §2).
 
 const OFFER: OfferShown = {
   id: 'land-github', name: 'Land on GitHub', version: '0.2.0',
@@ -42,4 +44,13 @@ export const HandsAServer: Story = {
 /** With a problem: the driver's sentence in *Install*'s place. */
 export const WithAProblem: Story = {
   args: { offer: { ...OFFER, problem: 'needs plugin API 2, and this build speaks 1 — update Daoris to install it.' } },
+};
+
+/** Its monogram leads the header (D140 §2), the one it keeps once installed: light, chosen. */
+export const MonogramLight: Story = { decorators: [(Story) => <InTheme theme="light"><Story /></InTheme>] };
+
+/** With an icon of its own, in dark, chosen. */
+export const IconDark: Story = {
+  args: { offer: { ...OFFER, icon: SVG_ICON } },
+  decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
 };
