@@ -14,13 +14,17 @@ public sealed partial class HelpProposalBox
 {
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
-    /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10).
+    /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
+    /// since KNOWUSE1b).
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "intake", "helper", "strikes", "retry",
-        "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "intake", "helper", "strikes",
+        "retry", "timeout", "notify", "cap", "adapter",
     ];
+
+    /// <summary>The most characters a standing answer holds — the driver's <c>DriverConfig.StandingLimit</c>, a deliberate copy.</summary>
+    private const int StandingLimit = 2_000;
 
     /// <summary>Why a setting is no door's shape, or null when it is one.</summary>
     public static string? Refusal(SettingChange change)
@@ -60,6 +64,11 @@ public sealed partial class HelpProposalBox
                     : "`timeout` is a whole number of minutes, 1 or more.";
             case "across":
                 return AcrossShape(named, circle, value);
+            case "standing":
+                // KNOWUSE1b (D135 §3): one repository's standing answer, in the person's words, as `daoris driver standing` takes it.
+                if (!named || circle) return "a standing answer names the repository it holds for, as the target, and no workspace.";
+                if (string.IsNullOrWhiteSpace(value)) return "`standing` is set to the person's words, or `--clear`.";
+                return value.Length > StandingLimit ? $"a standing answer is at most {StandingLimit} characters of the person's words." : null;
             case "cap":
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1
                     ? null

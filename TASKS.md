@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1086 CLI tests, 1008 service and 61 HTTP host, 3560 driver,
-589 desktop modules, 80 devkit, 2711 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
+**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1068 service and 62 HTTP host, 3620 driver,
+592 desktop modules, 80 devkit, 2736 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -187,12 +187,6 @@ install in both themes and both languages.
 KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
 3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
 
-- [ ] **KNOWUSE1a — a go-ahead is asked once and held on the ask** (service, driver, web). Three prod acts drew 13 asks;
-  a request for an act already asked joins the first, and every session on the ask is handed its answer. Contract: D135.
-  Proof: a second request for one act joins the first; a carry-on is handed it.
-- [ ] **KNOWUSE1b — a standing answer kept per repository** (driver, modules, both doors). *Dev writes allowed, test
-  locally against dev, prod only on a yes*: kept on this machine, never written into the repository, handed to every
-  session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
 - [ ] **KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it** (web, driver, modules; after
   KNOWUSE1a). The session page of a park that asked go-aheads shows them with *Approve* and *Refuse*, and answering
   there also answers the park: one press, not two. Contract: D135 §2, its KNOWUSE1a note. Proof: vitest; a driver test.
@@ -248,18 +242,46 @@ owner on 1 October.
   chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
   Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **STEER1 — a message to a running session reaches it at its next step, and shows at once** (owner, 2026-10-03: *"I
-  did send back the message but it never shows to daoris"*). A driven session's words are held until its turn ends,
-  and its turn is its whole run, so the agent hears nothing for up to an hour and the conversation shows nothing
-  meanwhile. Deliver at the harness's next step where its door allows (measure what the protocol adapter does with a
-  prompt during a turn), and show the held words in the conversation as *held, reaches it at …*. Contract: a short
-  design (SESS3 amended). Proof: the measurement; driver and page tests; the look.
 - [ ] **MSG1 — session messages, one model for every door** (owner, 2026-10-03: *"we do need a way to set message between
   runs so it does the resume so that close the gap for codex and it does look like in the same session, and this should
   be properly designed native/daoris managed session messages"*). A person's words to a session reach it at the next
   step where the door allows (STEER1), else at its turn's end by resuming the harness's own conversation (ANSWER1's
   resume), and after it ended by reopening the record, so every door reads as one session. Contract: D137 (in flight).
   Proof: the design, the doors measured, then its rows.
+- [ ] **MSG1a — the record keeps the person's words and reopens** (service). `said` replaces a single `answer`, and the
+  ledger's one move out of an ended state takes words waiting, on this machine's record only. Contract: §2.3, §2.4,
+  §5.3's `say`. Proof: `SessionLedgerTests` (stood-down, a teammate's and no words refused), `LocalHostTests`, a pushed
+  reopened record in `SessionSyncTests`.
+- [ ] **MSG1b — a driven session goes on with words, on both doors** (driver). The planner's `continuing` verdict takes
+  a record with words waiting, the judgement gains §2.2's rows and `elsewhere`, and a native run resumes while words
+  are held. Contract: §2.1, §2.2, §2.3. Proof: `ContinuationTests`, the plan tests, `NativeResumeTests`, a `Process`
+  tick (the parent's).
+- [ ] **MSG1c — a chat keeps its conversation and goes on** (driver). A chat keeps its id on both doors, an ended chat
+  reopens with the words, and a `promptQueueing` chat takes words at the next step. Contract: §2.1, §2.2, §4.2. Proof:
+  `HarnessConversationsTests`, chat tests on a protocol stub, the stop's *not kept* line.
+- [ ] **MSG1d — every door's words reach the record** (modules). `SESSION_INPUT` and `SESSION_QUEUE` answer for every
+  state, the loop is nudged, said, taken and went events are written, and the log gains its lines. Contract: §3, §5.3.
+  Proof: `DriverModuleConversationTests`, `DriverModuleAddedTests`, `SessionEventsTests`, `SessionLogTests`.
+- [ ] **MSG1e — `daoris-driver sessions say`** (driver). The verb through the request folder, its one line and its exit
+  codes, and Ask Daoris's exemption. Contract: §5.2, §5.4. Proof: `SessionsCommandTests`, `HelpCoverageTests`, the
+  room's goldens.
+- [ ] **MSG1f — the box on every session that takes words** (web-shell). The box and its sentences per reach, the
+  line where none, *going on*, the went link, *Start a conversation…*, and *Send back…* opening the box, in both
+  catalogues. Contract: §3.1, §3.2, §5.1. Proof: stories, vitest, the glossary check, the look.
+- [ ] **MSG1g — a resume asks for its own account** (driver). The selection names the record's account, a cool-off
+  holds the words with *Go on in a new session*, and an account that cannot run there carries on at once. Contract:
+  §2.2's account paragraph. Proof: plan tests, `AccountRotationTickTests` (the parent's).
+- [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn, which needs Codex installed).
+  The next-step door for `codex-acp` over `_session/steering`, steering only while a turn is live and waiting for a
+  turn it started. Contract: §1.3, §2.1. Proof: STEER3's measurement, then `AcpSteerTests` rows.
+- [ ] **MSG1i — the native door hears words at its next step** (driver; after STEER3's native turn, with
+  `--replay-user-messages`). Driven and chat runs that take words on stdin, which removes the argument's bound.
+  Contract: §2.1, §2.4. Proof: STEER3's measurement, then native tests.
+- [ ] **MSG1j — the canary on the install** (the parent's, after a republish carrying a–f). A session in *To review*
+  written to goes on in its own row; a stopped one too; a chat from yesterday goes on. Contract: §9. Proof: the run,
+  `session.reopened` with `resumed` true.
+- [ ] **MSG1k — a terminal conversation forked into Daoris** (held until a real use asks). Contract: §4.3. Proof: a
+  protocol stub that speaks `session/list` and `session/fork`.
 - [ ] **STEER2 — *Send now* on the next-step door, and a box that knows its door** (driver, modules, web; after STEER1).
   *Send now* has nothing to act on where words already reach the next step; send the draft through `_session/steering`
   and let the queue say when words arrive. Contract: D136 §4. Proof: driver, modules and page tests; one steer measured.
@@ -297,6 +319,9 @@ owner on 1 October.
   §7.2–§7.3. Proof: `AbandonTests`; a Process case on real git; a family rehearsal phase.
 - [ ] **PAUSE1e — on the screen** (web-shell; after b and d). *Pause…*, *Resume*, *Abandon…* with its list and reason on
   the ask's and quest's pages and a session's acts. Contract: D132 §6, §7.1, §8. Proof: stories, vitest, the look.
+- [ ] **PAUSE1h — the ask's page shows its work** (web-shell; found by PAUSE1e). Each quest of `WORK_PLAN` with its state
+  and sitting reason, the questions its sessions asked, and their sessions as doors into Sessions, so the person sees
+  what a pause or abandon reaches before pressing. Contract: D132 §7.1. Proof: stories, `AskPage` vitest, the look.
 - [ ] **PAUSE1f — Ask Daoris reaches pause** (driver, service, web-shell; after b and SESSUX1h). The `pause` kind; abandon
   stays the person's. Contract: D132 §7.4. Proof: proposal and coverage tests; the room's golden files.
 - [ ] **PAUSE1g — looked at on the install** (the parent's, after a–f). An ask paused mid-session and resumed in its tree;

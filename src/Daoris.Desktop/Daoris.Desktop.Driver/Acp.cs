@@ -279,7 +279,34 @@ public sealed partial class AcpSession(
     private readonly TimeSpan _closeTimeout = closeTimeout ?? TimeSpan.FromSeconds(5);
 
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
+
+    /// <summary>
+    /// What a request's answer does on the reader's thread, before anything after it is read (STEER1): a prompt's turn
+    /// event, and the words behind it taken, keep the order the wire said them in.
+    /// </summary>
+    private readonly ConcurrentDictionary<int, Action<JsonElement>> _answered = new();
+
     private readonly SemaphoreSlim _writeLock = new(1, 1);
+
+    /// <summary>The prompts on the wire and not yet answered, oldest first, and the lock that guards them (STEER1).</summary>
+    private readonly LinkedList<OpenPrompt> _prompts = [];
+    private readonly object _promptsGate = new();
+
+    /// <summary>Whether the agent said it takes a prompt during a turn (<see cref="TakesWordsMidTurn"/>).</summary>
+    private bool _takesWordsMidTurn;
+
+    /// <summary>Told each of the person's words as the session takes them (SESS3, STEER1); a run's.</summary>
+    private Action<ChatMessage>? _asked;
+
+    /// <summary>
+    /// One prompt on the wire: the person's words, or null for the driver's own — and whether the session has taken them.
+    /// </summary>
+    private sealed class OpenPrompt(ChatMessage? words)
+    {
+        public ChatMessage? Words { get; } = words;
+
+        public bool Taken { get; set; }
+    }
     private int _nextId;
     private int _updates;
 
@@ -381,11 +408,16 @@ public sealed partial class AcpSession(
     /// can actually do.
     /// </param>
     /// <param name="inbox">
-    /// What the person tells the session while it works (SESS3): each word held when a turn ends is the
-    /// next prompt of this same session, before it closes, and a stop of the turn in hand lets one go at
-    /// once. Null for a session nobody may tell anything — an intake (INT4h).
+    /// What the person tells the session while it works (SESS3). Where the agent says it takes a prompt during a turn,
+    /// each word is sent the moment it is said and reaches it at its next step (STEER1, D136); anywhere else each word
+    /// held when a turn ends is the next prompt of this same session, and a stop of the turn in hand lets one go at once.
+    /// The run ends only when nothing is held and no word is on its way. Null for a session nobody may tell anything —
+    /// an intake (INT4h).
     /// </param>
-    /// <param name="asked">Told each held word as it is handed over, so the record keeps it as the person's.</param>
+    /// <param name="asked">
+    /// Told each of the person's words as the session takes them, so the record keeps it as the person's ask there: as it
+    /// is sent when no turn runs, or when the prompt before it is answered (STEER1).
+    /// </param>
     /// <param name="resume">
     /// The harness conversation an answer continues (ANSWER1a, D131 §1), resumed rather than a new session opened, with
     /// <paramref name="prompt"/> — the answer — as its next turn. Null opens a new session, as every start does.
@@ -395,18 +427,40 @@ public sealed partial class AcpSession(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null)
     {
+        _asked = asked;
         try
         {
             if (resume is null) await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
             else await ResumeAsync(cwd, resume, ct, servers).ConfigureAwait(false);
-            inbox?.Attach(CancelTurnAsync);
-            var stopReason = await PromptAsync(prompt, ct).ConfigureAwait(false);
-            // The person's words, one prompt each, in the order said — the session keeps its context,
-            // and a turn stopped to send one ends `cancelled` before it goes.
-            while (inbox?.TakeOrClose() is { } message)
+
+            // Where the agent says it takes a prompt during its turn, each word goes the moment it is said and reaches it
+            // at its next step (STEER1, D136); anywhere else it waits for the turn's end. Words flow only once the target
+            // is on the wire, so none overtakes the prompt it follows.
+            inbox?.Attach(CancelTurnAsync, _takesWordsMidTurn
+                ? words => SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
+                : null);
+            var stopReason = await PromptAsync(prompt, ct, sent: inbox is null ? null : inbox.Flow).ConfigureAwait(false);
+
+            // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
+            // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends
+            // `cancelled` before it goes.
+            while (inbox?.NextOrClose() is { } next)
             {
-                asked?.Invoke(message);
-                stopReason = await PromptAsync(message.Prompt, ct, sent: null, message.Files).ConfigureAwait(false);
+                if (next.Held is { } held)
+                {
+                    stopReason = await SendPromptAsync(held.Prompt, held.Files, ct, sent: null, held).ConfigureAwait(false);
+                    continue;
+                }
+
+                try
+                {
+                    stopReason = await next.Answer!.ConfigureAwait(false);
+                }
+                catch (AcpRefusal refused)
+                {
+                    // A word the agent would not take costs that word, said in its own words, never the session's work.
+                    Note($"— the session would not take what the person added: {refused.Words}");
+                }
             }
 
             await CloseAsync(ct).ConfigureAwait(false);
@@ -414,10 +468,35 @@ public sealed partial class AcpSession(
         }
         finally
         {
+            // Words sent while it worked that it never took (STEER1): said, never shown for ever as on their way.
+            if (Untaken() is > 0 and var untaken)
+            {
+                Note($"— {untaken} message(s) the person sent while it worked never reached it: it ended first.");
+            }
+
             // A driven session's end is its turn's (CONSOLE2): what it left running ends with it, and
             // is said while the caller's transcript is still open, before the reader is let go.
             await EndStreamsAsync().ConfigureAwait(false);
             Release();
+        }
+    }
+
+    /// <summary>The driver's own sentence, on the console and in the record.</summary>
+    private void Note(string text)
+    {
+        _console.End();
+        onLine(text);
+        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = text });
+    }
+
+    /// <summary>How many of the person's words are on the wire and not yet taken, forgotten as they are counted.</summary>
+    private int Untaken()
+    {
+        lock (_promptsGate)
+        {
+            var untaken = _prompts.Count(open => open.Words is not null && !open.Taken);
+            _prompts.Clear();
+            return untaken;
         }
     }
 
@@ -476,7 +555,7 @@ public sealed partial class AcpSession(
         if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet);
         _pump = PumpAsync(_pumpStop.Token);
 
-        return await RequestAsync(
+        var initialized = await RequestAsync(
             "initialize",
             new
             {
@@ -485,7 +564,27 @@ public sealed partial class AcpSession(
                 clientInfo = new { name = "daoris-driver", version = "0" },
             },
             ct).ConfigureAwait(false);
+        _takesWordsMidTurn = TakesWordsMidTurn(initialized);
+        return initialized;
     }
+
+    /// <summary>
+    /// Whether the agent says it takes a prompt while one runs (STEER1, D136): <c>agentCapabilities._meta.claudeCode
+    /// .promptQueueing</c> as <c>true</c>, which <c>claude-agent-acp</c> declares, and whose words Claude Code folds into
+    /// the running turn at its next step (docs/2026-10-03-steer-evidence.md §1).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Its own word, and nothing else.</b> An agent that does not say so is never sent a second prompt during a turn:
+    /// <c>codex-acp</c> resets its running turn on one (evidence §5), and a door's silence is never a licence to guess (the
+    /// posture's rule, ACP3). The steering extension (<c>_session/steering</c>) is not read as this: it interrupts the step
+    /// in flight (evidence §2).
+    /// </remarks>
+    internal static bool TakesWordsMidTurn(JsonElement initialized) =>
+        initialized.ValueKind == JsonValueKind.Object
+        && initialized.TryGetProperty("agentCapabilities", out var capabilities) && capabilities.ValueKind == JsonValueKind.Object
+        && capabilities.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+        && meta.TryGetProperty("claudeCode", out var claudeCode) && claudeCode.ValueKind == JsonValueKind.Object
+        && claudeCode.TryGetProperty("promptQueueing", out var queueing) && queueing.ValueKind == JsonValueKind.True;
 
     /// <summary>The servers a session is handed (ACP4), in the wire's own shape: on a new session and on a resumed one alike.</summary>
     private static object[] Offer(IReadOnlyList<AcpMcpServer>? servers)
@@ -544,8 +643,9 @@ public sealed partial class AcpSession(
     /// is also what the record's turn event carries, as the wire's word and nothing more.
     /// </summary>
     /// <remarks>
-    /// One at a time: ACP takes a session's prompts in turn, so the caller queues a person's messages
-    /// rather than sending one into a turn still running.
+    /// One at a time, for a conversation: its caller queues a person's messages rather than sending one into a turn still
+    /// running (CONV4a). A driven session sends one during a turn only where the agent says it takes one (STEER1,
+    /// <see cref="RunAsync"/>), and the turn event is kept as the wire answers each, in the order it does.
     /// </remarks>
     /// <param name="sent">
     /// Told once the prompt is on the wire (CONV4a): a stop asked before that moment must wait for it,
@@ -556,8 +656,17 @@ public sealed partial class AcpSession(
     /// protocol's baseline block, which every agent takes and <c>claude-code-acp</c> reads without a tool
     /// call (docs/2026-09-25-message-content-evidence.md).
     /// </param>
-    public async Task<string> PromptAsync(
-        string text, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null)
+    public Task<string> PromptAsync(
+        string text, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null) =>
+        SendPromptAsync(text, files, ct, sent, words: null);
+
+    /// <summary>
+    /// One prompt on the open session, answered by the agent's stop reason: the driver's own, or the person's words
+    /// (<paramref name="words"/>), which the session takes as they go when no prompt is open, and when the one before
+    /// them is answered otherwise (STEER1) — the moment <c>claude-agent-acp</c> hands the running turn off to them.
+    /// </summary>
+    private async Task<string> SendPromptAsync(
+        string text, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, ChatMessage? words)
     {
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
 
@@ -567,13 +676,25 @@ public sealed partial class AcpSession(
             .. (files ?? []).Select(file => (object)new { type = "resource_link", uri = new Uri(file.Path).AbsoluteUri, name = file.Name }),
         ];
 
+        var open = new OpenPrompt(words);
+        bool takenNow;
+        lock (_promptsGate)
+        {
+            takenNow = words is not null && _prompts.Count == 0;
+            open.Taken = takenNow;
+            _prompts.AddLast(open);
+        }
+
+        // Recorded before the prompt, so the answer never sits above the question.
+        if (takenNow) Asked(words!);
+
         JsonElement result;
         try
         {
             result = await RequestAsync(
                 "session/prompt",
                 new { sessionId = _sessionId, prompt },
-                ct, sent).ConfigureAwait(false);
+                ct, sent, answered: frame => Answered(open, frame)).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -585,19 +706,58 @@ public sealed partial class AcpSession(
             throw;
         }
 
-        var stopReason = result.TryGetProperty("stopReason", out var reason)
+        return result.TryGetProperty("stopReason", out var reason)
             ? reason.GetString() ?? "unknown"
             : "unknown";
-        Emit(new SessionEvent
+    }
+
+    /// <summary>
+    /// A prompt answered, on the reader's thread before the next frame is read: its turn event, as the wire's word and
+    /// nothing more, and the person's words behind it taken (STEER1) — so the record reads in the order the wire said it,
+    /// and what the agent does next is the words' turn.
+    /// </summary>
+    private void Answered(OpenPrompt open, JsonElement frame)
+    {
+        if (frame.TryGetProperty("result", out var result))
         {
-            Kind = SessionEventKind.Turn,
-            StopReason = stopReason,
-            // The turn's own counts, where the agent reported them (CONV5): the response's `usage`.
-            Tokens = result.TryGetProperty("usage", out var usage)
-                ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
-                : null,
-        });
-        return stopReason;
+            Emit(new SessionEvent
+            {
+                Kind = SessionEventKind.Turn,
+                StopReason = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("stopReason", out var reason)
+                    ? reason.GetString() ?? "unknown"
+                    : "unknown",
+                // The turn's own counts, where the agent reported them (CONV5): the response's `usage`.
+                Tokens = result.ValueKind == JsonValueKind.Object && result.TryGetProperty("usage", out var usage)
+                    ? TurnTokens.Read(usage, "inputTokens", "outputTokens", "cachedReadTokens", "cachedWriteTokens")
+                    : null,
+            });
+        }
+
+        ChatMessage? taken = null;
+        lock (_promptsGate)
+        {
+            _prompts.Remove(open);
+            if (_prompts.First?.Value is { Taken: false, Words: { } next } head)
+            {
+                head.Taken = true;
+                taken = next;
+            }
+        }
+
+        if (taken is not null) Asked(taken);
+    }
+
+    /// <summary>Tell the run's listener the session took the person's words; its failure costs a line, never the turn.</summary>
+    private void Asked(ChatMessage words)
+    {
+        try
+        {
+            _asked?.Invoke(words);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            onLine($"[the person's words could not be recorded: {error.Message}]");
+        }
     }
 
     /// <summary>
@@ -832,6 +992,19 @@ public sealed partial class AcpSession(
     private void Complete(JsonElement id, JsonElement frame)
     {
         if (!id.TryGetInt32(out var key) || !_pending.TryRemove(key, out var waiting)) return;
+
+        // What the answer does here, on the reader's thread, before the next frame is read (STEER1).
+        if (_answered.TryRemove(key, out var answered))
+        {
+            try
+            {
+                answered(frame);
+            }
+            catch (Exception failure) when (failure is not OperationCanceledException)
+            {
+                onLine($"[an answer could not be recorded: {failure.Message}]");
+            }
+        }
 
         if (frame.TryGetProperty("error", out var error))
         {
@@ -1299,10 +1472,16 @@ public sealed partial class AcpSession(
     }
 
     /// <param name="sent">Told once the request is on the wire, before its answer is awaited.</param>
-    private async Task<JsonElement> RequestAsync(string method, object parameters, CancellationToken ct, Action? sent = null)
+    /// <param name="answered">
+    /// Told the answer's frame on the reader's thread, before the answer is handed back and before anything after it is
+    /// read (STEER1) — never once the caller has stopped waiting for it.
+    /// </param>
+    private async Task<JsonElement> RequestAsync(
+        string method, object parameters, CancellationToken ct, Action? sent = null, Action<JsonElement>? answered = null)
     {
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (answered is not null) _answered[id] = answered;
         _pending[id] = waiting;
 
         await SendAsync(new JsonObject
@@ -1314,7 +1493,16 @@ public sealed partial class AcpSession(
         }).ConfigureAwait(false);
         sent?.Invoke();
 
-        return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            return await waiting.Task.WaitAsync(ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // A caller that stopped waiting is told nothing more about this request, as before its answer was seen.
+            _answered.TryRemove(id, out _);
+            throw;
+        }
     }
 
     private Task NotifyAsync(string method, object parameters) => SendAsync(new JsonObject
@@ -1352,6 +1540,7 @@ public sealed partial class AcpSession(
     /// <summary>Fault everything still awaiting an answer that will never come.</summary>
     private void Fail(Exception error)
     {
+        _answered.Clear();
         foreach (var key in _pending.Keys)
         {
             if (_pending.TryRemove(key, out var waiting)) waiting.TrySetException(error);

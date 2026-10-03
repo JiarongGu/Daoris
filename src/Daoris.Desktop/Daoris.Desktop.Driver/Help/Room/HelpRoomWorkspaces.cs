@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The workspaces and their repositories (HELP1a): each repository with how it is driven, its line and how
-/// its work lands, from the driver's own answers — or, with none registered, where to begin.
+/// its work lands, from the driver's own answers, and its standing answer where it keeps one (KNOWUSE1b) — or, with none
+/// registered, where to begin.
 /// </summary>
 internal sealed class HelpRoomWorkspaces : IHelpRoomSection
 {
@@ -24,6 +25,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
                 OwnTree = config.OpensOwnTree(known.Repository),
                 Line = lineOf.TryGetValue(known.Repository, out var line) ? new Line(line.Branch, line.Source) : new Line(null, LineSource.None),
                 Landing = LandingRules.Choose(config, known.Repository, known.Workspace),
+                // KNOWUSE1b: what the person says holds for every session there, in their words.
+                Standing = config.StandingFor(known.Repository)?.Says,
             })],
         };
     }
@@ -51,6 +54,16 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             }
 
             text.Append('\n');
+
+            // KNOWUSE1b: each standing answer in the person's words, after the table, only where one is kept.
+            var standing = circle.Where(repository => repository.Standing is not null).OrderBy(repository => repository.Name, StringComparer.Ordinal).ToList();
+            if (standing.Count > 0)
+            {
+                text.Append($"Standing answers in `{circle.Key}`, each handed to every session in its repository beneath its quest "
+                            + "(`daoris driver standing <repository> \"…\"|--clear`):\n\n");
+                foreach (var repository in standing) text.Append($"- `{repository.Name}`: \"{repository.Standing!.ReplaceLineEndings(" ")}\"\n");
+                text.Append('\n');
+            }
         }
 
         return text.ToString();
@@ -108,6 +121,9 @@ public sealed record HelpRepository(string Name, string Workspace)
     public Line Line { get; init; } = new(null, LineSource.None);
 
     public Landing Landing { get; init; } = new(LandingRule.Merge, LandingSource.Default);
+
+    /// <summary>Its standing answer on this machine, the person's words (KNOWUSE1b); null where it keeps none.</summary>
+    public string? Standing { get; init; }
 }
 
 public sealed partial record HelpMachine

@@ -10,7 +10,7 @@ import { AskPage } from './AskPage';
 import { AskRow, asksInOrder } from './AskRow';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
-  UNMATCHED,
+  UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
 // An ask's three molecules (INT4c; FRAME1d): its row in Quests' list, its page in the main area, and the composer's
@@ -426,5 +426,80 @@ describe('a done ask', () => {
   it('says it is done on its record', () => {
     const { page } = record(DONE);
     expect(within(page).getByText('done')).toBeInTheDocument();
+  });
+});
+
+/**
+ * KNOWUSE1a (D135 §2): the go-aheads its sessions asked the person for, each once, on the ask's page. Each says the act
+ * by its kind, where it lands and what it touches, what became of it, and the person's words on an answer verbatim; one
+ * waiting is answered here, yes or no with words if any, and one answered can be answered again.
+ */
+describe('the go-aheads on an ask', () => {
+  const section = (page: HTMLElement) => within(within(page).getByRole('region', { name: 'Go-aheads' }));
+
+  it('lists each by its number, its act and what became of it, with the person\'s words verbatim', () => {
+    const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead: vi.fn() });
+    const goAheads = section(page);
+
+    const items = goAheads.getAllByRole('listitem');
+    expect(items).toHaveLength(4);
+    expect(within(items[0]).getByText('#1')).toBeInTheDocument();
+    expect(within(items[0]).getByText('write on production')).toBeInTheDocument();
+    expect(within(items[0]).getByText('“dashboard configuration”')).toBeInTheDocument();
+    expect(within(items[0]).getByText('approved')).toBeInTheDocument();
+    expect(within(items[0]).getByText('run the put')).toBeInTheDocument();
+    expect(within(items[1]).getByText('refused')).toBeInTheDocument();
+    expect(within(items[1]).getByText('test it on dev first')).toBeInTheDocument();
+    expect(within(items[2]).getByText('waiting on you')).toBeInTheDocument();
+    expect(within(items[2]).getByText('The report needs an entry on both sites.')).toBeInTheDocument();
+    // Asked by two sessions, and asked again because its words could not be told from #1's.
+    expect(within(items[2]).getByText(/asked again by 1 more session/)).toBeInTheDocument();
+    expect(within(items[2]).getByText(/could not be told from #1/)).toBeInTheDocument();
+    // A kind this page has no word for is shown as the service wrote it.
+    expect(within(items[3]).getByText('teleport on the moon')).toBeInTheDocument();
+  });
+
+  it('answers one waiting yes, with the person\'s words', async () => {
+    const onAnswerGoAhead = vi.fn();
+    const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead });
+    const waiting = within(section(page).getAllByRole('listitem')[2]);
+
+    await userEvent.type(waiting.getByRole('textbox', { name: 'your words, if any' }), 'only on the report site');
+    await userEvent.click(waiting.getByRole('button', { name: 'Approve' }));
+
+    expect(onAnswerGoAhead).toHaveBeenCalledWith(3, true, 'only on the report site');
+  });
+
+  it('answers one waiting no, with no words', async () => {
+    const onAnswerGoAhead = vi.fn();
+    const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead });
+
+    await userEvent.click(within(section(page).getAllByRole('listitem')[2]).getByRole('button', { name: 'Refuse' }));
+
+    expect(onAnswerGoAhead).toHaveBeenCalledWith(3, false, undefined);
+  });
+
+  it('answers one already answered again, only once asked to', async () => {
+    const onAnswerGoAhead = vi.fn();
+    const { page } = record(WITH_GO_AHEADS, { onAnswerGoAhead });
+    const approved = within(section(page).getAllByRole('listitem')[0]);
+
+    expect(approved.queryByRole('button', { name: 'Refuse' })).toBeNull();
+    await userEvent.click(approved.getByRole('button', { name: 'Change answer' }));
+    await userEvent.click(approved.getByRole('button', { name: 'Refuse' }));
+
+    expect(onAnswerGoAhead).toHaveBeenCalledWith(1, false, undefined);
+  });
+
+  it('offers no answer where there is no door to give it', () => {
+    const { page } = record(WITH_GO_AHEADS);
+
+    expect(section(page).queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(section(page).queryByRole('button', { name: 'Change answer' })).toBeNull();
+  });
+
+  it('has no section where no session asked for one', () => {
+    const { page } = record(PUBLISHED, { onAnswerGoAhead: vi.fn() });
+    expect(within(page).queryByRole('region', { name: 'Go-aheads' })).toBeNull();
   });
 });

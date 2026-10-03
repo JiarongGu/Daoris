@@ -836,8 +836,11 @@ public sealed partial class Driver(
             // another account that is now cooling, which only a limit makes so.
             var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
-            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is.
-            var target = (await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false)) with
+            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
+            // and their standing answer for its repository (KNOWUSE1b), from this machine's config.
+            var target = WithStanding(
+                await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
+                config) with
             {
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -1286,8 +1289,9 @@ public sealed partial class Driver(
         // same process; the pipe door reads its text, or its structure where its own wire carries one
         // (D76, CONV3). All of them end the same way: the record is concluded from the exit code and
         // what the session was for, never from what the session said about itself (D46 §4).
-        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target.
-        var prompt = resume?.Answer ?? TargetPrompt.Compose(target);
+        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target. After it, the answers
+        // to the go-aheads it asked since its start (KNOWUSE1a).
+        var prompt = resume?.Prompt ?? TargetPrompt.Compose(target);
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
         // intake's: it is answered through its ask.
         var keepAs = target.Ask is null ? adapter.Name : null;
@@ -1404,6 +1408,19 @@ public sealed partial class Driver(
             : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt }];
 
     /// <summary>
+    /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
+    /// words shown while they wait with the same words where the session took them, and the names of what they attached.
+    /// </summary>
+    internal static SessionEvent Words(ChatMessage message) => new()
+    {
+        Kind = SessionEventKind.User,
+        Origin = "person",
+        Id = message.Id,
+        Text = message.Text,
+        Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
+    };
+
+    /// <summary>
     /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
     /// RENDERED updates reaching the transcript and the console rather than the wire itself.
     /// </summary>
@@ -1509,21 +1526,24 @@ public sealed partial class Driver(
             // What it says about its account's windows, kept as it says it (TOOL6c).
             if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
+            // The person's words in the record the moment they are said, with when they reach the session (STEER1, D136):
+            // the page shows them waiting in the turn they were said in, rather than nothing until they are handed over.
+            inbox?.OnSaid((message, reach) =>
+            {
+                Line(reach == DrivenReach.NextStep
+                    ? $"— the person added, which reaches the session at its next step: {message.Text}"
+                    : $"— the person added, which reaches the session when its turn ends: {message.Text}");
+                Event(Words(message) with { Reaches = reach == DrivenReach.NextStep ? "next-step" : "turn-end" });
+            });
             var outcome = await session
                 .RunAsync(
                     cwd, prompt, ct, offered, inbox,
-                    // The person's words as theirs in the record, the moment they are handed over (SESS3):
-                    // recorded before the prompt, so the answer never sits above the question.
+                    // The same words as the turn's ask where the session took them (SESS3, STEER1): recorded before
+                    // anything the agent did with them, so the answer never sits above the question.
                     asked: message =>
                     {
-                        Line($"— the person added: {message.Text}");
-                        Event(new SessionEvent
-                        {
-                            Kind = SessionEventKind.User,
-                            Origin = "person",
-                            Text = message.Text,
-                            Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
-                        });
+                        Line($"— the session took what the person added: {message.Text}");
+                        Event(Words(message));
                     },
                     resume: resume?.Conversation)
                 .ConfigureAwait(false);
@@ -1622,6 +1642,13 @@ public sealed partial class Driver(
     /// </summary>
     internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, ServiceClient service, CancellationToken ct) =>
         target with { Words = await AskWords.ReadAsync(service, target.Asker, ct).ConfigureAwait(false) };
+
+    /// <summary>
+    /// The person's standing answer for the quest's repository on this machine (KNOWUSE1b, D135 §3), read from the config this
+    /// tick holds for every start, whatever kind: a follow-up step in another repository is handed that repository's.
+    /// </summary>
+    internal static SessionTarget WithStanding(SessionTarget target, DriverConfig config) =>
+        target with { Standing = config.StandingFor(target.Repository) };
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account

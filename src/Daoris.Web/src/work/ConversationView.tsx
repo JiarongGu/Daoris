@@ -227,20 +227,47 @@ function AskView({ ask }: { ask: Ask }) {
       {ask.text && (
         <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-body text-ink', !open && 'line-clamp-2')}>{ask.text}</p>
       )}
-      {/* What the person attached (CONV4c): names, as the record keeps them. */}
-      {ask.files && ask.files.length > 0 && (
-        <ul aria-label={t('work.conversation.attached')} className="m-0 mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
-          {ask.files.map((name, index) => (
-            <li
-              key={`${index}:${name}`}
-              className="inline-flex min-w-0 items-center gap-1 rounded-control border border-line bg-page px-2 py-0.5 text-meta text-ink-soft"
-            >
-              <Icon name="attach" size={11} className="shrink-0 text-ink-faint" />
-              <span className="min-w-0 truncate">{name}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Attached files={ask.files} />
+    </div>
+  );
+}
+
+/** What the person attached (CONV4c): names, as the record keeps them. */
+function Attached({ files }: { files?: string[] }) {
+  const { t } = useTranslation();
+  if (!files || files.length === 0) return null;
+  return (
+    <ul aria-label={t('work.conversation.attached')} className="m-0 mt-1.5 flex list-none flex-wrap gap-1.5 p-0">
+      {files.map((name, index) => (
+        <li
+          key={`${index}:${name}`}
+          className="inline-flex min-w-0 items-center gap-1 rounded-control border border-line bg-page px-2 py-0.5 text-meta text-ink-soft"
+        >
+          <Icon name="attach" size={11} className="shrink-0 text-ink-faint" />
+          <span className="min-w-0 truncate">{name}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The person's words to a working session, waiting to reach it (STEER1, D136): theirs, as written, dashed as the
+ * composer's waiting words are, and saying when the session reads them — or, the session over, that it never did. Where
+ * the session takes them they become the ask of that turn, and this goes.
+ */
+function HeldAsk({ block }: { block: Block }) {
+  const { t } = useTranslation();
+  const when = block.unreached
+    ? t('work.conversation.held.never')
+    : t(block.reaches === 'next-step' ? 'work.conversation.held.nextStep' : 'work.conversation.held.turnEnd');
+
+  return (
+    <div className="rounded-card border border-dashed border-line-strong px-3 py-2">
+      <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
+      {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap text-body text-ink-soft">{block.text}</p>}
+      <Attached files={block.files} />
+      <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>
     </div>
   );
 }
@@ -257,6 +284,8 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
       return <PlanView entries={block.entries ?? []} />;
     case 'note':
       return <NoteLine text={block.text ?? ''} />;
+    case 'held':
+      return <HeldAsk block={block} />;
     default:
       return <RawLine block={block} />;
   }

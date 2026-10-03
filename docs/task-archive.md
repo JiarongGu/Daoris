@@ -9895,3 +9895,33 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Proof: four branches noting four decisions merge with nothing twice and nothing moved.
 
 **Outcome** Designed as D134 (union tore 33 of 134 merges of the record: one file per decision), and its check built (DOC8b): `doc-duplicates` checks a folder of decisions for D134 §3.4's facts. Detail: D134 and its DOC8b note, `docs/2026-10-03-decisions-record-design.md`.
+
+
+## STEER1 — a message reaches a running session at its next step (2026-10-03 → D136)
+
+> - [ ] **STEER1 — a message to a running session reaches it at its next step, and shows at once** (owner, 2026-10-03: *"I
+> did send back the message but it never shows to daoris"*). A driven session's words are held until its turn ends,
+> and its turn is its whole run, so the agent hears nothing for up to an hour and the conversation shows nothing
+> meanwhile. Deliver at the harness's next step where its door allows (measure what the protocol adapter does with a
+> prompt during a turn), and show the held words in the conversation as *held, reaches it at …*. Contract: a short
+> design (SESS3 amended). Proof: the measurement; driver and page tests; the look.
+
+**Outcome** Over the protocol door a person's words reach a working Claude Code session at its next step (the adapter's `promptQueueing`) and show in the conversation as soon as they are sent; every other door holds them to the turn's end and says so. Detail: D136, `docs/2026-10-03-steer-evidence.md`, `c5497c42`.
+
+
+## KNOWUSE1a — a go-ahead is asked once and held on the ask (2026-10-03)
+
+> - [ ] **KNOWUSE1a — a go-ahead is asked once and held on the ask** (service, driver, web). Three prod acts drew 13 asks;
+> a request for an act already asked joins the first, and every session on the ask is handed its answer. Contract: D135.
+> Proof: a second request for one act joins the first; a carry-on is handed it.
+
+**Outcome** A go-ahead is asked once and held on the ask: a session asks through `go_ahead_ask`, a request for an act already asked joins the first, and every start on the ask is handed what was approved, refused and still waits; the person answers at the ask's door, the terminal and its page. Detail: D135's KNOWUSE1a note, `8ecfe0aa`.
+
+
+## KNOWUSE1b — a standing answer kept per repository (2026-10-03)
+
+> - [ ] **KNOWUSE1b — a standing answer kept per repository** (driver, modules, both doors). *Dev writes allowed, test
+> locally against dev, prod only on a yes*: kept on this machine, never written into the repository, handed to every
+> session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
+
+**Outcome** A standing answer is kept per repository in `driver.json`'s `standing` (both twins), set from the terminal, the repository's page and Ask Daoris, and handed to every claim, resume, carry-on and follow-up there. Detail: D135's KNOWUSE1b note, `e4e391a4`.

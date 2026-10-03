@@ -84,6 +84,114 @@ public sealed class DrivenInboxTests
         Assert.False(inbox.Hold(Said("three")));
     }
 
+    /// <summary>
+    /// STEER1 (D136): the record shows what the person said at once, with when it reaches the session — and a word said
+    /// before the door is known is told when it is, in the order said. Each word gets an id that pairs it with the same
+    /// words where the session takes them.
+    /// </summary>
+    [Fact]
+    public void Each_word_is_told_at_once_with_when_it_reaches_the_session_and_one_said_early_when_the_door_is_known()
+    {
+        var told = new List<(string Text, string? Id, DrivenReach Reach)>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((message, reach) => told.Add((message.Text, message.Id, reach)));
+
+        Assert.True(inbox.Hold(Said("said while it opened")));
+        Assert.Empty(told);
+
+        inbox.Attach(() => Task.CompletedTask);
+        Assert.True(inbox.Hold(Said("said while it works")));
+
+        Assert.Equal(
+            [("said while it opened", "said-1", DrivenReach.TurnEnd), ("said while it works", "said-2", DrivenReach.TurnEnd)],
+            told);
+        // The turn-end door still holds them for the turn's end.
+        Assert.Equal(["said while it opened", "said while it works"], inbox.State.Queued.Select(m => m.Text));
+        Assert.Equal("said-1", inbox.TakeOrClose()?.Id);
+    }
+
+    /// <summary>
+    /// 🔴 STEER1 (D136): where the agent takes words during a turn, each goes to it at once — held words too, the moment the
+    /// session's first prompt is on the wire, and never before it — and nothing waits in the inbox. The run's next step is
+    /// each word's answer, in the order sent, and only when none is on its way does the inbox close.
+    /// </summary>
+    [Fact]
+    public async Task On_a_door_that_takes_words_mid_turn_each_word_goes_at_once_and_the_inbox_closes_only_after_every_answer()
+    {
+        var sent = new List<string>();
+        var answers = new Dictionary<string, TaskCompletionSource<string>>();
+        var told = new List<DrivenReach>();
+        var inbox = new DrivenInbox(_ => { });
+        inbox.OnSaid((_, reach) => told.Add(reach));
+
+        Assert.True(inbox.Hold(Said("held before it opened")));
+        inbox.Attach(() => Task.CompletedTask, message =>
+        {
+            sent.Add(message.Text);
+            var answer = new TaskCompletionSource<string>();
+            answers[message.Text] = answer;
+            return answer.Task;
+        });
+        // Told at once, and held until the target is on the wire.
+        Assert.Equal([DrivenReach.NextStep], told);
+        Assert.Empty(sent);
+
+        inbox.Flow();
+        Assert.Equal(["held before it opened"], sent);
+
+        Assert.True(inbox.Hold(Said("and the budget is 64 KiB")));
+        Assert.Equal(["held before it opened", "and the budget is 64 KiB"], sent);
+        Assert.Equal([DrivenReach.NextStep, DrivenReach.NextStep], told);
+        Assert.Empty(inbox.State.Queued);
+        Assert.True(inbox.State.Taking);
+
+        var first = inbox.NextOrClose();
+        Assert.Null(first?.Held);
+        answers["held before it opened"].SetResult("end_turn");
+        Assert.Equal("end_turn", await first!.Answer!);
+
+        var second = inbox.NextOrClose();
+        answers["and the budget is 64 KiB"].SetResult("end_turn");
+        Assert.Equal("end_turn", await second!.Answer!);
+
+        Assert.Null(inbox.NextOrClose());
+        Assert.False(inbox.Hold(Said("too late")));
+        Assert.Equal(2, sent.Count);
+    }
+
+    /// <summary>
+    /// 🔴 STEER1 (D136): on a door that takes words at once nothing is ever held, and a stop while a word is on its way
+    /// would answer it cancelled while the agent may still act on it (steer evidence §3), so sending now stops nothing.
+    /// </summary>
+    [Fact]
+    public async Task Sending_now_on_a_door_that_takes_words_mid_turn_stops_nothing()
+    {
+        var stopped = 0;
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(() => { stopped++; return Task.CompletedTask; }, _ => new TaskCompletionSource<string>().Task);
+        inbox.Hold(Said("said before its first prompt left"));
+        Assert.Equal(TurnStop.Nothing, await inbox.SendNowAsync());
+
+        inbox.Flow();
+        inbox.Hold(Said("the tests are in /spec"));
+
+        Assert.Equal(TurnStop.Nothing, await inbox.SendNowAsync());
+        Assert.Equal(0, stopped);
+    }
+
+    /// <summary>A word already sent is the session's, so closing hands back only what never left.</summary>
+    [Fact]
+    public void Closing_a_door_that_takes_words_mid_turn_hands_back_nothing_it_sent()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        inbox.Attach(() => Task.CompletedTask, _ => Task.FromException<string>(new DriverException("the agent went away")));
+        inbox.Flow();
+        inbox.Hold(Said("sent"));
+
+        Assert.Empty(inbox.Close());
+        Assert.Null(inbox.NextOrClose());
+    }
+
     [Fact]
     public void The_registry_hands_a_sessions_inbox_to_the_page_and_forgets_it_when_it_closes()
     {

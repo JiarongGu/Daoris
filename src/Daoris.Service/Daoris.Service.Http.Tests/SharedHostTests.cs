@@ -278,5 +278,7 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     public void The_accept_door_does_not_exist_on_a_shared_host()
     {
         Assert.DoesNotContain(("POST", "/api/quests/{id}/accept"), host.Routes());
+        // Nor the go-ahead's (KNOWUSE1a): asks are a local host's, and the yes to a production act is the person's.
+        Assert.DoesNotContain(("POST", "/api/asks/{id}/go-aheads/{number}"), host.Routes());
     }
 }

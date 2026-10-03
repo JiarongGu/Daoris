@@ -40,6 +40,7 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__quest_respond",
         "mcp__daoris-knowledge__quest_publish",
         "mcp__daoris-knowledge__permission_propose",
+        "mcp__daoris-knowledge__go_ahead_ask",
     ];
 
     /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>

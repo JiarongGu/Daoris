@@ -3992,6 +3992,11 @@ its tree, which a carry-on session would have to rebuild.
 - **A conversation's stop semantics**, which hand queued words back (CONV4a): here the person stops
   the turn so their words go, so nothing is withdrawn.
 
+*Amended by D136 (STEER1, 2026-10-03).* Where the agent says it takes a prompt during a turn (`claude-agent-acp`), the
+words are a prompt sent the moment they are said, and reach it at its next step; this decision's turn's end is the door
+everywhere else. The words are recorded the moment they are said, with when they reach the session, and again where it
+took them, not only when they are handed over. *Send now* stops nothing on the next-step door, where nothing is held.
+
 ## D91 — What depends on what is declared by the repository that depends, as `domain.uses` (2026-09-30)
 
 **Decision (MAP4e, amending D34).** A repository's `domain` in its `daoris.json` may carry `uses`: the
@@ -10016,3 +10021,148 @@ KNOWUSE3.
 records, the documents and the owner's later words; the owner did not class them, which is what KNOWUSE2 measures. One
 session was still running and an earlier ticket's ten sessions were not read. No session was re-run with the proposed
 wording. `verify` checks this entry's place and the evidence's links, and none of their words.
+
+**KNOWUSE1a, built 2026-10-03: a go-ahead is asked once and held on the ask.** A session asks through its connector's
+`go_ahead_ask` (`kind`, `on`, `act`, `why`), which the connector default now allows in both twins
+(`Permissions.cs`, `permissions.ts`). `SessionLedger.AskGoAheadAsync` derives the ask as a word's is (DRIFT1a) and keeps
+the request in the ask's `go_aheads` column, read, decided and written in one transaction
+(`AskStore.DecideGoAheadsAsync`). Both ask routes answer `goAheads`. The person answers at
+`POST /api/asks/{id}/go-aheads/{n}` (`approved` or `refused`, with their words), `daoris-driver ask --go-ahead <id> <n>
+approve|refuse ["…"]`, and the ask's page's *Go-aheads*. Every start on the ask (a claim, a D79 resume, a carry-on on any
+account, a follow-up step) is handed them beneath the person's words (`GoAheadsText.Beneath`). A conversation an answer
+resumes (ANSWER1a) is handed the answers to the go-aheads it asked, after the person's answer, while its record keeps only
+the answer as theirs (`GoAheadsText.Resumed`). A quest an ask asked tells its session to ask once, through the tool.
+Choices §2 left open:
+- **How an act is named** (`GoAheadAct`), from the evidence's thirteen asks. There are three parts: the kind, read from
+  five words and their usual names (*put*, *deploy*, *login*); where it lands, an environment's names read as one (*prod*,
+  *live*, *production*); and what it touches, by its words. Case, the small words, a possessive, a plural's ending and its
+  own kind and place said again are set aside. Words only, so no model answers it (D24).
+- **One act** is the same kind, the same place, and every word of the earlier act's: a later request may be more precise
+  (*menu entry*, then *the report's menu entries*). Among several that match, the most precise answers it.
+- **Where text cannot tell**: a request sharing some of an earlier act's words without all of them, a broader one
+  included, is asked once more as its own, with `near` naming the earlier, and the session is told it could not match it.
+  A yes never covers an act the person did not read. Another kind or place, or no word shared, is simply another act.
+- **The answer replaces** an earlier one, since the latest is what the person says now, and is the person's alone: no
+  connector tool and no Ask Daoris kind answers one (HELP9's room names the terminal's door). A request for a refused act
+  joins it and is told not to do it; the same session asking twice adds no second request.
+- **Bounded**: `on` and `act` at most 300 characters, the reason and the person's words 2,000, an ask at most 50
+  go-aheads; the instruction carries 8,000 characters of them and names the rest by number.
+- **Kept as written**: a go-ahead this build cannot read (a newer kind, a half-written entry) is passed over on read, kept
+  by the next write, and numbered past. A store from before gains the column, every ask holding none.
+
+Proof: `GoAheadTests` (a request kept as go-ahead 1; the proof, a carry-on's second request in other words joining the
+first; a more precise one joining; one the words cannot tell asked once more, saying so; another kind, place or thing;
+an answer kept and told to a later request; a refusal and its replacement; the refusals; no ask; a follow-up step; a later
+publish and close; an unreadable entry kept; a store from before; the naming tables), seen failing with the join removed;
+`McpToolsTests` (asked and joined through two sessions' connectors), seen failing without the tool; `LocalHostTests`
+(both ask routes, the answer door's 200, 400 and 404), seen failing with the route moved; `SharedHostTests` (no door on a
+shared host). In the driver, `GoAheadsHandedTests` (the proof, a carry-on handed what was approved, refused and waiting;
+every kind of start and a follow-up; the tool named only on an ask; the bound; the client's read; the resumed prompt; the
+terminal's door), seen failing with the section removed; `PermissionRulesTests` and `permissions.test.ts`, seen failing
+before the tool was allowed; the room's goldens gained the door's row. In the page, `asks.test.tsx` (each listed with the
+person's words, a yes with words, a no, an answer changed, no door, no section), seen failing before the list was drawn;
+`api.test.ts` (the door's path and body). Not covered: no real agent was handed the tool, so whether a harness asks
+through it rather than in its last message is not measured; nothing compares an act's words by meaning, so two wordings
+sharing no word are asked twice; the parked session's page does not show the go-aheads it asked, which are on the ask's
+page; the family rehearsal asks none; the page was not looked at on the window.
+
+**KNOWUSE1b, built 2026-10-03: a standing answer kept per repository.** It lives in `driver.json`'s `standing`, by
+repository, as the person's words with when they set them. Both twins read it by one table (`DriverConfig.Standing`,
+`driverconfig.ts`'s `standing`; `.claude/knowledge/twins.md` has the row). It is set at
+`daoris driver standing <repo> "…"|--clear`, on the repository's page under the driver's choices (`SET_STANDING`), and by
+Ask Daoris's `setting` kind's `standing` door. Every start reads it from the tick's config (`Driver.WithStanding`): a claim,
+a D79 resume, a carry-on on any account and a follow-up step, each for its own repository. It is quoted beneath the quest,
+after the person's words and the go-aheads, saying it answers what it covers and that the quest's words and the ask's are
+newer and win (`StandingText`). Choices §3 left open:
+- **`driver.json`, not a file of its own**: it is a standing choice of the person's for this machine's driver, read at each
+  start beside the lines and landings, and `daoris driver list` shows it there. It is never written into the repository
+  (D32).
+- **Verbatim, one per repository**: the words trimmed at the ends only, a later answer replacing the earlier under the
+  spelling first written, the time kept in UTC to the second. Clearing is its own act (`--clear`, or no words at the screen's
+  door); blank words are refused.
+- **Bounded at 2,000 characters**, which the three doors refuse past, for the instruction's command-line reason (DRIFT1b).
+  An answer longer in a hand-edited file is cut in the instruction and said to be.
+- **Every session there, and no other**: a chat is the person's own conversation, and an ANSWER1 resume was handed it at
+  its start. Ask Daoris proposes it as a card the person applies, since it only says what the person said.
+
+Proof: `StandingTests` and `driverconfig.test.ts` (the shared table, the CLI parsing the driver's theory cell for cell; the
+written shape; a later answer; the refusals; another edit keeping it), seen failing before either reader existed;
+`StandingHandedTests` (the proof, a claim, a resume, a carry-on and a follow-up each handed it beneath the quest; a step in
+another repository handed that one's; gone once cleared; the bound), seen failing with the section removed;
+`DriverModuleStandingTests` (the screen's door writing the terminal's file, the state's rows, the refusals), seen failing
+with no route; `HelpSettingProposalTests` and `HelpSettingProposalsTests` (the box's shape, the driver's plan and its edit),
+seen failing before the door existed; `HelpCoverageTests` holds the verb to its door and the room names it, its goldens
+gaining the row; the CLI's usage fixture gained the verb. In the page, `StandingAnswer.test.tsx` (none and add, words with
+when and edit, clear, the bound) and `ProjectsView.test.tsx` (shown on the repository's page, saved and cleared on
+`DAORIS.DRIVER`), seen failing before the field existed. Ask Daoris's room lists each workspace's answers after its table
+(`HelpRoomTests`, seen failing with the list removed), so `daoris driver list` shows nothing the room does not. Not covered:
+no real agent was handed the answer, so whether it stops the go-ahead questions it answers is not measured; the page was
+not looked at on the window.
+
+## D136 — A word to a working session reaches it at its next step where its door takes one during a turn, and at its turn's end where it does not; the conversation shows it at once, saying which (2026-10-03)
+
+**Decision (STEER1, amending D90).** The owner, 2026-10-03: *"I did send back the message but it never shows to
+daoris"*. A driven session's turn is its whole run, and D90 held the person's words for the turn's end: the agent heard
+nothing for up to an hour, and the record kept the words only when they were handed over, so the conversation showed
+nothing meanwhile. What each door does with words sent during a turn was read from the shipped adapters and the CLI, and
+one session measured it (`docs/2026-10-03-steer-evidence.md`).
+
+1. **At its next step, where the agent says it takes a prompt during a turn.** On the protocol door, an agent whose
+   `initialize` answers `agentCapabilities._meta.claudeCode.promptQueueing: true` (`claude-agent-acp`) is sent the
+   person's words the moment they are said, as a `session/prompt` in the same session. Claude Code folds them into the
+   running turn after the tool calls in flight finish, before its next model call; nothing is cancelled (evidence §1,
+   measured). The wire answers the earlier prompt `end_turn` at that moment and the words' prompt at the real end, so
+   the driver's run ends only when nothing is held and no word is on its way. Words said while the session opens go
+   right after its first prompt, never before it.
+2. **At its turn's end everywhere else, and said so.** An agent that does not declare it — `codex-acp`, whose second
+   prompt would reset its running turn (evidence §5), dsh, the stub — keeps D90's door: the words are held and prompted
+   when the turn ends. Only the agent's own `true` counts; silence is never read as yes (ACP3's rule for the posture).
+3. **The conversation shows the words at once.** The record keeps them the moment they are said, as the person's, with
+   `reaches` (`next-step` or `turn-end`) and an id, and the page shows them in the turn they were said in as waiting:
+   *it reads this at its next step*, or *when its turn ends*. Where the session took them, the record keeps them again
+   under the same id, as that turn's ask: when the prompt before them is answered, or as they are sent when no turn
+   runs. The page then shows them there and no longer as waiting. A search finds them once, where they were taken.
+4. **Send now is kept.** On the turn-end door it is D90's: stop the turn so what is held goes next. On the next-step door
+   nothing is held, so it has nothing to send; and the driver never stops a turn while a word is on its way, because
+   `claude-agent-acp` answers such a word `cancelled` while Claude Code still runs it, its answer reaching nobody
+   (evidence §3). *Not even waiting for the step in flight* belongs to the steering extension, a follow-up.
+5. **What the other doors do, named.** The native door's driven session runs `claude -p <target>` with no stdin, so it
+   still hears nothing mid-turn and the page offers it no box; on `--input-format stream-json` it would fold words as the
+   adapter does (evidence §4), one turn to measure before it is built. `codex-acp`'s door to the running turn is its
+   `_session/steering` (Codex's `turn/steer`), held until a turn shows whether it interrupts the step in flight.
+6. **Words that never reached it are said.** Held words when the session ends are counted as D90 counts them; words
+   sent during the turn that it never took are counted on a note of their own, and an agent that refuses one costs that
+   word, in its words, never the run.
+
+**Why.** The person told a working session something and the screen showed nothing, which reads as Daoris dropping the
+words; and the agent read them an hour late, after doing the work the words were meant to change. Claude Code already
+does what the person expects (its terminal takes a message typed while it works at the next step), and its protocol
+adapter offers the same through an ordinary prompt and says so, so the words can reach it that soon with no loss. The
+record is the conversation's one home (D76), so showing the words the moment they are said is a record event, not a
+page-side echo that a restart would lose.
+
+**Rejected.**
+- **`_session/steering` as the default.** It aborts the generation or the tool in flight (evidence §2): a build or a
+  test run would be cut for a sentence that could wait one step, and the measured steer left the call it cut open on the
+  wire with no update. It is the right door for *send now* without ending the turn, as a follow-up.
+- **A second prompt to every protocol agent.** `codex-acp` resets its running turn on one, and an agent that says
+  nothing is not guessed at.
+- **Recording the words only where they are taken** (D90 as built): the owner's complaint, on the turn-end door for up
+  to an hour.
+- **Recording them once, at once.** The page reads a person's words as the start of a turn, so words recorded mid-turn
+  would make the rest of the running turn read as the answer to them.
+- ***Send now* as `session/cancel` while a word is on its way.** The word may still run, with its answer dropped.
+
+Proof: `AcpSteerTests` (the measured shape: the words sent at once, the first prompt handed off, the run open until the
+words' answer, the record in the wire's order; a word said while opening going right after the task; a silent agent
+holding for the turn's end; the marker read only as the agent's own `true`; words on their way when it died said;
+a refused word costing only itself), `DrivenInboxTests` (told at once with the reach, the early word told when the door
+is known; on the next-step door each word sent at once and the inbox closing only after every answer; *send now* stopping
+nothing there; close handing back nothing sent) and `SessionEventsTests` (kept waiting, then taken, found once). The
+hand-off, the inbox's sending and the run's waiting were each seen failing with their line removed. In the page,
+`conversation.test.ts` (the words held where they were said, then the ask of the turn that took them; never reached once
+the session ended) and `ConversationView.test.tsx` (each door's sentence, and *it ended before reading this*), the held
+branch seen failing with its line removed. `DrivenSessionInputTests`' process test now asserts the words kept twice; it
+is the parent's to run. Not covered: no driven session on the install has heard a word mid-turn yet (only the
+evidence's session, outside Daoris); a fold that waits for a long tool is read, not seen; nobody has looked at the held
+words on the window; the steer box still says nothing of its door, and *send now* stays disabled on the next-step door.

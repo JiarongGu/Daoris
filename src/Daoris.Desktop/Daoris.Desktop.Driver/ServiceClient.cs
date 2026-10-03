@@ -539,7 +539,77 @@ public sealed class ServiceClient : IDisposable
             // The person's words (DRIFT1a), which every session on the ask is handed (DRIFT1b).
             Words = ReadWords(ask),
             WordsKeptFrom = Moment(ask, "wordsKeptFrom"),
+            // The go-aheads its sessions asked (KNOWUSE1a), which every session on the ask is handed beside the words.
+            GoAheads = ReadGoAheads(ask),
         };
+
+    /// <summary>
+    /// The go-aheads an ask holds (KNOWUSE1a), oldest first; null where the host answered none, a host from before them. One
+    /// this build cannot read is passed over, as the service passes over a kind it does not know: never a failed read.
+    /// </summary>
+    private static IReadOnlyList<GoAheadView>? ReadGoAheads(JsonElement ask)
+    {
+        if (!ask.TryGetProperty("goAheads", out var held) || held.ValueKind != JsonValueKind.Array) return null;
+        var goAheads = new List<GoAheadView>();
+        foreach (var goAhead in held.EnumerateArray())
+        {
+            if (goAhead.ValueKind != JsonValueKind.Object
+                || !goAhead.TryGetProperty("number", out var number) || number.ValueKind != JsonValueKind.Number || !number.TryGetInt32(out var n)
+                || Text(goAhead, "kind") is not { Length: > 0 } kind || Text(goAhead, "on") is not { Length: > 0 } on
+                || Text(goAhead, "act") is not { Length: > 0 } act)
+            {
+                continue;
+            }
+
+            var asked = goAhead.TryGetProperty("asked", out var requests) && requests.ValueKind == JsonValueKind.Array
+                ? requests.EnumerateArray()
+                    .Where(request => request.ValueKind == JsonValueKind.Object && Text(request, "session") is { Length: > 0 } && Moment(request, "at") is not null)
+                    .Select(request => new GoAheadRequestView(Text(request, "session")!, Text(request, "quest"), Moment(request, "at")!.Value, Text(request, "why") ?? ""))
+                    .ToList()
+                : [];
+            GoAheadAnswerView? answer = null;
+            if (goAhead.TryGetProperty("answer", out var answered) && answered.ValueKind == JsonValueKind.Object
+                && answered.TryGetProperty("approved", out var approved) && approved.ValueKind is JsonValueKind.True or JsonValueKind.False
+                && Moment(answered, "at") is { } at)
+            {
+                answer = new GoAheadAnswerView(approved.GetBoolean(), Text(answered, "words"), at);
+            }
+
+            goAheads.Add(new GoAheadView(n, kind, on, act, asked)
+            {
+                Answer = answer,
+                Near = goAhead.TryGetProperty("near", out var near) && near.ValueKind == JsonValueKind.Number && near.TryGetInt32(out var m) ? m : null,
+            });
+        }
+
+        return goAheads;
+    }
+
+    /// <summary>
+    /// The person's yes or no to a go-ahead a session asked on their ask (KNOWUSE1a, D135 §2), with their words where they
+    /// give any: the terminal's door. The service's sentence comes back verbatim, a refusal (no such go-ahead) included.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> AnswerGoAheadAsync(
+        string ask, int number, bool approved, string? words, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("answer", approved ? "approved" : "refused");
+            if (!string.IsNullOrWhiteSpace(words)) writer.WriteString("words", words);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/asks/{Uri.EscapeDataString(ask.Trim().TrimStart('#'))}/go-aheads/{number.ToString(CultureInfo.InvariantCulture)}", body, ct)
+            .ConfigureAwait(false);
+        // A host older than the go-ahead door answers a bare 404 or 405 — said plainly, not parsed as nothing.
+        if (root is not { } answer)
+        {
+            return (false, $"the service at {_base} has no go-ahead door ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
 
     /// <summary>A field that is true, or false when it is anything else or absent.</summary>
     private static bool Flag(JsonElement element, string name) =>

@@ -85,6 +85,43 @@ describe('toTurns', () => {
     expect(turns[1]!.ask?.files).toBeUndefined();
   });
 
+  /**
+   * STEER1 (D136): what the person tells a working session shows the moment it is said, in the turn it was said in, as
+   * waiting — without opening a turn, since the agent is still on the one before. Where the session took the words, the
+   * same words come again under the same id as that turn's ask, and they wait no longer.
+   */
+  it('shows the person\'s words waiting where they were said, then as the ask of the turn that took them', () => {
+    const waiting = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
+      e(2, { kind: 'tool', id: 'c1', title: 'Read a.txt', status: 'completed' }),
+      e(3, { kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'put PINEAPPLE after the words', files: ['level.json'] }),
+      e(4, { kind: 'tool', id: 'c2', title: 'Read b.txt', status: 'in_progress' }),
+    ]);
+
+    expect(waiting.turns).toHaveLength(1);
+    expect(waiting.turns[0]!.items.map((b) => b.kind)).toEqual(['tool', 'held', 'tool']);
+    expect(waiting.turns[0]!.items[1]).toMatchObject({
+      kind: 'held', id: 'said-1', reaches: 'next-step', text: 'put PINEAPPLE after the words', files: ['level.json'],
+    });
+
+    const taken = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),
+      e(2, { kind: 'tool', id: 'c1', title: 'Read a.txt', status: 'completed' }),
+      e(3, { kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'put PINEAPPLE after the words' }),
+      e(4, { kind: 'turn', stopReason: 'end_turn' }),
+      e(5, { kind: 'user', origin: 'person', id: 'said-1', text: 'put PINEAPPLE after the words' }),
+      e(6, { kind: 'message', text: 'alpha bravo PINEAPPLE' }),
+      e(7, { kind: 'turn', stopReason: 'end_turn' }),
+    ]);
+
+    expect(taken.turns).toHaveLength(2);
+    expect(taken.turns[0]!.items.map((b) => b.kind)).toEqual(['tool']);
+    expect(taken.turns[1]!.ask).toMatchObject({ origin: 'person', text: 'put PINEAPPLE after the words' });
+    expect(taken.turns[1]!.items.map((b) => b.text)).toEqual(['alpha bravo PINEAPPLE']);
+    // A jump to the words lands where they now are.
+    expect(taken.where[3]).toBe('e5');
+  });
+
   /** A tool call and its updates are one card, where it first appeared, carrying its latest state. */
   it('merges a tool call\'s updates into the one card, in the place it began', () => {
     const { turns } = toTurns([
@@ -295,6 +332,22 @@ describe('settle', () => {
 
     expect(turns[0]!.cut).toBe(true);
     expect(turns[0]!.items.map((item) => item.stopped ?? false)).toEqual([false, true]);
+  });
+
+  /** STEER1: words still waiting when the session ended never reached it, and say so rather than waiting for ever. */
+  it('says words still waiting when the session ended never reached it', () => {
+    const turns = settle(run(
+      { kind: 'user', origin: 'target', text: 'go' },
+      { kind: 'user', origin: 'person', id: 'said-1', reaches: 'turn-end', text: 'one more thing' },
+      { kind: 'turn', stopReason: 'end_turn' },
+    ), false);
+
+    expect(turns[0]!.items[0]).toMatchObject({ kind: 'held', unreached: true });
+    const live = settle(run(
+      { kind: 'user', origin: 'target', text: 'go' },
+      { kind: 'user', origin: 'person', id: 'said-1', reaches: 'turn-end', text: 'one more thing' },
+    ), true);
+    expect(live[0]!.items[0]!.unreached).toBeUndefined();
   });
 
   it('leaves a live session and a finished turn as they are', () => {

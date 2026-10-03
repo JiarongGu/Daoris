@@ -129,7 +129,7 @@
   "work.detached.gone.body": "它不在当前工作区的账本里——可能属于另一个工作区，也可能这个窗口比它活得久。",
   "work.options.group": "本次对话的模型与推理强度，按其智能体提供的选项",
   "work.options.label": "本次对话的 {{name}}",
-  "work.steer.placeholder": "在它工作时补充信息——它会在当前这一轮结束时读到。回车排队，Shift+回车换行。",
+  "work.steer.placeholder": "在它工作时补充信息——对话里会显示它何时读到。回车排队，Shift+回车换行。",
   "work.steer.now": "立即发送",
   "work.steer.nowTip": "停止它当前这一轮，让你补充的内容立即送达——会话会继续，已完成的工作都保留。",
   "work.steer.sending": "正在停止这一轮：你补充的内容接着送达。",
