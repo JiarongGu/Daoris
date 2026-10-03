@@ -210,6 +210,9 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
   page reads as a list of manifests; design it as a catalogue (installed, Daoris's own, available) with each plugin's
   icon, declared in its manifest with a generated fallback. Contract: a short design (D64, D120 amended). Proof: stories,
   the manifest's twin tables, the look.
+- [ ] **LOOK5 — a setting's terminal command breaks inside a flag** (seen on the install, 2026-10-03, Settings → Agents
+  in 中文). `--keep <account>|--no-keep` wraps as `--no-` / `keep`, and `--workspace` as `--` / `workspace`; break a
+  command only between its words. Contract: D41 §3, the components' code span. Proof: the look at 1280, 888 and 680.
 - [ ] **LAYOUT11 — content that does not size with its pane** (owner, 2026-10-03: *"some page content still not auto
   sizing with the outer like quest body and plugin detail"*). A quest's body and a plugin's detail keep a fixed measure
   inside a wider or narrower pane. Find every such surface by looking at 1280, 888 and 680, and size each by its pane
