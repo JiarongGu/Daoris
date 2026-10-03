@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { USE_DEFAULTS } from './accounts';
 import {
-  CHOICES, MACHINE_NEAR, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,
+  CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX_AGENT, SIX_CHOICES, THREE,
 } from './accountsFixtures';
 import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope } from './AccountUse';
 
@@ -9,7 +9,8 @@ import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLin
 // shows: an account cooling until a stated reset, by Daoris's default, or in this machine's zone; what an agent last said;
 // nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one near and one
 // kept; six accounts and nothing said; no list yet; a default outside the list; one by one; an agent that says nothing of
-// its limits; a workspace on this machine's accounts and on its own; a 中文 account.
+// its limits; a workspace on this machine's accounts and on its own; a 中文 account; and which account the next start takes
+// and why (TOOL6e): offered again after a cool-off, waiting, and on the tool's own sign-in.
 
 const nothing = () => {};
 const ACTS: ScopeActs = { onOrder: nothing, onUse: nothing, onInherit: nothing };
@@ -112,6 +113,39 @@ export const OwnSignInUnnamed: Story = { render: () => <OwnSignInLine signsIn on
 
 /** Each account's own plan and terms apply. */
 export const Terms: Story = { render: () => <TermsLine /> };
+
+/**
+ * TOOL6e, the owner's case: the workspace's default came out of its cool-off and nothing runs, so the next start takes it,
+ * Daoris having started on it least recently; another account cools; the tool's own sign-in carries none of these starts.
+ */
+export const NextStartOfferedAgain: Story = {
+  args: { agent: OFFERED_AGAIN, scope: OFFERED_AGAIN.scopes[1]!, workspace: 'work' },
+};
+
+/** The next start waits: every account the list uses is held, the first offered again at its reset. */
+export const NextStartWaits: Story = {
+  args: {
+    scope: scopeOf({
+      list: ['account-1', 'account-2'], begins: 'account-1',
+      next: {
+        account: null, reason: 'waits', when: THREE.accounts[0]!.cooling!.until,
+        others: [
+          { account: 'account-1', hold: 'cooling', until: THREE.accounts[0]!.cooling!.until },
+          { account: 'account-2', hold: 'refused' },
+          { account: 'account-3', hold: 'outside' },
+        ],
+      },
+    }),
+  },
+};
+
+/** Nothing here names an account: the next start runs on the tool's own sign-in. */
+export const NextStartOwnSignIn: Story = { args: { scope: scopeOf({ next: { account: null, reason: 'own', others: [] } }) } };
+
+/** An account's row, offered again since its cool-off ended within the day. */
+export const AccountOfferedAgain: Story = {
+  render: () => <AccountFactsLines facts={OFFERED_AGAIN.accounts[0]!} label="work@example.invalid" onTryNow={nothing} />,
+};
 
 /** Today's defaults on a scope with a list, as a file that sets nothing reads. */
 export const TodaysDefaults: Story = {

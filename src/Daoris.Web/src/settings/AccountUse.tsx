@@ -4,7 +4,7 @@ import { moment } from '../format';
 import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
-  coolingLine, moved, NEAR_RANGE, nothingSaid, ownLine, saidLine, used,
+  coolingLine, heldLine, moved, NEAR_RANGE, nextLine, nothingSaid, offeredLine, ownLine, saidLine, used,
 } from './accounts';
 
 // How each agent's accounts are used, as Settings → Agents shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6).
@@ -15,9 +15,10 @@ import {
 export type AccountChoice = { name: string; label: string; login?: 'in' | 'out' | 'unknown'; keyed?: boolean };
 
 /**
- * One account's facts, on its row (D125 §2.4, D130 §3.2): Daoris's sessions running on it, what its agent last said with
- * how long ago (or that it has said nothing yet), the week a limit taught it, and its cool-off with *Try now*. Nothing here
- * counts accounts, and an absent count is unknown, never zero.
+ * One account's facts, on its row (D125 §2.4, D130 §3.2): Daoris's sessions running on it, since when it is offered again
+ * where its cool-off ended within the day (TOOL6e), what its agent last said with how long ago (or that it has said nothing
+ * yet), the week a limit taught it, and its cool-off with *Try now*. Nothing here counts accounts, and an absent count is
+ * unknown, never zero.
  */
 export function AccountFactsLines({ facts, label, busy, onTryNow, now }: {
   facts: AccountFacts;
@@ -36,6 +37,7 @@ export function AccountFactsLines({ facts, label, busy, onTryNow, now }: {
       <span className="text-meta text-ink-faint [overflow-wrap:anywhere]">
         {[
           typeof facts.running === 'number' ? t('harness.running', { count: facts.running }) : null,
+          facts.offered && !facts.cooling ? offeredLine(facts.offered) : null,
           saidLine(facts.said),
           // The week a limit taught it, where its agent has not said its week itself (TOOL6b).
           facts.week && !weekly ? t('harness.week', { when: moment(facts.week) }) : null,
@@ -102,6 +104,41 @@ export function TermsLine() {
   return <p className="m-0 mt-2 text-meta text-ink-faint">{t('harness.terms')}</p>;
 }
 
+/**
+ * Which account the scope's next start takes, and why (TOOL6e; D130 §3–§4, D125 §3.7): the walk's step, since when that
+ * account is offered again where its cool-off just ended, what holds every other account, and that the tool's own sign-in
+ * carries none of these starts, which is the switch a person makes at their terminal and expects Daoris to follow. Drawn
+ * only where the answer carries it, so a shell older than TOOL6e shows nothing rather than a guess.
+ */
+export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
+  agent: AgentAccounts;
+  product: string;
+  scope: AccountScope;
+  labelOf: (name: string) => string;
+  workspace?: string;
+}) {
+  const { t } = useTranslation();
+  const next = scope.next;
+  if (!next) return null;
+  const listed = scope.list.length > 0;
+  const facts = next.account ? agent.accounts.find((account) => account.name === next.account) : null;
+  const offered = facts?.offered && !facts.cooling ? t('harness.next.offeredSentence', { when: moment(facts.offered) }) : null;
+  const held = heldLine(next, labelOf);
+  return (
+    <SettingRow
+      label={t('harness.next.label')}
+      hint={listed ? t('harness.next.hint', { agent: agent.agent, scoped: workspace ? ` --workspace ${workspace}` : '' }) : undefined}
+      why={listed ? t(scope.use.use === 'order' ? 'harness.next.whyOrder' : 'harness.next.whyGoal') : undefined}
+    >
+      <p className="m-0 text-small text-ink">
+        {[nextLine(next, scope, labelOf), offered].filter(Boolean).join(t('harness.said.sentences'))}
+      </p>
+      {held && <p className="m-0 mt-0.5 text-small text-ink-soft">{held}</p>}
+      {next.reason !== 'own' && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('harness.next.ownSignIn', { product })}</p>}
+    </SettingRow>
+  );
+}
+
 /** What a scope's editor is handed to change it: each press is the terminal's door's twin (D50). */
 export type ScopeActs = {
   /** A list written whole, in order; none clears it, and its settings with it. */
@@ -146,6 +183,8 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
+      {/* First: the question a person comes with is where the next start goes, and why (TOOL6e). */}
+      <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} workspace={workspace} />
       <SettingRow
         label={t('harness.use.list')}
         hint={t('harness.use.orderHint', hinted)}
