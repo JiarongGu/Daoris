@@ -13,6 +13,7 @@
  * line.
  */
 import type { Convergence, Quest, QuestStep, Registration, Session } from '../api';
+import { answeredPark } from '../ui';
 
 export type MapNode = {
   id: string;
@@ -96,6 +97,11 @@ export type Topology = {
 
 const isOpen = (quest: Quest) => quest.status === 'Open' || quest.status === 'Taken';
 const WORKING: ReadonlySet<Session['state']> = new Set(['starting', 'working']);
+/**
+ * Parked on the person. Not a park they answered (ANSWER1e): the same session goes on with it at the driver's next look,
+ * so until then it is marked as a queued session is, neither parked nor working.
+ */
+const parkedOnPerson = (s: Session) => s.state === 'awaiting-person' && !answeredPark(s);
 /** The sender every quest an ask becomes is published by (the service's `AskDesk.SenderOf`). */
 const ASK = /^ask #(\S+)$/;
 
@@ -140,15 +146,15 @@ export function buildTopology(
       accepts: row.accepts,
       open: quests.filter((q) => q.to === row.repository && isOpen(q)).length,
       working: sessions.some((s) => s.repository === row.repository && WORKING.has(s.state)),
-      parked: sessions.some((s) => s.repository === row.repository && s.state === 'awaiting-person'),
-      sessions: sessions.filter((s) => s.repository === row.repository && (WORKING.has(s.state) || s.state === 'awaiting-person')).length,
+      parked: sessions.some((s) => s.repository === row.repository && parkedOnPerson(s)),
+      sessions: sessions.filter((s) => s.repository === row.repository && (WORKING.has(s.state) || parkedOnPerson(s))).length,
     }));
 
   // Which quests a session is on now, and how (MAP4d): waiting on the person leads.
   const onQuest = new Map<string, Live>();
   for (const s of sessions) {
     if (!s.quest) continue;
-    if (s.state === 'awaiting-person') onQuest.set(s.quest, 'parked');
+    if (parkedOnPerson(s)) onQuest.set(s.quest, 'parked');
     else if (WORKING.has(s.state) && onQuest.get(s.quest) !== 'parked') onQuest.set(s.quest, 'working');
   }
   const liveOf = (list: readonly Quest[]): Live => {

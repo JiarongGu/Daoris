@@ -149,4 +149,29 @@ describe('the sessions domain', () => {
       await i18n.changeLanguage('en');
     }
   });
+
+  /**
+   * CHATTAKE1c (D126's CHATTAKE1 note): a chat that took a quest is refused as having served one, and no quest records
+   * which session took it, so the refusal names none. The shell sends the quest empty, and the sentence says the session
+   * took a quest rather than reading `#`; one that names its quest still names it.
+   */
+  it('says a delete refused for a quest a chat took without naming one, in both languages', async () => {
+    const refusal = (code: string, parameters: Record<string, string>) => Object.assign(new Error(code), { code, parameters });
+    const took = refusal('SESSION_SERVED_QUEST', { session: 's8', quest: '' });
+    const unsent = refusal('SESSION_SERVED_QUEST', { session: 's8' });
+
+    try {
+      await i18n.changeLanguage('en');
+      expect(sentence(took)).toBe('s8 took a quest, and its record is that work’s, so it was not deleted. Archive it instead.');
+      expect(sentence(unsent)).toBe(sentence(took));
+      expect(sentence(refusal('SESSION_SERVED_QUEST', { session: 's4', quest: 'q1' }))).toMatch(/^s4 worked on #q1,/);
+
+      await i18n.changeLanguage('zh');
+      expect(sentence(took)).toBe('s8 接下过一个委托，它的记录属于那项工作，所以没有删除。请改为归档。');
+      expect(sentence(unsent)).toBe(sentence(took));
+      expect(sentence(refusal('SESSION_SERVED_QUEST', { session: 's4', quest: 'q1' }))).toMatch(/^s4 为委托 #q1 工作过/);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
 });

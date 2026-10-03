@@ -10,7 +10,7 @@ import { UpdateBanner, type UpdateState } from './UpdateBanner';
 const STAGED = { id: '20261003-ab12', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
 
 const state = (extra: Partial<UpdateState>): UpdateState => ({
-  state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, ...extra,
+  state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null, ...extra,
 });
 
 const draw = (update: UpdateState | undefined, busy = false) => {

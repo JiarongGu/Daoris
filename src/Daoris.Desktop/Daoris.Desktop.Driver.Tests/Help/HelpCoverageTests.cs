@@ -16,7 +16,7 @@ namespace Daoris.Driver.Tests;
 ///
 /// <para><b>Three answers.</b> A door names the kind and its door, held against <see cref="IHelpProposalKind.Doors"/>.
 /// An exemption is a principle: one of D89's own presses (a sign-in, a key, a discard), something that changes
-/// nothing, a viewer's own look, or what an agent may do. A door owed is a door Ask Daoris should have, and says
+/// nothing, a viewer's own look, what an agent may do, or the person's act on the application itself (D139). A door owed is a door Ask Daoris should have, and says
 /// what it waits on.</para>
 /// </remarks>
 public sealed partial class HelpCoverageTests
@@ -160,6 +160,35 @@ public sealed partial class HelpCoverageTests
         "it reads from a commit, a session or a quest back to its ask and changes nothing, so there is nothing to propose, as "
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
 
+    /// <summary>
+    /// The install's update (D139): *Update when idle*, *Update now* and *Not now* on the banner and Settings → Driver
+    /// (UPDATE1e's <c>useSayUpdate</c>), and the headless host's <c>daoris-driver update</c> (UPDATE1f). Exempt, since it is
+    /// the person's act on the application; the room names both doors, so the helper points there.
+    /// </summary>
+    private static readonly Exempt UpdateDoor = new(
+        "an update is the person's act on the application, not on the work it drives (D139): *Update now* closes Daoris, "
+        + "Ask Daoris's window with it, and *Not now* keeps a build from installing, so each stays their own press on the "
+        + "banner, Settings → Driver or `daoris-driver update --when-idle|--now|--cancel`.");
+
+    /// <summary>
+    /// The page's bridge hooks that change something and that no Settings domain presses, answered one by one (UPDATE1f):
+    /// only a Settings domain's controls are derived, so a hook pressed elsewhere is read and otherwise answered for nowhere.
+    /// Each row is held to a hook the bridge still exports, that still changes something, and that no domain presses, where
+    /// it would be one of <see cref="Controls"/> instead.
+    /// </summary>
+    private static readonly (string Hook, Answer Answer)[] Elsewhere =
+    [
+        // UPDATE1: the banner's *Dismiss*, once an update installed or rolled back; since UPDATE1d the last update outlives it.
+        ("useDismissUpdate", new Exempt(
+            "it puts away an update's outcome once said, the banner's *Dismiss*, and changes nothing about the install or its "
+            + "work: the last update still reads on Settings → Driver and from plain `daoris-driver update` (D139), so there "
+            + "is nothing to propose.")),
+        // BRW7: a link pressed on the page, opened in Daoris's browser where the links setting says so.
+        ("useLinkOpener", new Exempt(
+            "it opens a link the person pressed in Daoris's browser, their own click, and changes nothing on the machine; "
+            + "where links open is Settings → Browser's, which the `browser` kind's `links` door proposes (D110 §4).")),
+    ];
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -213,6 +242,9 @@ public sealed partial class HelpCoverageTests
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Owed(CoolOffOwed)),
+        // UPDATE1e: the install's update, *Update when idle*, *Update now* and *Not now*, read once the hooks exported as
+        // functions were; UPDATE1f gave the room its row.
+        ("driver", "useSayUpdate", null, UpdateDoor),
 
         // TOOL4g: how an agent's accounts are used. The `use` door is judged and applied on this side already
         // (`HelpAgentProposals`); every one waits on the service's writer.
@@ -374,7 +406,8 @@ public sealed partial class HelpCoverageTests
     [Fact]
     public void Every_door_named_is_one_its_kind_takes()
     {
-        var doors = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer)).OfType<Door>();
+        var doors = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
+            .Concat(Elsewhere.Select(row => row.Answer)).OfType<Door>();
 
         foreach (var door in doors.Distinct())
         {
@@ -389,6 +422,7 @@ public sealed partial class HelpCoverageTests
     {
         var reasons = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
             .Concat(Forms.Select(row => row.Answer))
+            .Concat(Elsewhere.Select(row => row.Answer))
             .Append(Share)
             .Append(SetupDoor)
             .Append(RegisterDoor)
@@ -399,6 +433,7 @@ public sealed partial class HelpCoverageTests
             .Append(AbandonDoor)
             .Append(SayDoor)
             .Append(TraceDoor)
+            .Append(UpdateDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -519,6 +554,46 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
+    /// UPDATE1f: the install's update is exempt from Ask Daoris (D139), the screen's three words and the headless host's
+    /// <c>update</c> alike, while its usage spells it; the room names it, marked exempt with its reason, and says where the
+    /// three words are, so the helper points the person at both doors.
+    /// </summary>
+    [Fact]
+    public void The_install_update_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("update"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver update --when-idle|--now|--cancel`", StringComparison.Ordinal)
+            && door.Terminal.Contains("`daoris-driver update`", StringComparison.Ordinal)
+            && new[] { "Settings → Driver", "*Update when idle*", "*Update now*", "*Not now*" }.All(word => door.Screen.Contains(word, StringComparison.Ordinal))
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("D139", UpdateDoor.Reason);
+        Assert.Same(UpdateDoor, Controls.Single(row => row.Hook == "useSayUpdate").Answer);
+    }
+
+    /// <summary>
+    /// UPDATE1f: a hook no Settings domain presses is answered for one by one, and only while the bridge still exports it, it
+    /// still changes something, and no domain presses it, where it would be read as a control instead.
+    /// </summary>
+    [Fact]
+    public void Every_hook_answered_outside_settings_still_changes_something_no_domain_presses()
+    {
+        var hooks = BridgeHooks();
+        var pressed = Domains().Values
+            .SelectMany(files => files)
+            .SelectMany(file => HookUse().Matches(File.ReadAllText(file)).Select(match => match.Groups[1].Value))
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var (hook, _) in Elsewhere)
+        {
+            Assert.True(hooks.TryGetValue(hook, out var read) && read.Changes, $"`{hook}` is answered for as a hook that changes something, and the bridge exports none.");
+            Assert.False(pressed.Contains(hook), $"`{hook}` is pressed by a Settings domain now, so it is a control there, not answered here.");
+        }
+
+        Assert.Equal(Elsewhere.Length, Elsewhere.Select(row => row.Hook).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>
     /// TRACE1: the headless host's <c>trace</c> is exempt from Ask Daoris (D110 §4, D143) while its usage spells it: a read that
     /// changes nothing, with no kind of that name to take it.
     /// </summary>
@@ -544,6 +619,20 @@ public sealed partial class HelpCoverageTests
         Assert.True(hooks.TryGetValue("useArchiveSessions", out var archive) && archive.Changes);
         Assert.Null(HelpProposalKinds.Find("session"));
         Assert.Contains("SESSUX1h", SessionArchiveDoor.Reason);
+    }
+
+    /// <summary>
+    /// UPDATE1e: a hook exported as a function is read as one exported as a constant is, whether it changes something
+    /// included, so the update's words on Settings → Driver are answered for rather than unseen.
+    /// </summary>
+    [Fact]
+    public void A_hook_exported_as_a_function_is_read_as_one_exported_as_a_constant_is()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useSayUpdate", out var say) && say.Changes);
+        Assert.True(hooks.TryGetValue("useUpdateState", out var state) && !state.Changes);
+        Assert.Contains("useSetNotify", hooks.Keys);
     }
 
     /// <summary>
@@ -671,7 +760,7 @@ public sealed partial class HelpCoverageTests
                     .SelectMany(union => Quoted().Matches(union.Groups[1].Value).Select(action => action.Groups[1].Value))
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
-                hooks[exported.Groups[1].Value] = (Changes().IsMatch(part), actions);
+                hooks[exported.Groups["hook"].Value] = (Changes().IsMatch(part), actions);
             }
         }
 
@@ -731,7 +820,9 @@ public sealed partial class HelpCoverageTests
     [GeneratedRegex(@"\n(?=export |const |function |type |/\*\*|//)")]
     private static partial Regex TopLevel();
 
-    [GeneratedRegex(@"^export const (use[A-Z]\w*)\s*=")]
+    // Both forms a hook is exported in (UPDATE1e): `export const useX =` and `export function useX(`, which the update's
+    // bridge uses, and which this read alone missed, leaving Settings → Driver's three words answered for nowhere.
+    [GeneratedRegex(@"^export (?:const (?<hook>use[A-Z]\w*)\s*=|function (?<hook>use[A-Z]\w*)\s*[(<])")]
     private static partial Regex ExportedHook();
 
     [GeneratedRegex(@"useMutation\(|\buse[A-Z]\w*Change\b")]

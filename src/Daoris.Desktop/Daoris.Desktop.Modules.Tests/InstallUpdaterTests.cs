@@ -70,6 +70,8 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Equal(UpdateStates.None, updater.Look().State);
         Assert.False(updater.Draining);
         Assert.Null(updater.State.Staged);
+        // No journal: no swap to tell of.
+        Assert.Null(updater.State.Last);
     }
 
     [Fact]
@@ -242,6 +244,57 @@ public sealed class InstallUpdaterTests : Bridge
         using var later = Updater();
         later.Started();
         Assert.Null(later.State.Outcome);
+    }
+
+    /// <summary>
+    /// UPDATE1d (D139's UPDATE1b note, D50): the last swap is the journal's record, told or not, on every state, apart from
+    /// the outcome the banner says once. It outlives the banner's *Dismiss* and a later start that says nothing, as the
+    /// terminal's plain <c>daoris-driver update</c> still says it from the same journal.
+    /// </summary>
+    [Fact]
+    public void The_last_swap_outlives_a_dismissal_and_a_later_start_told_or_not()
+    {
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.RolledBack, "b1", "0.0.2", "def5678", Now, [], Reason: "exited", Detail: "it ended before it came up."));
+        var last = new UpdateOutcome(SwapPhase.RolledBack, "b1", "0.0.2", "def5678", "exited", "it ended before it came up.");
+        using var updater = Updater();
+
+        updater.Started();
+        Assert.Equal(last, updater.State.Outcome);
+        Assert.Equal(last, updater.State.Last);
+
+        var dismissed = updater.Dismiss();
+        Assert.Null(dismissed.Outcome);
+        Assert.Equal(last, dismissed.Last);
+
+        // Told by the start before, so this one says nothing: the swap is still the last one.
+        using var later = Updater();
+        later.Started();
+        Assert.Null(later.State.Outcome);
+        Assert.Equal(last, later.State.Last);
+    }
+
+    /// <summary>
+    /// UPDATE1d: a swap this start confirmed is the last swap, installed, as the start says it, and stays so once the
+    /// launcher finishes; a journal still under way names no ending, so it is no last swap yet.
+    /// </summary>
+    [Fact]
+    public void A_swap_this_start_confirmed_is_the_last_swap_installed_and_one_under_way_is_none_yet()
+    {
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.2", "def5678", Now, []));
+        var installed = new UpdateOutcome(SwapPhase.Installed, "b1", "0.0.2", "def5678", null, null);
+        using var updater = Updater();
+
+        updater.Started();
+        Assert.Equal(SwapPhase.Confirmed, StagedBuild.ReadJournal(_install)!.Phase);
+        Assert.Equal(installed, updater.State.Last);
+
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.Installed, "b1", "0.0.2", "def5678", Now, [], Pid: 4242, Confirmed: true, Told: true));
+        Assert.Equal(installed, updater.Look().Last);
+
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Swapping, "b2", "0.0.3", null, Now, []));
+        Assert.Null(updater.Look().Last);
     }
 
     /// <summary>
