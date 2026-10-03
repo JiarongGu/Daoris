@@ -272,9 +272,12 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(("account-1", "the `stub` account `account-1` is not signed in"), (selection.Rotated!.From, selection.Rotated.Why));
     }
 
-    /// <summary>With every account of the order signed out and none cooling, the default's own refusal names the fix.</summary>
+    /// <summary>
+    /// With every account of the order signed out and none cooling, the refusal names each and its sign-in (TOOL6g), where
+    /// the default's own sentence named only the default's.
+    /// </summary>
     [Fact]
-    public async Task An_order_all_signed_out_is_refused_with_the_default_s_own_sentence()
+    public async Task An_order_all_signed_out_is_refused_naming_each_account_and_its_sign_in()
     {
         var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
 
@@ -282,6 +285,8 @@ public sealed class AccountRotationTickTests : IDisposable
 
         Assert.False(selection.Allowed);
         Assert.Contains("`daoris agent login stub --profile account-1`", selection.Refusal);
+        Assert.Contains("`daoris agent login stub --profile account-2`", selection.Refusal);
+        Assert.Equal(["account-1", "account-2"], selection.SignedOut!.Accounts);
         Assert.Null(selection.Cooling);
     }
 
