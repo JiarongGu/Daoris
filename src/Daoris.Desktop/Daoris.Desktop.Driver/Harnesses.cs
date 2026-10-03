@@ -979,6 +979,9 @@ public static class HarnessKeys
         held[account] = trimmed;
         Write(home, keys);
 
+        // Marked as a sign-in is (TOOL6g): a name a removed account had carries no word that it is signed out.
+        ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(home, harness, account), DateTimeOffset.UtcNow);
+
         // A new key into an account ends a cool-off its name still carried (TOOL4d, D125 §2.3): whatever was spent, it
         // was not this key. Never the reason a key is not kept.
         try
@@ -1077,13 +1080,30 @@ public static class HarnessProbe
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(20);
 
     /// <summary>Probe one harness: present, version, and every profile's login state.</summary>
+    /// <remarks>
+    /// <para>🔴 <b>One status question per account at a time</b> (TOOL6g): each is asked under that account's
+    /// <see cref="ProbeLock"/>, so two probes, two adapters onto one account, or the CLI's listing never ask one account at
+    /// once. The agent may refresh an expired token to answer, and two refreshes with one single-use refresh token signed
+    /// every account on the install out.</para>
+    /// <para><b>Never an account a session of Daoris's runs on</b> (<paramref name="busy"/>): that session's own process
+    /// refreshes its token, so the probe keeps out, and says what <paramref name="prior"/> said of it, or unknown.</para>
+    /// <para>🔴 <b>The tool's own sign-in only when asked</b> (<paramref name="own"/>): it is the person's own, which their
+    /// terminal and their other sessions run on, so only a person's press asks it (TOOL6g). Otherwise
+    /// <paramref name="prior"/>'s word stands, or unknown.</para>
+    /// </remarks>
+    /// <param name="busy">Whether a session of Daoris's runs on an account now, by its name, or null for the tool's own sign-in.</param>
+    /// <param name="prior">The last report of this harness, whose word on a busy account, and on the own sign-in not asked, stands.</param>
+    /// <param name="own">Whether to ask the tool's own sign-in: a person's press, never the loop.</param>
     public static async Task<HarnessReport> ProbeAsync(
         string adapter,
         HarnessToolchain toolchain,
         IReadOnlyList<string>? command,
         HarnessSettings settings,
         string home,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Func<string?, bool>? busy = null,
+        HarnessReport? prior = null,
+        bool own = true)
     {
         // 🔴 Rule 4, applied HERE and not only where a session spawns: the explicit command, then the
         // managed pin, then PATH. A presence answer computed from PATH while a pin is set is an answer
@@ -1137,17 +1157,24 @@ public static class HarnessProbe
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
             var (login, account) = present
-                ? await LoginAsync(resolved, toolchain, profileHome, isManaged, ct, key).ConfigureAwait(false)
+                ? await LoginAsync(
+                    resolved, toolchain, profileHome, isManaged, ct, key, ProbeLock.PathOf(home, owner, name),
+                    busy is null ? null : () => busy(name),
+                    Kept(prior?.Profiles.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))).ConfigureAwait(false)
                 : (LoginState.Unknown, null);
             profiles.Add(new ProfileReport(
                 name, profileHome, login, account, held is null ? null : HarnessKeys.Handle(held)));
         }
 
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
-        // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it.
-        var (own, ownAccount) = present
-            ? await LoginAsync(resolved, toolchain, profileHome: null, isManaged, ct).ConfigureAwait(false)
-            : (LoginState.Unknown, null);
+        // answers about wherever it keeps its own credential. Read-only; Daoris never logs into it, and
+        // asks it only at a person's press (TOOL6g).
+        var keptOwn = (prior?.OwnLogin ?? LoginState.Unknown, prior?.OwnAccount);
+        var (ownLogin, ownAccount) = !present ? (LoginState.Unknown, null)
+            : !own ? keptOwn
+            : await LoginAsync(
+                resolved, toolchain, profileHome: null, isManaged, ct, lockPath: ProbeLock.PathOf(home, owner, null),
+                busy: busy is null ? null : () => busy(null), kept: keptOwn).ConfigureAwait(false);
 
         return new HarnessReport(
             adapter,
@@ -1157,18 +1184,25 @@ public static class HarnessProbe
             toolchain.ProfileVariable,
             settings.Defaults.TryGetValue(owner, out var machine) ? machine : null,
             profiles,
-            own,
+            ownLogin,
             ownAccount);
     }
+
+    /// <summary>What the last report said of an account a session now runs on: its word stands, or unknown where it said none.</summary>
+    private static (LoginState Login, string? Account) Kept(ProfileReport? said) =>
+        said is null ? (LoginState.Unknown, null) : (said.Login, said.Account);
 
     /// <summary>
     /// What the harness says about logging in to ONE home — a profile's, or its own when
     /// <paramref name="profileHome"/> is null — asked of the binary a spawn would run. What a sign-in
     /// asks when it ends (D66 §3), without probing every other account on the machine to learn it.
     /// </summary>
+    /// <param name="lockPath">The account's <see cref="ProbeLock"/>, asked under it (TOOL6g); null asks with none.</param>
+    /// <param name="key">An account that is a key, asked with it as a session runs it (AGT3); null for a sign-in.</param>
     public static async Task<(LoginState Login, string? Account)> AskLoginAsync(
         string adapter, HarnessToolchain toolchain, IReadOnlyList<string>? command,
-        HarnessSettings settings, string home, string? profileHome, CancellationToken ct = default)
+        HarnessSettings settings, string home, string? profileHome, CancellationToken ct = default, string? lockPath = null,
+        IReadOnlyDictionary<string, string>? key = null)
     {
         var resolved = toolchain.Command(command);
         if (command is not { Count: > 0 }
@@ -1181,10 +1215,10 @@ public static class HarnessProbe
             }
 
             resolved = [managed, .. toolchain.Binary.Skip(1)];
-            return await LoginAsync(resolved, toolchain, profileHome, managed: true, ct).ConfigureAwait(false);
+            return await LoginAsync(resolved, toolchain, profileHome, managed: true, ct, key, lockPath).ConfigureAwait(false);
         }
 
-        return await LoginAsync(resolved, toolchain, profileHome, managed: false, ct).ConfigureAwait(false);
+        return await LoginAsync(resolved, toolchain, profileHome, managed: false, ct, key, lockPath).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1192,11 +1226,25 @@ public static class HarnessProbe
     /// answer is yes — <b>who</b> (D66 §3). A real harness volunteers an organisation and a
     /// subscription tier alongside both, and neither is Daoris's to hold, log, or put on a roster.
     /// </summary>
+    /// <param name="lockPath">
+    /// The home's <see cref="ProbeLock"/> (TOOL6g): asked only while holding it, and not at all, unknown, when another holder
+    /// keeps it past its patience. Null asks with no lock.
+    /// </param>
+    /// <param name="busy">
+    /// Whether a session of Daoris's runs on the home, asked once the lock is held, so a start that took the lock to count
+    /// itself is never asked about in between (TOOL6g); <paramref name="kept"/> is then the answer, and nothing runs.
+    /// </param>
     private static async Task<(LoginState Login, string? Account)> LoginAsync(
         IReadOnlyList<string> resolved, HarnessToolchain toolchain, string? profileHome, bool managed,
-        CancellationToken ct, IReadOnlyDictionary<string, string>? account = null)
+        CancellationToken ct, IReadOnlyDictionary<string, string>? account = null, string? lockPath = null,
+        Func<bool>? busy = null, (LoginState Login, string? Account) kept = default)
     {
         if (toolchain.LoginCheck is not { } question) return (LoginState.Unknown, null);
+
+        // One status question per account at a time, in this process and across them (TOOL6g).
+        await using var held = lockPath is null ? null : await ProbeLock.TakeAsync(lockPath, ct: ct).ConfigureAwait(false);
+        if (lockPath is not null && held is null) return (LoginState.Unknown, null);
+        if (busy?.Invoke() == true) return kept;
 
         var answer = await AskAsync(resolved, question.Arguments, profileHome, toolchain, ct, managed, account)
             .ConfigureAwait(false);
@@ -1514,8 +1562,9 @@ public sealed record StartWiring(
 /// <para><b>Probes are cached, and a refusal is re-checked before it is given.</b> Detection spawns a
 /// process, so doing it every tick for every quest would be absurd; but a cached "absent" or "logged
 /// out" would keep refusing after the person did exactly what the refusal told them to. So a yes is
-/// trusted and a no is asked again — which costs one process on the path that was about to fail
-/// anyway.</para>
+/// trusted and a no is asked again: an absent agent at once, and a signed-out account on its own, once
+/// its word is <see cref="SignedOutAskedAgain"/> old (TOOL6g), since a start held on it is tried at
+/// every look.</para>
 ///
 /// <para><b>The wiring file is re-read, never held.</b> Same rule as `driver.json`: the file is the
 /// truth and the surfaces are editors over it (D50), so a profile default changed from a terminal
@@ -1756,20 +1805,137 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// One harness as this machine has it. Cached after the first look; <paramref name="refresh"/>
     /// asks again, which is what the roster surface's refresh and every refusal do.
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>One probe of a harness at a time</b> (TOOL6g): a caller that finds one in flight takes its answer, so the
+    /// page's roster, a start's walk and a wiring panel missing the cache together at start run one probe, not three. Each
+    /// account inside it is asked under its <see cref="ProbeLock"/>, and one a session of Daoris's runs on is not asked.
+    /// The tool's own sign-in is asked only where <paramref name="own"/> says a person pressed for it; otherwise the last
+    /// word on it stands.
+    /// </remarks>
+    /// <param name="own">Whether to ask the tool's own sign-in too: the roster's refresh and a sign-in's end, never the loop.</param>
     public async Task<HarnessReport?> ReportAsync(
-        string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default)
+        string adapter, DriverConfig config, bool refresh = false, CancellationToken ct = default, bool own = false)
     {
         var resolved = adapters.Resolve(adapter);
         if (resolved.Toolchain is not { } toolchain) return null;
 
         if (!refresh && _seen.TryGetValue(resolved.Name, out var cached)) return cached;
 
-        var report = await HarnessProbe.ProbeAsync(
-            resolved.Name, toolchain, config.Commands.GetValueOrDefault(resolved.Name),
-            Settings, Home, ct).ConfigureAwait(false);
+        Task<HarnessReport> probe;
+        var flight = $"{resolved.Name}/{(own ? "own" : "")}";
+        lock (_probing)
+        {
+            if (!_probing.TryGetValue(flight, out probe!))
+            {
+                var name = resolved.Name;
+                var command = config.Commands.GetValueOrDefault(name);
+                var owner = toolchain.Owner(name);
+                _seen.TryGetValue(name, out var prior);
+                // Its own task, never a caller's token: a caller that stops waiting leaves the others their answer.
+                probe = Task.Run(async () =>
+                {
+                    var report = await HarnessProbe.ProbeAsync(
+                        name, toolchain, command, Settings, Home, CancellationToken.None,
+                        busy: account => Busy(owner, account), prior: prior, own: own).ConfigureAwait(false);
+                    _seen[name] = report;
+                    _seenAt[name] = Clock();
+                    return report;
+                }, CancellationToken.None);
+                _probing[flight] = probe;
+                var started = probe;
+                _ = started.ContinueWith(_ =>
+                {
+                    lock (_probing)
+                    {
+                        if (_probing.TryGetValue(flight, out var current) && current == started) _probing.Remove(flight);
+                    }
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }
+        }
 
-        _seen[resolved.Name] = report;
-        return report;
+        return await probe.WaitAsync(ct).ConfigureAwait(false);
+    }
+
+    // The probe in flight for each harness, by name and whether it asks the own sign-in (TOOL6g): one at a time, its answer
+    // shared by every caller that came. Two flights of one harness never ask one account at once: each account has its lock.
+    private readonly Dictionary<string, Task<HarnessReport>> _probing = new(StringComparer.OrdinalIgnoreCase);
+
+    // When each harness's report was taken, so a cached word that an account is signed out is asked again only so often.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _seenAt =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// How long the agent's word that an account is signed out is believed when nothing says it changed (TOOL6g): a
+    /// backstop for a sign-in no door of Daoris's made. Before TOOL6g, a start held on a signed-out account asked every
+    /// account's status, and the tool's own sign-in's, at every look.
+    /// </summary>
+    public static readonly TimeSpan SignedOutAskedAgain = TimeSpan.FromHours(1);
+
+    // When one account's status was last asked on its own (TOOL6g), by owner and account.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _askedAt =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whether the agent's word that an account is signed out is asked again, that account alone (TOOL6g): once per sign-out.
+    /// The word is the later of its harness's last report and its own last question; it stands until a sign-in or a key
+    /// into the account at the terminal marks it (<see cref="ProbeLock.SignedInPathOf"/>) after the word, or until the
+    /// word is <see cref="SignedOutAskedAgain"/> old. A sign-in on the screen and the roster's refresh are the person's
+    /// press, which asks the whole roster again.
+    /// </summary>
+    private bool AskAgain(string adapter, string owner, string account)
+    {
+        var said = _seenAt.TryGetValue(adapter, out var report) ? report : DateTimeOffset.MinValue;
+        if (_askedAt.TryGetValue(AccountKey(owner, account), out var alone) && alone > said) said = alone;
+        return ProbeLock.SignedIn(Home, owner, account) is { } marked && marked > said
+               || Clock() - said >= SignedOutAskedAgain;
+    }
+
+    /// <summary>
+    /// Ask one account's status again, under its lock, with its key where it is a key (AGT3), and keep the answer in its
+    /// harness's report, so the screen's next start (<see cref="Next"/>) reads it too (TOOL6g).
+    /// </summary>
+    private async Task<LoginState> AskOneAsync(
+        string adapter, HarnessToolchain toolchain, string owner, string account, DriverConfig config, CancellationToken ct)
+    {
+        var key = toolchain.KeyVariable is { Length: > 0 } variable && HarnessKeys.Of(Home, owner, account) is { } held
+            ? new Dictionary<string, string> { [variable] = held }
+            : null;
+        var (login, who) = await HarnessProbe.AskLoginAsync(
+            adapter, toolchain, config.Commands.GetValueOrDefault(adapter), Settings, Home,
+            HarnessSettings.ProfileHome(Home, owner, account), ct, ProbeLock.PathOf(Home, owner, account), key).ConfigureAwait(false);
+        // A mark this question answered is spent, whatever the file's clock says against the roster's.
+        var asked = Clock();
+        if (ProbeLock.SignedIn(Home, owner, account) is { } marked && marked > asked) asked = marked;
+        _askedAt[AccountKey(owner, account)] = asked;
+
+        if (_seen.TryGetValue(adapter, out var report))
+        {
+            _seen[adapter] = report with
+            {
+                Profiles = [.. report.Profiles.Select(profile =>
+                    string.Equals(profile.Name, account, StringComparison.OrdinalIgnoreCase) ? profile with { Login = login, Account = who } : profile)],
+            };
+        }
+
+        return login;
+    }
+
+    /// <summary>
+    /// Whether a session of Daoris's runs on an account of <paramref name="owner"/>'s now (TOOL6g): a running record the last
+    /// look read, or a start chosen on it since; <paramref name="account"/> null is the tool's own sign-in. Its own process
+    /// may refresh the account's token, so no probe asks it then.
+    /// </summary>
+    internal bool Busy(string owner, string? account)
+    {
+        lock (_load)
+        {
+            return _looked.Any(each => each.Session.Running
+                                       && string.Equals(each.Owner, owner, StringComparison.OrdinalIgnoreCase)
+                                       && string.Equals(each.Session.Profile ?? "", account ?? "", StringComparison.OrdinalIgnoreCase))
+                   || (account is not null && _chosen.Any(start =>
+                       string.Equals(start.Owner, owner, StringComparison.OrdinalIgnoreCase)
+                       && string.Equals(start.Account, account, StringComparison.OrdinalIgnoreCase)));
+        }
     }
 
     /// <summary>
@@ -1787,7 +1953,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var asker = AccountAgent(resolved.Name, toolchain);
         return await HarnessProbe.AskLoginAsync(
             asker.Name, asker.Toolchain, config.Commands.GetValueOrDefault(asker.Name), Settings, Home,
-            HarnessSettings.ProfileHome(Home, owner, profile), ct).ConfigureAwait(false);
+            HarnessSettings.ProfileHome(Home, owner, profile), ct, ProbeLock.PathOf(Home, owner, profile)).ConfigureAwait(false);
     }
 
     /// <summary>The toolchain that answers for this adapter's accounts (AGT7) — its owner's, when carried.</summary>
@@ -1845,7 +2011,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 continue;
             }
 
-            if (await ReportAsync(name, config, refresh, ct).ConfigureAwait(false) is { } report)
+            // The tool's own sign-in is asked only at the person's press (TOOL6g): it is theirs, and their terminal and
+            // their other sessions run on it.
+            if (await ReportAsync(name, config, refresh, ct, own: refresh).ConfigureAwait(false) is { } report)
             {
                 reports.Add(report);
             }
@@ -2078,19 +2246,18 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
         // The walk (TOOL4f, D125 §3.3): the first account still ready once the agent has said who is signed in, in the
         // order the start tries them. Signed out (a key gone included) is walked past as cooling and refused are.
-        var asked = false;
         var at = -1;
         for (var i = 0; i < states.Count && at < 0; i++)
         {
             if (!states[i].IsReady) continue;
             var account = states[i].Account!;
             var login = LoginOf(accounts, account);
-            if (login == LoginState.Out && !asked)
+            if (login == LoginState.Out && AskAgain(asker.Name, owner, account))
             {
-                // Same re-ask as above, and for the same reason: the person may have just signed in. Once per start.
-                accounts = await ReportAsync(asker.Name, config, refresh: true, ct).ConfigureAwait(false);
-                asked = true;
-                login = LoginOf(accounts, account);
+                // Asked again, as the install above is, since the person may have signed in since (TOOL6g): that account
+                // alone, and only once the word is `SignedOutAskedAgain` old. Before, a start held on a signed-out account
+                // asked every account's status at every look.
+                login = await AskOneAsync(asker.Name, asker.Toolchain, owner, account, config, ct).ConfigureAwait(false);
             }
 
             if (login == LoginState.Out)
@@ -2121,8 +2288,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 ? new Dictionary<string, string> { [variable] = held }
                 : null;
 
-        // Counted from here on as one of this account's sessions, so the next start chosen before the next look spreads.
-        if (counts) Chose(owner, runs);
+        // Counted from here on as one of this account's sessions, so the next start chosen before the next look spreads. And
+        // busy from here on (TOOL6g): a status question another caller is asking this account now is waited out first, and
+        // no probe asks it while the session's own process may refresh its token.
+        if (counts)
+        {
+            await using (await ProbeLock.TakeAsync(ProbeLock.PathOf(Home, owner, runs), ct: ct).ConfigureAwait(false))
+            {
+                Chose(owner, runs);
+            }
+        }
 
         var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key);
         if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
@@ -2827,6 +3002,8 @@ public static class HarnessActions
             .ConfigureAwait(false);
         if (code == 0)
         {
+            // And it is marked, so a start held on the account signed out asks it again (TOOL6g).
+            ProbeLock.MarkSignedIn(profileHome, DateTimeOffset.UtcNow);
             try
             {
                 AccountCooling.SignedIn(profileHome, DateTimeOffset.UtcNow);
