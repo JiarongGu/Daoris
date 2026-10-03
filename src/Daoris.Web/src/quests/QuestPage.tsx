@@ -9,6 +9,7 @@ import { ChainStrip } from '../map/ChainStrip';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, type IconName, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
+import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
 import { Note } from '../work/Note';
 import { QuestRequirements } from './Requirements';
 import { TrustAsk } from '../work/TrustAsk';
@@ -86,8 +87,13 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work,
+  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, trace,
 }: {
+  /**
+   * How it came to be (TRACE1b, D143, D50), folded at the foot of its page: the page's organism holds the fold and the read.
+   * Absent in a browser, which has no driver to read this machine's records (D47 §4).
+   */
+  trace?: TraceDoor;
   quest: Quest;
   /** Its lanes as its repository declares them (D115 §2.2), each named where its registration says. */
   lanes?: string;
@@ -578,6 +584,20 @@ export function QuestPage({
           {onAttend && <Button className="mt-2.5" onClick={() => press('session')}>{t('work.open')}</Button>}
           <p className="mt-2 mb-0 text-small text-ink-faint">{t('quests.session.hint')}</p>
         </section>
+      )}
+
+      {trace && (
+        /* How it came to be (TRACE1b): folded, so nothing is read until the person opens it. Its sessions open in
+           Sessions, its other quests here and its ask on its page, each where this page already has the door. */
+        <HowItCameToBe
+          className="mt-5"
+          kind="quest"
+          id={quest.id}
+          {...trace}
+          onSession={onAttend}
+          onQuest={onOpenQuest}
+          onAsk={onOpenAsk}
+        />
       )}
     </ViewMain>
   );

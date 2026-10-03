@@ -578,6 +578,45 @@ describe('the Work frame', () => {
     expect(onOpenQuest).toHaveBeenCalledWith('def456');
   });
 
+  /**
+   * TRACE1b (D143, D50): how the attended session came to be, folded on its page and read through `TRACE` only on the
+   * press, for that session; its quest opens where quests are read.
+   */
+  it('folds how the attended session came to be, reads it only on the press, and opens its quest', async () => {
+    const chain = {
+      chain: {
+        kind: 'session', id: 's1a2b3c4', unread: [],
+        links: [{
+          kind: 'quest',
+          quest: {
+            id: 'abc123', source: 'quests', address: 'engine', title: 'Expose a streaming budget', status: 'Taken',
+            from: 'game', requirements: [], then: [], records: [{ id: 's1a2b3c4', state: 'working' }],
+          },
+        }],
+      },
+      unread: [],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TRACE' ? chain : DRIVER_STATE));
+    const onOpenQuest = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onOpenQuest={onOpenQuest} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const section = await screen.findByRole('region', { name: 'How this came to be' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRACE', expect.anything());
+    await userEvent.click(within(section).getByRole('button', { name: /How this came to be/ }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRACE', { payload: { kind: 'session', id: 's1a2b3c4' } }));
+    expect(await within(section).findByText(/On no ask/)).toBeInTheDocument();
+    await userEvent.click(within(section).getByRole('button', { name: 'Quest #abc123' }));
+    expect(onOpenQuest).toHaveBeenCalledWith('abc123');
+  });
+
   it('lets the head and the composer follow the centre\'s width, however wide the window', async () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');

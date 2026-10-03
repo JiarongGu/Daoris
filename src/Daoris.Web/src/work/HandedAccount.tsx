@@ -21,17 +21,23 @@ import { type HandedLine, type HandedRow, handedView } from './handed';
  *
  * A molecule: handed the account, it reads the catalogue and nothing else.
  */
-export function HandedAccount({ account, defaultOpen = false }: {
+export function HandedAccount({ account, defaultOpen = false, ruled = true }: {
   /** The account the target's event keeps, or null for one handed before the driver kept one. */
   account?: InstructionAccount | null;
   /** Whether the table starts open: a story's or a test's. The person's press opens it on the page. */
   defaultOpen?: boolean;
+  /**
+   * The rule above it, which sets it apart at the foot of the target's card; a trace's step draws it under its own line
+   * instead (TRACE1b), where a rule would read as the step's end.
+   */
+  ruled?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(defaultOpen);
+  const rule = ruled ? 'mt-1.5 border-t border-line pt-1.5' : 'mt-0.5';
 
   if (!account) {
-    return <p className="m-0 mt-1.5 border-t border-line pt-1.5 text-meta text-ink-faint">{t('work.handed.notKept')}</p>;
+    return <p className={cn('m-0 text-meta text-ink-faint', rule)}>{t('work.handed.notKept')}</p>;
   }
 
   const view = handedView(t, (key) => i18n.exists(key), account, i18n.language);
@@ -41,7 +47,7 @@ export function HandedAccount({ account, defaultOpen = false }: {
   ].join(' · ');
 
   return (
-    <section aria-label={t('work.handed.label')} className="mt-1.5 border-t border-line pt-1.5">
+    <section aria-label={t('work.handed.label')} className={rule}>
       <button
         type="button"
         aria-expanded={open}

@@ -8,6 +8,7 @@ import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { Resolution } from './AwaitingPerson';
+import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Relations } from './relations';
 import { SessionHead } from './SessionHead';
 import { SessionRelations } from './SessionRelations';
@@ -47,8 +48,13 @@ const CHAIN_WHOLE = 'daoris.chainWhole';
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
-  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, headed = false, goAheads, onGoAhead,
+  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, headed = false, goAheads, onGoAhead, trace,
 }: {
+  /**
+   * How it came to be (TRACE1b, D143, D50), folded at the foot of its record, and the doors its chain opens by id: the page
+   * holds the fold and the read. Absent where nothing can read the trace: a browser, which has no driver.
+   */
+  trace?: TraceDoor & { onSession?: (id: string) => void; onQuest?: (id: string) => void; onAsk?: (id: string) => void };
   /** The go-aheads it asked on its quest's ask, shown in the head while it is parked (KNOWUSE1a2). */
   goAheads?: GoAhead[];
   /** Passed straight through to the head: one of them answered, and the park with it (KNOWUSE1a2). */
@@ -145,6 +151,8 @@ export function AttendedSession({
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
       {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
+      {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
+      {trace && <HowItCameToBe kind="session" id={session.id} {...trace} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
           here on a narrow window while the dock was hidden there; FRAME6 keeps the dock at every width,
           and the copy here drew it twice. Only a window with no dock carries it. */}

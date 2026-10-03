@@ -223,3 +223,51 @@ describe('trusting a folder the driver is holding (D73)', () => {
     expect(rule).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rule', id: 'p0000002', where: 'session i9n8t7k6' }));
   });
 });
+
+/**
+ * TRACE1b (D143, D50): how a quest came to be, the screen's door to `daoris-driver trace`. Its section opens folded and asks
+ * the driver nothing; the press reads this quest's chain through `TRACE`, and the page draws what the route answered.
+ */
+describe('how a quest came to be', () => {
+  const CHAIN = {
+    chain: {
+      kind: 'quest', id: 'abc123', unread: [],
+      links: [
+        { kind: 'ask', ask: { id: 'a1', source: 'asks', missing: 'not-found', namedBy: { kind: 'quest', id: 'abc123' }, quests: [] } },
+        {
+          kind: 'quest',
+          quest: {
+            id: 'abc123', source: 'quests', address: 'engine', title: 'Expose a streaming budget', status: 'Open', ask: 'a1',
+            from: 'ask #a1', requirements: [], then: [], records: [],
+          },
+        },
+      ],
+    },
+    unread: [],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TRACE' ? CHAIN : DRIVER_STATE));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    window.localStorage.clear();
+  });
+
+  it('opens folded and reads nothing, then the press reads this quest’s chain and draws it', async () => {
+    show(<QuestsView notify={() => {}} />);
+
+    const page = await chooseRow('Expose a streaming budget');
+    const section = within(page).getByRole('region', { name: 'How this came to be' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRACE', expect.anything());
+
+    await userEvent.click(within(section).getByRole('button', { name: /How this came to be/ }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRACE', { payload: { kind: 'quest', id: 'abc123' } }));
+    expect(await within(section).findByText(/Ask #a1 is not on the service/)).toBeInTheDocument();
+    expect(within(section).getByRole('button', { name: /How this came to be/ })).toHaveTextContent('ask #a1 → quest #abc123');
+  });
+});

@@ -16,13 +16,14 @@ import {
 } from './quests/records';
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import {
-  retryNotice, useConsidered, useDriver, useNudge, useRemotes, useRetryQuest, useSetHold, useTrustFolder, useUntrusted,
+  retryNotice, useConsidered, useDriver, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace, useTrustFolder, useUntrusted,
   useWorkPlan,
 } from './shell';
 import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
 import { ListMore } from './work/ListPane';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
+import type { TraceDoor } from './work/HowItCameToBe';
 import type { ViewLayout } from './work/ViewFrame';
 import { useWorkActs } from './work/workActs';
 
@@ -138,6 +139,10 @@ export function useQuestsView({
   const work = useWorkPlan(item && 'quest' in item ? { scope: 'quest', id: item.quest } : null, { enabled: active });
   const wiring = useRemotes().data;
   const workActs = useWorkActs({ notify });
+  // How a quest came to be (TRACE1b): read only while its section is open, for the quest it was opened on, since the read
+  // takes every session record and quest. Another quest's page opens folded.
+  const [tracing, setTracing] = useState<string | null>(null);
+  const trace = useTrace('quest', tracing);
   // The last abandon's answer, for the quest it was of, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
   // Every query this view renders from — a session surface or driver bridge that fails silently is
@@ -317,8 +322,22 @@ export function useQuestsView({
         onAttend={attend}
         onOpenAsk={(id) => onChoose(askItem(id))}
         work={workDoor(quest)}
+        trace={traceDoor(quest)}
       />
     );
+  };
+
+  // What the page is handed of the trace: nothing in a browser, whose page has no driver to read this machine's records.
+  const traceDoor = (quest: Quest): TraceDoor | undefined => {
+    if (!trace.available) return undefined;
+    const open = tracing === quest.id;
+    return {
+      open,
+      onToggle: () => setTracing(open ? null : quest.id),
+      answer: open ? trace.query.data : undefined,
+      reading: open && trace.query.isPending,
+      refusal: open && trace.query.error ? sentence(trace.query.error) : null,
+    };
   };
 
   const shownQuest = item && 'quest' in item
