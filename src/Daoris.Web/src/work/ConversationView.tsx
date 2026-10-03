@@ -166,12 +166,15 @@ function TurnMeter({ turn }: { turn: Turn }) {
   const { tokens, took, firstAfter } = turn;
   const exact = (value?: number | null) => (typeof value === 'number' ? value.toLocaleString(i18n.language) : '—');
 
-  // Input is what the harness read this turn, however it arrived: new, from its cache, or into it.
-  const inputs = [tokens?.input, tokens?.cacheRead, tokens?.cacheWrite].filter((n): n is number => typeof n === 'number');
+  // METER1: "in" is what the harness read anew this turn, new or written to its cache. What it re-read from
+  // its cache is said apart: a long turn re-reads its whole context on every call, and summed into "in" it
+  // made 69M of a turn whose new input was 663K.
+  const inputs = [tokens?.input, tokens?.cacheWrite].filter((n): n is number => typeof n === 'number');
   const input = inputs.length > 0 ? inputs.reduce((sum, n) => sum + n, 0) : undefined;
   const line = [
     took !== undefined ? span(took) : null,
     input !== undefined ? t('work.meter.in', { tokens: compact(input) }) : null,
+    typeof tokens?.cacheRead === 'number' ? t('work.meter.cached', { tokens: compact(tokens.cacheRead) }) : null,
     typeof tokens?.output === 'number' ? t('work.meter.out', { tokens: compact(tokens.output) }) : null,
   ].filter((part): part is string => part !== null);
   if (line.length === 0) return null;

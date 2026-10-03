@@ -64,14 +64,16 @@ describe('ConversationView', () => {
       ev({ kind: 'message', text: 'on it', at: stamp(21) }),
     ], { live: true });
 
-    const first = screen.getByText('4.8s · 67.8K in · 80 out');
+    // METER1: what it read anew (new and written to its cache) is "in"; what it re-read from its cache is
+    // said apart, since a long turn re-reads its whole context on every call and would bury the rest.
+    const first = screen.getByText('4.8s · 16.7K in · 51.1K cached · 80 out');
     expect(screen.getByText('1s')).toBeTruthy();
     // The running turn has said nothing about itself yet.
     expect(screen.queryByText(/on it.*·/)).toBeNull();
 
     await userEvent.hover(first);
     expect((await screen.findAllByText(/the first answer came after 1\.5s/))[0]).toBeTruthy();
-    expect(screen.getAllByText(/4 new, 51,061 read from its cache, 16,717 written to it/)[0]).toBeTruthy();
+    expect(screen.getAllByText(/16,721 tokens in \(4 new, 16,717 written to its cache\), 51,061 read from its cache, and 80 out/)[0]).toBeTruthy();
   });
 
   /** REVIEW2: an edit's lines are the review's lines — highlighted in the file's own language, and signed. */
