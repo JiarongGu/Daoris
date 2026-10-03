@@ -86,6 +86,16 @@ public static class Observation
     };
 
     /// <summary>
+    /// How a session whose quest had closed ends after going on with the person's words (MSG1b, D137 §2.3): in the state it
+    /// had before it went on when it exits cleanly, <c>failed</c> otherwise. Its quest does not move, so its state says
+    /// nothing of it; and it cannot park, since it holds no quest (D83).
+    /// </summary>
+    /// <param name="before">The ended state it went on from, in the record's spelling.</param>
+    public static SessionConclusion WentOn(int exitCode, string before) => exitCode == 0
+        ? new(before, "it went on with your words and ended; its quest stays as it closed.")
+        : new("failed", $"it went on with your words and exited {exitCode}; its quest stays as it closed.");
+
+    /// <summary>
     /// Did the tool say its provider refused the account's credential (AGT3b)? Read from its own last
     /// words, by the pattern its toolchain declares; null declares none, and nothing is observed.
     /// </summary>

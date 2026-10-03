@@ -435,11 +435,15 @@ public sealed partial class AcpSession(
     /// The first prompt as text blocks, one each, in place of <paramref name="prompt"/>'s one (MSG1b, D137 §2.2): the person's
     /// words a record goes on with, each its own block in the order said. Null or empty sends <paramref name="prompt"/>.
     /// </param>
+    /// <param name="prompted">
+    /// Told once the first prompt is on the wire (MSG1b): the words it carries were taken by the session, where a refusal
+    /// before it, or a failure of the handshake, took nothing.
+    /// </param>
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
-        IReadOnlyList<string>? blocks = null)
+        IReadOnlyList<string>? blocks = null, Action? prompted = null)
     {
         _asked = asked;
         try
@@ -453,9 +457,16 @@ public sealed partial class AcpSession(
             inbox?.Attach(CancelTurnAsync, _takesWordsMidTurn
                 ? words => SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
                 : null);
+            Action? sent = inbox is null && prompted is null
+                ? null
+                : () =>
+                {
+                    inbox?.Flow();
+                    prompted?.Invoke();
+                };
             var stopReason = blocks is { Count: > 0 }
-                ? await SendPromptAsync(blocks, null, ct, sent: inbox is null ? null : inbox.Flow, words: null).ConfigureAwait(false)
-                : await PromptAsync(prompt, ct, sent: inbox is null ? null : inbox.Flow).ConfigureAwait(false);
+                ? await SendPromptAsync(blocks, null, ct, sent, words: null).ConfigureAwait(false)
+                : await PromptAsync(prompt, ct, sent).ConfigureAwait(false);
 
             // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
             // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends

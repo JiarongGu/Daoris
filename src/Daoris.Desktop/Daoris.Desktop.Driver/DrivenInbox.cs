@@ -72,12 +72,15 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     /// during its turn — its way of sending one (STEER1). What is held then is told with when it reaches the session; a
     /// word goes only once the door says the turn has begun (<see cref="Flow"/>), so none overtakes the prompt it follows.
     /// </summary>
-    /// <param name="interrupt">Stops the running turn and keeps the session.</param>
+    /// <param name="interrupt">
+    /// Stops the running turn and keeps the session; null where nothing can stop a turn and keep the session (the native
+    /// door's run, MSG1b), and *Send now* then stops nothing.
+    /// </param>
     /// <param name="deliver">
     /// Sends one word as a prompt now and completes with its answer; null where the agent takes no prompt during a turn,
     /// and every word waits for the turn's end.
     /// </param>
-    public void Attach(Func<Task> interrupt, Func<ChatMessage, Task<string>>? deliver = null)
+    public void Attach(Func<Task>? interrupt, Func<ChatMessage, Task<string>>? deliver = null)
     {
         lock (_gate)
         {
@@ -207,6 +210,32 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
 
         closing?.Invoke();
         return next;
+    }
+
+    /// <summary>
+    /// Every word held for the turn's end, in the order said — or, with none held and none on its way, none, and the inbox
+    /// closed in the same step (MSG1b): the native door goes on with all of them in one resumed run, its words joined.
+    /// </summary>
+    public IReadOnlyList<ChatMessage> TakeAllOrClose()
+    {
+        Action? closing = null;
+        List<ChatMessage> taken;
+        lock (_gate)
+        {
+            if (_closed) return [];
+            taken = [.. _held];
+            _held.Clear();
+            if (taken.Count == 0 && _sent.Count == 0)
+            {
+                _closed = true;
+                closing = _closing;
+            }
+
+            Publish();
+        }
+
+        closing?.Invoke();
+        return taken;
     }
 
     /// <summary>

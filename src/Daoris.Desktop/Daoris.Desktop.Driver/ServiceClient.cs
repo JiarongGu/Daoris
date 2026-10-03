@@ -285,6 +285,35 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Take the person's words off a record once a session took them (MSG1a's door, MSG1b): by their ids, so a word said
+    /// after the driver read the record stays for the next run; <paramref name="by"/> names the new session a fallback
+    /// handed them to. The service keeps each word said after the record ended on its ask as <c>reopened</c>. Whether they
+    /// were taken is an answer, never an exception: a refusal, or a host without the door (one older than MSG1a, or a shared
+    /// one), is false with a sentence saying which.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> TakenAsync(
+        string id, IReadOnlyList<string> said, string? by = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("said");
+            foreach (var word in said) writer.WriteStringValue(word);
+            writer.WriteEndArray();
+            if (by is not null) writer.WriteString("by", by);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/taken", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return (false, $"the service at {_base} has no door for the words a session took ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answered, "message") ?? "") : (false, Text(answered, "error") ?? payload);
+    }
+
+    /// <summary>
     /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>

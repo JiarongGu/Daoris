@@ -329,6 +329,40 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// An open quest whose last session could not go on with the person's words is started again, handed them (D137 §2.2):
+    /// a first start's instruction, since the quest is not yet anyone's, with their words quoted, verbatim, beneath it.
+    /// </summary>
+    [Fact]
+    public void An_open_quests_start_is_handed_the_words_its_session_could_not_go_on_with()
+    {
+        var target = new SessionTarget("q1", "Serve the report", "It needs a port.", "Asker", "engine", _tree, "http://localhost:5177")
+        {
+            PersonSaid = "Also log the port.\n\nAnd use 9090.",
+        };
+
+        var prompt = TargetPrompt.Compose(target);
+
+        Assert.Contains("First take the quest", prompt);
+        Assert.DoesNotContain("do not take it again", prompt);
+        Assert.Contains("could not go on with their words", prompt);
+        Assert.Contains("  > Also log the port.\n  >\n  > And use 9090.", prompt);
+        Assert.DoesNotContain("could not go on with their words", TargetPrompt.Compose(target with { PersonSaid = null }));
+    }
+
+    /// <summary>
+    /// A closed quest's session that went on with the person's words ends as its process does (D137 §2.3): as it was before
+    /// on a clean exit, failed otherwise, saying its quest stays as it closed.
+    /// </summary>
+    [Fact]
+    public void A_closed_quests_session_ends_as_it_was_or_failed()
+    {
+        Assert.Equal("completed", Observation.WentOn(0, "completed").State);
+        Assert.Equal("declined", Observation.WentOn(0, "declined").State);
+        var failed = Observation.WentOn(3, "completed");
+        Assert.Equal(("failed", "it went on with your words and exited 3; its quest stays as it closed."), (failed.State, failed.Note));
+    }
+
+    /// <summary>
     /// <c>session.reopened</c> (D137 §3.3): once per reopen taken up, from which state, whether its own conversation resumed,
     /// and why not by code. Never the words.
     /// </summary>

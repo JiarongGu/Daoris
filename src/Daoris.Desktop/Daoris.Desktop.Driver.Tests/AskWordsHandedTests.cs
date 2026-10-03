@@ -119,6 +119,18 @@ public sealed class AskWordsHandedTests
         }
     }
 
+    /// <summary>
+    /// Words said to a session after it ended, kept on the ask once a session took them (MSG1a's <c>reopened</c>), are said as
+    /// added after it ended (D137 §2.4), so a session handed them on knows they came after that session's work.
+    /// </summary>
+    [Fact]
+    public void A_word_said_to_a_session_after_it_ended_is_said_so()
+    {
+        var prompt = TargetPrompt.Compose(Target(Read(Word("asked", Sentence, 0), Word("reopened", "Also log the port.", 40, "s5", "q1"))));
+
+        Assert.Contains("- They added, after a session on quest `#q1` ended, 2026-10-01 09:40 UTC:\n\n  > Also log the port.", prompt);
+    }
+
     [Fact]
     public void Each_word_says_how_it_was_given_when_and_on_which_quest()
     {

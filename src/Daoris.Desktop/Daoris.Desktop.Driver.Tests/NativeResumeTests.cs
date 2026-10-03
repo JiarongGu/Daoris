@@ -92,6 +92,90 @@ public sealed class NativeResumeTests
         Assert.Equal("first", mapper.Conversation);
     }
 
+    /// <summary>
+    /// 🔴 Words held while a native run worked go on in its own conversation before the record concludes (MSG1b, D137 §2.1):
+    /// <c>claude -p &lt;words&gt; --resume &lt;kept id&gt;</c>, under the rules and servers the run before it was handed.
+    /// </summary>
+    [Fact]
+    public void Words_held_while_it_worked_resume_its_own_conversation_under_the_same_rules()
+    {
+        var info = Daoris.Driver.Driver.GoOnStart(
+            new ClaudeCodeAdapter(), Target(), ["claude"], "0b5e7c1a", "Also log the port.",
+            settings: "D:/daoris-data/sessions/s1.settings.json", servers: "D:/daoris-data/sessions/s1.mcp.json")!;
+
+        var arguments = info.ArgumentList.ToList();
+        Assert.Equal("Also log the port.", arguments[arguments.IndexOf("-p") + 1]);
+        Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
+        Assert.Equal("D:/daoris-data/sessions/s1.settings.json", arguments[arguments.IndexOf("--settings") + 1]);
+        Assert.Equal("D:/daoris-data/sessions/s1.mcp.json", arguments[arguments.IndexOf("--mcp-config") + 1]);
+        Assert.DoesNotContain(arguments, argument => argument.Contains("Fix the flaky gate"));
+    }
+
+    /// <summary>A door that cannot resume has no run to go on in: it holds no words, so nothing waits on it.</summary>
+    [Fact]
+    public void A_door_that_cannot_resume_goes_on_with_nothing()
+    {
+        Assert.Null(Daoris.Driver.Driver.GoOnStart(AdapterSet.Built().Resolve("stub"), Target(), ["node", "stub.mjs"], "abc", "go on", null, null));
+    }
+
+    /// <summary>
+    /// Every word held goes in one prompt, in the order said, joined by a blank line on the native door's argument (D137
+    /// §2.2), each with where its files are kept.
+    /// </summary>
+    [Fact]
+    public void The_words_held_are_one_argument_joined_by_a_blank_line()
+    {
+        var prompt = NativeWords.Prompt(
+        [
+            new ChatMessage("Also log the port.", []),
+            new ChatMessage("And read this.", [new KeptFile("trace.txt", "D:/daoris-data/attachments/trace.txt")]),
+        ]);
+
+        Assert.StartsWith("Also log the port.\n\nAnd read this.", prompt, StringComparison.Ordinal);
+        Assert.Contains("D:/daoris-data/attachments/trace.txt", prompt);
+    }
+
+    /// <summary>
+    /// The run that takes them opens with the driver's line, then the same words under the ids they were shown with while
+    /// they waited (D137 §3.1), the person's, so the page pairs what waited with where it was taken.
+    /// </summary>
+    [Fact]
+    public void The_run_that_takes_them_says_them_again_under_their_ids()
+    {
+        var opening = NativeWords.Opening(
+            "claude-code", [new ChatMessage("Also log the port.", []) { Id = "said-1" }, new ChatMessage("And 9090.", []) { Id = "said-2" }]);
+
+        Assert.Equal(SessionEventKind.Note, opening[0].Kind);
+        Assert.Contains("resumed on `claude-code`", opening[0].Text);
+        Assert.Equal(
+            [("said-1", "Also log the port."), ("said-2", "And 9090.")],
+            opening.Skip(1).Select(e => (e.Id, e.Text)));
+        Assert.All(opening.Skip(1), e => Assert.Equal(("user", "person"), (e.Kind, e.Origin)));
+    }
+
+    /// <summary>
+    /// A native run holds the person's words for its turn's end and nothing else: no turn can be stopped and the session
+    /// kept on this door, so *Send now* stops nothing, and the run takes every word held at once.
+    /// </summary>
+    [Fact]
+    public void A_native_runs_inbox_holds_words_for_its_end_and_hands_them_over_together()
+    {
+        var inbox = new DrivenInbox(_ => { });
+        var told = new List<DrivenReach>();
+        inbox.OnSaid((_, reach) => told.Add(reach));
+        inbox.Attach(interrupt: null);
+
+        Assert.True(inbox.Hold(new ChatMessage("Also log the port.", [])));
+        Assert.True(inbox.Hold(new ChatMessage("And 9090.", [])));
+
+        Assert.Equal(TurnStop.Nothing, inbox.SendNowAsync().GetAwaiter().GetResult());
+        Assert.Equal([DrivenReach.TurnEnd, DrivenReach.TurnEnd], told);
+        Assert.Equal(["Also log the port.", "And 9090."], inbox.TakeAllOrClose().Select(word => word.Text));
+        Assert.Empty(inbox.TakeAllOrClose());
+        // Taking nothing closed it: a word said as the run winds up is refused, for the record's door to keep (MSG1d).
+        Assert.False(inbox.Hold(new ChatMessage("Too late.", [])));
+    }
+
     /// <summary>A mapper that knows no conversation names none: the default every other wire keeps.</summary>
     [Fact]
     public void A_wire_that_names_no_conversation_says_none()
