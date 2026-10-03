@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import i18n from '../i18n';
-import type { Quest, Session } from '../api';
+import type { GoAhead, Quest, Session } from '../api';
 import type { SweepBranch } from '../settings/Sweep';
 import { SessionHead } from './SessionHead';
 
@@ -291,6 +291,100 @@ describe('the attended session\'s head', () => {
 
     expect(screen.getByText('仓库')).toBeInTheDocument();
     expect(screen.getByText('工作中')).toBeInTheDocument();
+    await i18n.changeLanguage('en');
+  });
+});
+
+/** Two go-aheads the parked session asked, both still waiting on the person (KNOWUSE1a). */
+const ASKED: GoAhead[] = [
+  {
+    number: 1, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'asked',
+    asked: [{ session: 's1a2b3c4', quest: '7a82cc', at: '2026-09-21T11:00:00Z', why: 'The tile reads its target from it.' }],
+  },
+  {
+    number: 2, kind: 'release', on: 'production', act: 'comparison report', state: 'asked',
+    asked: [{ session: 's1a2b3c4', quest: '7a82cc', at: '2026-09-21T11:10:00Z', why: 'Ship it.' }],
+  },
+];
+
+/**
+ * KNOWUSE1a2 (D135 §2): a park that asked go-aheads shows them beneath its card, each with *Approve* and *Refuse*, and a
+ * press says which go-ahead, yes or no, and the person's words, for the frame to answer it and the park together. With
+ * nothing to act through they are shown with no door; a park that asked none, or a session not parked, shows nothing new.
+ */
+describe('a park\'s go-aheads', () => {
+  const parked: Partial<Session> = { state: 'awaiting-person', note: 'I need the two go-aheads to finish.' };
+
+  it('lists what the park asked beneath its card, each with Approve and Refuse, saying an answer here goes on', () => {
+    render(<SessionHead session={session(parked)} onResolve={vi.fn()} goAheads={ASKED} onGoAhead={vi.fn()} />);
+
+    const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
+    expect(section).toHaveTextContent('Answering one here answers this session too');
+    const items = within(section).getAllByRole('listitem');
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent('write on production');
+    expect(items[0]).toHaveTextContent('“dashboard configuration”');
+    expect(items[1]).toHaveTextContent('release on production');
+    for (const item of items) {
+      expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+      expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
+    }
+    // Beneath the card that asks, which stays: its finish and decline are still the person's.
+    expect(screen.getByText('This one is waiting on you').compareDocumentPosition(section)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+  });
+
+  it('says which go-ahead, the yes or the no, and the person\'s words, where they gave any', () => {
+    const onGoAhead = vi.fn();
+    render(<SessionHead session={session(parked)} goAheads={ASKED} onGoAhead={onGoAhead} />);
+    const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
+
+    fireEvent.change(within(second!).getByLabelText('your words, if any'), { target: { value: 'dev first, then production' } });
+    fireEvent.click(within(second!).getByRole('button', { name: 'Approve' }));
+    fireEvent.click(within(first!).getByRole('button', { name: 'Refuse' }));
+
+    expect(onGoAhead.mock.calls).toEqual([[2, true, 'dev first, then production'], [1, false, undefined]]);
+  });
+
+  it('keeps them beneath an answered park, the one still waiting answerable until the session goes on', () => {
+    const answered: GoAhead[] = [
+      { ...ASKED[0]!, state: 'approved', answer: { approved: true, at: '2026-09-21T11:58:00Z' } },
+      ASKED[1]!,
+    ];
+    render(
+      <SessionHead session={session({ ...parked, answer: 'carry on.' })} goAheads={answered} onGoAhead={vi.fn()} />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Your answer' })).toBeInTheDocument();
+    const [first, second] = within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem');
+    expect(first).toHaveTextContent('approved');
+    expect(within(first!).queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(within(second!).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
+  it('shows them with no door where nothing can answer them', () => {
+    render(<SessionHead session={session(parked)} goAheads={ASKED} />);
+
+    const section = screen.getByRole('region', { name: 'Go-aheads it asked' });
+    expect(within(section).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(section).queryByRole('button')).toBeNull();
+  });
+
+  it('shows nothing new for a park that asked none, or a session no longer parked', () => {
+    const { rerender } = render(<SessionHead session={session(parked)} goAheads={[]} onGoAhead={vi.fn()} />);
+    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+
+    rerender(<SessionHead session={session({ state: 'working' })} goAheads={ASKED} onGoAhead={vi.fn()} />);
+    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+  });
+
+  it('speaks the active catalog', async () => {
+    await i18n.changeLanguage('zh');
+    render(<SessionHead session={session(parked)} goAheads={ASKED} onGoAhead={vi.fn()} />);
+
+    expect(screen.getByRole('region', { name: '它请求的放行' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: '放行' })).toHaveLength(2);
     await i18n.changeLanguage('en');
   });
 });

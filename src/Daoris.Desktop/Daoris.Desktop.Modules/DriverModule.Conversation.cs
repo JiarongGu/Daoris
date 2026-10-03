@@ -77,6 +77,37 @@ public sealed partial class DriverModule
         return new { said.Sent, said.Reaches, said.Why };
     }
 
+    // A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press where the ask's
+    // page and the box took two. The go-ahead first, on its ask, so the conversation the answer resumes is handed it as the
+    // driver takes the park up (KNOWUSE1a's resumed prompt); then the park, with the person's words through the box's own
+    // judgement (MSG1d), or, with none, the park's blank answer. A refused go-ahead answers nothing else, in the service's
+    // sentence. `{ message, sent, reaches, why }`: the go-ahead's sentence, then what became of the park, as `SESSION_INPUT`
+    // says it.
+    [DriverRoute("SESSION_GO_AHEAD")]
+    private async Task<object?> SessionGoAheadAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var ask = PayloadHelper.GetRequiredValue<string>(request.Payload, "ask");
+        var approved = PayloadHelper.GetRequiredValue<bool>(request.Payload, "approved");
+        var number = Number(request, "number") is { } named and > 0 and <= int.MaxValue
+            ? (int)named
+            : throw new DriverException("a go-ahead is named by its number on its ask, a whole number from 1; nothing was answered.");
+        var words = Optional(request, "words")?.Trim() is { Length: > 0 } said ? said : null;
+        var service = _loop.Service ?? throw NotReady();
+
+        var (answered, message) = await service.AnswerGoAheadAsync(ask, number, approved, words, cancellationToken)
+            .ConfigureAwait(false);
+        if (!answered) throw new DriverException(message);
+
+        var park = words is null
+            ? await _loop.Words.AnswerParkAsync(id, cancellationToken).ConfigureAwait(false)
+            : await _loop.Words.SayAsync(id, words, [], preface: null, door: "screen", cancellationToken).ConfigureAwait(false)
+              ?? throw NotReady();
+        // Words a running session took are kept on its ask, as the box's are (DRIFT1a2): the park went on before the press.
+        if (park.Running && words is not null) _loop.Words.KeepOnAsk(id, words);
+        return new { Message = message, park.Sent, park.Reaches, park.Why };
+    }
+
     // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says
     // what it was going to say, and exits on its own. `STOP_SESSION` is the other verb. Refused
     // for a session that takes no input, for the same reason as a message.
