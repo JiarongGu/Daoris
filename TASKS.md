@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1068 service and 62 HTTP host, 3703 driver,
+**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1091 service and 66 HTTP host, 3703 driver,
 597 desktop modules, 80 devkit, 2839 web unit, 24 Playwright**, 114/114 release rehearsal, **357/357
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
@@ -240,10 +240,6 @@ owner on 1 October.
   chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
   Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **MSG1a — the record keeps the person's words and reopens** (service). `said` replaces a single `answer`, and the
-  ledger's one move out of an ended state takes words waiting, on this machine's record only. Contract: §2.3, §2.4,
-  §5.3's `say`. Proof: `SessionLedgerTests` (stood-down, a teammate's and no words refused), `LocalHostTests`, a pushed
-  reopened record in `SessionSyncTests`.
 - [ ] **MSG1b — a driven session goes on with words, on both doors** (driver). The planner's `continuing` verdict takes
   a record with words waiting, the judgement gains §2.2's rows and `elsewhere`, and a native run resumes while words
   are held. Contract: §2.1, §2.2, §2.3. Proof: `ContinuationTests`, the plan tests, `NativeResumeTests`, a `Process`
@@ -381,10 +377,6 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
   `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
   both doors; the composed settings' tests.
-- [ ] **DOC8a — the decisions record, one file per decision** (the parent's; no branch in flight on the record). The record
-  becomes `docs/decisions/D<n>.md`, `docs/DECISIONS.md` a fixed page, and the attributes, the manifest, the dogfood rule
-  and the lines naming the record move with it; D119's glued note gets its blank line after the proof. Contract: D134
-  §3.1–§3.5, §4. Proof: the concatenation check in the commit body; `verify`; the service suite and family rehearsal.
 - [ ] **DOC8c — a folder's record titled by its heading** (service; after DOC8a). The scanner titles a record in a declared
   folder by its first heading, so search shows *D130 — …*. Contract: D134 §3.5. Proof: `RepositoryScannerTests`.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
