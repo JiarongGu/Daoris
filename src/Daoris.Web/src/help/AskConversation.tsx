@@ -20,6 +20,12 @@ import { type HelpWhere, prefaceOf } from './where';
 import { logEvent } from '../shell';
 
 /**
+ * Words handed to Ask Daoris from another door, once per `id`: a question, sent as a typed one is (the palette's, the
+ * setup guide's), or a draft, put in the box for the person to finish (CTX1's *Ask Daoris about it*).
+ */
+export type AskOpening = { text: string; id: number; draft?: boolean };
+
+/**
  * Ask Daoris's conversation (HELP1a, D89): the organism that holds the newest help session's record
  * and its composer, so the panel holds neither.
  *
@@ -46,7 +52,7 @@ import { logEvent } from '../shell';
 export function useAskConversation(
   scroller: RefObject<HTMLElement | null>,
   where?: HelpWhere,
-  opening?: { text: string; id: number } | null,
+  opening?: AskOpening | null,
   /** The agent Ask Daoris runs on, or null: with none named, nothing is opened ahead of the person. */
   helper: string | null = null,
   /**
@@ -213,12 +219,14 @@ export function useAskConversation(
     // Only a new round, or the panel coming idle, opens one; the mutation is not a reason to open again.
   }, [idle, round]);
 
-  // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice.
+  // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice. A draft (CTX1's
+  // *Ask Daoris about it*) goes into the box for the person's question instead, and sends nothing.
   const opened = useRef<number | null>(null);
   useEffect(() => {
     if (!opening || opened.current === opening.id) return;
     opened.current = opening.id;
-    onSend(opening.text, []);
+    if (opening.draft) setDraft((was) => [opening.text, was.trim()].filter(Boolean).join(''));
+    else onSend(opening.text, []);
     // From the effect, never the render (frontend-architecture §4b): the holder clears what was sent.
     onOpened?.();
     // Only a new opening asks; `onSend` reads this render's session and is not a reason to ask again.

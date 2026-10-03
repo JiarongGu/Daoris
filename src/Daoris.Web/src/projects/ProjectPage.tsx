@@ -94,6 +94,15 @@ export function ProjectPage({
       {onManage && <Button onClick={onManage}>{t('projects.manage.open')}</Button>}
     </>
   );
+  // A right-click on the page offers its header's acts, as its buttons press them, then its name (CTX1, D138 §4).
+  const menu = {
+    label: repository,
+    acts: [
+      ...(onOpenCode ? [{ id: 'codeMap', label: t('projects.page.codeMap'), icon: 'map' as const, onSelect: onOpenCode }] : []),
+      ...(onManage ? [{ id: 'manage', label: t('projects.manage.open'), icon: 'settings' as const, onSelect: onManage }] : []),
+      { id: 'copy', label: t('contextMenu.act.copyRepository'), icon: 'copy' as const, copy: repository },
+    ],
+  };
 
   const head = (
     <PageHead
@@ -112,7 +121,7 @@ export function ProjectPage({
   );
 
   return (
-    <ViewMain header={head}>
+    <ViewMain header={head} menu={menu}>
       {adopted && !summary && (
         /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but an asker deserves to
            know they would be guessing. */

@@ -142,6 +142,8 @@ export function useWindowChrome() {
       else fire((commands) => commands.startDrag());
     }, [maximized]),
     onToggleMaximize: useCallback(() => fire((commands) => commands.toggleMaximize()), []),
+    /** A right-click on the strip's own space: the window's system menu, as a caption's (CTX1, D138 §4). */
+    onSystemMenu: useCallback(() => fire((commands) => commands.showSystemMenu()), []),
     /** The sliver above the strip: the frameless technique gives the top edge to the client. */
     onResizeTop: useCallback(() => fire((commands) => commands.startResize('top')), []),
   };

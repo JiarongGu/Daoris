@@ -6,7 +6,10 @@ import {
 } from './queries';
 import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
+import type { AskOpening } from './help/AskConversation';
 import { QuickAsk } from './help/QuickAsk';
+import { ContextMenus } from './menus/ContextMenu';
+import { clipped, type ContextDoors } from './menus/press';
 import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
 import { useSetupAtStart } from './setupGuide';
@@ -171,7 +174,9 @@ export function App() {
   const openings = useRef(0);
   // Quick Ask (DOCK1d): open or not, and the question the palette handed it, one id per question.
   const [quick, setQuick] = useState(false);
-  const [quickOpening, setQuickOpening] = useState<{ text: string; id: number } | null>(null);
+  const [quickOpening, setQuickOpening] = useState<AskOpening | null>(null);
+  // Words a right-click asked Search for (CTX1), one id per ask, let go once in its box.
+  const [searchAsked, setSearchAsked] = useState<{ text: string; id: number } | null>(null);
   // The side bar's question (SETUP1b): the setup guide's *Set up with Ask Daoris*, held until it is sent.
   const [helpOpening, setHelpOpening] = useState<{ text: string; id: number } | null>(null);
   const askSetup = (message: string) => {
@@ -179,10 +184,11 @@ export function App() {
     setHelpOpening({ text: message, id: openings.current });
     openHelp();
   };
-  const askQuickly = (question?: string) => {
+  /** Quick Ask, with a question it sends, or with a draft in its box for the person to finish (CTX1's *Ask Daoris about it*). */
+  const askQuickly = (question?: string, draft = false) => {
     if (question) {
       openings.current += 1;
-      setQuickOpening({ text: question, id: openings.current });
+      setQuickOpening({ text: question, id: openings.current, ...(draft ? { draft } : {}) });
     }
     // 🔴 A beat after the palette closes, never with it: closing, the palette hands focus back to where
     // it was, which pulled it out of a box opened in the same step, and the box's trap caught it on its
@@ -525,6 +531,8 @@ export function App() {
     notify,
     semantic: status.data?.semantic ?? false,
     onConverge: () => open('convergence'),
+    handed: searchAsked,
+    onHanded: () => setSearchAsked(null),
   });
   const convergencePane = lists.pane('convergence');
   const convergence = useConvergenceView({
@@ -592,6 +600,23 @@ export function App() {
    * no list (§4), and their page is their main area.
    */
   const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, convergence, search, settings };
+
+  // The right-click menu's doors (CTX1, D138 §3): a copy, said once copied, since nothing on the screen shows it; Search
+  // with the words in its box; and, a shell's, Quick Ask with them quoted and Daoris's browser at the address.
+  const contextDoors: ContextDoors = {
+    copy: (text) => {
+      void navigator.clipboard?.writeText(text).then(() => notify(t('contextMenu.copied', { what: clipped(text) })), () => {});
+    },
+    search: (text) => {
+      openings.current += 1;
+      setSearchAsked({ text, id: openings.current });
+      open('search');
+    },
+    ...(attached ? {
+      ask: (text: string) => askQuickly(text, true),
+      openInBrowser: (address: string) => openBrowser.mutate(address, { onError: failure(notify) }),
+    } : {}),
+  };
   const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
       // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
@@ -638,6 +663,7 @@ export function App() {
         onDragStart={chrome.present ? chrome.onDragStart : undefined}
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
+        onSystemMenu={chrome.present ? chrome.onSystemMenu : undefined}
         // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE, and since D75 they
         // are the setup domains: Daoris, Workspace, Agents, then View. Each setup item opens its own
         // domain of Settings. Navigating is NOT here: that is the rail's, and since D66 the rail is
@@ -988,6 +1014,8 @@ export function App() {
         </Drawer>
       )}
       <Toasts items={toasts} onClose={dismiss} />
+      {/* The window's one right-click handler (CTX1, D138): each surface offers its acts, and it draws the menu. */}
+      <ContextMenus doors={contextDoors} shell={chrome.present} />
       {/* A notification is a door (design §4): clicking the OS balloon lands on that session
           rather than on whatever was last open. */}
       <ShellSignals notify={notify} onAttend={openInWork} />

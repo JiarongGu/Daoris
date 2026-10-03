@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import type { Convergence } from '../api';
 import { Inline, Prose, SkeletonRows } from '../ui';
+import { contextOffer } from '../menus/press';
 import { type MainNotice, PageHead, ViewMain } from '../work/ViewMain';
-import { EntryPills, entryPlace, EntryText } from './EntryPage';
+import { documentMenu, EntryPills, entryPlace, EntryText } from './EntryPage';
 import { type EntryReading, findingTitle } from './records';
 
 /**
@@ -41,7 +42,8 @@ export function FindingPage({ finding, readings }: {
         const reading = readings[entry.id] ?? { state: 'loading' };
         const read = reading.state === 'read' ? reading.entry : null;
         return (
-          <section key={entry.id} aria-label={entry.title} className="mt-6 border-t border-line pt-4">
+          // Each entry is a document: a right-click on it copies its path (CTX1, D138 §4).
+          <section key={entry.id} aria-label={entry.title} className="mt-6 border-t border-line pt-4" {...contextOffer(documentMenu(t, entry))}>
             <h2 className="m-0 text-title font-semibold wrap-anywhere">{entry.title}</h2>
             <div className="mb-3 mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <EntryPills kind={entry.kind} provenance={read?.provenance} />

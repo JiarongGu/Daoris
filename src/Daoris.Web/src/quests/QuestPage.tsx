@@ -7,11 +7,39 @@ import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
-import { Button, Icon, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
+import { Button, Icon, type IconName, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
+
+/** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
+type QuestAct = 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'resume' | 'retry' | 'trust' | 'session';
+
+/** Each act's name, the one its button says, and its glyph in a menu. */
+const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
+  take: { label: 'quests.detail.take' },
+  done: { label: 'quests.detail.done', icon: 'check' },
+  pause: { label: 'quests.detail.pause', icon: 'pause' },
+  decline: { label: 'quests.detail.decline' },
+  abandon: { label: 'quests.detail.abandon' },
+  delete: { label: 'quests.detail.delete', icon: 'remove' },
+  resume: { label: 'quests.detail.resume', icon: 'resume' },
+  retry: { label: 'quests.detail.retry', icon: 'refresh' },
+  trust: { label: 'trust.open', icon: 'shield' },
+  session: { label: 'work.open', icon: 'frameWork' },
+};
+
+/**
+ * A header act's button: the one loud control is the quest's next step (UX5 U31), taking it while it is open and closing
+ * it once it is taken; Pause… plain; the rest quiet.
+ */
+function buttonOf(act: QuestAct, status: Quest['status']): 'primary' | 'default' | 'ghost' {
+  if (act === 'take') return 'primary';
+  if (act === 'done') return status === 'Taken' ? 'primary' : 'default';
+  if (act === 'pause') return 'default';
+  return 'ghost';
+}
 
 /** A record's row of facts: its name, and what it holds. */
 function Fact({ name, children }: { name: string; children: ReactNode }) {
@@ -126,40 +154,66 @@ export function QuestPage({
     else setAsking('pause');
   };
 
-  const acts = (moving || offers.abandon) && (
+  // The header's acts, in its order (D118 §3b), each where it applies. While one asks under the header, its first press
+  // is not offered twice. One list for its buttons and the page's right-click (CTX1), so the two never disagree.
+  const headActs: QuestAct[] = !(moving || offers.abandon) ? [] : [
+    ...(quest.status === 'Open' ? ['take' as const] : []),
+    ...(moving ? ['done' as const] : []),
+    ...(offers.pause && moving && asking !== 'pause' ? ['pause' as const] : []),
+    ...(moving && !declining ? ['decline' as const] : []),
+    ...(offers.abandon && asking !== 'abandon' ? ['abandon' as const] : []),
+    ...(deletable && !deleting ? ['delete' as const] : []),
+  ];
+  // What its body offers (the sitting line's Resume, Try again and trust, its session's door), which the right-click
+  // offers after the header's.
+  const ownResume = (ownPause || pausedUnseen) && work !== undefined;
+  const retryable = (because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry !== undefined;
+  const trustable = Boolean(hold && onGrant && onTrusting && !trusting);
+  const bodyActs: QuestAct[] = [
+    ...(ownResume ? ['resume' as const] : []),
+    ...(retryable ? ['retry' as const] : []),
+    ...(trustable ? ['trust' as const] : []),
+    ...(session && onAttend ? ['session' as const] : []),
+  ];
+
+  const press = (act: QuestAct) => {
+    switch (act) {
+      case 'take': onRespond('take'); return;
+      case 'done': onRespond('done'); return;
+      case 'pause': onPauseFirst(); return;
+      case 'decline': setAsking('decline'); return;
+      case 'abandon': setListed(work!.plan); setAsking('abandon'); return;
+      case 'delete': setAsking('delete'); return;
+      case 'resume': work?.onResume(); return;
+      case 'retry': onRetry?.(); return;
+      case 'trust': onTrusting?.(true); return;
+      case 'session': if (session) onAttend?.(session.id); return;
+    }
+  };
+
+  const acts = headActs.length > 0 && (
     <>
-      {/* The one loud control is the quest's next step (UX5 U31): taking it while it is open, closing it once
-          it is taken. Done led an open quest too, with taking it offered as the quiet choice. */}
-      {quest.status === 'Open' && (
-        <Button variant="primary" disabled={waiting} onClick={() => onRespond('take')}>{t('quests.detail.take')}</Button>
-      )}
-      {moving && (
-        <Button variant={quest.status === 'Taken' ? 'primary' : 'default'} disabled={waiting} onClick={() => onRespond('done')}>
-          {t('quests.detail.done')}
+      {headActs.map((act) => (
+        <Button key={act} variant={buttonOf(act, quest.status)} disabled={waiting} onClick={() => press(act)}>
+          {act === 'delete' && <Icon name="remove" size={13} />}
+          {t(QUEST_ACT[act].label)}
         </Button>
-      )}
-      {/* While one asks under the header, its first press is not offered twice. */}
-      {offers.pause && moving && asking !== 'pause' && (
-        <Button disabled={waiting} onClick={onPauseFirst}>{t('quests.detail.pause')}</Button>
-      )}
-      {moving && !declining && (
-        <Button variant="ghost" disabled={waiting} onClick={() => setAsking('decline')}>
-          {t('quests.detail.decline')}
-        </Button>
-      )}
-      {offers.abandon && asking !== 'abandon' && (
-        <Button variant="ghost" disabled={waiting} onClick={() => { setListed(work!.plan); setAsking('abandon'); }}>
-          {t('quests.detail.abandon')}
-        </Button>
-      )}
-      {deletable && !deleting && (
-        <Button variant="ghost" disabled={waiting} onClick={() => setAsking('delete')}>
-          <Icon name="remove" size={13} />
-          {t('quests.detail.delete')}
-        </Button>
-      )}
+      ))}
     </>
   );
+
+  const menu = {
+    label: quest.title,
+    acts: [
+      ...[...headActs, ...bodyActs].map((act) => ({
+        id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon,
+        // What waits on a press waits in the menu too: the header's on the quest's own, Try again on its own.
+        disabled: act === 'retry' ? retrying : act === 'session' || act === 'trust' ? false : waiting,
+        onSelect: () => press(act),
+      })),
+      { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id },
+    ],
+  };
 
   const head = (
     <PageHead
@@ -172,7 +226,7 @@ export function QuestPage({
   );
 
   return (
-    <ViewMain header={head}>
+    <ViewMain header={head} menu={menu}>
       {asking === 'pause' && work && pauseLines && (
         <PauseAsk
           className="mb-4 max-w-3xl"
@@ -285,7 +339,7 @@ export function QuestPage({
                 stop; an ask's, or the quest's whose question this is, is resumed on that page, a door away. */}
             {(ownPause || pausedUnseen) && work && (
               <span className="mt-1.5 block">
-                <Button disabled={waiting} onClick={() => work.onResume()}>{t('quests.detail.resume')}</Button>
+                <Button disabled={waiting} onClick={() => press('resume')}>{t('quests.detail.resume')}</Button>
               </span>
             )}
             {pausedBy?.scope === 'ask' && onOpenAsk && (
@@ -300,14 +354,14 @@ export function QuestPage({
             )}
             {/* The one hold only the person can lift, offered where it is read (D73). */}
             {hold && onGrant && onTrusting && !trusting && (
-              <span className="mt-1.5 block"><Button onClick={() => onTrusting(true)}>{t('trust.open')}</Button></span>
+              <span className="mt-1.5 block"><Button onClick={() => press('trust')}>{t('trust.open')}</Button></span>
             )}
             {/* And the other two: a quest parked by its strikes, started again on the press (RETRY1), counted from
                 where it stands so the next failures park it again; and one the person's stop holds, released from that
                 stop (SESSUX1b, D126 §3.4). One act and one word, on this page and on the session that holds it. */}
             {(because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry && (
               <span className="mt-1.5 block">
-                <Button disabled={retrying} onClick={onRetry}>{t('quests.detail.retry')}</Button>
+                <Button disabled={retrying} onClick={() => press('retry')}>{t('quests.detail.retry')}</Button>
               </span>
             )}
           </Fact>
@@ -463,7 +517,7 @@ export function QuestPage({
           )}
           {/* One home for the stream (design §3, D55): a session's console is the frame's panel. This keeps the
               record summary and becomes a DOOR — which is only offered where Sessions exists at all. */}
-          {onAttend && <Button className="mt-2.5" onClick={() => onAttend(session.id)}>{t('work.open')}</Button>}
+          {onAttend && <Button className="mt-2.5" onClick={() => press('session')}>{t('work.open')}</Button>}
           <p className="mt-2 mb-0 text-small text-ink-faint">{t('quests.session.hint')}</p>
         </section>
       )}

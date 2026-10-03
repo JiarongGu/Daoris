@@ -3,12 +3,24 @@ import { useTranslation } from 'react-i18next';
 import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
-import { Button, Icon, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
+import { Button, Icon, type IconName, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
 import { GoAheadList } from './GoAheadList';
+
+/** The acts in an ask's header (CTX1, D138 §4): its buttons and its page's right-click draw this one list. */
+type AskAct = 'resume' | 'pause' | 'close' | 'abandon' | 'delete';
+
+/** Each act's name, its button's look (the loud act is *Resume*, §7.1) and its glyph in a menu. */
+const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 'ghost'; icon?: IconName }> = {
+  resume: { label: 'asks.record.resume', variant: 'primary', icon: 'resume' },
+  pause: { label: 'asks.record.pause', variant: 'default', icon: 'pause' },
+  close: { label: 'asks.record.close', variant: 'default' },
+  abandon: { label: 'asks.record.abandon', variant: 'ghost' },
+  delete: { label: 'asks.record.delete', variant: 'ghost', icon: 'remove' },
+};
 
 /**
  * An ask's page (INT4c; FRAME1d, D118 §3d): the record in Quests' main area, the screen twin of
@@ -100,31 +112,42 @@ export function AskPage({
   };
 
   // The acts in the header (D118 §3b); while one asks under it, its first press is not offered twice. The loud act is the
-  // next step: *Resume* while paused (§7.1).
-  const acts = (live || deletable || offers.pause || offers.resume || offers.abandon) && (
+  // next step: *Resume* while paused (§7.1). One list for its buttons and the page's right-click (CTX1).
+  const headActs: AskAct[] = [
+    ...(offers.resume ? ['resume' as const] : []),
+    ...(offers.pause && asking !== 'pause' ? ['pause' as const] : []),
+    ...(live && !closing ? ['close' as const] : []),
+    ...(offers.abandon && asking !== 'abandon' ? ['abandon' as const] : []),
+    ...(deletable && !deleting ? ['delete' as const] : []),
+  ];
+  const press = (act: AskAct) => {
+    switch (act) {
+      case 'resume': work?.onResume(); return;
+      case 'pause': onPauseFirst(); return;
+      case 'close': setAsking('close'); return;
+      case 'abandon': setListed(work!.plan); setAsking('abandon'); return;
+      case 'delete': setAsking('delete'); return;
+    }
+  };
+  const acts = headActs.length > 0 && (
     <>
-      {offers.resume && (
-        <Button variant="primary" disabled={waiting} onClick={() => work?.onResume()}>{t('asks.record.resume')}</Button>
-      )}
-      {offers.pause && asking !== 'pause' && (
-        <Button disabled={waiting} onClick={onPauseFirst}>{t('asks.record.pause')}</Button>
-      )}
-      {live && !closing && (
-        <Button disabled={waiting} onClick={() => setAsking('close')}>{t('asks.record.close')}</Button>
-      )}
-      {offers.abandon && asking !== 'abandon' && (
-        <Button variant="ghost" disabled={waiting} onClick={() => { setListed(work!.plan); setAsking('abandon'); }}>
-          {t('asks.record.abandon')}
+      {headActs.map((act) => (
+        <Button key={act} variant={ASK_ACT[act].variant} disabled={waiting} onClick={() => press(act)}>
+          {act === 'delete' && <Icon name="remove" size={13} />}
+          {t(ASK_ACT[act].label)}
         </Button>
-      )}
-      {deletable && !deleting && (
-        <Button variant="ghost" disabled={waiting} onClick={() => setAsking('delete')}>
-          <Icon name="remove" size={13} />
-          {t('asks.record.delete')}
-        </Button>
-      )}
+      ))}
     </>
   );
+  const menu = {
+    label: firstLine(ask.sentence),
+    acts: [
+      ...headActs.map((act) => ({
+        id: act, label: t(ASK_ACT[act].label), icon: ASK_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
+      })),
+      { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy' as const, copy: ask.id },
+    ],
+  };
 
   const head = (
     <PageHead
@@ -142,7 +165,7 @@ export function AskPage({
   );
 
   return (
-    <ViewMain header={head}>
+    <ViewMain header={head} menu={menu}>
       {asking === 'pause' && work && pauseLines && (
         <PauseAsk
           className="mb-4 max-w-3xl"

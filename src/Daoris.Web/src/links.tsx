@@ -66,7 +66,8 @@ export function ExternalLink({ href, system = false, className, title, children 
   };
 
   return (
-    <a href={href} target="_blank" rel="noreferrer" className={className} title={title} onClick={onClick}>
+    // A link that must stay the system's says so on itself, so a right-click never offers it to Daoris's browser (CTX1).
+    <a href={href} target="_blank" rel="noreferrer" className={className} title={title} onClick={onClick} data-link={system ? 'system' : undefined}>
       {children}
     </a>
   );

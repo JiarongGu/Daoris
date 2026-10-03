@@ -3,7 +3,8 @@ import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
 import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../ui';
 import { cn } from '../lib/cn';
-import { ACT_LOOK, type SessionActId } from './acts';
+import { contextOffer } from '../menus/press';
+import { actMenu, type SessionActId } from './acts';
 import { type SessionGrouping, shownOf } from './groups';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { ListRowDoor } from './ListPane';
@@ -156,13 +157,13 @@ export function SessionRow({
   ].filter(Boolean).join(' ');
 
   // What the rule offered, each absent where it does not apply and never disabled (D119 §3.2); nothing at all where there
-  // is nowhere to report a press.
-  const actions = onAct ? acts : [];
+  // is nowhere to report a press. One list for its ⋯ and its right-click (CTX1).
+  const actions = actMenu(onAct ? acts : [], t, (act) => onAct?.(act, session.id));
 
   return (
     // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;
-    // and a row of its list, so the list's arrows move to it (D118 §3e).
-    <li data-list-row="" className="group relative">
+    // and a row of its list, so the list's arrows move to it (D118 §3e). A right-click offers its ⋯'s acts (CTX1).
+    <li data-list-row="" className="group relative" {...contextOffer({ label: title, acts: actions })}>
       {/* Every list's row door (FRAME1d): `aria-current` rather than `aria-selected`, since the row is a
           button, not a listbox option, and the accent stripe beside it is not something every reader has. */}
       <ListRowDoor chosen={selected} onPress={() => onSelect?.(session.id)}>
@@ -207,12 +208,7 @@ export function SessionRow({
             </button>
           </Menu.Trigger>
           <Menu.Content side="bottom" align="end" highlight="accent" className="min-w-44">
-            {actions.map((act) => (
-              <Menu.Item key={act} onSelect={() => onAct?.(act, session.id)}>
-                <Icon name={ACT_LOOK[act].icon} size={12} className="shrink-0 text-ink-faint" />
-                {t(ACT_LOOK[act].label)}
-              </Menu.Item>
-            ))}
+            <Menu.Acts acts={actions} />
           </Menu.Content>
         </Menu.Root>
       )}

@@ -345,6 +345,26 @@ describe('Ask Daoris, with an agent named', () => {
   });
 
   /**
+   * CTX1 (D138, design §3): *Ask Daoris about it* hands its words as a draft, quoted in the box for the person's question,
+   * and sends nothing until they do; it is let go once in the box, as a sent one is.
+   */
+  it('puts a draft it is handed in the box, sends nothing, and lets it go', async () => {
+    bridge();
+    const onOpened = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <AskDaoris opening={{ text: '> a per-frame budget\n\n', id: 1, draft: true }} onOpened={onOpened} onGo={vi.fn()} onClose={vi.fn()} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('> a per-frame budget\n\n'));
+    expect(onOpened).toHaveBeenCalledOnce();
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT')).toEqual([]);
+  });
+
+  /**
    * SETUP1b: the side bar's AskDaoris is drawn again whenever its tab is, and a Quick Ask box each time it
    * opens, so a question still held by the application would be asked again by every new drawing. It
    * says when it has sent one, and the holder, told, lets it go (frontend-architecture §4b): held the way

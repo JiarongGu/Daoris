@@ -5,6 +5,8 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { PROPOSED } from '../asks/fixtures';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { HELD_BY_PERSON, OPEN, SITTING, TAKEN } from './fixtures';
 import { QuestList } from './QuestList';
 
@@ -71,6 +73,31 @@ describe("Quests' list", () => {
     list({ quests: [], unanswered: 'Daoris could not reach this machine\'s host.' });
     expect(screen.getByText('Daoris could not reach this machine\'s host.')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
+  });
+
+  /**
+   * CTX1 (D138, design §4): a row offers what it does, its page what is done to it. A quest's row: *Open*, its own act (a
+   * held repository's *Resume*), and its id; an ask's row: *Open* and its id.
+   */
+  it('offers a row’s own acts on a right-click: Open, a hold’s Resume, its id', async () => {
+    const copy = vi.fn();
+    const { onChoose, onResume } = list({ asks: [{ ask: PROPOSED }], quests: [{ quest: OPEN, sitting: HELD_BY_PERSON }, { quest: TAKEN }] });
+    render(<ContextMenus doors={{ copy }} />);
+
+    rightClick(screen.getByRole('button', { name: /Expose a streaming budget/ }));
+    expect(await menuActs('Actions for Expose a streaming budget on the chunk API')).toEqual(['Open', 'Resume engine', 'Copy quest ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Resume engine' }));
+    expect(onResume).toHaveBeenCalledWith('engine');
+
+    rightClick(screen.getByRole('button', { name: /Read the media field names/ }));
+    expect(await menuActs()).toEqual(['Open', 'Copy quest ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Open' }));
+    expect(onChoose).toHaveBeenCalledWith(TAKEN.id);
+
+    rightClick(screen.getByRole('button', { name: /The chunk streamer stalls/ }));
+    expect(await menuActs()).toEqual(['Open', 'Copy ask ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Copy ask ID' }));
+    expect(copy).toHaveBeenCalledWith(PROPOSED.id);
   });
 
   it('wears the list\'s choice on the chosen row', () => {

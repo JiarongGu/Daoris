@@ -4,6 +4,7 @@ import type { Hit } from '../api';
 import { mark } from '../highlight';
 import { Button, CheckField, EmptyState, Icon, Inline, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
+import { contextOffer } from '../menus/press';
 import { ListRowDoor } from '../work/ListPane';
 
 /**
@@ -138,7 +139,19 @@ export function HitList({
           )}
           <ul className={cn('m-0 list-none p-0', answer.searching && 'opacity-60 transition-opacity duration-(--speed)')}>
             {answer.hits.map((hit) => (
-              <li key={hit.id} aria-label={hit.title} data-list-row="">
+              <li
+                key={hit.id}
+                aria-label={hit.title}
+                data-list-row=""
+                // A hit is a document's link: a right-click opens it or copies its path (CTX1, D138 §4).
+                {...contextOffer({
+                  label: hit.title,
+                  acts: [
+                    { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onChoose(hit.id) },
+                    { id: 'copy', label: t('contextMenu.act.copyPath'), icon: 'copy', copy: hit.path },
+                  ],
+                })}
+              >
                 <ListRowDoor chosen={chosen === hit.id} onPress={() => onChoose(hit.id)}>
                   <span className="block truncate text-body text-ink">{hit.title}</span>
                   <span title={hit.path} className="block truncate font-mono text-meta text-ink-faint">

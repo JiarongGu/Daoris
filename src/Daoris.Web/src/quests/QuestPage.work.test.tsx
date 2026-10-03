@@ -4,6 +4,8 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import { OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN } from './fixtures';
@@ -123,5 +125,89 @@ describe('pausing and abandoning a quest', () => {
     await i18n.changeLanguage('zh');
     page({ work: door() });
     expect(headerActs()).toEqual(['接下', '标为完成', '暂缓…', '谢绝…', '放弃…']);
+  });
+});
+
+/**
+ * CTX1 (D138, design §4): a right-click on a quest's page offers what is done to it: its header's acts, then its body's,
+ * then its id, each pressed as its button is, so an act that asks still asks under the header.
+ */
+describe("a quest's page on a right-click", () => {
+  const copy = vi.fn();
+  const withMenus = (over: Partial<Parameters<typeof QuestPage>[0]> = {}) => {
+    const props = page(over);
+    render(<ContextMenus doors={{ copy }} />);
+    return props;
+  };
+  const onPage = () => rightClick(screen.getByText(/World streaming needs a per-frame cap/));
+
+  afterEach(async () => {
+    vi.clearAllMocks();
+    await i18n.changeLanguage('en');
+  });
+
+  it('offers its header’s acts, then its id, named for the quest', async () => {
+    withMenus({ work: door() });
+    onPage();
+    expect(await menuActs('Actions for Expose a streaming budget on the chunk API'))
+      .toEqual(['Take', 'Mark done', 'Pause…', 'Decline…', 'Abandon…', 'Copy quest ID']);
+  });
+
+  it('presses each as its button does: Take responds, Decline… asks its reason under the header', async () => {
+    const props = withMenus({ work: door() });
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Take' }));
+    expect(props.onRespond).toHaveBeenCalledWith('take');
+
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Decline…' }));
+    expect(await screen.findByRole('textbox', { name: /reason/i })).toBeInTheDocument();
+  });
+
+  it('offers what its body offers: Try again for a stop, Resume for its own pause, its session’s door', async () => {
+    const props = withMenus({
+      sitting: STOPPED, work: door(),
+      session: { id: 's1a2b3c4', quest: OPEN.id, repository: 'engine', adapter: 'claude-code', state: 'stopped', created: OPEN.filed, updated: OPEN.filed },
+      onAttend: vi.fn(),
+    });
+    onPage();
+    const acts = await menuActs();
+    expect(acts.slice(-3)).toEqual(['Try again', 'Open in Sessions', 'Copy quest ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Try again' }));
+    expect(props.onRetry).toHaveBeenCalledOnce();
+
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Open in Sessions' }));
+    expect(props.onAttend).toHaveBeenCalledWith('s1a2b3c4');
+  });
+
+  it('resumes its own pause from the menu, and offers no Pause…', async () => {
+    const work = door({ plan: { ...PAUSED_QUEST, id: OPEN.id } });
+    withMenus({ sitting: PAUSED_ITSELF, work });
+    onPage();
+    const acts = await menuActs();
+    expect(acts).not.toContain('Pause…');
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Resume' }));
+    expect(work.onResume).toHaveBeenCalledOnce();
+  });
+
+  it('copies its id through the window’s copy', async () => {
+    withMenus({});
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Copy quest ID' }));
+    expect(copy).toHaveBeenCalledWith('abc123');
+  });
+
+  it('a link on the page comes first, and the quest’s acts after it', async () => {
+    withMenus({});
+    rightClick(screen.getByRole('link', { name: 'https://tickets.example/T-1' }));
+    expect(await menuActs()).toEqual(['Open', 'Copy link', 'Take', 'Mark done', 'Decline…', 'Copy quest ID']);
+  });
+
+  it('names them in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    withMenus({ work: door() });
+    onPage();
+    expect(await menuActs()).toEqual(['接下', '标为完成', '暂缓…', '谢绝…', '放弃…', '复制委托 ID']);
   });
 });
