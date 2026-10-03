@@ -267,6 +267,13 @@ public sealed partial class DriverModule
             // Each repository's standing answer (KNOWUSE1b), as rows for the same reason; `at` in UTC, or null where unknown.
             Standing = config.Standing.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, p.Value.Says, p.Value.At }).ToArray(),
+            // The session languages as set (LANG1c), as rows for the same reason, and the closed table each screen names its
+            // options from, so adding a language is a row in the driver's table and needs no window catalogue.
+            Languages = config.Languages.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Language = p.Value }).ToArray(),
+            WorkspaceLanguages = config.WorkspaceLanguages.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Language = p.Value }).ToArray(),
+            LanguageTable = SessionLanguages.Table.Select(row => new { row.Code, row.Name }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

@@ -101,6 +101,55 @@ describe("the workspace domain: the machine's wiring", () => {
   });
 
   /**
+   * LANG1c (D142 point 7): beside the lines, each workspace's session language, named from the driver's table and set over
+   * the same file `daoris driver language` edits; said in a toast that names it. A shell older than it answers no table, and
+   * no card is offered.
+   */
+  it('sets a workspace\'s session language beside its lines, named from the driver\'s table', async () => {
+    const table = [{ code: 'en', name: 'English' }, { code: 'zh', name: 'Simplified Chinese (简体中文)' }];
+    const state = { ...DRIVER_STATE, languages: [], workspaceLanguages: [], languageTable: table };
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'LINES') {
+        return {
+          lines: [{ repository: 'engine', workspace: 'aurora', branch: 'main', source: 'checkout' }],
+          languages: [{ repository: 'engine', workspace: 'aurora' }],
+        };
+      }
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      if (type === 'SET_LANGUAGE') return { ...state, workspaceLanguages: [{ workspace: 'aurora', language: 'zh' }] };
+      return state;
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="workspace" />);
+
+    const card = within((await screen.findByRole('heading', { name: 'Session language' })).closest('article')!);
+    const field = await card.findByRole('combobox', { name: 'The session language for aurora' });
+    expect(field).toHaveTextContent('Not set');
+    field.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'Simplified Chinese (简体中文)' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANGUAGE', { payload: { workspace: 'aurora', language: 'zh' } });
+    expect(notify).toHaveBeenCalledWith(
+      'Sessions in aurora write to you in Simplified Chinese (简体中文) now. A session already running keeps what it was handed.');
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  it('offers no session language on a shell older than it', async () => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'LINES') return { lines: [{ repository: 'engine', workspace: 'aurora', branch: 'main', source: 'checkout' }] };
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    show(<SettingsView notify={() => {}} section="workspace" />);
+
+    await screen.findByRole('textbox', { name: 'The line for engine' });
+    expect(screen.queryByRole('heading', { name: 'Session language' })).toBeNull();
+  });
+
+  /**
    * WSR6: bringing repositories up to date is asked for, never fetched on its own — looking reaches the network,
    * as the person. Opening the domain asks nothing; *Look for updates* asks the driver, and the press sends only
    * the rows the look listed.

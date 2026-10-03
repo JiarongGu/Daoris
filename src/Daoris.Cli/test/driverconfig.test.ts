@@ -4,8 +4,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, pausedAsk, pausedQuest,
-  readDriverChoices, releasedFor, standingFor,
+  DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
+  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor,
 } from '../src/driverconfig.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -443,7 +443,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, language, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -820,6 +820,133 @@ test('a standing answer is written only once set, and a verb that knows nothing 
   run(['retry', 'q1', '--session', 's1'], at(fx));
 
   assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).standing.app.says, 'dev only');
+  fx.cleanup();
+});
+
+/**
+ * The session languages' closed table (LANG1c, D142 point 7): each code and the name the line gives the agent. 🔴 A TWIN with
+ * the driver's `SessionLanguages.Table`: `SessionLanguageTests.cs` holds this table row for row, and the test below holds it
+ * to this one, cell for cell.
+ */
+const LANGUAGE_TABLE_ROWS: [code: string, name: string][] = [
+  ['en', 'English'],
+  ['zh', 'Simplified Chinese (简体中文)'],
+];
+
+test('the session languages are the twin\'s closed table, in its order', () => {
+  assert.deepEqual(Object.entries(SESSION_LANGUAGES), LANGUAGE_TABLE_ROWS);
+});
+
+test('the driver’s language table is this table, row for row and in this order', () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+    'Daoris.Desktop.Driver.Tests', 'SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(csharpRows(source, 'The_table_names_each_language_for_the_agent', {}, 'SessionLanguageTests'), LANGUAGE_TABLE_ROWS);
+});
+
+/**
+ * `languages` and `workspaceLanguages` (LANG1c, D142 point 7): the language a session is asked to write to the person in, the
+ * repository's winning over its workspace's, neither set none. 🔴 A TWIN with the driver's `SessionLanguages.Resolve`:
+ * `SessionLanguageTests.cs` holds this table row for row, and the test below holds it to this one, cell for cell.
+ */
+const LANGUAGE_ROWS: [name: string, file: string, repository: string, workspace: string | null, code: string | null, source: string | null][] = [
+  ['absent is none', '{}', 'app', 'work', null, null],
+  ['a repository\'s language is its own', '{"languages":{"app":"zh"}}', 'app', 'work', 'zh', 'repository'],
+  ['a workspace\'s language is each repository\'s there that sets none', '{"workspaceLanguages":{"work":"zh"}}', 'app', 'work', 'zh', 'workspace'],
+  ['the repository\'s wins over its workspace\'s', '{"languages":{"app":"en"},"workspaceLanguages":{"work":"zh"}}', 'app', 'work', 'en', 'repository'],
+  ['another workspace\'s is not this one\'s', '{"workspaceLanguages":{"home":"zh"}}', 'app', 'work', null, null],
+  ['another repository\'s is not this one\'s', '{"languages":{"api":"zh"}}', 'app', 'work', null, null],
+  ['a repository in no workspace takes the default one\'s', '{"workspaceLanguages":{"default":"zh"}}', 'app', null, 'zh', 'workspace'],
+  ['a repository is matched in any case', '{"languages":{"App":"zh"}}', 'app', 'work', 'zh', 'repository'],
+  ['a workspace is matched in any case', '{"workspaceLanguages":{"Work":"zh"}}', 'app', 'work', 'zh', 'workspace'],
+  ['a code is read in any case, without the spaces around it', '{"languages":{"app":" ZH "}}', 'app', 'work', 'zh', 'repository'],
+  ['a code the table does not hold is not read, and the workspace\'s stands', '{"languages":{"app":"fr"},"workspaceLanguages":{"work":"zh"}}', 'app', 'work', 'zh', 'workspace'],
+  ['a value that is not text is not read', '{"languages":{"app":7}}', 'app', 'work', null, null],
+  ['a repository written twice in any case is read where first written', '{"languages":{"app":"zh","APP":"en"}}', 'app', 'work', 'zh', 'repository'],
+  ['a list is not a map', '{"languages":["app"]}', 'app', 'work', null, null],
+  ['null is absent', '{"languages":null,"workspaceLanguages":null}', 'app', 'work', null, null],
+];
+
+test('a session language resolves as the driver resolves it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-language-read');
+  for (const [name, file, repository, workspace, code, source] of LANGUAGE_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = languageFor(readDriverChoices(at(fx)), repository, workspace);
+    assert.equal(read?.code ?? null, code, name);
+    assert.equal(read?.source ?? null, source, `${name}: from`);
+    if (read) assert.equal(read.name, SESSION_LANGUAGES[read.code], `${name}: named by the table`);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s language reading is this table, row for row and in this order', () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+    'Daoris.Desktop.Driver.Tests', 'SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(csharpRows(source, 'Languages_read_as_the_cli_reads_them', {}, 'SessionLanguageTests'), LANGUAGE_ROWS);
+});
+
+/**
+ * The terminal's door onto the session language (LANG1c, D50): set for a repository or a workspace, replaced under the spelling
+ * first written, listed with where each was set, and cleared; a repository's page, Settings → Workspace and Ask Daoris are
+ * its other doors.
+ */
+test('language sets a repository\'s and a workspace\'s, replaces, lists and clears them', () => {
+  const fx = makeFixture('driver-language');
+  assert.match(run(['list'], at(fx)).out, /language\s+none set/);
+
+  const said = run(['language', 'Work-App', 'ZH'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).languages, { 'Work-App': 'zh' });
+  assert.match(said.out, /sessions in `Work-App` write to you in Simplified Chinese \(简体中文\)/);
+  assert.match(said.out, /Settings → Appearance, and neither sets the other/);
+
+  const shared = run(['language', '--workspace', 'work', 'en'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).workspaceLanguages, { work: 'en' });
+  assert.match(shared.out, /each repository in the workspace `work` that sets none of its own write to you in English/);
+  assert.match(shared.out, /daoris driver language <repository> --clear/);
+
+  run(['language', 'work-app', 'en'], at(fx));
+  assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).languages, { 'Work-App': 'en' });
+  const listed = run(['list'], at(fx)).out;
+  assert.match(listed, /language\s+Work-App\s+en \(English\)\s+\(set for it\)/);
+  assert.match(listed, /language\s+workspace work\s+en \(English\)\s+\(for each repository there that sets none\)/);
+  assert.doesNotMatch(listed, /none set/);
+  assert.equal(languageFor(readDriverChoices(at(fx)), 'other', 'WORK')?.source, 'workspace');
+
+  const cleared = run(['language', 'work-app', '--clear'], at(fx));
+  assert.equal('languages' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(cleared.out, /`Work-App` takes its workspace's session language again, else none/);
+  run(['language', '--workspace', 'WORK', '--clear'], at(fx));
+  assert.equal('workspaceLanguages' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('language refuses a code the table does not hold, and no name or no language, and writes nothing', () => {
+  const fx = makeFixture('driver-language-refused');
+  assert.equal(captureError(() => run(['language', 'app', 'fr'], at(fx))).message,
+    '`fr` is not a language a session can be asked to write in here — one of `en`, `zh`.');
+  assert.match(captureError(() => run(['language'], at(fx))).message, /`driver language` needs <repository>\|--workspace <name>/);
+  assert.match(captureError(() => run(['language', 'app'], at(fx))).message, /then en\|zh\|--clear/);
+  assert.match(captureError(() => run(['language', '--workspace', 'work'], at(fx))).message, /then en\|zh\|--clear/);
+  assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+test('a session language is written only once set, and a verb that knows nothing of it preserves it', () => {
+  const fx = makeFixture('driver-language-preserve');
+  run(['drive', 'app'], at(fx));
+  const fresh = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.equal('languages' in fresh, false);
+  assert.equal('workspaceLanguages' in fresh, false);
+
+  run(['language', 'app', 'zh'], at(fx));
+  run(['language', '--workspace', 'work', 'en'], at(fx));
+  run(['hold', 'app'], at(fx));
+  run(['standing', 'app', 'dev only'], at(fx));
+
+  const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual(kept.languages, { app: 'zh' });
+  assert.deepEqual(kept.workspaceLanguages, { work: 'en' });
   fx.cleanup();
 });
 

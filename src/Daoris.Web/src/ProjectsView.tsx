@@ -7,7 +7,9 @@ import { ProjectList, type RepositoryRowFacts } from './projects/ProjectList';
 import { type Driving, ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
-import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetStanding, useSetTrees, useSweepPlan } from './shell';
+import {
+  useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetLanguage, useSetStanding, useSetTrees, useSweepPlan,
+} from './shell';
 import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
 import { ListMore } from './work/ListPane';
@@ -64,10 +66,14 @@ export function useProjectsView({
   const setHold = useSetHold();
   const setTrees = useSetTrees();
   const setStanding = useSetStanding();
+  const setLanguage = useSetLanguage();
   // Each repository's line as the driver resolves it (WSR2) — shell-only, and absent in a browser.
   const lines = useLines();
   const lineOf = (repository: string) => (Array.isArray(lines.data?.lines) ? lines.data.lines : [])
     .find((line) => line.repository === repository && line.branch);
+  // And its session language (LANG1c), the driver's resolution, read rather than recomputed.
+  const languageOf = (repository: string) => (Array.isArray(lines.data?.languages) ? lines.data.languages : [])
+    .find((one) => one.repository === repository);
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
   // so work is not lost in a pile nobody reads. Settings → Workspace lists them one by one.
   const sweep = useSweepPlan();
@@ -135,6 +141,26 @@ export function useProjectsView({
       onStanding: driver.data.standing === undefined
         ? undefined
         : (says) => setStanding.mutate(says === null ? { repository } : { repository, says }, { onError: onDriverError }),
+      language: languageOfPage(registration),
+    };
+  };
+
+  /**
+   * Its session language (LANG1c, D142 point 7): the driver's resolution from the lines, its workspace's by the table's name,
+   * and the table. A shell older than it answers no table, and nothing is offered rather than a field whose save is refused.
+   */
+  const languageOfPage = (registration: Registration): Driving['language'] => {
+    const table = driver.data?.languageTable;
+    if (!Array.isArray(table)) return undefined;
+    const { repository } = registration;
+    const resolved = languageOf(repository) ?? null;
+    const workspace = (resolved?.workspace ?? registration.workspace ?? 'default').toLowerCase();
+    const shared = (driver.data?.workspaceLanguages ?? []).find((row) => row.workspace.toLowerCase() === workspace)?.language;
+    return {
+      resolved: resolved?.language ? resolved : null,
+      inherited: table.find((row) => row.code === shared)?.name,
+      table,
+      onSet: (language) => setLanguage.mutate(language === null ? { repository } : { repository, language }, { onError: onDriverError }),
     };
   };
 

@@ -208,6 +208,44 @@ public sealed record DriverConfig(
         return this with { Standing = next };
     }
 
+    /// <summary>
+    /// The language a repository's sessions are asked to write to the person in (LANG1c, D142 point 7), by repository, as a
+    /// code of <see cref="SessionLanguages.Table"/>. It wins over the workspace's (<see cref="SessionLanguages.Resolve"/>);
+    /// absent is the workspace's, then none, and none hands no line. The CLI's <c>driverconfig.ts</c> reads it the same way
+    /// (<c>SessionLanguageTests</c>, held row for row by its <c>driverconfig.test.ts</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Languages { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's session language, for every repository in it that sets none, and for its intake.</summary>
+    public IReadOnlyDictionary<string, string> WorkspaceLanguages { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Set a repository's session language, or clear it with null to take its workspace's, else none.</summary>
+    /// <exception cref="DriverException">No repository, or a code the table does not hold.</exception>
+    public DriverConfig WithLanguage(string repository, string? code) =>
+        this with { Languages = WithLanguageIn(Languages, repository, code, "repository") };
+
+    /// <summary>Set a workspace's session language, or clear it with null.</summary>
+    /// <exception cref="DriverException">No workspace, or a code the table does not hold.</exception>
+    public DriverConfig WithWorkspaceLanguage(string workspace, string? code) =>
+        this with { WorkspaceLanguages = WithLanguageIn(WorkspaceLanguages, workspace, code, "workspace") };
+
+    private static IReadOnlyDictionary<string, string> WithLanguageIn(
+        IReadOnlyDictionary<string, string> map, string name, string? code, string what)
+    {
+        var named = name?.Trim() ?? "";
+        if (named.Length == 0) throw new DriverException($"a session language is set for a {what} — name it.");
+        var language = code is null ? null : SessionLanguages.Code(code) ?? throw new DriverException(SessionLanguages.Refusal(code));
+
+        var next = new Dictionary<string, string>(map, StringComparer.OrdinalIgnoreCase);
+        // The name's spelling first written, when it has one in another case: one entry, never two.
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, named, StringComparison.OrdinalIgnoreCase)) ?? named;
+        if (language is null) next.Remove(key);
+        else next[key] = language;
+        return next;
+    }
+
     /// <summary>A moment as the file keeps it: in UTC, to the second.</summary>
     private static DateTimeOffset ToTheSecond(DateTimeOffset at)
     {
@@ -458,6 +496,9 @@ public sealed record DriverConfig(
             // a line should not start carrying an empty one.
             WriteMap(writer, "lines", Lines);
             WriteMap(writer, "workspaceLines", WorkspaceLines);
+            // Written only when set (LANG1c), as the CLI writes them: absent is no language, and no line handed.
+            WriteMap(writer, "languages", Languages);
+            WriteMap(writer, "workspaceLanguages", WorkspaceLanguages);
             // Written only when set (WSR1), for the same reason: absent is the merge it always was.
             WriteRules(writer, "landings", Landings);
             WriteRules(writer, "workspaceLandings", WorkspaceLandings);
@@ -695,6 +736,28 @@ public sealed record DriverConfig(
         return map;
     }
 
+    /// <summary>
+    /// The session languages (LANG1c): each name a code of the table, read in any case without the spaces around it. A code
+    /// the table does not hold, a value that is not text, a blank name and a map that is not one are not read; a name written
+    /// twice in any case is read where first written.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> LanguageMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Value.ValueKind == JsonValueKind.String && SessionLanguages.Code(property.Value.GetString()) is { } code
+                && property.Name.Trim() is { Length: > 0 } named && !map.ContainsKey(named))
+            {
+                map[named] = code;
+            }
+        }
+
+        return map;
+    }
+
     /// <summary>A map of names to branch names; an entry that is not one git would take is skipped.</summary>
     private static IReadOnlyDictionary<string, string> BranchMap(JsonElement root, string name)
     {
@@ -781,6 +844,8 @@ public sealed record DriverConfig(
             Standing = StandingMap(root, "standing"),
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
+            Languages = LanguageMap(root, "languages"),
+            WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
             Landings = RuleMap(root, "landings"),
             WorkspaceLandings = RuleMap(root, "workspaceLandings"),
             ReadAcross = FlagMap(root, "readAcross"),

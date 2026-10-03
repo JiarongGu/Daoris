@@ -858,10 +858,11 @@ public sealed partial class Driver(
             var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
-            // and their standing answer for its repository (KNOWUSE1b), from this machine's config.
-            var target = WithStanding(
+            // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
+            // machine's config.
+            var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
-                config) with
+                config), config, start.Workspace) with
             {
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -1764,6 +1765,13 @@ public sealed partial class Driver(
     /// </summary>
     internal static SessionTarget WithStanding(SessionTarget target, DriverConfig config) =>
         target with { Standing = config.StandingFor(target.Repository) };
+
+    /// <summary>
+    /// The work's session language for the quest's repository (LANG1c, D142 point 7), read from the config this tick holds
+    /// for every start, whatever kind: the repository's, else its workspace's, else none, and never the window's.
+    /// </summary>
+    internal static SessionTarget WithLanguage(SessionTarget target, DriverConfig config, string? workspace) =>
+        target with { Language = SessionLanguages.Resolve(config, target.Repository, workspace) };
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account

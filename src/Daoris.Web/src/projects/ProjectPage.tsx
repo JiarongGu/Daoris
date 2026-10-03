@@ -2,11 +2,13 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration, Repository } from '../api';
 import { ago, figure } from '../format';
+import type { LanguageOption, RepositoryLanguage } from '../settings/Languages';
 import type { RepositoryLine } from '../settings/Lines';
 import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../ui';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { DriverChoices } from './DriverChoices';
 import { RepositoryMarks } from './ProjectList';
+import { SessionLanguage } from './SessionLanguage';
 import { StandingAnswer } from './StandingAnswer';
 
 /** One fact of a repository: its label in the page's label column, its content wrapping beside it (POLISH4). */
@@ -33,6 +35,11 @@ export type Driving = {
   standing?: { says: string; at?: string | null } | null;
   /** Keep a standing answer, or with null clear it — absent on a shell older than it, and nothing is offered. */
   onStanding?: (says: string | null) => void;
+  /**
+   * Its session language (LANG1c, D142 point 7): what its sessions write to the person in, as the driver resolved it, with
+   * its workspace's by the table's name and the driver's table; absent on a shell older than it, and nothing is offered.
+   */
+  language?: { resolved: RepositoryLanguage | null; inherited?: string; table: LanguageOption[]; onSet: (language: string | null) => void };
 };
 
 /**
@@ -208,6 +215,17 @@ export function ProjectPage({
             /* What the person says holds for every session here (KNOWUSE1b), beside the other choices a session's
                instruction is composed from. */
             <StandingAnswer says={driving.standing?.says ?? null} at={driving.standing?.at ?? null} onSave={driving.onStanding} />
+          )}
+          {driving.language && (
+            /* The language its sessions write to the person in (LANG1c), beside the standing answer: both are what a
+               session's instruction is composed from, set for the work. */
+            <SessionLanguage
+              repository={registration.repository}
+              language={driving.language.resolved}
+              inherited={driving.language.inherited}
+              table={driving.language.table}
+              onSet={driving.language.onSet}
+            />
           )}
         </PageSection>
       )}

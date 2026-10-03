@@ -1,0 +1,14 @@
+{
+  "settings.sessionLanguage.title": "Session language",
+  "settings.sessionLanguage.body": "The language sessions write to you in: their questions, closing notes, decline reasons and last words. Code, commands and anything quoted stay as written. A repository's own wins over its workspace's; unset, sessions are asked for none. The window's own language is in Appearance, and neither sets the other.",
+  "settings.sessionLanguage.none": "No repository on this machine to set a session language for.",
+  "settings.sessionLanguage.workspaceHint": "The language for each repository in this workspace that sets none of its own, and for its intake.",
+  "settings.sessionLanguage.field": "The session language for {{name}}",
+  "settings.sessionLanguage.notSet": "Not set",
+  "settings.sessionLanguage.inherit": "Its workspace's: {{name}}",
+  "settings.sessionLanguage.from.repository": "{{name}}, set for this repository.",
+  "settings.sessionLanguage.from.workspace": "{{name}}, from this workspace.",
+  "settings.sessionLanguage.from.none": "None: its sessions are asked for no language.",
+  "settings.sessionLanguage.saved": "Sessions in {{name}} write to you in {{language}} now. A session already running keeps what it was handed.",
+  "settings.sessionLanguage.cleared": "{{name}} sets no session language of its own now."
+}

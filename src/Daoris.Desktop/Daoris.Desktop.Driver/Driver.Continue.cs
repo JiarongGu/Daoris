@@ -137,7 +137,7 @@ public sealed partial class Driver
         var workTree = park.Tree!;
         var before = await WorkingTree.HeadAsync(workTree, ct).ConfigureAwait(false);
         var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
-        var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with
+        var target = WithLanguage(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), config, start.Workspace) with
         {
             ReadsAcross = across.Reads,
             WritesAcross = across.Writes,
@@ -145,11 +145,13 @@ public sealed partial class Driver
         };
         // The go-aheads it asked, answered since it parked (KNOWUSE1a, D135 §2): its conversation was handed the ask's at its
         // start, and is told the answers after the person's own words. Unread, or on no ask, it is resumed with the words alone.
+        // Then the work's session language where one is set (LANG1c), since it may have changed since the conversation was
+        // handed it; none set, and the appendix is what it was.
         var asked = await AskWords.ReadAsync(service, quest.From, ct).ConfigureAwait(false);
         var resume = new ResumeAsk(
             kept.Conversation, park.Waiting,
             Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked),
-            GoAheadsText.Resumed("", asked, sessionId).TrimStart());
+            SessionLanguageText.Resumed(GoAheadsText.Resumed("", asked, sessionId).TrimStart(), target.Language));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
 
         try
