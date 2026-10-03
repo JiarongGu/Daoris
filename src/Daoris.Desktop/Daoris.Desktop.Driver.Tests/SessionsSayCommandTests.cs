@@ -207,6 +207,27 @@ public sealed class SessionsSayCommandTests : IDisposable
         Assert.Equal("sessions: held: it reads this when its turn ends.\n", said);
     }
 
+    /// <summary>
+    /// Words a running session took are the person's words on its ask (D133 §1; MSG1e4): once its door holds them they go to
+    /// the service's door for them by the session's own id, as the screen's do (DRIFT1a2), and the service judges which ask.
+    /// </summary>
+    [Fact]
+    public async Task Words_a_running_session_took_are_kept_on_its_ask()
+    {
+        var room = Running();
+        using var service = room.Client();
+        var processes = new SessionProcesses(Sessions);
+        processes.OpenInbox("w0rk1ng0").Attach(interrupt: null);
+        Alive("w0rk1ng0");
+        await using var loop = Loop(processes, service);
+
+        var (exit, _) = await SayAsync(room, ["w0rk1ng0", "use the cache"]);
+
+        Assert.Equal(0, exit);
+        await Poll.Until(() => room.Added.Count > 0, () => "nothing was posted to the ask's door");
+        Assert.Equal(("w0rk1ng0", "use the cache"), Assert.Single(room.Added));
+    }
+
     private static Room Ended() => new([Record("d0ne0000", "completed")], [Quest("q1", "Done")]);
 
     /// <summary>
@@ -230,6 +251,9 @@ public sealed class SessionsSayCommandTests : IDisposable
         var shown = Assert.Single(events.Page("d0ne0000").Events);
         Assert.Equal((SessionEventKind.User, "person", "w1", "also the changelog", "resume", RequestDoor.Terminal),
             (shown.Kind, shown.Origin, shown.Id, shown.Text, shown.Reaches, shown.Door));
+
+        // The service keeps words said after a record ended on its ask once taken, as `reopened` (MSG1a): never added twice.
+        Assert.Empty(room.Added);
     }
 
     /// <summary>Where it could not go on in its own conversation, its words went to a new session, and the verb names it (D137 §3.1).</summary>
@@ -469,6 +493,7 @@ public sealed class SessionsSayCommandTests : IDisposable
         private readonly object _gate = new();
         private readonly List<JsonObject> _records = [.. records];
         private readonly List<JsonObject> _quests = [.. quests];
+        private readonly List<(string Session, string Text)> _added = [];
         private int _words;
 
         /// <summary>How many more times the say door answers a working record still running; at none it has ended.</summary>
@@ -484,6 +509,15 @@ public sealed class SessionsSayCommandTests : IDisposable
         public IReadOnlyList<string> Said(string id)
         {
             lock (_gate) return [.. Of(id)["said"]!.AsArray().Select(word => (string)word!["id"]!)];
+        }
+
+        /// <summary>What the door for what the person adds to a running session heard (DRIFT1a), in order: the session, then the words.</summary>
+        public IReadOnlyList<(string Session, string Text)> Added
+        {
+            get
+            {
+                lock (_gate) return [.. _added];
+            }
         }
 
         public IReadOnlyList<string> Files(string id)
@@ -559,6 +593,13 @@ public sealed class SessionsSayCommandTests : IDisposable
                     {
                         ["session"] = record.DeepClone(), ["message"] = $"Kept for session `{id}` to go on with.", ["said"] = word,
                     });
+                }
+
+                if (request.Method == HttpMethod.Post && path.EndsWith("/added", StringComparison.Ordinal))
+                {
+                    var id = Uri.UnescapeDataString(path["/api/sessions/".Length..^"/added".Length]);
+                    _added.Add((id, body!["text"]!.GetValue<string>()));
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["kept"] = true, ["message"] = "Kept on ask #a1." });
                 }
 
                 return Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"No door {path}." });

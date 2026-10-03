@@ -94,10 +94,13 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, env = {}, mode 
 /**
  * The same driver, running WHILE the gate acts — for a session that must be alive when something
  * happens to it (D68 §5: a losing session stopped). Same environment, same timeout, same answer.
+ * `mode: null` is the watch itself, a bare `drive` ticking until it is stopped, and aborting `signal`
+ * stops it as Ctrl+C does, the watch's own stop where the platform delivers one (MSG1e3: a terminal's
+ * words said while the loop runs). The timeout still ends a watch that does not stop.
  */
-const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once' }) =>
+const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once', signal }) =>
   new Promise((resolve) => {
-    const child = spawn('dotnet', [driverDll, 'drive', mode], {
+    const child = spawn('dotnet', [driverDll, 'drive', ...(mode ? [mode] : [])], {
       cwd: scratch,
       env: {
         ...process.env,
@@ -110,6 +113,7 @@ const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mod
       },
     });
     children.push(child);
+    signal?.addEventListener('abort', () => child.kill('SIGINT'), { once: true });
     let out = '';
     child.stdout.on('data', (chunk) => { out += chunk; });
     child.stderr.on('data', (chunk) => { out += chunk; });
@@ -4097,6 +4101,119 @@ check(
     && (portAnsweredLines[0].why ?? null) === null,
   JSON.stringify(portAnsweredLines),
 );
+
+// -------------------------------------------------- 17a2. words from a terminal
+
+section('17a2. Words from a terminal reach an ended session, which goes on in its own record (D137/MSG1e)');
+
+// `daoris-driver sessions say` is the terminal's door to what the screen's box says to a session (D137 §5.2, D50). Said
+// before any loop drives the home, words to a session that ended are kept on its record for the next loop, whose first
+// look goes on with them: the same record reopens, the stub's own conversation resumed with the words as its next prompt.
+// Said while the headless loop runs, its request watch keeps them, shows them and nudges its look (LoopWords), and the
+// verb follows them until the same session took them. An intake is refused before anything is asked. The loop is the
+// headless host's watch, ticking ten minutes apart, so only its first look and a nudge can take words up; the stub's
+// resumed turn lasts a few seconds, so the verb sees the record working before it ends again.
+const failuresBeforeSay = totals.failures;
+const heardAsk = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: 'Note the cache in the report', body: 'Say in the report that the frame cache exists.' },
+});
+const heardQuestId = heardAsk.json?.quest?.id ?? '';
+const heardRun = driver({ serviceUrl: BASE, config: acpConfig, mode: '--until-idle' });
+const heardRecords = async () => ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .filter((s) => s.quest === heardQuestId);
+const [heardEnded, ...heardMore] = await heardRecords();
+const heardId = heardEnded?.id ?? 'none';
+check(
+  'a stub session works a quest to done over the protocol door and ends, the one record its quest has',
+  heardAsk.status === 200 && heardRun.code === 0 && heardMore.length === 0 && heardEnded?.state === 'completed',
+  `${heardAsk.text}\n${heardRun.out}\n${JSON.stringify([heardEnded, ...heardMore])}`,
+);
+
+// The loop's own config: the protocol door's, and a watch whose next look is ten minutes away.
+const sayConfig = join(scratch, 'driver-say.json');
+writeFileSync(sayConfig, `${JSON.stringify({ ...JSON.parse(readFileSync(acpConfig, 'utf8')), pollSeconds: 600 }, null, 2)}\n`);
+const sayFromTerminal = (id, words) => driver({ serviceUrl: BASE, config: sayConfig, mode: `sessions say ${id} "${words}"` });
+const heardTranscript = (record) => (existsSync(record?.transcript ?? '') ? readFileSync(record.transcript, 'utf8') : '');
+const heardEvents = () => {
+  const path = join(scratch, 'sessions', `${heardId}.events.jsonl`);
+  return existsSync(path) ? readFileSync(path, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line)) : [];
+};
+// Ended again, its words taken and the stub's resumed turn heard them: read until then, or for 45 seconds.
+const heardSettled = async (words) => {
+  let seen = null;
+  for (let attempt = 0; attempt < 180; attempt += 1) {
+    seen = (await heardRecords()).find((s) => s.id === heardId) ?? null;
+    if ((seen?.said ?? []).length === 0 && !['queued', 'starting', 'working'].includes(seen?.state)
+        && heardTranscript(seen).includes(`acp-agent: heard after it ended: ${words}`)) {
+      return seen;
+    }
+    await sleep(250);
+  }
+  return seen;
+};
+
+const heldSay = sayFromTerminal(heardId, 'note the cache size too');
+const heldRecord = (await heardRecords()).find((s) => s.id === heardId);
+const heldShown = heardEvents().filter((e) => e.kind === 'user' && e.origin === 'person');
+check(
+  'before any loop drives the home, words said to it are kept on its record for the next loop, and shown as the terminal’s',
+  heldSay.code === 0 && /held: the same session goes on with this when a driver next runs on this machine/.test(heldSay.out)
+    && heldRecord?.state === 'completed' && heldRecord.said?.length === 1 && heldRecord.said[0].text === 'note the cache size too'
+    && heldShown.length === 1 && heldShown[0].id === heldRecord.said[0].id
+    && heldShown[0].reaches === 'resume' && heldShown[0].door === 'terminal',
+  `${heldSay.out}\n${JSON.stringify(heldRecord)}\n${JSON.stringify(heldShown)}`,
+);
+
+const stopSayLoop = new AbortController();
+const sayLoop = driverInBackground({ serviceUrl: BASE, config: sayConfig, mode: null, signal: stopSayLoop.signal });
+const firstLook = await heardSettled('note the cache size too');
+const firstLookSaid = heardTranscript(firstLook);
+check(
+  'the loop’s first look goes on with them in the SAME record: its own conversation resumed with the words, and it ends again',
+  firstLook?.state === 'completed' && (await heardRecords()).length === 1
+    && /went on with your words and ended/.test(firstLook.note ?? '')
+    && (firstLookSaid.match(/acp-agent: session on/g) ?? []).length === 1
+    && (firstLookSaid.match(/acp-agent: resumed conversation acp-session-1/g) ?? []).length === 1,
+  `${JSON.stringify(firstLook)}\n${firstLookSaid.slice(-1600)}`,
+);
+
+const goingOn = sayFromTerminal(heardId, 'and say where it lives');
+check(
+  'with the headless loop running, words said to it are taken up by the SAME session, and the verb says so: going on, exit 0',
+  goingOn.code === 0 && /sessions: going on: the same session took it\./.test(goingOn.out),
+  goingOn.out,
+);
+const workedAgain = await heardSettled('and say where it lives');
+const workedAgainSaid = heardTranscript(workedAgain);
+check(
+  '…the record worked again and ended again: still one record, its own conversation resumed a second time, never opened anew',
+  workedAgain?.state === 'completed' && (await heardRecords()).length === 1
+    && (workedAgainSaid.match(/acp-agent: session on/g) ?? []).length === 1
+    && (workedAgainSaid.match(/acp-agent: resumed conversation acp-session-1/g) ?? []).length === 2,
+  `${JSON.stringify(workedAgain)}\n${workedAgainSaid.slice(-1600)}`,
+);
+
+const heardReopened = readEvents(driver({ serviceUrl: BASE, config: sayConfig, mode: 'logs --event session.reopened --json' }).out, 'session.reopened')
+  .filter((data) => data.session === heardId);
+check(
+  'the machine log has `session.reopened` for it twice: a driven record, from completed, resumed, the words said at the terminal',
+  heardReopened.length === 2 && heardReopened.every((data) => data.kind === 'driven' && data.from === 'completed'
+    && data.resumed === true && data.door === 'terminal' && data.adapter === 'acp-stub'),
+  JSON.stringify(heardReopened),
+);
+
+const intakeSay = sayFromTerminal(intakeSession?.id ?? 'none', 'one more thing');
+const [intakeAfterSay] = await intakesOf(settledAskId);
+check(
+  '…and words to an intake are refused before anything is asked: exit 1, naming the ask to answer instead',
+  intakeSay.code === 1 && new RegExp(`is an intake; answer its ask #${settledAskId} instead`).test(intakeSay.out)
+    && (intakeAfterSay?.said ?? []).length === 0,
+  `${intakeSay.out}\n${JSON.stringify(intakeAfterSay)}`,
+);
+
+stopSayLoop.abort();
+const sayLoopRan = await sayLoop;
+if (totals.failures > failuresBeforeSay) console.log(`          the headless loop said:\n${sayLoopRan.out}`);
 
 // -------------------------------------------------- 17b. registered is drivable over the protocol door
 
