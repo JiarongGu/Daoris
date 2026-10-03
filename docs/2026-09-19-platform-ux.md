@@ -485,7 +485,8 @@ controls are in the frame design's §3.
     download is followed on its card (its console and *Stop download*), *Delete* asks once, and *Resource locations*
     lists the person's, then the list built in, which cannot be removed.
   - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
-    the strikes dial); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
+    the strikes dial, and the install's update: what is staged, the drain, the last swap and the banner's three words,
+    UPDATE1b); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose
     it, a job named once a circle has two, a blocked start's sentence whole, at the card's width);
     *Agents* (one card per agent, its accounts leading, each row saying its cool-off with *Try now*, the
