@@ -26,7 +26,13 @@ public static class LandingForm
 /// once the branch exists, it pushes and opens the pull request for its platform. Null — the default — is
 /// the branch left for the person to push, as it always was.
 /// </param>
-public sealed record LandingRule(string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null)
+/// <param name="AutoAccept">
+/// <i>Accept automatically</i> (LAND2a, D145): a quest's done lands its work as the person's Accept would, and the rule's
+/// plugin pushes it and opens the pull request with no press, the pull request being the last human step. Only a branch
+/// rule takes it; off, the default, is the press as it always was. It rides the rule, so a repository's own rule replaces
+/// its workspace's switch with the rest of it. Nothing acts on it until LAND2b.
+/// </param>
+public sealed record LandingRule(string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false)
 {
     public static readonly LandingRule Merge = new(LandingForm.Merge);
 }
@@ -142,6 +148,11 @@ public static class LandingRules
         LandingForm.Merge when rule.Plugin is not null =>
             "only a branch rule hands its work to a plugin — the plugin pushes the branch Daoris made, and a merge "
             + "makes none. `branch <pattern> --plugin <id>` is the form that does.",
+        // A merge writes into the person's checkout, and with no press nothing would stand between the work and the
+        // line (D145 point 1, D51 rule 6).
+        LandingForm.Merge when rule.AutoAccept =>
+            "only a branch rule accepts automatically — a merge writes into your checkout, and with no press nothing would "
+            + "stand between the work and the line. `branch <pattern> --auto-accept` is the form that does.",
         LandingForm.Merge => null,
         LandingForm.Branch => Problem(rule.Pattern ?? "") ?? (rule.Plugin is { } plugin && !PluginId.IsMatch(plugin)
             ? $"`{plugin}` is not a plugin id — one is lowercase letters, digits, dots and dashes, like `example.github-pull-request`."
@@ -177,6 +188,18 @@ public static class LandingRules
             ? null
             : $"plugin `{plugin}` does not land work — its manifest speaks on no `{HookPoints.Land}` point.";
     }
+
+    /// <summary>
+    /// What a door says as <i>Accept automatically</i> is set (LAND2a, D145 point 5, design §6): the switch is the
+    /// person's standing say-so for a push with no press, so it is said where it is given. With no plugin, the warning
+    /// that nothing leaves the machine. The CLI's <c>driverconfig.ts</c> says the same words; the page says them in its
+    /// own catalogue.
+    /// </summary>
+    public static string AutoAcceptSays(string? plugin) => plugin is { } named
+        ? $"when a quest here is done, its work is put on its branch, and `{named}` pushes it and opens a pull request without "
+          + "asking you each time. The pull request is where it is judged. Switch it off to accept each one yourself."
+        : "when a quest here is done, its work is put on its branch, and nothing leaves this machine: no plugin opens a pull "
+          + "request, so each done's branch waits here for you to push it. Switch it off to accept each one yourself.";
 
     /// <summary>
     /// What the conversation's record keeps of a landing (D100): the whole sentence the press said, the

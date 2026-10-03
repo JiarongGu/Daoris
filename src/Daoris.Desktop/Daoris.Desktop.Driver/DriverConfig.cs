@@ -706,6 +706,8 @@ public sealed record DriverConfig(
             if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
             // Written only when on: absent is the tree staying, as it always has.
             if (rule.Tidy) writer.WriteBoolean("tidy", true);
+            // Written only when on (LAND2a): absent is the person's press, as it always was. The CLI writes it here too.
+            if (rule.AutoAccept) writer.WriteBoolean("autoAccept", true);
             writer.WriteEndObject();
         }
 
@@ -714,7 +716,7 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// A map of names to landing rules; one that could not land work — an unknown form, a pattern that
-    /// names no branch, a merge naming a plugin — is skipped. A plugin not installed here is still read:
+    /// names no branch, a merge naming a plugin or accepting automatically — is skipped. A plugin not installed here is still read:
     /// the press says so, and the file stays what the person wrote.
     /// </summary>
     private static IReadOnlyDictionary<string, LandingRule> RuleMap(JsonElement root, string name)
@@ -725,10 +727,13 @@ public sealed record DriverConfig(
             foreach (var property in element.EnumerateObject())
             {
                 if (property.Value.ValueKind != JsonValueKind.Object) continue;
+                // Only JSON `true` switches the tidy or the automatic acceptance on (LAND2a): `"true"` or 1 is not the
+                // person's say-so for a push with no press.
                 var rule = new LandingRule(
                     String(property.Value, "form") ?? "", String(property.Value, "pattern"),
                     property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
-                    String(property.Value, "plugin"));
+                    String(property.Value, "plugin"),
+                    property.Value.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True);
                 if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
             }
         }

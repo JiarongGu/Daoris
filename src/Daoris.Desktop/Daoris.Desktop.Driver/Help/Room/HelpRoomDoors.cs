@@ -44,7 +44,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
         ("set how accepted work lands", "Settings → Workspace → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
-            + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request)"),
+            + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
+            + "`--auto-accept`: a quest's done lands it with no press)"),
         // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
         // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112).
         ("bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches "

@@ -30,7 +30,7 @@ public sealed class HelpRoomGoldenTests
             {
                 Checkout = true, Drivable = true, OwnTree = true,
                 Line = new Line("feature/app", LineSource.Repository),
-                Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}", Tidy: true, Plugin: "example.lands"), LandingSource.Workspace),
+                Landing = new Landing(new LandingRule("branch", "feature/{slug}-{quest}", Tidy: true, Plugin: "example.lands", AutoAccept: true), LandingSource.Workspace),
             },
             new("reports-db", "work")
             {

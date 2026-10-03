@@ -38,4 +38,21 @@ export const HandedToAPlugin: Story = {
   },
 };
 
+/**
+ * LAND2a (D145): a workspace that accepts automatically through its plugin, and a repository whose own rule accepts
+ * automatically with no plugin, which warns that nothing leaves the machine.
+ */
+export const AcceptsAutomatically: Story = {
+  args: {
+    landers: ['azure-devops-pull-request'],
+    workspaceLandings: [
+      { workspace: 'work', form: 'branch', pattern: 'feature/{slug}-{quest}', tidy: true, plugin: 'azure-devops-pull-request', autoAccept: true },
+    ],
+    landings: [
+      { repository: 'report-ui', workspace: 'work', form: 'branch', pattern: 'feature/{slug}-{quest}', tidy: true, plugin: 'azure-devops-pull-request', autoAccept: true, source: 'workspace' },
+      { repository: 'reports-db', workspace: 'work', form: 'branch', pattern: 'review/{session}', autoAccept: true, source: 'repository' },
+    ],
+  },
+};
+
 export const NothingHere: Story = {};
