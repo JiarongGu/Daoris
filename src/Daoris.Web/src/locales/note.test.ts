@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { NOTE_CODES, NOTE_VALUES } from '../work/noteLines';
+import { REASONS } from '../work/say';
 import { en, zh } from '.';
 
 /**
@@ -9,26 +11,34 @@ import { en, zh } from '.';
  * This side parses both declarations, one per line as each writer writes them, and holds both catalogues to them: every
  * code has its entry saying exactly its values, and every `note.*` entry is a code a writer declares, so a retired code
  * leaves nothing behind. Each writer's own test reads the catalogues from its side; the parity gate holds `en` and `zh` to one
- * key set. LANG1b's `note.ts` map joins this table when it is built.
+ * key set. LANG1b's `work/noteLines.ts` map is the third side: held below to both declarations code for code, with the same
+ * values, key and family of reasons, and every value a writer declares has a way the page says it.
  */
 
-type Declared = { code: string; values: string[]; key: string; writer: string };
+type Declared = { code: string; values: string[]; key: string; writer: string; why?: string };
 
 const root = join(process.cwd(), '..', '..');
-const DECLARATION = /new\("(?<code>[a-z][a-z.-]*)", \[(?<values>[^\]]*)\](?:, Key: "(?<key>[^"]+)")?\)/g;
+const DECLARATION =
+  /new\("(?<code>[a-z][a-z.-]*)", \[(?<values>[^\]]*)\](?:, Key: "(?<key>[^"]+)")?\)(?: \{ Why = (?<why>\w+) \})?/g;
+
+const names = (values: string) =>
+  values.split(',').map((value) => value.trim().replace(/^"|"$/g, '')).filter((value) => value.length > 0);
+
+const source = (path: string) => readFileSync(join(root, ...path.split('/')), 'utf8');
 
 /** A writer's codes, read from its source as it declares them. */
 function declared(writer: string, path: string): Declared[] {
-  const source = readFileSync(join(root, ...path.split('/')), 'utf8');
-  return [...source.matchAll(DECLARATION)].map((match) => {
-    const { code, values, key } = match.groups as { code: string; values: string; key?: string };
-    return {
-      code,
-      values: values.split(',').map((value) => value.trim().replace(/^"|"$/g, '')).filter((value) => value.length > 0),
-      key: key ?? `note.${code}`,
-      writer,
-    };
+  return [...source(path).matchAll(DECLARATION)].map((match) => {
+    const { code, values, key, why } = match.groups as { code: string; values: string; key?: string; why?: string };
+    return { code, values: names(values), key: key ?? `note.${code}`, writer, ...(why ? { why: why.toLowerCase() } : {}) };
   });
+}
+
+/** The reasons the driver declares for one family (`NoteCodes.Continue`, `NoteCodes.Cooling`): each key and its values. */
+function reasons(family: string): { key: string; values: string[] }[] {
+  const text = source('src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs');
+  const block = new RegExp(`NoteReasons ${family} = new\\(\\s*\\[([\\s\\S]*?)\\]\\);`).exec(text)?.[1] ?? '';
+  return [...block.matchAll(/new\(\w+\.\w+, \[([^\]]*)\], "([^"]+)"\)/g)].map((match) => ({ key: match[2], values: names(match[1]) }));
 }
 
 const driver = declared('driver', 'src/Daoris.Desktop/Daoris.Desktop.Driver/NoteCodes.cs');
@@ -58,5 +68,36 @@ describe('a session note’s codes, held to both catalogues', () => {
     const keys = new Set(codes.map((code) => code.key));
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
+  });
+});
+
+describe('the page’s map of a note’s codes, held to both writers', () => {
+  /** LANG1b: a code a writer adds fails here until the page maps it; one it retires leaves nothing behind. */
+  it('maps exactly the codes the writers declare, each with its values, its key and its family of reasons', () => {
+    const page = Object.entries(NOTE_CODES).map(([code, entry]) => ({
+      code, values: [...entry.values], key: entry.key ?? `note.${code}`, ...(entry.why ? { why: entry.why } : {}),
+    }));
+    const declaredCodes = codes.map(({ code, values, key, why }) => ({ code, values, key, ...(why ? { why } : {}) }));
+    const byCode = (a: { code: string }, b: { code: string }) => a.code.localeCompare(b.code);
+    expect(page.sort(byCode)).toEqual(declaredCodes.sort(byCode));
+  });
+
+  it('has a way to say every value a writer declares', () => {
+    const values = new Set(codes.flatMap((code) => code.values));
+    expect([...values].filter((value) => !(value in NOTE_VALUES))).toEqual([]);
+  });
+
+  /** A `why` the driver writes is a reason the page words, by the same key, needing the values the driver writes beside it. */
+  it('words every reason a `why` may name', () => {
+    const continued = reasons('Continue');
+    expect(continued.length).toBeGreaterThan(10);
+    const page = Object.values(REASONS).map(({ key, needs }) => ({ key, values: [...(needs ?? [])] }));
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    expect(page.sort(byKey)).toEqual(continued.sort(byKey));
+
+    const cooling = reasons('Cooling');
+    expect(cooling.map((reason) => reason.key).sort()).toEqual([
+      'harness.cooling.why.assumed', 'harness.cooling.why.default', 'harness.cooling.why.notBelieved', 'harness.cooling.why.stated',
+    ]);
   });
 });

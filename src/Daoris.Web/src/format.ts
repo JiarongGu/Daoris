@@ -8,9 +8,8 @@ import i18n from './i18n';
  * when the machine speaks it. A British machine reading English writes 24/09/2026, which the page's
  * bare `en` would have written 9/24/2026; the same machine reading 中文 writes the date as 中文 does.
  */
-function locale(): string {
+function locale(page: string = i18n.language): string {
   const machine = typeof navigator === 'undefined' ? undefined : navigator.language;
-  const page = i18n.language;
   return machine && machine.split('-')[0] === page.split('-')[0] ? machine : page;
 }
 
@@ -40,11 +39,20 @@ export function stamp(iso: string): string {
 /**
  * A moment as a person reads a reset (TOOL4g, D125 §2.4): its month and day, its clock, and the zone named, in this
  * machine's zone and written the way the reader's language writes them — `Oct 3, 16:02 GMT+5:45`, `10月3日 16:02 GMT+5:45`.
+ * `language` is the page's unless a caller words in another, as {@link list}'s is.
  */
-export function moment(iso: string): string {
-  return new Date(iso).toLocaleString(locale(), {
+export function moment(iso: string, language?: string): string {
+  return new Date(iso).toLocaleString(locale(language), {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZoneName: 'short',
   });
+}
+
+/**
+ * Items joined the way the reader's language joins a list (LANG1b, the language design §4): `#a1, #b2, and #c3`,
+ * `#a1、#b2和#c3`. `language` is the page's unless a caller words in another (a story's or a test's fixed language).
+ */
+export function list(items: readonly string[], language?: string): string {
+  return new Intl.ListFormat(locale(language), { type: 'conjunction' }).format(items);
 }
 
 /** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */

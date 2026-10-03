@@ -4,6 +4,7 @@ import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import { Button, Icon, type IconName, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
+import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
@@ -282,8 +283,9 @@ export function AskPage({
 
       {ask.intake && (
         /* Who answered (INT4d): the session the intake ran as — its state, then its tool, and its note,
-           verbatim like every driver sentence. A door into Sessions only where Sessions exists, and
-           only onto a record the page holds; one it does not is named by its id. */
+           Daoris's lines in the reader's language and someone's words as written (LANG1b). A door into
+           Sessions only where Sessions exists, and only onto a record the page holds; one it does not is
+           named by its id. */
         <PageSection title={t('asks.record.intake')}>
           {intake ? (
             <>
@@ -302,7 +304,7 @@ export function AskPage({
                 )}
                 <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
               </p>
-              {intake.note && <p className="mt-1.5 mb-0 text-body text-ink-soft">{intake.note}</p>}
+              <Note note={intake.note} parts={intake.noteParts} className="mt-1.5 text-body text-ink-soft" />
             </>
           ) : (
             <span className="font-mono text-meta text-ink-soft">#{ask.intake.slice(0, 6)}</span>

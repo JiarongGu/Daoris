@@ -110,8 +110,11 @@ export type ReasonValues = {
   agent?: string | null;
 };
 
-/** Each reason's key, and the values its sentence needs (D137 §5.1): a code the driver writes on its note (`ContinueWhy`). */
-const REASONS: Record<string, { key: string; needs?: readonly (keyof ReasonValues)[] }> = {
+/**
+ * Each reason's key, and the values its sentence needs (D137 §5.1): a code the driver writes on its note (`ContinueWhy`).
+ * `locales/note.test.ts` holds it to the reasons the driver's `NoteCodes.Continue` declares, key for key (LANG1b).
+ */
+export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (keyof ReasonValues)[] }>> = {
   'account': { key: 'work.say.why.account' },
   'adapter': { key: 'work.say.why.adapter', needs: ['from', 'to'] },
   'unkept': { key: 'work.say.why.unkept' },

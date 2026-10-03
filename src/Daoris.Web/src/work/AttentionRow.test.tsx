@@ -89,6 +89,40 @@ describe('a row in what needs you', () => {
     render(<AttentionRow item={{ ...PARKED, detail: null }} onOpen={() => {}} />);
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
+
+  /**
+   * LANG1b (D142 points 1, 4, 5): a parked session's note in the reader's language, as one run the row clamps, the agent's
+   * question inline; a record from before parts as it was kept, marked.
+   */
+  it('words a parked session’s note in the reader’s language, and shows an old one as recorded', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const { container, unmount } = render(<AttentionRow
+        item={{
+          ...PARKED,
+          detail: undefined,
+          note: {
+            note: 'It stopped with its quest still taken, to ask you: Which branch?',
+            parts: [
+              { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+              { words: 'Which branch?', by: 'agent' },
+            ],
+          },
+        }}
+        onOpen={vi.fn()}
+      />);
+      const clamped = container.querySelector('.line-clamp-2')!;
+      expect(clamped.textContent).toBe('它停了下来，委托仍已接下，想问你：Which branch?');
+      expect([...clamped.classList].filter((name) => /^(block|inline|flex|grid|inline-block)$/.test(name))).toEqual([]);
+      unmount();
+
+      render(<AttentionRow item={{ ...PARKED, detail: undefined, note: { note: 'two ways forward.' } }} />);
+      expect(screen.getByText('按原文显示')).toBeInTheDocument();
+      expect(screen.getByText('two ways forward.')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
 });
 
 /** No pinned clock: nothing below reads a duration, and userEvent's own waits are real. */

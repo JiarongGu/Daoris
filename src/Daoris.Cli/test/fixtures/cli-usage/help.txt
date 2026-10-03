@@ -120,6 +120,11 @@ daoris <command> [options]
                                                    session there: which writes
                                                    are allowed, where to test;
                                                    kept here, never in the repo
+                         language <repo> en|zh|--clear
+                                                   the language its sessions write
+                                                   to you in (--workspace <name>
+                                                   for each repo there with none);
+                                                   the window's is Appearance's
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

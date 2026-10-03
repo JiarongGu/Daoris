@@ -184,6 +184,8 @@ public sealed partial class HelpCoverageTests
         ("across write-to", new Door("setting", "across")),
         // KNOWUSE1b: a standing answer for a repository, the person's words, which Ask Daoris proposes and the person applies.
         ("standing", new Door("setting", "standing")),
+        // LANG1c: the work's session language, for a repository or a workspace; LANG1c2 gave it the service's writer.
+        ("language", new Door("setting", "language")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -208,6 +210,7 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
+        ("workspace", "useSetLanguage", null, new Door("setting", "language")),
         ("workspace", "useTreesSync", null, new Door("sync", "sync")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "

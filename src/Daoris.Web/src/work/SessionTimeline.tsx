@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago } from '../format';
 import { SectionTitle } from '../ui';
+import { Note } from './Note';
 import { type TimelineEvent, sessionTimeline } from './timeline';
 
 /** The mark's hue per kind — an arrangement of existing tokens (D41), never a new colour. */
@@ -19,9 +20,9 @@ const MARK: Record<TimelineEvent['kind'], string> = {
  * A molecule: it is handed an event and renders it, so every kind — including the ones a real
  * session produces once a week — is reachable in a story.
  *
- * **What the driver said renders verbatim.** A note is an observation and an evidence bundle is a
- * sentence the driving machine wrote; the chrome around them speaks the active language and they
- * do not, which is where the platform's i18n boundary sits.
+ * **A session's note is `Note`'s** (LANG1b, D142): Daoris's lines worded by their codes in the reader's language,
+ * someone's words as written, a record from before as it was kept, marked. An evidence bundle is a sentence the
+ * driving machine wrote and renders verbatim, and a quest's note is its closer's words.
  */
 export function TimelineEntry({ event }: { event: TimelineEvent }) {
   const { t } = useTranslation();
@@ -31,7 +32,8 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
       : event.kind === 'quest' ? t('work.timeline.quest', { status: t(`status.${event.status}`) })
         : t('work.timeline.evidence');
 
-  const note = event.kind === 'state' || event.kind === 'quest' ? event.note : null;
+  // A quest's note is its closer's words, shown as written; a session's is its record's, Daoris's lines worded (LANG1b).
+  const note = event.kind === 'quest' ? event.note : null;
 
   return (
     <li className="relative pb-3 pl-5 last:pb-0">
@@ -46,6 +48,9 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
 
       {note && (
         <p className="m-0 mt-0.5 whitespace-pre-wrap text-small italic text-ink-soft">{note}</p>
+      )}
+      {event.kind === 'state' && (
+        <Note note={event.note} parts={event.noteParts} className="mt-0.5 text-small italic text-ink-soft" />
       )}
 
       {event.kind === 'evidence' && (
@@ -96,7 +101,7 @@ export function SessionTimeline({ session, quest, hideCurrentNote = false, title
 }) {
   const { t } = useTranslation();
   const events = sessionTimeline(session, quest).map((event) =>
-    (hideCurrentNote && event.kind === 'state' ? { ...event, note: null } : event));
+    (hideCurrentNote && event.kind === 'state' ? { ...event, note: null, noteParts: null } : event));
 
   return (
     <section>
