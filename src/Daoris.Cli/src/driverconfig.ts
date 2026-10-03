@@ -208,7 +208,7 @@ export interface LandingRule {
   /**
    * *Accept automatically* (LAND2a, D145): a quest's done lands its work with no press, and the rule's plugin pushes it
    * and opens the pull request. Only a branch rule takes it; absent is the person's press. The driver's
-   * `LandingRule.AutoAccept` is the twin. Nothing acts on it until LAND2b.
+   * `LandingRule.AutoAccept` is the twin; the driver lands a released done under it at a look (LAND2b).
    */
   autoAccept?: boolean;
 }
