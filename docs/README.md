@@ -72,6 +72,7 @@ changes no row (D127).
 | `2026-10-03-context-menu-design.md` | contract | The right-click menu: the page's own, each surface's acts from the owner it has, selected text, a link and a code span; the engine's menu kept for fields and suppressed elsewhere (CTX1) | Current (D138). Amends the platform language §4 and §6 |
 | `2026-10-03-plugin-catalogue-design.md` | contract | The plugins page as a catalogue (installed, Daoris's own, available), a plugin's icon declared in its manifest and handed to the page as its bytes, and the monogram in its place (PLUGUI2) | Current (D140), built (PLUGUI2, PLUGUI2b). Amends the plugin design §3 and the plugins screen design §3.1–§3.2 |
 | `2026-10-03-language-design.md` | contract | Languages: Daoris's lines in a session's note worded by code, someone's words shown as written, every line the driver writes coded, and a session language set for the work, apart from the window's (LANG1) | Designed (D142); LANG1a and LANG1c built (D142's notes). Amends the platform language §4 and the frontend architecture §3 |
+| `2026-10-03-evidence-design.md` | contract | Evidence Daoris checks: a requirement names a path the done's commit must hold, or a declared gate read from the queue's verdict; a met answer without it holds the quest as a departure does (EVID1) | Designed (D144); nothing built. Amends D46, D133 §3–§4, D65 §4 and D115 §5 |
 
 ## Studies and evidence
 
