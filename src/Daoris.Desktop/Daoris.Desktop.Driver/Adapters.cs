@@ -214,7 +214,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}
+        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}{WrittenTo(target)}
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
@@ -326,6 +326,18 @@ public static class TargetPrompt
     /// its ask: their words, verbatim, with when they set them. Nothing where the repository keeps none.
     /// </summary>
     private static string Standing(SessionTarget target) => StandingText.Beneath(target.Standing, target.Repository);
+
+    /// <summary>
+    /// For a first start handed the words the person wrote to an earlier session on its quest after it ended, which could
+    /// not go on with them (MSG1b, D137 §2.2): their words, verbatim, quoted line by line. Nothing for any other start: a
+    /// carry-on says them in its own paragraph (<see cref="Before"/>).
+    /// </summary>
+    private static string WrittenTo(SessionTarget target) => target is { PersonSaid: { } said, CutOff: null, Answered: null }
+        ? "\nThe person wrote to an earlier session on this quest after it ended, and it could not go on with their words, so "
+          + "they are yours to act on:\n\n"
+          + string.Join("\n", said.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}"))
+          + "\n"
+        : "";
 
     /// <summary>
     /// The most characters of the requirements' words and checks an instruction carries, for the person's words' reason
