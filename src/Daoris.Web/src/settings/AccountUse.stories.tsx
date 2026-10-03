@@ -10,7 +10,7 @@ import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLin
 // nothing said yet; the tool's own sign-in shared with the person; the terms; a scope with three accounts, one near and one
 // kept; six accounts and nothing said; no list yet; a default outside the list; one by one; an agent that says nothing of
 // its limits; a workspace on this machine's accounts and on its own; a 中文 account; and which account the next start takes
-// and why (TOOL6e): offered again after a cool-off, waiting, and on the tool's own sign-in.
+// and why (TOOL6e): offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
 
 const nothing = () => {};
 const ACTS: ScopeActs = { onOrder: nothing, onUse: nothing, onInherit: nothing };
@@ -139,8 +139,14 @@ export const NextStartWaits: Story = {
   },
 };
 
-/** Nothing here names an account: the next start runs on the tool's own sign-in. */
-export const NextStartOwnSignIn: Story = { args: { scope: scopeOf({ next: { account: null, reason: 'own', others: [] } }) } };
+/** Nothing here names an account and the tool's own sign-in cools: the next start waits for it. */
+export const NextStartOwnSignInWaits: Story = {
+  args: {
+    scope: scopeOf({
+      next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: null, hold: 'cooling', until: OWN_COOLING.until }] },
+    }),
+  },
+};
 
 /** An account's row, offered again since its cool-off ended within the day. */
 export const AccountOfferedAgain: Story = {

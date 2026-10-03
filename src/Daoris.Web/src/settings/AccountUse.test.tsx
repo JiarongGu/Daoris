@@ -227,12 +227,29 @@ describe('the next start', () => {
     expect(row.textContent).toContain('daoris agent profile use claude-code --workspace work');
   });
 
-  /** The tool's own sign-in, where nothing names an account: said, and no sentence that it carries none. */
-  it('says a scope naming no account runs on the tool\'s own sign-in', () => {
-    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
+  /**
+   * The tool's own sign-in, where nothing names an account, is said by the list's empty line and D125 §3.7's line, so no
+   * third sentence; its wait is said, and never that it carries none of the starts it does carry.
+   */
+  it('says the tool\'s own sign-in once, and its wait without claiming it carries none', () => {
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.queryByText('Next start')).toBeNull();
+    expect(screen.getByText(/^No account is used here yet, so starts run on the tool's own sign-in\./)).toBeTruthy();
+    unmount();
 
-    expect(screen.getByText('The next start runs on your own sign-in: nothing here names an account.')).toBeTruthy();
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: null, hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^the tool's own sign-in is cooling until .+\.$/)).toBeTruthy();
     expect(screen.queryByText(/carries none of these starts/)).toBeNull();
+  });
+
+  /** A workspace whose every account is held waits, and its own-sign-in sentence stands: switching that would not help. */
+  it('says a list\'s wait with the sentence that the tool\'s own sign-in carries none of its starts', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1', next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: 'account-1', hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} workspace="work" acts={acts()} />);
+
+    expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^work@example\.invalid is cooling until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/carries none of these starts/)).toBeTruthy();
   });
 
   /** An answer from a shell older than TOOL6e has no `next`: the row is not drawn. */

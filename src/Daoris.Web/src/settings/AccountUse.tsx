@@ -119,7 +119,9 @@ export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
 }) {
   const { t } = useTranslation();
   const next = scope.next;
-  if (!next) return null;
+  // The tool's own sign-in is said already, by the list's empty line and D125 §3.7's line beneath the accounts; a third
+  // sentence would say it again. Its wait is not said there, so `waits` is drawn.
+  if (!next || next.reason === 'own') return null;
   const listed = scope.list.length > 0;
   const facts = next.account ? agent.accounts.find((account) => account.name === next.account) : null;
   const offered = facts?.offered && !facts.cooling ? t('harness.next.offeredSentence', { when: moment(facts.offered) }) : null;
@@ -134,7 +136,9 @@ export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
         {[nextLine(next, scope, labelOf), offered].filter(Boolean).join(t('harness.said.sentences'))}
       </p>
       {held && <p className="m-0 mt-0.5 text-small text-ink-soft">{held}</p>}
-      {next.reason !== 'own' && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('harness.next.ownSignIn', { product })}</p>}
+      {/* Wherever the scope names an account, waiting included: a person who switched the tool's own sign-in expects the
+          starts to follow it, and none of these does (D130 §3.1). */}
+      {scope.begins && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('harness.next.ownSignIn', { product })}</p>}
     </SettingRow>
   );
 }
