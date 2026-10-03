@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, posix } from 'node:path';
@@ -8,9 +9,11 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN,
-  PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, cliLaunchers,
-  installedNote, isInstall, layCli, layOffers, layResources, recordedShellFiles, refusal, retiredPaths,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, HOST_HOME, KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA,
+  MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE,
+  SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, installedNote, isInstall, layCli,
+  layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, stageRefusal, stagedManifest, unstage,
+  writeManifest,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 import { resolveCanonRoot } from '../src/canon.ts';
@@ -38,9 +41,107 @@ const folder = (): string => mkdtempSync(join(tmpdir(), 'daoris-publish-'));
 
 const markInstalled = (at: string) => writeFileSync(join(at, MARKER), `${MARKER_HEADER}\n\nours\n`);
 
-test('four names make an install, and the marker is one of them', () => {
-  assert.deepEqual([...OWN].sort(), ['Daoris.exe', 'INSTALLED.md', 'app', 'data']);
+test('five names make an install, the marker and the update’s folder among them', () => {
+  assert.deepEqual([...OWN].sort(), ['Daoris.exe', 'INSTALLED.md', 'app', 'data', 'update']);
   assert.ok(OWN.includes(MARKER));
+  assert.ok(OWN.includes(STAGE[0]));
+});
+
+/**
+ * UPDATE1 (D139 §1, §4): the publish's `--stage` writes the build where the application and the launcher look for it,
+ * with the manifest their one check reads (`StagedBuild.cs`, which the launcher compiles). Two languages, one layout:
+ * this reads the C# for its spellings and its required files.
+ */
+test('the staged build is laid out where StagedBuild looks, with the files it requires', () => {
+  const source = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'StagedBuild.cs'), 'utf8');
+  assert.ok(source.includes(`Folder = "${STAGED[0]}"`), 'the update’s folder');
+  assert.ok(source.includes(`Staged = "${STAGED[1]}"`), 'the staged build inside it');
+  assert.ok(source.includes(`Manifest = "${BUILD_MANIFEST}"`), 'its manifest');
+  assert.ok(source.includes(`Journal = "${SWAP_JOURNAL}"`), 'the swap’s journal');
+  assert.ok(source.includes(`Schema = ${MANIFEST_SCHEMA};`), 'the manifest’s schema');
+  const required = /Required =\s*\[([^\]]+)\]/.exec(source)?.[1] ?? '';
+  const named = [...required.matchAll(/"([^"]+)"|\b(Launcher|Marker)\b/g)]
+    .map((match) => match[1] ?? (match[2] === 'Launcher' ? LAUNCHER : MARKER));
+  assert.deepEqual(named, [...STAGED_REQUIRED]);
+  assert.ok(STAGED_REQUIRED.includes(`${SHELL_HOME[0]}/${SHELL_EXE}`));
+  assert.ok(source.includes(`Host = "${HOST_HOME.join('/')}/daoris-knowledge-http.exe"`), 'the host it requires of an install that carries one');
+});
+
+test('a staged build’s manifest names every file but itself, with its size and SHA-256, in one order', () => {
+  const root = folder();
+  mkdirSync(join(root, 'app', 'locales'), { recursive: true });
+  writeFileSync(join(root, 'Daoris.exe'), 'launcher');
+  writeFileSync(join(root, 'app', 'Daoris.Desktop.exe'), 'application');
+  writeFileSync(join(root, 'app', 'locales', 'zh-CN.pak'), '中文');
+  writeFileSync(join(root, BUILD_MANIFEST), '{ "old": true }');
+
+  const manifest = stagedManifest(root, { id: 'b1', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' });
+
+  assert.equal(manifest.schema, MANIFEST_SCHEMA);
+  assert.equal(manifest.id, 'b1');
+  assert.equal(manifest.version, '0.0.1');
+  assert.equal(manifest.commit, 'abc1234');
+  assert.deepEqual(manifest.files.map((file: { path: string }) => file.path), ['Daoris.exe', 'app/Daoris.Desktop.exe', 'app/locales/zh-CN.pak']);
+  const pak = manifest.files[2];
+  assert.equal(pak.size, Buffer.byteLength('中文'));
+  assert.equal(pak.sha256, createHash('sha256').update('中文').digest('hex'));
+
+  writeManifest(root, { id: 'b1', version: '0.0.1', commit: null, at: '2026-10-03T12:00:00Z' });
+  const written = readFileSync(join(root, BUILD_MANIFEST), 'utf8');
+  assert.ok(!written.includes('\r'), 'LF');
+  assert.equal(JSON.parse(written).files.length, 3);
+  assert.equal(JSON.parse(written).commit, null);
+});
+
+test('a build id names its moment and is never the same twice', () => {
+  const at = new Date('2026-10-03T12:34:56Z');
+  assert.match(buildId(at), /^20261003T123456Z-[0-9a-f]{8}$/);
+  assert.notEqual(buildId(at), buildId(at));
+});
+
+test('--stage stages only beside an install, never over a swap in progress, and with the host when the install carries one', () => {
+  const at = folder();
+  assert.match(stageRefusal(join(at, 'nowhere'), { service: true }) ?? '', /not an install/);
+  writeFileSync(join(at, 'notes.txt'), 'someone else’s');
+  assert.match(stageRefusal(at, { service: true }) ?? '', /not an install/);
+
+  markInstalled(at);
+  assert.equal(stageRefusal(at, { service: false }), null, 'an install without a host stages without --service');
+
+  mkdirSync(join(at, ...HOST_HOME), { recursive: true });
+  writeFileSync(join(at, ...HOST_HOME, 'daoris-knowledge-http.exe'), '');
+  assert.match(stageRefusal(at, { service: false }) ?? '', /--service/);
+  assert.equal(stageRefusal(at, { service: true }), null);
+
+  mkdirSync(join(at, ...STAGE), { recursive: true });
+  for (const phase of ['swapping', 'started', 'confirmed']) {
+    writeFileSync(join(at, ...STAGE, SWAP_JOURNAL), JSON.stringify({ phase }));
+    assert.match(stageRefusal(at, { service: true }) ?? '', /swap/, phase);
+  }
+  for (const phase of ['installed', 'rolled-back', 'refused']) {
+    writeFileSync(join(at, ...STAGE, SWAP_JOURNAL), JSON.stringify({ phase }));
+    assert.equal(stageRefusal(at, { service: true }), null, phase);
+  }
+});
+
+test('a stage replaces what was staged whole, and a publish in place removes it', () => {
+  const at = folder();
+  markInstalled(at);
+  mkdirSync(join(at, ...STAGED), { recursive: true });
+  writeFileSync(join(at, ...STAGED, 'stale.dll'), 'old');
+  const staging = join(at, ...STAGE, '.staging');
+  mkdirSync(staging, { recursive: true });
+  writeFileSync(join(staging, BUILD_MANIFEST), '{}');
+
+  promoteStage(staging, at);
+
+  assert.deepEqual(readdirSync(join(at, ...STAGED)), [BUILD_MANIFEST]);
+  assert.ok(!existsSync(staging));
+
+  writeFileSync(join(at, ...STAGE, SWAP_JOURNAL), '{ "phase": "installed" }');
+  unstage(at);
+  assert.ok(!existsSync(join(at, ...STAGED)));
+  assert.ok(existsSync(join(at, ...STAGE, SWAP_JOURNAL)), 'the last swap’s record stays to read');
 });
 
 test('a folder that does not exist, or is empty, is fine', () => {

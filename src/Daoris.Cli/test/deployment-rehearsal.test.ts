@@ -10,7 +10,8 @@ import { readText } from '../src/fsx.ts';
 import { makeFixture } from './_fixture.ts';
 import {
   CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, firstUnder, gitBashBeside, hookLines, insideWorkspace,
-  invokeInPage, isMarkedProcess, launchers, markedProcess, offerProblems, strays, transcriptHolds, utf8Of,
+  invokeInPage, isMarkedProcess, launchers, loggedData, markedProcess, offerProblems, stageLiveBuild, strays, swapOutcome,
+  transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
@@ -356,6 +357,68 @@ test('a record is concluded by the close only when it carries the close’s note
   assert.equal(concludedByTheClose({ state: 'completed', note: CLOSED_NOTE }), false);
   assert.equal(concludedByTheClose(null), false);
   assert.equal(concludedByTheClose(undefined), false);
+});
+
+/**
+ * UPDATE1 (D139 §5, §6): the gate reads how the launcher's swap ended from its journal, and only a phase it knows; a journal
+ * that is missing or torn is no outcome, so the check waits rather than passing on it.
+ */
+test('the swap’s journal is read for its phase, reason and confirmation, and nothing else counts as one', () => {
+  assert.deepEqual(swapOutcome(JSON.stringify({ phase: 'installed', id: 'b1', confirmed: true })),
+    { phase: 'installed', id: 'b1', reason: null, confirmed: true });
+  assert.deepEqual(swapOutcome(JSON.stringify({ phase: 'rolled-back', id: 'b2', reason: 'exited' })),
+    { phase: 'rolled-back', id: 'b2', reason: 'exited', confirmed: null });
+  assert.equal(swapOutcome(''), null);
+  assert.equal(swapOutcome('{ torn'), null);
+  assert.equal(swapOutcome(JSON.stringify({ phase: 'finished' })), null);
+  assert.equal(swapOutcome(JSON.stringify({ id: 'b1' })), null);
+});
+
+test('the machine log is read by event, for each line’s data, skipping what does not read', () => {
+  const lines = [
+    JSON.stringify({ event: 'update.applying', data: { by: 'idle', build: 'b1' } }),
+    '{ torn',
+    JSON.stringify({ event: 'update.installed', data: { build: 'b1', confirmed: true } }),
+    JSON.stringify({ event: 'update.applying', data: { by: 'now', build: 'b2' } }),
+    '',
+  ].join('\n');
+
+  assert.deepEqual(loggedData(lines, 'update.applying'), [{ by: 'idle', build: 'b1' }, { by: 'now', build: 'b2' }]);
+  assert.deepEqual(loggedData(lines, 'update.rolled-back'), []);
+});
+
+/**
+ * The rehearsal's roll-back stages the live build again with its application replaced by a program that exits at once,
+ * and a manifest that agrees with it, so the check passes and the start fails: the case D139 §6 rolls back. Its refusal
+ * stages the live build with one file changed after the manifest was written, so the check refuses it.
+ */
+test('a build staged to fail its start passes the check’s shape, and one staged to fail the check does not', () => {
+  const fixture = makeFixture('deploy-update');
+  const install = fixture.root;
+  writeFileSync(join(install, 'INSTALLED.md'), '# Daoris — installed desktop\n');
+  writeFileSync(join(install, 'Daoris.exe'), 'launcher');
+  fixture.write('app/Daoris.Desktop.exe', 'application');
+  fixture.write('app/Daoris.Desktop.App.dll', 'library');
+  fixture.write('app/daoris-knowledge-http/daoris-knowledge-http.exe', 'host');
+  fixture.write('data/driver.json', '{}');
+  const exits = join(install, 'exits-at-once.exe');
+  writeFileSync(exits, 'a program that exits');
+
+  const staged = stageLiveBuild(install, { id: 'fails-to-start', version: '0.0.1', application: exits });
+
+  const manifest = JSON.parse(readText(join(staged, 'build.json')));
+  assert.equal(manifest.id, 'fails-to-start');
+  assert.deepEqual(manifest.files.map((file: { path: string }) => file.path).sort(), [
+    'Daoris.exe', 'INSTALLED.md', 'app/Daoris.Desktop.App.dll', 'app/Daoris.Desktop.exe', 'app/daoris-knowledge-http/daoris-knowledge-http.exe',
+  ]);
+  assert.equal(readText(join(staged, 'app', 'Daoris.Desktop.exe')), 'a program that exits');
+  assert.equal(readText(join(install, 'app', 'Daoris.Desktop.exe')), 'application', 'the live build is untouched');
+  assert.ok(!manifest.files.some((file: { path: string }) => file.path.startsWith('data/')), 'the home is never staged');
+
+  const refused = stageLiveBuild(install, { id: 'fails-the-check', version: '0.0.1', tamper: 'app/Daoris.Desktop.App.dll' });
+  const listed = JSON.parse(readText(join(refused, 'build.json'))).files
+    .find((file: { path: string }) => file.path === 'app/Daoris.Desktop.App.dll');
+  assert.notEqual(listed.size, readText(join(refused, 'app', 'Daoris.Desktop.App.dll')).length, 'changed after its manifest');
 });
 
 /** A C# `const string` whose value is one literal or several joined by `+`, as the source spells it. */
