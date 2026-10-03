@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -115,23 +115,6 @@ public sealed class TreeFilesTests : IDisposable
         await GitAsync(root, "add", ".");
         await GitAsync(root, "commit", "-m", "first");
         return root;
-    }
-
-    private static async Task<string> GitAsync(string cwd, params string[] arguments)
-    {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = cwd,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        return stdout;
     }
 
     private static string RepoRoot()
