@@ -163,7 +163,7 @@ public sealed class NoteSitesTests
     [Fact]
     public void A_tree_s_opening_carries_its_branch_and_where_it_started_never_its_path()
     {
-        const string path = "/home/someone/.daoris/trees/default/engine/s-1a2b3c4d";
+        var path = Path.Combine("data", "trees", "default", "engine", "s-1a2b3c4d");
         var opening = SessionTrees.OpeningOf(path, "daoris/s-1a2b3c4d", "`main` (the line set for `engine`)", "main", unrecorded: null);
         Line(opening,
             $"opened a session tree at {path} on `daoris/s-1a2b3c4d`, from `main` (the line set for `engine`) — a fresh tree holds "

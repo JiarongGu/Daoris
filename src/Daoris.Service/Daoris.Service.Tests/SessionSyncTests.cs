@@ -166,6 +166,38 @@ public sealed class SessionSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// LANG1a (D142 point 2): the note's parts cross with it, every string in them cleaned as the note is, so a teammate's
+    /// page words the lines in its own language and still learns no path and no account.
+    /// </summary>
+    [Fact]
+    public async Task A_note_s_parts_cross_with_it_cleaned_and_reach_the_team()
+    {
+        var session = await _a.CreateAsync(
+            "q1", "Shared", "stub", Now, profile: "janes-own-account", tree: "C:/somewhere/private/tree");
+        const string Note = "opened a session tree at C:/somewhere/private/tree on `daoris/s1`. Its provider refused the `claude-code` "
+            + "account `janes-own-account` (401).";
+        await _a.SetStateAsync(
+            session.Id, SessionState.Failed, Note, null, null, Now,
+            noteParts: """
+                [{"code":"started.tree","values":{"branch":"daoris/s1","basedOn":"main"},"text":"opened a session tree at C:/somewhere/private/tree on `daoris/s1`."},
+                 {"code":"account.refused","values":{"owner":"claude-code"},"text":"Its provider refused the `claude-code` account `janes-own-account` (401)."}]
+                """);
+        var remote = Remote("a@one");
+
+        await SyncAsync(_a, "a@one", remote);
+        await SyncAsync(_b, "b@two");
+
+        Assert.Contains("\"noteParts\"", remote.LastFeed);
+        Assert.Contains("account.refused", remote.LastFeed);
+        Assert.DoesNotContain("janes-own-account", remote.LastFeed);
+        Assert.DoesNotContain("somewhere", remote.LastFeed);
+        var theirs = Assert.Single(await _b.ListAsync(includeClosed: true), record => record.Origin == "a@one");
+        Assert.Contains("\"code\":\"started.tree\"", theirs.NoteParts);
+        Assert.Contains("\"owner\":\"claude-code\"", theirs.NoteParts);
+        Assert.DoesNotContain("somewhere", theirs.NoteParts);
+    }
+
+    /// <summary>
     /// Every machine sees the team's (SYNC4): b's record comes down to a keyed `origin/id`, carrying its
     /// origin and nothing machine-local — and a's own, which the remote also holds, never comes back.
     /// </summary>

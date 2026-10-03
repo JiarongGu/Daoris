@@ -29,7 +29,7 @@ public static class SessionWire
             writer.WriteStartObject();
             Write(writer, record.Id, origin: null, record.Quest, record.Repository, record.Adapter, record.State,
                 record.Note, record.Evidence, record.Created, record.Updated, record.Kind, record.HarnessVersion,
-                record.Limit);
+                record.Limit, record.NoteParts);
             writer.WriteEndObject();
         }
 
@@ -53,7 +53,7 @@ public static class SessionWire
             records.Add(new FedSessionRecord(
                 Text(item, "id"), Text(item, "quest"), Text(item, "repository"), Text(item, "adapter"),
                 Text(item, "state"), Text(item, "note"), Text(item, "evidence"), created, updated,
-                Text(item, "kind"), Text(item, "harnessVersion"), Said(item, "limit")));
+                Text(item, "kind"), Text(item, "harnessVersion"), Said(item, "limit"), Parts(item)));
         }
 
         return records;
@@ -71,7 +71,7 @@ public static class SessionWire
             writer.WriteStartObject();
             Write(writer, session.Id, session.Origin, session.Quest, session.Repository, session.Adapter,
                 session.StateName, session.Note, session.Evidence, session.Created, session.Updated,
-                session.Kind.ToString(), session.HarnessVersion, session.Limit);
+                session.Kind.ToString(), session.HarnessVersion, session.Limit, session.NoteParts);
             writer.WriteEndObject();
         }
 
@@ -103,6 +103,7 @@ public static class SessionWire
             {
                 Origin = origin,
                 Limit = Said(item, "limit"),
+                NoteParts = Parts(item),
             });
         }
 
@@ -115,7 +116,7 @@ public static class SessionWire
     private static void Write(
         Utf8JsonWriter writer, string? id, string? origin, string? quest, string? repository, string? adapter,
         string? state, string? note, string? evidence, DateTimeOffset created, DateTimeOffset updated,
-        string? kind, string? harnessVersion, bool limit)
+        string? kind, string? harnessVersion, bool limit, string? noteParts)
     {
         writer.WriteString("id", id);
         if (origin is not null) writer.WriteString("origin", origin);
@@ -126,6 +127,13 @@ public static class SessionWire
         writer.WriteString("adapter", adapter);
         writer.WriteString("state", state);
         if (note is not null) writer.WriteString("note", note);
+        // LANG1a: the note's parts beside it, as kept; absent for a record from before parts, which a reader from before ignores.
+        if (NoteParts.Element(noteParts) is { } parts)
+        {
+            writer.WritePropertyName("noteParts");
+            parts.WriteTo(writer);
+        }
+
         if (evidence is not null) writer.WriteString("evidence", evidence);
         writer.WriteString("created", created.ToString("O"));
         writer.WriteString("updated", updated.ToString("O"));
@@ -135,6 +143,10 @@ public static class SessionWire
         // alike on both sides, as false. It names no account, which is why it has a field at all.
         if (limit) writer.WriteBoolean("limit", true);
     }
+
+    /// <summary>A record's note parts as the wire carried them, kept only as what a part is (LANG1a); null for none.</summary>
+    private static string? Parts(JsonElement item) =>
+        item.ValueKind == JsonValueKind.Object && item.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null;
 
     /// <summary>Whether a flag is said, true: absent, false or of another kind is not.</summary>
     private static bool Said(JsonElement element, string name) =>

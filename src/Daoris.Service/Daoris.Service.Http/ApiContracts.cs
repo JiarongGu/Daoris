@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Daoris.Knowledge;
 
@@ -211,7 +212,10 @@ public sealed record SessionResponse(
     bool Deletable = false,
     // MSG1a (D137 §2.4): the person's words waiting for it to go on with them, in order. Their own words, which may name
     // anything on this machine: answered to it only, like `Answer` and the transcript.
-    IReadOnlyList<SaidWordResponse>? Said = null);
+    IReadOnlyList<SaidWordResponse>? Said = null,
+    // LANG1a (D142 point 2): the note's lines, each a code with its values or someone's words, beside `note`, which stays as it
+    // always read. Null for a record from before parts. To another machine, every string in them cleaned as the note is.
+    JsonElement? NoteParts = null);
 // MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
 // words; when; its files' names, never where they are; and whether it was said after the record ended.
 public sealed record SaidWordResponse(string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
@@ -250,9 +254,11 @@ public sealed record OpenIntakeRequest(
 public sealed record OpenHelpRequest(
     string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
 // `Interrupted` (D104): a move to `stopped` that was not the person's. `Limit` (TOOL4c): a move to `failed`
-// that an account's limit made. Silence is the old reading of both.
+// that an account's limit made. Silence is the old reading of both. `NoteParts` (LANG1a): the note's lines by code, beside
+// it; a note sent without them clears the record's, and an older driver sends none.
 public sealed record AdvanceSessionRequest(
-    string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null);
+    string? State, string? Note, string? Evidence, string? Transcript, bool? Interrupted = null, bool? Limit = null,
+    JsonElement? NoteParts = null);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
 // The three provenance fields are the feed's claim about WHICH point in the history it speaks for

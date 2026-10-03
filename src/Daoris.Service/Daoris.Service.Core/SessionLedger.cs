@@ -473,7 +473,8 @@ public sealed partial class SessionLedger(
             }
 
             var word = new SaidWord(NewWordId(), said, now, []);
-            var answered = await sessions.KeepSaidAsync(id, word, AnsweredNote(session, said), inside).ConfigureAwait(false);
+            var (note, parts) = AnsweredNote(session, said);
+            var answered = await sessions.KeepSaidAsync(id, word, note, inside, noteParts: parts).ConfigureAwait(false);
             return new SessionAdvanceOutcome(
                 SessionAdvanceRefusal.None,
                 $"Answered session `{id}`: it carries on with `#{session.Quest}` at the driver's next look.",
@@ -552,8 +553,9 @@ public sealed partial class SessionLedger(
             }
 
             var word = new SaidWord(NewWordId(), words, now, Names(files), Reopens: !parked);
+            var (note, parts) = parked ? AnsweredNote(session, words) : (null, null);
             var kept = await sessions
-                .KeepSaidAsync(id, word, parked ? AnsweredNote(session, words) : null, inside)
+                .KeepSaidAsync(id, word, note, inside, noteParts: parts)
                 .ConfigureAwait(false);
             return new SessionSayOutcome(SessionSayRefusal.None, KeptMessage(session), kept, word);
         }, ct).ConfigureAwait(false);
@@ -639,8 +641,21 @@ public sealed partial class SessionLedger(
     /// question is half a conversation. A second answer adds its own line after the first (MSG1a), so the note says
     /// what the record holds.
     /// </summary>
-    private static string AnsweredNote(Session parked, string said) =>
-        (parked.Note ?? "It stopped to ask the person; its question is in its transcript.") + AnsweredLine(said);
+    /// <remarks>
+    /// Its lines with their codes beside the English (LANG1a, the language design §4 rows 64–65): the record's parts, or its
+    /// note carried whole, or the ledger's own line where it had none; then <c>Answered:</c> and the person's words, a part of
+    /// their own.
+    /// </remarks>
+    internal static (string Note, string Parts) AnsweredNote(Session parked, string said)
+    {
+        const string Asked = "It stopped to ask the person; its question is in its transcript.";
+        var note = (parked.Note ?? Asked) + AnsweredLine(said);
+        NoteLine[] answered = [NoteLine.Coded(LedgerNoteCodes.Answered, "Answered:"), NoteLine.Said(said, "person")];
+        var parts = parked.Note is null
+            ? NoteParts.After(null, null, [NoteLine.Coded(LedgerNoteCodes.Parked, Asked), .. answered])
+            : NoteParts.After(parked.NoteParts, parked.Note, answered);
+        return (note, parts);
+    }
 
     private static string AnsweredLine(string said) => $"\n\nAnswered: {said}";
 
@@ -804,9 +819,13 @@ public sealed partial class SessionLedger(
     /// That an account's limit refused the turn (TOOL4c, D125 §5.2), as the driver read it from the door's
     /// failure. Only a move to <c>failed</c> may say so, since it says why a turn failed.
     /// </param>
+    /// <param name="noteParts">
+    /// The note's parts beside it (LANG1a, D142 point 2), as <see cref="NoteParts.Normalize"/> keeps them; only with a note.
+    /// A note moved without them clears the record's.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false, string? noteParts = null)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -849,7 +868,7 @@ public sealed partial class SessionLedger(
             if (!session.Active)
             {
                 return target == SessionState.Working
-                    ? await GoOnAsync(session, note, evidence, transcript, now, inside).ConfigureAwait(false)
+                    ? await GoOnAsync(session, note, noteParts, evidence, transcript, now, inside).ConfigureAwait(false)
                     : new SessionAdvanceOutcome(
                         SessionAdvanceRefusal.Terminal,
                         $"Session `{session.Id}` is {Spell(session.State)} — a finished session does not move.",
@@ -868,7 +887,7 @@ public sealed partial class SessionLedger(
             // A session that parks again asks anew (ANSWER1b, D131 §5): the answer it went on with is not this park's.
             var moved = await sessions.SetStateAsync(
                     id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
-                    clearSaid: target == SessionState.AwaitingPerson)
+                    clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts)
                 .ConfigureAwait(false);
 
             return new SessionAdvanceOutcome(
@@ -894,7 +913,7 @@ public sealed partial class SessionLedger(
     /// run takes them (<see cref="TakeSaidAsync"/>).</para>
     /// </remarks>
     private async Task<SessionAdvanceOutcome> GoOnAsync(
-        Session session, string? note, string? evidence, string? transcript, DateTimeOffset now, CancellationToken inside)
+        Session session, string? note, string? noteParts, string? evidence, string? transcript, DateTimeOffset now, CancellationToken inside)
     {
         var id = session.Id;
         var refused = session switch
@@ -916,18 +935,31 @@ public sealed partial class SessionLedger(
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Busy, Busy(session.Repository, holder), Session: null);
         }
 
-        var went = string.Join(
-            "\n\n",
-            new[] { session.Note, $"Went on with your words at {now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC.", note }
-                .Where(part => !string.IsNullOrWhiteSpace(part)));
+        var (went, parts) = WentOnNote(session, note, noteParts, now);
         var moved = await sessions
-            .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true)
+            .SetStateAsync(id, SessionState.Working, went, evidence, transcript, now, inside, forgive: true, noteParts: parts)
             .ConfigureAwait(false);
 
         return new SessionAdvanceOutcome(
             SessionAdvanceRefusal.None,
             $"Session `{id}` is working again: it goes on from {Spell(session.State)} with the person's words.",
             moved);
+    }
+
+    /// <summary>
+    /// The note an ended record goes on with (MSG1a, D137 §2.3): what ended it, when it went on, and the note the move passed,
+    /// each with its parts (LANG1a, the language design §4 row 66): the record's own, or its note carried whole; the ledger's
+    /// line with its moment; the move's own, or its note carried whole.
+    /// </summary>
+    internal static (string Note, string Parts) WentOnNote(Session session, string? note, string? noteParts, DateTimeOffset now)
+    {
+        var line = $"Went on with your words at {now.UtcDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC.";
+        var went = string.Join("\n\n", new[] { session.Note, line, note }.Where(part => !string.IsNullOrWhiteSpace(part)));
+        var parts = NoteParts.After(
+            string.IsNullOrWhiteSpace(session.Note) ? null : session.NoteParts, session.Note,
+            [NoteLine.Coded(LedgerNoteCodes.WentOn, line, ("at", NoteParts.Moment(now)))],
+            string.IsNullOrWhiteSpace(note) ? null : noteParts, note);
+        return (went, parts);
     }
 
     /// <summary>
