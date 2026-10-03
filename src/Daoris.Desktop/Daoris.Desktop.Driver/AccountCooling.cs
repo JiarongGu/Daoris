@@ -60,6 +60,22 @@ public static class AccountCooling
             .OrderBy(entry => entry.Agent, StringComparer.OrdinalIgnoreCase)
             .ThenBy(entry => entry.Account ?? "", StringComparer.OrdinalIgnoreCase)];
 
+    /// <summary>
+    /// How long after a cool-off ends its account is said to be offered again (TOOL6e): a day, the walk's own horizon
+    /// (<see cref="AccountRotation.LastDay"/>); a cool-off that ended longer ago explains no start a person is looking at.
+    /// </summary>
+    public static readonly TimeSpan OfferedFor = TimeSpan.FromDays(1);
+
+    /// <summary>
+    /// Every account whose cool-off ended within <see cref="OfferedFor"/> before <paramref name="now"/>, as the file still
+    /// holds it (TOOL6e): its <c>until</c> is when it was offered again. The next write drops a passed entry, so this says
+    /// only what the file has not lost; an early end (<i>Try now</i>, a sign-in) removes the entry and says nothing here.
+    /// </summary>
+    public static IReadOnlyList<CoolingEntry> Offered(string home, DateTimeOffset now) =>
+        [.. Entries(Load(home)).Where(entry => entry.Until <= now && now - entry.Until <= OfferedFor)
+            .OrderBy(entry => entry.Agent, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(entry => entry.Account ?? "", StringComparer.OrdinalIgnoreCase)];
+
     /// <summary>The account's cool-off at <paramref name="now"/>, or null when it is ready.</summary>
     public static CoolingEntry? Of(string home, string agent, string? account, DateTimeOffset now) =>
         Read(home, now).FirstOrDefault(entry => Same(entry, agent, account));
@@ -256,6 +272,13 @@ public static class CoolingWords
     /// </summary>
     public static string Note(CoolingEntry entry, TimeZoneInfo zone) =>
         $"The account it ran on is cooling until {When(entry.Until, zone)}, {Why(entry)}, and nothing starts on it until then.";
+
+    /// <summary>
+    /// <see cref="Note"/> with its code (LANG1a, the language design §4 row 22): until when as a moment the page formats in the
+    /// reader's zone, and why by its code. It names no account, as the sentence does not.
+    /// </summary>
+    public static Noted NoteOf(CoolingEntry entry, TimeZoneInfo zone) =>
+        Noted.Of(NoteCodes.AccountCooling, Note(entry, zone), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)));
 
     /// <summary>What a conversation whose turn was refused is told in its record; the conversation goes on.</summary>
     public static string Conversation(CoolingEntry entry, TimeZoneInfo zone) =>

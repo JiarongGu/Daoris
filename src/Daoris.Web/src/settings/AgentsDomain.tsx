@@ -14,7 +14,7 @@ import {
   SettingRow, Tip, useErrorNotify,
 } from '../ui';
 import { workspacesOf } from '../workspaces';
-import { agentOf, listedIn, machineScope, workspaceScope } from './accounts';
+import { agentOf, listedIn, machineScope, offeredLine, workspaceScope } from './accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 import {
   type AccountChoice, AccountFactsLines, CoolingLine, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope,
@@ -232,6 +232,10 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                     busy={busy}
                     onTryNow={() => tryNow(door, null, tool.ownAccount ?? t('harness.own'))}
                   />
+                )}
+                {/* Since when it is offered again, where its cool-off just ended (TOOL6e). */}
+                {use?.own.offered && !use.own.cooling && (
+                  <span className="text-meta text-ink-faint">{offeredLine(use.own.offered)}</span>
                 )}
               </span>
               <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">

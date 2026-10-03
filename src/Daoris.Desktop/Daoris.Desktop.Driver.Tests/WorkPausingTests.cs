@@ -163,10 +163,10 @@ public sealed class WorkPausingTests : IDisposable
     {
         var ledger = Family();
         Alive("w0rk1ng0");
-        string? heard = null;
+        Noted? heard = null;
         await using var loop = new SessionRequestWatch(
             _home, runsHere: id => id == "w0rk1ng0",
-            stop: (string id, string? note) => { heard = note; ledger.Move(id, "stopped", note ?? "the person stopped it."); return true; },
+            stop: (string id, Noted? note) => { heard = note; ledger.Move(id, "stopped", note?.Note ?? "the person stopped it."); return true; },
             service: () => null);
         var honoured = new List<SessionRequest>();
         using var honouring = new CancellationTokenSource();
@@ -187,7 +187,10 @@ public sealed class WorkPausingTests : IDisposable
         Assert.Equal(new WorkStop("w0rk1ng0", "q2"), Assert.Single(outcome.Stopped));
         var request = Assert.Single(honoured);
         Assert.Equal((SessionMove.Stop, RequestDoor.Pause), (request.Move, request.By));
-        Assert.Equal("paused with ask `#a1`.", heard);
+        Assert.Equal("paused with ask `#a1`.", heard?.Note);
+        // The request carried the pause's line with its code, and the loop that took it stops with both (LANG1a).
+        Assert.Equal(["stopped.paused-ask"], NoteAssert.Codes(heard?.Parts));
+        Assert.Equal("a1", heard!.Parts[0].Value("ask"));
         Assert.Equal("paused with ask `#a1`.", ledger.Note("w0rk1ng0"));
         Assert.Equal("w0rk1ng0", DriverConfig.Load(ConfigPath).PausedAsk("a1")!.Stopped["q2"]);
     }

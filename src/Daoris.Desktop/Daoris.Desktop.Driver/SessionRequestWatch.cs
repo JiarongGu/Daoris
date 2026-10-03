@@ -27,7 +27,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 {
     private readonly SessionRequests _requests;
     private readonly Func<string, bool> _runsHere;
-    private readonly Func<string, string?, bool> _stop;
+    private readonly Func<string, Noted?, bool> _stop;
     private readonly Func<ServiceClient?> _service;
     private readonly Func<DateTimeOffset> _clock;
 
@@ -70,10 +70,10 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
     /// <summary>
     /// The test seam that also hears the note a stop carries: a pause's words for the record (PAUSE1b), which the registry's
-    /// stop writes on it as the person's.
+    /// stop writes on it as the person's, with their codes (LANG1a).
     /// </summary>
     public SessionRequestWatch(
-        string home, Func<string, bool> runsHere, Func<string, string?, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
+        string home, Func<string, bool> runsHere, Func<string, Noted?, bool> stop, Func<ServiceClient?> service, Func<DateTimeOffset>? clock = null)
     {
         _requests = new SessionRequests(home);
         _runsHere = runsHere;
@@ -112,8 +112,14 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
                 try
                 {
-                    // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop.
-                    if (!resolves) _stop(request.Session, request.Note);
+                    // A stop's note is a pause's words for the record (PAUSE1b), or none for the plain stop: the driver's line,
+                    // with its codes, or carried whole where an older door wrote none (LANG1a).
+                    var line = request.Note is null ? null : Noted.From(request.Note, request.NoteParts);
+                    if (!resolves) _stop(request.Session, line);
+                    else if (request.Move == SessionMove.Stop && line is not null)
+                    {
+                        await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, "stopped", line, ct).ConfigureAwait(false);
+                    }
                     else
                     {
                         var state = request.Move switch
@@ -122,6 +128,7 @@ public sealed class SessionRequestWatch : IAsyncDisposable
                             SessionMove.Decline => "declined",
                             _ => "stopped",
                         };
+                        // A finish's note and a decline's reason are the person's own words.
                         await SessionMoves.ResolveAsync(id => _stop(id, null), service!, request.Session, state, request.Note, ct).ConfigureAwait(false);
                     }
 

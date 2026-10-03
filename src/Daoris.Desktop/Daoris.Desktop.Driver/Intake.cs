@@ -425,13 +425,18 @@ public static class IntakeObservation
     /// What the protocol door said when the agent refused the turn itself (ACPEND1), or null — the
     /// exit after stdin closes is 0 either way, so this is what tells a cut-off intake from an asking one.
     /// </param>
+    /// <remarks>
+    /// Each line is a code with its values beside its English (LANG1a, the language design §4 rows 42–48); the person's
+    /// closing note and the agent's failure are words of their own, never a value.
+    /// </remarks>
     public static SessionConclusion Conclude(int exitCode, int before, AskView? after, string? turnFailed = null)
     {
         var exit = exitCode == 0 ? "" : $" (exit {exitCode})";
         if (after is null)
         {
             // Only a person's delete takes an ask away (D95): the ask was settled under it, as a close is.
-            return new("stood-down", $"the ask it answered was deleted while it ran{exit}.");
+            return SessionConclusion.Of("stood-down", Observation.Exit(
+                Noted.Of(NoteCodes.IntakeAskDeleted, $"the ask it answered was deleted while it ran{exit}."), exitCode));
         }
 
         var gained = after.Quests.Skip(before).ToList();
@@ -440,37 +445,49 @@ public static class IntakeObservation
         // reaching done does for a driven session.
         if (gained.Count > 0 && after.Tier == ByIntake)
         {
-            return new("completed", $"published {Quests(gained)} onto ask `#{after.Id}`{exit}.");
+            return SessionConclusion.Of("completed", Observation.Exit(
+                Noted.Of(
+                    NoteCodes.IntakePublished, $"published {Quests(gained)} onto ask `#{after.Id}`{exit}.",
+                    ("quests", gained), ("ask", after.Id)),
+                exitCode));
         }
 
         // Somebody else answered it while this ran — the person, publishing or closing. The ask was
         // theirs to settle, which is what standing down has always meant.
         if (after.State == "Closed")
         {
-            return new("stood-down", $"ask `#{after.Id}` was closed while it ran ({after.Note}).");
+            var closed = Noted.Of(NoteCodes.IntakeAskClosed, $"ask `#{after.Id}` was closed while it ran", ("ask", after.Id));
+            return SessionConclusion.Of("stood-down", closed.Then(" (", Noted.Said(after.Note ?? "", NoteBy.Person)).Then(")."));
         }
 
         if (gained.Count > 0)
         {
-            return new("stood-down", $"ask `#{after.Id}` was answered while it ran — it became {Quests(gained)}.");
+            return SessionConclusion.Of("stood-down", Noted.Of(
+                NoteCodes.IntakeAskAnswered, $"ask `#{after.Id}` was answered while it ran — it became {Quests(gained)}.",
+                ("ask", after.Id), ("quests", gained)));
         }
 
         // 🔴 A refused turn is not a clean exit (ACPEND1): parked as "asking", it would send the person
         // to a question the transcript does not end with.
         if (turnFailed is { Length: > 0 })
         {
-            return new("failed", $"the agent's turn failed before publishing anything onto ask `#{after.Id}`: {turnFailed}");
+            return SessionConclusion.Of("failed", Noted.Of(
+                    NoteCodes.IntakeTurnFailed, $"the agent's turn failed before publishing anything onto ask `#{after.Id}`:", ("ask", after.Id))
+                .Then(" ", Noted.Said(turnFailed, NoteBy.Agent)));
         }
 
         // A clean exit that published nothing is the intake ASKING: the declarations did not settle it
         // and it said so rather than guess. The question is its own last words, on its transcript.
         return exitCode == 0
-            ? new("awaiting-person",
+            ? SessionConclusion.Of("awaiting-person", Noted.Of(
+                NoteCodes.IntakeAsks,
                 $"published nothing: the declarations did not settle ask `#{after.Id}`, so it asks you rather "
                 + "than guess — its question ends its transcript. `daoris-driver ask --publish "
                 + $"{after.Id} --to <repository>` answers it; `daoris-driver ask --close {after.Id} --reason \"…\"` "
-                + "ends it.")
-            : new("failed", $"exit {exitCode} before publishing anything onto ask `#{after.Id}`.");
+                + "ends it.",
+                ("ask", after.Id)))
+            : SessionConclusion.Of("failed", Noted.Of(
+                NoteCodes.IntakeExit, $"exit {exitCode} before publishing anything onto ask `#{after.Id}`.", ("ask", after.Id), ("exit", exitCode)));
     }
 
     /// <summary>
@@ -481,8 +498,12 @@ public static class IntakeObservation
     {
         // Done is published with every quest closed (USE1c) — the service derives it, and a quest can
         // close between two ticks.
-        "Published" or "Done" => new("completed", $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}."),
-        "Closed" => new("stopped", $"the person closed ask `#{ask.Id}`: {ask.Note}"),
+        "Published" or "Done" => SessionConclusion.Of("completed", Noted.Of(
+            NoteCodes.IntakePersonAnswered, $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}.",
+            ("ask", ask.Id), ("quests", ask.Quests))),
+        "Closed" => SessionConclusion.Of("stopped",
+            Noted.Of(NoteCodes.IntakePersonClosed, $"the person closed ask `#{ask.Id}`:", ("ask", ask.Id))
+                .Then(" ", Noted.Said(ask.Note ?? "", NoteBy.Person))),
         _ => null,
     };
 
@@ -491,7 +512,8 @@ public static class IntakeObservation
     /// ends — the person's own act, as a close is.
     /// </summary>
     public static SessionConclusion Deleted(string ask) =>
-        new("stopped", $"the person deleted ask `#{ask}`, so there is nothing left for it to wait on.");
+        SessionConclusion.Of("stopped", Noted.Of(
+            NoteCodes.IntakePersonDeleted, $"the person deleted ask `#{ask}`, so there is nothing left for it to wait on.", ("ask", ask)));
 
     /// <summary>The ask's own tier word for an intake's publish — the service's spelling.</summary>
     public const string ByIntake = "intake";

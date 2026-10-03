@@ -9,6 +9,12 @@ namespace Daoris.Driver;
 public sealed record ContinueReason(string Code, string Sentence)
 {
     /// <summary>
+    /// The facts its line names, as the page words it (LANG1a, D142): an adapter's change names both adapters, and a door
+    /// without resume names its adapter. None for a reason whose line is fixed.
+    /// </summary>
+    public IReadOnlyList<(string Name, string Value)> Values { get; init; } = [];
+
+    /// <summary>
     /// A row of D137 §2.2 that never goes on (MSG1b): a teammate's record, an intake, a stand-down. Nothing carries the words
     /// on, whatever the quest, where every other reason carries them to a new session or leaves them waiting.
     /// </summary>
@@ -88,10 +94,11 @@ public static class ContinueWhy
 
     /// <summary>The adapter changed between the park and the answer.</summary>
     public static ContinueReason AdapterChanged(string ranOn, string startsOn) =>
-        new(Adapter, $"it ran on `{ranOn}`, and starts here now run on `{startsOn}`");
+        new(Adapter, $"it ran on `{ranOn}`, and starts here now run on `{startsOn}`") { Values = [("from", ranOn), ("to", startsOn)] };
 
     /// <summary>The adapter's door has no resume.</summary>
-    public static ContinueReason CannotResume(string adapter) => new(Unable, $"`{adapter}` cannot resume a conversation");
+    public static ContinueReason CannotResume(string adapter) =>
+        new(Unable, $"`{adapter}` cannot resume a conversation") { Values = [("adapter", adapter)] };
 }
 
 /// <summary>
@@ -154,11 +161,17 @@ public static class Continuations
     /// <summary>What the record says while its resumed conversation runs: the conclusion's note replaces it.</summary>
     public const string Working = "resumes its own conversation with your answer, in the tree it worked in.";
 
+    /// <summary><see cref="Working"/> with its code (LANG1a).</summary>
+    public static Noted WorkingNoted => Noted.Of(NoteCodes.WorkingResumesAnswer, Working);
+
     /// <summary>
     /// What an ended record's note gains as it goes on (MSG1b, D137 §2.3), after the service's own line saying when: the
     /// conclusion's note replaces the whole note, keeping what ended it only where the conclusion says so.
     /// </summary>
     public const string GoingOn = "It goes on with your words in its own conversation, in the tree it worked in.";
+
+    /// <summary><see cref="GoingOn"/> with its code (LANG1a).</summary>
+    public static Noted GoingOnNoted => Noted.Of(NoteCodes.WorkingGoesOn, GoingOn);
 
     /// <summary>
     /// The resumed run's first line in its record (D131 §1): the door it resumed on, and the harness's version where it
@@ -177,17 +190,22 @@ public static class Continuations
     /// The note an ended record keeps where its words cannot go on in it and nothing carries them on by itself (MSG1b, D137
     /// §2.2): a closed quest's, or a never. What ended it stays, then why; the words stay waiting as they were said.
     /// </summary>
-    public static string CannotNote(PriorSession record, ContinueReason why) =>
-        $"{Before(record)}It cannot go on in this session, because {why.Sentence}.";
+    /// <remarks>Its line is a code after the record's earlier parts (LANG1a), the reason a value the page words.</remarks>
+    public static Noted CannotNote(PriorSession record, ContinueReason why) =>
+        After(record, Noted.Of(
+            NoteCodes.WentCannot, $"It cannot go on in this session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)));
 
     /// <summary>
     /// The note an ended record keeps where its words went to a new session (MSG1b, D137 §2.2): a taken quest carried on, or
     /// an open one started, handed them. What ended it stays, then why.
     /// </summary>
-    public static string WentNote(PriorSession record, ContinueReason why) =>
-        $"{Before(record)}Your words went to a new session, because {why.Sentence}.";
+    public static Noted WentNote(PriorSession record, ContinueReason why) =>
+        After(record, Noted.Of(
+            NoteCodes.WentNewSession, $"Your words went to a new session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)));
 
-    private static string Before(PriorSession record) => record.Note is { Length: > 0 } note ? $"{note}\n\n" : "";
+    /// <summary>The record's note, then a blank line and the new line; the line alone where the record said nothing.</summary>
+    private static Noted After(PriorSession record, Noted line) =>
+        record.Note is { Length: > 0 } ? record.AsNoted().Then("\n\n", line) : line;
 
     /// <summary>
     /// <c>session.reopened</c> (D137 §3.3, D94 §4): once per ended record whose words the driver takes up, from which state,
@@ -233,11 +251,15 @@ public static class Continuations
     };
 
     /// <summary>The note a fallback ends the park with: what it asked, as its record said, and why the answer went to a new session.</summary>
-    public static string EndedNote(PriorSession park, ContinueReason why) =>
-        $"{park.Note ?? "It stopped to ask you."}\n\nCarried on in a new session, because {why.Sentence}.";
+    public static Noted EndedNote(PriorSession park, ContinueReason why) =>
+        (park.Note is null ? Noted.Of(NoteCodes.EndedParkedShort, "It stopped to ask you.") : park.AsNoted())
+        .Then("\n\n", Noted.Of(
+            NoteCodes.WentCarriedOn, $"Carried on in a new session, because {why.Sentence}.", NoteCodes.Reason(why, park.Adapter)));
 
-    /// <summary>The sentence the carrying-on session's note ends with (D131 §2).</summary>
-    public static string CarriedOn(ContinueReason why) => $" A new session, because {why.Sentence}.";
+    /// <summary>The sentence the carrying-on session's note ends with (D131 §2), after a space.</summary>
+    /// <param name="ranOn">The adapter the record it carries on ran on, which <c>elsewhere</c> names.</param>
+    public static Noted CarriedOn(ContinueReason why, string? ranOn = null) =>
+        Noted.Of(NoteCodes.StartedFellBack, $"A new session, because {why.Sentence}.", NoteCodes.Reason(why, ranOn));
 
     /// <summary>
     /// <c>session.answered</c> (D131 §2, D94 §4): once per answer the driver takes up, whether its own conversation resumed

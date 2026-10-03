@@ -936,7 +936,9 @@ app.MapPost("/api/sessions/{id}/state", async (
 {
     var outcome = await s.Ledger.AdvanceAsync(
         id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct,
-        interrupted: body.Interrupted == true, limit: body.Limit == true);
+        interrupted: body.Interrupted == true, limit: body.Limit == true,
+        // The note's lines by code (LANG1a), kept only as what a part is; none with no note.
+        noteParts: body.Note is null ? null : NoteParts.Normalize(body.NoteParts));
 
     return outcome.Refusal switch
     {
@@ -1555,7 +1557,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     // A limit names no account (TOOL4c), so it is answered to every caller, as the state beside it is.
     Limit: s.Limit,
     // The same words, one by one (MSG1a), under the same guard.
-    Said: loopback ? s.Said.Select(ToSaid).ToList() : null);
+    Said: loopback ? s.Said.Select(ToSaid).ToList() : null,
+    // The note's lines by code (LANG1a), beside it and cleaned as it is for any other caller.
+    NoteParts: NoteParts.Element(loopback ? s.NoteParts : NoteParts.ForAnotherMachine(s.NoteParts, s)));
 
 static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens);
 

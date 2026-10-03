@@ -159,6 +159,92 @@ public sealed class DriverModuleAccountsTests : DriverModuleBridge
         Assert.Empty(solo.GetProperty("list").EnumerateArray());
     }
 
+    /// <summary>
+    /// TOOL6e (D130 §3–§4): each scope answers which account its next start would take, the step that chose it and the
+    /// account it was weighed against, and what holds each other account of the agent's — a cool-off until when, an account
+    /// the scope does not use — read from the walk's own pieces, with nothing probed.
+    /// </summary>
+    [Fact]
+    public async Task Each_scope_answers_the_account_its_next_start_takes_why_and_what_holds_the_others()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3");
+        Wiring("""
+            {
+              "workspaces": { "work": { "claude-code": "account-3" } },
+              "rotation": { "claude-code": ["account-1", "account-2"] },
+              "workspaceRotation": { "work": { "claude-code": ["account-3", "account-1"] } }
+            }
+            """);
+        var until = Now.AddHours(2);
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "account-3", until, true, "weekly", Now.AddMinutes(-5), "s1"), Now);
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        var machine = Scope(claude, null).GetProperty("next");
+        Assert.Equal("account-1", machine.GetProperty("account").GetString());
+        Assert.Equal("list", machine.GetProperty("reason").GetString());
+        Assert.Equal("account-2", machine.GetProperty("over").GetString());
+        Assert.Equal(JsonValueKind.Null, machine.GetProperty("when").ValueKind);
+        Assert.Equal(
+            ["account-2=ready", "account-3=outside"],
+            machine.GetProperty("others").EnumerateArray().Select(each => $"{each.GetProperty("account").GetString()}={each.GetProperty("hold").GetString()}"));
+
+        // Its default cooling: the only other account it uses carries the start, and the cool-off says until when.
+        var work = Scope(claude, "work").GetProperty("next");
+        Assert.Equal("account-1", work.GetProperty("account").GetString());
+        Assert.Equal("onlyReady", work.GetProperty("reason").GetString());
+        var others = work.GetProperty("others").EnumerateArray().ToList();
+        Assert.Equal(["account-3", "account-2"], others.Select(each => each.GetProperty("account").GetString()));
+        Assert.Equal(["cooling", "outside"], others.Select(each => each.GetProperty("hold").GetString()));
+        Assert.Equal(
+            until.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"),
+            others[0].GetProperty("until").GetDateTimeOffset().ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"));
+        Assert.Equal(JsonValueKind.Null, others[1].GetProperty("until").ValueKind);
+    }
+
+    /// <summary>D125 §3.7 as TOOL6e says it: a scope that names no account runs on the tool's own sign-in, and waits out its cool-off.</summary>
+    [Fact]
+    public async Task A_scope_naming_no_account_answers_the_tool_s_own_sign_in_and_its_wait()
+    {
+        Accounts("claude-code", "account-1");
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, Now.AddMinutes(45), false, null, Now, null), Now);
+
+        var next = Scope(Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code"), null).GetProperty("next");
+
+        Assert.Equal(JsonValueKind.Null, next.GetProperty("account").ValueKind);
+        Assert.Equal("waits", next.GetProperty("reason").GetString());
+        Assert.True(next.GetProperty("when").GetDateTimeOffset() > Now.AddMinutes(44));
+        Assert.Equal(
+            [JsonValueKind.Null, JsonValueKind.String],
+            next.GetProperty("others").EnumerateArray().Select(each => each.GetProperty("account").ValueKind));
+    }
+
+    /// <summary>
+    /// TOOL6e: an account whose cool-off ended within the day, which the file still holds, answers when it was offered again,
+    /// and so does the tool's own sign-in; one still cooling, or never cooled, answers none.
+    /// </summary>
+    [Fact]
+    public async Task An_account_whose_cool_off_ended_within_the_day_answers_when_it_was_offered_again()
+    {
+        Accounts("claude-code", "account-1", "account-2", "account-3");
+        var ended = Now.AddMinutes(-58);
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "account-1", ended, true, "weekly", Now.AddHours(-30), "s1"), Now.AddHours(-30));
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", null, Now.AddMinutes(-5), false, null, Now.AddHours(-1), null), Now.AddHours(-1));
+        AccountCooling.Cool(Home, new CoolingEntry("claude-code", "account-3", Now.AddHours(1), true, "session", Now.AddHours(-1), "s3"), Now.AddHours(-1));
+
+        var claude = Agent(await AnswerAsync(Module(), "ACCOUNTS"), "claude-code");
+
+        var offered = Account(claude, "account-1");
+        Assert.Equal(JsonValueKind.Null, offered.GetProperty("cooling").ValueKind);
+        Assert.Equal(
+            ended.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"),
+            offered.GetProperty("offered").GetDateTimeOffset().ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm"));
+        Assert.Equal(JsonValueKind.Null, Account(claude, "account-2").GetProperty("offered").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Account(claude, "account-3").GetProperty("offered").ValueKind);
+        Assert.True(claude.GetProperty("own").GetProperty("offered").GetDateTimeOffset() < Now);
+        Assert.Equal(JsonValueKind.Null, claude.GetProperty("own").GetProperty("cooling").ValueKind);
+    }
+
     /// <summary>A file edited by hand that breaks the rule is read with the list winning, and the scope names the conflict.</summary>
     [Fact]
     public async Task A_scope_whose_default_is_outside_its_list_names_the_conflict()

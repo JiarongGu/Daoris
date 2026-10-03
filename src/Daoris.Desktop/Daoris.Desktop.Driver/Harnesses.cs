@@ -2080,6 +2080,63 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     }
 
     /// <summary>
+    /// Which account the next start on <paramref name="agent"/>'s accounts in <paramref name="workspace"/> would take, the
+    /// step that chose it, and what holds each other account (TOOL6e, D130 §3–§4): what Settings → Agents says.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>The walk's own pieces, never a second judgement</b>, as <see cref="WiringAsync"/> holds: the one scope
+    /// <see cref="SelectAsync"/> reads, what it knows of each account, its order, and each account as it finds it before any
+    /// probe (cooling, refused), with the agent's word on who is signed in as its last probe left it. Nothing is probed,
+    /// spawned or counted as a start chosen, so the page may ask at every tick; a sign-in the last probe did not see is
+    /// said by the start that asks again.
+    /// </remarks>
+    /// <param name="agent">Whose accounts: the accounts' owner (AGT7), a door's being its owner's.</param>
+    /// <param name="workspace">The workspace, or null for this machine's scope.</param>
+    /// <param name="kind">Driven work, which drops the kept account, or a conversation (§4.6).</param>
+    public NextStart Next(string agent, string? workspace, StartKind kind = StartKind.Driven)
+    {
+        var circle = string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim();
+        var scope = Settings.ResolveScope(agent, circle);
+        var now = Clock();
+        IReadOnlyList<string> present;
+        try
+        {
+            present = HarnessSettings.Profiles(Home, agent);
+        }
+        catch (DriverException)
+        {
+            present = [];
+        }
+
+        var facts = scope.List.Count == 0 ? NoFacts : Facts(agent, scope.List, now);
+        IReadOnlyList<string?> order = scope.List.Count == 0 ? [scope.Begins] : [.. AccountRotation.Order(scope, kind, present, facts, now)];
+        var report = SeenOf(agent);
+        var tried = order.Select(account => Before(agent, account, now) switch
+        {
+            { IsReady: true, Account: { } named } ready when LoginOf(report, named) == LoginState.Out => ready with { Readiness = AccountReadiness.SignedOut },
+            var state => state,
+        }).ToList();
+        return AccountRotation.Next(scope, kind, tried, present, facts, now);
+    }
+
+    /// <summary>The last probe's report on an owner's accounts: its own where this build carries it, else a door's onto them.</summary>
+    private HarnessReport? SeenOf(string owner)
+    {
+        if (_seen.TryGetValue(owner, out var own)) return own;
+        foreach (var name in adapters.Names)
+        {
+            if (adapters.Resolve(name).Toolchain is { } toolchain
+                && string.Equals(toolchain.Owner(name), owner, StringComparison.OrdinalIgnoreCase)
+                && _seen.TryGetValue(name, out var door))
+            {
+                return door;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// What a start on this account would meet before any probe (TOOL4f, D125 §3.3): its cool-off, a file read, then a
     /// refusal its provider gave (AGT3b), held in memory; otherwise ready, until the agent says it is signed out.
     /// </summary>

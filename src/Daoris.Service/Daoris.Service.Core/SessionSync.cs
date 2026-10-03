@@ -44,7 +44,9 @@ public static class SessionSync
                     c.Session.Created, c.Session.Updated,
                     c.Session.Kind.ToString(), c.Session.HarnessVersion,
                     // A limit names no account, so it goes up with the record (TOOL4c).
-                    c.Session.Limit))
+                    c.Session.Limit,
+                    // The note's parts with it, every string cleaned as the note is (LANG1a).
+                    NoteParts.ForAnotherMachine(c.Session.NoteParts, c.Session)))
                 .ToList();
             if (feed.Count > 0)
             {

@@ -181,7 +181,7 @@ public sealed partial class Driver
                 said: Said(adapter, selection, sessionId),
                 resume: resume,
                 // A park's note is replaced while it works; an ended record's keeps what ended it and says it goes on (MSG1b).
-                workingNote: park.Parked ? Continuations.Working : Continuations.GoingOn,
+                workingNote: park.Parked ? Continuations.WorkingNoted : Continuations.GoingOnNoted,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 working: () => starting?.Dispose(),
                 conclude: (exitCode, used, turnFailed) =>
@@ -195,9 +195,7 @@ public sealed partial class Driver
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, "stopped",
-                    note: "the driver was stopped while this ran; the session's process was ended with it.",
-                    ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
+                    sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
             }
             catch
             {
@@ -215,7 +213,7 @@ public sealed partial class Driver
             // ended, and refuses that move, so the words are handed on as any fallback hands them.
             try
             {
-                await service.AdvanceAsync(sessionId, "failed", note: error.Message, ct: CancellationToken.None).ConfigureAwait(false);
+                await service.AdvanceAsync(sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
             }
             catch (DriverException)
             {
@@ -280,7 +278,7 @@ public sealed partial class Driver
             // completed, as an answer it could not take always ended it (D131 §2).
             await service.AdvanceAsync(
                     sessionId, park.Parked ? "completed" : park.State,
-                    note: park.Parked ? Continuations.EndedNote(park, refused)
+                    park.Parked ? Continuations.EndedNote(park, refused)
                         : closed ? Continuations.CannotNote(park, refused)
                         : Continuations.WentNote(park, refused),
                     ct: ct, interrupted: !park.Parked && park.Interrupted, limit: !park.Parked && park.Limit)
@@ -303,10 +301,10 @@ public sealed partial class Driver
 
         var stoppedFor = _processes.StopReason(sessionId);
         var conclusion = stoppedFor is not null
-            ? new SessionConclusion("stood-down", stoppedFor)
+            ? SessionConclusion.Of("stood-down", stoppedFor)
             : _processes.WasStopRequested(sessionId)
             // A pause's stop names the pause (PAUSE1b, design §4.1), as a first run's does.
-            ? new SessionConclusion("stopped", _processes.StopNote(sessionId) ?? "the person stopped it.")
+            ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
             : exitCode is int code
                 // As any start's where its quest was open or taken as the look planned it, so a park whose run closes its
                 // quest ends completed; a closed quest's session ends as its process does (MSG1b). It carried on a take this
@@ -315,13 +313,14 @@ public sealed partial class Driver
                     code, park.State, quest.Status, status, quest.Awaits, after?.Awaits, turnFailed,
                     took: !closed && status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                     lastWords: closed ? null : ParkedWords(_events, sessionId, transcript))
-                : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
+                : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
         conclusion = AccountRefused(conclusion, adapter, selection, transcript);
         (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
         var evidence = await WorkingTree.CommitsSinceAsync(workTree, park.BaseCommit ?? before, ct).ConfigureAwait(false);
-        await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited)
+        await service.AdvanceAsync(
+                sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited, parts: conclusion.Parts)
             .ConfigureAwait(false);
         service.AccountSaid(Took(park, adapter.Name, why: null));
 
@@ -347,7 +346,7 @@ public sealed partial class Driver
         {
             try
             {
-                await service.AdvanceAsync(park.Session, "completed", note: Continuations.EndedNote(park, why), ct: ct).ConfigureAwait(false);
+                await service.AdvanceAsync(park.Session, "completed", Continuations.EndedNote(park, why), ct: ct).ConfigureAwait(false);
             }
             catch (DriverException refused)
             {

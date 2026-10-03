@@ -866,15 +866,25 @@ public sealed class ServiceClient : IDisposable
     /// a strike. Sent only where true, so a host older than the field reads it as any failure; the ledger refuses it on
     /// a move to any other state (TOOL4c). It names no account.
     /// </param>
+    /// <param name="parts">
+    /// The note's parts beside its English (LANG1a, D142 point 2), sent only with a note: a note sent without them clears the
+    /// record's parts, so an older driver's note never sits beside stale ones. A host older than the field ignores it.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default, bool interrupted = false, bool limit = false)
+        CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("state", state);
             if (note is not null) writer.WriteString("note", note);
+            if (note is not null && parts is { Count: > 0 })
+            {
+                writer.WritePropertyName("noteParts");
+                NotePart.Write(writer, parts);
+            }
+
             if (evidence is not null) writer.WriteString("evidence", evidence);
             if (transcript is not null) writer.WriteString("transcript", transcript);
             if (interrupted) writer.WriteBoolean("interrupted", true);
@@ -897,6 +907,12 @@ public sealed class ServiceClient : IDisposable
         Raise(Moved, new SessionMoved(id, (root is { } moved ? StateOf(moved) : null) ?? state));
         return root is { } answer ? Text(answer, "message") ?? "" : "";
     }
+
+    /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>
+    public Task<string> AdvanceAsync(
+        string id, string state, Noted noted, string? evidence = null, string? transcript = null,
+        CancellationToken ct = default, bool interrupted = false, bool limit = false) =>
+        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts);
 
     /// <summary>The state an answer's session record is in now, or null when it carries none.</summary>
     private static string? StateOf(JsonElement answer) =>
@@ -1068,6 +1084,8 @@ public sealed class ServiceClient : IDisposable
                 Tree = Text(session, "tree"),
                 // The quest it serves, which it holds while it works (DEV3).
                 Quest = Text(session, "quest"),
+                // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
+                NoteParts = NotePart.Read(session),
             });
         }
 
@@ -1174,6 +1192,8 @@ public sealed class ServiceClient : IDisposable
             Ask = Text(session, "ask"),
             // A chat goes on through the chat runner, never the planner (MSG1c).
             Kind = Text(session, "kind") ?? "driven",
+            // Its note's lines by code (LANG1a), which a note added to it carries on; null for a record from before parts.
+            NoteParts = NotePart.Read(session),
         };
 
     /// <summary>

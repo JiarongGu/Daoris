@@ -537,6 +537,53 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// LANG1a (D142 point 2): the state door takes a note's parts beside it, and the record's route and the list answer
+    /// them back, the note unchanged beside them. A note sent without parts clears them, so an older driver's note never
+    /// sits beside stale ones; a move that sends no note keeps both; an answer adds its own lines after them.
+    /// </summary>
+    [Fact]
+    public async Task A_note_s_parts_go_in_through_the_state_door_and_come_back_beside_it()
+    {
+        var quest = await PublishAsync("A quest whose session parked to ask, by code");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var parked = await host.PostAsync($"/api/sessions/{id}/state", new
+        {
+            state = "awaiting-person",
+            note = "It stopped with its quest still taken, to ask you:\n\nWhich port?",
+            noteParts = new object[]
+            {
+                new { code = "ended.parked-asked", values = new { }, text = "It stopped with its quest still taken, to ask you:" },
+                new { words = "Which port?", by = "agent" },
+            },
+        });
+        Assert.Equal(200, parked.Status);
+        Assert.Equal(["ended.parked-asked", null], Codes(parked.Json.GetProperty("session")));
+
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/answer", new { answer = "8080" })).Status);
+        var listed = (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == id);
+        Assert.Equal("It stopped with its quest still taken, to ask you:\n\nWhich port?\n\nAnswered: 8080", listed.GetProperty("note").GetString());
+        Assert.Equal(["ended.parked-asked", null, "ledger.answered", null], Codes(listed));
+
+        var older = await host.PostAsync($"/api/sessions/{id}/state", new { state = "completed", note = "an older driver's line." });
+        Assert.Equal(200, older.Status);
+        var cleared = older.Json.GetProperty("session");
+        Assert.True(!cleared.TryGetProperty("noteParts", out var none) || none.ValueKind == JsonValueKind.Null);
+    }
+
+    private static IReadOnlyList<string?> Codes(JsonElement session) =>
+    [
+        .. session.GetProperty("noteParts").EnumerateArray()
+            .Select(part => part.TryGetProperty("code", out var code) ? code.GetString() : null),
+    ];
+
+    /// <summary>
     /// ANSWER1b (D131 §5): the answer door replies with the session as it now stands, still `awaiting-person`, its words
     /// kept and said on its note, which is how the driver tells a watcher nothing moved; a second answer joins the first
     /// (MSG1a, D137 §6), `answer` the words joined for a client from before. The words are answered to this machine only,

@@ -7,7 +7,9 @@ decision wins, and the amended documents say so where they were amended. The sup
 
 **Kinds.** A *contract* is what a part is and must keep being; it is built against. A *method* is
 how something gets built. A *study* is input to a decision, read for its reasoning. *Evidence* is
-what was measured, and it stays a record of that moment. A *record* is append-only history.
+what was measured, and it stays a record of that moment. A *record* is append-only history. A
+*proposal* is a suggestion brought from outside the record, kept as written; a review weighs it before
+anything is built.
 
 **Rows.** A row gives a document's kind, what it is for, and where it stands in one line naming the
 decision that changed it. What was built under it is that decision's notes, never the row, so a build
@@ -69,7 +71,7 @@ changes no row (D127).
 | `2026-10-03-update-when-idle-design.md` | contract | Update when idle: a build staged beside the install, a drain that starts nothing new, the launcher swapping `app/` while the application is closed, and its roll-back (UPDATE1) | Built (D139); the deployment rehearsal's phase 9 is its gate. Amends D60's and D93's publish |
 | `2026-10-03-context-menu-design.md` | contract | The right-click menu: the page's own, each surface's acts from the owner it has, selected text, a link and a code span; the engine's menu kept for fields and suppressed elsewhere (CTX1) | Current (D138). Amends the platform language §4 and §6 |
 | `2026-10-03-plugin-catalogue-design.md` | contract | The plugins page as a catalogue (installed, Daoris's own, available), a plugin's icon declared in its manifest and handed to the page as its bytes, and the monogram in its place (PLUGUI2) | Current (D140), built (PLUGUI2, PLUGUI2b). Amends the plugin design §3 and the plugins screen design §3.1–§3.2 |
-| `2026-10-03-language-design.md` | contract | Languages: Daoris's lines in a session's note worded by code, someone's words shown as written, every line the driver writes coded, and a session language set for the work, apart from the window's (LANG1) | Designed (D142); nothing built. Amends the platform language §4 and the frontend architecture §3 |
+| `2026-10-03-language-design.md` | contract | Languages: Daoris's lines in a session's note worded by code, someone's words shown as written, every line the driver writes coded, and a session language set for the work, apart from the window's (LANG1) | Designed (D142); LANG1a built, the record's half (D142's note). Amends the platform language §4 and the frontend architecture §3 |
 
 ## Studies and evidence
 
@@ -99,6 +101,8 @@ changes no row (D127).
 | `2026-10-02-ask-drift-evidence.md` | evidence | D133, DRIFT1: one ask's two requirements traced through its intake, two quests and ten sessions. The intake kept a word and lost its meaning; each correction reached one session, then a one-hop carry-on and an account's limit dropped it; a closing note became the requirement. §6 proposes the rows |
 | `2026-10-03-steer-evidence.md` | evidence | D136, STEER1: what each door does with a word sent during a turn, read keylessly, one session measured. A second `session/prompt` reaches Claude Code at its next step; `_session/steering` interrupts the step in flight; a stop with words on their way loses their answer; `codex-acp` must not get a second prompt |
 | `2026-10-03-knowledge-use-evidence.md` | evidence | D135, KNOWUSE1: the 46 questions 33 sessions of the owner's work repository put to the owner, classed by what could answer each. Sessions read their knowledge; 2 items were answered by a document they read, 25 needed the owner, 13 of them asks for three production acts. §6 proposes the rows |
+| `DAORIS_FUTURE_DIRECTIONS.md` | proposal | An outside analysis the owner brought in (2026-10-03): 73 suggestions for proving, explaining, recovering and learning from driven work, kept as written. Reviewed in `2026-10-03-future-directions-review.md`; nothing is adopted from it without a decision |
+| `2026-10-03-future-directions-review.md` | study | That proposal against the record: 18 sections exist, 38 partly, 15 are new and 2 conflict (D130; D46 with D69). It recommends TRACE1, EVID1, CONTEXT1 and OUTCOME1 first, and §66 as a decision. ROADMAP's horizon points to it |
 
 ## Records
 

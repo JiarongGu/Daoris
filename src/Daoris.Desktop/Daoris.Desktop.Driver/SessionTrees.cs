@@ -5,7 +5,14 @@ namespace Daoris.Driver;
 /// <param name="BasedOn">Which point the branch grew from, spelled for a person — the canonical line, or HEAD with the reason.</param>
 /// <param name="Sentence">The whole act in one sentence, price included — for whoever is watching.</param>
 /// <param name="GrewFrom">The chain step's branch it grew from (CHAIN2), when it did — null for the canonical line.</param>
-public sealed record TreeOpened(string Path, string Branch, string BasedOn, string Sentence, string? GrewFrom = null);
+public sealed record TreeOpened(string Path, string Branch, string BasedOn, string Sentence, string? GrewFrom = null)
+{
+    /// <summary>
+    /// <see cref="Sentence"/> with its codes (LANG1a, the language design §4 rows 25–26): the tree's branch and what it grew
+    /// from as facts, never its path; and where its start went unrecorded, that line with git's words beside it.
+    /// </summary>
+    public Noted? Opening { get; init; }
+}
 
 /// <param name="Removed">Whether the tree is gone. False is a refusal, not a failure.</param>
 /// <param name="Message">What happened, or what would have been lost and how to mean it.</param>
@@ -147,7 +154,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
         // here, so a chain's step replays only its own commits once the step before's are on the line.
-        var unrecorded = "";
+        string? unrecorded = null;
         var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
             .ConfigureAwait(false);
         if (headCode == 0)
@@ -158,18 +165,38 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                unrecorded = $" Daoris could not record where its branch started ({error.Message}), so bringing it up to date "
-                    + "will cut where its work first differs from the line.";
+                unrecorded = error.Message;
             }
         }
 
-        return new(
-            path, branch, basedOn,
+        // What it grew from as a fact (LANG1a): the branch it started at, never the sentence spelling it for a person.
+        var opening = OpeningOf(path, branch, basedOn, grewFrom ?? line.Branch ?? "HEAD", unrecorded);
+        return new(path, branch, basedOn, opening.Note, grewFrom) { Opening = opening };
+    }
+
+    /// <summary>
+    /// The opening's sentence, price included, with its codes (LANG1a, the language design §4 rows 25–26): its branch and the
+    /// branch it started at as facts, never its path, which only the English names and the cleaner cuts where it travels.
+    /// </summary>
+    /// <param name="basedOn">What it grew from, spelled for a person.</param>
+    /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>
+    /// <param name="unrecorded">Why where its branch started was not recorded (WSR6), in the program's words; null where it was.</param>
+    internal static Noted OpeningOf(string path, string branch, string basedOn, string startedAt, string? unrecorded)
+    {
+        var opening = Noted.Of(
+            NoteCodes.StartedTree,
             $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
             + "nothing git does not track: no installed dependencies, no build outputs. The "
             + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
-            + "holds nothing." + unrecorded,
-            grewFrom);
+            + "holds nothing.",
+            ("branch", branch), ("basedOn", startedAt));
+        if (unrecorded is null) return opening;
+
+        var line = Noted.Of(
+            NoteCodes.StartedTreeUnrecorded,
+            $"Daoris could not record where its branch started ({unrecorded}), so bringing it up to date "
+            + "will cut where its work first differs from the line.");
+        return opening.Then(" ", unrecorded.Length == 0 ? line : line.Also(NotePart.Said(unrecorded, NoteBy.Program)));
     }
 
     /// <summary>

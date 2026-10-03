@@ -46,6 +46,38 @@ export type AccountFacts = {
   week?: string | null;
   /** Daoris's sessions running on it now; null where they could not be counted — unknown, never zero. */
   running?: number | null;
+  /** When its cool-off ended, within the last day, while `cooling.json` still holds it (TOOL6e); null otherwise. */
+  offered?: string | null;
+};
+
+/**
+ * Why the next start takes its account (TOOL6e, D130 §3–§4 as §16.3 amends them): the driver's `NextReason`, a closed set.
+ * `own` and `named` are a scope's one account, chosen by no step; `waits` is no account ready.
+ */
+export type NextReason =
+  | 'own' | 'named' | 'onlyReady' | 'kept' | 'near' | 'fewest' | 'lapsing' | 'pace' | 'leastRecent' | 'notStarted' | 'list'
+  | 'waits';
+
+/** What keeps the next start off an account (TOOL6e), or `ready` where nothing does and it is merely ranked after. */
+export type NextHold = 'ready' | 'near' | 'cooling' | 'refused' | 'signedOut' | 'kept' | 'missing' | 'outside';
+
+/** One account the next start does not take: null is the tool's own sign-in. */
+export type AccountHeld = { account?: string | null; hold: NextHold; until?: string | null };
+
+/**
+ * Which account a scope's next start would take, why, and what holds the others (TOOL6e): the driver's own walk, asked
+ * without starting, counting or probing anything.
+ */
+export type NextStart = {
+  /** The account it takes; null for the tool's own sign-in, and while it waits. */
+  account?: string | null;
+  reason: NextReason;
+  /** The account the reason weighed it against: where the list begins, or else the next ready account. */
+  over?: string | null;
+  /** Its week's reset (`lapsing`), or when the first account is offered again (`waits`). */
+  when?: string | null;
+  /** Every other account, in the order the walk tried them, then kept, missing and unused ones. */
+  others: AccountHeld[];
 };
 
 /** How one scope's list is used (D130 §16.6). */
@@ -71,6 +103,8 @@ export type AccountScope = {
   problem?: { kind: 'default' | 'keep' | 'alone'; account: string } | null;
   /** The accounts of its list near their limit by its own `near` (D130 §6): by the agent's word, credits or a number. */
   near: { account: string; window: string; by: NearBy }[];
+  /** Which account its next start would take, and why (TOOL6e); absent from a shell older than that. */
+  next?: NextStart | null;
 };
 
 /** One agent's accounts, by the accounts' owner (AGT7): a door's accounts are its owner's. */
@@ -78,8 +112,8 @@ export type AgentAccounts = {
   agent: string;
   /** Whether its sessions say how near their limits are (TOOL6c): what switching before the limit waits for. */
   speaks: boolean;
-  /** The tool's own sign-in's cool-off (D125 §3.7): never one of the accounts, never in a list. */
-  own: { cooling?: AccountCooling | null };
+  /** The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. */
+  own: { cooling?: AccountCooling | null; offered?: string | null };
   accounts: AccountFacts[];
   /** The machine's scope first, then each workspace's own. */
   scopes: AccountScope[];
@@ -216,6 +250,62 @@ export function saidLine(said: AccountSaid | null | undefined): string {
   }
   if (parts.length === 0) parts.push(i18n.t('harness.said.clear'));
   return i18n.t('harness.said.line', { age: ago(said.seen), what: parts.join(i18n.t('harness.said.join')) });
+}
+
+/**
+ * Why the next start takes its account, as a clause (TOOL6e): the walk's step, naming the account it weighed it against as a
+ * person calls it. The list's order says the default, the list's first, or the account it comes before.
+ */
+function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
+  const over = next.over ? labelOf(next.over) : '';
+  switch (next.reason) {
+    case 'list':
+      if (next.account === scope.default) return i18n.t('harness.next.why.listDefault');
+      if (next.account === scope.begins || !next.over) return i18n.t('harness.next.why.listFirst');
+      return i18n.t('harness.next.why.listNext', { over });
+    case 'kept':
+      return next.over ? i18n.t('harness.next.why.keptOver', { over }) : i18n.t('harness.next.why.kept');
+    case 'lapsing':
+      return next.when ? i18n.t('harness.next.why.lapsing', { when: moment(next.when) }) : i18n.t('harness.next.why.lapsingSoon');
+    default:
+      return i18n.t(`harness.next.why.${next.reason}`, { over });
+  }
+}
+
+/**
+ * The next start, as a sentence (TOOL6e, D130 §3–§4): which account it takes and the walk's step that chose it; the tool's
+ * own sign-in where nothing names an account (D125 §3.7); or that it waits, until when where an account is cooling.
+ */
+export function nextLine(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
+  if (next.reason === 'own') return i18n.t('harness.next.own');
+  if (next.reason === 'waits' || !next.account) {
+    return next.when ? i18n.t('harness.next.waitsUntil', { when: moment(next.when) }) : i18n.t('harness.next.waits');
+  }
+  return i18n.t('harness.next.takes', { account: labelOf(next.account), why: nextWhy(next, scope, labelOf) });
+}
+
+/**
+ * What holds the accounts the next start does not take, as one or two sentences (TOOL6e): each held account and why, then
+ * the accounts the scope does not use together; an account merely ranked after is not said. Null where nothing holds any.
+ */
+export function heldLine(next: NextStart, labelOf: (name: string) => string): string | null {
+  const name = (held: AccountHeld) => (held.account ? labelOf(held.account) : i18n.t('harness.use.emptyOwn'));
+  const clauses = next.others.flatMap((held) => {
+    if (held.hold === 'ready' || held.hold === 'outside') return [];
+    if (held.hold === 'cooling') return held.until ? [i18n.t('harness.next.held.cooling', { account: name(held), when: moment(held.until) })] : [];
+    return [i18n.t(`harness.next.held.${held.hold}`, { account: name(held) })];
+  });
+  const outside = next.others.filter((held) => held.hold === 'outside').map(name);
+  const sentences = [
+    clauses.length > 0 ? i18n.t('harness.next.held.line', { clauses: clauses.join(i18n.t('harness.said.join')) }) : null,
+    outside.length > 0 ? i18n.t('harness.next.outside', { accounts: outside.join(i18n.t('harness.next.comma')) }) : null,
+  ].filter((sentence): sentence is string => sentence !== null);
+  return sentences.length > 0 ? sentences.join(i18n.t('harness.said.sentences')) : null;
+}
+
+/** Since when an account is offered again, its cool-off having ended (TOOL6e), as its row says it. */
+export function offeredLine(offered: string): string {
+  return i18n.t('harness.next.offered', { when: moment(offered) });
 }
 
 /** The tool's own sign-in's line (D125 §3.7), when a start would run on it, with its cool-off where it cools. */
