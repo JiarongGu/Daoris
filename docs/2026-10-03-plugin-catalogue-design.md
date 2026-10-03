@@ -1,7 +1,7 @@
 # The plugins page as a catalogue, and a plugin's icon — design
 
 > PLUGUI2, from the owner, 2026-10-03: *"plugin page design (and plugin icon)"*. The decision is **D140**. Status:
-> **designed and built** (PLUGUI2), but for the host's answer of the icon, PLUGUI2b (§3.2). Read with the plugins
+> **designed and built** (PLUGUI2), and the host's answer of the icon with it (PLUGUI2b, §3.2). Read with the plugins
 > screen design (`2026-10-01-plugins-screen-design.md`, D119), which this amends, the plugin design (D64 §3) and the
 > distribution design (D120 §4, §6).
 
@@ -109,9 +109,9 @@ never meets it: the view is shell-only (D47 §4), and nothing in the answer says
 view comes to the front and after an act, never on a timer. A route per icon would ask the driver once per row for
 files the catalogue has just read.
 
-**Not built here: the two fields on `PLUGINS`** (`DriverModule.Plugins.cs`, the modules' lane). PLUGUI2b adds them by
-calling `PluginIcon.Read` for each plugin and offer. The page already reads them, and until they arrive every plugin
-wears its monogram.
+**The two fields on `PLUGINS`** (`DriverModule.Plugins.cs`, the modules' lane) came after the page, in PLUGUI2b, which
+calls `PluginIcon.Read` for each plugin and offer; `DriverModulePluginPageTests` holds them, and that no string in the
+answer names an icon's file.
 
 ### 3.3 The monogram
 

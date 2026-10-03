@@ -493,7 +493,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                 onChange={(event) => setKeyDraft(event.target.value)}
                 aria-label={t('harness.profile.keyLabel', { tool: tool.product ?? tool.name })}
                 placeholder={t('harness.profile.keyPlaceholder')}
-                className="min-w-72 flex-1 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>
                 {t('harness.profile.keySave')}
@@ -675,7 +675,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                 onChange={(event) => setPinning(
                   (held) => ({ ...held, [harness.harness]: event.target.value }))}
                 placeholder={t('harness.pin.placeholder')}
-                className="w-32 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                className="w-32 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               <Button
                 type="submit"

@@ -42,12 +42,54 @@ const LAYOUTS = ['left', 'center', 'right', 'justify', 'start', 'end', 'wrap', '
  */
 const TEXT_CLASS = /(?<![\w-])text-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)/g;
 
+/**
+ * Tailwind's colour keywords that need no theme. `tokens.css` clears Tailwind's palette (`--color-*: initial`), so
+ * `bg-white` or `border-red-500` draws nothing, while these three are values of their own and still draw (LOOK6).
+ */
+const BUILT_IN_COLOURS = ['transparent', 'current', 'inherit'];
+
 /** Every `text-` class that names no step, colour or layout `tokens.css` and Tailwind declare. */
 export function undeclaredSteps(files: [path: string, source: string][], css: string): string[] {
-  const known = new Set([...declaredSteps(css), ...declaredColours(css), ...LAYOUTS]);
+  const known = new Set([...declaredSteps(css), ...declaredColours(css), ...LAYOUTS, ...BUILT_IN_COLOURS]);
   return files.flatMap(([path, source]) => [...source.matchAll(TEXT_CLASS)]
     .filter((match) => !known.has(match[1]!))
     .map((match) => `${path} wears text-${match[1]}, which tokens.css does not declare`));
+}
+
+/**
+ * 🔴 **A colour no token defines draws nothing, and says nothing** (LOOK6). Thirteen files asked for `bg-sunken` for
+ * the box a destructive move asks in, and `tokens.css` declared no such colour: Tailwind emits no rule for a name
+ * its theme lacks, so every one of those boxes had no background in either theme, with every check green. The
+ * `text-` scan above already held the type steps; a `bg-` or `border-` colour had nothing.
+ *
+ * A `bg-` or `border-` class is read whole, its opacity aside (`bg-st-done/10` is `st-done`), and what is not a
+ * colour is set aside by its shape: a background's attachment, clip, origin, repeat, size, position, image or
+ * blend; a border's width, side, style or table layout. A side may carry a colour (`border-l-st-open`). A class
+ * built from a variable (`bg-st-${state}`) and an arbitrary value (`bg-[…]`) are not names, so neither is read.
+ */
+const COLOUR_CLASS = /(?<![\w-])(bg|border)-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)(?![a-z0-9]|-[a-z0-9]|-?\$\{)/g;
+
+const NOT_A_BACKGROUND_COLOUR = /^(?:fixed|local|scroll|none|auto|cover|contain|center|top|bottom|left|right|repeat|no-repeat)$|^(?:clip|origin|repeat|size|position|linear|radial|conic|gradient|blend|top|bottom|left|right)-/;
+const NOT_A_BORDER_COLOUR = /^(?:\d+|solid|dashed|dotted|double|hidden|none|collapse|separate)$|^spacing(?:-|$)/;
+const BORDER_SIDE = /^(?:x|y|t|r|b|l|s|e|bs|be)(?:-(.+))?$/;
+
+/** The colour a `bg-` or `border-` class names, or null where it names none. */
+function colourNamed(utility: string, value: string): string | null {
+  if (utility === 'bg') return NOT_A_BACKGROUND_COLOUR.test(value) ? null : value;
+  const side = BORDER_SIDE.exec(value);
+  const rest = side ? side[1] : value;
+  return rest === undefined || NOT_A_BORDER_COLOUR.test(rest) ? null : rest;
+}
+
+/** Every `bg-` and `border-` class whose colour is neither a token `tokens.css` declares nor a built-in that draws. */
+export function undeclaredColours(files: [path: string, source: string][], css: string): string[] {
+  const known = new Set([...declaredColours(css), ...BUILT_IN_COLOURS]);
+  return files.flatMap(([path, source]) => [...source.matchAll(COLOUR_CLASS)]
+    .filter((match) => {
+      const colour = colourNamed(match[1]!, match[2]!);
+      return colour !== null && !known.has(colour);
+    })
+    .map((match) => `${path} wears ${match[0]}, a colour tokens.css does not declare`));
 }
 
 /**
@@ -139,12 +181,47 @@ describe('the type scale', () => {
     expect(wears('className="hover:text-xl"')).toHaveLength(1);
     // And what must keep passing: a step, a colour with and without its opacity, a layout.
     expect(wears('className="text-view text-ink-soft hover:text-st-declined text-ink/70 text-pretty text-left"')).toEqual([]);
+    // Tailwind's colour keywords draw though its palette is cleared (LOOK6).
+    expect(wears('className="text-current text-inherit text-transparent"')).toEqual([]);
     // A raw size is the other check's, and a word that merely contains the prefix is no class.
     expect(wears('className="text-[0.85rem] context-text-h3"')).toEqual([]);
   });
 
   it('holds: every text- class names a step, a colour or a layout tokens.css or Tailwind declares', () => {
     expect(undeclaredSteps([...components, ...modules], tokensCss)).toEqual([]);
+  });
+});
+
+describe('the colours', () => {
+  const wears = (source: string, css = tokensCss) => undeclaredColours([['./asks/AskPage.tsx', source]], css);
+
+  it('catches a colour no token defines — the check itself, in the shape bg-sunken took', () => {
+    // tokens.css as it stood before LOOK6: the box asked for a colour the theme did not have.
+    const before = tokensCss.replace(/^\s*--color-sunken\s*:.*$/m, '');
+    expect(before).not.toBe(tokensCss);
+    expect(wears('className="mb-4 flex rounded-control border border-line bg-sunken px-2.5 py-2"', before))
+      .toEqual(['./asks/AskPage.tsx wears bg-sunken, a colour tokens.css does not declare']);
+    // Tailwind's own palette, which tokens.css clears, behind a variant, with an opacity, and on one side.
+    expect(wears('className="hover:bg-white"')).toHaveLength(1);
+    expect(wears('className="border-red-500/40"')).toHaveLength(1);
+    expect(wears('className="border-l-muted"')).toHaveLength(1);
+    expect(wears("cn('text-ink', busy && 'bg-muted')")).toHaveLength(1);
+  });
+
+  it('leaves what is a token, a built-in or no colour at all', () => {
+    expect(wears([
+      'className="bg-raised bg-page/60 hover:bg-accent-soft data-[state=checked]:bg-accent bg-st-done/10 bg-scrim',
+      'bg-transparent bg-inherit border-current border-transparent bg-ident-moss/15',
+      'border border-0 border-2 border-x border-t border-b-0 border-l-[3px] border-l-st-open border-t-line',
+      'border-dashed border-none border-collapse border-spacing-2 border-line-strong hover:enabled:border-accent',
+      'bg-cover bg-center bg-left-top bg-no-repeat bg-clip-text bg-linear-to-r bg-[url(x)] border-[#cfcabe]"',
+      // A class built from a variable is not a name, and a word that merely holds the prefix is no class.
+      'className={`bg-st-${state} border-st-${state}`} data-bg-sunken="x" box-border',
+    ].join(' '))).toEqual([]);
+  });
+
+  it('holds: every bg- and border- colour a web source names is one tokens.css declares', () => {
+    expect(undeclaredColours([...components, ...modules], tokensCss)).toEqual([]);
   });
 });
 
@@ -233,6 +310,70 @@ describe('the chosen themes', () => {
     const read = palettes(tokensCss);
     expect(read['chosen-light']).toEqual(read['system-light']);
     expect(read['chosen-dark']).toEqual(read['system-dark']);
+  });
+});
+
+/**
+ * **Every surface is readable in every ink, and the sunken one lies below the page** (D41 §3; LOOK6). The status and
+ * identity hues were computed and the surfaces under the inks were not, until a fourth surface arrived for the box a
+ * move asks once in. Body and secondary ink reach 4.5:1 on every surface; the faint ink, which carries meta and a
+ * field's placeholder beside a label that says the same, reaches 3:1. Computed from `tokens.css`, in both themes.
+ */
+const SURFACES = ['--page', '--sunken', '--raised', '--overlay'];
+const INK_FLOORS: [ink: string, floor: number][] = [['--ink', 4.5], ['--ink-soft', 4.5], ['--ink-faint', 3]];
+
+/** Relative luminance of a `#rrggbb` colour (WCAG 2). */
+export function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((at) => {
+    const c = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** The contrast ratio of two `#rrggbb` colours (WCAG 2), whichever is lighter. */
+export function contrast(a: string, b: string): number {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+describe('the surfaces', () => {
+  const themes = () => {
+    const read = palettes(tokensCss);
+    return { light: read['system-light'], dark: read['system-dark'] };
+  };
+
+  it('reads every surface and ink in both themes', () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      for (const token of [...SURFACES, ...INK_FLOORS.map(([ink]) => ink)]) {
+        expect(tokens[token], `${theme} ${token}`).toMatch(/^#[0-9a-f]{6}$/);
+      }
+    }
+  });
+
+  it('catches an ink too faint for its surface, and a well above the page — the check itself', () => {
+    const { light } = themes();
+    // The faint ink on a field's strong line: the shape a "subtle" surface would take one step too far.
+    expect(contrast(light['--ink-faint']!, light['--line-strong']!)).toBeLessThan(3);
+    expect(contrast('#000000', '#ffffff')).toBeCloseTo(21, 5);
+    expect(luminance(light['--raised']!)).toBeGreaterThan(luminance(light['--page']!));
+  });
+
+  it('holds: every ink reaches its floor on every surface, in both themes', () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      for (const surface of SURFACES) {
+        for (const [ink, floor] of INK_FLOORS) {
+          const ratio = contrast(tokens[ink]!, tokens[surface]!);
+          expect(ratio, `${theme} ${ink} on ${surface}: ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(floor);
+        }
+      }
+    }
+  });
+
+  it('holds: the sunken surface lies below the page in both themes, so the well reads as one', () => {
+    for (const [theme, tokens] of Object.entries(themes())) {
+      expect(luminance(tokens['--sunken']!), `${theme} --sunken against --page`).toBeLessThan(luminance(tokens['--page']!));
+    }
   });
 });
 

@@ -270,7 +270,7 @@ export function ToolCard({
                 onChange={(event) => { onAsk?.(null); onChoice({ ...choice, file: event.target.value }); }}
                 placeholder={t('settings.tools.filePlaceholder')}
                 spellCheck={false}
-                className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               {onBrowse && <Button variant="ghost" disabled={acting} onClick={onBrowse}>{t('settings.tools.browse')}</Button>}
               {changing && !asking && (
@@ -554,7 +554,7 @@ export function ToolLocations({
               onChange={(event) => setAddress(event.target.value)}
               placeholder={t('settings.tools.locations.placeholder')}
               spellCheck={false}
-              className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+              className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
             />
             <Button type="submit" disabled={busy || !address.trim()}>{t('settings.tools.locations.save')}</Button>
             <Button variant="ghost" onClick={() => { setAddress(''); setAdding(false); }}>{t('common.cancel')}</Button>

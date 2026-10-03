@@ -27,6 +27,8 @@ public sealed partial class DriverModule
     // The Plugins view's list (PLUGUI1e, D119 §4.1) adds what each hands sessions and speaks on, the points its running
     // process listens on, its health from the loop's own record, and whether an update waits. It stays light: the
     // page asks PLUGIN for the rest.
+    // Each plugin and offer carries its icon (PLUGUI2b, D140 §5): the bytes PluginIcon.Read judged, as a data URI, and
+    // never the icon's path, so the page draws what it was handed and reaches for nothing; 32 KiB a plugin bounds it.
     [DriverRoute("PLUGINS")]
     private async Task<object?> PluginsAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -42,6 +44,7 @@ public sealed partial class DriverModule
             Plugins = catalog.Plugins.Select(plugin =>
             {
                 var health = _loop.Health.Of(plugin);
+                var icon = PluginIcon.Read(plugin.Folder, plugin.Manifest);
                 return new
                 {
                     plugin.Manifest.Id,
@@ -50,6 +53,9 @@ public sealed partial class DriverModule
                     plugin.Manifest.Description,
                     plugin.Enabled,
                     plugin.Problem,
+                    // An icon's problem is said beside the plugin's, never as it: a refused plugin keeps its icon (D140 §4).
+                    Icon = icon.DataUri,
+                    IconProblem = icon.Problem,
                     Harnesses = plugin.Manifest.Harnesses.Select(h => h.Name).ToArray(),
                     Points = plugin.Manifest.Hooks?.Points ?? [],
                     // What the catalogue takes, as the rows above: a refused plugin hands nothing and speaks nowhere.
@@ -68,18 +74,24 @@ public sealed partial class DriverModule
             }).ToArray(),
             // Daoris's own plugins the install carries (PLUG9 d), installed only by a press.
             OffersFolder,
-            Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names).Select(offer => new
+            Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names).Select(offer =>
             {
-                offer.Id,
-                offer.Manifest.Name,
-                offer.Manifest.Version,
-                offer.Manifest.Description,
-                offer.Problem,
-                Harnesses = offer.Manifest.Harnesses.Select(h => h.Name).ToArray(),
-                Points = offer.Manifest.Hooks?.Points ?? [],
-                Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
-                offer.Needs,
-                offer.Installed,
+                var icon = PluginIcon.Read(offer.Folder, offer.Manifest);
+                return new
+                {
+                    offer.Id,
+                    offer.Manifest.Name,
+                    offer.Manifest.Version,
+                    offer.Manifest.Description,
+                    offer.Problem,
+                    Icon = icon.DataUri,
+                    IconProblem = icon.Problem,
+                    Harnesses = offer.Manifest.Harnesses.Select(h => h.Name).ToArray(),
+                    Points = offer.Manifest.Hooks?.Points ?? [],
+                    Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
+                    offer.Needs,
+                    offer.Installed,
+                };
             }).ToArray(),
         };
     }

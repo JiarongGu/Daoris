@@ -24,6 +24,7 @@ function Gallery() {
       <section>
         <h2 className="mb-2 text-body font-semibold">Surfaces & ink</h2>
         <Swatch name="page" variable="--page" />
+        <Swatch name="sunken" variable="--sunken" note="the box a move asks once in" />
         <Swatch name="raised" variable="--raised" note="cards, controls" />
         <Swatch name="overlay" variable="--overlay" note="drawers, toasts" />
         <Swatch name="line" variable="--line" />

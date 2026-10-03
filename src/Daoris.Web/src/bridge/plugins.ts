@@ -39,7 +39,7 @@ export type PluginEntry = {
   update?: 'waits' | 'current' | null;
   /**
    * Its declared icon as its own bytes, a `data:image/svg+xml` or `data:image/png` URI (PLUGUI2, D140 §3.2), never a
-   * path. Absent until the host answers it (PLUGUI2b), and the page draws the monogram.
+   * path. Null, or absent from a host older than PLUGUI2b, and the page draws the monogram.
    */
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
