@@ -371,6 +371,30 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.False(await _ledger.MarkTookAsync(session.Id, quest.Id));
     }
 
+    /// <summary>
+    /// CHATTAKE1 (D126 §5.4): a chat has no quest of its own, so whatever quest it takes through its own connector is the
+    /// work it served, and the take is written on its record as a driven session's is. Only while it runs, and only this
+    /// machine's record: an ended chat and a teammate's change nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_chats_take_is_marked_on_its_record()
+    {
+        var quest = await Publish();
+        var chat = (await _ledger.OpenChatAsync("Owner", "stub", Now)).Session!;
+
+        Assert.True(await _ledger.MarkTookAsync(chat.Id, $"#{quest.Id}"));
+        Assert.True((await _sessions.FindAsync(chat.Id))!.Took);
+
+        var ended = (await _ledger.OpenChatAsync("Owner", "stub", Now, tree: "/trees/owner-ended")).Session!;
+        await _sessions.SetStateAsync(ended.Id, SessionState.Completed, null, null, null, Now.AddMinutes(1));
+        Assert.False(await _ledger.MarkTookAsync(ended.Id, quest.Id));
+        Assert.False((await _sessions.FindAsync(ended.Id))!.Took);
+
+        await _sessions.MirrorAsync(new Session(
+            "bob-laptop/ab12cd34", null, "Owner", "stub", SessionState.Working, null, null, null, Now, Now, Kind: SessionKind.Chat));
+        Assert.False(await _ledger.MarkTookAsync("bob-laptop/ab12cd34", quest.Id));
+    }
+
     /// <summary>A driven session that took its quest and parked to ask the person, as the driver parks one (STANDDOWN2).</summary>
     private async Task<(Quest Quest, Session Parked)> Parked(string? asked = "needs a merge, a sign-in and a go-ahead.")
     {

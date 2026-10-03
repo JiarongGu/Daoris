@@ -157,7 +157,10 @@ public enum SessionDeleteRefusal
     /// <summary>It still runs or waits: stopped first, it ends.</summary>
     Live,
 
-    /// <summary>It served a quest, and is that work's record: the strikes and the carry-ons are read from it (D58, D80).</summary>
+    /// <summary>
+    /// It served a quest, and is that work's record: the strikes and the carry-ons are read from it (D58, D80). A chat that
+    /// took one through its own connector served it too (CHATTAKE1).
+    /// </summary>
     ServedQuest,
 
     /// <summary>An ask names it as its intake, or a quest was published by it (SESS1).</summary>
@@ -172,7 +175,10 @@ public enum SessionDeleteRefusal
 /// <param name="Session">The record judged, when there is one.</param>
 public sealed record SessionDeleteOutcome(SessionDeleteRefusal Refusal, string Message, Session? Session)
 {
-    /// <summary>The quest it served, or the quest it published, where that refused it.</summary>
+    /// <summary>
+    /// The quest it served, or the quest it published, where that refused it. Null for a chat that took one, whose record
+    /// says it took a quest but not which (CHATTAKE1).
+    /// </summary>
     public string? Quest { get; init; }
 
     /// <summary>The ask that names it as its intake, where that refused it.</summary>
@@ -411,17 +417,22 @@ public sealed partial class SessionLedger(
     /// The session's own connector took its quest (STANDDOWN2): recorded on the session, so its end
     /// can tell "it holds the quest and stopped" from "somebody else had it". Only the session's own
     /// quest, only while it runs, and only this machine's record — anything else changes nothing.
+    /// A chat has no quest of its own, so whatever it takes is the work it served (CHATTAKE1).
     /// </summary>
+    /// <remarks>
+    /// <b>A chat's take is marked too</b>, or its record reads as serving no quest and a delete removes that work's record
+    /// (D126 §5.4). Every reader that asks a take of a quest keys on the record's quest, which a chat's is not, so the mark
+    /// changes no carry-on and no stand-down.
+    /// </remarks>
     public async Task<bool> MarkTookAsync(string sessionId, string questId, CancellationToken ct = default)
     {
         var session = await sessions.FindAsync(sessionId, ct).ConfigureAwait(false);
-        if (session is not { Active: true, Origin: null, Quest: { } quest }
-            || !string.Equals(quest, questId.TrimStart('#'), StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
+        if (session is not { Active: true, Origin: null }) return false;
 
-        return await sessions.MarkTookAsync(sessionId, ct).ConfigureAwait(false);
+        var served = session.Quest is { } quest
+            ? string.Equals(quest, questId.TrimStart('#'), StringComparison.OrdinalIgnoreCase)
+            : session.Kind == SessionKind.Chat;
+        return served && await sessions.MarkTookAsync(sessionId, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1003,6 +1014,15 @@ public sealed partial class SessionLedger(
                 SessionDeleteRefusal.ServedQuest,
                 $"Session `{id}` worked on `#{served}`, and its record is that work's; archive it instead.",
                 session) { Quest = served };
+        }
+
+        // A chat's take names no quest on its record (CHATTAKE1), so its sentence says the take without one.
+        if (session.Took)
+        {
+            return new(
+                SessionDeleteRefusal.ServedQuest,
+                $"Session `{id}` took a quest, and its record is that work's; archive it instead.",
+                session);
         }
 
         var intakeOf = named.Asks.FirstOrDefault(ask =>

@@ -530,7 +530,8 @@ public sealed partial class KnowledgeTools(
             .ConfigureAwait(false);
 
         // A take by a session the driver started is written on its record (STANDDOWN2): how its end is
-        // told apart from a stand-down, which the quest's state alone cannot say.
+        // told apart from a stand-down, which the quest's state alone cannot say. A chat's too (CHATTAKE1):
+        // how a delete knows the chat served that quest.
         if (outcome.Refusal == QuestRespondRefusal.None
             && string.Equals(action, "take", StringComparison.OrdinalIgnoreCase)
             && intake?.Session is { } session && ledger is not null)

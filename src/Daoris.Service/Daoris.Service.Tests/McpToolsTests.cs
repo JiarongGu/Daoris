@@ -375,6 +375,29 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// CHATTAKE1: a chat takes a quest through the connector its driver handed it, named with its session, and the take is
+    /// written on its record as a driven session's is, so a delete knows the chat served that quest.
+    /// </summary>
+    [Fact]
+    public async Task A_take_through_a_chats_own_connector_is_written_on_its_record()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var asks = await AskStore.OpenAsync(_connection);
+        var ledger = new SessionLedger(_quests, sessions, _service, asks);
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        await _tools.PublishQuestAsync("Asker", "Owner", "Verify it", "Open it and look.");
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        var chat = await sessions.CreateAsync(null, "Owner", "stub", DateTimeOffset.UtcNow, kind: SessionKind.Chat);
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
+            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, chat.Id), ledger: ledger);
+
+        await tools.RespondToQuestAsync(quest.Id, "take");
+
+        Assert.True((await sessions.FindAsync(chat.Id))!.Took);
+    }
+
+    /// <summary>
     /// KNOWUSE1a (D135 §2): a session asks the person for a go-ahead through its own connector, held on the ask its quest
     /// was asked by; a second session asking for the act in other words joins it rather than asking again, and a connector
     /// that speaks for no session is told there is no ask to hold one.
