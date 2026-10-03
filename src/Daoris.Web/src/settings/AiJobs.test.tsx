@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
+import { code } from '../test/code';
 import { AiJobs, type IntakeJob, type SearchTier } from './AiJobs';
 import type { StartWiring } from '../map/wiring';
 
@@ -72,7 +73,7 @@ describe('AI features', () => {
 
     expect(screen.getByRole('combobox', { name: 'the intake agent' })).toHaveTextContent('Off — declarations only');
     expect(screen.getByText(/answered from the workspace's declarations/)).toBeInTheDocument();
-    expect(screen.getByText(/daoris driver intake <agent>\|off/)).toBeInTheDocument();
+    expect(screen.getByText(code(/daoris driver intake <agent>\|off/))).toBeInTheDocument();
   });
 
   /**

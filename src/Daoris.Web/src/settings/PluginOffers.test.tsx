@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
+import { code } from '../test/code';
 import { PluginOffersCard, type PluginOfferShown } from './PluginOffers';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown } from './PluginUpdate';
 
@@ -43,7 +44,7 @@ describe('the install\'s own plugins', () => {
     expect(screen.getByText(/speaks on work\/land/)).toBeInTheDocument();
     const needs = within(screen.getByRole('list', { name: 'What github-pull-request needs' }));
     // The README's own words: code renders as code, and nothing is re-said.
-    expect(needs.getByText('gh auth login', { selector: 'code' })).toBeInTheDocument();
+    expect(needs.getByText(code('gh auth login'))).toBeInTheDocument();
     expect(needs.getAllByRole('listitem')).toHaveLength(2);
     // An installed one is in the catalogue above, not offered again.
     expect(screen.queryByText('In-app browser')).toBeNull();
@@ -162,7 +163,7 @@ describe('in 中文', () => {
 
       expect(screen.getByText('Daoris 自带的插件')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '安装 github-pull-request' })).toBeInTheDocument();
-      expect(screen.getByText('gh auth login', { selector: 'code' })).toBeInTheDocument();
+      expect(screen.getByText(code('gh auth login'))).toBeInTheDocument();
       expect(screen.getByText(/没有它来自哪里的记录/)).toBeInTheDocument();
       expect(screen.getByRole('region', { name: '更新内容' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '立即更新' })).toBeInTheDocument();
