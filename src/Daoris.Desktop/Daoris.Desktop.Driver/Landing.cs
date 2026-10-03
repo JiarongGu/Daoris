@@ -74,8 +74,9 @@ public sealed record TreeLanding(
     bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null, IReadOnlyList<TidiedBranch>? Tidied = null)
 {
     /// <summary>
-    /// A refusal's code (LAND2b), one of <see cref="AutoLandingCode"/>: <c>uncommitted</c>, <c>nothing</c> or <c>exists</c>
-    /// where the branch form said so, else null, which a landing at done keeps as <c>refused</c>. The message says it to a person.
+    /// A refusal's code (LAND2b), one of <see cref="AutoLandingCode"/>: <c>uncommitted</c>, <c>nothing</c>, <c>exists</c> or, where a
+    /// chain's branch was merged, <c>completed</c> (LAND2c) where the branch form said so, else null, which a landing at done keeps
+    /// as <c>refused</c>. The message says it to a person.
     /// </summary>
     public string? Refusal { get; init; }
 
@@ -85,6 +86,12 @@ public sealed record TreeLanding(
     /// refuses before anything is made instead (D100).
     /// </summary>
     public string? Unready { get; init; }
+
+    /// <summary>
+    /// Where the landing moved a branch Daoris made on from (LAND2c, D149 point 2): the commit it stood at, recorded, before this
+    /// session's work fast-forwarded it. Null for a branch made new, and for every merge.
+    /// </summary>
+    public string? AdvancedFrom { get; init; }
 }
 
 /// <summary>
@@ -110,9 +117,94 @@ public sealed record LandingCommit(string Sha, string Subject);
 /// <param name="Base">The line the work grew from, which a pull request goes into — null where git can name none.</param>
 /// <param name="Title">What the work is called: the quest's title, else what the person first said, else null.</param>
 /// <param name="Quest">The chain's first quest (WSR5), or null for a conversation.</param>
+/// <param name="PullRequest">
+/// The pull request the landing record holds for this branch (LAND2c, D149 point 4): one a plugin opened at the chain's first
+/// landing, which this push grows, so the plugin pushes and opens no second one. Null where none is open from it yet.
+/// </param>
+/// <param name="AcceptedBy">
+/// Who accepted the work (LAND2c, D145 point 3), one of <see cref="Daoris.Driver.AcceptedBy"/>: the description a plugin
+/// writes says it, and it is not always the person who reviewed it.
+/// </param>
 public sealed record LandingFrame(
     string Repository, string Workspace, string Root, string Branch, string? Base, string? Title,
-    string? Quest, string Session, IReadOnlyList<LandingCommit> Commits);
+    string? Quest, string Session, IReadOnlyList<LandingCommit> Commits, string? PullRequest = null,
+    string AcceptedBy = Daoris.Driver.AcceptedBy.Person);
+
+/// <summary>
+/// What an advance of a standing branch is judged by (LAND2c, D149 points 2–3), read from git at the press or the look: the
+/// record's entry for it, where it stands, where it is checked out, whether the session's work grows from it, and whether its
+/// work already reads on the line.
+/// </summary>
+/// <param name="Recorded">The landing record's standing entry for this branch in this repository, or null: not Daoris's.</param>
+/// <param name="Tip">The commit the branch stands at now.</param>
+/// <param name="CheckedOutAt">The working tree that has it checked out, or null.</param>
+/// <param name="Descends">Whether the session's work grows from the recorded tip: its tip has that commit in its history.</param>
+/// <param name="Ahead">How many commits the session's work holds beyond the recorded tip.</param>
+/// <param name="Completed">
+/// Where D102's proof found the recorded tip's work on the line — a form of it, such as <c>origin/main</c> — so its pull
+/// request was merged; null where it does not read there.
+/// </param>
+public sealed record AdvanceFacts(LandedBranch? Recorded, string Tip, string? CheckedOutAt, bool Descends, int Ahead, string? Completed);
+
+/// <summary>
+/// Whether a landing may move a standing branch on (LAND2c, D145 §3, D149): pure, so its table holds every refusal without
+/// git. Only a branch Daoris made and recorded, standing at the recorded tip, checked out nowhere, whose work does not
+/// already read on the line, to a commit that grows from that tip with something new.
+/// </summary>
+public static class LandingAdvance
+{
+    /// <summary>The refusal, in its code and its sentence, or null where the branch may move on.</summary>
+    /// <param name="name">The branch the pattern names.</param>
+    /// <param name="sessionBranch">The session's own branch, whose work would move it.</param>
+    public static TreeLanding? Refusal(string name, string repository, string sessionBranch, AdvanceFacts facts)
+    {
+        TreeLanding Exists(string why) => new(false, why) { Refusal = AutoLandingCode.Exists };
+
+        if (facts.Recorded is not { } recorded)
+        {
+            return Exists($"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it did not make. "
+                + "Rename or delete it there, or change the pattern with `daoris driver landing`.");
+        }
+
+        if (!string.Equals(facts.Tip, recorded.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            return Exists($"`{name}` moved since Daoris landed on it (it stood at {Short(recorded.Tip)}, and stands at {Short(facts.Tip)} "
+                + "now), so Daoris does not move it on: what moved it may be somebody's. Land this work by hand, or rename "
+                + "that branch and accept again.");
+        }
+
+        if (facts.CheckedOutAt is { } at)
+        {
+            return Exists($"`{name}` is checked out at {at}, and Daoris does not move a branch a working tree stands on. "
+                + "Switch that tree to another branch, then accept again.");
+        }
+
+        if (facts.Completed is { } where)
+        {
+            return new TreeLanding(false,
+                $"`{name}`'s work already reads on `{where}` — its pull request was merged — so Daoris does not move it on: commits "
+                + "added to it now would ride no pull request. Bring the repository up to date (`daoris-driver trees sync`, or "
+                + "Bring up to date on the page), which replays this session's own commits onto the line and removes that branch; "
+                + $"then Accept lands this work on a fresh `{name}`, and its plugin opens a new pull request.")
+            { Refusal = AutoLandingCode.Completed };
+        }
+
+        if (!facts.Descends)
+        {
+            return Exists($"`{sessionBranch}` does not grow from `{name}`, so moving it on would not be a fast-forward, and Daoris "
+                + "merges nothing into a branch. Land this work by hand, or change the pattern with `daoris driver landing`.");
+        }
+
+        return facts.Ahead > 0
+            ? null
+            : new TreeLanding(false, $"`{name}` already holds everything on `{sessionBranch}` — nothing to land.")
+            {
+                Refusal = AutoLandingCode.Nothing,
+            };
+    }
+
+    private static string Short(string commit) => commit[..Math.Min(8, commit.Length)];
+}
 
 /// <summary>What a session branch holds, for the clean-up's list (D88). Only the first two go.</summary>
 public static class SweepKind

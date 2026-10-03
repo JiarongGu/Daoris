@@ -172,7 +172,8 @@ public static class AskWork
 
         // 4. Every landing that names a session of the work, standing or a trace.
         var ids = new HashSet<string>(placed.Select(session => session.Record.Id), StringComparer.OrdinalIgnoreCase);
-        var landings = look.Landings.Where(landing => ids.Contains(landing.Session)).ToList();
+        // A landing a session of the work made, or moved on (LAND2c).
+        var landings = look.Landings.Where(landing => ids.Contains(landing.Session) || landing.Advances.Any(advance => ids.Contains(advance.Session))).ToList();
 
         return new WorkPieces(scope, named, quests, placed, trees, landings);
     }

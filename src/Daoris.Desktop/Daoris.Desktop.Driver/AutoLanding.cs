@@ -30,7 +30,10 @@ public static class AutoLandingCode
     /// <summary>The branch was made and recorded, and the rule's plugin pushed it where it names one.</summary>
     public const string Landed = "landed";
 
-    /// <summary>A later step's done moved the chain's branch on (LAND2c). Declared for it; nothing writes it yet.</summary>
+    /// <summary>
+    /// A later done moved the chain's branch on as a fast-forward (LAND2c, D149 point 2): a chain's later step, or a session that
+    /// went on after its landing. The rule's plugin pushed it where it names one.
+    /// </summary>
     public const string Advanced = "advanced";
 
     /// <summary>The done made no commits, so there was nothing to land.</summary>
@@ -42,8 +45,17 @@ public static class AutoLandingCode
     /// <summary>The tree holds uncommitted work, which a branch would leave behind.</summary>
     public const string Uncommitted = "uncommitted";
 
-    /// <summary>The pattern names a branch that stands, and Daoris does not move one (D87).</summary>
+    /// <summary>
+    /// The pattern names a branch that stands and may not move on (D87, D149 point 2): one Daoris did not make, one moved since
+    /// its landing, one checked out, or one the session's work does not grow from.
+    /// </summary>
     public const string Exists = "exists";
+
+    /// <summary>
+    /// The chain's branch already reads on the line, so its pull request was merged, and an advance would push work no pull
+    /// request carries (LAND2c, D149 point 3). It waits: bringing the repository up to date and the person's Accept land it fresh.
+    /// </summary>
+    public const string Completed = "completed";
 
     /// <summary>The branch was made and recorded; the rule's plugin cannot land work here, so its push was not tried (D145 point 2).</summary>
     public const string PluginUnready = "plugin-unready";
@@ -70,10 +82,10 @@ public static class AutoLandingCode
     public const string Refused = "refused";
 
     /// <summary>Whether a try with this code closes its entry; the rest wait for a change, a release or the person's press.</summary>
-    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Refused);
+    public static bool Closes(string code) => code is not (Held or Uncommitted or Exists or Completed or Refused);
 
     /// <summary>Whether a try with this code is tried again only once its tree's tip or status moves (design §2).</summary>
-    public static bool OnChange(string code) => code is Uncommitted or Exists or Refused;
+    public static bool OnChange(string code) => code is Uncommitted or Exists or Completed or Refused;
 }
 
 /// <summary>One try to land a due session, and the facts it was made at (design §8): never a sentence, a path or a word of anyone's.</summary>
@@ -171,12 +183,16 @@ public static class AutoLandingRules
         return "sha256:" + Convert.ToHexStringLower(hash)[..16];
     }
 
-    /// <summary>What a landing came to, by its code (design §8).</summary>
+    /// <summary>
+    /// What a landing came to, by its code (design §8). The push is the plugin's whether the branch was made or moved on, so a
+    /// plugin that could not or did not push is kept as that first (LAND2c).
+    /// </summary>
     public static string CodeOf(TreeLanding landed)
     {
         if (!landed.Landed) return landed.Refusal ?? AutoLandingCode.Refused;
         if (landed.Unready is not null) return AutoLandingCode.PluginUnready;
-        return landed.Plugin is { Failed: true } or { Pushed: false } ? AutoLandingCode.PluginFailed : AutoLandingCode.Landed;
+        if (landed.Plugin is { Failed: true } or { Pushed: false }) return AutoLandingCode.PluginFailed;
+        return landed.AdvancedFrom is not null ? AutoLandingCode.Advanced : AutoLandingCode.Landed;
     }
 }
 
@@ -361,8 +377,9 @@ public sealed class AutoLandings(string home)
 public static class AutoLandingNotes
 {
     /// <summary>Whether a try with this code is said in the conversation; the closings without a landing stay the due list's and the log's.</summary>
-    public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.PluginUnready or AutoLandingCode.PluginFailed
-        or AutoLandingCode.Nothing or AutoLandingCode.Held or AutoLandingCode.Uncommitted or AutoLandingCode.Exists or AutoLandingCode.Refused;
+    public static bool Says(string code) => code is AutoLandingCode.Landed or AutoLandingCode.Advanced or AutoLandingCode.PluginUnready
+        or AutoLandingCode.PluginFailed or AutoLandingCode.Nothing or AutoLandingCode.Held or AutoLandingCode.Uncommitted
+        or AutoLandingCode.Exists or AutoLandingCode.Completed or AutoLandingCode.Refused;
 
     /// <summary>
     /// The note for one try: its lead-in by its code, then the landing's sentence where there was a landing to say it.
@@ -376,7 +393,8 @@ public static class AutoLandingNotes
         var named = landed?.Branch ?? branch ?? "";
         var lead = code switch
         {
-            AutoLandingCode.Landed => Noted.Of(NoteCodes.LandingAccepted,
+            // An advance is an acceptance too (LAND2c): the work is on the chain's branch, and the sentence beneath says it moved.
+            AutoLandingCode.Landed or AutoLandingCode.Advanced => Noted.Of(NoteCodes.LandingAccepted,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`.", ("branch", named)),
             AutoLandingCode.PluginUnready => Noted.Of(NoteCodes.LandingUnready,
                 $"{LandingRules.AutoAccepted} its work is on `{named}`, and `{plugin}` cannot land work here, so nothing was pushed; "

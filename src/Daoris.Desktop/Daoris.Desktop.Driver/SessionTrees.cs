@@ -77,10 +77,16 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <param name="from">
     /// A branch to grow from instead of the canonical line — the one a chain's previous step landed on
     /// in this repository (CHAIN2), so the next step's tree holds the unmerged work it builds on or
-    /// checks. One that no longer exists falls back to the canonical line, and the answer says so.
+    /// checks. One that no longer exists falls back to <paramref name="landed"/>, then to the canonical line, and the
+    /// answer says so.
+    /// </param>
+    /// <param name="landed">
+    /// The branch the chain's step before landed on (LAND2c, D82 as D145 amends it), tried when <paramref name="from"/> is gone:
+    /// a rule's tidy removes that session branch at its landing, and a step grown from the line could not move the chain's
+    /// branch on.
     /// </param>
     public async Task<TreeOpened> OpenAsync(
-        string root, string repository, string workspace, CancellationToken ct = default, string? from = null)
+        string root, string repository, string workspace, CancellationToken ct = default, string? from = null, string? landed = null)
     {
         // The root must BE the top of its own working tree — proven, not assumed. Git resolves a
         // repository by walking UP from wherever it is asked, so a root that is not one (a
@@ -120,10 +126,19 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             var (known, _, _) = await WorkingTree.GitAsync(
                 root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{from}"], ct).ConfigureAwait(false);
+            var (chain, _, _) = known != 0 && landed is { Length: > 0 } && BranchName.IsValid(landed)
+                ? await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{landed}"], ct).ConfigureAwait(false)
+                : (1, "", "");
             if (known == 0)
             {
                 start = grewFrom = from;
                 basedOn = $"`{from}`, the branch the step before it landed on (not merged yet)";
+            }
+            else if (chain == 0 && landed is not null)
+            {
+                start = grewFrom = landed;
+                basedOn = $"`{landed}`, the branch its chain landed on (not merged yet) — `{from}`, the branch the step before it "
+                    + "worked on, is gone";
             }
             else
             {
@@ -366,7 +381,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <summary>
     /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
     /// merged into the line (<see cref="MergeAsync"/>), or put on a new branch for the person to push, or
-    /// for the plugin the rule names to push and open the pull request from (WSR4, D100).
+    /// for the plugin the rule names to push and open the pull request from (WSR4, D100). A chain's later
+    /// done moves the branch its first landing made on instead, and grows that pull request (LAND2c, D149).
     /// </summary>
     /// <remarks>
     /// 🔴 <b>The plugin is spoken to after the branch exists, and never instead of it.</b> A plugin the
@@ -422,7 +438,13 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
             // because this line wrote it down, at the commit it was made at.
             var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
-            if (landed.Landed && tip is not null)
+            if (landed.Landed && tip is not null && landed.AdvancedFrom is { } advancedFrom)
+            {
+                // Moved on (LAND2c): the entry's tip is the new commit, and the advance is kept with who accepted it (D143).
+                landed = Remember(landed, () => Recorded.Advanced(repository, landed.Branch!,
+                    new LandedAdvance(advancedFrom, tip, DateTimeOffset.UtcNow, subject.Session) { AcceptedBy = acceptedBy }));
+            }
+            else if (landed.Landed && tip is not null)
             {
                 // Where its work grew from (WSR6): the session branch's start, so bringing it up to date replays only its own.
                 var from = branched.Source is { } source ? Grown.Of(repository, source)?.From : null;
@@ -450,9 +472,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             }
             else if (landed.Landed && plugin is not null)
             {
+                // An advance grows the pull request its first landing opened (LAND2c, D149 point 4): the plugin is told it, so it
+                // pushes and opens no second one, and is told who accepted the work, so its description says so truly.
+                var open = landed.AdvancedFrom is null ? null : Recorded.Of(repository, landed.Branch!) is { Pushed: true } entry ? entry.PullRequest : null;
                 var said = await _plugins.LandAsync(plugin, new LandingFrame(
                     repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
-                    subject.Session, branched.Commits), ct).ConfigureAwait(false);
+                    subject.Session, branched.Commits, open, acceptedBy), ct).ConfigureAwait(false);
                 landed = landed with
                 {
                     Plugin = said,
@@ -769,14 +794,17 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 + "would take. Change the pattern with `daoris driver landing`.");
         }
 
-        var (exists, _, _) = await WorkingTree.GitAsync(
-            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}"], ct).ConfigureAwait(false);
+        var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(entry => entry.Split('\t', 2))
+            .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
+            .ToList();
+
+        var (exists, standing, _) = await WorkingTree.GitAsync(
+            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}^{{commit}}"], ct).ConfigureAwait(false);
         if (exists == 0)
         {
-            // LAND2c will move one Daoris made and recorded on as a fast-forward (D145 point 3); until then every one is refused.
-            return new TreeLanding(false, $"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it "
-                + "did not make. Rename or delete it there, or change the pattern with `daoris driver landing`.")
-            { Refusal = AutoLandingCode.Exists };
+            // A chain's later done moves the chain's branch on (LAND2c, D149): only one Daoris made, as a fast-forward.
+            return await AdvanceAsync(root, repository, name, standing.Trim(), branch, line, commits, handedOn, ct).ConfigureAwait(false);
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, branch], ct).ConfigureAwait(false);
@@ -784,16 +812,95 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             return new TreeLanding(false, $"git would not make `{name}`: {FirstLine(err)}");
         }
-        var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(entry => entry.Split('\t', 2))
-            .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
-            .ToList();
+
         var pushIt = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {name}`.";
         return new Branched(
             new TreeLanding(true,
                 $"put the work on `{name}` — {commits.Count} commit(s) from `{line ?? "HEAD"}`.{pushIt} Nothing was merged "
                 + $"and the checkout was not touched.{TreeStays}",
                 name),
+            root, line, commits, branch);
+    }
+
+    /// <summary>
+    /// Move a standing branch on to the session's work (LAND2c, D145 §3, D149): the chain's branch, which an earlier done
+    /// made, grows by this session's commits, so a ticket has one branch and one pull request.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Only a fast-forward of a branch Daoris made, and never forced.</b> It must be the record's (D102), standing at
+    /// the recorded tip, checked out in no working tree, with its work not already on the line, and the session's tip must grow
+    /// from it with something new (<see cref="LandingAdvance"/>). Then git moves it by compare-and-swap from the tip judged
+    /// (<c>update-ref</c>), so a branch moved in between is refused by git itself. Like the branch form, it writes one ref and
+    /// touches no checkout.</para>
+    ///
+    /// <para><b>A branch whose pull request was merged is not moved on</b> (D149 point 3): D102's proof on the recorded tip, the
+    /// same one the clean-up and the hand-off make, finds its work on the line, and commits added now would ride no pull
+    /// request.</para>
+    /// </remarks>
+    /// <param name="standsAt">The commit the branch stands at, read a moment ago.</param>
+    /// <param name="branch">The session's own branch.</param>
+    /// <param name="commits">What the branch would hold beyond the line once moved: what a plugin is told, as at a first landing.</param>
+    private async Task<Branched> AdvanceAsync(
+        string root, string repository, string name, string standsAt, string branch, string? line,
+        IReadOnlyList<LandingCommit> commits, bool handedOn, CancellationToken ct)
+    {
+        var recorded = Recorded.Of(repository, name);
+        var (_, headOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}^{{commit}}"], ct)
+            .ConfigureAwait(false);
+        var head = headOut.Trim();
+
+        // Each fact read only where the one before it allowed an advance, in the order the refusals are said.
+        string? checkedOut = null;
+        string? completed = null;
+        var descends = false;
+        var newer = 0;
+        if (recorded is not null && string.Equals(standsAt, recorded.Tip, StringComparison.OrdinalIgnoreCase))
+        {
+            checkedOut = (await WorktreesAsync(root, ct).ConfigureAwait(false)).GetValueOrDefault(name);
+            if (checkedOut is null)
+            {
+                var proof = await ProveAsync(root, recorded.Tip, line, await LineFormsAsync(root, line, ct).ConfigureAwait(false), ct)
+                    .ConfigureAwait(false);
+                completed = proof.Kind is LandedKind.Merged or LandedKind.OnLine ? proof.Where : null;
+            }
+
+            if (checkedOut is null && completed is null && head.Length > 0)
+            {
+                var (ancestor, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", recorded.Tip, head], ct)
+                    .ConfigureAwait(false);
+                descends = ancestor == 0;
+                if (descends)
+                {
+                    var (_, count, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{recorded.Tip}..{head}"], ct)
+                        .ConfigureAwait(false);
+                    newer = int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : 0;
+                }
+            }
+        }
+
+        if (LandingAdvance.Refusal(name, repository, branch, new AdvanceFacts(recorded, standsAt, checkedOut, descends, newer, completed))
+            is { } refused)
+        {
+            return refused;
+        }
+
+        // Compare-and-swap from the tip judged: git refuses where the branch moved since, and nothing is forced.
+        var (moved, _, moveErr) = await WorkingTree.GitAsync(
+            root, ["update-ref", "-m", $"daoris: {branch} moves {name} on", $"refs/heads/{name}", head, standsAt], ct).ConfigureAwait(false);
+        if (moved != 0)
+        {
+            return new TreeLanding(false, $"git would not move `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]}: "
+                + $"{FirstLine(moveErr)} It may have moved meanwhile; nothing was changed.")
+            { Refusal = AutoLandingCode.Exists };
+        }
+
+        var pushIt = handedOn ? "" : $" Push it to grow its pull request: `git push origin {name}`.";
+        return new Branched(
+            new TreeLanding(true,
+                $"moved `{name}` on from {standsAt[..Math.Min(8, standsAt.Length)]} to this session's work — {newer} more commit(s), "
+                + $"{commits.Count} from `{line ?? "HEAD"}` in all.{pushIt} Nothing was merged and the checkout was not touched.{TreeStays}",
+                name)
+            { AdvancedFrom = standsAt },
             root, line, commits, branch);
     }
 

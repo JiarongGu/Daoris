@@ -230,8 +230,8 @@ public sealed class AutoLandingTests : IDisposable
     }
 
     /// <summary>
-    /// A branch of the pattern's name that stands is refused and kept (design §5); a look with nothing moved does not try it
-    /// again, and a new commit does. LAND2c will move one Daoris made on instead.
+    /// A branch of the pattern's name that stands, and that Daoris did not make, is refused and kept (design §5); a look with
+    /// nothing moved does not try it again, and a new commit does. One Daoris made moves on instead (the next case, LAND2c).
     /// </summary>
     [Fact]
     public async Task A_standing_branch_is_refused_kept_and_tried_again_only_on_a_change()
@@ -253,6 +253,41 @@ public sealed class AutoLandingTests : IDisposable
         await CommitAsync(tree, "more.txt", "more work", "more work");
         Assert.Single(await LookAsync());
         Assert.Equal(2, new AutoLandings(_home).Of("s1")!.Tries.Count);
+    }
+
+    /// <summary>
+    /// LAND2c (D145 §3, D149): a chain's later step whose done comes after the chain's first landing moves the chain's branch on
+    /// at the look, kept as <c>advanced</c>; the rule's plugin is told the pull request it opened at the first landing, and who
+    /// accepted the work, so the ticket keeps one pull request.
+    /// </summary>
+    [Fact]
+    public async Task A_later_steps_done_moves_the_chains_branch_on_and_is_kept_as_advanced()
+    {
+        var root = await RepositoryAsync("engine");
+        Rule(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: Plugin, AutoAccept: true));
+        InstallManifest();
+        var first = await DoneSessionAsync(root, "s1", "q1");
+        Assert.Single(await LookAsync());
+        const string branch = "feature/q1-fix-the-gap";
+
+        // Its verify step follows q1 and grows from s1's branch, as the planner grows it (CHAIN2).
+        await DoneSessionAsync(root, "s2", "q2", parent: "q1", from: $"daoris/{Path.GetFileName(first)}");
+        var line = Assert.Single(await LookAsync());
+
+        Assert.StartsWith($"landing  session s2 (#q2 → engine): {LandingRules.AutoAccepted} its work is on `{branch}`.", line);
+        Assert.Contains($"moved `{branch}` on from", line);
+        var entry = new AutoLandings(_home).Of("s2")!;
+        Assert.Equal((AutoLandingCode.Advanced, branch, 1), (entry.Last!.Code, entry.Last.Branch, entry.Last.Commits));
+        Assert.NotNull(entry.Closed);
+        Assert.Equal(2, _frames.Count);
+        var told = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(_frames[1])).RootElement;
+        Assert.Equal("https://example.test/pull/7", told.GetProperty("pullRequest").GetString());
+        Assert.Equal(AcceptedBy.Auto, told.GetProperty("acceptedBy").GetString());
+        var record = new LandedBranches(_home).Landing("s2")!;
+        Assert.Equal("s1", record.Session);
+        Assert.Equal("s2", Assert.Single(record.Advances).Session);
+        Assert.Equal(AutoLandingCode.Advanced, Value(_lines[^1], "code"));
+        Assert.Single((await GitAsync(root, "branch", "--list", "feature/*")).Trim().Split('\n'));
     }
 
     /// <summary>
@@ -365,11 +400,14 @@ public sealed class AutoLandingTests : IDisposable
     private DriverConfig Config() => DriverConfig.Load(Path.Combine(_home, "driver.json"));
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done, made due as the driver's conclusion makes it.</summary>
-    private async Task<string> DoneSessionAsync(string root, string session, string quest, bool held = false, bool commit = true)
+    /// <param name="parent">The quest it follows, where it is a chain's later step.</param>
+    /// <param name="from">The session branch its tree grows from, as a chain's step grows (CHAIN2).</param>
+    private async Task<string> DoneSessionAsync(
+        string root, string session, string quest, bool held = false, bool commit = true, string? parent = null, string? from = null)
     {
-        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora", from: from);
         if (commit) await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
-        _world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done") { Held = held };
+        _world.Quests[quest] = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", "Done") { Held = held, Parent = parent };
         _world.Records.Add(new SessionRecord(session, "engine", "completed") { Quest = quest, Tree = opened.Path, Created = DateTimeOffset.UtcNow });
         var verdict = AutoLander.Concluded(_home, Config(), new SessionEvents(Path.Combine(_home, "sessions")), session, _world.Quests[quest],
             "Done", "completed", opened.Path, "aurora");
@@ -435,10 +473,13 @@ public sealed class AutoLandingTests : IDisposable
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(info)!;
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.StandardError.ReadToEndAsync();
+        // 🔴 Both streams are read at once, before the wait: read one after the other, a git that writes more than a pipe's
+        // worth of warnings to the second blocks on it while the first is still being read (FIX-LOG 2026-10-04).
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
+        await Task.WhenAll(stdout, stderr);
         await process.WaitForExitAsync();
-        return stdout;
+        return await stdout;
     }
 
     /// <summary>The checkout this build runs from: a linked worktree's <c>.git</c> is a file, so it stops there too.</summary>

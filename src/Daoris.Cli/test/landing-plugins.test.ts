@@ -52,7 +52,9 @@ function repository(fx: Fixture): { root: string; origin: string } {
 /**
  * `gh` and `az`, faked: each records its arguments and where it ran, and answers as the real one does —
  * `gh pr create` prints the pull request's address, `az repos pr create --output json` prints the pull
- * request. `FAKE_FAIL=<tool>` makes that one fail as a tool that is not signed in fails.
+ * request, and reading one (`gh pr view … --json state`, `az repos pr show --id … --output json`) prints
+ * its state, `FAKE_STATE` where it is set. `FAKE_FAIL=<tool>` makes that one fail as a tool that is not
+ * signed in fails.
  */
 function fakes(fx: Fixture): string {
   const bin = join(fx.root, 'bin');
@@ -62,8 +64,11 @@ function fakes(fx: Fixture): string {
     'const [tool, ...args] = process.argv.slice(2);',
     "appendFileSync(process.env.FAKE_LOG, JSON.stringify({ tool, args, cwd: process.cwd() }) + '\\n');",
     "if (process.env.FAKE_FAIL === tool) { console.error(tool + ': not signed in, the fake says'); process.exit(1); }",
-    "if (tool === 'gh') console.log('https://example.test/example-org/engine/pull/7');",
-    "if (tool === 'az') console.log(JSON.stringify({ pullRequestId: 7, repository: { webUrl: 'https://example.test/example-org/project/_git/engine' } }));",
+    "const web = 'https://example.test/example-org/project/_git/engine';",
+    "if (tool === 'gh' && args[1] === 'view') console.log(JSON.stringify({ state: process.env.FAKE_STATE ?? 'OPEN' }));",
+    "else if (tool === 'gh') console.log('https://example.test/example-org/engine/pull/7');",
+    "if (tool === 'az' && args[2] === 'show') console.log(JSON.stringify({ pullRequestId: 7, status: process.env.FAKE_STATE ?? 'active', repository: { webUrl: web } }));",
+    "else if (tool === 'az') console.log(JSON.stringify({ pullRequestId: 7, repository: { webUrl: web } }));",
     '',
   ].join('\n'));
   for (const tool of ['gh', 'az']) {
@@ -203,6 +208,87 @@ test('a platform tool that fails leaves the push done and says so; a push that f
   assert.match(String(unpushed.answer.message), /git push to origin failed/);
   // Nothing is opened for a branch that never reached the platform.
   assert.equal(calls(fx).filter((call) => call.tool === 'az').length, 0);
+  fx.cleanup();
+});
+
+// ——— LAND2c (D149 point 4): a chain's branch moved on, and the pull request already open from it
+
+const PULL = {
+  'github-pull-request': 'https://example.test/example-org/engine/pull/7',
+  'azure-devops-pull-request': 'https://example.test/example-org/project/_git/engine/pullrequest/7',
+} as const;
+
+/** The branch pushed once, as the chain's first landing pushed it, then moved on by a later step's commit, as Daoris moves it. */
+function advanced(root: string): string {
+  git(root, 'push', '--quiet', 'origin', BRANCH);
+  git(root, 'checkout', '--quiet', BRANCH);
+  writeFileSync(join(root, 'verify.txt'), 'the verify step\'s work\n');
+  git(root, 'add', '-A');
+  git(root, 'commit', '--quiet', '-m', 'the verify step');
+  git(root, 'checkout', '--quiet', 'main');
+  return git(root, 'rev-parse', BRANCH);
+}
+
+for (const plugin of ['github-pull-request', 'azure-devops-pull-request'] as const) {
+  test(`at an advance the ${plugin} plugin pushes to the open pull request and opens no second one`, async () => {
+    const fx = makeFixture(`landing-plugin-advance-${plugin}`);
+    const { root, origin } = repository(fx);
+    const bin = fakes(fx);
+    const tip = advanced(root);
+
+    const spoken = await land(plugin, fx, bin, { ...frame(root), pullRequest: PULL[plugin], acceptedBy: 'auto' });
+
+    assert.equal(spoken.answer.pushed, true, String(spoken.answer.message));
+    assert.equal(spoken.answer.pullRequest, PULL[plugin]);
+    assert.match(String(spoken.answer.message), /its pull request carries the new commits/);
+    assert.equal(git(origin, 'rev-parse', `refs/heads/${BRANCH}`), tip);
+    // It read the pull request's state, and created nothing.
+    const asked = calls(fx);
+    assert.equal(asked.length, 1, JSON.stringify(asked));
+    assert.deepEqual(asked[0]!.args, plugin === 'github-pull-request'
+      ? ['pr', 'view', PULL[plugin], '--json', 'state']
+      : ['repos', 'pr', 'show', '--id', '7', '--output', 'json']);
+    fx.cleanup();
+  });
+
+  test(`at an advance the ${plugin} plugin pushes nothing to a pull request that is not open, or whose state it cannot read`, async () => {
+    const fx = makeFixture(`landing-plugin-closed-${plugin}`);
+    const { root, origin } = repository(fx);
+    const bin = fakes(fx);
+    const before = git(root, 'rev-parse', BRANCH);
+    advanced(root);
+    const told = { ...frame(root), pullRequest: PULL[plugin], acceptedBy: 'person' };
+
+    const completed = await land(plugin, fx, bin, told, { FAKE_STATE: plugin === 'github-pull-request' ? 'MERGED' : 'completed' });
+    assert.equal(completed.answer.pushed, false);
+    assert.match(String(completed.answer.message), /is (merged|completed), so nothing was pushed: commits pushed now would ride no pull request/);
+
+    const unread = await land(plugin, fx, bin, told, { FAKE_FAIL: plugin === 'github-pull-request' ? 'gh' : 'az' });
+    assert.equal(unread.answer.pushed, false);
+    assert.match(String(unread.answer.message), /could not read the state of its pull request .* nothing was pushed/);
+
+    // The remote still holds what the first landing pushed, and no pull request was opened.
+    assert.equal(git(origin, 'rev-parse', `refs/heads/${BRANCH}`), before);
+    assert.equal(calls(fx).filter((call) => call.args.includes('create')).length, 0);
+    fx.cleanup();
+  });
+}
+
+test('the description each plugin writes says who accepted the work', async () => {
+  const fx = makeFixture('landing-plugin-accepted');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+
+  await land('github-pull-request', fx, bin, { ...frame(root), acceptedBy: 'auto' });
+  const [gh] = calls(fx);
+  const body = readFileSync(gh!.args[gh!.args.indexOf('--body-file') + 1]!, 'utf8');
+  assert.match(body, /accepted automatically when its quest was done/);
+  assert.doesNotMatch(body, /the person who reviewed it/);
+
+  await land('azure-devops-pull-request', fx, bin, { ...frame(root), acceptedBy: 'person' });
+  const az = calls(fx).find((call) => call.tool === 'az')!;
+  const described = az.args.slice(az.args.indexOf('--description') + 1).join('\n');
+  assert.match(described, /accepted by the person who reviewed it/);
   fx.cleanup();
 });
 

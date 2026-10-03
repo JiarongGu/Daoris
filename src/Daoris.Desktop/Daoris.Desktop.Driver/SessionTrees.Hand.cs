@@ -137,8 +137,12 @@ public sealed partial class SessionTrees
             }
         }
 
+        // The pull request a plugin already opened from it, so the hand-off grows it rather than opening a second, and who
+        // accepted the work it carries (LAND2c, D149 point 4): its newest acceptance, a landing from before kept as the person's.
+        var newest = entry.Advances.Count > 0 ? entry.Advances[^1].Session : entry.Session;
         return (new HandPlan(repository, branch, plugin, null, entry.PullRequest, commits.Count),
-            new LandingFrame(repository, workspace, root, branch, line, entry.Title, entry.Quest, entry.Session, commits),
+            new LandingFrame(repository, workspace, root, branch, line, entry.Title, entry.Quest, entry.Session, commits,
+                entry.Pushed ? entry.PullRequest : null, entry.AcceptedByOf(newest) ?? AcceptedBy.Person),
             tip);
     }
 }

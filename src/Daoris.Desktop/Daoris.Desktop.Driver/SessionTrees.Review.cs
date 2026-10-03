@@ -62,12 +62,16 @@ public static class LandedReviewWords
     public static string Describe(string session, LandedReview review)
     {
         var entry = review.Entry;
-        var when = entry.LandedAt == DateTimeOffset.MinValue
+        // This session's own acceptance onto the branch (LAND2c): the landing that made it, or the advance its done made.
+        var at = entry.AcceptedAt(session);
+        var when = at == DateTimeOffset.MinValue
             ? ""
-            : $" on {entry.LandedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
+            : $" on {at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
         // Who accepted it (LAND2b, D145 point 4): said where it was the rule's switch, since a press is what the review offers.
-        var by = entry.AcceptedBy == AcceptedBy.Auto ? ", accepted automatically when its quest was done" : "";
-        var landed = $"`{session}` landed on `{entry.Branch}` in `{entry.Repository}`{when}{by}";
+        var by = entry.AcceptedByOf(session) == AcceptedBy.Auto ? ", accepted automatically when its quest was done" : "";
+        var landed = string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase)
+            ? $"`{session}` landed on `{entry.Branch}` in `{entry.Repository}`{when}{by}"
+            : $"`{session}` moved `{entry.Branch}` on in `{entry.Repository}`{when}, after `{entry.Session}`'s landing{by}";
         var pullRequest = entry is { Pushed: true, PullRequest: { } pr } ? $" Its pull request: {pr}" : "";
         return review.State switch
         {
