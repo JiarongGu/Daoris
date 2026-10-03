@@ -10068,3 +10068,245 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > harness, scored against their classes. Contract: D135. Proof: script tests; the model tier is the owner's run.
 
 **Outcome** `tools/question-bench.mjs` replays recorded questions through a words-only floor (a word search over the repository's knowledge and the ask's words, which points at text and never answers) and a model tier on a harness the deployment names, scored per tier against a person's classes, with the number answered in the person's place as the one that must be zero. On the private extract the floor found none of the ten B items at their line and put a hint beside 22 of 25 owner-only items, which is why it stays *words only*. The model tier's real run is the owner's. Detail: D135's KNOWUSE2 note, `09f8d2f4`, `c80838ad`.
+
+
+## PLUGUI2 — the plugins page and a plugin's icon (2026-10-03)
+
+> - [ ] **PLUGUI2 — the plugins page and a plugin's icon** (owner, 2026-10-03: *"plugin page design (and plugin icon)"*). The
+> page reads as a list of manifests; design it as a catalogue (installed, Daoris's own, available) with each plugin's
+> icon, declared in its manifest with a generated fallback. Contract: a short design (D64, D120 amended). Proof: stories,
+> the manifest's twin tables, the look.
+
+**Outcome** The plugins page is a catalogue (Installed, Daoris's own, and Available once packages exist) whose rows show each plugin's icon, description, source and update. A plugin declares its icon in its manifest, read by both twins under one table of eight rules; the page draws its bytes as a data URI or a computed monogram, never a path, and the detail takes the pane's width. The host's answer of the icon is PLUGUI2b. Detail: D140 and its built note, `docs/2026-10-03-plugin-catalogue-design.md`, `b1c1257e`..`380035f3`.
+
+
+## PLUGUI2b — the host answers a plugin's icon (2026-10-03)
+
+> - [ ] **PLUGUI2b — the host answers a plugin's icon** (modules; found by PLUGUI2). `DriverModule.Plugins.cs`'s
+> `PLUGINS` adds `icon` and `iconProblem` to each plugin and offer through `PluginIcon.Read(entry.Folder,
+> entry.Manifest)`; until then every plugin wears its monogram. Contract: D140 point 5, the catalogue design §3.2.
+> Proof: a `DriverModulePluginPageTests` case with an SVG and a bad icon; the look.
+
+**Outcome** `PLUGINS` answers each plugin and offer `icon` (a data URI) and `iconProblem` from `PluginIcon.Read`, never a path; an unreadable icon says *could not be read.* in both twins rather than the system's message, which names the file's path. Held by `DriverModulePluginPageTests` and `PluginIconTests`. Detail: D140's PLUGUI2b note, `858f53fc`, `2211379d`.
+
+
+## LOOK6 — `bg-sunken` draws nothing (2026-10-03)
+
+> - [ ] **LOOK6 — `bg-sunken` draws nothing** (web-shell; found by PLUGUI2). 13 files ask for `bg-sunken` (the ask boxes,
+> the plugin page's *Remove…* box) and `tokens.css` defines no sunken colour, so those boxes have no background in
+> either theme. Define it in all four theme blocks and `@theme`, or move the boxes to a colour that exists. Contract:
+> D41's tokens, `tokens.test.ts`. Proof: a token test that every `bg-*` a source names is defined; the look in both
+> themes.
+
+**Outcome** `--sunken` is one step below the page in both themes, for the boxes a move asks once in and the command centre at rest; the five fields that wore it moved to the platform's field look. `tokens.test.ts` fails on any undeclared `bg-`, `border-` or `text-` colour and holds every ink readable on every surface. Detail: platform language §3, `79715ffa`.
+
+
+## MSG1e — `daoris-driver sessions say` (2026-10-03)
+
+> - [ ] **MSG1e — `daoris-driver sessions say`** (driver). The verb through the request folder, its one line and its exit
+> codes, and Ask Daoris's exemption. Contract: §5.2, §5.4. Proof: `SessionsCommandTests`, `HelpCoverageTests`, the
+> room's goldens.
+
+**Outcome** `daoris-driver sessions say <id> "…" [--file <path>]…` is the terminal's door to a session: each say is a request of its own in the request folder, answered beside it by the loop's `Say`, with the nevers refused first by `WordsNever`, one line saying where the words stand, and exits 0, 1 and 2. Ask Daoris is exempt, and the room names the door. The shell's loop answers with the driver library's judge until MSG1e2. Detail: D137's MSG1e note, `567fcdbf`..`e7c7ab2e`.
+
+
+## MSG1f — the box on every session that takes words (2026-10-03)
+
+> - [ ] **MSG1f — the box on every session that takes words** (web-shell). The box and its sentences per reach, the
+> line where none, *going on*, the went link, *Start a conversation…*, and *Send back…* opening the box, in both
+> catalogues. Contract: §3.1, §3.2, §5.1. Proof: stories, vitest, the glossary check, the look.
+
+**Outcome** Every session page offers the box its state takes, or a line saying why, all through `SESSION_INPUT`: words waiting at the foot, where they went (a link), the press to start a conversation with them, *going on*, the native door's bound, and *Send back…* opening the box. A park's answer now goes through the same door, so it shows at once. Detail: D137's MSG1f note, `9bdcc60c`, `de0f3592`.
+
+
+## MSG1c — a chat keeps its conversation and goes on (2026-10-03)
+
+> - [ ] **MSG1c — a chat keeps its conversation and goes on** (driver). A chat keeps its id on both doors, an ended chat
+> reopens with the words, and a `promptQueueing` chat takes words at the next step. Contract: §2.1, §2.2, §4.2. Proof:
+> `HarnessConversationsTests`, chat tests on a protocol stub, the stop's *not kept* line.
+
+**Outcome** An ended chat goes on in its own record and conversation on both doors, taken up the moment the person's words are kept on it; a `promptQueueing` chat takes a word at its next step; a chat whose agent kept no conversation says so and keeps the words. Detail: D137's MSG1c note, `94ba0153`..`c078d0a1`.
+
+
+## MSG1e2 — the shell's loop answers a terminal's words with the screen's judge (2026-10-03)
+
+> - [ ] **MSG1e2 — the shell's loop answers a terminal's words with the screen's judge** (modules; found by MSG1e). The
+> shell's watch takes a say with the driver library's `LoopWords` and neither its record nor its nudge, so a terminal's
+> words are not shown at once, wait for the next look, never reach a conversation the window runs, and are asked again
+> rather than held while a session winds up. Hand the watch `Say` through `SessionWords.SayAsync(…, door: "terminal")`,
+> and let `SessionWords.Never` read the driver library's `WordsNever`, so the nevers have one source. Contract: D137's
+> MSG1e note, design §5.2. Proof: modules tests for a say to a running chat and to a session winding up.
+
+**Outcome** The shell's request watch answers a terminal's say through `SessionWords.HoldAsync` at door `terminal`: kept words show at once and nudge the loop, words said as a session winds up wait in the shell, a conversation the window runs hears them, and the nevers have one source, the driver library's `WordsNever`. Detail: D137's "MSG1e2 and MSG1c2, built" note, `51490bbb`.
+
+
+## MSG1c2 — an ended chat's words after a restart, and its end announced (2026-10-03)
+
+> - [ ] **MSG1c2 — an ended chat's words after a restart, and its end announced** (driver, modules; found by MSG1c). Words
+> kept on an ended chat while no shell ran wait until another word is said: the shell's start takes them up. A chat
+> taken up by itself announces its end (`SESSION_ENDED`), which the modules subscribe to. The *it may have read what
+> you added* line gets a code the page words (with LANG1a). Contract: D137's MSG1c note. Proof: driver and modules
+> tests; `ChatGoesOnProcessTests` (the parent's).
+
+**Outcome** `ChatRunner.TakeUpAsync` takes up, as the loop comes up, words left on ended chats while no shell ran, and a chat taken up by itself is announced as `SESSION_ENDED` through one writer. The *it may have read what you added* line's code waits for LANG1a. Detail: D137's "MSG1e2 and MSG1c2, built" note, `c7324c75`.
+
+
+## LANG1 — what Daoris says, in the reader's language (2026-10-03)
+
+> - [ ] **LANG1 — what Daoris says, in the reader's language** (design; D142). Which text is Daoris's (a code and its
+> values, worded by the page from both catalogues; the English kept for the terminal and the log) and which is
+> someone's words (the agent's question, the person's words: shown as written); the record's shape for both; a twin
+> table holding every code the driver can write against both catalogues, so a new line fails a test until it is
+> worded; old records without a code; and what language Daoris writes to an agent in, and asks it to write back to
+> the person in. Contract: translation-parity, D116, D41. Proof: the design and its decision.
+
+**Outcome** Designed: a line Daoris writes about a session gets a code and values in a new `noteParts` beside the unchanged English `note`, which the page words in the reader's language; someone's words (the agent's, the person's, a program's) are shown as written; 72 lines at about 60 sites become 66 codes, each worded in both languages; a part or record the page cannot word shows its English marked *shown as recorded*. The session language is the work's (a repository's, or a workspace's), kept in `driver.json`, never the machine's or the window's, and adds one line to a quest's instructions only where it is set. Detail: D142, `docs/2026-10-03-language-design.md`, `3e36020e`.
+
+
+## LANG1a — the driver writes its lines as codes (2026-10-03)
+
+> - [ ] **LANG1a — the driver writes its lines as codes** (driver, service; after LANG1 and MSG1c). Every note the driver
+> writes carries its code and values beside the English. Proof: the twin table's driver half; every note site covered.
+
+**Outcome** The driver and the ledger write each line of a session's note as a code beside the unchanged English (`noteParts`, stored, carried by both session routes and the remote feed, cleaned for another machine as the note is), 67 codes worded in both `note.json` catalogues and held there by three twin tests; someone's words ride as parts of their own, and an older note as one `before` part. Detail: D142's "LANG1a, built" note, `369b2577`..`63dddae2`.
+
+
+## LANG1b — the page words every line (2026-10-03)
+
+> - [ ] **LANG1b — the page words every line** (web-shell; after LANG1a). The session head, the quest page and the
+> conversation word each code in both catalogues; *the driver's words stand* is retired for a known code. Proof: the
+> twin table's page half, i18n parity, the look in 中文.
+
+**Outcome** A `Note` molecule draws a session's note from its parts in the reader's language, Daoris's lines from `note.json` and someone's words quoted as written, and every page that shows a session's note uses it (the session head, a quest's and an ask's page, *What needs you*, the timeline); a part the page cannot word, and every record from before parts, shows its English marked *shown as recorded*. Detail: D142's "LANG1b, built" note, `d18c7619`..`b837f320`.
+
+
+## LANG1c — a session writes to the person in their language (2026-10-03)
+
+> - [ ] **LANG1c — a session writes to the person in their language** (driver, modules, web-settings; after LANG1). The
+> owner: *"so the UI language and session language should be able to set differently this is more like system level
+> or usage level"*, and *"because session itself is bind to the work and the ui is bind to the user"*. The UI language
+> is the user's (system level); the session language (what a session is asked to write its questions and closing
+> notes in) is the work's (usage level): set on the workspace, the repository or the ask as LANG1 decides, never the
+> machine's or the viewer's, at both doors; today's behaviour until it is set. Proof: a prompt test; the canary on the
+> install.
+
+**Outcome** The session language is the work's: `languages` and `workspaceLanguages` in `driver.json`, a closed `en`/`zh` table in both twins, the repository's winning over its workspace's; where set, one line follows the close of every driven instruction and goes in a resumed conversation's appendix, and unset every instruction is as before. Its doors are `daoris driver language`, a repository's page and Settings → Workspace; Ask Daoris's is owed to the service (LANG1c2). Detail: D142's LANG1c note, `d3355f5b`..`b8fa5eab`.
+
+
+## LANG1c2 — Ask Daoris proposes a session language (2026-10-03)
+
+> - [ ] **LANG1c2 — Ask Daoris proposes a session language** (service, driver; after LANG1c). The driver judges
+> `language`, but the service's setting writer does not list it, so Ask Daoris's door is owed. Contract: D142 point 7
+> and its LANG1c note. Proof: rows in `HelpSettingProposalTests`; the driver's `Doors` equal the service's; both owed
+> rows in `HelpCoverageTests` become a door.
+
+**Outcome** Ask Daoris proposes a session language: the service's setting writer lists and shape-checks `language` (one of a repository or a workspace; `en`, `zh` or `--clear`), both sides' `Doors` carry it with a test holding the copied codes to the driver's table, and `HelpCoverageTests` holds it as a door. Detail: D142's LANG1c note, `f517c5a0`, `8bdf0b53`.
+
+
+## LAYOUT11 — content that does not size with its pane (2026-10-03)
+
+> - [ ] **LAYOUT11 — content that does not size with its pane** (owner, 2026-10-03: *"some page content still not auto
+> sizing with the outer like quest body and plugin detail"*). A quest's body and a plugin's detail keep a fixed measure
+> inside a wider or narrower pane. Find every such surface by looking at 1280, 888 and 680, and size each by its pane
+> (D41 §3's measure kept for prose only). Contract: D41 §3, the working-surface components. Proof: the look before and after.
+> **Seen on the install, 2026-10-03** (1600 × 900, dock hidden, 中文): a quest's title spans the pane and its body is a
+> 456px column, `max-w-prose` on the body's `<p>` (`QuestPage.tsx`), with ~750px empty beside it; a plugin's detail wraps
+> its description and data-folder note at that column and its source line at the pane's edge, two widths on one page;
+> 65ch holds ~32 CJK glyphs, so 中文 wraps at half the words (`…由你决定是否删` / `除。`). 27 files carry `max-w-prose`,
+> and platform-ux §2 and §5 set *prose at 65ch*, which the owner's words amend: a decision (D141), the rule set in one
+> place, then the sweep. After PLUGUI2 and MSG1f land, which hold `plugins/` and `work/`.
+
+**Outcome** Every block of a page takes its pane's width and the page column caps nothing: `max-w-prose` left 55 places in 26 files, and the quest and ask pages' fixed widths went with it; a cap, if one is ever wanted, goes on the column once, in `em`, never per paragraph and never in `ch`, which halved the words in 中文. `tokens.test.ts` refuses a line measure in any source and `pageMeasure.test.tsx` renders every page's stories and finds no block capped. Detail: D141, platform-ux §4, `0d86cd84`, `bfc78aac`.
+
+
+## DRIFT1c2 — the family rehearsal drives a requirement (2026-10-03)
+
+> - [ ] **DRIFT1c2 — the family rehearsal drives a requirement** (tools; after DRIFT1c). Teach the stub intake to publish
+> one quote the person said and to see one they never said refused, through the real host and the sync wire. Contract:
+> D133's DRIFT1c note. Proof: the family rehearsal's intake phase.
+
+**Outcome** The family rehearsal drives a requirement end to end: a quote the person never said is refused at the ask's door, a said one is kept, inherited by the step and answered met, and a departure is held until `daoris-driver quest accept`; the words, the answers and the yes survive the restart and cross the sync wire. Detail: D133's DRIFT1c2 note, `52b87b25`.
+
+
+## TOOL6e — the screen says which account the next start takes, and why (2026-10-03)
+
+> - [ ] **TOOL6e — the screen says which account the next start takes, and why** (modules, web-settings, driver; the owner,
+> 2026-10-03: *"I switched to local default for [the work account] since this does have more usage left but I don't see
+> Daoris auto switch to this?"*). The work account was already first in lumachain and had just come out of a cool-off,
+> nothing was running, and the owner's switch was the tool's own sign-in, which lumachain does not use; none of that
+> was on the screen. Each workspace's accounts say which account the next start takes and the walk's step that chose it
+> (*least recently started*, *weekly reset within a day*, *cooling until …*), when a cool-off ended, and that the tool's
+> own sign-in carries only work outside the workspace's list. Contract: D130 §3–§4, D125 §2.3. Proof: a driver test of
+> the walk's reason; route and vitest tests; the look on the install.
+
+**Outcome** Settings → Agents says which account each scope's next start takes and the walk's step that chose it (the owner's case reads *takes account-1: Daoris started on it less recently than account-2*), what holds every other account, when a cool-off ended, and that the tool's own sign-in carries none of a listed scope's starts; read from the walk's own pieces with nothing probed. Detail: D130's TOOL6e note, `bc2c54b8`..`fdbadc8d`.
+
+
+## KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it (2026-10-03)
+
+> - [ ] **KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it** (web, driver, modules; after
+> KNOWUSE1a). The session page of a park that asked go-aheads shows them with *Approve* and *Refuse*, and answering
+> there also answers the park: one press, not two. Contract: D135 §2, its KNOWUSE1a note. Proof: vitest; a driver test.
+
+**Outcome** A park's page shows the go-aheads that session asked beneath its card, and *Approve* or *Refuse* there answers the go-ahead and the park through one door (`SESSION_GO_AHEAD`), the go-ahead first so the resumed session is handed it, so the same session goes on with one press. Detail: D135's "KNOWUSE1a2, built" note, `c38c8e69`..`49ccef0e`.
+
+
+## TRACE1 — one read from a commit back to its ask (2026-10-03)
+
+> - [ ] **TRACE1 — one read from a commit back to its ask** (driver, modules). Six stores hold a change's provenance and
+> nothing reads them together. `daoris-driver trace <commit|session|quest>` prints the chain from landings, session
+> records, quest operations, the ask's words and the rules handed, a missing link said missing. Contract: review §3;
+> a decision making the analysis's §66 a rule (a choice keeps the facts it was made from). Proof: driver tests on
+> stand-in records; `HelpCoverageTests`.
+
+**Outcome** `daoris-driver trace <commit|session|quest>` reads a change back to its ask across the stores that hold it (the ask's words and go-aheads, the quest's requirements and answers, each session's agent, account, harness, tree, instruction by size, rules and landing, and what stood when it started), read-only, a missing link said missing; D143 makes the outside analysis's §66 the rule: a choice keeps the facts it was made from, and a door answers why. Detail: D143 and its TRACE1 note, `b64bfaff`, `a9f43d4a`.
+
+
+## OUTCOME1 — an outcome per quest, from the records (2026-10-03)
+
+> - [ ] **OUTCOME1 — an outcome per quest, from the records** (tools). The usage report gains each quest's sessions,
+> carry-ons, answers, departures, strikes, limits apart and how it closed, derived with no new store; a report, never
+> a gate (D54), absent never zero (D57). Contract: review §3. Proof: script tests over a fixture home; the owner's
+> install read once.
+
+**Outcome** `tools/usage-report.mjs --service <url>` reports an outcome per quest (its sessions and how each ended, carry-ons, strikes apart from limits, parks, the person's answers, departures and their yes, how and when it closed, and whether it was a first pass) and roll-ups by repository and by agent and account, each with its count and no score, from three loopback GETs and the machine log; a fact no store keeps is said not known. Detail: the review's *OUTCOME1, built* note, `b7559a5a`.
+
+
+## EVID1 — evidence Daoris checks, not the agent's word: designed (2026-10-03)
+
+> - [ ] **EVID1 — evidence Daoris checks, not the agent's word** (design first; service, driver). Since D133 a done
+> answers each requirement, and a met answer is unchecked. A requirement's check may name a file the done's branch
+> holds or a declared gate; a met answer without it holds the quest as a departure does. Contract: review §3,
+> amending D133 §4. Proof: the design, then its rows.
+
+**Outcome** Designed as D144: a requirement may name a path the done's commit must hold (later a gate read from the merge queue), and a met answer without it closes the quest done and held, as a departure is; the driver reads the evidence when the session ends and records the verdict through one judged door, which lifts the hold or keeps it, a narrow amendment of D46 the owner may reverse. The build is EVID1a–d. Detail: `docs/2026-10-03-evidence-design.md`, D144, `22d9f6d5`.
+
+
+## CONTEXT1 — what a session was handed, section by section (2026-10-03)
+
+> - [ ] **CONTEXT1 — what a session was handed, section by section** (driver, web-shell). The instruction is kept as one
+> event; keep each section's size, source and what its bound left out beside it, shown on the session's page and at
+> a terminal door. Contract: review §3; a note on D127. Proof: `TargetPromptGoldenTests` gaining the account; vitest;
+> the look.
+
+**Outcome** Each driven instruction keeps, on its own event, each section's size, source and what its bound left out and why, with the rules handed beside it and the sections not handed with their reason; the text is unchanged byte for byte. The session's page shows it under the target, folded, and `daoris-driver trace` prints it. Detail: D143's CONTEXT1 note, `5f04aa88`..`8fbfe0a5`.
+
+
+## DRIFT1d2 — the quest page shows the answers and takes the yes (2026-10-03)
+
+> - [ ] **DRIFT1d2 — the quest page shows the answers and takes the yes** (web-shell, service, driver; after DRIFT1d). Each
+> answer and departure with the words it quotes, and *Accept the departure* on a held quest, both languages; Ask Daoris
+> proposes the yes as its own card. Contract: D133 §4, its DRIFT1d note. Proof: stories, both catalogues,
+> `HelpProposalKindsTests`, `HelpCoverageTests` turning `AcceptDoor` into a door, the look.
+
+**Outcome** A quest's page quotes each requirement with its check and how the done answered it, met or departed with the words it relied on, and takes the yes on a held departure in one press (*Accept the departure*, the accept route the terminal uses); a held quest has its own group in the list; Ask Daoris proposes the yes as the `accept` kind. Detail: D133's DRIFT1d2 note, `ab63ddf4`..`cc054ab1`.
+
+
+## UPDATE1b — Settings shows the install's update (2026-10-03)
+
+> - [ ] **UPDATE1b — Settings shows the install's update** (web-settings; found by UPDATE1). The banner is the screen's
+> only door; Settings shows what is staged, the last swap and the three words, read from `DAORIS.UPDATE`. Contract:
+> D139, the update design §6. Proof: a web-settings test over the mocked bridge; a shot on an install with a staged
+> build.
+
+**Outcome** Settings → Driver shows the install's update: what is staged, the drain and what it waits on, the last swap, and the three words, over `STATE` and `SET`, worded as the banner words them. The last swap after the banner is dismissed waits on `STATE` answering it (UPDATE1d). Detail: D139's UPDATE1b note, the update design §6, `a40d4318`.

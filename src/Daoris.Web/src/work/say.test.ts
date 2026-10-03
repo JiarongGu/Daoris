@@ -1,0 +1,165 @@
+import { describe, expect, it } from 'vitest';
+import i18n from '../i18n';
+import type { Session } from '../api';
+import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, reasonOf, takesWords, tooLong } from './say';
+
+// The box on a session's page (MSG1f, D137 §5.1), as one pure answer: which box a session is offered, by what its record
+// says and what a word said now would do (`SESSION_QUEUE`'s `reaches` and `why`, MSG1d), and the sentences for what
+// takes no words and for why words did not go on.
+
+const t = i18n.getFixedT('en');
+const zh = i18n.getFixedT('zh');
+
+const session = (over: Partial<Session> = {}): Session => ({
+  id: 's1a2b3c4', quest: 'q1', repository: 'engine', adapter: 'claude-code-acp', state: 'working', kind: 'driven',
+  created: '2026-10-03T00:00:00Z', updated: '2026-10-03T00:00:00Z', ...over,
+});
+
+const facts = (over: Partial<Parameters<typeof boxOf>[0]> = {}) =>
+  ({ session: session(), here: true, intake: false, listening: false, ...over });
+
+describe('boxOf', () => {
+  it('offers nothing with nothing attended', () => {
+    expect(boxOf(facts({ session: null }))).toEqual({ kind: 'none' });
+  });
+
+  /** §2.2: a teammate's record never takes words here, whatever its state; the page knows it without asking. */
+  it('draws the line on a teammate’s record, whatever its state', () => {
+    for (const state of ['working', 'awaiting-person', 'completed'] as const) {
+      expect(boxOf(facts({ session: session({ state }), here: false }))).toEqual({ kind: 'line', why: 'teammate' });
+    }
+  });
+
+  /** INT4h: a live intake's head already says why it takes no words; an ended one has only the line. */
+  it('leaves a live intake to its head, and draws the line under an ended one', () => {
+    const intake = { kind: 'chat' as const, quest: null, ask: '0fda18' };
+    expect(boxOf(facts({ session: session({ ...intake, state: 'working' }), intake: true }))).toEqual({ kind: 'none' });
+    expect(boxOf(facts({ session: session({ ...intake, state: 'completed' }), intake: true })))
+      .toEqual({ kind: 'line', why: 'intake' });
+  });
+
+  /** §5.3: where nothing takes words the module says why by a code, and the page draws the line instead of the box. */
+  it('draws the line for the code the module answered', () => {
+    expect(boxOf(facts({ session: session({ state: 'completed' }), reach: { reaches: null, why: 'superseded' } })))
+      .toEqual({ kind: 'line', why: 'superseded' });
+    expect(boxOf(facts({ session: session({ kind: 'chat', quest: null, state: 'stopped' }), reach: { reaches: null, why: 'help' } })))
+      .toEqual({ kind: 'line', why: 'help' });
+  });
+
+  /** CONV4: a live chat keeps its own composer, its turns and its endings. */
+  it('keeps a live chat’s own composer', () => {
+    expect(boxOf(facts({ session: session({ kind: 'chat', quest: null }), reach: { reaches: 'turn-end', why: null } })))
+      .toEqual({ kind: 'chat' });
+  });
+
+  /** §2.2: an ended chat goes on with words; until the module answers, its composer says it ended, as before. */
+  it('offers an ended chat the box where words go on, and its ended composer until the module answers', () => {
+    const ended = session({ kind: 'chat', quest: null, state: 'completed' });
+    expect(boxOf(facts({ session: ended, reach: { reaches: 'resume', why: null } }))).toEqual({ kind: 'say', mode: 'goOn' });
+    expect(boxOf(facts({ session: ended }))).toEqual({ kind: 'chat' });
+  });
+
+  /** D136: a working driven session whose door listens takes words at its next step or its turn's end. */
+  it('offers a listening driven session the running door’s box', () => {
+    expect(boxOf(facts({ listening: true, reach: { reaches: 'next-step', why: null } }))).toEqual({ kind: 'steer' });
+    expect(boxOf(facts({ listening: true }))).toEqual({ kind: 'steer' });
+  });
+
+  /**
+   * §5.1, D126 §3.1: on a parked session the box is the answer, before the module answers too. Answered, the box stays:
+   * a second word joins the first (§2.4), and the same session goes on with them.
+   */
+  it('offers a parked driven session the answer, and once answered the box where the same session goes on', () => {
+    const parked = session({ state: 'awaiting-person' });
+    expect(boxOf(facts({ session: parked }))).toEqual({ kind: 'say', mode: 'answer' });
+    expect(boxOf(facts({ session: { ...parked, answer: 'go ahead' }, reach: { reaches: 'resume', why: null } })))
+      .toEqual({ kind: 'say', mode: 'goOn' });
+  });
+
+  /**
+   * §2.1: words said as a session winds up are held until its record ends, then reopen it, never refused; a working
+   * session no inbox here takes, and whose door the module has not answered for, is offered nothing.
+   */
+  it('offers a winding-up driven session the box that holds words for its end, and nothing while unknown', () => {
+    expect(boxOf(facts({ reach: { reaches: 'resume', why: null } }))).toEqual({ kind: 'say', mode: 'ending' });
+    expect(boxOf(facts({ reach: { reaches: null, why: null } }))).toEqual({ kind: 'none' });
+    expect(boxOf(facts())).toEqual({ kind: 'none' });
+  });
+
+  /** §2.2: an ended driven session goes on with words; until the module answers, nothing is claimed. */
+  it('offers an ended driven session the box where the same session goes on, once the module says so', () => {
+    for (const state of ['completed', 'declined', 'failed', 'stopped'] as const) {
+      expect(boxOf(facts({ session: session({ state }), reach: { reaches: 'resume', why: null } })))
+        .toEqual({ kind: 'say', mode: 'goOn' });
+      expect(boxOf(facts({ session: session({ state }) }))).toEqual({ kind: 'none' });
+    }
+  });
+
+  it('says which boxes take words, for Send back to open', () => {
+    expect([{ kind: 'chat' }, { kind: 'steer' }, { kind: 'say', mode: 'goOn' }].every((box) => takesWords(box as never))).toBe(true);
+    expect([{ kind: 'none' }, { kind: 'line', why: 'teammate' }].some((box) => takesWords(box as never))).toBe(false);
+  });
+});
+
+describe('neverSentence', () => {
+  /** MSG1d: the codes nothing takes words for, each in the page's own words, in both catalogues. */
+  it.each([
+    ['teammate', 'This session ran on another machine, where its conversation is.'],
+    ['stood-down', 'It stood down: #q1 is someone else\'s, so it has nothing to go on with.'],
+    ['intake', 'An intake takes no words: it is answered through its ask.'],
+    ['help', 'Ask Daoris\'s conversations take words in its own panel, which starts a new one.'],
+    ['superseded', '#q1 went on in a later session here, so write to that one.'],
+    ['not-found', 'Daoris no longer has this session\'s record, so nothing can take words for it.'],
+  ])('says %s in its own sentence', (code, said) => {
+    expect(neverSentence(t, code, { quest: 'q1' })).toBe(said);
+    expect(neverSentence(zh, code, { quest: 'q1' })).not.toBe(said);
+  });
+
+  it('names a code it has no sentence for, rather than saying nothing', () => {
+    expect(neverSentence(t, 'no-words', {})).toBe('It takes no words now (no-words).');
+  });
+});
+
+describe('reasonOf', () => {
+  /** §5.1: a reason is chrome, so the page words the code, never the note's English. */
+  it.each([
+    ['account', 'its conversation stays with the account it ran on, and this start runs on another'],
+    ['unkept', 'Daoris kept no id for its conversation'],
+    ['tree', 'its tree is gone'],
+    ['offered', 'the agent offers no way to continue a conversation'],
+    ['gone', 'the agent no longer has its conversation'],
+    ['refused', 'its conversation could not be continued'],
+    ['ended', 'its record had already ended'],
+    ['teammate', 'it ran on another machine, where its conversation is'],
+    ['intake', 'an intake is answered through its ask'],
+    ['stood-down', 'it stood down, so it has nothing to go on with'],
+  ])('words %s', (code, said) => {
+    expect(reasonOf(t, code, {})).toBe(said);
+  });
+
+  it('words a reason that names an agent only where the page knows which', () => {
+    expect(reasonOf(t, 'adapter', { from: 'claude-code', to: 'claude-code-acp' }))
+      .toBe('it ran on claude-code, and starts here now run on claude-code-acp');
+    expect(reasonOf(t, 'adapter', { from: 'claude-code' })).toBeNull();
+    expect(reasonOf(t, 'unable', { adapter: 'stub' })).toBe('stub cannot continue a conversation');
+    expect(reasonOf(t, 'unable', {})).toBeNull();
+    expect(reasonOf(t, 'elsewhere', { agent: 'Codex' })).toBe('its conversation is open in another client of Codex');
+    expect(reasonOf(t, 'elsewhere', {})).toBeNull();
+  });
+
+  it('has no words for a code it does not know, so the driver’s own line stands', () => {
+    expect(reasonOf(t, 'something-newer', {})).toBeNull();
+  });
+});
+
+describe('tooLong', () => {
+  /** §2.4: the native door takes the words as one argument, so its box refuses words past the bound before sending. */
+  it('holds a driven session on the native door to the bound, and nothing else', () => {
+    const long = 'x'.repeat(NATIVE_WORDS_LIMIT + 1);
+    expect(tooLong(long, { door: 'pipe', kind: 'driven' })).toBe(true);
+    expect(tooLong('x'.repeat(NATIVE_WORDS_LIMIT), { door: 'pipe', kind: 'driven' })).toBe(false);
+    expect(tooLong(long, { door: 'acp', kind: 'driven' })).toBe(false);
+    expect(tooLong(long, { door: 'pipe', kind: 'chat' })).toBe(false);
+    expect(tooLong(long, { door: null, kind: 'driven' })).toBe(false);
+  });
+});

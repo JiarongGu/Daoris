@@ -6,8 +6,9 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// How each agent's accounts are used, the page's `bridge/accounts.ts` (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9,
-/// §16.6): each scope's list and how it is used, each account's cool-off, what its agent last said and its learned week,
-/// and Daoris's sessions running on it (<c>ACCOUNTS</c>); and the edits Settings → Agents makes (<c>ACCOUNT_USE</c>) —
+/// §16.6): each scope's list and how it is used, which account its next start would take and why (TOOL6e), each account's
+/// cool-off or when it was offered again, what its agent last said and its learned week, and Daoris's sessions running on
+/// it (<c>ACCOUNTS</c>); and the edits Settings → Agents makes (<c>ACCOUNT_USE</c>) —
 /// a list written whole, how it is used, <i>Try now</i>, and a workspace returned to this machine's accounts.
 /// </summary>
 /// <remarks>
@@ -37,6 +38,8 @@ public sealed partial class DriverModule
     {
         var settings = roster.Settings;
         var cooling = AccountCooling.Read(roster.Home, now);
+        // When an account was offered again (TOOL6e): a cool-off that ended within the day, while the file still holds it.
+        var offered = Safe(() => AccountCooling.Offered(roster.Home, now)) ?? [];
         var doors = new List<(string Owner, string Door, HarnessToolchain Toolchain)>();
         foreach (var name in roster.Adapters.Names)
         {
@@ -61,17 +64,24 @@ public sealed partial class DriverModule
                         // D130 §6: switching before the limit reads the agent's own word, which a door carries only where its
                         // table reads it (TOOL6c). A door's readings are its owner's.
                         Speaks = owner.Any(door => roster.WindowsOf(door.Door) is not null),
-                        Own = new { Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)) },
+                        Own = new
+                        {
+                            Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)),
+                            Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null)?.Until,
+                        },
                         Accounts = accounts.Select(account => new
                         {
                             Name = account,
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))),
+                            Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
                             Said = SaidShown(said[account]),
                             // The weekly reset known for it: told by a limit, or by the agent's own word (TOOL6b, TOOL6c).
                             Week = Safe(() => AccountWindows.WeekOf(roster.Home, agent, account, now, fixedWeek)),
                             Running = running is null ? (int?)null : running.GetValueOrDefault(Key(agent, account)),
                         }).ToArray(),
-                        Scopes = ScopesOf(settings, agent).Select(scope => ScopeShown(scope.Workspace, scope.Scope, scope.Keep, said)).ToArray(),
+                        Scopes = ScopesOf(settings, agent)
+                            .Select(scope => ScopeShown(scope.Workspace, scope.Scope, scope.Keep, said, NextOf(roster, agent, scope.Workspace)))
+                            .ToArray(),
                     };
                 })
                 .ToArray(),
@@ -95,7 +105,27 @@ public sealed partial class DriverModule
         }
     }
 
-    private static object ScopeShown(string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said) => new
+    /// <summary>
+    /// Which account the scope's next driven start would take, why, and what holds the others (TOOL6e): the roster's own
+    /// walk, asked without probing or counting (<see cref="HarnessRoster.Next"/>). A file that cannot be read says nothing.
+    /// </summary>
+    private static object? NextOf(HarnessRoster roster, string agent, string? workspace)
+    {
+        var next = Safe(() => roster.Next(agent, workspace));
+        return next is null ? null : new
+        {
+            next.Account,
+            Reason = Code(next.Reason.ToString()),
+            next.Over,
+            next.When,
+            Others = next.Others.Select(held => new { held.Account, Hold = Code(held.Hold.ToString()), held.Until }).ToArray(),
+        };
+
+        static string Code(string name) => JsonNamingPolicy.CamelCase.ConvertName(name);
+    }
+
+    private static object ScopeShown(
+        string? workspace, RotationScope scope, string? keep, IReadOnlyDictionary<string, AccountSaid?> said, object? next) => new
     {
         Workspace = workspace,
         scope.Default,
@@ -113,6 +143,8 @@ public sealed partial class DriverModule
             .Where(each => each.Near is not null)
             .Select(each => new { each.Account, each.Near!.Value.Window.Window, By = JsonNamingPolicy.CamelCase.ConvertName(each.Near.Value.By.ToString()) })
             .ToArray(),
+        // Which account its next start would take, and why (TOOL6e, D130 §3–§4).
+        Next = next,
     };
 
     private static object? CoolingShown(CoolingEntry? entry) => entry is null ? null : new

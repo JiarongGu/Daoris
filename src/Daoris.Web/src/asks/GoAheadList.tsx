@@ -24,18 +24,23 @@ const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
  * Where it lands and what it touches are the session's words, shown as written; the kind is the service's word, in the
  * page's language. `daoris-driver ask --go-ahead` is the terminal's twin (D50). **Props only, no hook** (components §2):
  * without `onAnswer` there is no door, and nothing offers one.
+ *
+ * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering one
+ * answers the session too: its lead says so there, handed in as `lead`.
  */
-export function GoAheadList({ goAheads, busy = false, onAnswer }: {
+export function GoAheadList({ goAheads, busy = false, onAnswer, lead }: {
   goAheads: GoAhead[];
   busy?: boolean;
   /** The person's yes or no to go-ahead `number`, with their words where they gave any; absent where there is no door. */
   onAnswer?: (number: number, approved: boolean, words?: string) => void;
+  /** What the list's line above it says where it stands: the ask's own, absent. */
+  lead?: string;
 }) {
   const { t } = useTranslation();
   return (
     <>
-      <p className="m-0 mb-2 max-w-prose text-small text-ink-soft">{t('asks.goAhead.lead')}</p>
-      <ul className="m-0 grid max-w-3xl list-none gap-3 p-0">
+      <p className="m-0 mb-2 text-small text-ink-soft">{lead ?? t('asks.goAhead.lead')}</p>
+      <ul className="m-0 grid list-none gap-3 p-0">
         {goAheads.map((goAhead) => (
           <GoAheadItem key={goAhead.number} goAhead={goAhead} busy={busy} onAnswer={onAnswer} kindWord={
             KINDS.has(goAhead.kind) ? t(`asks.goAhead.kind.${goAhead.kind}`) : goAhead.kind
@@ -72,7 +77,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer }: {
         <span className="text-body font-semibold">{t('asks.goAhead.act', { kind: kindWord, on: goAhead.on })}</span>
         <span className="min-w-0 break-words text-body">“{goAhead.act}”</span>
       </p>
-      {first && <p className="m-0 max-w-prose text-small text-ink-soft">{first.why}</p>}
+      {first && <p className="m-0 text-small text-ink-soft">{first.why}</p>}
       <p className="m-0 font-mono text-meta text-ink-faint">
         {first && t('asks.goAhead.asked', { ago: ago(first.at) })}
         {more > 0 && ` · ${t('asks.goAhead.again', { count: more })}`}

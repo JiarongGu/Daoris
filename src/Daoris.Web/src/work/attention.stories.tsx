@@ -12,13 +12,27 @@ import { TrustAsk } from './TrustAsk';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
+/** A park's note by code (LANG1b): the lead-in worded in the window's language, the agent's question as written. */
 const PARKED: Attention = {
   id: 's1a2b3c4',
   kind: 'parked',
   title: 'Expose a streaming budget on the chunk API',
   where: 'engine',
   since: at(38),
-  detail: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.',
+  note: {
+    note: 'It stopped with its quest still taken, to ask you: …',
+    parts: [
+      { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+      { words: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.', by: 'agent' },
+    ],
+  },
+};
+
+/** A park from before parts: its note as kept, marked. */
+const PARKED_BEFORE: Attention = {
+  ...PARKED,
+  id: 'b4f0r3',
+  note: { note: 'Two ways forward; I recommend capping on the chunk API, which is what the quest asks for.' },
 };
 
 /**
@@ -65,13 +79,15 @@ const meta: Meta = { title: 'Work/Attention' };
 export default meta;
 
 /**
- * The band's rows, in the band's order: parked, a quest parked on its failed sessions, the two kinds of ask, a quest
- * nobody can take, a long title, one that said nothing — and last, a parked row with no door, as a browser shows it.
+ * The band's rows, in the band's order: parked, its note by code and then one from before parts (LANG1b), a quest parked
+ * on its failed sessions, the two kinds of ask, a quest nobody can take, a long title, one that said nothing — and last, a
+ * parked row with no door, as a browser shows it.
  */
 export const Rows: StoryObj = {
   render: () => (
     <ul className="m-0 max-w-2xl list-none border border-line bg-raised p-0">
       <AttentionRow item={PARKED} onOpen={() => {}} />
+      <AttentionRow item={PARKED_BEFORE} onOpen={() => {}} />
       <AttentionRow item={PARKED_QUEST} onOpen={() => {}} />
       {/* A folder waiting on the person's trust (D73): the folder, what it holds, and why. */}
       <AttentionRow item={TRUST_ROW} onOpen={() => {}} />
@@ -98,14 +114,20 @@ export const Rows: StoryObj = {
         }}
         onOpen={() => {}}
       />
-      <AttentionRow item={{ ...PARKED, id: 'quiet', detail: null, since: at(4) }} onOpen={() => {}} />
+      <AttentionRow item={{ ...PARKED, id: 'quiet', note: undefined, since: at(4) }} onOpen={() => {}} />
       <AttentionRow
         item={{
           ...PARKED,
           id: 'cjk',
           title: '让世界流式加载在每一帧内限制水合工作量，并把预算暴露在区块 API 上，供上层调度器读取',
           where: '世界流式加载引擎',
-          detail: '有两条路可走；我建议在区块 API 上限流，这正是委托所要求的。',
+          note: {
+            note: 'It stopped with its quest still taken, to ask you: …',
+            parts: [
+              { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+              { words: '有两条路可走；我建议在区块 API 上限流，这正是委托所要求的。', by: 'agent' },
+            ],
+          },
         }}
         onOpen={() => {}}
       />

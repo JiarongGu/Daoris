@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Quest, Session } from '../api';
+import type { GoAhead, Quest, Session } from '../api';
 import { SessionHead } from './SessionHead';
 
 // The record in every shape it really arrives in: driven, a conversation, parked with its analysis,
@@ -90,6 +90,53 @@ export const Answered: Story = {
   },
 };
 
+/** Two go-aheads a parked session asked on its quest's ask (KNOWUSE1a), both still waiting on the person. */
+const GO_AHEADS: GoAhead[] = [
+  {
+    number: 1, kind: 'write', on: 'production', act: 'chunk budget configuration', state: 'asked',
+    asked: [{ session: SESSION.id, quest: QUEST.id, at: at(14), why: 'The cap is read from the live configuration.' }],
+  },
+  {
+    number: 2, kind: 'release', on: 'production', act: 'streaming budget build', state: 'asked',
+    asked: [{ session: SESSION.id, quest: QUEST.id, at: at(12), why: 'The quest asks for it shipped.' }],
+  },
+];
+
+/**
+ * Parked asking for go-aheads (KNOWUSE1a2, D135 §2): what it asked stands beneath its card, each with *Approve* and
+ * *Refuse*, and answering one there answers the park too, so the same session goes on with one press.
+ */
+export const ParkedAskingGoAheads: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      state: 'awaiting-person',
+      created: at(52),
+      updated: at(11),
+      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production. Both are listed on the ask.',
+    },
+    goAheads: GO_AHEADS,
+    onResolve: () => {},
+    onGoAhead: () => {},
+  },
+};
+
+/**
+ * The same park once the person approved the first (KNOWUSE1a2): its blank answer is kept, so it goes on at the driver's
+ * next look, and the second, still waiting, can be answered before it does.
+ */
+export const AnsweredWithAGoAheadWaiting: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(1), answer: 'carry on.',
+      note: 'The cap is written; it needs go-aheads 1 and 2 to reach production.\n\nAnswered: carry on.',
+    },
+    goAheads: [{ ...GO_AHEADS[0]!, state: 'approved', answer: { approved: true, words: 'dev first', at: at(1) } }, GO_AHEADS[1]!],
+    onResolve: () => {},
+    onGoAhead: () => {},
+  },
+};
+
 /**
  * A parked INTAKE (INT4g): it serves an ask and runs in Daoris's own room, so the record says *ask*
  * and *room* rather than *repository* and *tree*, and its answer is a door to the ask.
@@ -154,6 +201,40 @@ export const Failed: Story = {
     session: {
       ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
     },
+  },
+};
+
+/**
+ * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
+ * lead-in as written. The two stories above are records from before parts, shown as kept and marked.
+ */
+export const FailedByCode: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'failed', created: at(40), updated: at(31),
+      note: 'The agent’s turn failed with the quest still taken: the ACP agent refused the call. It exited with code 1.',
+      noteParts: [
+        { code: 'ended.turn-failed-taken', values: {}, text: 'The agent’s turn failed with the quest still taken:' },
+        { words: 'the ACP agent refused the call: rate limited until 16:00.', by: 'agent' },
+        { code: 'account.cooling', values: { until: '2026-10-03T16:00:00Z', why: 'stated' }, text: 'The account it ran on is cooling until 2026-10-03 16:00 UTC (the agent said so); nothing starts on it until then.' },
+      ],
+    },
+  },
+};
+
+/** Parked, its lead-in by code and its question as the agent wrote it (LANG1b), with the moves a shell has. */
+export const ParkedByCode: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(11),
+      note: 'It stopped with its quest still taken, to ask you: …',
+      noteParts: [
+        { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+        { words: 'Two ways forward.\n\n1. Cap hydration in the scheduler.\n2. Cap it on the chunk API itself.\n\nI recommend the second.', by: 'agent' },
+      ],
+    },
+    onResolve: () => {},
+    onAnswerSession: () => {},
   },
 };
 

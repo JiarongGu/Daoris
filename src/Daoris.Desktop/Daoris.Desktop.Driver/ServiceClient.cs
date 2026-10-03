@@ -762,6 +762,12 @@ public sealed class ServiceClient : IDisposable
     public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => GetAsync(SessionRecords.Door, ct);
 
     /// <summary>
+    /// Every quest, closed ones included, as the service wrote them: what a trace reads a quest's answers, its yes and its
+    /// moments from (TRACE1), which <see cref="QuestView"/> leaves out because no planner needs them.
+    /// </summary>
+    public Task<string> QuestsJsonAsync(CancellationToken ct = default) => GetAsync("/api/quests?includeClosed=true", ct);
+
+    /// <summary>
     /// The ledger's judgement of deleting a session's record (SESSUX1f, D126 §5.4), deleting nothing: whether it would, and
     /// if not, its sentence, its word and the facts the word names.
     /// </summary>
@@ -866,15 +872,25 @@ public sealed class ServiceClient : IDisposable
     /// a strike. Sent only where true, so a host older than the field reads it as any failure; the ledger refuses it on
     /// a move to any other state (TOOL4c). It names no account.
     /// </param>
+    /// <param name="parts">
+    /// The note's parts beside its English (LANG1a, D142 point 2), sent only with a note: a note sent without them clears the
+    /// record's parts, so an older driver's note never sits beside stale ones. A host older than the field ignores it.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default, bool interrupted = false, bool limit = false)
+        CancellationToken ct = default, bool interrupted = false, bool limit = false, IReadOnlyList<NotePart>? parts = null)
     {
         var body = WriteJson(writer =>
         {
             writer.WriteStartObject();
             writer.WriteString("state", state);
             if (note is not null) writer.WriteString("note", note);
+            if (note is not null && parts is { Count: > 0 })
+            {
+                writer.WritePropertyName("noteParts");
+                NotePart.Write(writer, parts);
+            }
+
             if (evidence is not null) writer.WriteString("evidence", evidence);
             if (transcript is not null) writer.WriteString("transcript", transcript);
             if (interrupted) writer.WriteBoolean("interrupted", true);
@@ -897,6 +913,12 @@ public sealed class ServiceClient : IDisposable
         Raise(Moved, new SessionMoved(id, (root is { } moved ? StateOf(moved) : null) ?? state));
         return root is { } answer ? Text(answer, "message") ?? "" : "";
     }
+
+    /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>
+    public Task<string> AdvanceAsync(
+        string id, string state, Noted noted, string? evidence = null, string? transcript = null,
+        CancellationToken ct = default, bool interrupted = false, bool limit = false) =>
+        AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts);
 
     /// <summary>The state an answer's session record is in now, or null when it carries none.</summary>
     private static string? StateOf(JsonElement answer) =>
@@ -973,6 +995,15 @@ public sealed class ServiceClient : IDisposable
                     : [],
                 // Whether a departure holds it for the person's yes (DRIFT1d). Absent is false: a host from before answers.
                 Held = Flag(quest, "held"),
+                // How its done answered each requirement (DRIFT1d), which an accept shows before the yes (DRIFT1d2). Absent
+                // is none: a quest no done answered, or a host from before answers. A number left out reads as 0, no requirement's.
+                Answers = quest.TryGetProperty("answers", out var answered) && answered.ValueKind == JsonValueKind.Array
+                    ? answered.EnumerateArray()
+                        .Select(a => new QuestAnswerView(
+                            a.TryGetProperty("requirement", out var number) && number.ValueKind == JsonValueKind.Number ? number.GetInt32() : 0,
+                            Text(a, "met"), Text(a, "departed"), Text(a, "quote")))
+                        .ToList()
+                    : [],
             });
         }
 
@@ -1068,6 +1099,8 @@ public sealed class ServiceClient : IDisposable
                 Tree = Text(session, "tree"),
                 // The quest it serves, which it holds while it works (DEV3).
                 Quest = Text(session, "quest"),
+                // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
+                NoteParts = NotePart.Read(session),
             });
         }
 
@@ -1129,25 +1162,54 @@ public sealed class ServiceClient : IDisposable
 
             var at = DateTimeOffset.TryParse(Text(session, "created"), out var created) ? created : DateTimeOffset.MinValue;
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
-            last[quest] = (new PriorSession(
-                Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-                Text(session, "repository"), Text(session, "answer"), Interrupted(session))
-            {
-                // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
-                Profile = Text(session, "profile"),
-                Limit = Limit(session),
-                // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
-                Adapter = Text(session, "adapter"),
-                HarnessVersion = Text(session, "harnessVersion"),
-                BaseCommit = Text(session, "baseCommit"),
-                // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
-                Said = ReadSaid(session),
-                Ask = Text(session, "ask"),
-            }, at);
+            last[quest] = (Prior(session), at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// One record as a run that goes on reads it (MSG1c): its state, its words waiting, the adapter, account, tree and
+    /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
+    /// </summary>
+    public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
+        ReadRecord(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false), id);
+
+    /// <summary>The record with this id among the answer's, read as <see cref="RecordAsync"/> reads it; a teammate's is none here.</summary>
+    internal static PriorSession? ReadRecord(string json, string id)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return null;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session)) continue;
+            if (string.Equals(Text(session, "id"), id, StringComparison.Ordinal)) return Prior(session);
+        }
+
+        return null;
+    }
+
+    /// <summary>A record as what a later run on it is compared with and told (D79, D80, ANSWER1a, MSG1b).</summary>
+    private static PriorSession Prior(JsonElement session) =>
+        new(
+            Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
+            Text(session, "repository"), Text(session, "answer"), Interrupted(session))
+        {
+            // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
+            Profile = Text(session, "profile"),
+            Limit = Limit(session),
+            // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
+            Adapter = Text(session, "adapter"),
+            HarnessVersion = Text(session, "harnessVersion"),
+            BaseCommit = Text(session, "baseCommit"),
+            // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
+            Said = ReadSaid(session),
+            Ask = Text(session, "ask"),
+            // A chat goes on through the chat runner, never the planner (MSG1c).
+            Kind = Text(session, "kind") ?? "driven",
+            // Its note's lines by code (LANG1a), which a note added to it carries on; null for a record from before parts.
+            NoteParts = NotePart.Read(session),
+        };
 
     /// <summary>
     /// The words waiting on a record (MSG1a, D137 §2.4), one by one, read without trusting the shape: a word without its id,

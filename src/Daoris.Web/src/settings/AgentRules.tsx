@@ -143,7 +143,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
 
       {/* The driver's own sentence, verbatim: the defaults still hold when the file does not. */}
       {rules.problem && (
-        <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           {rules.problem}
         </p>
       )}
@@ -174,7 +174,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
                     {t('settings.rules.proposals.from', { author: proposalAuthor(proposal) })}
                   </p>
                   {/* The session's own reason, verbatim: content, never translated. */}
-                  <p className="m-0 mt-0.5 max-w-prose text-body text-ink-soft">{proposal.why}</p>
+                  <p className="m-0 mt-0.5 text-body text-ink-soft">{proposal.why}</p>
                   <p className="m-0 mt-0.5 text-small text-ink-faint">
                     {t(proposal.state === 'waiting' ? 'settings.rules.proposals.widens' : 'settings.rules.proposals.unjudged')}
                   </p>

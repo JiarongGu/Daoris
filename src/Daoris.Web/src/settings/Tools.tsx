@@ -210,7 +210,7 @@ export function ToolCard({
 
       {/* The way set cannot run, in the driver's own words: it never falls back to PATH (D121 §2.3). */}
       {tool.refused && tool.problem && (
-        <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           <Inline text={tool.problem} />
         </p>
       )}
@@ -270,7 +270,7 @@ export function ToolCard({
                 onChange={(event) => { onAsk?.(null); onChoice({ ...choice, file: event.target.value }); }}
                 placeholder={t('settings.tools.filePlaceholder')}
                 spellCheck={false}
-                className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               {onBrowse && <Button variant="ghost" disabled={acting} onClick={onBrowse}>{t('settings.tools.browse')}</Button>}
               {changing && !asking && (
@@ -424,7 +424,7 @@ export function GitSwitch({ asking, busy = false, onConfirm, onCancel }: {
       )}
       {!asking.reading && !problem && answer && answer.keys.length > 0 && (
         <>
-          <p className="m-0 mt-1 max-w-prose text-small text-ink-soft">{t('settings.tools.switch.differs')}</p>
+          <p className="m-0 mt-1 text-small text-ink-soft">{t('settings.tools.switch.differs')}</p>
           <ul className="m-0 mt-1.5 list-none p-0">
             {answer.keys.map((key) => (
               <li key={key.key} className="text-small text-ink">
@@ -504,10 +504,10 @@ export function ToolLocations({
         )}
         {/* What could not be fetched or read, in the driver's own words: the address and the reason are the person's to act on. */}
         {look && look.outcome !== 'fetched' && (
-          <p className="m-0 mt-1 max-w-prose text-small text-ink-soft"><Inline text={look.sentence} /></p>
+          <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={look.sentence} /></p>
         )}
         {list.problem && (
-          <p className="m-0 mt-1 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-small text-ink-soft">
+          <p className="m-0 mt-1 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-small text-ink-soft">
             <Inline text={list.problem} />
           </p>
         )}
@@ -554,7 +554,7 @@ export function ToolLocations({
               onChange={(event) => setAddress(event.target.value)}
               placeholder={t('settings.tools.locations.placeholder')}
               spellCheck={false}
-              className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+              className="min-w-0 flex-1 basis-64 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
             />
             <Button type="submit" disabled={busy || !address.trim()}>{t('settings.tools.locations.save')}</Button>
             <Button variant="ghost" onClick={() => { setAddress(''); setAdding(false); }}>{t('common.cancel')}</Button>

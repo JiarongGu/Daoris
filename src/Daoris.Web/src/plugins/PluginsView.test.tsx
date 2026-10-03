@@ -118,12 +118,14 @@ describe('the Plugins view', () => {
     window.localStorage.clear();
   });
 
-  it('lists the plugins by what they need from the person, and says how to choose with nothing chosen', async () => {
+  it('lists the plugins as a catalogue, waiting on you first, and says how to choose with nothing chosen', async () => {
     const onAsk = vi.fn();
     show({ onAsk });
 
-    expect(await within(list()).findByText('Waiting on you (1)')).toBeInTheDocument();
-    expect(within(list()).getByText('On (1)')).toBeInTheDocument();
+    // The catalogue (D140 §2): the installed, the one waiting on you first, then Daoris's own not installed.
+    expect(await within(list()).findByText('Installed (2)')).toBeInTheDocument();
+    const rows = within(within(list()).getByText('Installed (2)').closest('section')!).getAllByRole('button');
+    expect(rows.map((row) => (row.textContent?.includes('Future') ? 'Future' : 'Acme gate'))).toEqual(['Future', 'Acme gate']);
     expect(within(list()).getByText("Daoris's own plugins (1)")).toBeInTheDocument();
     expect(within(main()).getByText('Choose a plugin')).toBeInTheDocument();
 
@@ -268,7 +270,7 @@ describe('the Plugins view', () => {
 
   it('opens the kit in a drawer from the ＋, and at its trial from the ⋯', async () => {
     show({ onAsk: vi.fn() });
-    await within(list()).findByText('On (1)');
+    await within(list()).findByText('Installed (2)');
 
     within(list()).getByRole('button', { name: 'Add a plugin' }).focus();
     await userEvent.keyboard('{Enter}');
@@ -287,7 +289,7 @@ describe('the Plugins view', () => {
 
   it('offers no Ask Daoris where nobody hands it one, and the kit alone', async () => {
     show();
-    await within(list()).findByText('On (1)');
+    await within(list()).findByText('Installed (2)');
     // One kind left: the ＋ is that act itself.
     await userEvent.click(within(list()).getByRole('button', { name: 'Add a plugin' }));
     expect(await screen.findByRole('dialog', { name: 'Make a plugin' })).toBeInTheDocument();
@@ -379,7 +381,7 @@ describe('the doors into the Plugins view', () => {
     const names = within(bar()).getAllByRole('button').map((place) => place.getAttribute('aria-label') ?? place.textContent);
     expect(names.indexOf('Plugins')).toBe(names.indexOf('Search') + 1);
     await userEvent.click(within(bar()).getByRole('button', { name: 'Plugins' }));
-    expect(await screen.findByText('Waiting on you (1)')).toBeInTheDocument();
+    expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
     // The list's doors are named for it (D118 §3a).
     expect(screen.getByRole('button', { name: 'show or hide the plugin list (Ctrl+B)' })).toBeInTheDocument();
     // Fetched only once the view is in front: no other view asks for the catalogue.
@@ -398,7 +400,7 @@ describe('the doors into the Plugins view', () => {
     (await screen.findByRole('button', { name: 'Daoris' })).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: /^Plugins/ }));
-    expect(await screen.findByText('Waiting on you (1)')).toBeInTheDocument();
+    expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
   });
 
   /** "Its report stays here until Daoris closes": the page holds a trial across a change of view. */

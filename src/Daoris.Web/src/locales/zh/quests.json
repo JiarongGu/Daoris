@@ -104,5 +104,20 @@
   "quests.detail.pausedOwn": "你在本机暂缓了它：在你恢复之前，这里不会启动它的任何工作。",
   "quests.detail.openAsk": "打开需求 #{{id}}",
   "quests.detail.openPausing": "打开委托 #{{id}}",
-  "quests.detail.noDriver": "暂缓和放弃属于一台机器的驱动，所以浏览器两者都不提供：请在桌面应用中操作，或在终端运行 `daoris-driver quest pause {{id}}` 和 `daoris-driver quest abandon {{id}}`。"
+  "quests.detail.noDriver": "暂缓和放弃属于一台机器的驱动，所以浏览器两者都不提供：请在桌面应用中操作，或在终端运行 `daoris-driver quest pause {{id}}` 和 `daoris-driver quest abandon {{id}}`。",
+  "quests.groups.held": "待你采纳（{{count}}）",
+  "quests.card.held": "待你采纳",
+  "quests.card.heldHint": "它的完成偏离了你的要求，所以它后面的事要等你在它的页面上采纳这项偏离后才会继续。",
+  "quests.requirements.title": "你的要求",
+  "quests.requirements.check": "检验",
+  "quests.requirements.met": "已满足",
+  "quests.requirements.departed": "偏离",
+  "quests.requirements.reliedOn": "所据原话",
+  "quests.requirements.held": "它的完成偏离了你的要求，所以它在等你采纳：在你采纳这项偏离之前，它留住的事都不会继续，它的需求也不算完成。",
+  "quests.requirements.heldNext": "采纳后会发布它的下一步“{{title}}”，委托给 {{to}}。",
+  "quests.requirements.join": "{{first}}{{second}}",
+  "quests.requirements.accept": "采纳偏离",
+  "quests.requirements.accepted": "你在 {{ago}}采纳了这项偏离。",
+  "quests.requirements.toAnswer": "它的完成会逐条回答：已满足，或偏离并附上理由和所依据的你的原话。",
+  "quests.requirements.unanswered": "它的完成没有逐条回答：它关闭时，完成还不必逐条回答。"
 }

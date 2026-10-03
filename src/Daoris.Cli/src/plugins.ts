@@ -29,8 +29,13 @@
 //      whose update it refuses as the driver does: a package is installed whole, by the driver alone.
 //   6. Daoris's own example plugins are offered from the install's `app/plugin-offers/`, beside the
 //      home; what each needs is its README's `## What it needs`.
+//
+// And since PLUGUI2 (D140), with the driver's `PluginIcon.cs`, `PluginIconTests` holding the table:
+//
+//   7. A plugin's icon is the manifest's `icon`, a path inside its folder to an SVG or a PNG of at most 32 KiB.
+//      Its problem is said, by the same rules in the same order and words, and never refuses the plugin.
 
-import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
@@ -122,6 +127,13 @@ export interface PluginManifest {
   harnesses: PluginHarness[];
   hooks: PluginHooks | null;
   servers: PluginServer[];
+  /**
+   * Its icon (PLUGUI2, D140 §3.1): a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
+   * manifest's rules hold; null with none, and with one they refuse. `readIcon` judges the file.
+   */
+  icon: string | null;
+  /** Why its declared icon is not drawn, by the manifest's rules; never a reason to refuse the plugin. */
+  iconProblem: string | null;
 }
 
 /** The knowledge host's server name — Daoris's own, which a plugin may not claim. */
@@ -165,8 +177,10 @@ export function dataFolder(home: string, id: string): string {
   return join(pluginsRoot(home), DATA_DIR, id);
 }
 
-const empty = (id: string): PluginManifest =>
-  ({ id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [] });
+const empty = (id: string): PluginManifest => ({
+  id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [],
+  icon: null, iconProblem: null,
+});
 
 /** `plugins.json`: which plugins are disabled. An unreadable file disables nothing — the safe direction. */
 export function readPluginState(home: string): { disabled: string[] } {
@@ -327,6 +341,10 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
     }
   }
 
+  // Its icon, last: an icon's problem is said and never refuses the plugin (D140 §3.1).
+  const declaredIcon = (root as Record<string, unknown>).icon;
+  const { icon, problem: iconProblem } = declaredIcon === undefined ? { icon: null, problem: null } : iconDeclared(declaredIcon);
+
   return {
     manifest: {
       id,
@@ -337,9 +355,97 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
       harnesses,
       hooks,
       servers,
+      icon,
+      iconProblem,
     },
     problem: null,
   };
+}
+
+// ——— A plugin's icon (PLUGUI2, D140; the catalogue design §3.1). Twin: the driver's `PluginIcon.cs`, whose
+// `PluginIconTests` holds the table `plugin-icons.test.ts` parses and holds this reader to. An icon is how a plugin is
+// recognised, never what it does, so its problem is said and never refuses the plugin.
+
+/** The most an icon file may be: it is drawn at 48 px at most, and the screen's list carries every plugin's. Twin: `PluginIcon.MaxBytes`. */
+export const ICON_MAX_BYTES = 32 * 1024;
+
+/** The most a PNG icon may be on a side, which also bounds what a small file inflates to. Twin: `PluginIcon.MaxPixels`. */
+export const ICON_MAX_PIXELS = 512;
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+
+const iconType = (icon: string): 'svg' | 'png' | null =>
+  /\.svg$/i.test(icon) ? 'svg' : /\.png$/i.test(icon) ? 'png' : null;
+
+/**
+ * The manifest's `icon` by the manifest's rules, in order: none for `null`; text that is not blank; a path inside the
+ * folder, names joined by `/` with none empty, `.` or `..`, and no `\` or `:`; an `.svg` or a `.png`, case aside.
+ */
+function iconDeclared(value: unknown): { icon: string | null; problem: string | null } {
+  if (value === null) return { icon: null, problem: null };
+  if (typeof value !== 'string' || value.trim() === '') {
+    return { icon: null, problem: "`icon` must be the path of an .svg or .png file in the plugin's folder." };
+  }
+  if (value.includes('\\') || value.includes(':') || value.split('/').some((name) => name === '' || name === '.' || name === '..')) {
+    return {
+      icon: null,
+      problem: `\`icon\` \`${value}\` is not a path inside the plugin's folder: it is written from the folder, with \`/\` `
+        + 'between names and no `.` or `..`.',
+    };
+  }
+  return iconType(value) === null
+    ? { icon: null, problem: `\`icon\` \`${value}\` is neither an .svg nor a .png file.` }
+    : { icon: value, problem: null };
+}
+
+/**
+ * The icon a manifest declares, judged as a file in its folder, by the file's rules in order: there and a file; at most
+ * 32 KiB; a PNG that starts with its signature and header chunk, at most 512 pixels on a side; an SVG that is UTF-8 text
+ * holding an `<svg` element and declaring no entity. A manifest's own problem is said first. Twin: `PluginIcon.Read`,
+ * which also hands the page the bytes; this side lists only whether it draws.
+ */
+export function readIcon(folder: string, manifest: PluginManifest): { type: 'svg' | 'png' | null; problem: string | null } {
+  if (manifest.iconProblem !== null) return { type: null, problem: manifest.iconProblem };
+  if (manifest.icon === null) return { type: null, problem: null };
+  const icon = manifest.icon;
+  const refused = (why: string) => ({ type: null, problem: `\`icon\` \`${icon}\` ${why}` });
+
+  const path = join(folder, ...icon.split('/'));
+  let bytes: Buffer;
+  try {
+    if (!statSync(path).isFile()) return refused("is not a file in the plugin's folder.");
+    if (statSync(path).size > ICON_MAX_BYTES) return refused('is larger than 32 KiB, the most an icon may be.');
+    bytes = readFileSync(path);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return refused("is not a file in the plugin's folder.");
+    // Daoris's words, never the system's: its message names the file's whole path, which the page must not learn.
+    return refused('could not be read.');
+  }
+  // Read once, so the bytes judged are the bytes drawn.
+  if (bytes.length > ICON_MAX_BYTES) return refused('is larger than 32 KiB, the most an icon may be.');
+
+  if (iconType(icon) === 'png') {
+    if (bytes.length < 24 || !bytes.subarray(0, 8).equals(PNG_SIGNATURE) || bytes.toString('ascii', 12, 16) !== 'IHDR') {
+      return refused('is not a PNG image.');
+    }
+    const width = bytes.readUInt32BE(16);
+    const height = bytes.readUInt32BE(20);
+    if (width === 0 || height === 0) return refused('is not a PNG image.');
+    if (width > ICON_MAX_PIXELS || height > ICON_MAX_PIXELS) {
+      return refused(`is ${width}×${height} pixels, and an icon is at most ${ICON_MAX_PIXELS} on a side.`);
+    }
+    return { type: 'png', problem: null };
+  }
+
+  let text: string;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return refused('is not an SVG image.');
+  }
+  if (text.includes('\0') || !/<svg[\s>/]/.test(text)) return refused('is not an SVG image.');
+  if (text.includes('<!ENTITY')) return refused('declares an XML entity, which an icon may not.');
+  return { type: 'svg', problem: null };
 }
 
 /**
@@ -808,6 +914,9 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
           write(`  ${entry.manifest.id.padEnd(24)} ${entry.manifest.name}${version}${state}`);
           write(`  ${''.padEnd(24)} ${entry.problem ? `⚠ ${entry.problem}` : describe(entry.manifest)}`);
           write(`  ${''.padEnd(24)} ${sourceLine(entry.folder)}`);
+          // Its author's to fix, and never a reason it is refused (D140 §3.1): the screen draws its monogram.
+          const icon = readIcon(entry.folder, entry.manifest);
+          if (icon.problem !== null) write(`  ${''.padEnd(24)} icon not drawn: ${icon.problem}`);
         }
       }
 
@@ -818,6 +927,8 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
           write(`  ${offer.id.padEnd(24)} ${offer.manifest.name}${version}`);
           write(`  ${''.padEnd(24)} ${offer.problem ? `⚠ ${offer.problem}` : describe(offer.manifest)}`);
           if (offer.needs.length > 0) write(`  ${''.padEnd(24)} needs: ${offer.needs.join('; ')}`);
+          const icon = readIcon(offer.folder, offer.manifest);
+          if (icon.problem !== null) write(`  ${''.padEnd(24)} icon not drawn: ${icon.problem}`);
           if (offer.problem === null) {
             write(`  ${''.padEnd(24)} \`daoris plugin add --offer ${offer.id}\` installs it; nothing runs before that.`);
           }

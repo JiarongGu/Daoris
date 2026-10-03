@@ -128,7 +128,7 @@ export function PluginRow({
       {/* The driver's own sentence, verbatim — a version this build does not speak, a
           conflict naming both sides, a manifest that would not parse. Content, not chrome. */}
       {plugin.problem && (
-        <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+        <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           <Inline text={plugin.problem} />
         </p>
       )}

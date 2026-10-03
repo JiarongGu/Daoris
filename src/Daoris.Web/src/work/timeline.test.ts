@@ -82,6 +82,17 @@ describe('a session timeline', () => {
     });
   });
 
+  /** LANG1b: the note's parts ride with its English, for the entry to word in the reader's language. */
+  it('carries the note’s parts beside its English', () => {
+    const noteParts = [{ code: 'ended.done', values: {}, text: 'The quest reached done.' }];
+    const events = sessionTimeline(session({
+      state: 'completed', updated: '2026-09-21T09:20:00Z', note: 'The quest reached done.', noteParts,
+    }));
+    expect(events[1]).toEqual({
+      kind: 'state', at: '2026-09-21T09:20:00Z', state: 'completed', note: 'The quest reached done.', noteParts,
+    });
+  });
+
   it('records the quest moving, once the move is news the session could have caused', () => {
     const events = sessionTimeline(session({ quest: '7a82cc' }), quest({ status: 'Done' }));
     expect(events.map((event) => event.kind)).toEqual(['opened', 'quest']);

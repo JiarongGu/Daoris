@@ -26,11 +26,11 @@ public sealed class SessionProcesses(string? markers = null)
         public required Process Process;
         public bool StopRequested;
 
-        /// <summary>Why the driver ended it, when the driver did — null when the person did.</summary>
-        public string? Reason;
+        /// <summary>Why the driver ended it, when the driver did — null when the person did. With its code (LANG1a).</summary>
+        public Noted? Reason;
 
         /// <summary>What the person's stop says on the record, where the door that stopped it said more (a pause, PAUSE1b).</summary>
-        public string? Note;
+        public Noted? Note;
 
         /// <summary>Why a person's line is refused here, in the driver's words — null for a conversation.</summary>
         public string? RefusesInput;
@@ -146,7 +146,7 @@ public sealed class SessionProcesses(string? markers = null)
     /// For the person's stop, what its record says in place of the plain one: a pause's stop names the pause (PAUSE1b, design
     /// §4.1). Still the person's stop, which nothing decides from (D104).
     /// </param>
-    public bool Stop(string sessionId, string? reason = null, string? note = null)
+    public bool Stop(string sessionId, Noted? reason = null, Noted? note = null)
     {
         Entry? entry;
         lock (_gate)
@@ -213,13 +213,13 @@ public sealed class SessionProcesses(string? markers = null)
     }
 
     /// <summary>Why the driver ended this session itself — null when nobody did, or the person did.</summary>
-    public string? StopReason(string sessionId)
+    public Noted? StopReason(string sessionId)
     {
         lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Reason : null;
     }
 
     /// <summary>What the person's stop of this session says on its record, where its door said more; null for the plain stop.</summary>
-    public string? StopNote(string sessionId)
+    public Noted? StopNote(string sessionId)
     {
         lock (_gate) return _running.TryGetValue(sessionId, out var entry) ? entry.Note : null;
     }

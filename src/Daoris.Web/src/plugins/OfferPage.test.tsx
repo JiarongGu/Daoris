@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { code } from '../test/code';
+import { cappedBlocks } from '../test/measure';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
 
@@ -31,6 +32,22 @@ describe("an offer's page", () => {
     expect(within(header()).getByText('not installed')).toBeInTheDocument();
     await userEvent.click(within(header()).getByRole('button', { name: 'Install land-github' }));
     expect(onInstall).toHaveBeenCalledWith('land-github');
+  });
+
+  /** D140 §2 and D141: the detail's blocks share the pane's width, none keeping a measure of its own. */
+  it('lets every block take the pane\'s width', () => {
+    const { container } = render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
+    expect(cappedBlocks(container)).toEqual([]);
+  });
+
+  /** D140 §2: an offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */
+  it('leads its header with its icon', () => {
+    render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
+
+    const monogram = header().querySelector('[data-hue]')!;
+    expect(monogram.textContent).toBe('L');
+    expect(monogram.getAttribute('data-hue')).toBe('slate');
+    expect(monogram.className).toContain('size-12');
   });
 
   it('shows what its manifest declares and what its README says it needs, verbatim', () => {

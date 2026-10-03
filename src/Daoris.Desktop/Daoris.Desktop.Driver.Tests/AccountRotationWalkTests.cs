@@ -19,9 +19,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class AccountRotationWalkTests
 {
-    private static readonly DateTimeOffset Now = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
+    internal static readonly DateTimeOffset Now = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
 
-    private static RotationScope Scope(string written)
+    internal static RotationScope Scope(string written)
     {
         var tokens = written.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var list = tokens.Where(token => !token.StartsWith('@') && !token.Contains('=') && token is not ("order" or "goal")).ToList();
@@ -40,7 +40,7 @@ public sealed class AccountRotationWalkTests
         return settings.ResolveScope("fake", null);
     }
 
-    private static Dictionary<string, AccountFacts> Facts(string written)
+    internal static Dictionary<string, AccountFacts> Facts(string written)
     {
         var facts = new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in written.Split(' ', StringSplitOptions.RemoveEmptyEntries))

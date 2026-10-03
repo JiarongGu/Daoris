@@ -135,6 +135,9 @@ public sealed partial class Driver(
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
         + "session's take is a conflict on the quest and its work would double someone else's.";
 
+    /// <summary><see cref="LostClaim"/> with its code (LANG1a).</summary>
+    public static Noted LostClaimNoted => Noted.Of(NoteCodes.EndedLostClaim, LostClaim);
+
     /// <summary>
     /// Why a person's line is refused for a driven session (INT4i), and where its work goes instead —
     /// the sentence the bridge carries verbatim, so a caller is told the truth rather than "it ended".
@@ -514,7 +517,7 @@ public sealed partial class Driver(
                 continue; // The host did not answer; the next pass asks again.
             }
 
-            if (claim == "lost" && _processes.Stop(session, LostClaim))
+            if (claim == "lost" && _processes.Stop(session, LostClaimNoted))
             {
                 lock (events) events.Add($"stop  session {session} (#{quest}): {LostClaim}");
             }
@@ -855,10 +858,11 @@ public sealed partial class Driver(
             var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
             // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
-            // and their standing answer for its repository (KNOWUSE1b), from this machine's config.
-            var target = WithStanding(
+            // their standing answer for its repository (KNOWUSE1b), and the work's session language (LANG1c), from this
+            // machine's config.
+            var target = WithLanguage(WithStanding(
                 await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
-                config) with
+                config), config, start.Workspace) with
             {
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -886,34 +890,10 @@ public sealed partial class Driver(
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
-            await service.AdvanceAsync(
-                sessionId, "starting",
-                // The creating sentence, on the record while the session runs (D51 rule 4): where it
-                // grew from and what a fresh tree does not hold. The conclusion's note replaces it —
-                // by then the record's Tree field and the evidence say the rest.
-                note: opened?.Sentence
-                    ?? (answered is not null
-                        ? $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered"
-                          + (resumedIn is null ? "." : $", in the tree session `{start.Resumes!.Session}` asked from.")
-                        : carryingOn
-                            ? (start.Resumes!.Answer is not null
-                                ? (written is { Parked: false, Said: not null }
-                                    // Words to a session that had ended (MSG1b): no answer, and an open quest is started.
-                                    ? quest.Status == "Open"
-                                        ? $"starts `#{quest.Id}` with your words to session `{start.Resumes.Session}`"
-                                        : $"carries `#{quest.Id}` on with your words to session `{start.Resumes.Session}`"
-                                    : $"carries `#{quest.Id}` on with your answer to session `{start.Resumes.Session}`")
-                                : start.Resumes.PersonStopped
-                                    ? $"carries `#{quest.Id}` on: you stopped session `{start.Resumes.Session}`, and released it"
-                                    : $"carries `#{quest.Id}` on after session `{start.Resumes.Session}` was cut off")
-                              // 🔴 Which account, never (TOOL4f, D125 §3.6): the note travels, and its scrubber elides
-                              // only the record's own account, so another account's name here would reach a teammate.
-                              + (elsewhere ? ", on another account" : "")
-                              + (resumedIn is null ? "." : ", in the tree it worked in.")
-                              // Why the answer did not go on in its own conversation (ANSWER1a, D131 §2).
-                              + (fellBack is not null ? Continuations.CarriedOn(fellBack) : "")
-                            : null),
-                ct: ct).ConfigureAwait(false);
+            // The creating sentence, on the record while the session runs (D51 rule 4): where it grew from and what a fresh
+            // tree does not hold. The conclusion's note replaces it — by then the record's Tree field and the evidence say the rest.
+            var startingNote = StartingNote(opened, quest, answered, resumedIn, carryingOn, start.Resumes, written, elsewhere, fellBack);
+            await service.AdvanceAsync(sessionId, "starting", note: startingNote?.Note, ct: ct, parts: startingNote?.Parts).ConfigureAwait(false);
 
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
             // the person's words in its own record, where they read the question. A resume that was tried already put
@@ -973,10 +953,10 @@ public sealed partial class Driver(
                     var conclusion = stoppedFor is not null
                         // The driver's own stop, for a take that lost (D68 §5): the quest was someone
                         // else's, which is what standing down has always meant — and the reason says who.
-                        ? new SessionConclusion("stood-down", stoppedFor)
+                        ? SessionConclusion.Of("stood-down", stoppedFor)
                         : _processes.WasStopRequested(sessionId)
                         // A pause's stop names the pause (PAUSE1b, design §4.1); still the person's, never interrupted.
-                        ? new SessionConclusion("stopped", _processes.StopNote(sessionId) ?? "the person stopped it.")
+                        ? SessionConclusion.Of("stopped", _processes.StopNote(sessionId) ?? Observation.Stopped)
                         : exitCode is int code
                             // What it waited on before and after (D79): a NEW question is this session
                             // asking and waiting, which is a good ending, not a stand-down.
@@ -986,14 +966,15 @@ public sealed partial class Driver(
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                                 lastWords: ParkedWords(_events, sessionId, transcript))
-                            : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
+                            : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
                     await service.AdvanceAsync(
-                        sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited).ConfigureAwait(false);
+                        sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
+                        parts: conclusion.Parts).ConfigureAwait(false);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that
@@ -1026,9 +1007,7 @@ public sealed partial class Driver(
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, "stopped",
-                    note: "the driver was stopped while this ran; the session's process was ended with it.",
-                    ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
+                    sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
             }
             catch
             {
@@ -1052,7 +1031,7 @@ public sealed partial class Driver(
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, "failed", note: error.Message, ct: CancellationToken.None).ConfigureAwait(false);
+                    sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -1143,13 +1122,16 @@ public sealed partial class Driver(
     /// What it may reach outside its tree (D107): a read of each checkout it may read, an edit in each declared
     /// target, and a refusal everywhere else — beside the person's rules, whose denies still win.
     /// </param>
-    /// <returns>The file, which goes when the session does, and what the protocol door carries.</returns>
-    private (string? File, object? Meta) HandRules(
+    /// <returns>
+    /// The file, which goes when the session does, what the protocol door carries, and what was handed, for the instruction's
+    /// account (CONTEXT1), which outlives the file.
+    /// </returns>
+    private (string? File, object? Meta, HandedSection Handed) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
         string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
-        if (!adapter.TakesSettings) return (null, null);
+        if (!adapter.TakesSettings) return (null, null, RulesHanded(takes: false, PermissionFile.Empty, RuleLists.Empty, workspace, repository));
 
         var rules = PermissionRules.Load(home);
         var composed = PermissionRules.Compose(rules, workspace, repository);
@@ -1171,15 +1153,64 @@ public sealed partial class Driver(
         var file = SpawnSettings.Write(
             home, sessionId, composed, PermissionRules.HardDeny(rules),
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
-        if (file is null) return (null, null);
+        var handed = RulesHanded(takes: true, rules, composed, workspace, repository);
+        if (file is null) return (null, null, handed);
 
         if (adapter.Wire == SessionWire.Pipe)
         {
             adapter.HandSettings(info, file);
-            return (file, null);
+            return (file, null, handed);
         }
 
-        return (file, adapter.AcpSessionMeta(file));
+        return (file, adapter.AcpSessionMeta(file), handed);
+    }
+
+    /// <summary>
+    /// The permission rules a session was handed beside its instruction (CONTEXT1, D143 point 1), kept in its instruction's
+    /// account: how many in each list, the scopes they were composed for, the hard denials and the tree guard. The rules file
+    /// goes when the run does (TRACE1), and the account keeps what it held by count past that.
+    /// </summary>
+    /// <param name="takes">Whether the session's agent takes Daoris's rules at all (<see cref="ISessionAdapter.TakesSettings"/>).</param>
+    /// <param name="handed">The rules as handed: the composition, with any read of the quest's files, reach across and job's own.</param>
+    internal static HandedSection RulesHanded(bool takes, PermissionFile file, RuleLists handed, string? workspace, string? repository)
+    {
+        const string Name = HandedSections.Rules;
+        const string Source = HandedSources.Permissions;
+        if (!takes)
+        {
+            return new HandedSection(Name, Source, "the permission rules: none handed, since its agent takes no rules from Daoris")
+            {
+                Shown = 0,
+                None = HandedNones.Agent,
+            };
+        }
+
+        var count = handed.Allow.Count + handed.Ask.Count + handed.Deny.Count;
+        var hard = PermissionRules.HardDeny(file).Count;
+        var guard = PermissionRules.GuardsTree(file);
+        if (count == 0 && hard == 0 && !guard)
+        {
+            return new HandedSection(Name, Source, "the permission rules: none handed, since none were composed for it")
+            {
+                Shown = 0,
+                None = HandedNones.Empty,
+            };
+        }
+
+        var scope = $"workspace `{RemoteTarget.Workspace(workspace)}`" + (repository is { Length: > 0 } named ? $" and repository `{named}`" : "");
+        var beside = new List<string>();
+        if (hard > 0) beside.Add(InstructionAccounting.Plural(hard, "hard denial"));
+        if (guard) beside.Add("the tree guard");
+        return new HandedSection(
+            Name, Source,
+            $"the permission rules: {count} handed beside it ({handed.Allow.Count} allow, {handed.Ask.Count} ask, {handed.Deny.Count} deny), "
+            + $"composed from this machine's rules for {scope}" + (beside.Count > 0 ? "; " + InstructionAccounting.Joined(beside) : ""))
+        {
+            Shown = count,
+            Cuts = file.Problem is null
+                ? null
+                : [new HandedCut(HandedCuts.RulesUnread, "this machine's rules file could not be read, so only the defaults were handed")],
+        };
     }
 
     /// <summary>
@@ -1215,7 +1246,7 @@ public sealed partial class Driver(
 
         var (entry, seen) = read;
         service.AccountSaid(AccountLine.Limited(sessionId, adapter.Name, selection.Profile, seen, TurnsEnded(_events, sessionId) + 1, used?.Used));
-        return (conclusion with { Note = $"{conclusion.Note} {CoolingWords.Note(entry, _harnesses.Zone)}" }, true);
+        return (conclusion.Then(" ", CoolingWords.NoteOf(entry, _harnesses.Zone)), true);
     }
 
     /// <summary>
@@ -1261,11 +1292,79 @@ public sealed partial class Driver(
         }
 
         var owner = refusing.Owner(adapter.Name);
-        var account = selection.Profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
-        var reason = $"its provider refused {account} (401). Replace the key or sign in again — "
-            + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
+        var reason = RefusedReason(owner, selection.Profile);
         _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
-        return conclusion with { Note = $"{conclusion.Note} {char.ToUpperInvariant(reason[0])}{reason[1..]}" };
+        return conclusion.Then(" ", RefusedNote(owner, selection.Profile));
+    }
+
+    /// <summary>
+    /// The creating sentence a start's record carries while it runs (D51 rule 4), each line with its code (LANG1a, the language
+    /// design §4 rows 25–36): its tree's opening; a resume once its question closed, and in which tree; or a carry-on, why,
+    /// whether on another account, in which tree, and why the person's words did not go on in their own session. Null where
+    /// a start in the root says nothing.
+    /// </summary>
+    /// <param name="resumes">The record it carries on or resumes after, or null.</param>
+    /// <param name="written">The record the person's words were written to, as the look read it, or null.</param>
+    /// <param name="elsewhere">Whether it runs on another account than the record it carries on.</param>
+    internal static Noted? StartingNote(
+        TreeOpened? opened, QuestView quest, QuestView? answered, string? resumedIn, bool carryingOn,
+        PriorSession? resumes, PriorSession? written, bool elsewhere, ContinueReason? fellBack)
+    {
+        if (opened is not null) return opened.Opening ?? Noted.From(opened.Sentence, null);
+
+        if (answered is not null)
+        {
+            var resumed = Noted.Of(
+                NoteCodes.StartedResumesAnswered, $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered",
+                ("quest", quest.Id), ("answered", answered.Id));
+            return resumedIn is null
+                ? resumed.Then(".")
+                : resumed.Then(", ", Noted.Of(
+                    NoteCodes.StartedInAskingTree, $"in the tree session `{resumes!.Session}` asked from.", ("session", resumes.Session)));
+        }
+
+        if (!carryingOn) return null;
+
+        var session = resumes!.Session;
+        (string Name, object? Value)[] facts = [("quest", quest.Id), ("session", session)];
+        var carried = resumes.Answer is not null
+            ? (written is { Parked: false, Said: not null }
+                // Words to a session that had ended (MSG1b): no answer, and an open quest is started.
+                ? quest.Status == "Open"
+                    ? Noted.Of(NoteCodes.StartedWordsOpen, $"starts `#{quest.Id}` with your words to session `{session}`", facts)
+                    : Noted.Of(NoteCodes.StartedWordsTaken, $"carries `#{quest.Id}` on with your words to session `{session}`", facts)
+                : Noted.Of(NoteCodes.StartedAnswer, $"carries `#{quest.Id}` on with your answer to session `{session}`", facts))
+            : resumes.PersonStopped
+                ? Noted.Of(NoteCodes.StartedReleased, $"carries `#{quest.Id}` on: you stopped session `{session}`, and released it", facts)
+                : Noted.Of(NoteCodes.StartedCutOff, $"carries `#{quest.Id}` on after session `{session}` was cut off", facts);
+
+        // 🔴 Which account, never (TOOL4f, D125 §3.6): the note travels, and its scrubber elides only the record's own
+        // account, so another account's name here would reach a teammate.
+        if (elsewhere) carried = carried.Then(", ", Noted.Of(NoteCodes.StartedOtherAccount, "on another account"));
+        carried = resumedIn is null ? carried.Then(".") : carried.Then(", ", Noted.Of(NoteCodes.StartedSameTree, "in the tree it worked in."));
+
+        // Why the answer did not go on in its own conversation (ANSWER1a, D131 §2).
+        return fellBack is null ? carried : carried.Then(" ", Continuations.CarriedOn(fellBack, resumes.Adapter));
+    }
+
+    /// <summary>What a refused credential says (AGT3b): the account by its owner and name, or the tool's own sign-in.</summary>
+    private static string RefusedReason(string owner, string? profile)
+    {
+        var account = profile is { } named ? $"the `{owner}` account `{named}`" : $"`{owner}`'s own sign-in";
+        return $"its provider refused {account} (401). Replace the key or sign in again — "
+            + $"on Settings, or `daoris agent` — and Daoris will start sessions on it again.";
+    }
+
+    /// <summary>
+    /// The refused credential's line on a record (LANG1a, the language design §4 rows 23–24): the English names the account,
+    /// which the cleaner cuts where the note travels; the values carry only its owner, never its name.
+    /// </summary>
+    internal static Noted RefusedNote(string owner, string? profile)
+    {
+        var reason = RefusedReason(owner, profile);
+        return Noted.Of(
+            profile is null ? NoteCodes.AccountRefusedOwn : NoteCodes.AccountRefused,
+            $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
     }
 
     /// <summary>
@@ -1303,11 +1402,11 @@ public sealed partial class Driver(
     /// <param name="working">Told once the ledger has moved the record to working, and so holds its tree (LEFT2, MSG1b).</param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
-        string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
+        string cwd, string? harnessNotice, (string? File, object? Meta, HandedSection? Handed) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
-        ResumeAsk? resume = null, string? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
+        ResumeAsk? resume = null, Noted? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
         Action? working = null)
     {
         using var process = Process.Start(info)
@@ -1331,7 +1430,13 @@ public sealed partial class Driver(
         // what the session was for, never from what the session said about itself (D46 §4).
         // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target. After it, the answers
         // to the go-aheads it asked since its start (KNOWUSE1a).
-        var prompt = resume?.Prompt ?? TargetPrompt.Compose(target);
+        var composed = resume is null ? TargetPrompt.Composed(target) : null;
+        var prompt = resume?.Prompt ?? composed!.Text;
+        // What the target was composed of, kept beside it on its event with the rules handed beside it (CONTEXT1, D143 point 1);
+        // a resume composes nothing, so its record keeps none.
+        var account = composed is null ? null
+            : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
+            : composed.Account;
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
         // intake's: it is answered through its ask.
         var keepAs = target.Ask is null ? adapter.Name : null;
@@ -1355,12 +1460,13 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said, keepAs, resume)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said, keepAs, resume, account)
             : null;
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume) : null;
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said, keepAs, resume, account) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
-        await service.AdvanceAsync(sessionId, "working", note: workingNote, transcript: transcript, ct: ct).ConfigureAwait(false);
+        await service.AdvanceAsync(
+            sessionId, "working", note: workingNote?.Note, transcript: transcript, ct: ct, parts: workingNote?.Parts).ConfigureAwait(false);
         working?.Invoke();
 
         var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
@@ -1427,15 +1533,16 @@ public sealed partial class Driver(
     /// </summary>
     /// <param name="keepAs">The adapter a quest's session keeps its harness's conversation id under (ANSWER1a); null keeps none.</param>
     /// <param name="resume">The conversation an answer continues: the record's transcript and conversation go on.</param>
+    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event.</param>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
         CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null,
-        string? keepAs = null, ResumeAsk? resume = null) =>
+        string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null) =>
         adapter.StructuredOutput() is { } mapper
             ? KeepingAsync(mapper, CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
                 resume is null ? prompt : null, ct, preamble, personSaid: personSaid,
-                opened: resume?.Opening(), append: resume is not null, said: said), sessionId, keepAs, resume)
+                opened: resume?.Opening(), append: resume is not null, said: said, account: account), sessionId, keepAs, resume)
             : null;
 
     /// <summary>
@@ -1456,21 +1563,22 @@ public sealed partial class Driver(
     }
 
     /// <summary>
-    /// A session's opening in its record: the target the driver composed, then — for a carry-on the person
-    /// answered (STANDDOWN2) — their answer, as theirs.
+    /// A session's opening in its record: the target the driver composed, with the composer's account of it beside it
+    /// (CONTEXT1), then — for a carry-on the person answered (STANDDOWN2) — their answer, as theirs.
     /// </summary>
     /// <remarks>
     /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The words travelled only inside the target, which the conversation folds, so the one thing the person
     /// said was nowhere they would look.
     /// </remarks>
-    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid) =>
+    /// <param name="account">What the target was composed of, kept on its event; null where none was composed here.</param>
+    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid, InstructionAccount? account = null) =>
         personSaid is { Length: > 0 } said
             ?
             [
-                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt },
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account },
                 new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said },
             ]
-            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt }];
+            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt, Account = account }];
 
     /// <summary>
     /// What the person told a driven session, as its record keeps it (SESS3, STEER1): theirs, under the id that pairs the
@@ -1512,12 +1620,13 @@ public sealed partial class Driver(
     /// The conversation an answer continues (ANSWER1a): resumed rather than opened, the record's transcript and
     /// conversation going on, and an agent that would not resume it told to the resume, never as a turn that failed.
     /// </param>
+    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null for a resume.</param>
     private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
         IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
-        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null)
+        Action<JsonElement>? said = null, string? keepAs = null, ResumeAsk? resume = null, InstructionAccount? account = null)
     {
         await using var file = new StreamWriter(transcript, append: resume is not null);
 
@@ -1554,7 +1663,7 @@ public sealed partial class Driver(
             }
             else
             {
-                foreach (var opening in Opening(prompt, personSaid)) Event(opening);
+                foreach (var opening in Opening(prompt, personSaid, account)) Event(opening);
             }
 
             // What this harness is doing that daoris has not been able to govern (ACP3). On the
@@ -1719,6 +1828,13 @@ public sealed partial class Driver(
         target with { Standing = config.StandingFor(target.Repository) };
 
     /// <summary>
+    /// The work's session language for the quest's repository (LANG1c, D142 point 7), read from the config this tick holds
+    /// for every start, whatever kind: the repository's, else its workspace's, else none, and never the window's.
+    /// </summary>
+    internal static SessionTarget WithLanguage(SessionTarget target, DriverConfig config, string? workspace) =>
+        target with { Language = SessionLanguages.Resolve(config, target.Repository, workspace) };
+
+    /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account
     /// against the selection's, compared as the wiring compares names, null being the tool's own home.
     /// </summary>
@@ -1848,13 +1964,18 @@ public sealed partial class Driver(
     /// The record's opening where it is not a prompt's (ANSWER1a): a resumed run's first line and the person's answer.
     /// </param>
     /// <param name="append">The transcript goes on rather than starting again: a resumed run's record is the one that parked.</param>
+    /// <param name="account">What the prompt was composed of (CONTEXT1), kept beside it on its event; null where none was.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
-        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null)
+        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
+        Action<string>? named = null, InstructionAccount? account = null)
     {
         await using var file = new StreamWriter(transcript, append);
+        // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
+        // before it ends, as the protocol door keeps `session/new`'s id.
+        var told = false;
 
         void Line(string text)
         {
@@ -1865,7 +1986,7 @@ public sealed partial class Driver(
         void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
 
         if (preamble is { Length: > 0 }) Line(preamble);
-        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid)))
+        foreach (var opening in opened ?? (prompt is null ? [] : Opening(prompt, personSaid, account)))
         {
             // The driver's own first line is the transcript's too; the person's answer is the conversation's alone.
             if (opening.Kind == SessionEventKind.Note && opening.Text is { } note) Line(note);
@@ -1880,6 +2001,20 @@ public sealed partial class Driver(
         {
             if (beside?.Take(line) == true) continue;
             var mapped = mapper.Read(line);
+            if (named is not null && !told && mapper.Conversation is { } conversation)
+            {
+                told = true;
+                try
+                {
+                    named(conversation);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    // Keeping the id enriches the session; losing it costs a resume, never the run.
+                    Line($"[the session's conversation id could not be kept: {error.Message}]");
+                }
+            }
+
             foreach (var text in mapped.Lines) Line(text);
             foreach (var e in mapped.Events)
             {

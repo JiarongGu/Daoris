@@ -426,8 +426,9 @@ describe('the session tone map', () => {
   ];
 
   // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
-  // session list's reader derives from the session's quest (D126 §2.2), and the park the person answered (ANSWER1c).
-  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered'];
+  // session list's reader derives from the session's quest (D126 §2.2), the park the person answered (ANSWER1c), and a
+  // record going on with their words (MSG1f).
+  const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on'];
 
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
@@ -499,8 +500,25 @@ describe('the session tone map', () => {
     expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: 'Use the second.' }, undefined)).toBe('answered');
     expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: null }, undefined)).toBe('awaiting-person');
     expect(shownState({ kind: 'driven', state: 'awaiting-person', answer: '' }, undefined)).toBe('awaiting-person');
-    // Once the driver takes it up the record says so, and the answer it kept is no longer what the row says.
-    expect(shownState({ kind: 'driven', state: 'working', answer: 'Use the second.' }, undefined)).toBe('working');
+    // Once the driver takes it up the record says so: going on while the words still wait for its first prompt (MSG1f).
+    expect(shownState({ kind: 'driven', state: 'working', answer: 'Use the second.' }, undefined)).toBe('going-on');
+  });
+
+  /**
+   * MSG1f (D137 §3.2): a record that went on with the person's words and whose run is opening shows *going on*, as an
+   * answered park shows *answered*: it keeps the words until its run's first prompt takes them, and then it is working.
+   * An ended record with words waiting is the reader's to say, since words it cannot take wait there too.
+   */
+  it('shows a record whose words wait for its run to open as going on', () => {
+    for (const state of ['queued', 'starting', 'working'] as const) {
+      expect(shownState({ kind: 'driven', state, answer: 'also cap it' }, undefined)).toBe('going-on');
+    }
+    expect(shownState({ kind: 'chat', state: 'working', answer: 'also cap it' }, false)).toBe('going-on');
+    expect(shownState({ kind: 'driven', state: 'working', answer: null }, undefined)).toBe('working');
+    expect(shownState({ kind: 'driven', state: 'completed', answer: 'also cap it' }, undefined)).toBe('completed');
+    expect(SESSION_TONE['going-on']).toBe('neutral');
+    expect(SESSION_DOT['going-on']).toBe('idle');
+    expect(shownKey('going-on')).toBe('work.shown.goingOn');
   });
 
   /**

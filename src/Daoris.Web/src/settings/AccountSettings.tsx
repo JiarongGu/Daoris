@@ -136,7 +136,7 @@ export function AccountSettingsForm({
         </div>
       )}
 
-      <p className="m-0 max-w-prose text-meta text-ink-faint">{t('harness.settings.hint')}</p>
+      <p className="m-0 text-meta text-ink-faint">{t('harness.settings.hint')}</p>
       <p className="m-0 flex flex-wrap items-baseline gap-1.5 text-meta text-ink-faint">
         <span>{t('harness.settings.terminal')}</span>
         <CodeText text={`daoris agent settings ${harness} --account ${account} model <model> effort <effort>`} />

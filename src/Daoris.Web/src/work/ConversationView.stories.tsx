@@ -1,11 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ConversationView } from './ConversationView';
-import { type SessionEvent, toTurns } from './conversation';
+import { type SessionEvent, settle, toTurns } from './conversation';
+import { CLAIMED } from './handedFixtures';
 
 // Every state of a conversation (D76, CONV2), built by the same fold the organism uses, so what a
 // reviewer designs against is what a session shows: a finished turn folded, a running one open, a
-// driven session's composed target, the kinds a tool call can be, a plan, the driver's own note, an
-// update this version does not know, a door that carries only text, and 中文.
+// driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
+// can be, a plan, the driver's own note, an update this version does not know, a door that carries only
+// text, and 中文.
 
 let seq = 0;
 // A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
@@ -13,7 +15,7 @@ const ev = (over: Partial<SessionEvent>): SessionEvent =>
   ({ seq: ++seq, at: new Date(Date.UTC(2026, 8, 25, 9) + seq * 1500).toISOString(), kind: 'message', ...over });
 
 const DRIVEN: SessionEvent[] = [
-  ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget" — with `quest_respond`, do the work in this repository, commit it, and close the quest.\n\nThe game needs a per-frame cap on chunk hydration.' }),
+  ev({ kind: 'user', origin: 'target', account: CLAIMED, text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget" — with `quest_respond`, do the work in this repository, commit it, and close the quest.\n\nThe game needs a per-frame cap on chunk hydration.' }),
   ev({ kind: 'plan', entries: [
     { content: 'Read the streamer', status: 'completed' },
     { content: 'Cap hydration per frame', status: 'in_progress' },
@@ -74,6 +76,31 @@ const TOLD: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', id: 'said-2', reaches: 'turn-end', text: 'And cap it at 64 KiB.' }),
 ];
 
+/** A driven session that finished, the run's last words and its end, before the person wrote to it (MSG1f). */
+const FINISHED: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'target', text: 'You are the engine repository\'s agent. Take quest #q1 — "Expose a streaming budget".' }),
+  ev({ kind: 'message', text: 'Capped hydration at **4 chunks per frame**, committed as `a1b2c3d`.' }),
+  ev({ kind: 'turn', stopReason: 'end_turn' }),
+];
+
+/** MSG1f (D137 §3.1): written to after it ended, the words waiting at its foot for the same session to go on. */
+const WRITTEN_TO: SessionEvent[] = [
+  ...FINISHED,
+  ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'Also say so in the release notes.', door: 'screen' }),
+];
+
+/** MSG1f: its tree was gone, so a carry-on took the words, and the conversation says which session, a door. */
+const WENT: SessionEvent[] = [
+  ...WRITTEN_TO,
+  ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because its tree is gone.', words: ['w1'], to: 'n3wn3w00', why: 'tree' }),
+];
+
+/** MSG1f (D137 §2.2): its quest had closed and its agent refused the resume: the words stay, with one press. */
+const CANNOT: SessionEvent[] = [
+  ...WRITTEN_TO,
+  ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1'], why: 'refused' }),
+];
+
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
@@ -94,6 +121,10 @@ export const Running: Story = { args: { turns: toTurns(RUNNING).turns, live: tru
 export const FailedAndCancelled: Story = { args: { turns: toTurns(FAILED).turns } };
 export const Stopped: Story = { args: { turns: toTurns(STOPPED).turns } };
 export const ToldWhileWorking: Story = { args: { turns: toTurns(TOLD).turns, live: true } };
+export const WrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false) } };
+export const ChatWrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false), chat: true } };
+export const WordsWentToANewSession: Story = { args: { turns: settle(toTurns(WENT).turns, false), onSession: () => {} } };
+export const WordsCannotGoOnHere: Story = { args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {} } };
 export const WithEarlierTurns: Story = { args: { turns: toTurns(DRIVEN).turns, earlier: true, onLoadEarlier: () => {} } };
 export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };

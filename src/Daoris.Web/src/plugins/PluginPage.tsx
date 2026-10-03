@@ -1,21 +1,35 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '../lib/cn';
 import { Button, Inline, PathText, Pill, Prose } from '../ui';
 import { type KitPoint, type PluginTrialResult, TrialReport } from '../settings/PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from '../settings/PluginUpdate';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { type PluginShown, pluginState, speaks } from './catalog';
+import { type PluginShown, pluginState, speaks, updateWaits } from './catalog';
+import { PluginIcon } from './PluginIcon';
 import { STATE_WORD } from './PluginList';
 
 // The main area's page header and its sections are every page's since FRAME1d (`work/ViewMain`).
 export { PageHead, PageSection };
 
-/** A warn-railed sentence a plugin's page leads with: the driver's own, verbatim, since it is content (D119 §3.2). */
+/**
+ * A warn-railed sentence a plugin's page leads with: the driver's own, verbatim, since it is content (D119 §3.2). Like
+ * every block of a page it takes the column's width (D140 §2, D141).
+ */
 export function Lead({ text }: { text: string }) {
   return (
-    <p className="m-0 mb-4 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+    <p className="m-0 mb-4 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
       <Inline text={text} />
     </p>
   );
+}
+
+/**
+ * A paragraph of the detail, in the small face, at the column's width: no paragraph keeps a measure of its own (D140 §2,
+ * from the install: a 65ch paragraph beside a full-width line wrapped one page at two edges; D141 for every page).
+ */
+export function Body({ className, children }: { className?: string; children: ReactNode }) {
+  return <p className={cn('m-0 text-small text-ink-soft', className)}>{children}</p>;
 }
 
 /** Each declared point, in the mono face, with what kind of question it is in the kit's words (D119 §3.2). */
@@ -59,6 +73,8 @@ export function NameRows({ names }: { names: string[] }) {
  *   second does and where what the plugin kept stays, beside *Remove plugin* and *Never mind*.
  * - **A refused plugin's page leads with the driver's sentence**, verbatim; it is taken nowhere, so it has nothing to try.
  * - **Health's lines, Servers and Activity wait on the host's answers** (PLUGUI1d–f): today's `PLUGINS` says none of them.
+ * - **Its icon leads the header** (D140 §2), its own or its monogram, *update available* sits beside its state where an
+ *   update waits, and its Source says why a declared icon is not drawn.
  */
 export function PluginPage({
   plugin, kitPoints, canTry = false, trial, trying = false, plan, updating = false, acting = false, asking = false,
@@ -131,9 +147,16 @@ export function PluginPage({
 
   const head = (
     <PageHead
+      icon={<PluginIcon id={plugin.id} name={plugin.name} icon={plugin.icon} size="page" dimmed={!plugin.enabled} />}
       title={plugin.name || plugin.id}
       version={plugin.version}
-      pills={word && <Pill tone={word.tone}>{t(word.key)}</Pill>}
+      pills={(
+        <>
+          {word && <Pill tone={word.tone}>{t(word.key)}</Pill>}
+          {/* An update waits on nobody, so it is never a state: the neutral pill beside it (D119 §2, D140 §2). */}
+          {updateWaits(plugin) && <Pill tone="neutral">{t('plugin.update.waits')}</Pill>}
+        </>
+      )}
       id={plugin.id}
       line={plugin.description}
       acts={acts}
@@ -180,14 +203,14 @@ export function PluginPage({
       <PageSection title={t('plugin.section.tests')}>
         <h3 className="m-0 mb-1.5 text-small font-medium text-ink-soft">{t('plugin.tests.trial')}</h3>
         {trying ? (
-          <Prose className="text-small"><Inline text={t('plugin.kit.working')} /></Prose>
+          <Body><Inline text={t('plugin.kit.working')} /></Body>
         ) : trial ? (
           <TrialReport trial={trial} />
         ) : !speaks(plugin) ? (
-          <Prose className="text-small">{t('plugin.tests.nothing')}</Prose>
+          <Body>{t('plugin.tests.nothing')}</Body>
         ) : (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <Prose className="text-small"><Inline text={t('plugin.tests.none')} /></Prose>
+            <Body className="min-w-0 flex-1 basis-64"><Inline text={t('plugin.tests.none')} /></Body>
             {tryable && <Button variant="ghost" onClick={() => onTry(plugin.id)}>{t('plugin.kit.try')}</Button>}
           </div>
         )}
@@ -195,7 +218,7 @@ export function PluginPage({
 
       <PageSection title={t('plugin.section.data')}>
         <PathText path={plugin.data} className="text-small text-ink-soft" />
-        <Prose className="mt-1 text-small">{t('plugin.data.body')}</Prose>
+        <Body className="mt-1">{t('plugin.data.body')}</Body>
       </PageSection>
 
       <PageSection title={t('plugin.section.source')}>
@@ -205,6 +228,8 @@ export function PluginPage({
             <span className="text-ink-faint">{t('plugin.field.folder')}</span>
             <PathText path={plugin.folder} className="text-small" />
           </span>
+          {/* Its author's to fix, and never a refusal (D140 §3.1): the reader's sentence, whole, beside its monogram. */}
+          {plugin.iconProblem && <span><Inline text={t('plugin.icon.problem', { problem: plugin.iconProblem })} /></span>}
         </div>
       </PageSection>
 

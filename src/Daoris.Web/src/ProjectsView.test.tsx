@@ -177,6 +177,36 @@ describe('the shell-attached platform', () => {
   });
 
   /**
+   * LANG1c (D142 point 7): a repository's session language on its page, beside its standing answer, as the driver's lines
+   * resolve it and named from its table; set and cleared over the same file the terminal edits, on DAORIS.DRIVER. A shell
+   * older than it answers no table, and nothing is offered.
+   */
+  it("shows a repository's session language on its page, and sets it on DAORIS.DRIVER", async () => {
+    const table = [{ code: 'en', name: 'English' }, { code: 'zh', name: 'Simplified Chinese (简体中文)' }];
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'LINES'
+      ? { lines: [], languages: [{ repository: 'engine', workspace: 'aurora', language: 'zh', name: 'Simplified Chinese (简体中文)', source: 'workspace' }] }
+      : { ...DRIVER_STATE, workspaceLanguages: [{ workspace: 'aurora', language: 'zh' }], languageTable: table }));
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+
+    expect(await within(page).findByText('Its sessions write to you in Simplified Chinese (简体中文), from the workspace aurora.')).toBeInTheDocument();
+    const field = within(page).getByRole('combobox', { name: 'The session language for engine' });
+    field.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'English' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANGUAGE', { payload: { repository: 'engine', language: 'en' } });
+  });
+
+  it('offers no session language on a shell older than it', async () => {
+    invoke.mockImplementation(async () => DRIVER_STATE);
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+
+    await within(page).findByLabelText('Drive on this machine');
+    expect(within(page).queryByRole('combobox', { name: 'The session language for engine' })).not.toBeInTheDocument();
+  });
+
+  /**
    * The rail's words for a repository's standing on this machine (RepositoryGroup), on its row and its page's
    * head: held outranks *drives here*, and a registration with no checkout here says so.
    */
@@ -537,9 +567,9 @@ describe('the shell-attached registry management', () => {
     const init = within(page).getByText(code('daoris init'));
     expect(init.tagName).toBe('CODE');
     expect(init.parentElement).not.toHaveClass('font-mono');
-    // Prose keeps its measure once the column follows the window (UX5 U59): uncapped, the sentence
-    // ran about two hundred characters on one line.
-    expect(init.parentElement).toHaveClass('max-w-prose');
+    // It wraps at the page's edge with every block of it (D141): a 65ch sentence beside blocks that ran
+    // the pane gave the page two edges.
+    expect(init.parentElement!.className).not.toMatch(/\bmax-w-/);
   });
 
   /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */

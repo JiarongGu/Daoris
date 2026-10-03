@@ -31,12 +31,25 @@ describe("Quests' groups", () => {
 
   it('groups by where each quest is in its life, open first', () => {
     expect(questGroups(rows, false).map(({ group, quests }) => [group, quests.map((q) => q.id)])).toEqual([
-      ['open', ['o1']], ['progress', ['t1']],
+      ['held', []], ['open', ['o1']], ['progress', ['t1']],
     ]);
   });
 
   it('adds the closed group, done and declined, only where closed quests are shown', () => {
     expect(questGroups(rows, true).at(-1)).toEqual({ group: 'closed', quests: [rows[2], rows[3]] });
+  });
+
+  /**
+   * DRIFT1d2 (D133 §4): a done a departure holds is outstanding, and the service lists it without closed ones, so the list
+   * shows it first, awaiting the person's yes, whether closed quests are shown or not, and never twice.
+   */
+  it('puts a quest a departure holds first, awaiting the person, with closed quests shown or not', () => {
+    const held = quest({ id: 'h1', status: 'Done', held: true });
+
+    expect(questGroups([...rows, held], false)[0]).toEqual({ group: 'held', quests: [held] });
+    const shown = questGroups([...rows, held], true);
+    expect(shown[0]).toEqual({ group: 'held', quests: [held] });
+    expect(shown.at(-1)!.quests.map((q) => q.id)).toEqual(['d1', 'x1']);
   });
 });
 

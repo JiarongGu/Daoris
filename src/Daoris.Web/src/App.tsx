@@ -624,9 +624,10 @@ export function App() {
   };
   const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
-      // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
-      // was 72rem, and a maximized window left every view a third empty. Prose keeps its own measure
-      // (`Prose`), and a form its own size. The main area is the container a view's split follows (§3b).
+      // No cap: content follows the window (UX5 U59), as the session's centre does since U16. It was 72rem,
+      // and a maximized window left every view a third empty. Every block wraps at the column's edge, prose
+      // included (D141), and a form keeps its own size. The main area is the container a view's split
+      // follows (§3b).
       <ViewMain>
         {view === 'overview' && (
           <OverviewView

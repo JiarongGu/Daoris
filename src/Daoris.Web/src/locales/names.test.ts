@@ -353,13 +353,13 @@ describe('the real glossary and catalogues', () => {
     expect([byTerm.get('turn on')?.en, byTerm.get('turn on')?.zh]).toEqual(['turn on', '启用']);
     expect([byTerm.get('turn off')?.en, byTerm.get('turn off')?.zh]).toEqual(['turn off', '停用']);
     expect(byTerm.get('turn off')?.avoid.zh).toContain('关闭');
+    // The list's On and Off headings retired with the catalogue (PLUGUI2, D140 §5): the state is each row's word.
     const named: Record<string, [string, string]> = {
       'plugin.enable': ['Turn on', '启用'],
       'plugin.disable': ['Turn off', '停用'],
       'plugin.off': ['off', '已停用'],
-      'plugin.group.on': ['On ({{count}})', '已启用（{{count}}）'],
-      'plugin.group.off': ['Off ({{count}})', '已停用（{{count}}）'],
     };
+    expect(en['plugin.group.on'] ?? zh['plugin.group.off']).toBeUndefined();
     for (const [key, [english, chinese]] of Object.entries(named)) expect([en[key], zh[key]], key).toEqual([english, chinese]);
     expect(zh['plugin.enabled']).toMatch(/^\{\{id\}\} 已启用。/);
     expect(zh['plugin.disabled']).toMatch(/^\{\{id\}\} 已停用。/);

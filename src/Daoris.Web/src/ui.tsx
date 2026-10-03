@@ -221,6 +221,8 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'awaiting-reply': 'neutral',
   // Answered, it waits on the driver's next look, as a queued session does, and no longer on the person (ANSWER1c).
   'answered': 'neutral',
+  // Going on, its run is opening with the person's words, and nothing waits on the person (MSG1f): answered's twin.
+  'going-on': 'neutral',
 };
 
 /**
@@ -228,13 +230,14 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * whose turn has ended, waiting for the person's next message (UX5 U17); the two words the session
  * list's reader derives from the session's quest (D126 §2.2): **parked**, the last session here of a quest
  * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
- * question asked of another repository; and **answered**, a park the person answered, which the same session
- * goes on from at the driver's next look (ANSWER1c, D131). None is a record state: no new session state (D126 §2).
+ * question asked of another repository; **answered**, a park the person answered, which the same session
+ * goes on from at the driver's next look (ANSWER1c, D131); and **going-on**, a record going on with the person's
+ * words, its run opening (MSG1f, D137 §3.2). None is a record state: no new session state (D126 §2).
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
  */
-export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered';
+export type ShownState = SessionState | 'idle' | 'parked' | 'awaiting-reply' | 'answered' | 'going-on';
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
@@ -244,6 +247,7 @@ export function shownKey(shown: ShownState): string {
   if (shown === 'parked') return 'work.shown.parked';
   if (shown === 'awaiting-reply') return 'work.shown.awaitingReply';
   if (shown === 'answered') return 'work.shown.answered';
+  if (shown === 'going-on') return 'work.shown.goingOn';
   return `sessionState.${shown}`;
 }
 
@@ -263,11 +267,16 @@ export function answeredPark(session: { state: SessionState; answer?: string | n
  * driver says no turn is in flight, and working while one is; a turn the driver has not answered for
  * is the record's own word, never a guess. Driven work is one long turn, so it is never idle. A park the
  * person answered is **answered** (ANSWER1c), read from its own record, as the list's reader reads it.
+ *
+ * A live record that still keeps the person's words is **going on** (MSG1f, D137 §3.2): it went on with them, and
+ * its run's first prompt has not taken them yet. An ended record with words waiting is the list's reader's to say,
+ * since words it cannot take stay waiting there too, and only the reader knows which.
  */
 export function shownState(
   session: { kind?: 'driven' | 'chat'; state: SessionState; answer?: string | null }, taking: boolean | undefined,
 ): ShownState {
   if (answeredPark(session)) return 'answered';
+  if (session.state !== 'awaiting-person' && SESSION_ACTIVE.has(session.state) && session.answer) return 'going-on';
   return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
 }
 
@@ -308,6 +317,8 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'awaiting-reply': 'idle',
   // Answered, nothing runs yet and nothing waits on the person: quiet until the driver's next look (ANSWER1c).
   'answered': 'idle',
+  // Going on, its run is opening and no turn runs yet (MSG1f): quiet until its first prompt goes.
+  'going-on': 'idle',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */
@@ -396,11 +407,16 @@ export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_
  * The first character is taken whole, by code point, so a 中文 name shows its first character rather than
  * half of one.
  */
-export function StripMark({ label, initialOf, tone, dimmed = false, current = false, onPress }: {
+export function StripMark({ label, initialOf, face, tone, dimmed = false, current = false, onPress }: {
   /** Its accessible name and its tip: what it is and how it stands. */
   label: string;
   /** The name whose first character the strip shows. */
   initialOf: string;
+  /**
+   * What it is drawn as instead of its initial, decoration its label names: a plugin's icon (PLUGUI2, D140 §2). The
+   * face is drawn faint itself where it is dimmed.
+   */
+  face?: ReactNode;
   /** Its mark; absent, it wears none, as a plugin that is simply on does (D119). */
   tone?: keyof typeof DOT_TONE;
   /** Its initial drawn faint: a plugin switched off (D119). */
@@ -424,9 +440,11 @@ export function StripMark({ label, initialOf, tone, dimmed = false, current = fa
         >
           {/* The same 2px accent rail the activity bar gives its current place. */}
           {current && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />}
-          <span aria-hidden className={cn('text-small font-semibold uppercase', dimmed && 'text-ink-faint')}>
-            {Array.from(initialOf)[0] ?? '?'}
-          </span>
+          {face ?? (
+            <span aria-hidden className={cn('text-small font-semibold uppercase', dimmed && 'text-ink-faint')}>
+              {Array.from(initialOf)[0] ?? '?'}
+            </span>
+          )}
           {tone && <DotMark tone={tone} className="absolute right-1 top-1" />}
         </button>
       </Tip>
@@ -610,23 +628,21 @@ export function PageHeader({ title, description, action }: {
 }
 
 /**
- * Explanatory text, at a measure a person can actually read.
+ * Explanatory text: the console explaining itself, in the secondary ink.
  *
  * @remarks
- * **The column follows the window and prose does not.** Cards, tiles and tables take the column's
- * whole width (UX5 U59: it was capped at 72rem, and a maximized window left every view a third
- * empty) — but a paragraph inheriting it ran to about **190 characters a line** even under
- * the old cap, roughly triple the 45–75 the eye tracks without losing its place. Measured in the
- * real window before this existed: every sentence on the Machine view was one of those lines.
+ * **It wraps at the column's edge, as every block of a page does** (D141, LAYOUT11). It carried
+ * Tailwind's prose width, 65ch, from UX5's first pass, when a paragraph in a column nothing stood
+ * beside ran to about 190 characters a line. A measure per paragraph gave every page two edges: on
+ * the install a quest's title ran the pane while its body stopped at 456 px, and in 中文 the 65
+ * Latin digits held about 32 glyphs. The page's column (`ViewMain`) is the one place a line's length
+ * is set, and it sets none; the person sizes the pane with the list's edge and the side bar.
  *
- * `max-w-prose` is 65ch and font-relative, so it stays right if the scale moves again — which is
- * exactly the property the hardcoded type sizes did not have (D56).
- *
- * This is for the console EXPLAINING itself. It is not for data: a quest's body, a knowledge entry
- * and a session's note are content, and content is shown as it is.
+ * A quest's body, a knowledge entry and a session's note are content, shown as they are, and they
+ * wrap at the same edge.
  */
 export function Prose({ className, children }: { className?: string; children: ReactNode }) {
-  return <p className={cn('m-0 max-w-prose text-body text-ink-soft', className)}>{children}</p>;
+  return <p className={cn('m-0 text-body text-ink-soft', className)}>{children}</p>;
 }
 
 /**
@@ -1210,7 +1226,7 @@ export function CountBadge({ count, tone = 'accent' }: {
  * 🔴 The machine's settings were a long list, and the screenshot said what "long" meant: five
  * cards, each opening with a four-line paragraph, the first control 580px below the title at the
  * D56 scale and the second a full screen down — a settings page laid out as an essay, with the
- * right 60% of every card empty because the prose measure is 65ch and the column was 72rem. A setting
+ * right 60% of every card empty because the prose measure was 65ch and the column was 72rem. A setting
  * is a row, the way every settings surface a person already knows lays one out: the label leads, the
  * hint is one line, the control sits where the eye expects it. The paragraph that motivated the
  * setting is still there, on the info glyph, for the person who asks why.
@@ -1256,7 +1272,7 @@ export function SettingRow({ label, hint, why, control, children }: {
             {why && <WhyGlyph why={why} />}
           </div>
           {hint && (
-            <div className="mt-0.5 max-w-prose text-small text-ink-faint">
+            <div className="mt-0.5 text-small text-ink-faint">
               {typeof hint === 'string' ? <Inline text={hint} /> : hint}
             </div>
           )}

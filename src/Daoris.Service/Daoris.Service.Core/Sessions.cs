@@ -188,6 +188,14 @@ public sealed record Session(
     /// </summary>
     public bool Pushed { get; init; }
 
+    /// <summary>
+    /// The note's parts, each line's code and values beside its English (LANG1a, D142 point 2; the language design §3): a JSON
+    /// list as <see cref="Knowledge.NoteParts"/> keeps it. Null for a record from before parts, and for a note written without
+    /// them, whose note then stands as kept.
+    /// </summary>
+    /// <remarks>It travels with the note, every string in it cleaned as the note is (<see cref="Knowledge.NoteParts.ForAnotherMachine"/>).</remarks>
+    public string? NoteParts { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
@@ -347,6 +355,10 @@ public sealed class SessionStore
         // TOOL4c (D125 §5.2): a failure an account's limit made. A record from before it says nothing, and
         // nothing is the old reading: a failure like any other. `limited`, since LIMIT is SQL's own word.
         await SchemaColumns.EnsureAsync(_connection, "sessions", "limited", "limited INTEGER NULL", ct).ConfigureAwait(false);
+
+        // LANG1a (D142 point 2): the note's parts, a JSON list beside it. A record from before says none, and its note stands
+        // as kept: nothing re-reads the English, and nothing rewrites it (the language design §6).
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "note_parts", "note_parts TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _connection.CreateCommand())
         {
@@ -520,10 +532,14 @@ public sealed class SessionStore
     /// That this move takes an ended record out of its ended state (MSG1a, D137 §2.3), so what ended it — a stop that was
     /// not the person's, a limit's failure — says nothing of the run that follows: both start unsaid again.
     /// </param>
+    /// <param name="noteParts">
+    /// The note's parts, written with the note (LANG1a): a note written without them clears the record's, so an older
+    /// driver's note never sits beside stale parts; a move that writes no note keeps both.
+    /// </param>
     public async Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearSaid = false, bool forgive = false)
+        bool clearSaid = false, bool forgive = false, string? noteParts = null)
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
@@ -532,6 +548,7 @@ public sealed class SessionStore
         {
             State = state,
             Note = note ?? session.Note,
+            NoteParts = note is null ? session.NoteParts : noteParts,
             Evidence = evidence ?? session.Evidence,
             Transcript = transcript ?? session.Transcript,
             Updated = now,
@@ -543,11 +560,12 @@ public sealed class SessionStore
         // The words are cleared or left alone, never rewritten from what was read: a move is about the state.
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            UPDATE sessions SET state = $state, note = $note, evidence = $evidence,
+            UPDATE sessions SET state = $state, note = $note, note_parts = $noteParts, evidence = $evidence,
               transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
               said = CASE WHEN $clear THEN NULL ELSE said END, answer = CASE WHEN $clear THEN NULL ELSE answer END,
               revision = {NextRevision} WHERE id = $id
             """;
+        command.Parameters.AddWithValue("$noteParts", (object?)moved.NoteParts ?? DBNull.Value);
         command.Parameters.AddWithValue("$clear", clearSaid ? 1 : 0);
         command.Parameters.AddWithValue("$interrupted", moved.Interrupted ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$limited", moved.Limit ? 1 : (object)DBNull.Value);
@@ -572,15 +590,17 @@ public sealed class SessionStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO sessions (id, quest, repository, adapter, state, note, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, revision)
-            VALUES ($id, $quest, $repository, $adapter, $state, $note, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, {NextRevision})
+            INSERT INTO sessions (id, quest, repository, adapter, state, note, note_parts, evidence, transcript, created, updated, workspace, kind, harness_version, profile, tree, origin, limited, revision)
+            VALUES ($id, $quest, $repository, $adapter, $state, $note, $noteParts, $evidence, NULL, $created, $updated, $workspace, $kind, $harnessVersion, NULL, NULL, $origin, $limited, {NextRevision})
             ON CONFLICT (id) DO UPDATE SET
-              state = $state, note = $note, evidence = $evidence, updated = $updated, workspace = $workspace,
+              state = $state, note = $note, note_parts = $noteParts, evidence = $evidence, updated = $updated, workspace = $workspace,
               kind = $kind, harness_version = $harnessVersion, origin = $origin, limited = $limited,
               revision = {NextRevision}
             """;
         // A limit names no account (TOOL4c), so it is copied like the state beside it.
         command.Parameters.AddWithValue("$limited", record.Limit ? 1 : (object)DBNull.Value);
+        // The note's parts travel with the note, already cleaned where they left their machine (LANG1a).
+        command.Parameters.AddWithValue("$noteParts", (object?)record.NoteParts ?? DBNull.Value);
         // Whose record: named, or read from the id a mirror is always keyed by — never empty, because
         // a mirrored row with no origin would count as this machine's own and hold its trees.
         command.Parameters.AddWithValue(
@@ -873,6 +893,7 @@ public sealed class SessionStore
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
         Pushed = !reader.IsDBNull(reader.GetOrdinal("pushed")) && reader.GetInt64(reader.GetOrdinal("pushed")) != 0,
+        NoteParts = reader.IsDBNull(reader.GetOrdinal("note_parts")) ? null : reader.GetString(reader.GetOrdinal("note_parts")),
     };
 
     /// <summary>
@@ -922,7 +943,9 @@ public sealed class SessionStore
     /// <para><b>A record from before the list</b> holds its answer in the old column: it becomes the list's first
     /// word in the same statement, and the old column is emptied, so the record's words have one home from here.</para>
     /// </remarks>
-    public async Task<Session?> KeepSaidAsync(string id, SaidWord word, string? note = null, CancellationToken ct = default)
+    /// <param name="noteParts">The note's parts beside it (LANG1a), written with it; a note without them clears the record's.</param>
+    public async Task<Session?> KeepSaidAsync(
+        string id, SaidWord word, string? note = null, CancellationToken ct = default, string? noteParts = null)
     {
         await using (var command = _connection.CreateCommand())
         {
@@ -933,7 +956,7 @@ public sealed class SessionStore
                       'id', '{AnswerWordId}', 'text', answer, 'at', updated, 'files', json('[]'))) END),
                     '$[#]', json($word)),
                   answer = NULL
-                  {(note is null ? "" : $", note = $note, updated = $updated, revision = {NextRevision}")}
+                  {(note is null ? "" : $", note = $note, note_parts = $noteParts, updated = $updated, revision = {NextRevision}")}
                 WHERE id = $id AND origin IS NULL
                 """;
             command.Parameters.AddWithValue("$id", id);
@@ -941,6 +964,7 @@ public sealed class SessionStore
             if (note is not null)
             {
                 command.Parameters.AddWithValue("$note", note);
+                command.Parameters.AddWithValue("$noteParts", (object?)noteParts ?? DBNull.Value);
                 command.Parameters.AddWithValue("$updated", word.At.ToString("O"));
             }
 

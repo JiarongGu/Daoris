@@ -88,7 +88,7 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
               {t('setup.ask.button')}
             </Button>
           )
-          : <Prose className="max-w-[28ch] text-small text-ink-faint">{t('setup.askNeedsAgent')}</Prose>)}
+          : <Prose className="text-small text-ink-faint">{t('setup.askNeedsAgent')}</Prose>)}
       </div>
 
       {reading && <Prose className="mt-4 text-small text-ink-faint">{t('setup.reading')}</Prose>}
@@ -112,7 +112,7 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
                 <span className="font-medium text-ink">{title}</span>
                 {step.state !== 'desktop' && <Pill tone={TONE[step.state]}>{t(`setup.state.${step.state}`)}</Pill>}
               </div>
-              <p className="m-0 mt-0.5 max-w-prose text-small text-ink-faint">{t(`setup.step.${step.id}.when`)}</p>
+              <p className="m-0 mt-0.5 text-small text-ink-faint">{t(`setup.step.${step.id}.when`)}</p>
               {/* Not a nested list: a step is one item, and its commands are part of what it says. */}
               <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                 {step.commands.map((command) => (

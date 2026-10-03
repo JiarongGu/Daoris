@@ -29,6 +29,15 @@ export type PluginShown = {
   data: string;
   /** Where it came from (D103). An older shell sends none. */
   source?: PluginSourceShown;
+  /**
+   * Whether an update waits (D119 §2, PLUGUI1e): `waits` when its source declares something different, `current` when
+   * the same, null with no record that reads. An older shell sends none.
+   */
+  update?: 'waits' | 'current' | null;
+  /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none from a shell older than PLUGUI2b. */
+  icon?: string | null;
+  /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
+  iconProblem?: string | null;
 };
 
 /** One of Daoris's own plugins the install carries (D103), with what its manifest declares and its README needs. */
@@ -44,6 +53,9 @@ export type OfferShown = {
   servers: string[];
   needs: string[];
   installed: boolean;
+  /** Its declared icon as its bytes (D140 §3.2); none from a shell older than PLUGUI2b. */
+  icon?: string | null;
+  iconProblem?: string | null;
 };
 
 /**
@@ -63,22 +75,23 @@ export function pluginState(plugin: Pick<PluginShown, 'enabled' | 'problem' | 'r
 /** Whether a plugin speaks at a point the driver asks, and so has something to try. A refused one is taken nowhere. */
 export const speaks = (plugin: Pick<PluginShown, 'problem' | 'points'>): boolean => !plugin.problem && plugin.points.length > 0;
 
-/** The list's groups (D119 §3.1), each in the person's reading order. */
+/**
+ * The catalogue's sections (D140 §2), each in the person's reading order. *Available*, what a package source offers,
+ * joins them with PLUGDIST1e.
+ */
 export type PluginGroups = {
-  /** Waiting on you: refused while on. Failing joins it with PLUGUI1f. */
-  waiting: PluginShown[];
-  /** On: running, or simply on. */
-  on: PluginShown[];
-  off: PluginShown[];
+  /** Every plugin on this machine: waiting on you (refused while on; failing with PLUGUI1f), then on, then off. */
+  installed: PluginShown[];
   /** Daoris's own plugins this machine has not installed. */
   offers: OfferShown[];
 };
 
 /**
- * The installed plugins by what they need from the person, then the offers not installed. **The order is what the
- * person acts on** (D119 §3.1): what needs them, what is working, what they turned off, what they could add.
+ * The installed plugins, then the offers not installed. **Within the installed, the order is what the person acts on**
+ * (D119 §3.1, kept by D140 §2): what needs them, what is working, what they turned off. The state is the row's word, not
+ * a heading.
  *
- * Within a group, by name as the person reads it (case and accents aside, in their language), then by id, since two
+ * Within a standing, by name as the person reads it (case and accents aside, in their language), then by id, since two
  * plugins may wear one name.
  */
 export function pluginGroups(plugins: readonly PluginShown[], offers: readonly OfferShown[], locale?: string): PluginGroups {
@@ -88,15 +101,28 @@ export function pluginGroups(plugins: readonly PluginShown[], offers: readonly O
   const inState = (...states: PluginState[]) => byName(plugins.filter((plugin) => states.includes(pluginState(plugin))));
 
   return {
-    waiting: inState('refused'),
-    on: inState('running', 'on'),
-    off: inState('off'),
+    installed: [...inState('refused'), ...inState('running', 'on'), ...inState('off')],
     offers: byName(offers.filter((offer) => !offer.installed)),
   };
 }
 
 /** Every installed plugin in the list's order, as the strip marks them: offers are not on the strip. */
-export const stripOrder = (groups: PluginGroups): PluginShown[] => [...groups.waiting, ...groups.on, ...groups.off];
+export const stripOrder = (groups: PluginGroups): PluginShown[] => groups.installed;
+
+/** The word for where a plugin came from, on its row's meta line (D140 §2), by the kinds the driver answers. */
+const SOURCE_WORD: Record<PluginSourceShown['kind'], string> = {
+  offer: 'plugin.from.offer',
+  folder: 'plugin.from.folder',
+  none: 'plugin.from.none',
+  unread: 'plugin.from.unread',
+};
+
+/** Its source's word's key, or null where the shell sent no record or a kind this page does not know: never a guess. */
+export const sourceWord = (source: PluginSourceShown | undefined): string | null =>
+  (source && Object.hasOwn(SOURCE_WORD, source.kind) ? SOURCE_WORD[source.kind] : null);
+
+/** An update waits: its source declares something different (D119 §2). Not a state, since it waits on nobody. */
+export const updateWaits = (plugin: Pick<PluginShown, 'update'>): boolean => plugin.update === 'waits';
 
 const OFFER = 'offer:';
 

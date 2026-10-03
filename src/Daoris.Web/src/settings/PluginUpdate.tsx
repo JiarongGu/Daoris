@@ -64,7 +64,7 @@ export function PluginUpdatePlan({ plan, busy = false, onApply, onCancel }: {
   return (
     <section aria-label={t('plugin.update.title')} className="rounded-control border border-line bg-page/60 px-3.5 py-2.5">
       {plan.refusal ? (
-        <p className="m-0 max-w-prose border-l-[3px] border-warn pl-3 text-body text-ink-soft"><Inline text={plan.refusal} /></p>
+        <p className="m-0 border-l-[3px] border-warn pl-3 text-body text-ink-soft"><Inline text={plan.refusal} /></p>
       ) : plan.changes.length === 0 ? (
         <p className="m-0 text-small text-ink-soft">{t('plugin.update.same')}</p>
       ) : (

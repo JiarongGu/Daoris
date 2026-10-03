@@ -62,10 +62,23 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// not yet accepted. The service lists it among the open, so a quest waiting on it waits. Absent is false.
     /// </summary>
     public bool Held { get; init; }
+
+    /// <summary>
+    /// How its done answered each requirement (DRIFT1d, D133 §4), by number, as the service answers them: what an accept
+    /// shows the person before their yes (DRIFT1d2). Empty for a quest no done answered, and from a host before answers.
+    /// </summary>
+    public IReadOnlyList<QuestAnswerView> Answers { get; init; } = [];
 }
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
 public sealed record QuestRequirementView(string Quote, string Check);
+
+/// <summary>
+/// How a done answered one requirement (DRIFT1d), as the service answers it: its number, and <paramref name="Met"/> with
+/// how its check was met, or <paramref name="Departed"/> with the reason and <paramref name="Quote"/>, the person's words
+/// it turns on.
+/// </summary>
+public sealed record QuestAnswerView(int Requirement, string? Met, string? Departed, string? Quote);
 
 /// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>
 /// <param name="Session">Its record's id.</param>
@@ -124,6 +137,21 @@ public sealed record PriorSession(
 
     /// <summary>The ask an intake answers (D65 §1b), or null for every other record: an intake never goes on (D137 §2.2).</summary>
     public string? Ask { get; init; }
+
+    /// <summary>
+    /// <c>driven</c> or <c>chat</c>, as the record says: an ended chat the person wrote to goes on through the chat runner
+    /// (MSG1c), never the planner, which plans a quest's sessions.
+    /// </summary>
+    public string Kind { get; init; } = "driven";
+
+    /// <summary>
+    /// Its note's lines, each by its code with its values (LANG1a, D142 point 2): what a line the driver adds to its note carries
+    /// on. Null for a record from before parts, whose note is then carried whole.
+    /// </summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
+    /// <summary>Its note as composed: its parts, or its English whole as one part from before them.</summary>
+    public Noted AsNoted() => Noted.From(Note, NoteParts);
 
     /// <summary>Waiting on the person (D83): <c>awaiting-person</c>, the one state a record goes on from without leaving an ended one.</summary>
     public bool Parked => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase);
@@ -217,6 +245,9 @@ public sealed record SessionView(
     /// started it (DEV3), so the next look can find its quest still open, and must not start it again.
     /// </summary>
     public string? Quest { get; init; }
+
+    /// <summary>Its note's lines by code (LANG1a), handed on wherever its note is; null for a record from before parts.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
 }
 
 /// <summary>

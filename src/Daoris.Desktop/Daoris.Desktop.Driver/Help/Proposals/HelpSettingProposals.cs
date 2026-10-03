@@ -27,12 +27,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpProposalBox.Doors</c>).</summary>
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
-    /// <c>retry</c>, once the facts carried the parked quests.
+    /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it.
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "intake", "helper", "strikes",
-        "retry", "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "intake", "helper",
+        "strikes", "retry", "timeout", "notify", "cap", "adapter",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -149,6 +149,39 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                         : $"Keep a standing answer for `{target}`, handed to every session in `{target}` beneath its quest: \"{says}\"",
                     $"daoris driver standing {target} {(says is null ? "--clear" : $"\"{says.Replace("\"", "\\\"", StringComparison.Ordinal)}\"")}",
                     c => c.WithStanding(target!, says, at));
+                break;
+            }
+            case "language":
+            {
+                // LANG1c (D142 point 7): the work's session language, for a repository or a workspace, judged by the closed
+                // table as `SET_LANGUAGE` and `daoris driver language` judge it. A door since LANG1c2, whose service writer
+                // checks only the shape; the registry and the workspace are judged here.
+                var circle = workspace is { Length: > 0 };
+                if (circle == target is { Length: > 0 })
+                {
+                    return Refused("a session language is set for a repository or a workspace — name exactly one.", "", "");
+                }
+
+                var code = value == "--clear" ? null : SessionLanguages.Code(value);
+                if (value != "--clear" && code is null)
+                {
+                    return Refused(value.Length == 0
+                        ? "`language` names a language, `en` or `zh`, or `--clear` — e.g. `daoris driver language engine zh`."
+                        : SessionLanguages.Refusal(value), "", "");
+                }
+
+                var language = code is null ? null : SessionLanguages.NameOf(code);
+                planned = (language is null
+                        ? circle
+                            ? $"Clear workspace `{workspace}`'s session language: each repository there keeps its own, else none."
+                            : $"Clear `{target}`'s session language: it takes its workspace's again, else none."
+                        : (circle
+                            ? $"Sessions in each repository of workspace `{workspace}` that sets none of its own write to you in {language}"
+                            : $"Sessions in `{target}` write to you in {language}")
+                          + ": a question to you, a closing note, a decline's reason, their last words. The window's own language "
+                          + "stays yours, in Settings → Appearance.",
+                    $"daoris driver language {scope} {code ?? "--clear"}",
+                    c => circle ? c.WithWorkspaceLanguage(workspace!, code) : c.WithLanguage(target!, code));
                 break;
             }
             case "intake" or "helper":

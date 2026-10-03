@@ -93,5 +93,11 @@
   "projects.standing.save": "保存",
   "projects.standing.placeholder": "允许写入开发环境；在本地对开发环境测试；生产环境须经你同意",
   "projects.standing.tooLong": "{{count}} / {{most}} 个字符：长期答复最多 {{most}} 个字符。",
-  "projects.standing.hint": "你的原话会附在这个仓库每个会话的委托下方。只保存在本机，绝不写入仓库。"
+  "projects.standing.hint": "你的原话会附在这个仓库每个会话的委托下方。只保存在本机，绝不写入仓库。",
+  "projects.language.label": "会话语言",
+  "projects.language.field": "{{repository}} 的会话语言",
+  "projects.language.from.repository": "它的会话用 {{name}} 写给你，为这个仓库设定。",
+  "projects.language.from.workspace": "它的会话用 {{name}} 写给你，沿用工作区 {{workspace}}。",
+  "projects.language.from.none": "这里和它的工作区都没有设定：不要求它的会话使用任何语言。",
+  "projects.language.hint": "会话写给你的内容：提问、关闭说明、谢绝理由和最后的话；代码和引用的内容保持原样。窗口自身的语言在“设置 → 外观”中，两者互不影响。"
 }

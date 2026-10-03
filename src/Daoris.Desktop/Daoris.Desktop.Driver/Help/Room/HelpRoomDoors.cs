@@ -82,6 +82,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
             "Repositories → the repository's page → Standing answer", "`daoris driver standing <repository> \"…\"|--clear`"),
+        // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris proposes it as the `setting`
+        // kind's `language` door since LANG1c2.
+        ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
+            + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
+            "Repositories → the repository's page → Session language; Settings → Workspace → Session language",
+            "`daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
         ("sign an agent in, or add an account", "Settings → Agents", "`daoris agent login <agent>`"),
         // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
         // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).
@@ -121,10 +127,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`, `daoris-driver quest abandon <id> [--reason \"…\" --yes]`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
-        // DRIFT1d: the person's yes to a done's departure, the terminal's door; the quest page's yes and Ask Daoris's are
-        // owed meanwhile (HelpCoverageTests' AcceptDoor).
+        // DRIFT1d: the person's yes to a done's departure, the terminal's door; DRIFT1d2 gave it the quest page's yes and
+        // Ask Daoris's `accept` kind.
         ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
-            + "waiting on it", "(no screen yet)", "`daoris-driver quest accept <id>`"),
+            + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris-driver quest accept <id>`"),
         // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
         // Daoris's own (d) and updates one from where it came from (c).
         ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",
@@ -138,6 +144,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`daoris browser favorite add|remove <address>`"),
         ("start a task", "Quests → Ask", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
+        // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
+        ("say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when "
+            + "its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours)",
+            "Sessions → the session's page → its box", "`daoris-driver sessions say <id> \"…\" [--file <path>]…`"),
         // KNOWUSE1a: a go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris
         // never answers one: the production acts stay the person's (D135 §2).
         ("answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on "

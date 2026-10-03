@@ -7,6 +7,7 @@ import '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
+import { cappedBlocks } from '../test/measure';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
 
@@ -47,13 +48,68 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('1.2.0')).toBeInTheDocument();
     expect(within(header()).getByText('acme.gate')).toBeInTheDocument();
     const line = within(header()).getByText('Holds quests overnight.');
-    // NAME2: its description is content, read whole at the reading measure; the install showed it cut to one
-    // line with an ellipsis.
+    // NAME2: its description is content, read whole; the install showed it cut to one line with an ellipsis. D140 §2:
+    // it takes the pane's width, as every block of every page does (D141).
     expect(line).not.toHaveClass('truncate');
-    expect(line).toHaveClass('max-w-prose');
+    expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
     // PLUG10 (P9), as D119 §2 gives it: running is the quiet neutral, never done's green.
     expect(within(header()).getByText('running').className).toMatch(/\bborder-line\b/);
+  });
+
+  /** D140 §2: the header leads with the plugin's icon at 48 px, its own or its monogram, beside the title. */
+  it('leads its header with its icon: its own where handed, its monogram otherwise', () => {
+    const svg = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"/>')}`;
+    const { unmount } = page({ plugin: { ...PLUGIN, icon: svg } });
+    expect(header().querySelector('img')!.getAttribute('src')).toBe(svg);
+    expect(header().querySelector('img')!.className).toContain('size-12');
+    unmount();
+
+    page();
+    const monogram = header().querySelector('[data-hue]')!;
+    expect(monogram.textContent).toBe('A');
+    expect(monogram.className).toContain('size-12');
+    // Decoration: the title is the page's name, whole.
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Acme gate');
+  });
+
+  /**
+   * D140 §2, from the install (LAYOUT11, D141): the detail's blocks share one width, the pane's. A paragraph capped at
+   * 65ch beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs. An
+   * update's refused plan, drawn by Settings' `PluginUpdatePlan`, kept the cap after the page's own went.
+   */
+  it('lets every block of its detail take the pane\'s width: no paragraph keeps a measure of its own', () => {
+    const { container } = page({
+      plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.' },
+      plan: { id: PLUGIN.id, applied: false, refusal: 'The source asks for plugin API 99, and this build speaks 1.', changes: [] },
+    });
+
+    expect(cappedBlocks(container)).toEqual([]);
+  });
+
+  /** An update waits on nobody, so it is a neutral pill beside the state's, never a state (D119 §2, D140 §2). */
+  it('says update available beside its state where its source declares something different', () => {
+    const { unmount } = page({ plugin: { ...PLUGIN, update: 'waits' } });
+    expect(within(header()).getByText('update available').className).toMatch(/\bborder-line\b/);
+    unmount();
+
+    page({ plugin: { ...PLUGIN, update: 'current' } });
+    expect(within(header()).queryByText('update available')).toBeNull();
+  });
+
+  /** D140 §3.1: an icon's problem never refuses the plugin; its Source says why, in the reader's sentence, verbatim. */
+  it('says in its Source why its declared icon is not drawn, and nothing where it draws', () => {
+    const problem = "`icon` `icon.svg` is not a file in the plugin's folder.";
+    const { unmount } = page({ plugin: { ...PLUGIN, iconProblem: problem } });
+    const source = screen.getByRole('region', { name: 'Source' });
+    expect(source).toHaveTextContent("Its icon is not drawn: icon icon.svg is not a file in the plugin's folder.");
+    expect(within(source).getByText('icon.svg').tagName).toBe('CODE');
+    // Never a refusal: no warn-railed sentence leads the page.
+    expect(document.querySelector('.border-warn')).toBeNull();
+    unmount();
+
+    page();
+    expect(screen.getByRole('region', { name: 'Source' })).not.toHaveTextContent(/icon is not drawn/);
   });
 
   it('holds its four acts in order: the switch, Try, Update… and Remove…, which is the danger variant', () => {

@@ -4,6 +4,7 @@ import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../queries';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from '../work/conversation';
 import type { SessionOption } from '../work/SessionOptions';
+import type { Reach } from '../work/say';
 import { toUpload } from '../attachments';
 import { call } from './call';
 
@@ -328,7 +329,57 @@ export const useStartChat = () => {
 };
 
 /**
- * One message into the session. False means it ended while the person was typing — an answer.
+ * What the person's words to a session did (MSG1d, D137 §5.3), as `SESSION_INPUT` answers for every state: `sent` when
+ * they are held or taken, when they reach the session (`next-step`, `turn-end` or `resume`), and why nothing takes them,
+ * by a code, where nothing does.
+ */
+export type WordsAnswer = { sent: boolean; reaches: string | null; why: string | null };
+
+/**
+ * An answer read defensively. The bridge leaves a null out, so an absent `reaches` or `why` is null, and an answer that is
+ * not one sent nothing.
+ */
+const wordsOf = (answer: unknown): WordsAnswer => {
+  const said = answer as { sent?: unknown; reaches?: unknown; why?: unknown } | null | undefined;
+  return {
+    sent: said?.sent === true,
+    reaches: typeof said?.reaches === 'string' && said.reaches ? said.reaches : null,
+    why: typeof said?.why === 'string' && said.why ? said.why : null,
+  };
+};
+
+/** What a word said now would do, read from `SESSION_QUEUE`'s answer (MSG1d): its `reaches` and `why`, each null where absent. */
+const reachOf = (answer: unknown): Reach => {
+  const { reaches, why } = wordsOf(answer);
+  return { reaches, why };
+};
+
+/**
+ * What a word said now to this session would do (MSG1d, D137 §5.3): `SESSION_QUEUE`'s `reaches` and `why`, which decide
+ * the box the page offers and the line it draws where nothing takes words (`boxOf`). Undefined until the driver answers.
+ *
+ * @remarks
+ * **Asked again whenever what it reads moves**: keyed by the session's state and whether its inbox listens, so a session
+ * that winds up, ends, or goes on is asked again as it moves, and under the sessions' key, so whatever asks the listing
+ * again (a word kept, a tick) asks this too. The live queue (`SESSION_QUEUED`) does not carry it. Desktop-only, as a
+ * conversation is.
+ */
+export const useSessionReach = (session: { id: string; state: string } | null, listening = false): Reach | undefined => {
+  const { isAvailable } = useShenora();
+  const answer = useQuery({
+    queryKey: keys.sessionReach(session?.id ?? '', session?.state ?? '', listening),
+    queryFn: async () => reachOf(await call<unknown>('SESSION_QUEUE', { id: session!.id })),
+    enabled: isAvailable && session !== null,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+  return session ? answer.data : undefined;
+};
+
+/**
+ * One message into the session (CONV4), and what it did (MSG1d): held or taken, when it reaches the session, or why
+ * nothing takes it.
  *
  * @remarks
  * Its files (CONV4c) go as names and bytes, the way a quest's uploads do, and the driver keeps them
@@ -339,12 +390,96 @@ export const useSendMessage = () =>
     // A preface (HELP1b) is where the person is, handed to the agent ahead of the words; absent for most.
     mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
-      return call<{ sent: boolean }>('SESSION_INPUT', {
+      return wordsOf(await call<unknown>('SESSION_INPUT', {
         id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
         ...(message.preface ? { preface: message.preface } : {}),
-      });
+      }));
     },
   });
+
+/**
+ * The person's words to a session that is not a live chat (MSG1f, D137 §5.1): a working driven session's running door, a
+ * park's answer, a session that ended, or one winding up, all through `SESSION_INPUT`, which keeps a park's and an ended
+ * record's words on the record and nudges the driver's loop (MSG1d). Words alone: the resumed run is handed no files.
+ *
+ * The sessions are asked again, so a park shows its answer and a record its words waiting.
+ */
+export const useSay = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (words: { id: string; text: string }) =>
+      wordsOf(await call<unknown>('SESSION_INPUT', { id: words.id, text: words.text })),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
+  });
+};
+
+/** What a go-ahead answered on a park's page did (KNOWUSE1a2): the go-ahead's sentence, then what became of the park. */
+export type GoAheadAnswered = WordsAnswer & { message: string };
+
+/**
+ * A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press, where the ask's
+ * page and the box took two. `SESSION_GO_AHEAD` answers the go-ahead on its ask first, so the conversation the answer
+ * resumes is handed it, then the park: with the person's words as the box keeps them, or, with none, the park's blank
+ * answer. A refused go-ahead answers nothing else, in the service's sentence. The person's words go only where they gave
+ * some: the record keeps no words they did not write (D137).
+ *
+ * The sessions and the asks are asked again whatever came of it, since a park that could not be answered may still have
+ * had its go-ahead answered.
+ */
+export const useParkGoAhead = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (answer: { id: string; ask: string; number: number; approved: boolean; words?: string }): Promise<GoAheadAnswered> => {
+      const answered = await call<unknown>('SESSION_GO_AHEAD', {
+        id: answer.id, ask: answer.ask, number: answer.number, approved: answer.approved,
+        ...(answer.words ? { words: answer.words } : {}),
+      });
+      const message = (answered as { message?: unknown } | null | undefined)?.message;
+      return { ...wordsOf(answered), message: typeof message === 'string' ? message : '' };
+    },
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.allAsks });
+    },
+  });
+};
+
+/** What *Start a conversation with these words* did: the conversation it opened, or the driver's sentence why none. */
+export type StartedFrom = { sessionId: string | null; message: string; sent: boolean };
+
+/**
+ * *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the session's repository whose first message is
+ * the words the session could not go on with, its opening naming the session they were written to.
+ *
+ * @remarks
+ * **Two doors a chat already has**, until the modules route the press of their own. D137 §5.3 names
+ * `SESSION_START_FROM` for it, which the modules do not have yet, so this starts a chat where `START_CHAT` would start
+ * one (the workspace's account and the machine's agent, as every start takes them) and sends the words as its first
+ * message, with a preface naming the session. The preface is the agent's to read, so it is not translated, and the driver
+ * keeps it on the new record as its note. The words stay on the old record, which the driver no longer tries (its
+ * *cannot* mark), until the modules' press takes them off.
+ */
+export const useStartFrom = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (from: { session: string; repository: string; words: readonly string[] }): Promise<StartedFrom> => {
+      const start = await call<{ sessionId?: string | null; message?: string } | null>('START_CHAT', { repository: from.repository });
+      const sessionId = start?.sessionId ?? null;
+      if (!sessionId) return { sessionId: null, message: start?.message ?? '', sent: false };
+      const said = wordsOf(await call<unknown>('SESSION_INPUT', {
+        id: sessionId,
+        text: from.words.join('\n\n'),
+        preface: `The person first wrote these words to session \`${from.session}\`, which could not go on with them; `
+          + 'this conversation has none of that session\'s context.',
+      }));
+      return { sessionId, message: start?.message ?? '', sent: said.sent };
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.driver });
+    },
+  });
+};
 
 /**
  * Finish a conversation: the harness gets end-of-input, says what it was going to say, and exits.

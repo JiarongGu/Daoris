@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Pill, Prose } from '../ui';
+import { Button, Inline, Pill } from '../ui';
 import type { KitPoint } from '../settings/PluginKit';
 import { ViewMain } from '../work/ViewMain';
 import type { OfferShown } from './catalog';
-import { Lead, NameRows, PageHead, PageSection, PointRows } from './PluginPage';
+import { PluginIcon } from './PluginIcon';
+import { Body, Lead, NameRows, PageHead, PageSection, PointRows } from './PluginPage';
 
 /**
  * **One of Daoris's own plugins, not installed here** (D119 §3.2, D103): a header with its name, its version,
@@ -24,6 +25,7 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
 
   const head = (
     <PageHead
+      icon={<PluginIcon id={offer.id} name={offer.name} icon={offer.icon} size="page" />}
       title={offer.name || offer.id}
       version={offer.version}
       pills={<Pill tone="neutral">{t('plugin.offers.notInstalled')}</Pill>}
@@ -57,13 +59,13 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
       )}
       {offer.needs.length > 0 && (
         <PageSection title={t('plugin.section.needs')}>
-          <ul className="m-0 max-w-prose list-disc pl-5 text-small text-ink-soft">
+          <ul className="m-0 list-disc pl-5 text-small text-ink-soft">
             {offer.needs.map((need) => <li key={need} className="break-words"><Inline text={need} /></li>)}
           </ul>
         </PageSection>
       )}
 
-      <Prose className="mt-6 text-small">{t('plugin.offer.note')}</Prose>
+      <Body className="mt-6">{t('plugin.offer.note')}</Body>
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
         <Inline text={t('plugin.offer.terminal', { id: offer.id })} />
       </p>

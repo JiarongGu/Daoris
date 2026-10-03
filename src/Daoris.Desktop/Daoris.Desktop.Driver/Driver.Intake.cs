@@ -166,7 +166,8 @@ public sealed partial class Driver
                 Attachments = ask.Attachments,
                 Ask = ask.Id,
                 Session = sessionId,
-                Prompt = IntakePrompt.Compose(ask),
+                // Its workspace's session language (LANG1c): an intake answers a workspace's ask, in no repository.
+                Prompt = IntakePrompt.Compose(ask, SessionLanguages.OfWorkspace(config, ask.Workspace)),
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
@@ -222,15 +223,16 @@ public sealed partial class Driver
                     var after = await service.FindAskAsync(ask.Id, ct).ConfigureAwait(false);
                     var byPerson = _processes.WasStopRequested(sessionId);
                     var conclusion = byPerson
-                        ? new SessionConclusion("stopped", "the person stopped it.")
+                        ? SessionConclusion.Of("stopped", Observation.Stopped)
                         : exitCode is int code
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
-                            : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
+                            : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
-                    await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited).ConfigureAwait(false);
+                    await service.AdvanceAsync(
+                        sessionId, conclusion.State, note: conclusion.Note, ct: ct, limit: limited, parts: conclusion.Parts).ConfigureAwait(false);
 
                     return new StartRun(
                         $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",
@@ -247,10 +249,7 @@ public sealed partial class Driver
             // The person is closing the driver; the record says so rather than sit at "working".
             try
             {
-                await service.AdvanceAsync(
-                    sessionId, "stopped",
-                    note: "the driver was stopped while this ran; the session's process was ended with it.",
-                    ct: CancellationToken.None).ConfigureAwait(false);
+                await service.AdvanceAsync(sessionId, "stopped", Observation.DriverClosed, ct: CancellationToken.None).ConfigureAwait(false);
             }
             catch
             {
@@ -268,7 +267,7 @@ public sealed partial class Driver
             try
             {
                 await service.AdvanceAsync(
-                    sessionId, "failed", note: error.Message, ct: CancellationToken.None).ConfigureAwait(false);
+                    sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -312,7 +311,7 @@ public sealed partial class Driver
 
             try
             {
-                await service.AdvanceAsync(parked.Id, answered.State, note: answered.Note, ct: ct).ConfigureAwait(false);
+                await service.AdvanceAsync(parked.Id, answered.State, answered.AsNoted(), ct: ct).ConfigureAwait(false);
             }
             catch (DriverException error)
             {

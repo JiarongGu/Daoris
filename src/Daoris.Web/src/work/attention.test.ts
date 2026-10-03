@@ -76,8 +76,19 @@ describe('what needs a person', () => {
       title: 'Expose a streaming budget on the chunk API',
       where: 'engine',
       since: '2026-09-21T10:00:00Z',
-      detail: 'two ways forward.',
+      note: { note: 'two ways forward.' },
     }]);
+  });
+
+  /** LANG1b: the record's note travels whole, its parts beside its English, for the row to word in the reader's language. */
+  it('hands the row a parked session’s note with its parts, never an English sentence made of them', () => {
+    const noteParts = [{ code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' }];
+    const [item] = needsAPerson(
+      [session({ state: 'awaiting-person', quest: '7a82cc', note: 'It stopped…', noteParts })],
+      [quest({ status: 'Taken' })], [registration('engine')], [],
+    );
+    expect(item.note).toEqual({ note: 'It stopped…', parts: noteParts });
+    expect(item.detail).toBeUndefined();
   });
 
   /**
@@ -180,7 +191,7 @@ describe('an ask that waits on a person', () => {
       title: 'The chunk streamer stalls on a cold cache.',
       where: 'aurora',
       since: '2026-09-21T09:45:00Z',
-      detail: note,
+      note: { note },
     }]);
   });
 

@@ -120,6 +120,22 @@ public sealed class HelpDoorsTests : Bridge
         Assert.Equal((true, "Deleted ask #a1b2c3d4."), ask);
     }
 
+    /// <summary>
+    /// DRIFT1d2: a yes to a departure is the local host's own accept route, the one the quest page's *Accept the departure*
+    /// and `daoris-driver quest accept` call, and the service's sentence comes back as said.
+    /// </summary>
+    [Fact]
+    public async Task A_yes_to_a_departure_goes_through_the_local_hosts_own_accept_route()
+    {
+        var host = new StandInHost();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(host));
+
+        var accepted = await Module().HelpDoors(service).AcceptDepartureAsync("#q3done00", CancellationToken.None);
+
+        Assert.Equal(["POST /api/quests/q3done00/accept"], host.Asked);
+        Assert.Equal((true, "Accepted quest #q3done00."), accepted);
+    }
+
     [Fact]
     public async Task A_delete_before_the_driver_is_up_is_the_cold_start_sentence()
     {
@@ -242,7 +258,7 @@ public sealed class HelpDoorsTests : Bridge
         }
     }
 
-    /// <summary>The local host's delete routes, standing in: each answers the service's sentence.</summary>
+    /// <summary>The local host's delete routes and its accept route (DRIFT1d2), standing in: each answers the service's sentence.</summary>
     private sealed class StandInHost : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];
@@ -251,6 +267,16 @@ public sealed class HelpDoorsTests : Bridge
         {
             var path = request.RequestUri!.AbsolutePath;
             Asked.Add($"{request.Method} {path}");
+            if (path.EndsWith("/accept", StringComparison.Ordinal))
+            {
+                var quest = path.Split('/')[^2];
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { message = $"Accepted quest #{quest}." }), Encoding.UTF8, "application/json"),
+                });
+            }
+
             var what = path.StartsWith("/api/quests/", StringComparison.Ordinal) ? "quest" : "ask";
             var id = path[(path.LastIndexOf('/') + 1)..];
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)

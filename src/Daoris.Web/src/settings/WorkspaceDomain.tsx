@@ -4,7 +4,7 @@ import { StartWiringList } from '../map/StartWiring';
 import { useRegistry, useWorkspaceHoldings } from '../queries';
 import { useScope } from '../scope';
 import {
-  useDriver, useHarnesses, useLines, usePlugins, useRemotes, useSetLanding, useSetLine, useStarts, useSweep,
+  useDriver, useHarnesses, useLines, usePlugins, useRemotes, useSetLanding, useSetLanguage, useSetLine, useStarts, useSweep,
   stoppedWaiting, useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
 } from '../shell';
 import {
@@ -12,6 +12,7 @@ import {
 } from '../ui';
 import { workspacesOf } from '../workspaces';
 import { LandingList } from './Landings';
+import { LanguageList } from './Languages';
 import { LineList } from './Lines';
 import { namer } from './namer';
 import { SweepList } from './Sweep';
@@ -29,6 +30,7 @@ export function WorkspaceDomain({ attached, notify }: { attached: boolean; notif
       {attached && <WiringSettings notify={notify} />}
       {attached && <Starts notify={notify} />}
       {attached && <LineSettings notify={notify} />}
+      {attached && <LanguageSettings notify={notify} />}
       {attached && <LandingSettings notify={notify} />}
       {attached && <SweepSettings notify={notify} />}
     </>
@@ -280,6 +282,39 @@ function LineSettings({ notify }: { notify: Notify }) {
           notify(change.branch
             ? t('settings.lines.saved', { name, branch: change.branch })
             : t('settings.lines.cleared', { name }));
+        },
+        onError: failure(notify),
+      })}
+    />
+  );
+}
+
+/**
+ * The language each workspace's and repository's sessions write to the person in (LANG1c, D142 point 7), beside the lines:
+ * the driver's own resolution, named from its own table, and the screen's half of `daoris driver language` (D50). The
+ * window's language stays Appearance's. A shell older than it answers no table, and no card is offered rather than a field
+ * whose save would be refused.
+ */
+function LanguageSettings({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const answer = useLines();
+  const driver = useDriver();
+  const setLanguage = useSetLanguage();
+  const table = driver.data?.languageTable;
+  if (!Array.isArray(table)) return null;
+
+  return (
+    <LanguageList
+      languages={Array.isArray(answer.data?.languages) ? answer.data.languages : []}
+      workspaceLanguages={driver.data?.workspaceLanguages ?? []}
+      table={table}
+      onSet={(change) => setLanguage.mutate(change, {
+        onSuccess: () => {
+          const name = change.repository ?? change.workspace ?? '';
+          const language = table.find((row) => row.code === change.language)?.name;
+          notify(language
+            ? t('settings.sessionLanguage.saved', { name, language })
+            : t('settings.sessionLanguage.cleared', { name }));
         },
         onError: failure(notify),
       })}

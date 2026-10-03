@@ -114,6 +114,13 @@ public sealed record SessionTarget(
     public StandingAnswer? Standing { get; init; }
 
     /// <summary>
+    /// The language the work asks its sessions to write to the person in (LANG1c, D142 point 7): its repository's, else its
+    /// workspace's, read from <c>driver.json</c> for this start and named in one line after the close instruction. Null where
+    /// neither is set, and the instruction reads as it did.
+    /// </summary>
+    public SessionLanguage? Language { get; init; }
+
+    /// <summary>
     /// Whether the session before was stopped by the person, who has since released the quest from that stop with *Try
     /// again* (SESSUX1b): the carry-on is told so, rather than that the session before was cut off.
     /// </summary>
@@ -199,94 +206,162 @@ public static class TargetPrompt
     /// door that delivers a target (the pipe's argument, the protocol's prompt, <c>DAORIS_TARGET</c>)
     /// delivers the same words without knowing which kind of session it is.
     /// </summary>
-    public static string Compose(SessionTarget target) =>
-        target.Prompt
-        ?? (target.Answered is { } answered ? Resuming(target, answered)
-            : target.CutOff is { } cutOff ? CarryingOn(target, cutOff)
-            : Claiming(target));
+    public static string Compose(SessionTarget target) => Composed(target).Text;
 
-    private static string Claiming(SessionTarget target) =>
-        $"""
-        You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.
+    /// <summary>
+    /// The instruction a session is handed, and the composer's account of it (CONTEXT1, D143 point 1): the same words as
+    /// <see cref="Compose"/>, joined from named pieces, each counted as it joins, so the account's sizes add up to the text.
+    /// </summary>
+    public static ComposedInstruction Composed(SessionTarget target)
+    {
+        if (target.Prompt is { } prompt) return InstructionAccounting.Intake(target, prompt);
 
-        Your target is quest `#{target.QuestId}`, asked by `{target.Asker}`:
+        var pieces = target.Answered is { } answered ? ResumingPieces(target, answered)
+            : target.CutOff is { } cutOff ? CarryingOnPieces(target, cutOff)
+            : ClaimingPieces(target);
+        return InstructionAccounting.Account(target, pieces);
+    }
 
-        # {target.Title}
+    /// <summary>A piece of an instruction: the section it belongs to, and its words.</summary>
+    internal readonly record struct Piece(string Section, string Text);
 
-        {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}{WrittenTo(target)}
-        First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
-        repository under its own doctrine and gates, then close it: `done` when it has landed, or
-        `decline` with the reason — the reason is the part the asker can act on. If the quest is already
-        taken or closed, stand down and finish without changing anything.
-        {Mapped(target)}{Landing(target)}{Reading(target)}
-        {Asking(target)}
+    /// <summary>
+    /// Who the agent is and the quest: the opening line, the line naming the quest and how this start stands to it, then the
+    /// quest's title and body, as every instruction begins.
+    /// </summary>
+    private static Piece Head(SessionTarget target, string line) => new(
+        HandedSections.Quest,
+        $"You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.\n\n{line}\n\n"
+        + $"# {target.Title}\n\n{target.Body}\n");
 
-        {Proposing}
+    /// <summary>What the quest carries and what the person said about it, beneath it, as every instruction carries them.</summary>
+    private static IEnumerable<Piece> Beneath(SessionTarget target) =>
+    [
+        new(HandedSections.Carried, Carried(target)),
+        new(HandedSections.Requirements, Required(target)),
+        new(HandedSections.Words, Words(target)),
+        new(HandedSections.GoAheads, GoAheads(target)),
+        new(HandedSections.Standing, Standing(target)),
+    ];
 
-        {Boundary(target)}
-        """;
+    /// <summary>
+    /// The close paragraph and everything after it, as every instruction ends: the language line inside the close's line, the
+    /// map, the landing and the checkouts to read, the look, asking, the closing note, proposing and the boundary.
+    /// </summary>
+    private static IEnumerable<Piece> Tail(SessionTarget target, string close) =>
+    [
+        new(HandedSections.Close, close),
+        new(HandedSections.Language, Language(target)),
+        new(HandedSections.Close, "\n"),
+        new(HandedSections.Map, Mapped(target)),
+        new(HandedSections.Landing, Landing(target)),
+        new(HandedSections.Reading, Reading(target)),
+        .. AskingPieces(target, lead: "\n"),
+        new(HandedSections.Proposing, "\n\n" + Proposing),
+        new(HandedSections.Boundary, "\n\n" + Boundary(target)),
+    ];
+
+    /// <summary>A first start (D46 §3): the quest, to take, work and close, or stand down from where it is someone else's.</summary>
+    private static IReadOnlyList<Piece> ClaimingPieces(SessionTarget target) =>
+    [
+        Head(target, $"Your target is quest `#{target.QuestId}`, asked by `{target.Asker}`:"),
+        .. Beneath(target),
+        new(HandedSections.WrittenTo, WrittenTo(target)),
+        .. Tail(target,
+            $"\nFirst take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this\n"
+            + "repository under its own doctrine and gates, then close it: `done` when it has landed, or\n"
+            + "`decline` with the reason — the reason is the part the asker can act on. If the quest is already\n"
+            + "taken or closed, stand down and finish without changing anything."),
+    ];
 
     /// <summary>
     /// A session resuming a quest its own earlier session took and waited on (D79): the quest again,
     /// what was asked and what came back, and — the part a claiming instruction would get wrong — that
     /// the quest is already this session's, so taking it again is refused and standing down is wrong.
     /// </summary>
-    private static string Resuming(SessionTarget target, QuestView answered) =>
-        $"""
-        You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.
-
-        You are resuming quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and it
-        is yours: do not take it again, and do not stand down.
-
-        # {target.Title}
-
-        {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}
-        An earlier session on this quest needed something only `{answered.To}` could answer, asked it, and
-        waited. What it did is in this tree — read its commits before you go on. The question was quest
-        `#{answered.Id}`, "{answered.Title}", and {Answer(answered)}
-
-        Carry on from there, inside this repository under its own doctrine and gates, then close
-        `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part
-        the asker can act on.
-        {Mapped(target)}{Landing(target)}{Reading(target)}
-        {Asking(target)}
-
-        {Proposing}
-
-        {Boundary(target)}
-        """;
+    private static IReadOnlyList<Piece> ResumingPieces(SessionTarget target, QuestView answered) =>
+    [
+        Head(target,
+            $"You are resuming quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and it\n"
+            + "is yours: do not take it again, and do not stand down."),
+        .. Beneath(target),
+        new(HandedSections.Answered,
+            $"\nAn earlier session on this quest needed something only `{answered.To}` could answer, asked it, and\n"
+            + "waited. What it did is in this tree — read its commits before you go on. The question was quest\n"
+            + $"`#{answered.Id}`, \"{answered.Title}\", and {Answer(answered)}\n"),
+        .. Tail(target,
+            "\nCarry on from there, inside this repository under its own doctrine and gates, then close\n"
+            + $"`#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part\n"
+            + "the asker can act on."),
+    ];
 
     /// <summary>
     /// A session carrying on a quest its own earlier session took and was cut off from (D80): the
     /// quest again, what cut the last one off, and what it left in the tree — so it finishes the work
     /// rather than starting it again, and does not take or stand down from a quest that is its own.
     /// </summary>
-    private static string CarryingOn(SessionTarget target, string cutOff) =>
-        $"""
-        You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.
+    private static IReadOnlyList<Piece> CarryingOnPieces(SessionTarget target, string cutOff) =>
+    [
+        Head(target,
+            $"You are carrying on quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and\n"
+            + "it is yours: do not take it again, and do not stand down."),
+        .. Beneath(target),
+        new(HandedSections.CarryOn,
+            $"\n{Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,\n"
+            + $"and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}\n"),
+        .. Tail(target,
+            "\nFinish from there rather than starting again, inside this repository under its own doctrine and\n"
+            + $"gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —\n"
+            + "the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less."),
+    ];
 
-        You are carrying on quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and
-        it is yours: do not take it again, and do not stand down.
-
-        # {target.Title}
-
-        {target.Body}
-        {Carried(target)}{Required(target)}{Words(target)}{GoAheads(target)}{Standing(target)}
-        {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
-        and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}
-
-        Finish from there rather than starting again, inside this repository under its own doctrine and
-        gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
-        the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less.
-        {Mapped(target)}{Landing(target)}{Reading(target)}
-        {Asking(target)}
-
-        {Proposing}
-
-        {Boundary(target)}
-        """;
+    /// <summary>
+    /// Where a question goes, in the order a session should reach for each (WSSETUP9, D124 §6.1): to the
+    /// sources first, which settle most questions; then ask and wait (D79), since what another repository
+    /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
+    /// out of it; and only then to the person, for what no source holds. A session that asks or stops
+    /// commits, ends its turn and keeps the quest, and the driver starts it again here with the answer.
+    /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
+    /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
+    /// readings the session took, each naming its source. Each its own section of the account (CONTEXT1): the look,
+    /// the indexes inside its first sentence, the words met second-hand, asking, and the closing note.
+    /// </summary>
+    /// <remarks>
+    /// The person's stop once offered "a choice between options that is theirs", and a session read which
+    /// report a ticket meant as one, though its repository's notes and code settled it. A reading the
+    /// evidence leans to is taken and said in the close instead: it is committed on the session's branch and
+    /// reviewed with the diff, so the person corrects it in review rather than being stopped by it. Those
+    /// readings then reached the person in closing notes, mixed with the production yeses under one heading
+    /// and resting on a ticket line none of them quoted, so the close now keeps them apart and cites each.
+    /// </remarks>
+    /// <param name="lead">What comes before the look: the line break after the lines above it.</param>
+    private static IEnumerable<Piece> AskingPieces(SessionTarget target, string lead) =>
+    [
+        new(HandedSections.Look,
+            lead
+            + "Look before you ask. The quest, its links and its files; this repository's own documents, code and\n"
+            + "history (its log, and the commits that last changed what you are changing); the workspace's\n"
+            + $"knowledge, through your connector's `knowledge_search`{Checkouts(target)}."),
+        new(HandedSections.Indexes, Indexes(target)),
+        new(HandedSections.Look,
+            " A question one of these\n"
+            + "settles is not a question: decide it, and keep what settled it for your closing note. Where the\n"
+            + "evidence leans one way without settling it, take that reading, carry on, and say in your closing\n"
+            + "note which reading you took and on what evidence, so the person can correct it in review rather than\n"
+            + "be stopped by it.\n\n"),
+        new(HandedSections.Attributed, Attributed + "\n\n"),
+        new(HandedSections.Asking,
+            $"{Needs(target)} Publish a quest to it saying\n"
+            + $"what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`\n"
+            + "on that new quest's id, and end your turn. The quest stays yours, and you are started again here,\n"
+            + "in this tree, with its answer.\n\n"
+            + "Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act\n"
+            + $"outside this repository or on a production system, a preference nothing records.{OnceOnTheAsk(target)} Then say exactly\n"
+            + "what and why, and what you looked at, in your last message, commit what you have, and\n"
+            + "end your turn with the quest still taken, rather than declining. The person answers, and you are\n"
+            + "started again here, in this tree, with their words.\n\n"),
+        new(HandedSections.Closing, Closing),
+    ];
 
     /// <summary>
     /// Why the session before did not finish: cut off (D80), or stopped to ask the person, who has
@@ -328,6 +403,12 @@ public static class TargetPrompt
     private static string Standing(SessionTarget target) => StandingText.Beneath(target.Standing, target.Repository);
 
     /// <summary>
+    /// The work's session language (LANG1c, the language design §7), as a paragraph of its own after the close instruction it
+    /// governs: what the agent writes to the person in. Nothing where none is set, so the instruction reads as it did.
+    /// </summary>
+    private static string Language(SessionTarget target) => SessionLanguageText.AfterClose(target.Language);
+
+    /// <summary>
     /// For a first start handed the words the person wrote to an earlier session on its quest after it ended, which could
     /// not go on with them (MSG1b, D137 §2.2): their words, verbatim, quoted line by line. Nothing for any other start: a
     /// carry-on says them in its own paragraph (<see cref="Before"/>).
@@ -360,13 +441,9 @@ public static class TargetPrompt
         text.Append("What the person requires of this quest, in their own words, each quoted verbatim with the check that ")
             .Append("proves the work meets it. A reading of their words, the body's above included, is someone else's:\n");
 
-        var used = 0;
         var shown = 0;
-        foreach (var requirement in target.Requirements)
+        foreach (var requirement in target.Requirements.Take(RequirementsShown(target.Requirements)))
         {
-            var cost = requirement.Quote.Length + requirement.Check.Length;
-            if (shown > 0 && used + cost > RequirementsLimit) break;
-            used += cost;
             shown++;
             text.Append($"\n- Requirement {shown}:\n\n")
                 .Append(string.Join("\n", requirement.Quote.ReplaceLineEndings("\n").Split('\n').Select(line => line.Length == 0 ? "  >" : $"  > {line}")))
@@ -387,6 +464,25 @@ public static class TargetPrompt
             .Append("waits until the person accepts it: say plainly where the work departs from their words, rather than close ")
             .Append("as though they had agreed to your reading of them.\n");
         return text.ToString();
+    }
+
+    /// <summary>
+    /// How many requirements an instruction quotes whole by <see cref="RequirementsLimit"/>: the first always, then each while
+    /// its words and check fit beside those before it. The instruction and its account (CONTEXT1) count by this one rule.
+    /// </summary>
+    internal static int RequirementsShown(IReadOnlyList<QuestRequirementView> requirements)
+    {
+        var used = 0;
+        var shown = 0;
+        foreach (var requirement in requirements)
+        {
+            var cost = requirement.Quote.Length + requirement.Check.Length;
+            if (shown > 0 && used + cost > RequirementsLimit) break;
+            used += cost;
+            shown++;
+        }
+
+        return shown;
     }
 
     /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>
@@ -436,50 +532,6 @@ public static class TargetPrompt
             ? $"{closed}, saying:\n\n> {note.ReplaceLineEndings("\n> ")}"
             : $"{closed} without a note — read that quest, and what `{answered.To}` landed, for the answer.";
     }
-
-    /// <summary>
-    /// Where a question goes, in the order a session should reach for each (WSSETUP9, D124 §6.1): to the
-    /// sources first, which settle most questions; then ask and wait (D79), since what another repository
-    /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
-    /// out of it; and only then to the person, for what no source holds. A session that asks or stops
-    /// commits, ends its turn and keeps the quest, and the driver starts it again here with the answer.
-    /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
-    /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
-    /// readings the session took, each naming its source.
-    /// </summary>
-    /// <remarks>
-    /// The person's stop once offered "a choice between options that is theirs", and a session read which
-    /// report a ticket meant as one, though its repository's notes and code settled it. A reading the
-    /// evidence leans to is taken and said in the close instead: it is committed on the session's branch and
-    /// reviewed with the diff, so the person corrects it in review rather than being stopped by it. Those
-    /// readings then reached the person in closing notes, mixed with the production yeses under one heading
-    /// and resting on a ticket line none of them quoted, so the close now keeps them apart and cites each.
-    /// </remarks>
-    private static string Asking(SessionTarget target) =>
-        $"""
-        Look before you ask. The quest, its links and its files; this repository's own documents, code and
-        history (its log, and the commits that last changed what you are changing); the workspace's
-        knowledge, through your connector's `knowledge_search`{Checkouts(target)}.{Indexes(target)} A question one of these
-        settles is not a question: decide it, and keep what settled it for your closing note. Where the
-        evidence leans one way without settling it, take that reading, carry on, and say in your closing
-        note which reading you took and on what evidence, so the person can correct it in review rather than
-        be stopped by it.
-
-        {Attributed}
-
-        {Needs(target)} Publish a quest to it saying
-        what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
-        on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
-        in this tree, with its answer.
-
-        Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act
-        outside this repository or on a production system, a preference nothing records.{OnceOnTheAsk(target)} Then say exactly
-        what and why, and what you looked at, in your last message, commit what you have, and
-        end your turn with the quest still taken, rather than declining. The person answers, and you are
-        started again here, in this tree, with their words.
-
-        {Closing}
-        """;
 
     /// <summary>
     /// The person's words met second-hand while looking (KNOWUSE1d, D135 §5): theirs are the words this instruction quotes as
@@ -747,7 +799,14 @@ public static class TargetPrompt
 /// A chat carries no quest (D49 §3) — that is the whole point: it is for work not yet shaped as an
 /// ask. It may take one mid-conversation through its own connector, exactly as a driven session does.
 /// </remarks>
-public sealed record ChatTarget(string Repository, string Root, string ServiceUrl);
+public sealed record ChatTarget(string Repository, string Root, string ServiceUrl)
+{
+    /// <summary>
+    /// The harness conversation an ended chat goes on in (MSG1c, D137 §4.2), by the id Daoris kept for its record; null for
+    /// a new conversation. A native door hands it to its harness's own resume; a protocol door resumes on its wire.
+    /// </summary>
+    public string? Resume { get; init; }
+}
 
 /// <summary>How the driver talks to the spawned process once it is running (D53).</summary>
 public enum SessionWire
@@ -1542,11 +1601,13 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     {
         var resolved = Resolve(command);
         // A conversation on the harness's structured wire (CONV3): each message a `stream-json` line on
-        // stdin, one turn each, until input ends — the same two endings the chat door keeps.
+        // stdin, one turn each, until input ends — the same two endings the chat door keeps. One that goes on
+        // (MSG1c) resumes its own conversation by the id kept for its record, never `--continue` (D137 §4.2).
         return Spawning.ChatInRoot(
             target, resolved[0],
             resolved.Skip(1)
                 .Concat(["-p", "--input-format", "stream-json", "--permission-mode", "acceptEdits"])
+                .Concat(target.Resume is { Length: > 0 } conversation ? ["--resume", conversation] : [])
                 .Concat(StreamJsonOut));
     }
 

@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Button, Inline, type MenuAct, Pill, StripMark } from '../ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
-import { offerItem, type OfferShown, type PluginGroups, type PluginShown, type PluginState, pluginState, stripOrder } from './catalog';
+import {
+  offerItem, type OfferShown, type PluginGroups, type PluginState, pluginState, sourceWord, stripOrder, updateWaits,
+} from './catalog';
+import { PluginIcon } from './PluginIcon';
 
 /**
  * A state's word and its pill's tone (D119 §2). **Running is the quiet neutral** (PLUG10 P9): a hook process is up
@@ -28,13 +31,17 @@ function useFragments() {
 }
 
 /**
- * The Plugins view's list (D119 §3.1): the installed plugins grouped by what they need from the person — *Waiting on
- * you*, *On*, *Off* — then *Daoris's own plugins* not installed, each group with its count and absent with none.
+ * The Plugins view's list as a **catalogue** (D140 §2, amending D119 §3.1): *Installed*, waiting on you first, then on,
+ * then off; then *Daoris's own plugins* not installed; each section with its count and absent with none.
  *
  * @remarks
  * **A molecule**: the catalogue arrives grouped (`pluginGroups`), and every press goes out. A plugin's name, version
  * and description are content, shown as they are. Each row is a row of its list (`data-list-row`), so ↑, ↓, Home and
  * End move along it. An offer's *Install* sits beside its row's door, never inside it.
+ *
+ * **A row** is its icon, its name and version with its state's word at the right; then what it gives, its author's
+ * description, cut to the row (what it adds as fragments where it has none); then a meta line: where it came from, what
+ * it adds, and *update available* where its source declares something different. Never a path: the page says where.
  */
 export function PluginList({ groups, chosen, installing = false, unanswered, onChoose, onInstall }: {
   groups: PluginGroups;
@@ -54,38 +61,78 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
     return <p className="m-0 px-3 py-3 text-small text-ink-soft"><Inline text={unanswered} /></p>;
   }
 
-  const installed = (key: string, rows: PluginShown[]) => rows.length > 0 && (
-    <Group key={key} title={t(key, { count: rows.length })}>
-      {rows.map((plugin) => {
-        const word = STATE_WORD[pluginState(plugin)];
-        const adds = plugin.problem ? '' : fragments(plugin) || t('plugin.quiet');
-        return (
-          <li key={plugin.id} data-list-row="" {...contextOffer(rowMenu(t, plugin.name || plugin.id, plugin.id, () => onChoose(plugin.id)))}>
-            <RowDoor chosen={chosen === plugin.id} onPress={() => onChoose(plugin.id)}>
-              <span className="flex min-w-0 items-baseline gap-2">
-                <span className={cn('min-w-0 truncate text-body', plugin.enabled ? 'text-ink' : 'text-ink-soft')}>{plugin.name}</span>
-                {plugin.version && <span className="shrink-0 font-mono text-meta text-ink-faint">{plugin.version}</span>}
-                {word && <span className="ml-auto shrink-0"><Pill tone={word.tone}>{t(word.key)}</Pill></span>}
-              </span>
-              {adds && <span className="block truncate text-meta text-ink-faint">{adds}</span>}
-            </RowDoor>
-          </li>
-        );
-      })}
-    </Group>
-  );
-
   return (
     <div>
-      {installed('plugin.group.waiting', groups.waiting)}
-      {installed('plugin.group.on', groups.on)}
-      {installed('plugin.group.off', groups.off)}
+      {groups.installed.length > 0 && (
+        <Group title={t('plugin.group.installed', { count: groups.installed.length })}>
+          {groups.installed.map((plugin) => {
+            const word = STATE_WORD[pluginState(plugin)];
+            // What it adds is what a refused plugin is not taken for, so it says none (D64 §5).
+            const adds = plugin.problem ? '' : fragments(plugin) || t('plugin.quiet');
+            const source = sourceWord(plugin.source);
+            return (
+              <li key={plugin.id} data-list-row="" {...contextOffer(rowMenu(t, plugin.name || plugin.id, plugin.id, () => onChoose(plugin.id)))}>
+                <RowDoor chosen={chosen === plugin.id} onPress={() => onChoose(plugin.id)}>
+                  <CatalogueRow
+                    icon={<PluginIcon id={plugin.id} name={plugin.name} icon={plugin.icon} dimmed={!plugin.enabled} />}
+                    name={plugin.name}
+                    version={plugin.version}
+                    quiet={!plugin.enabled}
+                    word={word && <Pill tone={word.tone}>{t(word.key)}</Pill>}
+                    gives={plugin.description || adds}
+                    meta={[source && t(source), plugin.description ? adds : ''].filter(Boolean).join(' · ')}
+                    update={updateWaits(plugin) && <Pill tone="neutral">{t('plugin.update.waits')}</Pill>}
+                  />
+                </RowDoor>
+              </li>
+            );
+          })}
+        </Group>
+      )}
       {groups.offers.length > 0 && (
         <Group title={t('plugin.group.offers', { count: groups.offers.length })}>
           {groups.offers.map((offer) => <OfferRow key={offer.id} offer={offer} chosen={chosen} installing={installing} adds={fragments(offer)} onChoose={onChoose} onInstall={onInstall} />)}
         </Group>
       )}
     </div>
+  );
+}
+
+/**
+ * A catalogue row's face (D140 §2): the icon at its left; its name, version and state's word; what it gives, cut to the
+ * row; and its meta line. Content (the name, the version, what it gives) is shown as declared.
+ */
+function CatalogueRow({ icon, name, version, quiet = false, word, gives, meta, update }: {
+  icon: ReactNode;
+  name: string;
+  version: string;
+  /** Its name drawn soft: a plugin that is off, or an offer not installed. */
+  quiet?: boolean;
+  word?: ReactNode;
+  /** What it gives: its description, or what it adds where it has none. */
+  gives: string;
+  /** Where it came from and what it adds, joined; empty where it has nothing to say. */
+  meta: string;
+  update?: ReactNode;
+}) {
+  return (
+    <span className="flex min-w-0 items-start gap-2.5">
+      <span className="mt-0.5 shrink-0">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className={cn('min-w-0 truncate text-body font-medium', quiet ? 'text-ink-soft' : 'text-ink')}>{name}</span>
+          {version && <span className="shrink-0 font-mono text-meta text-ink-faint">{version}</span>}
+          {word && <span className="ml-auto shrink-0">{word}</span>}
+        </span>
+        {gives && <span className="block truncate text-small text-ink-soft">{gives}</span>}
+        {(meta || update) && (
+          <span className="flex min-w-0 items-center gap-1.5 text-meta text-ink-faint">
+            {meta && <span className="min-w-0 truncate">{meta}</span>}
+            {update && <span className="shrink-0">{update}</span>}
+          </span>
+        )}
+      </span>
+    </span>
   );
 }
 
@@ -147,11 +194,15 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
     <li data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, offer.name || offer.id, offer.id, () => onChoose(item), install))}>
       <div className="min-w-0 flex-1">
         <RowDoor chosen={chosen === item} onPress={() => onChoose(item)}>
-          <span className="flex min-w-0 items-baseline gap-2">
-            <span className="min-w-0 truncate text-body text-ink-soft">{offer.name}</span>
-            {offer.version && <span className="shrink-0 font-mono text-meta text-ink-faint">{offer.version}</span>}
-          </span>
-          {adds && <span className="block truncate text-meta text-ink-faint">{adds}</span>}
+          {/* No state and no source: its section says both (D140 §2). */}
+          <CatalogueRow
+            icon={<PluginIcon id={offer.id} name={offer.name} icon={offer.icon} />}
+            name={offer.name}
+            version={offer.version}
+            quiet
+            gives={offer.description || adds}
+            meta={offer.description ? adds : ''}
+          />
         </RowDoor>
       </div>
       {/* Only where it can be installed as it stands; its page gives the driver's sentence otherwise. */}
@@ -171,9 +222,9 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
 }
 
 /**
- * The list closed to its strip (D119 §3.1): each installed plugin's initial and its mark, in the list's order. Waiting
- * on you wears the waiting mark, off a faint initial, on no mark. Offers are not on the strip, which holds what this
- * machine has; a strip longer than the window scrolls, since the list pane's strip does.
+ * The list closed to its strip (D119 §3.1): each installed plugin's icon and its mark, in the list's order (D140 §2: its
+ * icon in its initial's place). Waiting on you wears the waiting mark, off a faint icon, on no mark. Offers are not on
+ * the strip, which holds what this machine has; a strip longer than the window scrolls, since the list pane's strip does.
  */
 export function PluginStrip({ groups, chosen, onChoose }: {
   groups: PluginGroups;
@@ -191,6 +242,7 @@ export function PluginStrip({ groups, chosen, onChoose }: {
             key={plugin.id}
             label={word ? `${plugin.name} · ${t(word.key)}` : plugin.name}
             initialOf={plugin.name || plugin.id}
+            face={<PluginIcon id={plugin.id} name={plugin.name} icon={plugin.icon} size="strip" dimmed={state === 'off'} />}
             tone={state === 'refused' ? 'parked' : undefined}
             dimmed={state === 'off'}
             current={chosen === plugin.id}

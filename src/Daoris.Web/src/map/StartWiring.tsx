@@ -64,9 +64,9 @@ export function StartWiringList({ starts, nameOf }: {
             </dd>
           </dl>
           {start.refusal && (
-            // A reading measure, not the card's width: across a wide window the sentence ran to 190
-            // characters a line (seen on the window), the defect platform-ux names by that number.
-            <p className="m-0 max-w-prose whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+            // The driver's sentence, whole, at the card's width with every block of the page (D141): it
+            // wore a 65ch measure once, which gave the page two edges.
+            <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
               {start.refusal}
             </p>
           )}

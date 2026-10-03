@@ -14,7 +14,7 @@ import {
   SettingRow, Tip, useErrorNotify,
 } from '../ui';
 import { workspacesOf } from '../workspaces';
-import { agentOf, listedIn, machineScope, workspaceScope } from './accounts';
+import { agentOf, listedIn, machineScope, offeredLine, workspaceScope } from './accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 import {
   type AccountChoice, AccountFactsLines, CoolingLine, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope,
@@ -232,6 +232,10 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                     busy={busy}
                     onTryNow={() => tryNow(door, null, tool.ownAccount ?? t('harness.own'))}
                   />
+                )}
+                {/* Since when it is offered again, where its cool-off just ended (TOOL6e). */}
+                {use?.own.offered && !use.own.cooling && (
+                  <span className="text-meta text-ink-faint">{offeredLine(use.own.offered)}</span>
                 )}
               </span>
               <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
@@ -493,7 +497,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                 onChange={(event) => setKeyDraft(event.target.value)}
                 aria-label={t('harness.profile.keyLabel', { tool: tool.product ?? tool.name })}
                 placeholder={t('harness.profile.keyPlaceholder')}
-                className="min-w-72 flex-1 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>
                 {t('harness.profile.keySave')}
@@ -675,7 +679,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                 onChange={(event) => setPinning(
                   (held) => ({ ...held, [harness.harness]: event.target.value }))}
                 placeholder={t('harness.pin.placeholder')}
-                className="w-32 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                className="w-32 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
               />
               <Button
                 type="submit"
@@ -738,7 +742,7 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
               );
             })}
           </ul>
-          <p className="mt-2 max-w-prose text-meta text-ink-faint">{t('usage.note')}</p>
+          <p className="mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
         </div>
       )}
 

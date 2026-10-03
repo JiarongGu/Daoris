@@ -73,11 +73,16 @@ present it as the tree.
   work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for
   every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
   then lists what the press would do; apply acts on those rows only. Daoris never pushes.
+- `accept_propose`: the person's yes to a quest a done's departure holds: it closed done departing from what
+  the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for
+  the person's yes). Propose it only when the person asks to accept it, never on your own reading of the
+  departure. Its card shows each departure with the person's words it relied on, as the quest's page does.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
 a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),
 a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
+an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),
 and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
 
 ## Making a plugin
@@ -121,6 +126,7 @@ session named; never propose adding one that has not landed.
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Standing answer | `daoris driver standing <repository> "…"|--clear` |
+| set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline reasons and last words (the window's own language is Settings → Appearance, and neither sets the other) | Repositories → the repository's page → Session language; Settings → Workspace → Session language | `daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace) |
 | sign an agent in, or add an account | Settings → Agents | `daoris agent login <agent>` |
 | choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents → Make default, use for a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
 | choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Settings → Agents → How accounts are used → Use, up and down, and a workspace's Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
@@ -131,12 +137,13 @@ session named; never propose adding one that has not landed.
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | (no screen yet) | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | (no screen yet) | `daoris-driver ask --abandon <id> [--reason "…" --yes]`, `daoris-driver quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
-| accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | (no screen yet) | `daoris-driver quest accept <id>` |
+| accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | Quests → the quest's page → Accept the departure | `daoris-driver quest accept <id>` |
 | add a plugin that has landed, or switch one on or off | Settings → Plugins (its switch) | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
 | install one of Daoris's own plugins, or update one from where it came from | Settings → Plugins (Install beside Daoris's own; Update on an installed one's row) | `daoris plugin add --offer <id>`, `daoris plugin update <id>` |
 | choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |
 | start a task | Quests → Ask | `daoris-driver ask --workspace <name> "…"` |
 | answer what waits on the person | Sessions, and what needs you | `daoris-driver answer` |
+| say something to a session of this machine's, running, parked or ended: it reads your words at its next step or when its turn ends, or the same session goes on with them (Ask Daoris never proposes it: the words are yours) | Sessions → the session's page → its box | `daoris-driver sessions say <id> "…" [--file <path>]…` |
 | answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on the ask is handed | Quests → the ask's page → Go-aheads | `daoris-driver ask --go-ahead <id> <n> approve|refuse ["…"]` |
 
 A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and

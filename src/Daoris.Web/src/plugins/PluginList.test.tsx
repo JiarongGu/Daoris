@@ -33,37 +33,103 @@ const GROUPS = pluginGroups([
 
 const headings = () => screen.getAllByRole('heading').map((heading) => heading.textContent);
 
+const SVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"/>')}`;
+
 describe('the plugin list', () => {
-  it('groups by what each plugin needs from the person, each group with its count, then the offers', () => {
+  /** A catalogue (D140 §2): the installed, waiting on you first, then on, then off; then Daoris's own not installed. */
+  it('is a catalogue: the installed with their count, waiting on you first, then the offers', () => {
     render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 
-    expect(headings()).toEqual(['Waiting on you (1)', 'On (1)', 'Off (1)', "Daoris's own plugins (1)"]);
+    expect(headings()).toEqual(['Installed (3)', "Daoris's own plugins (1)"]);
+    const installed = within(screen.getByRole('heading', { name: 'Installed (3)' }).closest('section')!).getAllByRole('button');
+    const names = ['Future', 'Acme gate', 'Quiet hours'];
+    expect(installed.map((row) => names.find((name) => row.textContent?.includes(name)))).toEqual(names);
   });
 
   /**
    * NAME2: 关闭 is close's word (an ask's, a quest's 已关闭), so a plugin switched off read as closed. A
    * plugin is 启用 and 停用 in Chinese, wherever its state is said.
    */
-  it('names the groups and the off word in 中文 by the switch, never by close', async () => {
+  it('names the sections and the off word in 中文 by the switch, never by close; a plugin\'s words stay as declared', async () => {
     const { default: i18n } = await import('../i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
-      expect(headings()).toEqual(['等你处理（1）', '已启用（1）', '已停用（1）', 'Daoris 自带的插件（1）']);
+      render(<PluginList groups={pluginGroups([
+        ...GROUPS.installed, plugin({ id: 'acme.offered', name: 'Offered', source: { kind: 'offer', offer: 'acme.offered' } }),
+      ], [OFFER])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+      expect(headings()).toEqual(['已安装（4）', 'Daoris 自带的插件（1）']);
       expect(within(screen.getByRole('button', { name: /Quiet hours/ })).getByText('已停用')).toBeInTheDocument();
       expect(screen.queryByText(/关闭|开启/)).toBeNull();
+      // Chrome translates; content does not (translation parity): the description is the author's.
+      expect(within(screen.getByRole('button', { name: /Offered/ })).getByText('Holds quests overnight.')).toBeInTheDocument();
+      expect(within(screen.getByRole('button', { name: /Offered/ })).getByText(/Daoris 自带/)).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }
   });
 
-  it('leaves out a group with none', () => {
+  it('leaves out a section with none', () => {
     render(<PluginList groups={pluginGroups([plugin()], [])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 
-    expect(headings()).toEqual(['On (1)']);
+    expect(headings()).toEqual(['Installed (1)']);
   });
 
-  it('says what each plugin adds as fragments, and its state\'s word where it has one', () => {
+  /** A row (D140 §2): its icon, name and version, its state; what it gives in its author's words; then its meta line. */
+  it('reads each row as a catalogue\'s: what it gives, then where it came from and what it adds', () => {
+    render(<PluginList groups={pluginGroups([
+      plugin({ source: { kind: 'folder', folder: 'C:/somewhere/checkout/gate' } }),
+      plugin({ id: 'acme.bare', name: 'Bare', description: '', source: { kind: 'none' } }),
+    ], [])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+
+    const row = screen.getByRole('button', { name: /Acme gate/ });
+    expect(within(row).getByText('Holds quests overnight.')).toBeInTheDocument();
+    expect(within(row).getByText('from a folder · 2 points · 1 agent')).toBeInTheDocument();
+    // 🔴 Never the folder's path: the row says the kind of source, and the page says where.
+    expect(row.textContent).not.toContain('somewhere');
+    // With no description, what it adds takes the line, and the meta line keeps its source.
+    const bare = screen.getByRole('button', { name: /Bare/ });
+    expect(within(bare).getByText('2 points · 1 agent')).toBeInTheDocument();
+    expect(within(bare).getByText('no source recorded')).toBeInTheDocument();
+  });
+
+  it('draws each plugin\'s icon: its own where one is handed, its monogram otherwise, faint where it is off', () => {
+    const { container } = render(<PluginList groups={pluginGroups([
+      plugin({ icon: SVG }),
+      plugin({ id: 'quiet', name: 'Quiet hours', enabled: false, running: false }),
+    ], [])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: /Acme gate/ }).querySelector('img')!.getAttribute('src')).toBe(SVG);
+    const monogram = screen.getByRole('button', { name: /Quiet hours/ }).querySelector('[data-hue]')!;
+    expect(monogram.textContent).toBe('Q');
+    expect(monogram.className).toContain('size-8');
+    expect(monogram.className).toContain('opacity-55');
+    expect(container.querySelectorAll('img')).toHaveLength(1);
+  });
+
+  /** An update waits on nobody, so it is never a state (D119 §2): a neutral pill on the meta line. */
+  it('says update available on the row where its source declares something different, and only there', () => {
+    render(<PluginList groups={pluginGroups([
+      plugin({ source: { kind: 'offer', offer: 'acme.gate' }, update: 'waits' }),
+      plugin({ id: 'acme.same', name: 'Same', source: { kind: 'folder', folder: 'C:/x' }, update: 'current' }),
+    ], [])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+
+    const waits = within(screen.getByRole('button', { name: /Acme gate/ })).getByText('update available');
+    expect(waits.className).toMatch(/\bborder-line\b/);
+    expect(within(screen.getByRole('button', { name: /Acme gate/ })).getByText(/^Daoris's own/)).toBeInTheDocument();
+    expect(within(screen.getByRole('button', { name: /Same/ })).queryByText('update available')).toBeNull();
+  });
+
+  it('draws an offer\'s icon and what it gives, and no source, since its section says it', () => {
+    render(<PluginList groups={pluginGroups([], [OFFER])} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
+
+    const row = screen.getByRole('button', { name: /^In-app browser/ });
+    expect(row.querySelector('[data-hue]')!.textContent).toBe('I');
+    expect(within(row).getByText('Daoris\'s browser for every session.')).toBeInTheDocument();
+    expect(within(row).getByText('1 server')).toBeInTheDocument();
+    expect(row.textContent).not.toMatch(/Daoris's own/);
+  });
+
+  it('says its state\'s word where it has one', () => {
     render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 
     const row = screen.getByRole('button', { name: /Acme gate/ });
@@ -126,14 +192,17 @@ describe('the plugin list', () => {
 });
 
 describe("the plugin list's strip", () => {
-  it('marks each installed plugin by its initial: waiting wears the waiting mark, off its initial faint, on none', () => {
+  it('marks each installed plugin by its icon: waiting wears the waiting mark, off its icon faint, on none', () => {
     const { container } = render(<PluginStrip groups={GROUPS} chosen="quiet" onChoose={vi.fn()} />);
 
     const marks = screen.getAllByRole('button');
     expect(marks.map((mark) => mark.getAttribute('aria-label'))).toEqual(['Future · refused', 'Acme gate · running', 'Quiet hours · off']);
     expect(marks[0]!.querySelector('.bg-st-open')).not.toBeNull();
     expect(marks[1]!.querySelector('[class*="bg-"][aria-hidden].rounded-full')).toBeNull();
-    expect(marks[2]!.querySelector('.text-ink-faint')).not.toBeNull();
+    // Each mark is the plugin's icon at the strip's size, its monogram here (D140 §2).
+    expect(marks.map((mark) => mark.querySelector('[data-hue]')?.textContent)).toEqual(['F', 'A', 'Q']);
+    expect(marks[1]!.querySelector('[data-hue]')!.className).toContain('size-5');
+    expect(marks[2]!.querySelector('.opacity-55')).not.toBeNull();
     expect(marks[2]).toHaveAttribute('aria-current', 'true');
     // Offers are not on the strip: the strip holds what this machine has.
     expect(container.textContent).not.toMatch(/In-app/);

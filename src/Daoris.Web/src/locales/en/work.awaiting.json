@@ -11,5 +11,11 @@
   "work.awaiting.answerConfirm": "Carry on with this answer",
   "work.awaiting.answered": "Answered — the same session goes on with your words at the driver's next look.",
   "work.awaiting.yourAnswer": "Your answer",
-  "work.awaiting.goesOn": "The same session goes on with this answer at the driver's next look."
+  "work.awaiting.goesOn": "The same session goes on with this answer at the driver's next look.",
+  "work.awaiting.goAheads": "Go-aheads it asked",
+  "work.awaiting.goAheadsLead": "Answering one here answers this session too: the same session goes on with your answer at the driver's next look. Every session on the ask is handed it.",
+  "work.awaiting.goAheadApproved": "Approved go-ahead #{{number}}; the same session goes on with it at the driver's next look.",
+  "work.awaiting.goAheadRefused": "Refused go-ahead #{{number}}; the same session goes on with it at the driver's next look.",
+  "work.awaiting.goAheadOnly": "Answered go-ahead #{{number}}.",
+  "work.awaiting.goAheadNotWaiting": "The session was no longer waiting on you, so the ask keeps your answer for every later start."
 }

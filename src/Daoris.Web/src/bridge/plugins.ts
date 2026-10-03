@@ -35,6 +35,15 @@ export type PluginEntry = {
   data: string;
   /** Where it came from (PLUG9 c): what an Update re-reads. An older shell sends none. */
   source?: PluginSourceShown;
+  /** Whether an update waits (PLUGUI1e): `waits`, `current`, or null with no record that reads. */
+  update?: 'waits' | 'current' | null;
+  /**
+   * Its declared icon as its own bytes, a `data:image/svg+xml` or `data:image/png` URI (PLUGUI2, D140 §3.2), never a
+   * path. Null, or absent from a host older than PLUGUI2b, and the page draws the monogram.
+   */
+  icon?: string | null;
+  /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
+  iconProblem?: string | null;
 };
 export type PluginCatalog = {
   folder: string;

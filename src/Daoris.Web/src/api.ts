@@ -89,7 +89,27 @@ export type Quest = {
    * repository. Absent or empty is a quest to the whole repository, which every older quest is.
    */
   lanes?: string[];
+  /**
+   * What the person requires of it (DRIFT1c, D133 §3), in the service's order, the numbers its done answers by: each their
+   * own words and the check that proves them. Absent or empty is a quest that names none, and a host older than the field.
+   */
+  requirements?: QuestRequirement[];
+  /** How its done answered each requirement (DRIFT1d, §4), by number; absent or empty before a done answered. */
+  answers?: QuestAnswer[];
+  /**
+   * Whether a departure holds it for the person's yes (DRIFT1d): closed done, departing from what they required, so the
+   * chain's next step and a quest waiting on it wait. Absent is false. `accepted` is when the person gave the yes.
+   */
+  held?: boolean;
+  accepted?: string | null;
 };
+/** One thing the person requires (DRIFT1c): their words, quoted as they said them, and the check that proves them. */
+export type QuestRequirement = { quote: string; check: string };
+/**
+ * How a done answered one requirement (DRIFT1d): `met` with how its check was met, or `departed` with the reason and
+ * `quote`, the person's words it turns on, each in the done's words. The host leaves the absent half out.
+ */
+export type QuestAnswer = { requirement: number; met?: string | null; departed?: string | null; quote?: string | null };
 /** One lane a repository declares (D115 §2.2), as the registry answers it: its words, never its paths. */
 export type Lane = { id: string; title: string; summary: string; steward: boolean };
 /**
@@ -255,7 +275,29 @@ export type Session = {
    * (ANSWER1c). The person's own words, answered to this machine only: null over a keyed remote and on a teammate's.
    */
   answer?: string | null;
+  /**
+   * The note's lines, one part each, beside the note's English (LANG1a, D142 point 2): the page words a coded part in the
+   * reader's language and shows a words part as written (LANG1b, `work/note.ts`). Absent or null for a record from before
+   * parts, and from a host older than the field, whose note is shown as kept.
+   */
+  noteParts?: NotePart[] | null;
 };
+
+/**
+ * Whose words a words part is (LANG1a, D142 point 1): the agent's, the person's, a program's passed through, or `before`,
+ * an English note from before parts carried whole. A newer writer may name another, which is shown as written too.
+ */
+export type NoteBy = 'agent' | 'person' | 'program' | 'before';
+
+/**
+ * One line of a session's note (LANG1a, D142 point 2; the language design §3). A **coded part** is Daoris's: its code, the
+ * facts its line carries (values, never sentences: ids, a list of quest ids, an exit code, a count of minutes, an ISO 8601
+ * UTC moment, a reason's code with its own values), and `text`, its English as its writer wrote it, which a page that does
+ * not know the code shows. A **words part** is someone's words and whose they are.
+ */
+export type NotePart =
+  | { code: string; values?: Record<string, unknown> | null; text?: string | null; words?: undefined }
+  | { words: string; by?: NoteBy | (string & {}) | null; code?: undefined };
 
 /**
  * The "repository" Ask Daoris's sessions are recorded in (HELP1a, D89): a colon is in no folder name,
@@ -442,6 +484,9 @@ export const api = {
     onHost(`/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
+  // The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): what it held goes on. A local
+  // host's door, as a delete is; `daoris-driver quest accept` is the terminal's twin.
+  acceptQuest: (id: string) => post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/accept`, {}),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.
   dismissConflict: (id: string, machine: string, sequence: number) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/conflicts/dismiss`, { machine, sequence }),

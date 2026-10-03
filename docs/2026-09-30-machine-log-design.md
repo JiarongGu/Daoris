@@ -360,6 +360,11 @@ the transcript beside it.
   that week in that workspace by a door that can park (driven and intake; a conversation never parks). A week with
   sessions and no park is shown, since a week of *before* is the point.
 
+**As built (OUTCOME1)**: with `--service <url>`, a loopback address only, the report also reads the local host's quests,
+session records and asks over three GETs and says each quest's outcome. From the log it takes only the parks of sessions
+whose start the period holds. The future-directions review's *OUTCOME1, built* note says what it reads and what no store
+keeps.
+
 ## 7. Build order
 
 1. **LOG1a**: the writers and the lifecycle events: the desktop's (`MachineLog` in the driver

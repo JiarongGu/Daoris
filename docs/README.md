@@ -7,7 +7,9 @@ decision wins, and the amended documents say so where they were amended. The sup
 
 **Kinds.** A *contract* is what a part is and must keep being; it is built against. A *method* is
 how something gets built. A *study* is input to a decision, read for its reasoning. *Evidence* is
-what was measured, and it stays a record of that moment. A *record* is append-only history.
+what was measured, and it stays a record of that moment. A *record* is append-only history. A
+*proposal* is a suggestion brought from outside the record, kept as written; a review weighs it before
+anything is built.
 
 **Rows.** A row gives a document's kind, what it is for, and where it stands in one line naming the
 decision that changed it. What was built under it is that decision's notes, never the row, so a build
@@ -21,7 +23,7 @@ changes no row (D127).
 | `2026-08-05-knowledge-service-design.md` | contract | the service | Built. Its banner names what later decisions answered, D123's pieces of a long entry among them; §3–§4, the disclosure classes, still bind |
 | `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change, D104's interrupted stop, PAR1's sessions side by side in trees, DEV3's sessions outliving their tick (§9), D131's resumed answer (§10) and D137's reopened record (§4) noted |
 | `2026-09-19-platform-design.md` | contract | the platform (D38) | Current in shape; the views it names have moved since (D55, D66, D75) |
-| `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
+| `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at. D141 retired *prose at 65ch*: a page wraps at its pane's edge |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |
 | `2026-09-20-workspace-design.md` | contract | workspaces (D48, WSP) | Current |
 | `2026-09-20-interactive-design.md` | contract | chat, console, managed harnesses (D49, SES) | Current, with D67, CONSOLE2's streams and D98 (§7 reversed) noted |
@@ -51,7 +53,7 @@ changes no row (D127).
 | `2026-10-01-naming-design.md` | contract | Names: a name is a UI element, designed in each language; the kinds, their rules and budgets, the glossary and the check (NAME1, D116) | Current (D116); D116's notes say what each build settled |
 | `2026-10-01-agent-layout-design.md` | contract | One repository, every agent: knowledge and skills under `.agents/`, a skills mirror and imports instead of links, rooms, and a repository set up by its own session (LAYOUT1) | Designed (D117); building, and D117's notes say what each build settled |
 | `2026-10-01-frame-model-design.md` | contract | One frame for every view: the list pane and the main area each view owns, what each view puts in them, and the build (FRAME1, D118) | Designed (FRAME1a); built as FRAME1b–i, and PLUGUI1's screen on it |
-| `2026-10-01-plugins-screen-design.md` | contract | Plugins get a view of their own: a list by what they need, a page per plugin with its health, activity, tests and data, what the host answers, and what leaves Settings (PLUGUI1, D119) | Designed (D119); building, and D119's notes say what each build settled |
+| `2026-10-01-plugins-screen-design.md` | contract | Plugins get a view of their own: a list by what they need, a page per plugin with its health, activity, tests and data, what the host answers, and what leaves Settings (PLUGUI1, D119) | Designed (D119); building, and D119's notes say what each build settled. §3.1's groups and §3.2's header amended by D140 |
 | `2026-10-01-development-documents-design.md` | contract | The development documents every repository keeps for code generation, and fewer asks: the safe work a repository declares and how each agent is handed it (DOC1, UNBLOCK1) | Designed (D122); building, and D122's notes say what each build settled |
 | `2026-10-01-tools-design.md` | contract | Tools: every program Daoris runs beside its agents (Git, Node.js, PowerShell, GitHub CLI, Azure CLI) is the system's, managed, or a file you name; a `resources.json` built in, and resource locations that extend it without a release (TOOLS1) | Designed (D121); building, and D121's notes say what each build settled |
 | `2026-10-01-plugin-distribution-design.md` | contract | Plugins leave the repository: a workshop in the home where Daoris makes the plugins people ask for, Daoris.Plugins for Daoris's own, and NuGet as the package source *Find plugins* searches (PLUGREPO2, PLUGDIST1, D120) | Designed (D120); building, and D120's notes say what each build settled |
@@ -65,9 +67,12 @@ changes no row (D127).
 | `2026-10-02-answer-continues-design.md` | contract | An answer continues the session: the parked record reopens and its harness conversation resumes on the same account, adapter and tree; otherwise today's carry-on, saying why (ANSWER1) | Designed (D131); building, and D131's notes say what each build settled. D137 amends §3: a finished record reopens on the person's words |
 | `2026-10-02-pause-and-clean-up-design.md` | contract | Pausing and abandoning an ask or a quest: a pause that stops what runs and keeps its place, and an abandon listed first that declines with the person's reason and discards only what nothing else holds (PAUSE1) | Designed (D132); nothing built. Amends D126 §3.3, D88's removal and D68 rule 2 |
 | `2026-10-03-decisions-record-design.md` | contract | The decisions record under parallel merges: how often union merges tore it and in which shapes, four options weighed, one file per decision with its notes, a check per file, and the migration (DOC8) | Designed (D134); nothing built. Amends D106's and D117 §2.4's rejection of a file per decision |
-| `2026-10-03-session-messages-design.md` | contract | Session messages: a person's words reach a session at its next step, its turn's end, or by reopening its record and resuming its own conversation; Codex's and the native doors read (MSG1) | Designed (D137); nothing built. Amends D131's rejection of reopening a finished record, D90, D136 and CONV4a |
+| `2026-10-03-session-messages-design.md` | contract | Session messages: a person's words reach a session at its next step, its turn's end, or by reopening its record and resuming its own conversation; Codex's and the native doors read (MSG1) | Current (D137): MSG1a–f built, with the shell's half (MSG1e2, MSG1c2); D137's notes say what each built. Amends D131's rejection of reopening a finished record, D90, D136 and CONV4a |
 | `2026-10-03-update-when-idle-design.md` | contract | Update when idle: a build staged beside the install, a drain that starts nothing new, the launcher swapping `app/` while the application is closed, and its roll-back (UPDATE1) | Built (D139); the deployment rehearsal's phase 9 is its gate. Amends D60's and D93's publish |
 | `2026-10-03-context-menu-design.md` | contract | The right-click menu: the page's own, each surface's acts from the owner it has, selected text, a link and a code span; the engine's menu kept for fields and suppressed elsewhere (CTX1) | Current (D138). Amends the platform language §4 and §6 |
+| `2026-10-03-plugin-catalogue-design.md` | contract | The plugins page as a catalogue (installed, Daoris's own, available), a plugin's icon declared in its manifest and handed to the page as its bytes, and the monogram in its place (PLUGUI2) | Current (D140), built (PLUGUI2, PLUGUI2b). Amends the plugin design §3 and the plugins screen design §3.1–§3.2 |
+| `2026-10-03-language-design.md` | contract | Languages: Daoris's lines in a session's note worded by code, someone's words shown as written, every line the driver writes coded, and a session language set for the work, apart from the window's (LANG1) | Designed (D142); LANG1a and LANG1c built (D142's notes). Amends the platform language §4 and the frontend architecture §3 |
+| `2026-10-03-evidence-design.md` | contract | Evidence Daoris checks: a requirement names a path the done's commit must hold, or a declared gate read from the queue's verdict; a met answer without it holds the quest as a departure does (EVID1) | Designed (D144); nothing built. Amends D46, D133 §3–§4, D65 §4 and D115 §5 |
 
 ## Studies and evidence
 
@@ -97,6 +102,8 @@ changes no row (D127).
 | `2026-10-02-ask-drift-evidence.md` | evidence | D133, DRIFT1: one ask's two requirements traced through its intake, two quests and ten sessions. The intake kept a word and lost its meaning; each correction reached one session, then a one-hop carry-on and an account's limit dropped it; a closing note became the requirement. §6 proposes the rows |
 | `2026-10-03-steer-evidence.md` | evidence | D136, STEER1: what each door does with a word sent during a turn, read keylessly, one session measured. A second `session/prompt` reaches Claude Code at its next step; `_session/steering` interrupts the step in flight; a stop with words on their way loses their answer; `codex-acp` must not get a second prompt |
 | `2026-10-03-knowledge-use-evidence.md` | evidence | D135, KNOWUSE1: the 46 questions 33 sessions of the owner's work repository put to the owner, classed by what could answer each. Sessions read their knowledge; 2 items were answered by a document they read, 25 needed the owner, 13 of them asks for three production acts. §6 proposes the rows |
+| `DAORIS_FUTURE_DIRECTIONS.md` | proposal | An outside analysis the owner brought in (2026-10-03): 73 suggestions for proving, explaining, recovering and learning from driven work, kept as written. Reviewed in `2026-10-03-future-directions-review.md`; nothing is adopted from it without a decision |
+| `2026-10-03-future-directions-review.md` | study | That proposal against the record: 18 sections exist, 38 partly, 15 are new and 2 conflict (D130; D46 with D69). It recommends TRACE1, EVID1, CONTEXT1 and OUTCOME1 first, and §66 as a decision. ROADMAP's horizon points to it |
 
 ## Records
 

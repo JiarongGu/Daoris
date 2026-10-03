@@ -75,6 +75,9 @@ public static class DriverCommand
               decline one that waits on you.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
+          sessions say <id> "…" [--file <path>]…
+              say something to a session of this machine's: read at its next step or when its turn ends while it
+              works, or, parked or ended, the same session goes on with it. Prints where the words stand.
           trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | sync [--repository <name>] [--all] [--yes]]
@@ -85,6 +88,9 @@ public static class DriverCommand
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
+          trace <commit|session|quest>  ·  trace commit|session|quest <id>
+              one read back to the ask: the person's words and go-aheads, the quest's requirements and answers, each
+              session's agent, account, instruction, rules and landing, each from the store that keeps it. Reads only.
           update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
               what is staged beside the install and how the last swap ended; or install it when idle (the
               default), now (ending what runs as a close does), or not now, as the window's banner does.

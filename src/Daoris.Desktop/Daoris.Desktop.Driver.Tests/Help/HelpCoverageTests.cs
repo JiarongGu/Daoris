@@ -88,15 +88,6 @@ public sealed partial class HelpCoverageTests
         + "line (D124 §4.5).");
 
     /// <summary>
-    /// DRIFT1d's <c>daoris-driver quest accept</c> (D133 §4), a verb of the headless host: the person's yes to a done's
-    /// departure, a door Ask Daoris owes until DRIFT1d2 gives it a kind of its own, with the quest page's yes beside it.
-    /// </summary>
-    private static readonly Owed AcceptDoor = new(
-        "accepting a departure releases what it held, the chain's next step and a quest waiting on it, so Ask Daoris should "
-        + "propose it and the person apply it as a card, the departure and the words it quotes shown; that waits on "
-        + "DRIFT1d2's kind: the service's box and tool, the driver's judge against the quest as it stands, and the card.");
-
-    /// <summary>
     /// PAUSE1b's <c>daoris-driver ask --pause|--resume</c> and <c>quest pause|resume</c> (D132 §7.2), verbs of the headless host:
     /// doors Ask Daoris owes until PAUSE1f gives it the <c>pause</c> kind, its doors <c>pause</c> and <c>resume</c>, beside the
     /// pages' and a session's acts PAUSE1e builds.
@@ -153,6 +144,22 @@ public sealed partial class HelpCoverageTests
         + "list, each a change the person applies as a card, so Ask Daoris should propose them; that is SESSUX1h's `session` "
         + "kind and the `delete` kind's `session` door, while finishing and declining stay the person's answer (D126 §7.3).");
 
+    /// <summary>
+    /// MSG1e's <c>daoris-driver sessions say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
+    /// session are the person's (D133 §1). The room says where the box is and names the command, so the helper points there.
+    /// </summary>
+    private static readonly Exempt SayDoor = new(
+        "the words said to a session are the person's own (D133 §1), so Ask Daoris composes none in their name; the room says "
+        + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
+
+    /// <summary>
+    /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
+    /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
+    /// </summary>
+    private static readonly Exempt TraceDoor = new(
+        "it reads from a commit, a session or a quest back to its ask and changes nothing, so there is nothing to propose, as "
+        + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -168,6 +175,8 @@ public sealed partial class HelpCoverageTests
         ("across write-to", new Door("setting", "across")),
         // KNOWUSE1b: a standing answer for a repository, the person's words, which Ask Daoris proposes and the person applies.
         ("standing", new Door("setting", "standing")),
+        // LANG1c: the work's session language, for a repository or a workspace; LANG1c2 gave it the service's writer.
+        ("language", new Door("setting", "language")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -192,6 +201,7 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
+        ("workspace", "useSetLanguage", null, new Door("setting", "language")),
         ("workspace", "useTreesSync", null, new Door("sync", "sync")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
@@ -384,10 +394,11 @@ public sealed partial class HelpCoverageTests
             .Append(RegisterDoor)
             .Append(WorkspaceDoor)
             .Append(SessionArchiveDoor)
-            .Append(AcceptDoor)
             .Append(SessionDeleteDoor)
             .Append(SessionsVerbDoor)
             .Append(AbandonDoor)
+            .Append(SayDoor)
+            .Append(TraceDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -452,16 +463,16 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
-    /// DRIFT1d: the headless host's <c>quest accept</c> is a door owed to DRIFT1d2's kind (D133 §4) while the host's usage
-    /// spells it and no kind of that name is built; the room names it meanwhile, so the helper can point the person at it.
+    /// DRIFT1d2: the headless host's <c>quest accept</c> (D133 §4), owed since DRIFT1d, is the <c>accept</c> kind's door while
+    /// the host's usage spells it, and the room names its screen, the quest page's yes, beside its command.
     /// </summary>
     [Fact]
-    public void The_headless_hosts_quest_accept_is_a_door_owed_to_a_kind_of_its_own()
+    public void The_headless_hosts_quest_accept_is_the_accept_kinds_door()
     {
         Assert.Contains("quest accept <id>", DriverCommand.Usage);
-        Assert.Null(HelpProposalKinds.Find("accept"));
-        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal));
-        Assert.Contains("DRIFT1d2", AcceptDoor.Reason);
+        Assert.Contains("accept", HelpProposalKinds.Find("accept")!.Doors);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver quest accept <id>`", StringComparison.Ordinal)
+            && door.Screen.Contains("Accept the departure", StringComparison.Ordinal));
     }
 
     /// <summary>
@@ -491,6 +502,33 @@ public sealed partial class HelpCoverageTests
             && door.Terminal.Contains("`daoris-driver quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D37", AbandonDoor.Reason);
+    }
+
+    /// <summary>
+    /// MSG1e: the headless host's <c>sessions say</c> is exempt from Ask Daoris (D137 §5.4) while its usage spells it; the room
+    /// names it, marked exempt with its reason, and says where the box is, so the helper points the person at both doors.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_say_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("sessions say <id> \"…\" [--file <path>]…", DriverCommand.Usage);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver sessions say <id> \"…\" [--file <path>]…`", StringComparison.Ordinal)
+            && door.Screen.Contains("box", StringComparison.Ordinal)
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("D133", SayDoor.Reason);
+    }
+
+    /// <summary>
+    /// TRACE1: the headless host's <c>trace</c> is exempt from Ask Daoris (D110 §4, D143) while its usage spells it: a read that
+    /// changes nothing, with no kind of that name to take it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_trace_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("trace <commit|session|quest>  ·  trace commit|session|quest <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("trace"));
+        Assert.Contains("changes nothing", TraceDoor.Reason);
+        Assert.Contains("D143", TraceDoor.Reason);
     }
 
     /// <summary>

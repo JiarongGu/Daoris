@@ -173,6 +173,21 @@ export const ProposingEveryKind: Story = {
                 apart: ['docs', 'site', 'tools'],
               },
             },
+            // DRIFT1d2: the person's yes to a done's departure, each departure shown before the press.
+            {
+              id: 'a1', kind: 'accept' as const,
+              describe: 'Accept the departure on quest `#he0he0` “Stream the tiles from the cold cache”, for `engine`: it departed from requirement 2, and what it held goes on — its next step, “Verify he0he0 in a playtest” to `game`, is published.',
+              terminal: 'daoris-driver quest accept he0he0', why: 'you said the first frame may go over',
+              accept: {
+                quest: 'he0he0', title: 'Stream the tiles from the cold cache',
+                departures: [{
+                  requirement: 2, quote: 'keep the budget under the ceiling the engine sets',
+                  check: 'no frame hydrates more than the ceiling in a playtest',
+                  departed: 'a cold cache cannot hold the ceiling on its first frame, so that frame may hydrate twice the ceiling',
+                  words: 'keep the budget under the ceiling the engine sets',
+                }],
+              },
+            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDriver, useSetCoolOff, useSetNotify, useSetStrikes } from '../shell';
+import { useDriver, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState } from '../shell';
 import { Card, CheckField, failure, type Notify, PathText, SettingRow } from '../ui';
+import { UpdateSection } from './Update';
 
 /**
  * The home's hint for how the home stands to the account's DAORIS_HOME, which a terminal's daoris reads
@@ -46,6 +47,9 @@ export function DriverDomain({ notify }: { notify: Notify }) {
   // The cool-off's minutes as typed (TOOL4g), held as text for the strikes' reason.
   const setCoolOffMutation = useSetCoolOff();
   const [coolOff, setCoolOff] = useState<string | null>(null);
+  // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
+  const update = useUpdateState();
+  const sayUpdate = useSayUpdate();
   const onError = failure(notify);
 
   return (
@@ -71,7 +75,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
             control={<PathText path={driver.data.home} className="text-small text-ink-soft" />}
           >
             {driver.data.homeNotice && (
-              <p className="max-w-prose border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              <p className="border-l-[3px] border-accent bg-page/60 px-3.5 py-2 text-body text-ink-soft">
                 {driver.data.homeNotice}
               </p>
             )}
@@ -80,7 +84,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
                 existed to hear it, which is how the second deployment showed a new window, an old
                 page, and no surface saying so. */}
             {driver.data.hostNotice && (
-              <p className="mt-2 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+              <p className="mt-2 border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
                 {driver.data.hostNotice}
               </p>
             )}
@@ -139,7 +143,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
         >
           {/* Stated where the zero is, because zero is the one value whose consequence is invisible. */}
           {Number(strikes ?? driver.data?.strikes ?? 3) === 0 && (
-            <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
+            <p className="border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
               {t('settings.strikes.zero')}
             </p>
           )}
@@ -180,6 +184,15 @@ export function DriverDomain({ notify }: { notify: Notify }) {
           />
         )}
       </Card>
+
+      {/* The install's update (UPDATE1b): the banner, its other door on the screen, is gone once dismissed, and this
+          stands. Here because the update is the application's own, as the home above is, and holds the driver's starts
+          while it drains. A word the shell refuses is said in its sentence; one it takes is shown by the row itself. */}
+      <UpdateSection
+        update={update.data}
+        busy={sayUpdate.isPending}
+        onSay={(mode) => sayUpdate.mutate(mode, { onError })}
+      />
     </>
   );
 }

@@ -22,7 +22,7 @@ public static class SessionMoves
     /// orphan's record says nothing ran it, which is the fact.
     /// </param>
     public static async Task<StopAnswer> StopAsync(
-        SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default, string? note = null)
+        SessionProcesses processes, ServiceClient? service, string id, CancellationToken ct = default, Noted? note = null)
     {
         var stopped = processes.Stop(id, note: note);
         var orphan = !stopped
@@ -38,21 +38,31 @@ public static class SessionMoves
     /// </summary>
     /// <param name="stop">How this door ends the process: its registry's stop. False is the common case, since a parked session usually has no process here.</param>
     /// <exception cref="DriverException">The ledger refused the move.</exception>
+    /// <param name="note">The person's own words, a part of their own (LANG1a); null writes the sentence that says they moved it.</param>
+    public static Task<string> ResolveAsync(
+        Func<string, bool> stop, ServiceClient service, string id, string state, string? note, CancellationToken ct = default) =>
+        ResolveAsync(stop, service, id, state, noted: note is null ? null : Noted.Said(note, NoteBy.Person), ct);
+
+    /// <summary>The same move with the driver's own line for the record: a pause's or an abandon's (PAUSE1b, PAUSE1d).</summary>
+    /// <param name="noted">The record's note with its parts; null writes the sentence that says the person moved it.</param>
     public static async Task<string> ResolveAsync(
-        Func<string, bool> stop, ServiceClient service, string id, string state, string? note, CancellationToken ct = default)
+        Func<string, bool> stop, ServiceClient service, string id, string state, Noted? noted, CancellationToken ct = default)
     {
         stop(id);
-        return await service.AdvanceAsync(id, state, note ?? ByThePerson(state), ct: ct).ConfigureAwait(false);
+        return await service.AdvanceAsync(id, state, noted ?? ByThePersonNoted(state), ct: ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// What the record says when the person wrote nothing — never translated: it is data. The store keeps an earlier note
     /// when a move carries none, so without this a session finished at a checkpoint would read its parked analysis.
     /// </summary>
-    public static string ByThePerson(string state) => state switch
+    public static string ByThePerson(string state) => ByThePersonNoted(state).Note;
+
+    /// <summary><see cref="ByThePerson"/> with its code (LANG1a, the language design §4 rows 56–58).</summary>
+    public static Noted ByThePersonNoted(string state) => state switch
     {
-        "completed" => "The person finished this at a checkpoint.",
-        "stopped" => "The person stopped this at a checkpoint.",
-        _ => "The person moved this at a checkpoint.",
+        "completed" => Noted.Of(NoteCodes.StoppedCheckpointFinished, "The person finished this at a checkpoint."),
+        "stopped" => Noted.Of(NoteCodes.StoppedCheckpointStopped, "The person stopped this at a checkpoint."),
+        _ => Noted.Of(NoteCodes.StoppedCheckpointMoved, "The person moved this at a checkpoint."),
     };
 }

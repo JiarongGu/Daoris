@@ -3,6 +3,8 @@ import { elapsed } from '../format';
 import { cn } from '../lib/cn';
 import type { TrustHold } from '../signals';
 import { Dot, Inline } from '../ui';
+import { Note } from './Note';
+import { hasNote, type NoteRecord } from './noteLines';
 
 /**
  * One thing that is waiting on a person, as Overview's band shows it.
@@ -39,8 +41,13 @@ export type Attention = {
   where: string;
   /** When it started waiting — a park's last move, a parked quest's last session's end, an ask's asking, a quest's filing. */
   since: string;
-  /** The session's analysis, or the sentence explaining what the person is being asked to settle. */
+  /** The sentence explaining what the person is being asked to settle. */
   detail?: string | null;
+  /**
+   * A parked session's or a parked intake's note, its English and its parts (LANG1b): worded by the row in the reader's
+   * language, the agent's question as written, in `detail`'s place.
+   */
+  note?: NoteRecord;
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
@@ -78,9 +85,15 @@ export function AttentionRow({ item, onOpen }: {
       </span>
       {/* 🔴 No display utility beside the clamp: `block` overrode the box it needs, and a parked
           session's whole analysis filled the band (2026-09-29). */}
-      {item.detail && (
-        <span className="mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></span>
-      )}
+      {item.note && hasNote(item.note)
+        ? (
+          <span className="mt-0.5 line-clamp-2 text-small text-ink-soft">
+            <Note note={item.note.note} parts={item.note.parts} compact />
+          </span>
+        )
+        : item.detail && (
+          <span className="mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></span>
+        )}
       {/* Where the door goes, said on it: a row that only read as a notice left the owner with
           nowhere to answer a parked session (2026-09-29). */}
       {onOpen && (

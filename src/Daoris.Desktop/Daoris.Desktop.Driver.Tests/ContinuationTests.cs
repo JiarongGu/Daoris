@@ -159,15 +159,25 @@ public sealed class ContinuationTests : IDisposable
     {
         var why = ContinueWhy.Of(ContinueWhy.Account);
 
+        var ended = Continuations.EndedNote(Park(), why);
         Assert.Equal(
             "It stopped with its quest still taken, to ask you:\n\nWhich port?\n\nCarried on in a new session, because "
             + "its conversation stays with the account it ran on, and this start runs on another.",
-            Continuations.EndedNote(Park(), why));
+            ended.Note);
+        // The park's note had no parts, so it is carried whole before the line's code (LANG1a).
+        Assert.Equal([null, "went.carried-on"], NoteAssert.Codes(ended.Parts));
+        Assert.Equal(NoteBy.Before, ended.Parts[0].By);
+        Assert.Equal("account", ended.Parts[1].Value("why"));
+        // The session that carries on says it after a space its caller writes.
+        var carried = Continuations.CarriedOn(why);
         Assert.Equal(
-            " A new session, because its conversation stays with the account it ran on, and this start runs on another.",
-            Continuations.CarriedOn(why));
-        Assert.Equal("It stopped to ask you.\n\nCarried on in a new session, because its tree is gone.",
-            Continuations.EndedNote(Park() with { Note = null }, ContinueWhy.Of(ContinueWhy.Tree)));
+            "A new session, because its conversation stays with the account it ran on, and this start runs on another.",
+            carried.Note);
+        Assert.Equal(["started.fell-back"], NoteAssert.Codes(carried.Parts));
+        var asked = Continuations.EndedNote(Park() with { Note = null }, ContinueWhy.Of(ContinueWhy.Tree));
+        Assert.Equal("It stopped to ask you.\n\nCarried on in a new session, because its tree is gone.", asked.Note);
+        NoteAssert.Holds(asked);
+        Assert.Equal(["ended.parked-short", "went.carried-on"], NoteAssert.Codes(asked.Parts));
     }
 
     /// <summary>
@@ -320,12 +330,20 @@ public sealed class ContinuationTests : IDisposable
     {
         var record = Written("completed", Word) with { Note = "the quest reached done." };
 
-        Assert.Equal(
-            "the quest reached done.\n\nIt cannot go on in this session, because its tree is gone.",
-            Continuations.CannotNote(record, ContinueWhy.Of(ContinueWhy.Tree)));
-        Assert.Equal(
-            "the quest reached done.\n\nYour words went to a new session, because its tree is gone.",
-            Continuations.WentNote(record, ContinueWhy.Of(ContinueWhy.Tree)));
+        var cannot = Continuations.CannotNote(record, ContinueWhy.Of(ContinueWhy.Tree));
+        Assert.Equal("the quest reached done.\n\nIt cannot go on in this session, because its tree is gone.", cannot.Note);
+        Assert.Equal([null, "went.cannot"], NoteAssert.Codes(cannot.Parts));
+        var went = Continuations.WentNote(record, ContinueWhy.Of(ContinueWhy.Tree));
+        Assert.Equal("the quest reached done.\n\nYour words went to a new session, because its tree is gone.", went.Note);
+        Assert.Equal([null, "went.new-session"], NoteAssert.Codes(went.Parts));
+
+        // A record whose note has parts keeps them, and the line follows them (LANG1a).
+        var coded = record with { NoteParts = [NoteCodes.EndedDone.Part("the quest reached done.")] };
+        var after = Continuations.CannotNote(coded, ContinueWhy.Of(ContinueWhy.Tree));
+        Assert.Equal(cannot.Note, after.Note);
+        NoteAssert.Holds(after);
+        Assert.Equal(["ended.done", "went.cannot"], NoteAssert.Codes(after.Parts));
+        Assert.Equal("tree", after.Parts[1].Value("why"));
     }
 
     /// <summary>
@@ -423,6 +441,36 @@ public sealed class ContinuationTests : IDisposable
         Assert.Equal(
             [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "failed"), ("resumed", false), ("why", "account"), ("door", null)],
             carried.Data);
+    }
+
+    /// <summary>An ended chat the person wrote to says so on the same line (MSG1c, D137 §3.3): its kind is the record's.</summary>
+    [Fact]
+    public void A_chats_reopen_line_names_its_kind()
+    {
+        var line = Continuations.Reopened("c1", "acp-stub", "completed", why: null, door: "screen", kind: "chat");
+
+        Assert.Contains(("kind", (object?)"chat"), line.Data);
+        Assert.Contains(("resumed", (object?)true), line.Data);
+    }
+
+    /// <summary>
+    /// 🔴 A chat's record is judged as a driven one's (MSG1c, D137 §2.2): its conversation goes on only on the adapter that
+    /// opened it, the account it ran on, the tree it ran in, by the id kept for it. A chat whose agent named no conversation
+    /// cannot go on, and says Daoris kept no id.
+    /// </summary>
+    [Fact]
+    public void A_chats_record_goes_on_only_by_the_id_kept_for_it()
+    {
+        var chat = new PriorSession("c1", _tree, "completed", "the conversation ended; its commits are its record.", "engine")
+        {
+            Kind = "chat",
+            Adapter = "acp-stub",
+            Said = [new SaidWordView("w1", "Also log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true)],
+        };
+
+        Assert.Null(Continuations.Judge(chat, "acp-stub", doorResumes: true, profile: null, new HarnessConversation("acp-stub", "acp-chat")));
+        Assert.Equal(ContinueWhy.Unkept, Continuations.Judge(chat, "acp-stub", doorResumes: true, profile: null, kept: null)!.Code);
+        Assert.Equal(ContinueWhy.Ended, Continuations.Judge(chat with { Said = [] }, "acp-stub", true, null, null)!.Code);
     }
 
     /// <summary>

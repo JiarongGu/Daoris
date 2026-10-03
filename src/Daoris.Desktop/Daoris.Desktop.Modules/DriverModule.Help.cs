@@ -58,8 +58,7 @@ public sealed partial class DriverModule
 
         var start = await chat.StartHelpAsync(
             helper, config, machine,
-            onEnded: (session, state) =>
-                _events.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state }),
+            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
             ct: cancellationToken).ConfigureAwait(false);
 
         _loop.Nudge();
@@ -104,11 +103,32 @@ public sealed partial class DriverModule
                     }
                     : null,
                 Sync = SyncShown(plan.Sync),
+                // An accept's departures (DRIFT1d2), for the card to show the person's words before the yes.
+                Accept = AcceptShown(plan.Accept),
             });
         }
 
         return new { Session = session, Proposals = shown.ToArray() };
     }
+
+    /// <summary>
+    /// What an accept card shows (DRIFT1d2), the page's <c>HelpAcceptShown</c>: the quest, and each departure its done
+    /// answered — the requirement's number, the person's words it quotes and its check, the done's reason, and the person's
+    /// words the reason relied on, each as the service answered it. Null for every other kind.
+    /// </summary>
+    public static object? AcceptShown(HelpAcceptPlan? accept) => accept is null ? null : new
+    {
+        accept.Quest,
+        accept.Title,
+        Departures = accept.Departures.Select(departure => new
+        {
+            departure.Requirement,
+            Quote = departure.Required,
+            departure.Check,
+            Departed = departure.Reason,
+            departure.Words,
+        }).ToArray(),
+    };
 
     /// <summary>
     /// What a bring-up-to-date card shows (HELP10), the page's <c>HelpSyncShown</c>: whether the person has looked, every
@@ -146,7 +166,8 @@ public sealed partial class DriverModule
 
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
-        if (proposal.Kind is "ask" or "delete") _loop.Nudge();
+        // An accept publishes the step a departure held and lets a quest waiting on it go on (DRIFT1d2), as a delete or an ask moves the work.
+        if (proposal.Kind is "ask" or "delete" or "accept") _loop.Nudge();
 
         return ApplyAnswer(proposal, applied);
     }
@@ -210,6 +231,10 @@ public sealed partial class DriverModule
         // The ask's record's Delete: the local host's `DELETE /api/asks/{id}`.
         public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct) =>
             (service ?? throw NotReady()).DeleteAskAsync(id, ct);
+
+        // The quest page's Accept the departure (DRIFT1d2): the local host's `POST /api/quests/{id}/accept`, the terminal's too.
+        public Task<(bool Ok, string Message)> AcceptDepartureAsync(string id, CancellationToken ct) =>
+            (service ?? throw NotReady()).AcceptDepartureAsync(id, ct);
 
         // HARNESS_ACTION's own start, streamed under the same key and ended with the same news.
         public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
@@ -422,6 +447,13 @@ public sealed partial class DriverModule
         {
             var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
+        }
+
+        // Every quest as the service answers it, its requirements, answers and hold with it (DRIFT1d2), read only when an
+        // accept is pending: the quest page's yes is shown by the same answer.
+        if (proposals.Any(proposal => proposal.Kind == "accept"))
+        {
+            facts = facts with { QuestRecords = await service.EveryQuestAsync(ct).ConfigureAwait(false) };
         }
 
         // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.

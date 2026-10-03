@@ -4,6 +4,7 @@ import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import { Button, Icon, type IconName, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
+import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
@@ -168,7 +169,7 @@ export function AskPage({
     <ViewMain header={head} menu={menu}>
       {asking === 'pause' && work && pauseLines && (
         <PauseAsk
-          className="mb-4 max-w-3xl"
+          className="mb-4"
           target={target}
           lines={pauseLines}
           meanIt={t('asks.record.pauseMeanIt')}
@@ -207,7 +208,7 @@ export function AskPage({
       )}
 
       {live && closing && (
-        <div className="mb-4 grid max-w-prose gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
+        <div className="mb-4 grid gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
           {/* A close is the person's word that the ask is answered, and leaves its quests as they are (§6.5). */}
           <span className="text-small text-ink-soft">{t('asks.record.closeLeaves')}</span>
           <textarea
@@ -230,7 +231,7 @@ export function AskPage({
 
       {/* The first line is the page's title, so the body is what follows it — a one-line ask was its title
           and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}
-      {rest && <p className="m-0 mb-4 max-w-prose whitespace-pre-wrap text-body leading-relaxed">{rest}</p>}
+      {rest && <p className="m-0 mb-4 whitespace-pre-wrap text-body leading-relaxed">{rest}</p>}
 
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-body">
         <dt className="text-ink-faint">{t('asks.record.circle')}</dt><dd className="m-0">{ask.workspace}</dd>
@@ -282,8 +283,9 @@ export function AskPage({
 
       {ask.intake && (
         /* Who answered (INT4d): the session the intake ran as — its state, then its tool, and its note,
-           verbatim like every driver sentence. A door into Sessions only where Sessions exists, and
-           only onto a record the page holds; one it does not is named by its id. */
+           Daoris's lines in the reader's language and someone's words as written (LANG1b). A door into
+           Sessions only where Sessions exists, and only onto a record the page holds; one it does not is
+           named by its id. */
         <PageSection title={t('asks.record.intake')}>
           {intake ? (
             <>
@@ -302,7 +304,7 @@ export function AskPage({
                 )}
                 <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
               </p>
-              {intake.note && <p className="mt-1.5 mb-0 max-w-prose text-body text-ink-soft">{intake.note}</p>}
+              <Note note={intake.note} parts={intake.noteParts} className="mt-1.5 text-body text-ink-soft" />
             </>
           ) : (
             <span className="font-mono text-meta text-ink-soft">#{ask.intake.slice(0, 6)}</span>
@@ -338,9 +340,9 @@ export function AskPage({
       {live && (
         <PageSection title={t('asks.record.proposal')}>
           {ask.proposal.length === 0 ? (
-            <p className="m-0 mb-2 max-w-prose text-body text-ink-soft">{t('asks.record.noProposal')}</p>
+            <p className="m-0 mb-2 text-body text-ink-soft">{t('asks.record.noProposal')}</p>
           ) : (
-            <ul className="m-0 mb-3 grid max-w-3xl list-none gap-2 p-0">
+            <ul className="m-0 mb-3 grid list-none gap-2 p-0">
               {ask.proposal.map((match) => (
                 <li key={match.repository} className="flex items-center justify-between gap-3">
                   <span className="grid min-w-0 gap-0.5">

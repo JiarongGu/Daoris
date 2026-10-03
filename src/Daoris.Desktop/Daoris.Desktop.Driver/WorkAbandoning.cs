@@ -244,7 +244,12 @@ public static class WorkAbandoning
     public const string NeedsReason = "abandoning needs your reason: each declined quest keeps it.";
 
     /// <summary>What a record this abandon stopped says (design §4.1): a person reads it, and nothing decides from it (D104).</summary>
-    public static string Note(WorkScope scope, string id) => scope == WorkScope.Ask ? $"ask `#{id}` abandoned." : $"quest `#{id}` abandoned.";
+    public static string Note(WorkScope scope, string id) => NoteOf(scope, id).Note;
+
+    /// <summary><see cref="Note"/> with its code and the work's id (LANG1a, the language design §4 rows 54–55).</summary>
+    public static Noted NoteOf(WorkScope scope, string id) => scope == WorkScope.Ask
+        ? Noted.Of(NoteCodes.StoppedAbandonedAsk, $"ask `#{id}` abandoned.", ("ask", id))
+        : Noted.Of(NoteCodes.StoppedAbandonedQuest, $"quest `#{id}` abandoned.", ("quest", id));
 
     /// <summary>The terminal's door to the first press, and with <c>--reason</c> and <c>--yes</c> the second (design §7.2).</summary>
     public static string Door(WorkScope scope, string id) =>
@@ -354,7 +359,7 @@ public static class WorkAbandoning
         WorkPausing.WithPause(config, scope, named, new WorkPause(at, earlier?.Stopped ?? new Dictionary<string, string>())).Save(world.ConfigPath);
 
         // 2. Every live session listed stopped as the person's, every parked one ended unanswered.
-        var note = Note(scope, named);
+        var note = NoteOf(scope, named);
         var stopped = new List<WorkStop>();
         var unreached = new HashSet<string>(StringComparer.Ordinal);
         foreach (var session in plan.Sessions.Where(session => session.Act is AbandonAct.Stop or AbandonAct.End && goes.Contains(session.Key)))

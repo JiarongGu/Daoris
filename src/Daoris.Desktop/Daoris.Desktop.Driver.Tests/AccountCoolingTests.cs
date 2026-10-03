@@ -120,6 +120,27 @@ public sealed class AccountCoolingTests : IDisposable
         Assert.NotNull(AccountCooling.Of(_home, "codex", "account-1", after));
     }
 
+    /// <summary>
+    /// TOOL6e: a cool-off that ended within the last day, which the file still holds, says when its account was offered
+    /// again; one still cooling, one that ended longer ago, and one a later write dropped say nothing.
+    /// </summary>
+    [Fact]
+    public void A_cool_off_that_ended_within_the_day_says_when_its_account_was_offered_again_while_the_file_holds_it()
+    {
+        AccountCooling.Cool(_home, Entry(), _now);
+        AccountCooling.Cool(_home, Entry(account: null, until: Until.AddHours(-30)), _now);
+        AccountCooling.Cool(_home, Entry(account: "account-2", until: Until.AddHours(3)), _now);
+        var after = Until.AddHours(2);
+
+        var offered = Assert.Single(AccountCooling.Offered(_home, after));
+        Assert.Equal(Entry(), offered);
+        Assert.Empty(AccountCooling.Offered(_home, Until.AddMinutes(-1)).Where(entry => entry.Account == "account-1"));
+        Assert.Empty(AccountCooling.Offered(_home, Until.AddHours(3) + AccountCooling.OfferedFor + TimeSpan.FromMinutes(1)));
+
+        AccountCooling.Cool(_home, Entry(agent: "codex", until: after.AddHours(1)), after);
+        Assert.Empty(AccountCooling.Offered(_home, after));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("not json")]
