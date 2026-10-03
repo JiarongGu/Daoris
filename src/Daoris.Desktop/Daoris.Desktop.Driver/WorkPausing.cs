@@ -289,7 +289,7 @@ public static class WorkPausing
         WithPause(config, scope, named, new WorkPause(at, earlier?.Stopped ?? new Dictionary<string, string>())).Save(world.ConfigPath);
 
         // 2. Every live session of the work this machine runs, stopped as the person's; the rest named with why.
-        var note = new PausedBy(scope, named).Note;
+        var note = new PausedBy(scope, named).Noted;
         var stopped = new List<WorkStop>();
         var kept = new List<WorkKept>();
         foreach (var each in plan.Sessions)
@@ -468,7 +468,7 @@ public static class WorkPausing
     /// (an abandon's, PAUSE1d) is ended <c>stopped</c> unanswered, as <c>RESOLVE_SESSION</c> ends it, its process first.
     /// </summary>
     /// <param name="by">Who asks, as the request names it: <see cref="RequestDoor.Pause"/> or <see cref="RequestDoor.Abandon"/>.</param>
-    internal static async Task<string?> StopAsync(WorkWorld world, SessionRecord record, string note, string by, CancellationToken ct)
+    internal static async Task<string?> StopAsync(WorkWorld world, SessionRecord record, Noted note, string by, CancellationToken ct)
     {
         var parked = record.State == "awaiting-person";
         // A parked session this registry runs, or one nothing on this machine runs: its process (if any) goes, then its record.
@@ -487,7 +487,7 @@ public static class WorkPausing
         }
 
         var requests = new SessionRequests(world.Home);
-        requests.Write(new SessionRequest(record.Id, SessionMove.Stop, world.Clock()) { By = by, Note = note, Parked = parked });
+        requests.Write(new SessionRequest(record.Id, SessionMove.Stop, world.Clock()) { By = by, Note = note.Note, NoteParts = note.Parts, Parked = parked });
         var waited = Stopwatch.StartNew();
         while (waited.Elapsed < world.Wait)
         {

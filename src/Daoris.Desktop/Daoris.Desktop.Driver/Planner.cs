@@ -131,6 +131,15 @@ public sealed record PriorSession(
     /// </summary>
     public string Kind { get; init; } = "driven";
 
+    /// <summary>
+    /// Its note's lines, each by its code with its values (LANG1a, D142 point 2): what a line the driver adds to its note carries
+    /// on. Null for a record from before parts, whose note is then carried whole.
+    /// </summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
+    /// <summary>Its note as composed: its parts, or its English whole as one part from before them.</summary>
+    public Noted AsNoted() => Noted.From(Note, NoteParts);
+
     /// <summary>Waiting on the person (D83): <c>awaiting-person</c>, the one state a record goes on from without leaving an ended one.</summary>
     public bool Parked => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase);
 
@@ -223,6 +232,9 @@ public sealed record SessionView(
     /// started it (DEV3), so the next look can find its quest still open, and must not start it again.
     /// </summary>
     public string? Quest { get; init; }
+
+    /// <summary>Its note's lines by code (LANG1a), handed on wherever its note is; null for a record from before parts.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
 }
 
 /// <summary>

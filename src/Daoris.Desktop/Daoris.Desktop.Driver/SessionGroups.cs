@@ -256,6 +256,9 @@ public sealed record QuestPark(string Quest, string Repository)
     /// <summary>What its last session's record said about its end: the last failure's note. Null is a state, not a gap.</summary>
     public string? Note { get; init; }
 
+    /// <summary>That note's lines by code (LANG1a), beside it; null where the note is, or the record is from before parts.</summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
     /// <summary>When its last session ended: what the park has waited since. Null where that record is not listed.</summary>
     public DateTimeOffset? Since { get; init; }
 }
@@ -373,6 +376,7 @@ public static class SessionGroups
                     Session = last?.Session,
                     Strikes = look.Strikes.TryGetValue(quest, out var strikes) ? strikes : null,
                     Note = string.IsNullOrWhiteSpace(last?.Note) ? null : last.Note.Trim(),
+                    NoteParts = string.IsNullOrWhiteSpace(last?.Note) ? null : last.NoteParts,
                     Since = ended,
                 };
             })];

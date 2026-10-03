@@ -53,6 +53,12 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     public string? Note { get; init; }
 
     /// <summary>
+    /// A pause's or an abandon's words for the record with their codes (LANG1a, D142 point 2), beside <see cref="Note"/>; null
+    /// for the person's own words, and for a request an older door wrote, whose note is then carried whole.
+    /// </summary>
+    public IReadOnlyList<NotePart>? NoteParts { get; init; }
+
+    /// <summary>
     /// That the record waited on the person when it was asked: its stop is then its card's, the record moved by the ledger
     /// once the process is let go, as <c>RESOLVE_SESSION</c>'s <c>stopped</c> moves it (D126 §3.3).
     /// </summary>
@@ -317,6 +323,7 @@ public sealed partial class SessionRequests(string home)
             return new SessionRequest(session, move, at)
             {
                 Note = Text("note"),
+                NoteParts = NotePart.Read(root),
                 Parked = root.TryGetProperty("parked", out var parked) && parked.ValueKind == JsonValueKind.True,
                 By = Text("by") ?? RequestDoor.Terminal,
                 Text = Text("text"),
@@ -362,6 +369,12 @@ public sealed partial class SessionRequests(string home)
         writer.WriteString("session", request.Session);
         writer.WriteString("move", request.Move);
         if (request.Note is not null) writer.WriteString("note", request.Note);
+        if (request.Note is not null && request.NoteParts is { Count: > 0 } parts)
+        {
+            writer.WritePropertyName("noteParts");
+            NotePart.Write(writer, parts);
+        }
+
         writer.WriteBoolean("parked", request.Parked);
         writer.WriteString("by", request.By);
         writer.WriteString("at", request.At.ToString("O", CultureInfo.InvariantCulture));
