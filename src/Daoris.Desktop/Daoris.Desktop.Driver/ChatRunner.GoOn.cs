@@ -122,14 +122,36 @@ public sealed partial class ChatRunner
         if (!_goingOn.TryAdd(sessionId, going.Task)) return new(null, $"conversation `{sessionId}` is already going on.");
         try
         {
-            return await GoingOnAsync(sessionId, config ?? DriverConfig.Load(Path.Combine(_home, "driver.json")), onEnded, ct)
-                .ConfigureAwait(false);
+            DriverConfig choices;
+            try
+            {
+                choices = config ?? MachineConfig();
+            }
+            catch (Exception unreadable) when (unreadable is DriverException or System.Text.Json.JsonException or IOException
+                                                   or UnauthorizedAccessException)
+            {
+                // The words wait, said: the next word tries again, and a torn driver.json is the person's to mend.
+                return Held(sessionId, $"this machine's driver.json could not be read: {unreadable.Message}");
+            }
+
+            return await GoingOnAsync(sessionId, choices, onEnded, ct).ConfigureAwait(false);
         }
         finally
         {
             _goingOn.TryRemove(sessionId, out _);
             going.TrySetResult();
         }
+    }
+
+    /// <summary>
+    /// The machine's choices for a chat taken up by itself (MSG1c): the file every door reads where its override names this
+    /// home's, as the shell's own config path is; this home's <c>driver.json</c> otherwise.
+    /// </summary>
+    private DriverConfig MachineConfig()
+    {
+        var chosen = Environment.GetEnvironmentVariable(DriverConfig.PathVariable);
+        var path = chosen is { Length: > 0 } && SamePath(DriverConfig.HomeOf(chosen), _home) ? chosen : Path.Combine(_home, "driver.json");
+        return DriverConfig.Load(path);
     }
 
     private async Task<ChatStart> GoingOnAsync(

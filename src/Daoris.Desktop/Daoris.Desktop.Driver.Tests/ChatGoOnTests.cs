@@ -143,6 +143,28 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// A chat taken up by itself reads the machine's choices from the home's <c>driver.json</c>; one torn mid-write holds the
+    /// words, said in the conversation, rather than ending the runner's look at them silently.
+    /// </summary>
+    [Fact]
+    public async Task A_torn_driver_json_holds_the_words_and_says_so()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        File.WriteAllText(Path.Combine(_home, "driver.json"), """{ "adapter": "talk", "commands": """);
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        var held = await NoteAsync(events, "c1", e => e.Text?.Contains("does not go on yet") == true);
+        Assert.Contains("driver.json could not be read", held.Text);
+        Assert.Equal("completed", ledger.State("c1"));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+    }
+
+    /// <summary>
     /// Only an ended chat of this machine's with words waiting goes on here: a driven record is the planner's (MSG1b), a live
     /// chat hears words at its door, and a record with none waiting has nothing to go on with. Each starts nothing.
     /// </summary>
