@@ -252,23 +252,16 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     /// A terminal's files, by the names the verb kept them under for the session (MSG1e): read back from where they lie, so
     /// the box's own path keeps them, which finds each already there since a file is kept by its content (CONV4c).
     /// </summary>
-    private IReadOnlyList<ChatUpload> Kept(string id, IReadOnlyList<string> names)
-    {
-        if (names.Count == 0) return [];
-        var folder = ChatFiles.Folder(loop.Home, id);
-        var lying = Directory.Exists(folder) ? Directory.GetFiles(folder) : [];
-        return [.. names.Select(name =>
+    private IReadOnlyList<ChatUpload> Kept(string id, IReadOnlyList<string> names) =>
+    [
+        .. names.Select(name =>
         {
-            // Kept as `<first 12 of its hash>-<name>`; of two files given one name, the newer is the one just said.
-            var path = lying
-                .Where(each => Path.GetFileName(each) is var leaf
-                               && leaf.Length == name.Length + 13 && leaf[12] == '-' && leaf.EndsWith(name, StringComparison.Ordinal))
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault()
+            // Of two files given one name, the newer is the one just said (ChatFiles.Find, which a resumed run reads by too).
+            var kept = ChatFiles.Find(loop.Home, id, name)
                 ?? throw new DriverException($"`{name}` is not kept for session `{id}`, so your words were not sent; say them again with it.");
-            return new ChatUpload(name, File.ReadAllBytes(path));
-        })];
-    }
+            return new ChatUpload(name, File.ReadAllBytes(kept.Path));
+        }),
+    ];
 
     /// <summary>
     /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session took

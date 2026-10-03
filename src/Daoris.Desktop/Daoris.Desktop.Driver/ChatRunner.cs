@@ -1262,11 +1262,12 @@ public sealed partial class ChatRunner : IDisposable
                         _record(opening);
                     }
 
+                    // The files said with the words, a link each after their blocks (MSG1d3).
                     await session.PromptAsync(goOn.Blocks, CancellationToken.None, () =>
                     {
                         sent();
                         _wentOn?.Invoke();
-                    }).ConfigureAwait(false);
+                    }, goOn.Files).ConfigureAwait(false);
                     return;
                 }
 
@@ -1376,7 +1377,8 @@ public sealed partial class ChatRunner : IDisposable
                     if (message.GoesOn is { } goOn)
                     {
                         // The words an ended chat goes on with (MSG1c, D137 §2.2): the driver's first line, then each word under
-                        // the id its record gave it, then all of them as one message, joined by a blank line.
+                        // the id its record gave it, then all of them as one message, joined by a blank line, each with where
+                        // its files are kept (MSG1d3).
                         foreach (var opening in goOn.Opening()) record(opening);
                         line = adapter.FrameMessage(goOn.Prompt);
                     }
