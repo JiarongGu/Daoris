@@ -70,7 +70,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     /// <summary>
     /// LANG1c (D142 point 7): a session language for a registered repository or a workspace, judged by the closed table and
     /// the registry, planned with the terminal's spelling and applied as `SET_LANGUAGE` and `daoris driver language` make it.
-    /// Not yet one of the kind's doors: the service's setting writer does not list it (HelpCoverageTests' language row).
+    /// One of the kind's doors since LANG1c2, once the service's setting writer listed it.
     /// </summary>
     [Fact]
     public void A_session_language_is_judged_by_the_table_and_the_registry_and_applied_as_the_terminal_makes_it()
@@ -98,7 +98,24 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Contains("is not registered on this machine", HelpProposals.Plan(Setting("language", "elsewhere", null, "zh"), DriverConfig.Empty, Facts).Refusal);
         Assert.Contains("no workspace `elsewhere`", HelpProposals.Plan(Setting("language", null, "elsewhere", "zh"), DriverConfig.Empty, Facts).Refusal);
         Assert.Contains("a repository or a workspace", HelpProposals.Plan(Setting("language", "engine", "work", "zh"), DriverConfig.Empty, Facts).Refusal);
-        Assert.DoesNotContain("language", new HelpSettingProposals().Doors);
+    }
+
+    /// <summary>
+    /// LANG1c2: the service's setting writer shape-checks a language against a deliberate copy of the table's codes
+    /// (<c>HelpProposalBox.Languages</c>), read here as text since the two share no code, so a language added to the table is
+    /// one the box takes, and the box takes none the table does not hold.
+    /// </summary>
+    [Fact]
+    public void The_service_box_takes_the_languages_the_table_holds()
+    {
+        var writer = System.IO.File.ReadAllText(Path.Combine(
+            HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Service", "Daoris.Service.Core", "HelpProposalBox.Setting.cs"));
+        var listed = System.Text.RegularExpressions.Regex.Match(writer, @"IReadOnlyList<string> Languages\s*=\s*\[([^\]]*)\]");
+
+        Assert.True(listed.Success, "the service's session languages are a list, `Languages`.");
+        Assert.Equal(
+            SessionLanguages.Table.Select(row => row.Code),
+            System.Text.RegularExpressions.Regex.Matches(listed.Groups[1].Value, "\"([a-z-]+)\"").Select(match => match.Groups[1].Value));
     }
 
     [Fact]
@@ -181,7 +198,7 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
-            ("intake", null, null, "off"),
+            ("language", null, "work", "zh"), ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
         ];

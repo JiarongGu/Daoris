@@ -82,8 +82,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
             "Repositories → the repository's page → Standing answer", "`daoris driver standing <repository> \"…\"|--clear`"),
-        // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris's `language` door waits on the
-        // service's writer (HelpCoverageTests).
+        // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris proposes it as the `setting`
+        // kind's `language` door since LANG1c2.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
             "Repositories → the repository's page → Session language; Settings → Workspace → Session language",

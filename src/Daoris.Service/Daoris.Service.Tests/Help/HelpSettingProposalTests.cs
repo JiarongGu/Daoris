@@ -51,6 +51,11 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     // KNOWUSE1b: a standing answer for a repository, in the person's words, or cleared.
     [InlineData("standing", "engine", null, "dev writes allowed; test locally against dev; prod only on a yes")]
     [InlineData("standing", "engine", null, "--clear")]
+    // LANG1c2 (D142 point 7): a session language for a repository or a workspace, a code of the table in any case, or cleared.
+    [InlineData("language", "engine", null, "zh")]
+    [InlineData("language", null, "work", "en")]
+    [InlineData("language", "engine", null, "ZH")]
+    [InlineData("language", null, "work", "--clear")]
     public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
     {
         var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
@@ -109,6 +114,26 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Contains("for retry, the quest's id, as the room lists the parked and the held ones", target);
     }
 
+    /// <summary>
+    /// LANG1c2 (D142 points 7–8): the tool tells the helper what a session language takes, and that it is the work's, never
+    /// the window's, so it proposes the codes the box takes rather than learning them from a refusal.
+    /// </summary>
+    [Fact]
+    public void The_tool_says_a_language_takes_a_code_of_the_table_or_a_clear_and_is_not_the_windows()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        string Described(string name) => method.GetParameters().Single(parameter => parameter.Name == name)
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.Contains("`en` or `zh`, or `--clear` (language)", Described("value"));
+        Assert.Contains("a language", Described("target"));
+        Assert.Contains("a language", Described("workspace"));
+        Assert.Contains("never the window's", tool);
+    }
+
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
@@ -136,6 +161,12 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("standing", "engine", "work", "dev only", "names the repository it holds for")]
     [InlineData("standing", "engine", null, null, "the person's words, or `--clear`")]
     [InlineData("standing", "engine", null, "  ", "the person's words, or `--clear`")]
+    // LANG1c2: exactly one of a repository or a workspace, and a code the table holds or `--clear`.
+    [InlineData("language", null, null, "zh", "session language is set for a repository or a workspace — name exactly one")]
+    [InlineData("language", "engine", "work", "zh", "session language is set for a repository or a workspace — name exactly one")]
+    [InlineData("language", "engine", null, null, "`language` is set to `en` or `zh`, or `--clear`")]
+    [InlineData("language", null, "work", "fr", "`language` is set to `en` or `zh`, or `--clear`")]
+    [InlineData("language", "engine", null, "en zh", "`language` is set to `en` or `zh`, or `--clear`")]
     [InlineData("retry", null, null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked or the person's stop holds")]
     [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked or the person's stop holds")]

@@ -3,10 +3,10 @@ using System.Globalization;
 namespace Daoris.Knowledge;
 
 /// <summary>A setting Ask Daoris proposes (HELP1c, D89): one of the driver's doors, spelled as the CLI's verbs are.</summary>
-/// <param name="Door">One of <see cref="HelpProposalBox.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap` or `adapter`.</param>
+/// <param name="Door">One of <see cref="HelpProposalBox.Doors"/>: `drive`, `undrive`, `hold`, `resume`, `trees`, `line`, `landing`, `across`, `standing`, `language`, `intake`, `helper`, `strikes`, `retry`, `timeout`, `notify`, `cap` or `adapter`.</param>
 /// <param name="Target">The repository, for the doors that take one; for `retry`, the quest its failed sessions parked or the person's stop holds.</param>
-/// <param name="Workspace">The workspace, for a line, a landing or reading across set for a whole workspace.</param>
-/// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, an agent…</param>
+/// <param name="Workspace">The workspace, for a line, a landing, a session language or reading across set for a whole workspace.</param>
+/// <param name="Value">What it is set to, as the CLI takes it: `on`, a branch, `branch &lt;pattern&gt; --tidy`, `read off`, `write-to &lt;other&gt;`, `zh`, an agent…</param>
 public sealed record SettingChange(string Door, string? Target, string? Workspace, string? Value);
 
 /// <summary>The <c>setting</c> kind's writer (HELP1c): one of the driver's doors, shape-checked as the CLI's verbs take it.</summary>
@@ -15,16 +15,22 @@ public sealed partial class HelpProposalBox
     /// <summary>
     /// The doors a setting may name, as the CLI's verbs spell them, in the order the driver's <c>HelpSettingProposals</c>
     /// lists them — every <c>daoris driver</c> verb but <c>list</c> (HELP9, D110; <c>retry</c> since HELP10; <c>standing</c>
-    /// since KNOWUSE1b).
+    /// since KNOWUSE1b; <c>language</c> since LANG1c2).
     /// </summary>
     public static readonly IReadOnlyList<string> Doors =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "intake", "helper", "strikes",
-        "retry", "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "intake", "helper",
+        "strikes", "retry", "timeout", "notify", "cap", "adapter",
     ];
 
     /// <summary>The most characters a standing answer holds — the driver's <c>DriverConfig.StandingLimit</c>, a deliberate copy.</summary>
     private const int StandingLimit = 2_000;
+
+    /// <summary>
+    /// The codes a session language takes (LANG1c2, D142 point 7) — the driver's <c>SessionLanguages.Table</c>, a deliberate
+    /// copy, which the driver's <c>HelpSettingProposalsTests</c> holds to its own, code for code.
+    /// </summary>
+    private static readonly IReadOnlyList<string> Languages = ["en", "zh"];
 
     /// <summary>Why a setting is no door's shape, or null when it is one.</summary>
     public static string? Refusal(SettingChange change)
@@ -69,6 +75,14 @@ public sealed partial class HelpProposalBox
                 if (!named || circle) return "a standing answer names the repository it holds for, as the target, and no workspace.";
                 if (string.IsNullOrWhiteSpace(value)) return "`standing` is set to the person's words, or `--clear`.";
                 return value.Length > StandingLimit ? $"a standing answer is at most {StandingLimit} characters of the person's words." : null;
+            case "language":
+                // LANG1c2 (D142 point 7): the work's session language, as `daoris driver language` takes it — a code of the
+                // table in any case, as the driver reads one, or `--clear`; whether the repository or the workspace is one
+                // this machine holds is the driver's to judge.
+                if (named == circle) return "a session language is set for a repository or a workspace — name exactly one.";
+                return value is not null && (value == "--clear" || Languages.Contains(value.ToLowerInvariant()))
+                    ? null
+                    : $"`language` is set to {string.Join(" or ", Languages.Select(code => $"`{code}`"))}, or `--clear`.";
             case "cap":
                 return int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1
                     ? null

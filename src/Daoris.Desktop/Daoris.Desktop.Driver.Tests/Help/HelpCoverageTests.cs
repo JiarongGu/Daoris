@@ -49,16 +49,6 @@ public sealed partial class HelpCoverageTests
         + "side's doors, and until then `daoris driver cooloff` and Settings → Driver are its doors.";
 
     /// <summary>
-    /// The session language (LANG1c, D142 point 7): the `setting` kind's `language`, judged on this side already
-    /// (<c>HelpSettingProposals</c>), whose service half is another lane's.
-    /// </summary>
-    private const string LanguageOwed =
-        "the language a repository's or a workspace's sessions write to the person in is a setting that undoes itself, so Ask "
-        + "Daoris should propose it; that is the `setting` kind's `language` door (D142 point 7), judged on this side already, "
-        + "which waits on the service's setting writer listing it beside this side's doors, and until then `daoris driver "
-        + "language`, a repository's page and Settings → Workspace are its doors.";
-
-    /// <summary>
     /// How an agent's accounts are used, Settings → Agents' controls (TOOL4g; D125 §6, D130 §9): each a door of the `agent`
     /// kind that the service's `agent_propose` does not write yet, which another lane's row holds.
     /// </summary>
@@ -194,8 +184,8 @@ public sealed partial class HelpCoverageTests
         ("across write-to", new Door("setting", "across")),
         // KNOWUSE1b: a standing answer for a repository, the person's words, which Ask Daoris proposes and the person applies.
         ("standing", new Door("setting", "standing")),
-        // LANG1c: the work's session language, for a repository or a workspace; its Ask Daoris door waits on the service.
-        ("language", new Owed(LanguageOwed)),
+        // LANG1c: the work's session language, for a repository or a workspace; LANG1c2 gave it the service's writer.
+        ("language", new Door("setting", "language")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
@@ -220,7 +210,7 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
-        ("workspace", "useSetLanguage", null, new Owed(LanguageOwed)),
+        ("workspace", "useSetLanguage", null, new Door("setting", "language")),
         ("workspace", "useTreesSync", null, new Door("sync", "sync")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
