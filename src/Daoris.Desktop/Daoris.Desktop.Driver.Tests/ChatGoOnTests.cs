@@ -210,6 +210,102 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// MSG1c2: a chat taken up by itself announces its end, since no route that started it is there to hear it. Here its run
+    /// fails at the spawn (a judgement test spawns nothing), which ends the record <c>failed</c> and is told as any end is.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_taken_up_by_itself_announces_its_end()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+        var ended = new List<(string Session, string State)>();
+        runner.TakenUpEnded += (session, state) => { lock (ended) ended.Add((session, state)); };
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        await Poll.Until(() => { lock (ended) return ended.Count > 0; }, () => $"moves [{string.Join(",", ledger.Moves("c1"))}]");
+        lock (ended) Assert.Equal([("c1", "failed")], ended);
+        Assert.Equal(["working", "failed"], ledger.Moves("c1"));
+    }
+
+    /// <summary>
+    /// MSG1c2: words kept on an ended chat while no runner heard them (the shell was not running) are taken up when one
+    /// comes up, judged as words shown now are: here a chat whose conversation was not kept says why. What the runner never
+    /// takes up stays as it was: a driven record (the planner's), a live chat, a chat with no words, and a chat whose every
+    /// waiting word was already judged unable to go on, which waits for a word said since; one with a word said since the
+    /// mark is tried.
+    /// </summary>
+    [Fact]
+    public async Task Words_kept_while_no_runner_heard_them_are_taken_up_as_one_comes_up()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "talk", _root).Say("w1", "Also log the port.");
+        ledger.Chat("d1", "completed", "talk", _root, kind: "driven").Say("w2", "And the readme.");
+        ledger.Chat("c2", "working", "talk", _root).Say("w3", "Faster.");
+        ledger.Chat("c3", "stopped", "talk", _root);
+        ledger.Chat("c4", "failed", "talk", _root).Say("w4", "Try again.");
+        ledger.Chat("c5", "completed", "talk", _root).Say("w5", "Old.").Say("w6", "New.");
+        var marks = new GoOnMarks(_home);
+        marks.Mark("c4", ["w4"], ContinueWhy.Of(ContinueWhy.Unkept), DateTimeOffset.UtcNow);
+        marks.Mark("c5", ["w5"], ContinueWhy.Of(ContinueWhy.Unkept), DateTimeOffset.UtcNow);
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        var taken = await runner.TakeUpAsync();
+
+        Assert.Equal(2, taken.Count);
+        Assert.All(taken, start => Assert.Null(start.SessionId));
+        Assert.Equal(ContinueWhy.Unkept, (await NoteAsync(events, "c1", e => e.Why is not null)).Why);
+        Assert.Equal(["w5", "w6"], (await NoteAsync(events, "c5", e => e.Why is not null)).Words!);
+        foreach (var untouched in new[] { "d1", "c2", "c3", "c4" })
+        {
+            Assert.Empty(events.After(untouched, 0).Events);
+            Assert.Empty(ledger.Moves(untouched));
+        }
+
+        Assert.Equal(["w4"], marks.Read("c4")!.Said);
+    }
+
+    /// <summary>MSG1c2: a chat the sweep takes up announces its end as one a word takes up does.</summary>
+    [Fact]
+    public async Task A_chat_the_sweep_takes_up_announces_its_end()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "stopped", "talk", _root).Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "talk", "conv-c1");
+        using var runner = Runner(ledger, Events);
+        var ended = new List<(string Session, string State)>();
+        runner.TakenUpEnded += (session, state) => { lock (ended) ended.Add((session, state)); };
+
+        await runner.TakeUpAsync();
+
+        lock (ended) Assert.Equal([("c1", "failed")], ended);
+    }
+
+    /// <summary>MSG1c2: a service that does not answer takes nothing up now, rather than ending the shell's start in an error.</summary>
+    [Fact]
+    public async Task A_sweep_the_service_does_not_answer_takes_nothing_up()
+    {
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(ChatLedger.Url, null, new HttpClient(new Refusing()));
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: Events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        Assert.Empty(await runner.TakeUpAsync());
+    }
+
+    /// <summary>A service that refuses every connection.</summary>
+    private sealed class Refusing : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            throw new HttpRequestException("No connection could be made because the target machine actively refused it.");
+    }
+
+    /// <summary>
     /// A record is read as a run that goes on needs it (MSG1c): its kind, state, words, adapter, account, tree, version,
     /// note and flags; a teammate's record with the same id is none of this machine's.
     /// </summary>

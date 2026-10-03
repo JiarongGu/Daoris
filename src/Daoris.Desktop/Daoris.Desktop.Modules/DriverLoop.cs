@@ -405,13 +405,17 @@ public sealed class DriverLoop(
                 // An open inbox always has a turn in hand; a closed one tells Idle.
                 Listening = queue.Taking,
             });
-        Chat = chat;
-        await ComeUpAsync(service).ConfigureAwait(false);
+        await ComeUpAsync(service, chat).ConfigureAwait(false);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
         // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
         // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
-        await using var requests = new SessionRequestWatch(homeDirectory, Processes, () => Service);
+        await using var requests = new SessionRequestWatch(homeDirectory, Processes, () => Service)
+        {
+            // A terminal's `sessions say` (MSG1e2) is judged as the box's words are: a conversation the window runs hears it,
+            // kept words are shown at once and the loop nudged, and words said as a session winds up wait here.
+            Say = Words.HoldAsync,
+        };
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
@@ -571,14 +575,41 @@ public sealed class DriverLoop(
     /// <para>The service holds its registry the moment it answers at all (its store is read on each ask), so the
     /// service being handed over is the whole of being ready. Called by the loop once its host answers; public so the
     /// tests hold what the page is told.</para>
+    ///
+    /// <para><b>Its conversations come up with it</b> (D49 §3): a chat needs the service that holds its record, so the
+    /// runner is handed over here, and the routes and a terminal's words (MSG1e2) reach it from now. Two things only the
+    /// loop does for them (MSG1c2): a chat the runner takes up by itself announces its end, since no route that started it
+    /// is there to hear it; and the words kept on an ended chat while no shell ran are taken up now, in the background, so
+    /// no look waits on them.</para>
     /// </remarks>
-    public async Task ComeUpAsync(ServiceClient service)
+    /// <param name="chat">The loop's conversations, built over <paramref name="service"/>; null keeps none.</param>
+    public async Task ComeUpAsync(ServiceClient service, ChatRunner? chat = null)
     {
         // Words held while a session winds up are tried the moment its record moves here (MSG1d).
         service.Moved += Words.OnMoved;
+        if (chat is not null)
+        {
+            chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
+            Chat = chat;
+        }
+
         Service = service;
         await eventBus.EmitAsync("DAORIS", "DRIVER_READY", new { Ready = true }).ConfigureAwait(false);
+
+        if (chat is not null)
+        {
+            var stopping = _stopping.Token;
+            _ = Task.Run(() => chat.TakeUpAsync(stopping), stopping);
+        }
     }
+
+    /// <summary>
+    /// A conversation's end, as the page's one event for it (D49 §3): the session and the state its record took. One writer,
+    /// since the shape is the page's contract: the routes that start a conversation hand it to their runs, and a chat the
+    /// runner took up by itself is announced by it (MSG1c2).
+    /// </summary>
+    internal static Task Ended(IEventBus bus, string session, string state) =>
+        bus.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state });
 
     /// <summary>
     /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and

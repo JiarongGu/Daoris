@@ -58,8 +58,7 @@ public sealed partial class DriverModule
 
         var start = await chat.StartHelpAsync(
             helper, config, machine,
-            onEnded: (session, state) =>
-                _events.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state }),
+            onEnded: (session, state) => DriverLoop.Ended(_events, session, state),
             ct: cancellationToken).ConfigureAwait(false);
 
         _loop.Nudge();
