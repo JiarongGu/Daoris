@@ -41,5 +41,8 @@
   "work.rail.archivedTip": "Archived on this machine: kept whole, and out of the list unless Show archived, in the list’s ⋯, is ticked.",
   "work.rail.empty.headline": "Nothing is running",
   "work.rail.empty.body": "Sessions appear here as the driver takes quests and as you open conversations, listed by what each one needs from you.",
-  "work.rail.ended": "Ended"
+  "work.rail.ended": "Ended",
+  "work.rail.pausedAsk": "paused with ask #{{id}}",
+  "work.rail.pausedQuest": "paused with quest #{{id}}",
+  "work.rail.pausedTip": "Its quest is paused on this machine: nothing of its work starts here until you resume it, and Resume carries it on."
 }

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1068 service and 62 HTTP host, 3620 driver,
-592 desktop modules, 80 devkit, 2736 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
+**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1068 service and 62 HTTP host, 3703 driver,
+597 desktop modules, 80 devkit, 2839 web unit, 24 Playwright**, 114/114 release rehearsal, **357/357
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -190,11 +190,6 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
 - [ ] **KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it** (web, driver, modules; after
   KNOWUSE1a). The session page of a park that asked go-aheads shows them with *Approve* and *Refuse*, and answering
   there also answers the park: one press, not two. Contract: D135 §2, its KNOWUSE1a note. Proof: vitest; a driver test.
-- [ ] **KNOWUSE1c — a closing note says what needs you apart from readings, each citing its source** (driver). Ticket line,
-  doc line or code path beside every item; the look names the repository's own indexes. Contract: D135. Proof:
-  `AskAndWaitPromptTests`; a canary turn.
-- [ ] **KNOWUSE1d — the owner's words quoted second-hand are a reading** (driver; beside DRIFT1). A quote in a doc, a closed
-  note or a commit is attributed only if the ask's record holds it. Contract: D135. Proof: prompt goldens.
 - [ ] **KNOWUSE2 — a bench for checking a question before it reaches the owner** (tools). Replays the 46 recorded
   questions through the no-model floor (word search, labelled *words only*) and a model tier on the deployment's own
   harness, scored against their classes. Contract: D135. Proof: script tests; the model tier is the owner's run.
@@ -242,12 +237,6 @@ owner on 1 October.
   chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
   Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **MSG1 — session messages, one model for every door** (owner, 2026-10-03: *"we do need a way to set message between
-  runs so it does the resume so that close the gap for codex and it does look like in the same session, and this should
-  be properly designed native/daoris managed session messages"*). A person's words to a session reach it at the next
-  step where the door allows (STEER1), else at its turn's end by resuming the harness's own conversation (ANSWER1's
-  resume), and after it ended by reopening the record, so every door reads as one session. Contract: D137 (in flight).
-  Proof: the design, the doors measured, then its rows.
 - [ ] **MSG1a — the record keeps the person's words and reopens** (service). `said` replaces a single `answer`, and the
   ledger's one move out of an ended state takes words waiting, on this machine's record only. Contract: §2.3, §2.4,
   §5.3's `say`. Proof: `SessionLedgerTests` (stood-down, a teammate's and no words refused), `LocalHostTests`, a pushed
@@ -313,12 +302,6 @@ owner on 1 October.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
-- [ ] **PAUSE1d — abandon** (driver, modules; after b and c). One listed press that declines the quests with the person's
-  reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`; its declines send
-  `whileOpen` (PAUSE1c), and D132 §5.2 and §13's older-remote sentence takes PAUSE1c's reading. Contract: D132 §3, §4,
-  §7.2–§7.3. Proof: `AbandonTests`; a Process case on real git; a family rehearsal phase.
-- [ ] **PAUSE1e — on the screen** (web-shell; after b and d). *Pause…*, *Resume*, *Abandon…* with its list and reason on
-  the ask's and quest's pages and a session's acts. Contract: D132 §6, §7.1, §8. Proof: stories, vitest, the look.
 - [ ] **PAUSE1h — the ask's page shows its work** (web-shell; found by PAUSE1e). Each quest of `WORK_PLAN` with its state
   and sitting reason, the questions its sessions asked, and their sessions as doors into Sessions, so the person sees
   what a pause or abandon reaches before pressing. Contract: D132 §7.1. Proof: stories, `AskPage` vitest, the look.

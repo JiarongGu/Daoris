@@ -41,5 +41,8 @@
   "work.rail.archivedTip": "已在本机归档：完整保留；只有在列表的 ⋯ 中勾选「显示已归档」时才会列出。",
   "work.rail.empty.headline": "当前没有会话在运行",
   "work.rail.empty.body": "驱动接下委托、或你开启对话之后，会话会出现在这里，按各自需要你做什么排列。",
-  "work.rail.ended": "已结束"
+  "work.rail.ended": "已结束",
+  "work.rail.pausedAsk": "随需求 #{{id}} 暂缓",
+  "work.rail.pausedQuest": "随委托 #{{id}} 暂缓",
+  "work.rail.pausedTip": "它的委托已在本机暂缓：在你恢复之前，这里不会启动它的任何工作；恢复后会继续。"
 }

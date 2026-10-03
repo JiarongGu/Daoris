@@ -2,6 +2,7 @@ import type { Quest, Session } from '../api';
 import { answeredPark, type IconName, SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isHelp, isIntake, sessionOrigin } from './identity';
+import { askOf, type WorkTarget } from './pausing';
 import type { SessionWhere } from './SessionRow';
 
 // The acts on a session, as its row's ⋯ and its page header offer them (SESSUX1d, D126 §3.1): which apply, in which
@@ -10,11 +11,13 @@ import type { SessionWhere } from './SessionRow';
 
 /** Every act a session's doors offer, by the name `sessionActs.ts` runs it by. Finish and Decline… stay its card's. */
 export type SessionActId =
-  | 'answer' | 'stop' | 'retry' | 'review' | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
+  | 'answer' | 'stop' | 'pauseQuest' | 'pauseAsk' | 'resumeQuest' | 'resumeAsk' | 'retry' | 'review' | 'openFolder'
+  | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
 
-/** §3.1's order, the order a menu lists them in. */
+/** §3.1's order, the order a menu lists them in; a pause beside the stop, and a resume where *Try again* stands (D132 §7.1). */
 export const ACT_ORDER: readonly SessionActId[] = [
-  'answer', 'stop', 'retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'unarchive', 'delete', 'copy',
+  'answer', 'stop', 'pauseQuest', 'pauseAsk', 'resumeQuest', 'resumeAsk', 'retry', 'review', 'openFolder', 'terminal',
+  'detach', 'archive', 'unarchive', 'delete', 'copy',
 ];
 
 /**
@@ -24,6 +27,11 @@ export const ACT_ORDER: readonly SessionActId[] = [
 export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; danger?: boolean }> = {
   answer: { label: 'work.act.answer', icon: 'answer' },
   stop: { label: 'work.act.stop', icon: 'stop', danger: true },
+  // PAUSE1e: the player's pause and play, since a pause keeps everything and Resume carries it on where it stood.
+  pauseQuest: { label: 'work.act.pauseQuest', icon: 'pause' },
+  pauseAsk: { label: 'work.act.pauseAsk', icon: 'pause' },
+  resumeQuest: { label: 'work.act.resumeQuest', icon: 'resume' },
+  resumeAsk: { label: 'work.act.resumeAsk', icon: 'resume' },
   retry: { label: 'work.act.retry', icon: 'refresh' },
   review: { label: 'work.head.review', icon: 'diff' },
   openFolder: { label: 'work.act.openFolder', icon: 'folder' },
@@ -39,6 +47,8 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
 /** What decides a session's acts: its record, where the list's reader placed it, its repository's checkout, and where its work is. */
 export type ActFacts = {
   session: Session;
+  /** Its quest, where the page holds it: whether an ask asked it decides *Pause ask…* (PAUSE1e). */
+  quest?: Quest | null;
   /** Where the reader placed it (SESSUX1a); absent where none answered, and then only the record speaks. */
   grouping?: SessionGrouping | null;
   /** Its repository's registered checkout on this machine, answered only to the machine that holds it (D48 §7). */
@@ -74,18 +84,29 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  *   quest, its record one the ledger would delete, its tree and landing no longer here. D95's way: offered only there.
  * - **A teammate's record** (SYNC4) is offered only what reaches no process: the archive marks, which are this machine's
  *   (§5.2), and its id.
+ * - **Pause quest…** for a live driven session, and **Pause ask…** where its quest is an ask's, unless a pause holds it
+ *   already; **Resume ask** or **Resume quest** where one does, in *Try again*'s place, which a pause comes before (PAUSE1e,
+ *   D132 §6.1, §7.1). A parked session's quest gets no pause verdict, so a pause of its work offers its pause again, which
+ *   answers that it was paused already.
  */
 export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionActId[] {
   const { session, grouping, where } = facts;
   const here = sessionOrigin(session) === null;
   const intake = isIntake(session);
   const live = SESSION_ACTIVE.has(session.state);
+  const pausedBy = grouping?.pausedBy ?? null;
   const offered = new Set<SessionActId>();
 
   if (here) {
     if (door === 'row' && session.state === 'awaiting-person' && !answeredPark(session) && !intake) offered.add('answer');
     if (live) offered.add('stop');
-    if (grouping?.shown === 'parked' || (session.state === 'stopped' && grouping?.holdsQuest)) offered.add('retry');
+    const driven = live && Boolean(session.quest) && session.kind !== 'chat' && !intake && !isHelp(session);
+    if (driven && !pausedBy) {
+      offered.add('pauseQuest');
+      if (askOf(facts.quest)) offered.add('pauseAsk');
+    }
+    if (pausedBy) offered.add(pausedBy.scope === 'ask' ? 'resumeAsk' : 'resumeQuest');
+    else if (grouping?.shown === 'parked' || (session.state === 'stopped' && grouping?.holdsQuest)) offered.add('retry');
     if (!intake && !isHelp(session)
       && (grouping?.group === 'review' || Boolean(where?.landed) || (Boolean(session.tree) && !where?.treeGone))) {
       offered.add('review');
@@ -105,13 +126,35 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
 }
 
 /**
- * The header's loud act (§3.2): *Try again* while parked or held, *Review* in To review, else none. The one primary
- * control a page has is its next step (platform language §4).
+ * The header's loud act (§3.2): *Resume* while a pause holds its quest (D132 §6.1), *Try again* while parked or held,
+ * *Review* in To review, else none. The one primary control a page has is its next step (platform language §4).
  */
 export function primaryAct(acts: readonly SessionActId[], grouping?: SessionGrouping | null): SessionActId | null {
+  if (acts.includes('resumeAsk')) return 'resumeAsk';
+  if (acts.includes('resumeQuest')) return 'resumeQuest';
   if (acts.includes('retry')) return 'retry';
   if (acts.includes('review') && grouping?.group === 'review') return 'review';
   return null;
+}
+
+/**
+ * The work a pause or a resume on a session names (PAUSE1e, D132 §7.1): *Pause quest…* its quest, *Pause ask…* the ask that
+ * asked it, and *Resume* the pause that holds it, as the reader named it. Null for any other act, or where the fact is missing.
+ */
+export function workTargetOf(act: SessionActId, facts: Pick<ActFacts, 'session' | 'quest' | 'grouping'>): WorkTarget | null {
+  switch (act) {
+    case 'pauseQuest': return facts.session.quest ? { scope: 'quest', id: facts.session.quest } : null;
+    case 'pauseAsk': {
+      const ask = askOf(facts.quest);
+      return ask ? { scope: 'ask', id: ask } : null;
+    }
+    case 'resumeAsk':
+    case 'resumeQuest': {
+      const pause = facts.grouping?.pausedBy;
+      return pause ? { scope: pause.scope, id: pause.id } : null;
+    }
+    default: return null;
+  }
 }
 
 /**

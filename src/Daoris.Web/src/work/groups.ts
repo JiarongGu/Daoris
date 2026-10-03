@@ -43,6 +43,11 @@ export type SessionGrouping = {
    */
   holdsQuest?: boolean;
   /**
+   * Whose pause holds this session's quest on this machine (PAUSE1b, D132 §6.1): an ask's or a quest's own. Its row says so,
+   * and offers *Resume* in *Try again*'s place (PAUSE1e). Absent where none does, and on a host older than the fact.
+   */
+  pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
+  /**
    * Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): a conversation that served no quest, whose record the ledger
    * would delete and whose tree and landing this machine no longer holds. Offered only where true, D95's way. Absent on a
    * host older than the fact, which offers none.

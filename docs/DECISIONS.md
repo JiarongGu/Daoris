@@ -3997,6 +3997,10 @@ words are a prompt sent the moment they are said, and reach it at its next step;
 everywhere else. The words are recorded the moment they are said, with when they reach the session, and again where it
 took them, not only when they are handed over. *Send now* stops nothing on the next-step door, where nothing is held.
 
+*Amended by D137 (MSG1, 2026-10-03): a session never concludes while words are held, on the native door too, which
+resumes its conversation with them; a word said as a session winds up waits for its record to reopen instead of being
+refused.*
+
 ## D91 — What depends on what is declared by the repository that depends, as `domain.uses` (2026-09-30)
 
 **Decision (MAP4e, amending D34).** A repository's `domain` in its `daoris.json` may carry `uses`: the
@@ -9437,6 +9441,10 @@ both languages are the parent's to look at. Whether an answer through the window
 real agent is ANSWER1d's canary. The map's *parked* mark and Ask Daoris's count of sessions waiting on you still read
 the record's state, so for up to one look they count an answered park.
 
+*Amended by D137 (MSG1, 2026-10-03): the resume reaches every session of this machine the person writes to, not only an
+answered park. A finished record reopens on the person's words alone, which this entry rejected; a second answer joins
+the first; a resume asks for its record's own account and waits out a cool-off; and `elsewhere` joins the codes.*
+
 ## D132 — An ask's work is paused and resumed whole on this machine, and abandoned on a listed second press that discards only what nothing else holds (2026-10-02)
 
 **Decision (PAUSE1).** The owner, 2026-10-02, wanted to stop a request whose work had gone the wrong way: *"so there
@@ -9536,7 +9544,8 @@ named, not touched.
 
 **What the gate does not cover.** This decision is documents only. The code was read at `32cbf03`, as the design's
 §13 lists. That SESSUX1g's request folder is built as D126 §7.1 says is assumed, and PAUSE1b waits on it. An older
-remote applies a `whileOpen` decline as a plain one. Found while reading and filed: D124's set-up plan *Pause* stops
+remote honours no `whileOpen` on a push nobody rebased, which no machine of this build sends (as PAUSE1c's note reads it;
+amended by PAUSE1d). Found while reading and filed: D124's set-up plan *Pause* stops
 nothing that runs, so by this glossary it is a hold, for WSSETUP7 to name. The code's comments call a repository's
 hold *paused*, which PAUSE1b rewords. Not measured: every item of the design's §12. `verify` checks this entry's shape
 and the design's links, and none of their words.
@@ -9641,6 +9650,88 @@ decline first, an older record, an older remote); `QuestShareTests`; `LocalHostT
 `ServiceClient`, which this branch did not touch. Reading each decline's answer from the pass is the abandon's. No real
 remote ran, an older one included: the older remote here is the real store behind the real wire with the flag taken
 out. The rehearsals were not run by this branch.
+
+**Built 2026-10-03 (PAUSE1d): abandon** (points 6–10; design §3, §4, §7.2, §7.3). `WorkAbandoning` plans and abandons for
+both doors: `WORK_PLAN`'s abandon half and `WORK_ABANDON` (`DriverModule.Work.cs`), and `daoris-driver ask --abandon` and
+`quest abandon` with `--reason` and `--yes` (`WorkCommand`). The proof is `SessionTrees.OnlyHereAsync`; the record is
+`AbandonRecord` (`<home>/abandoned.json`); the log gains `work.abandoned` (the machine log design's §4); `WORK_REASON` is in
+both catalogues. What building it settled:
+- **Whose take a taken quest is** is this machine's claim (`ClaimAsync`, D68 §4) and the records' `Took` (STANDDOWN2). This
+  machine's take with a record of its own that took it is declined; with none, it was taken outside Daoris and stays;
+  another machine's stays, named by a teammate's record where one is on it, else *another machine*, since the service names
+  no taker. The driver now reads `took` and `baseCommit` on its records and `workspace` on its quests. 🔴 The family's stub
+  takes over HTTP and marks no `Took`, so a quest it holds reads as taken outside Daoris.
+- **The proof judges from the tree's first session's base** (a carry-on's base is later), against every branch but local
+  `daoris/*`, every remote and every tag, so a pushed `daoris/*` counts. Checked out anywhere but its own tree, a base git
+  does not know, a path outside this home's trees and a branch not `daoris/*` are each kept. A branch whose tree went
+  without git being told has that stale registration pruned before `branch -D`.
+- **A piece is its key** (`quest:`, `session:`, `tree:<repository>:<branch>`, `ask:`), and `abandon.pieces` is what the
+  second press sends. One listed that the reader no longer takes changed since the list and is counted. One the reader
+  takes that the list did not hold joined since and is not taken, and **the scope stays paused**, as after a failed step:
+  joined work starting again once the pause is gone is the harm §3.4 names.
+- **A quest whose session could not be stopped is not declined**, and a tree a session still runs in is not discarded. A
+  decline, a close or a discard the service or git refuses is a failed step with its sentence, never a change. Each leaves
+  the scope paused.
+- **A session stopped whose tree stays with work went** (its stop) and is named to review. An archive the list held alone
+  that the reader now refuses changed. A parked session is ended through `WorkPausing.StopAsync`, which now takes one, by a
+  request with `by: abandon` and `parked` where another process runs it.
+- **The pass reads each decline back**: lost where the quest is no longer declined, unconfirmed where the pass met a wall or
+  left the quest behind (`SyncStanding.Behind`), confirmed otherwise. A workspace with no remote answers none. The screen
+  runs the loop's own pass; the terminal runs `RemoteSyncSet` over the same map.
+- **The record** keeps each tree's sessions and an `alone` mark for a branch whose tree was gone, `changed` on each kept
+  piece the list had held to go, and never git's or the service's sentence, which may name a path. An entry whose ask or
+  quest the service no longer lists is dropped as the next is written.
+- **The room's doors** gain abandon's row, marked exempt (D132 §7.4), and `HelpCoverageTests` holds the exemption.
+- **D132's gate note and the design's §5.2 and §13** now read an older remote as PAUSE1c's note does.
+
+**What the gates do not cover.** Held by `AbandonTests`, `DriverModuleWorkTests`, `HelpCoverageTests` and the room's golden
+files, each seen failing first: `AbandonTests` against stubbed bodies (its unknown case passed early, through the resume
+verb), the module's abandon cases with the route unmarked and the keep words blanked, and the catalogue and README route
+tests before their rows. `SessionTreeOnlyHereTests` (the `Process` half, real git) and the family rehearsal's phase 16a are
+written and were not run here; the ranges the proof asks were checked by hand on a scratch repository (a branch, a tag,
+another `daoris/*` branch, a pushed one). 🔴 The phase's first run, at the merge, failed at its set-up: a person's
+`ask --publish` to the receiver the ask already named answers that same quest again, so the "second" quest was the first,
+its branch was the one pushed, and the list rightly found nothing only Daoris held. The phase now publishes its other
+quests through the ask's publish door with words of their own, as an intake does, prints the work beside every check, and
+holds that nothing outside the ask's work moves; the proof was then run by hand over a copy of that layout and cleared the
+tree. The phase wires no remote, so the `whileOpen` race over a real one stays PAUSE1c's suite's. A queued session nothing
+runs is not reached, as for a pause. How long `WORK_PLAN` takes now that it walks
+git per tree is not measured (design §12). The page's acts and its words for each act and why are PAUSE1e's.
+
+**Built 2026-10-03 (PAUSE1e): on the screen** (points 11 and 12; design §6, §7.1, §8). `bridge/work.ts` asks the four routes;
+`work/pausing.ts` is the one pure rule the ask's page, the quest's page and a session's header read; `work/workActs.ts` owns
+the three presses; `work/WorkAsks.tsx` draws the pause's ask, the abandon's list and *What went* and *What stayed*. No route
+lacked a field, so the modules are untouched. What building it settled:
+- **A plan is asked only while Quests is in front**, under the quests' key so a tick and a move on a quest ask it again, since
+  each answer walks git per tree. An answer without a plan's shape is no plan, and with no plan no act is offered: none is
+  guessed while it is on its way.
+- **A pause stops nothing when no piece's pause act is `stopped`**, and then applies at once with its notice (§2.6). *Another
+  machine may still take* is said where the machine's wiring (`DAORIS.REMOTES`) names the ask's or quest's workspace, or the
+  environment names the remote whole. A session it meant to stop and could not is its own failure notice.
+- **The abandon's second press sends the plan held from when its list opened**, whatever the reader answers meanwhile.
+  *What went* reads the second press's answer at once, then `abandoned.json`'s entry, which keeps no detail.
+- **A quest's own pause the tick has no verdict for** (its session waits on you, §2.1) is said from the plan under *Sitting*,
+  with *Resume*. Another's pause is the tick's sentence and a door to the ask or the quest whose pause it is.
+- **A session's acts**: *Pause quest…* for a live driven session here, *Pause ask…* where its quest's sender is an ask, both
+  absent once `pausedBy` holds it; *Resume ask* or *Resume quest* where it does, in *Try again*'s place and leading the header.
+  A parked session's quest gets no `Paused` verdict, so its acts offer the pause again, and a second pause answers that it was
+  paused already. The pause asks under the session's header, as *Stop…* does; *Resume* never asks.
+- **`work.sitting.Paused`** passes the driver's English through and says 中文 from `pausedBy`, a quest's own pause by the
+  catalogue's `context`; `i18n-check.mjs`'s facts a passed sentence may say gain `pause`.
+- **The glossary's two terms** carry the design's Chinese avoid lists. *Abandon*'s English list is empty: *clean up* and
+  *cancel* are other terms' names, and avoiding them would report every label that names those. Beyond §8.1's keys: the
+  quest page's *Abandoned*, *What went* and *What stayed*, the sentence a browser says instead of the acts, the close's
+  sentence (§6.5), the row's *paused with* line, and the `work.pause.*` and `work.abandon.*` sentences.
+
+**What the gates do not cover.** Held by `pausing.test.ts`, `bridge/work.test.tsx`, `workActs.test.tsx`, `WorkAsks.test.tsx`,
+`AskPage.work.test.tsx`, `QuestPage.work.test.tsx`, `QuestsView.work.test.tsx` over the mocked bridge, `acts.test.ts`,
+`sessionActs.test.tsx`, `SessionRow.test.tsx`, `WorkFrame.test.tsx` and `signals.test.ts`, the stories, parity and
+`names:check --strict`. The bridge's, the quest page's, the sitting sentence's, the session acts' and the row's line's tests
+were seen failing before their code; the rest came with it, and the header's offers, the wired sentence, the ask page's
+quiet pause and the session's pause ask were each sabotaged and seen red. The window was not looked at (light and dark, both languages, 1280,
+888 and 680 px), and `test:web`, the rehearsals and the `Process` half were not run here. The budgets of §8.1 are estimates
+until the window measures them (§12). **Not built**: the ask's page listing its work (§7.1's second point: each quest with its
+state and sitting reason, the questions, the sessions as doors), and Ask Daoris's `pause` kind (PAUSE1f).
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
@@ -10099,6 +10190,64 @@ when and edit, clear, the bound) and `ProjectsView.test.tsx` (shown on the repos
 no real agent was handed the answer, so whether it stops the go-ahead questions it answers is not measured; the page was
 not looked at on the window.
 
+**KNOWUSE1c, built 2026-10-03: a closing note keeps what needs the person apart from readings, each naming its source.**
+Every driven instruction (a claim, a D79 resume, a carry-on) ends its look-and-ask paragraphs with how the close is written
+(`TargetPrompt.Closing`): the note a quest closes with and the last message a stop ends on keep two lists apart. Under
+*Needs you*, only what the person alone can give, each with why and what was looked at first. Under *Readings*, everything
+else, said as the session's reading rather than asked, each naming what it rests on: the quest's or its linked ticket's
+line, quoted; a document's path and line; a code path. The look names the indexes the session's tree keeps
+(`RepositoryIndexes.Find`, read in `SessionTarget.ForQuest` beside the code map): the router `daoris.json` declares, then
+every markdown file with *index* as a word of its name, one level deep in the root, `docs/`, `.claude/`, `.claude/rules/`,
+`.claude/knowledge/`, `.agents/` and `.agents/knowledge/`. Choices §4 left open:
+- **An agreement the repository's own documents require is the person's**, listed beside a go-ahead, a sign-in and a
+  preference nothing records: point 7 keeps such a document standing, so it is not a reading to take.
+- **Both places the person reads**: a quest's close and a stop's last message, since 15 of the 46 came in parks.
+- **The headings are words, not a format.** The harness writes the note and nothing parses it; a fact gates and a
+  judgement reports (D54).
+- **Indexes are found by name, not by reading the instructions.** The evidence's repository named its indexes in its
+  instructions by file name alone, kept in its rules folder; a name over the folders documents and doctrine are kept in finds
+  them, Daoris's generated index and an unadopted repository's alike, with no one's prose parsed and no walk of the tree.
+- **The router is a pointer, not a twin** of `checkDocuments` and `RepositoryDocuments`. It is named only as a plain
+  repository-relative path (no `..`, no root, no drive) to a file the tree holds, and nothing is refused or gated on it,
+  so `.claude/knowledge/twins.md` gains no row.
+- **Eight named at most**, the rest counted beside them: a pointer, not a listing.
+- **The instruction is LF throughout.** `Carried` ended its lines in the platform's newline, so a quest with links, files or
+  a chain was handed CRLF lines inside an LF instruction on Windows. It now ends them in LF, which the golden needed to
+  hold one text on every machine.
+
+Proof: `AskAndWaitPromptTests` (every instruction keeps the two lists, each naming its source, after the stop; the indexes
+named where the tree keeps one, two or three, and bounded), seen failing before the wording; `RepositoryIndexesTests` (none;
+each folder in order; nothing deeper or elsewhere; the name table; the router's two shapes and its spellings, first; a
+router that is an index named once; twelve declarations that name nothing; a manifest that does not read; `ForQuest`), seen
+failing on a stub that found nothing; `TargetPromptGoldenTests`, new: three instructions (a repository's quest carrying
+nothing, an ask's with every section, a carry-on after the person's answer) pinned as they were, then the goldens gained the
+wording and failed before the instruction did. Not covered: no real agent was handed it, so whether a harness keeps the
+two lists and cites its sources is not measured, which a canary turn on the owner's install is for; nothing checks a
+closing note's shape, by design; an index named otherwise, or kept deeper, is not named.
+
+**KNOWUSE1d, built 2026-10-03: the person's words quoted second-hand are only a reading.** Every driven instruction says,
+below the look (`TargetPrompt.Attributed`), that only the words it quotes as the person's own are theirs: their words on
+the ask (DRIFT1b), a requirement's quote, a go-ahead's answer, the standing answer and a parked session's answer, each from
+a record Daoris keeps. Their words quoted anywhere else (a document, a closed quest's note, a commit, an earlier session's
+record) are someone's reading, however firmly attributed. A session relies on one only as a reading, under *Readings* with
+where it found it, and writes nothing into the repository that records it as the person's words or decision. Choices §5
+left open:
+- **What the instruction quotes is the measure**, not the ask's record read again: no connector tool reads an ask's
+  words, and the instruction already carries them. A word the bound left out is said to be kept on the ask's record, so a
+  quote of one met elsewhere reads as a reading, which is the safe side.
+- **One sentence for every quest**, on an ask or not, its words read or not: where the instruction quotes none of the
+  person's words, nothing met second-hand is theirs either.
+- **Said, not checked.** Whether a note or a document a session writes attributes words truly is a judgement (D54);
+  DRIFT1d's done already refuses a departure quoting words that are not on the ask.
+- **Below the look and above asking another repository**, where such a quote is met, and below the words the instruction
+  quotes, so what it points to is above it.
+
+Proof: `AskAndWaitPromptTests` (every instruction says it; on an ask, after the person's words and the look and before
+asking another repository) and the three goldens of `TargetPromptGoldenTests` gaining the paragraph, each seen failing
+before the wording. Not covered: no real agent was handed it, so whether a session stops recording an attributed reading
+as the person's is not measured; the repository document that already records the misread answer stands until the
+person's request (KNOWUSE4) reaches that repository.
+
 ## D136 — A word to a working session reaches it at its next step where its door takes one during a turn, and at its turn's end where it does not; the conversation shows it at once, saying which (2026-10-03)
 
 **Decision (STEER1, amending D90).** The owner, 2026-10-03: *"I did send back the message but it never shows to
@@ -10166,3 +10315,82 @@ branch seen failing with its line removed. `DrivenSessionInputTests`' process te
 is the parent's to run. Not covered: no driven session on the install has heard a word mid-turn yet (only the
 evidence's session, outside Daoris); a fold that waits for a long tool is read, not seen; nobody has looked at the held
 words on the window; the steer box still says nothing of its door, and *send now* stays disabled on the next-step door.
+words on the window; the steer box still says nothing of its door, and *send now* stays disabled on the next-step door.
+
+*Amended by D137 (MSG1, 2026-10-03): the reaches gain `resume`, for a parked or ended session whose record reopens; a
+chat on the next-step door takes words at once; and `codex-acp`'s next-step door is `_session/steering`, which Codex
+drains at the next step as read, built after one measured turn.*
+
+## D137 — A person's words reach a session whatever its door and state: at its next step, at its turn's end, or by reopening its record and resuming its own conversation; Daoris resumes only by the id it kept (2026-10-03)
+
+**Decision (MSG1).** The owner, 2026-10-03: *"we do need a way to send messages between runs so it does the resume, so
+that closes the gap for codex and it does look like the same session, and this should be properly designed:
+native/Daoris-managed session messages"*. Read from the code at `14338bff`: a running driven session on the protocol
+door hears words (D90, D136), a native one refuses them, a session winding up refuses them, a parked one takes them as
+its answer (D131), and an ended one takes nothing. The contract is `docs/2026-10-03-session-messages-design.md`; its §1
+reads what `codex-acp` 2.1.1, `codex exec` at `rust-v0.159.3` and Claude Code's native door offer.
+
+1. **Three reaches, one record.** Words are said to a session and reach it at its `next-step`, at its `turn-end`, or
+   on `resume`. The record shows them the moment they are said with their reach, and again under the same id where the
+   session took them, or names where a fallback sent them (design §2, §3.1).
+2. **While a turn runs**, at the next step where the agent declares it takes words then (D136), and at the turn's end
+   everywhere else. **A session never concludes while words are held**: the protocol door prompts them in the same
+   process; the native door resumes its conversation with them under the same record. A word said as a session winds
+   up waits for the reopen instead of being refused. A chat on a next-step door takes words at once (design §2.1).
+3. **Between runs, the record reopens and the conversation resumes.** Words to a parked or ended session of this
+   machine resume its harness conversation, every held word its next prompt, by D131's judgement and doors: a parked,
+   completed, declined, failed, cut-off or stopped driven session, and an ended chat. Never a teammate's record, an
+   intake or a stood-down session. A stop's hold is released and a failure forgiven, as *Try again* does (design §2.2).
+4. **Where it cannot resume**, a taken quest is carried on in a new session handed the words (D80, D131 §2); an open
+   one starts handed them; a closed quest or a chat offers *Start a conversation with these words*, the person's press.
+   A pause, a repository's hold, the cap and an account cooling hold the words, named; they never refuse them.
+5. **The ledger gains one move out of an ended state**: to `working`, with the person's words waiting, on this
+   machine's record. `stood-down` never moves. A reopened run on a closed quest ends as its process does, its quest
+   unmoved (design §2.3).
+6. **The words wait in `said`**, a list on the record, local to this machine, which `answer` becomes: a second word
+   joins the first. On the ask they are kept once taken, as the new kind `reopened` (design §2.4).
+7. **A resume asks for its record's own account.** A cool-off holds the words until its reset, with *Go on in a new
+   session* offered; an account that can no longer run there carries on at once, saying `account`.
+8. **One record per harness conversation; Daoris resumes only by the id it kept.** A chat keeps its id too. Never
+   `--continue`, `--last` or a name: `codex exec resume` starts a new thread for a name it cannot find. A person's own
+   terminal conversation comes into Daoris only as a fork, held until asked. What is never claimed is design §4.4.
+9. **Codex.** `codex-acp` resumes (`session/resume` is `thread/resume` with no history; `session/load` replays), names
+   the conversation by Codex's thread id, and refuses a thread another Codex client holds with
+   `data.reason: "thread_active_writer"`, which Daoris reads as a new code, `elsewhere`. Its next-step door is
+   `_session/steering`, which Codex drains at the next step as read, built only after STEER3's measured turn. A native Codex
+   door would resume with `codex exec resume <thread-uuid>`, the id from `thread.started`, its words waiting for the
+   run's end.
+10. **Both doors.** The screen's box on every session that takes words, and a line saying why where none does; *Send
+    back…* opens it; both catalogues, *resume* staying the pause's word. The terminal's `daoris-driver sessions say
+    <id> "…"` through D126's request folder. Ask Daoris is exempt: the words are the person's.
+
+**Why.** A session that finished is the one that knows what it did, and Claude Code's own terminal lets a person write
+to a conversation after its turn, the next day, and it goes on. D131 built the resume for one entry, an answered park;
+every other entry still starts a fresh session or refuses, so the person rebuilds through a quest or a new chat what
+the conversation holds, and sees two rows for one piece of work. One record per harness conversation (D131 §3) means a
+resumed conversation is the same record, so it must reopen: the cost is one ledger move, its strikes and its travel,
+stated where they bind. The doors that cannot hear words during a turn (`codex-acp` today, the native door) hear them
+between runs with the same record, which is the gap the owner named for Codex.
+
+**Rejected.**
+- **A new record continuing the old conversation, linked to it**: D131's rejected shape, every reader learning a fold.
+- **Refusing words to an ended session**, which is today, and **a fresh session for every message** (D90).
+- **`--continue`, `--last` or a name** to find a conversation, and **reading the account's home** for one (D66 §3).
+- **Adopting a terminal conversation in place**: two clients writing one conversation.
+- **A second `session/prompt` to `codex-acp`**, and **steering it before a turn is measured**: a steer that lands after
+  the turn ended starts a turn of its own.
+- **Replacing a first answer with a second** (ANSWER1b as built), and **reopening a done quest from its session's
+  box**, which is DRIFT1e's.
+
+**This amends:** D131 (reopening a finished record, for the person's words alone; a second answer joins; a resume's
+account; `elsewhere`), D90 and D136 (no conclusion while words are held, on the native door too; no refusal while
+winding up; chats), D76's CONV4a (a chat's words on a next-step door, and as record events), D46 §4 (one way out of an
+ended state), D83, D80, D104 and D126 §3.4 (words to a stopped or failed session reopen it), D133 §1 (`reopened`), and
+D94 §4 (`session.reopened`, `message.sent`'s `reach`). INT4i, D52, D47 §6 and D132 stand. The rows are design §8,
+MSG1a–MSG1k.
+
+**What the checks do not cover.** Documents only, and nothing is built. The harness findings were read from shipped
+packages, the maker's source and one binary's help at the versions in design §1; no turn was run, Codex is not
+installed on this machine, and Daoris pins no Codex version. Whether Codex's steer ever cuts a step short, whether Codex
+locks a thread across processes, and whether Claude Code notices a second writer were not read. `verify` checks this
+entry's place and the design's links, and none of their words.

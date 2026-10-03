@@ -1957,6 +1957,62 @@ describe('a session’s page header and its acts', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^Deleted c0ffee11/)));
   });
 
+  /**
+   * PAUSE1e (D132 §2.6, §7.1): a running driven session's ⋯ offers *Pause quest…*; it asks once under the header, saying
+   * from the driver's plan what it stops, and pauses on its second press. Where a pause holds its quest, *Resume quest* is
+   * the header's loud act, in *Try again*'s place.
+   */
+  it('pauses a running session’s quest from its header’s ⋯, asking once and saying what it stops', async () => {
+    const plan = {
+      scope: 'quest', id: 'abc123', pausable: true, paused: null, trees: [], landings: [],
+      quests: [{ quest: 'abc123', title: 'Expose a streaming budget', to: 'engine', status: 'Open', joined: 'named', pause: 'paused', key: 'quest:abc123', abandon: 'decline', whileOpen: true }],
+      sessions: [{ session: 's1a2b3c4', repository: 'engine', state: 'working', quest: 'abc123', pause: 'stopped', key: 'session:s1a2b3c4', abandon: 'stop', archive: true }],
+      abandon: { abandonable: true, pieces: ['quest:abc123', 'session:s1a2b3c4'], closes: null, abandoned: null },
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'WORK_PLAN') return plan;
+      if (type === 'WORK_PAUSE') return { scope: 'quest', id: 'abc123', did: 'paused', already: false, stopped: [{ session: 's1a2b3c4', quest: 'abc123' }], kept: [] };
+      if (type === 'SESSION_GROUPS') return { sessions: [{ session: 's1a2b3c4', group: 'working', shown: 'working', archived: false, teammate: false }] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const user = userEvent.setup();
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GROUPS', {}));
+    acts.getByRole('button', { name: 'More actions' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitem', { name: 'Pause quest…' }));
+
+    const ask = await screen.findByRole('group', { name: 'pause this work' });
+    await waitFor(() => expect(ask).toHaveTextContent('Stops 1 running session now and starts nothing of quest #abc123 on this machine'));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_PAUSE', expect.anything());
+    await user.click(within(ask).getByRole('button', { name: 'Pause quest' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_PAUSE', expect.objectContaining({ payload: { quest: 'abc123' } })));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^Paused quest #abc123 and stopped 1 session/), 'ok'));
+    await waitFor(() => expect(screen.queryByRole('group', { name: 'pause this work' })).toBeNull());
+  });
+
+  it('leads a stopped session’s header with Resume where a pause holds its quest, and resumes over the driver', async () => {
+    SESSIONS = [{ ...DRIVEN, state: 'stopped' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_GROUPS') {
+        return { sessions: [{ session: 's1a2b3c4', group: 'ended', shown: 'stopped', archived: false, teammate: false, pausedBy: { scope: 'quest', id: 'abc123' } }] };
+      }
+      if (type === 'WORK_RESUME') return { scope: 'quest', id: 'abc123', did: 'resumed', released: [{ quest: 'abc123', session: 's1a2b3c4' }], holds: [] };
+      return DRIVER_STATE;
+    });
+    show('s1a2b3c4');
+
+    const acts = within(await screen.findByRole('group', { name: 'Session actions' }));
+    const resume = await acts.findByRole('button', { name: 'Resume quest' });
+    expect(resume.className).toContain('bg-accent');
+    expect(acts.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await userEvent.click(resume);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_RESUME', expect.objectContaining({ payload: { quest: 'abc123' } })));
+  });
+
   it('offers a driven session that served a quest no Delete… in its header', async () => {
     SESSIONS = [{ ...DRIVEN, state: 'completed' }];
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GROUPS'

@@ -4,6 +4,7 @@ import i18n from '../i18n';
 import type { Session } from '../api';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { ViewMain } from './ViewMain';
+import { PauseAsk } from './WorkAsks';
 
 // A session's page header (SESSUX1d, D126 §3.2) pinned in Sessions' main area, in each state's acts, each stop's ask
 // (§3.3), a teammate's record, below 560 px and with a 中文 title. A molecule, so each is reached by passing it; the
@@ -152,4 +153,30 @@ export const Narrow: Story = {
 /** A 中文 title, one line, whole on its tip. */
 export const ChineseTitle: Story = {
   args: { title: '为区块接口提供流式预算，让世界流式加载能按帧限制水合工作量，避免卡顿和掉帧' },
+};
+
+/** A running driven session whose quest an ask asked (PAUSE1e): *Pause quest…* and *Pause ask…* in its ⋯. */
+export const RunningWithItsPauses: Story = {
+  args: { acts: ['stop', 'pauseQuest', 'pauseAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'] },
+};
+
+/** Its quest's pause asking once under the header, from the driver's plan of what it stops (D132 §2.6). */
+export const PauseAsking: Story = {
+  args: {
+    acts: ['stop', 'pauseQuest', 'pauseAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
+    asking: (
+      <PauseAsk
+        className="mt-2.5" target={{ scope: 'quest', id: 'abc123' }} meanIt="Pause quest"
+        lines={[{ key: 'work.pause.ask.stops', values: { count: 1 } }]} onPause={() => {}} onCancel={() => {}}
+      />
+    ),
+  },
+};
+
+/** Stopped by its ask's pause: *Resume ask*, the loud act, in *Try again*'s place (D132 §6.1). */
+export const PausedWithItsAsk: Story = {
+  args: {
+    session: { ...SESSION, state: 'stopped' }, shown: 'stopped',
+    acts: ['resumeAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'], primary: 'resumeAsk',
+  },
 };

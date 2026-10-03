@@ -45,6 +45,9 @@ public static class DriverCommand
           ask --pause <id>  ·  ask --resume <id>  ·  quest pause <id>  ·  quest resume <id>
               stop what of an ask's work, or a quest's, runs on this machine and start nothing of it until
               you resume it, which carries it on where it stood.
+          ask --abandon <id> [--reason "…" --yes]  ·  quest abandon <id> [--reason "…" --yes]
+              list what abandoning it would decline, discard and archive, and what it keeps and why; with
+              --reason and --yes, give up what the list holds, each quest declined with your reason.
           setup <repository> [--plan]
               ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
               brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan

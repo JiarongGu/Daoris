@@ -6,12 +6,14 @@ import { sentence } from '../format';
 import { askItem } from '../opener';
 import { useAnswerGoAhead, useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
-import { useDriver, useNudge } from '../shell';
+import { useDriver, useNudge, useRemotes, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { freshest } from '../quests/records';
 import type { AskRowFacts } from '../quests/QuestList';
 import { QuestsMainNotice } from '../quests/QuestPage';
+import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
+import { useWorkActs } from '../work/workActs';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { asksInOrder } from './AskRow';
@@ -44,6 +46,10 @@ export type AsksPart = {
  *
  * Every answer is the service's sentence, verbatim (frontend §4a). A refused publish still leaves the
  * ask kept with its proposal (INT4a), which is why the list is asked again whatever the door said.
+ *
+ * **Its work is paused, resumed and abandoned on its page** (PAUSE1e, D132 §7.1): the chosen ask's plan is asked of this
+ * machine's driver while Quests is in front, and each press goes to the one owner (`workActs.ts`). An abandon's answer is
+ * kept for the page until the record says the same. A browser has no driver, and its page names the terminal's commands.
  *
  * The organism: it holds the hooks so the row, the page and the composer below it hold none (components §2).
  */
@@ -91,6 +97,12 @@ export function useAsksPart({
   const [reading, setReading] = useState(false);
   // The door's last answer about an ask, kept until the list catches up with it.
   const [held, setHeld] = useState<Ask | null>(null);
+  // The chosen ask's work on this machine (PAUSE1e): its plan while Quests is in front, and the three presses.
+  const work = useWorkPlan(chosen ? { scope: 'ask', id: chosen } : null, { enabled: active });
+  const wiring = useRemotes().data;
+  const workActs = useWorkActs({ notify });
+  // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
+  const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
 
   const circles = workspacesOf(family.data ?? []);
   const fixed = scope.workspace ?? (circles.length === 1 ? circles[0] : null);
@@ -167,6 +179,25 @@ export function useAsksPart({
     ? freshest(every.data?.find((candidate) => candidate.id === chosen), held?.id === chosen ? held : null)
     : undefined;
 
+  // What the page is handed of this machine's driver for the ask: nothing in a browser, which has none (D47 §4).
+  const workDoor = (item: Ask): WorkDoor | undefined => {
+    if (!work.available) return undefined;
+    const target: WorkTarget = { scope: 'ask', id: item.id };
+    return {
+      // Asked by the chosen ask's id, which is the page's.
+      plan: work.plan,
+      wired: wiredFor(wiring, item.workspace),
+      busy: workActs.busy,
+      outcome: abandonedNow?.id === item.id ? abandonedNow : null,
+      onPause: (done) => workActs.pause(target, () => done()),
+      onResume: () => workActs.resume(target),
+      onAbandon: (reason, pieces, done) => workActs.abandon(target, reason, pieces, (answer) => {
+        setAbandonedNow({ id: item.id, answer, at: new Date().toISOString() });
+        done();
+      }),
+    };
+  };
+
   const page = !chosen
     ? null
     : shown
@@ -184,6 +215,7 @@ export function useAsksPart({
           onDelete={() => onDelete(shown.id)}
           onOpenQuest={(id) => onChoose(id)}
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
+          work={workDoor(shown)}
         />
       )
       : <QuestsMainNotice state={every.data === undefined && !every.error ? 'loading' : 'gone'} gone="ask" />;

@@ -149,6 +149,31 @@ describe('the acts on a session', () => {
     expect(JSON.parse(window.localStorage.getItem('daoris.drafts') ?? '[]')).toEqual([['other000', 'kept']]);
   });
 
+  /** PAUSE1e (D132 §7.1): a pause is the frame's to ask, naming its quest or its ask; Resume goes to the work's owner at once. */
+  it('hands a pause to the frame with the work it names, and resumes the pause that holds its quest over the driver', async () => {
+    const doors = { pause: vi.fn() };
+    const { result: withDoor } = acts(doors);
+    const asked = { id: 'abc123', from: 'ask #a1b2c3', to: 'engine', title: 'T', body: '', status: 'Taken' as const, filed: '', updated: '' };
+    withDoor.current.run('pauseQuest', { session: session({ state: 'working' }), quest: asked });
+    withDoor.current.run('pauseAsk', { session: session({ state: 'working' }), quest: asked });
+    expect(doors.pause).toHaveBeenNthCalledWith(1, 's1a2b3c4', { scope: 'quest', id: 'abc123' });
+    expect(doors.pause).toHaveBeenNthCalledWith(2, 's1a2b3c4', { scope: 'ask', id: 'a1b2c3' });
+    expect(acts().result.current.can('pauseQuest')).toBe(false);
+    expect(acts().result.current.can('resumeAsk')).toBe(true);
+
+    invoke.mockImplementation(async () => ({ scope: 'ask', id: 'a1b2c3', did: 'resumed', released: [], holds: [] }));
+    const { result, notify } = acts();
+    const grouping = {
+      session: 's1a2b3c4', group: 'review' as const, shown: 'stopped', archived: false, teammate: false,
+      pausedBy: { scope: 'ask' as const, id: 'a1b2c3' },
+    };
+    act(() => result.current.run('resumeAsk', { session: session({ state: 'stopped' }), grouping }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_RESUME', expect.objectContaining({ payload: { ask: 'a1b2c3' } })));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      "Resumed ask #a1b2c3: the driver's next look plans its work as it would have.", 'ok'));
+  });
+
   it('says a delete the host refused in the catalogue’s words, and keeps the ask open', async () => {
     invoke.mockImplementation(async () => { throw refusal('SESSION_SERVED_QUEST', { session: 's1a2b3c4', quest: 'abc123' }); });
     const { result, notify } = acts();

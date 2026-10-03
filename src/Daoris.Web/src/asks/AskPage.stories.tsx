@@ -1,4 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { WorkDoor } from '../work/pausing';
+import {
+  ABANDON_ANSWER, ABANDONED_ASK, ABANDONED_ENTRY, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK, SPENT_ASK,
+} from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED,
@@ -65,3 +69,28 @@ export const IntakeUnloaded: Story = { args: { ask: BY_INTAKE, intake: null, onA
 export const GoAheads: Story = { args: { ask: WITH_GO_AHEADS, onAnswerGoAhead: nothing } };
 /** The same go-aheads where there is no door to answer them: what became of each, and nothing offered. */
 export const GoAheadsWithNoDoor: Story = { args: { ask: WITH_GO_AHEADS } };
+
+// ——— Its work on this machine (PAUSE1e, D132 §7.1): *Pause…*, *Resume* and *Abandon…* where each applies, from the
+// driver's plan.
+
+const work = (over: Partial<WorkDoor> = {}): WorkDoor => ({
+  plan: PAUSABLE_ASK, wired: true, busy: false, onPause: nothing, onResume: nothing, onAbandon: nothing, ...over,
+});
+const WORKING = { ...PUBLISHED, id: 'a1b2c3', deletable: true };
+
+/** In flight on this machine: *Pause…* beside *Close ask*, *Abandon…* quiet beside *Delete…*. */
+export const WorkInFlight: Story = { args: { ask: WORKING, work: work() } };
+/** Paused here: *paused* beside its state, and *Resume* its loud act. */
+export const WorkPaused: Story = { args: { ask: WORKING, work: work({ plan: PAUSED_ASK }) } };
+/** The plan still on its way: none of the three is offered until it answers. */
+export const WorkReading: Story = { args: { ask: WORKING, work: work({ plan: null }) } };
+/** Abandoned: closed with the reason, when, what went and what stayed, from this machine's record. */
+export const WorkAbandoned: Story = { args: { ask: { ...CLOSED, id: 'a1b2c3', note: ABANDONED_ENTRY.reason }, work: work({ plan: ABANDONED_ASK }) } };
+/** Just abandoned: the second press's answer, said at once. */
+export const WorkJustAbandoned: Story = {
+  args: { ask: { ...CLOSED, id: 'a1b2c3', note: ABANDONED_ENTRY.reason }, work: work({ plan: SPENT_ASK, outcome: { answer: ABANDON_ANSWER, at: ABANDONED_ENTRY.at } }) },
+};
+/** Some of its work is not Daoris's here, so the abandon keeps it: *Abandon…* still offered for the rest. */
+export const WorkPartlyElsewhere: Story = { args: { ask: WORKING, work: work({ plan: MIXED_ASK }) } };
+/** In a browser: none of the three, and the terminal's commands named. */
+export const WorkInABrowser: Story = { args: { ask: WORKING } };

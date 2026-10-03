@@ -9925,3 +9925,50 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
 
 **Outcome** A standing answer is kept per repository in `driver.json`'s `standing` (both twins), set from the terminal, the repository's page and Ask Daoris, and handed to every claim, resume, carry-on and follow-up there. Detail: D135's KNOWUSE1b note, `e4e391a4`.
+
+
+## PAUSE1d — abandon (2026-10-03)
+
+> - [ ] **PAUSE1d — abandon** (driver, modules; after b and c). One listed press that declines the quests with the person's
+> reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`; its declines send
+> `whileOpen` (PAUSE1c), and D132 §5.2 and §13's older-remote sentence takes PAUSE1c's reading. Contract: D132 §3, §4,
+> §7.2–§7.3. Proof: `AbandonTests`; a Process case on real git; a family rehearsal phase.
+
+**Outcome** Abandon is one listed press: the first lists every piece with what it would keep and why; the second, with the person's reason, declines (`whileOpen` for open quests), closes, syncs, discards only what `OnlyHereAsync` proves is held nowhere else, archives, and writes `abandoned.json`. Detail: D132's PAUSE1d note, `01a2d31f`.
+
+
+## PAUSE1e — pause and abandon on the screen (2026-10-03)
+
+> - [ ] **PAUSE1e — on the screen** (web-shell; after b and d). *Pause…*, *Resume*, *Abandon…* with its list and reason on
+> the ask's and quest's pages and a session's acts. Contract: D132 §6, §7.1, §8. Proof: stories, vitest, the look.
+
+**Outcome** *Pause…*, *Resume* and *Abandon…* are on the ask's page, the quest's page and a session's header and row, through `bridge/work.ts` and one owner (`work/workActs.ts`); the catalogues and glossary carry 暂缓 and 放弃. Detail: D132's PAUSE1e note, `2d7ac245`.
+
+
+## MSG1 — session messages, one model for every door, designed (2026-10-03 → D137)
+
+> - [ ] **MSG1 — session messages, one model for every door** (owner, 2026-10-03: *"we do need a way to set message between
+> runs so it does the resume so that close the gap for codex and it does look like in the same session, and this should
+> be properly designed native/daoris managed session messages"*). A person's words to a session reach it at the next
+> step where the door allows (STEER1), else at its turn's end by resuming the harness's own conversation (ANSWER1's
+> resume), and after it ended by reopening the record, so every door reads as one session. Contract: D137 (in flight).
+> Proof: the design, the doors measured, then its rows.
+
+**Outcome** Designed as D137: a person's words reach a session at its next step, at its turn's end, or by reopening its record and resuming its own conversation, on every door; Codex and the native door read, not measured. Detail: D137, `docs/2026-10-03-session-messages-design.md` §1, §2, §8.
+
+
+## KNOWUSE1c — needs you apart from readings, each citing its source (2026-10-03)
+
+> - [ ] **KNOWUSE1c — a closing note says what needs you apart from readings, each citing its source** (driver). Ticket line,
+> doc line or code path beside every item; the look names the repository's own indexes. Contract: D135. Proof:
+> `AskAndWaitPromptTests`; a canary turn.
+
+**Outcome** Every driven instruction keeps *Needs you* apart from *Readings*, each item naming its source, and the look names the repository's own router and index files. Detail: D135's KNOWUSE1c note, `106396f8`.
+
+
+## KNOWUSE1d — the owner's words quoted second-hand are a reading (2026-10-03)
+
+> - [ ] **KNOWUSE1d — the owner's words quoted second-hand are a reading** (driver; beside DRIFT1). A quote in a doc, a closed
+> note or a commit is attributed only if the ask's record holds it. Contract: D135. Proof: prompt goldens.
+
+**Outcome** Every driven instruction treats the person's words quoted anywhere but in the instruction as a reading, never recorded in the repository as theirs. Detail: D135's KNOWUSE1d note, `4dda489c`.

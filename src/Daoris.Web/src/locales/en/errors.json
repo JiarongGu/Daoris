@@ -36,6 +36,7 @@
   "errors.QUEST_PAUSED_quest": "#{{id}} is paused on its own; Resume carries it on.",
   "errors.WORK_UNKNOWN": "There is no ask #{{id}} on this machine.",
   "errors.WORK_UNKNOWN_quest": "There is no quest #{{id}} here.",
+  "errors.WORK_REASON": "Abandoning needs your reason: each declined quest keeps it.",
   "errors.SESSION_UNKNOWN_folder": "There is no session {{session}} on this machine, so there is no folder to open.",
   "errors.SESSION_UNKNOWN_delete": "There is no session {{session}} on this machine, so there was nothing to delete.",
   "errors.SESSION_LIVE_delete": "{{session}} is still running, so it was not deleted. Stop it first.",
