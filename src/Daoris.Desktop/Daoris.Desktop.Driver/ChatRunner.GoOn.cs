@@ -269,11 +269,21 @@ public sealed partial class ChatRunner
             return Held(sessionId, $"`{record.Repository}` has no checkout on this machine any more");
         }
 
-        // The account it ran on, asked for by name, as a chat's picker names one (D137 §2.2): its conversation lives in that
-        // account's home. One the selection will not start holds the words; one it lands elsewhere cannot go on.
-        var selection = await _harnesses
-            .SelectAsync(adapter.Name, config, known.Workspace, record.Profile, StartKind.Conversation, ct)
+        // The account it ran on, asked for by name, as a chat's picker names one (D137 §2.2, MSG1g): its conversation lives in
+        // that account's home. Cooling, the words wait for its reset, said with the door out of the wait; unable to run there
+        // at all, it cannot go on, at once and saying why, since nothing carries a chat's words on by itself; anything else the
+        // selection will not start holds the words.
+        var resume = await _harnesses
+            .ResumeAsync(adapter.Name, config, known.Workspace, record.Profile, StartKind.Conversation, walks: false, ct: ct)
             .ConfigureAwait(false);
+        if (resume.Waits)
+        {
+            Note(sessionId, $"— it does not go on yet: {resume.Selection.Refusal} {ResumeWords.ChatDoor(record.Repository!)}");
+            return new(null, resume.Selection.Refusal);
+        }
+
+        if (resume.Elsewhere is { } elsewhere) return CannotGoOn(record, elsewhere, adapter.Name);
+        var selection = resume.Selection;
         if (!selection.Allowed) return Held(sessionId, selection.Refusal!);
         if (Continuations.Judge(record, adapter.Name, adapter.Resumes, selection.Profile, kept) is { } account)
         {
@@ -406,7 +416,7 @@ public sealed partial class ChatRunner
         _events.Keep(record.Session, note, say: null);
         _service.AccountSaid(Continuations.Reopened(
             record.Session, adapter, record.State, why, _events.DoorOf(record.Session, words), kind: "chat"));
-        return new(null, $"it cannot go on in this conversation, because {why.Sentence}.");
+        return new(null, $"it cannot go on in this conversation, because {why.Said}.");
     }
 
     /// <summary>

@@ -10521,3 +10521,36 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > D133. Proof: the design and its decision.
 
 **Outcome** Designed as D146: a session captures proof of its done (screenshots through the browser it is handed, the answers of API reads it relied on) into a folder Daoris keeps on the record, never in the repository, checked for presence, kind, readability and size, redacted, and shown on the session's page, its review and the quest's page; a requirement may require it, and a done without it is held as D144 holds one. Only codes, hashes and sizes cross machines. The build is EVID2a–c. Detail: `docs/2026-10-04-landing-and-proof-design.md`, D146, `4a82bd5d`.
+
+
+## REVIEW3 — the review loads in one git call, not one per file (2026-10-04)
+
+> - [ ] **REVIEW3 — the review loads in one git call, not one per file** (driver; owner, 2026-10-04: *"I found the 审阅
+> loads really slow"*). Measured on the install: `SESSION_DIFF` took 52.7 s for 61 files, 55.4 s for 71, 8 s for 7:
+> `WorkingTree.RangeAsync` runs `git diff -M <range> -- <path>` once per file, about a second each on the work
+> repository. Read the range's whole patch in one call and split it by file, the budget applied as it splits.
+> Contract: D113, REVIEW2. Proof: `WorkingTree` tests (renames, binary, quoted paths, the budget) counting one patch
+> call; the install's review timed again.
+
+**Outcome** A review reads its range in one git process (`diff -M -z --raw --numstat -p`) instead of one per file, two git starts whatever the file count: a 468-file range 2.3 s against 61.2 s on this repository. A renamed file now shows its rename and counts, and a path outside ASCII its patch. Detail: D113's REVIEW3 note, `32c69844`.
+
+
+## REVIEW4 — the review says what it is doing while it loads (2026-10-04)
+
+> - [ ] **REVIEW4 — the review says what it is doing while it loads** (web-shell; owner, 2026-10-04: *"we do need to
+> improve the loading states for this view too"*). The review sat blank for up to a minute (REVIEW3's measurement):
+> show its frame at once with the session's facts, a skeleton per file row (D41's loading rules), what it is reading
+> and for how long, an error that says why (a record with no tree here, a base git cannot find), and a second open
+> served from the cache, since a commit range never changes. Contract: D41's interaction rules, D113. Proof: vitest
+> over a slow and a failing mocked bridge; stories; the look on the install.
+
+**Outcome** The review says what it is doing while it loads: its frame from the record at once, a skeleton with what is being read and for how long, each refusal code worded with its next move, a three-minute wait in place of the bridge's thirty seconds (the 55-second diff had timed out), an ended session's answer kept for a second open and a live one read again behind the last. Detail: D113's REVIEW4 note, `d2fac199`..`0dee77f0`.
+
+
+## MSG1g — a resume asks for its own account (2026-10-04)
+
+> - [ ] **MSG1g — a resume asks for its own account** (driver). The selection names the record's account, a cool-off
+> holds the words with *Go on in a new session*, and an account that cannot run there carries on at once. Contract:
+> §2.2's account paragraph. Proof: plan tests, `AccountRotationTickTests` (the parent's).
+
+**Outcome** A resume asks for its record's own account: a cool-off holds the words, with *Go on in a new session* as the way out (`SESSION_GO_ON_NEW`, `daoris-driver sessions go-on-new`); an account that cannot run there carries the words on at once, the reason `account` with a coded line saying why; a chat's account is asked as its picker names one. Detail: D137's MSG1g note, `f26d28fa`..`90c28d0e`.

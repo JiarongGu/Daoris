@@ -1,7 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n';
 import { buildChain } from '../map/chain';
+import { InTheme } from '../plugins/storyIcons';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
+import { answer, QUEST_CHAIN } from '../work/traceFixtures';
 import {
   ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD, HELD_BY_PERSON, HELD_CJK, LANED, MET,
   OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REQUIRING, STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT,
@@ -15,6 +19,14 @@ import { QuestPage, QuestsMainNotice } from './QuestPage';
 // title; and the main area with no record: nothing chosen, gone, loading.
 
 const nothing = () => {};
+
+/** A reader of 中文, whatever the window's language, sharing the catalogues. */
+const zh = i18n.cloneInstance({ lng: 'zh' });
+const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
+/** Dark, as a person chooses it (D66): the main area's own box inside the theme's, which is no flex row the page can fill. */
+const dark: Decorator = (Story) => (
+  <InTheme theme="dark"><div className="flex h-[43rem] w-[51rem] max-w-full"><Story /></div></InTheme>
+);
 
 const meta: Meta<typeof QuestPage> = {
   title: 'Quests/QuestPage',
@@ -176,3 +188,24 @@ export const AskGone: Story = { render: () => <QuestsMainNotice state="gone" gon
 
 /** The chosen record on its way: skeleton rows, never the empty state. */
 export const Loading: Story = { render: () => <QuestsMainNotice state="loading" /> };
+
+// ——— How it came to be (TRACE1b, D143): folded at the foot of its page, then open on its chain.
+
+const TRACED = { ...DONE, id: 'q1', to: 'dashboards', title: 'Fix the dashboard figure' };
+
+/** How it came to be, folded at the page's foot: nothing read until it opens. */
+export const HowItCameToBeFolded: Story = { args: { quest: TRACED, trace: { open: false, onToggle: nothing } } };
+
+/** How it came to be, open: the ask and the person's words, the quest, both its sessions and the carry-on. */
+export const HowItCameToBeOpen: Story = {
+  args: { quest: TRACED, onAttend: nothing, onOpenAsk: nothing, trace: { open: true, onToggle: nothing, answer: answer(QUEST_CHAIN) } },
+};
+
+/** Open, in 中文. */
+export const HowItCameToBeChinese: Story = { ...HowItCameToBeOpen, decorators: [chinese] };
+
+/** Open, in dark. */
+export const HowItCameToBeDark: Story = { ...HowItCameToBeOpen, decorators: [dark] };
+
+/** Open, in 中文 and dark. */
+export const HowItCameToBeChineseDark: Story = { ...HowItCameToBeOpen, decorators: [chinese, dark] };

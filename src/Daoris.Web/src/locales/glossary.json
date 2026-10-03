@@ -88,7 +88,7 @@
         "work.group.you", "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.list.groupBy",
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
-        "work.sync.inConflict"
+        "work.sync.inConflict", "work.trace.title"
       ]
     },
     "field": {
@@ -231,7 +231,7 @@
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
-        "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
+        "work.review.readAgain", "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open"
       ]
     },
@@ -314,7 +314,7 @@
         "search.emptyHeadline", "search.gone.headline", "search.none.headline", "search.nothingHeadline",
         "work.archived.none", "work.attended.none.headline", "work.attention.emptyHeadline", "work.detached.gone.headline",
         "work.monitor.empty.headline", "work.rail.empty.headline", "work.review.empty.headline",
-        "work.review.none.headline"
+        "work.review.failed.headline.*", "work.review.none.headline"
       ]
     },
     "placeholder": {

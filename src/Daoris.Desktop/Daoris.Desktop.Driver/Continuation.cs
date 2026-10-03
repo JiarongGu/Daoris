@@ -15,6 +15,15 @@ public sealed record ContinueReason(string Code, string Sentence)
     public IReadOnlyList<(string Name, string Value)> Values { get; init; } = [];
 
     /// <summary>
+    /// A coded line said after the reason's own wherever it is said (MSG1g): for <c>account</c>, why the record's own account
+    /// could not carry the words (<see cref="ContinueWhy.AccountHeld"/>). Null for a reason that says all in its line.
+    /// </summary>
+    public Noted? Detail { get; init; }
+
+    /// <summary>The reason's line, then its detail after a space, as one sentence ends and the next begins.</summary>
+    public string Said => Detail is { } detail ? $"{Sentence}. {detail.Note.TrimEnd('.')}" : Sentence;
+
+    /// <summary>
     /// A row of D137 §2.2 that never goes on (MSG1b): a teammate's record, an intake, a stand-down. Nothing carries the words
     /// on, whatever the quest, where every other reason carries them to a new session or leaves them waiting.
     /// </summary>
@@ -28,7 +37,10 @@ public sealed record ContinueReason(string Code, string Sentence)
 /// </summary>
 public static class ContinueWhy
 {
-    /// <summary>The start runs on another account than the park did: a limit cools it, a rotation or D130's list chose another.</summary>
+    /// <summary>
+    /// The start runs on another account than the record did: its own cannot run there, or the person chose a new session
+    /// while it cooled (MSG1g, with why as its <see cref="ContinueReason.Detail"/>); or a selection nobody asked for it made.
+    /// </summary>
     public const string Account = "account";
 
     /// <summary>The person changed the adapter since.</summary>
@@ -106,6 +118,16 @@ public static class ContinueWhy
     /// <summary>The adapter's door has no resume.</summary>
     public static ContinueReason CannotResume(string adapter) =>
         new(Unable, $"`{adapter}` cannot resume a conversation") { Values = [("adapter", adapter)] };
+
+    /// <summary>
+    /// <see cref="Account"/>, where the resume asked for the record's own account and it could not carry the words (MSG1g, D137
+    /// §2.2): its line, then why, as a coded line of its own (<see cref="ResumeWords.Line"/>). The code stays <c>account</c>, so
+    /// the log and every reader that words the reason read it as before.
+    /// </summary>
+    /// <param name="hold">What held the record's own account, by TOOL6e's codes.</param>
+    /// <param name="chosen">The person chose a new session while it cooled.</param>
+    public static ContinueReason AccountHeld(NextHold hold, bool chosen = false) =>
+        Of(Account) with { Detail = ResumeWords.Line(hold, chosen) };
 }
 
 /// <summary>
@@ -115,8 +137,10 @@ public static class ContinueWhy
 /// </summary>
 /// <remarks>
 /// <para><b>The same account, always.</b> The harness keeps a conversation in the configuration home of the account it
-/// ran on, so another account would not find it, and a record names one account (D125 §7). A limit cooling the park's
-/// account, a rotation and D130's list each land a start on another account, and each is a carry-on.</para>
+/// ran on, so another account would not find it, and a record names one account (D125 §7). So a resume asks for that
+/// account (MSG1g, <see cref="HarnessRoster.ResumeAsync"/>): a cool-off holds the words for its reset, and an account that
+/// cannot run there at all, or the person's choice of a new session, lands the start on another account, which is a
+/// carry-on, said <c>account</c> with why.</para>
 ///
 /// <para><b>What never goes on is said first</b> (D137 §2.2): a teammate's record, an intake and a stand-down. <b>Then the
 /// record, then what the start runs as, then what is kept, then the door</b>, so the line said is the one a person can act
@@ -133,8 +157,13 @@ public static class Continuations
     /// </param>
     /// <param name="profile">The account the start would run on, as the selection resolved it; null for the tool's own home.</param>
     /// <param name="kept">The conversation id kept for the park, or null.</param>
+    /// <param name="account">
+    /// Why the record's own account cannot carry the words, where the resume asked for it and the selection said (MSG1g,
+    /// <see cref="ResumeChoice.Elsewhere"/>); null where it can, or nobody asked. Said at the account's step, so an ended record
+    /// and a changed adapter are still said first.
+    /// </param>
     public static ContinueReason? Judge(
-        PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept)
+        PriorSession park, string adapter, bool doorResumes, string? profile, HarnessConversation? kept, ContinueReason? account = null)
     {
         // What never goes on (D137 §2.2), before anything else: the service refuses words to each, so only a record read
         // some other way reaches here, and none is ever this machine's to resume.
@@ -150,6 +179,7 @@ public static class Continuations
             return ContinueWhy.AdapterChanged(ranOn, adapter);
         }
 
+        if (account is not null) return account;
         if (!string.Equals(park.Profile ?? "", profile ?? "", StringComparison.OrdinalIgnoreCase))
         {
             return ContinueWhy.Of(ContinueWhy.Account);
@@ -199,20 +229,23 @@ public static class Continuations
     /// </summary>
     /// <remarks>Its line is a code after the record's earlier parts (LANG1a), the reason a value the page words.</remarks>
     public static Noted CannotNote(PriorSession record, ContinueReason why) =>
-        After(record, Noted.Of(
-            NoteCodes.WentCannot, $"It cannot go on in this session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)));
+        After(record, Detailed(Noted.Of(
+            NoteCodes.WentCannot, $"It cannot go on in this session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
 
     /// <summary>
     /// The note an ended record keeps where its words went to a new session (MSG1b, D137 §2.2): a taken quest carried on, or
     /// an open one started, handed them. What ended it stays, then why.
     /// </summary>
     public static Noted WentNote(PriorSession record, ContinueReason why) =>
-        After(record, Noted.Of(
-            NoteCodes.WentNewSession, $"Your words went to a new session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)));
+        After(record, Detailed(Noted.Of(
+            NoteCodes.WentNewSession, $"Your words went to a new session, because {why.Sentence}.", NoteCodes.Reason(why, record.Adapter)), why));
 
     /// <summary>The record's note, then a blank line and the new line; the line alone where the record said nothing.</summary>
     private static Noted After(PriorSession record, Noted line) =>
         record.Note is { Length: > 0 } ? record.AsNoted().Then("\n\n", line) : line;
+
+    /// <summary>A line whose reason is <paramref name="why"/>, then the reason's detail as a coded line of its own (MSG1g).</summary>
+    private static Noted Detailed(Noted line, ContinueReason why) => why.Detail is { } detail ? line.Then(" ", detail) : line;
 
     /// <summary>
     /// <c>session.reopened</c> (D137 §3.3, D94 §4): once per ended record whose words the driver takes up, from which state,
@@ -239,7 +272,7 @@ public static class Continuations
     public static SessionEvent Went(IReadOnlyList<string> words, string to, ContinueReason why) => new()
     {
         Kind = SessionEventKind.Note,
-        Text = $"— your words went to session `{to}`, because {why.Sentence}.",
+        Text = $"— your words went to session `{to}`, because {why.Said}.",
         Words = words.Count > 0 ? words : null,
         To = to,
         Why = why.Code,
@@ -252,7 +285,7 @@ public static class Continuations
     public static SessionEvent Cannot(IReadOnlyList<string> words, ContinueReason why) => new()
     {
         Kind = SessionEventKind.Note,
-        Text = $"— It cannot go on in this session, because {why.Sentence}.",
+        Text = $"— It cannot go on in this session, because {why.Said}.",
         Words = words.Count > 0 ? words : null,
         Why = why.Code,
     };
@@ -260,13 +293,13 @@ public static class Continuations
     /// <summary>The note a fallback ends the park with: what it asked, as its record said, and why the answer went to a new session.</summary>
     public static Noted EndedNote(PriorSession park, ContinueReason why) =>
         (park.Note is null ? Noted.Of(NoteCodes.EndedParkedShort, "It stopped to ask you.") : park.AsNoted())
-        .Then("\n\n", Noted.Of(
-            NoteCodes.WentCarriedOn, $"Carried on in a new session, because {why.Sentence}.", NoteCodes.Reason(why, park.Adapter)));
+        .Then("\n\n", Detailed(Noted.Of(
+            NoteCodes.WentCarriedOn, $"Carried on in a new session, because {why.Sentence}.", NoteCodes.Reason(why, park.Adapter)), why));
 
     /// <summary>The sentence the carrying-on session's note ends with (D131 §2), after a space.</summary>
     /// <param name="ranOn">The adapter the record it carries on ran on, which <c>elsewhere</c> names.</param>
     public static Noted CarriedOn(ContinueReason why, string? ranOn = null) =>
-        Noted.Of(NoteCodes.StartedFellBack, $"A new session, because {why.Sentence}.", NoteCodes.Reason(why, ranOn));
+        Detailed(Noted.Of(NoteCodes.StartedFellBack, $"A new session, because {why.Sentence}.", NoteCodes.Reason(why, ranOn)), why);
 
     /// <summary>
     /// <c>session.answered</c> (D131 §2, D94 §4): once per answer the driver takes up, whether its own conversation resumed

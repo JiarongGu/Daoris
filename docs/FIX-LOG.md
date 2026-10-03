@@ -5,6 +5,40 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The deployment rehearsal failed after all 110 checks passed (2026-10-04)
+
+**Symptom.** At the merge of REVIEW3, the deployment rehearsal printed *110/110 checks passed* and its whole result, then
+exited 1 with `EPERM` removing its own scratch folder. A minute later nothing ran from the folder, and it removed
+cleanly.
+
+**Root cause.** The run ends by staging builds into the install it drove. The last build's processes were still letting
+go of their files when the result printed, and the final clean was a single `rmSync`. The clean at the start of the
+run already retried, after the same lesson.
+
+**Fix.** The final clean retries like the first (twenty times, half a second apart).
+
+**Verification.** The leftover folder removed with the same call; the next merge's deployment rehearsal.
+
+## A test's git helper waited forever on a full stderr pipe (2026-10-04)
+
+**Symptom.** At the merge of REVIEW3, the driver's real-process half sat for 1 h 33 m on one test,
+`TreeDiffTests.A_review_starts_two_git_processes_however_many_files_changed`, with a `git add -A` child of the test host
+alive and idle. When that git was stopped, the test failed with `(3, 0, 3)` files for `(3, 60, 63)`. The branch's own
+gates never ran it: the class is `Process`, which only the parent's merge runs (MOD8).
+
+**Root cause.** The test's helper read git's stdout to its end, and only then its stderr. Where git's line-ending setting
+converts on add, `add -A` over sixty new files writes a warning per file to stderr. That is more than the pipe holds, so
+git blocks writing it, stdout never ends, and the helper waits on a process that waits on the helper. The product's git
+runners (`WorkingTree`, `Harnesses`, `SetupWorld`, `ToolQuestions`) start both reads before waiting, and are not
+affected. About eighteen other test helpers keep the sequential read. Their output is small today, so each is a hang
+waiting for a bigger fixture.
+
+**Fix.** Both helpers in `TreeDiffTests` start both reads, wait for the exit, then take both. The other helpers are
+TESTGIT1's sweep.
+
+**Verification.** Before the fix the test hung twice, in the merge's full run and in its re-run alone, each time on the
+sixty-file `add -A`. After it, `TreeDiffTests` and `TreeDiffSplitTests` passed 8/8 in 21 s (serial, `process.runsettings`).
+
 ## Two tests stamped a fixed minute their watch read by the wall clock (2026-10-04)
 
 **Symptom.** `SessionRequestsTests`' three say rows started failing at 09:01 UTC on 2026-10-03 on every branch, and
