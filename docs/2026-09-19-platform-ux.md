@@ -295,7 +295,9 @@ controls are in the frame design's §3.
   (*proposed, not yet published*, *its intake asked you*, *an intake is reading it*), and its place
   is named by its kind, *workspace default*, never as one more repository name. Its record says who
   answered, the tier in words and an intake as a line (its state, then its tool); a record never says
-  no intake ran above the intake that did. The ask composer promises only what this machine will do:
+  no intake ran above the intake that did. **On a shell its quests section is its work** (PAUSE1h, D132 §7.1): each quest with
+  its state and why it sits, its sessions as doors into Sessions, and the questions they asked beneath it, which is what a
+  pause or an abandon reaches. The ask composer promises only what this machine will do:
   an intake agent publishes on its own, so *nothing is published until you name a receiver* is said
   only where none is set (U34). The two composers are **drawers**, since they are forms (D118 §3d);
   the list stays scannable (pill and its marks, title, route, age) grouped Open / Taken / Closed;
