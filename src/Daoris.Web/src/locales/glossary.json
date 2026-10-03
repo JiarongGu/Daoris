@@ -100,7 +100,7 @@
         "about.index", "about.surface", "asks.compose.circle", "asks.compose.sentence", "asks.compose.to",
         "asks.record.abandonedAt", "asks.record.asked", "asks.record.asker", "asks.record.circle", "asks.record.closedBecause",
         "quests.detail.abandonedAt",
-        "asks.record.notPublished", "asks.record.tier", "carry.linksLabel", "code.detail.dependsOn",
+        "asks.record.notPublished", "asks.record.tier", "asks.work.asked", "asks.work.sessions", "carry.linksLabel", "code.detail.dependsOn",
         "code.detail.usedBy", "console.label", "convergence.threshold", "harness.body",
         "harness.settings.effort", "harness.settings.model", "harness.use.early.label", "harness.use.keep.label",
         "harness.use.list", "harness.use.member", "harness.use.mode.label", "harness.use.near.label",
