@@ -418,7 +418,8 @@ export function readIcon(folder: string, manifest: PluginManifest): { type: 'svg
     bytes = readFileSync(path);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return refused("is not a file in the plugin's folder.");
-    return refused(`could not be read: ${(error as Error).message}`);
+    // Daoris's words, never the system's: its message names the file's whole path, which the page must not learn.
+    return refused('could not be read.');
   }
   // Read once, so the bytes judged are the bytes drawn.
   if (bytes.length > ICON_MAX_BYTES) return refused('is larger than 32 KiB, the most an icon may be.');

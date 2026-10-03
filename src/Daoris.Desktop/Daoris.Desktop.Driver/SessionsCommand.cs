@@ -4,8 +4,8 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver sessions</c> was asked (D126 §7.1).</summary>
-/// <param name="Verb"><c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c> or <c>delete</c>.</param>
+/// <summary>What <c>daoris-driver sessions</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2).</summary>
+/// <param name="Verb"><c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c> or <c>say</c>.</param>
 public sealed record SessionsAsk(string Verb)
 {
     /// <summary>The sessions a verb names.</summary>
@@ -28,6 +28,12 @@ public sealed record SessionsAsk(string Verb)
 
     /// <summary><c>archive --ended --yes</c>: archive what the list holds.</summary>
     public bool Yes { get; init; }
+
+    /// <summary>A say's words (MSG1e), joined by a space as `answer` joins them.</summary>
+    public string? Text { get; init; }
+
+    /// <summary>A say's files, each as the person named its path.</summary>
+    public IReadOnlyList<string> Files { get; init; } = [];
 }
 
 /// <summary>
@@ -46,6 +52,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
 
     /// <summary>How often the record is read while a request waits.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Whether a driver loop holds this home (DRV8a, <see cref="DriverLock.HeldBy"/>): where none does, nothing would take a
+    /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2).
+    /// </summary>
+    public Func<bool> LoopRuns { get; init; } = () => DriverLock.HeldBy(Home) is not null;
 }
 
 /// <summary>
@@ -60,8 +72,14 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
 /// happened, withdrawing a request nothing took. Where nothing on this machine runs the session, a parked one is moved by
 /// the ledger directly and any other is ended as the screen's stop ends an orphan.</para>
 ///
-/// <para>Exit codes are the family's: 0 done, or listed · 1 refused, a policy answer · 2 could not, the usage among
-/// them.</para>
+/// <para><b>Say is what the screen's box says</b> (MSG1e, D137 §5.2, D50): the words reach the loop that runs the session
+/// through the same requests, a say of their own that the loop answers beside it; a loop keeps words to a session nothing here
+/// runs on its record. Where no loop drives the home, a driven session's words are kept on its record for the next loop, and
+/// a conversation's are refused, since nothing here could open it. What never goes on is judged first, by
+/// <see cref="WordsNever"/>, before anything is asked. One line says where the words stand.</para>
+///
+/// <para>Exit codes are the family's: 0 done, listed, or the words taken or held · 1 refused, a policy answer · 2 could not,
+/// the usage among them.</para>
 /// </remarks>
 public static class SessionsCommand
 {
@@ -70,6 +88,7 @@ public static class SessionsCommand
         usage: daoris-driver sessions [--group you|review|working|later|ended|archived] [--repository <name>] [--json]
                daoris-driver sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
+               daoris-driver sessions say <id> "…" [--file <path>]…
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -118,6 +137,8 @@ public static class SessionsCommand
             case ["delete", ..]:
                 problem = "`delete` takes one session's id.";
                 return null;
+            case ["say", ..]:
+                return ReadSay(args, out problem);
         }
 
         var ask = new SessionsAsk("list");
@@ -149,9 +170,37 @@ public static class SessionsCommand
         return ask;
     }
 
+    /// <summary><c>say &lt;id&gt; "…" [--file &lt;path&gt;]…</c>: the words after the id joined by a space, and each path after its flag.</summary>
+    private static SessionsAsk? ReadSay(IReadOnlyList<string> args, out string? problem)
+    {
+        problem = "`say` takes one session's id, then your words, and `--file <path>` for each file you give with them.";
+        if (args.Count < 2 || !Id(args[1])) return null;
+
+        var words = new List<string>();
+        var files = new List<string>();
+        for (var at = 2; at < args.Count; at++)
+        {
+            if (args[at] != "--file")
+            {
+                words.Add(args[at]);
+                continue;
+            }
+
+            if (at + 1 >= args.Count || args[at + 1].Trim().Length == 0) return null;
+            files.Add(args[++at]);
+        }
+
+        var text = string.Join(' ', words).Trim();
+        if (text.Length == 0) return null;
+
+        problem = null;
+        return new SessionsAsk("say") { Ids = [args[1]], Text = text, Files = files };
+    }
+
     public static async Task<int> RunAsync(SessionsAsk ask, SessionsWorld world, TextWriter output, CancellationToken ct = default) =>
         ask.Verb switch
         {
+            "say" => await SayAsync(world, ask, output, ct).ConfigureAwait(false),
             "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
@@ -492,6 +541,328 @@ public static class SessionsCommand
 
         return record;
     }
+
+    // ——— Say (MSG1e, D137 §5.2): what the screen's box says to a session.
+
+    private static async Task<int> SayAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
+    {
+        var id = ask.Ids[0];
+        var text = ask.Text ?? "";
+        var waited = Stopwatch.StartNew();
+
+        // Read here, on the machine that has them, as `ask --file` reads them.
+        var uploads = new List<ChatUpload>();
+        foreach (var path in ask.Files)
+        {
+            var full = Path.GetFullPath(path);
+            if (!File.Exists(full))
+            {
+                output.WriteLine($"sessions: `{path}` is not a file on this machine.");
+                return 2;
+            }
+
+            uploads.Add(new ChatUpload(Path.GetFileName(full), await File.ReadAllBytesAsync(full, ct).ConfigureAwait(false)));
+        }
+
+        // What never goes on is judged from the record before anything is asked (D137 §2.2), by the one table.
+        var json = await world.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+        var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        if (record is null)
+        {
+            output.WriteLine($"sessions: {Refusal(WordsNever.NotFound, id, null, null, null)}");
+            return 1;
+        }
+
+        var last = WordsNever.LastHere(json, record.Quest);
+        if (WordsNever.Judge(record, last) is { } never)
+        {
+            output.WriteLine($"sessions: {Refusal(never, id, record, last, null)}");
+            return 1;
+        }
+
+        // Kept as the box keeps what is attached (CONV4c), so the names the request and the record carry name files that exist.
+        IReadOnlyList<string> files;
+        try
+        {
+            files = uploads.Count > 0 ? [.. ChatFiles.Keep(world.Home, id, uploads).Select(file => file.Name)] : [];
+        }
+        catch (DriverException refused)
+        {
+            output.WriteLine($"sessions: {refused.Message}");
+            return 2;
+        }
+
+        var runs = world.Processes.AliveOnThisMachine(id);
+        if (!runs && !world.LoopRuns()) return await KeepAsync(world, record, text, files, loop: false, output, ct).ConfigureAwait(false);
+
+        var (held, taken) = await AskLoopAsync(world, record, text, files, waited, ct).ConfigureAwait(false);
+        if (held is not null) return await SaidAsync(world, record, held, waited, output, ct).ConfigureAwait(false);
+        if (taken)
+        {
+            output.WriteLine(
+                $"sessions: the loop that runs {id} took your words, and had not said where they stand after {Seconds(world)} seconds; "
+                + "`daoris-driver sessions` says where it stands.");
+            return 2;
+        }
+
+        if (runs)
+        {
+            output.WriteLine(
+                $"sessions: nothing that runs {id} took your words within {Seconds(world)} seconds, so they were withdrawn: it runs in "
+                + "another Daoris process on this machine that takes no requests (a terminal's chat takes words on its own input).");
+            return 2;
+        }
+
+        // A loop holds the home and took nothing in time: one still coming up, or a build from before this door.
+        return await KeepAsync(world, record, text, files, loop: true, output, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A say asked of the loops on this home and waited for, until its answer or the wait's end (§5.2). A session winding up is
+    /// asked again until its record has ended, since the say door keeps nothing for a record still running. Null and not taken
+    /// where nothing took it, which is withdrawn so no loop acts on it after the person was told.
+    /// </summary>
+    private static async Task<(WordsHeld? Held, bool Taken)> AskLoopAsync(
+        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Stopwatch waited, CancellationToken ct)
+    {
+        var requests = new SessionRequests(world.Home);
+        WordsHeld? winding = null;
+        while (true)
+        {
+            var request = new SessionRequest(record.Id, SessionMove.Say, DateTimeOffset.UtcNow)
+            {
+                Text = text, Files = files, Key = SessionRequests.NewKey(),
+            };
+            requests.Write(request);
+
+            WordsHeld? held = null;
+            while (held is null && waited.Elapsed < world.Wait)
+            {
+                await Task.Delay(world.Poll, ct).ConfigureAwait(false);
+                held = requests.AnswerOf(request);
+            }
+
+            if (held is null)
+            {
+                return requests.Withdraw(request)
+                    ? (winding, winding is not null)
+                    : (requests.AnswerOf(request) ?? winding, true);
+            }
+
+            if (held.Why != WordsHeld.Running || waited.Elapsed >= world.Wait) return (held, true);
+            winding = held;
+        }
+    }
+
+    /// <summary>Where the words stand, in one line, from the loop's answer (§5.2); words kept on the record are followed.</summary>
+    private static async Task<int> SaidAsync(
+        SessionsWorld world, SessionRecord record, WordsHeld held, Stopwatch waited, TextWriter output, CancellationToken ct)
+    {
+        switch (held)
+        {
+            case { Sent: true, Reaches: "resume" }:
+                return await GoesOnAsync(world, record, held.Word, waited, output, ct).ConfigureAwait(false);
+            case { Sent: true, Reaches: "next-step" }:
+                output.WriteLine("sessions: held: it reads this at its next step.");
+                return 0;
+            case { Sent: true, Reaches: "turn-end" }:
+                output.WriteLine("sessions: held: it reads this when its turn ends.");
+                return 0;
+            case { Sent: true }:
+                output.WriteLine(record.Quest is null
+                    ? "sessions: sent: it takes this as its next turn."
+                    : "sessions: held: it reads this once its turn opens.");
+                return 0;
+            case { Why: WordsHeld.Running }:
+                output.WriteLine(
+                    $"sessions: {record.Id} was still winding up after {Seconds(world)} seconds, and nothing here holds words for it "
+                    + "until it ends; say it again once it has ended.");
+                return 2;
+            case { Why: WordsHeld.Unreached }:
+                output.WriteLine(
+                    $"sessions: the desktop runs {record.Id}, a conversation, and hands it only the words typed in its box; write in "
+                    + "its box there.");
+                return 2;
+            case { Why: { } why }:
+                output.WriteLine($"sessions: {Refusal(why, record.Id, record, null, held.Message)}");
+                return 1;
+            default:
+                output.WriteLine($"sessions: {held.Message ?? "the loop that took your words could not say where they went."}");
+                return 2;
+        }
+    }
+
+    /// <summary>
+    /// Words kept on the record, followed until the wait's end (§5.2, D137 §3.1): taken by the same session, gone to a new one,
+    /// judged unable to go on, or still held, with what holds them.
+    /// </summary>
+    private static async Task<int> GoesOnAsync(
+        SessionsWorld world, SessionRecord record, string? word, Stopwatch waited, TextWriter output, CancellationToken ct)
+    {
+        var events = new SessionEvents(Path.Combine(world.Home, "sessions"));
+        var gone = false;
+        while (word is not null)
+        {
+            // The driver's note on these words, where it wrote one (MSG1b, MSG1d): where they went, or why they cannot go on.
+            var note = events.Page(record.Id, limit: SessionEvents.MaxPage).Events
+                .LastOrDefault(each => each.Kind == SessionEventKind.Note && each.Words?.Contains(word, StringComparer.Ordinal) == true);
+            if (note is { To: { } to })
+            {
+                output.WriteLine($"sessions: went to session `{to}`, because {Because(note)}.");
+                return 0;
+            }
+
+            if (note is not null)
+            {
+                output.WriteLine($"sessions: kept, but it cannot go on in this session, because {Because(note)}.");
+                output.WriteLine($"  start a conversation with them instead: daoris-driver chat --repository {record.Repository}");
+                return 1;
+            }
+
+            var json = await world.Service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
+            gone = !Waiting(json, record.Id).Contains(word, StringComparer.Ordinal);
+            var now = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, record.Id, StringComparison.Ordinal));
+            if (gone && now is { Live: true })
+            {
+                output.WriteLine("sessions: going on: the same session took it.");
+                return 0;
+            }
+
+            if (waited.Elapsed >= world.Wait) break;
+            await Task.Delay(world.Poll, ct).ConfigureAwait(false);
+        }
+
+        output.WriteLine(gone
+            ? "sessions: taken: the session took it, and has moved since; `daoris-driver sessions` says where it stands."
+            : $"sessions: {await HeldAsync(world, record, ct).ConfigureAwait(false)}");
+        return 0;
+    }
+
+    /// <summary>
+    /// Kept words not taken within the wait: held for the driver's next look, or what holds them, by the planner's own verdict on
+    /// the record's quest, since whatever holds a start holds a reopen (D137 §2.2). A conversation goes on as it opens again.
+    /// </summary>
+    private static async Task<string> HeldAsync(SessionsWorld world, SessionRecord record, CancellationToken ct)
+    {
+        const string Next = "held: the same session goes on with this at the driver's next look.";
+        if (record.Quest is not { } quest) return "held: the same conversation goes on with this as it opens again.";
+
+        Consideration? verdict;
+        try
+        {
+            verdict = (await SessionGroups.VerdictsAsync(world.Service, world.Config, world.Door, lastLook: null, ct).ConfigureAwait(false))
+                .FirstOrDefault(each => string.Equals(each.Quest.Id, quest, StringComparison.OrdinalIgnoreCase));
+        }
+        catch (Exception error) when (error is HttpRequestException or DriverException or JsonException)
+        {
+            return Next;
+        }
+
+        return verdict switch
+        {
+            null or { Verdict: StartVerdict.Start } => Next,
+            { Verdict: StartVerdict.Paused, PausedBy: { } pause } => $"held: it goes on with this once you resume its work: {pause.Door}",
+            { Verdict: StartVerdict.Held } =>
+                $"held: it goes on with this once {verdict.Quest.To} is no longer held: daoris driver resume {verdict.Quest.To}",
+            { Verdict: StartVerdict.AtCapacity } => "held: it goes on with this when a running session here ends.",
+            _ => $"held: it waits: {verdict.Reason}",
+        };
+    }
+
+    /// <summary>
+    /// Words the verb keeps on the record itself (§5.2). Where no loop drives the home, a driven session's, for the next loop to
+    /// take up, shown in its conversation as the terminal's, since nothing else writes that record now; where a loop holds the
+    /// home but took nothing in time, the same, unshown, since that loop's record of it may be open. A conversation goes on only
+    /// through a loop's chat runner, so where none runs nothing here could open it.
+    /// </summary>
+    private static async Task<int> KeepAsync(
+        SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, bool loop, TextWriter output, CancellationToken ct)
+    {
+        if (record.Quest is null)
+        {
+            output.WriteLine(loop
+                ? $"sessions: the driver on this machine took nothing within {Seconds(world)} seconds, so your words were withdrawn; say them again in a moment."
+                : $"sessions: {record.Id} is a conversation, and no driver runs on this machine to open it again: start the desktop, "
+                  + "or `daoris-driver drive`, then say it again.");
+            return loop ? 2 : 1;
+        }
+
+        var said = await world.Service.SayAsync(record.Id, text, files, ct).ConfigureAwait(false);
+        if (said.Kept)
+        {
+            if (!loop && said.Word is { } kept)
+            {
+                new SessionEvents(Path.Combine(world.Home, "sessions")).Keep(record.Id, LoopWords.Shown(kept, RequestDoor.Terminal), null);
+            }
+
+            output.WriteLine(loop
+                ? "sessions: held: the same session goes on with this at the driver's next look."
+                : "sessions: held: the same session goes on with this when a driver next runs on this machine.");
+            return 0;
+        }
+
+        switch (said.Refusal)
+        {
+            case "running":
+                output.WriteLine(
+                    $"sessions: {record.Id} is still {Word(record.State)}, and nothing on this machine runs it: a driver's next start "
+                    + "ends it, and then it can go on; say it again then.");
+                return 2;
+            case { } refusal:
+                output.WriteLine($"sessions: {Refusal(WordsNever.Code(refusal), record.Id, record, null, said.Message)}");
+                return 1;
+            default:
+                output.WriteLine($"sessions: {said.Message}");
+                return 2;
+        }
+    }
+
+    /// <summary>What never goes on, by its code, in the terminal's words (D137 §2.2, §5.1); any other code, the service's sentence.</summary>
+    private static string Refusal(string code, string id, SessionRecord? record, string? last, string? message) => code switch
+    {
+        WordsNever.NotFound => $"no session here is {id}.",
+        WordsNever.Teammate =>
+            $"{id} ran on {(id.Contains('/') ? id[..id.IndexOf('/')] : "another machine")}, where its conversation is; nothing said here reaches it.",
+        WordsNever.Help => $"{id} is Ask Daoris's own conversation, which goes on nowhere: its panel opens a new one.",
+        WordsNever.Intake => $"{id} is an intake; answer its ask #{record?.Ask} instead: publish it or close it.",
+        WordsNever.StoodDown => $"it stood down: #{record?.Quest} is someone else's, so it has nothing to go on with.",
+        WordsNever.Superseded =>
+            $"#{record?.Quest} went on in a later session here, {last}; say it to that one: daoris-driver sessions say {last} \"…\"",
+        _ => message ?? $"{id} did not take your words ({code}).",
+    };
+
+    /// <summary>A driver's note's reason, as its line says it after <c>because</c>; its code where the line says none.</summary>
+    private static string Because(SessionEvent note)
+    {
+        var text = note.Text ?? "";
+        var at = text.IndexOf("because ", StringComparison.Ordinal);
+        return at >= 0 ? text[(at + "because ".Length)..].TrimEnd().TrimEnd('.') : note.Why ?? "it could not";
+    }
+
+    /// <summary>The ids of the words waiting on one record, as the service answers its <c>said</c>; none where it answers none.</summary>
+    private static IReadOnlyList<string> Waiting(string json, string id)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object
+                || !session.TryGetProperty("id", out var named) || named.ValueKind != JsonValueKind.String || named.GetString() != id)
+            {
+                continue;
+            }
+
+            return session.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.Array
+                ? [.. said.EnumerateArray()
+                    .Where(each => each.ValueKind == JsonValueKind.Object && each.TryGetProperty("id", out var word) && word.ValueKind == JsonValueKind.String)
+                    .Select(each => each.GetProperty("id").GetString()!)]
+                : [];
+        }
+
+        return [];
+    }
+
+    private static int Seconds(SessionsWorld world) => (int)Math.Round(world.Wait.TotalSeconds);
 
     // ——— Archive, unarchive and delete: the screen's owners.
 

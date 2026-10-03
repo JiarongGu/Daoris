@@ -157,6 +157,28 @@ public sealed class PluginIconTests : IDisposable
         Assert.DoesNotContain(_home, read.DataUri!, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// A file the system will not read says so in Daoris's words, never the system's: its message names the file's whole
+    /// path, and the page shows the sentence whole (D140 point 5).
+    /// </summary>
+    [Fact]
+    public void An_icon_that_cannot_be_read_names_no_folder()
+    {
+        var folder = Plugin("acme.gate", "\"icon.svg\"");
+        var path = Path.Combine(folder, "icon.svg");
+        Write(path, "svg");
+
+        PluginIconRead read;
+        using (new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            read = PluginIcon.Read(folder, Assert.Single(PluginCatalog.Load(_home).Plugins).Manifest);
+        }
+
+        Assert.Null(read.DataUri);
+        Assert.Equal("`icon` `icon.svg` could not be read.", read.Problem);
+        Assert.DoesNotContain(_home, read.Problem!, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void A_png_is_handed_as_a_png()
     {

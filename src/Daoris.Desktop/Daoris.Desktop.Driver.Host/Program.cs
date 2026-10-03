@@ -100,6 +100,12 @@ using Daoris.Driver;
 //                 request in <home>/sessions/requests/ that its loop takes, waiting ten seconds for the record to move;
 //                 one nothing here runs is moved by the ledger, as the screen's stop moves an orphan. archive, unarchive
 //                 and delete are the screen's owners, and their log lines say this door. Sessions' rows are the other door.
+//   sessions say <id> "…" [--file <path>]…
+//                 say something to a session of this machine's (MSG1e, D137 §5.2): a say request in the same folder,
+//                 which the loop that runs it holds at its door, and any loop keeps on the record of one nothing here
+//                 runs, answering beside it. What never goes on is refused first, exit 1. Where no loop drives the
+//                 home, a driven session's words are kept on its record for the next, and a conversation's refused.
+//                 It waits up to ten seconds and prints where the words stand. The session's box is the other door.
 //
 //   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
 //         | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]
@@ -342,14 +348,22 @@ try
 
     using var service = ServiceClient.FromEnvironment();
 
-    // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126 §7.1),
-    // and acts on one for a session this host runs as the screen's route would.
-    await using var requests = new SessionRequestWatch(home, processes, () => service);
-
     // What this host runs and how long each part takes, into its log (LOG1b): the watcher hears the
     // client's opens and moves and the record's events, so the record is handed to every driver below.
     var events = new SessionEvents(Path.Combine(home, "sessions"));
     using var sessionLog = new SessionLog(log, service, events);
+
+    // The watch, once it runs, so a terminal's words a loop keeps are taken up at once rather than at its next look (MSG1e).
+    DriverWatch? watching = null;
+
+    // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126 §7.1),
+    // and acts on one for a session this host runs as the screen's route would. A terminal's `sessions say` (MSG1e) is held
+    // at the door of a session this host runs, or kept on the record of one nothing here runs, shown in this host's own
+    // record of it, and the look nudged.
+    await using var requests = new SessionRequestWatch(home, processes, () => service)
+    {
+        Say = new LoopWords(processes, () => service) { Events = events, Nudge = () => watching?.Nudge() }.HoldAsync,
+    };
 
     // The machine's remotes, one per workspace that has one ($DAORIS_HOME/remotes.json, environment
     // overriding — D47 §9, D48 §5): the syncs ride the tick, so a headless driver on a server machine
@@ -401,7 +415,8 @@ try
         // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
         // below, which is this door's exit-2 contract.
-        await new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events).RunAsync(
+        watching = new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events);
+        await watching.RunAsync(
             async (report, ticked) =>
             {
                 Print(report, quietWhenIdle: true);

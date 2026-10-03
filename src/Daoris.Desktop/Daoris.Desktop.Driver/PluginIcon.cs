@@ -92,7 +92,8 @@ public static class PluginIcon
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return Refused($"could not be read: {error.Message}");
+            // Daoris's words, never the system's: its message names the file's whole path, which the page must not learn.
+            return Refused("could not be read.");
         }
 
         // Read once, so the bytes judged are the bytes handed.

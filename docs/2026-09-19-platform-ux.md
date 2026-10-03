@@ -61,7 +61,9 @@ D75), where its own rules live; this is what a view may assume of it.
   move into more flatten design"*). **A bar is flat**: thin, square-ended, on a track that shows the
   whole scale, since a thick bar with a rounded end made a short one a blob rather than a share.
 - **Surfaces**: `--page`, `--raised` (cards, controls), `--overlay` (drawers, toasts — one step above
-  raised), `--line` and `--line-strong`. **Ink**: `--ink`, `--ink-soft`, `--ink-faint`. **A field is
+  raised), `--line` and `--line-strong`, and `--sunken` one step below the page for the box a move asks once in and
+  the command center, while a field stays raised (LOOK6: thirteen files asked for it and none drew; `tokens.test.ts`
+  now holds every `bg-`, `border-` and `text-` colour a token, and every ink readable on every surface). **Ink**: `--ink`, `--ink-soft`, `--ink-faint`. **A field is
   outlined with `--line-strong`, a container with `--line`**: a `--line` field on a `--raised` card is
   very nearly invisible in dark, a form whose fields you cannot find. **A mark that is content wears an
   ink**, never a container's line: the code map's arrows at `--line-strong` were 1.6:1, and stepped

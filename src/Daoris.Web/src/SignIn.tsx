@@ -143,7 +143,7 @@ export function SignIn({
                     aria-label={t('signin.codeLabel')}
                     placeholder={t('signin.codePlaceholder')}
                     spellCheck={false}
-                    className="min-w-56 flex-1 rounded-control border border-line-strong bg-sunken px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+                    className="min-w-56 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
                   />
                   <Button type="submit" variant="primary" disabled={input.isPending || !code.trim()}>
                     {t('signin.continue')}
