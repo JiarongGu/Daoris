@@ -6,6 +6,10 @@
 // It runs only for a landing: started for the one frame, told to go after it, never kept beside the
 // driver loop — and only where a person installed it and named it in a workspace's landing rule.
 //
+// It also answers a query (PLUGHOOK1a, D148): `hook/work/state`, whether a landed branch's pull request
+// completed and with which commit, asked only at a look that may remove the branch. A squash leaves git no
+// ancestor to see; Azure DevOps knows, and Daoris acts on the answer only where git confirms it.
+//
 // The organization, project and repository are the ones `az` detects from the checkout's own `origin`
 // (`--detect`, on by default), so nothing here names any of them.
 //
@@ -152,6 +156,91 @@ function advance(p) {
   };
 }
 
+/** `az`'s JSON, or the reason it is not. */
+function json(read) {
+  try {
+    return { value: JSON.parse(read.out) };
+  } catch {
+    return { error: 'az answered something that is not JSON' };
+  }
+}
+
+/** Azure DevOps' word for how a pull request completed, in Daoris's (PLUGHOOK1a): any other is none. */
+const HOW = { noFastForward: 'merge', squash: 'squash', rebase: 'rebase', rebaseMerge: 'rebase-merge' };
+
+/** Azure DevOps' status in Daoris's words: active is open, completed and abandoned keep theirs, anything else is unknown. */
+const STATE = { active: 'open', completed: 'completed', abandoned: 'abandoned' };
+
+const withoutHeads = (ref) => (typeof ref === 'string' ? ref.replace(/^refs\/heads\//, '') : null);
+
+/**
+ * Which of the pull requests from a branch is the one asked about (PLUGHOOK1a, design §2.6): among those into the line where
+ * there are any, a completed one, else an active one, else the newest abandoned one.
+ */
+function choose(found, line) {
+  const into = found.filter((each) => withoutHeads(each?.targetRefName) === line);
+  const pool = line && into.length > 0 ? into : found;
+  const newest = (list) => [...list].sort((a, b) => String(b.closedDate ?? b.creationDate ?? '').localeCompare(String(a.closedDate ?? a.creationDate ?? ''))
+    || Number(b.pullRequestId) - Number(a.pullRequestId))[0];
+  return newest(pool.filter((each) => each?.status === 'completed'))
+    ?? newest(pool.filter((each) => each?.status === 'active'))
+    ?? newest(pool.filter((each) => each?.status === 'abandoned'))
+    ?? null;
+}
+
+/** A failure of `az` is the call's error, in az's last line: never a state, so nothing moves on it. */
+class Failed extends Error {}
+
+/**
+ * The query (PLUGHOOK1a, D148): a landed branch's pull request, found by its address or by the branch as its source, read
+ * with `az repos pr show`, and answered in Daoris's words. Daoris acts on a completed answer only where git confirms its merge
+ * commit on the line, so a reading of Azure DevOps that is wrong keeps the branch rather than losing it.
+ */
+function query(p) {
+  let id = typeof p.pullRequest === 'string' ? /\/pullrequest\/(\d+)\/?$/i.exec(p.pullRequest)?.[1] : undefined;
+  if (id === undefined) {
+    const listed = run('az', ['repos', 'pr', 'list', '--source-branch', p.branch, '--status', 'all', '--output', 'json'], p.root);
+    if (!listed.ok) throw new Failed(listed.why);
+    const found = json(listed);
+    if (found.error) throw new Failed(found.error);
+    const chosen = Array.isArray(found.value) ? choose(found.value, p.line) : null;
+    if (chosen === null) return { state: 'unknown', pullRequest: null, message: `no pull request from \`${p.branch}\` was found in Azure DevOps.` };
+    id = String(chosen.pullRequestId);
+  }
+
+  const shown = run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json'], p.root);
+  if (!shown.ok) throw new Failed(shown.why);
+  const read = json(shown);
+  if (read.error) throw new Failed(read.error);
+  const pr = read.value ?? {};
+  const web = pr.repository?.webUrl;
+  const address = typeof web === 'string' && pr.pullRequestId !== undefined ? `${web}/pullrequest/${pr.pullRequestId}` : null;
+  const word = STATE[pr.status] ?? 'unknown';
+  const target = withoutHeads(pr.targetRefName);
+  const at = typeof pr.closedDate === 'string' && word !== 'open' ? pr.closedDate : null;
+  if (word !== 'completed') {
+    return {
+      state: word, pullRequest: address, mergeCommit: null, sourceCommit: null, target, how: null, at,
+      message: word === 'unknown' ? `pull request ${id} is \`${pr.status ?? 'without a status'}\`, a status Daoris has no word for.` : `pull request ${id} is ${word}.`,
+    };
+  }
+
+  const merge = pr.lastMergeCommit?.commitId;
+  const source = pr.lastMergeSourceCommit?.commitId;
+  if (typeof merge !== 'string' || typeof source !== 'string') {
+    return {
+      state: 'unknown', pullRequest: address, mergeCommit: null, sourceCommit: null, target, how: null, at,
+      message: `pull request ${id} completed, and az names no merge commit${typeof source === 'string' ? '' : ' or source commit'} for it, so nothing can be confirmed.`,
+    };
+  }
+
+  const how = HOW[pr.completionOptions?.mergeStrategy] ?? null;
+  return {
+    state: 'completed', pullRequest: address, mergeCommit: merge, sourceCommit: source, target, how, at,
+    message: `pull request ${id} completed${how ? ` by ${how}` : ''} into \`${target ?? 'its target'}\`.`,
+  };
+}
+
 /** The landing: push, then open the pull request. Each failure is the answer's own sentence. */
 function land(p) {
   if (p.pullRequest) return advance(p);
@@ -184,14 +273,29 @@ for await (const line of createInterface({ input: process.stdin })) {
 
   switch (frame.method) {
     // The handshake: the points this process actually listens on, a subset of what the manifest declared.
-    case 'initialize':
-      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: ['work/land'] } });
+    case 'initialize': {
+      const declared = Array.isArray(frame.params?.points) ? frame.params.points : [];
+      send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: ['work/land', 'work/state'].filter((point) => declared.includes(point)) } });
       break;
+    }
 
     case 'hook/work/land': {
       const answer = land(frame.params);
       say(answer.message);
       send({ jsonrpc: '2.0', id: frame.id, result: answer });
+      break;
+    }
+
+    case 'hook/work/state': {
+      try {
+        const answer = query(frame.params);
+        say(answer.message);
+        send({ jsonrpc: '2.0', id: frame.id, result: answer });
+      } catch (error) {
+        const why = error instanceof Failed ? error.message : `could not read the pull request: ${error?.message ?? error}`;
+        say(why);
+        send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: why } });
+      }
       break;
     }
 
