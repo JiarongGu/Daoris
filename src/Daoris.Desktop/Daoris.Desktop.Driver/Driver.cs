@@ -698,16 +698,39 @@ public sealed partial class Driver(
         // threw from here out of the tick, every tick, losing the report's holds and considerations
         // with it. The intake's twin already held on the same sentence.
         HarnessSelection selection;
+        ResumeChoice? resume = null;
         try
         {
-            // A carry-on and a resume take the walk as any start does (D130 §16.2): no context stays with an account.
-            selection = await _harnesses
-                .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, StartKind.Driven, ct)
-                .ConfigureAwait(false);
+            if (ResumesOwn(start) is { } words)
+            {
+                // A resume asks for its record's own account (MSG1g, D137 §2.2): its conversation lives in that account's
+                // configuration home (D131 §1), so the walk that chooses a start's account never chooses a resume's.
+                resume = await _harnesses
+                    .ResumeAsync(config.Adapter, config, start.Workspace, words.Profile, StartKind.Driven, _newSessions.Covers(words), ct: ct)
+                    .ConfigureAwait(false);
+                selection = resume.Selection;
+            }
+            else
+            {
+                // A carry-on and a first start take the walk as any start does (D130 §16.2): no context stays with an account.
+                selection = await _harnesses
+                    .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, StartKind.Driven, ct)
+                    .ConfigureAwait(false);
+            }
         }
         catch (DriverException error)
         {
             return Hold(error.Message);
+        }
+
+        if (resume is { Waits: true })
+        {
+            // The words wait for the account's reset (MSG1g, D125 §2), held as any start on a cooling account is, so the look
+            // says the wait once and a screen shows the quest waiting for an account; the record's conversation says why, with
+            // the door out of the wait. Nothing was spawned or probed to learn it.
+            var why = WaitsFor(quest, start.Resumes!, resume.Selection);
+            HeldForAccount(start.Resumes!, why);
+            return Hold(why) with { Cooling = resume.Selection.Cooling };
         }
 
         if (!selection.Allowed)
@@ -814,7 +837,9 @@ public sealed partial class Driver(
             && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
             && quest.Awaits is null or "")
         {
-            (var continued, fellBack, answerKept) = await ContinueAsync(start, park, selection, registry, starting, onOpened, ct)
+            // Where its own account could not carry the words, the walk's pick did, and the reason says why (MSG1g).
+            (var continued, fellBack, answerKept) = await ContinueAsync(
+                    start, park, selection, registry, starting, onOpened, ct, account: resume?.Elsewhere)
                 .ConfigureAwait(false);
             if (continued is not null) return continued;
 

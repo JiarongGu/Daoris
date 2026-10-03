@@ -795,6 +795,9 @@ export function WorkFrame({
       return withWhose(
         <DiffPane
           session={attended?.id ?? null}
+          // What its frame says while git reads (REVIEW4); off Sessions the line above already names the session.
+          record={attended}
+          title={attended && !elsewhere ? sessionTitle(attended, quest, openings[attended.id]) : null}
           // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
           hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
           onSendBack={attended && (takesWords(box) || onSendBack) ? sendBack : undefined}

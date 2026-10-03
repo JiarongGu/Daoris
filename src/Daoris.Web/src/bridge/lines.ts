@@ -73,6 +73,8 @@ export const useSweep = () => {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
+      // A tree removed: an ended session's review is kept until something moves its tree (REVIEW4), and this did.
+      void client.invalidateQueries({ queryKey: keys.allDiffs });
       // A session branch gone may leave its repository holding nothing of Daoris's (D112).
       void client.invalidateQueries({ queryKey: treesSyncScopeKey });
     },
@@ -196,6 +198,8 @@ export const useTreesSync = () => {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
+      // A tree replayed or a branch deleted moves what a kept review reads (REVIEW4).
+      void client.invalidateQueries({ queryKey: keys.allDiffs });
       void client.invalidateQueries({ queryKey: treesSyncScopeKey });
     },
   });

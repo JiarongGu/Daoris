@@ -65,6 +65,8 @@ export const keys = {
   rules: ['rules'] as const,
   /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
   diff: (session: string) => ['diff', session] as const,
+  /** Every session's review: what a press that removes or moves trees asks again (REVIEW4). */
+  allDiffs: ['diff'] as const,
   /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
   treeFiles: (session: string) => ['tree-files', session] as const,
   /** One file in a session's tree, read for its preview (PREVIEW1) — shell-only for the same reason. */

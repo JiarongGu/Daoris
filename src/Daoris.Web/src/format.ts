@@ -107,19 +107,21 @@ export function elapsed(from: string, to?: string | null): string {
 /**
  * A short span in milliseconds — how long a turn took (CONV5), where `elapsed` measures a session.
  * Tenths under ten seconds, whole seconds under a minute, then minutes and seconds; an hour and more
- * reads as `elapsed` says it.
+ * reads as `elapsed` says it. `language` is the page's unless a caller words in another, as {@link list}'s is.
  */
-export function span(ms: number): string {
+export function span(ms: number, language?: string): string {
+  const lng = language ? { lng: language } : {};
   const seconds = Math.max(0, ms) / 1000;
   if (seconds < 10) {
     return i18n.t('duration.seconds', {
-      seconds: (Math.round(seconds * 10) / 10).toLocaleString(locale(), { maximumFractionDigits: 1 }),
+      seconds: (Math.round(seconds * 10) / 10).toLocaleString(locale(language), { maximumFractionDigits: 1 }),
+      ...lng,
     });
   }
-  if (seconds < 60) return i18n.t('duration.seconds', { seconds: Math.round(seconds) });
+  if (seconds < 60) return i18n.t('duration.seconds', { seconds: Math.round(seconds), ...lng });
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return i18n.t('duration.minuteSeconds', { minutes, seconds: Math.floor(seconds % 60) });
-  return i18n.t('duration.hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60 });
+  if (minutes < 60) return i18n.t('duration.minuteSeconds', { minutes, seconds: Math.floor(seconds % 60), ...lng });
+  return i18n.t('duration.hours', { hours: Math.floor(minutes / 60), minutes: minutes % 60, ...lng });
 }
 
 /**
@@ -149,18 +151,20 @@ const FORM_WHEN_EMPTY: Readonly<Record<string, { parameter: string; context: str
  * A form of the sentence is the shell's `context`, or, for a refusal in `FORM_WHEN_EMPTY`, the form that
  * names nothing where the shell sent that parameter empty.
  */
-export function sentence(error: unknown): string {
+export function sentence(error: unknown, language?: string): string {
   const code = (error as { code?: unknown } | null)?.code;
   if (typeof code !== 'string' || !code) return (error as Error)?.message ?? '';
 
+  // In a caller's language where it words in another than the page's (a story's or a test's), as `list` does.
+  const lng = language ? { lng: language } : {};
   const parameters = (error as { parameters?: Record<string, string> }).parameters ?? {};
   const empty = FORM_WHEN_EMPTY[code];
   const values = empty && !parameters[empty.parameter] && !parameters.context
     ? { ...parameters, context: empty.context }
     : parameters;
   const key = `errors.${code}`;
-  const translated = i18n.t(key, values);
-  return translated === key ? i18n.t('errors.UNKNOWN') : translated;
+  const translated = i18n.t(key, { ...values, ...lng });
+  return translated === key ? i18n.t('errors.UNKNOWN', lng) : translated;
 }
 
 /**

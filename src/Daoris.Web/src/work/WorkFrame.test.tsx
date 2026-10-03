@@ -2531,13 +2531,35 @@ describe('reviewing what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
 
     expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
+    // Within the review's own bound (REVIEW4): the bridge's 30 seconds gave up on a diff git took most of a minute over.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', {
-      payload: { id: 's1a2b3c4' },
+      payload: { id: 's1a2b3c4' }, timeoutMs: 180_000,
     });
     // The range it is measured from, stated — a review that does not say so is an opinion.
     expect(screen.getByText(/abc12345/)).toBeTruthy();
     // And a binary file is listed as uncounted rather than as an empty change.
     expect(screen.getByText('binary')).toBeTruthy();
+  });
+
+  /**
+   * REVIEW4: while git reads, the review's frame is the attended record's — its own branch, the commit it began at, the
+   * commits it reported — above the skeleton and the words saying what is read. The installed window sat blank here.
+   */
+  it('stands the review’s frame from the attended record at once while git reads', async () => {
+    SESSIONS = [{
+      ...DRIVEN, state: 'completed', tree: 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9',
+      baseCommit: 'abc1234567890', evidence: 'commits landed:\nabc1234 Cap the streaming budget',
+    }];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? new Promise(() => {}) : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText('Reading the changes in engine…')).toBeTruthy();
+    expect(screen.getByText('daoris/s-2394e5d9')).toBeTruthy();
+    expect(screen.getByText('since abc12345')).toBeTruthy();
+    expect(screen.getByText('1 commit')).toBeTruthy();
   });
 
   /**

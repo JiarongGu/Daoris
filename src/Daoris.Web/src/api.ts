@@ -267,6 +267,12 @@ export type Session = {
    * no path. Surfaces show its last segment, which is the branch the tree was cut for.
    */
   tree?: string | null;
+  /**
+   * The commit its tree stood at when the spawn began (SURF6): what its review is measured from. Guarded as the tree
+   * is, so a browser over a keyed remote and a teammate's record have none; the review's frame names it while git
+   * reads the range (REVIEW4).
+   */
+  baseCommit?: string | null;
   /** The ask an intake session answers (D65 §1b) — absent for every other session. */
   ask?: string | null;
   /**

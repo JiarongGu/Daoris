@@ -255,14 +255,18 @@ public static class WorkingTree
     /// away. A caller says so rather than showing an empty diff, which reads as "it changed
     /// nothing".</para>
     /// </remarks>
-    public static async Task<TreeDiff?> DiffAsync(
-        string root, string before, CancellationToken ct = default)
+    public static Task<TreeDiff?> DiffAsync(string root, string before, CancellationToken ct = default) =>
+        DiffAsync(root, before, ReadGitAsync, ct);
+
+    /// <inheritdoc cref="DiffAsync(string, string, CancellationToken)"/>
+    /// <param name="git">How the review reads git: the seam its tests count processes through (REVIEW3).</param>
+    internal static async Task<TreeDiff?> DiffAsync(string root, string before, GitRead git, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(before)) return null;
 
-        if (!await IsTopLevelAsync(root, ct).ConfigureAwait(false)) return null;
+        if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
 
-        return await RangeAsync(root, before, $"{before}..HEAD", "`git diff` in the tree has all of it.", ct).ConfigureAwait(false);
+        return await RangeAsync(root, before, $"{before}..HEAD", "`git diff` in the tree has all of it.", git, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -275,93 +279,355 @@ public static class WorkingTree
     /// it is in. Both ends must be commit ids, since the record's words become git's arguments. Null where git
     /// cannot answer, and where <paramref name="root"/> is not the top of a repository of its own (git walks UP).
     /// </remarks>
-    public static async Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, CancellationToken ct = default)
+    public static Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, CancellationToken ct = default) =>
+        DiffBetweenAsync(root, from, to, ReadGitAsync, ct);
+
+    /// <inheritdoc cref="DiffBetweenAsync(string, string, string, CancellationToken)"/>
+    /// <param name="git">How the review reads git: the seam its tests count processes through (REVIEW3).</param>
+    internal static async Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, GitRead git, CancellationToken ct)
     {
         if (!IsCommitId(from) || !IsCommitId(to)) return null;
 
-        if (!await IsTopLevelAsync(root, ct).ConfigureAwait(false)) return null;
+        if (!await IsTopLevelAsync(root, git, ct).ConfigureAwait(false)) return null;
 
-        return await RangeAsync(root, from, $"{from}..{to}", $"`git diff {Short(from)} {Short(to)}` in the repository's checkout has all of it.", ct)
+        return await RangeAsync(
+                root, from, $"{from}..{to}", $"`git diff {Short(from)} {Short(to)}` in the repository's checkout has all of it.", git, ct)
             .ConfigureAwait(false);
     }
 
     private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
 
-    /// <summary>The files and patches of one range, bounded; <paramref name="rest"/> says where the rest is when the bound drops some.</summary>
-    private static async Task<TreeDiff?> RangeAsync(string root, string before, string range, string rest, CancellationToken ct)
+    /// <summary>
+    /// The files and patches of one range, bounded, from ONE git process (REVIEW3); <paramref name="rest"/> says where the
+    /// rest is when the bound drops some.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>A read of two commits, or of a tree's committed range, and nothing else.</b> A diff of a range compares
+    /// trees git already holds: no working tree and no index is read, whatever state they are in. Null where git cannot
+    /// answer (an unknown commit, git failing or not starting), which a caller says rather than showing an empty diff.</para>
+    ///
+    /// <para><b>One process, not one per file.</b> A git start on a large repository costs about a second, and this read
+    /// once asked git again for each file's patch: a review of 61 files took 52.7 s on an install. Now <c>--raw</c> (the
+    /// status: <c>--name-status</c> would make git drop the counts and the patch from the same answer), <c>--numstat</c>
+    /// and <c>-p</c> come back together. With <c>-z</c> the two lists are NUL-ended fields with every path verbatim, an
+    /// empty field ends them, and the patch follows. Each file's patch starts at a <c>diff --git</c> line, which no other
+    /// line of a patch can start with (a hunk's lines start with a space, <c>+</c>, <c>-</c> or <c>\</c>), and is matched
+    /// to its file by that line exactly as git writes it for the file's paths: a part of the answer is never filed under
+    /// a file whose line it does not carry. A typechange's two halves carry the same line, and both are its file's.</para>
+    ///
+    /// <para><b>A rename is git's rename.</b> With the whole range in view, git pairs a renamed file with where it came
+    /// from: its patch is the rename and the lines that changed, and its counts are found under its new path. A read of the
+    /// new path alone could not see the old one, so it showed the whole file as added and found no counts.</para>
+    ///
+    /// <para><b>The bound is applied as the answer comes</b>, exactly as each file's own read applied it, in the files'
+    /// order: a patch is kept while less than <see cref="PatchBudget"/> is spent, cut at <see cref="PatchCap"/>; once the
+    /// budget is spent every later file is counted, and git is stopped there rather than read to the end.</para>
+    /// </remarks>
+    private static async Task<TreeDiff?> RangeAsync(
+        string root, string before, string range, string rest, GitRead git, CancellationToken ct)
     {
-        // `--numstat` and `--name-status` in one pass would need parsing two formats out of one
-        // stream; two cheap calls read plainly and cannot mis-align, because each is keyed by path.
-        var (statusCode, statusOut, _) = await GitAsync(
-            root, ["diff", "--name-status", "-M", range], ct).ConfigureAwait(false);
-        if (statusCode != 0) return null;
+        var split = new RangeSplit();
+        var code = await git(
+            root,
+            [
+                // A path outside ASCII as itself on the `diff --git` line, as `-z` gives it in the lists.
+                "-c", "core.quotePath=false",
+                "diff",
+                // What a person's settings would change in the answer's shape: colour codes (`color.ui=always`), a diff
+                // program (`diff.external`), and the prefixes on the line a patch is matched by (`diff.noprefix`,
+                // `diff.mnemonicPrefix`, `diff.srcPrefix`): each named here wins over the setting.
+                "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/",
+                "-M", "-z", "--raw", "--numstat", "-p", range,
+            ],
+            piece => split.Take(piece.Span),
+            ct).ConfigureAwait(false);
+        if (code != 0 && !split.Stopped) return null;
 
-        var (numCode, numOut, _) = await GitAsync(
-            root, ["diff", "--numstat", "-M", range], ct).ConfigureAwait(false);
+        return split.End(before, rest);
+    }
 
-        var counts = new Dictionary<string, (int? Added, int? Removed)>(StringComparer.Ordinal);
-        if (numCode == 0)
+    /// <summary>
+    /// git's answer to <c>diff -z --raw --numstat -p</c>, read as it comes (REVIEW3): the files and their counts first,
+    /// then each file's patch, bounded as it is read.
+    /// </summary>
+    private sealed class RangeSplit
+    {
+        private const string Header = "diff --git ";
+
+        private readonly List<(char Status, string Old, string New)> _files = [];
+        private readonly Dictionary<string, (int? Added, int? Removed)> _counts = new(StringComparer.Ordinal);
+
+        // The lists: a record is its NUL-ended fields, and how many it has is known from its first.
+        private readonly StringBuilder _field = new();
+        private readonly List<string> _record = [];
+        private int _fields;
+        private bool _inPatch;
+
+        // The patch: which file each `diff --git` line is, and what has been kept of each.
+        private readonly Dictionary<string, int> _headers = new(StringComparer.Ordinal);
+        private string?[] _patches = [];
+        private readonly StringBuilder _line = new();
+        private bool _lineStart = true;
+        private readonly StringBuilder _patch = new();
+        private int _current = -1;
+        private int _next;
+        private int _spent;
+        private int _dropped;
+
+        /// <summary>Whether the budget was spent and the rest of git's answer is not wanted.</summary>
+        public bool Stopped { get; private set; }
+
+        /// <summary>Read the next piece of git's answer; false once nothing more is wanted.</summary>
+        public bool Take(ReadOnlySpan<char> piece)
         {
-            foreach (var line in numOut.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            while (piece.Length > 0 && !Stopped)
             {
-                var parts = line.Trim().Split('\t');
-                if (parts.Length < 3) continue;
-                // git writes `-` for a binary file rather than a count. Null, not zero: "not counted"
-                // and "counted nothing" are different answers.
-                var added = int.TryParse(parts[0], out var a) ? a : (int?)null;
-                var removed = int.TryParse(parts[1], out var r) ? r : (int?)null;
-                counts[parts[^1]] = (added, removed);
+                if (_inPatch)
+                {
+                    piece = Patch(piece);
+                    continue;
+                }
+
+                var end = piece.IndexOf('\0');
+                if (end < 0)
+                {
+                    _field.Append(piece);
+                    break;
+                }
+
+                _field.Append(piece[..end]);
+                piece = piece[(end + 1)..];
+                var field = _field.ToString();
+                _field.Clear();
+                Field(field);
             }
+
+            return !Stopped;
         }
 
-        var files = new List<DiffFile>();
-        var spent = 0;
-        var dropped = 0;
-
-        foreach (var line in statusOut.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        /// <summary>The range as a review shows it, once git's answer has ended or been stopped.</summary>
+        public TreeDiff End(string before, string rest)
         {
-            var parts = line.Trim().Split('\t');
-            if (parts.Length < 2) continue;
-
-            // A rename carries two paths; the one that exists now is the last.
-            var path = parts[^1];
-            var status = parts[0][0] switch
+            if (!_inPatch) BeginPatch();
+            if (Stopped)
             {
-                'A' => "added",
-                'D' => "deleted",
-                'R' => "renamed",
-                'C' => "copied",
-                _ => "modified",
-            };
-
-            var (added, removed) = counts.TryGetValue(path, out var count) ? count : (null, null);
-
-            string? patch = null;
-            if (spent < PatchBudget)
-            {
-                var (patchCode, patchOut, _) = await GitAsync(
-                    root, ["diff", "-M", range, "--", path], ct).ConfigureAwait(false);
-                if (patchCode == 0 && patchOut.Length > 0)
-                {
-                    patch = patchOut.Length > PatchCap
-                        ? patchOut[..PatchCap] + "\n… this file's patch is longer than the surface renders."
-                        : patchOut;
-                    spent += patch.Length;
-                }
+                // Every file from here was past the budget when its turn came.
+                _dropped += _files.Count - _next;
             }
             else
             {
-                dropped++;
+                if (_line.Length > 0) Keep(_line.ToString());
+                Close();
+                while (_next < _files.Count) Settle(_next++, "");
             }
 
-            files.Add(new DiffFile(path, status, added, removed, patch));
+            var files = new List<DiffFile>(_files.Count);
+            for (var i = 0; i < _files.Count; i++)
+            {
+                var (letter, _, path) = _files[i];
+                var status = letter switch
+                {
+                    'A' => "added",
+                    'D' => "deleted",
+                    'R' => "renamed",
+                    'C' => "copied",
+                    _ => "modified",
+                };
+                var (added, removed) = _counts.TryGetValue(path, out var count) ? count : (null, null);
+                files.Add(new DiffFile(path, status, added, removed, _patches[i]));
+            }
+
+            var truncated = _dropped == 0
+                ? null
+                : $"{_dropped} more file{(_dropped == 1 ? "" : "s")} changed; their patches are not shown here. {rest}";
+            return new TreeDiff(files, truncated, before);
         }
 
-        var truncated = dropped == 0
-            ? null
-            : $"{dropped} more file{(dropped == 1 ? "" : "s")} changed; their patches are not shown here. {rest}";
+        /// <summary>
+        /// One field of the lists. A <c>--raw</c> record is <c>:modes ids STATUS</c> and its path, or two for a rename or a
+        /// copy; a <c>--numstat</c> record is <c>added\tremoved\tpath</c>, or an empty path and then two. An empty field
+        /// where a record would start ends the lists.
+        /// </summary>
+        private void Field(string field)
+        {
+            if (_record.Count == 0)
+            {
+                if (field.Length == 0)
+                {
+                    BeginPatch();
+                    return;
+                }
 
-        return new TreeDiff(files, truncated, before);
+                _fields = field[0] == ':'
+                    ? (StatusOf(field) is 'R' or 'C' ? 3 : 2)
+                    : (field.Split('\t', 3) is [_, _, ""] ? 3 : 1);
+            }
+
+            _record.Add(field);
+            if (_record.Count < _fields) return;
+
+            var head = _record[0];
+            if (head[0] == ':')
+            {
+                // A rename carries two paths; the one that exists now is the last.
+                _files.Add((StatusOf(head), _record[1], _record[^1]));
+            }
+            else if (head.Split('\t', 3) is [var added, var removed, var path])
+            {
+                // git writes `-` for a binary file rather than a count. Null, not zero: "not counted"
+                // and "counted nothing" are different answers.
+                _counts[path.Length > 0 ? path : _record[^1]] = (
+                    int.TryParse(added, out var a) ? a : (int?)null,
+                    int.TryParse(removed, out var r) ? r : (int?)null);
+            }
+
+            _record.Clear();
+        }
+
+        private static char StatusOf(string raw) => raw[(raw.LastIndexOf(' ') + 1)..] is { Length: > 0 } status ? status[0] : 'M';
+
+        private void BeginPatch()
+        {
+            _inPatch = true;
+            _patches = new string?[_files.Count];
+            for (var i = 0; i < _files.Count; i++)
+            {
+                var header = $"{Header}{Quoted("a/", _files[i].Old)} {Quoted("b/", _files[i].New)}";
+                // Two files git would head alike could not be told apart: neither is handed a patch that may be the other's.
+                if (!_headers.TryAdd(header, i)) _headers[header] = -1;
+            }
+        }
+
+        /// <summary>
+        /// The patch, a line at a time: a line's start is held while it may still be a <c>diff --git</c> line, which is
+        /// read whole; any other line is the current file's, and is copied through to its end.
+        /// </summary>
+        private ReadOnlySpan<char> Patch(ReadOnlySpan<char> piece)
+        {
+            while (piece.Length > 0 && !Stopped)
+            {
+                if (_lineStart)
+                {
+                    var c = piece[0];
+                    piece = piece[1..];
+                    _line.Append(c);
+                    if (_line.Length > Header.Length)
+                    {
+                        if (c == '\n') Section();
+                    }
+                    else if (c != Header[_line.Length - 1])
+                    {
+                        Keep(_line.ToString());
+                        _line.Clear();
+                        _lineStart = c == '\n';
+                    }
+
+                    continue;
+                }
+
+                var newline = piece.IndexOf('\n');
+                var through = newline < 0 ? piece.Length : newline + 1;
+                Keep(piece[..through]);
+                piece = piece[through..];
+                _lineStart = newline >= 0;
+            }
+
+            return piece;
+        }
+
+        /// <summary>
+        /// A <c>diff --git</c> line: the next part of the current file (a typechange's second half), or the start of a
+        /// later file's, where every file between that had no part of its own is settled with none.
+        /// </summary>
+        private void Section()
+        {
+            var line = _line.ToString();
+            _line.Clear();
+            var at = _headers.TryGetValue(line[..^1], out var index) ? index : -1;
+            if (at < 0 || at != _current)
+            {
+                Close();
+                if (at >= _next)
+                {
+                    while (_next < at) Settle(_next++, "");
+                    if (_spent >= PatchBudget)
+                    {
+                        Stopped = true;
+                        return;
+                    }
+
+                    _current = at;
+                }
+            }
+
+            Keep(line);
+        }
+
+        /// <summary>Keep text for the current file, up to one character past the cap: enough to know it is longer.</summary>
+        private void Keep(ReadOnlySpan<char> text)
+        {
+            if (_current < 0) return;
+            var room = PatchCap + 1 - _patch.Length;
+            if (room > 0) _patch.Append(text[..Math.Min(room, text.Length)]);
+        }
+
+        private void Close()
+        {
+            if (_current < 0) return;
+            Settle(_current, _patch.ToString());
+            _next = _current + 1;
+            _current = -1;
+            _patch.Clear();
+        }
+
+        /// <summary>The rule each file's own read applied, in the files' order: kept while the budget lasts, cut at the cap.</summary>
+        private void Settle(int index, string patch)
+        {
+            if (_spent >= PatchBudget)
+            {
+                _dropped++;
+                return;
+            }
+
+            if (patch.Length == 0) return;
+            _patches[index] = patch.Length > PatchCap
+                ? patch[..PatchCap] + "\n… this file's patch is longer than the surface renders."
+                : patch;
+            _spent += _patches[index]!.Length;
+        }
+    }
+
+    /// <summary>
+    /// A path as git writes it on a <c>diff --git</c> line under <c>core.quotePath=false</c> (git's <c>quote_c_style</c>):
+    /// as itself after its prefix, or in double quotes with the prefix inside them where it holds a double quote, a
+    /// backslash or a control character, each escaped.
+    /// </summary>
+    private static string Quoted(string prefix, string path)
+    {
+        var escaped = new StringBuilder(path.Length + 8);
+        var any = false;
+        foreach (var c in path)
+        {
+            var escape = c switch
+            {
+                '"' => "\\\"",
+                '\\' => "\\\\",
+                '\a' => "\\a",
+                '\b' => "\\b",
+                '\t' => "\\t",
+                '\n' => "\\n",
+                '\v' => "\\v",
+                '\f' => "\\f",
+                '\r' => "\\r",
+                < ' ' or '\x7f' => "\\" + Convert.ToString(c, 8).PadLeft(3, '0'),
+                _ => null,
+            };
+            any |= escape is not null;
+            if (escape is null) escaped.Append(c);
+            else escaped.Append(escape);
+        }
+
+        return any ? $"\"{prefix}{escaped}\"" : prefix + path;
     }
 
     /// <summary>The files a tree holds, for a person to `@` one (CONV4d).</summary>
@@ -432,12 +698,34 @@ public static class WorkingTree
     /// to BE this path also rejects a subdirectory, which the driver never passes and which would
     /// silently narrow the answer if it ever did.
     /// </remarks>
-    internal static async Task<bool> IsTopLevelAsync(string root, CancellationToken ct)
+    internal static Task<bool> IsTopLevelAsync(string root, CancellationToken ct) => IsTopLevelAsync(root, WholeAsync, ct);
+
+    /// <inheritdoc cref="IsTopLevelAsync(string, CancellationToken)"/>
+    /// <param name="git">How git is read: the review's seam (REVIEW3), so its tests count this start with the range's.</param>
+    private static async Task<bool> IsTopLevelAsync(string root, GitRead git, CancellationToken ct)
     {
         // A folder that is not there: git would refuse to start in it, and nothing here is asked of the one above.
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return false;
-        var (code, stdout, _) = await GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
-        return code == 0 && SamePath(stdout.Trim(), root);
+        var stdout = new StringBuilder();
+        var code = await git(
+            root,
+            ["rev-parse", "--show-toplevel"],
+            piece =>
+            {
+                stdout.Append(piece.Span);
+                return true;
+            },
+            ct).ConfigureAwait(false);
+        return code == 0 && SamePath(stdout.ToString().Trim(), root);
+    }
+
+    /// <summary>git's whole answer handed on at once: how every caller but the review asks, through <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/> as before.</summary>
+    private static async Task<int> WholeAsync(
+        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
+    {
+        var (code, stdout, _) = await GitAsync(root, arguments, ct).ConfigureAwait(false);
+        take(stdout.AsMemory());
+        return code;
     }
 
     /// <summary>
@@ -613,6 +901,69 @@ public static class WorkingTree
         catch (Exception error) when (error is not OperationCanceledException)
         {
             return null;
+        }
+        finally
+        {
+            process?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// How a review reads git (REVIEW3): <c>take</c> is handed git's answer as it comes and answers false once it has what
+    /// it needs, and git is stopped there. The answer is git's exit code, 0 where the reader stopped it, -1 where git did
+    /// not start or could not be read.
+    /// </summary>
+    /// <remarks>The seam a review's tests count its git processes through; production passes <see cref="ReadGitAsync"/>.</remarks>
+    internal delegate Task<int> GitRead(
+        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct);
+
+    /// <summary>
+    /// git, read as it answers (REVIEW3): each piece of what it writes is handed to <paramref name="take"/>, decoded as
+    /// UTF-8, and once <paramref name="take"/> answers false git is stopped rather than drained, since the rest is not
+    /// wanted. 0 where it was stopped so, git's own code otherwise, -1 where git did not start or could not be read.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="GitBytesAsync"/>'s shape for text: a range's patch has no upper size, and a review that has spent its
+    /// bound reads no further. git's words on the error stream are drained beside it, so a full pipe never holds git.
+    /// </remarks>
+    internal static async Task<int> ReadGitAsync(
+        string root, IReadOnlyList<string> arguments, Func<ReadOnlyMemory<char>, bool> take, CancellationToken ct)
+    {
+        var (info, _) = GitStart(root, arguments, DaorisHome.Resolve());
+        if (info is null) return -1;
+
+        Process? process = null;
+        try
+        {
+            process = Process.Start(info) ?? throw new DriverException("git did not start");
+            var stderr = process.StandardError.ReadToEndAsync(ct);
+            var buffer = new char[16 * 1024];
+            var stopped = false;
+            int got;
+            while (!stopped && (got = await process.StandardOutput.ReadAsync(buffer.AsMemory(), ct).ConfigureAwait(false)) > 0)
+            {
+                stopped = !take(buffer.AsMemory(0, got));
+            }
+
+            if (stopped)
+            {
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+                catch (Exception kill) when (kill is InvalidOperationException or System.ComponentModel.Win32Exception)
+                {
+                    // Gone already.
+                }
+            }
+
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            await stderr.ConfigureAwait(false);
+            return stopped ? 0 : process.ExitCode;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return -1;
         }
         finally
         {
