@@ -169,7 +169,16 @@ public sealed class DriverLoop(
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
-    public void Nudge() => _watch?.Nudge();
+    public void Nudge()
+    {
+        Interlocked.Increment(ref _nudges);
+        _watch?.Nudge();
+    }
+
+    private long _nudges;
+
+    /// <summary>How many times a route asked the loop to look now: what a test holds "the loop is nudged" by (MSG1d).</summary>
+    public long Nudges => Interlocked.Read(ref _nudges);
 
     /// <summary>
     /// A session's console lines, as the page's one event for them. The shape is the page's contract,
@@ -545,9 +554,19 @@ public sealed class DriverLoop(
     /// </remarks>
     public async Task ComeUpAsync(ServiceClient service)
     {
+        // Words held while a session winds up are tried the moment its record moves here (MSG1d).
+        service.Moved += Words.OnMoved;
         Service = service;
         await eventBus.EmitAsync("DAORIS", "DRIVER_READY", new { Ready = true }).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and
+    /// <c>SESSION_QUEUE</c> answer by, and where words said as a session winds up wait for its record to end.
+    /// </summary>
+    public SessionWords Words => LazyInitializer.EnsureInitialized(ref _words, () => new SessionWords(this));
+
+    private SessionWords? _words;
 
     /// <summary>How often a loop waiting on another driver's lock looks again (DRV8a).</summary>
     public TimeSpan HoldRetry { get; init; } = TimeSpan.FromSeconds(5);
@@ -646,6 +665,7 @@ public sealed class DriverLoop(
     public void Stop()
     {
         _stopping.Cancel();
+        _words?.Dispose();
         try
         {
             _loop?.Wait(TimeSpan.FromSeconds(15));

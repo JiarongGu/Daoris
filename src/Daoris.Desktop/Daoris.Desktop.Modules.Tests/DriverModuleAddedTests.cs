@@ -34,20 +34,31 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
         Assert.Equal("use the shared report module", words.RootElement.GetProperty("text").GetString());
     }
 
+    /// <summary>
+    /// Its inbox closes as the session winds up. What the person says then is held for its record to end (MSG1d, D137
+    /// §2.1), no longer refused, and nothing is posted as added: the session never took it during its run, and the record
+    /// keeps it on the ask once the session that goes on takes it.
+    /// </summary>
     [Fact]
-    public async Task A_message_the_session_no_longer_takes_posts_nothing()
+    public async Task A_message_the_session_no_longer_takes_is_held_and_never_posted_as_added()
     {
-        var standIn = new StandIn(_ => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""));
+        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
+        {
+            "/api/sessions" => (HttpStatusCode.OK,
+                """[{"id":"s1","repository":"engine","state":"working","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]"""),
+            "/api/sessions/s1/say" => (HttpStatusCode.Conflict, """{"error":"Session `s1` is working.","refusal":"running"}"""),
+            _ => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""),
+        });
         var loop = Loop();
         await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
-        // Its inbox closes as the session ends: what the person typed then reached nobody, so nothing is kept for it.
         loop.Processes.OpenInbox("s1").TakeOrClose();
 
-        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "too late" });
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "too late?" });
 
-        Assert.False(sent.GetProperty("sent").GetBoolean());
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        Assert.Equal("resume", sent.GetProperty("reaches").GetString());
         await Task.Delay(200);
-        Assert.Equal(0, standIn.Count);
+        Assert.DoesNotContain(standIn.Heard, heard => heard.Path.EndsWith("/added", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -81,6 +92,33 @@ public sealed class DriverModuleAddedTests : DriverModuleBridge
         Assert.True(sent.GetProperty("sent").GetBoolean());
         await UntilAsync(() => standIn.Count > 0);
         Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
+    }
+
+    /// <summary>
+    /// MSG1d (D137 §2.4): words to a session that ended go to its say door and never to the added one. The service keeps
+    /// them on the ask once a session takes them (as <c>reopened</c>), so posting them as added would keep them twice.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_that_ended_go_to_its_say_door_and_never_to_the_added_one()
+    {
+        var standIn = new StandIn(request => request.RequestUri!.AbsolutePath switch
+        {
+            "/api/sessions" => (HttpStatusCode.OK,
+                """[{"id":"s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}]"""),
+            "/api/sessions/s1/say" => (HttpStatusCode.OK, """
+                {"session":{"id":"s1","state":"completed"},"message":"Kept.",
+                 "said":{"id":"w1","text":"also the changelog","at":"2026-10-03T09:00:00+00:00","files":[],"reopens":true}}
+                """),
+            _ => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""),
+        });
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "also the changelog" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        await Task.Delay(200);
+        Assert.Equal(["/api/sessions/s1/say"], standIn.Heard.Select(heard => heard.Path).Where(path => path != "/api/sessions"));
     }
 
     /// <summary>A service standing in: each request recorded by its path and body, then answered.</summary>

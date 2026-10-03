@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -5,107 +7,185 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// A conversation over the bridge (`DriverModule.Conversation.cs`, MOD5): its record, its start, the
-/// person's messages and files, finishing, stopping a turn, and its queue.
+/// person's messages and files, finishing, stopping a turn, and its queue. The rows where a real process
+/// holds the session are <see cref="DriverModuleConversationProcessTests"/>'s.
 /// </summary>
-[Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleConversationTests : DriverModuleBridge
 {
     /// <summary>
-    /// 🔴 A session that takes no input — an intake, one turn, whose stdin on the protocol door
-    /// carries the driver's own frames (INT4h) — is REFUSED in the driver's words, never answered
-    /// false. False means "it ended while you were typing", and a page that read it so would tell the
-    /// person something untrue about a session that is running fine. Finishing it is refused too:
-    /// closing that stream would end the protocol's turn, not a conversation.
+    /// MSG1d (D137 §2.2, §5.3): before the loop's service answers, words to a session nothing here runs have nowhere to be
+    /// kept, which is a sentence the person can wait out, never a quiet false.
     /// </summary>
-    [Theory]
-    [InlineData("SESSION_INPUT")]
-    [InlineData("END_CHAT")]
-    [InlineData("CANCEL_TURN")]
-    public async Task A_session_that_takes_no_input_is_refused_in_the_drivers_words(string type)
+    [Fact]
+    public async Task Words_to_a_session_nothing_here_runs_before_the_loop_is_up_say_so()
     {
-        var loop = Loop();
-        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "node",
-            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
-            RedirectStandardInput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        })!;
-        using var tracked = loop.Processes.Track(
-            "i1", process, refusesInput: "ask #a1b2c3's intake takes no messages.");
+        var refusal = await RefusalAsync(Module(), "SESSION_INPUT", new { id = "nothing-here", text = "hello" });
 
-        try
-        {
-            var refusal = await RefusalAsync(new DriverModule(Bus, loop), type, new { id = "i1", text = "hello" });
-
-            Assert.Contains(Refusals.DriverRefused, refusal);
-            Assert.Contains("ask #a1b2c3's intake takes no messages.", refusal);
-        }
-        finally
-        {
-            loop.Processes.Stop("i1");
-        }
+        Assert.Contains(Refusals.DriverNotReady, refusal);
     }
 
     /// <summary>
-    /// SESS3: a driven session on the protocol door hears what the person adds — its inbox holds the
-    /// words ahead of INT4i's refusal, the queue says it is listening and what waits, and the stop sends
-    /// what is held now, withdrawing nothing. A finish is still refused: its stream is the driver's.
+    /// MSG1d (D137 §2.2, §3.1, §5.3): words to a session of this machine's that ended go to the service's say door, which
+    /// keeps them on its record; the conversation shows them at once as the person's, under the id the record gave them,
+    /// with the reach <c>resume</c> and the door they were said at; the loop is nudged to take them up now; and the page is
+    /// told they are held. They are kept on the ask once a session takes them, so nothing goes to the added door.
     /// </summary>
-    [Fact]
-    public async Task A_driven_session_that_listens_holds_what_the_person_adds_and_sends_it_on_a_stop()
+    [Theory]
+    [InlineData("completed")]
+    [InlineData("declined")]
+    [InlineData("failed")]
+    [InlineData("stopped")]
+    [InlineData("awaiting-person")]
+    public async Task Words_to_a_session_that_ended_or_parked_are_kept_on_its_record_shown_at_once_and_the_loop_nudged(string state)
     {
-        var loop = Loop();
-        var module = new DriverModule(Bus, loop);
-        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "node",
-            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
-            RedirectStandardInput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        })!;
-        using var tracked = loop.Processes.Track("s1", process, refusesInput: "the session on quest #q1 takes no line in its stream.");
-        var inbox = loop.Processes.OpenInbox("s1");
-        var stops = 0;
-        inbox.Attach(() => { stops++; return Task.CompletedTask; });
+        var ledger = new Ledger { Records = Records(Record("s1", state)) };
+        var (loop, module) = await UpAsync(ledger);
 
-        try
-        {
-            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "the level file moved" });
-            Assert.True(sent.GetProperty("sent").GetBoolean());
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "also the changelog" });
 
-            var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id = "s1" });
-            Assert.True(queue.GetProperty("listening").GetBoolean());
-            Assert.True(queue.GetProperty("taking").GetBoolean());
-            Assert.Equal("the level file moved", Assert.Single(queue.GetProperty("queued").EnumerateArray()).GetProperty("text").GetString());
-
-            var stop = await AnswerAsync(module, "CANCEL_TURN", new { id = "s1" });
-            Assert.True(stop.GetProperty("cancelled").GetBoolean());
-            Assert.Empty(stop.GetProperty("withdrawn").EnumerateArray());
-            Assert.Equal(1, stops);
-            Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
-
-            Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "END_CHAT", new { id = "s1" }));
-
-            // Closed, it hears nothing more — and the page is told it is not listening.
-            inbox.TakeOrClose();
-            var closed = await AnswerAsync(module, "SESSION_QUEUE", new { id = "s1" });
-            Assert.False(closed.GetProperty("listening").GetBoolean());
-        }
-        finally
-        {
-            loop.Processes.Stop("s1");
-        }
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        Assert.Equal("resume", sent.GetProperty("reaches").GetString());
+        Assert.Equal(JsonValueKind.Null, sent.GetProperty("why").ValueKind);
+        var (_, path, body) = Assert.Single(ledger.Posts);
+        Assert.Equal("/api/sessions/s1/say", path);
+        using (var said = JsonDocument.Parse(body)) Assert.Equal("also the changelog", said.RootElement.GetProperty("text").GetString());
+        var shown = Assert.Single(loop.Events.Page("s1").Events);
+        Assert.Equal(
+            (SessionEventKind.User, "person", "w1", "also the changelog", "resume", "screen"),
+            (shown.Kind, shown.Origin, shown.Id, shown.Text, shown.Reaches, shown.Door));
+        Assert.Equal(1, loop.Nudges);
     }
 
-    [Fact]
-    public async Task Sending_to_a_session_that_is_not_listening_answers_false()
+    /// <summary>
+    /// MSG1d (D137 §2.2): what never goes on is refused by its code, and nothing is posted: a teammate's record (whose
+    /// process and conversation are on their machine), an intake, a session that stood down, Ask Daoris's own conversation
+    /// (its panel opens a new one), a session whose quest went on in a later session here, and a record nothing holds.
+    /// </summary>
+    [Theory]
+    [InlineData("laptop/s1", """{"id":"laptop/s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "teammate")]
+    [InlineData("s1", """{"id":"s1","repository":"ask #a1","state":"completed","ask":"a1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "intake")]
+    [InlineData("s1", """{"id":"s1","repository":"engine","state":"stood-down","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "stood-down")]
+    [InlineData("s1", """{"id":"s1","repository":"daoris:help","state":"completed","kind":"chat","created":"2026-10-03T08:00:00Z"}""", "help")]
+    [InlineData("s1", """{"id":"s1","repository":"engine","state":"failed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"},{"id":"s2","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T09:00:00Z"}""", "superseded")]
+    [InlineData("s9", """{"id":"s1","repository":"engine","state":"completed","quest":"q1","kind":"driven","created":"2026-10-03T08:00:00Z"}""", "not-found")]
+    public async Task What_never_goes_on_is_refused_by_its_code_and_nothing_is_kept(string id, string records, string why)
     {
-        var state = await AnswerAsync(Module(), "SESSION_INPUT", new { id = "nothing-here", text = "hello" });
+        var ledger = new Ledger { Records = $"[{records}]" };
+        var (loop, module) = await UpAsync(ledger);
 
-        Assert.False(state.GetProperty("sent").GetBoolean());
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id, text = "one more thing" });
+        var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id });
+
+        Assert.False(sent.GetProperty("sent").GetBoolean());
+        Assert.Equal((JsonValueKind.Null, why), (sent.GetProperty("reaches").ValueKind, sent.GetProperty("why").GetString()));
+        Assert.Equal((JsonValueKind.Null, why), (queue.GetProperty("reaches").ValueKind, queue.GetProperty("why").GetString()));
+        Assert.Empty(ledger.Posts);
+        Assert.Empty(loop.Events.Page(id.Replace('/', '-')).Events);
+        Assert.Equal(0, loop.Nudges);
+    }
+
+    /// <summary>
+    /// MSG1d: the service judges the record again as it keeps the words, and its refusal is the answer, by the code the
+    /// page words: its word for a teammate's record is the page's <c>teammate</c>.
+    /// </summary>
+    [Theory]
+    [InlineData(HttpStatusCode.Conflict, "stood-down", "stood-down")]
+    [InlineData(HttpStatusCode.Conflict, "not-ours", "teammate")]
+    [InlineData(HttpStatusCode.Conflict, "intake", "intake")]
+    [InlineData(HttpStatusCode.NotFound, "not-found", "not-found")]
+    public async Task The_say_doors_refusal_is_the_answer_by_its_code(HttpStatusCode status, string refusal, string why)
+    {
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "completed")),
+            Say = _ => (status, $$"""{"error":"Refused.","refusal":"{{refusal}}"}"""),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "one more thing" });
+
+        Assert.Equal((false, why), (sent.GetProperty("sent").GetBoolean(), sent.GetProperty("why").GetString()));
+        Assert.Empty(loop.Events.Page("s1").Events);
+    }
+
+    /// <summary>
+    /// MSG1d (D137 §2.1, D90, D136): words said as a session winds up are no longer refused. Its record still runs, so the
+    /// say door refuses them <c>running</c>; they are held, the page is told so, and once the record moves through this
+    /// machine's client the words are kept on it, shown in its conversation and the loop nudged.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_as_a_session_winds_up_are_held_until_its_record_ends_then_kept()
+    {
+        var ended = false;
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "working")),
+            Say = id => ended
+                ? (HttpStatusCode.OK, Kept(id, "w7", "and the readme"))
+                : (HttpStatusCode.Conflict, """{"error":"Session `s1` is working.","refusal":"running"}"""),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "and the readme" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        Assert.Equal("resume", sent.GetProperty("reaches").GetString());
+        await UntilAsync(() => ledger.Posts.Count >= 1);
+        Assert.Empty(loop.Events.Page("s1").Events);
+
+        ended = true;
+        await loop.Service!.AdvanceAsync("s1", "completed", note: "the quest reached done.");
+
+        await UntilAsync(() => loop.Events.Page("s1").Events.Count == 1);
+        var shown = Assert.Single(loop.Events.Page("s1").Events);
+        Assert.Equal(("w7", "resume", "screen"), (shown.Id, shown.Reaches, shown.Door));
+        Assert.Equal(1, loop.Nudges);
+    }
+
+    /// <summary>
+    /// MSG1d (D137 §5.3): what a word said now would do, for the page to offer the box by: a session that ended or parked
+    /// goes on with it, and a driven session's inbox answers its door's reach, which is not known until the door is.
+    /// </summary>
+    [Fact]
+    public async Task The_queue_says_what_a_word_said_now_would_do()
+    {
+        var ledger = new Ledger { Records = Records(Record("s1", "completed"), Record("s2", "awaiting-person", quest: "q2")) };
+        var (loop, module) = await UpAsync(ledger);
+        var opening = loop.Processes.OpenInbox("d1");
+        var holding = loop.Processes.OpenInbox("d2");
+        var sending = loop.Processes.OpenInbox("d3");
+        holding.Attach(interrupt: null);
+        sending.Attach(() => Task.CompletedTask, _ => Task.FromResult("end_turn"));
+
+        foreach (var (id, reaches) in new[] { ("s1", "resume"), ("s2", "resume"), ("d2", "turn-end"), ("d3", "next-step") })
+        {
+            var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id });
+            Assert.Equal((id, reaches), (id, queue.GetProperty("reaches").GetString()));
+            Assert.Equal(JsonValueKind.Null, queue.GetProperty("why").ValueKind);
+        }
+
+        var unknown = await AnswerAsync(module, "SESSION_QUEUE", new { id = "d1" });
+        Assert.True(unknown.GetProperty("listening").GetBoolean());
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (unknown.GetProperty("reaches").ValueKind, unknown.GetProperty("why").ValueKind));
+        GC.KeepAlive(opening);
+    }
+
+    /// <summary>
+    /// MSG1d (D136, D137 §5.3): a word to a driven session whose inbox is open is held there as before, and the answer says
+    /// when it reaches the session: at its next step where the door sends words during a turn.
+    /// </summary>
+    [Fact]
+    public async Task A_word_a_driven_sessions_inbox_holds_says_when_it_reaches_the_session()
+    {
+        var loop = Loop();
+        var inbox = loop.Processes.OpenInbox("s1");
+        inbox.Attach(() => Task.CompletedTask, _ => Task.FromResult("end_turn"));
+
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "the level file moved" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        Assert.Equal("next-step", sent.GetProperty("reaches").GetString());
+        Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
     }
 
     /// <summary>CONV4c: the payload's files read back as the names and bytes the page sent; none is none.</summary>
@@ -170,6 +250,8 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.False(queue.GetProperty("opening").GetBoolean());
         // RAIL2: no turn ended here, so no last move is claimed — the page keeps the record's.
         Assert.Equal(JsonValueKind.Null, queue.GetProperty("lastTurn").ValueKind);
+        // MSG1d: before the loop is up nothing is known of where a word would go, and nothing is claimed either way.
+        Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (queue.GetProperty("reaches").ValueKind, queue.GetProperty("why").ValueKind));
     }
 
     /// <summary>
@@ -223,5 +305,67 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         var refusal = await RefusalAsync(Module(), "START_CHAT", new { repository = "engine" });
 
         Assert.Contains(Refusals.DriverNotReady, refusal);
+    }
+
+    /// <summary>A loop whose service is the stand-in, and the module over it.</summary>
+    private async Task<(DriverLoop Loop, DriverModule Module)> UpAsync(Ledger ledger)
+    {
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(ledger)));
+        return (loop, new DriverModule(Bus, loop));
+    }
+
+    private static string Records(params string[] records) => $"[{string.Join(",", records)}]";
+
+    private static string Record(string id, string state, string quest = "q1") =>
+        $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"{{quest}}","kind":"driven","created":"2026-10-03T08:00:00Z"}""";
+
+    /// <summary>The say door's yes: the record, its sentence, and the word as kept, with the id the record gave it.</summary>
+    private static string Kept(string id, string word = "w1", string text = "also the changelog") => $$"""
+        {"session":{"id":"{{id}}","state":"completed"},"message":"Kept for session `{{id}}` to go on with.",
+         "said":{"id":"{{word}}","text":"{{text}}","at":"2026-10-03T09:00:00+00:00","files":[],"reopens":true}
+        }
+        """;
+
+    /// <summary>
+    /// A local host standing in: the records as given, the say door as given, and the state door, which moves a record
+    /// as asked. Each write is heard by its path and body.
+    /// </summary>
+    private sealed class Ledger : HttpMessageHandler
+    {
+        private readonly List<(string Method, string Path, string Body)> _posts = [];
+
+        public string Records { get; init; } = "[]";
+
+        public Func<string, (HttpStatusCode Status, string Body)> Say { get; init; } = id => (HttpStatusCode.OK, Kept(id));
+
+        /// <summary>Every write but a move: what the person's words were posted to.</summary>
+        public IReadOnlyList<(string Method, string Path, string Body)> Posts
+        {
+            get { lock (_posts) return [.. _posts]; }
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
+            var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var (status, answer) = (request.Method.Method, parts) switch
+            {
+                ("GET", ["api", "sessions"]) => (HttpStatusCode.OK, Records),
+                ("POST", ["api", "sessions", var id, "state"]) => (HttpStatusCode.OK,
+                    $$"""{"session":{"id":"{{Uri.UnescapeDataString(id)}}","state":"{{JsonDocument.Parse(body).RootElement.GetProperty("state").GetString()}}"},"message":"Moved."}"""),
+                ("POST", ["api", "sessions", var id, "say"]) => Heard(path, body, Say(Uri.UnescapeDataString(id))),
+                ("POST", _) => Heard(path, body, (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}""")),
+                _ => (HttpStatusCode.NotFound, ""),
+            };
+            return new HttpResponseMessage(status) { Content = new StringContent(answer, Encoding.UTF8, "application/json") };
+        }
+
+        private (HttpStatusCode, string) Heard(string path, string body, (HttpStatusCode, string) answer)
+        {
+            lock (_posts) _posts.Add(("POST", path, body));
+            return answer;
+        }
     }
 }
