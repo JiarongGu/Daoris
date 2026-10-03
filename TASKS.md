@@ -414,6 +414,12 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
   a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
   (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
+- [ ] **GATE2 — the merge gate cleans up merged branches** (owner, 2026-10-03: *"I think we do need to update the gate
+  here to cleanup merged branches"*; 36 of 41 branches merged, 41 worktrees standing). `merge-branch --prune [--plan]`,
+  and at each merge's start: a branch merged into main goes with its worktree unless the worktree is locked (an agent
+  runs in it), has modified tracked files, or holds something under its `local/`; each keep says why. Contract: the
+  dispatch-subagent skill's parent half. Proof: `merge-branch.test.ts` on fixture repositories, a branch at main's tip
+  in a locked worktree kept.
 - [ ] **WSSETUP13 — the rest** (the owner's run): the plan resumed with the pilot's numbers; parks per week before and
   after.
 
