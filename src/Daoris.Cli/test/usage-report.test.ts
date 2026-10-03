@@ -4,7 +4,8 @@ import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  main, median, parseArguments, parseLine, readLogs, readProposals, render, summarise,
+  RECORD_ROUTES, askOf, endingOf, main, median, outcomesOf, parseArguments, parseLine, readLogs, readProposals, readRecords,
+  render, summarise,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/usage-report.mjs';
 
@@ -319,6 +320,13 @@ test('an empty period says so in every section rather than printing nothing', ()
   assert.match(text, /No lines in this period\./);
   assert.match(text, /^Refused\n {2}none$/m);
   assert.match(text, /^Used most\n {2}none$/m);
+  // OUTCOME1: with no host named, the outcomes are not read, and the section says how to read them.
+  assert.match(text, /^Outcomes\n {2}not read — no host was named: --service <url> reads its quests and sessions$/m);
+  const quiet: string = render(summarise([], {
+    from: since, to: NOW, skipped: 0,
+    records: { quests: [], questsUnread: null, sessions: [], sessionsUnread: null, asks: [], asksUnread: null },
+  }), 'logs');
+  assert.match(quiet, /^Outcomes\n {2}none$/m);
 });
 
 /**
@@ -503,16 +511,19 @@ test('a period with no asks and no proposals says none in both sections', () => 
   assert.match(text, /^Rule proposals\n {2}none$/m);
 });
 
-test('the runner reads the home\'s proposals beside its log', () => {
-  withAsks((home) => {
+test('the runner reads the home\'s proposals beside its log', async () => {
+  const home = asksWeek();
+  try {
     const out: string[] = [];
     const io = { now: NOW, out: (text: string) => out.push(text), err: () => {} };
 
-    assert.equal(main(['--home', home, '--json'], io), 0);
+    assert.equal(await main(['--home', home, '--json'], io), 0);
     const report = JSON.parse(out.join('\n')) as Report;
     assert.equal(report.proposals.waiting, 3);
     assert.equal(report.asks.refused, 5);
-  });
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });
 
 /**
@@ -670,9 +681,20 @@ test('the text report says each set-up\'s cost and the parks by week, and none w
   assert.match(empty, /^Parks\n {2}none$/m);
 });
 
-test('the arguments: a home, or an install\'s data folder, a number of days, and JSON', () => {
-  assert.deepEqual(parseArguments(['--home', 'h']), { home: 'h', days: 7, json: false });
-  assert.deepEqual(parseArguments(['--install', 'i', '--days', '30', '--json']), { home: join('i', 'data'), days: 30, json: true });
+test('the arguments: a home, or an install\'s data folder, a number of days, JSON, and the local host', () => {
+  assert.deepEqual(parseArguments(['--home', 'h']), { home: 'h', days: 7, json: false, service: null });
+  assert.deepEqual(
+    parseArguments(['--install', 'i', '--days', '30', '--json']),
+    { home: join('i', 'data'), days: 30, json: true, service: null });
+  // OUTCOME1: the host is named by its origin, and only this machine's own: the report reads the local host alone.
+  for (const [given, origin] of [
+    ['http://localhost:5177', 'http://localhost:5177'],
+    ['http://localhost:5177/', 'http://localhost:5177'],
+    ['http://127.0.0.1:5177', 'http://127.0.0.1:5177'],
+    ['http://[::1]:5177', 'http://[::1]:5177'],
+  ] as const) {
+    assert.equal(parseArguments(['--home', 'h', '--service', given]).service, origin, given);
+  }
   for (const [args, problem] of [
     [[], /--home <dir> or --install <dir>/],
     [['--home', 'h', '--install', 'i'], /one of --home and --install/],
@@ -680,26 +702,525 @@ test('the arguments: a home, or an install\'s data folder, a number of days, and
     [['--home', 'h', '--days', 'week'], /--days takes a whole number of days/],
     [['--home'], /--home takes a folder/],
     [['--home', 'h', '--tail'], /`--tail` is not an option/],
+    [['--home', 'h', '--service'], /--service takes the local host's address/],
+    [['--home', 'h', '--service', 'localhost:5177'], /--service takes the local host's address/],
+    [['--home', 'h', '--service', 'ftp://localhost:5177'], /--service takes the local host's address/],
+    [['--home', 'h', '--service', 'https://daoris.example.org'], /only this machine's own host/],
+    [['--home', 'h', '--service', 'http://192.168.1.4:5177'], /only this machine's own host/],
   ] as const) {
     assert.throws(() => parseArguments([...args]), problem);
   }
 });
 
-test('the runner prints the text, or the same as JSON, and says when a home holds no log', () => {
-  withWeek((home) => {
+test('the runner prints the text, or the same as JSON, and says when a home holds no log', async () => {
+  const home = week();
+  try {
     const out: string[] = [];
     const err: string[] = [];
     const io = { now: NOW, out: (text: string) => out.push(text), err: (text: string) => err.push(text) };
 
-    assert.equal(main(['--home', home], io), 0);
+    assert.equal(await main(['--home', home], io), 0);
     assert.match(out.join('\n'), /^Daoris usage, 2026-09-23 12:00 → 2026-09-30 12:00 UTC \(7 days\)/);
 
     out.length = 0;
-    assert.equal(main(['--home', home, '--json'], io), 0);
+    assert.equal(await main(['--home', home, '--json'], io), 0);
     assert.equal((JSON.parse(out.join('\n')) as Report).sessions.started, 3);
 
-    assert.equal(main(['--home', join(home, 'nowhere')], io), 2);
+    assert.equal(await main(['--home', join(home, 'nowhere')], io), 2);
     assert.match(err.join('\n'), /no machine log in/);
-    assert.equal(main(['--days', '3'], io), 2);
+    assert.equal(await main(['--days', '3'], io), 2);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+/**
+ * OUTCOME1 (the future-directions review's §3, row 4): an outcome per quest, from the records. The quests and the session
+ * records are the local host's (`/api/quests` and `/api/sessions`, closed ones included), the person's words are each
+ * ask's (D133, `/api/asks`), and the parks are the machine log's. A report, never a gate (D54); a fact no store keeps is
+ * said missing, never zero (D57, D143 point 3).
+ */
+type Group = {
+  quests: number; done: number; declined: number;
+  firstPass: { yes: number; of: number; unknown: number };
+  carryOn: { quests: number; of: number; carryOns: number };
+  answers: { total: number; over: number; unknown: number };
+};
+type OutcomeSession = {
+  session: string; state: string; ending: string; adapter: string | null; account: string; teammate: boolean;
+  created: string | null; parked: number | null;
+};
+type Outcome = {
+  quest: string; repository: string; workspace: string | null; status: string; waiting: boolean;
+  filed: string | null; closed: { how: string; at: string | null; afterMs: number | null; bySession?: boolean } | null;
+  sessions: OutcomeSession[]; teammates: number; carryOns: number; strikes: number; limits: number;
+  parks: number | null; answers: number | null; added: number | null;
+  requirements: number; departures: number; held: boolean; accepted: string | null;
+  firstPass: boolean | null; missing: { fact: string; why: string }[];
+};
+type Outcomes = {
+  read: boolean; unread: string | null; quests: Outcome[];
+  byRepository: (Group & { repository: string })[];
+  byAgent: (Group & { agent: string; account: string | null })[];
+};
+
+/** Every word a person or an agent wrote on these records: none of it may reach the report, as text or as data. */
+const WORDS = ['TITLE-WORDS', 'BODY-WORDS', 'NOTE-WORDS', 'QUOTE-WORDS', 'CHECK-WORDS', 'MET-WORDS', 'DEPARTED-WORDS',
+  'ASKED-WORDS', 'ANSWER-WORDS', 'ADDED-WORDS', 'SESSION-NOTE-WORDS', 'SAID-WORDS'];
+
+const quest = (id: string, from: string, to: string, status: string, filed: string, updated: string, more: Record<string, unknown> = {}) => ({
+  id, from, to, title: `TITLE-WORDS ${id}`, body: `BODY-WORDS ${id}`, status, note: `NOTE-WORDS ${id}`,
+  filed: `${filed}+00:00`, updated: `${updated}+00:00`, workspace: 'work', links: [], attachments: [], then: [], parent: null,
+  conflicts: [], requirements: [], answers: [], held: false, accepted: null, ...more,
+});
+const requirement = { quote: 'QUOTE-WORDS', check: 'CHECK-WORDS' };
+
+/** The host's quests: one per shape an outcome takes, and one wholly before the period. */
+const QUESTS = [
+  // Done by its one session, with nothing asked of the person: a first pass.
+  quest('q-first', 'ask #a1', 'engine', 'Done', '2026-09-29T08:00:00', '2026-09-29T10:00:00', {
+    requirements: [requirement], answers: [{ requirement: 1, met: 'MET-WORDS', departed: null, quote: null }],
+  }),
+  // Cut off by a limit, answered, carried on on another account, and done with a departure the person accepted.
+  quest('q-carry', 'ask #a1', 'engine', 'Done', '2026-09-29T08:30:00', '2026-09-29T15:00:00', {
+    requirements: [requirement], answers: [{ requirement: 1, met: null, departed: 'DEPARTED-WORDS', quote: 'QUOTE-WORDS' }],
+    accepted: '2026-09-29T15:00:00+00:00',
+  }),
+  // Asked by a repository, filed before the period and still worked in it: a failure, an interrupted stop, a third run.
+  quest('q-strikes', 'engine', 'game', 'Taken', '2026-09-20T08:00:00', '2026-09-21T08:00:00'),
+  // Declined by its session; its ask keeps the person's words only from after it was published.
+  quest('q-declined', 'ask #a2', 'game', 'Declined', '2026-09-29T09:00:00', '2026-09-29T09:45:00'),
+  // Done with a departure still held for the person's yes; its ask is not on the host; a teammate's record stood down.
+  quest('q-held', 'ask #gone', 'engine', 'Done', '2026-09-29T11:00:00', '2026-09-29T13:00:00', {
+    requirements: [requirement], answers: [{ requirement: 1, met: null, departed: 'DEPARTED-WORDS', quote: 'QUOTE-WORDS' }],
+    held: true,
+  }),
+  // Published and not yet taken: no session.
+  quest('q-quiet', 'ask #a1', 'game', 'Open', '2026-09-30T09:00:00', '2026-09-30T09:00:00'),
+  // Wholly before the period.
+  quest('q-old', 'engine', 'game', 'Done', '2026-09-01T09:00:00', '2026-09-02T09:00:00'),
+];
+
+const record = (id: string, questId: string | null, adapter: string, state: string, created: string, updated: string, more: Record<string, unknown> = {}) => ({
+  id, quest: questId, repository: 'engine', adapter, state, note: 'SESSION-NOTE-WORDS', evidence: null, transcript: null,
+  created: `${created}+00:00`, updated: `${updated}+00:00`, workspace: 'work', kind: 'driven', harnessVersion: '2.1.0',
+  profile: null, tree: null, took: false, answer: null, interrupted: false, limit: false, said: [{ id: 'w1', text: 'SAID-WORDS' }],
+  ...more,
+});
+
+/** The host's session records, closed ones included, as `/api/sessions?includeClosed=true` answers this machine. */
+const SESSIONS = [
+  record('s1', 'q-first', 'claude-code', 'completed', '2026-09-29T08:05:00', '2026-09-29T09:55:00', { profile: 'work', took: true }),
+  record('s2', 'q-carry', 'claude-code', 'failed', '2026-09-29T08:35:00', '2026-09-29T09:00:00', { profile: 'work', took: true, limit: true }),
+  record('s3', 'q-carry', 'claude-code', 'completed', '2026-09-29T10:00:00', '2026-09-29T14:50:00', { profile: 'personal' }),
+  record('s4', 'q-strikes', 'codex-acp', 'failed', '2026-09-20T08:10:00', '2026-09-20T09:00:00', { took: true }),
+  record('s5', 'q-strikes', 'codex-acp', 'stopped', '2026-09-29T12:00:00', '2026-09-29T12:30:00', { interrupted: true }),
+  record('s6', 'q-strikes', 'codex-acp', 'working', '2026-09-30T08:00:00', '2026-09-30T08:00:00'),
+  record('s7', 'q-declined', 'claude-code-acp', 'declined', '2026-09-29T09:05:00', '2026-09-29T09:40:00', { profile: 'work' }),
+  record('s8', 'q-held', 'claude-code', 'completed', '2026-09-29T11:05:00', '2026-09-29T12:55:00', { profile: 'personal', took: true }),
+  // A teammate's record, synced down keyed `origin/id`: its account and its log are on its machine.
+  record('m2/s9', 'q-held', 'claude-code', 'stood-down', '2026-09-29T11:06:00', '2026-09-29T11:07:00'),
+  // A conversation and an intake serve no quest, and are no quest's sessions.
+  record('s10', null, 'claude-code', 'completed', '2026-09-29T08:00:00', '2026-09-29T08:10:00', { kind: 'chat' }),
+  record('s11', null, 'claude-code', 'completed', '2026-09-29T07:50:00', '2026-09-29T07:59:00', { kind: 'chat', ask: 'a1', repository: 'ask #a1' }),
+  record('s12', 'q-old', 'claude-code', 'completed', '2026-09-01T09:05:00', '2026-09-01T10:00:00'),
+];
+
+const word = (kind: string, at: string, session: string | null, questId: string | null, text: string) =>
+  ({ kind, text, at: `${at}+00:00`, session, quest: questId });
+
+/** The host's asks, closed ones included, each with the person's words (DRIFT1a). */
+const ASKS = [
+  {
+    id: 'a1', workspace: 'work', sentence: 'ASKED-WORDS', state: 'Open', tier: 'intake', quests: ['q-first', 'q-carry', 'q-quiet'],
+    words: [
+      word('asked', '2026-09-29T07:45:00', null, null, 'ASKED-WORDS'),
+      word('answered', '2026-09-29T08:55:00', 's2', 'q-carry', 'ANSWER-WORDS'),
+      word('added', '2026-09-29T11:00:00', 's3', 'q-carry', 'ADDED-WORDS'),
+      // A word on another quest is not this one's.
+      word('answered', '2026-09-29T12:00:00', 'sx', 'q-elsewhere', 'ANSWER-WORDS'),
+    ],
+  },
+  {
+    id: 'a2', workspace: 'work', sentence: 'ASKED-WORDS', state: 'Done', tier: 'intake', quests: ['q-declined'],
+    words: [word('asked', '2026-09-29T08:50:00', null, null, 'ASKED-WORDS')], wordsKeptFrom: '2026-09-29T12:00:00+00:00',
+  },
+];
+
+/** The machine log beside the records: the starts this period holds (not s4's, before it) and the parks. */
+function outcomeHome(): string {
+  const home = mkdtempSync(join(tmpdir(), 'daoris-outcomes-'));
+  const logs = join(home, 'logs');
+  mkdirSync(logs);
+  const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
+  const started = (time: string, session: string, adapter: string) =>
+    at(time, 'session.started', { session, kind: 'driven', adapter, repository: 'engine', workspace: 'work' });
+  writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${[
+    started('2026-09-29T08:05:00.000Z', 's1', 'claude-code'),
+    started('2026-09-29T08:35:00.000Z', 's2', 'claude-code'),
+    at('2026-09-29T08:50:00.000Z', 'session.parked', { session: 's2', kind: 'driven', repository: 'engine', workspace: 'work' }),
+    started('2026-09-29T09:05:00.000Z', 's7', 'claude-code-acp'),
+    started('2026-09-29T10:00:00.000Z', 's3', 'claude-code'),
+    started('2026-09-29T11:05:00.000Z', 's8', 'claude-code'),
+    at('2026-09-29T11:30:00.000Z', 'session.parked', { session: 's8', kind: 'driven', repository: 'engine', workspace: 'work' }),
+    started('2026-09-29T12:00:00.000Z', 's5', 'codex-acp'),
+  ].join('\n')}\n`);
+  writeFileSync(join(logs, '2026-09-30.desktop.jsonl'), `${started('2026-09-30T08:00:00.000Z', 's6', 'codex-acp')}\n`);
+  return home;
+}
+
+const RECORDS = { quests: QUESTS, questsUnread: null, sessions: SESSIONS, sessionsUnread: null, asks: ASKS, asksUnread: null };
+
+function outcomesFor(records: unknown = RECORDS): Outcomes {
+  const home = outcomeHome();
+  try {
+    const read = readLogs(join(home, 'logs'), { since });
+    return outcomesOf(records, read.lines, { from: since, to: NOW });
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+const byId = (outcomes: Outcomes) => new Map(outcomes.quests.map((each) => [each.quest, each]));
+
+test('the outcomes hold every quest the period touched, by publish, close or a session, oldest first, and none other', () => {
+  const outcomes = outcomesFor();
+  assert.equal(outcomes.read, true);
+  assert.equal(outcomes.unread, null);
+  // q-strikes was published before the period and is in it by its sessions; q-old is wholly before it.
+  assert.deepEqual(outcomes.quests.map((each) => each.quest), ['q-strikes', 'q-first', 'q-carry', 'q-declined', 'q-held', 'q-quiet']);
+});
+
+test('each quest\'s sessions, oldest first, and how each ended: a limit and an interrupted stop said apart from a failure', () => {
+  const quests = byId(outcomesFor());
+  const ended = (id: string) => quests.get(id)!.sessions.map((each) => `${each.session} ${each.ending} ${each.adapter} ${each.account}`);
+
+  assert.deepEqual(ended('q-carry'), ['s2 limit claude-code work', 's3 completed claude-code personal']);
+  assert.deepEqual(ended('q-strikes'), [
+    's4 failed codex-acp (own sign-in)', 's5 interrupted codex-acp (own sign-in)', 's6 working codex-acp (own sign-in)',
+  ]);
+  // A teammate's record is listed and counted apart: its account is on its machine.
+  assert.deepEqual(ended('q-held'), ['s8 completed claude-code personal', 'm2/s9 stood-down claude-code (a teammate\'s)']);
+  assert.equal(quests.get('q-held')!.teammates, 1);
+  assert.deepEqual(quests.get('q-quiet')!.sessions, []);
+});
+
+test('carry-ons, strikes and limits: a run after a cut-off is a carry-on, a limit is never a strike, and a teammate\'s is no strike here', () => {
+  const quests = byId(outcomesFor());
+  const counts = (id: string) => {
+    const each = quests.get(id)!;
+    return [each.carryOns, each.strikes, each.limits];
+  };
+
+  assert.deepEqual(counts('q-first'), [0, 0, 0]);
+  assert.deepEqual(counts('q-carry'), [1, 0, 1]);
+  // A failure, then an interrupted stop (D104), then a third run: two carry-ons and two strikes (D58 as amended).
+  assert.deepEqual(counts('q-strikes'), [2, 2, 0]);
+  assert.deepEqual(counts('q-held'), [0, 0, 0]);
+});
+
+test('how and when each closed, and the time from publish to close; a yes that replaced the done\'s moment is said missing', () => {
+  const quests = byId(outcomesFor());
+
+  assert.deepEqual(quests.get('q-first')!.closed, { how: 'done', at: '2026-09-29T10:00:00.000Z', afterMs: 2 * 3_600_000 });
+  assert.deepEqual(quests.get('q-declined')!.closed, {
+    how: 'declined', at: '2026-09-29T09:45:00.000Z', afterMs: 45 * 60_000, bySession: true,
   });
+  assert.equal(quests.get('q-strikes')!.closed, null);
+  assert.equal(quests.get('q-quiet')!.closed, null);
+
+  const carried = quests.get('q-carry')!;
+  assert.deepEqual(carried.closed, { how: 'done', at: null, afterMs: null });
+  assert.equal(carried.accepted, '2026-09-29T15:00:00.000Z');
+  assert.match(carried.missing.find((each) => each.fact === 'closed')?.why ?? '', /yes/);
+});
+
+test('departures and the person\'s yes (D133): accepted, or still held', () => {
+  const quests = byId(outcomesFor());
+  const said = (id: string) => {
+    const each = quests.get(id)!;
+    return [each.requirements, each.departures, each.held, each.accepted];
+  };
+
+  assert.deepEqual(said('q-first'), [1, 0, false, null]);
+  assert.deepEqual(said('q-carry'), [1, 1, false, '2026-09-29T15:00:00.000Z']);
+  assert.deepEqual(said('q-held'), [1, 1, true, null]);
+});
+
+test('answers are the person\'s words on this quest from its ask, and where no ask keeps them they are missing, never zero', () => {
+  const quests = byId(outcomesFor());
+  const words = (id: string) => [quests.get(id)!.answers, quests.get(id)!.added];
+  const why = (id: string) => quests.get(id)!.missing.find((each) => each.fact === 'answers')?.why ?? '';
+
+  assert.deepEqual(words('q-first'), [0, 0]);
+  assert.deepEqual(words('q-carry'), [1, 1]);
+  assert.deepEqual(words('q-quiet'), [0, 0]);
+  assert.deepEqual(words('q-strikes'), [null, null]);
+  assert.match(why('q-strikes'), /asked by a repository/);
+  assert.deepEqual(words('q-declined'), [null, null]);
+  assert.match(why('q-declined'), /from 2026-09-29 12:00 UTC, after the quest was published/);
+  assert.deepEqual(words('q-held'), [null, null]);
+  assert.match(why('q-held'), /ask #gone is not on the host/);
+});
+
+test('parks are the machine log\'s, for this machine\'s sessions whose start the period holds, and missing where one\'s does not', () => {
+  const quests = byId(outcomesFor());
+
+  assert.equal(quests.get('q-first')!.parks, 0);
+  assert.equal(quests.get('q-carry')!.parks, 1);
+  // The teammate's record is on its own machine's log, and does not make this machine's count unknown.
+  assert.equal(quests.get('q-held')!.parks, 1);
+  assert.deepEqual(quests.get('q-carry')!.sessions.map((each) => each.parked), [1, 0]);
+  // s4 started before the period, so whether it parked is not known.
+  assert.equal(quests.get('q-strikes')!.parks, null);
+  assert.deepEqual(quests.get('q-strikes')!.sessions.map((each) => each.parked), [null, 0, 0]);
+  assert.match(quests.get('q-strikes')!.missing.find((each) => each.fact === 'parks')?.why ?? '', /before the period/);
+});
+
+test('a first pass is done by its one working session, with no departure and nothing asked of the person; not done is not judged', () => {
+  const quests = byId(outcomesFor());
+
+  assert.equal(quests.get('q-first')!.firstPass, true);
+  assert.equal(quests.get('q-carry')!.firstPass, false);
+  // One working session (the teammate's stood down), but a departure and a park.
+  assert.equal(quests.get('q-held')!.firstPass, false);
+  for (const id of ['q-strikes', 'q-declined', 'q-quiet']) assert.equal(quests.get(id)!.firstPass, null, id);
+});
+
+/**
+ * The first-pass table: a done quest with one working session, and what is known of whether the person was asked. Either
+ * store saying the person was asked makes it no first pass; one saying nothing was asked makes it one; neither knowing is
+ * not known, and is said missing.
+ */
+const FIRST_PASS: [why: string, answered: boolean | null, parked: boolean | null, firstPass: boolean | null][] = [
+  ['both say nothing was asked', false, false, true],
+  ['the ask says nothing was answered, the log does not know', false, null, true],
+  ['the log says it never parked, the ask keeps no words', null, false, true],
+  ['the ask holds an answer', true, null, false],
+  ['the log holds a park', null, true, false],
+  ['neither store knows', null, null, null],
+];
+
+test('each row of the first-pass table judges as it says', () => {
+  for (const [why, answered, parked, firstPass] of FIRST_PASS) {
+    const one = quest('q1', answered === null ? 'engine' : 'ask #a9', 'engine', 'Done', '2026-09-29T08:00:00', '2026-09-29T09:00:00');
+    const run = record('r1', 'q1', 'claude-code', 'completed', '2026-09-29T08:01:00', '2026-09-29T08:59:00');
+    const ask = { id: 'a9', words: answered ? [word('answered', '2026-09-29T08:30:00', 'r1', 'q1', 'ANSWER-WORDS')] : [] };
+    const lines = parked === null ? [] : [
+      parseLine(line('2026-09-29T08:01:00.000Z', 'desktop', 'info', 'session.started', { session: 'r1', kind: 'driven' })),
+      ...(parked ? [parseLine(line('2026-09-29T08:20:00.000Z', 'desktop', 'info', 'session.parked', { session: 'r1' }))] : []),
+    ];
+    const records = { quests: [one], questsUnread: null, sessions: [run], sessionsUnread: null, asks: [ask], asksUnread: null };
+    const [outcome] = (outcomesOf(records, lines, { from: since, to: NOW }) as Outcomes).quests;
+    assert.equal(outcome!.firstPass, firstPass, why);
+    assert.equal(outcome!.missing.some((each) => each.fact === 'firstPass'), firstPass === null, why);
+  }
+});
+
+test('the sender names the ask, as the service\'s AskDesk.AskOf reads it, and a session\'s ending as the strikes read it', () => {
+  for (const [sender, ask] of [
+    ['ask #a1', 'a1'], ['ask #7f3c', '7f3c'], ['ask #', null], ['Ask #a1', null], ['engine', null], [null, null], [3, null],
+  ] as const) {
+    assert.equal(askOf(sender), ask, String(sender));
+  }
+  for (const [given, ending] of [
+    [{ state: 'failed' }, 'failed'],
+    [{ state: 'failed', limit: true }, 'limit'],
+    [{ state: 'failed', limit: 'true' }, 'failed'],
+    [{ state: 'stopped' }, 'stopped'],
+    [{ state: 'stopped', interrupted: true }, 'interrupted'],
+    [{ state: 'completed', limit: true }, 'completed'],
+    [{ state: 'awaiting-person' }, 'awaiting-person'],
+    [{}, '(unsaid)'],
+  ] as const) {
+    assert.equal(endingOf(given), ending, JSON.stringify(given));
+  }
+});
+
+test('the roll-up by repository: quests, first passes of those done, carry-ons and answers, each with its count', () => {
+  const { byRepository } = outcomesFor();
+
+  assert.deepEqual(byRepository, [
+    {
+      repository: 'engine', quests: 3, done: 3, declined: 0,
+      firstPass: { yes: 1, of: 3, unknown: 0 }, carryOn: { quests: 1, of: 3, carryOns: 1 }, answers: { total: 1, over: 2, unknown: 1 },
+    },
+    {
+      repository: 'game', quests: 3, done: 0, declined: 1,
+      firstPass: { yes: 0, of: 0, unknown: 0 }, carryOn: { quests: 1, of: 2, carryOns: 2 }, answers: { total: 0, over: 1, unknown: 2 },
+    },
+  ]);
+});
+
+test('the roll-up by agent and account, each quest under its first working session, and a quest with none last', () => {
+  const { byAgent } = outcomesFor();
+
+  assert.deepEqual(byAgent.map((each) => [each.agent, each.account, each.quests, each.done, each.firstPass, each.carryOn, each.answers]), [
+    ['claude-code', 'work', 2, 2, { yes: 1, of: 2, unknown: 0 }, { quests: 1, of: 2, carryOns: 1 }, { total: 1, over: 2, unknown: 0 }],
+    ['claude-code', 'personal', 1, 1, { yes: 0, of: 1, unknown: 0 }, { quests: 0, of: 1, carryOns: 0 }, { total: 0, over: 0, unknown: 1 }],
+    ['claude-code-acp', 'work', 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 0, of: 1, carryOns: 0 }, { total: 0, over: 0, unknown: 1 }],
+    ['codex-acp', '(own sign-in)', 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 1, of: 1, carryOns: 2 }, { total: 0, over: 0, unknown: 1 }],
+    ['(no session)', null, 1, 0, { yes: 0, of: 0, unknown: 0 }, { quests: 0, of: 0, carryOns: 0 }, { total: 0, over: 1, unknown: 0 }],
+  ]);
+});
+
+test('no score: each roll-up row carries its counts and nothing that folds them into one number', () => {
+  const { byRepository, byAgent } = outcomesFor();
+  for (const row of [...byRepository, ...byAgent]) {
+    for (const key of Object.keys(row)) assert.equal(/score|rate|grade|rank/i.test(key), false, key);
+  }
+});
+
+test('records the host did not answer are said, and the log\'s report still stands', () => {
+  const unread = outcomesFor({
+    quests: null, questsUnread: '/api/quests?includeClosed=true answered 500', sessions: [], sessionsUnread: null, asks: [], asksUnread: null,
+  });
+  assert.deepEqual([unread.read, unread.unread, unread.quests], [false, '/api/quests?includeClosed=true answered 500', []]);
+
+  // Asks unread: every quest an ask asked has its answers missing, saying why, and the rest stands.
+  const asksUnread = byId(outcomesFor({ ...RECORDS, asks: null, asksUnread: '/api/asks?includeClosed=true answered 404' }));
+  assert.equal(asksUnread.get('q-first')!.answers, null);
+  assert.match(asksUnread.get('q-first')!.missing.find((each) => each.fact === 'answers')?.why ?? '', /answered 404/);
+  assert.equal(asksUnread.get('q-first')!.parks, 0);
+
+  // An ask from a host before DRIFT1a answers no words.
+  const wordless = byId(outcomesFor({ ...RECORDS, asks: [{ id: 'a1' }] }));
+  assert.match(wordless.get('q-first')!.missing.find((each) => each.fact === 'answers')?.why ?? '', /without the person's words/);
+
+  // No host named at all.
+  const none = outcomesOf(null, [], { from: since, to: NOW }) as Outcomes;
+  assert.deepEqual([none.read, none.quests, none.byRepository, none.byAgent], [false, [], [], []]);
+  assert.match(none.unread ?? '', /--service/);
+});
+
+/** A host that answers the three routes from the fixture, and remembers what it was asked. */
+function fakeHost(answers: Record<string, { status: number; body: unknown } | Error> = {}) {
+  const asked: { url: string; method: string }[] = [];
+  const fetch = async (url: string, init: { method?: string } = {}) => {
+    asked.push({ url, method: init.method ?? 'GET' });
+    const route = url.replace('http://localhost:5177', '');
+    const fixture: Record<string, unknown> = {
+      [RECORD_ROUTES.quests]: QUESTS, [RECORD_ROUTES.sessions]: SESSIONS, [RECORD_ROUTES.asks]: ASKS,
+    };
+    const answer = answers[route] ?? { status: 200, body: fixture[route] };
+    if (answer instanceof Error) throw answer;
+    return {
+      ok: answer.status >= 200 && answer.status < 300,
+      status: answer.status,
+      text: async () => (typeof answer.body === 'string' ? answer.body : JSON.stringify(answer.body)),
+    };
+  };
+  return { fetch, asked };
+}
+
+test('the host is read by three GETs of its routes, closed records included, and nothing else is asked of it', async () => {
+  const host = fakeHost();
+  const records = await readRecords('http://localhost:5177', { fetch: host.fetch });
+
+  assert.deepEqual(RECORD_ROUTES, {
+    quests: '/api/quests?includeClosed=true', sessions: '/api/sessions?includeClosed=true', asks: '/api/asks?includeClosed=true',
+  });
+  assert.deepEqual(host.asked.map((each) => each.method), ['GET', 'GET', 'GET']);
+  assert.deepEqual(
+    host.asked.map((each) => each.url).sort(),
+    Object.values(RECORD_ROUTES).map((route) => `http://localhost:5177${route}`).sort());
+  assert.equal(records.quests.length, QUESTS.length);
+  assert.deepEqual([records.questsUnread, records.sessionsUnread, records.asksUnread], [null, null, null]);
+});
+
+test('a route that fails, answers no list or is unreachable is said by its route, never read as no records', async () => {
+  const records = await readRecords('http://localhost:5177', {
+    fetch: fakeHost({
+      [RECORD_ROUTES.quests]: { status: 200, body: 'not json' },
+      [RECORD_ROUTES.sessions]: { status: 200, body: { sessions: [] } },
+      [RECORD_ROUTES.asks]: { status: 404, body: { error: 'no route' } },
+    }).fetch,
+  });
+  assert.deepEqual([records.quests, records.sessions, records.asks], [null, null, null]);
+  assert.match(records.questsUnread, /^\/api\/quests\?includeClosed=true answered something that is not JSON$/);
+  assert.match(records.sessionsUnread, /^\/api\/sessions\?includeClosed=true answered no list$/);
+  assert.match(records.asksUnread, /^\/api\/asks\?includeClosed=true answered 404$/);
+
+  const refused = Object.assign(new Error('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+  const down = await readRecords('http://localhost:5177', { fetch: fakeHost({ [RECORD_ROUTES.quests]: refused }).fetch });
+  assert.match(down.questsUnread, /^\/api\/quests\?includeClosed=true did not answer: ECONNREFUSED$/);
+});
+
+test('the runner reads the host it is named and reports the outcomes beside the log, as text or JSON', async () => {
+  const home = outcomeHome();
+  try {
+    const host = fakeHost();
+    const out: string[] = [];
+    const io = { now: NOW, out: (text: string) => out.push(text), err: () => {}, fetch: host.fetch };
+
+    assert.equal(await main(['--home', home, '--service', 'http://localhost:5177', '--json'], io), 0);
+    const report = JSON.parse(out.join('\n')) as { outcomes: Outcomes };
+    assert.equal(report.outcomes.read, true);
+    assert.equal(report.outcomes.quests.length, 6);
+
+    // Without a host the outcomes are not read, and nothing is asked of any host.
+    out.length = 0;
+    const idle = fakeHost();
+    assert.equal(await main(['--home', home, '--json'], { ...io, fetch: idle.fetch }), 0);
+    assert.equal((JSON.parse(out.join('\n')) as { outcomes: Outcomes }).outcomes.read, false);
+    assert.deepEqual(idle.asked, []);
+
+    // A host that does not answer is said, and the log's report still prints: exit 0.
+    out.length = 0;
+    const down = fakeHost({ [RECORD_ROUTES.quests]: new Error('fetch failed') });
+    assert.equal(await main(['--home', home, '--service', 'http://localhost:5177'], { ...io, fetch: down.fetch }), 0);
+    assert.match(out.join('\n'), /^Outcomes\n {2}not read — \/api\/quests\?includeClosed=true did not answer: fetch failed$/m);
+    assert.match(out.join('\n'), /^Lifecycle$/m);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('the text report says each quest\'s outcome, its sessions and what is not known, then the roll-ups with their counts', () => {
+  const home = outcomeHome();
+  try {
+    const read = readLogs(join(home, 'logs'), { since });
+    const text: string = render(summarise(read.lines, { from: since, to: NOW, skipped: read.skipped, records: RECORDS }), join(home, 'logs'));
+
+    assert.match(text, /^Outcomes\n {2}quests {9}6 — done 3 · declined 1 · open 1 · taken 1$/m);
+    assert.match(text, /^ {2}q-first {5}engine {2}done in 2h 0m · first pass · 1 session · answers 0\n {22}s1 completed \[claude-code · work\]$/m);
+    assert.match(text, new RegExp([
+      '^  q-carry     engine  done · not first pass · 1 departure, accepted 6h 30m after publish · 2 sessions · 1 carry-on',
+      ' · 1 limit · parked 1 · answers 1 · added 1$',
+    ].join(''), 'm'));
+    assert.match(text, /^ {22}s2 limit \[claude-code · work\] → s3 completed \[claude-code · personal\]$/m);
+    assert.match(text, /^ {22}not known: closed — the person's yes is its last moment/m);
+    assert.match(text, /^ {2}q-strikes {3}game {4}taken · 3 sessions · 2 carry-ons · 2 strikes$/m);
+    assert.match(text, /^ {22}not known: parks — the period read holds no start for s4 .*; answers — asked by a repository/m);
+    assert.match(text, /^ {2}q-declined {2}game {4}declined in 45m 0s by its session · 1 session$/m);
+    assert.match(text, /q-held {6}engine {2}done in 2h 0m · not first pass · 1 departure, held for the person's yes · 2 sessions \(1 a teammate's\) · parked 1$/m);
+    assert.match(text, /^ {2}q-quiet {5}game {4}open · 0 sessions · answers 0$/m);
+    assert.match(text, new RegExp([
+      '^  by repository\\n',
+      '    engine  3 quests · done 3 · first pass 1 of 3 done · carried on 1 of 3 run here \\(1 carry-on\\)',
+      ' · answers 1 over 2 quests \\(0\\.5 a quest\\), 1 not kept\\n',
+      '    game    3 quests · done 0 · declined 1 · first pass: none done · carried on 1 of 2 run here \\(2 carry-ons\\)',
+      ' · answers 0 over 1 quest \\(0 a quest\\), 2 not kept$',
+    ].join(''), 'm'));
+    assert.match(text, /^ {2}by agent and account, each quest under its first session\n {4}claude-code · work {9}2 quests · done 2 · first pass 1 of 2 done/m);
+    assert.match(text, /^ {4}codex-acp · \(own sign-in\) {2}1 quest · done 0 · first pass: none done · carried on 1 of 1 run here \(2 carry-ons\) · answers not kept \(1\)$/m);
+    assert.match(text, /^ {4}\(no session\) {15}1 quest · done 0 · first pass: none done · carried on: no session here · answers 0 over 1 quest \(0 a quest\)$/m);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('the outcomes never carry anyone\'s words: no title, body, note, requirement, answer or word of the ask', async () => {
+  const home = outcomeHome();
+  try {
+    const out: string[] = [];
+    const io = { now: NOW, out: (text: string) => out.push(text), err: () => {}, fetch: fakeHost().fetch };
+    await main(['--home', home, '--service', 'http://localhost:5177'], io);
+    await main(['--home', home, '--service', 'http://localhost:5177', '--json'], io);
+    const printed = out.join('\n');
+    assert.match(printed, /q-carry/);
+    for (const words of WORDS) assert.equal(printed.includes(words), false, words);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
 });
