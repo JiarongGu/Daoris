@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, CountBadge, Dot, DotMark, Icon, type IconName, Tip } from '../ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
@@ -21,6 +21,59 @@ export const STRIP_SPACE = 'data-strip-space';
 /** A press on the strip itself, or on space one of its groups leaves empty — never on a control. */
 function isStripSpace(target: EventTarget, strip: EventTarget) {
   return target === strip || (target instanceof HTMLElement && target.hasAttribute(STRIP_SPACE));
+}
+
+/**
+ * How far, in CSS px either side of the press, the pointer may travel on the strip before the press is
+ * a drag (FRAME2). Windows' own drag distance (`SM_CXDRAG`, `SM_CYDRAG`) is 4 px by default; a page
+ * cannot read the system metric, so the default stands in for it.
+ */
+export const DRAG_DISTANCE = 4;
+
+/**
+ * The strip's press, as a caption's (FRAME2): it only notes where it went down, and the drag begins once
+ * the pointer travels past {@link DRAG_DISTANCE} with the button still held. A still click is nothing,
+ * and since no move loop has started, the browser's `dblclick` arrives for a double-click.
+ *
+ * @remarks
+ * Handing the press straight to the OS move loop, as SURF7 did, restored a maximized window on a single
+ * click and let the loop swallow a double-click's second press. The move and the release are heard on
+ * the window rather than the strip, because a quick drag leaves the strip's 36px before its first move.
+ */
+function useCaptionPress(onDragStart: (() => void) | undefined) {
+  // The latest handler, read when the drag begins: it restores first only while the window is
+  // maximized, and a press can outlive the render it began in.
+  const drag = useRef(onDragStart);
+  drag.current = onDragStart;
+  const release = useRef<(() => void) | null>(null);
+  useEffect(() => () => release.current?.(), []);
+
+  return (event: ReactPointerEvent<HTMLElement>) => {
+    release.current?.();
+    // Only the strip's own space drags. A press that began on a menu or the scope is that control's,
+    // and handing it to the OS would make every button a drag handle.
+    if (!drag.current || event.button !== 0 || !isStripSpace(event.target, event.currentTarget)) return;
+
+    const { pointerId, clientX: x, clientY: y } = event;
+    const move = (next: PointerEvent) => {
+      if (next.pointerId !== pointerId) return;
+      // The button came up where nothing told us: the press is over, and it never became a drag.
+      if ((next.buttons & 1) === 0) return stop();
+      if (Math.abs(next.clientX - x) <= DRAG_DISTANCE && Math.abs(next.clientY - y) <= DRAG_DISTANCE) return;
+      stop();
+      drag.current?.();
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+      release.current = null;
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    window.addEventListener('pointercancel', stop);
+    release.current = stop;
+  };
 }
 
 /**
@@ -57,13 +110,17 @@ export function AppStrip({
   trailing?: ReactNode;
   captionRoom?: boolean;
   stripRef?: (element: HTMLElement | null) => void;
-  /** Absent in a browser: there is no window to move, so the strip is simply a strip. */
+  /**
+   * Called once a press on the strip's own space has travelled past {@link DRAG_DISTANCE}, never on the
+   * press itself (FRAME2). Absent in a browser: there is no window to move, so the strip is simply a strip.
+   */
   onDragStart?: () => void;
   onToggleMaximize?: () => void;
   onResizeTop?: () => void;
   /** A right-click on the strip's own space opens the window's system menu, as a caption's does (CTX1, D138 §4). */
   onSystemMenu?: () => void;
 }) {
+  const onPress = useCaptionPress(onDragStart);
   return (
     <header
       ref={stripRef}
@@ -73,14 +130,12 @@ export function AppStrip({
         event.preventDefault();
         onSystemMenu();
       }}
-      // The title bar's own gesture. `onPointerDown` rather than a click: the OS move loop has to
-      // start while the button is still down, which is also why the host dispatches it inline.
-      onPointerDown={(event) => {
-        // Only the strip's own space drags. A press that began on a menu or the scope is that
-        // control's, and handing it to the OS would make every button a drag handle.
-        if (event.button !== 0 || !isStripSpace(event.target, event.currentTarget)) return;
-        onDragStart?.();
-      }}
+      // The title bar's own gesture, as a caption's (FRAME2): a press notes where it went down, and a
+      // move past the drag distance starts the OS move loop while the button is still held, which is
+      // also why the host dispatches it inline.
+      onPointerDown={onPress}
+      // A double-click reaches here because a still press starts no move loop to swallow it. The
+      // engine decides what counts as one, so the page keeps no clock of its own.
       onDoubleClick={(event) => {
         if (!isStripSpace(event.target, event.currentTarget)) return;
         onToggleMaximize?.();

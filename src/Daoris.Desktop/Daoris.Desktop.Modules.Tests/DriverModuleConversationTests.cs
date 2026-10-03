@@ -143,6 +143,69 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// MSG1d4 (D137's MSG1d note): words held as a session winds up survive a restart. The shell keeps them in a small file
+    /// under the home until the record keeps them; a new loop's judge reads them back and tries them as before, so once the
+    /// record ends they are kept, shown at the door they were said at, and the file holds nothing more.
+    /// </summary>
+    [Fact]
+    public async Task Words_held_as_a_session_winds_up_survive_a_restart()
+    {
+        var ended = false;
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "working")),
+            Say = id => ended
+                ? (HttpStatusCode.OK, Kept(id, "w7", "and the readme"))
+                : (HttpStatusCode.Conflict, """{"error":"Session `s1` is working.","refusal":"running"}"""),
+        };
+        var (before, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "and the readme" });
+
+        Assert.Equal("resume", sent.GetProperty("reaches").GetString());
+        Assert.True(File.Exists(SessionWords.HeldPath(Home)));
+
+        // The shell closes with the words still held, and a new one comes up on the same home.
+        before.Stop();
+        var (after, _) = await UpAsync(ledger);
+        ended = true;
+        await after.Service!.AdvanceAsync("s1", "completed", note: "the quest reached done.");
+
+        await UntilAsync(() => after.Events.Page("s1").Events.Count == 1);
+        var shown = Assert.Single(after.Events.Page("s1").Events);
+        Assert.Equal(("w7", "resume", "screen"), (shown.Id, shown.Reaches, shown.Door));
+        Assert.Equal(1, after.Nudges);
+        await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
+    }
+
+    /// <summary>
+    /// A file of held words that does not read holds nothing (MSG1d4): the loop comes up as before, and the next words held
+    /// replace it, written whole beside it and renamed.
+    /// </summary>
+    [Fact]
+    public async Task A_file_of_held_words_that_does_not_read_holds_nothing()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(SessionWords.HeldPath(Home))!);
+        File.WriteAllText(SessionWords.HeldPath(Home), "{ not json");
+        var ledger = new Ledger
+        {
+            Records = Records(Record("s1", "working")),
+            Say = _ => (HttpStatusCode.Conflict, """{"error":"Session `s1` is working.","refusal":"running"}"""),
+        };
+        var (loop, module) = await UpAsync(ledger);
+
+        var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "and the readme" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        var written = File.ReadAllText(SessionWords.HeldPath(Home));
+        Assert.DoesNotContain("\r", written);
+        using var held = JsonDocument.Parse(written);
+        var word = Assert.Single(held.RootElement.GetProperty("held").EnumerateArray());
+        Assert.Equal(("s1", "and the readme", "screen"), (word.GetProperty("session").GetString(), word.GetProperty("text").GetString(), word.GetProperty("door").GetString()));
+        loop.Stop();
+    }
+
+    /// <summary>
     /// MSG1d (D137 §5.3): what a word said now would do, for the page to offer the box by: a session that ended or parked
     /// goes on with it, and a driven session's inbox answers its door's reach, which is not known until the door is.
     /// </summary>

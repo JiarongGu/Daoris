@@ -123,6 +123,33 @@ public static class ChatFiles
     }
 
     /// <summary>
+    /// A file kept for a session under the name a record gives it (MSG1d3), where <see cref="Keep"/> laid it:
+    /// <c>&lt;first 12 of its hash&gt;-&lt;name&gt;</c>. Of two kept under one name, the newer, which is the one said last. Null
+    /// where none is kept by that name, or the id names no session.
+    /// </summary>
+    public static KeptFile? Find(string home, string sessionId, string name)
+    {
+        if (!SessionEvents.IsId(sessionId) || name.Length == 0) return null;
+        var folder = Folder(home, sessionId);
+        if (!Directory.Exists(folder)) return null;
+
+        var path = Directory.EnumerateFiles(folder)
+            .Where(each => Path.GetFileName(each) is var leaf
+                           && leaf.Length == name.Length + HashInName + 1 && leaf[HashInName] == '-'
+                           && leaf.EndsWith(name, StringComparison.Ordinal))
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .FirstOrDefault();
+        return path is null ? null : new KeptFile(name, path);
+    }
+
+    /// <summary>
+    /// The files kept for a session under the names a record gives them (MSG1d3), in order: what a resumed run is handed of
+    /// the words it goes on with. A name nothing keeps any more is left out, never named as a path that is not there.
+    /// </summary>
+    public static IReadOnlyList<KeptFile> Kept(string home, string sessionId, IReadOnlyList<string> names) =>
+        [.. names.Select(name => Find(home, sessionId, name)).OfType<KeptFile>()];
+
+    /// <summary>
     /// A name made safe to keep: any directory in it dropped, a character no file system takes made an
     /// underscore, a trailing dot or space gone (Windows drops them when it opens a file), and a name
     /// that is nothing becoming <c>attachment</c> — <c>QuestFiles.SafeName</c>'s rules.

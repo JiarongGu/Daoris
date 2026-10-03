@@ -41,6 +41,27 @@ public static class SessionEventKind
     public const string Raw = "raw";
 }
 
+/// <summary>
+/// The codes a driver's note in a conversation carries where the page words it itself (MSG1c3, D142 point 1): each the page's
+/// <c>work.conversation.&lt;code&gt;</c>, worded in both catalogues. A note with none is the driver's English, shown as written.
+/// </summary>
+/// <remarks>
+/// A twin (<c>.claude/knowledge/twins.md</c>): the page's <c>work/conversation.ts</c> keeps the same list
+/// (<c>CONVERSATION_CODES</c>), and its test parses this class, one <c>public const string</c> per line, and holds the list
+/// and both catalogues to it; <c>ChatTurnsTests</c> holds the catalogues from this side.
+/// </remarks>
+public static class SessionEventCodes
+{
+    /// <summary>
+    /// A word handed to a turn at its next step that the person's stop cut off on its way (MSG1c, STEER1 §3): the agent may
+    /// have read it, and its answer was not kept.
+    /// </summary>
+    public const string Lost = "lost";
+
+    /// <summary>Every code, which both catalogues word.</summary>
+    public static IReadOnlyList<string> All { get; } = [Lost];
+}
+
 /// <summary>What a tool call carries: text, a diff, or a terminal, in ACP's own three shapes.</summary>
 public sealed record ToolContent(
     string Type, string? Text = null, string? Path = null, string? OldText = null, string? NewText = null);
@@ -143,6 +164,13 @@ public sealed record SessionEvent
     /// is the driver's English.
     /// </summary>
     public string? Why { get; init; }
+
+    /// <summary>
+    /// For a driver's note the page words itself (MSG1c3, D142 point 1): a code of <see cref="SessionEventCodes"/>. Daoris's
+    /// own line is chrome, so the page says it from the code in the reader's language; <see cref="Text"/> beside it stays the
+    /// driver's English, for the console, the terminal and a page that does not know the code.
+    /// </summary>
+    public string? Code { get; init; }
 
     /// <summary>
     /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached (CONV4c) —

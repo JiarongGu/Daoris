@@ -1211,22 +1211,26 @@ public sealed partial class ChatRunner : IDisposable
         /// </summary>
         private async Task AnsweredAsync(ChatMessage words, Task<string> answered)
         {
-            string? why = null;
+            // The words' id beside each line, so the page settles any it still shows waiting (MSG1f).
+            SessionEvent Said(string why) => new() { Kind = SessionEventKind.Note, Text = why, Words = [words.Id!] };
+
+            SessionEvent? said = null;
             try
             {
                 var reason = await answered.ConfigureAwait(false);
                 bool stoppedUnder;
                 lock (_gate) stoppedUnder = _stoppedUnder.Contains(words.Id!);
-                if (stoppedUnder && reason == "cancelled") why = "— it may have read what you added; its answer was not kept.";
+                // With its code, which the page words in the reader's language (MSG1c3).
+                said = ChatTurns.Lost(words.Id!, stoppedUnder, reason);
             }
             catch (AcpRefusal refused)
             {
                 // A word the agent would not take costs that word, in its own words, never the conversation.
-                why = $"— the conversation would not take what the person added: {refused.Words}";
+                said = Said($"— the conversation would not take what the person added: {refused.Words}");
             }
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException or InvalidOperationException)
             {
-                why = $"— what the person added never reached it: {error.Message}";
+                said = Said($"— what the person added never reached it: {error.Message}");
             }
             finally
             {
@@ -1237,10 +1241,9 @@ public sealed partial class ChatRunner : IDisposable
                 }
             }
 
-            if (why is null) return;
-            _line(why);
-            // The words' id beside the line, so the page settles any it still shows waiting (MSG1f).
-            _record(new SessionEvent { Kind = SessionEventKind.Note, Text = why, Words = [words.Id!] });
+            if (said is null) return;
+            _line(said.Text!);
+            _record(said);
         }
 
         private async Task TurnAsync(ChatMessage message, Action sent)
@@ -1259,11 +1262,12 @@ public sealed partial class ChatRunner : IDisposable
                         _record(opening);
                     }
 
+                    // The files said with the words, a link each after their blocks (MSG1d3).
                     await session.PromptAsync(goOn.Blocks, CancellationToken.None, () =>
                     {
                         sent();
                         _wentOn?.Invoke();
-                    }).ConfigureAwait(false);
+                    }, goOn.Files).ConfigureAwait(false);
                     return;
                 }
 
@@ -1373,7 +1377,8 @@ public sealed partial class ChatRunner : IDisposable
                     if (message.GoesOn is { } goOn)
                     {
                         // The words an ended chat goes on with (MSG1c, D137 §2.2): the driver's first line, then each word under
-                        // the id its record gave it, then all of them as one message, joined by a blank line.
+                        // the id its record gave it, then all of them as one message, joined by a blank line, each with where
+                        // its files are kept (MSG1d3).
                         foreach (var opening in goOn.Opening()) record(opening);
                         line = adapter.FrameMessage(goOn.Prompt);
                     }

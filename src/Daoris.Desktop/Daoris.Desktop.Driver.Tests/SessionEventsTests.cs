@@ -202,6 +202,21 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Equal("— your words went to session `s2`, because its tree is gone.", went.Text);
     }
 
+    /// <summary>
+    /// MSG1c3: the line that a stop cut a word off keeps its code through the record, so a page that opens the conversation
+    /// after a restart words it in the reader's language, as a live one does.
+    /// </summary>
+    [Fact]
+    public void A_coded_note_keeps_its_code_through_the_record()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("chat1", ChatTurns.Lost("said-1", stoppedUnder: true, stopReason: "cancelled")!);
+
+        var lost = Assert.Single(new SessionEvents(_directory).Page("chat1").Events);
+        Assert.Equal((SessionEventKind.Note, (string?)"lost"), (lost.Kind, lost.Code));
+        Assert.Equal(["said-1"], lost.Words!);
+    }
+
     /// <summary>The answer is bounded and says so: a few hits per session, the snippet a window, not the whole text.</summary>
     [Fact]
     public void Search_is_bounded_and_says_when_it_left_hits_out()

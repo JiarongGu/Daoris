@@ -252,6 +252,37 @@ public sealed class AcpResumeTests
     }
 
     /// <summary>
+    /// MSG1d3 (D137 §2.4): the files said with the words ride the resumed first prompt as a conversation's message carries
+    /// them, a <c>resource_link</c> to where each is kept, after the words' own blocks: on a driven record's resumed run and
+    /// on a conversation that goes on alike.
+    /// </summary>
+    [Fact]
+    public async Task The_files_said_with_the_words_are_links_after_their_blocks()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "daoris-home", "sessions", "s-1", "files", "0123456789ab-trace.txt");
+        KeptFile[] files = [new("trace.txt", path)];
+        var driven = Answering(Both);
+
+        await new AcpSession(driven.Incoming, driven.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", "See the trace.", CancellationToken.None, resume: "0b5e7c1a", blocks: ["See the trace."], files: files);
+
+        var chat = Answering(Both);
+        var session = new AcpSession(chat.Incoming, chat.Outgoing, _ => { });
+        await session.ResumeAsync("D:/trees/chat-1", "0b5e7c1a", CancellationToken.None, Servers);
+        await session.PromptAsync(["See the trace."], CancellationToken.None, files: files);
+        session.Release();
+
+        foreach (var agent in new[] { driven, chat })
+        {
+            var prompt = agent.Params("session/prompt").GetProperty("prompt").EnumerateArray().ToList();
+            Assert.Equal(["text", "resource_link"], prompt.Select(block => block.GetProperty("type").GetString()));
+            Assert.Equal("See the trace.", prompt[0].GetProperty("text").GetString());
+            Assert.Equal(new Uri(path).AbsoluteUri, prompt[1].GetProperty("uri").GetString());
+            Assert.Equal("trace.txt", prompt[1].GetProperty("name").GetString());
+        }
+    }
+
+    /// <summary>
     /// 🔴 A conversation that goes on (MSG1c, D137 §2.2): resumed on the id it kept, never opened anew, and its first turn
     /// the person's words waiting, each its own text block in the order said, told once the prompt is on the wire.
     /// </summary>

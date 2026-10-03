@@ -313,9 +313,12 @@ public sealed partial class ChatRunner
         // list read now is whole, a word said while it was judged included.
         var now = await ReadAgainAsync(sessionId, ct).ConfigureAwait(false);
         var words = now is { Waiting.Count: > 0 } ? now.Waiting : record.Waiting;
+        // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; the conversation's
+        // rules already read its own files folder (CONV4c).
         var ask = new ResumeAsk(
             kept.Conversation, words,
-            Continuations.Opening(adapter.Name, selection.Version, record.HarnessVersion, answer: false));
+            Continuations.Opening(adapter.Name, selection.Version, record.HarnessVersion, answer: false),
+            files: word => ChatFiles.Kept(_home, sessionId, word.Files));
 
         return await RunAsync(
             sessionId, $"conversation `{sessionId}` goes on with your words in its own conversation.", adapter, selection, config,

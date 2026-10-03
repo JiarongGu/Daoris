@@ -21,8 +21,11 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { en, zh } from '../locales';
 import { useChatTurns, useSay, useSessionEvents, useSessionReach } from '../shell';
-import { mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
+import { CONVERSATION_CODES, mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
 
@@ -239,6 +242,23 @@ describe('toTurns', () => {
     expect(turns[0]!.items[1]!.said).toBeUndefined();
   });
 
+  /**
+   * MSG1c3 (D142 point 1): a driver's note the page words itself carries its code. A word the person's stop cut off on its
+   * way is that word's line, said once: it waits no longer, and the note keeps the code its sentence is worded from.
+   */
+  it('carries a note’s code, and settles the word the lost line names', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'read the five files' }),
+      e(2, { kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'PINEAPPLE' }),
+      e(3, { kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['said-1'], code: 'lost' }),
+      e(4, { kind: 'turn', stopReason: 'cancelled' }),
+    ]);
+
+    const items = turns[0]!.items;
+    expect(items.map((b) => [b.kind, b.settled ?? false])).toEqual([['held', true], ['note', false]]);
+    expect(items[1]).toMatchObject({ code: 'lost', words: ['said-1'] });
+  });
+
   /** A tool call and its updates are one card, where it first appeared, carrying its latest state. */
   it('merges a tool call\'s updates into the one card, in the place it began', () => {
     const { turns } = toTurns([
@@ -393,6 +413,30 @@ describe('toTurns', () => {
  * 1,855 events in the longest — so the page holds its newest 200, past the ask and past the start of
  * the calls it shows.
  */
+/**
+ * A conversation note's codes are a twin (MSG1c3; `.claude/knowledge/twins.md`): the driver declares them in
+ * `SessionEventCodes`, one `public const string` per line, and this page words each as `work.conversation.<code>`. This side
+ * parses the declarations and holds `CONVERSATION_CODES` and both catalogues to them; the driver's `ChatTurnsTests` holds the
+ * catalogues from its side.
+ */
+describe('a conversation note’s codes, held to the driver', () => {
+  const source = readFileSync(
+    join(process.cwd(), '..', '..', 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'SessionEvents.cs'), 'utf8');
+  const block = /public static class SessionEventCodes\s*\{([\s\S]*?)\n\}/.exec(source)?.[1] ?? '';
+  const declared = [...block.matchAll(/public const string \w+ = "([a-z-]+)";/g)].map((match) => match[1]);
+
+  it('maps exactly the codes the driver declares, each to its key', () => {
+    // A scan that matched nothing would pass on a moved or renamed class: it has to see them.
+    expect(declared).toEqual(['lost']);
+    expect(Object.keys(CONVERSATION_CODES).sort()).toEqual([...declared].sort());
+    for (const code of declared) expect(CONVERSATION_CODES[code]).toBe(`work.conversation.${code}`);
+  });
+
+  it.each([['en', en], ['zh', zh]] as const)('words every code in %s', (_, catalogue) => {
+    for (const key of Object.values(CONVERSATION_CODES)) expect(catalogue[key], key).toBeTruthy();
+  });
+});
+
 describe('toTurns, on a page of a long run', () => {
   const target = e(1, { kind: 'user', origin: 'target', text: 'Your target is the quest…' });
 
