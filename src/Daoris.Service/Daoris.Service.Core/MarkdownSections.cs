@@ -32,6 +32,45 @@ public static class MarkdownSections
     /// </remarks>
     public static string Preamble(string markdown, int level = 2) => Walk(markdown, level).Preamble;
 
+    /// <summary>
+    /// The text of the document's first heading at any level, trimmed, or null when it has none: what a record
+    /// in a folder is titled by (DOC8c; D134 §5).
+    /// </summary>
+    /// <remarks>
+    /// Any level, since an ADR opens with <c>#</c> where a decision split out of a log keeps its <c>##</c>. Read
+    /// as <see cref="Split"/> reads a heading: at the start of a line, hashes and a space, never inside a fence;
+    /// and never inside a leading frontmatter block, where <c># …</c> is a comment among the fields. A heading
+    /// with no words names nothing, so the next one is read.
+    /// </remarks>
+    public static string? FirstHeading(string? markdown)
+    {
+        var lines = (markdown ?? string.Empty).Replace("\r\n", "\n").Split('\n');
+        var start = 0;
+        if (lines[0] == "---")
+        {
+            var close = Array.IndexOf(lines, "---", 1);
+            if (close > 0) start = close + 1;
+        }
+
+        var inFence = false;
+        foreach (var raw in lines.Skip(start))
+        {
+            var trimmed = raw.TrimStart();
+            if (trimmed.StartsWith("```", StringComparison.Ordinal) || trimmed.StartsWith("~~~", StringComparison.Ordinal))
+            {
+                inFence = !inFence;
+                continue;
+            }
+            if (inFence) continue;
+
+            var hashes = raw.Length - raw.TrimStart('#').Length;
+            if (hashes is < 1 or > 6 || raw.Length == hashes || raw[hashes] != ' ') continue;
+            var heading = raw[hashes..].Trim();
+            if (heading.Length > 0) return heading;
+        }
+        return null;
+    }
+
     private static (string Preamble, List<MarkdownSection> Sections) Walk(string? markdown, int level)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(level, 1);
