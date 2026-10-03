@@ -32,7 +32,7 @@ public sealed class InstructionAccountTests
         "intake" => TargetPromptGoldenTests.Bare with { Ask = "a1b2c3", Prompt = "You are the intake for workspace `default`.\n\nThe person asked." },
         "everything" => TargetPromptGoldenTests.Full with
         {
-            Attachments = [new QuestFileView("spec.pdf", "00", 10, "C:/home/files/spec.pdf"), new QuestFileView("shot.png", "01", 10, null)],
+            Attachments = [new QuestFileView("spec.pdf", "00", 10, "C:/daoris/files/spec.pdf"), new QuestFileView("shot.png", "01", 10, null)],
             Parent = "p1",
             Then = [new QuestStepView("bridge", "Verify the report", "Check it.")],
             CodeMap = "docs/code-map.json",
