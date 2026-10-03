@@ -172,6 +172,20 @@ public sealed class DriverLoop(
     public void Nudge() => _watch?.Nudge();
 
     /// <summary>
+    /// Whether an update drains this loop (UPDATE1, D139 §2): the install's <see cref="InstallUpdater.Draining"/>, handed in
+    /// once both exist, and asked by the watch at every look. Null, as in a workspace build, holds nothing.
+    /// </summary>
+    public Func<bool>? Draining { get; set; }
+
+    /// <summary>
+    /// What an update waits on (D139 §2): the driven sessions this loop runs — a quest's, a resume, a carry-on, an intake —
+    /// and the conversations whose turn is in flight. A conversation between turns, a parked session and a terminal are idle.
+    /// </summary>
+    public UpdateWork Work() => new(
+        _watch?.Running.Running ?? 0,
+        Chat is { } chat ? Processes.Running.Count(chat.Taking) : 0);
+
+    /// <summary>
     /// A session's console lines, as the page's one event for them. The shape is the page's contract,
     /// so one writer builds it: the relay's batches and a harness action's lines alike (REV3 CLEAN1).
     /// </summary>
@@ -227,6 +241,8 @@ public sealed class DriverLoop(
             parked?.Strikes,
             parked?.Since,
             WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Until, waiting.Stated },
+            // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
+            ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
         };
     }
 
@@ -410,7 +426,11 @@ public sealed class DriverLoop(
         string? lastRegistered = null;
         var failures = new TickErrors();
 
-        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser);
+        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser)
+        {
+            // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).
+            Draining = () => Draining?.Invoke() == true,
+        };
         await _watch.RunAsync(
             async (report, ticked) =>
             {

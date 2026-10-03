@@ -121,6 +121,22 @@ internal static class Program
             sp.GetRequiredService<EngineBrowserHost>(),
             // What the person runs, and how long it takes, into the same log (LOG1b).
             log));
+        // The install's update (UPDATE1, D139): what is staged beside the install drains the loop and, once the work allows,
+        // starts the launcher to swap `app/` and closes this application as the person's close does. A workspace build is no
+        // install, and never updates this way.
+        builder.Services.AddSingleton(sp => new InstallUpdater(
+            inInstallApp ? installRoot : null,
+            Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!,
+            log,
+            work: () => sp.GetRequiredService<DriverLoop>().Work(),
+            relaunch: () => Relaunch(installRoot),
+            close: () =>
+            {
+                var form = sp.GetRequiredService<MainForm>();
+                if (form.IsHandleCreated) form.BeginInvoke(form.Close);
+            },
+            bus: sp.GetRequiredService<Shenora.Core.Events.IEventBus>()));
+        builder.Services.AddIpcModule<UpdateModule>();
         builder.Services.AddSingleton<MainForm>();
         // A tool named as a file (TOOLS7): the system's file picker, owned by the window, as the folder picker is.
         builder.Services.AddSingleton<PickFile>(sp => title => sp.GetRequiredService<MainForm>().PickFile(title));
@@ -178,7 +194,14 @@ internal static class Program
                     .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
                     .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
                 ("installed", inInstallApp));
-            app.Services.GetRequiredService<DriverLoop>().Start();
+            var loop = app.Services.GetRequiredService<DriverLoop>();
+            // Composed: a swap waiting for this start is confirmed here, so the launcher keeps this build (D139 §5), and
+            // the last swap's outcome is said once. Then the drain watches what is staged, holding the loop's starts.
+            var updater = app.Services.GetRequiredService<InstallUpdater>();
+            loop.Draining = () => updater.Draining;
+            updater.Started();
+            updater.Start();
+            loop.Start();
         });
         builder.OnStopping(app =>
         {
@@ -205,5 +228,36 @@ internal static class Program
 
         using var app = builder.Build();
         app.Run();
+    }
+
+    /// <summary>
+    /// Start the launcher at the install's root with <c>--update --after &lt;this process&gt;</c> (UPDATE1, D139 §5): it waits
+    /// for this application to close, then swaps <c>app/</c>. False when it could not be started, and the application stays.
+    /// </summary>
+    private static bool Relaunch(string installRoot)
+    {
+        var launcher = Path.Combine(installRoot, Daoris.Driver.StagedBuild.Launcher);
+        if (!File.Exists(launcher)) return false;
+
+        // Not the tools' environment (TOOLS5): the launcher is Daoris's own program, and it hands this process's environment,
+        // its home included, to the application it starts, which hands every child the tools' environment there.
+        var start = new System.Diagnostics.ProcessStartInfo(launcher)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = installRoot,
+        };
+        start.ArgumentList.Add("--update");
+        start.ArgumentList.Add("--after");
+        start.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        try
+        {
+            using var started = System.Diagnostics.Process.Start(start);
+            return started is not null;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
     }
 }
