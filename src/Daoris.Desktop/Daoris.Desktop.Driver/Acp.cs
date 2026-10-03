@@ -157,11 +157,19 @@ public sealed record AcpOutcome(
 /// <param name="errorKind">The data's <c>errorKind</c>, or null where it carried none.</param>
 /// <param name="code">The error's JSON-RPC <c>code</c>, or null where it gave none (ANSWER1a).</param>
 /// <param name="words">The agent's own sentence, without this client's preface (ANSWER1a); the message where unsaid.</param>
+/// <param name="reason">The data's <c>reason</c>, or null where it carried none (MSG1b).</param>
 public sealed class AcpRefusal(
-    string message, string? said = null, string? errorKind = null, int? code = null, string? words = null) : DriverException(message)
+    string message, string? said = null, string? errorKind = null, int? code = null, string? words = null, string? reason = null)
+    : DriverException(message)
 {
     /// <summary>What the error's <c>data.message</c> said, or null where it said nothing.</summary>
     public string? Said => said;
+
+    /// <summary>
+    /// The error's <c>data.reason</c> (MSG1b, D137 §1.1): <c>codex-acp</c> says <c>thread_active_writer</c> there when another
+    /// Codex client holds the conversation. A field a reader acts on, where the sentence beside it is only for a person.
+    /// </summary>
+    public string? Reason => reason;
 
     /// <summary>The error's <c>data.errorKind</c>, or null where it carried none.</summary>
     public string? ErrorKind => errorKind;
@@ -190,7 +198,8 @@ public sealed class AcpRefusal(
                    && c.ValueKind == JsonValueKind.Number && c.TryGetInt32(out var number)
             ? number
             : (int?)null;
-        return new AcpRefusal($"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"), code, sentence);
+        return new AcpRefusal(
+            $"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"), code, sentence, Text(data, "reason"));
     }
 
     private static string? Text(JsonElement element, string name) =>
@@ -422,10 +431,19 @@ public sealed partial class AcpSession(
     /// The harness conversation an answer continues (ANSWER1a, D131 §1), resumed rather than a new session opened, with
     /// <paramref name="prompt"/> — the answer — as its next turn. Null opens a new session, as every start does.
     /// </param>
+    /// <param name="blocks">
+    /// The first prompt as text blocks, one each, in place of <paramref name="prompt"/>'s one (MSG1b, D137 §2.2): the person's
+    /// words a record goes on with, each its own block in the order said. Null or empty sends <paramref name="prompt"/>.
+    /// </param>
+    /// <param name="prompted">
+    /// Told once the first prompt is on the wire (MSG1b): the words it carries were taken by the session, where a refusal
+    /// before it, or a failure of the handshake, took nothing.
+    /// </param>
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
-        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null)
+        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
+        IReadOnlyList<string>? blocks = null, Action? prompted = null)
     {
         _asked = asked;
         try
@@ -439,7 +457,16 @@ public sealed partial class AcpSession(
             inbox?.Attach(CancelTurnAsync, _takesWordsMidTurn
                 ? words => SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
                 : null);
-            var stopReason = await PromptAsync(prompt, ct, sent: inbox is null ? null : inbox.Flow).ConfigureAwait(false);
+            Action? sent = inbox is null && prompted is null
+                ? null
+                : () =>
+                {
+                    inbox?.Flow();
+                    prompted?.Invoke();
+                };
+            var stopReason = blocks is { Count: > 0 }
+                ? await SendPromptAsync(blocks, null, ct, sent, words: null).ConfigureAwait(false)
+                : await PromptAsync(prompt, ct, sent).ConfigureAwait(false);
 
             // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
             // the turn is waited for until it is answered; one held is prompted now, and a turn stopped to send it ends
@@ -665,14 +692,19 @@ public sealed partial class AcpSession(
     /// (<paramref name="words"/>), which the session takes as they go when no prompt is open, and when the one before
     /// them is answered otherwise (STEER1) — the moment <c>claude-agent-acp</c> hands the running turn off to them.
     /// </summary>
+    private Task<string> SendPromptAsync(
+        string text, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, ChatMessage? words) =>
+        SendPromptAsync([text], files, ct, sent, words);
+
+    /// <summary>One prompt of one or more text blocks, each its own (MSG1b), then the files as links.</summary>
     private async Task<string> SendPromptAsync(
-        string text, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, ChatMessage? words)
+        IReadOnlyList<string> texts, IReadOnlyList<KeptFile>? files, CancellationToken ct, Action? sent, ChatMessage? words)
     {
         if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be prompted on it.");
 
         object[] prompt =
         [
-            new { type = "text", text },
+            .. texts.Select(text => (object)new { type = "text", text }),
             .. (files ?? []).Select(file => (object)new { type = "resource_link", uri = new Uri(file.Path).AbsoluteUri, name = file.Name }),
         ];
 

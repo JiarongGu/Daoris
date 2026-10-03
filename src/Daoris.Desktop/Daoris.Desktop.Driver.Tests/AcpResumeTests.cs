@@ -203,6 +203,54 @@ public sealed class AcpResumeTests
         Assert.Equal("Internal error: query closed", refused.Words);
     }
 
+    /// <summary>
+    /// 🔴 <c>codex-acp</c> refuses a thread another Codex client holds with <c>invalidRequest</c> and
+    /// <c>data.reason: "thread_active_writer"</c> (D137 §1.1): read from that structured data, it is <c>elsewhere</c>, and the
+    /// agent's own sentence stays beside it, never in the line.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_another_client_holds_is_refused_as_elsewhere()
+    {
+        var agent = Answering(Both, (frame, _) =>
+            """{"jsonrpc":"2.0","id":""" + frame.GetProperty("id").GetRawText()
+            + ""","error":{"code":-32600,"message":"This Codex session is in use by another Codex client (the Codex app, the CLI or an IDE extension).","data":{"reason":"thread_active_writer"}}}""");
+
+        var refused = await Assert.ThrowsAsync<AcpResumeRefused>(() => new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", "Also log the port.", CancellationToken.None, resume: "thread-1"));
+
+        Assert.Equal(ContinueWhy.Elsewhere, refused.Why.Code);
+        Assert.Contains("in use by another Codex client", refused.Words);
+        Assert.DoesNotContain("session/prompt", agent.Methods);
+    }
+
+    /// <summary>The same sentence with no structured reason is a refusal like any other: the agent's words are never read for a code.</summary>
+    [Fact]
+    public async Task A_refusal_that_says_another_client_only_in_words_is_refused()
+    {
+        var agent = Answering(Both, (frame, _) => Error(frame, -32600, "This Codex session is in use by another Codex client."));
+
+        var refused = await Assert.ThrowsAsync<AcpResumeRefused>(() => new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", "Also log the port.", CancellationToken.None, resume: "thread-1"));
+
+        Assert.Equal(ContinueWhy.Refused, refused.Why.Code);
+    }
+
+    /// <summary>
+    /// Words to an ended or parked record go on as one prompt, each its own text block, in the order said (D137 §2.2): the
+    /// conversation reads a correction as a correction.
+    /// </summary>
+    [Fact]
+    public async Task Words_waiting_are_one_prompt_each_its_own_text_block()
+    {
+        var agent = Answering(Both);
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { })
+            .RunAsync("D:/trees/s-1", "Port 8080.\n\nNo, 9090.", CancellationToken.None, resume: "0b5e7c1a", blocks: ["Port 8080.", "No, 9090."]);
+
+        var prompt = agent.Params("session/prompt").GetProperty("prompt");
+        Assert.Equal(["Port 8080.", "No, 9090."], prompt.EnumerateArray().Select(block => block.GetProperty("text").GetString()));
+    }
+
     /// <summary>The posture is set on the resume's answer as on a new session's (D81): the adapter's first offered mode.</summary>
     [Fact]
     public async Task The_posture_is_set_on_the_resumed_conversation()

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 
 /// <summary>One of the person's words on an ask (DRIFT1a, D133 §1), as the service answers it.</summary>
 /// <param name="Kind">
-/// <c>asked</c>, <c>answered</c> or <c>added</c>, as the service spells it. A kind this build does not know is kept as
+/// <c>asked</c>, <c>answered</c>, <c>added</c> or <c>reopened</c>, as the service spells it. A kind this build does not know is kept as
 /// spelled and said as a word they said, never dropped: what the person said outranks what this build can name.
 /// </param>
 /// <param name="Text">Their words, verbatim.</param>
@@ -16,6 +16,9 @@ public sealed record AskWordView(string Kind, string Text, DateTimeOffset At, st
     public const string Asked = "asked";
     public const string Answered = "answered";
     public const string Added = "added";
+
+    /// <summary>Said to a session after it ended, kept once a session took them (MSG1a's <c>reopened</c>, D137 §2.4).</summary>
+    public const string Reopened = "reopened";
 }
 
 /// <summary>
@@ -205,6 +208,7 @@ public static class AskWordsText
             AskWordView.Asked => "They asked",
             AskWordView.Answered => $"They answered a session{on}",
             AskWordView.Added => $"They added, while a session{on} ran",
+            AskWordView.Reopened => $"They added, after a session{on} ended",
             _ => on.Length == 0 ? "They said" : $"They said,{on}",
         };
     }

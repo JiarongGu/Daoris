@@ -214,13 +214,19 @@ public sealed class GoAheadsHandedTests
     [Fact]
     public void A_resumed_run_prompts_with_the_go_aheads_and_its_record_keeps_only_the_persons_answer()
     {
-        var prompt = GoAheadsText.Resumed("carry on", Read(Held(1, "write", "dashboard configuration", true, "run the put", session: "s9")), "s9");
-        var resume = new ResumeAsk("conversation-1", "carry on", "It goes on.", prompt);
+        var words = Read(Held(1, "write", "dashboard configuration", true, "run the put", session: "s9"));
+        var prompt = GoAheadsText.Resumed("carry on", words, "s9");
+        IReadOnlyList<SaidWordView> said = [new("w1", "carry on", DateTimeOffset.UnixEpoch, [], Reopens: false)];
+        var resume = new ResumeAsk("conversation-1", said, "It goes on.", GoAheadsText.Resumed("", words, "s9").TrimStart());
 
         Assert.Equal(prompt, resume.Prompt);
+        // The protocol door's blocks (MSG1b): the person's words, then what Daoris adds, as its own block.
+        Assert.Equal(2, resume.Blocks.Count);
+        Assert.Equal("carry on", resume.Blocks[0]);
         var opening = resume.Opening();
-        Assert.Equal(("person", "carry on"), (opening[1].Origin, opening[1].Text));
-        Assert.Equal("carry on", new ResumeAsk("conversation-1", "carry on", "It goes on.").Prompt);
+        Assert.Equal(("person", "carry on", "w1"), (opening[1].Origin, opening[1].Text, opening[1].Id));
+        Assert.Single(opening, e => e.Origin == "person");
+        Assert.Equal("carry on", new ResumeAsk("conversation-1", said, "It goes on.").Prompt);
     }
 
     /// <summary>

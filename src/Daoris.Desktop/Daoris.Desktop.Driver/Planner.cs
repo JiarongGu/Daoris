@@ -115,7 +115,42 @@ public sealed record PriorSession(
     /// where it can. An answer a service from before ANSWER1b took has already ended the record, and is a carry-on.
     /// </summary>
     public bool AnsweredPark => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase) && Answer is not null;
+
+    /// <summary>
+    /// The person's words waiting on its record for it to go on with (MSG1a, D137 §2.4), in the order said; null where the
+    /// host answers no <c>said</c>, one from before MSG1a, and empty where nothing waits.
+    /// </summary>
+    public IReadOnlyList<SaidWordView>? Said { get; init; }
+
+    /// <summary>The ask an intake answers (D65 §1b), or null for every other record: an intake never goes on (D137 §2.2).</summary>
+    public string? Ask { get; init; }
+
+    /// <summary>Waiting on the person (D83): <c>awaiting-person</c>, the one state a record goes on from without leaving an ended one.</summary>
+    public bool Parked => string.Equals(State, "awaiting-person", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A record that came down from the team, keyed <c>origin/id</c> (D47 §6): never this machine's to go on with.</summary>
+    public bool Teammate => Session.Contains('/');
+
+    /// <summary>
+    /// Whether the person's words wait for it to go on with (MSG1b, D137 §2.2): its <c>said</c> holds any, parked or ended;
+    /// from a host before <c>said</c>, an answered park is the one case that waits.
+    /// </summary>
+    public bool WordsWaiting => Said is { } said ? said.Count > 0 : AnsweredPark;
+
+    /// <summary>The words it goes on with, in order: each of <see cref="Said"/>, or a host's answer from before <c>said</c>.</summary>
+    public IReadOnlyList<SaidWordView> Waiting =>
+        Said is { } said ? said
+        : Answer is { } answer ? [new SaidWordView(null, answer, DateTimeOffset.MinValue, [], false)]
+        : [];
 }
+
+/// <summary>
+/// One of the person's words waiting on a record (MSG1a, D137 §2.4), as the service answers it to this machine: its id,
+/// which the record's events say again where the session took it, the words, when, its files' names, and whether it was
+/// said after the record ended.
+/// </summary>
+/// <param name="Id">Its id on the record; null for an answer a host from before <c>said</c> kept, which has none.</param>
+public sealed record SaidWordView(string? Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -243,6 +278,19 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, PausedBy> Paused { get; init; } =
         new Dictionary<string, PausedBy>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The closed quests whose last session here has the person's words waiting (MSG1b, D137 §2.2): no open list holds them,
+    /// and the session goes on all the same, its quest staying as it closed. Absent is none.
+    /// </summary>
+    public IReadOnlyList<QuestView> Closed { get; init; } = [];
+
+    /// <summary>
+    /// The marks of words a record could not go on with, by session (<see cref="GoOnMarks"/>): read at each look, so the
+    /// planner leaves those words waiting instead of trying them again. Absent is none.
+    /// </summary>
+    public IReadOnlyDictionary<string, GoOnMark> Unable { get; init; } =
+        new Dictionary<string, GoOnMark>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -340,6 +388,12 @@ public sealed record Consideration(
     /// Null for every other verdict.
     /// </summary>
     public PausedBy? PausedBy { get; init; }
+
+    /// <summary>
+    /// For a start the person's words make (MSG1b, D137 §2.2): <see cref="Resumes"/> is the record they wait on, parked or
+    /// ended, which goes on in its own conversation where it can, and else hands them on.
+    /// </summary>
+    public bool GoesOn { get; init; }
 }
 
 public static class Considerations
@@ -408,15 +462,30 @@ public static class Planner
         var slots = config.Cap - snapshot.Active.Count;
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts
-        // first" one implementation rather than two that drift.
-        foreach (var quest in snapshot.Quests)
+        // first" one implementation rather than two that drift. 🔴 But a record the person wrote to goes first (MSG1b, D137
+        // §2.2): a reopen goes before every start the driver planned itself, so the quests whose last session here has words
+        // waiting are planned ahead of the rest, the open list's in its order and then the closed ones no list holds.
+        var writtenTo = snapshot.Quests.Concat(snapshot.Closed)
+            .Where(WrittenTo)
+            .DistinctBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        foreach (var quest in writtenTo.Concat(snapshot.Quests.Where(quest => !WrittenTo(quest))))
         {
             // 🔴 A pause holds every quest of its work this planner would plan (PAUSE1b, D132 point 3), before every other reason,
             // the person's stop included: Resume is the one press that moves it, so a released stop starts nothing meanwhile.
             // First, too, so a paused quest spends no slot and no repository's turn, and the next starts where it would have.
+            // Words written to its session wait for Resume too (D137 §2.2).
             if (snapshot.Paused.TryGetValue(quest.Id, out var pause) && Plans(quest))
             {
                 considerations.Add(Paused(quest, pause));
+                continue;
+            }
+
+            // The person wrote to its last session here, parked or ended (MSG1b, D137 §2.2): that record goes on with their
+            // words. Before the person's stop, which the words release as Try again does: the same session goes on with them.
+            if (WrittenTo(quest))
+            {
+                considerations.Add(GoOn(quest, snapshot.LastRun[quest.Id]));
                 continue;
             }
 
@@ -448,13 +517,6 @@ public static class Planner
             {
                 considerations.Add(Resume(quest, awaits, prior));
             }
-            // The person answered a park, and it is still parked (ANSWER1a, D131 §1): its own record goes on.
-            else if (quest is { Status: "Taken", Awaits: null or "" }
-                     && snapshot.LastRun.TryGetValue(quest.Id, out var park)
-                     && park.AnsweredPark)
-            {
-                considerations.Add(CarryOn(quest, park, continuing: true));
-            }
             else if (quest is { Status: "Taken", Awaits: null or "" }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
                      && (string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase)
@@ -476,6 +538,7 @@ public static class Planner
         // and one whose session runs or waits on the person, is not planned, so a pause says nothing of it either.
         bool Plans(QuestView quest) =>
             quest.Status == "Open"
+            || WrittenTo(quest)
             || (quest.Status == "Taken"
                 && snapshot.LastRun.TryGetValue(quest.Id, out var run)
                 && (quest.Awaits is { Length: > 0 }
@@ -483,6 +546,36 @@ public static class Planner
                     || string.Equals(run.State, "failed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(run.State, "stopped", StringComparison.OrdinalIgnoreCase)
                     || run is { State: "completed", Answer: not null }));
+
+        // Whether the person's words wait on this quest's last session here (MSG1b, D137 §2.2), parked or ended, and are not
+        // all words a reopen already found it could not take (MSG1a's open point). A quest waiting on a question waits with
+        // them: D79's resume is its next start, and the words stay on the record they were said to.
+        bool WrittenTo(QuestView quest) =>
+            quest.Awaits is null or ""
+            && snapshot.LastRun.TryGetValue(quest.Id, out var written)
+            && written.WordsWaiting
+            && !GoOnMarks.Judged(written, snapshot.Unable.GetValueOrDefault(written.Session));
+
+        // Words going on in the record they were said to (MSG1b, D137 §2.2), `continuing` it: a park is still an active record
+        // holding its tree, its quest and its slot, which it is never busy with itself; an ended record holds nothing, so it
+        // takes a slot, ahead of every start planned after it. The sentence names whose words: a park's answer, as ANSWER1a
+        // said it, or what the person wrote to a session that had ended.
+        Consideration GoOn(QuestView quest, PriorSession written)
+        {
+            var considered = Consider(quest, into: written, continuing: true);
+            if (considered.Verdict != StartVerdict.Start) return considered;
+
+            var waiting = written.Waiting;
+            var said = waiting.Count == 1 ? waiting[0].Text : $"{waiting[0].Text} (and {waiting.Count - 1} more)";
+            return considered with
+            {
+                Reason = written.Parked
+                    ? $"carrying on in `{quest.To}` — you answered session `{written.Session}`: {written.Answer ?? said}"
+                    : $"going on in `{quest.To}` — you wrote to session `{written.Session}`: {said}",
+                Resumes = written,
+                GoesOn = true,
+            };
+        }
 
         // Held by a pause (PAUSE1b, design §2.3): the sentence names the pause, what Resume does and the terminal's door. It
         // says paused, never held, since a hold is a repository's and stops nothing that runs (design §8.1).
@@ -512,11 +605,10 @@ public static class Planner
         // and the work is in its tree. Carried on like a failed start is retried: the strikes count every
         // cut-off, and the third parks it — bar one an account's limit made, which is no strike: its carry-on is
         // planned as any is, and held at spawn while the account cools (TOOL4d, D125 §4).
-        // An answered park (ANSWER1a) is planned the same way and says the same thing, `continuing` it: the park is still
-        // an active record holding its tree, its quest and its slot, which it is never busy with itself.
-        Consideration CarryOn(QuestView quest, PriorSession cutOff, bool continuing = false)
+        // A record the person's words wait on, an answered park among them, is planned by GoOn above.
+        Consideration CarryOn(QuestView quest, PriorSession cutOff)
         {
-            var considered = Consider(quest, into: cutOff, continuing);
+            var considered = Consider(quest, into: cutOff);
             return considered.Verdict == StartVerdict.Start
                 ? considered with
                 {
@@ -562,7 +654,8 @@ public static class Planner
 
         // `into`: the earlier session whose tree a resume or a carry-on goes back into — the one tree a
         // live session there would hold (PAR1). Null for a first start, which grows a tree of its own.
-        // `continuing`: `into` is an answered park that goes on itself (ANSWER1a), so it holds nothing against itself.
+        // `continuing`: `into` is the record the person's words wait on, which goes on itself (ANSWER1a; MSG1b), so it holds
+        // nothing against itself.
         Consideration Consider(QuestView quest, PriorSession? into = null, bool continuing = false)
         {
             bool Itself(SessionView session) => continuing && string.Equals(session.Id, into?.Session, StringComparison.OrdinalIgnoreCase);
@@ -619,7 +712,9 @@ public static class Planner
             var strikes = snapshot.Strikes.TryGetValue(quest.Id, out var failures)
                 ? failures - config.ForgivenAt(quest.Id)
                 : 0;
-            if (config.Strikes > 0 && strikes >= config.Strikes)
+            // The person's words to its session are their Try again (MSG1b, D137 §2.2): a failure they write to is forgiven as
+            // its record leaves `failed`, and a quest the strikes parked goes on with them, as a retry would start it.
+            if (config.Strikes > 0 && strikes >= config.Strikes && !(continuing && into is { WordsWaiting: true }))
             {
                 return new(quest, StartVerdict.Exhausted,
                     $"{strikes} session(s) have failed on `#{quest.Id}` without landing anything — "
@@ -663,8 +758,9 @@ public static class Planner
                     $"queued behind quest `#{ahead}` in `{quest.To}` — oldest first, one at a time.");
             }
 
-            // An answered park already holds its slot among the active (ANSWER1a): going on, it starts no second session.
-            if (!continuing)
+            // An answered park already holds its slot among the active (ANSWER1a): going on, it starts no second session. An
+            // ended record holds none (MSG1b), so going on takes one, as a start does; it was planned first, so it is first to.
+            if (!(continuing && snapshot.Active.Any(Itself)))
             {
                 if (slots <= 0)
                 {

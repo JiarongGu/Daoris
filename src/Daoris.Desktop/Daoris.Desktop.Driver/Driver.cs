@@ -268,6 +268,8 @@ public sealed partial class Driver(
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         // The quests of every paused work, read again at each look (PAUSE1b, design §2.3): the planner holds each.
         snapshot = await PausedWork.LookAsync(service, config, snapshot, ct).ConfigureAwait(false);
+        // The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting.
+        snapshot = snapshot with { Unable = _marks.For(snapshot.LastRun.Values) };
         _harnesses.Look(snapshot.Started, mark);
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
@@ -760,16 +762,27 @@ public sealed partial class Driver(
             }
         }
 
-        // An answer continues its own session (ANSWER1a, D131): a park still parked goes on itself where its harness
-        // conversation resumes. Otherwise the park ends, and the answer is carried on below in a new session, saying why.
+        // An answer continues its own session (ANSWER1a, D131), and so do words to a session that had ended (MSG1b, D137
+        // §2.2): the record they wait on goes on itself where its harness conversation resumes. Otherwise a park ends, and
+        // the words are handed on below in a new session, saying why; an answer a service from before ANSWER1b ended the
+        // record with is tried, and said `ended`.
         ContinueReason? fellBack = null;
         var answerKept = false;
-        if (start.Resumes is { Answer: not null, State: "awaiting-person" or "completed" } park && quest.Awaits is null or "")
+        var written = start.Resumes;
+        if (start.Resumes is { } park
+            && (start.GoesOn || park is { State: "completed", Answer: not null, Said: null })
+            && quest.Awaits is null or "")
         {
             (var continued, fellBack, answerKept) = await ContinueAsync(start, park, selection, registry, starting, onOpened, ct)
                 .ConfigureAwait(false);
             if (continued is not null) return continued;
-            start = start with { Resumes = park with { State = "completed" } };
+
+            // Nothing carries the words on by itself from a closed quest's session, nor from a never (D137 §2.2): they stay
+            // waiting as said, marked so a later look leaves them there, and the person's press is the next move (MSG1f).
+            if (fellBack!.Never || quest.Status is not ("Open" or "Taken")) return CannotGoOn(quest, park, fellBack);
+
+            // A taken quest is carried on, an open one started, handed the words, in the tree the session worked in.
+            start = start with { Resumes = park.Parked || park.Said is null ? park with { State = "completed" } : park };
         }
 
         // A resume that was tried let go of the starting hold (LEFT2) when the park held the tree; the carry-on's open below
@@ -827,6 +840,11 @@ public sealed partial class Driver(
 
         try
         {
+            // The words a session could not go on with went to this one (MSG1b, D137 §2.2): off that record by their ids, kept
+            // on the ask by the service, so this start's instruction reads them among the person's words; and said in that
+            // session's conversation, where the person wrote them.
+            if (fellBack is not null) await HandedOnAsync(written!, sessionId, fellBack, ct).ConfigureAwait(false);
+
             var adapter = _adapters.Resolve(config.Adapter);
             // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
             // every harness's instruction carries.
@@ -848,8 +866,9 @@ public sealed partial class Driver(
                 Session = sessionId,
                 Answered = answered,
                 // What cut the last session off, and what it left uncommitted (D80) — read by the
-                // driver, because the session may not run `git status` itself.
-                CutOff = carryingOn ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
+                // driver, because the session may not run `git status` itself. An open quest's start, handed the words its
+                // session could not go on with (MSG1b), takes it as any first start does: it is not yet anyone's.
+                CutOff = carryingOn && quest.Status != "Open" ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
@@ -878,7 +897,12 @@ public sealed partial class Driver(
                           + (resumedIn is null ? "." : $", in the tree session `{start.Resumes!.Session}` asked from.")
                         : carryingOn
                             ? (start.Resumes!.Answer is not null
-                                ? $"carries `#{quest.Id}` on with your answer to session `{start.Resumes.Session}`"
+                                ? (written is { Parked: false, Said: not null }
+                                    // Words to a session that had ended (MSG1b): no answer, and an open quest is started.
+                                    ? quest.Status == "Open"
+                                        ? $"starts `#{quest.Id}` with your words to session `{start.Resumes.Session}`"
+                                        : $"carries `#{quest.Id}` on with your words to session `{start.Resumes.Session}`"
+                                    : $"carries `#{quest.Id}` on with your answer to session `{start.Resumes.Session}`")
                                 : start.Resumes.PersonStopped
                                     ? $"carries `#{quest.Id}` on: you stopped session `{start.Resumes.Session}`, and released it"
                                     : $"carries `#{quest.Id}` on after session `{start.Resumes.Session}` was cut off")
@@ -894,7 +918,8 @@ public sealed partial class Driver(
             // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
             // the person's words in its own record, where they read the question. A resume that was tried already put
             // them there (ANSWER1a).
-            if (carryingOn && !answerKept && start.Resumes!.Answer is { Length: > 0 } answeredWith)
+            // Words to a session that had ended are in its conversation already, where the person wrote them (MSG1b).
+            if (carryingOn && !answerKept && start.Resumes!.Answer is { Length: > 0 } answeredWith && written is { Parked: true } or { Said: null })
             {
                 _events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
             }
@@ -929,6 +954,8 @@ public sealed partial class Driver(
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
                 said: Said(adapter, selection, sessionId),
+                // A native run holds what the person says while it works, and goes on with it in its own conversation (MSG1b).
+                goOn: GoOnWith(adapter, target, selection, rules.File, handed),
                 conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)
@@ -1269,13 +1296,19 @@ public sealed partial class Driver(
     /// to the record's transcript and conversation, and says on it whether the agent would not resume. Null for a start.
     /// </param>
     /// <param name="workingNote">What the record says while it works, where a start's opening sentence is not it.</param>
+    /// <param name="goOn">
+    /// How a native run goes on with what the person said while it worked (MSG1b, D137 §2.1): its own conversation resumed
+    /// with the words, before the record concludes. Null on a door that cannot resume, which holds no words.
+    /// </param>
+    /// <param name="working">Told once the ledger has moved the record to working, and so holds its tree (LEFT2, MSG1b).</param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
-        ResumeAsk? resume = null, string? workingNote = null)
+        ResumeAsk? resume = null, string? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
+        Action? working = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1284,6 +1317,13 @@ public sealed partial class Driver(
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
         using var servers = new Disposer(() => SpawnServers.Remove(handed));
         using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));
+        // The runs a native session goes on in with the person's words (MSG1b), each kept tracked until the record has
+        // concluded: the conclusion reads whose stop it was from the run that ended last. Ended before the first run's.
+        var wentOn = new List<IDisposable>();
+        using var goneOn = new Disposer(() =>
+        {
+            for (var at = wentOn.Count - 1; at >= 0; at--) wentOn[at].Dispose();
+        });
 
         // Which door this harness is held over (D53). The protocol door drives an ACP session on the
         // same process; the pipe door reads its text, or its structure where its own wire carries one
@@ -1296,9 +1336,22 @@ public sealed partial class Driver(
         // intake's: it is answered through its ask.
         var keepAs = target.Ask is null ? adapter.Name : null;
         // What the person tells a quest's session while it works (SESS3), held for the protocol door to
-        // hand over between turns. Never an intake's: it is one turn framed as one prompt (INT4h).
-        var inbox = adapter.Wire == SessionWire.Acp && target.Ask is null ? _processes.OpenInbox(sessionId) : null;
+        // hand over between turns. Never an intake's: it is one turn framed as one prompt (INT4h). On the native door, where
+        // the run can resume, held until it ends and gone on with in its own conversation (MSG1b, D137 §2.1).
+        var held = goOn is not null && adapter.Wire == SessionWire.Pipe && target.Ask is null ? _processes.OpenInbox(sessionId) : null;
+        var inbox = adapter.Wire == SessionWire.Acp && target.Ask is null ? _processes.OpenInbox(sessionId) : held;
         using var unheld = new Disposer(() => inbox?.Close());
+        if (held is not null)
+        {
+            // In the record the moment they are said, with when they reach it (D136 §3): the run's own transcript is open in
+            // its capture, so the line goes to the console and the record, and the transcript has it as the next run opens.
+            held.OnSaid((message, _) =>
+            {
+                output?.Append(sessionId, $"— the person added, which reaches the session when its turn ends: {message.Text}");
+                _events.Keep(sessionId, Words(message) with { Reaches = "turn-end" }, say: null);
+            });
+            held.Attach(interrupt: null);
+        }
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
@@ -1308,6 +1361,7 @@ public sealed partial class Driver(
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         await service.AdvanceAsync(sessionId, "working", note: workingNote, transcript: transcript, ct: ct).ConfigureAwait(false);
+        working?.Invoke();
 
         var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
         await capture.ConfigureAwait(false);
@@ -1318,6 +1372,16 @@ public sealed partial class Driver(
         var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
             : null;
+
+        // 🔴 A session never concludes while words are held (MSG1b, D137 §2.1): on the native door its process has exited, so
+        // its own conversation is resumed with them under the same record, which stays working, until a run ends with none.
+        if (held is not null)
+        {
+            (exitCode, used) = await GoOnAsync(
+                held, goOn!, adapter, sessionId, transcript, refusesInput, drivesBrowser, exitCode, used, resume, said, wentOn, ct)
+                .ConfigureAwait(false);
+        }
+
         return await conclude(exitCode, used, turnFailed).ConfigureAwait(false);
     }
 
@@ -1384,7 +1448,8 @@ public sealed partial class Driver(
         if (mapper.Conversation is { } conversation)
         {
             if (keepAs is not null) _conversations.Keep(sessionId, keepAs, conversation);
-            if (resume is not null) resume.Named = true;
+            // It opened the conversation its argument carried the person's words to, so the words went (MSG1b).
+            if (resume is not null) resume.Named = resume.Prompted = true;
         }
 
         return usage;
@@ -1545,7 +1610,10 @@ public sealed partial class Driver(
                         Line($"— the session took what the person added: {message.Text}");
                         Event(Words(message));
                     },
-                    resume: resume?.Conversation)
+                    resume: resume?.Conversation,
+                    // Each of the person's words its own block (MSG1b, D137 §2.2), and taken once the prompt is on the wire.
+                    blocks: resume?.Blocks,
+                    prompted: resume is null ? null : () => resume.Prompted = true)
                 .ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
