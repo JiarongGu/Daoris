@@ -85,13 +85,17 @@ public sealed class SessionMessagesTickTests : IDisposable
         File.WriteAllText(Path.Combine(_home, "sessions", SessionArchive.FileName), """{"archived":[{"session":"s1","at":"2026-10-03T09:00:00Z"}]}""");
         Assert.Equal("w1", await service.SayAsync("s1", "Also log the port."));
         Assert.Equal("w2", await service.SayAsync("s1", "And use 9090."));
+        var before = service.Record("s1");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
-        Assert.Equal(1, service.SessionCount);
-        Assert.Equal(("completed", "Done"), (service.State("s1"), service.Status("q1")));
-        Assert.Equal(["working", "completed"], service.MovesAfterWords("s1"));
-        Assert.Empty(service.Said("s1"));
+        // Said whole on failure: the record before the look, the plan, what the look did, and the record after it.
+        var seen = $"before: {before}\nplan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
+                   + $"\nlook: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}\nquest: {service.Status("q1")}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True((service.State("s1"), service.Status("q1")) == ("completed", "Done"), seen);
+        Assert.True(service.MovesAfterWords("s1").SequenceEqual(["working", "completed"]), seen);
+        Assert.True(service.Said("s1").Count == 0, seen);
         Assert.Equal([("s1", "w1,w2", (string?)null)], service.Taken);
 
         var heard = Heard();
@@ -123,11 +127,13 @@ public sealed class SessionMessagesTickTests : IDisposable
         var driver = Protocol(service, "elsewhere");
         await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
         await service.SayAsync("s1", "Also log the port.");
+        var before = service.Record("s1");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
-        Assert.Equal(1, service.SessionCount);
-        Assert.Equal("completed", service.State("s1"));
+        var seen = $"before: {before}\nlook: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(service.State("s1") == "completed", seen);
         Assert.EndsWith(
             "It cannot go on in this session, because its conversation is open in another client of its agent.", service.Note("s1"));
         Assert.Equal(["w1"], service.Said("s1"));
@@ -351,6 +357,12 @@ public sealed class SessionMessagesTickTests : IDisposable
         public int SessionCount { get { lock (_sessions) return _sessions.Count; } }
 
         public string State(string id) => Field(id, "state")!;
+
+        /// <summary>The record as the wire answers it, for a failure message.</summary>
+        public string Record(string id)
+        {
+            lock (_sessions) return Wire(Find(id)).ToJsonString();
+        }
 
         public string? Note(string id) => Field(id, "note");
 

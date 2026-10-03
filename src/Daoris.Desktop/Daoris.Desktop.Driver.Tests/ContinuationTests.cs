@@ -363,6 +363,50 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 Whether a resumed run's quest had closed is read from the quest as the look planned it, never as the run left it
+    /// (the merge of 2026-10-03). An answered park's run that closes its own quest done is a completed record, as ANSWER1a
+    /// concluded it: read after the run, the closed quest sent it down a closed quest's ending, which ended it as it was
+    /// before, still parked, its tree and its slot held for ever.
+    /// </summary>
+    [Fact]
+    public void A_park_whose_resumed_run_closes_its_quest_ends_completed()
+    {
+        var concluded = Observation.Resumed(0, before: "awaiting-person", startedOn: "Taken", questStatus: "Done");
+
+        Assert.Equal(("completed", "the quest reached done."), (concluded.State, concluded.Note));
+    }
+
+    /// <summary>A record whose quest had closed before it went on ends as a closed quest's, whatever its quest says after.</summary>
+    [Fact]
+    public void A_record_whose_quest_had_closed_ends_as_a_closed_quests()
+    {
+        Assert.Equal("completed", Observation.Resumed(0, before: "completed", startedOn: "Done", questStatus: "Done").State);
+        Assert.Equal("declined", Observation.Resumed(0, before: "declined", startedOn: "Declined", questStatus: "Declined").State);
+        Assert.Equal("failed", Observation.Resumed(1, before: "completed", startedOn: "Done", questStatus: "Done").State);
+    }
+
+    /// <summary>A resumed run on a taken quest that ends still holding it is waiting on the person again, as ANSWER1a has it.</summary>
+    [Fact]
+    public void A_resumed_run_that_ends_still_holding_its_quest_parks_again()
+    {
+        Assert.Equal(
+            "awaiting-person",
+            Observation.Resumed(0, before: "awaiting-person", startedOn: "Taken", questStatus: "Taken", lastWords: "Which port, again?").State);
+    }
+
+    /// <summary>
+    /// A closed quest's ending never leaves a record live: it cannot park, holding no quest (D83), so a record that was live
+    /// when it went on ends completed on a clean exit.
+    /// </summary>
+    [Theory]
+    [InlineData("awaiting-person")]
+    [InlineData("working")]
+    public void A_closed_quests_ending_never_leaves_a_record_live(string before)
+    {
+        Assert.Equal("completed", Observation.WentOn(0, before).State);
+    }
+
+    /// <summary>
     /// <c>session.reopened</c> (D137 §3.3): once per reopen taken up, from which state, whether its own conversation resumed,
     /// and why not by code. Never the words.
     /// </summary>

@@ -86,13 +86,39 @@ public static class Observation
     };
 
     /// <summary>
+    /// How a run that resumed its own conversation ends (ANSWER1a; MSG1b, D137 §2.3): as any start's, from its exit and its
+    /// quest's state, where its quest was open or taken when the look planned it; as a closed quest's (<see cref="WentOn"/>)
+    /// where it had closed before.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Closed is read from the quest as the look planned it, never as the run left it.</b> A resumed run closes its own
+    /// quest: read after it, an answered park that finished its work took a closed quest's ending and stayed parked, holding
+    /// its tree and a slot, which the merge of 2026-10-03 caught in ANSWER1's tick and the family rehearsal's 17a.
+    /// </remarks>
+    /// <param name="before">The record's state before it went on, in its spelling.</param>
+    /// <param name="startedOn">Its quest's status as the look planned the run.</param>
+    /// <param name="questStatus">Its quest's status as the run left it.</param>
+    public static SessionConclusion Resumed(
+        int exitCode, string before, string startedOn, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
+        string? turnFailed = null, bool took = false, string? lastWords = null) =>
+        startedOn is "Open" or "Taken"
+            ? Conclude(exitCode, questStatus, awaitsBefore, awaitsAfter, turnFailed, resumed: true, took, lastWords)
+            : WentOn(exitCode, before);
+
+    /// <summary>
     /// How a session whose quest had closed ends after going on with the person's words (MSG1b, D137 §2.3): in the state it
     /// had before it went on when it exits cleanly, <c>failed</c> otherwise. Its quest does not move, so its state says
     /// nothing of it; and it cannot park, since it holds no quest (D83).
     /// </summary>
-    /// <param name="before">The ended state it went on from, in the record's spelling.</param>
+    /// <remarks>
+    /// A record live when it went on (a park whose quest closed under it) ends <c>completed</c> on a clean exit: a live
+    /// record would hold its tree and a slot for ever.
+    /// </remarks>
+    /// <param name="before">The state it went on from, in the record's spelling.</param>
     public static SessionConclusion WentOn(int exitCode, string before) => exitCode == 0
-        ? new(before, "it went on with your words and ended; its quest stays as it closed.")
+        ? new(
+            before is "completed" or "declined" or "failed" or "stopped" ? before : "completed",
+            "it went on with your words and ended; its quest stays as it closed.")
         : new("failed", $"it went on with your words and exited {exitCode}; its quest stays as it closed.");
 
     /// <summary>

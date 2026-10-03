@@ -270,7 +270,9 @@ public sealed partial class Driver
 
         var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
         var status = after?.Status ?? "Open";
-        var closed = status is not ("Open" or "Taken");
+        // 🔴 Whether its quest had closed, as the look planned the run: never as the run left it, since a resumed run closes
+        // its own quest, and read after it an answered park that finished its work took a closed quest's ending (MSG1b).
+        var closed = quest.Status is not ("Open" or "Taken");
 
         if (resume.Refused is { } refused)
         {
@@ -306,14 +308,13 @@ public sealed partial class Driver
             // A pause's stop names the pause (PAUSE1b, design §4.1), as a first run's does.
             ? new SessionConclusion("stopped", _processes.StopNote(sessionId) ?? "the person stopped it.")
             : exitCode is int code
-                ? closed
-                    // A closed quest's session went on with the person's words and ends as its process does (MSG1b).
-                    ? Observation.WentOn(code, park.State)
-                    // It carried on a take this machine already held, so ending with it still taken is a park, not a stand-down.
-                    : Observation.Conclude(
-                        code, status, quest.Awaits, after?.Awaits, turnFailed, resumed: true,
-                        took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                        lastWords: ParkedWords(_events, sessionId, transcript))
+                // As any start's where its quest was open or taken as the look planned it, so a park whose run closes its
+                // quest ends completed; a closed quest's session ends as its process does (MSG1b). It carried on a take this
+                // machine already held, so ending with it still taken is a park, not a stand-down.
+                ? Observation.Resumed(
+                    code, park.State, quest.Status, status, quest.Awaits, after?.Awaits, turnFailed,
+                    took: !closed && status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
+                    lastWords: closed ? null : ParkedWords(_events, sessionId, transcript))
                 : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
         conclusion = AccountRefused(conclusion, adapter, selection, transcript);
