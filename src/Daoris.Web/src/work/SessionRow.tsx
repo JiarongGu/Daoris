@@ -222,13 +222,22 @@ export function SessionRow({
 
 /**
  * What a row's line says for the group the reader placed it in (D126 §2.2), with the tip that explains it: how many
- * sessions failed before its quest parked, which question its quest waits on and who it was asked of, that its stop
- * holds its quest here, or what its own tree holds to review. Null for every other row, whose group needs no sentence.
+ * sessions failed before its quest parked, which question its quest waits on and who it was asked of, whose pause holds
+ * its quest (PAUSE1e), that its stop holds its quest here, or what its own tree holds to review. Null for every other row,
+ * whose group needs no sentence.
  */
 function placedFact(
   grouping: SessionGrouping | null | undefined, shown: string,
 ): { line: string; values?: Record<string, unknown>; tip: string } | null {
   if (!grouping) return null;
+  // A pause that holds its quest (PAUSE1e, D132 §6.1) is the reason before every other, a stop's hold included.
+  if (grouping.pausedBy) {
+    return {
+      line: grouping.pausedBy.scope === 'ask' ? 'work.rail.pausedAsk' : 'work.rail.pausedQuest',
+      values: { id: grouping.pausedBy.id },
+      tip: 'work.rail.pausedTip',
+    };
+  }
   if (shown === 'parked') {
     return typeof grouping.strikes === 'number'
       ? { line: 'work.rail.parkedAfter', values: { count: grouping.strikes }, tip: 'work.rail.parkedTip' }

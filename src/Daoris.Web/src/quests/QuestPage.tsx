@@ -8,8 +8,10 @@ import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
+import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
+import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 
 /** A record's row of facts: its name, and what it holds. */
 function Fact({ name, children }: { name: string; children: ReactNode }) {
@@ -39,11 +41,16 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   note, the driver's sentence about why it sits (translated by its verdict, never by its words, U27).
  * - **A page never prints a machine path it was answered** (D47 §4): a kept file opens through the host's own
  *   route, and one kept elsewhere says so.
+ * - **Its work is paused and abandoned here** (PAUSE1e, D132 §7.1), from this machine's driver's plan: *Pause…* while open
+ *   or taken and not paused on its own, asking once where it ends work in flight (§2.6); *Abandon…* beside *Decline…*,
+ *   listing first and abandoning on its second press with the person's reason (§3.1). *Resume* stands under *Sitting* for
+ *   its own pause, where *Try again* stands for a stop; for another's pause the sentence names whose, and a door opens it.
+ *   After an abandon it says when, *What went* and *What stayed* (§4.2). A browser names the terminal's commands instead.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend,
+  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, work,
 }: {
   quest: Quest;
   /** Its lanes as its repository declares them (D115 §2.2), each named where its registration says. */
@@ -83,36 +90,70 @@ export function QuestPage({
   onOpenQuest: (id: string) => void;
   /** The door into Sessions: absent where there are none, a browser, or no driver is attached. */
   onAttend?: (session: string) => void;
+  /** Open an ask's page: where the pause that holds this quest is resumed (PAUSE1e). */
+  onOpenAsk?: (id: string) => void;
+  /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
+  work?: WorkDoor;
 }) {
   const { t } = useTranslation();
-  const [declining, setDeclining] = useState(false);
+  // One question asks under the header at a time: a decline's reason, a delete's sentence, a pause's, the abandon's list.
+  const [asking, setAsking] = useState<'decline' | 'delete' | 'pause' | 'abandon' | null>(null);
+  // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
+  const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
+  const declining = asking === 'decline';
   // A delete asks once (D95): the first press arms it, and only the second removes the record.
-  const [deleting, setDeleting] = useState(false);
+  const deleting = asking === 'delete';
   const moving = quest.status === 'Open' || quest.status === 'Taken';
   const deletable = quest.deletable === true && onDelete !== undefined;
   const answered = question?.quest?.status === 'Done' || question?.quest?.status === 'Declined';
   // A wait (D79) is said by its own row, with the question; the driver's sentence under it would say it again.
   const because = sitting?.verdict === 'Waiting' ? null : sitting ?? null;
+  const target: WorkTarget = { scope: 'quest', id: quest.id };
+  const offers = workOffers(work?.plan);
+  const waiting = busy || work?.busy === true;
+  const pauseLines = work?.plan ? pauseAsk(work.plan, { wired: work.wired }) : null;
+  const abandoned = lastAbandon(work);
+  // Whose pause holds it, from the tick's verdict: its own is resumed here, an ask's or another quest's on that page.
+  const pausedBy = because?.verdict === 'Paused' ? because.pausedBy ?? null : null;
+  const ownPause = pausedBy?.scope === 'quest' && pausedBy.id === quest.id;
+  // Its own pause where the tick has no verdict for it (its session waits on you, D132 §2.1): said from the plan, with Resume.
+  const pausedUnseen = offers.paused && !pausedBy;
 
-  const acts = moving && (
+  // A pause that stops nothing applies at once, with its notice, since nothing is lost (§2.6).
+  const onPauseFirst = () => {
+    if (pauseLines === null) work?.onPause(() => {});
+    else setAsking('pause');
+  };
+
+  const acts = (moving || offers.abandon) && (
     <>
       {/* The one loud control is the quest's next step (UX5 U31): taking it while it is open, closing it once
           it is taken. Done led an open quest too, with taking it offered as the quiet choice. */}
       {quest.status === 'Open' && (
-        <Button variant="primary" disabled={busy} onClick={() => onRespond('take')}>{t('quests.detail.take')}</Button>
+        <Button variant="primary" disabled={waiting} onClick={() => onRespond('take')}>{t('quests.detail.take')}</Button>
       )}
-      <Button variant={quest.status === 'Taken' ? 'primary' : 'default'} disabled={busy} onClick={() => onRespond('done')}>
-        {t('quests.detail.done')}
-      </Button>
+      {moving && (
+        <Button variant={quest.status === 'Taken' ? 'primary' : 'default'} disabled={waiting} onClick={() => onRespond('done')}>
+          {t('quests.detail.done')}
+        </Button>
+      )}
       {/* While one asks under the header, its first press is not offered twice. */}
-      {!declining && (
-        <Button variant="ghost" disabled={busy} onClick={() => { setDeclining(true); setDeleting(false); }}>
+      {offers.pause && moving && asking !== 'pause' && (
+        <Button disabled={waiting} onClick={onPauseFirst}>{t('quests.detail.pause')}</Button>
+      )}
+      {moving && !declining && (
+        <Button variant="ghost" disabled={waiting} onClick={() => setAsking('decline')}>
           {t('quests.detail.decline')}
         </Button>
       )}
+      {offers.abandon && asking !== 'abandon' && (
+        <Button variant="ghost" disabled={waiting} onClick={() => { setListed(work!.plan); setAsking('abandon'); }}>
+          {t('quests.detail.abandon')}
+        </Button>
+      )}
       {deletable && !deleting && (
-        <Button variant="ghost" disabled={busy} onClick={() => { setDeleting(true); setDeclining(false); }}>
+        <Button variant="ghost" disabled={waiting} onClick={() => setAsking('delete')}>
           <Icon name="remove" size={13} />
           {t('quests.detail.delete')}
         </Button>
@@ -132,6 +173,30 @@ export function QuestPage({
 
   return (
     <ViewMain header={head}>
+      {asking === 'pause' && work && pauseLines && (
+        <PauseAsk
+          className="mb-4 max-w-3xl"
+          target={target}
+          lines={pauseLines}
+          meanIt={t('quests.detail.pauseMeanIt')}
+          busy={waiting}
+          onPause={() => work.onPause(() => setAsking(null))}
+          onCancel={() => setAsking(null)}
+        />
+      )}
+
+      {asking === 'abandon' && work && listed && (
+        <AbandonAsk
+          target={target}
+          plan={listed}
+          meanIt={t('quests.detail.abandonMeanIt')}
+          placeholder={t('quests.detail.abandonWhy')}
+          busy={waiting}
+          onAbandon={(why) => work.onAbandon(why, listed.abandon.pieces, () => { setAsking(null); setListed(null); })}
+          onCancel={() => { setAsking(null); setListed(null); }}
+        />
+      )}
+
       {deleting && deletable && (
         /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only asks, the
            way removing an account does, and the second is the one that deletes. */
@@ -141,10 +206,10 @@ export function QuestPage({
           className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
         >
           <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('quests.detail.deleteConfirm')}</span>
-          <Button variant="danger" disabled={busy} onClick={() => { setDeleting(false); onDelete!(); }}>
+          <Button variant="danger" disabled={busy} onClick={() => { setAsking(null); onDelete!(); }}>
             {t('quests.detail.deleteMeanIt')}
           </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
+          <Button variant="ghost" disabled={busy} onClick={() => setAsking(null)}>{t('common.cancel')}</Button>
         </div>
       )}
 
@@ -162,7 +227,7 @@ export function QuestPage({
           <Button variant="danger" disabled={busy || !reason.trim()} onClick={() => onRespond('decline', reason)}>
             {t('quests.detail.declineConfirm')}
           </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => { setDeclining(false); setReason(''); }}>
+          <Button variant="ghost" disabled={busy} onClick={() => { setAsking(null); setReason(''); }}>
             {t('common.cancel')}
           </Button>
         </div>
@@ -204,7 +269,7 @@ export function QuestPage({
             </span>
           </Fact>
         )}
-        {(because || hold) && (
+        {(because || hold || pausedUnseen) && (
           // Why this machine's driver is not starting it, in its own words (D46 §3) — the whole sentence here,
           // where there is room. The trust hold stands on its own: it arrives in the same tick as the sentence,
           // and the grant must not wait on a second list having arrived too.
@@ -213,7 +278,26 @@ export function QuestPage({
             {waitsForAccount(because) && (
               <span className="mb-1 block"><Pill tone="neutral">{t('work.waitsForAccount')}</Pill></span>
             )}
-            <Inline text={because ? sittingSentence(because) : t('work.attention.trustWhy')} />
+            <Inline
+              text={because ? sittingSentence(because) : pausedUnseen ? t('quests.detail.pausedOwn') : t('work.attention.trustWhy')}
+            />
+            {/* A pause comes before every other reason (D132 §2.3): its own is resumed here, where Try again stands for a
+                stop; an ask's, or the quest's whose question this is, is resumed on that page, a door away. */}
+            {(ownPause || pausedUnseen) && work && (
+              <span className="mt-1.5 block">
+                <Button disabled={waiting} onClick={() => work.onResume()}>{t('quests.detail.resume')}</Button>
+              </span>
+            )}
+            {pausedBy?.scope === 'ask' && onOpenAsk && (
+              <span className="mt-1.5 block">
+                <Button variant="ghost" onClick={() => onOpenAsk(pausedBy.id)}>{t('quests.detail.openAsk', { id: pausedBy.id })}</Button>
+              </span>
+            )}
+            {pausedBy?.scope === 'quest' && !ownPause && (
+              <span className="mt-1.5 block">
+                <Button variant="ghost" onClick={() => onOpenQuest(pausedBy.id)}>{t('quests.detail.openPausing', { id: pausedBy.id })}</Button>
+              </span>
+            )}
             {/* The one hold only the person can lift, offered where it is read (D73). */}
             {hold && onGrant && onTrusting && !trusting && (
               <span className="mt-1.5 block"><Button onClick={() => onTrusting(true)}>{t('trust.open')}</Button></span>
@@ -228,7 +312,22 @@ export function QuestPage({
             )}
           </Fact>
         )}
+        {abandoned && (
+          /* When its work was abandoned on this machine (§4.2); the reason is the decline's note, on the record below. */
+          <Fact name={t('quests.detail.abandonedAt')}>{stamp(abandoned.at)} · {ago(abandoned.at)}</Fact>
+        )}
       </dl>
+
+      {abandoned && (
+        <div className="mb-4">
+          <AbandonedWork target={target} outcome={abandoned.outcome} went={t('quests.detail.went')} stayed={t('quests.detail.stayed')} />
+        </div>
+      )}
+
+      {!work && moving && (
+        /* A browser has no driver (D47 §4): none of the three is offered, and the terminal's commands are named. */
+        <Prose className="mb-4 text-small"><Inline text={t('quests.detail.noDriver', { id: quest.id })} /></Prose>
+      )}
 
       {hold && onGrant && trusting && (
         <div className="mb-4 max-w-3xl">

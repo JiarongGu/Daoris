@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
+import type { WorkDoor } from '../work/pausing';
+import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import {
-  CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD_BY_PERSON, LANED, OPEN, QUESTION, STOPPED,
-  TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
+  CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD_BY_PERSON, LANED, OPEN, PAUSED_ITSELF,
+  PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -90,6 +92,32 @@ export const Deletable: Story = { args: { quest: DELETABLE } };
 
 /** A title in 中文, which the header wraps. */
 export const ChineseTitle: Story = { args: { quest: CJK } };
+
+// ——— Its work on this machine (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header, beside *Decline…*; *Resume*
+// under *Sitting* for its own pause.
+
+const PLAN = { ...PAUSABLE_QUEST, id: OPEN.id };
+const work = (over: Partial<WorkDoor> = {}): WorkDoor => ({
+  plan: PLAN, wired: false, busy: false, onPause: nothing, onResume: nothing, onAbandon: nothing, ...over,
+});
+
+/** In flight on this machine: *Pause…* and *Abandon…* beside *Decline…*. */
+export const WorkInFlight: Story = { args: { work: work() } };
+/** Paused on its own: the sentence under *Sitting*, and *Resume* where *Try again* stands for a stop. */
+export const PausedOnItsOwn: Story = { args: { sitting: PAUSED_ITSELF, work: work({ plan: { ...PAUSED_QUEST, id: OPEN.id } }) } };
+/** Paused with its ask: the sentence, and a door to the ask, where that pause is resumed. */
+export const PausedWithItsAsk: Story = { args: { sitting: PAUSED_WITH_ASK, onOpenAsk: nothing, work: work() } };
+/** A question its asker's pause holds: a door to the quest whose pause it is. */
+export const PausedWithAnotherQuest: Story = { args: { sitting: PAUSED_WITH_QUEST, work: work() } };
+/** Abandoned: declined with the reason, when, what went and what stayed. */
+export const WorkAbandoned: Story = {
+  args: {
+    quest: { ...OPEN, status: 'Declined', note: ABANDONED_ENTRY.reason },
+    work: work({ plan: { ...PLAN, abandon: { abandonable: false, pieces: [], closes: null, abandoned: { ...ABANDONED_ENTRY, closed: false, declined: [OPEN.id] } } } }),
+  },
+};
+/** In a browser: none of the three, and the terminal's commands named. */
+export const WorkInABrowser: Story = { args: {} };
 
 /** Nothing chosen: how to choose, and the ＋'s two kinds, Ask first. */
 export const NothingChosen: Story = {

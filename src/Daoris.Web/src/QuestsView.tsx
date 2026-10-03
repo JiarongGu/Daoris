@@ -5,7 +5,7 @@ import { linksOf, toUpload } from './attachments';
 import { useAsksPart } from './asks/AsksPart';
 import { sentence } from './format';
 import { buildChain } from './map/chain';
-import { questsItem } from './opener';
+import { askItem, questsItem } from './opener';
 import { useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './quests/QuestComposer';
 import { QuestList } from './quests/QuestList';
@@ -14,12 +14,15 @@ import {
 } from './quests/records';
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import {
-  retryNotice, useConsidered, useDriver, useNudge, useRetryQuest, useSetHold, useTrustFolder, useUntrusted,
+  retryNotice, useConsidered, useDriver, useNudge, useRemotes, useRetryQuest, useSetHold, useTrustFolder, useUntrusted,
+  useWorkPlan,
 } from './shell';
 import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
 import { ListMore } from './work/ListPane';
+import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
 import type { ViewLayout } from './work/ViewFrame';
+import { useWorkActs } from './work/workActs';
 
 /** A radio item cannot carry an empty value, so "every receiver" travels as a sentinel. */
 const EVERYONE = '*';
@@ -127,6 +130,12 @@ export function useQuestsView({
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
   const remove = useDeleteQuest();
+  // The chosen quest's work on this machine (PAUSE1e, D132 §7.1): its plan while Quests is in front, and the three presses.
+  const work = useWorkPlan(item && 'quest' in item ? { scope: 'quest', id: item.quest } : null, { enabled: active });
+  const wiring = useRemotes().data;
+  const workActs = useWorkActs({ notify });
+  // The last abandon's answer, for the quest it was of, said on its page before the record catches up.
+  const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
   // Every query this view renders from — a session surface or driver bridge that fails silently is
   // indistinguishable from a family with no driver attached. Said once, while the view is in front (D118 §3h).
   useErrorNotify(active ? quests.error ?? registry.error ?? sessions.error ?? driver.error : null, notify);
@@ -230,6 +239,25 @@ export function useQuestsView({
     else setComposing(true);
   };
 
+  // What the page is handed of this machine's driver for the quest: nothing in a browser, which has none (D47 §4).
+  const workDoor = (quest: Quest): WorkDoor | undefined => {
+    if (!work.available) return undefined;
+    const target: WorkTarget = { scope: 'quest', id: quest.id };
+    return {
+      // Asked by the chosen quest's id, which is the page's.
+      plan: work.plan,
+      wired: wiredFor(wiring, quest.workspace),
+      busy: workActs.busy,
+      outcome: abandonedNow?.id === quest.id ? abandonedNow : null,
+      onPause: (done) => workActs.pause(target, () => done()),
+      onResume: () => workActs.resume(target),
+      onAbandon: (reason, pieces, done) => workActs.abandon(target, reason, pieces, (answer) => {
+        setAbandonedNow({ id: quest.id, answer, at: new Date().toISOString() });
+        done();
+      }),
+    };
+  };
+
   const pageOf = (quest: Quest): ReactNode => {
     const session = latest.get(quest.id) ?? null;
     const hold = untrusted.find((candidate) => candidate.quest === quest.id) ?? null;
@@ -269,6 +297,8 @@ export function useQuestsView({
         })}
         onOpenQuest={(id) => onChoose(id)}
         onAttend={attend}
+        onOpenAsk={(id) => onChoose(askItem(id))}
+        work={workDoor(quest)}
       />
     );
   };

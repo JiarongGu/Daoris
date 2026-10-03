@@ -135,6 +135,8 @@ export function SessionRail({
   // What decides each row's acts: its record, where the reader placed it, its checkout, where its work is (D126 §3.1).
   const factsFor = (session: Session) => ({
     session,
+    // Whether an ask asked its quest decides *Pause ask…* (PAUSE1e).
+    quest: session.quest ? questFor.get(session.quest) : null,
     grouping: live ? null : placed.get(session.id),
     root: registered.get(session.repository)?.root,
     where: where[session.id],

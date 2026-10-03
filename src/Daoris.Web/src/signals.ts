@@ -61,6 +61,11 @@ export interface Consideration {
    * parked, no Retry, and it starts by itself at the reset. Absent for every other hold, and on an older shell.
    */
   waitsFor?: { agent: string; account?: string | null; until: string; stated: boolean };
+  /**
+   * For a quest a pause holds (verdict `Paused`, PAUSE1b): whose pause, an ask's or a quest's, which the sentence names and
+   * whose *Resume* moves it (D132 §2.3). Absent for every other verdict, and on an older shell.
+   */
+  pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
 }
 
 /** Whether a quest waits for an account (TOOL4g, D125 §4): held at spawn on a cooling account, never parked. */
@@ -108,7 +113,8 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * driver's typed half, and never by matching the English, which would turn a rewording into a silent
  * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
  * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`,
- * SESSUX1d), and `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i). The rest
+ * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), and `Paused`, whose ask or
+ * quest it names (`pausedBy`, PAUSE1e). The rest
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
  * so does a verdict the page has not heard of, and a stop or a park on a shell that names no session or
  * number. English passes the driver's sentence through as its only copy, as the rules' defaults do
@@ -117,6 +123,14 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
 export function sittingSentence(sitting: Consideration): string {
   if (sitting.verdict === 'Stopped' && !sitting.heldBy) return sitting.reason;
   if (sitting.verdict === 'Exhausted' && sitting.strikes == null) return sitting.reason;
+  // A pause (PAUSE1e, D132 §2.3) is said from whose it is, an ask's or a quest's own; with none named, the driver's words.
+  if (sitting.verdict === 'Paused') {
+    if (!sitting.pausedBy) return sitting.reason;
+    return i18n.t('work.sitting.Paused', {
+      why: sitting.reason, pause: sitting.pausedBy.id, quest: sitting.quest,
+      context: sitting.pausedBy.scope === 'quest' ? 'quest' : undefined, defaultValue: sitting.reason,
+    });
+  }
   // A wait for an account (TOOL4g) is a `Blocked` hold the tick names the account of, so it is said from those facts; any
   // other `Blocked` hold keeps the driver's words, since its sentence names what the tick does not carry.
   if (sitting.verdict === 'Blocked' && sitting.waitsFor) {

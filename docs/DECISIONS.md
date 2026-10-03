@@ -9690,6 +9690,41 @@ tree. The phase wires no remote, so the `whileOpen` race over a real one stays P
 runs is not reached, as for a pause. How long `WORK_PLAN` takes now that it walks
 git per tree is not measured (design §12). The page's acts and its words for each act and why are PAUSE1e's.
 
+**Built 2026-10-03 (PAUSE1e): on the screen** (points 11 and 12; design §6, §7.1, §8). `bridge/work.ts` asks the four routes;
+`work/pausing.ts` is the one pure rule the ask's page, the quest's page and a session's header read; `work/workActs.ts` owns
+the three presses; `work/WorkAsks.tsx` draws the pause's ask, the abandon's list and *What went* and *What stayed*. No route
+lacked a field, so the modules are untouched. What building it settled:
+- **A plan is asked only while Quests is in front**, under the quests' key so a tick and a move on a quest ask it again, since
+  each answer walks git per tree. An answer without a plan's shape is no plan, and with no plan no act is offered: none is
+  guessed while it is on its way.
+- **A pause stops nothing when no piece's pause act is `stopped`**, and then applies at once with its notice (§2.6). *Another
+  machine may still take* is said where the machine's wiring (`DAORIS.REMOTES`) names the ask's or quest's workspace, or the
+  environment names the remote whole. A session it meant to stop and could not is its own failure notice.
+- **The abandon's second press sends the plan held from when its list opened**, whatever the reader answers meanwhile.
+  *What went* reads the second press's answer at once, then `abandoned.json`'s entry, which keeps no detail.
+- **A quest's own pause the tick has no verdict for** (its session waits on you, §2.1) is said from the plan under *Sitting*,
+  with *Resume*. Another's pause is the tick's sentence and a door to the ask or the quest whose pause it is.
+- **A session's acts**: *Pause quest…* for a live driven session here, *Pause ask…* where its quest's sender is an ask, both
+  absent once `pausedBy` holds it; *Resume ask* or *Resume quest* where it does, in *Try again*'s place and leading the header.
+  A parked session's quest gets no `Paused` verdict, so its acts offer the pause again, and a second pause answers that it was
+  paused already. The pause asks under the session's header, as *Stop…* does; *Resume* never asks.
+- **`work.sitting.Paused`** passes the driver's English through and says 中文 from `pausedBy`, a quest's own pause by the
+  catalogue's `context`; `i18n-check.mjs`'s facts a passed sentence may say gain `pause`.
+- **The glossary's two terms** carry the design's Chinese avoid lists. *Abandon*'s English list is empty: *clean up* and
+  *cancel* are other terms' names, and avoiding them would report every label that names those. Beyond §8.1's keys: the
+  quest page's *Abandoned*, *What went* and *What stayed*, the sentence a browser says instead of the acts, the close's
+  sentence (§6.5), the row's *paused with* line, and the `work.pause.*` and `work.abandon.*` sentences.
+
+**What the gates do not cover.** Held by `pausing.test.ts`, `bridge/work.test.tsx`, `workActs.test.tsx`, `WorkAsks.test.tsx`,
+`AskPage.work.test.tsx`, `QuestPage.work.test.tsx`, `QuestsView.work.test.tsx` over the mocked bridge, `acts.test.ts`,
+`sessionActs.test.tsx`, `SessionRow.test.tsx`, `WorkFrame.test.tsx` and `signals.test.ts`, the stories, parity and
+`names:check --strict`. The bridge's, the quest page's, the sitting sentence's, the session acts' and the row's line's tests
+were seen failing before their code; the rest came with it, and the header's offers, the wired sentence, the ask page's
+quiet pause and the session's pause ask were each sabotaged and seen red. The window was not looked at (light and dark, both languages, 1280,
+888 and 680 px), and `test:web`, the rehearsals and the `Process` half were not run here. The budgets of §8.1 are estimates
+until the window measures them (§12). **Not built**: the ask's page listing its work (§7.1's second point: each quest with its
+state and sitting reason, the questions, the sessions as doors), and Ask Daoris's `pause` kind (PAUSE1f).
+
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
 **Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +

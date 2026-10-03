@@ -25,3 +25,4 @@ export * from './bridge/terminal';
 export * from './bridge/tools';
 export * from './bridge/trees';
 export * from './bridge/windows';
+export * from './bridge/work';

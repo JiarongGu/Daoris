@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Quest, Session } from '../api';
 import type { SessionGrouping } from './groups';
-import { folderOf, offeredActs, primaryAct, stopAsk } from './acts';
+import { folderOf, offeredActs, primaryAct, stopAsk, workTargetOf } from './acts';
 
 // Which acts a session is offered, by the one rule its row's ⋯ and its page header share (SESSUX1d, D126 §3.1): each
 // offered where it applies and absent where it does not, never disabled (D119 §3.2). Pure, so every session a person
@@ -25,15 +25,53 @@ const quest = (status: Quest['status']): Quest => ({
 });
 
 describe('the acts a session is offered', () => {
-  it('offers a running driven session its stop, its folder and a terminal there, in §3.1’s order', () => {
+  it('offers a running driven session its stop, its quest’s pause, its folder and a terminal there, in §3.1’s order', () => {
     expect(offeredActs({ session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT }, 'row'))
-      .toEqual(['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+      .toEqual(['stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
   });
 
   it('offers a session waiting on you its answer on its row, and not in its header, where its card keeps it', () => {
     const waiting = { session: session({ state: 'awaiting-person' }), grouping: placed({ group: 'you', shown: 'awaiting-person' }), root: ROOT };
-    expect(offeredActs(waiting, 'row')).toEqual(['answer', 'stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs(waiting, 'row')).toEqual(['answer', 'stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
     expect(offeredActs(waiting, 'header')).not.toContain('answer');
+  });
+
+  /** PAUSE1e (D132 §7.1): where work going wrong is met, its quest is paused, and its ask's where an ask asked it. */
+  it('offers a live driven session Pause quest…, and Pause ask… where its quest is an ask’s', () => {
+    const working = { session: session(), grouping: placed({ group: 'working', shown: 'working' }), root: ROOT };
+    expect(offeredActs({ ...working, quest: quest('Taken') }, 'header')).toContain('pauseQuest');
+    expect(offeredActs({ ...working, quest: quest('Taken') }, 'header')).not.toContain('pauseAsk');
+    const asked = { ...quest('Taken'), from: 'ask #a1b2c3' };
+    expect(offeredActs({ ...working, quest: asked }, 'header')).toEqual(expect.arrayContaining(['pauseQuest', 'pauseAsk']));
+    // Not for a chat, an intake, a teammate's record or an ended session: none is a driven session's work here.
+    expect(offeredActs({ ...working, session: session({ kind: 'chat', quest: null }) }, 'row')).not.toContain('pauseQuest');
+    expect(offeredActs({ ...working, session: session({ state: 'completed' }) }, 'row')).not.toContain('pauseQuest');
+    expect(offeredActs({ ...working, session: session({ id: 'person@machine-b/s1' }) }, 'row')).not.toContain('pauseQuest');
+  });
+
+  /** PAUSE1e (D132 §6.1): where a pause holds its quest, Resume is offered in Try again's place, and leads. */
+  it('offers Resume ask or Resume quest where a pause holds its quest, in Try again’s place, and leads with it', () => {
+    const byAsk = placed({ group: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } });
+    const stopped = { session: session({ state: 'stopped', tree: TREE }), grouping: byAsk, root: ROOT };
+    const acts = offeredActs(stopped, 'header');
+    expect(acts).toContain('resumeAsk');
+    expect(acts).not.toContain('retry');
+    expect(acts).not.toContain('pauseQuest');
+    expect(primaryAct(acts, byAsk)).toBe('resumeAsk');
+
+    const byQuest = placed({ group: 'ended', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'quest', id: 'abc123' } });
+    expect(offeredActs({ ...stopped, grouping: byQuest }, 'row')).toContain('resumeQuest');
+    expect(offeredActs({ ...stopped, grouping: byQuest }, 'row')).not.toContain('retry');
+  });
+
+  it('names where each pause and resume goes: the session’s quest, its ask, or the pause that holds it', () => {
+    const asked = { ...quest('Taken'), from: 'ask #a1b2c3' };
+    const facts = { session: session(), quest: asked, grouping: placed({ group: 'working', shown: 'working' }) };
+    expect(workTargetOf('pauseQuest', facts)).toEqual({ scope: 'quest', id: 'abc123' });
+    expect(workTargetOf('pauseAsk', facts)).toEqual({ scope: 'ask', id: 'a1b2c3' });
+    const held = { ...facts, grouping: placed({ group: 'ended', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } }) };
+    expect(workTargetOf('resumeAsk', held)).toEqual({ scope: 'ask', id: 'a1b2c3' });
+    expect(workTargetOf('stop', facts)).toBeNull();
   });
 
   /** ANSWER1c (D131): answered, the same session goes on at the driver's next look, and there is no box to answer in. */
@@ -43,7 +81,7 @@ describe('the acts a session is offered', () => {
       grouping: placed({ group: 'working', shown: 'answered' }),
       root: ROOT,
     };
-    expect(offeredActs(answered, 'row')).toEqual(['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
+    expect(offeredActs(answered, 'row')).toEqual(['stop', 'pauseQuest', 'review', 'openFolder', 'terminal', 'detach', 'copy']);
   });
 
   it('offers a parked quest’s last session Try again, and a stopped one Try again only where its stop holds its quest', () => {

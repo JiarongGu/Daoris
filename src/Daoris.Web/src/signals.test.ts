@@ -220,6 +220,29 @@ describe('sittingSentence', () => {
     expect(sittingSentence(own)).toContain('Daoris 的默认值');
     expect(sittingSentence(sits('Blocked', 'the tree is dirty.'))).toBe('the tree is dirty.');
   });
+
+  /**
+   * PAUSE1e (D132 §2.3): a paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
+   * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (a shell older than the
+   * fact), the driver's words stand.
+   */
+  it('says a pause in 中文, naming the ask or the quest whose pause the tick says holds it', async () => {
+    const asks = 'paused with ask `#a1`; Resume starts it — `daoris-driver ask --resume a1`.';
+    const byAsk: Consideration = { ...sits('Paused', asks), pausedBy: { scope: 'ask', id: 'a1' } };
+    const own = 'you paused `#9a9492`; Resume carries it on — `daoris-driver quest resume 9a9492`.';
+    const byQuest: Consideration = { ...sits('Paused', own), pausedBy: { scope: 'quest', id: '9a9492' } };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(byAsk)).toBe(asks);
+    expect(sittingSentence(byQuest)).toBe(own);
+
+    await i18n.changeLanguage('zh');
+    expect(sittingSentence(byAsk)).toContain('已随需求 `#a1` 暂缓');
+    expect(sittingSentence(byAsk)).toContain('`daoris-driver ask --resume a1`');
+    expect(sittingSentence(byQuest)).toContain('`daoris-driver quest resume 9a9492`');
+    expect(sittingSentence(byQuest)).not.toContain('需求');
+    expect(sittingSentence(sits('Paused', asks))).toBe(asks);
+  });
 });
 
 describe('waitsForAccount', () => {

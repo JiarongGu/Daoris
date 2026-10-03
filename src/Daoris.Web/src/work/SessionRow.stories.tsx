@@ -292,6 +292,27 @@ export const DeletableConversation: Story = {
   },
 };
 
+/** Stopped by its ask's pause (PAUSE1e): its line names the pause, and its ⋯ offers *Resume ask* in *Try again*'s place. */
+export const PausedWithItsAsk: Story = {
+  args: {
+    session: { ...SESSION, state: 'stopped', created: at(80), updated: at(20) },
+    grouping: placed({ group: 'review', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' } }),
+    place: 'engine',
+    acts: ['resumeAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
+    onAct: () => {},
+  },
+};
+
+/** Running, its quest an ask's (PAUSE1e): its ⋯ offers *Pause quest…* and *Pause ask…* beside *Stop…*. */
+export const RunningWithItsPauses: Story = {
+  args: {
+    session: { ...SESSION, state: 'working', created: at(30), updated: at(1) },
+    place: 'engine',
+    acts: ['stop', 'pauseQuest', 'pauseAsk', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
+    onAct: () => {},
+  },
+};
+
 /** A person's stop that holds its quest (SESSUX1b): its line says so, and its ⋯ offers *Try again*. */
 export const StoppedHoldingItsQuest: Story = {
   args: {

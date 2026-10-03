@@ -149,5 +149,13 @@
   "work.views.reset": "重置视图位置",
   "work.views.console": "控制台",
   "work.views.terminal": "终端",
-  "work.views.empty": "这里现在什么都没有。从某个视图标签的菜单把它移到这里，或重置视图位置。"
+  "work.views.empty": "这里现在什么都没有。从某个视图标签的菜单把它移到这里，或重置视图位置。",
+  "work.act.pauseAsk": "暂缓需求…",
+  "work.act.pauseQuest": "暂缓委托…",
+  "work.act.resumeAsk": "恢复需求",
+  "work.act.resumeQuest": "恢复委托",
+  "work.sitting.Paused": "已随需求 `#{{pause}}` 暂缓；恢复后会继续——`daoris-driver ask --resume {{pause}}`。",
+  "work.sitting.Paused_quest": "随委托 `#{{pause}}` 暂缓；恢复后会继续——`daoris-driver quest resume {{pause}}`。",
+  "work.scope.ask": "需求 #{{id}}",
+  "work.scope.quest": "委托 #{{id}}"
 }
