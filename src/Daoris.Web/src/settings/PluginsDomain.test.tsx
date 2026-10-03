@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from '../SettingsView';
+import { code } from '../test/code';
 import { respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 
 /**
@@ -116,7 +117,7 @@ describe('the plugins card', () => {
       (type === 'PLUGINS' ? { folder: 'C:/somewhere/data/plugins', plugins: [] } : WIRING));
     show(<SettingsView notify={() => {}} section="plugins" />);
 
-    expect(await screen.findByText(/daoris plugin add/)).toBeTruthy();
+    expect(await screen.findByText(code(/daoris plugin add/))).toBeTruthy();
     expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
   });
 
@@ -229,7 +230,7 @@ describe('the plugins card', () => {
 
     const group = (await screen.findByText('Daoris\'s own plugins')).closest('article')!;
     expect(within(group).getByText('GitHub pull request')).toBeTruthy();
-    expect(within(group).getByText('gh auth login', { selector: 'code' })).toBeTruthy();
+    expect(within(group).getByText(code('gh auth login'))).toBeTruthy();
     // Installed already, it is a row of the catalogue above, never offered again.
     expect(within(group).queryByText('Acme gate')).toBeNull();
 
@@ -268,7 +269,7 @@ describe('the plugins card', () => {
       expect(screen.getByText(/安装自 Daoris 自带的插件/)).toBeTruthy();
       expect(screen.getByRole('button', { name: '更新 acme.gate' })).toBeTruthy();
       expect(screen.getByRole('button', { name: '安装 github-pull-request' })).toBeTruthy();
-      expect(screen.getByText('gh auth login', { selector: 'code' })).toBeTruthy();
+      expect(screen.getByText(code('gh auth login'))).toBeTruthy();
 
       // PLUG10 (P8): the ask once, in the glossary's words — 移除 is remove's, 插件 plugin's.
       await userEvent.click(screen.getByRole('button', { name: '移除…' }));

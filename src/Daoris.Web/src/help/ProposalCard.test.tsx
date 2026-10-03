@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '../i18n';
+import { code } from '../test/code';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
 
 // HELP1c (D89): a change Ask Daoris proposes, and the person's two presses.
@@ -18,8 +19,8 @@ describe('a proposal of Ask Daoris\'s', () => {
     render(<ul><ProposalCard proposal={LANDING} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText('feature/{quest}-{slug}', { selector: 'code' })).toBeInTheDocument();
-    expect(screen.getByText(LANDING.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code('feature/{quest}-{slug}'))).toBeInTheDocument();
+    expect(screen.getByText(code(LANDING.terminal))).toBeInTheDocument();
     expect(screen.getByText('Why: the person asked for feature branches')).toBeInTheDocument();
   });
 
@@ -132,25 +133,25 @@ describe('the kinds that reach every door', () => {
     await press(UPDATE, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
-    expect(screen.getByText('claude-code-acp', { selector: 'code' })).toBeInTheDocument();
-    expect(screen.getByText(UPDATE.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code('claude-code-acp'))).toBeInTheDocument();
+    expect(screen.getByText(code(UPDATE.terminal))).toBeInTheDocument();
   });
 
   it('an account\'s model and effort say the values in the tool\'s own words, with Apply and Not now', async () => {
     await press(ACCOUNT, 'Apply');
 
-    expect(screen.getByText('opus', { selector: 'code' })).toBeInTheDocument();
-    expect(screen.getByText('high', { selector: 'code' })).toBeInTheDocument();
-    expect(screen.getByText(ACCOUNT.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code('opus'))).toBeInTheDocument();
+    expect(screen.getByText(code('high'))).toBeInTheDocument();
+    expect(screen.getByText(code(ACCOUNT.terminal))).toBeInTheDocument();
   });
 
   it('a delete says what goes and that it cannot be undone, and its Apply is a delete', async () => {
     await press(DELETE, 'Delete');
 
     expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
-    expect(screen.getByText('#q1a2b3c4', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code('#q1a2b3c4'))).toBeInTheDocument();
     expect(screen.getByText(/cannot be undone/)).toBeInTheDocument();
-    expect(screen.getByText(DELETE.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code(DELETE.terminal))).toBeInTheDocument();
   });
 
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
@@ -167,24 +168,24 @@ describe('the kinds that reach every door', () => {
 
     expect(screen.getByText('Ask Daoris proposes a plugin')).toBeInTheDocument();
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText('acme.quiet-hours', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(code('acme.quiet-hours'))).toBeInTheDocument();
     // `${plugin}` as the manifest writes it, never a path on this machine.
-    expect(runs.getByText('node ${plugin}/hooks.mjs', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('quest/consider', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('session/ended', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('acme-agent', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('acme-agent --acp', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('browser', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('npx -y @playwright/mcp@latest', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
+    expect(runs.getByText(code('quest/consider'))).toBeInTheDocument();
+    expect(runs.getByText(code('session/ended'))).toBeInTheDocument();
+    expect(runs.getByText(code('acme-agent'))).toBeInTheDocument();
+    expect(runs.getByText(code('acme-agent --acp'))).toBeInTheDocument();
+    expect(runs.getByText(code('browser'))).toBeInTheDocument();
+    expect(runs.getByText(code('npx -y @playwright/mcp@latest'))).toBeInTheDocument();
     expect(screen.getByText(/copies its folder into Daoris's home under its id/)).toBeInTheDocument();
-    expect(screen.getByText(PLUGIN_ADD.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code(PLUGIN_ADD.terminal))).toBeInTheDocument();
   });
 
   it('a plugin to switch says it is not copied, and what keeps it from contributing in the driver\'s words', () => {
     render(<ul><ProposalCard proposal={PLUGIN_ON} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
 
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText('example.lands', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(code('example.lands'))).toBeInTheDocument();
     expect(runs.getByText(/runs no process of its own/)).toBeInTheDocument();
     expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
     expect(screen.getByText(/contributes nothing: declares agent/)).toBeInTheDocument();
@@ -202,9 +203,9 @@ describe('the kinds that reach every door', () => {
     await press(HAND, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes a hand-off')).toBeInTheDocument();
-    expect(screen.getByText('feature/q2-second', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code('feature/q2-second'))).toBeInTheDocument();
     expect(screen.getByText(/pushes the branch to its remote, signed in as you/)).toBeInTheDocument();
-    expect(screen.getByText(HAND.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code(HAND.terminal))).toBeInTheDocument();
   });
 
   // HELP10: Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
@@ -220,7 +221,7 @@ describe('the kinds that reach every door', () => {
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
     expect(screen.getByText(BROWSER.describe)).toBeInTheDocument();
-    expect(screen.getByText(BROWSER.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code(BROWSER.terminal))).toBeInTheDocument();
   });
 
   // HELP10: bringing up to date (WSR6, D109), the screen's two presses on one card: the look, which fetches and so is
@@ -260,9 +261,9 @@ describe('the kinds that reach every door', () => {
     const rows = within(screen.getByRole('list', { name: 'what the press would do' }));
     expect(rows.getByText('moves')).toBeInTheDocument();
     expect(rows.getByText('stays')).toBeInTheDocument();
-    expect(rows.getByText('origin/main', { selector: 'code' })).toBeInTheDocument();
+    expect(rows.getByText(code('origin/main'))).toBeInTheDocument();
     expect(screen.getByText(/Apply does only the rows that move/)).toBeInTheDocument();
-    expect(screen.getByText(LOOKED.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code(LOOKED.terminal))).toBeInTheDocument();
   });
 
   // LEFT3 b: what the rows do not say, said on the card itself and not only in the look's message (WSR7, D112).
@@ -302,8 +303,8 @@ describe('the kinds that reach every door', () => {
 
     const apart = within(screen.getByRole('group', { name: 'Repositories not looked at' }));
     expect(apart.getByText('2 other repositories with a checkout here hold no branch of Daoris\'s')).toBeInTheDocument();
-    expect(apart.getByText('docs', { selector: 'code' })).toBeInTheDocument();
-    expect(apart.getByText('site', { selector: 'code' })).toBeInTheDocument();
+    expect(apart.getByText(code('docs'))).toBeInTheDocument();
+    expect(apart.getByText(code('site'))).toBeInTheDocument();
     expect(apart.getByText(/A proposal naming one looks at it/)).toBeInTheDocument();
   });
 
@@ -318,17 +319,17 @@ describe('the kinds that reach every door', () => {
     await press(PLUGIN_OFFER, 'Apply');
 
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText('gh auth login', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(code('gh auth login'))).toBeInTheDocument();
     expect(runs.getByText(/^needs:/)).toBeInTheDocument();
-    expect(screen.getByText(PLUGIN_OFFER.terminal, { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(code(PLUGIN_OFFER.terminal))).toBeInTheDocument();
   });
 
   it('an update says what changes, as the manifests write it, and that its folder is replaced keeping what it kept', async () => {
     await press(PLUGIN_UPDATE, 'Apply');
 
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
-    expect(runs.getByText('1.0.0', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText('1.1.0', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(code('1.0.0'))).toBeInTheDocument();
+    expect(runs.getByText(code('1.1.0'))).toBeInTheDocument();
     expect(runs.getByText(/^Servers: /)).toBeInTheDocument();
     expect(screen.getByText(/replaces its folder from where it came from/)).toBeInTheDocument();
     expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
@@ -347,7 +348,7 @@ describe('the kinds that reach every door', () => {
       // PLUG9: the plugin card's chrome translates; the command stays as the manifest writes it.
       expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();
       const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
-      expect(runs.getByText('node ${plugin}/hooks.mjs', { selector: 'code' })).toBeInTheDocument();
+      expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
       cleanup();
       // WSR5b: the hand-off's chrome translates too.
       render(<ul><ProposalCard proposal={HAND} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);

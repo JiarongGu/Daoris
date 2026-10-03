@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { figure, stamp } from '../format';
 import { cn } from '../lib/cn';
-import { Button, Card, Icon, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../ui';
+import { Button, Card, Icon, Inline, PathText, Prose, Segmented, SelectField, SettingRow, SkeletonRows } from '../ui';
 
 /** The process kinds that write a file (D94 §2), in the order the terminal names them. */
 export const LOG_SOURCES = ['desktop', 'host', 'mcp', 'browser', 'driver'] as const;
@@ -96,7 +96,7 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
     // No title of its own (NAME1b, UX5 U57): the card is alone in its domain, and the settings list names
     // it *Machine log*, as every card alone in its domain leaves it.
     <Card id="settings-logs" className="scroll-mt-3">
-      <Prose className="text-small text-ink-soft">{t('settings.logs.body')}</Prose>
+      <Prose className="text-small text-ink-soft"><Inline text={t('settings.logs.body')} /></Prose>
 
       {reading?.folder && (
         <div className="mt-3">

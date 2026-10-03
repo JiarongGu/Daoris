@@ -21,8 +21,9 @@ namespace Daoris.Knowledge;
 /// A repository may still say where its records are, in its manifest's <c>documents</c> (DOC5; D122
 /// §2.7, <see cref="RepositoryDocuments"/>). A declaration adds a path and is never required: the
 /// declared decisions, fixes or archive is the first candidate for its log, a file or a folder of
-/// records, and the declared router is read as a document. A declaration the CLI refuses is read as
-/// none, so the candidates are read as before it was written. One file is one place in the index.
+/// records, each titled by its first heading (DOC8c), and the declared router is read as a document. A
+/// declaration the CLI refuses is read as none, so the candidates are read as before it was written. One
+/// file is one place in the index.
 ///
 /// Where the documents live is the layout's (D117 §5.5, LAYOUT4): the lock's root before the
 /// manifest's, both roots for a repository with no lock, the lock's mirrors skipped so each skill is
@@ -114,7 +115,7 @@ public sealed class RepositoryScanner
         {
             if (Directory.Exists(Absolute(repositoryRoot, router)))
             {
-                Add(ScanFolder(repositoryRoot, name, router, EntryKind.Knowledge, indexed));
+                Add(ScanFolder(repositoryRoot, name, router, EntryKind.Knowledge, indexed, byHeading: false));
             }
             else if (ReadDocument(repositoryRoot, router) is { } body)
             {
@@ -139,7 +140,7 @@ public sealed class RepositoryScanner
             if (found is null || indexed.Contains(found)) continue;
 
             Add(Directory.Exists(Absolute(repositoryRoot, found))
-                ? ScanFolder(repositoryRoot, name, found, kind, indexed)
+                ? ScanFolder(repositoryRoot, name, found, kind, indexed, byHeading: true)
                 : ScanLog(repositoryRoot, name, found, kind));
         }
 
@@ -341,21 +342,27 @@ public sealed class RepositoryScanner
     }
 
     /// <summary>
-    /// A declared folder of records (DOC5; D122 §2.1): one entry per markdown file in it or below, each
-    /// read whole, since a record's headings are its own parts (an ADR's context and consequences) and
-    /// not records of their own. Named by its file, as a document is.
+    /// A declared folder (DOC5; D122 §2.1): one entry per markdown file in it or below, each read whole,
+    /// since a record's headings are its own parts (an ADR's context and consequences) and not records of
+    /// their own.
     /// </summary>
     /// <param name="indexed">What is already read: a file another reader took is not read again.</param>
+    /// <param name="byHeading">
+    /// Whether each file is titled by its first heading, and by its name where it has none (DOC8c; D134 §5).
+    /// A log's folder is: a search for a decision showed <c>D130</c> where its heading says what was decided,
+    /// and an ADR's file name is a number and a slug. A router's folder is not: it holds documents, named by
+    /// their files as the knowledge tier's are (D122). The id is the path either way, so a title is never a key.
+    /// </param>
     private static IEnumerable<KnowledgeEntry> ScanFolder(
-        string root, string repository, string folder, EntryKind kind, ISet<string> indexed)
+        string root, string repository, string folder, EntryKind kind, ISet<string> indexed, bool byHeading)
     {
         foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
         {
             if (indexed.Contains(relative)) continue;
             if (ReadDocument(root, relative) is not { } body) continue;
 
-            yield return new KnowledgeEntry(
-                repository, kind, Provenance.Local, Path.GetFileNameWithoutExtension(relative), body, relative);
+            var title = (byHeading ? MarkdownSections.FirstHeading(body) : null) ?? Path.GetFileNameWithoutExtension(relative);
+            yield return new KnowledgeEntry(repository, kind, Provenance.Local, title, body, relative);
         }
     }
 

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { code } from '../test/code';
 import type { DiffFile } from './diff';
 import { DiffFileRow } from './DiffFileRow';
 
@@ -72,7 +73,7 @@ describe('DiffFileRow', () => {
   it('lists a file whose patch the bound dropped, and says where the rest is', () => {
     show({ ...FILE, patch: null }, { open: true });
     expect(screen.getByText('src/world/chunk.ts')).toBeTruthy();
-    expect(screen.getByText(/git diff/)).toBeTruthy();
+    expect(screen.getByText(code(/git diff/))).toBeTruthy();
   });
 
   it('carries the person’s own viewed mark, which is theirs to set', async () => {

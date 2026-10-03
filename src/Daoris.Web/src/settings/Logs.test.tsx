@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
+import { code } from '../test/code';
 import { dataText, LOG_FILTERS, LogList, type LogFilters, type LogReading } from './Logs';
 
 // LOG1c (D94): Settings → Logs, the screen's door to the machine log — the recent lines newest first,
@@ -43,6 +44,14 @@ describe('the logs domain', () => {
 
     expect(screen.queryByRole('heading')).toBeNull();
     expect(screen.queryByText('Machine log')).toBeNull();
+  });
+
+  /** LOOK5: the opening names its terminal twin as code, as every setting's is, and never prints the backticks. */
+  it('sets the terminal twin in its opening as code', () => {
+    draw();
+
+    expect(screen.getByText(code('daoris-driver logs'))).toBeInTheDocument();
+    expect(screen.queryByText(/`/)).toBeNull();
   });
 
   it('lists the lines newest first, each with its source, level, event and data', () => {

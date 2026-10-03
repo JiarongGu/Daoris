@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
+import { code } from '../test/code';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 import type { AccountSettings, SettingsChoices } from '../tools';
 
@@ -130,11 +131,17 @@ describe("an account's own settings", () => {
     expect(onSave).toHaveBeenLastCalledWith({ perModel: { 'claude-opus-5': 'medium', 'claude-sonnet-5': null } });
   });
 
-  /** D50: whatever the screen sets, a terminal can — and the form says the command, for this account. */
+  /**
+   * D50: whatever the screen sets, a terminal can — and the form says the command, for this account. It is the console's
+   * one code span, so a line breaks only between its words and never inside `--account` (LOOK5).
+   */
   it('names the terminal command that does the same, for this account', () => {
     form();
 
-    expect(screen.getByText('daoris agent settings claude-code --account work model <model> effort <effort>').tagName).toBe('CODE');
+    const command = screen.getByText(code('daoris agent settings claude-code --account work model <model> effort <effort>'));
+    expect([...command.children].map((word) => word.textContent)).toEqual(
+      ['daoris', 'agent', 'settings', 'claude-code', '--account', 'work', 'model', '<model>', 'effort', '<effort>']);
+    for (const word of command.children) expect(word).toHaveClass('inline-block', 'max-w-full');
   });
 
   it('is taken back with cancel, and holds nothing while it saves', async () => {
