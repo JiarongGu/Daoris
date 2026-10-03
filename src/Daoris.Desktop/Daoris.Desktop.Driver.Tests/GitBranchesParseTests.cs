@@ -109,12 +109,12 @@ public sealed class GitBranchesParseTests
     {
         var trees = GitRefs.ParseWorktrees(
             $"worktree D:/repos/engine\nHEAD {Main}\nbranch refs/heads/main\n\n"
-            + $"worktree D:/home/trees/aurora/engine/s-1a2b3c4d\nHEAD {Topic}\nbranch refs/heads/daoris/s-1a2b3c4d\n\n"
+            + $"worktree D:/data/trees/aurora/engine/s-1a2b3c4d\nHEAD {Topic}\nbranch refs/heads/daoris/s-1a2b3c4d\n\n"
             + $"worktree D:/scratch/detached\nHEAD {Topic}\ndetached\n\n");
 
         Assert.Equal(2, trees.Count);
         Assert.Equal("D:/repos/engine", trees["refs/heads/main"]);
-        Assert.Equal("D:/home/trees/aurora/engine/s-1a2b3c4d", trees["refs/heads/daoris/s-1a2b3c4d"]);
+        Assert.Equal("D:/data/trees/aurora/engine/s-1a2b3c4d", trees["refs/heads/daoris/s-1a2b3c4d"]);
     }
 
     [Theory]

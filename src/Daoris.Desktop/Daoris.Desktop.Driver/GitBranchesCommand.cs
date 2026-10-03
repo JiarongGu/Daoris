@@ -204,7 +204,10 @@ public static class GitBranchesCommand
         var details = new List<string>();
         if (branch.Session is { } session)
         {
-            if (session.Session is { } id) details.Add($"session {id} ({session.State}){(session.Quest is { } quest ? $", quest #{quest}" : "")}");
+            if (session.Session is { } id)
+            {
+                details.Add($"session {id}{(session.State is { Length: > 0 } state ? $" ({state})" : "")}{(session.Quest is { } quest ? $", quest #{quest}" : "")}");
+            }
             else if (sessionsRead) details.Add("no session record names its tree");
             if (session.GrewFrom is { } grew) details.Add($"grew from `{grew}`");
             details.Add(branch.Worktree is { } tree ? $"its tree {tree}" : "no tree holds it");

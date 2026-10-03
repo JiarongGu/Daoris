@@ -64,16 +64,16 @@ public sealed class GitBranchesReadTests
         Grown = [new GrownBranch("engine", "aurora", "daoris/s-1a2b3c4d", "main", Main, "feature/12-even", DateTimeOffset.Parse("2026-10-03T00:00:00Z"))],
         Sessions =
         [
-            new SessionRecord("older", "engine", "completed") { Tree = "D:/home/trees/aurora/engine/s-1a2b3c4d", Created = DateTimeOffset.Parse("2026-10-03T00:00:00Z") },
-            new SessionRecord("newest", "engine", "working") { Tree = @"D:\home\trees\aurora\engine\s-1a2b3c4d", Quest = "21", Created = DateTimeOffset.Parse("2026-10-04T00:00:00Z") },
-            new SessionRecord("other", "game", "working") { Tree = "D:/home/trees/aurora/game/s-1a2b3c4d", Created = DateTimeOffset.Parse("2026-10-05T00:00:00Z") },
+            new SessionRecord("older", "engine", "completed") { Tree = "D:/data/trees/aurora/engine/s-1a2b3c4d", Created = DateTimeOffset.Parse("2026-10-03T00:00:00Z") },
+            new SessionRecord("newest", "engine", "working") { Tree = @"D:\data\trees\aurora\engine\s-1a2b3c4d", Quest = "21", Created = DateTimeOffset.Parse("2026-10-04T00:00:00Z") },
+            new SessionRecord("other", "game", "working") { Tree = "D:/data/trees/aurora/game/s-1a2b3c4d", Created = DateTimeOffset.Parse("2026-10-05T00:00:00Z") },
         ],
     };
 
     /// <summary>The repository the owner's case reads: its line, a session's branch, four landed, the person's own, and origin's.</summary>
     private static string Everything() =>
         Record("refs/heads/main", Main, "0 0", worktree: "D:/repos/engine")
-        + Record("refs/heads/daoris/s-1a2b3c4d", Session, "2 0", worktree: "D:/home/trees/aurora/engine/s-1a2b3c4d", at: "2026-10-04T03:00:00Z")
+        + Record("refs/heads/daoris/s-1a2b3c4d", Session, "2 0", worktree: "D:/data/trees/aurora/engine/s-1a2b3c4d", at: "2026-10-04T03:00:00Z")
         + Record("refs/heads/feature/12-even", Landed, "1 0", at: "2026-10-01T00:00:00Z")
         + Record("refs/heads/feature/13-ahead", Moved, "3 0", at: "2026-10-02T00:00:00Z")
         + Record("refs/heads/feature/14-mine", Topic, "1 4", at: "2026-10-02T00:00:00Z")
@@ -315,7 +315,7 @@ public sealed class GitBranchesReadTests
             .Answer(GitRefs.Arguments(trees: true, against: null), "", code: 128, stderr: "fatal: unknown field name: worktreepath")
             .Answer(["worktree", "list", "--porcelain"],
                 $"worktree D:/repos/engine\nHEAD {Main}\nbranch refs/heads/main\n\n"
-                + $"worktree D:/home/trees/aurora/engine/s-1a2b3c4d\nHEAD {Session}\nbranch refs/heads/daoris/s-1a2b3c4d\n\n")
+                + $"worktree D:/data/trees/aurora/engine/s-1a2b3c4d\nHEAD {Session}\nbranch refs/heads/daoris/s-1a2b3c4d\n\n")
             .Answer(["rev-list", "--left-right", "--count", "refs/heads/daoris/s-1a2b3c4d...refs/heads/main"], "2\t0\n");
 
         var read = await GitBranches.ReadAsync(Ask() with { Landings = [] }, git.Run);
@@ -323,7 +323,7 @@ public sealed class GitBranchesReadTests
         Assert.Equal([GitRefs.WorktreePath, GitRefs.AheadBehind], read.Missing);
         Assert.Equal("D:/repos/engine", read.Branches[0].Worktree);
         var session = read.Branches.Single(branch => branch.Kind == GitBranchKind.Session);
-        Assert.Equal(("D:/home/trees/aurora/engine/s-1a2b3c4d", 2, 0), (session.Worktree, session.Ahead, session.Behind));
+        Assert.Equal(("D:/data/trees/aurora/engine/s-1a2b3c4d", 2, 0), (session.Worktree, session.Ahead, session.Behind));
         Assert.Equal(5, git.Asked.Count);
     }
 

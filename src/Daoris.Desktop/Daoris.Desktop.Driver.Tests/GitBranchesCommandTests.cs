@@ -64,7 +64,7 @@ public sealed class GitBranchesCommandTests
                     new GitBranch("main", GitBranchKind.Line, Main) { Worktree = "D:/repos/engine", Ahead = 0, Behind = 0 },
                     new GitBranch("daoris/s-1a2b3c4d", GitBranchKind.Session, Session)
                     {
-                        Worktree = "D:/home/trees/aurora/engine/s-1a2b3c4d", Ahead = 2, Behind = 0,
+                        Worktree = "D:/data/trees/aurora/engine/s-1a2b3c4d", Ahead = 2, Behind = 0,
                         Session = new GitSessionBranch { Session = "newest", State = "working", Quest = "21", GrewFrom = "feature/12-even" },
                     },
                     new GitBranch("daoris/s-0f0f0f0f", GitBranchKind.Session, Session) { Ahead = 1, Behind = 3, Session = new GitSessionBranch() },
@@ -113,7 +113,7 @@ public sealed class GitBranchesCommandTests
         var said = Said(List());
 
         Assert.Contains("  sessions' branches (2)\n", said);
-        Assert.Contains("    daoris/s-1a2b3c4d  22222222  2 ahead  session newest (working), quest #21; grew from `feature/12-even`; its tree D:/home/trees/aurora/engine/s-1a2b3c4d\n", said);
+        Assert.Contains("    daoris/s-1a2b3c4d  22222222  2 ahead  session newest (working), quest #21; grew from `feature/12-even`; its tree D:/data/trees/aurora/engine/s-1a2b3c4d\n", said);
         Assert.Contains("    daoris/s-0f0f0f0f  22222222  1 ahead, 3 behind  no session record names its tree; no tree holds it\n", said);
         Assert.Contains("  landed (2)\n", said);
         Assert.Contains("    feature/12-even  33333333  1 ahead  landed for session s-even, quest #12 \"Even\"; pushed by azure, in step with origin's copy; pull request https://example.test/pr/7\n", said);
