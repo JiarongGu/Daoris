@@ -64,7 +64,7 @@ describe('the declared icon the page draws', () => {
   it('draws nothing it would have to reach for, nor any other kind: a path, an address, markup, another type', () => {
     for (const refused of [
       'C:/somewhere/data/plugins/acme.gate/icon.svg',
-      '/home/someone/.daoris/plugins/acme.gate/icon.png',
+      '/srv/daoris/data/plugins/acme.gate/icon.png',
       'file:///C:/somewhere/icon.svg',
       'https://example.com/icon.svg',
       '<svg xmlns="http://www.w3.org/2000/svg"/>',
