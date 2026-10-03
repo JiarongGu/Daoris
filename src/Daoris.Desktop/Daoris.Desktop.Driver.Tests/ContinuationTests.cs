@@ -215,4 +215,213 @@ public sealed class ContinuationTests : IDisposable
         Assert.False((Park() with { Answer = null }).AnsweredPark);
         Assert.False(Park(state: "completed").AnsweredPark);
     }
+
+    private static readonly SaidWordView Word = new("w1", "Also log the port.", DateTimeOffset.Parse("2026-10-03T09:00:00Z"), [], Reopens: true);
+
+    /// <summary>A record of this machine's with the person's words waiting (MSG1a's <c>said</c>), as the last run reads it.</summary>
+    private PriorSession Written(string state, params SaidWordView[] said) =>
+        Park(state: state) with { Answer = string.Join("\n\n", said.Select(word => word.Text)), Said = said };
+
+    /// <summary>
+    /// 🔴 Words to an ended session go on in its own record (MSG1b, D137 §2.2): completed, declined, stopped and failed each
+    /// resume its own conversation where the adapter, the account, the tree and the kept id are the same.
+    /// </summary>
+    [Theory]
+    [InlineData("completed")]
+    [InlineData("declined")]
+    [InlineData("stopped")]
+    [InlineData("failed")]
+    public void Words_waiting_on_an_ended_record_resume_its_own_conversation(string state)
+    {
+        Assert.Null(Continuations.Judge(Written(state, Word), "claude-code-acp", doorResumes: true, profile: "account-1", Kept));
+    }
+
+    /// <summary>An ended record with no words waiting has nothing to go on with: it ended, as a record from before ANSWER1b did.</summary>
+    [Fact]
+    public void An_ended_record_with_no_words_waiting_has_ended()
+    {
+        var why = Continuations.Judge(
+            Park(state: "completed") with { Answer = null, Said = [] }, "claude-code-acp", doorResumes: true, profile: "account-1", Kept);
+
+        Assert.Equal(ContinueWhy.Ended, why?.Code);
+    }
+
+    /// <summary>
+    /// The rows of D137 §2.2 that never go on, judged before anything else: a teammate's record, an intake and a stand-down.
+    /// Each is a reason that carries nothing on, said in a line that names no machine and no account.
+    /// </summary>
+    [Fact]
+    public void What_never_goes_on_is_refused_before_anything_else()
+    {
+        var teammate = Continuations.Judge(
+            Written("completed", Word) with { Session = "laptop/s1", Profile = "account-9" }, "claude-code", doorResumes: false, profile: null, kept: null);
+        var intake = Continuations.Judge(Written("completed", Word) with { Ask = "a1" }, "claude-code-acp", doorResumes: true, "account-1", Kept);
+        var stoodDown = Continuations.Judge(Written("stood-down", Word), "claude-code-acp", doorResumes: true, "account-1", Kept);
+
+        Assert.Equal(
+            [(ContinueWhy.Teammate, true), (ContinueWhy.Intake, true), (ContinueWhy.StoodDown, true)],
+            new[] { teammate, intake, stoodDown }.Select(why => (why!.Code, why.Never)));
+        Assert.Equal("it ran on another machine, where its conversation is", teammate!.Sentence);
+        Assert.Equal("an intake is answered through its ask", intake!.Sentence);
+        Assert.Equal("it stood down, so it has nothing to go on with", stoodDown!.Sentence);
+        Assert.DoesNotContain("laptop", teammate.Sentence);
+    }
+
+    /// <summary>Every other reason carries the words on, or leaves them waiting: none of them is a never.</summary>
+    [Fact]
+    public void Only_the_three_rows_are_nevers()
+    {
+        Assert.False(ContinueWhy.Of(ContinueWhy.Account).Never);
+        Assert.False(ContinueWhy.Of(ContinueWhy.Elsewhere).Never);
+        Assert.False(ContinueWhy.AdapterChanged("a", "b").Never);
+    }
+
+    /// <summary>
+    /// <c>elsewhere</c> (D137 §2.2): the agent refused because another client holds the conversation, read from its data and
+    /// never its sentence. Its line names no client.
+    /// </summary>
+    [Fact]
+    public void Another_client_holding_the_conversation_has_its_line()
+    {
+        Assert.Equal("elsewhere", ContinueWhy.Elsewhere);
+        Assert.Equal("its conversation is open in another client of its agent", ContinueWhy.Of(ContinueWhy.Elsewhere).Sentence);
+    }
+
+    /// <summary>
+    /// Words wait for a record where its <c>said</c> holds any; a host from before MSG1a answers no <c>said</c>, and there an
+    /// answered park is the one case that waits.
+    /// </summary>
+    [Fact]
+    public void Words_wait_where_said_holds_any_or_on_an_answered_park_from_before_said()
+    {
+        Assert.True(Written("completed", Word).WordsWaiting);
+        Assert.False((Park(state: "completed") with { Answer = null, Said = [] }).WordsWaiting);
+        Assert.True(Park().WordsWaiting);
+        Assert.False(Park(state: "completed").WordsWaiting);
+        Assert.Equal(["Port 8080."], Park().Waiting.Select(word => word.Text));
+        Assert.Equal(["w1", "w2"], Written("failed", Word, Word with { Id = "w2" }).Waiting.Select(word => word.Id));
+    }
+
+    /// <summary>The resumed run's first line says words to an ended record as the person's words, not an answer.</summary>
+    [Fact]
+    public void A_resumed_run_on_an_ended_record_opens_with_your_words()
+    {
+        Assert.Equal(
+            "— your words are the next turn of its own conversation, resumed on `claude-code`.",
+            Continuations.Opening("claude-code", now: "2.1.300", then: "2.1.300", answer: false));
+    }
+
+    /// <summary>
+    /// The notes a resume that cannot happen leaves on an ended record: on a closed quest it cannot go on, and nothing else
+    /// carries the words on by itself; on a taken or open one they went to a new session.
+    /// </summary>
+    [Fact]
+    public void An_ended_record_that_cannot_go_on_says_why_on_its_note()
+    {
+        var record = Written("completed", Word) with { Note = "the quest reached done." };
+
+        Assert.Equal(
+            "the quest reached done.\n\nIt cannot go on in this session, because its tree is gone.",
+            Continuations.CannotNote(record, ContinueWhy.Of(ContinueWhy.Tree)));
+        Assert.Equal(
+            "the quest reached done.\n\nYour words went to a new session, because its tree is gone.",
+            Continuations.WentNote(record, ContinueWhy.Of(ContinueWhy.Tree)));
+    }
+
+    /// <summary>
+    /// An open quest whose last session could not go on with the person's words is started again, handed them (D137 §2.2):
+    /// a first start's instruction, since the quest is not yet anyone's, with their words quoted, verbatim, beneath it.
+    /// </summary>
+    [Fact]
+    public void An_open_quests_start_is_handed_the_words_its_session_could_not_go_on_with()
+    {
+        var target = new SessionTarget("q1", "Serve the report", "It needs a port.", "Asker", "engine", _tree, "http://localhost:5177")
+        {
+            PersonSaid = "Also log the port.\n\nAnd use 9090.",
+        };
+
+        var prompt = TargetPrompt.Compose(target);
+
+        Assert.Contains("First take the quest", prompt);
+        Assert.DoesNotContain("do not take it again", prompt);
+        Assert.Contains("could not go on with their words", prompt);
+        Assert.Contains("  > Also log the port.\n  >\n  > And use 9090.", prompt);
+        Assert.DoesNotContain("could not go on with their words", TargetPrompt.Compose(target with { PersonSaid = null }));
+    }
+
+    /// <summary>
+    /// A closed quest's session that went on with the person's words ends as its process does (D137 §2.3): as it was before
+    /// on a clean exit, failed otherwise, saying its quest stays as it closed.
+    /// </summary>
+    [Fact]
+    public void A_closed_quests_session_ends_as_it_was_or_failed()
+    {
+        Assert.Equal("completed", Observation.WentOn(0, "completed").State);
+        Assert.Equal("declined", Observation.WentOn(0, "declined").State);
+        var failed = Observation.WentOn(3, "completed");
+        Assert.Equal(("failed", "it went on with your words and exited 3; its quest stays as it closed."), (failed.State, failed.Note));
+    }
+
+    /// <summary>
+    /// 🔴 Whether a resumed run's quest had closed is read from the quest as the look planned it, never as the run left it
+    /// (the merge of 2026-10-03). An answered park's run that closes its own quest done is a completed record, as ANSWER1a
+    /// concluded it: read after the run, the closed quest sent it down a closed quest's ending, which ended it as it was
+    /// before, still parked, its tree and its slot held for ever.
+    /// </summary>
+    [Fact]
+    public void A_park_whose_resumed_run_closes_its_quest_ends_completed()
+    {
+        var concluded = Observation.Resumed(0, before: "awaiting-person", startedOn: "Taken", questStatus: "Done");
+
+        Assert.Equal(("completed", "the quest reached done."), (concluded.State, concluded.Note));
+    }
+
+    /// <summary>A record whose quest had closed before it went on ends as a closed quest's, whatever its quest says after.</summary>
+    [Fact]
+    public void A_record_whose_quest_had_closed_ends_as_a_closed_quests()
+    {
+        Assert.Equal("completed", Observation.Resumed(0, before: "completed", startedOn: "Done", questStatus: "Done").State);
+        Assert.Equal("declined", Observation.Resumed(0, before: "declined", startedOn: "Declined", questStatus: "Declined").State);
+        Assert.Equal("failed", Observation.Resumed(1, before: "completed", startedOn: "Done", questStatus: "Done").State);
+    }
+
+    /// <summary>A resumed run on a taken quest that ends still holding it is waiting on the person again, as ANSWER1a has it.</summary>
+    [Fact]
+    public void A_resumed_run_that_ends_still_holding_its_quest_parks_again()
+    {
+        Assert.Equal(
+            "awaiting-person",
+            Observation.Resumed(0, before: "awaiting-person", startedOn: "Taken", questStatus: "Taken", lastWords: "Which port, again?").State);
+    }
+
+    /// <summary>
+    /// A closed quest's ending never leaves a record live: it cannot park, holding no quest (D83), so a record that was live
+    /// when it went on ends completed on a clean exit.
+    /// </summary>
+    [Theory]
+    [InlineData("awaiting-person")]
+    [InlineData("working")]
+    public void A_closed_quests_ending_never_leaves_a_record_live(string before)
+    {
+        Assert.Equal("completed", Observation.WentOn(0, before).State);
+    }
+
+    /// <summary>
+    /// <c>session.reopened</c> (D137 §3.3): once per reopen taken up, from which state, whether its own conversation resumed,
+    /// and why not by code. Never the words.
+    /// </summary>
+    [Fact]
+    public void The_reopen_line_says_from_where_whether_it_resumed_and_why_not()
+    {
+        var resumed = Continuations.Reopened("s1", "claude-code-acp", "completed", why: null);
+        var carried = Continuations.Reopened("s1", "claude-code-acp", "failed", ContinueWhy.Of(ContinueWhy.Account));
+
+        Assert.Equal("session.reopened", resumed.Event);
+        Assert.Equal(
+            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "completed"), ("resumed", true), ("why", null)],
+            resumed.Data);
+        Assert.Equal(
+            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "failed"), ("resumed", false), ("why", "account")],
+            carried.Data);
+    }
 }
