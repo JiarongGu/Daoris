@@ -95,6 +95,98 @@ public sealed record RotatedStart(string From, CoolingEntry? Cooling, string Why
 }
 
 /// <summary>
+/// Why the next start of a scope would take its account (TOOL6e, D130 §3–§4 as §16.3 amends them, D125 §3.7): a closed set
+/// the screen translates, the walk's steps among them by the log's own names. Read without starting anything.
+/// </summary>
+public enum NextReason
+{
+    /// <summary>No default and no list name an account: the tool's own sign-in (D125 §3.7).</summary>
+    Own,
+
+    /// <summary>The scope names one account: a default and no list, or a list of one.</summary>
+    Named,
+
+    /// <summary>The list names others, and every other is held.</summary>
+    OnlyReady,
+
+    /// <summary>A conversation: the kept account first where it is the default, or the kept account taken last.</summary>
+    Kept,
+
+    /// <summary>The account it was weighed against said it is near its limit, so went last (§16.3 step 2).</summary>
+    Near,
+
+    /// <summary>It runs fewer of Daoris's sessions (step 3).</summary>
+    Fewest,
+
+    /// <summary>Its known weekly reset falls within the next day (step 4).</summary>
+    Lapsing,
+
+    /// <summary>It is further behind its week's pace (step 5).</summary>
+    Pace,
+
+    /// <summary>Daoris started on it less recently (step 6).</summary>
+    LeastRecent,
+
+    /// <summary>Daoris has not started on it yet (step 6, where it was never started).</summary>
+    NotStarted,
+
+    /// <summary>The list's order, begun at its default: nothing else told the two apart (step 7, or <c>order</c>'s walk).</summary>
+    List,
+
+    /// <summary>No account the scope may use is ready: the start waits (D125 §4).</summary>
+    Waits,
+}
+
+/// <summary>What keeps the next start off an account of the agent's (TOOL6e), or that nothing does.</summary>
+public enum NextHold
+{
+    /// <summary>Ready, and ranked after the account the next start takes.</summary>
+    Ready,
+
+    /// <summary>Ready, and its agent said it is near its limit, so it goes last (D130 §6).</summary>
+    Near,
+
+    /// <summary>Its cool-off has not passed (D125 §2): it waits for a time.</summary>
+    Cooling,
+
+    /// <summary>Its provider refused its credential (AGT3b): it waits for a person.</summary>
+    Refused,
+
+    /// <summary>The agent last said nobody is signed in there: it waits for a person.</summary>
+    SignedOut,
+
+    /// <summary>Kept for conversations, which driven work never starts on (§4.6).</summary>
+    Kept,
+
+    /// <summary>The list names it, and this machine has no such account.</summary>
+    Missing,
+
+    /// <summary>The scope does not use it: never carries its starts (D130 §3.1).</summary>
+    Outside,
+}
+
+/// <summary>One account the next start does not take, and what holds it (TOOL6e).</summary>
+/// <param name="Account">The profile's name, or null for the tool's own sign-in.</param>
+/// <param name="Until">When it is offered again, where it is cooling.</param>
+public sealed record AccountHeld(string? Account, NextHold Hold, DateTimeOffset? Until = null);
+
+/// <summary>
+/// Which account the next start of a scope would take, why, and what holds each other account of the agent's (TOOL6e):
+/// the walk's answer asked without starting, counting or probing anything. Machine-local, as every account name is.
+/// </summary>
+/// <param name="Account">The account it takes, or null for the tool's own sign-in, and while it <see cref="NextReason.Waits"/>.</param>
+/// <param name="Others">Every other account of the agent's, in the order the walk tried them, then the kept account a driven
+/// start drops, then accounts the list names that this machine lacks, then accounts the scope does not use, by name.</param>
+public sealed record NextStart(string? Account, NextReason Reason, IReadOnlyList<AccountHeld> Others)
+{
+    /// <summary>The account the reason weighed it against: where the list begins, or else the next ready account.</summary>
+    public string? Over { get; init; }
+
+    /// <summary>The moment the reason names: its week's reset (<see cref="NextReason.Lapsing"/>), or the first account offered again (<see cref="NextReason.Waits"/>).</summary>
+    public DateTimeOffset? When { get; init; }
+}
+
+/// <summary>
 /// The step of the goal's walk that chose a start's account, and what its record says first (TOOL6b, D130 §16.4).
 /// Machine-local, as <see cref="RotatedStart"/> is: the clause may name accounts.
 /// </summary>
@@ -224,6 +316,101 @@ public static class AccountRotation
         WalkChoice Ahead(string a, string b) => Rank(a, b, facts, now, scope.Use) is { Order: < 0 } ranked
             ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Pace ? b : null }
             : new WalkChoice(WalkStep.List);
+    }
+
+    /// <summary>
+    /// Which account the next start would take, the step that chose it, and what holds each other account (TOOL6e, D130
+    /// §3–§4 as §16.3 amends them): what Settings → Agents says, so a person sees why a start runs where it does.
+    /// </summary>
+    /// <remarks>
+    /// <para>The account is the first ready one of <paramref name="tried"/>, as a start takes it. The reason is weighed as
+    /// <see cref="Chose"/> weighs it, so the screen and the start's own first line name one step: against where the list
+    /// begins, when that account was ready and a step moved the start off it; otherwise against the next ready account, by
+    /// the step that told the two apart or the list's order. An account not ready, or kept for conversations, is a hold and
+    /// never the reason. With no account ready the start waits, until the first cool-off ends where one is cooling.</para>
+    /// <para>A scope with no list is its one account, or the tool's own sign-in where it names none (D125 §3.7), and no step
+    /// chose it. Every account of the agent's the scope does not use is said so, since none ever carries its starts.</para>
+    /// </remarks>
+    /// <param name="tried">The walk's order (<see cref="Order"/>), or a scope's one account, each as the roster finds it
+    /// before any probe: cooling, refused, or signed out by the agent's last word.</param>
+    /// <param name="present">The agent's accounts on this machine.</param>
+    public static NextStart Next(
+        RotationScope scope, StartKind kind, IReadOnlyList<AccountState> tried, IReadOnlyCollection<string> present,
+        IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now)
+    {
+        var listed = scope.List.Count > 0;
+        var keep = listed ? Keep(scope, scope.List) : null;
+        var at = -1;
+        for (var i = 0; i < tried.Count && at < 0; i++)
+        {
+            if (tried[i].IsReady) at = i;
+        }
+
+        var others = new List<AccountHeld>();
+        for (var i = 0; i < tried.Count; i++)
+        {
+            if (i != at) others.Add(Held(tried[i]));
+        }
+
+        if (keep is not null && !tried.Any(state => state.Account is { } name && Same(name, keep))) others.Add(new(keep, NextHold.Kept));
+        others.AddRange(scope.List
+            .Where(name => !present.Contains(name, StringComparer.OrdinalIgnoreCase) && !tried.Any(state => state.Account is { } tries && Same(tries, name)))
+            .Select(name => new AccountHeld(name, NextHold.Missing)));
+        others.AddRange(present
+            .Where(name => !scope.List.Contains(name, StringComparer.OrdinalIgnoreCase) && !(scope.Begins is { } one && Same(one, name)))
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .Select(name => new AccountHeld(name, NextHold.Outside)));
+
+        if (at < 0)
+        {
+            return new NextStart(null, NextReason.Waits, others)
+            {
+                When = tried.Where(state => state.Cooling is not null).Select(state => (DateTimeOffset?)state.Cooling!.Until).Min(),
+            };
+        }
+
+        var runs = tried[at].Account;
+        if (!listed || runs is null) return new NextStart(runs, runs is null ? NextReason.Own : NextReason.Named, others);
+
+        var conversationKeeps = kind == StartKind.Conversation && keep is not null;
+        if (conversationKeeps && Same(runs, keep!)) return new NextStart(runs, NextReason.Kept, others);
+
+        // Against where the list begins while a step moved the start off it; else against the next ready account.
+        var begins = scope.Begins;
+        var against = begins is not null && !Same(runs, begins) && !(conversationKeeps && Same(begins, keep!))
+                      && tried.Any(state => state.IsReady && Same(state.Account!, begins))
+            ? begins
+            : tried.Skip(at + 1).FirstOrDefault(state => state.IsReady)?.Account;
+        if (against is null) return new NextStart(runs, scope.List.Count > 1 ? NextReason.OnlyReady : NextReason.Named, others);
+        if (conversationKeeps && Same(against, keep!)) return new NextStart(runs, NextReason.Kept, others) { Over = against };
+
+        var own = facts.GetValueOrDefault(runs) ?? new AccountFacts();
+        var reason = Rank(runs, against, facts, now, scope.Use) switch
+        {
+            { Order: >= 0 } => NextReason.List,
+            { Step: WalkStep.Near } => NextReason.Near,
+            { Step: WalkStep.Fewest } => NextReason.Fewest,
+            { Step: WalkStep.Lapsing } => NextReason.Lapsing,
+            { Step: WalkStep.Pace } => NextReason.Pace,
+            { Step: WalkStep.LeastRecent } => Started(own).Tier == 0 ? NextReason.NotStarted : NextReason.LeastRecent,
+            _ => NextReason.List,
+        };
+        return new NextStart(runs, reason, others)
+        {
+            Over = against,
+            When = reason == NextReason.Lapsing ? own.WeekResets : null,
+        };
+
+        AccountHeld Held(AccountState state) => state.Readiness switch
+        {
+            AccountReadiness.Cooling => new(state.Account, NextHold.Cooling, state.Cooling?.Until),
+            AccountReadiness.Refused => new(state.Account, NextHold.Refused),
+            AccountReadiness.SignedOut => new(state.Account, NextHold.SignedOut),
+            _ => new(state.Account,
+                listed && scope.Use.Early && state.Account is { } name && AccountReadings.Near(facts.GetValueOrDefault(name)?.Said, scope.Use.Near)
+                    ? NextHold.Near
+                    : NextHold.Ready),
+        };
     }
 
     /// <summary>The scope's list begun where it begins, wrapping: that account always, every other only where the machine has it.</summary>

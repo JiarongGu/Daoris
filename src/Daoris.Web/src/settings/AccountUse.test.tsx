@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
 import { USE_DEFAULTS } from './accounts';
 import {
-  CHOICES, MACHINE_NEAR, OWN_COOLING, scopeOf, SILENT, SIX, SIX_AGENT, SIX_CHOICES, THREE,
+  CHOICES, MACHINE_NEAR, OFFERED_AGAIN, OWN_COOLING, scopeOf, SILENT, SIX, SIX_AGENT, SIX_CHOICES, THREE,
 } from './accountsFixtures';
 import { AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope } from './AccountUse';
 
@@ -204,6 +204,75 @@ describe('how a scope\'s list is used', () => {
 
     expect(screen.getByText("Codex's sessions here do not say how near their limits are, so this waits for that word.")).toBeTruthy();
     expect(screen.getByRole('checkbox', { name: 'Switch before the limit · This machine' })).toBeTruthy();
+  });
+});
+
+describe('the next start', () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  /**
+   * TOOL6e, the owner's case: the workspace's default came out of its cool-off and nothing runs, so the next start takes
+   * it; another account cools; and the tool's own sign-in, which the owner had switched, carries none of these starts.
+   */
+  it('says which account the next start takes, why, since when it is offered again, and what holds the others', () => {
+    const work = OFFERED_AGAIN.scopes[1]!;
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={work} accounts={CHOICES} workspace="work" acts={acts()} />);
+
+    const row = screen.getByText('Next start').closest('div.\\@container') as HTMLElement;
+    expect(row).toBeTruthy();
+    expect(within(row).getByText(/^The next start takes work@example\.invalid: Daoris started on it less recently than home@example\.invalid\. Its cool-off ended at .+\.$/)).toBeTruthy();
+    expect(within(row).getByText(/^spare@example\.invalid is cooling until .+\.$/)).toBeTruthy();
+    expect(within(row).getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
+    // Its terminal twin: `profile use` names the steps, since the CLI reads no session record to name the account.
+    expect(row.textContent).toContain('daoris agent profile use claude-code --workspace work');
+  });
+
+  /**
+   * The tool's own sign-in, where nothing names an account, is said by the list's empty line and D125 §3.7's line, so no
+   * third sentence; its wait is said, and never that it carries none of the starts it does carry.
+   */
+  it('says the tool\'s own sign-in once, and its wait without claiming it carries none', () => {
+    const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'own', others: [] } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.queryByText('Next start')).toBeNull();
+    expect(screen.getByText(/^No account is used here yet, so starts run on the tool's own sign-in\./)).toBeTruthy();
+    unmount();
+
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: null, hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} acts={acts()} />);
+    expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^the tool's own sign-in is cooling until .+\.$/)).toBeTruthy();
+    expect(screen.queryByText(/carries none of these starts/)).toBeNull();
+  });
+
+  /** A workspace whose every account is held waits, and its own-sign-in sentence stands: switching that would not help. */
+  it('says a list\'s wait with the sentence that the tool\'s own sign-in carries none of its starts', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1', next: { account: null, reason: 'waits', when: OWN_COOLING.until, others: [{ account: 'account-1', hold: 'cooling', until: OWN_COOLING.until }] } })} accounts={CHOICES} workspace="work" acts={acts()} />);
+
+    expect(screen.getByText(/^No account here is ready, so the next start waits until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/^work@example\.invalid is cooling until .+\.$/)).toBeTruthy();
+    expect(screen.getByText(/carries none of these starts/)).toBeTruthy();
+  });
+
+  /** An answer from a shell older than TOOL6e has no `next`: the row is not drawn. */
+  it('draws no row where the answer says nothing of the next start', () => {
+    wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1'], begins: 'account-1' })} accounts={CHOICES} acts={acts()} />);
+
+    expect(screen.queryByText('Next start')).toBeNull();
+  });
+
+  it('says it in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={OFFERED_AGAIN.scopes[1]!} accounts={CHOICES} workspace="work" acts={acts()} />);
+
+    expect(screen.getByText('下一次启动')).toBeTruthy();
+    expect(screen.getByText(/^下一次启动使用 work@example\.invalid：Daoris 在它上面启动的时间比 home@example\.invalid 更早。它的冷却在 .+ 结束。$/)).toBeTruthy();
+    expect(screen.getByText(/^Claude Code 自己的登录/)).toBeTruthy();
+  });
+
+  /** An account's row says since when it is offered again, where its cool-off ended within the day. */
+  it('says on an account\'s row since when it is offered again', () => {
+    wrap(<AccountFactsLines facts={OFFERED_AGAIN.accounts[0]!} label="work@example.invalid" onTryNow={() => {}} />);
+
+    expect(screen.getByText(/^0 of Daoris's sessions running · offered again since .+ · nothing said yet/)).toBeTruthy();
   });
 });
 

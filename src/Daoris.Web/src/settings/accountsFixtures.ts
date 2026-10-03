@@ -45,8 +45,21 @@ export const THREE: AgentAccounts = {
     { name: 'account-3', running: 1 },
   ],
   scopes: [
-    scopeOf({ default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [] }),
-    scopeOf({ workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: { ...USE_DEFAULTS, use: 'order' } }),
+    // Its default cooling: of the rest, the one running fewer of Daoris's sessions (TOOL6e).
+    scopeOf({
+      default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1', near: [],
+      next: {
+        account: 'account-3', reason: 'fewest', over: 'account-2',
+        others: [{ account: 'account-1', hold: 'cooling', until: minutesFrom(190) }, { account: 'account-2', hold: 'ready' }],
+      },
+    }),
+    scopeOf({
+      workspace: 'work', list: ['account-2', 'account-1'], begins: 'account-2', use: { ...USE_DEFAULTS, use: 'order' },
+      next: {
+        account: 'account-2', reason: 'onlyReady',
+        others: [{ account: 'account-1', hold: 'cooling', until: minutesFrom(190) }, { account: 'account-3', hold: 'outside' }],
+      },
+    }),
   ],
 };
 
@@ -73,6 +86,41 @@ export const SILENT: AgentAccounts = {
   own: {},
   accounts: [{ name: 'account-1' }, { name: 'account-2' }],
   scopes: [scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1' })],
+};
+
+/**
+ * TOOL6e, the owner's case: the work workspace's default came out of its cool-off 58 minutes ago, nothing runs, and the
+ * others started since, so the next start takes it; account-3 cools until a stated reset. This machine's list begins at
+ * account-1 too, by the list's order.
+ */
+export const OFFERED_AGAIN: AgentAccounts = {
+  agent: 'claude-code',
+  speaks: true,
+  own: {},
+  accounts: [
+    { name: 'account-1', running: 0, offered: minutesFrom(-58) },
+    { name: 'account-2', running: 0 },
+    {
+      name: 'account-3', running: 0,
+      cooling: { until: minutesFrom(190), stated: true, window: 'session', seen: minutesFrom(-60), assumedZone: false, notBelieved: false },
+    },
+  ],
+  scopes: [
+    scopeOf({
+      list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
+      next: {
+        account: 'account-1', reason: 'list', over: 'account-2',
+        others: [{ account: 'account-2', hold: 'ready' }, { account: 'account-3', hold: 'cooling', until: minutesFrom(190) }],
+      },
+    }),
+    scopeOf({
+      workspace: 'work', default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1',
+      next: {
+        account: 'account-1', reason: 'leastRecent', over: 'account-2',
+        others: [{ account: 'account-2', hold: 'ready' }, { account: 'account-3', hold: 'cooling', until: minutesFrom(190) }],
+      },
+    }),
+  ],
 };
 
 /** The tool's own sign-in cooling on the agent's default, with no reset named. */

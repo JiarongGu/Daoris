@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import {
-  type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, listedIn, machineScope, moved, nothingSaid, ownLine,
-  saidLine, used, USE_DEFAULTS, workspaceScope,
+  type AccountScope, type AgentAccounts, agentOf, cannotLeave, coolingLine, heldLine, listedIn, machineScope, moved, nextLine,
+  type NextStart, nothingSaid, offeredLine, ownLine, saidLine, used, USE_DEFAULTS, workspaceScope,
 } from './accounts';
 
 // How each agent's accounts are used, read and said (TOOL4g; D125 §2.4, §3.7; D130 §3.1, §4.6, §5.2, §16.4): the pure half
@@ -110,6 +110,84 @@ describe('what is said', () => {
 
     expect(nothingSaid(quiet, list)).toBe(true);
     expect(nothingSaid(spoke, list)).toBe(false);
+  });
+
+  /**
+   * TOOL6e (D130 §3–§4): which account the next start takes and the walk's step that chose it, in the reader's language,
+   * the account named as a person calls it.
+   */
+  it('says which account the next start takes and why', async () => {
+    const labelOf = (name: string) => ({ 'account-1': 'work@example.invalid' } as Record<string, string>)[name] ?? name;
+    const list = scope({ default: 'account-1', list: ['account-1', 'account-2', 'account-3'], begins: 'account-1' });
+    const next = (over: Partial<NextStart>): NextStart => ({ account: 'account-1', reason: 'list', over: 'account-2', others: [], ...over });
+
+    expect(nextLine(next({ reason: 'leastRecent' }), list, labelOf))
+      .toBe('The next start takes work@example.invalid: Daoris started on it less recently than account-2.');
+    expect(nextLine(next({}), list, labelOf)).toBe('The next start takes work@example.invalid: it is the default here.');
+    expect(nextLine(next({}), scope({ list: ['account-1', 'account-2'], begins: 'account-1' }), labelOf))
+      .toBe('The next start takes work@example.invalid: it comes first in the list.');
+    expect(nextLine(next({ account: 'account-3', over: 'account-2' }), list, labelOf))
+      .toBe('The next start takes account-3: it comes before account-2 in the list.');
+    expect(nextLine(next({ account: 'account-2', reason: 'fewest', over: 'account-1' }), list, labelOf))
+      .toBe('The next start takes account-2: it runs fewer of Daoris\'s sessions than work@example.invalid.');
+    expect(nextLine(next({ account: 'account-2', reason: 'near', over: 'account-1' }), list, labelOf))
+      .toBe('The next start takes account-2: work@example.invalid is near its limit, so it goes last.');
+    expect(nextLine(next({ reason: 'lapsing', when: '2026-10-04T10:00:00Z' }), list, labelOf))
+      .toMatch(/^The next start takes work@example\.invalid: its week resets first, .+\.$/);
+    expect(nextLine(next({ account: 'account-3', reason: 'notStarted' }), list, labelOf))
+      .toBe('The next start takes account-3: Daoris has not started on it yet.');
+    expect(nextLine(next({ account: 'account-2', reason: 'onlyReady', over: null }), list, labelOf))
+      .toBe('The next start takes account-2: it is the only account here that is ready.');
+    expect(nextLine(next({ account: 'account-2', reason: 'named', over: null }), list, labelOf))
+      .toBe('The next start takes account-2: it is the one account used here.');
+    expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
+      .toBe('The next start runs on your own sign-in: nothing here names an account.');
+    expect(nextLine(next({ account: null, reason: 'waits', over: null, when: '2026-10-03T16:02:00Z' }), list, labelOf))
+      .toMatch(/^No account here is ready, so the next start waits until .+\.$/);
+    expect(nextLine(next({ account: null, reason: 'waits', over: null }), list, labelOf))
+      .toBe('No account here is ready, and none comes ready by itself: the next start waits for you.');
+
+    await i18n.changeLanguage('zh');
+    expect(nextLine(next({ reason: 'leastRecent' }), list, labelOf))
+      .toBe('下一次启动使用 work@example.invalid：Daoris 在它上面启动的时间比 account-2 更早。');
+    expect(nextLine(next({ account: null, reason: 'own', over: null }), scope(), labelOf))
+      .toBe('下一次启动运行在你自己的登录上：这里没有指定任何账户。');
+  });
+
+  /** TOOL6e: what holds every other account, cooling with until when, and the accounts a scope does not use, together. */
+  it('says what holds the other accounts, and nothing for an account merely ranked after', async () => {
+    const labelOf = (name: string) => name;
+    const next: NextStart = {
+      account: 'account-2', reason: 'fewest', over: 'account-1',
+      others: [
+        { account: 'account-1', hold: 'cooling', until: '2026-10-03T16:02:00Z' },
+        { account: 'account-3', hold: 'ready' },
+        { account: 'account-4', hold: 'near' },
+        { account: 'account-5', hold: 'refused' },
+        { account: 'account-6', hold: 'kept' },
+        { account: 'account-7', hold: 'missing' },
+        { account: 'account-8', hold: 'outside' },
+        { account: 'account-9', hold: 'outside' },
+      ],
+    };
+
+    expect(heldLine(next, labelOf)).toMatch(new RegExp(
+      '^account-1 is cooling until .+; account-4 is near its limit; account-5 was refused by its provider; '
+      + 'account-6 is kept for conversations; account-7 is not on this machine\\. Not used here: account-8, account-9\\.$'));
+    expect(heldLine({ ...next, others: [{ account: 'account-3', hold: 'ready' }] }, labelOf)).toBeNull();
+    expect(heldLine({ ...next, others: [{ account: null, hold: 'cooling', until: '2026-10-03T16:02:00Z' }] }, labelOf))
+      .toMatch(/^the tool's own sign-in is cooling until .+\.$/);
+
+    await i18n.changeLanguage('zh');
+    expect(heldLine({ ...next, others: [{ account: 'account-5', hold: 'signedOut' }, { account: 'account-8', hold: 'outside' }, { account: 'account-9', hold: 'outside' }] }, labelOf))
+      .toBe('account-5 未登录。这里不使用：account-8、account-9。');
+  });
+
+  /** TOOL6e: when a cool-off ended, the account offered again since then. */
+  it('says since when an account is offered again', async () => {
+    expect(offeredLine('2026-10-03T10:17:00Z')).toMatch(/^offered again since .+$/);
+    await i18n.changeLanguage('zh');
+    expect(offeredLine('2026-10-03T10:17:00Z')).toMatch(/^自 .+ 起重新可用$/);
   });
 
   /** D125 §3.7: who the tool's own sign-in is where it says, and its cool-off where it cools. */
