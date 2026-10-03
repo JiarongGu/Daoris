@@ -25,6 +25,7 @@ public sealed class HelpProposalBoxKindsTests
         ("hand", "hand_propose"),
         ("browser", "browser_propose"),
         ("sync", "sync_propose"),
+        ("accept", "accept_propose"),
     ];
 
     private static string RepositoryRoot()

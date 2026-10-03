@@ -62,10 +62,23 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// not yet accepted. The service lists it among the open, so a quest waiting on it waits. Absent is false.
     /// </summary>
     public bool Held { get; init; }
+
+    /// <summary>
+    /// How its done answered each requirement (DRIFT1d, D133 §4), by number, as the service answers them: what an accept
+    /// shows the person before their yes (DRIFT1d2). Empty for a quest no done answered, and from a host before answers.
+    /// </summary>
+    public IReadOnlyList<QuestAnswerView> Answers { get; init; } = [];
 }
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
 public sealed record QuestRequirementView(string Quote, string Check);
+
+/// <summary>
+/// How a done answered one requirement (DRIFT1d), as the service answers it: its number, and <paramref name="Met"/> with
+/// how its check was met, or <paramref name="Departed"/> with the reason and <paramref name="Quote"/>, the person's words
+/// it turns on.
+/// </summary>
+public sealed record QuestAnswerView(int Requirement, string? Met, string? Departed, string? Quote);
 
 /// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>
 /// <param name="Session">Its record's id.</param>
