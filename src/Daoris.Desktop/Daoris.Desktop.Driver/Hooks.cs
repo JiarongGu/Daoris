@@ -13,7 +13,10 @@ public sealed record HookDecision(bool Allowed, string? Reason = null)
     public static HookDecision Hold(string reason) => new(false, reason);
 }
 
-/// <summary>The points a plugin may listen on. Named here once; a manifest naming another is refused at `initialize`.</summary>
+/// <summary>
+/// The points a plugin may listen on, named here once. A handshake naming one this build lacks is said once and never
+/// asked there (PLUGHOOK1a, D148 point 8): a plugin that grew a point keeps the points this build has.
+/// </summary>
 public static class HookPoints
 {
     /// <summary>A decision: one consideration the planner marked <i>Start</i>. The first hold in catalogue order ends the waterfall.</summary>
@@ -29,7 +32,14 @@ public static class HookPoints
     /// </summary>
     public const string Land = "work/land";
 
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land];
+    /// <summary>
+    /// A query (PLUGHOOK1a, D148): a landed branch's pull request, asked of the plugin that pushed it, which only its platform
+    /// knows. Asked only at an occasion that may remove something, and acted on only where git confirms the answer. An
+    /// unanswered query is not known, never a default.
+    /// </summary>
+    public const string State = "work/state";
+
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land, State];
 
     /// <summary>The points the driver loop asks at — a plugin that speaks on none of them is not kept running beside it.</summary>
     public static readonly IReadOnlyList<string> Loop = [QuestConsider, SessionEnded];
@@ -82,6 +92,21 @@ public static class HookFrames
         pullRequest = frame.PullRequest,
         acceptedBy = frame.AcceptedBy,
     };
+
+    /// <summary>
+    /// <see cref="HookPoints.State"/>: a landed branch, asked about (PLUGHOOK1a, design §2.2): where it is, the line, and the pull
+    /// request and the commit the record holds, so a plugin finds the pull request by its address, else by its source branch.
+    /// </summary>
+    public static object State(StateFrame frame) => new
+    {
+        repository = frame.Repository,
+        workspace = frame.Workspace,
+        root = frame.Root,
+        branch = frame.Branch,
+        line = frame.Line,
+        pullRequest = frame.PullRequest,
+        pushedTip = frame.PushedTip,
+    };
 }
 
 /// <summary>
@@ -105,6 +130,14 @@ public interface IHookChannel : IAsyncDisposable
 
     /// <summary>The landing's one frame (D100): the branch Daoris made, answered with what the plugin did with it.</summary>
     Task<PluginLanding> LandAsync(object payload, CancellationToken ct);
+
+    /// <summary>
+    /// A landed branch's pull request (PLUGHOOK1a, D148), answered with its state. A channel that has no such answer fails as
+    /// the plugin's error, which keeps everything where it is.
+    /// </summary>
+    Task<PullRequestState> StateAsync(object payload, CancellationToken ct) =>
+        Task.FromException<PullRequestState>(PluginFailures.Mark(
+            new DriverException($"this channel does not answer `{HookPoints.State}`."), PluginEvents.Errored));
 }
 
 /// <summary>
@@ -196,12 +229,15 @@ public sealed class HookPeer(
 
                 if (!HookPoints.All.Contains(name, StringComparer.Ordinal))
                 {
-                    throw Unreadable(
+                    // PLUGHOOK1a (D148 point 8): a point is additive, so a plugin that grew one keeps the points this build has.
+                    // Refusing it whole made an older build lose the plugin's landing. Said once, and never asked there.
+                    onLine?.Invoke(
                         $"plugin `{plugin}` listens on `{name}`, which is not a point this build has "
-                        + $"({string.Join(", ", HookPoints.All)}).");
+                        + $"({string.Join(", ", HookPoints.All)}): it is not asked there.");
+                    continue;
                 }
 
-                points.Add(name);
+                if (!points.Contains(name, StringComparer.Ordinal)) points.Add(name);
             }
         }
 
@@ -275,6 +311,20 @@ public sealed class HookPeer(
         }
 
         return new PluginLanding(plugin, pushed.GetBoolean(), pullRequest, message);
+    }
+
+    /// <summary>
+    /// The query's frame (PLUGHOOK1a, design §2.2), and its answer read by shape (<see cref="PullRequestAnswers.Read"/>): a
+    /// state of the four, the full ids of both commits for a completed one, and the rest each its own shape or absent.
+    /// Anything else is not an answer (<c>unreadable</c>), and never a state.
+    /// </summary>
+    public async Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
+    {
+        var answer = await RequestAsync($"hook/{HookPoints.State}", payload, ct).ConfigureAwait(false);
+        return PullRequestAnswers.Read(answer, plugin) ?? throw Unreadable(
+            $"plugin `{plugin}` answered {Raw(answer)}, which is not a pull request's state — "
+            + "`{ \"state\": \"open\" | \"completed\" | \"abandoned\" | \"unknown\", … }`, a completed one naming its "
+            + "`mergeCommit` and `sourceCommit` in full.");
     }
 
     /// <summary>Told to go, politely; whoever owns the process then makes sure it did.</summary>
@@ -573,6 +623,8 @@ public sealed class HookProcess : IHookChannel
     public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
 
     public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
+
+    public Task<PullRequestState> StateAsync(object payload, CancellationToken ct) => _peer.StateAsync(payload, ct);
 
     /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
     public async ValueTask DisposeAsync()

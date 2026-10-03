@@ -50,7 +50,7 @@ public sealed class PluginKitTests : IDisposable
     public void The_kit_has_every_point_the_driver_has_in_the_driver_s_order()
     {
         Assert.Equal(HookPoints.All, PluginKit.Points.Select(point => point.Name));
-        Assert.Equal(["decision", "observation", "act"], PluginKit.Points.Select(point => point.Kind));
+        Assert.Equal(["decision", "observation", "act", "query"], PluginKit.Points.Select(point => point.Kind));
     }
 
     [Fact]
@@ -59,6 +59,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.QuestConsider)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.SessionEnded)!.Patience);
         Assert.Equal(LandingPlugins.DefaultPatience, PluginKit.Find(HookPoints.Land)!.Patience);
+        Assert.Equal(TimeSpan.FromSeconds(30), PluginKit.Find(HookPoints.State)!.Patience);
     }
 
     /// <summary>
@@ -84,8 +85,14 @@ public sealed class PluginKitTests : IDisposable
         await new LandingPlugins(home, start: (_, _, _) => Task.FromResult<IHookChannel>(new RecordingChannel(HookPoints.All, told)))
             .LandAsync("acme.every", PluginKit.SampleLanding);
 
-        Assert.Equal(3, told.Count);
-        for (var i = 0; i < 3; i++)
+        // The query's frame, through an occasion's asks (PLUGHOOK1a).
+        var landed = new LandedBranch("engine", "default", PluginKit.SampleState.Branch, "main", PluginKit.SampleState.PushedTip!, "s1a2b3c4",
+            "0fda18", "Expose a streaming budget", DateTimeOffset.UnixEpoch);
+        await new LandingPlugins(home, start: (_, _, _) => Task.FromResult<IHookChannel>(new RecordingChannel(HookPoints.All, told)))
+            .AskStatesAsync([new StateAsk(landed, "acme.every", PluginKit.SampleState)]);
+
+        Assert.Equal(4, told.Count);
+        for (var i = 0; i < 4; i++)
         {
             Assert.Equal(
                 JsonSerializer.SerializeToNode(told[i])!.ToJsonString(),
@@ -96,6 +103,7 @@ public sealed class PluginKitTests : IDisposable
         // with an empty scratch folder — never a path on anybody's machine.
         Assert.Equal(PluginKit.SampleRoot, PluginKit.Find(HookPoints.QuestConsider)!.Frame["root"]!.GetValue<string>());
         Assert.Equal(PluginKit.SampleRoot, PluginKit.Find(HookPoints.Land)!.Frame["root"]!.GetValue<string>());
+        Assert.Equal(PluginKit.SampleRoot, PluginKit.Find(HookPoints.State)!.Frame["root"]!.GetValue<string>());
     }
 
     // ——— new
@@ -162,6 +170,10 @@ public sealed class PluginKitTests : IDisposable
         // cmd reads a `.cmd` tool's line a second time, so what it would act on inside quotes is refused.
         Assert.Contains("[\"%\\r\\n]", script);
         Assert.DoesNotContain("function run(", PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content);
+        // A query asks its platform's tool too (PLUGHOOK1a), so it carries the same helper.
+        var asks = PluginKit.Plan("acme.asks", [HookPoints.State], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content;
+        Assert.Contains("'work/state'", asks);
+        Assert.Contains("function run(", asks);
     }
 
     [Theory]
@@ -183,7 +195,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var unknown = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", ["quest/started"], _scratch));
         Assert.Contains("`quest/started` is not a point", unknown.Message);
-        Assert.Contains("quest/consider, session/ended, work/land", unknown.Message);
+        Assert.Contains("quest/consider, session/ended, work/land, work/state", unknown.Message);
 
         var none = Assert.Throws<DriverException>(() => PluginKit.Plan("acme.gate", [], _scratch));
         Assert.Contains("at least one point", none.Message);
@@ -232,7 +244,8 @@ public sealed class PluginKitTests : IDisposable
         { new[] { HookPoints.QuestConsider } },
         { new[] { HookPoints.SessionEnded } },
         { new[] { HookPoints.Land } },
-        { new[] { HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land } },
+        { new[] { HookPoints.State } },
+        { new[] { HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.Land, HookPoints.State } },
     };
 
     /// <summary>
@@ -583,7 +596,25 @@ public sealed class PluginKitTests : IDisposable
         { HookPoints.Land, """{"pushed":true,"pullRequest":"ftp://example.test/7"}""", false },
         { HookPoints.Land, """{"pushed":true,"pullRequest":"pull/7"}""", false },
         { HookPoints.Land, """{"pushed":true,"message":7}""", false },
+        // PLUGHOOK1a: the query's answer, as HookStateTests holds the driver's reader to the same rows.
+        { HookPoints.State, """{"state":"open"}""", true },
+        { HookPoints.State, """{"state":"abandoned","pullRequest":null,"at":"2026-10-04T14:02:11Z","message":"abandoned"}""", true },
+        { HookPoints.State, """{"state":"unknown","message":"no pull request from that branch"}""", true },
+        { HookPoints.State, $$"""{"state":"completed","mergeCommit":"{{FullA}}","sourceCommit":"{{FullB}}","target":"main","how":"squash"}""", true },
+        { HookPoints.State, $$"""{"state":"completed","mergeCommit":"{{FullA}}","sourceCommit":"{{FullB}}","how":"fast-forward"}""", true },
+        { HookPoints.State, $$"""{"state":"completed","mergeCommit":"{{FullA}}"}""", false },
+        { HookPoints.State, $$"""{"state":"completed","mergeCommit":"1111111","sourceCommit":"{{FullB}}"}""", false },
+        { HookPoints.State, """{"state":"merged"}""", false },
+        { HookPoints.State, """{"pullRequest":"https://example.test/pr/7"}""", false },
+        { HookPoints.State, """{"state":"open","pullRequest":"pull/7"}""", false },
+        { HookPoints.State, """{"state":"open","target":7}""", false },
+        { HookPoints.State, """{"state":"open","at":"yesterday"}""", false },
+        { HookPoints.State, """{"state":"open","message":7}""", false },
+        { HookPoints.State, "null", false },
     };
+
+    private const string FullA = "1111111111111111111111111111111111111111";
+    private const string FullB = "2222222222222222222222222222222222222222";
 
     [Theory]
     [MemberData(nameof(Answers))]
@@ -805,6 +836,12 @@ public sealed class PluginKitTests : IDisposable
         {
             told.Add(payload);
             return Task.FromResult(new PluginLanding("acme.every", Pushed: false, PullRequest: null, "recorded"));
+        }
+
+        public Task<PullRequestState> StateAsync(object payload, CancellationToken ct)
+        {
+            told.Add(payload);
+            return Task.FromResult(new PullRequestState(PullRequestStates.Unknown));
         }
 
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;

@@ -225,7 +225,9 @@ public static class PluginsCommand
                 ? "ready: on and sound, and no process of it is up now; the driver loop starts it"
                 : points.Contains(HookPoints.Land, StringComparer.Ordinal)
                     ? "ready: a landing starts it for each branch it lands"
-                    : "ready: it declares agents and servers, and runs nothing itself",
+                    : points.Contains(HookPoints.State, StringComparer.Ordinal)
+                        ? "ready: a look that may remove a landed branch starts it to ask about its pull request"
+                        : "ready: it declares agents and servers, and runs nothing itself",
         };
     }
 
@@ -235,12 +237,15 @@ public static class PluginsCommand
         var at = where is PluginEvents.AtStart or PluginEvents.AtProcess
             ? points.Contains(HookPoints.QuestConsider, StringComparer.Ordinal) ? HookPoints.QuestConsider
               : points.Contains(HookPoints.SessionEnded, StringComparer.Ordinal) ? HookPoints.SessionEnded
-              : HookPoints.Land
+              : points.Contains(HookPoints.Land, StringComparer.Ordinal) ? HookPoints.Land
+              : HookPoints.State
             : where;
         return at switch
         {
             HookPoints.QuestConsider => "Every quest it is asked about sits until it answers, or until you turn it off.",
             HookPoints.Land => "A landing keeps its branch; push it by hand.",
+            // PLUGHOOK1a (design §2.4): a query fails toward keeping.
+            HookPoints.State => "Nothing is removed on its word until it answers.",
             _ => "Nothing waits on it; the driver goes on.",
         };
     }
