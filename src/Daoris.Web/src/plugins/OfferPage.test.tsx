@@ -32,6 +32,22 @@ describe("an offer's page", () => {
     expect(onInstall).toHaveBeenCalledWith('land-github');
   });
 
+  /** D140 §2 (LAYOUT11 sets the rule): the detail's blocks share the pane's width, none keeping a measure of its own. */
+  it('lets every block take the pane\'s width', () => {
+    const { container } = render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
+    expect(container.querySelectorAll('.max-w-prose')).toHaveLength(0);
+  });
+
+  /** D140 §2: an offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */
+  it('leads its header with its icon', () => {
+    render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
+
+    const monogram = header().querySelector('[data-hue]')!;
+    expect(monogram.textContent).toBe('L');
+    expect(monogram.getAttribute('data-hue')).toBe('slate');
+    expect(monogram.className).toContain('size-12');
+  });
+
   it('shows what its manifest declares and what its README says it needs, verbatim', () => {
     render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
 

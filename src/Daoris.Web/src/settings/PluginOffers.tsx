@@ -17,6 +17,9 @@ export type PluginOfferShown = {
   servers: string[];
   needs: string[];
   installed: boolean;
+  /** Its declared icon as its own bytes (PLUGUI2, D140 §3.2), never a path; absent until the host answers it. */
+  icon?: string | null;
+  iconProblem?: string | null;
 };
 
 /**

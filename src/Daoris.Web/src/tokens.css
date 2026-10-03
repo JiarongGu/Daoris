@@ -33,6 +33,15 @@
   --st-done: #2c9a62;
   --st-declined: #9e2f24;
 
+  /* A monogram's identity hues (PLUGUI2, D140 §3.3): which plugin, never how it stands. Computed in
+     plugins/icon.test.ts: each glyph at least 4.5:1 on its 15% field, each hue ΔE 20 from every state. */
+  --ident-moss: #576837;
+  --ident-teal: #1c6e6e;
+  --ident-slate: #396588;
+  --ident-iris: #635887;
+  --ident-plum: #7f4f6a;
+  --ident-stone: #646059;
+
   --speed: 140ms;
 }
 
@@ -56,6 +65,13 @@
     --st-taken: #5c97dd;
     --st-done: #3da476;
     --st-declined: #c74534;
+
+    --ident-moss: #b4c698;
+    --ident-teal: #8bcbcb;
+    --ident-slate: #9bc3e5;
+    --ident-iris: #c0b6e4;
+    --ident-plum: #ddadc7;
+    --ident-stone: #c2bdb5;
   }
 }
 
@@ -82,6 +98,12 @@
   --st-taken: #2f6db3;
   --st-done: #2c9a62;
   --st-declined: #9e2f24;
+  --ident-moss: #576837;
+  --ident-teal: #1c6e6e;
+  --ident-slate: #396588;
+  --ident-iris: #635887;
+  --ident-plum: #7f4f6a;
+  --ident-stone: #646059;
 }
 
 :root[data-theme="dark"] {
@@ -102,6 +124,12 @@
   --st-taken: #5c97dd;
   --st-done: #3da476;
   --st-declined: #c74534;
+  --ident-moss: #b4c698;
+  --ident-teal: #8bcbcb;
+  --ident-slate: #9bc3e5;
+  --ident-iris: #c0b6e4;
+  --ident-plum: #ddadc7;
+  --ident-stone: #c2bdb5;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -126,6 +154,12 @@
   --color-st-taken: var(--st-taken);
   --color-st-done: var(--st-done);
   --color-st-declined: var(--st-declined);
+  --color-ident-moss: var(--ident-moss);
+  --color-ident-teal: var(--ident-teal);
+  --color-ident-slate: var(--ident-slate);
+  --color-ident-iris: var(--ident-iris);
+  --color-ident-plum: var(--ident-plum);
+  --color-ident-stone: var(--ident-stone);
   --color-scrim: rgb(15 12 8 / 0.4);
 
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

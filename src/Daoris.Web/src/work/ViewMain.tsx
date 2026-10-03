@@ -13,20 +13,30 @@ import { type ContextOffer, contextOffer } from '../menus/press';
  *
  * **The line is shown whole, at the reading measure** (NAME2): content is shown as it is (platform language §4), and
  * cut to one line a plugin's description ended in an ellipsis on the install, its tip the only place it could be read.
+ *
+ * **An icon leads it where the record has one** (PLUGUI2, D140 §2): a plugin's, beside its title, decoration the title
+ * names.
+ *
+ * **`measure={false}` lets the line take the page's width**, as a plugin's detail asks (D140 §2): its blocks share the
+ * pane's width, and LAYOUT11 sets the one rule for every page.
  */
-export function PageHead({ title, version, pills, id, line, acts }: {
-  title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode;
+export function PageHead({ title, version, pills, id, line, acts, icon, measure = true }: {
+  title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode; icon?: ReactNode;
+  measure?: boolean;
 }) {
   return (
     <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-      <div className="min-w-0 flex-1 basis-64">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>
-          {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
-          {pills}
+      <div className="flex min-w-0 flex-1 basis-64 items-start gap-3">
+        {icon && <span className="shrink-0">{icon}</span>}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>
+            {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
+            {pills}
+          </div>
+          {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
+          {line && <Prose className={cn('mt-1 wrap-anywhere', !measure && 'max-w-none')}>{line}</Prose>}
         </div>
-        {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
-        {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
       </div>
       {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
     </header>

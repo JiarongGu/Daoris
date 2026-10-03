@@ -3,9 +3,11 @@ import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
 import { ListMore, ListPane } from '../work/ListPane';
 import { type OfferShown, pluginGroups, type PluginShown } from './catalog';
 import { PluginList, PluginStrip } from './PluginList';
+import { InTheme, PNG_ICON, SVG_ICON } from './storyIcons';
 
-// The Plugins view's list (PLUGUI1b, D119 §3.1) on its list pane, in every state the design names: empty, loading, an
-// error with no answer ever, each group, a refused row, a 中文 name, the strip, and laid over the main area.
+// The Plugins view's list as a catalogue (PLUGUI2, D140 §2; PLUGUI1b, D119 §3.1) on its list pane, in every state the
+// design names: the catalogue in both themes, empty, loading, an error with no answer ever, a refused row, a 中文 name,
+// the strip, and laid over the main area.
 
 const open = (width: number): ListLayout => ({ mode: 'open', width, beside: width, auto: false });
 const CLOSED: ListLayout = { mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false };
@@ -18,12 +20,21 @@ const plugin = (over: Partial<PluginShown>): PluginShown => ({
   ...over,
 });
 
+// A catalogue a machine could hold: an icon of its own (SVG, PNG) and monograms, each source, an update waiting, a
+// plugin with no description, a refused one and an off one.
 const PLUGINS: PluginShown[] = [
-  plugin({ harnesses: ['acme-agent'], points: ['quest/consider', 'session/ended'] }),
-  plugin({ id: 'acme.notes', name: 'Session notes', points: ['session/ended'], running: false }),
-  plugin({ id: 'acme.agents', name: 'Acme agents', harnesses: ['acme-agent', 'acme-review'], points: [], running: false }),
-  plugin({ id: 'future', name: 'Future', version: '', problem: 'needs plugin API 99, and this build speaks 1 — update Daoris.', points: [], running: false }),
-  plugin({ id: 'quiet-hours', name: 'Quiet hours', enabled: false, running: false }),
+  plugin({
+    harnesses: ['acme-agent'], points: ['quest/consider', 'session/ended'], icon: SVG_ICON,
+    source: { kind: 'folder', folder: 'C:/somewhere/checkouts/plugins/acme.gate' }, update: 'waits',
+  }),
+  plugin({
+    id: 'in-app-browser', name: 'In-app browser', version: '0.1.0', description: "Daoris's browser, handed to every session.",
+    points: [], running: false, source: { kind: 'offer', offer: 'in-app-browser' }, update: 'current',
+  }),
+  plugin({ id: 'acme.notes', name: 'Session notes', description: '', points: ['session/ended'], running: false, icon: PNG_ICON, source: { kind: 'none' } }),
+  plugin({ id: 'acme.agents', name: 'Acme agents', harnesses: ['acme-agent', 'acme-review'], points: [], running: false, source: { kind: 'unread', problem: 'it is not JSON' } }),
+  plugin({ id: 'future', name: 'Future', version: '', description: '', problem: 'needs plugin API 99, and this build speaks 1 — update Daoris.', points: [], running: false }),
+  plugin({ id: 'quiet-hours', name: 'Quiet hours', enabled: false, running: false, source: { kind: 'folder', folder: 'C:/somewhere/plugins/quiet-hours' } }),
 ];
 
 const OFFERS: OfferShown[] = [
@@ -92,8 +103,18 @@ export default meta;
 
 type Story = StoryObj<typeof PluginsListPane>;
 
-/** Each group with its count: waiting on you, on, off, then Daoris's own plugins not installed. */
-export const EachGroup: Story = {};
+/**
+ * The catalogue (D140 §2): *Installed*, the one waiting on you first, then on, then off; then Daoris's own plugins not
+ * installed. Each row its icon, its name and version and state, what it gives, then where it came from, what it adds
+ * and *update available*.
+ */
+export const Catalogue: Story = {};
+
+/** The catalogue in the light theme, chosen. */
+export const CatalogueLight: Story = { decorators: [(Story) => <InTheme theme="light"><Story /></InTheme>] };
+
+/** The catalogue in the dark theme, chosen: the monograms' dark hues, a declared icon as its author drew it. */
+export const CatalogueDark: Story = { decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
 
 /** A refused plugin chosen: it waits on the person, and its word wears the waiting hue. */
 export const Refused: Story = { args: { chosen: 'future' } };

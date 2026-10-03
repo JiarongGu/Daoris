@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
+import { InTheme, PNG_ICON, SVG_ICON } from './storyIcons';
 
 // A plugin's page (PLUGUI1b, D119 §3.2) in the main area, in every state the design names on today's answers: running,
 // off, refused, a landing plugin, an agents-only plugin, no source record, an update's plan and a refused one, a trial
@@ -123,6 +124,32 @@ export const TrialFailed: Story = {
 
 /** *Remove…* pressed once: the sentence saying what the second press does, *Remove plugin* and *Never mind*. */
 export const RemoveAsking: Story = { args: { asking: true } };
+
+/** Its own icon leads the header (D140 §2), and *update available* sits beside its state: light, chosen. */
+export const IconAndUpdateLight: Story = {
+  args: { plugin: { ...RUNNING, icon: SVG_ICON, update: 'waits' } },
+  decorators: [(Story) => <InTheme theme="light"><Story /></InTheme>],
+};
+
+/** The same in dark, chosen. */
+export const IconAndUpdateDark: Story = {
+  args: { plugin: { ...RUNNING, icon: SVG_ICON, update: 'waits' } },
+  decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
+};
+
+/** Its monogram, in dark: a plugin with no icon of its own, or one whose icon does not draw. */
+export const MonogramDark: Story = { decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>] };
+
+/**
+ * A declared icon that does not draw (D140 §3.1): the monogram, and its Source says why in the reader's sentence. Never
+ * a refusal: the plugin is sound, and nothing leads the page.
+ */
+export const IconNotDrawn: Story = {
+  args: { plugin: { ...RUNNING, iconProblem: "`icon` `assets/icon.svg` is not a file in the plugin's folder." } },
+};
+
+/** Off, with its own icon: drawn faint, as its name is. */
+export const OffWithIcon: Story = { args: { plugin: { ...RUNNING, enabled: false, running: false, icon: PNG_ICON } } };
 
 /** Nothing chosen: how to choose, and the list's ＋ kinds. */
 export const NothingChosen: StoryObj<typeof PluginMainNotice> = {
