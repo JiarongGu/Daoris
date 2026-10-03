@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
+import { code } from '../test/code';
 import { outcomeOf, pauseAsk } from './pausing';
 import { ABANDON_ANSWER, ABANDONED_ENTRY, MIXED_ASK, PAUSABLE_ASK, SPENT_ASK } from './pausingFixtures';
 import { AbandonAsk, AbandonedWork, PauseAsk } from './WorkAsks';
@@ -105,7 +106,7 @@ describe('what went and what stayed (design §4.2)', () => {
     const went = screen.getByRole('region', { name: 'What went' });
     expect(went).toHaveTextContent('Declined #9a8b7c, #5e4f3d with your reason.');
     expect(went).toHaveTextContent('Closed ask #a1b2c3 with your reason.');
-    expect(within(went).getByText('git branch daoris/s-1a2b3c4d 9f3e2a1').tagName).toBe('CODE');
+    expect(within(went).getByText(code('git branch daoris/s-1a2b3c4d 9f3e2a1'))).toBeInTheDocument();
     expect(went).toHaveTextContent('The remote confirmed the decline of #9a8b7c.');
 
     const stayed = screen.getByRole('region', { name: 'What stayed' });

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '../i18n';
+import { code } from '../test/code';
 import { AskPanel } from './AskPanel';
 import { starters } from './starters';
 
@@ -18,7 +19,7 @@ describe('Ask Daoris', () => {
     const panel = screen.getByRole('complementary', { name: 'Ask Daoris' });
     expect(within(panel).getByText('1 session is waiting on you.')).toBeInTheDocument();
     expect(within(panel).getByText(/No repository is driven on this machine/)).toBeInTheDocument();
-    expect(within(panel).getByText('daoris driver drive <repository>', { selector: 'code' })).toBeInTheDocument();
+    expect(within(panel).getByText(code('daoris driver drive <repository>'))).toBeInTheDocument();
     expect(within(panel).getByText(/Name an agent under AI features/)).toBeInTheDocument();
   });
 

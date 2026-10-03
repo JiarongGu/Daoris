@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Ask } from '../api';
 import i18n from '../i18n';
+import { code } from '../test/code';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDON_ANSWER, ABANDONED_ASK, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
@@ -127,7 +128,7 @@ describe('pausing and abandoning an ask', () => {
     page(undefined);
     expect(headerActs()).toEqual(['Close ask', 'Delete…']);
     const said = screen.getByText(/a browser offers neither/);
-    expect(within(said).getByText('daoris-driver ask --pause a1b2c3').tagName).toBe('CODE');
+    expect(within(said).getByText(code('daoris-driver ask --pause a1b2c3'))).toBeInTheDocument();
   });
 
   it('names its acts in 中文', async () => {

@@ -4,6 +4,7 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { code } from '../test/code';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
 
@@ -49,7 +50,7 @@ describe("an offer's page", () => {
     render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
 
     expect(screen.getByText(/Installing runs nothing/)).toBeInTheDocument();
-    expect(screen.getByText(/daoris plugin add --offer land-github/)).toBeInTheDocument();
+    expect(screen.getByText(code(/daoris plugin add --offer land-github/))).toBeInTheDocument();
   });
 
   it("gives the driver's sentence in Install's place for one that cannot be installed as it stands", () => {
