@@ -231,7 +231,7 @@
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
-        "work.review.sendBack", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
+        "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open"
       ]
     },
@@ -594,6 +594,7 @@
       { "key": "work.awaiting.answerConfirm", "en": "Carry on with this answer", "why": "The confirming press alone on its row: in the parked band's form under the session's head, and as the answer composer's send, which has no endings or attachments beside it." },
       { "key": "work.say.placeholder", "en": "write to it — the same session goes on with your words", "zh": "写给它——同一个会话会带着你的话继续", "why": "The hint in the box at the foot of a session's page, which is the centre's width, never narrower than its 400px floor; the design names it so (D137 §5.1), and what the words will do is the whole of it." },
       { "key": "work.say.startChat", "en": "Start a conversation with these words", "why": "The one press under the line saying the words cannot go on, alone on its row in the conversation's column at the centre's width; the design names it so (D137 §5.1), since a new conversation, not this one, is what it starts." },
+      { "key": "work.say.goOnNew", "en": "Go on in a new session", "why": "The one press under words a cooling account holds, alone on its row in the conversation's column at the centre's width; the design names it so (D137 §5.1), since a new session, not this one, is what goes on (MSG1g2)." },
       { "key": "work.awaiting.declineConfirm", "en": "Decline with this reason", "why": "The confirming press in the parked band's form under the session's head, a row that wraps." },
       { "key": "work.dock.unfull", "en": "Back beside the session", "why": "An icon control's tip and accessible name in the side bar's head; nothing lays the words out." },
       { "key": "work.rail.close", "en": "Hide the session list", "why": "An icon control's tip and accessible name, the session list's close; nothing lays the words out, and every view's list names its pair alike." },

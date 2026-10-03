@@ -7,7 +7,7 @@ import { CLAIMED } from './handedFixtures';
 // reviewer designs against is what a session shows: a finished turn folded, a running one open, a
 // driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
 // can be, a plan, the driver's own note, an update this version does not know, a door that carries only
-// text, and 中文.
+// text, words a cooling account holds with *Go on in a new session* and what it came to (MSG1g2), and 中文.
 
 let seq = 0;
 // A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
@@ -125,6 +125,30 @@ export const WrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRIT
 export const ChatWrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(WRITTEN_TO).turns, false), chat: true } };
 export const WordsWentToANewSession: Story = { args: { turns: settle(toTurns(WENT).turns, false), onSession: () => {} } };
 export const WordsCannotGoOnHere: Story = { args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {} } };
+
+/** MSG1g2 (D137 §2.2): the account it ran on cools until a reset the agent named, so the words wait, with the door out. */
+const COOLING_UNTIL = '2026-09-25T13:10:00Z';
+export const WordsACoolingAccountHolds: Story = {
+  args: { turns: settle(toTurns(WRITTEN_TO).turns, false), cooling: { until: COOLING_UNTIL, quest: 'q1', onGoOnNew: () => {} } },
+};
+/** MSG1g2: the choice kept; the driver's next look carries the words on in a new session. */
+export const NewSessionChosen: Story = {
+  args: {
+    turns: settle(toTurns(WRITTEN_TO).turns, false),
+    cooling: { until: COOLING_UNTIL, quest: 'q1', onGoOnNew: () => {}, answer: { sent: true, why: null, message: 'it goes on in a new session' } },
+  },
+};
+/** MSG1g2: its quest had closed, so nothing carries the words on by itself, and a conversation is the door instead. */
+export const NewSessionRefusedQuestClosed: Story = {
+  args: {
+    turns: settle(toTurns(WRITTEN_TO).turns, false),
+    onStartFrom: () => {},
+    cooling: {
+      until: COOLING_UNTIL, quest: 'q1', onGoOnNew: () => {},
+      answer: { sent: false, why: 'closed', message: '#q1 has closed, so nothing carries its session’s words on by itself' },
+    },
+  },
+};
 export const WithEarlierTurns: Story = { args: { turns: toTurns(DRIVEN).turns, earlier: true, onLoadEarlier: () => {} } };
 export const Chinese: Story = { args: { turns: toTurns(CHINESE).turns } };
 export const TextOnlyDoor: Story = { args: { turns: [] } };

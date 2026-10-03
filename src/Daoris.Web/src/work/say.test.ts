@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Session } from '../api';
-import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, reasonOf, takesWords, tooLong } from './say';
+import type { AccountsAnswer, AgentAccounts } from '../settings/accounts';
+import type { ToolDoor } from '../tools';
+import { boxOf, coolingFor, NATIVE_WORDS_LIMIT, neverSentence, newSessionSaid, reasonOf, takesWords, tooLong } from './say';
 
 // The box on a session's page (MSG1f, D137 §5.1), as one pure answer: which box a session is offered, by what its record
 // says and what a word said now would do (`SESSION_QUEUE`'s `reaches` and `why`, MSG1d), and the sentences for what
@@ -161,5 +163,93 @@ describe('tooLong', () => {
     expect(tooLong(long, { door: 'acp', kind: 'driven' })).toBe(false);
     expect(tooLong(long, { door: 'pipe', kind: 'chat' })).toBe(false);
     expect(tooLong(long, { door: null, kind: 'driven' })).toBe(false);
+  });
+});
+
+/**
+ * MSG1g2 (D137 §2.2, MSG1g's note): a resume asks for the account its record ran on, so the page reads that account's
+ * cool-off from the facts `ACCOUNTS` answers: by the agent that owns the door's accounts (AGT7), the tool's own sign-in
+ * where the record names no account, and only while it has not passed.
+ */
+describe('coolingFor', () => {
+  const now = new Date('2026-10-04T10:00:00Z');
+  const until = '2026-10-04T13:10:00Z';
+  const cooling = { until, stated: true, window: 'session', seen: '2026-10-04T09:50:00Z', assumedZone: false, notBelieved: false };
+  const agent = (over: Partial<AgentAccounts> = {}): AgentAccounts => ({
+    agent: 'claude-code', speaks: true, own: {}, scopes: [],
+    accounts: [{ name: 'personal', cooling }, { name: 'work' }], ...over,
+  });
+  const answer = (...agents: AgentAccounts[]): AccountsAnswer => ({ agents });
+  const doors: ToolDoor[] = [
+    { harness: 'claude-code', present: true },
+    { harness: 'claude-code-acp', present: true, accountOf: 'claude-code' },
+  ];
+
+  it('reads the cool-off of the account the record ran on, by its own door or a door onto the same tool', () => {
+    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, answer(agent()), now)).toBe(until);
+    expect(coolingFor({ adapter: 'claude-code-acp', profile: 'personal' }, doors, answer(agent()), now)).toBe(until);
+  });
+
+  it('reads the tool’s own sign-in where the record names no account', () => {
+    const own = agent({ own: { cooling } });
+    expect(coolingFor({ adapter: 'claude-code', profile: null }, doors, answer(own), now)).toBe(until);
+    expect(coolingFor({ adapter: 'claude-code', profile: null }, doors, answer(agent()), now)).toBeNull();
+  });
+
+  it('says nothing cools for a ready account, a passed cool-off, another agent, or an answer an older shell gave', () => {
+    expect(coolingFor({ adapter: 'claude-code', profile: 'work' }, doors, answer(agent()), now)).toBeNull();
+    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, answer(agent()), new Date('2026-10-04T14:00:00Z')))
+      .toBeNull();
+    expect(coolingFor({ adapter: 'codex', profile: 'personal' }, doors, answer(agent()), now)).toBeNull();
+    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, undefined, now)).toBeNull();
+    expect(coolingFor({ adapter: 'claude-code', profile: 'personal' }, doors, {} as AccountsAnswer, now)).toBeNull();
+  });
+});
+
+/**
+ * MSG1g2 (D137 §2.2, MSG1g's note): what *Go on in a new session* came to, in the page's own words: kept, or each code
+ * `SESSION_GO_ON_NEW` refuses by, in both catalogues; and *Start a conversation with these words* the door where nothing
+ * carries the words on by itself.
+ */
+describe('newSessionSaid', () => {
+  const said = (why: string | null, sent = false, language = t) =>
+    newSessionSaid(language, { sent, why, message: 'the driver’s own sentence' }, { quest: 'q1' });
+
+  it('says the choice is kept, and that the new session starts without this conversation', () => {
+    expect(said(null, true)).toEqual({
+      sentence: 'A new session takes your words at the driver\'s next look, without this conversation\'s context.',
+      startChat: false,
+    });
+  });
+
+  it.each([
+    ['running', 'It is still running, so your words reach it there; it needs no new session.', false],
+    ['no-words', 'No words of yours wait on it to go on with.', false],
+    ['conversation', 'A conversation does not go on in a new session by itself; start a conversation with these words instead.', true],
+    ['closed', '#q1 has closed, so nothing carries its words on by itself; start a conversation with them instead.', true],
+    ['not-cooling', 'Its account is not cooling any more, so the same session goes on with your words at the driver\'s next look.', false],
+    ['teammate', 'This session ran on another machine, where its conversation is.', false],
+    ['stood-down', 'It stood down: #q1 is someone else\'s, so it has nothing to go on with.', false],
+  ])('words %s, and offers a conversation where nothing carries the words on', (why, sentence, startChat) => {
+    expect(said(why)).toEqual({ sentence, startChat });
+  });
+
+  /** Every code the route refuses by has a sentence of the page's own, in each catalogue. */
+  it('has a sentence of its own for every code the route refuses by, in both languages', () => {
+    const codes = [
+      'not-found', 'teammate', 'help', 'intake', 'stood-down', 'superseded',
+      'running', 'no-words', 'conversation', 'closed', 'not-cooling',
+    ];
+    for (const language of [t, zh]) {
+      const sentences = codes.map((why) => said(why, false, language).sentence);
+      expect(sentences.filter((sentence) => sentence === 'the driver’s own sentence' || /[a-z]+\.[a-z]+\./.test(sentence))).toEqual([]);
+      expect(new Set(sentences).size).toBe(codes.length);
+    }
+    expect(said('closed', false, zh).sentence).toBe('#q1 已关闭，没有什么会自行接着处理它的话；请改为用这些话开始对话。');
+  });
+
+  it('passes the driver’s own sentence through for a choice it could not keep, or a code this page does not know', () => {
+    expect(said(null)).toEqual({ sentence: 'the driver’s own sentence', startChat: false });
+    expect(said('something-newer')).toEqual({ sentence: 'the driver’s own sentence', startChat: false });
   });
 });

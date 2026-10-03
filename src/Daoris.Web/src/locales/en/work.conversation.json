@@ -22,6 +22,7 @@
   "work.conversation.held.never": "It ended before reading this.",
   "work.conversation.held.resume": "Held: the same session goes on with this at the driver's next look.",
   "work.conversation.held.reopen": "Held: the same conversation goes on with this as it opens again.",
+  "work.conversation.held.cooling": "Held: its account is cooling until {{time}}; it goes on with this then.",
   "work.conversation.went": "Your words went to session {{id}}, because {{why}}.",
   "work.conversation.plan": "Plan",
   "work.conversation.driver": "Driver",

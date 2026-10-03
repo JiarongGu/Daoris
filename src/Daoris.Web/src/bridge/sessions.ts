@@ -4,6 +4,7 @@ import type { Session } from '../api';
 import { keys } from '../queries';
 import type { SessionEvent } from '../work/conversation';
 import type { SessionGroupName, SessionGrouping } from '../work/groups';
+import type { NewSessionAnswer } from '../work/say';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
 
@@ -216,6 +217,31 @@ export const useDeleteSession = () => {
 export const useOpenSessionFolder = () => useMutation({
   mutationFn: (id: string) => call<{ opened: boolean }>('SESSION_OPEN_FOLDER', { id }),
 });
+
+/**
+ * *Go on in a new session* (MSG1g, D137 §2.2): words a resume holds while the account their session ran on cools go on in a
+ * new session at the driver's next look, handed them, without that conversation. By the session's id alone: the driver
+ * judges it and keeps the person's choice, the door `daoris-driver sessions go-on-new` calls too (D50). Read field by field,
+ * so a refusal keeps its code for the page to word, and a shell older than the route answers no choice kept. The sessions
+ * and the driver are asked again, since the loop takes the choice up at its next look.
+ */
+export const useGoOnNew = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string): Promise<NewSessionAnswer> => {
+      const answer = await call<{ sent?: boolean; why?: string | null; message?: string } | null>('SESSION_GO_ON_NEW', { id });
+      return {
+        sent: answer?.sent === true,
+        why: typeof answer?.why === 'string' ? answer.why : null,
+        message: typeof answer?.message === 'string' ? answer.message : '',
+      };
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.driver });
+    },
+  });
+};
 
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };
