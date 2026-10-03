@@ -93,8 +93,10 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
  *
  * It resumes a conversation (ANSWER1b, D131): `initialize` advertises `session/resume`, and a resumed
  * conversation's next prompt is the person's answer. A quest titled to ask the person first asks which
- * port and ends its turn holding the quest; resumed, it serves the report on the port it was told. The
- * stub keeps no history, so it resumes whichever conversation it is asked, and says which on stderr.
+ * port and ends its turn holding the quest; resumed, it serves the report on the port it was told. Any
+ * other quest's conversation, resumed with words said after it ended (MSG1e3), says what it heard and
+ * ends its turn a few seconds later, touching nothing. The stub keeps no history, so it resumes
+ * whichever conversation it is asked, and says which on stderr.
  *
  * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
@@ -238,9 +240,22 @@ async function askFirst(sessionId, said) {
   return 'end_turn';
 }
 
+// Words said to a session after it ended (MSG1e3, D137 §2.2). Its own conversation is resumed and the person's words are its
+// next prompt; its quest had closed, so it says what it heard and touches nothing. The turn lasts a few seconds, as an
+// agent's does, so a terminal that follows the words sees the record working before it ends again.
+const HEARD_FOR_MS = 3000;
+
+async function hearAfter(sessionId, said) {
+  say('heard after it ended: ' + said);
+  update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'Heard after the work: ' + said } });
+  await new Promise((resolve) => setTimeout(resolve, HEARD_FOR_MS));
+  return 'end_turn';
+}
+
 async function work(sessionId, said) {
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(SET_UP)) return setUp(sessionId);
   if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(ASKS_FIRST)) return askFirst(sessionId, said);
+  if (resumed) return hearAfter(sessionId, said);
   update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'taking quest ' + id } });
 
   const taken = await respond('take', null);
