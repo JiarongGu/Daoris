@@ -66,6 +66,11 @@ export interface Consideration {
    * whose *Resume* moves it (D132 §2.3). Absent for every other verdict, and on an older shell.
    */
   pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
+  /**
+   * For a quest an update's drain holds (verdict `Blocked`, UPDATE1, D139 §2): true, so the sentence is said from the fact.
+   * Absent for every other hold, and on an older shell.
+   */
+  forUpdate?: boolean | null;
 }
 
 /** Whether a quest waits for an account (TOOL4g, D125 §4): held at spawn on a cooling account, never parked. */
@@ -113,8 +118,8 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
  * driver's typed half, and never by matching the English, which would turn a rewording into a silent
  * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
  * (`NotDrivable`, `Held`, `NoRoot`), `Stopped`, whose session the tick names as a fact (`heldBy`,
- * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), and `Paused`, whose ask or
- * quest it names (`pausedBy`, PAUSE1e). The rest
+ * SESSUX1d), `Exhausted`, whose number of failed sessions it names (`strikes`, SESSUX1i), `Paused`, whose ask or
+ * quest it names (`pausedBy`, PAUSE1e), and a `Blocked` hold that is an update's drain (`forUpdate`, UPDATE1). The rest
  * keep the driver's words, since their sentences name a session or a cap the tick does not carry, and
  * so does a verdict the page has not heard of, and a stop or a park on a shell that names no session or
  * number. English passes the driver's sentence through as its only copy, as the rules' defaults do
@@ -130,6 +135,10 @@ export function sittingSentence(sitting: Consideration): string {
       why: sitting.reason, pause: sitting.pausedBy.id, quest: sitting.quest,
       context: sitting.pausedBy.scope === 'quest' ? 'quest' : undefined, defaultValue: sitting.reason,
     });
+  }
+  // An update's drain (UPDATE1) is a `Blocked` hold the tick marks, so it is said from that fact.
+  if (sitting.verdict === 'Blocked' && sitting.forUpdate) {
+    return i18n.t('work.sitting.forUpdate', { why: sitting.reason, defaultValue: sitting.reason });
   }
   // A wait for an account (TOOL4g) is a `Blocked` hold the tick names the account of, so it is said from those facts; any
   // other `Blocked` hold keeps the driver's words, since its sentence names what the tick does not carry.

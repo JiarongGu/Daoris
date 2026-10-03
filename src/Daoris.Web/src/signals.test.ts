@@ -177,6 +177,24 @@ describe('sittingSentence', () => {
   });
 
   /**
+   * UPDATE1 (D139 §2): a quest an update's drain holds says so in 中文 from the tick's `forUpdate`, never from the driver's
+   * English; any other `Blocked` hold keeps the driver's words.
+   */
+  it('says an update’s hold in 中文 from the tick’s fact, and no other Blocked hold', async () => {
+    const reason = "an update is waiting for this machine's sessions to end: nothing new starts until it is installed and Daoris starts again.";
+    const held: Consideration = { ...sits('Blocked', reason), forUpdate: true };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(held)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    expect(sittingSentence(held)).toMatch(/更新/);
+    expect(sittingSentence(held)).toContain('`daoris-driver update --cancel`');
+    const plugin = sits('Blocked', 'held by plugin `hold-by-title`.');
+    expect(sittingSentence(plugin)).toBe(plugin.reason);
+  });
+
+  /**
    * SESSUX1i (D126 §4.6): a quest parked on its failed sessions is *What needs you*'s row, and its detail is this
    * sentence. The tick carries the number the planner parked it at (`strikes`), so 中文 says it, with the terminal's
    * door. With no number (a shell older than the fact, or a park not read yet), the driver's words stand.
