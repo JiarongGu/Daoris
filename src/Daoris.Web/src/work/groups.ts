@@ -22,7 +22,7 @@ export const GROUP_ORDER: readonly SessionGroupName[] = ['you', 'review', 'worki
  * @remarks
  * **One reader, in the driver.** It needs the planner's verdicts and a git judgement per tree, which only the driver has,
  * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `shown` is the
- * record's state or a derived word, `parked`, `awaiting-reply` or `answered` (ANSWER1c); the page keeps its own *idle* for a live chat between
+ * record's state or a derived word, `parked`, `awaiting-reply`, `answered` (ANSWER1c) or `going-on` (MSG1f); the page keeps its own *idle* for a live chat between
  * turns (UX5 U17). `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
  * says the mark stands: a session that needs the person stays in its group whatever the mark says.
  */
@@ -75,16 +75,19 @@ export function keptSessionFilters(filters: SessionFilters): Record<string, unkn
   return { ...(filters.group === 'repository' ? { group: 'repository' } : {}), ...(filters.archived ? { archived: true } : {}) };
 }
 
+/** The words the reader derives that the page shows as its own (D126 §2.2, ANSWER1c, MSG1f). */
+const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answered', 'going-on']);
+
 /**
- * A row's shown state: the reader's derived word where it said one (*parked*, *awaiting reply*, *answered*), and
- * otherwise the page's own reading of the record, *idle* and *answered* among it. A word a newer host derives that this
- * page does not know reads as the record's own, never as nothing.
+ * A row's shown state: the reader's derived word where it said one (*parked*, *awaiting reply*, *answered*, *going on*),
+ * and otherwise the page's own reading of the record, *idle*, *answered* and *going on* among it. A word a newer host
+ * derives that this page does not know reads as the record's own, never as nothing.
  */
 export function shownOf(
   session: Pick<Session, 'kind' | 'state' | 'answer'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
   taking: boolean | undefined,
 ): ShownState {
-  if (grouping?.shown === 'parked' || grouping?.shown === 'awaiting-reply' || grouping?.shown === 'answered') return grouping.shown;
+  if (grouping && DERIVED.has(grouping.shown)) return grouping.shown as ShownState;
   return shownState(session, taking);
 }
 

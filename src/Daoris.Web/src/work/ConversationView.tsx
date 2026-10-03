@@ -1,11 +1,26 @@
-import { type ReactNode, useState } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Tip } from '../ui';
 import { type Ask, type Block, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import { Markdown } from './Markdown';
+import { reasonOf, type ReasonValues } from './say';
 import { ToolCard } from './ToolCard';
+
+/**
+ * What the person's words to a session that parked or ended need below the conversation (MSG1f, D137 §3.1): whether it
+ * is a chat, the doors a note about them offers, and what a reason may name. Handed down by the view itself, so a block
+ * deep in a turn reads it without every level between carrying it.
+ */
+type Said = {
+  chat: boolean;
+  onSession?: (id: string) => void;
+  onStartFrom?: (words: string[]) => void;
+  reasons: ReasonValues;
+};
+
+const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
 
 /**
  * A session's conversation (D76, CONV2): what was asked, what the agent said and did, and how each
@@ -23,13 +38,25 @@ import { ToolCard } from './ToolCard';
  *   translated (translation-parity).
  * - **A session whose door carries only text** has no conversation to draw, and says so, pointing at
  *   the console, wherever it stands (DOCK1b) — D76 §1's "stays text, and the page says so".
+ * - **Words said after it parked or ended wait at its foot** (MSG1f, D137 §3.1), saying the same session
+ *   goes on with them; where they went to a new session the line says which, a door to it; where they
+ *   cannot go on here it says why, with one press that starts a conversation with them.
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar,
+  reveal, toolbar, onSession, onStartFrom, reasons = {},
 }: {
+  /** Attend a session the person's words went to (MSG1f): the went line's door. Absent, the session is named as text. */
+  onSession?: (id: string) => void;
+  /**
+   * Start a conversation with words that cannot go on in this session (MSG1f, D137 §2.2): the one press under the line
+   * saying so. Absent, no press is drawn.
+   */
+  onStartFrom?: (words: string[]) => void;
+  /** What a reason the driver gave by code may name (D137 §5.1): the adapters and the agent. */
+  reasons?: ReasonValues;
   turns: Turn[];
   /**
    * The block a jump or a search landed on (SESS1 S9), by its key: its fold opens and it is marked.
@@ -83,27 +110,30 @@ export function ConversationView({
     // conversation past the centre (seen on the window with a real session, CONV3). No measure of its
     // own: the agent's words are content, shown at the width they are given (UX5 U16: a 768px
     // cap was half a maximized window).
-    <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
-      {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
-          height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
-      {toolbar && (
-        <div className="sticky top-[calc(var(--session-head,0px)-0.75rem)] z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">
-          {toolbar}
-        </div>
-      )}
-      {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
-      {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
-      {turns.map((turn, index) => (
-        <TurnView
-          key={turn.key}
-          turn={turn}
-          tree={tree}
-          running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended}
-          onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
-          reveal={reveal}
-        />
-      ))}
-    </section>
+    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons }}>
+      <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
+        {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
+            height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
+        {toolbar && (
+          <div className="sticky top-[calc(var(--session-head,0px)-0.75rem)] z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">
+            {toolbar}
+          </div>
+        )}
+        {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
+        {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
+        {turns.map((turn, index) => (
+          <TurnView
+            key={turn.key}
+            turn={turn}
+            tree={tree}
+            // Words waiting at the foot are no run of the agent's (MSG1f): nothing runs until its first prompt takes them.
+            running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended && !turn.waiting}
+            onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
+            reveal={reveal}
+          />
+        ))}
+      </section>
+    </SaidDoors.Provider>
   );
 }
 
@@ -254,23 +284,87 @@ function Attached({ files }: { files?: string[] }) {
   );
 }
 
+/** When the person's words reach the session, by the door's reach (D136, MSG1f): a chat's conversation opens again. */
+const heldKey = (reaches: string | null | undefined, chat: boolean) => {
+  if (reaches === 'next-step') return 'work.conversation.held.nextStep';
+  if (reaches === 'resume') return chat ? 'work.conversation.held.reopen' : 'work.conversation.held.resume';
+  return 'work.conversation.held.turnEnd';
+};
+
 /**
- * The person's words to a working session, waiting to reach it (STEER1, D136): theirs, as written, dashed as the
- * composer's waiting words are, and saying when the session reads them — or, the session over, that it never did. Where
- * the session takes them they become the ask of that turn, and this goes.
+ * The person's words to a session, waiting to reach it (STEER1, D136; MSG1f, D137 §3.1): theirs, as written, dashed as
+ * the composer's waiting words are, and saying when the session reads them — at its next step, at its turn's end, or as
+ * the same session goes on — or, the session over, that it never did. Where the session takes them they become the ask
+ * of that turn, and this goes. Where a driver's note below says where they went, or that they cannot go on here, that
+ * note is their line and this says none.
  */
 function HeldAsk({ block }: { block: Block }) {
   const { t } = useTranslation();
-  const when = block.unreached
-    ? t('work.conversation.held.never')
-    : t(block.reaches === 'next-step' ? 'work.conversation.held.nextStep' : 'work.conversation.held.turnEnd');
+  const { chat } = useContext(SaidDoors);
+  const when = block.settled ? null : block.unreached ? t('work.conversation.held.never') : t(heldKey(block.reaches, chat));
 
   return (
     <div className="rounded-card border border-dashed border-line-strong px-3 py-2">
       <span className="text-meta text-ink-faint">{t('work.conversation.you')}</span>
       {block.text && <p className="m-0 mt-0.5 whitespace-pre-wrap text-body text-ink-soft">{block.text}</p>}
       <Attached files={block.files} />
-      <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>
+      {when && <p className="m-0 mt-1 text-meta text-ink-faint">{when}</p>}
+    </div>
+  );
+}
+
+/** Never in a sentence: where a session's id goes, so the sentence can be cut around its door. */
+const DOOR = '⁣';
+
+/**
+ * The person's words went to a new session (MSG1f, D137 §3.1): said in the page's words, the session a door to it, once,
+ * where the words were shown. A reason the page cannot word leaves the driver's own line, which names it too.
+ */
+function WentLine({ block }: { block: Block }) {
+  const { t } = useTranslation();
+  const { onSession, reasons } = useContext(SaidDoors);
+  const why = block.why ? reasonOf(t, block.why, reasons) : null;
+  if (!why || !block.to) return <NoteLine text={block.text ?? ''} />;
+  const to = block.to;
+  const [before, ...after] = t('work.conversation.went', { id: DOOR, why }).split(DOOR);
+
+  return (
+    <p className="m-0 text-small text-ink-soft">
+      {before}
+      {onSession
+        ? (
+          <button
+            type="button"
+            onClick={() => onSession(to)}
+            className="cursor-pointer border-0 bg-transparent p-0 font-mono text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+          >
+            {to}
+          </button>
+        )
+        : <span className="font-mono">{to}</span>}
+      {after.join(to)}
+    </p>
+  );
+}
+
+/**
+ * The person's words cannot go on in this session (MSG1f, D137 §2.2): why, in the page's words, and one press that starts
+ * a conversation with them — the person's, since a new conversation has none of this one's context. The press only where
+ * the page holds every word the note names, so what it starts with is what they said.
+ */
+function CannotLine({ block }: { block: Block }) {
+  const { t } = useTranslation();
+  const { onStartFrom, reasons } = useContext(SaidDoors);
+  const why = block.why ? reasonOf(t, block.why, reasons) : null;
+  if (!why) return <NoteLine text={block.text ?? ''} />;
+  const said = block.said;
+
+  return (
+    <div className="grid justify-items-start gap-1.5">
+      <p className="m-0 text-small text-ink-soft">{t('work.say.cannot', { why })}</p>
+      {onStartFrom && said && said.length > 0 && (
+        <Button onClick={() => onStartFrom(said)}>{t('work.say.startChat')}</Button>
+      )}
     </div>
   );
 }
@@ -286,6 +380,9 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
     case 'plan':
       return <PlanView entries={block.entries ?? []} />;
     case 'note':
+      // A note about the person's words (MSG1f): where they went, or why they cannot go on here.
+      if (block.to) return <WentLine block={block} />;
+      if (block.why) return <CannotLine block={block} />;
       return <NoteLine text={block.text ?? ''} />;
     case 'held':
       return <HeldAsk block={block} />;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -358,6 +358,122 @@ describe('ConversationView', () => {
     render(<Tooltip.Provider><ConversationView turns={settle(toTurns(working).turns, false)} /></Tooltip.Provider>);
     expect(screen.getAllByText('It ended before reading this.')).toHaveLength(2);
     expect(screen.queryByText(/Held:/)).toBeNull();
+  });
+
+  /**
+   * MSG1f (D137 §3.1): words said to a session after it parked or ended show at once, as a turn waiting at its foot,
+   * saying the same session goes on with them — a chat's conversation as it opens again. The session's end is not
+   * theirs: no *it ended before reading this*, no *working…* while they wait, and no cut turn of their own.
+   */
+  it('shows words said after the end waiting at its foot, saying the same session goes on with them', () => {
+    const ended = [
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'message', text: 'Done, committed.' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it at 64 KiB' }),
+    ];
+    const { unmount } = render(
+      <Tooltip.Provider><ConversationView turns={settle(toTurns(ended).turns, false)} /></Tooltip.Provider>,
+    );
+    expect(screen.getByText('also cap it at 64 KiB')).toBeTruthy();
+    expect(screen.getByText("Held: the same session goes on with this at the driver's next look.")).toBeTruthy();
+    expect(screen.queryByText('It ended before reading this.')).toBeNull();
+    expect(screen.queryByText(/before this turn did/)).toBeNull();
+    unmount();
+
+    // Going on, the record is live again, and nothing runs until its first prompt takes the words.
+    const { unmount: gone } = render(
+      <Tooltip.Provider><ConversationView turns={toTurns(ended).turns} live /></Tooltip.Provider>,
+    );
+    expect(screen.queryByText('working…')).toBeNull();
+    gone();
+
+    render(<Tooltip.Provider><ConversationView turns={settle(toTurns(ended).turns, false)} chat /></Tooltip.Provider>);
+    expect(screen.getByText('Held: the same conversation goes on with this as it opens again.')).toBeTruthy();
+  });
+
+  /**
+   * MSG1f (D137 §3.1): where a fallback handed the words to a new session, the conversation says so once, where they
+   * were shown, the session a door to it; the driver's own English line is not said beside it.
+   */
+  it('says where the words went, the session a door, once', async () => {
+    const onSession = vi.fn();
+    view([
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
+      ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because its tree is gone.', words: ['w1'], to: 'n3wn3w00', why: 'tree' }),
+    ], { onSession });
+
+    const went = screen.getByText((_, element) => element?.tagName === 'P'
+      && element.textContent === 'Your words went to session n3wn3w00, because its tree is gone.');
+    expect(screen.queryByText(/Held:/)).toBeNull();
+    expect(screen.queryByText(/— your words went/)).toBeNull();
+    await userEvent.click(within(went).getByRole('button', { name: 'n3wn3w00' }));
+    expect(onSession).toHaveBeenCalledWith('n3wn3w00');
+  });
+
+  it('names the session as text where nothing here can open it, and lets the driver’s line stand for a reason it cannot word', () => {
+    const { unmount } = view([
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
+      ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because its tree is gone.', words: ['w1'], to: 'n3wn3w00', why: 'tree' }),
+    ]);
+    expect(screen.queryByRole('button', { name: 'n3wn3w00' })).toBeNull();
+    expect(screen.getByText((_, element) => element?.tagName === 'P'
+      && element.textContent === 'Your words went to session n3wn3w00, because its tree is gone.')).toBeTruthy();
+    unmount();
+
+    // A reason that names an agent the page was not told, or a code it does not know: the driver's words stand.
+    view([
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
+      ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because it ran on `a`, and starts here now run on `b`.', words: ['w1'], to: 'n3wn3w00', why: 'adapter' }),
+    ]);
+    expect(screen.getByText(/because it ran on `a`/)).toBeTruthy();
+  });
+
+  /**
+   * MSG1f (D137 §2.2): words a closed quest's session or a chat cannot go on with stay as said, the conversation says
+   * why in the page's words, and one press starts a new conversation with them — the person's, since a new conversation
+   * has none of this one's context.
+   */
+  it('says the words cannot go on here and offers one press that starts a conversation with them', async () => {
+    const onStartFrom = vi.fn();
+    view([
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      ev({ kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+      ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' }),
+    ], { onStartFrom });
+
+    expect(screen.getByText('It cannot go on in this session, because its conversation could not be continued.')).toBeTruthy();
+    expect(screen.queryByText(/Held:/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Start a conversation with these words' }));
+    expect(onStartFrom).toHaveBeenCalledWith(['first', 'second']);
+  });
+
+  it('offers no press where the page holds not every word, or nothing could start one', () => {
+    const { unmount } = view([
+      ev({ kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+      ev({ kind: 'note', text: '— It cannot go on in this session, because its tree is gone.', words: ['w1', 'w2'], why: 'tree' }),
+    ], { onStartFrom: vi.fn() });
+    expect(screen.getByText('It cannot go on in this session, because its tree is gone.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Start a conversation with these words' })).toBeNull();
+    unmount();
+
+    view([
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      ev({ kind: 'note', text: '— It cannot go on in this session, because its tree is gone.', words: ['w1'], why: 'tree' }),
+    ]);
+    expect(screen.queryByRole('button', { name: 'Start a conversation with these words' })).toBeNull();
+  });
+
+  it('words a reason that names an agent from what it is handed', () => {
+    view([
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation is open in another client of its agent.', words: ['w1'], why: 'elsewhere' }),
+    ], { reasons: { agent: 'Codex' } });
+    expect(screen.getByText('It cannot go on in this session, because its conversation is open in another client of Codex.')).toBeTruthy();
   });
 
   /** SESS1 S5: a call the page holds only the updates of began earlier, and says so, never its id. */

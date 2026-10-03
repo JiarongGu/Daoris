@@ -1602,6 +1602,211 @@ describe('starting and holding a conversation', () => {
 });
 
 /**
+ * MSG1f (D137 §5.1): the box on every session that takes words, by what a word said now would do (`SESSION_QUEUE`'s
+ * `reaches` and `why`, MSG1d), and the line saying why on the rest; the words shown at once, where they went, and the one
+ * press where they cannot go on; *Send back…* opening the box.
+ */
+describe('the box on every session that takes words', () => {
+  const ENDED = { ...DRIVEN, state: 'completed', note: 'Done; committed as a1b2c3d.' };
+
+  /** A driver that answers `SESSION_QUEUE` with these, `SESSION_INPUT` with `said`, and the rest as the frame needs. */
+  const driver = (reach: object, said: object = { sent: true, reaches: 'resume' }, more: Record<string, unknown> = {}) =>
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type in more) return more[type];
+      if (type === 'SESSION_QUEUE') return { session: 's1a2b3c4', queued: [], taking: false, ...reach };
+      if (type === 'SESSION_INPUT') return said;
+      return DRIVER_STATE;
+    });
+
+  beforeEach(() => {
+    SESSIONS = [ENDED];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    window.localStorage.removeItem('daoris.drafts');
+    window.localStorage.removeItem('daoris.dockClosed');
+  });
+
+  /** §2.2: a session that ended goes on with the person's words, and the box says so; the log counts where they reach. */
+  it('offers a session that ended the box where the same session goes on, and says through it', async () => {
+    driver({ reaches: 'resume' });
+    show('s1a2b3c4');
+
+    const box = await screen.findByLabelText('Message');
+    expect(box).toHaveAttribute('placeholder', 'write to it — the same session goes on with your words');
+    expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
+    await userEvent.type(box, 'also say so in the release notes');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 's1a2b3c4', text: 'also say so in the release notes' },
+    });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.LOG', 'EVENT', {
+      payload: { event: 'message.sent', data: { session: 's1a2b3c4', kind: 'say', length: 32, files: 0, reach: 'resume' } },
+    }));
+    expect((box as HTMLTextAreaElement).value).toBe('');
+  });
+
+  /** Nothing known is nothing claimed: a driver that answers no reach (an older shell) offers an ended session no box. */
+  it('offers an ended session no box until the driver says words go on', async () => {
+    driver({});
+    show('s1a2b3c4');
+
+    await screen.findByRole('heading', { level: 1 });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1a2b3c4' } }));
+    expect(screen.queryByLabelText('Message')).toBeNull();
+  });
+
+  /** MSG1d: where nothing takes words the driver says why by a code, and the page draws the line instead of the box. */
+  it('draws the line the driver’s code names instead of a box', async () => {
+    driver({ why: 'superseded' });
+    show('s1a2b3c4');
+
+    expect(await screen.findByText('#abc123 went on in a later session here, so write to that one.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+  });
+
+  it('draws the line under a teammate’s record without asking the driver', async () => {
+    SESSIONS = [{ ...ENDED, id: 'person@machine-b/s1a2b3c4' }];
+    driver({ reaches: 'resume' });
+    show('person@machine-b/s1a2b3c4');
+
+    expect(await screen.findByText('This session ran on another machine, where its conversation is.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', expect.anything());
+  });
+
+  /** REV3, MSG1d: words nothing took come back into the box, and the line says why in the page's words. */
+  it('hands back words nothing took, saying why by the driver’s code', async () => {
+    driver({ reaches: 'resume' }, { sent: false, why: 'stood-down' });
+    show('s1a2b3c4');
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'one more thing');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText('It stood down: #abc123 is someone else\'s, so it has nothing to go on with.')).toBeInTheDocument();
+    await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe('one more thing'));
+  });
+
+  /** D137 §2.4: a driven session on the native door takes its words as one argument, so longer ones are refused first. */
+  it('refuses words longer than the native door takes, before sending, and keeps them', async () => {
+    const PIPE = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], wire: 'pipe' }] };
+    driver({ reaches: 'resume' }, undefined, { HARNESSES: PIPE });
+    show('s1a2b3c4');
+
+    const box = await screen.findByLabelText('Message');
+    const words = 'x'.repeat(24_001);
+    fireEvent.change(box, { target: { value: words } });
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText(/takes at most 24000 characters at once/)).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+    expect((box as HTMLTextAreaElement).value).toBe(words);
+  });
+
+  /** D137 §2.1: words said as a session winds up wait for its record to end, then reopen it — never refused. */
+  it('holds words said as a session winds up above its box', async () => {
+    SESSIONS = [DRIVEN];
+    driver({ reaches: 'resume' });
+    show('s1a2b3c4');
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.type(box, 'keep the old flag for a release');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    expect(await screen.findByText('held until this run ends — then the same session goes on with them')).toBeInTheDocument();
+    expect(screen.getByText('keep the old flag for a release')).toBeInTheDocument();
+  });
+
+  /** §3.2: a record going on with the person's words shows it, while its run opens with them. */
+  it('shows a record going on with the person’s words as going on', async () => {
+    SESSIONS = [{ ...DRIVEN, answer: 'also cap it' }];
+    driver({});
+    show('s1a2b3c4');
+
+    const header = await screen.findByRole('heading', { level: 1 });
+    expect(within(header.closest('header')!).getByText('going on')).toBeInTheDocument();
+  });
+
+  /** §3.1: the words shown at once, then where they went, the session a door to it. */
+  it('says where the words went, and opens that session from the line', async () => {
+    driver({ reaches: 'resume' }, undefined, {
+      SESSION_HISTORY: {
+        session: 's1a2b3c4', earlier: false, latest: 4,
+        events: [
+          { seq: 1, at: '2026-10-03T10:00:00Z', kind: 'user', origin: 'target', text: 'take quest #abc123' },
+          { seq: 2, at: '2026-10-03T10:00:05Z', kind: 'turn', stopReason: 'end_turn' },
+          { seq: 3, at: '2026-10-03T11:00:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' },
+          { seq: 4, at: '2026-10-03T11:00:30Z', kind: 'note', text: '— your words went to session `n3wn3w00`, because its tree is gone.', words: ['w1'], to: 'n3wn3w00', why: 'tree' },
+        ],
+      },
+    });
+    const { onSelect } = show('s1a2b3c4');
+
+    await userEvent.click(await screen.findByRole('button', { name: 'n3wn3w00' }));
+    expect(onSelect).toHaveBeenCalledWith('n3wn3w00');
+  });
+
+  /**
+   * §2.2: words a closed quest's session cannot go on with offer one press: a new conversation in the same repository whose
+   * first message is the words, its opening naming the session they were written to, attended once it opens.
+   */
+  it('starts a conversation with the words that cannot go on, and attends it', async () => {
+    driver({ reaches: 'resume' }, { sent: true }, {
+      START_CHAT: { sessionId: 'c4a7c4a7', message: 'started' },
+      SESSION_HISTORY: {
+        session: 's1a2b3c4', earlier: false, latest: 5,
+        events: [
+          { seq: 1, at: '2026-10-03T10:00:00Z', kind: 'user', origin: 'target', text: 'take quest #abc123' },
+          { seq: 2, at: '2026-10-03T10:00:05Z', kind: 'turn', stopReason: 'end_turn' },
+          { seq: 3, at: '2026-10-03T11:00:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' },
+          { seq: 4, at: '2026-10-03T11:00:01Z', kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' },
+          { seq: 5, at: '2026-10-03T11:00:30Z', kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' },
+        ],
+      },
+    });
+    const { onSelect } = show('s1a2b3c4');
+
+    expect(await screen.findByText('It cannot go on in this session, because its conversation could not be continued.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Start a conversation with these words' }));
+
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c4a7c4a7'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', { payload: { repository: 'engine' } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'c4a7c4a7', text: 'first\n\nsecond', preface: expect.stringContaining('session `s1a2b3c4`') },
+    });
+  });
+
+  /**
+   * §5.1: *Send back…* in a review opens the box on that session, with the focus in it, instead of the quest composer —
+   * what the glossary's *send back* means. Where the session takes no words, the quest composer's door stays.
+   */
+  it('opens the box from Send back… in a review, and the quest composer only where nothing takes words', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const DIFF = { session: 's1a2b3c4', base: 'abc1234567890', truncated: null, files: [{ path: 'src/chunk.ts', status: 'modified', added: 1, removed: 1, patch: '@@ -1 +1 @@\n-a\n+b' }] };
+    driver({ reaches: 'resume' }, undefined, { SESSION_DIFF: DIFF });
+    const onSendBack = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onSendBack={onSendBack} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const box = await screen.findByLabelText('Message');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Send back…' }));
+    await waitFor(() => expect(box).toHaveFocus());
+    expect(onSendBack).not.toHaveBeenCalled();
+  });
+});
+
+/**
  * `awaiting-person` has meant "only the person can clear this" since D46 and had no surface at all
  * (design §4). The three moves land on the DRIVER, not on the service, because the process and the
  * record must move together — a record saying `completed` beside a process this machine still
@@ -1627,6 +1832,9 @@ describe('clearing a parked session', () => {
    * chat is, and the card says so — one owner for the answer (D56).
    */
   it('answers a parked driven session from the box at the foot, and the card says the box carries it on', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_INPUT'
+      ? { sent: true, reaches: 'resume' }
+      : DRIVER_STATE));
     show('p4rk3d00');
 
     const box = await screen.findByLabelText('Message');
@@ -1640,26 +1848,30 @@ describe('clearing a parked session', () => {
     await userEvent.type(box, 'go ahead with the PUT');
     await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
-    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith(
-      '/api/sessions/p4rk3d00/answer', expect.objectContaining({ method: 'POST' })));
-    const [, init] = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/answer'))!;
-    expect(JSON.parse(String(init!.body))).toEqual({ answer: 'go ahead with the PUT' });
+    // Through the one door every box says through (MSG1f): the driver keeps it on the record, shows it at once in the
+    // conversation and nudges its loop (MSG1d), where the service's answer door did none of the last two.
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: 'p4rk3d00', text: 'go ahead with the PUT' },
+    }));
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/sessions/p4rk3d00/answer', expect.anything());
   });
 
   /**
    * ANSWER1c (D131): the answer keeps the park (ANSWER1b), and the same session goes on at the driver's next look. Until
-   * then the record is still parked, with the answer set, and the frame shows it going on: the answer and when, no box
-   * to answer in again, and none of the card's moves. The toast says the same.
+   * then the record is still parked, with the answer set, and the frame shows it going on: the answer and when, and none
+   * of the card's moves. The toast says the same. MSG1f (D137 §2.4): a second word joins the first, so the box stays,
+   * saying the same session goes on with it.
    */
-  it('shows an answered park as going on at the driver\'s next look, with no box and no moves', async () => {
+  it('shows an answered park as going on at the driver\'s next look, its box taking a second word and no moves', async () => {
     const notify = vi.fn();
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).endsWith('/answer') && init?.method === 'POST') {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') {
         SESSIONS = [{ ...PARKED, answer: 'go ahead with the PUT', note: `${PARKED.note}\n\nAnswered: go ahead with the PUT` }];
-        return Response.json({ message: 'Answered session `p4rk3d00`.' });
+        return { sent: true, reaches: 'resume' };
       }
-      return respond(String(input));
-    }));
+      if (type === 'SESSION_QUEUE') return { session: 'p4rk3d00', queued: [], taking: false, reaches: 'resume' };
+      return DRIVER_STATE;
+    });
     show('p4rk3d00', notify);
 
     await userEvent.type(await screen.findByLabelText('Message'), 'go ahead with the PUT');
@@ -1668,7 +1880,7 @@ describe('clearing a parked session', () => {
     expect(await screen.findByRole('heading', { name: 'Your answer' })).toBeInTheDocument();
     expect(screen.getByText("The same session goes on with this answer at the driver's next look.")).toBeInTheDocument();
     expect(notify).toHaveBeenCalledWith("Answered — the same session goes on with your words at the driver's next look.");
-    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(await screen.findByLabelText('Message')).toHaveAttribute('placeholder', 'write to it — the same session goes on with your words');
     expect(screen.queryByText('This one is waiting on you')).toBeNull();
     for (const name of ['Finish', 'Decline…', 'Carry on with this answer']) expect(screen.queryByRole('button', { name })).toBeNull();
     // Its stop stays the page header's, saying what a driven session's stop says, never that it stops unanswered.

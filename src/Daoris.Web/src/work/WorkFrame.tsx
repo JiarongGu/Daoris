@@ -8,14 +8,17 @@ import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
-  logEvent, useTerminals, useRemotes, useWorkPlan,
+  logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
 } from '../shell';
+import { doorOf } from '../tools';
+import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, takesWords, tooLong } from './say';
+import { SessionBox } from './SessionBox';
 import { pauseAsk, wiredFor, type WorkTarget } from './pausing';
 import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { answeredPark, Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import { Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
@@ -313,22 +316,14 @@ export function WorkFrame({
   // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
   const talking = Boolean(attended && conversation && here && !intake);
-  // 🔴 A driven session parked to ask the person is answered from the box at the foot, where a chat's
-  // is: the door was a button at the top of a record of 1,800 events, and the question is read at its
-  // foot. The card above keeps the
-  // endings and says the box carries it on: one owner for the answer (D56). Once answered it has no box:
-  // the record stays parked until the driver's next look, when the same session goes on (ANSWER1c).
-  const answering = Boolean(attended && here && !intake && !conversation && attended.quest
-    && attended.state === 'awaiting-person' && !answeredPark(attended));
-  const [answerDraft, setAnswerDraft] = useState('');
   // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
   const steerable = Boolean(attended && here && !intake && !conversation && attended.quest
     && SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
-  const [steerDraft, setSteerDraft] = useState('');
 
-  // What the person was typing to this conversation, kept per session and across a reload (CONV4b).
-  const [draft, setDraft] = useDraft(talking ? attended!.id : null);
+  // What the person was typing to this session, kept per session and across a reload (CONV4b): one draft for whichever
+  // box its page offers, so words typed as it ends are still there in the box that goes on with them (MSG1f).
+  const [draft, setDraft] = useDraft(attended && here && !intake ? attended.id : null);
   // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and
   // queue follow it, not the record, which learns a turn began only when its first event lands
   // (CONV4a); and the rail and the head read a chat between turns as idle (UX5 U17).
@@ -340,6 +335,19 @@ export function WorkFrame({
   // What the driver holds for the attended driven session, and whether it hears anything at all.
   const held = steerable ? chatTurns[attended!.id] : undefined;
   const steering = held?.listening === true;
+  // The box at the foot (MSG1f, D137 §5.1): on every session that takes words, by what a word said now would do, and the
+  // line saying why on the rest. 🔴 A driven session parked to ask the person is answered from it, where a chat's is: the
+  // door was a button at the top of a record of 1,800 events, and the question is read at its foot. The card above keeps
+  // the endings and says the box carries it on: one owner for the answer (D56). Answered, a second word joins the first
+  // (D137 §2.4), so the box stays.
+  const reach = useSessionReach(attended && here && !intake ? attended : null, steering);
+  const box = boxOf({ session: attended, here, intake, listening: steering, reach });
+  const answering = box.kind === 'say' && box.mode === 'answer';
+  // Words said as the attended session winds up, held for its record to end (D137 §2.1), shown above its box until then.
+  const [ending, setEnding] = useState<{ session: string; words: string[] } | null>(null);
+  useEffect(() => {
+    if (!attended || ending?.session !== attended.id || !SESSION_ACTIVE.has(attended.state)) setEnding(null);
+  }, [attended, ending?.session]);
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
   // When each live chat's last turn ended here (RAIL2): its *moved*, which its record never says.
   const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
@@ -403,11 +411,18 @@ export function WorkFrame({
     });
   };
 
+  // Counted into the machine log once the words went, never their words (LOG1b): their length, how many files they carried,
+  // and where they reach the session as the driver answered (MSG1d, D137 §3.3).
+  const counted = (session: string, kind: string, text: string, files: number, said: WordsAnswer) =>
+    logEvent('message.sent', { session, kind, length: text.length, files, ...(said.reaches ? { reach: said.reaches } : {}) });
+
+  // Words nothing took, in the page's words: by the driver's code where it gave one (MSG1d), else that nothing took them.
+  const untaken = (said: WordsAnswer, fallback: string) =>
+    (said.why ? neverSentence(t, said.why, { quest: attended?.quest }) : fallback);
+
   const onSend = (text: string, files: File[] = []) => {
     if (!attended) return;
     const session = attended.id;
-    // Counted into the machine log, never its words (LOG1b): its length, and how many files it carried.
-    logEvent('message.sent', { session, kind: 'chat', length: text.length, files: files.length });
     // 🔴 The composer lets go of the words when it sends; a send that did not arrive hands them back,
     // into THIS session's draft (the setter is bound to it), and names the files — the page no longer
     // holds their bytes. Losing a paragraph to a refusal is the failure the composer exists to prevent (REV3).
@@ -422,11 +437,12 @@ export function WorkFrame({
       // rather than in a toast, because that is where the person is looking — on THAT session's.
       onSuccess: (result) => {
         if (result.sent) {
+          counted(session, 'chat', text, files.length, result);
           setRefusal(null);
           return;
         }
         giveBack();
-        setRefusal({ session, text: t('work.composer.notListening') });
+        setRefusal({ session, text: untaken(result, t('work.composer.notListening')) });
       },
       onError: (error: unknown) => {
         giveBack();
@@ -435,27 +451,61 @@ export function WorkFrame({
     });
   };
 
-  // What the person adds to a driven session while it works (SESS3): held by the driver for its turn's
-  // end. A send that did not arrive gives the words back to the box, as a message does (REV3).
-  const onSteer = (text: string) => {
-    if (!attended || !text) return;
+  // A door that takes fewer characters at once than these says so before anything is sent, and the words stay in the box
+  // (D137 §2.4): a driven session on the native door, whose resumed run takes them as one argument.
+  const accepts = (text: string) => {
+    if (!attended || !tooLong(text, { door: doorOf(attended.adapter, roster), kind: attended.kind })) return true;
+    setRefusal({ session: attended.id, text: t('work.say.tooLong', { count: NATIVE_WORDS_LIMIT }) });
+    return false;
+  };
+
+  // The person's words through the box at the foot (MSG1f, D137 §5.1): a working driven session's running door (SESS3), a
+  // park's answer, a session that ended, or one winding up. A send that did not arrive gives the words back to the box, as
+  // a message does (REV3).
+  const say = useSay();
+  const onSay = (text: string) => {
+    if (!attended || !text || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
     const session = attended.id;
-    logEvent('message.sent', { session, kind: 'steer', length: text.length, files: 0 });
-    send.mutate({ id: session, text, files: [] }, {
+    const kind = box.kind === 'steer' ? 'steer' : box.mode === 'answer' ? 'answer' : 'say';
+    const winding = box.kind === 'say' && box.mode === 'ending';
+    const giveBack = () => setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+    say.mutate({ id: session, text }, {
       onSuccess: (result) => {
-        if (result.sent) {
-          setRefusal(null);
+        if (!result.sent) {
+          giveBack();
+          setRefusal({ session, text: untaken(result, t('work.say.notTaken')) });
           return;
         }
-        setSteerDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
-        setRefusal({ session, text: t('work.steer.gone') });
+        counted(session, kind, text, 0, result);
+        setRefusal(null);
+        if (kind === 'answer') notify(t('work.awaiting.answered'));
+        // Held until its record ends, and shown above the box meanwhile: the conversation shows them once kept.
+        if (winding) setEnding((was) => ({ session, words: [...(was?.session === session ? was.words : []), text] }));
       },
       onError: (error: unknown) => {
-        setSteerDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+        giveBack();
         notify(sentence(error), 'error');
       },
     });
   };
+  // *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the repository, its first message the words
+  // this session could not go on with, attended once it opens. The driver's sentence when none could start is said whole.
+  const startFrom = useStartFrom();
+  const onStartFrom = (words: string[]) => {
+    if (!attended || startFrom.isPending) return;
+    startFrom.mutate({ session: attended.id, repository: attended.repository, words }, {
+      onSuccess: (started) => {
+        if (!started.sessionId) {
+          notify(started.message, 'error');
+          return;
+        }
+        attend(started.sessionId);
+        if (!started.sent) notify(t('work.say.notTaken'), 'error');
+      },
+      onError: failure(notify),
+    });
+  };
+
   // Its stop sends what is held now: the turn stops, and the words are its next prompt.
   const onSteerNow = () => {
     if (!attended) return;
@@ -515,7 +565,7 @@ export function WorkFrame({
       onError: (error) => {
         // 🔴 The box at the foot let go of the words when it sent; an answer that did not arrive hands
         // them back, as a message does (REV3).
-        if (words) setAnswerDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n'));
+        if (words) setDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n'));
         failure(notify)(error);
       },
     });
@@ -677,6 +727,19 @@ export function WorkFrame({
     ?? [...(registry.data ?? [])].filter((row) => row.root).sort((a, b) => a.repository.localeCompare(b.repository))[0]?.root
     ?? undefined;
 
+  // *Send back…* in a review (SURF6; MSG1f, D137 §5.1): the box on that session, with the focus in it, which is what the
+  // glossary's send back means — its work returned to it with a note, so it carries on. Off Sessions, Sessions is opened,
+  // where the box is. Where the session takes no words, the door to the quest composer stays (SURF6b).
+  const sendBack = () => {
+    if (!attended) return;
+    if (!takesWords(box)) {
+      onSendBack?.(attended.repository);
+      return;
+    }
+    if (elsewhere) onOpenSessions?.();
+    setAnswerFocus((was) => ({ session: attended.id, at: (was?.at ?? 0) + 1 }));
+  };
+
   /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
   const surface = (view: ViewId, where: Place = 'panel') => {
     if (view === 'ask') return ask;
@@ -687,9 +750,7 @@ export function WorkFrame({
           session={attended?.id ?? null}
           // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
           hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
-          onSendBack={onSendBack && attended
-            ? () => onSendBack(attended.repository)
-            : undefined}
+          onSendBack={attended && (takesWords(box) || onSendBack) ? sendBack : undefined}
           onPreview={attended && here ? (path) => openPreview({ path }) : undefined}
         />,
       );
@@ -1025,13 +1086,23 @@ export function WorkFrame({
                   turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
                   scroller={centre}
                   onUsage={onUsage}
+                  // Where the person's words went, a door to that session; and words that cannot go on here, one press
+                  // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
+                  onSession={(id) => attend(id)}
+                  onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
+                  reasons={{
+                    from: attended.adapter,
+                    to: harnesses.data?.adapter,
+                    adapter: harnesses.data?.adapter,
+                    agent: roster.find((row) => row.harness === attended.adapter)?.product || attended.adapter,
+                  }}
                 />
               </FileOpener.Provider>
             </div>
           )}
         </ViewMain>
 
-        {talking && attended && (
+        {talking && attended && box.kind === 'chat' && (
           <Composer
             // Per session: the files attached in one conversation never follow the person to another.
             key={attended.id}
@@ -1075,45 +1146,25 @@ export function WorkFrame({
           />
         )}
 
-        {steering && attended && held && (
-          <Composer
-            key={`steer:${attended.id}`}
-            live
-            endings={false}
-            attachments={false}
-            sending={send.isPending}
+        {/* Every other box (MSG1f, D137 §5.1): the running door, the park's answer, the box where the same session goes
+            on, and the line where nothing takes words. Keyed by session and box, so a draft's form starts fresh. */}
+        {attended && box.kind !== 'chat' && box.kind !== 'none' && (
+          <SessionBox
+            key={`${box.kind === 'say' ? box.mode : box.kind}:${attended.id}`}
+            box={box}
+            quest={attended.quest}
+            draft={draft}
+            onDraft={setDraft}
+            sending={say.isPending}
             refusal={refusal?.session === attended.id ? refusal.text : null}
-            placeholder={t('work.steer.placeholder')}
-            draft={steerDraft}
-            onDraft={setSteerDraft}
-            queued={held.queued}
-            taking={held.taking}
-            // Only something held can be sent now; with nothing held, stopping the turn would end the work.
-            stoppable={held.queued.length > 0}
+            held={held ? { queued: held.queued, taking: held.taking } : undefined}
+            ending={ending?.session === attended.id ? ending.words : []}
             stopping={cancelTurn.isPending}
-            stopTurnLabel={t('work.steer.now')}
-            stopTurnTip={t('work.steer.nowTip')}
-            onStopTurn={onSteerNow}
-            onSend={(text) => onSteer(text.trim())}
-            onFinish={() => {}}
-          />
-        )}
-
-        {answering && attended && (
-          <Composer
-            key={`answer:${attended.id}`}
-            live
-            endings={false}
-            attachments={false}
-            sending={answer.isPending}
-            placeholder={t('work.awaiting.answerPlaceholder')}
-            sendLabel={t('work.awaiting.answerConfirm')}
-            draft={answerDraft}
-            onDraft={setAnswerDraft}
-            // *Answer…* from its row puts the focus here (D126 §3.1).
+            // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
             focus={answerFocus?.session === attended.id ? answerFocus.at : 0}
-            onSend={(text) => onAnswerSession(text.trim() || null)}
-            onFinish={() => {}}
+            accepts={accepts}
+            onSend={onSay}
+            onSendNow={onSteerNow}
           />
         )}
 
