@@ -88,6 +88,24 @@ public sealed partial class DriverModule
         return new { Session = id, State = state, Message = message };
     }
 
+    // *Go on in a new session* (MSG1g, D137 §2.2): words a resume holds while the account their session ran on cools go on now
+    // in a new session, handed them, without that conversation. The driver's door judges and keeps the person's choice
+    // (D143 point 4), the same door `daoris-driver sessions go-on-new` calls (D50); the loop is nudged so its next look carries
+    // them on. What cannot is `sent: false` with its code, for the page to word, and the driver's sentence beside it. The
+    // page's press is a later row.
+    [DriverRoute("SESSION_GO_ON_NEW")]
+    private async Task<object?> SessionGoOnNewAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var service = _loop.Service ?? throw NotReady();
+        var answer = await GoOnNew.AskAsync(
+                service, _loop.Home, (adapter, profile) => _loop.Harnesses.CoolingOf(adapter ?? "", profile), id,
+                DateTimeOffset.UtcNow, cancellationToken)
+            .ConfigureAwait(false);
+        if (answer.Sent) _loop.Nudge();
+        return new { answer.Sent, answer.Why, answer.Message };
+    }
+
     private const string PersonMoves =
         "A person may finish, decline or stop a parked session — not move it anywhere else. "
         + "Answering it so it carries on is a message, not a move.";

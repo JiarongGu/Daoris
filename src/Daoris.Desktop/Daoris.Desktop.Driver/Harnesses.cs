@@ -1456,6 +1456,12 @@ public sealed record HarnessSelection(
     /// §16.4); null where none has said anything, and for a pick or a scope with no list. Machine-local: it names accounts.
     /// </summary>
     public string? SaidLine { get; init; }
+
+    /// <summary>
+    /// Why the one account a refused start asked for was not ready (MSG1g): cooling, refused, or signed out as the agent said;
+    /// null where the start was refused for anything else (no agent, a pin nobody installed), or ran.
+    /// </summary>
+    public AccountReadiness? NotReady { get; init; }
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -1876,6 +1882,72 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         ChooseAsync(adapter, config, workspace, chosen, kind, counts: true, ct);
 
     /// <summary>
+    /// The account a resume runs on (MSG1g, D137 §2.2's account paragraph): its record's own, asked for by name as a chat's
+    /// picker names one, since its conversation lives in that account's configuration home (D131 §1); never the walk's choice
+    /// for a start. Judged by <see cref="ResumeAccount.Judge"/> with what this roster knows of the account before any probe.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Ready</b>, it is selected as a pick is, so a sign-in the agent says is gone is learned by the probe a start
+    /// makes. <b>Cooling</b>, the resume is held with its cool-off, nothing counted, so a look says the wait once and a screen
+    /// shows it waiting for an account (TOOL4g), unless the person chose a new session (<paramref name="newSession"/>).
+    /// <b>Unable to run there at all</b> (gone, off the list, kept for conversations, refused, signed out), or left by the
+    /// person's choice, the walk picks as for any start (D130 §16.3), which passes the account by itself; where
+    /// <paramref name="walks"/> is false, as for a conversation that nothing carries on by itself, nothing is walked or
+    /// counted, and the answer is a refusal saying what held it.</para>
+    /// </remarks>
+    /// <param name="account">The account the record ran on, or null for the tool's own sign-in.</param>
+    /// <param name="newSession">The person chose to go on in a new session rather than wait for a cooling account.</param>
+    /// <param name="walks">Whether an account that cannot carry the words is replaced by the walk's pick.</param>
+    public async Task<ResumeChoice> ResumeAsync(
+        string adapter, DriverConfig config, string? workspace, string? account, StartKind kind, bool newSession = false,
+        bool walks = true, CancellationToken ct = default)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain is not { } toolchain)
+        {
+            // An adapter with no accounts has nothing to ask for: it spawns as it always did.
+            return new ResumeChoice(await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false), NextHold.Ready);
+        }
+
+        var owner = toolchain.Owner(resolved.Name);
+        var scope = Settings.ResolveScope(owner, string.IsNullOrWhiteSpace(workspace) ? null : workspace.Trim());
+        var named = string.IsNullOrWhiteSpace(account) ? null : account.Trim();
+        IReadOnlyCollection<string> present;
+        try
+        {
+            present = named is null ? [] : HarnessSettings.Profiles(Home, owner);
+        }
+        catch (DriverException)
+        {
+            present = [];
+        }
+
+        var before = Before(owner, named, Clock());
+        var own = ResumeAccount.Judge(named, scope, kind, before, present);
+        if (own == NextHold.Cooling && !newSession)
+        {
+            return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(before.Cooling!, Zone)) { Cooling = before.Cooling }, own);
+        }
+
+        if (own != NextHold.Ready) return await ElsewhereAsync(own).ConfigureAwait(false);
+
+        // Ready before any probe: asked for by name, as a pick is; the tool's own sign-in is its scope's one account.
+        var asked = await SelectAsync(adapter, config, workspace, chosen: named, kind, ct).ConfigureAwait(false);
+        return asked is { Allowed: false, NotReady: AccountReadiness.SignedOut }
+            ? await ElsewhereAsync(NextHold.SignedOut).ConfigureAwait(false)
+            : new ResumeChoice(asked, NextHold.Ready);
+
+        async Task<ResumeChoice> ElsewhereAsync(NextHold held) => new(
+            walks
+                ? await SelectAsync(adapter, config, workspace, chosen: null, kind, ct).ConfigureAwait(false)
+                : new HarnessSelection(ResumeWords.Line(held, newSession)?.Note ?? "Its own account cannot carry it."),
+            held)
+        {
+            NewSession = newSession && held == NextHold.Cooling,
+        };
+    }
+
+    /// <summary>
     /// <see cref="SelectAsync"/>, or with <paramref name="counts"/> false the same answer for a panel, which starts nothing
     /// and so is never counted as a start chosen.
     /// </summary>
@@ -2171,7 +2243,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     {
         var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
         var held = states.Count == 1 || first is null
-            ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling }
+            ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling, NotReady = states[0].Readiness }
             : new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first };
         if (held.Cooling is null || scope?.Begins is null) return held;
 

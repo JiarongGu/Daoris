@@ -285,6 +285,240 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Null(selection.Cooling);
     }
 
+    // ——— MSG1g (D137 §2.2's account paragraph): a resume asks for its record's own account.
+
+    private string ResumeLog => Path.Combine(_home, "resume.log");
+
+    private JsonObject[] Frames() => [.. StubFile.Lines(ResumeLog).Select(line => JsonNode.Parse(line)!.AsObject())];
+
+    private IReadOnlyList<SessionEvent> Events(string session) => new SessionEvents(Path.Combine(_home, "sessions")).After(session, 0).Events;
+
+    /// <summary>The protocol door onto the stub's accounts, its agent resuming conversations; <paramref name="signedOut"/> as the stub's sign-in answers it.</summary>
+    private DriverConfig Resuming(string mode, string signedOut = "-") => DriverConfig.Empty with
+    {
+        Drivable = ["engine"],
+        Trees = ["engine"],
+        Adapter = "acp-stub",
+        TimeoutMinutes = 1,
+        PollSeconds = 1,
+        Commands = new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["acp-stub"] = ["node", ResumingAgent(), ResumeLog, mode],
+            // The stub answers its accounts' sign-in question for its protocol door (AGT7).
+            ["stub"] = ["node", Agent(), Log, signedOut],
+        },
+    };
+
+    private static string Profile(SessionMessagesTickTests.SaidStandIn service, string session) =>
+        JsonNode.Parse(service.Record(session))!["profile"]!.GetValue<string>();
+
+    /// <summary>
+    /// 🔴 The goal's walk (D130) would start on <c>account-2</c>, which Daoris has not started on yet; words to a session that
+    /// ran on <c>account-1</c> resume its own conversation on <c>account-1</c>, in the same record.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_go_on_on_its_own_account_where_the_walk_would_start_on_another()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("closes"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal(("completed", "Done", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        Assert.Equal("account-2", roster.Next("stub", "default").Account);
+
+        await service.SayAsync("s1", "Also log the port.");
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 1, seen);
+        var resumed = Assert.Single(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        Assert.Equal("account-1", resumed["account"]!.GetValue<string>());
+        Assert.Equal([("s1", "w1", (string?)null)], service.Taken);
+        Assert.Equal("completed", service.State("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 Its own account cooling, the words wait for its reset: the look holds the start with the account's cool-off, so the
+    /// quest waits for an account (TOOL4g) and the record's conversation says why once, with the door out; nothing is spawned
+    /// and the words stay waiting, unmarked. The person then chooses a new session (MSG1g's door), and the next look carries the
+    /// words on, on <c>account-2</c>, in the same tree, its note saying it was their choice and naming no account.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_whose_account_is_cooling_wait_for_its_reset_until_the_person_chooses_a_new_session()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var driver = new Daoris.Driver.Driver(client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal(("failed", "Taken", "account-1"), (service.State("s1"), service.Status("q1"), Profile(service, "s1")));
+        var tree = JsonNode.Parse(service.Record("s1"))!["tree"]!.GetValue<string>();
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", Until, true, "weekly", Seen, "s0"), Seen);
+        await service.SayAsync("s1", "Also log the port.");
+
+        var held = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", held.Events)}\nafter: {service.Record("s1")}";
+        var verdict = Assert.Single(held.Considerations, c => c.Quest.Id == "q1");
+        Assert.True(verdict.Verdict == StartVerdict.Blocked, seen);
+        Assert.StartsWith(
+            $"the `stub` account `account-1` is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and its conversation is "
+            + "on that account, so your words wait to go on in it then.",
+            verdict.Reason);
+        Assert.EndsWith("`daoris-driver sessions go-on-new s1`.", verdict.Reason);
+        var wait = Assert.Single(held.Waits);
+        Assert.Equal(("account-1", Until), (wait.Account, wait.Until));
+        Assert.Equal(["q1"], wait.Quests);
+        Assert.Equal(1, service.SessionCount);
+        Assert.Equal(["w1"], service.Said("s1"));
+        Assert.Null(new GoOnMarks(_home).Read("s1"));
+        Assert.DoesNotContain(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet: the `stub` account `account-1` is cooling", StringComparison.Ordinal) == true);
+
+        // A second look while it cools holds it again, and says nothing more in its conversation.
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
+        Assert.Equal(1, service.SessionCount);
+
+        var chose = await GoOnNew.AskAsync(client, _home, (adapter, profile) => roster.CoolingOf(adapter ?? "acp-stub", profile), "s1", Seen);
+        Assert.True(chose.Sent, chose.Message);
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        seen = $"after: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Equal(("completed", "account-2", "Done"), (service.State("s2"), Profile(service, "s2"), service.Status("q1")));
+        Assert.Equal(Path.GetFullPath(tree), Path.GetFullPath(JsonNode.Parse(service.Record("s2"))!["tree"]!.GetValue<string>()), ignoreCase: true);
+        Assert.Equal([("s1", "w1", "s2")], service.Taken);
+        var went = Assert.Single(Events("s1"), e => e.To == "s2");
+        Assert.Equal(ContinueWhy.Account, went.Why);
+        Assert.EndsWith("this start runs on another. You chose a new session over waiting for that account.", went.Text);
+
+        var carrying = Frames().Last(frame => frame["method"]!.GetValue<string>() == "session/prompt");
+        Assert.Equal("account-2", carrying["account"]!.GetValue<string>());
+        Assert.Contains("Also log the port.", carrying["prompt"]!.GetValue<string>());
+        var note = carrying["note"]!.GetValue<string>();
+        Assert.Contains(
+            "A new session, because its conversation stays with the account it ran on, and this start runs on another. "
+            + "You chose a new session over waiting for that account.",
+            note);
+        Assert.DoesNotContain("account-1", note);
+        Assert.Null(new NewSessionChoices(_home).Read("s1"));
+    }
+
+    /// <summary>
+    /// 🔴 Its own account signed out, which only the probe a start makes tells: the words are carried on at once on
+    /// <c>account-2</c>, handed them, saying why in a coded line that names no account.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_session_whose_account_is_signed_out_are_carried_on_at_once_on_the_next_account()
+    {
+        await using var service = SessionMessagesTickTests.SaidStandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(service.Url, null);
+        var first = new Daoris.Driver.Driver(
+            client, Resuming("fails"), adapters, _home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone });
+        await first.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal(("failed", "account-1"), (service.State("s1"), Profile(service, "s1")));
+        await service.SayAsync("s1", "Also log the port.");
+
+        // account-1 signs out; a fresh roster asks the agent again, as the next start's probe does.
+        var signedOut = new Daoris.Driver.Driver(
+            client, Resuming("fails", signedOut: "account-1"), adapters, _home, processes: new SessionProcesses(),
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone });
+        var look = await signedOut.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
+        Assert.True(service.SessionCount == 2, seen);
+        Assert.Equal(("account-2", "Done"), (Profile(service, "s2"), service.Status("q1")));
+        Assert.DoesNotContain(Frames(), frame => frame["method"]!.GetValue<string>() == "session/resume");
+        var went = Assert.Single(Events("s1"), e => e.To == "s2");
+        Assert.EndsWith("this start runs on another. That account is not signed in any more.", went.Text);
+        var note = Frames().Last(frame => frame["method"]!.GetValue<string>() == "session/prompt")["note"]!.GetValue<string>();
+        Assert.Contains("That account is not signed in any more.", note);
+        Assert.DoesNotContain("account-1", note);
+    }
+
+    /// <summary>
+    /// The protocol door's stand-in that resumes (MSG1g): it names its conversation <c>conv-&lt;session&gt;</c> and writes down
+    /// each frame with the stub account it runs as, what it was prompted and what its record's note said. A first prompt takes
+    /// the quest and, by its mode, closes it (<c>closes</c>) or fails its turn with the quest still taken (<c>fails</c>); a
+    /// carry-on closes it; a resumed prompt answers.
+    /// </summary>
+    private string ResumingAgent()
+    {
+        var script = Path.Combine(_home, "resuming-agent.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            import { appendFileSync } from 'node:fs';
+            import { basename } from 'node:path';
+            const [log, mode] = process.argv.slice(2);
+            const url = process.env.DAORIS_SERVICE_URL;
+            const session = process.env.DAORIS_SESSION_ID;
+            const home = process.env.DAORIS_STUB_CONFIG_DIR ?? '';
+            const account = home ? basename(home) : '(own)';
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            const note = async () => {
+              const sessions = await (await fetch(`${url}/api/sessions`)).json();
+              return sessions.find((s) => s.id === session)?.note ?? null;
+            };
+            const heard = (what) => appendFileSync(log, JSON.stringify({ ...what, session, account }) + '\n');
+            const respond = (body) => fetch(`${url}/api/quests/q1/respond`, {
+              method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+            let conversation = null;
+            let resumed = false;
+            const say = (text) => send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: conversation,
+              update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text } } } });
+            const lines = createInterface({ input: process.stdin });
+            lines.on('line', async (line) => {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1,
+                  agentCapabilities: { loadSession: true, sessionCapabilities: { resume: {}, close: {} } } } });
+              } else if (frame.method === 'session/new') {
+                conversation = 'conv-' + session;
+                heard({ method: 'session/new', conversation });
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: conversation } });
+              } else if (frame.method === 'session/resume' || frame.method === 'session/load') {
+                heard({ method: frame.method, conversation: frame.params?.sessionId });
+                conversation = frame.params.sessionId;
+                resumed = true;
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              } else if (frame.method === 'session/prompt') {
+                const prompt = (frame.params?.prompt ?? []).filter((block) => block.type === 'text').map((block) => block.text).join('\n');
+                heard({ method: 'session/prompt', prompt, resumed, note: await note() });
+                if (resumed) {
+                  say('Logged the port, as you said.');
+                  send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                } else if (prompt.includes('carrying on quest')) {
+                  await respond({ action: 'done', reason: 'carried on' });
+                  say('Done.');
+                  send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                } else if (mode === 'fails') {
+                  await respond({ action: 'take' });
+                  say('I started the field.');
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'Internal error: the model fell over.' } });
+                } else {
+                  await respond({ action: 'take' });
+                  await respond({ action: 'done', reason: 'served the report' });
+                  say('Served.');
+                  send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+                }
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            });
+            // stdin closed: the ending. Never process.exit (STUB1): the process ends when the loop drains.
+            lines.on('close', () => { process.exitCode = 0; process.stdin.destroy(); });
+            """);
+        return script;
+    }
+
     /// <summary>
     /// The stand-in harness. Asked its version or an account's sign-in, it answers, signed out for the accounts named in
     /// its second argument. Run, it writes down where it ran, as which account, what it was handed and what its record's
