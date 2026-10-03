@@ -130,12 +130,12 @@ internal sealed record TraceFacts(
 
 /// <summary>What an id was found to name, before the chain is read: the sessions and quests it starts from, and how each was found.</summary>
 /// <param name="Kind">The kind it names, one of <see cref="TraceEntry"/>.</param>
-/// <param name="Found">How it was found, a line each, for a commit: which evidence and which landing named it.</param>
+/// <param name="Found">How it was found, for a commit: which evidence and which landing named it.</param>
 /// <param name="Sessions">The sessions the chain is read through in full.</param>
 /// <param name="Quests">The quests the chain is read through, by id, in order.</param>
 /// <param name="Unrecorded">Sessions a landing names that no record on the service does.</param>
 internal sealed record TraceFound(
-    string Kind, string Id, IReadOnlyList<string> Found, IReadOnlyList<TracedSession> Sessions, IReadOnlyList<string> Quests,
+    string Kind, string Id, IReadOnlyList<TraceFoundBy> Found, IReadOnlyList<TracedSession> Sessions, IReadOnlyList<string> Quests,
     IReadOnlyList<string> Unrecorded);
 
 /// <summary>
@@ -169,6 +169,39 @@ public static class Trace
         if (a is null || b is null) return false;
         var (shorter, longer) = a.Length <= b.Length ? (a, b) : (b, a);
         return shorter.Length >= CommitDigits && longer.StartsWith(shorter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Read the stores, find what the id names, read the asks the chain names, and answer the chain (TRACE1b): the one read the
+    /// terminal prints and the screen words (D50). Where nothing names the id, or several kinds do, the sentence says so.
+    /// </summary>
+    public static async Task<TraceRead> ReadChainAsync(TraceAsk asked, TraceSources sources, CancellationToken ct = default)
+    {
+        var facts = await ReadAsync(sources, ct).ConfigureAwait(false);
+        var unread = TraceChains.Unread(facts);
+        var (found, problem) = Resolve(asked, facts);
+        if (found is null) return new TraceRead(null, problem, unread);
+
+        var asks = new Dictionary<string, TraceAskRead>(StringComparer.OrdinalIgnoreCase);
+        foreach (var id in TraceChains.AsksNamed(found, facts))
+        {
+            asks[id] = await ReadAskAsync(sources.Service, id, ct).ConfigureAwait(false);
+        }
+
+        return new TraceRead(TraceChains.Of(found, facts, asks, sources, unread), null, unread);
+    }
+
+    /// <summary>One ask, whole, from its door (<c>GET /api/asks/{id}</c>): never a failure of the trace.</summary>
+    private static async Task<TraceAskRead> ReadAskAsync(ServiceClient service, string id, CancellationToken ct)
+    {
+        try
+        {
+            return new TraceAskRead(id, await service.FindAskAsync(id, ct).ConfigureAwait(false), null);
+        }
+        catch (Exception error) when (Unanswered(error, ct))
+        {
+            return new TraceAskRead(id, null, error.Message);
+        }
     }
 
     /// <summary>Each store's facts, every read independent, so one that does not answer costs its links and not the others.</summary>
@@ -264,19 +297,19 @@ public static class Trace
             return (new TraceFound(TraceEntry.Quest, quest.Id, [], on, [quest.Id], []), null);
         }
 
-        var found = new List<string>();
+        var found = new List<TraceFoundBy>();
         var reached = new List<TracedSession>();
         foreach (var (made, line) in evidence)
         {
-            found.Add($"found in session {made.Id}'s evidence: {line}");
+            found.Add(new TraceFoundBy(TraceFoundBy.Evidence, made.Id) { Line = line });
             if (!reached.Contains(made)) reached.Add(made);
         }
 
         var unrecorded = new List<string>();
         foreach (var landing in landings)
         {
-            var at = SameCommit(landing.Tip, commit) ? "the tip of" : "the commit a plugin pushed of";
-            found.Add($"found as {at} branch {landing.Branch}, which session {landing.Session}'s landing made");
+            var how = SameCommit(landing.Tip, commit) ? TraceFoundBy.Tip : TraceFoundBy.Pushed;
+            found.Add(new TraceFoundBy(how, landing.Session) { Branch = landing.Branch });
             var made = facts.Sessions.FirstOrDefault(each => string.Equals(each.Id, landing.Session, StringComparison.OrdinalIgnoreCase));
             if (made is null)
             {

@@ -88,7 +88,7 @@
         "work.group.you", "work.head.waiting", "work.intake.waiting", "work.intakeRunning.title", "work.list.groupBy",
         "work.rail.ended",
         "work.rail.label", "work.rail.search.byContent", "work.rail.search.byName", "work.relations.title",
-        "work.sync.inConflict"
+        "work.sync.inConflict", "work.trace.title"
       ]
     },
     "field": {

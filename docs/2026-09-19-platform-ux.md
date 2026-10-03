@@ -315,7 +315,11 @@ controls are in the frame design's §3.
   press; its header and its row say *awaits your yes*, and the list puts it first, since the default list leaves closed
   quests out. Ask Daoris's accept card draws each departure the same way. **A chain** (D65 §4) is behind *Add a next step…*; the page shows it as one strip
   (MAP1a): the ask, the quests before and after, the steps still to come as written, and every
-  session under its quest, the one being read marked and the others underlined doors.
+  session under its quest, the one being read marked and the others underlined doors. **How it came to be** (TRACE1b,
+  D143) closes the page, as it closes a session's record above its conversation: folded to its name, read only on the
+  press, then its story on the folded line (*ask #a1 → quest #q1 → 2 sessions*). Open, it is a step per link, each naming
+  the store it was read from; someone's words quoted as written, the driver's own notes marked *shown as recorded*, and a
+  link nothing keeps marked *missing* where it would have been. A browser has none, since it has no driver.
 - **A folder waiting on trust** (D73) — the grant is offered where the hold is read: the quest's
   page carries *Trust this folder…* under its sitting line, and *What needs you* a `trust` row, the
   only place an intake's held room shows. The question is the agent's own, asked in the open: the
