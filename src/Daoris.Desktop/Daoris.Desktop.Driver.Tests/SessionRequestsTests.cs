@@ -251,7 +251,7 @@ public sealed class SessionRequestsTests : IDisposable
         inbox.Attach(interrupt: null);
         var request = Say("s1");
         Requests.Write(request);
-        await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1));
+        await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1), clock: () => Now);
 
         var honoured = await watch.HonourAsync();
 
@@ -273,7 +273,7 @@ public sealed class SessionRequestsTests : IDisposable
         var ledger = new SayingLedger();
         using var service = ledger.Client();
         Requests.Write(Say("s1"));
-        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => service, every: TimeSpan.FromHours(1));
+        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => service, every: TimeSpan.FromHours(1), clock: () => Now);
 
         Assert.Empty(await watch.HonourAsync());
         Assert.Single(Requests.Pending(Now));
@@ -292,7 +292,7 @@ public sealed class SessionRequestsTests : IDisposable
         ServiceClient? up = null;
         var request = Say("s1");
         Requests.Write(request);
-        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => up, every: TimeSpan.FromHours(1));
+        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => up, every: TimeSpan.FromHours(1), clock: () => Now);
 
         Assert.Empty(await watch.HonourAsync());
         Assert.Single(Requests.Pending(Now));
