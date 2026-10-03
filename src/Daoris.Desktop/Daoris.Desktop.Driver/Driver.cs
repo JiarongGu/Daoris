@@ -1300,13 +1300,15 @@ public sealed partial class Driver(
     /// How a native run goes on with what the person said while it worked (MSG1b, D137 §2.1): its own conversation resumed
     /// with the words, before the record concludes. Null on a door that cannot resume, which holds no words.
     /// </param>
+    /// <param name="working">Told once the ledger has moved the record to working, and so holds its tree (LEFT2, MSG1b).</param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null,
-        ResumeAsk? resume = null, string? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null)
+        ResumeAsk? resume = null, string? workingNote = null, Func<string, string, ProcessStartInfo?>? goOn = null,
+        Action? working = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1359,6 +1361,7 @@ public sealed partial class Driver(
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         await service.AdvanceAsync(sessionId, "working", note: workingNote, transcript: transcript, ct: ct).ConfigureAwait(false);
+        working?.Invoke();
 
         var exitCode = await WaitAsync(process, ct).ConfigureAwait(false);
         await capture.ConfigureAwait(false);

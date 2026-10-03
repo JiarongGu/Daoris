@@ -130,8 +130,8 @@ public sealed partial class Driver
         }
 
         // The park holds its tree in the ledger the whole time (D51), so a replay already sees it in use (LEFT2). An ended
-        // record holds it again as it goes on, which the ledger refuses where another session holds it now.
-        starting?.Dispose();
+        // record holds it again only once the ledger moves it to working, so its starting hold is kept until then (MSG1b).
+        if (park.Parked) starting?.Dispose();
 
         var sessionId = park.Session;
         var workTree = park.Tree!;
@@ -183,6 +183,7 @@ public sealed partial class Driver
                 // A park's note is replaced while it works; an ended record's keeps what ended it and says it goes on (MSG1b).
                 workingNote: park.Parked ? Continuations.Working : Continuations.GoingOn,
                 goOn: GoOnWith(adapter, target, selection, rules.File, handed),
+                working: () => starting?.Dispose(),
                 conclude: (exitCode, used, turnFailed) =>
                     ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ct))
                 .ConfigureAwait(false);
@@ -237,6 +238,8 @@ public sealed partial class Driver
         finally
         {
             output?.Close(sessionId);
+            // A resume that was tried lets the starting hold go however it ended, so a carry-on takes it again (LEFT2).
+            starting?.Dispose();
         }
     }
 
