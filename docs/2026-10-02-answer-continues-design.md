@@ -112,6 +112,10 @@ sees one. With the record reopened, the page shows one row and one conversation 
 has already travelled, and the strikes are counted from it. So the answer must leave the record parked, which is
 ANSWER1b's change.
 
+*Amended by D137 (MSG1, 2026-10-03): a finished record reopens on the person's words alone, so a session that ended goes
+on in its own record as an answered park does; §4's entries keep their new sessions, beside the words' reopen
+(`docs/2026-10-03-session-messages-design.md` §2.2–§2.3).*
+
 ## 4. The other entries
 
 - **Try again after a person's stop (SESSUX1b): a new session, as today.** The stop ended that session, and the record
