@@ -6,10 +6,11 @@ import type { SessionState } from './api';
 import i18n from './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
+  Button, CodeText, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
   SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownKey, type ShownState, shownState, StripMark, Tile,
   Tip, WaitingCard,
 } from './ui';
+import { code } from './test/code';
 import { CommandPalette } from './work/CommandPalette';
 
 describe('the primitives', () => {
@@ -157,7 +158,7 @@ describe('a setting row', () => {
     );
 
     expect(screen.getByText('Park a quest after this many failed sessions')).toBeTruthy();
-    expect(screen.getByText(/daoris driver strikes/)).toBeTruthy();
+    expect(screen.getByText(code(/daoris driver strikes/))).toBeTruthy();
     expect(screen.getByLabelText('count')).toBeTruthy();
     expect(screen.getByText('zero means it keeps trying')).toBeTruthy();
     // The why is announced on its glyph and is not a paragraph anyone has to scroll past.
@@ -301,6 +302,58 @@ describe('a code span in a sentence', () => {
   it('is the setting row hint, because every hint is a sentence of the console', () => {
     const { container } = render(<SettingRow label="notify" hint="Also `daoris driver notify on|off`." />);
     expect(container.querySelector('code')).toHaveTextContent('daoris driver notify on|off');
+  });
+});
+
+/**
+ * LOOK5, seen on the install in Settings → Agents in 中文: a browser may break after any hyphen, so a setting's
+ * terminal twin read `--no-` over `keep` and `--` over `workspace`. jsdom lays nothing out, so what is held is the
+ * structure that leaves a line nowhere to break inside a word: each word is an inline box no wider than its line,
+ * which moves whole and breaks inside only when it alone is wider (`break-word`, U8), and the spaces between the
+ * boxes are the span's only loose text.
+ */
+describe('a code span breaks only between its words', () => {
+  const COMMAND = 'daoris agent profile use claude-code --keep <account>|--no-keep --workspace work';
+
+  /** Each word's box, or the span itself where it is one word, with what lies loose between them. */
+  const boxesOf = (code: Element) => ({
+    words: code.children.length > 0 ? [...code.children] : [code],
+    loose: [...code.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).map((node) => node.textContent ?? ''),
+  });
+  const unbreakable = (box: Element) => {
+    expect(box.className).toContain('inline-block');
+    expect(box.className).toContain('max-w-full');
+    expect(box.className).toContain('wrap-break-word');
+    expect(box.className).not.toContain('break-all');
+  };
+
+  it('sets each word of a command in its own box, the spaces between them, the text unchanged', () => {
+    const { container } = render(<SettingRow label="keep" hint={`\`${COMMAND}\``} />);
+    const code = container.querySelector('code')!;
+    expect(code.textContent).toBe(COMMAND);
+    const { words, loose } = boxesOf(code);
+    expect(words.map((word) => word.textContent)).toEqual(COMMAND.split(' '));
+    words.forEach(unbreakable);
+    // Nothing but a space lies outside a box, so no hyphen is ever where the line may break.
+    expect(loose.every((text) => /^\s+$/.test(text))).toBe(true);
+    expect(words.find((word) => word.textContent === '<account>|--no-keep')).toBeTruthy();
+    expect(words.find((word) => word.textContent === '--workspace')).toBeTruthy();
+  });
+
+  it('makes a span of one word its own box, so a flag alone never breaks either', () => {
+    const { container } = render(<p><Inline text="Or `--no-keep`, a flag." /></p>);
+    const code = container.querySelector('code')!;
+    expect(code.textContent).toBe('--no-keep');
+    expect(code.children).toHaveLength(0);
+    unbreakable(code);
+  });
+
+  it('is the same span a screen sets as code itself, with its own size and ink', () => {
+    const { container } = render(<CodeText text="daoris agent settings claude-code --account work" className="text-meta" />);
+    const code = container.querySelector('code')!;
+    expect(code.className).toContain('text-meta');
+    expect(boxesOf(code).words.map((word) => word.textContent)).toEqual(['daoris', 'agent', 'settings', 'claude-code', '--account', 'work']);
+    boxesOf(code).words.forEach(unbreakable);
   });
 });
 
