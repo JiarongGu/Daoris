@@ -339,8 +339,8 @@ function QuestStep({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
                   <span className={cn(requirement.answer === 'met' ? 'text-st-done' : requirement.answer === 'departed' ? 'text-st-open' : 'text-ink-faint')}>
                     {t(`work.trace.answer.${requirement.answer}`)}
                   </span>
-                  {requirement.met && `: ${requirement.met}`}
-                  {requirement.departed && `: ${requirement.departed}`}
+                  {requirement.met && `${t('work.trace.colon')}${requirement.met}`}
+                  {requirement.departed && `${t('work.trace.colon')}${requirement.departed}`}
                   {requirement.on && ` · ${t('work.trace.answerOn')} “${requirement.on}”`}
                 </p>
               </li>

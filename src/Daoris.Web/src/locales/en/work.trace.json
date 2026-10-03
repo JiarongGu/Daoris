@@ -75,6 +75,7 @@
   "work.trace.answer.unanswered": "not answered: its done carries no answer to it",
   "work.trace.answer.not-yet": "not answered yet: a done answers it",
   "work.trace.answerOn": "on your words",
+  "work.trace.colon": ": ",
   "work.trace.session.head": "Session {{id}}",
   "work.trace.session.opened": "opened {{at}}",
   "work.trace.session.openedUnknown": "opened at a moment not recorded",

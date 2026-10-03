@@ -75,6 +75,7 @@
   "work.trace.answer.unanswered": "未回答：它的完成没有对此作答",
   "work.trace.answer.not-yet": "尚未回答：完成时才会回答",
   "work.trace.answerOn": "依据你的原话",
+  "work.trace.colon": "：",
   "work.trace.session.head": "会话 {{id}}",
   "work.trace.session.opened": "开始于 {{at}}",
   "work.trace.session.openedUnknown": "开始时刻没有记录",
