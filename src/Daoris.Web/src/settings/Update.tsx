@@ -2,20 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../format';
 import { Button, Card, MetaLine, Pill, SectionTitle, SettingRow } from '../ui';
-import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
-
-/** How a swap ended, as `outcome` carries it. */
-export type UpdateOutcome = NonNullable<UpdateState['outcome']>;
-
-/**
- * Where the install's update stands, as Settings' row reads it: what `DAORIS.UPDATE` · `STATE` answers, and `last`.
- *
- * @remarks
- * `last` is how the last swap ended, kept after the banner's *Dismiss* puts `outcome` away, as the terminal's plain
- * `daoris-driver update` still says it from the swap's journal (D50). The modules' `STATE` does not answer it yet
- * (UPDATE1b), so until it does the row says the last swap while `outcome` stands, and nothing of it after a dismissal.
- */
-export type UpdateStanding = UpdateState & { last?: UpdateOutcome | null };
+import type { UpdateMode, UpdateOutcome, UpdateState } from '../update/UpdateBanner';
 
 /** The pill a drain's state wears: in progress in taken's hue, a refusal an outcome in declined's, a held word neutral. */
 const STATE_TONE: Record<string, string> = { draining: 'taken', applying: 'taken', waiting: 'neutral', refused: 'declined' };
@@ -39,16 +26,18 @@ const WORD_VARIANT = { 'when-idle': 'default', now: 'primary', 'not-now': 'ghost
  * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended); the Driver domain holds
  * the hooks. It says the banner's sentences where they are the same fact — a swap's ending and each check's reason — so
  * the two doors never word one thing twice. Nothing until the shell answers.
+ *
+ * The last swap is `last`, the journal's record told or not (UPDATE1d), never the banner's once-said `outcome`: it stands
+ * after the banner's *Dismiss* and at every later start, as the terminal's plain `daoris-driver update` says it (D50).
  */
 export function UpdateSection({ update, busy = false, onSay }: {
-  update: UpdateStanding | undefined;
+  update: UpdateState | undefined;
   busy?: boolean;
   onSay: (mode: UpdateMode) => void;
 }) {
   const { t, i18n } = useTranslation();
   if (!update) return null;
-  const { state, staged, problem } = update;
-  const last = update.last ?? update.outcome;
+  const { state, staged, problem, last } = update;
 
   const named = (version?: string | null, commit?: string | null) =>
     `${version ?? ''}${commit ? ` (${commit})` : ''}`.trim();

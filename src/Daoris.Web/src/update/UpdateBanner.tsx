@@ -4,6 +4,11 @@ import { Button } from '../ui';
 /** The person's word on a staged build (UPDATE1, D139 §3), as `DAORIS.UPDATE` · `SET` takes it. */
 export type UpdateMode = 'when-idle' | 'now' | 'not-now';
 
+/** How a swap ended (D139 §6): installed, rolled back or refused, the build it was, and the check's or the roll-back's reason. */
+export type UpdateOutcome = {
+  phase: string; build?: string | null; version?: string | null; commit?: string | null; reason?: string | null; detail?: string | null;
+};
+
 /** Where an install's update stands, as the shell's `InstallUpdater` answers it: no path of this machine's. */
 export type UpdateState = {
   state: 'none' | 'waiting' | 'draining' | 'applying' | 'refused';
@@ -14,10 +19,14 @@ export type UpdateState = {
   turns: number;
   /** Why the staged build is not being installed: the check's code, which this words, and the driver's sentence. */
   problem: { code: string; message: string } | null;
-  /** How the last swap ended, said once at the start after it, until dismissed. */
-  outcome: {
-    phase: string; build?: string | null; version?: string | null; commit?: string | null; reason?: string | null; detail?: string | null;
-  } | null;
+  /** How the last swap ended, said once at the start after it, until dismissed: what this banner shows. */
+  outcome: UpdateOutcome | null;
+  /**
+   * The last swap as the install's journal records it, told or not, on every state (UPDATE1d): what Settings' row says
+   * after a dismissal, as the terminal's plain `daoris-driver update` says it (D50). Null with no journal, and while a swap
+   * is under way. The banner reads `outcome`, never this.
+   */
+  last: UpdateOutcome | null;
 };
 
 /** The codes a refusal or a roll-back is said by; anything else keeps the driver's own sentence. */
