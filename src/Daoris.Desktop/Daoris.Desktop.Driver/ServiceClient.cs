@@ -762,6 +762,12 @@ public sealed class ServiceClient : IDisposable
     public Task<string> SessionRecordsJsonAsync(CancellationToken ct = default) => GetAsync(SessionRecords.Door, ct);
 
     /// <summary>
+    /// Every quest, closed ones included, as the service wrote them: what a trace reads a quest's answers, its yes and its
+    /// moments from (TRACE1), which <see cref="QuestView"/> leaves out because no planner needs them.
+    /// </summary>
+    public Task<string> QuestsJsonAsync(CancellationToken ct = default) => GetAsync("/api/quests?includeClosed=true", ct);
+
+    /// <summary>
     /// The ledger's judgement of deleting a session's record (SESSUX1f, D126 §5.4), deleting nothing: whether it would, and
     /// if not, its sentence, its word and the facts the word names.
     /// </summary>
