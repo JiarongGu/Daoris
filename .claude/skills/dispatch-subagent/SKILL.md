@@ -123,6 +123,9 @@ Follow the dispatch-subagent skill's subagent half.
      modified, staged or untracked files, one with anything under `local/`, and whatever git refuses. It
      never forces a removal or uses `-D`. `--prune --plan` shows it, `--prune` runs it alone, and
      `--no-prune` skips it for one merge, for an agent you mean to continue in its worktree.
+     🔴 **Lock a worktree you make by hand** (`git worktree add --lock …`, or `git worktree lock` after):
+     an integration worktree at main's tip before its first commit counts as merged and clean, and the
+     next merge's prune would take it. Unlock it once it has landed, so the prune can clear it.
 5. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
