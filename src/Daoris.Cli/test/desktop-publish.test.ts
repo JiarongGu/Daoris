@@ -9,10 +9,10 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, HOST_HOME, KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, GATE_COMMAND, HOME, HOST_HOME, KEPT_LOCALES, LAUNCHER, MANIFEST_SCHEMA,
   MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE,
-  SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, installedNote, isInstall, layCli,
-  layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, stageRefusal, stagedManifest, unstage,
+  SHELL_FILES, SHELL_HOME, STAGE, STAGED, STAGED_REQUIRED, SWAP_JOURNAL, buildId, cliLaunchers, insideFixtures, installedNote, isInstall, layCli,
+  layOffers, layResources, promoteStage, recordedShellFiles, refusal, retiredPaths, stageRefusal, stagedManifest, ungatedRefusal, unstage,
   writeManifest,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
@@ -122,6 +122,117 @@ test('--stage stages only beside an install, never over a swap in progress, and 
     writeFileSync(join(at, ...STAGE, SWAP_JOURNAL), JSON.stringify({ phase }));
     assert.equal(stageRefusal(at, { service: true }), null, phase);
   }
+});
+
+/**
+ * GATE3: a merge runs only the gates its lanes reach, so the full set runs before the install is built. A
+ * "web only" batch once skipped the .NET suites and broke main unseen; the lane table could be wrong the
+ * same way, and this is where that is caught, the same day. The deployment rehearsal's own publishes go
+ * into a scratch folder under `_fixtures`, which is never asked: it is one of the gates being run.
+ */
+type Ask = (root: string) => { code: number; out: string };
+
+test('a publish into a scratch folder under _fixtures is never asked about gates; any other folder is', () => {
+  const fx = makeFixture('publish-inside-fixtures');
+  assert.equal(insideFixtures(join(fx.root, '_fixtures', 'deployment-rehearsal', 'install'), fx.root), true);
+  assert.equal(insideFixtures(join(fx.root, '_fixtures'), fx.root), true);
+  assert.equal(insideFixtures(join(fx.root, '_fixtures-not', 'install'), fx.root), false, 'a sibling whose name starts the same is not inside');
+  assert.equal(insideFixtures(join(fx.root, 'install'), fx.root), false);
+  assert.equal(insideFixtures(join(dirname(fx.root), 'install'), fx.root), false);
+  if (process.platform === 'win32') assert.equal(insideFixtures(join(fx.root.toUpperCase(), '_FIXTURES', 'x'), fx.root), true);
+  fx.cleanup();
+});
+
+test('a publish refuses a commit the full set has not passed, naming what is missing, the command that runs it, and the override', async () => {
+  const fx = makeFixture('publish-ungated');
+  const to = join(fx.root, 'install');
+  const asked: string[] = [];
+  const ask = (code: number, out: string): Ask => (root) => {
+    asked.push(root);
+    return { code, out };
+  };
+  const missing = 'merge-branch: the full set has NOT passed this checkout (tree 1a2b3c4, HEAD abc1234): 11 of 13 gates.\n'
+    + '  driver-process   none   no verdict on this tree\n  deployment       none   no verdict on this tree\n';
+
+  const passed = ungatedRefusal(to, fx.root, { ask: ask(0, 'merge-branch: the full set has passed this checkout (tree 1a2b3c4, HEAD abc1234): 13 of 13 gates.\n') });
+  assert.equal(passed.refusal, null);
+  assert.match(passed.note!, /the full set has passed/);
+  assert.deepEqual(asked, [fx.root]);
+
+  const refused = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run every gate on it: node tools/merge-branch.mjs --full\n`) });
+  assert.match(refused.refusal!, /the full set of gates has not passed/);
+  assert.match(refused.refusal!, /driver-process\s+none/);
+  assert.equal(refused.refusal!.split(GATE_COMMAND).length, 2, 'it names the command that runs the full set, once');
+  // One command, spelled in two files: the publish's refusal and the merge tool's own.
+  const mergeTool = await import(
+    // @ts-expect-error — untyped workspace tooling; see above
+    '../../../tools/merge-branch.mjs') as { FULL_COMMAND: string };
+  assert.equal(GATE_COMMAND, mergeTool.FULL_COMMAND);
+  assert.equal(GATE_COMMAND, 'node tools/merge-branch.mjs --full');
+  assert.match(refused.refusal!, /--force-ungated/);
+
+  // The person's explicit override publishes, and says it is ungated.
+  const forced = ungatedRefusal(to, fx.root, { force: true, ask: ask(1, missing) });
+  assert.equal(forced.refusal, null);
+  assert.match(forced.note!, /ungated \(--force-ungated\)/);
+  assert.match(forced.note!, /driver-process/);
+
+  // A record that cannot be read is no proof either.
+  const broken = ungatedRefusal(to, fx.root, { ask: ask(2, 'merge-branch: daoris.gates.json is not valid JSON') });
+  assert.match(broken.refusal!, /could not tell whether the full set passed/);
+  assert.match(broken.refusal!, /not valid JSON/);
+
+  // The deployment rehearsal's scratch install is not asked at all.
+  asked.length = 0;
+  assert.deepEqual(ungatedRefusal(join(fx.root, '_fixtures', 'deployment-rehearsal', 'install'), fx.root, { ask: ask(1, missing) }), { refusal: null, note: null });
+  assert.deepEqual(asked, []);
+  fx.cleanup();
+});
+
+test('the stage refuses an ungated commit, as the merge tool\'s gates record reads, and publishes once every gate passed it', () => {
+  const fx = makeFixture('publish-gates-record');
+  const repo = join(fx.root, 'repo');
+  mkdirSync(repo, { recursive: true });
+  const env = {
+    ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_AUTHOR_NAME: 'Fixture', GIT_AUTHOR_EMAIL: 'fixture@example.test',
+    GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.test',
+  };
+  const git = (...args: string[]): string => {
+    const result = spawnSync('git', args, { cwd: repo, encoding: 'utf8', env });
+    assert.equal(result.status, 0, `git ${args.join(' ')}: ${result.stderr}`);
+    return result.stdout.trim();
+  };
+  git('init', '--quiet', '--template=', '-b', 'main');
+  // git walks up: the tool must find this repository, never the one this suite sits in.
+  assert.equal(git('rev-parse', '--show-toplevel').toLowerCase().replace(/\\/g, '/'), repo.toLowerCase().replace(/\\/g, '/'));
+  writeFileSync(join(repo, '.gitignore'), 'local/\n');
+  writeFileSync(join(repo, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node a.mjs' }, { name: 'second', run: 'node b.mjs' }] })}\n`);
+  writeFileSync(join(repo, 'code.txt'), 'built\n');
+  git('add', '-A');
+  git('commit', '--quiet', '-m', 'first');
+  const tree = git('rev-parse', 'HEAD^{tree}');
+  const record = (gates: string[]) => {
+    mkdirSync(join(repo, 'local'), { recursive: true });
+    const at = '2026-10-04T12:00:00Z';
+    writeFileSync(join(repo, 'local', 'gate-verdicts.json'),
+      `${JSON.stringify({ schema: 1, verdicts: gates.map((gate) => ({ gate, verdict: 'PASS', tree, at, commit: null, branch: null })) }, null, 2)}\n`);
+  };
+  const to = join(fx.root, 'install');
+
+  let gated = ungatedRefusal(to, repo);
+  assert.match(gated.refusal!, /first\s+none/);
+  assert.match(gated.refusal!, /second\s+none/);
+
+  record(['first']);
+  gated = ungatedRefusal(to, repo);
+  assert.match(gated.refusal!, /second\s+none/);
+  assert.match(gated.refusal!, /first\s+PASS/);
+
+  record(['first', 'second']);
+  gated = ungatedRefusal(to, repo);
+  assert.equal(gated.refusal, null, gated.refusal ?? '');
+  assert.match(gated.note!, /the full set has passed/);
+  fx.cleanup();
 });
 
 test('a stage replaces what was staged whole, and a publish in place removes it', () => {

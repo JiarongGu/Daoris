@@ -5,8 +5,9 @@
 > MOD rows in `TASKS.md`. Status: **MOD1–MOD9 built** (D106 for MOD1). *D115 (DEV1,
 > `docs/2026-10-01-self-development-design.md`) designs what the driver makes of this: §5's map moves to
 > `daoris.lanes.json` as the repository's own declaration, and §3's rules 6 and 7 become the driver's queue
-> and a steward's lane. DEV2 has moved the map, with ids and the steward's `records` lane (§5). Until the
-> other rows land, everything else here stands as written.*
+> and a steward's lane. DEV2 has moved the map, with ids and the steward's `records` lane (§5). GATE3 and
+> GATE4 narrow the merge tool's gates by lane (§3). Until the other rows land, everything else here stands as
+> written.*
 
 ## 1. What was measured
 
@@ -98,6 +99,16 @@ batch's end the tool prunes (GATE2): a branch merged into main goes with its wor
 worktree is locked (an agent runs in it), holds changes or untracked files, or has anything under
 `local/`; it never forces and never uses `-D`. A worktree made by hand is locked by whoever made it. The brief is the local skill
 `dispatch-subagent`.
+
+**GATE3 and GATE4 (2026-10-04) narrow rule 6.** A merge runs the baseline (the universal gates, the code map,
+`verify`) and the gates its changed paths can reach, by the tool's lane table (`REACH`), and says why each runs or
+is skipped. A path the table does not place runs every gate, and `--full` runs the plan. Tests hold the table to
+every repository path a .NET suite reads and to everything a rehearsal imports or starts. Each verdict is kept
+with the tree it ran on, and `publish:desktop` refuses a tree the full set has not passed, as `--passed` reads
+it (`--full` alone runs the plan on the checkout), so a wrong table is caught before the install is built.
+`--rerun <gate>…` re-runs a fixed gate on the merge in place and keeps the other verdicts, saying from when. A
+Process half leaves a trx, and the ten slowest classes are printed after it (PROC1). D115's note says what this
+amends.
 
 ## 4. The splits (the code half)
 
