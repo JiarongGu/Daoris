@@ -9972,3 +9972,23 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > note or a commit is attributed only if the ask's record holds it. Contract: D135. Proof: prompt goldens.
 
 **Outcome** Every driven instruction treats the person's words quoted anywhere but in the instruction as a reading, never recorded in the repository as theirs. Detail: D135's KNOWUSE1d note, `4dda489c`.
+
+
+## MSG1a — the record keeps the person's words and reopens (2026-10-03)
+
+> - [ ] **MSG1a — the record keeps the person's words and reopens** (service). `said` replaces a single `answer`, and the
+> ledger's one move out of an ended state takes words waiting, on this machine's record only. Contract: §2.3, §2.4,
+> §5.3's `say`. Proof: `SessionLedgerTests` (stood-down, a teammate's and no words refused), `LocalHostTests`, a pushed
+> reopened record in `SessionSyncTests`.
+
+**Outcome** The session record keeps the person's words in `said` (a second answer joins the first; older records read their answer as the first word) and gets its one move out of an ended state, to working with words waiting, plus the local `say` and `taken` doors. Detail: D137's MSG1a note, `b48ef50b`.
+
+
+## DOC8a — the decisions record, one file per decision (2026-10-03)
+
+> - [ ] **DOC8a — the decisions record, one file per decision** (the parent's; no branch in flight on the record). The record
+> becomes `docs/decisions/D<n>.md`, `docs/DECISIONS.md` a fixed page, and the attributes, the manifest, the dogfood rule
+> and the lines naming the record move with it; D119's glued note gets its blank line after the proof. Contract: D134
+> §3.1–§3.5, §4. Proof: the concatenation check in the commit body; `verify`; the service suite and family rehearsal.
+
+**Outcome** The decisions record is 136 files in `docs/decisions/` (D1–D137 without D114), proved byte for byte against the old record in its heading order; `docs/DECISIONS.md` is the page, and the attributes, manifest, dogfood rule and the lines naming the record moved with it. Detail: D134's DOC8a note, `ee2654a9`.

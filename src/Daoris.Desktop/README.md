@@ -2,7 +2,7 @@
 
 **Status: built — the driver, its headless host and the shell all exist, and the family rehearsal
 drives them end to end.** `docs/2026-09-19-driver-design.md` (D46) is the contract; how each part
-got its shape is in `docs/DECISIONS.md` and `docs/task-archive.md`, not here.
+got its shape is in `docs/decisions/` and `docs/task-archive.md`, not here.
 
 | Project | What it is |
 |---|---|

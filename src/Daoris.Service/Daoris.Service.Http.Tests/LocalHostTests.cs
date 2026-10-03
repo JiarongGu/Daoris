@@ -538,8 +538,9 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
     /// <summary>
     /// ANSWER1b (D131 §5): the answer door replies with the session as it now stands, still `awaiting-person`, its words
-    /// kept and said on its note, which is how the driver tells a watcher nothing moved; a second answer replaces the
-    /// first. The words are answered to this machine only, like a transcript, and a record that is not parked is a 409.
+    /// kept and said on its note, which is how the driver tells a watcher nothing moved; a second answer joins the first
+    /// (MSG1a, D137 §6), `answer` the words joined for a client from before. The words are answered to this machine only,
+    /// like a transcript, and a record that is not parked is a 409.
     /// </summary>
     [Fact]
     public async Task An_answer_replies_with_the_session_still_parked_and_its_words_kept()
@@ -563,17 +564,160 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Equal(200, answered.Status);
         var session = answered.Json.GetProperty("session");
-        Assert.Equal(("awaiting-person", "9090.", "which port?\n\nAnswered: 9090."),
+        Assert.Equal(("awaiting-person", "8080.\n\n9090.", "which port?\n\nAnswered: 8080.\n\nAnswered: 9090."),
             (session.GetProperty("state").GetString(), session.GetProperty("answer").GetString(), session.GetProperty("note").GetString()));
+        Assert.Equal(["8080.", "9090."], session.GetProperty("said").EnumerateArray().Select(word => word.GetProperty("text").GetString()));
         Assert.Equal($"Answered session `{id}`: it carries on with `#{quest}` at the driver's next look.",
             answered.Json.GetProperty("message").GetString());
         var offMachine = (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Json.EnumerateArray()
             .Single(row => row.GetProperty("id").GetString() == id);
         Assert.Equal("awaiting-person", offMachine.GetProperty("state").GetString());
         Assert.False(offMachine.TryGetProperty("answer", out _));
+        Assert.False(offMachine.TryGetProperty("said", out _));
 
         // The record holds its tree until the driver goes on with it; stopped, nothing of it holds a later test.
         Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped" })).Status);
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.3, §5.3): the say door keeps the person's words on an ended session of this machine's, the record
+    /// staying as it ended. It answers the word with its id, when and its files' names (never a path), and the session as
+    /// it stands. The words are answered to this machine only, `answer` the words joined for a client from before. The
+    /// state door then takes the record out of its ended state to working, and the taken door takes the words off it.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_to_an_ended_session_wait_on_it_and_it_goes_on_through_the_state_door()
+    {
+        var quest = await PublishAsync("A quest whose session finished and is written to");
+        var id = await RunningAsync(quest, "msg1a-goes-on");
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "completed", note = "landed." })).Status);
+        var file = Path.Combine(host.Repositories, "msg1a", "plan.md");
+
+        var said = await host.PostAsync($"/api/sessions/{id}/say", new { text = "Also add the changelog line.", files = new[] { file } });
+
+        Assert.Equal(200, said.Status);
+        Assert.Equal("completed", said.Json.GetProperty("session").GetProperty("state").GetString());
+        Assert.Equal(
+            $"Kept for session `{id}`: the same session goes on with your words at the driver's next look.",
+            said.Json.GetProperty("message").GetString());
+        var word = said.Json.GetProperty("said");
+        var wordId = word.GetProperty("id").GetString()!;
+        Assert.Equal("Also add the changelog line.", word.GetProperty("text").GetString());
+        Assert.Equal(["plan.md"], word.GetProperty("files").EnumerateArray().Select(name => name.GetString()));
+        Assert.True(word.GetProperty("reopens").GetBoolean());
+        Assert.Equal(JsonValueKind.String, word.GetProperty("at").ValueKind);
+        Assert.DoesNotContain("msg1a", word.GetRawText(), StringComparison.OrdinalIgnoreCase);
+
+        var listed = (await ListedSessionAsync(id))!.Value;
+        Assert.Equal([wordId], listed.GetProperty("said").EnumerateArray().Select(w => w.GetProperty("id").GetString()));
+        Assert.Equal("Also add the changelog line.", listed.GetProperty("answer").GetString());
+        var offMachine = (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == id);
+        Assert.False(offMachine.TryGetProperty("said", out _));
+        Assert.False(offMachine.TryGetProperty("answer", out _));
+
+        var reopened = await host.PostAsync($"/api/sessions/{id}/state", new { state = "working" });
+
+        Assert.Equal(200, reopened.Status);
+        var going = reopened.Json.GetProperty("session");
+        Assert.Equal("working", going.GetProperty("state").GetString());
+        Assert.StartsWith("landed.\n\nWent on with your words at ", going.GetProperty("note").GetString());
+        Assert.Equal(1, going.GetProperty("said").GetArrayLength());
+
+        var taken = await host.PostAsync($"/api/sessions/{id}/taken", new { said = new[] { wordId } });
+
+        Assert.Equal(200, taken.Status);
+        Assert.Equal(0, taken.Json.GetProperty("session").GetProperty("said").GetArrayLength());
+        Assert.False(taken.Json.GetProperty("session").TryGetProperty("answer", out _));
+        Assert.Equal(400, (await host.PostAsync($"/api/sessions/{id}/taken", new { said = Array.Empty<string>() })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/sessions/nothing2/taken", new { said = new[] { wordId } })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped" })).Status);
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.2, §5.3): the say door refuses what never goes on, each by its word beside the ledger's sentence and
+    /// the fact the word names: a stood-down session (its quest), a teammate's record (its machine), an intake (its ask)
+    /// and a running session, each 409; no words, 400; and a session this host does not hold, 404.
+    /// </summary>
+    [Fact]
+    public async Task The_say_door_refuses_what_never_goes_on_by_its_word()
+    {
+        var quest = await PublishAsync("A quest whose session stood down");
+        var stood = await RunningAsync(quest, "msg1a-stood");
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{stood}/state", new { state = "stood-down" })).Status);
+        var running = await RunningAsync(await PublishAsync("A quest whose session runs"), "msg1a-running");
+        await host.Composed.Sessions.MirrorAsync(new Session(
+            "cd34ef56", quest, "Keeper", "claude-code", SessionState.Completed, "landed.", null, null,
+            DateTimeOffset.UtcNow, DateTimeOffset.UtcNow) { Origin = "alice-laptop" });
+        var asked = await host.PostAsync("/api/asks", new { workspace = "default", sentence = "Find who should build the weekly page." });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var intake = await host.PostAsync("/api/sessions/intake", new { ask, room = Path.Combine(host.Repositories, "rooms", "msg1a") });
+        Assert.Equal(200, intake.Status);
+        var intakeId = intake.Json.GetProperty("session").GetProperty("id").GetString()!;
+
+        var stoodDown = await host.PostAsync($"/api/sessions/{stood}/say", new { text = "Do it anyway." });
+        var theirs = await host.PostAsync("/api/sessions/cd34ef56/say", new { text = "One more thing." });
+        var anIntake = await host.PostAsync($"/api/sessions/{intakeId}/say", new { text = "Ask Keeper." });
+        var working = await host.PostAsync($"/api/sessions/{running}/say", new { text = "Hello." });
+        var blank = await host.PostAsync($"/api/sessions/{running}/say", new { text = "  " });
+        var unknown = await host.PostAsync("/api/sessions/nothing3/say", new { text = "Hello." });
+
+        Assert.Equal((409, "stood-down", quest), (stoodDown.Status, Refusal(stoodDown), stoodDown.Json.GetProperty("quest").GetString()));
+        Assert.Equal((await host.Composed.Ledger.SayAsync(stood, "Do it anyway.", null, DateTimeOffset.UtcNow)).Message, stoodDown.Error);
+        Assert.Equal((409, "not-ours", "alice-laptop"), (theirs.Status, Refusal(theirs), theirs.Json.GetProperty("origin").GetString()));
+        Assert.Equal((409, "intake", ask), (anIntake.Status, Refusal(anIntake), anIntake.Json.GetProperty("ask").GetString()));
+        Assert.Equal((409, "running"), (working.Status, Refusal(working)));
+        Assert.Equal((400, "no-words"), (blank.Status, Refusal(blank)));
+        Assert.Equal((404, "not-found"), (unknown.Status, Refusal(unknown)));
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{running}/state", new { state = "stopped" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{intakeId}/state", new { state = "stopped" })).Status);
+
+        static string? Refusal(Answer answer) => answer.Json.GetProperty("refusal").GetString();
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.4, D133 §1): the person's words reach the ask the session's work is for. Said to a parked session,
+    /// through the say door as through the answer door, they are its answer and kept at once. Said to an ended one, they
+    /// are kept once taken, as `reopened`, said to the session that took them; an answer taken off the record is not kept
+    /// twice.
+    /// </summary>
+    [Fact]
+    public async Task Words_reach_the_ask_as_an_answer_at_once_and_as_reopened_once_taken()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Build the monthly report through the v3 bridge.", to = "Keeper",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var quest = asked.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var id = await RunningAsync(quest, "msg1a-ask");
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "awaiting-person", note = "Which report?" })).Status);
+
+        var answer = await host.PostAsync($"/api/sessions/{id}/say", new { text = "use the common-report" });
+        Assert.Equal(200, answer.Status);
+        Assert.Equal(["asked", "answered"], await KindsAsync());
+
+        foreach (var state in new[] { "working", "completed" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var later = await host.PostAsync($"/api/sessions/{id}/say", new { text = "and add the changelog line" });
+        Assert.Equal(["asked", "answered"], await KindsAsync());
+
+        var taken = await host.PostAsync($"/api/sessions/{id}/taken", new
+        {
+            said = new[] { answer.Json.GetProperty("said").GetProperty("id").GetString(), later.Json.GetProperty("said").GetProperty("id").GetString() },
+        });
+
+        Assert.Equal(200, taken.Status);
+        var words = (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words").EnumerateArray().ToList();
+        Assert.Equal(["asked", "answered", "reopened"], words.Select(w => w.GetProperty("kind").GetString()));
+        Assert.Equal(("and add the changelog line", id, quest),
+            (words[2].GetProperty("text").GetString(), words[2].GetProperty("session").GetString(), words[2].GetProperty("quest").GetString()));
+
+        async Task<IEnumerable<string?>> KindsAsync() =>
+            (await host.GetAsync($"/api/asks/{ask}")).Json.GetProperty("words").EnumerateArray().Select(w => w.GetProperty("kind").GetString()).ToList();
     }
 
     /// <summary>

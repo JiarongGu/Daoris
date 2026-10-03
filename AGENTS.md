@@ -27,7 +27,7 @@ Declared in `daoris.json`; look here before searching.
 | Role | Where | Its job |
 |---|---|---|
 | router | `docs/README.md` | every document, its kind and its standing |
-| decisions | `docs/DECISIONS.md` | numbered decisions, with why and what each rejected |
+| decisions | `docs/decisions` | numbered decisions, with why and what each rejected |
 | backlog | `TASKS.md` | open work only |
 | archive | `docs/task-archive.md` | finished work, with its date and outcome |
 | fixes | `docs/FIX-LOG.md` | root cause, fix and verification per defect |

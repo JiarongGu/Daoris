@@ -430,14 +430,16 @@ test('the universal gates run in verify, not only at release', () => {
  * practice rather than imposing it.
  */
 test('every decision entry from D51 on says what it rejected', () => {
-  const text = readText(join(repoRoot, 'docs', 'DECISIONS.md'));
+  // One file per decision since DOC8a (D134): `docs/decisions/D<n>.md`, its number in its name, so a file
+  // is an entry whole and no split at headings can drop one. The page left at `docs/DECISIONS.md` holds
+  // none; read in their place, it was the guard below that refused to pass on its zero entries.
+  const folder = join(repoRoot, 'docs', 'decisions');
   const GRANDFATHERED_THROUGH = 50;
-  // Split rather than a lazy match with a terminating lookahead: the obvious regex for "this heading
-  // to the next" needs an end-of-input anchor, JavaScript has none (`\Z` is a literal Z), and the
-  // version written that way silently dropped the NEWEST entry — the one the rule most exists for.
-  // The guard below caught it; without the guard it would have been a green test checking nothing.
-  const entries = text.split(/^## (?=D\d)/m).slice(1)
-    .map((section) => ({ number: Number(/^D(\d+)/.exec(section)?.[1]), body: section }))
+  const entries = readdirSync(folder)
+    .flatMap((name) => {
+      const number = /^D(\d+)\.md$/.exec(name)?.[1];
+      return number ? [{ number: Number(number), body: readText(join(folder, name)) }] : [];
+    })
     .filter((entry) => entry.number > GRANDFATHERED_THROUGH);
 
   // Without this the test passes loudest exactly when the pattern stops matching headings at all.

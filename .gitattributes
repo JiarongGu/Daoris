@@ -22,8 +22,13 @@ daoris.lock -merge
 # versions of a line two branches changed, so `tools/doc-duplicates.mjs` (run by `verify`) refuses a
 # decision number, heading, index row or changelog line that appears twice; the parent reads every
 # merged diff besides. Not the backlog: rows move out of it, which union would undo.
+#
+# The decisions are one file per decision, each merged by union on its own (D134): as one file, union put
+# a note under the wrong decision or a decision in twice in a quarter of its merges. The page left at
+# `docs/DECISIONS.md` is not union-merged, so a note a branch from before wrote there conflicts, and the
+# check refuses one that lands.
 CHANGELOG.md merge=union
-docs/DECISIONS.md merge=union
+docs/decisions/*.md merge=union
 docs/task-archive.md merge=union
 docs/FIX-LOG.md merge=union
 docs/README.md merge=union

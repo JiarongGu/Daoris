@@ -115,6 +115,12 @@ public enum AskWordKind
 
     /// <summary>A message added to a session while it ran.</summary>
     Added,
+
+    /// <summary>
+    /// Words said to a session after it ended, which went on with them (MSG1a, D137 §2.4): kept once a session took
+    /// them — the reopened record itself, or the session a fallback handed them to.
+    /// </summary>
+    Reopened,
 }
 
 /// <summary>One thing the person said on an ask, verbatim (DRIFT1a, D133 §1).</summary>

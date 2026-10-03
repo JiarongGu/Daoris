@@ -100,7 +100,7 @@ changes no row (D127).
 
 | Document | What it holds |
 |---|---|
-| `DECISIONS.md` | Every decision, numbered, with its reasoning; from D51 on, with what it rejected |
+| `decisions/` | Every decision, one file each (`D<n>.md`), with its reasoning and its notes; from D51 on, with what it rejected. `DECISIONS.md` is the page that says so (D134) |
 | `task-archive.md` | Every finished task, with its date and outcome |
 | `FIX-LOG.md` | Root cause, fix and verification for each non-trivial defect |
 | `2026-09-25-rev3-review.md` | REV3's ledger, and CLEAN1's item by item |

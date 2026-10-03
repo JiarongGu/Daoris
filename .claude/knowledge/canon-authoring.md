@@ -26,7 +26,7 @@ an ignored rule still costs context on every single session.
 - **Where a mechanism must be named, name its tool-absent path in the same breath.** A rule that
   instructs an action only one tool can perform reads as a *dead end* to anyone working without it —
   and that is not a hypothetical reader. An adopted repository stays fully workable for contributors
-  who do not run this tool, their agents included (`docs/DECISIONS.md` D48); those agents load the same
+  who do not run this tool, their agents included (`docs/decisions/D48.md`); those agents load the same
   vendored markdown and find an instruction they cannot carry out. So: *never write into another
   repository; publish a quest where a request system exists, and file the request with that
   repository's owner where none does.* **The principle is canonical; the mechanism degrades.**
@@ -38,7 +38,7 @@ an ignored rule still costs context on every single session.
     audit that established it first "fixed" a rule naming the generated index, which needed nothing.
   - **The budget makes the cost real, and that is the point.** A carve-out costs always-loaded bytes in
     every repository forever, so one that does not fit is a *split* — the detail moves to the on-demand
-    tier and the rule keeps the principle — never a raised limit (`docs/DECISIONS.md` D28). The audit
+    tier and the rule keeps the principle — never a raised limit (`docs/decisions/D28.md`). The audit
     that established this found its own bytes: the rule it corrected had been restating, in
     always-loaded text, what its own on-demand document already said better.
 - **No product names, no build commands, no repository-specific layouts.** Say "the always-loaded rules
@@ -70,13 +70,13 @@ silent. Tests assert `name` matches the filename, so a rename that misses the fr
   rendered into a region of the adopter's `AGENTS.md`, the one instruction file every harness this
   family drives actually reads; `.claude/rules/` reached exactly one of the three. Every session in
   every adopting repository pays for it, so put a document here only if nearly every task needs it. The
-  core budget measures exactly this span and **reports** it rather than failing on it (`docs/DECISIONS.md`
-  D54) — a fact gates, a judgement reports.
+  core budget measures exactly this span and **reports** it rather than failing on it
+  (`docs/decisions/D54.md`) — a fact gates, a judgement reports.
 - **`knowledge/` is read on demand** — the right home for anything long, or anything that only matters
   when touching one area.
 - **`skills/` is invoked by name** — a procedure, not a rule. Only its `description` is ever loaded
   unasked, so a skill's body is cheap and its description is not.
-- There is no `tier` field; the **location** *is* the tier (`docs/DECISIONS.md` D7 as amended by D59) —
+- There is no `tier` field; the **location** *is* the tier (`docs/decisions/D7.md`, as amended by D59) —
   a directory for the two on-demand tiers, a region inside a file for the always-loaded one.
 
 ### Writing a skill
@@ -95,7 +95,7 @@ description: <what it does, and when to use it — this is the trigger>
   description for the moment of matching: what it does *and* when to reach for it.
 - **The provenance header goes UNDER the closing `---`,** because frontmatter is only frontmatter when it
   starts at the first byte. `withHeader` does this; never hand-stamp a skill.
-- **Canonical skills are parameter-free** (`docs/DECISIONS.md` D14). No paths, no build commands, no
+- **Canonical skills are parameter-free** (`docs/decisions/D14.md`). No paths, no build commands, no
   roster of other skills. Where a skill needs repository specifics, send the reader to the **generated
   index** — it is built from the adopter's own disk, so it is right in repositories the canon has never
   seen. Measured evidence: across twelve repositories the shared procedure was ~15 lines and the rest was
@@ -111,7 +111,7 @@ description: <what it does, and when to use it — this is the trigger>
 3. **Write a pack when a repository is ready to adopt it**, and validate it by that adoption. A pack
    nobody installs is a draft that looks like doctrine.
 4. **A pack whose own document replaces a core one may offer to switch it off** — `switchesOff` in
-   `pack.json`, the core row mapped to the reason (`docs/DECISIONS.md` D71). The replacement ships under
+   `pack.json`, the core row mapped to the reason (`docs/decisions/D71.md`). The replacement ships under
    its own name, never at the core target, and the row goes off only where a repository confirms it.
 5. `npm run verify` — tests assert frontmatter, filename match, pack description, and the absence of
    machine paths.

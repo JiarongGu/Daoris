@@ -123,33 +123,138 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER1b: an answer is kept with its note and leaves the state where it is. It is a new revision, so the note goes
-    /// up with the next push; a teammate's mirrored record is never answered here. A move told to clear it clears it,
-    /// and any other move keeps it.
+    /// ANSWER1b, as MSG1a keeps it (D137 §2.4): a word kept with a note leaves the state where it is and is a new revision,
+    /// so the note goes up with the next push; a word kept with no note writes no revision, since the words never travel.
+    /// Words are kept in order, each whole, and `Answer` is them joined by a blank line. A teammate's mirrored record is
+    /// never written to here. A move told to clear the words clears them, and any other move keeps them.
     /// </summary>
     [Fact]
-    public async Task An_answer_is_kept_with_its_note_as_a_new_revision_and_a_move_clears_it_only_when_told()
+    public async Task Words_are_kept_in_order_and_a_move_clears_them_only_when_told()
     {
         var parked = await Create();
         await _sessions.SetStateAsync(parked.Id, SessionState.AwaitingPerson, "which port?", null, null, Now);
         var before = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single().Revision;
 
-        var answered = await _sessions.AnswerAsync(parked.Id, "8080.", "which port?\n\nAnswered: 8080.", Now.AddMinutes(1));
+        var answered = await _sessions.KeepSaidAsync(
+            parked.Id, new SaidWord("w1", "8080.", Now.AddMinutes(1), []), note: "which port?\n\nAnswered: 8080.");
 
         Assert.Equal((SessionState.AwaitingPerson, "8080.", "which port?\n\nAnswered: 8080.", Now.AddMinutes(1)),
             (answered!.State, answered.Answer, answered.Note, answered.Updated));
-        Assert.True((await _sessions.OwnChangedSinceAsync(before, Workspaces.Default)).Single().Revision > before);
+        var after = (await _sessions.OwnChangedSinceAsync(before, Workspaces.Default)).Single().Revision;
+        Assert.True(after > before);
 
-        await _sessions.SetStateAsync(parked.Id, SessionState.Working, null, null, null, Now.AddMinutes(2));
-        Assert.Equal("8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
-        await _sessions.SetStateAsync(parked.Id, SessionState.AwaitingPerson, "and which host?", null, null, Now.AddMinutes(3), clearAnswer: true);
-        Assert.Null((await _sessions.FindAsync(parked.Id))!.Answer);
+        await _sessions.KeepSaidAsync(parked.Id, new SaidWord("w2", "9090.", Now.AddMinutes(2), ["notes.md"], Reopens: true));
+        Assert.Empty(await _sessions.OwnChangedSinceAsync(after, Workspaces.Default));
+        var both = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal(["w1", "w2"], both.Said.Select(word => word.Id));
+        Assert.Equal((false, true), (both.Said[0].Reopens, both.Said[1].Reopens));
+        Assert.Equal(["notes.md"], both.Said[1].Files);
+        Assert.Equal(Now.AddMinutes(2), both.Said[1].At);
+        Assert.Equal("8080.\n\n9090.", both.Answer);
+        Assert.Equal(("which port?\n\nAnswered: 8080.", Now.AddMinutes(1)), (both.Note, both.Updated));
+
+        await _sessions.SetStateAsync(parked.Id, SessionState.Working, null, null, null, Now.AddMinutes(3));
+        Assert.Equal(2, (await _sessions.FindAsync(parked.Id))!.Said.Count);
+        await _sessions.SetStateAsync(parked.Id, SessionState.AwaitingPerson, "and which host?", null, null, Now.AddMinutes(4), clearSaid: true);
+        var cleared = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Empty(cleared.Said);
+        Assert.Null(cleared.Answer);
 
         var fed = new Session(
             "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code", SessionState.AwaitingPerson, "which port?", null, null, Now, Now);
         await _sessions.MirrorAsync(fed);
-        Assert.Null(await _sessions.AnswerAsync(fed.Id, "8080.", "which port?\n\nAnswered: 8080.", Now));
-        Assert.Null((await _sessions.FindAsync(fed.Id))!.Answer);
+        Assert.Null(await _sessions.KeepSaidAsync(fed.Id, new SaidWord("w3", "8080.", Now, []), note: "which port?\n\nAnswered: 8080."));
+        Assert.Empty((await _sessions.FindAsync(fed.Id))!.Said);
+        Assert.Null(await _sessions.TakeSaidAsync(fed.Id, ["w3"]));
+    }
+
+    /// <summary>
+    /// MSG1a: taking words removes exactly those named, in any order, passing over an id the record does not hold; the
+    /// last one taken leaves nothing. No revision is written, since the words never travel.
+    /// </summary>
+    [Fact]
+    public async Task Taking_words_removes_those_named_and_writes_no_revision()
+    {
+        var ended = await Create();
+        await _sessions.SetStateAsync(ended.Id, SessionState.Completed, "landed.", null, null, Now);
+        foreach (var id in new[] { "w1", "w2", "w3" })
+        {
+            await _sessions.KeepSaidAsync(ended.Id, new SaidWord(id, $"said {id}", Now, [], Reopens: true));
+        }
+
+        var revision = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single().Revision;
+
+        var taken = await _sessions.TakeSaidAsync(ended.Id, ["w3", "w1", "nope"]);
+
+        Assert.Equal(["w2"], taken!.Said.Select(word => word.Id));
+        Assert.Empty(await _sessions.OwnChangedSinceAsync(revision, Workspaces.Default));
+        Assert.Empty((await _sessions.TakeSaidAsync(ended.Id, ["w2"]))!.Said);
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.4): a store from before `said` kept a park's answer in its `answer` column. It reads as the record's
+    /// first word, and a word kept after it joins it in the record's one list, so an answered park from before goes on
+    /// with both and the old column holds nothing the list does not.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_from_before_said_reads_as_its_first_word_and_a_later_word_joins_it()
+    {
+        await using var old = new SqliteConnection("Data Source=:memory:");
+        await old.OpenAsync();
+        await using (var create = old.CreateCommand())
+        {
+            create.CommandText = """
+                CREATE TABLE sessions (
+                  id TEXT PRIMARY KEY, quest TEXT NULL, repository TEXT NOT NULL, adapter TEXT NOT NULL,
+                  state TEXT NOT NULL, note TEXT NULL, evidence TEXT NULL, transcript TEXT NULL,
+                  created TEXT NOT NULL, updated TEXT NOT NULL, answer TEXT NULL
+                );
+                INSERT INTO sessions (id, quest, repository, adapter, state, note, created, updated, answer)
+                  VALUES ('abcd1234', 'q1', 'Owner', 'stub', 'AwaitingPerson', 'which port?', '2026-10-02T10:00:00Z',
+                          '2026-10-02T10:05:00Z', '8080.');
+                """;
+            await create.ExecuteNonQueryAsync();
+        }
+
+        var store = await SessionStore.OpenAsync(old);
+
+        var before = (await store.FindAsync("abcd1234"))!;
+        var first = Assert.Single(before.Said);
+        Assert.Equal(("answer", "8080.", DateTimeOffset.Parse("2026-10-02T10:05:00Z"), false), (first.Id, first.Text, first.At, first.Reopens));
+        Assert.Empty(first.Files);
+        Assert.Equal("8080.", before.Answer);
+
+        await store.KeepSaidAsync("abcd1234", new SaidWord("w2", "9090, not 8080.", Now, []));
+
+        var joined = (await store.FindAsync("abcd1234"))!;
+        Assert.Equal(["answer", "w2"], joined.Said.Select(word => word.Id));
+        Assert.Equal("8080.\n\n9090, not 8080.", joined.Answer);
+        await using var column = old.CreateCommand();
+        column.CommandText = "SELECT answer FROM sessions WHERE id = 'abcd1234'";
+        Assert.Equal(DBNull.Value, await column.ExecuteScalarAsync());
+    }
+
+    /// <summary>
+    /// MSG1a: a word a later build wrote with fields this one does not know reads as the word it is, and a malformed one —
+    /// no id, no text, no moment — is passed over, never a failed read of the record.
+    /// </summary>
+    [Fact]
+    public async Task A_word_with_unknown_fields_reads_and_a_malformed_one_is_passed_over()
+    {
+        var ended = await Create();
+        await using (var plant = _connection.CreateCommand())
+        {
+            plant.CommandText = """
+                UPDATE sessions SET said = '[{"id":"w1","text":"kept","at":"2026-09-19T10:00:00+00:00","files":["a.md",3],"tone":"calm"},{"text":"no id","at":"2026-09-19T10:00:00+00:00"},{"id":"w3","at":"2026-09-19T10:00:00+00:00"},{"id":"w4","text":"no moment"},7]' WHERE id = $id
+                """;
+            plant.Parameters.AddWithValue("$id", ended.Id);
+            await plant.ExecuteNonQueryAsync();
+        }
+
+        var word = Assert.Single((await _sessions.FindAsync(ended.Id))!.Said);
+
+        Assert.Equal(("w1", "kept"), (word.Id, word.Text));
+        Assert.Equal(["a.md"], word.Files);
     }
 
     /// <summary>

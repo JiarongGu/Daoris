@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
 namespace Daoris.Knowledge;
@@ -141,11 +142,22 @@ public sealed record Session(
     public bool Took { get; init; }
 
     /// <summary>
-    /// What the person answered a session that parked to ask them (STANDDOWN2), or null. The record stays parked with it
-    /// until the driver goes on with it, as that session's next prompt or handed to the session that carries its quest
-    /// on (ANSWER1b, D131); parking again clears it, so a session that asks again is answered anew.
+    /// The person's words waiting for this record to go on with them, in the order said (MSG1a, D137 §2.4): an answer to
+    /// a park (STANDDOWN2, ANSWER1b), or words to a session that ended, which reopen it. A second word joins the first and
+    /// never replaces it. Kept until taken, by the resumed run's first prompt or the session a fallback handed them to;
+    /// parking again clears them, so a session that asks again is answered anew.
     /// </summary>
-    public string? Answer { get; init; }
+    /// <remarks>
+    /// <b>This machine's own, like the transcript</b> (D47 §4): answered only to a caller on it, never on the wire to a
+    /// remote, and keeping them writes no revision, since nothing that travels changed.
+    /// </remarks>
+    public IReadOnlyList<SaidWord> Said { get; init; } = [];
+
+    /// <summary>
+    /// The words waiting, joined by a blank line, or null when none wait: what an answer was before <see cref="Said"/>
+    /// (ANSWER1b), kept for every reader from before it — the driver's resume, its carry-on and the page's answered park.
+    /// </summary>
+    public string? Answer => Said.Count == 0 ? null : string.Join("\n\n", Said.Select(word => word.Text));
 
     /// <summary>
     /// A <see cref="SessionState.Stopped"/> record that was not the person's stop (D104): the orphan
@@ -196,6 +208,17 @@ public sealed record Session(
         Enum.TryParse(value.Replace("-", "", StringComparison.Ordinal), ignoreCase: true, out state)
         && Enum.IsDefined(state);
 }
+
+/// <summary>One thing the person said to a session, waiting for it to go on with it (MSG1a, D137 §2.4).</summary>
+/// <param name="Id">The word's own handle, so the record can say again where the session took it (D136 §3).</param>
+/// <param name="Text">Their words, trimmed at the ends only.</param>
+/// <param name="At">When they said it.</param>
+/// <param name="Files">The names of the files they gave with it — names alone, never where the files are.</param>
+/// <param name="Reopens">
+/// Said after the record ended, so it goes on by reopening it; such a word is kept on its ask once taken, as
+/// <c>reopened</c> (D133 §1). False for an answer to a park, which its door keeps on the ask at once.
+/// </param>
+public sealed record SaidWord(string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens = false);
 
 /// <summary>
 /// Session records, held by the service beside the quests they serve.
@@ -311,6 +334,11 @@ public sealed class SessionStore
         // parked to ask them, which the session that carries the quest on is handed.
         await SchemaColumns.EnsureAsync(_connection, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_connection, "sessions", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
+
+        // MSG1a (D137 §2.4): the person's words, a JSON list, which the single answer above became. Nothing is moved at
+        // the column's arrival: a record from before reads its answer as its first word, and the first word kept after
+        // it writes both into this list and empties the old column, so the two never both hold words.
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "said", "said TEXT NULL", ct).ConfigureAwait(false);
 
         // D104: a stop that was not the person's — the sweep's, or a shutdown's. A record from before it
         // says nothing, and nothing is the old reading: the person's stop.
@@ -487,11 +515,15 @@ public sealed class SessionStore
     /// </summary>
     /// <param name="interrupted">That this move ends it not by the person's hand (D104) — kept once said.</param>
     /// <param name="limit">That an account's limit refused its turn (TOOL4c) — kept once said.</param>
-    /// <param name="clearAnswer">That the person's answer goes with this move (ANSWER1b): the ledger's to say.</param>
+    /// <param name="clearSaid">That the person's words go with this move (ANSWER1b, MSG1a): the ledger's to say.</param>
+    /// <param name="forgive">
+    /// That this move takes an ended record out of its ended state (MSG1a, D137 §2.3), so what ended it — a stop that was
+    /// not the person's, a limit's failure — says nothing of the run that follows: both start unsaid again.
+    /// </param>
     public async Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
         DateTimeOffset now, CancellationToken ct = default, bool interrupted = false, bool limit = false,
-        bool clearAnswer = false)
+        bool clearSaid = false, bool forgive = false)
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
@@ -503,18 +535,20 @@ public sealed class SessionStore
             Evidence = evidence ?? session.Evidence,
             Transcript = transcript ?? session.Transcript,
             Updated = now,
-            Interrupted = interrupted || session.Interrupted,
-            Limit = limit || session.Limit,
-            Answer = clearAnswer ? null : session.Answer,
+            Interrupted = interrupted || (!forgive && session.Interrupted),
+            Limit = limit || (!forgive && session.Limit),
+            Said = clearSaid ? [] : session.Said,
         };
 
+        // The words are cleared or left alone, never rewritten from what was read: a move is about the state.
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, evidence = $evidence,
               transcript = $transcript, updated = $updated, interrupted = $interrupted, limited = $limited,
-              answer = $answer, revision = {NextRevision} WHERE id = $id
+              said = CASE WHEN $clear THEN NULL ELSE said END, answer = CASE WHEN $clear THEN NULL ELSE answer END,
+              revision = {NextRevision} WHERE id = $id
             """;
-        command.Parameters.AddWithValue("$answer", (object?)moved.Answer ?? DBNull.Value);
+        command.Parameters.AddWithValue("$clear", clearSaid ? 1 : 0);
         command.Parameters.AddWithValue("$interrupted", moved.Interrupted ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$limited", moved.Limit ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$state", moved.State.ToString());
@@ -835,7 +869,7 @@ public sealed class SessionStore
         Origin = reader.IsDBNull(reader.GetOrdinal("origin")) ? null : reader.GetString(reader.GetOrdinal("origin")),
         Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
-        Answer = reader.IsDBNull(reader.GetOrdinal("answer")) ? null : reader.GetString(reader.GetOrdinal("answer")),
+        Said = SaidOf(reader),
         Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
         Limit = !reader.IsDBNull(reader.GetOrdinal("limited")) && reader.GetInt64(reader.GetOrdinal("limited")) != 0,
         Pushed = !reader.IsDBNull(reader.GetOrdinal("pushed")) && reader.GetInt64(reader.GetOrdinal("pushed")) != 0,
@@ -870,25 +904,151 @@ public sealed class SessionStore
     }
 
     /// <summary>
-    /// Keep the person's answer on a parked session's record (STANDDOWN2), with the note that says it, leaving its state
-    /// where it is (ANSWER1b). A new revision, since the note travels. Null when there is no such record of this machine's.
+    /// The id a record from before <see cref="Session.Said"/> gives its answer as a word (MSG1a). Never one a word is
+    /// given now, which are hexadecimal.
     /// </summary>
-    public async Task<Session?> AnswerAsync(string id, string answer, string note, DateTimeOffset now, CancellationToken ct = default)
+    public const string AnswerWordId = "answer";
+
+    /// <summary>
+    /// Keep a word the person said on this machine's record, after the words already waiting, leaving its state where it
+    /// is (STANDDOWN2, ANSWER1b, MSG1a). With a <paramref name="note"/> (an answer's line) the note is written too, as a
+    /// new revision at the word's moment, since the note travels; with none, nothing that travels changes, so no
+    /// revision is written. Null when there is no such record of this machine's.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Appended in one statement</b>, for the reason an ask's words are (REV3): a whole-list save from two
+    /// doors at once would drop one of them.</para>
+    ///
+    /// <para><b>A record from before the list</b> holds its answer in the old column: it becomes the list's first
+    /// word in the same statement, and the old column is emptied, so the record's words have one home from here.</para>
+    /// </remarks>
+    public async Task<Session?> KeepSaidAsync(string id, SaidWord word, string? note = null, CancellationToken ct = default)
     {
         await using (var command = _connection.CreateCommand())
         {
             command.CommandText = $"""
-                UPDATE sessions SET answer = $answer, note = $note, updated = $updated, revision = {NextRevision}
+                UPDATE sessions SET
+                  said = json_insert(
+                    COALESCE(said, CASE WHEN answer IS NULL THEN '[]' ELSE json_array(json_object(
+                      'id', '{AnswerWordId}', 'text', answer, 'at', updated, 'files', json('[]'))) END),
+                    '$[#]', json($word)),
+                  answer = NULL
+                  {(note is null ? "" : $", note = $note, updated = $updated, revision = {NextRevision}")}
                 WHERE id = $id AND origin IS NULL
                 """;
             command.Parameters.AddWithValue("$id", id);
-            command.Parameters.AddWithValue("$answer", answer);
-            command.Parameters.AddWithValue("$note", note);
-            command.Parameters.AddWithValue("$updated", now.ToString("O"));
+            command.Parameters.AddWithValue("$word", WordJson(word));
+            if (note is not null)
+            {
+                command.Parameters.AddWithValue("$note", note);
+                command.Parameters.AddWithValue("$updated", word.At.ToString("O"));
+            }
+
             if (await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) == 0) return null;
         }
 
         return await FindAsync(id, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Take these words off this machine's record (MSG1a, D137 §2.4): the session took them. An id it does not hold is
+    /// passed over, and the last word taken leaves the record with none. No revision, since the words never travel. Null
+    /// when there is no such record of this machine's.
+    /// </summary>
+    /// <remarks>A read, then the write it decides: the ledger calls it inside <see cref="ExclusiveAsync{T}"/> (REV3).</remarks>
+    public async Task<Session?> TakeSaidAsync(string id, IReadOnlyCollection<string> ids, CancellationToken ct = default)
+    {
+        var session = await FindAsync(id, ct).ConfigureAwait(false);
+        if (session is not { Origin: null }) return null;
+
+        var left = session.Said.Where(word => !ids.Contains(word.Id, StringComparer.Ordinal)).ToList();
+        await using (var command = _connection.CreateCommand())
+        {
+            command.CommandText = "UPDATE sessions SET said = $said, answer = NULL WHERE id = $id AND origin IS NULL";
+            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$said", left.Count == 0 ? DBNull.Value : SaidJson(left));
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        return session with { Said = left };
+    }
+
+    /// <summary>
+    /// The record's words: its list, or, on a record from before the list, its answer as the first word, said when the
+    /// record last changed, which is when the answer was kept (ANSWER1b).
+    /// </summary>
+    private static IReadOnlyList<SaidWord> SaidOf(SqliteDataReader reader)
+    {
+        var said = reader.GetOrdinal("said");
+        if (!reader.IsDBNull(said)) return SaidWords(reader.GetString(said));
+
+        var answer = reader.GetOrdinal("answer");
+        return reader.IsDBNull(answer)
+            ? []
+            : [new SaidWord(AnswerWordId, reader.GetString(answer), DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated"))), [])];
+    }
+
+    /// <summary>
+    /// The words of a list as stored, in order. A word missing its id, its words or its moment is passed over, and a field
+    /// this build does not know is ignored: a later build's word, or a malformed one, is never a failed read of the record.
+    /// </summary>
+    private static IReadOnlyList<SaidWord> SaidWords(string json)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind != JsonValueKind.Array) return [];
+
+            var words = new List<SaidWord>();
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                if (element.ValueKind != JsonValueKind.Object
+                    || JsonFields.Text(element, "id") is not { Length: > 0 } wordId
+                    || JsonFields.Text(element, "text") is not { } text
+                    || !DateTimeOffset.TryParse(
+                        JsonFields.Text(element, "at"), System.Globalization.CultureInfo.InvariantCulture,
+                        System.Globalization.DateTimeStyles.None, out var at))
+                {
+                    continue;
+                }
+
+                var files = JsonFields.Items(element, "files")
+                    .Where(file => file.ValueKind == JsonValueKind.String)
+                    .Select(file => file.GetString()!)
+                    .ToList();
+                var reopens = element.TryGetProperty("reopens", out var flag) && flag.ValueKind == JsonValueKind.True;
+                words.Add(new SaidWord(wordId, text, at, files, reopens));
+            }
+
+            return words;
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    // Hand-rolled for the reason every store's lists are: nothing here may stop working under AOT.
+    private static string SaidJson(IEnumerable<SaidWord> words) => JsonFields.Written(writer =>
+    {
+        writer.WriteStartArray();
+        foreach (var word in words) Write(writer, word);
+        writer.WriteEndArray();
+    });
+
+    private static string WordJson(SaidWord word) => JsonFields.Written(writer => Write(writer, word));
+
+    private static void Write(Utf8JsonWriter writer, SaidWord word)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("id", word.Id);
+        writer.WriteString("text", word.Text);
+        writer.WriteString("at", word.At.ToString("O"));
+        writer.WriteStartArray("files");
+        foreach (var file in word.Files) writer.WriteStringValue(file);
+        writer.WriteEndArray();
+        if (word.Reopens) writer.WriteBoolean("reopens", true);
+        writer.WriteEndObject();
     }
 
     /// <summary>

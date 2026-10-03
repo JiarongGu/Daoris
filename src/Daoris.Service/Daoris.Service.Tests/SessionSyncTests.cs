@@ -253,6 +253,47 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Equal(mine.Id, (await _a.ActiveForAsync("Shared"))!.Id);
     }
 
+    /// <summary>
+    /// MSG1a (D137 §2.3): a record that went on with the person's words travels as a move does. Its revision after going
+    /// on goes up with the next push; the remote takes it, since its feed judges no state and a record leaving an ended
+    /// state is not refused; and a teammate sees it go from ended back to working, its note saying when. The words never
+    /// travel, and keeping them alone pushes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_record_that_went_on_goes_up_and_a_teammate_sees_it_working_again_without_the_words()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var quests = await QuestStore.OpenAsync(connection);
+        var machine = await OpenAsync(connection);
+        var ledger = new SessionLedger(quests, machine, _service);
+        var chat = (await ledger.OpenChatAsync("Shared", "stub", Now)).Session!;
+        foreach (var state in new[] { "starting", "working", "completed" })
+        {
+            Assert.Equal(SessionAdvanceRefusal.None, (await ledger.AdvanceAsync(chat.Id, state, "talked it through.", null, null, Now)).Refusal);
+        }
+
+        await SyncAsync(machine, "a@one");
+        await SyncAsync(_b, "b@two");
+        Assert.Equal(SessionState.Completed, (await _b.FindAsync($"a@one/{chat.Id}"))!.State);
+
+        Assert.Equal(SessionSayRefusal.None, (await ledger.SayAsync(chat.Id, "One more thing, about the quiet plan.", null, Now.AddMinutes(5))).Refusal);
+        Assert.Equal(0, (await SyncAsync(machine, "a@one")).Pushed);
+
+        Assert.Equal(SessionAdvanceRefusal.None, (await ledger.AdvanceAsync(chat.Id, "working", null, null, null, Now.AddMinutes(6))).Refusal);
+        var remote = Remote("a@one");
+        var pass = await SyncAsync(machine, "a@one", remote);
+        await SyncAsync(_b, "b@two");
+
+        Assert.Equal((1, (string?)null), (pass.Pushed, pass.Problem));
+        Assert.DoesNotContain("quiet plan", remote.LastFeed);
+        Assert.Equal(SessionState.Working, (await _remote.FindAsync($"a@one/{chat.Id}"))!.State);
+        var there = (await _b.FindAsync($"a@one/{chat.Id}"))!;
+        Assert.Equal(SessionState.Working, there.State);
+        Assert.Equal("talked it through.\n\nWent on with your words at 2026-09-24 10:06 UTC.", there.Note);
+        Assert.Empty(there.Said);
+    }
+
     /// <summary>The remote down: the wall is named, and neither cursor moves — nothing is lost, the next pass sends it.</summary>
     [Fact]
     public async Task An_unreachable_remote_is_named_and_moves_no_cursor()

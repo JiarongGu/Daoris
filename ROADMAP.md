@@ -32,7 +32,7 @@ Three parts, in build order:
 
 ## Closed arcs: workspaces, the working surface (D48–D56, 2026-09-20 → 22)
 
-Both are built; the archive has every item's outcome and `docs/DECISIONS.md` the reasons.
+Both are built; the archive has every item's outcome and `docs/decisions/` the reasons.
 
 | Arc | What it settled | Contract |
 |---|---|---|
@@ -51,7 +51,7 @@ declared gates, and the shell had no tests. Both were fixed and gated.
 ## The arcs since: the toolchain, the instruction file, the deployment, the home, the plugins (2026-09-22 → 23)
 
 Each was set by the owner and measured before it was designed; the archive carries the outcomes and
-`docs/DECISIONS.md` the reasons.
+`docs/decisions/` the reasons.
 
 | Arc | What | Where it stands |
 |---|---|---|
@@ -117,7 +117,7 @@ after every change.
 
 ## Five artefacts
 
-Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All five exist:
+Daoris is a workspace, not a single tool (`docs/decisions/D20.md`). All five exist:
 
 | | What | State |
 |---|---|---|

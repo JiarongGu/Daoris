@@ -30,7 +30,7 @@ everywhere; a pack installs where the manifest asks for it.
    canon/packs/<name>/skills/<n>/SKILL.md     -> .claude/skills/<n>/   (invoked by name)
    ```
 
-   The subdirectory *is* the target tier. There is no `tier` field (`docs/DECISIONS.md` D7).
+   The subdirectory *is* the target tier. There is no `tier` field (`docs/decisions/D7.md`).
 
 2. **Write `pack.json`.**
 
