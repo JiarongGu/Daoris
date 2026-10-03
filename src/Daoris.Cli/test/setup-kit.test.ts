@@ -573,11 +573,11 @@ type Heard = { id?: number; result?: { stopReason?: string; sessionId?: string; 
 
 /**
  * One process of the stub, spoken to as the driver speaks to one: the frames sent in order, a permission it asks for
- * refused (D52), and end of input once every frame is answered. Resolves with each answer by its id, the text of
- * every update, stderr, and the code the stub exited with.
+ * refused (D52), and end of input once every frame is answered. Resolves with each answer by its id and when it came (in
+ * `performance.now()` milliseconds), the text of every update, stderr, and the code the stub exited with.
  */
 async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said[] }): Promise<{
-  answers: Map<number, Heard>; texts: string[]; stderr: string; code: number | null;
+  answers: Map<number, Heard>; at: Map<number, number>; texts: string[]; stderr: string; code: number | null;
 }> {
   const agent = join(cwd, '..', 'acp-agent.mjs');
   writeFileSync(agent, ACP_STUB_AGENT);
@@ -586,6 +586,7 @@ async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said
   child.stderr.on('data', (chunk) => { stderr += chunk; });
   const send = (frame: object) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', ...frame })}\n`);
   const answers = new Map<number, Heard>();
+  const at = new Map<number, number>();
   const texts: string[] = [];
   const answered = new Promise<void>((resolve) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
@@ -595,6 +596,7 @@ async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said
         send({ id: frame.id, result: { outcome: { outcome: 'selected', optionId: 'deny' } } });
       } else if (frame.id !== undefined && frames.some((said) => said.id === frame.id)) {
         answers.set(frame.id, frame);
+        at.set(frame.id, performance.now());
         if (answers.size === frames.length) resolve();
       }
     });
@@ -603,7 +605,7 @@ async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said
   for (const frame of frames) send(frame);
   await answered;
   child.stdin.end();
-  return { answers, texts, stderr, code: await exited };
+  return { answers, at, texts, stderr, code: await exited };
 }
 
 /**
@@ -659,6 +661,51 @@ test('the stub resumes the conversation it is asked to, and the person\'s answer
     assert.equal(git(tree, 'rev-parse', 'HEAD~1').trim(), born);
     assert.equal(git(tree, 'status', '--porcelain'), '');
     assert.equal(resumed.code, 0, `end of input is the ending, after the quest's fetches too (STUB1)\n${resumed.stderr}`);
+  } finally {
+    await door.close();
+    fx.cleanup();
+  }
+});
+
+/** How long the stub's resumed turn is held to last: about three seconds, never at once and never a hang (STUB2). */
+const HEARD_TURN_MS = { least: 2900, most: 6000 };
+
+/**
+ * STUB2 (D137's MSG1e4 and MSG1e3 note): words said to a session after it ended resume its own conversation, and the
+ * person's words are the prompt. On a quest whose title asks nothing of it, the stub says what it heard, touches nothing
+ * and takes nothing, since its quest had closed. Its turn lasts about three seconds, which family phase 17a2 leans on:
+ * the verb says *going on* only if it sees the record working at one of its looks, 250 ms apart.
+ */
+test('the stub resumed on a quest that asks nothing says what it heard, takes nothing, and ends its turn about 3 s later (STUB2)', async () => {
+  const fx = makeFixture('setup-kit-stub-heard');
+  const tree = unadoptedRepository(join(fx.root, 'atlas'));
+  const born = git(tree, 'rev-parse', 'HEAD').trim();
+  const door = await questDoor();
+  try {
+    const heard = await speak({
+      cwd: tree,
+      env: { ...process.env, DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: 'quest-tiles', DAORIS_QUEST_TITLE: 'Answer the map tiles' },
+      frames: [
+        { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
+        { id: 2, method: 'session/resume', params: { sessionId: 'acp-session-1', cwd: tree, mcpServers: [] } },
+        { id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'The tiles moved to v2.' }] } },
+      ],
+    });
+
+    assert.deepEqual(heard.answers.get(2)?.result, {});
+    assert.match(heard.stderr, /acp-agent: resumed conversation acp-session-1 on /);
+    assert.match(heard.stderr, /acp-agent: heard after it ended: The tiles moved to v2\./);
+    assert.deepEqual(heard.texts, ['Heard after the work: The tiles moved to v2.']);
+
+    // Timed from the resume's answer, which comes the moment it is asked, so a slow start of the process is not counted.
+    assert.equal(heard.answers.get(3)?.result?.stopReason, 'end_turn', heard.stderr);
+    const turn = heard.at.get(3)! - heard.at.get(2)!;
+    assert.ok(turn >= HEARD_TURN_MS.least && turn < HEARD_TURN_MS.most, `the resumed turn lasted ${Math.round(turn)} ms\n${heard.stderr}`);
+
+    assert.deepEqual(door.moves, [], heard.stderr);
+    assert.equal(git(tree, 'rev-parse', 'HEAD').trim(), born);
+    assert.equal(git(tree, 'status', '--porcelain'), '');
+    assert.equal(heard.code, 0, `end of input is the ending (STUB1)\n${heard.stderr}`);
   } finally {
     await door.close();
     fx.cleanup();
