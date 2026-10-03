@@ -73,6 +73,7 @@ changes no row (D127).
 | `2026-10-03-plugin-catalogue-design.md` | contract | The plugins page as a catalogue (installed, Daoris's own, available), a plugin's icon declared in its manifest and handed to the page as its bytes, and the monogram in its place (PLUGUI2) | Current (D140), built (PLUGUI2, PLUGUI2b). Amends the plugin design §3 and the plugins screen design §3.1–§3.2 |
 | `2026-10-03-language-design.md` | contract | Languages: Daoris's lines in a session's note worded by code, someone's words shown as written, every line the driver writes coded, and a session language set for the work, apart from the window's (LANG1) | Designed (D142); LANG1a and LANG1c built (D142's notes). Amends the platform language §4 and the frontend architecture §3 |
 | `2026-10-03-evidence-design.md` | contract | Evidence Daoris checks: a requirement names a path the done's commit must hold, or a declared gate read from the queue's verdict; a met answer without it holds the quest as a departure does (EVID1) | Designed (D144); nothing built. Amends D46, D133 §3–§4, D65 §4 and D115 §5 |
+| `2026-10-04-built-in-git-design.md` | contract | Git built in: a place holding each repository's branches by kind, history as a graph, a commit, a file's history and blame, a compare; acts on refs, a push only on the person's press, managed Git offered (GIT1) | Designed (D147); nothing built. Amends the push in D87, D100 and D109, D97 and D66 |
 
 ## Studies and evidence
 
