@@ -1523,6 +1523,15 @@ export function commandHarness(
         if (map[name]) write(`  ${''.padEnd(14)} pinned ${map[name]} for the \`${circle}\` workspace`);
       }
 
+      // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its
+      // owner listed them above with what the agent said of each, and naming them twice read as two sets of accounts.
+      const owner = toolchain.accountOf ? TOOLCHAINS[toolchain.accountOf] : undefined;
+      if (toolchain.accountOf && owner) {
+        const product = owner.product ?? toolchain.accountOf;
+        write(`  ${''.padEnd(14)} its accounts are ${product}'s, listed under \`${toolchain.accountOf}\`: this is another way `
+          + `${product} runs on them`);
+        continue;
+      }
       for (const line of accountLines(name, toolchain, report, settings, home, new Date(), machineZone())) write(line);
     }
 
