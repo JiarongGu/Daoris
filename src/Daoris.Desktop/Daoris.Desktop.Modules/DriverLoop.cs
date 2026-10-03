@@ -465,8 +465,9 @@ public sealed class DriverLoop(
                 // retry only of a quest the drawer would offer Retry on.
                 Parked.Record(report.Considerations);
 
-                // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts.
-                Look.Record(report.Considerations);
+                // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts;
+                // with the cool-offs it held starts on, which a record whose words one holds names (MSG1f2).
+                Look.Record(report.Considerations, report.Waits);
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,

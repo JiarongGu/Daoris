@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Quest, Session, SessionState } from '../api';
+import { moment } from '../format';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
 import type { SessionGrouping } from './groups';
@@ -311,6 +312,42 @@ describe("a row as the list's reader places it", () => {
     // A count git could not give is still work: said as work, never as nothing.
     rerender(<SessionRow session={stopped} grouping={placed({ group: 'review', shown: 'stopped', work: { commits: null, uncommitted: null } })} />);
     expect(screen.getByText(/work to review/)).toBeInTheDocument();
+  });
+
+  /**
+   * MSG1f2 (D137 §3.2): an ended record the person's words wait on reads *going on* where the reader says the same session
+   * goes on with them, and, resting under Resumes later, its line names what holds them: the person's hold, the cap, a
+   * cool-off's reset, or the planner's own sentence for anything else.
+   */
+  it('says going on, and what holds the words of one that resumes later', () => {
+    const ended = session({ state: 'completed', quest: '7a82cc' });
+    const { rerender } = render(<SessionRow session={ended} grouping={placed({ group: 'working', shown: 'going-on' })} />);
+    expect(screen.getByText('going on')).toBeInTheDocument();
+
+    const held = (holds: SessionGrouping['holds']) =>
+      rerender(<SessionRow session={ended} grouping={placed({ group: 'later', shown: 'completed', holds })} />);
+    held({ why: 'hold', reason: '`engine` is held by the person.', repository: 'engine' });
+    expect(screen.getByText(/goes on with your words once engine is no longer held/)).toBeInTheDocument();
+    held({ why: 'cap', reason: 'the concurrency cap (2) is spent — it frees as sessions finish.' });
+    expect(screen.getByText(/goes on with your words when a running session here ends/)).toBeInTheDocument();
+    held({ why: 'cooling', reason: 'its account is cooling.', until: '2026-10-04T12:30:00Z' });
+    const reset = `goes on with your words once its account cools, at ${moment('2026-10-04T12:30:00Z')}`;
+    expect(screen.getByText((said) => said.includes(reset))).toBeInTheDocument();
+    held({ why: 'busy', reason: 'session `s9` is active in the tree `#7a82cc` goes back into — one session per tree.' });
+    expect(screen.getByText(/your words wait: session `s9` is active in the tree/)).toBeInTheDocument();
+    expect(screen.getByTitle(/You wrote to this session/)).toBeInTheDocument();
+  });
+
+  /** A pause's line names whose pause, as before; what holds the words adds nothing beside it. */
+  it('lets a pause name itself where the words wait on it', () => {
+    render(
+      <SessionRow
+        session={session({ state: 'stopped' })}
+        grouping={placed({ group: 'later', shown: 'stopped', pausedBy: { scope: 'ask', id: 'a1b2c3' }, holds: { why: 'paused', reason: 'paused.' } })}
+      />,
+    );
+    expect(screen.getByText(/paused with ask #a1b2c3/)).toBeInTheDocument();
+    expect(screen.queryByText(/your words/)).toBeNull();
   });
 
   it('names its repository first on its line where no group header does', () => {

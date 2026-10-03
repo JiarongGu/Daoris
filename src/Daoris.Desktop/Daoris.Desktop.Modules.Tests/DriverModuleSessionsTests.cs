@@ -275,6 +275,32 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// MSG1f2 (D137 §3.2): an ended record the person's words wait on, whose start the loop's last look held on a cooling
+    /// account, resumes later, and its row carries what holds the words with the cool-off's reset, read from the waits that
+    /// look kept beside its verdicts.
+    /// </summary>
+    [Fact]
+    public async Task Words_a_cool_off_holds_resume_later_saying_its_reset()
+    {
+        using var ledger = Ledger();
+        ledger.Serve("/api/sessions?includeClosed=true", System.Text.Encoding.UTF8.GetBytes(
+            """[{"id":"done1","quest":"q4","repository":"engine","adapter":"claude-code","state":"completed","kind":"driven","created":"2026-10-02T09:50:00Z","updated":"2026-10-02T09:51:00Z","said":[{"id":"w1","text":"Also the readme.","at":"2026-10-02T10:00:00Z","files":[],"reopens":true}]}]"""));
+        var loop = await UpAsync(ledger);
+        var until = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
+        loop.Look.Record(
+            [new Consideration(new QuestView("q4", "game", "engine", "The work of #q4", "A body.", "Done"), StartVerdict.Blocked, "its account is cooling until 12:00.")],
+            [new AccountWait("claude-code", "Claude Code", "work", "aurora", until, Stated: true, "its account is cooling until 12:00.") { Quests = ["q4"] }]);
+
+        var row = (await AnswerAsync(new DriverModule(Bus, loop), "SESSION_GROUPS", new { ids = new[] { "done1" } })).GetProperty("sessions")[0];
+
+        Assert.Equal(("later", "completed"), (row.GetProperty("group").GetString(), row.GetProperty("shown").GetString()));
+        var holds = row.GetProperty("holds");
+        Assert.Equal(WordsHold.Cooling, holds.GetProperty("why").GetString());
+        Assert.Equal(until, holds.GetProperty("until").GetDateTimeOffset());
+        Assert.Equal("its account is cooling until 12:00.", holds.GetProperty("reason").GetString());
+    }
+
+    /// <summary>
     /// SESSUX1a (D126 §5.2): an ended session is archived on this machine, its mark in the home's
     /// <c>sessions/archived.json</c>, and listed as archived; unarchived, it is back in its group, and one that was not
     /// archived is said, never refused (D48 §6).

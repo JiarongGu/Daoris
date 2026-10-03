@@ -195,6 +195,78 @@ public static class ShownState
     /// derived from the record rather than its quest, since its state still says it waits on the person.
     /// </summary>
     public const string Answered = "answered";
+
+    /// <summary>
+    /// An ended record the person's words wait on, whose run the planner starts (MSG1f2, D137 §3.2): the same session goes
+    /// on with them, so it is working, as an answered park is.
+    /// </summary>
+    public const string GoingOn = "going-on";
+}
+
+/// <summary>
+/// What holds the person's words on an ended record that goes on with them by itself once it lifts (MSG1f2, D137 §3.2): the
+/// planner's own verdict on its quest, since whatever holds a start holds a reopen (§2.2), by a code the page words, with
+/// the planner's sentence beside it.
+/// </summary>
+/// <param name="Why">One of the codes below.</param>
+/// <param name="Reason">The planner's sentence, or the spawn's hold's: the line where the page has none of its own.</param>
+public sealed record WordsHold(string Why, string Reason)
+{
+    /// <summary>The work's pause (D132): <i>Resume</i> moves it, and the row's line already names whose.</summary>
+    public const string Paused = "paused";
+
+    /// <summary>The person holds its repository (D46 §3).</summary>
+    public const string Hold = "hold";
+
+    /// <summary>The concurrency cap is spent: a reopen goes first once a running session here ends.</summary>
+    public const string Cap = "cap";
+
+    /// <summary>Its account is cooling (TOOL4g; MSG1g's resume on its own account): the words go at its reset.</summary>
+    public const string Cooling = "cooling";
+
+    /// <summary>A session is active in the tree or the repository it goes back into (D51, PAR1).</summary>
+    public const string Busy = "busy";
+
+    /// <summary>Anything else the planner or the spawn holds it by, said in its own sentence.</summary>
+    public const string Waits = "waits";
+
+    /// <summary>The repository the person holds, for <see cref="Hold"/>.</summary>
+    public string? Repository { get; init; }
+
+    /// <summary>When the cool-off ends, for <see cref="Cooling"/>.</summary>
+    public DateTimeOffset? Until { get; init; }
+
+    /// <summary>Whose pause, for <see cref="Paused"/>.</summary>
+    public PausedBy? PausedBy { get; init; }
+
+    /// <summary>
+    /// What holds the words, by the planner's verdict on the record's quest and the cool-off the look held its start on;
+    /// null where the verdict starts it, which is going on.
+    /// </summary>
+    /// <param name="wait">The look's wait naming this quest (TOOL4g), or null.</param>
+    public static WordsHold? Of(Consideration verdict, AccountWait? wait) => verdict.Verdict switch
+    {
+        StartVerdict.Start => null,
+        StartVerdict.Paused => new(Paused, verdict.Reason) { PausedBy = verdict.PausedBy },
+        StartVerdict.Held => new(Hold, verdict.Reason) { Repository = verdict.Quest.To },
+        StartVerdict.AtCapacity => new(Cap, verdict.Reason),
+        StartVerdict.Blocked when wait is not null => new(Cooling, verdict.Reason) { Until = wait.Until },
+        StartVerdict.RepositoryBusy => new(Busy, verdict.Reason),
+        _ => new(Waits, verdict.Reason),
+    };
+
+    /// <summary>
+    /// What it says in the terminal's words, after <c>held: </c>: the same lines <c>sessions say</c> prints for words that wait
+    /// (MSG1e), so the listing and the verb agree.
+    /// </summary>
+    public string Sentence => this switch
+    {
+        { Why: Paused, PausedBy: { } pause } => $"it goes on with this once you resume its work: {pause.Door}",
+        { Why: Hold, Repository: { } repository } =>
+            $"it goes on with this once {repository} is no longer held: daoris driver resume {repository}",
+        { Why: Cap } => "it goes on with this when a running session here ends.",
+        _ => $"it waits: {Reason}",
+    };
 }
 
 /// <summary>Where one session is listed, and what its row's second line says (D126 §2.2, §2.4).</summary>
@@ -231,6 +303,12 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// *paused with ask `#a`; Resume carries it on*, and *Resume* stands where *Try again* would. Null otherwise.
     /// </summary>
     public PausedBy? PausedBy { get; init; }
+
+    /// <summary>
+    /// For an ended record the person's words wait on that resumes later (MSG1f2, D137 §3.2): what holds them, which its line
+    /// says. Null otherwise, and for one that goes on (<see cref="ShownState.GoingOn"/>).
+    /// </summary>
+    public WordsHold? Holds { get; init; }
 
     /// <summary>
     /// Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): the ledger would delete its record, and this machine holds
@@ -288,6 +366,18 @@ public sealed record SessionLook(
     /// keeps a record the ledger would delete from being deleted here.
     /// </summary>
     public IReadOnlySet<string> Kept { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The words each record could not go on with (MSG1b's marks, <see cref="GoOnMarks"/>), by session: a record whose every
+    /// waiting word is marked waits on nothing, as the planner leaves it (MSG1f2).
+    /// </summary>
+    public IReadOnlyDictionary<string, GoOnMark> Unable { get; init; } = new Dictionary<string, GoOnMark>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The starts the loop's last look held on a cooling account (TOOL4g, D125 §4): what a record whose words such a start
+    /// holds is said with, its reset (MSG1f2). None where no loop has looked, since a fresh plan cannot see a cool-off.
+    /// </summary>
+    public IReadOnlyList<AccountWait> Waits { get; init; } = [];
 
     /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
@@ -449,6 +539,8 @@ public static class SessionGroups
         {
             Archived = new SessionArchive(home).Marks(),
         };
+        // What each quest's last session here could not go on with (MSG1f2), read as the planner's snapshot reads it.
+        look = look with { Unable = new GoOnMarks(home).For(look.LastRun.Values) };
         look = look with { Kept = new SessionDeletion(home).Kept(look.Records) };
         return await JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct).ConfigureAwait(false);
     }
@@ -539,6 +631,20 @@ public static class SessionGroups
             // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests; and PAUSE1b (D132
             // §6.1), that a pause does, since a pause is the reason before a stop.
             row = row with { HoldsQuest = verdict?.Verdict == StartVerdict.Stopped, PausedBy = verdict?.PausedBy };
+
+            // MSG1f2 (D137 §3.2): the person's words wait on it, so it goes on with them, working, where the planner starts
+            // it; else it resumes later, its line naming what holds them, the planner's own verdict. Before parked and to
+            // review: words written to it are the person's Try again, and its tree is what it goes on in.
+            if (verdict is not null && WordsWait(record))
+            {
+                if (WordsHold.Of(verdict, WaitOn(verdict.Quest.Id)) is not { } holds)
+                {
+                    return row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
+                }
+
+                return Rest(row with { Group = SessionGroup.Later, Holds = holds });
+            }
+
             if (verdict?.Verdict == StartVerdict.Exhausted)
             {
                 return row with
@@ -591,6 +697,21 @@ public static class SessionGroups
                 : tree;
         }
 
+        /// <summary>
+        /// Whether the person's words wait on this record for it to go on with (MSG1b, D137 §2.2): its quest's last session
+        /// here, with words kept on it, and not every one a word it was already found unable to go on with (its marks).
+        /// </summary>
+        private bool WordsWait(SessionRecord record) =>
+            record.Quest is { } quest
+            && _look.LastRun.TryGetValue(quest, out var last)
+            && string.Equals(last.Session, record.Id, StringComparison.Ordinal)
+            && last.WordsWaiting
+            && !GoOnMarks.Judged(last, _look.Unable.GetValueOrDefault(record.Id));
+
+        /// <summary>The cool-off the look held this quest's start on (TOOL4g), or null.</summary>
+        private AccountWait? WaitOn(string quest) =>
+            _look.Waits.FirstOrDefault(wait => wait.Quests.Contains(quest, StringComparer.OrdinalIgnoreCase));
+
         /// <summary>The planner's verdict on this session's quest, where this session is that quest's last here; null otherwise.</summary>
         private Consideration? VerdictOnLast(SessionRecord record) =>
             record.Quest is { } quest
@@ -609,10 +730,21 @@ public static class SessionGroups
 /// <remarks>Kept as <see cref="ParkedQuests"/> is, and replaced whole each look, so nothing older than the last look is read.</remarks>
 public sealed class LastLook
 {
-    private volatile IReadOnlyList<Consideration>? _latest;
+    private volatile Looked? _looked;
+
+    /// <summary>One look's verdicts and the cool-offs it held starts on, replaced together.</summary>
+    private sealed record Looked(IReadOnlyList<Consideration> Considered, IReadOnlyList<AccountWait> Waits);
 
     /// <summary>What the last look considered, in its order; null before any look, which is when a fresh plan is read instead.</summary>
-    public IReadOnlyList<Consideration>? Latest => _latest;
+    public IReadOnlyList<Consideration>? Latest => _looked?.Considered;
 
-    public void Record(IEnumerable<Consideration> considered) => _latest = [.. considered];
+    /// <summary>
+    /// The starts the last look held on a cooling account (TOOL4g): a record whose words such a start holds says its reset
+    /// (MSG1f2). None before any look.
+    /// </summary>
+    public IReadOnlyList<AccountWait> Waits => _looked?.Waits ?? [];
+
+    /// <param name="waits">The look's waits (<see cref="TickReport.Waits"/>); none where it held nothing on an account.</param>
+    public void Record(IEnumerable<Consideration> considered, IEnumerable<AccountWait>? waits = null) =>
+        _looked = new Looked([.. considered], [.. waits ?? []]);
 }

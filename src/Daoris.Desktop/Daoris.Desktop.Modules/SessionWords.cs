@@ -144,9 +144,10 @@ public sealed class SessionWords : IDisposable
                     Tell(earlier.Id);
                 }
             }
-            catch (Exception error) when (Unanswered(error))
+            catch (Exception error) when (Unanswered(error) || error is ObjectDisposedException)
             {
-                // Nothing told is nothing claimed: the page keeps what it was told, and a word said refuses as before.
+                // Nothing told is nothing claimed: the page keeps what it was told, and a word said refuses as before. The
+                // loop closing under it disposes the client, which says nothing either.
             }
         });
     }

@@ -93,7 +93,7 @@ public static class SessionsCommand
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
     public static IReadOnlyList<string> JsonFields { get; } =
-        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "deletable"];
+        ["session", "group", "shown", "archived", "teammate", "strikes", "awaits", "awaitsOf", "work", "holdsQuest", "pausedBy", "holds", "deletable"];
 
     /// <summary>What the words ask, or null with what is wrong with them.</summary>
     public static SessionsAsk? Read(IReadOnlyList<string> args, out string? problem)
@@ -254,6 +254,21 @@ public static class SessionsCommand
                     writer.WriteNull("pausedBy");
                 }
 
+                // MSG1f2 (D137 §3.2): what holds the person's words on a record that resumes later.
+                if (row.Holds is { } holds)
+                {
+                    writer.WriteStartObject("holds");
+                    writer.WriteString("why", holds.Why);
+                    writer.WriteString("reason", holds.Reason);
+                    writer.WriteString("repository", holds.Repository);
+                    if (holds.Until is { } until) writer.WriteString("until", until); else writer.WriteNull("until");
+                    writer.WriteEndObject();
+                }
+                else
+                {
+                    writer.WriteNull("holds");
+                }
+
                 writer.WriteBoolean("deletable", row.Deletable);
                 writer.WriteEndObject();
             }
@@ -336,6 +351,7 @@ public static class SessionsCommand
         "awaiting-person" => "waiting on you",
         "stood-down" => "stood down",
         ShownState.AwaitingReply => "awaiting reply",
+        ShownState.GoingOn => "going on",
         _ => shown,
     };
 
@@ -390,6 +406,9 @@ public static class SessionsCommand
                 ? $"paused with ask #{pause.Id}; Resume carries it on: {pause.Door}"
                 : $"paused with quest #{pause.Id}; Resume carries it on: {pause.Door}";
         }
+
+        // MSG1f2 (D137 §3.2): what holds the person's words, in the words `sessions say` prints for them; a pause's is the line above.
+        if (row.Holds is { Why: not WordsHold.Paused } holds) yield return $"held: {holds.Sentence}";
         if (row.Archived && row.Group != SessionGroup.Archived) yield return "archived";
     }
 
@@ -758,15 +777,8 @@ public static class SessionsCommand
             return Next;
         }
 
-        return verdict switch
-        {
-            null or { Verdict: StartVerdict.Start } => Next,
-            { Verdict: StartVerdict.Paused, PausedBy: { } pause } => $"held: it goes on with this once you resume its work: {pause.Door}",
-            { Verdict: StartVerdict.Held } =>
-                $"held: it goes on with this once {verdict.Quest.To} is no longer held: daoris driver resume {verdict.Quest.To}",
-            { Verdict: StartVerdict.AtCapacity } => "held: it goes on with this when a running session here ends.",
-            _ => $"held: it waits: {verdict.Reason}",
-        };
+        // The listing's line for words that wait (MSG1f2): one sentence for both doors.
+        return verdict is null || WordsHold.Of(verdict, wait: null) is not { } holds ? Next : $"held: {holds.Sentence}";
     }
 
     /// <summary>

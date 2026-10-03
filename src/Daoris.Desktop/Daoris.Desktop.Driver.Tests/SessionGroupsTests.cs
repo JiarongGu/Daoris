@@ -23,8 +23,13 @@ public sealed class SessionGroupsTests
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
         string kind = "driven", bool interrupted = false, string? ask = null, int? updated = null, string? answer = null,
-        bool deletable = false) => new()
+        bool deletable = false, string[]? said = null) => new()
         {
+            // The person's words waiting on it (MSG1a), each by its id, as the service answers this machine.
+            ["said"] = new JsonArray([.. (said ?? []).Select(word => (JsonNode)new JsonObject
+            {
+                ["id"] = word, ["text"] = $"the words {word}", ["at"] = T0.AddMinutes(at + 2).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+            })]),
             ["deletable"] = deletable,
             ["id"] = id,
             ["repository"] = repository,
@@ -53,13 +58,25 @@ public sealed class SessionGroupsTests
     private static SessionLook Look(
         JsonObject[] records, QuestView[]? quests = null, Consideration[]? considered = null,
         (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null,
-        string[]? kept = null) =>
+        string[]? kept = null, (string Session, string[] Said)[]? unable = null, AccountWait[]? waits = null) =>
         SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)) with
         {
             Trees = (trees ?? []).ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase),
             Archived = (archived ?? []).ToDictionary(id => id, _ => T0, StringComparer.Ordinal),
             Kept = new HashSet<string>(kept ?? [], StringComparer.Ordinal),
+            Unable = (unable ?? []).ToDictionary(
+                each => each.Session, each => new GoOnMark(each.Said, ContinueWhy.Refused, T0), StringComparer.Ordinal),
+            Waits = waits ?? [],
         };
+
+    /// <summary>The planner's start of a record the person's words wait on (MSG1b's <c>GoOn</c>): it goes on itself.</summary>
+    private static Consideration GoesOn(QuestView quest) => Verdict(quest, StartVerdict.Start) with { GoesOn = true };
+
+    /// <summary>A cool-off holding the starts of these quests (TOOL4g), ready at <see cref="Reset"/>.</summary>
+    private static AccountWait Cooling(params string[] quests) =>
+        new("claude-code", "Claude Code", "work", "default", Reset, Stated: true, "its account is cooling until 11:00.") { Quests = quests };
+
+    private static readonly DateTimeOffset Reset = T0.AddHours(2);
 
     /// <summary>One row of the table: what is on the machine, the session asked about, and where it is shown.</summary>
     public sealed record Case(SessionLook Look, string Session, string Group, string Shown)
@@ -248,6 +265,81 @@ public sealed class SessionGroupsTests
         ["the asker of a quest whose answer came back is ended while it resumes"] =
             new(Look([Record("s1", "completed", "q1", Tree)], [Asking], [Verdict(Asking, StartVerdict.Start)], [(Tree, new TreeWork(3, 0))]),
                 "s1", SessionGroup.Ended, "completed"),
+
+        // MSG1f2 (D137 §3.2): an ended record the person's words wait on goes on with them, or resumes later, its line naming
+        // what holds them, by the planner's own verdict on its quest.
+        ["an ended record whose words its run is planned for is going on"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)]),
+                "s1", SessionGroup.Working, ShownState.GoingOn)
+            {
+                Also = row => Assert.Null(row.Holds),
+            },
+        ["words to a session to review go on: working, not to review"] =
+            new(Look([Record("s1", "completed", "q1", Tree, said: ["w1"])], [Done], [GoesOn(Done)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Working, ShownState.GoingOn),
+        ["an archived record whose words go on is working"] =
+            new(Look([Record("s1", "failed", "q1", said: ["w1"])], [Taken], [GoesOn(Taken)], archived: ["s1"]),
+                "s1", SessionGroup.Working, ShownState.GoingOn),
+        ["words the cap holds resume later, naming the cap"] =
+            new(Look([Record("s1", "failed", "q1", Tree, said: ["w1"])], [Taken], [Verdict(Taken, StartVerdict.AtCapacity)], [(Tree, new TreeWork(2, 0))]),
+                "s1", SessionGroup.Later, "failed")
+            {
+                Also = row => Assert.Equal((WordsHold.Cap, "the planner's sentence"), (row.Holds!.Why, row.Holds.Reason)),
+            },
+        ["words the person's hold holds resume later, naming the repository"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Held)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Hold, "engine"), (row.Holds!.Why, row.Holds.Repository)),
+            },
+        ["words a cooling account holds resume later, until its reset"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q1")]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
+            },
+        ["words another hold at the spawn holds resume later, in its words"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.Blocked)], waits: [Cooling("q9")]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Waits, (DateTimeOffset?)null), (row.Holds!.Why, row.Holds.Until)),
+            },
+        ["words a pause holds resume later, naming the pause"] =
+            new(Look([Record("s1", "stopped", "q1", said: ["w1"])], [Taken], [PausedVerdict(Taken)]),
+                "s1", SessionGroup.Later, "stopped")
+            {
+                Also = row =>
+                {
+                    Assert.Equal(WordsHold.Paused, row.Holds!.Why);
+                    Assert.Equal(ByAsk, row.PausedBy);
+                },
+            },
+        ["words a session in the way holds resume later"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.RepositoryBusy)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal(WordsHold.Busy, row.Holds!.Why),
+            },
+        ["an archived record whose words are held is archived, saying what holds them"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.AtCapacity)], archived: ["s1"]),
+                "s1", SessionGroup.Archived, "completed")
+            {
+                Also = row => Assert.Equal(WordsHold.Cap, row.Holds!.Why),
+            },
+        ["words every one of which could not go on wait for nothing: ended"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.AtCapacity)], unable: [("s1", ["w1"])]),
+                "s1", SessionGroup.Ended, "completed")
+            {
+                Also = row => Assert.Null(row.Holds),
+            },
+        ["a word said since the mark waits again"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1", "w2"])], [Done], [GoesOn(Done)], unable: [("s1", ["w1"])]),
+                "s1", SessionGroup.Working, ShownState.GoingOn),
+        ["an earlier session of a quest whose words wait on a later one is ended"] =
+            new(Look([Record("s1", "failed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10, said: ["w2"])], [Taken], [GoesOn(Taken)]),
+                "s1", SessionGroup.Ended, "failed"),
+        ["a conversation's words are its runner's: it is grouped as it ended"] =
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])]), "s1", SessionGroup.Ended, "completed"),
 
         // Ended: a record.
         ["completed is ended"] = new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Ended, "completed"),
@@ -536,10 +628,14 @@ public sealed class SessionGroupsTests
         var look = new LastLook();
         Assert.Null(look.Latest);
 
-        look.Record([Verdict(Taken, StartVerdict.Exhausted)]);
+        look.Record([Verdict(Taken, StartVerdict.Exhausted)], [Cooling("q1")]);
         look.Record([Verdict(Open, StartVerdict.Start)]);
 
         Assert.Equal(StartVerdict.Start, Assert.Single(look.Latest!).Verdict);
+        // MSG1f2: the cool-offs it held starts on go with it, so a look that held none leaves none.
+        Assert.Empty(look.Waits);
+        look.Record([Verdict(Open, StartVerdict.Blocked)], [Cooling("q1")]);
+        Assert.Equal(["q1"], Assert.Single(look.Waits).Quests);
     }
 
     /// <summary>The records are asked of the service's own door, closed ones included; a refusal is the driver's sentence.</summary>

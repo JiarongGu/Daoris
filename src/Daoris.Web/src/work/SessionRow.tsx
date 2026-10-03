@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
-import { ago, elapsed } from '../format';
+import { ago, elapsed, moment } from '../format';
 import { Dot, Icon, Menu, SESSION_ACTIVE, SESSION_DOT, shownKey, StripMark } from '../ui';
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
@@ -219,8 +219,8 @@ export function SessionRow({
 /**
  * What a row's line says for the group the reader placed it in (D126 §2.2), with the tip that explains it: how many
  * sessions failed before its quest parked, which question its quest waits on and who it was asked of, whose pause holds
- * its quest (PAUSE1e), that its stop holds its quest here, or what its own tree holds to review. Null for every other row,
- * whose group needs no sentence.
+ * its quest (PAUSE1e), what holds the words the person wrote to it after it ended (MSG1f2), that its stop holds its quest
+ * here, or what its own tree holds to review. Null for every other row, whose group needs no sentence.
  */
 function placedFact(
   grouping: SessionGrouping | null | undefined, shown: string,
@@ -233,6 +233,16 @@ function placedFact(
       values: { id: grouping.pausedBy.id },
       tip: 'work.rail.pausedTip',
     };
+  }
+  // What holds the person's words on a record that resumes later (MSG1f2, D137 §3.2): said from the facts where the page
+  // has words for them, and in the planner's own sentence for anything else.
+  if (grouping.holds) {
+    const { why, reason, repository, until } = grouping.holds;
+    const tip = 'work.rail.wordsHeldTip';
+    if (why === 'hold' && repository) return { line: 'work.rail.wordsHeld.hold', values: { repository }, tip };
+    if (why === 'cap') return { line: 'work.rail.wordsHeld.cap', tip };
+    if (why === 'cooling' && until) return { line: 'work.rail.wordsHeld.cooling', values: { time: moment(until) }, tip };
+    return { line: 'work.rail.wordsHeld.waits', values: { why: reason.replace(/\.$/, '') }, tip };
   }
   if (shown === 'parked') {
     return typeof grouping.strikes === 'number'

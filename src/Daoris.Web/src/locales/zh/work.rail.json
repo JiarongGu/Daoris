@@ -44,5 +44,10 @@
   "work.rail.ended": "已结束",
   "work.rail.pausedAsk": "随需求 #{{id}} 暂缓",
   "work.rail.pausedQuest": "随委托 #{{id}} 暂缓",
-  "work.rail.pausedTip": "它的委托已在本机暂缓：在你恢复之前，这里不会启动它的任何工作；恢复后会继续。"
+  "work.rail.pausedTip": "它的委托已在本机暂缓：在你恢复之前，这里不会启动它的任何工作；恢复后会继续。",
+  "work.rail.wordsHeld.hold": "{{repository}} 不再暂停后带着你的话继续",
+  "work.rail.wordsHeld.cap": "这里有正在运行的会话结束后带着你的话继续",
+  "work.rail.wordsHeld.cooling": "它的账户冷却到 {{time}}，届时带着你的话继续",
+  "work.rail.wordsHeld.waits": "你的话在等待：{{why}}",
+  "work.rail.wordsHeldTip": "你在这个会话结束后写给了它：拦住这些话的情况解除后，同一个会话会自己带着它们继续。"
 }
