@@ -10320,3 +10320,78 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > the machine log.
 
 **Outcome** The owner's install took its first staged update on 2026-10-03: `publish:desktop --stage` beside the running install at 13:24:27, drained with nothing running, applied when idle a second later, the new build up and confirmed 13 seconds after, `update/` left holding only the journal, the window saying *Daoris 已更新到 0.0.1 (2249a6bc)* once, and the debug port still answering after the swap. No session was working, so the drain waiting on one is still the rehearsal's proof, not the install's.
+
+
+## TOOL6f — `agent list` says the next start's steps beneath each list (2026-10-03)
+
+> - [ ] **TOOL6f — `agent list` says the next start's steps beneath each list** (cli; found by TOOL6e). The screen names
+> the next start's account, but `agent list` prints each list without a *next start* line, which only `profile use`
+> prints; the CLI reads no session record, so it cannot name the account itself. Contract: D130's TOOL6e note, the
+> account-use design §16.4. Proof: `toolchain.test.ts` rows for `agent list` with the line and its pointer to
+> Settings → Agents.
+
+**Outcome** `daoris agent list` says the next start beneath each list: the walk's steps in effect, each account cooling and until when, the wait when none can start, and a pointer to Settings → Agents for the account it takes, which the terminal cannot read; a machine with no list names its default. It never guesses an account. Detail: D130's TOOL6f note, `b2f7aeb2`.
+
+
+## UPDATE1d — `STATE` keeps the last swap (2026-10-03)
+
+> - [ ] **UPDATE1d — `STATE` keeps the last swap** (modules, web-shell; found by UPDATE1b). `InstallUpdater.Dismiss()`
+> clears the outcome, so after a dismissal or a later start Settings cannot show the last swap the terminal still
+> shows from the journal (D50). Answer `last` from the journal's record, told or not; add it to `UpdateState`.
+> Contract: D139's UPDATE1b note, the update design §6. Proof: `UpdateModuleTests` (a state after `Dismiss` still
+> carrying `last`); the row on the install.
+
+**Outcome** Every `STATE` answers `last`, the swap journal's record whether or not it was already said, and Settings → Driver's row reads it, so the last swap still shows after *Dismiss* and at a later start, as the terminal shows it. Detail: D139's UPDATE1b note, the update design §6, `6c60739a`.
+
+
+## UPDATE1e — Ask Daoris's coverage sees the update's words (2026-10-03)
+
+> - [ ] **UPDATE1e — Ask Daoris's coverage sees the update's words** (driver, web-shell; found by UPDATE1b).
+> `HelpCoverageTests` reads only hooks exported as `export const use…`, and `bridge/update.ts` exports `export
+> function`, so *Update when idle*, *Update now* and *Not now* on Settings → Driver are not accounted for (D110). Teach
+> the reader both forms and answer `useSayUpdate` (exempt, most likely: an update is the person's act on the
+> application). Contract: D110, D139. Proof: `HelpCoverageTests` failing on the unaccounted hook first.
+
+**Outcome** `HelpCoverageTests` reads hooks exported in either form; `useSayUpdate`, the only new control it found, is exempt as the person's act on the application (D139). Detail: D139's note, `34d4ba97`.
+
+
+## UPDATE1f — Ask Daoris's room names the update's doors (2026-10-03)
+
+> - [ ] **UPDATE1f — Ask Daoris's room names the update's doors** (driver; found by UPDATE1e). Ask Daoris cannot point
+> at *Update when idle*, *Update now*, *Not now* or `daoris-driver update`, exempt with their reason, as it does for
+> `sessions say`; and two hooks that change something no Settings domain uses (`useDismissUpdate`, `useLinkOpener`)
+> are read but unanswered. Contract: D110, D139. Proof: the room's goldens; a `HelpCoverageTests` fact like
+> `sessions say`'s.
+
+**Outcome** Ask Daoris's room names the update's doors, exempt as `sessions say` is (an update is the person's act on the application), and `HelpCoverageTests` answers `useDismissUpdate` and `useLinkOpener` with their reasons. Detail: D139's UPDATE1f note, `63dcc3c8`.
+
+
+## CHATTAKE1c — the refusal of a chat's delete names no quest (2026-10-03)
+
+> - [ ] **CHATTAKE1c — the refusal of a chat's delete names no quest** (web-shell; found by CHATTAKE1).
+> `errors.SESSION_SERVED_QUEST` says `#{{quest}}`, and a chat that took a quest refuses with none, so the sentence
+> reads `#`. Give it a form with no quest. Reached by a delete that races a take, or by SESSUX1h. Contract: D126's
+> CHATTAKE1 note. Proof: both catalogues and a vitest row.
+
+**Outcome** A delete refused for a quest a chat took reads *took a quest* (`errors.SESSION_SERVED_QUEST_took`, both catalogues, picked by `sentence()` where the quest is empty) instead of `#`. Detail: D126's CHATTAKE1c note, `3f404820`.
+
+
+## ANSWER1e — the map and Ask Daoris read an answered park (2026-10-03)
+
+> - [ ] **ANSWER1e — the map and Ask Daoris read an answered park** (web-shell; found by ANSWER1c). The map's *parked* mark
+> (`map/topology.ts`) and Ask Daoris's waiting count (`help/machine.ts`) still count an answered park for up to one look.
+> Contract: answer-continues design §5. Proof: `topology.test.ts` and the help machine test read `answeredPark`.
+
+**Outcome** The map's parked mark and Ask Daoris's waiting count read `answeredPark`, so an answered park shows as queued until the driver's next look. Ask Daoris's preface is ANSWER1f. Detail: `4a20ecbc`.
+
+
+## GATE2 — the merge gate cleans up merged branches (2026-10-03)
+
+> - [ ] **GATE2 — the merge gate cleans up merged branches** (owner, 2026-10-03: *"I think we do need to update the gate
+> here to cleanup merged branches"*; 36 of 41 branches merged, 41 worktrees standing). `merge-branch --prune [--plan]`,
+> and at each merge's start: a branch merged into main goes with its worktree unless the worktree is locked (an agent
+> runs in it), has modified tracked files, or holds something under its `local/`; each keep says why. Contract: the
+> dispatch-subagent skill's parent half. Proof: `merge-branch.test.ts` on fixture repositories, a branch at main's tip
+> in a locked worktree kept.
+
+**Outcome** `merge-branch` prunes merged branches and their worktrees at each merge's start, at a batch's end, and on `--prune [--plan]`: it keeps a worktree that is locked (an agent runs in it), holds changes or untracked files, or has anything under `local/`, says why for each, never forces and never uses `-D`; `--no-prune` skips it once. A worktree made by hand is locked by whoever made it. Detail: the tool's header, the dispatch-subagent skill's parent half, `529e9bd1`, `1b690a22`.

@@ -1,6 +1,8 @@
+import type { Session } from '../api';
 import type { RepositoryLanding } from '../settings/Landings';
 import type { RepositoryLine } from '../settings/Lines';
 import { byTool, type Tool, type ToolDoor } from '../tools';
+import { answeredPark } from '../ui';
 
 /**
  * What this machine holds, as Ask Daoris's starters (HELP1d) and the setup guide (SETUP1a, D97) read
@@ -13,7 +15,10 @@ export type Machine = {
   repositories: readonly string[];
   drivable: readonly string[];
   tools: readonly Tool[];
-  /** How many sessions wait on the person. */
+  /**
+   * How many sessions wait on the person. Not a park they answered (ANSWER1e): the same session goes on with it at the
+   * driver's next look, as the session list already says.
+   */
   waiting: number;
   /** Repositories with no line set and none git can name. */
   unnamedLines: readonly string[];
@@ -39,7 +44,7 @@ export function readMachine(answers: {
   /** The driver's standing state. The adapters are `""` for none: the bridge leaves a null out. */
   driver?: { drivable?: readonly string[]; helperAdapter?: string; intakeAdapter?: string };
   harnesses?: readonly ToolDoor[];
-  sessions?: readonly { state: string }[];
+  sessions?: readonly Pick<Session, 'state' | 'answer'>[];
   lines?: readonly RepositoryLine[];
   landings?: readonly RepositoryLanding[];
 }): Machine {
@@ -56,7 +61,7 @@ export function readMachine(answers: {
     repositories,
     drivable,
     tools: byTool(answers.harnesses ?? []),
-    waiting: (answers.sessions ?? []).filter((session) => session.state === 'awaiting-person').length,
+    waiting: (answers.sessions ?? []).filter((session) => session.state === 'awaiting-person' && !answeredPark(session)).length,
     unnamedLines: (answers.lines ?? []).filter((line) => line.source === 'none').map((line) => line.repository),
     helper: answers.driver?.helperAdapter || null,
     intake: answers.driver?.intakeAdapter || null,

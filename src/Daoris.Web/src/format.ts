@@ -125,6 +125,15 @@ export function span(ms: number, language?: string): string {
 }
 
 /**
+ * A refusal whose sentence names something its record may not have, and the form to read where the shell sent it
+ * empty (CHATTAKE1c, D126's CHATTAKE1 note): a chat that took a quest is refused as having served one, but no quest
+ * records which session took it, so the refusal names none, and the sentence that names one read `#`.
+ */
+const FORM_WHEN_EMPTY: Readonly<Record<string, { parameter: string; context: string }>> = {
+  SESSION_SERVED_QUEST: { parameter: 'quest', context: 'took' },
+};
+
+/**
  * The sentence a failure puts in front of the person, whichever half of the platform it came from.
  *
  * @remarks
@@ -138,6 +147,9 @@ export function span(ms: number, language?: string): string {
  * An unmapped code falls back to a sentence rather than to the code itself. It happens when the page
  * is older than the host, and a bare `SOMETHING_FAILED` in front of a person is barely better than the
  * generic failure this whole seam was fixed to replace.
+ *
+ * A form of the sentence is the shell's `context`, or, for a refusal in `FORM_WHEN_EMPTY`, the form that
+ * names nothing where the shell sent that parameter empty.
  */
 export function sentence(error: unknown, language?: string): string {
   const code = (error as { code?: unknown } | null)?.code;
@@ -146,8 +158,12 @@ export function sentence(error: unknown, language?: string): string {
   // In a caller's language where it words in another than the page's (a story's or a test's), as `list` does.
   const lng = language ? { lng: language } : {};
   const parameters = (error as { parameters?: Record<string, string> }).parameters ?? {};
+  const empty = FORM_WHEN_EMPTY[code];
+  const values = empty && !parameters[empty.parameter] && !parameters.context
+    ? { ...parameters, context: empty.context }
+    : parameters;
   const key = `errors.${code}`;
-  const translated = i18n.t(key, { ...parameters, ...lng });
+  const translated = i18n.t(key, { ...values, ...lng });
   return translated === key ? i18n.t('errors.UNKNOWN', lng) : translated;
 }
 
