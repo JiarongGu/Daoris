@@ -36,21 +36,20 @@ import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules,
-  useSayUpdate, useSyncNow, useTrustFolder, useUntrusted, useUpdateState,
+  useSayUpdate, useSessionGroups, useSyncNow, useUntrusted, useUpdateState,
 } from './shell';
 import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
 import { browserDrivers } from './work/browserDrivers';
 import { appMenus, menuAction } from './work/appMenus';
-import type { TrustHold } from './signals';
-import { TrustAsk } from './work/TrustAsk';
 import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import { ViewFrame, type ViewLayout } from './work/ViewFrame';
 import { ViewMain } from './work/ViewMain';
 import type { AttentionDoors } from './work/AttentionBand';
+import type { Attention } from './work/AttentionRow';
 import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
@@ -203,8 +202,8 @@ export function App() {
   const registry = useRegistry();
   // The asks still waiting (INT4d), from the cache Quests fills — the count below includes them.
   const asks = useAsks(false);
-  // The folders the driver is holding for the agent's trust (D73), from the tick, and the one being
-  // asked about. The band's row opens the question; only the person's press grants it.
+  // The folders the driver is holding for the agent's trust (D73), from the tick. The band's row asks the question in
+  // place (UX6c); only the person's press grants it.
   const untrusted = useUntrusted();
   // The planner's verdicts as of the last tick: Sessions' badge counts the quests parked on their failed sessions
   // (SESSUX1c, D126 §2.5), and Overview's, which counts the band, does too (SESSUX1i). Empty in a browser.
@@ -212,8 +211,9 @@ export function App() {
   // What agents proposed about the rules (PERM2): the menus count those waiting, and the band lists them.
   const rules = useRules();
   const proposals = Array.isArray(rules.data?.proposals) ? rules.data.proposals : [];
-  const grantTrust = useTrustFolder();
-  const [trusting, setTrusting] = useState<TrustHold | null>(null);
+  // Where Sessions' list places each session (D126): Overview's badge counts the work to review the band lists (UX6c).
+  // The frame reads the same answer under the same key on every view, so this asks nothing more; a browser has none.
+  const sessionGroups = useSessionGroups();
   // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
   const update = useUpdateState();
   const sayUpdate = useSayUpdate();
@@ -333,12 +333,12 @@ export function App() {
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : 'absent';
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
-  // Overview's badge, from the one derivation the band uses and every input it reads, the rule proposals and the parked
-  // quests among them (SESSUX1i) — two answers to "how many need me" would disagree the first time either was edited.
-  // Sessions' badge is its own sessions only (U20).
+  // Overview's badge, from the one derivation the band uses and every input it reads, the rule proposals, the parked
+  // quests (SESSUX1i) and the work to review (UX6c) among them — two answers to "how many need me" would disagree the
+  // first time either was edited. Sessions' badge is its own sessions only (U20).
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    proposals, considered.data ?? []).length;
+    proposals, considered.data ?? [], sessionGroups.data ?? []).length;
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
@@ -568,18 +568,31 @@ export function App() {
     onGo: go,
   };
 
+  // Each row's door (UX6c, design §6.2): where its record is, beside the acts the row settles in place.
   const attentionDoors: AttentionDoors = {
     ...(attached ? { parked: (item) => openInWork(item.id) } : {}),
     proposal: (item) => openAsk(item.id),
     intake: (item) => openAsk(item.id),
     unanswerable: (item) => openQuest(item.id),
-    // A quest parked on its failed sessions (SESSUX1i) opens its page, where Try again is, and its session from there.
+    // A quest parked on its failed sessions (SESSUX1i) opens its page, and its session from there.
     'parked-quest': (item) => openQuest(item.id),
-    // A folder waiting on the person's trust (D73) opens the question itself. Only a shell has one.
-    ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
+    // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed (KNOWUSE1a).
+    'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
+    // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).
+    departure: (item) => openQuest(item.id),
+    // A folder waiting on the person's trust (D73) opens what it holds: the quest's page, or the ask whose intake it is.
+    // The row asks the trust question itself. Only a shell has one.
+    ...(attached ? {
+      trust: (item: Attention) => {
+        if (item.quest) openQuest(item.quest);
+        else if (item.ask) openAsk(item.ask);
+      },
+    } : {}),
     // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is
     // answered beside them. Only a shell reads the rules.
     ...(attached ? { rule: () => openSettings('permissions') } : {}),
+    // Work to review opens in Sessions with its review open (D126, D113): accepting needs looking. A shell's alone.
+    ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent('review'); } } : {}),
   };
 
   // Settings on the frame (FRAME1g): its domains are its list pane and the domain chosen its main area.
@@ -635,6 +648,7 @@ export function App() {
             onOpenQuest={openQuest}
             doors={attentionDoors}
             notify={notify}
+            onSessions={attached ? () => open('sessions') : undefined}
           />
         )}
         {view === 'map' && (
@@ -1009,27 +1023,6 @@ export function App() {
         </QuickAsk>
       )}
 
-      {trusting && (
-        <Drawer title={t('trust.title')} onClose={() => setTrusting(null)}>
-          <TrustAsk
-            hold={{
-              ...trusting,
-              // What it holds, named: the band groups one folder's holds into one row.
-              ...(untrusted.data ?? []).find((hold) =>
-                hold.folder === trusting.folder && hold.trustFile === trusting.trustFile),
-            }}
-            busy={grantTrust.isPending}
-            onCancel={() => setTrusting(null)}
-            onGrant={() => grantTrust.mutate(trusting, {
-              onSuccess: (granted) => {
-                notify(granted.message, granted.verified ? 'ok' : 'error');
-                setTrusting(null);
-              },
-              onError: failure(notify),
-            })}
-          />
-        </Drawer>
-      )}
       <Toasts items={toasts} onClose={dismiss} />
       {/* The window's one right-click handler (CTX1, D138): each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />

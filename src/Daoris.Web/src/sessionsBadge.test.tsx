@@ -143,12 +143,16 @@ describe("Overview's What needs you, on a machine", () => {
     start(CONSIDERED);
 
     // The band is drawn again as the window's answers arrive, so its row is found afresh rather than inside a held node.
-    const row = await screen.findByRole('button', { name: /Expose a streaming budget.*parked after failed sessions/ });
-    expect(screen.getByRole('region', { name: 'What needs you' })).toContainElement(row);
+    await screen.findByRole('listitem', { name: 'Expose a streaming budget' });
     // Two sessions parked to ask, and the parked quest: the band's count, on the icon of the view that holds it.
     await waitFor(() => expect(within(overviewButton()).getByText('3')).toBeInTheDocument());
+    const row = screen.getByRole('listitem', { name: 'Expose a streaming budget' });
+    expect(screen.getByRole('region', { name: 'What needs you' })).toContainElement(row);
+    expect(within(row).getByText('parked after failed sessions')).toBeInTheDocument();
 
-    await userEvent.click(row);
+    // UX6c: the row's door is its own press, beside *Try again*, which the row offers in place.
+    expect(within(row).getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('q1');
   });

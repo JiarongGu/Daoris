@@ -12,14 +12,14 @@ import { AttentionBand, type AttentionDoors } from './work/AttentionBand';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to
- * answer one question first — is anything sitting, and for how long — so that is what leads: family
- * health as stat tiles, the outstanding quests oldest-first, and the repositories by what the index
- * holds. Every row is a door.
+ * answer one question first — what needs me, and is anything sitting — so that is what leads: *What needs you*
+ * (UX6c, design §6), then family health as stat tiles, the outstanding quests oldest-first, and the repositories by what
+ * the index holds. Every row is a door.
  *
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
+export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSessions }: {
   onNavigate: (tab: 'quests' | 'projects') => void;
   /**
    * Where an outstanding row goes: that quest's page on Quests (§5; FRAME1d). The row went to Quests and opened
@@ -33,6 +33,8 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
    */
   doors?: AttentionDoors;
   notify: Notify;
+  /** Sessions itself, where the band's work to review past its fifth row is (UX6c): a shell's alone. */
+  onSessions?: () => void;
 }) {
   const { t } = useTranslation();
   const repositories = useRepositories();
@@ -59,10 +61,9 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
     <section>
       <PageHeader title={t('overview.title')} description={t('overview.description')} />
 
-      {/* Above the tiles, because "what needs me" outranks "how is the family" — and absent
-          entirely when nothing is waiting, since a band that always says all-clear stops being
-          read (design §4). */}
-      <AttentionBand doors={doors} />
+      {/* The page's lead, above the tiles, because "what needs me" outranks "how is the family" (UX6c, design §6.1);
+          one line when nothing is waiting, since a card that always says all-clear stops being read. */}
+      <AttentionBand doors={doors} notify={notify} onSessions={onSessions} />
 
       <div className="mb-5 grid grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
         <Tile

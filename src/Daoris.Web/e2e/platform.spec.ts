@@ -380,10 +380,11 @@ test('an ask waiting on a person is in What needs you, and its record names its 
 
   await page.goto('/');
   const band = page.getByRole('region', { name: 'What needs you' });
-  const proposed = band.getByRole('button', { name: new RegExp(sentence) });
+  // UX6c: a row is named by its title, and its door is the press at its end, beside the acts it settles in place.
+  const proposed = band.getByRole('listitem', { name: sentence });
   await expect(proposed).toContainText('proposed, not yet published');
   await expect(proposed).toContainText('workspace default');
-  await proposed.click();
+  await proposed.getByRole('button', { name: 'Open' }).click();
   // Its page, in Quests' main area (FRAME1d), with the ask chosen in the list beside it.
   await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
   await expect(record(page).getByRole('region', { name: 'Where it belongs' })).toBeVisible();
@@ -402,13 +403,14 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   expect(parked.ok(), await parked.text()).toBe(true);
 
   await page.goto('/');
-  const asking = page.getByRole('region', { name: 'What needs you' }).getByRole('button', { name: new RegExp(sentence) });
+  const asking = page.getByRole('region', { name: 'What needs you' }).getByRole('listitem', { name: sentence });
   await expect(asking).toContainText('its intake asked you');
   await expect(asking).toContainText('published nothing: it asks you rather than guess.');
   // One thing, one row: the parked intake is the ask's row, not a parked session beside it.
   await expect(page.getByRole('region', { name: 'What needs you' }).getByText('parked at a checkpoint')).toHaveCount(0);
 
-  await asking.click();
+  // An intake's question needs reading, so its door is the row's one control, naming the ask it opens.
+  await asking.getByRole('button', { name: `Answer ask #${ask.id}` }).click();
   await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
   const intake = record(page).getByRole('region', { name: 'Intake session' });
   await expect(intake.getByText('waiting on you')).toBeVisible();

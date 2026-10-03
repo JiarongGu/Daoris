@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
-import type { Ask, Quest, Registration, Session } from '../api';
+import type { Ask, GoAhead, Quest, Registration, Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
 import type { Consideration } from '../signals';
-import { needsAPerson, waitingInSessions } from './attention';
+import type { Attention } from './AttentionRow';
+import type { SessionGrouping } from './groups';
+import { ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, needsAPerson, waitingInSessions } from './attention';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
@@ -154,6 +156,8 @@ describe('an ask that waits on a person', () => {
       where: 'aurora',
       since: '2026-09-21T08:30:00Z',
       detail: 'The declarations propose engine, game. Nothing is published until you choose.',
+      publishTo: ['engine', 'game'],
+      choices: [],
     }]);
   });
 
@@ -215,8 +219,11 @@ describe('an ask that waits on a person', () => {
     ])).toEqual([]);
   });
 
-  /** Asks hold nothing while they wait, and nothing downstream moves until the person settles one. */
-  it('sits after the parked sessions and before the quests nobody can take, oldest first', () => {
+  /**
+   * UX6c (design §6.2): an ask waits for the person's word, after what holds work, and within that group what has waited
+   * longest comes first, whatever its kind: a quest nobody can take, sitting since September, before this morning's asks.
+   */
+  it('waits for the person’s word after what holds work, the longest waiting first within the group', () => {
     const waiting = needsAPerson(
       [
         session({ id: 'parked', state: 'awaiting-person', updated: '2026-09-21T11:00:00Z' }),
@@ -231,8 +238,25 @@ describe('an ask that waits on a person', () => {
     );
 
     expect(waiting.map((item) => `${item.kind}:${item.id}`)).toEqual([
-      'parked:parked', 'intake:7c1e9a04b2d5', 'proposal:later', 'unanswerable:sitting',
+      'parked:parked', 'unanswerable:sitting', 'intake:7c1e9a04b2d5', 'proposal:later',
     ]);
+  });
+
+  /**
+   * UX6c (design §6.2): a proposal's row publishes where its declarations named receivers, in one press, and chooses among
+   * whoever its workspace can ask otherwise. Both are read from the facts the band already holds: the ask and the registry.
+   */
+  it('names whom its publish goes to and whom it could choose, from the ask and the registry', () => {
+    const inAurora = (name: string, over: Partial<Registration> = {}): Registration => ({ ...registration(name), workspace: 'aurora', ...over });
+    const [item] = needsAPerson([], [], [
+      inAurora('game'), inAurora('engine'), inAurora('tools', { adopted: false }), registration('elsewhere'),
+    ], [ask()]);
+
+    expect(item.publishTo).toEqual(['engine', 'game']);
+    expect(item.choices).toEqual(['engine', 'game']);
+    const [nobody] = needsAPerson([], [], [inAurora('engine')], [ask({ proposal: [] })]);
+    expect(nobody.publishTo).toEqual([]);
+    expect(nobody.choices).toEqual(['engine']);
   });
 
   it('explains a proposal in the active language', async () => {
@@ -292,14 +316,26 @@ describe('a folder waiting on the person\'s trust', () => {
     expect(item.since).toBe('2026-09-21T08:30:00Z');
   });
 
-  it('sits after the parked sessions and ahead of the asks: nothing it holds can start until it is granted', () => {
+  /**
+   * Nothing it holds can start until it is granted, so it holds work, ahead of every ask; beside a parked session, the one
+   * that has waited longer comes first (UX6c, design §6.2).
+   */
+  it('holds work, ahead of the asks, beside the parked sessions by how long each has waited', () => {
     const waiting = needsAPerson(
       [session({ id: 'parked', state: 'awaiting-person', updated: '2026-09-21T09:00:00Z' })],
       [quest({ id: 'q1' })], [registration('engine')], [ask()],
       [{ ...hold, quest: 'q1' }],
     );
 
-    expect(waiting.map((item) => item.kind)).toEqual(['parked', 'trust', 'proposal']);
+    expect(waiting.map((item) => item.kind)).toEqual(['trust', 'parked', 'proposal']);
+  });
+
+  /** Its door is what it holds: the quest's page, or the ask's for an intake's room. */
+  it('names the quest or the ask it holds, which its door opens', () => {
+    const [onQuest] = needsAPerson([], [quest({ id: 'q1' })], [registration('engine')], [], [{ ...hold, quest: 'q1' }]);
+    expect(onQuest).toMatchObject({ quest: 'q1' });
+    const [onAsk] = needsAPerson([], [], [], [ask()], [{ ...hold, ask: '7c1e9a04b2d5' }]).filter((row) => row.kind === 'trust');
+    expect(onAsk).toMatchObject({ ask: '7c1e9a04b2d5' });
   });
 
   it('adds nothing when nothing is held for trust, and a browser has no holds at all', () => {
@@ -336,11 +372,12 @@ describe('a proposal to widen the rules', () => {
     expect(needsAPerson([], [], [], [], [], settled.map((state) => proposal({ id: state, state })))).toEqual([]);
   });
 
-  it('sits after the asks and before the quests nobody can take', () => {
+  /** It waits for the person's word beside the asks and the quests nobody can take, the longest waiting first (UX6c). */
+  it('waits for the person’s word, with the asks and the quests nobody can take, the longest waiting first', () => {
     const waiting = needsAPerson(
       [], [quest({ to: 'nobody' })], [registration('engine')], [ask()], [], [proposal()]);
 
-    expect(waiting.map((item) => item.kind)).toEqual(['proposal', 'rule', 'unanswerable']);
+    expect(waiting.map((item) => item.kind)).toEqual(['unanswerable', 'proposal', 'rule']);
   });
 });
 
@@ -369,8 +406,12 @@ describe('a quest parked on its failed sessions', () => {
     }]);
   });
 
-  /** A session parked to ask holds a tree while it waits; a parked quest holds nothing, and comes after it. */
-  it('sits after the parked sessions and ahead of the folders held for trust, oldest first', () => {
+  /**
+   * It holds work, as a parked session and a folder held for trust do, and within that group what has waited longest comes
+   * first (UX6c, design §6.2): the folder held since its quest was filed, then the quests by when each parked, then the
+   * session that parked this noon.
+   */
+  it('holds work beside the parked sessions and the folders held for trust, the longest waiting first', () => {
     const waiting = needsAPerson(
       [session({ id: 'asking', state: 'awaiting-person', updated: '2026-10-01T12:00:00Z' })],
       [quest({ id: 'q-new', status: 'Taken' }), quest({ id: 'q-old' })],
@@ -380,7 +421,7 @@ describe('a quest parked on its failed sessions', () => {
     );
 
     expect(waiting.map((item) => `${item.kind}:${item.id}`)).toEqual([
-      'parked:asking', 'parked-quest:q-old', 'parked-quest:q-new', `trust:C:/somewhere/.claude.json\nC:/somewhere/engine`,
+      `trust:C:/somewhere/.claude.json\nC:/somewhere/engine`, 'parked-quest:q-old', 'parked-quest:q-new', 'parked:asking',
     ]);
   });
 
@@ -487,5 +528,199 @@ describe('what the Sessions badge counts', () => {
 
     expect(waitingInSessions(sessions)).toBe(1);
     expect(needsAPerson(sessions, [], [], []).map((item) => item.id)).toEqual(['p4rk3d00']);
+  });
+});
+
+/**
+ * UX6c (design §6.2): a go-ahead a session asked on an ask (KNOWUSE1a) holds that session's act until the person answers,
+ * so it holds work. Read from the ask's own `goAheads`, which the asks list already carries: nothing is asked to find it.
+ */
+describe('a go-ahead asked on an ask', () => {
+  const goAhead = (over: Partial<GoAhead> = {}): GoAhead => ({
+    number: 1, kind: 'push', on: 'prod', act: 'the report’s menu entries', state: 'asked',
+    asked: [{ session: 's1a2b3c4', quest: '7a82cc', at: '2026-09-21T09:10:00Z', why: 'The menu ships with the release.' }],
+    ...over,
+  });
+
+  it('is a row per waiting go-ahead: the act, its ask, since it was first asked, and why in the session’s words', () => {
+    const waiting = needsAPerson([], [], [], [ask({ state: 'Published', goAheads: [goAhead()] })]);
+
+    expect(waiting).toEqual([{
+      id: '7c1e9a04b2d5#1',
+      kind: 'go-ahead',
+      ask: '7c1e9a04b2d5',
+      number: 1,
+      title: 'push on prod: “the report’s menu entries”',
+      where: 'ask #7c1e9a04b2d5',
+      since: '2026-09-21T09:10:00Z',
+      detail: 'The menu ships with the release.',
+    }]);
+  });
+
+  it('leaves one answered out, and one on a closed ask', () => {
+    expect(needsAPerson([], [], [], [
+      ask({ state: 'Published', goAheads: [goAhead({ state: 'approved', answer: { approved: true, at: '2026-09-21T10:00:00Z' } })] }),
+      ask({ id: 'closed', state: 'Closed', goAheads: [goAhead()] }),
+    ])).toEqual([]);
+  });
+
+  /** A kind this page has no word for is shown as the service wrote it; one it has is said in the reader's language. */
+  it('names the act’s kind in the reader’s language where it can, and as written where it cannot', async () => {
+    const [unknown] = needsAPerson([], [], [], [ask({ state: 'Published', goAheads: [goAhead({ kind: 'migrate' })] })]);
+    expect(unknown.title).toBe('migrate on prod: “the report’s menu entries”');
+    await i18n.changeLanguage('zh');
+    try {
+      const [item] = needsAPerson([], [], [], [ask({ state: 'Published', goAheads: [goAhead()] })]);
+      expect(item.title).toBe('在 prod 上推送：“the report’s menu entries”');
+      expect(item.where).toBe('需求 #7c1e9a04b2d5');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('holds work: after a parked session that waited longer, before every ask', () => {
+    const waiting = needsAPerson(
+      [session({ id: 'parked', state: 'awaiting-person', updated: '2026-09-21T09:00:00Z' })], [], [],
+      [ask({ id: 'proposed', asked: '2026-09-20T09:00:00Z' }), ask({ state: 'Published', goAheads: [goAhead()] })],
+    );
+    expect(waiting.map((item) => item.kind)).toEqual(['parked', 'go-ahead', 'proposal']);
+  });
+});
+
+/**
+ * UX6c (design §6.2): a done that departed from what the person required is held for their yes (DRIFT1d2), so it waits for
+ * their word. The quests list carries it (`held`), and the requirement and the departure's reason are the done's words.
+ */
+describe('a departure that waits for your yes', () => {
+  const held = (over: Partial<Quest> = {}): Quest => quest({
+    status: 'Done', held: true, updated: '2026-09-22T09:00:00Z',
+    requirements: [{ quote: 'cap it per frame', check: 'a test' }, { quote: 'on the chunk API', check: 'the API' }],
+    answers: [
+      { requirement: 1, met: 'tested' },
+      { requirement: 2, departed: 'the scheduler holds the budget instead', quote: 'on the chunk API' },
+    ],
+    ...over,
+  });
+
+  it('is a row: the quest, its receiver, since its done, and the departed requirement with its reason', () => {
+    expect(needsAPerson([], [held()], [registration('engine')], [])).toEqual([{
+      id: '7a82cc',
+      kind: 'departure',
+      title: 'Expose a streaming budget on the chunk API',
+      where: 'engine',
+      since: '2026-09-22T09:00:00Z',
+      detail: 'Requirement 2 departed: the scheduler holds the budget instead',
+    }]);
+  });
+
+  it('counts the departures where its done departed from more than one', () => {
+    const [item] = needsAPerson([], [held({
+      answers: [
+        { requirement: 1, departed: 'no per-frame cap', quote: 'cap it per frame' },
+        { requirement: 2, departed: 'the scheduler holds it', quote: 'on the chunk API' },
+      ],
+    })], [registration('engine')], []);
+    expect(item.detail).toBe('2 requirements departed; requirement 1: no per-frame cap');
+  });
+
+  it('is gone once accepted, and absent for a quest no departure holds', () => {
+    expect(needsAPerson([], [held({ accepted: '2026-09-22T10:00:00Z' }), quest({ status: 'Done' })], [registration('engine')], []))
+      .toEqual([]);
+  });
+});
+
+/**
+ * UX6c (design §6.2): finished work the person has not looked at is ready for them. Sessions' list already places it in
+ * *To review* (D126), from the driver's one reader the frame holds on every view, so the band reads that answer and never a
+ * reader of its own. The foot sentence that said such work was not listed goes with it.
+ */
+describe('work to review', () => {
+  const placed = (over: Partial<SessionGrouping> = {}): SessionGrouping => ({
+    session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false,
+    work: { commits: 3, uncommitted: 0 }, ...over,
+  });
+
+  it('is a row per session the list places to review: its identity, where, since it ended, and what its tree holds', () => {
+    const waiting = needsAPerson(
+      [session({ id: 'r3v13w00', quest: '7a82cc', state: 'completed', updated: '2026-09-21T11:00:00Z' })],
+      [quest({ status: 'Done' })], [registration('engine')], [], [], [], [], [placed()],
+    );
+
+    expect(waiting).toEqual([{
+      id: 'r3v13w00',
+      kind: 'review',
+      title: 'Expose a streaming budget on the chunk API',
+      where: 'engine',
+      since: '2026-09-21T11:00:00Z',
+      detail: '3 commits to review',
+    }]);
+  });
+
+  it('still says what waits where the record is not in hand, named by its id', () => {
+    const [item] = needsAPerson([], [], [], [], [], [], [], [placed()]);
+    expect(item).toMatchObject({ kind: 'review', title: '#r3v13w00', where: '' });
+  });
+
+  it('is only the list’s To review, and comes last: it holds nothing and waits on nobody', () => {
+    const waiting = needsAPerson(
+      [session({ id: 'parked', state: 'awaiting-person', updated: '2026-09-21T12:00:00Z' })], [], [], [], [], [], [],
+      [placed(), placed({ session: 'w0rk1ng0', group: 'working' }), placed({ session: 'end3d000', group: 'ended' })],
+    );
+    expect(waiting.map((item) => `${item.kind}:${item.id}`)).toEqual(['parked:parked', 'review:r3v13w00']);
+  });
+});
+
+/** UX6c (design §6.2): the three groups, in the order a person acts on them, and none shown empty. */
+describe('the groups', () => {
+  it('puts each kind in its group', () => {
+    expect(ATTENTION_GROUP).toEqual({
+      parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
+      proposal: 'word', intake: 'word', departure: 'word', rule: 'word', unanswerable: 'word',
+      review: 'ready',
+    });
+  });
+
+  it('splits the rows into the groups that hold any, in order, keeping each group’s order', () => {
+    const rows = needsAPerson(
+      [session({ id: 'parked', state: 'awaiting-person' })], [quest({ id: 'q1', to: 'gone' })], [registration('engine')], [],
+      [], [], [], [{ session: 'r3v13w00', group: 'review', shown: 'completed', archived: false, teammate: false }],
+    );
+    expect(attentionGroups(rows).map(({ group, items }) => [group, items.map((item) => item.id)])).toEqual([
+      ['holding', ['parked']], ['word', ['q1']], ['ready', ['r3v13w00']],
+    ]);
+    expect(attentionGroups([])).toEqual([]);
+  });
+});
+
+/**
+ * UX6c (design §6.3): an act is on a row only where one press is safe and the row says what it does; one that widens what
+ * Daoris may do asks once; one that needs reading first is the row's door, never an act. One rule per kind, so every row
+ * of a kind is offered the same acts.
+ */
+describe('what a row offers', () => {
+  const row = (kind: Attention['kind'], over: Partial<Attention> = {}): Attention =>
+    ({ id: 'x', kind, title: 't', where: 'w', since: '2026-09-21T09:00:00Z', ...over });
+
+  it('publishes where its declarations named receivers, and chooses otherwise', () => {
+    expect(attentionActs(row('proposal', { publishTo: ['engine'] }))).toEqual(['publish', 'choose']);
+    expect(attentionActs(row('proposal', { publishTo: [] }))).toEqual(['choose']);
+  });
+
+  it('tries a parked quest again, accepts a departure, and answers a go-ahead, a folder and a widening', () => {
+    expect(attentionActs(row('parked-quest'))).toEqual(['retry']);
+    expect(attentionActs(row('departure'))).toEqual(['accept-departure']);
+    expect(attentionActs(row('go-ahead'))).toEqual(['approve', 'refuse']);
+    expect(attentionActs(row('trust', { trust: { folder: 'f', trustFile: 'g' } }))).toEqual(['trust']);
+    expect(attentionActs(row('rule'))).toEqual(['accept-rule', 'decline-rule']);
+  });
+
+  /** Answering a park or an intake's question, and accepting a review, need reading: each is its door alone. */
+  it('offers nothing where reading comes first, or where nothing here can act', () => {
+    for (const kind of ['parked', 'intake', 'review', 'unanswerable'] as const) expect(attentionActs(row(kind))).toEqual([]);
+    expect(attentionActs(row('trust'))).toEqual([]);
+  });
+
+  it('asks once before what widens what Daoris may do, and before a choice', () => {
+    expect([...ASKS_ONCE].sort()).toEqual(['accept-rule', 'approve', 'choose', 'refuse', 'trust']);
   });
 });

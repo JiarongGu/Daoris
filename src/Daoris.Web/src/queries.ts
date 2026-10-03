@@ -252,11 +252,13 @@ export const useQuests = (repository: string | null, includeClosed: boolean) => 
 };
 
 /** Session records are read-only here: the controls act where a driver is attached (D46 §6). */
-export const useSessions = (repository: string | null, includeClosed: boolean) => {
+/** The sessions in scope; `enabled` false asks nothing, for a reader that needs them only sometimes (a review's title, UX6c). */
+export const useSessions = (repository: string | null, includeClosed: boolean, enabled = true) => {
   const { workspace } = useScope();
   return useQuery({
     queryKey: keys.sessions(repository, includeClosed, workspace),
     queryFn: ({ signal }) => api.sessions(repository, includeClosed, workspace, signal),
+    enabled,
   });
 };
 

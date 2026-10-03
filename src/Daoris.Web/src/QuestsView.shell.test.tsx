@@ -191,20 +191,29 @@ describe('trusting a folder the driver is holding (D73)', () => {
     expect(within(page).queryByRole('button', { name: 'Trust this folder…' })).toBeNull();
   });
 
-  it('a held folder waits in *What needs you*, and its row opens the grant', async () => {
+  /**
+   * UX6c (design §6.2): a held folder waits in *What needs you*, which asks the agent's trust question under its row and
+   * grants on the second press; the row's door opens the quest it holds.
+   */
+  it('a held folder waits in *What needs you*, asks the grant under its row, and its door opens what it holds', async () => {
     const trust = vi.fn();
     show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ trust }} />, holding());
 
-    const band = await screen.findByRole('region', { name: 'What needs you' });
-    await userEvent.click(await within(band).findByRole('button', { name: /C:\/somewhere\/engine/ }));
-
+    const row = await screen.findByRole('listitem', { name: HOLD.folder });
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
     expect(trust).toHaveBeenCalledWith(expect.objectContaining({
       kind: 'trust', trust: { folder: HOLD.folder, trustFile: HOLD.trustFile },
     }));
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Trust this folder…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', expect.anything());
+    await userEvent.click(within(row).getByRole('button', { name: 'Trust this folder' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'TRUST_FOLDER', { payload: { folder: HOLD.folder, trustFile: HOLD.trustFile } }));
   });
 
   /** PERM2 (D74): a widening an agent proposed waits on the person, read from the machine's rules. */
-  it('a widening the driver is holding waits in *What needs you*, and its row is a door', async () => {
+  it('a widening the driver is holding waits in *What needs you*, and its row has a door', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'RULES'
       ? {
         path: 'C:/somewhere/data/permissions.json', defaults: [], scopes: [],
@@ -217,8 +226,8 @@ describe('trusting a folder the driver is holding (D73)', () => {
     const rule = vi.fn();
     show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ rule }} />);
 
-    const band = await screen.findByRole('region', { name: 'What needs you' });
-    await userEvent.click(await within(band).findByRole('button', { name: /allow WebFetch for every session on this machine/ }));
+    const row = await screen.findByRole('listitem', { name: 'allow WebFetch for every session on this machine' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
 
     expect(rule).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rule', id: 'p0000002', where: 'session i9n8t7k6' }));
   });
