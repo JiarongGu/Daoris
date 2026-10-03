@@ -101,5 +101,29 @@ public sealed class TargetPromptGoldenTests
     public void The_quests_instruction_is_its_golden_text(string which)
     {
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Compose(Of(which)));
+        // The text the account is kept beside is the same instruction, byte for byte (CONTEXT1).
+        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Composed(Of(which)).Text);
     }
+
+    /// <summary>
+    /// The account kept beside each instruction (CONTEXT1), as the session's record writes it: each section's size, its
+    /// source and what its bound left out. A section added, moved or resized shows here as the account's difference, and the
+    /// sizes add up to the golden text's length.
+    /// </summary>
+    [Theory]
+    [InlineData("bare")]
+    [InlineData("full")]
+    [InlineData("carry-on")]
+    public void The_account_beside_it_is_its_golden(string which)
+    {
+        var account = TargetPrompt.Composed(Of(which)).Account;
+
+        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")).Length, account.Chars);
+        Assert.Equal(File.ReadAllText(GoldenPath($"{which}.account.json")), Written(account));
+    }
+
+    /// <summary>The account as the record's JSON spells it, indented and LF, so a golden reads the same on every machine.</summary>
+    internal static string Written(InstructionAccount account) =>
+        System.Text.Json.JsonSerializer.Serialize(
+            account, new System.Text.Json.JsonSerializerOptions(SessionEvents.Json) { WriteIndented = true, NewLine = "\n" }) + "\n";
 }
