@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync, execSync, spawn } from 'node:child_process';
+import { type ChildProcess, execFileSync, execSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -432,6 +432,40 @@ type Update = { sessionUpdate: string; title?: string; status?: string };
 type Frame = { id?: number; method?: string; params?: { update: Update }; result?: { stopReason?: string } };
 
 /**
+ * How long a row waits for each thing the stub owes it, its answers and then its exit (STUB3, FLAKE1): a few seconds past
+ * the slowest a row expects, so a stub that will never answer fails its row in seconds. `speak()`'s slowest is the resumed
+ * turn, about 3 s; `driveTurn()`'s is a set-up turn, which runs the doctrine tool six times and takes about 7 s alone.
+ */
+const STUB_WAIT_MS = 10_000;
+const TURN_WAIT_MS = 30_000;
+
+/** A spawned stub, and when its process has ended with its output read to the end, as `close` says it. */
+type Stub = { child: ChildProcess; closed: Promise<number | null> };
+
+/**
+ * What a row awaits of the stub, bounded (STUB3): `until` settles it, or `wait` passes first and the row fails saying what
+ * never came. Either way a failure stops the stub and waits for it to end, so nothing outlives the row and its folder can
+ * go (Windows holds a running process's folder), and carries its stderr.
+ */
+async function bounded<T>(
+  { child, closed }: Stub, until: Promise<T>, { wait, late, stderr }: { wait: number; late: () => string; stderr: () => string },
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const bound = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${late()} within ${wait} ms`)), wait);
+  });
+  try {
+    return await Promise.race([until, bound]);
+  } catch (error) {
+    child.kill();
+    await closed;
+    throw new Error(`${(error as Error).message}\n${stderr()}`);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
  * One driven turn over the protocol, as the driver holds one: the handshake, a session on the tree, the prompt,
  * a permission the stub asks for refused (the driver refuses one by construction, D52), and end of input once
  * the prompt is answered. Resolves with the prompt's answer, every update, stderr, and the code the stub exited with.
@@ -444,7 +478,9 @@ async function driveTurn({ cwd, env }: { cwd: string; env: Env }): Promise<{ ans
   child.stderr.on('data', (chunk) => { stderr += chunk; });
   const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
   const updates: Update[] = [];
-  const answered = new Promise<Frame>((resolve) => {
+  // Bounded as `speak()` is (STUB3): the prompt's answer, then the exit, each failing the row where it never comes.
+  const closed = new Promise<number | null>((resolve) => child.on('close', (code) => resolve(code)));
+  const answered = new Promise<Frame>((resolve, reject) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
       const frame = JSON.parse(line) as Frame;
       if (frame.method === 'session/update' && frame.params) updates.push(frame.params.update);
@@ -452,14 +488,17 @@ async function driveTurn({ cwd, env }: { cwd: string; env: Env }): Promise<{ ans
         send({ jsonrpc: '2.0', id: frame.id, result: { outcome: { outcome: 'selected', optionId: 'deny' } } });
       } else if (frame.id === 3) resolve(frame);
     });
+    void closed.then((code) => reject(new Error(`the stub exited with code ${code} and never answered 3 (session/prompt)`)));
   });
-  const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
   send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: 1 } });
   send({ jsonrpc: '2.0', id: 2, method: 'session/new', params: { cwd, mcpServers: [] } });
   send({ jsonrpc: '2.0', id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'the target' }] } });
-  const answer = await answered;
+  const stub = { child, closed };
+  const told = { wait: TURN_WAIT_MS, stderr: () => stderr };
+  const answer = await bounded(stub, answered, { late: () => 'the stub never answered 3 (session/prompt)', ...told });
   child.stdin.end();
-  return { answer, updates, stderr, code: await exited };
+  const code = await bounded(stub, closed, { late: () => 'the stub did not exit once its input closed', ...told });
+  return { answer, updates, stderr, code };
 }
 
 /** A body that asks for what the set-up runs, in the words `SetupBrief` uses for each, and says what the tool prints. */
@@ -574,20 +613,29 @@ type Heard = { id?: number; result?: { stopReason?: string; sessionId?: string; 
 /**
  * One process of the stub, spoken to as the driver speaks to one: the frames sent in order, a permission it asks for
  * refused (D52), and end of input once every frame is answered. Resolves with each answer by its id, the text of
- * every update, stderr, and the code the stub exited with.
+ * every update, stderr, and the code the stub exited with. `agent` is the stub's text, ACP's stub unless a row cuts one
+ * short.
+ *
+ * Each wait is bounded (STUB3): a stub that exits before answering fails the row as it exits, one that stays silent fails
+ * it at `wait`, and one that does not exit once its input closes fails it there too, each naming what never came.
  */
-async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said[] }): Promise<{
+async function speak({ cwd, env, frames, agent: text = ACP_STUB_AGENT, wait = STUB_WAIT_MS }: {
+  cwd: string; env: Env; frames: Said[]; agent?: string; wait?: number;
+}): Promise<{
   answers: Map<number, Heard>; texts: string[]; stderr: string; code: number | null;
 }> {
   const agent = join(cwd, '..', 'acp-agent.mjs');
-  writeFileSync(agent, ACP_STUB_AGENT);
+  writeFileSync(agent, text);
   const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += chunk; });
   const send = (frame: object) => child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', ...frame })}\n`);
   const answers = new Map<number, Heard>();
   const texts: string[] = [];
-  const answered = new Promise<void>((resolve) => {
+  const missing = () => frames.filter((said) => !answers.has(said.id)).map((said) => `${said.id} (${said.method})`).join(', ');
+  // `close` comes once its output is read to the end, so every answer it gave is counted before one is called missing.
+  const closed = new Promise<number | null>((resolve) => child.on('close', (code) => resolve(code)));
+  const answered = new Promise<void>((resolve, reject) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
       const frame = JSON.parse(line) as Heard & { method?: string; params?: { update?: { content?: { text?: string } } } };
       if (frame.method === 'session/update') texts.push(frame.params?.update?.content?.text ?? '');
@@ -598,12 +646,15 @@ async function speak({ cwd, env, frames }: { cwd: string; env: Env; frames: Said
         if (answers.size === frames.length) resolve();
       }
     });
+    void closed.then((code) => reject(new Error(`the stub exited with code ${code} and never answered ${missing()}`)));
   });
-  const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
   for (const frame of frames) send(frame);
-  await answered;
+  const stub = { child, closed };
+  const told = { wait, stderr: () => stderr };
+  await bounded(stub, answered, { late: () => `the stub never answered ${missing()}`, ...told });
   child.stdin.end();
-  return { answers, texts, stderr, code: await exited };
+  const code = await bounded(stub, closed, { late: () => 'the stub did not exit once its input closed', ...told });
+  return { answers, texts, stderr, code };
 }
 
 /**
@@ -661,6 +712,62 @@ test('the stub resumes the conversation it is asked to, and the person\'s answer
     assert.equal(resumed.code, 0, `end of input is the ending, after the quest's fetches too (STUB1)\n${resumed.stderr}`);
   } finally {
     await door.close();
+    fx.cleanup();
+  }
+});
+
+/**
+ * A stub cut short (STUB3): it answers `initialize`, then, at the next frame, either ends without a word or hears nothing
+ * more and stays. Either is a stub that will never answer what the row waits for.
+ */
+const cutShort = (then: 'exits' | 'stays') => `
+import { createInterface } from 'node:readline';
+createInterface({ input: process.stdin }).on('line', (line) => {
+  const frame = JSON.parse(line);
+  if (frame.method === 'initialize') process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id: frame.id, result: {} }) + '\\n');
+  else if (${JSON.stringify(then)} === 'exits') { process.exitCode = 3; process.stdin.destroy(); }
+});
+`;
+
+const RESUME_FRAMES: Said[] = [
+  { id: 1, method: 'initialize', params: { protocolVersion: 1 } },
+  { id: 2, method: 'session/new', params: { cwd: '.', mcpServers: [] } },
+  { id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'Port 8080.' }] } },
+];
+
+/**
+ * STUB3 (FLAKE1): `speak()` awaited the stub's answers with no bound, so ANSWER1b's row hung ten minutes under load when
+ * the stub exited without answering, and passed alone. A stub that exits early now fails its row as it exits, naming each
+ * answer that never came, with the stub's stderr beside it.
+ */
+test('a stub that exits without answering fails its row in seconds, naming the answers that never came (STUB3)', { timeout: 30_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-early');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  try {
+    const began = Date.now();
+    await assert.rejects(
+      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('exits') }),
+      /^Error: the stub exited with code 3 and never answered 2 \(session\/new\), 3 \(session\/prompt\)/,
+    );
+    assert.ok(Date.now() - began < STUB_WAIT_MS, `it failed as the stub exited, not at the bound: ${Date.now() - began} ms`);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** STUB3: a stub that stays without answering fails its row at the bound, naming what never came, and is stopped. */
+test('a stub that stays without answering fails its row at the bound, and is stopped (STUB3)', { timeout: 30_000 }, async () => {
+  const fx = makeFixture('setup-kit-stub-stays');
+  const tree = join(fx.root, 'atlas');
+  mkdirSync(tree, { recursive: true });
+  try {
+    await assert.rejects(
+      speak({ cwd: tree, env: { ...process.env }, frames: RESUME_FRAMES, agent: cutShort('stays'), wait: 1_000 }),
+      /^Error: the stub never answered 2 \(session\/new\), 3 \(session\/prompt\) within 1000 ms/,
+    );
+    // Stopped: a stub left running holds this file's process open past its last row, which the run would show as a hang.
+  } finally {
     fx.cleanup();
   }
 });
