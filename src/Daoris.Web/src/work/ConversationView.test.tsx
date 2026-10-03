@@ -531,6 +531,109 @@ describe('ConversationView', () => {
     expect(screen.getByText('— a line a newer driver coded.')).toBeTruthy();
   });
 
+  /**
+   * MSG1g2 (D137 §2.2, MSG1g's note): words a resume holds while the account its record ran on cools say so, naming its
+   * reset, and offer *Go on in a new session*, saying the new session starts without this conversation's context. What the
+   * press came to is said in the page's words; where nothing carries the words on by itself, the door is a conversation.
+   */
+  describe('words a cooling account holds', () => {
+    const until = '2026-10-04T13:10:00Z';
+    const COOLING = () => [
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'message', text: 'Done, committed.' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      ev({ kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+    ];
+    const ended = (cooling: Parameters<typeof ConversationView>[0]['cooling'], more: Partial<Parameters<typeof ConversationView>[0]> = {}) =>
+      render(<Tooltip.Provider><ConversationView turns={settle(toTurns(COOLING()).turns, false)} cooling={cooling} {...more} /></Tooltip.Provider>);
+
+    it('says the words wait for the account’s reset, and offers a new session without this conversation', async () => {
+      const onGoOnNew = vi.fn();
+      ended({ until, onGoOnNew });
+
+      const held = screen.getAllByText(/^Held: its account is cooling until .+; it goes on with this then\.$/);
+      expect(held).toHaveLength(2);
+      expect(held[0]!.textContent).toContain(new Date(until).toLocaleString('en', { month: 'short', day: 'numeric' }));
+      expect(screen.queryByText("Held: the same session goes on with this at the driver's next look.")).toBeNull();
+      expect(screen.getByText("A new session can take your words now, without this conversation's context.")).toBeTruthy();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Go on in a new session' }));
+      expect(onGoOnNew).toHaveBeenCalledTimes(1);
+    });
+
+    it('holds the press while it is on its way, and says the held line alone where nothing offers one', () => {
+      const { unmount } = ended({ until, onGoOnNew: vi.fn(), pending: true });
+      expect(screen.getByRole('button', { name: 'Go on in a new session' })).toBeDisabled();
+      unmount();
+
+      ended({ until });
+      expect(screen.getAllByText(/^Held: its account is cooling until/)).toHaveLength(2);
+      expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+    });
+
+    it('says the choice is kept, and offers the press no more', () => {
+      ended({ until, onGoOnNew: vi.fn(), answer: { sent: true, why: null, message: 'it goes on in a new session' } });
+      expect(screen.getByText("A new session takes your words at the driver's next look, without this conversation's context.")).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+      expect(screen.queryByText("A new session can take your words now, without this conversation's context.")).toBeNull();
+    });
+
+    it('points a closed quest’s words at a conversation, with every word waiting', async () => {
+      const onStartFrom = vi.fn();
+      ended({ until, onGoOnNew: vi.fn(), quest: 'abc123', answer: { sent: false, why: 'closed', message: '#abc123 has closed…' } }, { onStartFrom });
+
+      expect(screen.getByText('#abc123 has closed, so nothing carries its words on by itself; start a conversation with them instead.')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: 'Start a conversation with these words' }));
+      expect(onStartFrom).toHaveBeenCalledWith(['first', 'second']);
+    });
+
+    it('says a refusal the press cannot get past, offering no conversation, and the press again for a choice not kept', () => {
+      const { unmount } = ended({ until, onGoOnNew: vi.fn(), answer: { sent: false, why: 'not-cooling', message: 'not cooling' } }, { onStartFrom: vi.fn() });
+      expect(screen.getByText("Its account is not cooling any more, so the same session goes on with your words at the driver's next look.")).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Start a conversation with these words' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+      unmount();
+
+      ended({ until, onGoOnNew: vi.fn(), answer: { sent: false, why: null, message: 'your choice could not be kept: disk full' } });
+      expect(screen.getByText('your choice could not be kept: disk full')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Go on in a new session' })).toBeTruthy();
+    });
+
+    it('says nothing of a cool-off on a chat, or once a driver’s note has settled the words', () => {
+      const { unmount } = ended({ until, onGoOnNew: vi.fn() }, { chat: true });
+      expect(screen.queryByText(/cooling/)).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+      unmount();
+
+      render(
+        <Tooltip.Provider>
+          <ConversationView
+            turns={settle(toTurns([
+              ...COOLING(),
+              ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because you chose a new session.', words: ['w1', 'w2'], to: 'n3wn3w00', why: 'account' }),
+            ]).turns, false)}
+            cooling={{ until, onGoOnNew: vi.fn() }}
+          />
+        </Tooltip.Provider>,
+      );
+      expect(screen.queryByText(/cooling/)).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+    });
+
+    it('says it in 中文', async () => {
+      await i18n.changeLanguage('zh');
+      try {
+        ended({ until, onGoOnNew: vi.fn() });
+        expect(screen.getAllByText(/^已暂存：它的账户冷却到 .+，届时会带着这条继续。$/)).toHaveLength(2);
+        expect(screen.getByRole('button', { name: '在新会话中继续' })).toBeTruthy();
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    });
+  });
+
   /** SESS1 S5: a call the page holds only the updates of began earlier, and says so, never its id. */
   it('says a call began earlier where the page holds only its updates, never naming it by its id', () => {
     view([ev({ kind: 'tool', id: 'toolu_01ExampleCallId', status: 'completed' })]);

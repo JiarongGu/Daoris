@@ -151,4 +151,53 @@ describe('the landing card', () => {
     await user.click(within(screen.getByRole('region', { name: 'aurora' })).getAllByRole('button', { name: 'Clear' })[0]!);
     expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora' });
   });
+
+  /**
+   * LAND2a (D145): *Accept automatically* — a branch rule's switch, offered on a branch only, sent with the rule, and
+   * said as it is set: the plugin pushes and opens pull requests without a press, or with none, nothing leaves here.
+   */
+  it('offers Accept automatically on a branch rule only, and warns that nothing leaves the machine without a plugin', async () => {
+    const onSet = draw();
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    expect(within(forge).queryByRole('checkbox', { name: 'Accept automatically' })).toBeNull();
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'Branch' }));
+    await user.click(within(forge).getByRole('checkbox', { name: 'Accept automatically' }));
+
+    expect(within(forge).getByText(/no plugin opens a pull request, so each done's branch waits here for you to push it/)).toBeInTheDocument();
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
+    expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}', autoAccept: true });
+  });
+
+  it('says the chosen plugin pushes and opens pull requests without asking each time', async () => {
+    const onSet = draw(vi.fn(), ['github-pull-request']);
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'Branch' }));
+    await choose('Who pushes the branch for tools', 'Plugin github-pull-request');
+    await user.click(within(forge).getByRole('checkbox', { name: 'Accept automatically' }));
+
+    expect(within(forge).getByText(/pushes it and opens a pull request without asking you each time/)).toBeInTheDocument();
+    expect(within(forge).getByText('github-pull-request', { selector: 'code' })).toBeInTheDocument();
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
+    expect(onSet).toHaveBeenLastCalledWith(
+      { repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request', autoAccept: true });
+  });
+
+  it('shows a rule that accepts automatically, and a merge drops the switch', async () => {
+    const onSet = draw(vi.fn(), [], [
+      { repository: 'game', workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}', autoAccept: true, source: 'repository' },
+    ]);
+    const user = userEvent.setup();
+    const aurora = screen.getByRole('region', { name: 'aurora' });
+
+    expect(within(aurora).getByText(/Accepted automatically when its quest is done/)).toBeInTheDocument();
+    expect(within(aurora).getAllByRole('checkbox', { name: 'Accept automatically' })[1]).toBeChecked();
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in game lands' })).getByRole('radio', { name: 'Merge' }));
+    expect(within(aurora).queryAllByRole('checkbox', { name: 'Accept automatically' })).toHaveLength(1);
+    await user.click(within(aurora).getAllByRole('button', { name: 'Save' })[1]!);
+    expect(onSet).toHaveBeenLastCalledWith({ repository: 'game', form: 'merge' });
+  });
 });

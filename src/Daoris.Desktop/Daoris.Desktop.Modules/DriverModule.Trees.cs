@@ -112,6 +112,8 @@ public sealed partial class DriverModule
             landed.Entry.Plugin,
             landed.Entry.Pushed,
             landed.Entry.PullRequest,
+            // Who accepted it (LAND2b, D145 point 4): `person`, `auto`, or null for a landing from before it was kept.
+            landed.Entry.AcceptedBy,
             landed.State,
             AsLanded = landed.ReadsAsLanded(treeGone),
             Reads = landed.Reads is { } reads ? new { reads.Kind, reads.Where, reads.Files, reads.Detail } : null,
@@ -401,7 +403,8 @@ public sealed partial class DriverModule
             return new { Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem };
         }
 
-        var landed = await trees.LandAsync(tree, subject, cancellationToken);
+        // The sessions in use, asked when the rule's tidy reaches the other session branches the work holds (LAND3).
+        var landed = await trees.LandAsync(tree, subject, cancellationToken, async token => await InUseAsync(service, token));
         // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
         if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         _loop.Nudge();

@@ -109,9 +109,10 @@ session named; never propose adding one that has not landed.
 | set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris-driver setup --workspace <name> --pause|--resume|--stop` |
 | register a repository from what its line declares, as `connect` would, without running it: after a set-up's branch is merged and brought up to date, or a declaration changed outside Daoris | (no screen yet) | `daoris-driver register [--repository <name>]` |
 | set the line its work grows from and lands on | Settings → Workspace → Lines | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
-| set how accepted work lands | Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request) |
+| set how accepted work lands | Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and `--auto-accept`: a quest's done lands it with no press) |
 | bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the repositories holding Daoris's branches, and another where named or included) | Settings → Workspace → Session branches → Updates | `daoris-driver trees sync [--repository <name>] [--all] [--yes]` |
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Settings → Workspace → Session branches | `daoris-driver trees clean` |
+| discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → Hand to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
 | choose the agent that answers asks | Settings → AI features | `daoris driver intake <agent>|off` |
 | choose the agent Ask Daoris runs on | Settings → AI features | `daoris driver helper <agent>|off` |
@@ -153,6 +154,9 @@ and git must take what it comes out as: `feature/{quest}-{slug}` is a pattern th
 
 A branch rule may add `--plugin <id>`: once Daoris has made the branch, that plugin pushes it and
 opens the pull request, as the person's own platform tools are signed in.
+A branch rule may also add `--auto-accept`: a quest's done then lands its work with no press, and the
+rule's plugin pushes it and opens a pull request without asking each time. It is the person's standing
+say-so for that push, so propose it only when they ask for it, and never on a merge.
 No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,
 Settings → Plugins), so never propose a rule naming one.
 

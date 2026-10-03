@@ -1818,6 +1818,58 @@ describe('the box on every session that takes words', () => {
   });
 
   /**
+   * MSG1g2 (§2.2, MSG1g's note): words a resume holds while the account the record ran on cools say so with its reset,
+   * read from the accounts' facts, and *Go on in a new session* asks the driver; a closed quest's answer points at a
+   * conversation with the words, which MSG1f's press starts, as the driver's one act (MSG1f2).
+   */
+  it('says words wait for a cooling account, asks the driver for a new session, and words its answer', async () => {
+    SESSIONS = [{ ...ENDED, profile: 'personal' }];
+    const until = new Date(Date.now() + 3 * 3_600_000).toISOString();
+    const cooling = { until, stated: true, window: 'session', seen: until, assumedZone: false, notBelieved: false };
+    driver({ reaches: 'resume' }, { sent: true }, {
+      ACCOUNTS: { agents: [{ agent: 'claude-code', speaks: true, own: {}, scopes: [], accounts: [{ name: 'personal', cooling }] }] },
+      SESSION_GO_ON_NEW: { sent: false, why: 'closed', message: '#abc123 has closed, so nothing carries its session’s words on by itself' },
+      SESSION_START_FROM: { sessionId: 'c4a7c4a7', sent: true, message: 'started' },
+      SESSION_HISTORY: {
+        session: 's1a2b3c4', earlier: false, latest: 3,
+        events: [
+          { seq: 1, at: '2026-10-03T10:00:00Z', kind: 'user', origin: 'target', text: 'take quest #abc123' },
+          { seq: 2, at: '2026-10-03T10:00:05Z', kind: 'turn', stopReason: 'end_turn' },
+          { seq: 3, at: '2026-10-03T11:00:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' },
+        ],
+      },
+    });
+    const { onSelect } = show('s1a2b3c4');
+
+    expect(await screen.findByText(/^Held: its account is cooling until .+; it goes on with this then\.$/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Go on in a new session' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', { payload: { id: 's1a2b3c4' } });
+    expect(await screen.findByText('#abc123 has closed, so nothing carries its words on by itself; start a conversation with them instead.'))
+      .toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Start a conversation with these words' }));
+    await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c4a7c4a7'));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_START_FROM', { payload: { id: 's1a2b3c4' } });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', expect.anything());
+  });
+
+  /** MSG1g2: an account that is ready, or a shell that answers no accounts, leaves the held line as it was, and no press. */
+  it('offers no new session where the record’s account is not cooling', async () => {
+    SESSIONS = [{ ...ENDED, profile: 'personal' }];
+    driver({ reaches: 'resume' }, undefined, {
+      ACCOUNTS: { agents: [{ agent: 'claude-code', speaks: true, own: {}, scopes: [], accounts: [{ name: 'personal' }] }] },
+      SESSION_HISTORY: {
+        session: 's1a2b3c4', earlier: false, latest: 1,
+        events: [{ seq: 1, at: '2026-10-03T11:00:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }],
+      },
+    });
+    show('s1a2b3c4');
+
+    expect(await screen.findByText("Held: the same session goes on with this at the driver's next look.")).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Go on in a new session' })).toBeNull();
+  });
+
+  /**
    * §5.1: *Send back…* in a review opens the box on that session, with the focus in it, instead of the quest composer —
    * what the glossary's *send back* means. Where the session takes no words, the quest composer's door stays.
    */

@@ -1,4 +1,6 @@
 import type { Session } from '../api';
+import { type AccountsAnswer, agentOf } from '../settings/accounts';
+import { toolOf, type ToolDoor } from '../tools';
 import { answeredPark, SESSION_ACTIVE } from '../ui';
 
 // The box on a session's page (MSG1f, D137 §5.1): which box a session is offered, by what its record says and what a word
@@ -112,6 +114,60 @@ const START_FROM: Record<string, string> = {
 export function startFromRefusal(t: Translate, code: string, { quest }: { quest?: string | null }): string {
   const key = START_FROM[code];
   return key ? t(key) : neverSentence(t, code, { quest });
+}
+
+/**
+ * When the account a session's words wait for cools until (MSG1g2, D137 §2.2): MSG1g asks a resume for the account its record
+ * ran on, so where that account cools the words wait for its reset. Read from the facts `ACCOUNTS` answers: by the agent that
+ * owns the door's accounts (AGT7), the tool's own sign-in where the record names no account, and only while it has not
+ * passed. Null where it is ready, where the page does not know its agent, and from a shell older than the facts.
+ */
+export function coolingFor(
+  session: Pick<Session, 'adapter' | 'profile'>, doors: readonly ToolDoor[], answer: AccountsAnswer | null | undefined, now: Date,
+): string | null {
+  const door = doors.find((each) => each.harness === session.adapter);
+  const agent = agentOf(answer, door ? toolOf(door) : session.adapter);
+  if (!agent) return null;
+  const accounts = Array.isArray(agent.accounts) ? agent.accounts : [];
+  const cooling = session.profile
+    ? accounts.find((account) => account.name === session.profile)?.cooling
+    : agent.own?.cooling;
+  return cooling && Date.parse(cooling.until) > now.getTime() ? cooling.until : null;
+}
+
+/**
+ * What *Go on in a new session* came to, as `SESSION_GO_ON_NEW` answers it (MSG1g, D137 §2.2): kept for the driver's next
+ * look (`sent`), or refused by a code, with the driver's sentence beside it in the terminal's words.
+ */
+export type NewSessionAnswer = { sent: boolean; why: string | null; message: string };
+
+/** The sentence for each code the route refuses by that is its own, by its key; §2.2's nevers are the box's (`NEVER`). */
+const NEW_SESSION_REFUSED: Record<string, string> = {
+  'running': 'work.say.newSession.running',
+  'no-words': 'work.say.newSession.noWords',
+  'conversation': 'work.say.newSession.conversation',
+  'closed': 'work.say.newSession.closed',
+  'not-cooling': 'work.say.newSession.notCooling',
+};
+
+/** What nothing carries on by itself (D137 §2.2), whose door is *Start a conversation with these words* instead. */
+const START_CHAT_INSTEAD = new Set(['conversation', 'closed']);
+
+/**
+ * What *Go on in a new session* came to, in the page's own words (MSG1g2): kept, or why not by the route's code, §2.2's
+ * nevers said as the box says them; and whether *Start a conversation with these words* is the door instead. A choice the
+ * driver could not keep, or a code this page has no sentence for, is the driver's own sentence, passed through whole, since
+ * it names what to do.
+ */
+export function newSessionSaid(
+  t: Translate, answer: NewSessionAnswer, { quest }: { quest?: string | null },
+): { sentence: string; startChat: boolean } {
+  if (answer.sent) return { sentence: t('work.say.newSession.sent'), startChat: false };
+  const why = answer.why ?? '';
+  const own = NEW_SESSION_REFUSED[why];
+  if (own) return { sentence: t(own, { quest: quest ?? '' }), startChat: START_CHAT_INSTEAD.has(why) };
+  if (NEVER[why]) return { sentence: neverSentence(t, why, { quest }), startChat: false };
+  return { sentence: answer.message, startChat: false };
 }
 
 /** The agents a reason may name (D137 §5.1): the adapter a session ran on, the one starts ride now, and its agent's name. */

@@ -110,6 +110,24 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.True(state.GetProperty("landings")[0].GetProperty("tidy").GetBoolean());
     }
 
+    /// <summary>
+    /// LAND2a (D145): *Accept automatically* rides the rule as the tidy does — written only when on, read back for the
+    /// switch, and a merge carrying it refused in the driver's words with nothing written.
+    /// </summary>
+    [Fact]
+    public async Task An_automatic_acceptance_rides_the_rule_and_a_merge_with_it_is_refused()
+    {
+        var state = await AnswerAsync(Module(), "SET_LANDING",
+            new { workspace = "aurora", form = "branch", pattern = "feature/{quest}-{slug}", autoAccept = true });
+
+        Assert.True(DriverConfig.Load(DriverConfigPath).WorkspaceLandings["aurora"].AutoAccept);
+        Assert.True(state.GetProperty("workspaceLandings")[0].GetProperty("autoAccept").GetBoolean());
+
+        var merge = await RefusalAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge", autoAccept = true });
+        Assert.Contains("only a branch rule accepts automatically", merge);
+        Assert.False(DriverConfig.Load(DriverConfigPath).Landings.ContainsKey("engine"));
+    }
+
     /// <summary>The clean-up reads the registry's checkouts and the sessions in use, so before the driver is up it is the cold-start sentence.</summary>
     [Fact]
     public async Task The_clean_up_before_the_driver_is_up_is_a_sentence()

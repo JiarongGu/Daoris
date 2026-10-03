@@ -89,9 +89,17 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             case "landing":
             {
                 // As `daoris driver landing` reads its words (HELP8): the form, a branch's pattern, and
-                // `--tidy` and `--plugin <id>` in either order. A pattern holds no space, since git takes none.
+                // `--tidy`, `--plugin <id>` and `--auto-accept` or `--no-auto-accept` (LAND2a) in any order. A
+                // pattern holds no space, since git takes none.
                 var words = value.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
                 var tidy = words.Remove("--tidy");
+                var auto = words.Remove("--auto-accept");
+                var byHand = words.Remove("--no-auto-accept");
+                if (auto && byHand)
+                {
+                    return Refused("a rule accepts automatically or waits for your Accept — say `--auto-accept` or "
+                        + "`--no-auto-accept`, not both.", "", "");
+                }
                 string? plugin = null;
                 if (words.IndexOf("--plugin") is var at and >= 0)
                 {
@@ -109,9 +117,9 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 LandingRule? rule = bare switch
                 {
                     "--clear" => null,
-                    "merge" => new LandingRule("merge", null, tidy, plugin),
-                    _ when bare.StartsWith("branch ", StringComparison.Ordinal) => new LandingRule("branch", bare["branch ".Length..].Trim(), tidy, plugin),
-                    _ => new LandingRule(bare, null, tidy, plugin),
+                    "merge" => new LandingRule("merge", null, tidy, plugin, auto),
+                    _ when bare.StartsWith("branch ", StringComparison.Ordinal) => new LandingRule("branch", bare["branch ".Length..].Trim(), tidy, plugin, auto),
+                    _ => new LandingRule(bare, null, tidy, plugin, auto),
                 };
 
                 // The plugin must land work on THIS machine, asked as the screen's route asks it (D100),
@@ -124,8 +132,11 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
                 var after = (plugin is null ? "" : $", plugin `{plugin}` pushes it and opens the pull request")
                     + (tidy ? ", its tree removed once landed" : "");
+                // The person's standing say-so for a push with no press is said on the card they apply (D145 point 5).
+                var accepting = auto ? $" It is accepted automatically: {LandingRules.AutoAcceptSays(plugin)}"
+                    : byHand && rule?.Form == "branch" ? " Done work there waits for your Accept." : "";
                 var lands = rule is null ? $"Clear {whose}'s landing rule."
-                    : rule.Form == "branch" ? $"Land {whose}'s accepted work on a branch `{rule.Pattern}`{after}."
+                    : rule.Form == "branch" ? $"Land {whose}'s accepted work on a branch `{rule.Pattern}`{after}.{accepting}"
                     : $"Land {whose}'s accepted work merged into its line{after}.";
                 planned = (lands, $"daoris driver landing {scope} {value}",
                     c => workspace is { Length: > 0 } ? c.WithWorkspaceLanding(workspace, rule) : c.WithLanding(target!, rule));

@@ -123,7 +123,7 @@
         "settings.ai.search.label", "settings.browser.driving.label", "settings.browser.extensions.label",
         "settings.browser.favorites.address", "settings.browser.favorites.label",
         "settings.browser.favorites.titleField", "settings.browser.links.label", "settings.browser.which.label",
-        "settings.home.label", "settings.landing.tidy", "settings.language.label",
+        "settings.home.label", "settings.landing.autoAccept", "settings.landing.tidy", "settings.language.label",
         "settings.lines.repositoryField", "settings.lines.workspaceField", "settings.logs.event",
         "settings.logs.folder", "settings.logs.levels", "settings.logs.since", "settings.logs.source",
         "settings.cooloff.label", "settings.notify.label", "settings.rules.defaultOn", "settings.rules.file",
@@ -231,7 +231,7 @@
         "work.panel.stream.stopShort", "work.preview.close", "work.preview.reload", "work.rail.close",
         "work.rail.open", "work.review.accept", "work.review.accepting", "work.review.discard",
         "work.review.discardMeanIt", "work.review.hand", "work.review.handing", "work.review.pullRequest",
-        "work.review.sendBack", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
+        "work.review.sendBack", "work.say.goOnNew", "work.say.startChat", "work.start.go", "work.steer.now", "work.terminal.again", "work.terminal.close",
         "work.terminal.new", "work.terminal.open"
       ]
     },
@@ -439,6 +439,7 @@
     { "term": "line", "en": "line", "zh": "主线", "means": "The branch a repository's work grows from and lands on.", "match": "\\b(the|its|a|each|no) line\\b|^lines?$|\\bline for\\b", "avoid": { "en": [], "zh": ["主干"] } },
     { "term": "landing", "en": "landing", "zh": "落地", "means": "Accepting a session's work: merged into the line, or put on a branch of its own.", "match": "\\b(land|lands|landed|landing|landings|unlanded)\\b", "avoid": { "en": [], "zh": ["合入"] } },
     { "term": "accept", "en": "accept", "zh": "采纳", "means": "The move that takes what was offered: a session's work in its review, which lands it, or a proposal.", "why": "采纳 is taking what was proposed; 接受 is the declaration's accepts.", "match": "\\b(accept|accepted|accepting)\\b", "avoid": { "en": [], "zh": ["接受"] } },
+    { "term": "accept automatically", "en": "accept automatically", "zh": "自动采纳", "means": "A branch rule's switch: a quest's done lands its work as the person's accept would, and the rule's plugin pushes it and opens the pull request with no press.", "why": "Approve is the go-ahead's press (放行), a different yes, so auto-approve would give one act two names (D145).", "match": "\\baccept(s|ed|ing)? automatically\\b", "avoid": { "en": ["auto-approve", "approve automatically"], "zh": ["自动批准", "自动放行"] } },
     { "term": "review", "en": "review", "zh": "审阅", "means": "Read what a session changed before accepting it, sending it back or discarding it.", "why": "改动 is the diff's changes, and 查看 any look.", "match": "\\breview(s|ed|ing)?\\b", "avoid": { "en": [], "zh": ["改动", "查看"] } },
     { "term": "send back", "en": "send back", "zh": "退回", "means": "Return a session's work to it with a note, so it carries on.", "match": "\\bsends? (it )?back\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "discard", "en": "discard", "zh": "丢弃", "means": "Throw away a session's tree and the work in it.", "match": "\\bdiscard(s|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
@@ -594,6 +595,7 @@
       { "key": "work.awaiting.answerConfirm", "en": "Carry on with this answer", "why": "The confirming press alone on its row: in the parked band's form under the session's head, and as the answer composer's send, which has no endings or attachments beside it." },
       { "key": "work.say.placeholder", "en": "write to it — the same session goes on with your words", "zh": "写给它——同一个会话会带着你的话继续", "why": "The hint in the box at the foot of a session's page, which is the centre's width, never narrower than its 400px floor; the design names it so (D137 §5.1), and what the words will do is the whole of it." },
       { "key": "work.say.startChat", "en": "Start a conversation with these words", "why": "The one press under the line saying the words cannot go on, alone on its row in the conversation's column at the centre's width; the design names it so (D137 §5.1), since a new conversation, not this one, is what it starts." },
+      { "key": "work.say.goOnNew", "en": "Go on in a new session", "why": "The one press under words a cooling account holds, alone on its row in the conversation's column at the centre's width; the design names it so (D137 §5.1), since a new session, not this one, is what goes on (MSG1g2)." },
       { "key": "work.awaiting.declineConfirm", "en": "Decline with this reason", "why": "The confirming press in the parked band's form under the session's head, a row that wraps." },
       { "key": "work.dock.unfull", "en": "Back beside the session", "why": "An icon control's tip and accessible name in the side bar's head; nothing lays the words out." },
       { "key": "work.rail.close", "en": "Hide the session list", "why": "An icon control's tip and accessible name, the session list's close; nothing lays the words out, and every view's list names its pair alike." },

@@ -526,6 +526,26 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// LAND2b (design §8): each try to land a done session is one <c>landing.auto</c> line, codes and counts and a plugin's id,
+    /// never a sentence; and none once the watch has let go.
+    /// </summary>
+    [Fact]
+    public void A_landing_at_done_is_one_line_of_codes_and_counts()
+    {
+        using var w = Watch();
+
+        w.Client.LandingSaid(LandingLine.Auto("s1", "engine", "aurora", AutoLandingCode.PluginFailed, 2, null, "acme.lands", false));
+        w.Watch.Dispose();
+        w.Client.LandingSaid(LandingLine.Auto("s2", "engine", "aurora", AutoLandingCode.Landed, 1, null, null, null));
+
+        var line = Assert.Single(Named("landing.auto"));
+        Assert.Equal("info", line.GetProperty("level").GetString());
+        Assert.Equal(
+            """{"session":"s1","repository":"engine","workspace":"aurora","code":"plugin-failed","commits":2,"uncommitted":null,"plugin":"acme.lands","pushed":false}""",
+            Data(line).GetRawText());
+    }
+
+    /// <summary>
     /// WSSETUP6 (D124 §4.1): a workspace plan's lines, each with its fields only (names, words and counts, never a sentence
     /// or a path); and none once the watch has let go. A terminal's press writes the same lines through the static writer.
     /// </summary>
