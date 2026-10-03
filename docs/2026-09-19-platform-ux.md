@@ -33,8 +33,9 @@ D75), where its own rules live; this is what a view may assume of it.
   the workspace, the remote, the index and the recall tier (D24, stated on every screen). Global state
   lives in exactly one place; views never restate it.
 - **The content column is the window's whole width** (UX5 U59, the owner: under a 72rem cap a
-  maximized window left every view a third empty). What has a measure keeps it inside the column:
-  prose at 65ch, a form at what it holds, a drawing at one unit a pixel.
+  maximized window left every view a third empty), **and a page's every block is the column's**
+  (D141): prose wraps at its edge too. What keeps a size of its own is no page's block: a form at
+  what it holds, an overlay, an empty state's notice, a drawing at one unit a pixel.
 - **Every view opens with a page header**: title, one-line description, and the view's primary action
   on the right. The header is the only h-level element per view; sections inside use small muted
   section titles.
@@ -112,12 +113,14 @@ D75), where its own rules live; this is what a view may assume of it.
 The primitives live in `ui.tsx`, and a molecule imports no hook (the components plan). The frame's own
 controls are in the frame design's §3.
 
-- **Prose has a measure of its own.** Explanatory text goes in `Prose` (65ch, font-relative): a
-  paragraph inheriting the column's width ran to about 190 characters a line, roughly triple what the
-  eye tracks. This is for the console EXPLAINING itself; a quest's body, a knowledge entry, a
-  repository's summary and a session's note are **content**, and content is shown as it is. So a page header's
-  line (a plugin's description, a repository's summary) wraps at the measure, whole, and is never cut to one
-  line with its words in a tip (NAME2).
+- **A page wraps at one edge, its pane's** (D141, LAYOUT11; it replaces *prose has a measure of its own*). Every block
+  of a page takes the column's width: a header's line, a quest's body, a note, a refusal, `Prose`, a box a move asks
+  in. A 65ch measure per paragraph gave every page two edges (at 1600 px a quest's title ran the pane while its body
+  stopped at 456 px) and held about 32 glyphs of 中文. The column (`ViewMain`) is the one place a line's length is
+  set, and it sets none; a cap, if one is ever wanted, goes there once, in `em`, never `ch`. A long English line at a
+  wide pane is the stated cost, which the side bar and the list's edge narrow. `tokens.test.ts` and
+  `pageMeasure.test.tsx` hold it. Content is shown as it is: a page header's line (a plugin's description, a
+  repository's summary) wraps whole, never cut to one line with its words in a tip (NAME2).
 - **Status leads.** A row reads `pill · title · route · how long`: identity first, the secondary marks
   at the right. A pill pushed to the far edge sat a thousand pixels from the title it described.
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
@@ -323,7 +326,7 @@ controls are in the frame design's §3.
   commit it was fed from, its workspace, its line and its unlanded branches; its declaration as chips;
   *This machine*, the driving row, where it has somewhere to start; and for one not adopted the
   *Adoption steps*, led by one line with its reasoning on the info glyph (U36) and the join steps
-  proposed as text at a reading measure. The chosen repository is remembered, and adding, importing and
+  proposed as text. The chosen repository is remembered, and adding, importing and
   managing stay drawers (D118 §3d). **Who can be asked is the host's answer**: every receiver
   list reads `addressable` from the registry, never re-derived from `adopted` (D70). A choice that
   outlives the door is offered with the door said beside it: on a machine whose adapter rides the
@@ -344,9 +347,8 @@ controls are in the frame design's §3.
   (U41, U42). **An entry is read as it is written**, unrendered (U43), in Search's main area under its
   title, kind, provenance and place; **a finding** is read in Convergence's, the service's sentence first
   and then each of its entries whole, one entry's trouble said in its own place. Neither page adds an
-  act: doctrine changes where its repository keeps it (D31). A note keeps a measure: 🔴 `max-w-prose` on
-  a flex item caps its `basis-full`, so the measure goes on a child of the full-width item, or the note
-  stops breaking to its own line.
+  act: doctrine changes where its repository keeps it (D31). A note takes its region's width, as every
+  block does (D141).
 - **Map** (MAP2; MAP4a past twelve repositories: columns by who asks whom, which pan and zoom, a
   search, and a sizing menu behind the percentage; MAP4b: what the asks became in long dashes, a
   chain's hops dotted, and a *Connections* menu that switches each kind) — the circle's repositories on a ring, the quests between them as directed arrows
@@ -446,8 +448,8 @@ controls are in the frame design's §3.
   never a status. Its strip marks each installed plugin by its icon: the waiting mark, faint for off, nothing for on.
   A plugin's page heads with its icon, its switch, *Try*, *Update…* and *Remove…*, which asks once, and *update
   available* beside its state. A refused one's sentence leads, then Points, Agents, Tests (its last trial here), Data
-  folder and Source, and its terminal twins at its foot; every block of the detail takes the pane's width (LAYOUT11
-  sets the measure). *Running* is the neutral pill, never done's green. The `＋` asks Ask Daoris for a plugin first,
+  folder and Source, and its terminal twins at its foot; every block of the detail takes the pane's width, as on every
+  page (D141). *Running* is the neutral pill, never done's green. The `＋` asks Ask Daoris for a plugin first,
   then *Make a plugin…*, the kit in a drawer; the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
@@ -482,7 +484,7 @@ controls are in the frame design's §3.
   - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
     the strikes dial); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose
-    it, a job named once a circle has two, a blocked start's sentence at a reading measure);
+    it, a job named once a circle has two, a blocked start's sentence whole, at the card's width);
     *Agents* (one card per agent, its accounts leading, each row saying its cool-off with *Try now*, the
     sessions of Daoris's on it and what its agent last said; then *How accounts are used*, this machine's
     list and each workspace's, a press the terminal would refuse not offered (TOOL4g, D130 §9); its ways in
