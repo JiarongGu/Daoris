@@ -190,6 +190,43 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     }
 
     /// <summary>
+    /// A park answered with no words of the person's (KNOWUSE1a2, D135 §2): the go-ahead they answered on its page is what
+    /// they said, so nothing is written as their words here. The park takes the blank answer the service has always kept for
+    /// one (ANSWER1b's <i>carry on.</i>) through its answer door, and the loop is nudged. A park already answered goes on with
+    /// what it holds, and the resumed session reads every go-ahead it asked as it goes on, so nothing is kept again. A record
+    /// that is not parked is left as it is: nothing there waits on the person's answer.
+    /// </summary>
+    /// <exception cref="DriverException">The loop's service is not answering yet, or did not answer for the record.</exception>
+    public async Task<WordsAnswer> AnswerParkAsync(string id, CancellationToken ct)
+    {
+        if (id.Contains('/')) return WordsAnswer.Refused(WordsNever.Teammate);
+
+        Read? read;
+        try
+        {
+            read = await ReadAsync(id, ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (Unanswered(error))
+        {
+            throw new DriverException($"the service did not answer for session `{id}`, so it was not answered: {error.Message}");
+        }
+
+        if (read is null || loop.Service is not { } service) throw new DriverException(NotUp);
+        if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
+        if (WordsNever.Judge(record, read.Last) is { } never) return WordsAnswer.Refused(never);
+        if (record.State != "awaiting-person") return new(false, null, null);
+
+        if (!record.Answered)
+        {
+            var (answered, message) = await service.AnswerSessionAsync(id, answer: null, ct).ConfigureAwait(false);
+            if (!answered) return new(false, null, null) { Message = message };
+        }
+
+        loop.Nudge();
+        return new(true, "resume", null);
+    }
+
+    /// <summary>
     /// A terminal's words (MSG1e2, D137 §5.2): the shell's half of <c>daoris-driver sessions say</c>, handed to its request
     /// watch as <see cref="SessionRequestWatch.Say"/>. Judged as the box's words are (<see cref="SayAsync"/>), at the door
     /// <c>terminal</c>, and answered in the request's shape: a conversation the window runs hears them, words a running
