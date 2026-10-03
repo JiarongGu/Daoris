@@ -64,7 +64,10 @@ public static class HookFrames
         note = ended.Note,
     };
 
-    /// <summary><see cref="HookPoints.Land"/>: the branch a landing just made (D100).</summary>
+    /// <summary>
+    /// <see cref="HookPoints.Land"/>: the branch a landing just made (D100), or moved on (LAND2c): the pull request already open
+    /// from it, which a plugin grows rather than opening a second, and who accepted the work.
+    /// </summary>
     public static object Land(LandingFrame frame) => new
     {
         repository = frame.Repository,
@@ -76,6 +79,8 @@ public static class HookFrames
         quest = frame.Quest is { } quest ? new { id = quest, title = frame.Title } : null,
         session = frame.Session,
         commits = frame.Commits.Select(commit => new { sha = commit.Sha, subject = commit.Subject }).ToArray(),
+        pullRequest = frame.PullRequest,
+        acceptedBy = frame.AcceptedBy,
     };
 }
 

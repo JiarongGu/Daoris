@@ -53,6 +53,37 @@ public sealed record LandedBranch(
 
     /// <summary>The landing rule it was made under, as it stood then (LAND2b, design §8); null for one recorded before it was kept.</summary>
     public LandedRule? Rule { get; init; }
+
+    /// <summary>
+    /// Each time a later done moved it on (LAND2c, D149 point 2), oldest first: a chain's later step, or a session that went on
+    /// after its landing. <see cref="Tip"/> is the newest one's <see cref="LandedAdvance.To"/>.
+    /// </summary>
+    public IReadOnlyList<LandedAdvance> Advances { get; init; } = [];
+
+    /// <summary>Whether this landing names <paramref name="session"/>: the session that made it, or one whose done moved it on (LAND2c).</summary>
+    public bool Names(string session) =>
+        string.Equals(Session, session, StringComparison.OrdinalIgnoreCase)
+        || Advances.Any(advance => string.Equals(advance.Session, session, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>When <paramref name="session"/>'s work was accepted onto it: its newest advance, else the landing itself.</summary>
+    public DateTimeOffset AcceptedAt(string session) =>
+        Advances.LastOrDefault(advance => string.Equals(advance.Session, session, StringComparison.OrdinalIgnoreCase))?.At ?? LandedAt;
+
+    /// <summary>Who accepted <paramref name="session"/>'s work onto it (<see cref="Daoris.Driver.AcceptedBy"/>): its newest advance's, else the landing's.</summary>
+    public string? AcceptedByOf(string session) =>
+        Advances.LastOrDefault(advance => string.Equals(advance.Session, session, StringComparison.OrdinalIgnoreCase)) is { } advance
+            ? advance.AcceptedBy
+            : AcceptedBy;
+}
+
+/// <summary>
+/// One fast-forward of a landed branch (LAND2c, D145 point 6, design §8): from the commit it stood at to the one it moves to,
+/// when, the session whose done moved it, and who accepted that done.
+/// </summary>
+public sealed record LandedAdvance(string From, string To, DateTimeOffset At, string Session)
+{
+    /// <summary>One of <see cref="Daoris.Driver.AcceptedBy"/>, or null in a record that did not keep it.</summary>
+    public string? AcceptedBy { get; init; }
 }
 
 /// <summary>
@@ -95,10 +126,10 @@ public sealed class LandedBranches(string home)
 
     /// <summary>
     /// The newest landing of one session, standing or a trace (REVIEW2, D113): what its review says of where its work
-    /// went, since a tidy took its tree and the clean-up may have taken the branch since.
+    /// went, since a tidy took its tree and the clean-up may have taken the branch since. A session whose done moved a
+    /// chain's branch on finds that branch's landing (LAND2c).
     /// </summary>
-    public LandedBranch? Landing(string session) =>
-        Everything().LastOrDefault(entry => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase));
+    public LandedBranch? Landing(string session) => Everything().LastOrDefault(entry => entry.Names(session));
 
     /// <summary>
     /// Every branch <paramref name="plugin"/> answered that it pushed, standing or a trace, in the order they landed:
@@ -140,8 +171,7 @@ public sealed class LandedBranches(string home)
     public IReadOnlyList<LandedBranch> Find(string sessionOrBranch, string? repository = null) =>
         [.. All()
             .Where(entry => repository is null || string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
-            .Where(entry => string.Equals(entry.Session, sessionOrBranch, StringComparison.OrdinalIgnoreCase)
-                            || string.Equals(entry.Branch, sessionOrBranch, StringComparison.Ordinal))
+            .Where(entry => entry.Names(sessionOrBranch) || string.Equals(entry.Branch, sessionOrBranch, StringComparison.Ordinal))
             .Reverse()];
 
     /// <summary>
@@ -150,11 +180,21 @@ public sealed class LandedBranches(string home)
     /// </summary>
     public void Record(LandedBranch entry) => Edit(all => [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)), entry]);
 
-    /// <summary>What a plugin answered when it pushed the branch (D100), kept on its entry.</summary>
+    /// <summary>
+    /// What a plugin answered when it pushed the branch (D100), kept on its entry. An answer naming no pull request keeps the
+    /// one the entry holds: a push after an advance grows the pull request already open (LAND2c).
+    /// </summary>
     public void Pushed(string repository, string branch, PluginLanding said, string tip) => Edit(all =>
         [.. all.Select(each => Standing(each, repository, branch)
-            ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest, PushedTip = tip }
+            ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest ?? each.PullRequest, PushedTip = tip }
             : each)]);
+
+    /// <summary>
+    /// A later done moved the standing branch on as a fast-forward (LAND2c, D149 point 2): its tip is the advance's, and the
+    /// advance is kept with the rest. The branch stays the landing's, so the clean-up and the hand-off judge it at its new tip.
+    /// </summary>
+    public void Advanced(string repository, string branch, LandedAdvance advance) => Edit(all =>
+        [.. all.Select(each => Standing(each, repository, branch) ? each with { Tip = advance.To, Advances = [.. each.Advances, advance] } : each)]);
 
     /// <summary>
     /// Where bringing it up to date replayed it (WSR6): its new tip, and the line's commit it now grows from.
@@ -250,6 +290,23 @@ public sealed class LandedBranches(string home)
                     writer.WriteEndObject();
                 }
 
+                if (entry.Advances.Count > 0)
+                {
+                    writer.WriteStartArray("advances");
+                    foreach (var advance in entry.Advances)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("from", advance.From);
+                        writer.WriteString("to", advance.To);
+                        writer.WriteString("at", advance.At.ToString("O", CultureInfo.InvariantCulture));
+                        writer.WriteString("session", advance.Session);
+                        if (advance.AcceptedBy is not null) writer.WriteString("acceptedBy", advance.AcceptedBy);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -292,7 +349,33 @@ public sealed class LandedBranches(string home)
                     rule.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
                     Text(rule, "source") ?? LandingSource.Default)
                 : null,
+            Advances = AdvancesOf(element),
         };
+    }
+
+    /// <summary>
+    /// The advances an entry keeps (LAND2c), each whole or left out: one without the commits it moved between, when, or the
+    /// session is no fact at all. Absent is none, which is every landing from before LAND2c.
+    /// </summary>
+    private static IReadOnlyList<LandedAdvance> AdvancesOf(JsonElement element)
+    {
+        if (!element.TryGetProperty("advances", out var list) || list.ValueKind != JsonValueKind.Array) return [];
+        var advances = new List<LandedAdvance>();
+        foreach (var each in list.EnumerateArray())
+        {
+            if (each.ValueKind != JsonValueKind.Object || Text(each, "from") is not { } from || Text(each, "to") is not { } to
+                || Text(each, "session") is not { } session
+                || !DateTimeOffset.TryParse(Text(each, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+            {
+                continue;
+            }
+
+            advances.Add(new LandedAdvance(from, to, at, session) { AcceptedBy = Text(each, "acceptedBy") });
+        }
+
+        // The empty case is the property's own default, so an entry from before LAND2c still equals itself read twice.
+        if (advances.Count == 0) return [];
+        return advances;
     }
 
     private static string? Text(JsonElement element, string name) =>

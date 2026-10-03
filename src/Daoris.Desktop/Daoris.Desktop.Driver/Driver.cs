@@ -758,10 +758,17 @@ public sealed partial class Driver(
             {
                 // A chain's next step in its parent's repository grows from the branch the parent
                 // landed on (CHAIN2), named as the trees name their branches — so a verify step sees
-                // the unmerged work it exists to check.
+                // the unmerged work it exists to check. Where a tidy took that branch at the parent's
+                // landing, it grows from the chain's landed branch instead, so its own done can move
+                // that branch on (LAND2c, D82 as D145 amends it).
                 opened = await _trees.OpenAsync(
                         root, quest.To, start.Workspace ?? "default", ct,
-                        from: start.BuildsOn?.Tree is { Length: > 0 } parentTree ? $"daoris/{Path.GetFileName(parentTree)}" : null)
+                        from: start.BuildsOn?.Tree is { Length: > 0 } parentTree ? $"daoris/{Path.GetFileName(parentTree)}" : null,
+                        landed: start.BuildsOn is { } stepBefore
+                                && _trees.Recorded.Landing(stepBefore.Session) is { GoneAt: null } chain
+                                && string.Equals(chain.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
+                            ? chain.Branch
+                            : null)
                     .ConfigureAwait(false);
             }
             catch (DriverException error)
@@ -914,9 +921,11 @@ public sealed partial class Driver(
                 InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
                 // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
-                // the review's press reaches.
+                // the review's press reaches. A chain's step is told its chain's branch, which its done moves on (LAND2c).
                 LandsOn = _trees.Holds(workTree)
-                    ? await _trees.PlanAsync(workTree, new LandingSubject(sessionId, quest.Id, quest.Title), ct).ConfigureAwait(false)
+                    ? await _trees.PlanAsync(
+                        workTree, await LandsAsAsync(sessionId, quest, id => service.FindQuestAsync(id, ct), ct).ConfigureAwait(false), ct)
+                        .ConfigureAwait(false)
                     : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
@@ -1340,6 +1349,30 @@ public sealed partial class Driver(
         var reason = RefusedReason(owner, selection.Profile);
         _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
         return conclusion.Then(" ", RefusedNote(owner, selection.Profile));
+    }
+
+    /// <summary>
+    /// What a start's landing is named for, as its session is told it (WSR5, LAND2c): a chain's step lands on its chain's branch,
+    /// named for the chain's first quest, so it is told that branch, which its done moves on. A quest that follows nothing is its
+    /// own; a service that cannot walk the chain leaves the step its own name, since a start never waits on a sentence.
+    /// </summary>
+    /// <param name="find">One quest as the service answers it, closed ones included.</param>
+    internal static async Task<LandingSubject> LandsAsAsync(
+        string session, QuestView quest, Func<string, Task<QuestView?>> find, CancellationToken ct)
+    {
+        var own = new LandingSubject(session, quest.Id, quest.Title);
+        if (quest.Parent is not { Length: > 0 }) return own;
+        try
+        {
+            var chain = await LandingRules.SubjectAsync(session, quest.Id, find, opening: null).ConfigureAwait(false);
+            // A service that no longer answers for the step itself names it with no title: its own is truer.
+            return chain.Title is null ? own : chain;
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
+        {
+            return own;
+        }
     }
 
     /// <summary>
