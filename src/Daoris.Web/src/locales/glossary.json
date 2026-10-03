@@ -166,6 +166,7 @@
       "budget": { "en": 20, "zh": 8 },
       "case": "sentence",
       "keys": [
+        "update.whenIdle", "update.now", "update.notNow",
         "asks.ask", "asks.compose.submit", "asks.goAhead.approve", "asks.goAhead.change", "asks.goAhead.refuse",
         "asks.record.abandon", "asks.record.abandonMeanIt", "asks.record.close",
         "asks.record.closeConfirm", "asks.record.pause", "asks.record.pauseMeanIt", "asks.record.resume",

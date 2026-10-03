@@ -32,9 +32,10 @@ import { useProjectsView } from './ProjectsView';
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useConsidered, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow,
-  useTrustFolder, useUntrusted,
+  logEvent, useConsidered, useDismissUpdate, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules,
+  useSayUpdate, useSyncNow, useTrustFolder, useUntrusted, useUpdateState,
 } from './shell';
+import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
 import { browserDrivers } from './work/browserDrivers';
@@ -207,6 +208,10 @@ export function App() {
   const proposals = Array.isArray(rules.data?.proposals) ? rules.data.proposals : [];
   const grantTrust = useTrustFolder();
   const [trusting, setTrusting] = useState<TrustHold | null>(null);
+  // The install's update (UPDATE1, D139): what is staged, the drain, and the person's word on it, as the banner's.
+  const update = useUpdateState();
+  const sayUpdate = useSayUpdate();
+  const dismissUpdate = useDismissUpdate();
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
@@ -723,6 +728,17 @@ export function App() {
           />
         ) : undefined}
       />
+
+      {/* The install's update, under the strip and above every view (UPDATE1, D139): quiet, one line, and only while
+          there is something to say. The shell's alone: a browser has no install to update. */}
+      {attached && (
+        <UpdateBanner
+          update={update.data}
+          busy={sayUpdate.isPending || dismissUpdate.isPending}
+          onSay={(mode) => sayUpdate.mutate(mode, { onError: failure(notify) })}
+          onDismiss={() => dismissUpdate.mutate(undefined, { onError: failure(notify) })}
+        />
+      )}
 
       {/* No narrow-window stacking. The 15rem sidebar this replaced had to become a top bar under
           768px (D41 §2) — a 48px icon rail does not, and stacking it was actively wrong: it put a

@@ -119,6 +119,13 @@ using Daoris.Driver;
 //                 one readable line each, or as written with --json. A line that cannot be read is
 //                 skipped and counted. Settings → Logs is the screen's door to the same reading.
 //
+//   update [--install <folder>] · update --when-idle | --now | --cancel [--install <folder>]
+//                 an install's update (UPDATE1, D139): what `publish:desktop --stage` put beside the install, what holds
+//                 for it and how the last swap ended; or the word on it, written to <home>/update.json as the window's
+//                 banner writes it. When idle (the default for a staged build): the desktop starts nothing new, lets what
+//                 runs end or park, closes, and its launcher swaps app/ and starts again. Now: the close ends what runs as
+//                 any close does, each driven session carried on at the next start. Cancel: not now, for that build.
+//
 //   plugins install <file.nupkg>
 //                 a plugin package (PLUGDIST1a, D120): read before anything is extracted (the type
 //                 `DaorisPlugin` at a plugin API this build speaks, no dependencies, `plugin/plugin.json`),
@@ -256,6 +263,17 @@ try
     if (args is ["plugins", "install", .. var installArgs])
     {
         return PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve());
+    }
+
+    // An install's update from a terminal (UPDATE1, D139 §3, D50): the window's banner is the other door to the same request.
+    // Needs no service: the request is a file under the home, and the staged build a folder beside its install.
+    if (args is ["update", .. var updateArgs])
+    {
+        var exit = UpdateCommand.Run(
+            updateArgs, DaorisHome.Resolve() ?? throw new DriverException(DaorisHome.Sentence), () => DateTimeOffset.UtcNow, log,
+            out var updateSaid);
+        (exit == 2 ? Console.Error : Console.Out).Write(updateSaid);
+        return exit;
     }
 
     // The machine log from a terminal (LOG1c, D50): Settings → Logs is the other door to the same reading.

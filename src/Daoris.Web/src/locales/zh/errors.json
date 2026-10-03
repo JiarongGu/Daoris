@@ -1,4 +1,6 @@
 {
+  "errors.UPDATE_NOTHING_STAGED": "此安装旁没有暂存的构建，没有可安装的内容。",
+  "errors.UPDATE_MODE_UNKNOWN": "{{mode}} 不是更新的选项：可选空闲时、立即或暂不。",
   "errors.REMOTE_HALF_DECLARED": "{{workspace}} 需要同时给出地址和密钥。只声明一半等于没有接线——写进映射也会被直接跳过。",
   "errors.REPOSITORY_NOT_ADOPTED": "{{repository}} 尚未采用 Daoris，因而没有可编辑的声明。采用由它自己的智能体完成；此表单只修改已经存在的声明。",
   "errors.DRIVER_NOT_READY": "驱动仍在启动，其服务尚未应答。稍候。",

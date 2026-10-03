@@ -24,5 +24,6 @@ export * from './bridge/sessions';
 export * from './bridge/terminal';
 export * from './bridge/tools';
 export * from './bridge/trees';
+export * from './bridge/update';
 export * from './bridge/windows';
 export * from './bridge/work';

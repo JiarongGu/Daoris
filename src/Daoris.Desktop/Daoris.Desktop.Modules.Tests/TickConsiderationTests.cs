@@ -57,6 +57,22 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
+    /// UPDATE1 (D139 §2): a quest an update's drain holds is said so by a fact, <c>forUpdate</c>, so the page says it in the
+    /// reader's language rather than the driver's English; every other verdict, a person's hold included, carries none.
+    /// </summary>
+    [Fact]
+    public void A_quest_an_update_holds_is_marked_for_the_update_and_no_other_is()
+    {
+        var drained = new Consideration(Quest, StartVerdict.Blocked, InstallUpdate.HoldReason);
+        var person = new Consideration(Quest, StartVerdict.Held, "`engine` is held by the person.");
+        var plugin = new Consideration(Quest, StartVerdict.Blocked, "held by plugin `hold-by-title`: the title asks for a hold.");
+
+        Assert.True(JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(drained), Wire).GetProperty("forUpdate").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(person), Wire).GetProperty("forUpdate").ValueKind);
+        Assert.Equal(JsonValueKind.Null, JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(plugin), Wire).GetProperty("forUpdate").ValueKind);
+    }
+
+    /// <summary>
     /// SESSUX1i (D126 §4.6): Overview's *What needs you* holds a quest parked on its failed sessions, waiting since its last
     /// session ended, and says why in the reader's language. The tick carries both as facts: how many failed and when the
     /// last one ended. The session and its note stay here.
