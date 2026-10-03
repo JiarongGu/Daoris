@@ -101,7 +101,7 @@ import {
   writtenOrderCircles, writtenOrders, writtenUseCircles, writtenUses,
 } from './rotation.ts';
 import type { Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
-import { coolingLine, coolingOf, endCooling, machineZone, readCooling } from './cooling.ts';
+import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { saidLine, saidOf } from './windows.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
@@ -970,9 +970,68 @@ export function nextStartLines(scope: Scope, says = false, anySaid = false): { r
 }
 
 /**
+ * What `agent list` says beneath a scope about its next start (TOOL6f; D130's TOOL6e note, §16.4): the walk's steps as
+ * `profile use` names them, each account of the scope cooling now and until when, the wait where every account a start may
+ * take is cooling (driven work's alone where the kept account is ready), and where the account it takes is named. A scope
+ * with no list is its default alone, which the settings name and no step chooses.
+ *
+ * @remarks
+ * 🔴 It never names the account a step would choose. Fewest running and least recently started read Daoris's session
+ * records, which this command does not read, so a walk here without them would not be the driver's (D57: absent is never
+ * zero). Settings → Agents asks the driver's own judgement (`AccountRotation.Next`), and no `daoris-driver` verb answers
+ * it, so the pointer names the screen alone. A hold the roster alone knows (refused, signed out by the agent's last word)
+ * is not said here; each account's own line says what its probe found.
+ *
+ * @param owner The agent whose accounts these are (AGT7).
+ */
+export function nextStartBeneath(scope: Scope, owner: string, home: string, now: Date, zone: string): string[] {
+  const uses = scope.list.length > 0 ? scope.list : scope.default !== null ? [scope.default] : [];
+  const lines: string[] = [];
+  if (scope.list.length > 0) {
+    const anySaid = scope.list.some((account) => saidOf(home, owner, account, now) !== null);
+    const next = nextStartLines(scope, TOOLCHAINS[owner]?.windows === true, anySaid);
+    lines.push(`next start: ${next.row}`);
+    if (next.note) lines.push(next.note);
+  }
+
+  // Each account as the list spells it, with its cool-off's end where `cooling.json` holds one (names compare without case).
+  const held = uses.flatMap((account) => {
+    const entry = coolingOf(home, owner, account, now);
+    return entry ? [{ account, until: entry.until }] : [];
+  });
+  const soonest = (of: { until: Date }[]) =>
+    coolingWhen(new Date(Math.min(...of.map((entry) => entry.until.getTime()))), zone);
+  if (held.length > 0) {
+    const each = held.map((entry) => `\`${entry.account}\` is cooling until ${coolingWhen(entry.until, zone)}`).join('; ');
+    // Driven work passes a kept account that leaves it another (§4.6), so it waits once every other account cools.
+    const keep = scope.use.keep !== null && scopeProblem({ default: null, list: scope.list, keep: scope.use.keep }) === null
+      ? scope.use.keep
+      : null;
+    const driven = held.filter((entry) => entry.account !== keep);
+    if (uses.length === 1) {
+      lines.push(`held now: ${each}, so the next start waits until then`);
+    } else {
+      lines.push(`held now: ${each}`);
+      if (held.length === uses.length) {
+        lines.push(`every account of this list is cooling, so the next start waits until ${soonest(held)}`);
+      } else if (keep !== null && driven.length === uses.length - 1) {
+        lines.push(`every account but \`${keep}\`, kept for conversations, is cooling, so driven work waits until ${soonest(driven)}`);
+      }
+    }
+  }
+
+  if (scope.list.length > 1) {
+    lines.push('Settings → Agents names the account it takes, from the sessions Daoris runs and its last starts, which this '
+      + 'terminal does not read');
+  }
+  return lines;
+}
+
+/**
  * What `agent list` says under one agent about its accounts (D49 §4, D66 §3, TOOL4e): each account and what marks it,
- * each one's cool-off under it, the tool's own sign-in's cool-off, the order rotation may use, and — where a start would
- * run on the person's own sign-in — that it does, and how to give Daoris an account of its own (D125 §2.4, §3.7).
+ * each one's cool-off under it, the tool's own sign-in's cool-off, the order rotation may use with how it is used and its
+ * next start (`nextStartBeneath`, TOOL6f), and — where a start would run on the person's own sign-in — that it does, and
+ * how to give Daoris an account of its own (D125 §2.4, §3.7).
  *
  * @remarks
  * A door's accounts, defaults, orders and cool-offs are its owner's (twin rule 7). The own sign-in's line is said only for
@@ -1012,17 +1071,26 @@ export function accountLines(
   const ownCooling = coolingOf(home, owner, null, now);
   if (ownCooling) lines.push(`${indent}its own sign-in: ${coolingLine(ownCooling, now, zone)}`);
 
-  // Each list, and how it is used beneath it (TOOL6a, D130 §3.2): the machine's, then each workspace's own.
+  // Each list, how it is used beneath it (TOOL6a, D130 §3.2) and its next start (TOOL6f): the machine's, then each
+  // workspace's own. The machine with no list says its next start where its default names the one account it uses.
   const product = TOOLCHAINS[owner]?.product ?? owner;
   const beneath = (scope: Scope) => {
     const { rows, notes } = useLines(scope, product, TOOLCHAINS[owner]?.windows === true);
     for (const [label, value] of rows) lines.push(`${indent}${''.padEnd(16)} ${label}: ${value}`);
     for (const note of notes) lines.push(`${indent}${''.padEnd(16)} ${note}`);
+    for (const line of nextStartBeneath(scope, owner, home, now, zone)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
   };
   const order = resolveRotation(settings, owner, null);
   if (order.from === 'machine') {
     lines.push(`${indent}rotation         ${order.order.join(', then ')}`);
     beneath(resolveScope(settings, owner, null));
+  } else {
+    const machine = resolveScope(settings, owner, null);
+    if (machine.default !== null) {
+      lines.push(`${indent}next start       \`${machine.default}\`, this machine's default — with no list, the one account its `
+        + 'starts run on');
+      for (const line of nextStartBeneath(machine, owner, home, now, zone)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
+    }
   }
   for (const [circle, orders] of Object.entries(settings.workspaceRotation)) {
     if (!orders[owner]) continue;
