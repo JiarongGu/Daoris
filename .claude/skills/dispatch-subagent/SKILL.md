@@ -104,7 +104,7 @@ Follow the dispatch-subagent skill's subagent half.
    other or the work is split.
 3. **Run at most three at once.** More load makes real-process tests flake.
 4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
-   - `--plan <branch>` shows the lanes, the commit check and the gate order, and merges nothing.
+   - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`. It then runs every gate `daoris.gates.json` declares
      and every rehearsal the release workflow adds, fast first, whatever the branch touched. Each
      gate's whole log goes to `local/scratch/merge-<branch>/`. The lane report names lanes by id and
@@ -117,6 +117,12 @@ Follow the dispatch-subagent skill's subagent half.
    - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that
      died (its process ended, or it printed nothing) and passed when run again. Record it under FLAKE1;
      never let it through unrecorded.
+   - The gate prunes (GATE2) at each merge's start, after its refusals, and at a batch's last
+     `--continue`. Each local branch merged into main is deleted with its worktree, one line each. It
+     keeps, and says why, a worktree that is locked (an agent runs in it, even at main's tip), one with
+     modified, staged or untracked files, one with anything under `local/`, and whatever git refuses. It
+     never forces a removal or uses `-D`. `--prune --plan` shows it, `--prune` runs it alone, and
+     `--no-prune` skips it for one merge, for an agent you mean to continue in its worktree.
 5. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
    hand-back's one-line outcome and its pointer, add the changelog entry, and update the counts in
