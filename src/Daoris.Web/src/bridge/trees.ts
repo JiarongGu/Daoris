@@ -144,8 +144,9 @@ export type ReviewRecord = { updated: string; live: boolean };
  * second open is the first's answer, at once, for as long as nothing has moved since — an answer read
  * before the record's last move (it ended, it parked) is read again. A live session's is read again on
  * an open once the moment every view is fresh for has passed, the last answer held beneath it meanwhile;
- * and the record moving past the answer while the review is open reads it again then. A landing and a
- * discard ask again of their own accord. The page waits {@link reviewBound}, not the bridge's 30 seconds.
+ * and the record moving past the answer while the review is open reads it again then. A landing, a
+ * discard, the clean-up and bringing up to date ask again of their own accord, since each moves a tree.
+ * The page waits {@link reviewBound}, not the bridge's 30 seconds.
  *
  * A refusal's code is what the page words it by: "no tree here", "no range recorded", "git could not
  * read it" are different facts with different next moves, and the review says each (`ReviewFailed`).

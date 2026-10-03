@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 
 import '../i18n';
 import { keys } from '../queries';
+import { useSweep, useTreesSync } from '../shell';
 import { DiffPane } from './DiffPane';
 
 const ENDED: Session = {
@@ -284,6 +285,34 @@ describe('the review while git reads (REVIEW4)', () => {
     expect((client.getQueryData(keys.diff('s1a2b3c4')) as typeof DIFF).files.map((file) => file.path)).toEqual(['src/report/columns.ts']);
     expect(screen.getByText('src/report/columns.ts')).toBeTruthy();
     expect(screen.queryByText('src/report/header.ts')).toBeNull();
+  });
+
+  /**
+   * A kept answer stands until something moves the tree: the clean-up removes trees and bringing up to date replays
+   * them, so either press reads every kept review again rather than leaving acts on a tree that is gone.
+   */
+  const presses: [name: string, route: string, press: () => { mutateAsync: (only: string[]) => Promise<unknown> }][] = [
+    ['the clean-up', 'SWEEP', () => useSweep()],
+    ['bringing up to date', 'TREES_SYNC', () => useTreesSync()],
+  ];
+  it.each(presses)('reads a kept review again after %s', async (_name, route, press) => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === route) return { results: [], lines: [], rebases: [], deletes: [], removed: 0, changed: 0 };
+      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
+      return {};
+    });
+    const client = newClient();
+    render(pane(client));
+    expect(await screen.findByText('src/report/header.ts')).toBeTruthy();
+
+    const { result } = renderHook(press, {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await act(async () => {
+      await result.current.mutateAsync([]);
+    });
+    await waitFor(() => expect(diffs()).toHaveLength(2));
   });
 
   /** A return while git is still reading waits on that one read, and counts from when it began. */
