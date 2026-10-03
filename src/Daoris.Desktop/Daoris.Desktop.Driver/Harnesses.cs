@@ -1510,6 +1510,13 @@ public sealed record HarnessSelection(
     /// null where the start was refused for anything else (no agent, a pin nobody installed), or ran.
     /// </summary>
     public AccountReadiness? NotReady { get; init; }
+
+    /// <summary>
+    /// The accounts a held start passed because they are not signed in (TOOL6g), whether it then waits on a cooling one or on
+    /// none; null where it passed none, or ran. What the hold's sentence names with each sign-in, as facts for the page and
+    /// the log.
+    /// </summary>
+    public SignedOutAccounts? SignedOut { get; init; }
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -1600,9 +1607,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         _refused[AccountKey(owner, profile)] = reason;
     }
 
-    // The waits already written to the machine log, by account, with the cool-off each was for (TOOL4d): a wait is
-    // written once, however many looks it lasts, and a new cool-off on the account is a new wait.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _waited =
+    // The waits already written to the machine log, by account, with the cool-off each was for and the accounts it passed
+    // not signed in (TOOL4d, TOOL6g): a wait is written once, however many looks it lasts, and a new cool-off on the account,
+    // or another account signed out or in, is a new wait.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _waited =
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>What time it is, for reading and writing cool-offs (TOOL4d); the system's, unless a test's.</summary>
@@ -1739,12 +1747,16 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public bool Ready(string adapter, string? profile) =>
         CoolingAgent(adapters.Resolve(adapter)) is { } agent && AccountCooling.End(Home, agent, profile, Clock());
 
-    /// <summary>Whether this wait is new — an account, and the cool-off it is waiting out — so it is written once.</summary>
-    internal bool NewWait(string agent, string? account, DateTimeOffset until)
+    /// <summary>
+    /// Whether this wait is new — an account, the cool-off it is waiting out (none where it waits for a person, TOOL6g), and
+    /// the accounts it passed not signed in — so it is written once.
+    /// </summary>
+    internal bool NewWait(string agent, string? account, DateTimeOffset? until, IReadOnlyList<string>? signedOut = null)
     {
         var key = AccountKey(agent, account);
-        var said = _waited.TryGetValue(key, out var was) && was == until;
-        _waited[key] = until;
+        var now = $"{until?.UtcTicks}|{string.Join(",", (signedOut ?? []).Order(StringComparer.OrdinalIgnoreCase)).ToUpperInvariant()}";
+        var said = _waited.TryGetValue(key, out var was) && was == now;
+        _waited[key] = now;
         return !said;
     }
 
@@ -2417,9 +2429,14 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         string owner, IReadOnlyList<AccountState> states, RotationScope? scope, string? workspace, StartKind kind, DateTimeOffset now)
     {
         var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
-        var held = states.Count == 1 || first is null
-            ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling, NotReady = states[0].Readiness }
-            : new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first };
+        // TOOL6g: the accounts passed as not signed in are facts beside the sentence, and over a list with nothing cooling
+        // each is named with its sign-in, where the first account's refusal alone named only its own.
+        var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } names ? new SignedOutAccounts(owner, names) : null;
+        var held = states.Count == 1 || (first is null && signedOut is null)
+            ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling, NotReady = states[0].Readiness, SignedOut = signedOut }
+            : first is null
+                ? new HarnessSelection(RotationWords.NoneReady(owner, states)) { SignedOut = signedOut }
+                : new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first, SignedOut = signedOut };
         if (held.Cooling is null || scope?.Begins is null) return held;
 
         var sentence = held.Refusal!;
@@ -2435,8 +2452,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (scope.From == ChoiceFrom.Workspace || scope.List.Count > 0)
         {
             IReadOnlyList<string> listed = scope.List.Count > 0 ? scope.List : [scope.Begins];
+            // Not one the agent last said is not signed in (TOOL6g): adding it to the list would start nothing.
+            var seen = SeenOf(owner);
             var outside = HarnessSettings.Profiles(Home, owner)
-                .Where(name => !listed.Contains(name, StringComparer.OrdinalIgnoreCase) && Before(owner, name, now).IsReady)
+                .Where(name => !listed.Contains(name, StringComparer.OrdinalIgnoreCase) && Before(owner, name, now).IsReady
+                               && LoginOf(seen, name) != LoginState.Out)
                 .ToList();
             if (outside.Count > 0)
             {

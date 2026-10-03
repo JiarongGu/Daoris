@@ -62,6 +62,11 @@ export interface Consideration {
    */
   waitsFor?: { agent: string; account?: string | null; until: string; stated: boolean };
   /**
+   * For a start held at spawn that passed accounts not signed in (TOOL6g): whose, and which, so the page names each with
+   * its sign-in, beside a wait on a cooling account or with none cooling. Absent where it passed none, and on an older shell.
+   */
+  signedOut?: { agent: string; accounts: string[] } | null;
+  /**
    * For a quest a pause holds (verdict `Paused`, PAUSE1b): whose pause, an ask's or a quest's, which the sentence names and
    * whose *Resume* moves it (D132 §2.3). Absent for every other verdict, and on an older shell.
    */
@@ -140,16 +145,26 @@ export function sittingSentence(sitting: Consideration): string {
   if (sitting.verdict === 'Blocked' && sitting.forUpdate) {
     return i18n.t('work.sitting.forUpdate', { why: sitting.reason, defaultValue: sitting.reason });
   }
-  // A wait for an account (TOOL4g) is a `Blocked` hold the tick names the account of, so it is said from those facts; any
-  // other `Blocked` hold keeps the driver's words, since its sentence names what the tick does not carry.
+  // A wait for an account (TOOL4g) is a `Blocked` hold the tick names the account of, so it is said from those facts, with
+  // the accounts it passed not signed in and each one's sign-in (TOOL6g); a hold on accounts not signed in with none cooling
+  // is said from those alone. Any other `Blocked` hold keeps the driver's words, since its sentence names what the tick does
+  // not carry.
+  const signedOut = sitting.verdict === 'Blocked' && sitting.signedOut?.accounts?.length ? sitting.signedOut : null;
+  const signIn = signedOut ? {
+    accounts: signedOut.accounts.join(i18n.t('work.sitting.signedOutJoin')),
+    logins: signedOut.accounts.map((name) => `\`daoris agent login ${signedOut.agent} --profile ${name}\``).join(i18n.t('work.sitting.signedOutJoin')),
+  } : null;
   if (sitting.verdict === 'Blocked' && sitting.waitsFor) {
     const { agent, account, until, stated } = sitting.waitsFor;
-    return i18n.t(account ? 'work.sitting.waitsFor' : 'work.sitting.waitsForOwn', {
+    const key = account ? 'work.sitting.waitsFor' : 'work.sitting.waitsForOwn';
+    return i18n.t(signIn ? `${key}SignedOut` : key, {
       why: sitting.reason, agent, account, when: moment(until),
       because: i18n.t(stated ? 'harness.cooling.why.stated' : 'harness.cooling.why.default'),
+      ...signIn,
       defaultValue: sitting.reason,
     });
   }
+  if (signIn) return i18n.t('work.sitting.signedOut', { why: sitting.reason, agent: signedOut!.agent, ...signIn, defaultValue: sitting.reason });
   return i18n.t(`work.sitting.${sitting.verdict}`, {
     why: sitting.reason, session: sitting.heldBy, quest: sitting.quest, failed: sitting.strikes,
     defaultValue: sitting.reason,

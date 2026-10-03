@@ -154,6 +154,31 @@ describe('what is said', () => {
       .toBe('下一次启动运行在你自己的登录上：这里没有指定任何账户。');
   });
 
+  /**
+   * TOOL6g: a next start that waits while accounts of its list are not signed in says a sign-in starts it, sooner than the
+   * reset where one cools, so *waits until* never hides that a sign-in would free it.
+   */
+  it('says a waiting start would start sooner on a sign-in, naming the accounts not signed in', async () => {
+    const labelOf = (name: string) => ({ 'account-1': 'work@example.invalid' } as Record<string, string>)[name] ?? name;
+    const list = scope({ list: ['gmail', 'account-1', 'account-2'], begins: 'gmail' });
+    const waits = (when: string | null, others: NextStart['others']): NextStart => ({ account: null, reason: 'waits', over: null, when, others });
+    const passed: NextStart['others'] = [
+      { account: 'gmail', hold: 'cooling', until: '2026-10-06T09:00:00Z' },
+      { account: 'account-1', hold: 'signedOut' },
+      { account: 'account-2', hold: 'signedOut' },
+    ];
+
+    expect(nextLine(waits('2026-10-06T09:00:00Z', passed), list, labelOf)).toMatch(
+      /^No account here is ready, so the next start waits until .+\. Signing in to work@example\.invalid, account-2 starts it sooner, from its row below\.$/);
+    expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toBe(
+      'No account here is ready, and none comes ready by itself: the next start waits for you. Signing in to '
+      + 'work@example.invalid, account-2 starts it, from its row below.');
+    expect(nextLine(waits('2026-10-06T09:00:00Z', passed.slice(0, 1)), list, labelOf)).not.toMatch(/Signing in/);
+
+    await i18n.changeLanguage('zh');
+    expect(nextLine(waits(null, passed.slice(1)), list, labelOf)).toContain('登录 work@example.invalid、account-2');
+  });
+
   /** TOOL6e: what holds every other account, cooling with until when, and the accounts a scope does not use, together. */
   it('says what holds the other accounts, and nothing for an account merely ranked after', async () => {
     const labelOf = (name: string) => name;

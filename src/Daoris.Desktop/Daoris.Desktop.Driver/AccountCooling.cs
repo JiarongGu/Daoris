@@ -328,13 +328,23 @@ public sealed record AccountLine(string Event, IReadOnlyList<(string Key, object
             ("assumedZone", seen.AssumedZone), ("turn", turn), ("used", used),
         ]);
 
-    /// <summary>Every account a start may use was cooling: written once per wait.</summary>
+    /// <summary>
+    /// Every account a start may use was cooling or not signed in: written once per wait. Where none cools, nothing comes
+    /// ready by itself, and <paramref name="until"/> is null (TOOL6g).
+    /// </summary>
+    /// <param name="account">The account whose cool-off ends first, or null for the tool's own home and where none cools.</param>
     /// <param name="quests">How many quests the wait held when it was first written.</param>
-    public static AccountLine Waiting(string adapter, string? account, string? workspace, DateTimeOffset until, int quests) =>
+    /// <param name="signedOut">
+    /// The accounts it passed not signed in (TOOL6g), written as their profile names joined by commas, which no profile name
+    /// holds; a name that is not one is left out, and none is null.
+    /// </param>
+    public static AccountLine Waiting(
+        string adapter, string? account, string? workspace, DateTimeOffset? until, int quests, IReadOnlyList<string>? signedOut = null) =>
         new("starts.waiting",
         [
-            ("adapter", adapter), ("account", Profile(account)), ("workspace", workspace), ("until", AccountCooling.Stamp(until)),
-            ("quests", quests),
+            ("adapter", adapter), ("account", Profile(account)), ("workspace", workspace),
+            ("until", until is { } at ? AccountCooling.Stamp(at) : null), ("quests", quests),
+            ("signedOut", (signedOut ?? []).Select(Profile).OfType<string>().ToList() is { Count: > 0 } named ? string.Join(",", named) : null),
         ]);
 
     /// <summary>
@@ -400,4 +410,10 @@ public sealed record AccountWait(
 
     /// <summary>Where the held starts would have run: each quest's repository, or <c>ask #id</c>.</summary>
     public IReadOnlyList<string> Repositories { get; init; } = [];
+
+    /// <summary>
+    /// The accounts the held starts passed not signed in (TOOL6g), in the order the walk tried them: a sign-in starts them
+    /// sooner than the reset. Empty where none was.
+    /// </summary>
+    public IReadOnlyList<string> SignedOut { get; init; } = [];
 }

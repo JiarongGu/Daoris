@@ -96,6 +96,51 @@ public sealed class SignedOutLooksTests : IDisposable
         Assert.Equal(1, Asked.Count(line => line == "version"));
         Assert.Equal(["status account-1", "status account-2", "status gmail"], Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)).Order());
         Assert.DoesNotContain("status (own)", Asked);
+
+        // And the hold says which accounts are not signed in, and the sign-in for each, beside the wait on gmail.
+        Assert.Equal(
+            $"no `stub` account this start may use is ready: `account-1` is not signed in, `account-2` is not signed in, `gmail` "
+            + $"is cooling until Oct 6, 08:58 ({Zone.Id}); the first ready, `gmail`, at Oct 6, 08:58 ({Zone.Id}), as the agent "
+            + "said. Daoris starts nothing on them until then. A sign-in starts it sooner: `daoris agent login stub --profile "
+            + "account-1`, `daoris agent login stub --profile account-2`, or Settings → Agents.",
+            sitting.Reason);
+        Assert.Equal("stub", sitting.SignedOut!.Agent);
+        Assert.Equal(["account-1", "account-2"], sitting.SignedOut.Accounts);
+        var wait = Assert.Single(last.Waits);
+        Assert.Equal("gmail", wait.Account);
+        Assert.Equal(["account-1", "account-2"], wait.SignedOut);
+    }
+
+    [Fact]
+    public async Task With_nothing_cooling_every_account_not_signed_in_is_named_and_the_log_says_so_once()
+    {
+        AccountCooling.End(_home, "stub", "gmail", _now);
+        using var service = _ledger.Client();
+        var lines = new List<AccountLine>();
+        service.AccountLined += lines.Add;
+        var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
+        _ledger.Publish("q1", "engine");
+
+        TickReport? last = null;
+        for (var look = 0; look < 3; look++)
+        {
+            last = await new Daoris.Driver.Driver(service, Config, AdapterSet.Built(), _home, harnesses: roster).TickAsync().WaitAsync(Bound);
+        }
+
+        var sitting = Assert.Single(last!.Considerations);
+        Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
+        Assert.Equal(
+            "no `stub` account this start may use is ready: `account-1` is not signed in, `account-2` is not signed in, `gmail` is "
+            + "not signed in. A sign-in starts it: `daoris agent login stub --profile account-1`, `daoris agent login stub "
+            + "--profile account-2`, `daoris agent login stub --profile gmail`, or Settings → Agents.",
+            sitting.Reason);
+        Assert.Equal(["account-1", "account-2", "gmail"], sitting.SignedOut!.Accounts);
+        Assert.Empty(last.Waits);
+
+        // Written once in three looks, with no time and the accounts by name.
+        var line = Assert.Single(lines, l => l.Event == "starts.waiting");
+        var data = line.Data.ToDictionary(field => field.Key, field => field.Value);
+        Assert.Equal(("stub", null, null, "account-1,account-2,gmail"), (data["adapter"], data["account"], data["until"], data["signedOut"]));
     }
 
     [Fact]

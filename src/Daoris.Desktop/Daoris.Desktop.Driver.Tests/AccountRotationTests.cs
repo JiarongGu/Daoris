@@ -448,16 +448,42 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(why, RotationWords.Why("claude-code", new AccountState("account-1", readiness), Zone));
     }
 
+    /// <summary>
+    /// TOOL6g: a wait that passed accounts not signed in names each, and the sign-in that would start it sooner, so a
+    /// person reading *waits for `account-2`* knows a sign-in frees it.
+    /// </summary>
     [Fact]
-    public void A_wait_over_an_order_some_of_it_signed_out_names_each()
+    public void A_wait_over_an_order_some_of_it_signed_out_names_each_and_its_sign_in()
     {
         var cooling = new CoolingEntry("fake", "account-2", Until, false, null, Seen, "s1");
 
         Assert.Equal(
             "no `fake` account this start may use is ready: `account-1` is not signed in, `account-2` is cooling until Oct 3, "
             + $"16:02 ({Zone.Id}); the first ready, `account-2`, at Oct 3, 16:02 ({Zone.Id}), Daoris's default: the agent named "
-            + "no time. Daoris starts nothing on them until then.",
+            + "no time. Daoris starts nothing on them until then. A sign-in starts it sooner: "
+            + "`daoris agent login fake --profile account-1`, or Settings → Agents.",
             RotationWords.Wait("fake", [new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Cooling, cooling)], Zone));
+    }
+
+    /// <summary>TOOL6g: with nothing cooling, nothing comes ready by itself, so every account not signed in is named with its sign-in.</summary>
+    [Fact]
+    public void A_hold_with_nothing_cooling_names_every_account_not_signed_in_and_each_sign_in()
+    {
+        Assert.Equal(
+            "no `claude-code` account this start may use is ready: `account-1` is not signed in, `account-2` was refused by its "
+            + "provider, `gmail` is not signed in. A sign-in starts it: `daoris agent login claude-code --profile account-1`, "
+            + "`daoris agent login claude-code --profile gmail`, or Settings → Agents.",
+            RotationWords.NoneReady("claude-code", [
+                new("account-1", AccountReadiness.SignedOut), new("account-2", AccountReadiness.Refused), new("gmail", AccountReadiness.SignedOut),
+            ]));
+    }
+
+    [Fact]
+    public void A_wait_with_nobody_signed_out_says_nothing_of_signing_in()
+    {
+        var cooling = new CoolingEntry("fake", "account-2", Until, true, null, Seen, "s1");
+
+        Assert.DoesNotContain("sign-in", RotationWords.Wait("fake", [new("account-1", AccountReadiness.Refused), new("account-2", AccountReadiness.Cooling, cooling)], Zone));
     }
 
     // ——— Said once the record is open (§3.3, §3.6): its first line, and the log's.
