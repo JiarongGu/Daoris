@@ -178,7 +178,7 @@ public sealed partial class HelpCoverageTests
     /// </summary>
     private static readonly (string Hook, Answer Answer)[] Elsewhere =
     [
-        // UPDATE1d: the banner's *Dismiss*, once an update installed or rolled back.
+        // UPDATE1: the banner's *Dismiss*, once an update installed or rolled back; since UPDATE1d the last update outlives it.
         ("useDismissUpdate", new Exempt(
             "it puts away an update's outcome once said, the banner's *Dismiss*, and changes nothing about the install or its "
             + "work: the last update still reads on Settings → Driver and from plain `daoris-driver update` (D139), so there "
