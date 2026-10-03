@@ -169,6 +169,13 @@ public sealed class LandedRecordTests : IDisposable
             Say(new LandedReview(gone, LandedState.Gone, Reads: new LandedReads(LandedKind.OnLine, "main", [], null))));
         Assert.EndsWith("inside `feature/q2-other`, whose work read on the line.",
             Say(new LandedReview(gone with { RemovedAs = LandedKind.Inside, RemovedOn = "feature/q2-other" }, LandedState.Gone)));
+        // PLUGHOOK1a: removed on the platform's word, which git confirmed.
+        Assert.EndsWith("The clean-up removed it once its pull request completed, as `acme.asks` answered, and its merge commit read on `origin/main`.",
+            Say(new LandedReview(gone with
+            {
+                RemovedAs = LandedKind.PullRequest,
+                PullRequestState = new PullRequestState(PullRequestStates.Completed) { Plugin = "acme.asks" },
+            }, LandedState.Gone)));
         Assert.EndsWith("that branch is gone now. 2 files it changed read otherwise on `main`: a.ts, b.ts.",
             Say(new LandedReview(entry, LandedState.Gone, Reads: new LandedReads(LandedKind.Differs, "main", ["a.ts", "b.ts"], null))));
         Assert.EndsWith("whether its work reads on the line cannot be said.",
@@ -224,6 +231,74 @@ public sealed class LandedRecordTests : IDisposable
         var older = new LandedBranches(_home).Landing("s3")!;
         Assert.Null(older.AcceptedBy);
         Assert.Null(older.Rule);
+    }
+
+    /// <summary>
+    /// PLUGHOOK1a (D148 point 6, design §2.5): the entry keeps the latest answer about its pull request with who answered and
+    /// when, the latest failed ask beside it, the session branches removed on its word, and a removal on it; each round trips,
+    /// a trace takes them as a standing entry does, and a record from before keeps none of them.
+    /// </summary>
+    [Fact]
+    public void What_a_pull_requests_answer_chose_by_round_trips_on_a_standing_entry_and_a_trace()
+    {
+        var landings = new LandedBranches(_home);
+        landings.Record(Entry("feature/q1-fix", "s1"));
+        landings.Record(Entry("feature/q2-fix", "s2"));
+        landings.Removed("engine", "feature/q2-fix", LandedKind.OnLine, "main");
+        var answer = new PullRequestState(PullRequestStates.Completed)
+        {
+            PullRequest = "https://example.test/org/project/_git/engine/pullrequest/7",
+            MergeCommit = new string('a', 40),
+            SourceCommit = new string('b', 40),
+            Target = "main",
+            How = MergeHow.Squash,
+            At = At.AddHours(2),
+            Message = "completed by squash",
+            Plugin = "azure-devops-pull-request",
+            AskedAt = At.AddHours(3),
+        };
+
+        landings.AskFailed(landings.Landing("s1")!, new PullRequestAskFailed(PluginEvents.Late, "azure-devops-pull-request", At.AddHours(1)));
+        landings.Answered(landings.Landing("s1")!, answer);
+        landings.AskFailed(landings.Landing("s2")!, new PullRequestAskFailed(PluginEvents.Errored, "azure-devops-pull-request", At.AddHours(4)));
+        landings.Carried(landings.Landing("s1")!, new CarriedBranch("daoris/s-1", "tip00001", At.AddHours(3), CarriedBy.Tidy));
+        landings.Removed("engine", "feature/q1-fix", LandedKind.PullRequest, "origin/main");
+
+        var text = File.ReadAllText(Path.Combine(_home, LandedBranches.FileName));
+        Assert.Contains("\"pullRequestState\": {", text);
+        Assert.Contains("\"removedAs\": \"pull-request\"", text);
+        Assert.Contains("\"carried\": [", text);
+        Assert.DoesNotContain("\r", text);
+
+        var again = new LandedBranches(_home);
+        var first = again.Landing("s1")!;
+        Assert.Equal(answer, first.PullRequestState);
+        // An answer newer than the failure is the latest word; the failure is not kept beside it.
+        Assert.Null(first.PullRequestAskFailed);
+        Assert.Equal([new CarriedBranch("daoris/s-1", "tip00001", At.AddHours(3), CarriedBy.Tidy)], first.Carried);
+        Assert.Equal((LandedKind.PullRequest, "origin/main"), (first.RemovedAs, first.RemovedOn));
+        // A trace is asked about too, and a failure never overwrites a kept answer (here there was none).
+        var second = again.Landing("s2")!;
+        Assert.NotNull(second.GoneAt);
+        Assert.Null(second.PullRequestState);
+        Assert.Equal(new PullRequestAskFailed(PluginEvents.Errored, "azure-devops-pull-request", At.AddHours(4)), second.PullRequestAskFailed);
+
+        // A failure after an answer is kept beside it, and the answer stays.
+        again.AskFailed(first, new PullRequestAskFailed(PluginEvents.Unstartable, "azure-devops-pull-request", At.AddHours(5)));
+        var both = new LandedBranches(_home).Landing("s1")!;
+        Assert.Equal(answer, both.PullRequestState);
+        Assert.Equal(PluginEvents.Unstartable, both.PullRequestAskFailed!.Code);
+
+        File.WriteAllText(Path.Combine(_home, LandedBranches.FileName), """
+            { "branches": [ { "repository": "engine", "branch": "feature/q3", "tip": "abcd1234", "session": "s3",
+                              "landedAt": "2026-09-30T12:00:00.0000000+00:00",
+                              "pullRequestState": { "state": "completed", "mergeCommit": "abc" } } ] }
+            """);
+        var older = new LandedBranches(_home).Landing("s3")!;
+        // A completed answer that names no full commits would not have been an answer, so it is none.
+        Assert.Null(older.PullRequestState);
+        Assert.Null(older.PullRequestAskFailed);
+        Assert.Empty(older.Carried);
     }
 
     /// <summary>

@@ -90,6 +90,9 @@ public sealed class LandingChainTests : IDisposable
     [InlineData("moved", AutoLandingCode.Exists, "moved since Daoris landed on it")]
     [InlineData("checked-out", AutoLandingCode.Exists, "checked out at")]
     [InlineData("completed", AutoLandingCode.Completed, "its pull request was merged")]
+    [InlineData("kept-completed", AutoLandingCode.Completed, "'s pull request completed, as `acme.lands` answered at 2026-10-04 14:02 UTC")]
+    [InlineData("kept-abandoned", AutoLandingCode.Completed, "'s pull request was abandoned, as `acme.lands` answered")]
+    [InlineData("kept-open", null, null)]
     [InlineData("apart", AutoLandingCode.Exists, "does not grow from")]
     [InlineData("nothing-new", AutoLandingCode.Nothing, "nothing to land")]
     [InlineData("advances", null, null)]
@@ -97,12 +100,28 @@ public sealed class LandingChainTests : IDisposable
         string facts, string? code, string? says)
     {
         var standing = new AdvanceFacts(Entry(), Tip, CheckedOutAt: null, Descends: true, Ahead: 1, Completed: null);
+        // PLUGHOOK1a (D149 point 3): a kept answer the platform gave refuses as git's own proof does, since git cannot see a
+        // squash once the line has moved on.
+        AdvanceFacts Kept(string state) => standing with
+        {
+            Recorded = Entry() with
+            {
+                PullRequestState = new PullRequestState(state)
+                {
+                    MergeCommit = new string('a', 40), SourceCommit = new string('b', 40), Plugin = "acme.lands",
+                    AskedAt = new DateTimeOffset(2026, 10, 4, 14, 2, 0, TimeSpan.Zero),
+                },
+            },
+        };
         var given = facts switch
         {
             "unrecorded" => standing with { Recorded = null },
             "moved" => standing with { Tip = Next },
             "checked-out" => standing with { CheckedOutAt = "/elsewhere" },
             "completed" => standing with { Completed = "origin/main" },
+            "kept-completed" => Kept(PullRequestStates.Completed),
+            "kept-abandoned" => Kept(PullRequestStates.Abandoned),
+            "kept-open" => Kept(PullRequestStates.Open),
             "apart" => standing with { Descends = false, Ahead = 0 },
             "nothing-new" => standing with { Ahead = 0 },
             _ => standing,

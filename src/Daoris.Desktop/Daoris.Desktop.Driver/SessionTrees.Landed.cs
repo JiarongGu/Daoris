@@ -12,6 +12,13 @@ public static class LandedKind
     /// <summary>Its history is inside another landed branch whose work is on the line.</summary>
     public const string Inside = "inside";
 
+    /// <summary>
+    /// Its pull request completed, as the plugin that pushed it answered, and git confirms it here (PLUGHOOK1a, D148 point 4): the
+    /// merge commit is on the line and the branch stands at or under the commit it merged. What a squash leaves once the line
+    /// has moved on.
+    /// </summary>
+    public const string PullRequest = "pull-request";
+
     /// <summary>Some file it changed reads otherwise on the line — kept, and the files named.</summary>
     public const string Differs = "differs";
 
@@ -37,7 +44,22 @@ public sealed record LandedItem(
     string Repository, string Workspace, string Branch, string Kind, string? Where, IReadOnlyList<string> Files,
     string? Detail, string? PullRequest, int Commits)
 {
-    public bool Removable => Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside;
+    public bool Removable => Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside or LandedKind.PullRequest;
+
+    /// <summary>
+    /// The latest answer about its pull request, where one is kept (PLUGHOOK1a, design §2.5): what a row says the platform
+    /// answered, and when.
+    /// </summary>
+    public PullRequestState? State { get; init; }
+
+    /// <summary>
+    /// Why a kept answer does not clear it, where one is kept and does not (design §2.3): the state (<c>open</c>, <c>abandoned</c>,
+    /// <c>unknown</c>) or one of <see cref="PullRequestCodes"/>. Null where nothing is kept, or the answer cleared it.
+    /// </summary>
+    public string? StateCode { get; init; }
+
+    /// <summary>The latest ask that failed since that answer, where one did (design §2.4).</summary>
+    public PullRequestAskFailed? AskFailed { get; init; }
 }
 
 /// <summary>What the clean-up did with one landed branch, in the driver's words.</summary>
@@ -58,6 +80,8 @@ public static class LandedWords
         LandedKind.OnLine => $"its pull request reached `{item.Where}`: every file it changed reads there as it left it",
         LandedKind.Merged => $"merged into `{item.Where}`",
         LandedKind.Inside => $"inside `{item.Where}`, whose work is on the line",
+        LandedKind.PullRequest => "its pull request completed" + (item.State?.How is { } how ? $" by {how}" : "")
+            + (item.State?.Plugin is { } plugin ? $", as `{plugin}` answered," : "") + $" and its merge commit is on `{item.Where}`",
         LandedKind.Differs => (item.Files.Count == 1 ? "1 file still differs" : $"{item.Files.Count} files still differ")
             + $" on the line: {string.Join(", ", item.Files.Take(3))}" + (item.Files.Count > 3 ? $" and {item.Files.Count - 3} more" : ""),
         LandedKind.CheckedOut => "checked out in a working tree",
@@ -78,6 +102,13 @@ public sealed partial class SessionTrees
         CancellationToken ct = default)
     {
         var known = repositories.ToList();
+        // The look may remove, so it asks first where git cannot tell, as one occasion over every repository (PLUGHOOK1a, design
+        // §2.1 occasion 2); the press asks nothing.
+        await AskStatesAsync(
+            known.Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root))
+                .Select(each => (each.Root!, each.Repository, RemoteTarget.Workspace(each.Workspace))),
+            landedMayGo: true, ct).ConfigureAwait(false);
+
         var sessions = await SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
         var record = Recorded.All();
         var landed = new List<LandedItem>();
@@ -223,7 +254,7 @@ public sealed partial class SessionTrees
         var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
 
-        var judged = new List<(LandedBranch Entry, string Tip, Proof Proof, string? Keep, int Ahead)>();
+        var judged = new List<(LandedBranch Entry, string Tip, Proof Proof, string? Keep, int Ahead, PullRequestVerdict? Verdict)>();
         foreach (var entry in entries)
         {
             var (tipCode, tipOut, _) = await WorkingTree.GitAsync(
@@ -245,6 +276,13 @@ public sealed partial class SessionTrees
             }
 
             var proof = await ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
+            // PLUGHOOK1a: a fourth proof, the platform's word confirmed by git, where D102's could not see the work on the line.
+            var verdict = entry.PullRequestState is { } kept ? await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) : null;
+            if (proof.Kind is not (LandedKind.OnLine or LandedKind.Merged) && verdict is { Clears: true })
+            {
+                proof = proof with { Kind = LandedKind.PullRequest, Where = verdict.Form, Files = [], Detail = null, Judgeable = false };
+            }
+
             string? keep = null;
             var ahead = 0;
             if (worktrees.ContainsKey(entry.Branch))
@@ -258,12 +296,12 @@ public sealed partial class SessionTrees
                 keep = lacking > 0 ? LandedKind.AheadOfRemote : null;
             }
 
-            judged.Add((entry, tip, proof, keep, ahead));
+            judged.Add((entry, tip, proof, keep, ahead, verdict));
         }
 
-        var proven = judged.Where(each => each.Proof.Kind is LandedKind.OnLine or LandedKind.Merged).ToList();
+        var proven = judged.Where(each => each.Proof.Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.PullRequest).ToList();
         var items = new List<Judged>();
-        foreach (var (entry, tip, proof, keep, ahead) in judged)
+        foreach (var (entry, tip, proof, keep, ahead, verdict) in judged)
         {
             var kind = proof.Kind;
             var where = proof.Where;
@@ -287,7 +325,7 @@ public sealed partial class SessionTrees
                 where = null;
             }
 
-            var removable = kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside;
+            var removable = kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside or LandedKind.PullRequest;
             if (removable && await LeanerAsync(root, tip, staying, forms, ct).ConfigureAwait(false) is { } leaner)
             {
                 kind = LandedKind.LeanedOn;
@@ -297,7 +335,13 @@ public sealed partial class SessionTrees
             var files = kind == LandedKind.Differs ? proof.Files : [];
             items.Add(new(
                 new LandedItem(repository, workspace, entry.Branch, kind, where, files, proof.Detail, entry.PullRequest,
-                    kind == LandedKind.AheadOfRemote ? ahead : proof.Commits),
+                    kind == LandedKind.AheadOfRemote ? ahead : proof.Commits)
+                {
+                    // What the platform last said, and why it does not clear the branch where it does not (design §2.3, §2.5).
+                    State = entry.PullRequestState,
+                    StateCode = verdict is { Clears: false } ? verdict.Code : null,
+                    AskFailed = entry.PullRequestAskFailed,
+                },
                 tip));
         }
 
