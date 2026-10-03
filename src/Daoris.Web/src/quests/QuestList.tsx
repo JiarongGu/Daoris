@@ -7,6 +7,7 @@ import { askItem } from '../opener';
 import { type Consideration, sittingSentence } from '../signals';
 import { Button, Inline, Pill, QUEST_TONE, SESSION_ACTIVE, SESSION_TONE } from '../ui';
 import { cn } from '../lib/cn';
+import { contextOffer } from '../menus/press';
 import { ListGroup, ListRowDoor } from '../work/ListPane';
 import { questGroups } from './records';
 
@@ -117,9 +118,21 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
   const ended = quest.status === 'Done' || quest.status === 'Declined';
   // Only a hold is the person's to lift here; any other reason is said, and offers nothing.
   const resume = sitting?.verdict === 'Held' ? onResume : undefined;
+  // A row offers what it does on a right-click (CTX1, D138 §4): opening it, its hold's resume, and its id; what is done to
+  // the quest is its page's.
+  const menu = {
+    label: quest.title,
+    acts: [
+      { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onChoose(quest.id) },
+      ...(resume
+        ? [{ id: 'resume', label: t('quests.card.resume', { repository: quest.to }), icon: 'resume' as const, disabled: resuming, onSelect: () => resume(quest.to) }]
+        : []),
+      { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id },
+    ],
+  };
 
   return (
-    <li data-list-row="">
+    <li data-list-row="" {...contextOffer(menu)}>
       <ListRowDoor chosen={chosen} dimmed={ended} onPress={() => onChoose(quest.id)}>
         <span className="flex items-baseline gap-2">
           <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>

@@ -3879,7 +3879,8 @@ check(
   'the next look goes on with the SAME session: one record, reopened, ends completed, and the quest is done by it',
   portResumeRun.code === 0 && /\[resumed its conversation\]/.test(portResumeRun.out)
     && portAfter.length === 2 && portGoneOn?.state === 'completed' && portQuest?.status === 'Done',
-  `${portResumeRun.out}\n${JSON.stringify(portAfter)}\n${JSON.stringify(portQuest)}`,
+  // The park as the look found it first (MSG1b's merge): its state and the words waiting on it are what the look planned from.
+  `the park before the look: ${JSON.stringify(portAnswered)}\n${portResumeRun.out}\n${JSON.stringify(portAfter)}\n${JSON.stringify(portQuest)}`,
 );
 
 const portTranscript = existsSync(portGoneOn?.transcript ?? '') ? readFileSync(portGoneOn.transcript, 'utf8') : '';

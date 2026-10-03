@@ -25,6 +25,12 @@ public sealed partial class AcpSession
     /// <summary>JSON-RPC's <c>resource_not_found</c>, which the adapter answers for a conversation it no longer has.</summary>
     internal const int ResourceNotFound = -32002;
 
+    /// <summary>
+    /// <c>codex-acp</c>'s <c>data.reason</c> for a thread another Codex client holds (MSG1b, D137 §1.1), read from
+    /// <c>@agentclientprotocol/codex-acp</c> 2.1.1's <c>dist/index.js</c>.
+    /// </summary>
+    internal const string ActiveWriter = "thread_active_writer";
+
     /// <summary>The conversation whose replay is arriving while a <c>session/load</c> is answered, or null.</summary>
     private volatile string? _replaying;
 
@@ -63,8 +69,11 @@ public sealed partial class AcpSession
         }
         catch (AcpRefusal refused)
         {
-            throw new AcpResumeRefused(
-                ContinueWhy.Of(refused.Code == ResourceNotFound ? ContinueWhy.Gone : ContinueWhy.Refused), refused.Words);
+            // By the error's structure, never its words: another client holding the thread is its data's reason (MSG1b).
+            var why = refused.Code == ResourceNotFound ? ContinueWhy.Gone
+                : string.Equals(refused.Reason, ActiveWriter, StringComparison.Ordinal) ? ContinueWhy.Elsewhere
+                : ContinueWhy.Refused;
+            throw new AcpResumeRefused(ContinueWhy.Of(why), refused.Words);
         }
         finally
         {

@@ -43,6 +43,11 @@ public sealed class LogModuleTests : Bridge
             "message.sent", new { session = "76cdd5db", kind = "chat", length = 42, files = 2 }, "info",
             """{"session":"76cdd5db","kind":"chat","length":42,"files":2}"""
         },
+        {
+            // MSG1d (D137 §3.3): where the words reach the session, the answer SESSION_INPUT gave.
+            "message.sent", new { session = "76cdd5db", kind = "steer", length = 18, files = 0, reach = "resume" }, "info",
+            """{"session":"76cdd5db","kind":"steer","length":18,"files":0,"reach":"resume"}"""
+        },
         { "proposal.settled", new { applied = true }, "info", """{"applied":true}""" },
         {
             "page.error", new { where = "window", message = "Cannot read properties of undefined (reading 'id')" }, "error",

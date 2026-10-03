@@ -10011,3 +10011,60 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > command only between its words. Contract: D41 §3, the components' code span. Proof: the look at 1280, 888 and 680.
 
 **Outcome** Every code span is `CodeText`, one box per word, so a command breaks only at its spaces; the machine log's terminal command now renders as code. Detail: platform-ux §3, the components' atom row, `7524e625`.
+
+
+## MSG1b — a driven session goes on with words, on both doors (2026-10-03)
+
+> - [ ] **MSG1b — a driven session goes on with words, on both doors** (driver). The planner's `continuing` verdict takes
+> a record with words waiting, the judgement gains §2.2's rows and `elsewhere`, and a native run resumes while words
+> are held. Contract: §2.1, §2.2, §2.3. Proof: `ContinuationTests`, the plan tests, `NativeResumeTests`, a `Process`
+> tick (the parent's).
+
+**Outcome** A record with the person's words waiting goes on in its own conversation, parked or ended, on both doors: the planner goes on with it first, the judgement says the three nevers and `elsewhere`, words leave `said` by id once they reach the session, and what cannot go on is handed on or marked. A resumed run's closed quest is read as the look planned it (`Observation.Resumed`), which the first merge caught in ANSWER1's tick and the rehearsal's 17a. Detail: D137's MSG1b note, `3483ea90`..`1579b01b`.
+
+
+## MSG1d — every door's words reach the record (2026-10-03)
+
+> - [ ] **MSG1d — every door's words reach the record** (modules). `SESSION_INPUT` and `SESSION_QUEUE` answer for every
+> state, the loop is nudged, said, taken and went events are written, and the log gains its lines. Contract: §3, §5.3.
+> Proof: `DriverModuleConversationTests`, `DriverModuleAddedTests`, `SessionEventsTests`, `SessionLogTests`.
+
+**Outcome** `SESSION_INPUT` and `SESSION_QUEUE` answer `{sent, reaches, why}` for every state through the modules' `SessionWords`: a running session keeps its door, a parked or ended one takes the words through the say door and nudges the loop, words said as a session winds up wait and are retried, and what never goes on answers a code and posts nothing. The said and went events and `session.reopened`'s door are written. Detail: D137's MSG1d note, `322db936`..`c91ecbf1`.
+
+
+## UPDATE1 — the install updates when its work allows (2026-10-03)
+
+> - [ ] **UPDATE1 — the install updates when its work allows** (found 2026-10-03: four republishes waited on running
+> sessions). *Update when idle*: the desktop starts no new session, lets the running ones end or park, then installs the
+> new build and starts again, saying so; a session cut by an update is carried on, never lost. Contract: a short design
+> (D62, D93 amended). Proof: the deployment rehearsal's update phase; the look.
+
+**Outcome** `publish:desktop --stage` stages a checked build beside the running install; the desktop drains (starts nothing new) and installs it once no driven run and no conversation turn is in flight; the launcher swaps `app/` with a journal and rolls back to the old build on any failure; *Update now*, *Not now* and `daoris-driver update` are the doors, and the next start says the outcome once. Detail: D139, `docs/2026-10-03-update-when-idle-design.md`, `3cf5c723`..`c7e8bcf9`.
+
+
+## CTX1 — the desktop's right-click menu (2026-10-03)
+
+> - [ ] **CTX1 — the desktop's right-click menu** (owner, 2026-10-03: *"we do need to utilize the right click menu of daoris
+> desktop"*). Today a right-click shows the engine's default menu, or nothing; give each surface (a session row, a quest,
+> a repository, a plugin, selected text, a link) its own acts there, the same acts its ⋯ offers, from one owner. Contract:
+> a short design (D41's interaction rules amended). Proof: route and vitest tests; the look in both themes and languages.
+
+**Outcome** A right-click opens Daoris's own menu, drawn by the page in the shared menu's style, with selected words (copy, search, ask), a link, a code span, then the nearest surface's acts from the owner its ⋯ already has; text fields and the in-app browser keep the engine's menu, the title bar opens the system menu, and elsewhere the engine's is suppressed. Detail: D138 and its build note, `docs/2026-10-03-context-menu-design.md`, `f1b232c9`..`95ec444d`.
+
+
+## CHATTAKE1 — a chat's take is marked on its record (2026-10-03)
+
+> - [ ] **CHATTAKE1 — a chat's take is marked on its record** (service; found by SESSUX1f). `MarkTookAsync` ignores a chat, so a
+> chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
+> Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
+
+**Outcome** A chat's take marks its record `took`, and the ledger refuses to delete a record marked that way as that work's record, so *Delete…* is not offered for it. Detail: D126's "As built (CHATTAKE1)" note, `564b0d4b`, `4ef976b1`.
+
+
+## KNOWUSE2 — a bench for checking a question before it reaches the owner (2026-10-03)
+
+> - [ ] **KNOWUSE2 — a bench for checking a question before it reaches the owner** (tools). Replays the 46 recorded
+> questions through the no-model floor (word search, labelled *words only*) and a model tier on the deployment's own
+> harness, scored against their classes. Contract: D135. Proof: script tests; the model tier is the owner's run.
+
+**Outcome** `tools/question-bench.mjs` replays recorded questions through a words-only floor (a word search over the repository's knowledge and the ask's words, which points at text and never answers) and a model tier on a harness the deployment names, scored per tier against a person's classes, with the number answered in the person's place as the one that must be zero. On the private extract the floor found none of the ten B items at their line and put a hint beside 22 of 25 owner-only items, which is why it stays *words only*. The model tier's real run is the owner's. Detail: D135's KNOWUSE2 note, `09f8d2f4`, `c80838ad`.

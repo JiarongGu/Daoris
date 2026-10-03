@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A staged build could not be renamed into place while Windows scanned it (2026-10-03)
+
+**Symptom.** The deployment rehearsal's first run of UPDATE1's update phase failed at its first step:
+`publish:desktop --stage` exited with `EPERM: operation not permitted, rename` from `update/.staging` to
+`update/staged`, so nothing was staged and every check after it that needed a staged build failed with it.
+The roll-back and the refusal checks, which stage their own, passed.
+
+**Root cause.** `promoteStage` renamed a folder of executables written a moment before. On Windows a folder
+cannot be renamed while something holds a file inside it open, and the virus scanner opens every new
+executable to scan it; the refusal is `EPERM`, and it gives way within seconds. The unit tests stage tiny
+folders of text, which nothing scans, so only the deployed artefact met it, the case study's pattern
+(`docs/2026-09-22-first-deployment-case-study.md`). It never reached main: the merge's gate caught it.
+
+**Fix.** `renameHeld` in `tools/fsx.mjs` tries a rename again while it is refused with `EPERM`, `EACCES` or
+`EBUSY`, and throws any other failure at once. `promoteStage` tries for half a minute, and then copies the build
+into place with its manifest written last: whatever reads `update/staged/` reads the manifest first, so a half
+copy is nothing staged. Ten seconds was not enough: the second run staged once and failed the next stage, a whole
+application with its own Chromium.
+
+**The second defect it hid.** With a swap finally running, the build before it stayed in `update/previous/`:
+the launcher finishes by deleting that folder, which holds the launcher's own running `Daoris.exe` moved there
+mid-swap, and Windows will not delete a running program, so the delete failed silently and a whole old build was
+left until the next update. `StagedBuild.ClearPrevious` removes it once the journal says the swap ended, and the
+application tries at each look until the launcher has gone; never while a swap is under way.
+
+**The third.** After a roll-back the build started again answered nothing on its DevTools port: the rehearsal,
+told why, found the port held by two listening sockets whose owners had exited. The application started the
+launcher, and the launcher the application, with `UseShellExecute = false`, which in .NET always hands the child
+every inheritable handle the parent holds; the engine's DevTools socket is one, so each build after a swap carried
+the sockets of the builds before it and could not bind its own port. Any handle the application held could ride
+into the launcher the same way, one on a file under `app/` among them. Both starts now go through the shell, which
+inherits no handle and still hands the environment (checked with a throwaway program before relying on it).
+
+**Verification.** Rows red first: three in `tools-main.test.ts` (a rename refused twice then let through, one
+refused past its tries, one failing for another reason), one in `desktop-publish.test.ts` (a stage copied into
+place, its manifest last), and one in `InstallUpdaterTests` (the leftover cleared after a finished swap and kept
+during one). The rehearsal's leftover and roll-back checks now wait for what they check, and a read of the window
+that comes back empty says why, down to who holds the port. Then the merge's gates again, the deployment
+rehearsal's update phase among them.
+
 ## A limit reset given as a time of day cooled its account for two minutes (2026-10-02)
 
 **Symptom.** The first real rotation on the install (TOOL4f) moved a refused start to the next account as designed,

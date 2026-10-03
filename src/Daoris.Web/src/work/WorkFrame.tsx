@@ -28,7 +28,7 @@ import { useDraft } from './drafts';
 import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
-import { type ActFacts, offeredActs, primaryAct, stopAsk } from './acts';
+import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
@@ -819,13 +819,22 @@ export function WorkFrame({
     actions.work.pause(pausing.target, () => setPauseAsking(null));
   }, [pausing, pauseQuiet, actions.work]);
   useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
+  const attendedTitle = attended ? sessionTitle(attended, quest, openings[attended.id]) : '';
+  const headPrimary = primaryAct(headActs, grouping);
+  // A right-click on the session's page offers its header's acts, in the order the header draws them (CTX1, D138 §4).
+  const pageMenu = attended && attendedFacts
+    ? {
+      label: attendedTitle,
+      acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy),
+    }
+    : null;
   const pageHead = attended && attendedFacts && (
     <SessionPageHead
       session={attended}
-      title={sessionTitle(attended, quest, openings[attended.id])}
+      title={attendedTitle}
       shown={shownOf(attended, grouping, taking[attended.id])}
       acts={headActs}
-      primary={primaryAct(headActs, grouping)}
+      primary={headPrimary}
       busy={actions.busy}
       onAct={(act) => actions.run(act, attendedFacts)}
       asking={stopAsking === attended.id && live && asked ? (
@@ -968,6 +977,7 @@ export function WorkFrame({
           gutters="session"
           // Pinned at the top while the conversation scrolls under it (D126 §3.2); none with nothing attended.
           header={pageHead || undefined}
+          menu={pageMenu}
           // A remembered session is found in the list, so while the list first loads it is on its way, never
           // *Nothing attended* (audit SE11).
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}

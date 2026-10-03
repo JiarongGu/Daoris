@@ -169,7 +169,30 @@ public sealed class DriverLoop(
 
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
-    public void Nudge() => _watch?.Nudge();
+    public void Nudge()
+    {
+        Interlocked.Increment(ref _nudges);
+        _watch?.Nudge();
+    }
+
+    private long _nudges;
+
+    /// <summary>How many times a route asked the loop to look now: what a test holds "the loop is nudged" by (MSG1d).</summary>
+    public long Nudges => Interlocked.Read(ref _nudges);
+
+    /// <summary>
+    /// Whether an update drains this loop (UPDATE1, D139 §2): the install's <see cref="InstallUpdater.Draining"/>, handed in
+    /// once both exist, and asked by the watch at every look. Null, as in a workspace build, holds nothing.
+    /// </summary>
+    public Func<bool>? Draining { get; set; }
+
+    /// <summary>
+    /// What an update waits on (D139 §2): the driven sessions this loop runs — a quest's, a resume, a carry-on, an intake —
+    /// and the conversations whose turn is in flight. A conversation between turns, a parked session and a terminal are idle.
+    /// </summary>
+    public UpdateWork Work() => new(
+        _watch?.Running.Running ?? 0,
+        Chat is { } chat ? Processes.Running.Count(chat.Taking) : 0);
 
     /// <summary>
     /// A session's console lines, as the page's one event for them. The shape is the page's contract,
@@ -227,6 +250,8 @@ public sealed class DriverLoop(
             parked?.Strikes,
             parked?.Since,
             WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Until, waiting.Stated },
+            // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
+            ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
         };
     }
 
@@ -410,7 +435,11 @@ public sealed class DriverLoop(
         string? lastRegistered = null;
         var failures = new TickErrors();
 
-        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser);
+        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser)
+        {
+            // Asked at every look, so an update staged or put off between looks holds or frees the next one (UPDATE1).
+            Draining = () => Draining?.Invoke() == true,
+        };
         await _watch.RunAsync(
             async (report, ticked) =>
             {
@@ -545,9 +574,19 @@ public sealed class DriverLoop(
     /// </remarks>
     public async Task ComeUpAsync(ServiceClient service)
     {
+        // Words held while a session winds up are tried the moment its record moves here (MSG1d).
+        service.Moved += Words.OnMoved;
         Service = service;
         await eventBus.EmitAsync("DAORIS", "DRIVER_READY", new { Ready = true }).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// What the person's words to a session do, whatever its state (MSG1d, D137 §2): the one judge <c>SESSION_INPUT</c> and
+    /// <c>SESSION_QUEUE</c> answer by, and where words said as a session winds up wait for its record to end.
+    /// </summary>
+    public SessionWords Words => LazyInitializer.EnsureInitialized(ref _words, () => new SessionWords(this));
+
+    private SessionWords? _words;
 
     /// <summary>How often a loop waiting on another driver's lock looks again (DRV8a).</summary>
     public TimeSpan HoldRetry { get; init; } = TimeSpan.FromSeconds(5);
@@ -646,6 +685,7 @@ public sealed class DriverLoop(
     public void Stop()
     {
         _stopping.Cancel();
+        _words?.Dispose();
         try
         {
             _loop?.Wait(TimeSpan.FromSeconds(15));

@@ -4,6 +4,8 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { type OfferShown, pluginGroups, type PluginShown } from './catalog';
 import { PluginList, PluginStrip } from './PluginList';
 
@@ -135,6 +137,29 @@ describe("the plugin list's strip", () => {
     expect(marks[2]).toHaveAttribute('aria-current', 'true');
     // Offers are not on the strip: the strip holds what this machine has.
     expect(container.textContent).not.toMatch(/In-app/);
+  });
+
+  /** CTX1 (D138, design §4): a plugin's row offers what it does: opening it, an offer's Install, and its id. */
+  it('offers Open, an offer’s Install and its id on a right-click', async () => {
+    const copy = vi.fn();
+    const onChoose = vi.fn();
+    const onInstall = vi.fn();
+    render(<PluginList groups={GROUPS} chosen={null} onChoose={onChoose} onInstall={onInstall} />);
+    render(<ContextMenus doors={{ copy }} />);
+
+    rightClick(screen.getByRole('button', { name: /Acme gate/ }));
+    expect(await menuActs('Actions for Acme gate')).toEqual(['Open', 'Copy plugin ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Copy plugin ID' }));
+    expect(copy).toHaveBeenCalledWith('acme.gate');
+
+    rightClick(screen.getByRole('button', { name: /^In-app browser/ }));
+    expect(await menuActs('Actions for In-app browser')).toEqual(['Open', 'Install', 'Copy plugin ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Install' }));
+    expect(onInstall).toHaveBeenCalledWith('in-app-browser');
+
+    rightClick(screen.getByRole('button', { name: /^In-app browser/ }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Open' }));
+    expect(onChoose).toHaveBeenCalledWith('offer:in-app-browser');
   });
 
   it('chooses the plugin a mark names', async () => {

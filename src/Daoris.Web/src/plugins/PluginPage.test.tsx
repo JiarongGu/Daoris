@@ -4,6 +4,8 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
@@ -248,5 +250,35 @@ describe("the plugins' main area without a page", () => {
   it('says the sentence in place where the list has never had an answer', () => {
     render(<PluginMainNotice state="unanswered" sentence="This machine did not answer in time." />);
     expect(screen.getByText('This machine did not answer in time.')).toBeInTheDocument();
+  });
+});
+
+/** CTX1 (D138, design §4): a plugin's page on a right-click offers its header's acts, as its buttons press them, then its id. */
+describe("a plugin's page on a right-click", () => {
+  it('offers its switch, Try, Update… and Remove…, then its id, each pressed as its button is', async () => {
+    const copy = vi.fn();
+    const calls = page();
+    render(<ContextMenus doors={{ copy }} />);
+    const onPage = () => rightClick(screen.getByRole('heading', { level: 1, name: 'Acme gate' }));
+
+    onPage();
+    expect(await menuActs('Actions for Acme gate')).toEqual(['Turn off', 'Try', 'Update…', 'Remove…', 'Copy plugin ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Turn off' }));
+    expect(calls.onSwitch).toHaveBeenCalledWith('acme.gate', 'disable');
+
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Remove…' }));
+    expect(calls.onAskRemove).toHaveBeenCalledWith('acme.gate');
+
+    onPage();
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Copy plugin ID' }));
+    expect(copy).toHaveBeenCalledWith('acme.gate');
+  });
+
+  it('offers no Remove… while its ask stands, and no Try where the shell has no kit', async () => {
+    page({ asking: true, canTry: false, plugin: { ...PLUGIN, enabled: false, source: undefined } });
+    render(<ContextMenus doors={{ copy: vi.fn() }} />);
+    rightClick(screen.getByRole('heading', { level: 1, name: 'Acme gate' }));
+    expect(await menuActs()).toEqual(['Turn on', 'Copy plugin ID']);
   });
 });

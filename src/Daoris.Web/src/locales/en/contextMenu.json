@@ -1,0 +1,16 @@
+{
+  "contextMenu.label": "Actions here",
+  "contextMenu.for": "Actions for {{name}}",
+  "contextMenu.act.copy": "Copy",
+  "contextMenu.act.search": "Search Daoris for it",
+  "contextMenu.act.ask": "Ask Daoris about it",
+  "contextMenu.act.open": "Open",
+  "contextMenu.act.openInBrowser": "Open in Daoris's browser",
+  "contextMenu.act.copyLink": "Copy link",
+  "contextMenu.act.copyQuest": "Copy quest ID",
+  "contextMenu.act.copyAsk": "Copy ask ID",
+  "contextMenu.act.copyPlugin": "Copy plugin ID",
+  "contextMenu.act.copyRepository": "Copy repository name",
+  "contextMenu.act.copyPath": "Copy path",
+  "contextMenu.copied": "Copied {{what}}."
+}

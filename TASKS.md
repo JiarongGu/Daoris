@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1094 service and 66 HTTP host, 3703 driver,
-597 desktop modules, 80 devkit, 2844 web unit, 24 Playwright**, 114/114 release rehearsal, **357/357
-family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
+**Counts, and this is their one home:** seventeen commands, **1103 CLI tests, 1097 service and 66 HTTP host, 3833 driver,
+636 desktop modules, 80 devkit, 2939 web unit, 24 Playwright**, 114/114 release rehearsal, **357/357
+family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -190,30 +190,128 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
 - [ ] **KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it** (web, driver, modules; after
   KNOWUSE1a). The session page of a park that asked go-aheads shows them with *Approve* and *Refuse*, and answering
   there also answers the park: one press, not two. Contract: D135 §2, its KNOWUSE1a note. Proof: vitest; a driver test.
-- [ ] **KNOWUSE2 — a bench for checking a question before it reaches the owner** (tools). Replays the 46 recorded
-  questions through the no-model floor (word search, labelled *words only*) and a model tier on the deployment's own
-  harness, scored against their classes. Contract: D135. Proof: script tests; the model tier is the owner's run.
-- [ ] **KNOWUSE3 — the review beside each item** (web, driver; held on KNOWUSE2). Says which tier found each hint and never
+- [ ] **KNOWUSE2b — the 46 through the bench** (the owner's). The 46 go through the floor against the work repository's
+  own knowledge and through the model tier on the install's harness, with the account the owner chooses. KNOWUSE3 waits
+  until the count answered in the person's place is zero. Contract: D135 §6 and its KNOWUSE2 note, whose command lines
+  run it. Proof: the report's numbers, in a note under D135.
+- [ ] **KNOWUSE3 — the review beside each item** (web, driver; held on KNOWUSE2b). Says which tier found each hint and never
   answers in the owner's place. Contract: D135. Proof: stories; the look.
 - [ ] **KNOWUSE4 — a request the owner may publish to the work repository** (the owner's). Its comparison document
   records a misread answer as *the owner also settled the calculation*; correct it, and reconcile its *fix the config,
   not the shared component* rule with the owner's *add it into the common-report module*. Contract: the evidence §4.
 
 
+### Every language the window speaks (owner, 2026-10-03) — D142
+
+> *"I saw the mention of session input English today, but we should be building a multi language support"*
+
+Read from the install the same day: all 70 session records carry a note that opens with a line the driver wrote in
+English (*the quest reached done.*, *exited without touching its quest.*, *It stopped with its quest still taken, to
+ask you:*), which a 中文 window shows as written; the page words a few by code (D126's verdicts, MSG1f's reasons) and
+lets *the driver's words stand* elsewhere. The driver writes about 35 such lines across 10 files, most in
+`Observation.cs`.
+
+- [ ] **LANG1 — what Daoris says, in the reader's language** (design; D142). Which text is Daoris's (a code and its
+  values, worded by the page from both catalogues; the English kept for the terminal and the log) and which is
+  someone's words (the agent's question, the person's words: shown as written); the record's shape for both; a twin
+  table holding every code the driver can write against both catalogues, so a new line fails a test until it is
+  worded; old records without a code; and what language Daoris writes to an agent in, and asks it to write back to
+  the person in. Contract: translation-parity, D116, D41. Proof: the design and its decision.
+- [ ] **LANG1a — the driver writes its lines as codes** (driver, service; after LANG1 and MSG1c). Every note the driver
+  writes carries its code and values beside the English. Proof: the twin table's driver half; every note site covered.
+- [ ] **LANG1b — the page words every line** (web-shell; after LANG1a). The session head, the quest page and the
+  conversation word each code in both catalogues; *the driver's words stand* is retired for a known code. Proof: the
+  twin table's page half, i18n parity, the look in 中文.
+- [ ] **LANG1c — a session writes to the person in their language** (driver, modules, web-settings; after LANG1). The
+  owner: *"so the UI language and session language should be able to set differently this is more like system level
+  or usage level"*, and *"because session itself is bind to the work and the ui is bind to the user"*. The UI language
+  is the user's (system level); the session language (what a session is asked to write its questions and closing
+  notes in) is the work's (usage level): set on the workspace, the repository or the ask as LANG1 decides, never the
+  machine's or the viewer's, at both doors; today's behaviour until it is set. Proof: a prompt test; the canary on the
+  install.
+
+- [ ] **LANG1c2 — Ask Daoris proposes a session language** (service, driver; after LANG1c). The driver judges
+  `language`, but the service's setting writer does not list it, so Ask Daoris's door is owed. Contract: D142 point 7
+  and its LANG1c note. Proof: rows in `HelpSettingProposalTests`; the driver's `Doors` equal the service's; both owed
+  rows in `HelpCoverageTests` become a door.
+
+### The horizon after: work that proves itself (an outside analysis, reviewed 2026-10-03)
+
+The owner brought an outside future-directions analysis (`docs/DAORIS_FUTURE_DIRECTIONS.md`: *"this is some
+suggestion from analyze for direction and you can review and update our roadmap and TASKS"*). Reviewed against the
+record: 18 of its sections exist, 38 partly, 15 are new, 2 conflict (routing by outcome with D130, speculative
+execution with D46). The review is `docs/2026-10-03-future-directions-review.md`; ROADMAP's horizon section points
+to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
+
+- [ ] **TRACE1 — one read from a commit back to its ask** (driver, modules). Six stores hold a change's provenance and
+  nothing reads them together. `daoris-driver trace <commit|session|quest>` prints the chain from landings, session
+  records, quest operations, the ask's words and the rules handed, a missing link said missing. Contract: review §3;
+  a decision making the analysis's §66 a rule (a choice keeps the facts it was made from). Proof: driver tests on
+  stand-in records; `HelpCoverageTests`.
+- [ ] **TRACE1b — what the trace cannot reach yet** (driver, service, modules, web-shell; found by TRACE1). A screen
+  door: a trace section on a session's and a quest's page through a modules route calling the driver's `Trace`, both
+  languages. And the links it could not read: the rules handed kept past a run's end; a local door to one quest's
+  operations; a merge landing naming its merge commit; a carry-on's link kept on the record. Contract: D143 and its
+  TRACE1 note. Proof: route, driver and service tests; vitest and stories; the look.
+- [ ] **EVID1 — evidence Daoris checks, not the agent's word** (design first; service, driver). Since D133 a done
+  answers each requirement, and a met answer is unchecked. A requirement's check may name a file the done's branch
+  holds or a declared gate; a met answer without it holds the quest as a departure does. Contract: review §3,
+  amending D133 §4. Proof: the design, then its rows.
+- [ ] **EVID1a — a requirement names a path, and a met answer waits for its reading** (service; after DRIFT1d). Add
+  `evidence` at the three publish doors (a `gate` is refused, naming EVID1d). A met answer on one holds its done, and
+  `POST /api/quests/{id}/evidence` keeps an `Evidenced` verdict: found lifts the hold and publishes the step, missing
+  keeps it. Contract: the evidence design §2–§3, §6, D144. Proof: `QuestEvidenceTests`, `QuestSyncTests`,
+  `LocalHostTests`, `McpToolsTests`, `SharedHostTests`.
+- [ ] **EVID1b — the driver reads the evidence when the session ends** (driver; after EVID1a). In `conclude`, read each
+  path at the tree's `HEAD`, post the verdict and keep it in the record. The instruction names each path, the intake
+  asks for them, and the sweep and `daoris-driver quest check <id> [--commit]` read the rest. Contract: design §2–§3,
+  §5. Proof: `EvidenceCheckTests` over git fixtures, `RequirementsHandedTests`, the goldens, `TraceTests`,
+  `DriverCommandTests`, the family rehearsal's phase 7.
+- [ ] **EVID1c — the quest page shows the evidence and the hold's cause** (web-shell, driver; after EVID1b and
+  DRIFT1d2). Each requirement's evidence with its result and commit, whether a met answer was read or rests on the
+  session's word, and *Check again* beside the yes, both languages; Ask Daoris gets a check card. Contract: design
+  §5–§6. Proof: stories, vitest, both catalogues, `HelpCoverageTests`, the look.
+- [ ] **EVID1d — a gate as evidence, read from the queue** (driver, service; after DEV5, DEV7 and EVID1b). Accept
+  `gate`: the queue's gate set gains every gate a requirement names, and the check reads the landing's verdict per gate
+  and path evidence at the landed merge; a repository off the queue reads `no-queue`. Contract: design §4. Proof: the
+  queue's tests with a stand-in gate, the family rehearsal's queue phase.
+- [ ] **CONTEXT1 — what a session was handed, section by section** (driver, web-shell). The instruction is kept as one
+  event; keep each section's size, source and what its bound left out beside it, shown on the session's page and at
+  a terminal door. Contract: review §3; a note on D127. Proof: `TargetPromptGoldenTests` gaining the account; vitest;
+  the look.
+- [ ] **OUTCOME1 — an outcome per quest, from the records** (tools). The usage report gains each quest's sessions,
+  carry-ons, answers, departures, strikes, limits apart and how it closed, derived with no new store; a report, never
+  a gate (D54), absent never zero (D57). Contract: review §3. Proof: script tests over a fixture home; the owner's
+  install read once.
+- [ ] **AFTER1 — a chain step after several quests** (held until an ask needs it; service, driver). A step names the
+  quests it starts after, and the planner holds it saying which are open, as data on the quest. Contract: review §3,
+  amending the intake design §1g's linear chain. Proof: the trigger, then service and planner tests.
+
 ### The desktop's own surfaces (owner, 2026-10-03)
 
-- [ ] **CTX1 — the desktop's right-click menu** (owner, 2026-10-03: *"we do need to utilize the right click menu of daoris
-  desktop"*). Today a right-click shows the engine's default menu, or nothing; give each surface (a session row, a quest,
-  a repository, a plugin, selected text, a link) its own acts there, the same acts its ⋯ offers, from one owner. Contract:
-  a short design (D41's interaction rules amended). Proof: route and vitest tests; the look in both themes and languages.
 - [ ] **PLUGUI2 — the plugins page and a plugin's icon** (owner, 2026-10-03: *"plugin page design (and plugin icon)"*). The
   page reads as a list of manifests; design it as a catalogue (installed, Daoris's own, available) with each plugin's
   icon, declared in its manifest with a generated fallback. Contract: a short design (D64, D120 amended). Proof: stories,
   the manifest's twin tables, the look.
+- [ ] **PLUGUI2b — the host answers a plugin's icon** (modules; found by PLUGUI2). `DriverModule.Plugins.cs`'s
+  `PLUGINS` adds `icon` and `iconProblem` to each plugin and offer through `PluginIcon.Read(entry.Folder,
+  entry.Manifest)`; until then every plugin wears its monogram. Contract: D140 point 5, the catalogue design §3.2.
+  Proof: a `DriverModulePluginPageTests` case with an SVG and a bad icon; the look.
+- [ ] **LOOK6 — `bg-sunken` draws nothing** (web-shell; found by PLUGUI2). 13 files ask for `bg-sunken` (the ask boxes,
+  the plugin page's *Remove…* box) and `tokens.css` defines no sunken colour, so those boxes have no background in
+  either theme. Define it in all four theme blocks and `@theme`, or move the boxes to a colour that exists. Contract:
+  D41's tokens, `tokens.test.ts`. Proof: a token test that every `bg-*` a source names is defined; the look in both
+  themes.
 - [ ] **LAYOUT11 — content that does not size with its pane** (owner, 2026-10-03: *"some page content still not auto
   sizing with the outer like quest body and plugin detail"*). A quest's body and a plugin's detail keep a fixed measure
   inside a wider or narrower pane. Find every such surface by looking at 1280, 888 and 680, and size each by its pane
   (D41 §3's measure kept for prose only). Contract: D41 §3, the working-surface components. Proof: the look before and after.
+  **Seen on the install, 2026-10-03** (1600 × 900, dock hidden, 中文): a quest's title spans the pane and its body is a
+  456px column, `max-w-prose` on the body's `<p>` (`QuestPage.tsx`), with ~750px empty beside it; a plugin's detail wraps
+  its description and data-folder note at that column and its source line at the pane's edge, two widths on one page;
+  65ch holds ~32 CJK glyphs, so 中文 wraps at half the words (`…由你决定是否删` / `除。`). 27 files carry `max-w-prose`,
+  and platform-ux §2 and §5 set *prose at 65ch*, which the owner's words amend: a decision (D141), the rule set in one
+  place, then the sweep. After PLUGUI2 and MSG1f land, which hold `plugins/` and `work/`.
 
 ### Sessions that are easy to manage (owner, 2026-10-02) — D126
 
@@ -233,20 +331,54 @@ owner on 1 October.
 - [ ] **CARRY1 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
   cut-off without asking whose take the quest is, so a start that failed before its take carries on over someone else's.
   Contract: D80, D126's SESSUX1b2 note. Proof: a ledger row refused, seen failing first.
-- [ ] **CHATTAKE1 — a chat's take is marked on its record** (service; found by SESSUX1f). `MarkTookAsync` ignores a chat, so a
-  chat that took and worked a quest reads as serving none, and SESSUX1f's delete would remove that work's record.
-  Contract: D126 §5.4, its SESSUX1f note. Proof: a ledger test refusing to delete a chat that took a quest, failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **MSG1b — a driven session goes on with words, on both doors** (driver). The planner's `continuing` verdict takes
-  a record with words waiting, the judgement gains §2.2's rows and `elsewhere`, and a native run resumes while words
-  are held. Contract: §2.1, §2.2, §2.3. Proof: `ContinuationTests`, the plan tests, `NativeResumeTests`, a `Process`
-  tick (the parent's).
+- [ ] **CHATTAKE1b — a pipe-door chat is handed its session** (driver; found by CHATTAKE1). `Spawning.ChatInRoot` sets no
+  `DAORIS_SESSION_ID`, so a repository chat on the pipe door speaks for no session: its take marks nothing and its
+  publish names no session. Contract: D126's CHATTAKE1 note. Proof: a chat spawn's environment carries its session id.
+- [ ] **CHATTAKE1c — the refusal of a chat's delete names no quest** (web-shell; found by CHATTAKE1).
+  `errors.SESSION_SERVED_QUEST` says `#{{quest}}`, and a chat that took a quest refuses with none, so the sentence
+  reads `#`. Give it a form with no quest. Reached by a delete that races a take, or by SESSUX1h. Contract: D126's
+  CHATTAKE1 note. Proof: both catalogues and a vitest row.
 - [ ] **MSG1c — a chat keeps its conversation and goes on** (driver). A chat keeps its id on both doors, an ended chat
   reopens with the words, and a `promptQueueing` chat takes words at the next step. Contract: §2.1, §2.2, §4.2. Proof:
   `HarnessConversationsTests`, chat tests on a protocol stub, the stop's *not kept* line.
-- [ ] **MSG1d — every door's words reach the record** (modules). `SESSION_INPUT` and `SESSION_QUEUE` answer for every
-  state, the loop is nudged, said, taken and went events are written, and the log gains its lines. Contract: §3, §5.3.
-  Proof: `DriverModuleConversationTests`, `DriverModuleAddedTests`, `SessionEventsTests`, `SessionLogTests`.
+- [ ] **MSG1c2 — an ended chat's words after a restart, and its end announced** (driver, modules; found by MSG1c). Words
+  kept on an ended chat while no shell ran wait until another word is said: the shell's start takes them up. A chat
+  taken up by itself announces its end (`SESSION_ENDED`), which the modules subscribe to. The *it may have read what
+  you added* line gets a code the page words (with LANG1a). Contract: D137's MSG1c note. Proof: driver and modules
+  tests; `ChatGoesOnProcessTests` (the parent's).
+- [ ] **MSG1c3 — the lost line has a code** (driver, web-shell; found by LANG1a). A stop while the person's words are on
+  their way writes *it may have read what you added; its answer was not kept* as an English conversation event, which
+  the page cannot word. Give the event a code the page words as `work.conversation.lost`. Contract: D137's MSG1c2 note,
+  the language design §9. Proof: a `ChatTurns` row; a `ConversationView` vitest row in both catalogues.
+- [ ] **MSG1d2 — a chat's waiting words are record events** (driver, web-shell; with MSG1c). A queued chat word is
+  written with an id and its reach, taken under that id, and a withdrawn word says so, so a restart loses nothing.
+  Contract: §3.1, D137's MSG1d note. Proof: `ChatTurns` tests, `conversation.test.ts`.
+- [ ] **MSG1d3 — a resumed run is handed the files said with the words** (driver; found by MSG1d). Files are kept
+  under the home and named on the record, but the resumed prompt passes only the words. Contract: §2.4. Proof: a
+  continuation test whose prompt names the kept files.
+- [ ] **MSG1d4 — words held while a session winds up survive a restart** (modules; found by MSG1d). The shell holds
+  them until the record keeps them, and a restart in that moment loses them. Contract: D137's MSG1d note. Proof: a
+  modules test across a new `SessionWords`.
+- [ ] **MSG1f2 — what the box needs from the modules** (modules, driver; found by MSG1f). A `SESSION_START_FROM` route
+  that starts a conversation with a record's words and takes them off it naming the new session (the page joins
+  `START_CHAT` and `SESSION_INPUT` with an English preface today); `SESSION_QUEUED` carrying `reaches` and `why`, so
+  the page need not ask again on each move; and `SessionGroups.Read` answering *going on* for an ended record and
+  *Resumes later* with what holds the words. Contract: §3.1, §5.3, D137's MSG1f note. Proof: modules and driver
+  tests; the page's fallbacks retired.
+- [ ] **MSG1e2 — the shell's loop answers a terminal's words with the screen's judge** (modules; found by MSG1e). The
+  shell's watch takes a say with the driver library's `LoopWords` and neither its record nor its nudge, so a terminal's
+  words are not shown at once, wait for the next look, never reach a conversation the window runs, and are asked again
+  rather than held while a session winds up. Hand the watch `Say` through `SessionWords.SayAsync(…, door: "terminal")`,
+  and let `SessionWords.Never` read the driver library's `WordsNever`, so the nevers have one source. Contract: D137's
+  MSG1e note, design §5.2. Proof: modules tests for a say to a running chat and to a session winding up.
+- [ ] **MSG1e4 — the headless loop keeps a terminal's words to a running session on its ask** (driver; found by MSG1e2).
+  `LoopWords` holds words at a running session's inbox but never posts them to `/added`, so they miss the ask the shell
+  now keeps them on. Contract: D133 §1, D137's MSG1e2 and MSG1c2 note. Proof: a `SessionsSayCommandTests` row.
+- [ ] **MSG1e3 — the family rehearsal says words from a terminal** (tools; after MSG1c). With the headless loop
+  running, `sessions say` to an ended stub session exits 0 with *going on* and the record works again; to the intake,
+  exits 1; before the loop starts, a say is held and the first look takes it. Contract: D137's MSG1e note. Proof: the
+  phase.
 - [ ] **MSG1e — `daoris-driver sessions say`** (driver). The verb through the request folder, its one line and its exit
   codes, and Ask Daoris's exemption. Contract: §5.2, §5.4. Proof: `SessionsCommandTests`, `HelpCoverageTests`, the
   room's goldens.
@@ -278,16 +410,31 @@ owner on 1 October.
   1. **Republish** at the first moment no session runs (the watcher on the drill-down quest says when), carrying
      ANSWER1a–c, DRIFT1, TOOL6c and TOOL4g; or, on the owner's word, stop the running one and republish now.
   2. **ANSWER1d**, below: answer the next park on the install and see the same row go on.
-  3. **ANSWER1e**, below, and **UPDATE1**, so the next fix never waits on a free moment again.
+  3. **ANSWER1e**, below. **UPDATE1** is built (2026-10-03), so the next fix need not wait on a free moment: its first
+     install is a publish in place, and every one after it is staged (UPDATE1c).
 - [ ] **ANSWER1d — the canary on the install** (the parent's, after the republish). One park answered on the install shows
   one row, the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
 - [ ] **ANSWER1e — the map and Ask Daoris read an answered park** (web-shell; found by ANSWER1c). The map's *parked* mark
   (`map/topology.ts`) and Ask Daoris's waiting count (`help/machine.ts`) still count an answered park for up to one look.
   Contract: answer-continues design §5. Proof: `topology.test.ts` and the help machine test read `answeredPark`.
-- [ ] **UPDATE1 — the install updates when its work allows** (found 2026-10-03: four republishes waited on running
-  sessions). *Update when idle*: the desktop starts no new session, lets the running ones end or park, then installs the
-  new build and starts again, saying so; a session cut by an update is carried on, never lost. Contract: a short design
-  (D62, D93 amended). Proof: the deployment rehearsal's update phase; the look.
+- [ ] **UPDATE1b — Settings shows the install's update** (web-settings; found by UPDATE1). The banner is the screen's
+  only door; Settings shows what is staged, the last swap and the three words, read from `DAORIS.UPDATE`. Contract:
+  D139, the update design §6. Proof: a web-settings test over the mocked bridge; a shot on an install with a staged
+  build.
+- [ ] **UPDATE1d — `STATE` keeps the last swap** (modules, web-shell; found by UPDATE1b). `InstallUpdater.Dismiss()`
+  clears the outcome, so after a dismissal or a later start Settings cannot show the last swap the terminal still
+  shows from the journal (D50). Answer `last` from the journal's record, told or not; add it to `UpdateState`.
+  Contract: D139's UPDATE1b note, the update design §6. Proof: `UpdateModuleTests` (a state after `Dismiss` still
+  carrying `last`); the row on the install.
+- [ ] **UPDATE1e — Ask Daoris's coverage sees the update's words** (driver, web-shell; found by UPDATE1b).
+  `HelpCoverageTests` reads only hooks exported as `export const use…`, and `bridge/update.ts` exports `export
+  function`, so *Update when idle*, *Update now* and *Not now* on Settings → Driver are not accounted for (D110). Teach
+  the reader both forms and answer `useSayUpdate` (exempt, most likely: an update is the person's act on the
+  application). Contract: D110, D139. Proof: `HelpCoverageTests` failing on the unaccounted hook first.
+- [ ] **UPDATE1c — the install's first staged update** (the parent's, after the first publish in place carrying
+  UPDATE1). Stage the next build with `publish:desktop --stage` while a session works, and see the drain, the swap, the
+  confirmation and the banner's outcome, light and dark, en and 中文. Contract: D139. Proof: the run; `update.*` lines in
+  the machine log.
 - [ ] **DRIFT1c2 — the family rehearsal drives a requirement** (tools; after DRIFT1c). Teach the stub intake to publish
   one quote the person said and to see one they never said refused, through the real host and the sync wire. Contract:
   D133's DRIFT1c note. Proof: the family rehearsal's intake phase.
@@ -520,6 +667,19 @@ the ACP door, not a registry**.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
+- [ ] **TOOL6e — the screen says which account the next start takes, and why** (modules, web-settings, driver; the owner,
+  2026-10-03: *"I switched to local default for [the work account] since this does have more usage left but I don't see
+  Daoris auto switch to this?"*). The work account was already first in lumachain and had just come out of a cool-off,
+  nothing was running, and the owner's switch was the tool's own sign-in, which lumachain does not use; none of that
+  was on the screen. Each workspace's accounts say which account the next start takes and the walk's step that chose it
+  (*least recently started*, *weekly reset within a day*, *cooling until …*), when a cool-off ended, and that the tool's
+  own sign-in carries only work outside the workspace's list. Contract: D130 §3–§4, D125 §2.3. Proof: a driver test of
+  the walk's reason; route and vitest tests; the look on the install.
+- [ ] **TOOL6f — `agent list` says the next start's steps beneath each list** (cli; found by TOOL6e). The screen names
+  the next start's account, but `agent list` prints each list without a *next start* line, which only `profile use`
+  prints; the CLI reads no session record, so it cannot name the account itself. Contract: D130's TOOL6e note, the
+  account-use design §16.4. Proof: `toolchain.test.ts` rows for `agent list` with the line and its pointer to
+  Settings → Agents.
 - [ ] **TOOL4l — Ask Daoris's account doors, the service's half** (service, driver; found by TOOL4g). `agent_propose`
   writes `use` (with `use`, `keep`, `early`, `near`), `order` and `ready`, and the setting writer lists `cooloff`, so the
   cards the screen's controls owe can be offered. Contract: D125 §6, D130 §9, §16.6. Proof: the proposal-kind tests with

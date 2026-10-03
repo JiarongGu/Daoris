@@ -157,6 +157,7 @@
   "work.act.resumeQuest": "Resume quest",
   "work.sitting.Paused": "{{why}}",
   "work.sitting.Paused_quest": "{{why}}",
+  "work.sitting.forUpdate": "{{why}}",
   "work.scope.ask": "ask #{{id}}",
   "work.scope.quest": "quest #{{id}}"
 }

@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import i18n from '../i18n';
 import type { Quest, Session, SessionState } from '../api';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import type { SessionGrouping } from './groups';
 import { SessionRow } from './SessionRow';
 
@@ -390,6 +392,29 @@ describe("a row's acts", () => {
 
     await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
     expect(act).toHaveBeenCalledWith('stop', 's1a2b3c4');
+  });
+
+  /** CTX1 (D138, design §4): a right-click on the row offers its ⋯'s acts, the one list, and reports the act the same way. */
+  it('offers the same acts on a right-click, named for the session', async () => {
+    const act = vi.fn();
+    render(
+      <>
+        <ContextMenus doors={{ copy: () => {} }} />
+        <ul>
+          <SessionRow session={session({ kind: 'chat', state: 'completed' })} opening="Cap the hydration" acts={['review', 'archive', 'copy']} onAct={act} />
+        </ul>
+      </>,
+    );
+    rightClick(screen.getByText('Cap the hydration'));
+    expect(await menuActs('Actions for Cap the hydration')).toEqual(['Review', 'Archive', 'Copy session ID']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Archive' }));
+    expect(act).toHaveBeenCalledWith('archive', 's1a2b3c4');
+  });
+
+  it('a row with nothing to report offers nothing to a right-click', () => {
+    render(<><ContextMenus doors={{ copy: () => {} }} /><ul><SessionRow session={session({ kind: 'chat' })} opening="Cap" acts={['copy']} /></ul></>);
+    rightClick(screen.getByText('Cap'));
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
   it('offers no menu where it is handed no act, or nowhere to report one', () => {

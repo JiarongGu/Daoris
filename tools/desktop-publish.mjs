@@ -8,6 +8,9 @@
  *   node tools/desktop-publish.mjs --to <folder> --service  …and the HTTP host beside it, with its bundle
  *   node tools/desktop-publish.mjs --to <folder> --beside   …into a folder that holds other things —
  *                                                           the repositories it drives, typically
+ *   node tools/desktop-publish.mjs --to <install> --service --stage
+ *                                                           …beside a running install, in update/staged/,
+ *                                                           which the desktop installs when idle (D139)
  *
  * 🔴 **`--to` is required and has no default.** A machine path in a tracked file is exactly what
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
@@ -36,12 +39,13 @@
  * the folder is self-sufficient.
  */
 import { execSync } from 'node:child_process';
+import { createHash, randomBytes } from 'node:crypto';
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
 import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
-import { copyTree, isMain } from './fsx.mjs';
+import { copyTree, isMain, renameHeld } from './fsx.mjs';
 import { running } from './processes.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -362,10 +366,145 @@ export async function layCli(tarball, install) {
 }
 
 /**
- * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
- * creates on first start. Nothing else in that folder is ever this script's to touch.
+ * Where `--stage` puts a build beside an install (UPDATE1, D139 §1), as path segments: `update/`, which the stage and the
+ * launcher's swap own, and `update/staged/` inside it, renamed into place whole. A twin of `StagedBuild.Folder`,
+ * `StagedBuild.Staged`, `StagedBuild.Manifest`, `StagedBuild.Journal` and `StagedBuild.Schema`
+ * (`src/Daoris.Desktop/Daoris.Desktop.Driver/StagedBuild.cs`, which the launcher compiles); `desktop-publish.test.ts`
+ * reads that file for every spelling here.
  */
-export const OWN = Object.freeze([LAUNCHER, SHELL_HOME[0], HOME, MARKER]);
+export const STAGE = Object.freeze(['update']);
+export const STAGED = Object.freeze([...STAGE, 'staged']);
+export const BUILD_MANIFEST = 'build.json';
+export const SWAP_JOURNAL = 'swap.json';
+export const MANIFEST_SCHEMA = 1;
+
+/** What every staged build must carry, by its manifest paths: `StagedBuild.Required`, in its order. */
+export const STAGED_REQUIRED = Object.freeze([LAUNCHER, MARKER, `${SHELL_HOME[0]}/${SHELL_EXE}`, `${SHELL_HOME[0]}/Daoris.Desktop.App.dll`]);
+
+/** A swap's phases that mean it is under way: a stage then would move files out from under the launcher. */
+const SWAPPING = Object.freeze(['swapping', 'started', 'confirmed']);
+
+/**
+ * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
+ * creates on first start, and `update/`, which `--stage` and the swap own (D139). Nothing else in
+ * that folder is ever this script's to touch.
+ */
+export const OWN = Object.freeze([LAUNCHER, SHELL_HOME[0], HOME, MARKER, STAGE[0]]);
+
+/** A staged build's id: its moment in UTC and eight random hex digits, so two stages in one second differ. */
+export function buildId(at = new Date()) {
+  const stamp = at.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
+  return `${stamp}-${randomBytes(4).toString('hex')}`;
+}
+
+/**
+ * The manifest of the build under `root` (D139 §1, §4): every file but the manifest itself, by its path with `/`, its size
+ * and its SHA-256, in one order, under the build's identity. What the application and the launcher check before anything
+ * is replaced.
+ */
+export function stagedManifest(root, { id, version, commit = null, at }) {
+  const files = [];
+  const walk = (folder, prefix) => {
+    for (const entry of readdirSync(folder, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const full = join(folder, entry.name);
+      if (entry.isDirectory()) {
+        walk(full, relative);
+      } else if (relative !== BUILD_MANIFEST) {
+        const bytes = readFileSync(full);
+        files.push({ path: relative, size: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') });
+      }
+    }
+  };
+  walk(root, '');
+  files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  return { schema: MANIFEST_SCHEMA, id, version, commit, at, files };
+}
+
+/** Write the build's manifest into `root`: beside, then renamed, LF. */
+export function writeManifest(root, identity) {
+  const target = join(root, BUILD_MANIFEST);
+  const staging = `${target}.writing`;
+  writeFileSync(staging, `${JSON.stringify(stagedManifest(root, identity), null, 2)}\n`);
+  renameSync(staging, target);
+  return target;
+}
+
+/**
+ * What stops `--stage` (D139 §1), as the sentence to print, or null: a folder that is no install this script published, a
+ * swap the launcher has under way, and an install carrying its HTTP host staged without `--service`, which would leave the
+ * install without one. A running install is not refused: staging beside it is what the flag is for.
+ */
+export function stageRefusal(to, { service = false } = {}) {
+  if (!existsSync(to) || !isInstall(to)) {
+    return `desktop-publish: --stage stages a build beside an install this script published, and \`${to}\` is not an install.\n`
+      + '  Publish into it first, or point --to at the install the desktop runs from.';
+  }
+
+  const journal = join(to, ...STAGE, SWAP_JOURNAL);
+  if (existsSync(journal)) {
+    let phase = null;
+    try {
+      phase = JSON.parse(readFileSync(journal, 'utf8'))?.phase ?? null;
+    } catch {
+      // A journal that does not read is no swap under way: the launcher reads it the same way.
+    }
+    if (SWAPPING.includes(phase)) {
+      return `desktop-publish: the launcher has a swap under way in \`${to}\` (${phase}); stage again once Daoris has started on it.`;
+    }
+  }
+
+  if (!service && existsSync(join(to, ...HOST_HOME, HOST_EXE))) {
+    return `desktop-publish: \`${to}\` carries its HTTP host, so the staged build must too — stage it with --service, or the update\n`
+      + '  would leave the install without one.';
+  }
+  return null;
+}
+
+/**
+ * The finished staging folder into `update/staged/`, replacing whatever was staged before, whole. A folder of fresh
+ * executables: Windows refuses its rename while something still holds a file in it, the scanner most often (UPDATE1),
+ * so the rename is tried for half a minute, and then the build is copied into place with its manifest written last.
+ * Whatever reads `update/staged/` reads the manifest first, so a half copy is nothing staged, never a broken build.
+ */
+export function promoteStage(staging, install, { rename, tries = 150, waitMs = 200, copied = () => {} } = {}) {
+  const staged = join(install, ...STAGED);
+  rmSync(staged, { recursive: true, force: true });
+  try {
+    renameHeld(staging, staged, { tries, waitMs, ...(rename ? { rename } : {}) });
+    return staged;
+  } catch (error) {
+    if (!['EPERM', 'EACCES', 'EBUSY'].includes(error?.code)) throw error;
+  }
+
+  const copyInto = (from, to, at) => {
+    mkdirSync(to, { recursive: true });
+    for (const entry of readdirSync(from, { withFileTypes: true })) {
+      const path = at ? `${at}/${entry.name}` : entry.name;
+      if (!at && entry.name === BUILD_MANIFEST) continue;
+      if (entry.isDirectory()) copyInto(join(from, entry.name), join(to, entry.name), path);
+      else {
+        copyFileSync(join(from, entry.name), join(to, entry.name));
+        copied(path);
+      }
+    }
+  };
+  copyInto(staging, staged, '');
+  copyFileSync(join(staging, BUILD_MANIFEST), join(staged, BUILD_MANIFEST));
+  copied(BUILD_MANIFEST);
+  // The staging folder is spent either way; one still held is cleared by the next stage, which starts by removing it.
+  try {
+    rmSync(staging, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  } catch {
+    // Left for the next stage.
+  }
+  return staged;
+}
+
+/** What was staged, removed: a publish in place supersedes it (D139 §1). The swap's journal stays to read. */
+export function unstage(install) {
+  rmSync(join(install, ...STAGED), { recursive: true, force: true });
+}
 
 /** The names the last publish recorded in `app/shell-files.txt`, or none. */
 export function recordedShellFiles(install) {
@@ -396,6 +535,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
 | \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below). Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
+| \`${STAGE[0]}/\` | an update: a build staged with \`--stage\` in \`${STAGED.slice(1).join('/')}/\`, which the application installs once its work allows, and the launcher's record of the last swap, \`${SWAP_JOURNAL}\` (D139). Present only once something was staged. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a
 re-publish never touches it.
@@ -437,7 +577,13 @@ the launcher starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\` and exits, and W
 the window belongs to that pin, so the running window shows as a second button beside it. If you have
 a pin of that kind, unpin it, start Daoris, and pin its running window once.
 
-Re-publish over this folder to update it; nothing here is edited by hand.
+## Updating it
+
+Stage a new build beside it while it runs: \`npm run publish:desktop -- --to <this folder> --service --stage\`. The
+application then starts nothing new, lets the running sessions end or park, closes, and \`${LAUNCHER}\` checks the
+staged build, swaps \`${SHELL_HOME[0]}/\` and starts it again, putting the build before it back if the new one does not
+come up (D139). The banner in the window and \`daoris-driver update --when-idle|--now|--cancel\` say when.
+Re-publishing over this folder with the application closed still works; nothing here is edited by hand.
 `;
 }
 
@@ -516,10 +662,18 @@ async function main() {
 
   const run = (command) => execSync(command, { cwd: repoRoot, stdio: ['ignore', 'inherit', 'inherit'] });
 
-  const refused = refusal(to, { beside: flag('--beside') });
+  // `--stage` (UPDATE1, D139 §1): the same build, written beside the install into `update/staged/` instead of over it, for
+  // the desktop to install when its work allows. Everything below writes under `root`, which is the install or the staging.
+  const stage = flag('--stage');
+  const refused = stage ? stageRefusal(to, { service: flag('--service') }) : refusal(to, { beside: flag('--beside') });
   if (refused) {
     console.error(refused);
     process.exit(2);
+  }
+  const root = stage ? join(to, ...STAGE, '.staging') : to;
+  if (stage) {
+    rmSync(root, { recursive: true, force: true });
+    mkdirSync(root, { recursive: true });
   }
 
   /**
@@ -534,7 +688,8 @@ async function main() {
   // the root exits once it has started the application, so it is the application that holds files.
   const shells = [join(to, ...SHELL_HOME, SHELL_EXE), ...RETIRED_LAUNCHERS.map((name) => join(to, name))]
     .filter(existsSync);
-  if (process.platform === 'win32' && shells.length > 0) {
+  // A stage writes nothing the running application holds, so it is never refused for one running (D139 §1).
+  if (!stage && process.platform === 'win32' && shells.length > 0) {
     // Everything from the application's executable, its browser (CHR8) and its engine's processes
     // included; and the browser an install from before CHR8 still runs from its own folder, which
     // this publish removes. The browser follows the shell out, so a running one is a shell still
@@ -546,7 +701,8 @@ async function main() {
     if (held.length > 0) {
       console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.join(', ')}).`);
       console.error('  Close it and re-run — a running application holds its own executable open, and');
-      console.error('  publishing over it fails halfway through, leaving the folder part-written.');
+      console.error('  publishing over it fails halfway through, leaving the folder part-written. Or stage the');
+      console.error('  build beside it with --stage, which the desktop installs once its work allows (D139).');
       process.exit(2);
     }
   }
@@ -632,7 +788,7 @@ async function main() {
   // behind — only the recorded names, never the host beside them. Then what an earlier publish wrote
   // and this one no longer does, by name (D93): the single-file shell's launcher at the root, which
   // the launcher replaces, and the browser's own folder with its second engine (CHR8).
-  const app = join(to, ...SHELL_HOME);
+  const app = join(root, ...SHELL_HOME);
   const staged = readdirSync(shellStage);
   // The doctrine tool's two folders are laid out whole below, so an application file of either name would
   // be replaced by them, and lost without a word.
@@ -642,17 +798,18 @@ async function main() {
       + 'keeps the doctrine tool (WSSETUP2).');
     process.exit(1);
   }
-  for (const name of recordedShellFiles(to)) rmSync(join(app, name), { recursive: true, force: true });
-  for (const path of retiredPaths(to)) rmSync(path, { recursive: true, force: true });
+  // A staging folder starts empty and is no install, so neither line below removes anything there.
+  for (const name of recordedShellFiles(root)) rmSync(join(app, name), { recursive: true, force: true });
+  for (const path of retiredPaths(root)) rmSync(path, { recursive: true, force: true });
   mkdirSync(app, { recursive: true });
   for (const name of staged) cpSync(join(shellStage, name), join(app, name), { recursive: true });
-  writeFileSync(join(to, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
-  cpSync(join(launcherStage, LAUNCHER), join(to, LAUNCHER));
+  writeFileSync(join(root, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
+  cpSync(join(launcherStage, LAUNCHER), join(root, LAUNCHER));
 
   // The doctrine tool, beside the application (WSSETUP2, D124 §1.2): the package under `app/cli/`, as npm
   // lays one out, and a launcher for each shell in `app/bin/`. Nothing goes on any PATH from here.
   try {
-    const tool = await layCli(cliTarball, to);
+    const tool = await layCli(cliTarball, root);
     console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
       + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}.`);
   } catch (error) {
@@ -663,19 +820,19 @@ async function main() {
 
   // Daoris's own example plugins, as offers beside the application (PLUG9 d, D103): Settings → Plugins
   // lists them and installs one only when pressed, so the publish writes nothing under the home.
-  const offered = layOffers(join(repoRoot, 'examples', 'plugins'), to);
+  const offered = layOffers(join(repoRoot, 'examples', 'plugins'), root);
   console.log(`desktop-publish: offering ${offered.join(', ')} in ${PLUGIN_OFFERS.join('/')}/ (none installed).`);
 
   // The list of where each tool's versions download from (TOOLS3, D121 §3.1), beside the application.
   // The driver's build carries it too, and the stage was cleared of it above: this is the one writer.
-  layResources(join(repoRoot, ...RESOURCES_SOURCE), to);
+  layResources(join(repoRoot, ...RESOURCES_SOURCE), root);
   console.log(`desktop-publish: the list built in is ${RESOURCES.join('/')}.`);
 
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
     // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
     console.log(`desktop-publish: publishing the HTTP host under ${HOST_HOME[0]}/…`);
-    const host = join(to, ...HOST_HOME);
+    const host = join(root, ...HOST_HOME);
 
     // 🔴 REPLACED, not published over. `dotnet publish` does not clear its output, so a re-publish
     // leaves every previous hashed bundle in `wwwroot/assets` — and `index.html` names only the
@@ -697,11 +854,40 @@ async function main() {
     }
   }
 
-  mkdirSync(to, { recursive: true });
-  writeFileSync(join(to, MARKER), installedNote());
+  mkdirSync(root, { recursive: true });
+  writeFileSync(join(root, MARKER), installedNote());
 
+  if (stage) {
+    // The build's manifest, which the application and the launcher check before anything is replaced (D139 §4), then
+    // the folder swapped into `update/staged/` whole, so the desktop never meets half a stage.
+    const identity = {
+      id: buildId(),
+      version: JSON.parse(readFileSync(join(repoRoot, 'canon', 'canon.json'), 'utf8')).version,
+      commit: commitOf(repoRoot),
+      at: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+    };
+    writeManifest(root, identity);
+    promoteStage(root, to);
+    console.log(`\ndesktop-publish: staged build ${identity.id} (${identity.version}${identity.commit ? `, ${identity.commit}` : ''}) `
+      + `beside ${to}, in ${STAGED.join('/')}/`);
+    console.log('  The desktop installs it once no driven session runs and no turn is in flight, and starts again (D139);');
+    console.log('  `daoris-driver update` says where it stands, and --now or --cancel says otherwise.');
+    return;
+  }
+
+  // A publish in place supersedes anything staged (D139 §1): left, it would replace this build at the next start.
+  unstage(to);
   console.log(`\ndesktop-publish: installed to ${to}`);
   console.log(`  Its home is ${join(to, HOME)} (D63) — starting it starts the driver loop.`);
+}
+
+/** The commit this workspace is at, short, or null where git cannot say: what tells two builds at one version apart. */
+function commitOf(repoRoot) {
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 // Guarded, because the guard above is imported by a unit test — and `node --test` importing this

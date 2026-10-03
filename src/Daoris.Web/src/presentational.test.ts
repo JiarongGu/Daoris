@@ -111,7 +111,10 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `quests/` since FRAME1d: Quests' list, a quest's page and its composer, drawn from props — QuestsView holds the queries.
 // `knowledge/` since FRAME1f: Search's and Convergence's lists and pages, drawn from props — SearchView and
 // ConvergenceView hold the queries.
-const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx}}', {
+// `update/` since UPDATE1: the update's banner, drawn from props — the application holds the update's hooks.
+// `menus/` since CTX1: the right-click menu and its one handler, handed the frame's doors — App and the secondary
+// window's root hold the bridge, so a surface that offers its acts reaches no data through it.
+const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

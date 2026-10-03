@@ -1,5 +1,5 @@
 import type { Quest, Session } from '../api';
-import { answeredPark, type IconName, SESSION_ACTIVE } from '../ui';
+import { answeredPark, type IconName, type MenuAct, SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isHelp, isIntake, sessionOrigin } from './identity';
 import { askOf, type WorkTarget } from './pausing';
@@ -43,6 +43,18 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
   delete: { label: 'work.act.delete', icon: 'remove', danger: true },
   copy: { label: 'work.rail.menu.copy', icon: 'copy' },
 };
+
+/**
+ * A session's acts as a menu's rows (CTX1, D138): each by its one name and glyph, its press reported. A row's ⋯ and its
+ * right-click, and the page header's ⋯ and the page's right-click, each draw this one list, so they never disagree.
+ */
+export function actMenu(
+  acts: readonly SessionActId[], t: (key: string) => string, press: (act: SessionActId) => void, disabled = false,
+): MenuAct[] {
+  return acts.map((act) => ({
+    id: act, label: t(ACT_LOOK[act].label), icon: ACT_LOOK[act].icon, disabled, onSelect: () => press(act),
+  }));
+}
 
 /** What decides a session's acts: its record, where the list's reader placed it, its repository's checkout, and where its work is. */
 export type ActFacts = {
@@ -135,6 +147,19 @@ export function primaryAct(acts: readonly SessionActId[], grouping?: SessionGrou
   if (acts.includes('retry')) return 'retry';
   if (acts.includes('review') && grouping?.group === 'review') return 'review';
   return null;
+}
+
+/**
+ * The page header's acts as it draws them (§3.2): its loud act, *Stop…* while it is offered, then the rest behind its ⋯;
+ * *Answer…* stays the card's under the header. `all` is that order whole, which the page's right-click offers (CTX1).
+ */
+export function headerActs(
+  acts: readonly SessionActId[], primary: SessionActId | null,
+): { lead: SessionActId | null; stop: boolean; rest: SessionActId[]; all: SessionActId[] } {
+  const lead = primary && acts.includes(primary) ? primary : null;
+  const stop = acts.includes('stop');
+  const rest = acts.filter((act) => act !== lead && act !== 'stop' && act !== 'answer');
+  return { lead, stop, rest, all: [...(lead ? [lead] : []), ...(stop ? ['stop' as const] : []), ...rest] };
 }
 
 /**

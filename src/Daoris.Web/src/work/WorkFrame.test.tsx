@@ -43,6 +43,8 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import i18n from '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { WorkFrame } from './WorkFrame';
 import { DiffPane } from './DiffPane';
 
@@ -1161,6 +1163,31 @@ describe('starting and holding a conversation', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Stop…' }));
     expect(screen.getByRole('group', { name: 'stop this session' })).toHaveTextContent(/Finish lets its agent wind up instead/);
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
+  });
+
+  /**
+   * CTX1 (D138, design §4): a right-click on the attended session's page offers its header's acts, the loud act and
+   * *Stop…* with its ⋯'s, each carried out by the one owner: *Stop…* asks under the header as its button does.
+   */
+  it('offers the page header’s acts on a right-click anywhere on the session’s page', async () => {
+    SESSIONS = [CHAT];
+    show('c0ffee11');
+    render(<ContextMenus doors={{ copy: () => {} }} />);
+
+    const title = await screen.findByRole('heading', { level: 1 });
+    rightClick(title);
+    const acts = await menuActs();
+    expect(acts[0]).toBe('Stop…');
+    expect(acts).toContain('Copy session ID');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+
+    // Below the header, on the page itself, the same acts.
+    rightClick(title.closest('main')!);
+    expect(await menuActs()).toEqual(acts);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Stop…' }));
+    expect(await screen.findByRole('group', { name: 'stop this session' })).toBeInTheDocument();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
   });
 

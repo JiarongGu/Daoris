@@ -113,6 +113,29 @@ public sealed class SessionDeleteTests : IAsyncLifetime
         Assert.NotNull(await _sessions.FindAsync(driven.Id));
     }
 
+    /// <summary>
+    /// CHATTAKE1: a chat that took a quest through its own connector worked that quest, so its record is that work's as a
+    /// driven session's is. It is refused, kept, and left out of a list's answer.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_that_took_a_quest_is_refused_as_that_works_record()
+    {
+        var quest = await _quests.PublishAsync("Asker", "Owner", "Do the thing", "Why.", Now);
+        var chat = await _sessions.CreateAsync(null, "Owner", "stub", Now, kind: SessionKind.Chat);
+        await _sessions.SetStateAsync(chat.Id, SessionState.Working, null, null, null, Now);
+        await _ledger.MarkTookAsync(chat.Id, quest.Id);
+        await _sessions.SetStateAsync(chat.Id, SessionState.Completed, null, null, null, Now.AddMinutes(5));
+
+        var deletable = await _ledger.DeletableAsync(await _sessions.ListAsync(includeClosed: true));
+        var outcome = await _ledger.DeleteAsync(chat.Id);
+
+        Assert.Equal(SessionDeleteRefusal.ServedQuest, outcome.Refusal);
+        Assert.Contains("took a quest", outcome.Message);
+        Assert.Contains("archive it instead", outcome.Message);
+        Assert.NotNull(await _sessions.FindAsync(chat.Id));
+        Assert.DoesNotContain(chat.Id, deletable);
+    }
+
     /// <summary>An intake is named by its ask, which a reader follows to what it read and decided (D65 §1b).</summary>
     [Fact]
     public async Task An_intake_is_refused_naming_its_ask()

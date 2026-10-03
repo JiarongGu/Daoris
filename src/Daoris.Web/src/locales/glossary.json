@@ -166,6 +166,7 @@
       "budget": { "en": 20, "zh": 8 },
       "case": "sentence",
       "keys": [
+        "update.whenIdle", "update.now", "update.notNow",
         "asks.ask", "asks.compose.submit", "asks.goAhead.approve", "asks.goAhead.change", "asks.goAhead.refuse",
         "asks.record.abandon", "asks.record.abandonMeanIt", "asks.record.close",
         "asks.record.closeConfirm", "asks.record.pause", "asks.record.pauseMeanIt", "asks.record.resume",
@@ -275,7 +276,7 @@
       "case": "sentence",
       "keys": [
         "layout.menu.*", "map.fit", "map.kind.*", "map.lines", "map.when.all", "map.when.month", "work.act.pauseAsk",
-        "work.act.pauseQuest",
+        "work.act.pauseQuest", "contextMenu.act.*",
         "map.when.open", "map.when.week", "map.zoomIn", "map.zoomOut", "menu.about", "menu.agents.*",
         "menu.driver", "menu.language", "menu.plugins", "menu.refresh", "menu.settings", "menu.setup",
         "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "projects.list.import",

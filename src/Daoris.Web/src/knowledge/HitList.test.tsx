@@ -4,6 +4,8 @@ import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { CJK_HIT, HITS } from './fixtures';
 import { HitList, type HitsAnswer } from './HitList';
 
@@ -90,5 +92,24 @@ describe("Search's list", () => {
 
     expect(screen.getByRole('listitem', { name: '场景加载的顺序' })).toHaveTextContent('渲染管线');
     expect(screen.getAllByText(/场景|加载/, { selector: 'mark' }).length).toBeGreaterThan(0);
+  });
+});
+
+/** CTX1 (D138, design §4): a hit is a document's link; its row offers opening it and its path on a right-click. */
+describe("a hit's row on a right-click", () => {
+  it('offers Open and Copy path', async () => {
+    const copy = vi.fn();
+    const props = list();
+    render(<ContextMenus doors={{ copy }} />);
+    const row = () => screen.getByRole('listitem', { name: 'world-streaming' }).querySelector('button')!;
+
+    rightClick(row());
+    expect(await menuActs('Actions for world-streaming')).toEqual(['Open', 'Copy path']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Open' }));
+    expect(props.onChoose).toHaveBeenCalledWith(HITS[0]!.id);
+
+    rightClick(row());
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Copy path' }));
+    expect(copy).toHaveBeenCalledWith('.claude/knowledge/world-streaming.md');
   });
 });

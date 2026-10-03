@@ -25,6 +25,13 @@
  * the window saw it. So phase 6 closes the shell with a conversation open, and phase 7 reads the note
  * the close wrote.
  *
+ * And a fourth, held since UPDATE1 (D139): an install updated by hand, four times in a day, because a
+ * republish waited on running sessions. Phase 9 stages a build beside the RUNNING install, lets a
+ * working session hold the drain open while a newer quest waits, then watches the application close,
+ * the launcher swap `app/` and the new build confirm; then stages one that cannot come up and watches
+ * it rolled back, and one that fails its check refused with nothing closed. Only the artefact can
+ * show it: the swap is the launcher's, run against the install's own folder.
+ *
  *   npm run rehearse:deploy
  *
  * Exit 0 = the deployed thing works. Exit 1 = it does not; the transcript names the first failure.
@@ -54,8 +61,9 @@
  *    order and is not measured here; phase 3's host, started directly, is production regardless.
  */
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
-  existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync,
+  appendFileSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve, sep, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -66,8 +74,9 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OFFERED_PLUGINS, OWN,
-  PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
+  BUILD_MANIFEST, CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, MARKER,
+  OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES,
+  SHELL_HOME, STAGE, STAGED, SWAP_JOURNAL, promoteStage, unstage, writeManifest,
 } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -209,6 +218,62 @@ export function hookLines(rows, scratch) {
     .map((line) => Number(line.slice(0, line.indexOf('|'))))
     .filter((pid) => Number.isInteger(pid) && pid > 0);
 }
+
+/** The phases `update/swap.json` passes through (`SwapPhase`, `StagedBuild.cs`): a journal in any other is no outcome. */
+const SWAP_PHASES = Object.freeze(['swapping', 'started', 'confirmed', 'installed', 'rolled-back', 'refused']);
+
+/**
+ * How the launcher's swap ended (UPDATE1, D139 §6), read from `update/swap.json`'s text: its phase, the build, the reason
+ * it rolled back or refused, and whether the new application confirmed — or null for a journal missing, torn, or in a
+ * phase it does not know, which the gate waits through rather than passes on.
+ */
+export function swapOutcome(text) {
+  let journal = null;
+  try {
+    journal = JSON.parse(String(text ?? ''));
+  } catch {
+    return null;
+  }
+  if (!journal || typeof journal !== 'object' || !SWAP_PHASES.includes(journal.phase)) return null;
+  return {
+    phase: journal.phase,
+    id: journal.id ?? null,
+    reason: journal.reason ?? null,
+    confirmed: typeof journal.confirmed === 'boolean' ? journal.confirmed : null,
+  };
+}
+
+/** The data of every machine-log line naming `event`, in order, from a JSONL file's text; a line that does not read is skipped. */
+export function loggedData(text, event) {
+  return String(text ?? '').split('\n').flatMap((line) => {
+    try {
+      const entry = JSON.parse(line);
+      return entry?.event === event ? [entry.data ?? {}] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/**
+ * Stage the install's own live build again (D139 §1's layout, by the publish's own writers), for the update's roll-back and
+ * refusal: `application` replaces the application with another program, under a manifest that agrees, so the check passes
+ * and the start fails; `tamper` changes one file after the manifest was written, so the check refuses it. The home is
+ * never staged, and the live build is not touched. Answers the staged folder.
+ */
+export function stageLiveBuild(install, { id, version, application = null, tamper = null }) {
+  const staging = join(install, ...STAGE, '.staging');
+  rmSync(staging, { recursive: true, force: true });
+  mkdirSync(staging, { recursive: true });
+  for (const name of [LAUNCHER, MARKER, SHELL_HOME[0]]) cpSync(join(install, name), join(staging, name), { recursive: true });
+  if (application) copyFileSync(application, join(staging, ...SHELL_HOME, SHELL_EXE));
+  writeManifest(staging, { id, version, commit: null, at: new Date().toISOString().replace(/\.\d+Z$/, 'Z') });
+  if (tamper) appendFileSync(join(staging, ...tamper.split('/')), 'changed after its manifest');
+  return promoteStage(staging, install);
+}
+
+/** A file's SHA-256, as the manifest writes it: what tells which build is the live one. */
+const sha256Of = (path) => (existsSync(path) ? createHash('sha256').update(readFileSync(path)).digest('hex') : '');
 
 /**
  * The note a conversation's record takes when the shell holding it closes: `ChatRunner.ClosedNote`,
@@ -1307,9 +1372,235 @@ if (!done.ok) throw new Error(done.text);
     check('…and a tool error comes back through the script as exit 2', bashUnknown.code === 2, bashUnknown.out);
   }
 
-  // -------------------------------------------------------------- 9. report
+  // -------------------------------------------------------------- 9. the install updates when its work allows
 
-  section('9. Result');
+  section('9. The install updates when its work allows: staged, drained, swapped, started, rolled back (UPDATE1, D139)');
+
+  // The terminal's door to the update (D50): the headless host's `update`, built from this workspace and run on this
+  // run's home, naming the install, since a scratch home is no install's `data/`.
+  const driverProject = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Host');
+  const driverDll = join(driverProject, 'bin', 'Debug', 'net10.0', 'daoris-driver.dll');
+  const builtHost = run(`dotnet build "${driverProject}" --nologo -v q`, repoRoot, {}, 10 * 60_000);
+  check('the headless host builds, for its `update` door', builtHost.code === 0, builtHost.out.split('\n').slice(-6).join('\n'));
+  const driverUpdate = (words) => run(`dotnet "${driverDll}" update ${words} --install "${install}"`, scratch, { ...HERMETIC }, 60_000);
+
+  // A session that holds the drain open until the gate lets it go: it takes its quest, then waits for a file named for
+  // it in this run's scratch, then lands and closes as the stub does. Each session opens a tree of its own, so a second
+  // quest is held by the drain and not by the first session's checkout.
+  const releaseOf = (quest) => join(scratch, `release-${quest}`);
+  const slowAgent = join(scratch, 'slow-agent.mjs');
+  writeFileSync(slowAgent, `
+import { execSync } from 'node:child_process';
+import { existsSync, writeFileSync } from 'node:fs';
+
+if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
+if (process.argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
+
+const url = process.env.DAORIS_SERVICE_URL;
+const id = process.env.DAORIS_QUEST_ID;
+const respond = async (action, reason) => {
+  const response = await fetch(url + '/api/quests/' + id + '/respond', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, reason }),
+  });
+  return { ok: response.ok, status: response.status, text: await response.text() };
+};
+const take = await respond('take', null);
+if (!take.ok) { if (take.status === 409) process.exit(0); throw new Error(take.text); }
+const release = ${JSON.stringify(join(scratch, 'release-'))} + id;
+while (!existsSync(release)) await new Promise((resolve) => setTimeout(resolve, 500));
+writeFileSync('held-' + id + '.md', 'Held the update open, then let it go.\\n');
+const git = 'git -c user.name="Deployment Rehearsal" -c user.email="rehearsal@example.invalid"';
+execSync(git + ' add -A', { stdio: 'ignore' });
+execSync(git + ' commit -q -m "stub: held the update open for ' + id + '"', { stdio: 'ignore' });
+const done = await respond('done', 'Landed by the slow stub session.');
+if (!done.ok) throw new Error(done.text);
+`);
+  writeFileSync(join(home, 'driver.json'), `${JSON.stringify({
+    drivable: ['newcomer'],
+    trees: ['newcomer'],
+    adapter: 'stub',
+    cap: 3,
+    // Longer than the stage's build, which runs while the held session waits.
+    timeoutMinutes: 30,
+    pollSeconds: 2,
+    commands: { stub: ['node', slowAgent], 'acp-stub': ['node', acpAgent] },
+    notify: false,
+  }, null, 2)}\n`);
+
+  /** The update as the install's own page answers it over the bridge (`DAORIS.UPDATE` · `STATE`), or null. */
+  // Why the last read of the window's update state came back empty, so a check that waited on it can say so.
+  let lastUpdateRead = 'not read yet';
+  const updateState = async () => {
+    const { cdp: page, found } = await shellPage(cdpPort, base);
+    if (!page) {
+      // Who holds the debug port, by process, so a page that never answers says whether the port is bound at all.
+      const holders = spawnSync('powershell', ['-NoProfile', '-Command',
+        `Get-NetTCPConnection -LocalPort ${cdpPort} -ErrorAction SilentlyContinue | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; "$($_.State) pid $($_.OwningProcess) $($p.Path)" }`],
+      { encoding: 'utf8' }).stdout?.trim();
+      lastUpdateRead = `${found}; the port: ${holders || 'nothing bound'}`;
+      return null;
+    }
+    try {
+      const answer = await bounded(page.evaluate(bridgeCall('DAORIS.UPDATE', 'STATE', {})).catch((error) => ({ ok: false, error: error.message })), 20_000, null);
+      lastUpdateRead = answer === null ? 'the bridge call did not answer in 20 s' : JSON.stringify(answer).slice(0, 400);
+      return answer?.ok ? answer.data : null;
+    } finally {
+      page.close();
+    }
+  };
+  const waitFor = async (what, seconds, every = 1000) => {
+    let seen = null;
+    for (let waited = 0; waited < seconds * 1000; waited += every) {
+      seen = await what();
+      if (seen) return seen;
+      await sleep(every);
+    }
+    return null;
+  };
+  // Asked across a restart, when the host may not be listening yet: a refused connection is no session, never a crash.
+  const sessionFor = async (quest) => {
+    try {
+      const sessions = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true', base);
+      return (sessions.json ?? []).find((session) => session.quest === quest) ?? null;
+    } catch {
+      return null;
+    }
+  };
+  const journal = () => swapOutcome(existsSync(join(install, ...STAGE, SWAP_JOURNAL))
+    ? readFileSync(join(install, ...STAGE, SWAP_JOURNAL), 'utf8') : '');
+  const logged = (event) => (existsSync(join(home, 'logs'))
+    ? readdirSync(join(home, 'logs')).filter((file) => file.endsWith('.desktop.jsonl'))
+      .flatMap((file) => loggedData(readFileSync(join(home, 'logs', file), 'utf8'), event))
+    : []);
+  const windowUp = () => {
+    const shown = eachApplicationAt(shellExe, '"$($_.MainWindowHandle)|$($_.MainWindowTitle)"').trim();
+    return Boolean(shown) && !shown.startsWith('0|');
+  };
+
+  // Started the way a person starts it, on the same environment as phase 4, its debug port included.
+  shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
+  shell.unref();
+  check('the install starts again, for its update', await answers(base, 200));
+  const firstApplication = await waitFor(async () => (windowUp() ? applicationsAt(shellExe) : null), 60);
+  check('…and its window is up', Boolean(firstApplication?.length), JSON.stringify(firstApplication));
+
+  // 9a. A session runs, and holds the drain open.
+  const held = await api('POST', '/api/quests', base, {
+    from: 'game', to: 'newcomer', title: 'Hold the update open', body: 'Take this, then wait until the gate lets you go.',
+  });
+  const heldQuest = held.json?.quest?.id ?? '';
+  const heldWorking = await waitFor(async () => ((await sessionFor(heldQuest))?.state === 'working' ? true : null), 90);
+  check('a session is working when the build is staged', Boolean(heldQuest) && Boolean(heldWorking), held.text);
+
+  // 9b. Staged beside the running install, by the publish's own `--stage`: nothing it holds is written over.
+  const staged = run(
+    `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${install}" --service --stage`, repoRoot, {}, 15 * 60_000);
+  check('publish:desktop --stage exits 0 beside the running install', staged.code === 0, staged.out.split('\n').slice(-8).join('\n'));
+  const stagedManifestPath = join(install, ...STAGED, BUILD_MANIFEST);
+  const stagedManifest = existsSync(stagedManifestPath) ? JSON.parse(readFileSync(stagedManifestPath, 'utf8')) : null;
+  check(`…into ${STAGED.join('/')}/, with a manifest naming every file it carries`,
+    Boolean(stagedManifest?.id) && (stagedManifest?.files?.length ?? 0) > 0, stagedManifestPath);
+  check('…and the running application was not touched', applicationsAt(shellExe).join() === firstApplication?.join(),
+    `before: ${firstApplication?.join(', ')}; now: ${applicationsAt(shellExe).join(', ')}`);
+
+  // 9c. The drain: nothing new starts, and what runs is counted down.
+  const draining = await waitFor(async () => {
+    const state = await updateState();
+    return state?.state === 'draining' ? state : null;
+  }, 30);
+  check('the application drains for the staged build: when idle, by default, with the session counted',
+    draining?.staged?.id === stagedManifest?.id && draining?.mode === 'when-idle' && draining?.driven >= 1, JSON.stringify(draining));
+  const second = await api('POST', '/api/quests', base, {
+    from: 'game', to: 'newcomer', title: 'Wait for the update', body: 'Published while the update drains.',
+  });
+  const secondQuest = second.json?.quest?.id ?? '';
+  writeFileSync(releaseOf(secondQuest), '');
+  await sleep(8000);
+  check('a quest published while it drains does not start', Boolean(secondQuest) && !(await sessionFor(secondQuest)),
+    JSON.stringify(await sessionFor(secondQuest)));
+  check('the machine log says it was staged and is draining',
+    logged('update.staged').some((line) => line.build === stagedManifest?.id) && logged('update.draining').length > 0);
+
+  // 9d. The session ends; the work allows it; the launcher swaps and the new build starts and confirms.
+  writeFileSync(releaseOf(heldQuest), '');
+  const installed = await waitFor(async () => (journal()?.phase === 'installed' ? journal() : null), 300);
+  check('once the session ended, the launcher swapped app/ and the new build said it came up',
+    installed?.id === stagedManifest?.id && installed?.confirmed === true, JSON.stringify(journal()));
+  await answers(base, 200);
+  check('…the session was let end, not cut', (await sessionFor(heldQuest))?.state === 'completed', JSON.stringify(await sessionFor(heldQuest)));
+  const listedLibrary = stagedManifest?.files?.find((file) => file.path === `${SHELL_HOME[0]}/Daoris.Desktop.App.dll`);
+  check('…app/ is the staged build, by its manifest’s hash',
+    Boolean(listedLibrary) && sha256Of(join(install, ...SHELL_HOME, 'Daoris.Desktop.App.dll')) === listedLibrary.sha256);
+  const restarted = await waitFor(async () => {
+    const now = applicationsAt(shellExe);
+    return now.length > 0 && !now.some((pid) => firstApplication?.includes(pid)) && windowUp() ? now : null;
+  }, 120);
+  check('…a new application runs from the same place, its window up', Boolean(restarted), JSON.stringify(applicationsAt(shellExe)));
+  const launcherGone = await waitFor(async () => (running(launcherExe).length === 0 ? true : null), 30);
+  check('…and the launcher that swapped it has exited', Boolean(launcherGone), running(launcherExe).join(', '));
+  // The launcher cannot delete its own running launcher inside update/previous/, so the new application clears what the
+  // swap left once the launcher has gone (UPDATE1), at its next look.
+  check(`…and neither ${STAGED.join('/')}/ nor the build before it is left`,
+    Boolean(await waitFor(async () => (!existsSync(join(install, ...STAGED)) && !existsSync(join(install, ...STAGE, 'previous')) ? true : null), 30)),
+    readdirSync(join(install, ...STAGE)).join(', '));
+  check('the machine log says it applied when idle and was installed',
+    logged('update.applying').some((line) => line.by === 'idle' && line.build === stagedManifest?.id)
+      && logged('update.installed').some((line) => line.build === stagedManifest?.id && line.confirmed === true));
+  check('…and the window says so once, with nothing left staged',
+    (await waitFor(async () => {
+      const state = await updateState();
+      return state?.outcome?.phase === 'installed' && state.state === 'none' ? state : null;
+    }, 60)) !== null);
+  check('the quest held by the drain starts after the restart, and completes',
+    Boolean(await waitFor(async () => ((await sessionFor(secondQuest))?.state === 'completed' ? true : null), 120)),
+    JSON.stringify(await sessionFor(secondQuest)));
+
+  // 9e. Roll back: the live build staged again with its application replaced by a program that exits at once, under a
+  // manifest that agrees, so the check passes and the start fails. *Update now*, from the terminal's door.
+  const exitsAtOnce = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'whoami.exe');
+  if (!existsSync(exitsAtOnce)) {
+    console.log(`        no ${exitsAtOnce} on this runner: the roll-back checks are skipped, not passed`);
+  } else {
+    const liveApplication = sha256Of(shellExe);
+    const beforeRollback = applicationsAt(shellExe);
+    stageLiveBuild(install, { id: 'fails-to-start', version: canonVersion, application: exitsAtOnce });
+    const now = driverUpdate('--now');
+    check('`daoris-driver update --now` writes the word for the staged build', now.code === 0 && /installed now/.test(now.out), now.out);
+    const rolledBack = await waitFor(async () => (journal()?.phase === 'rolled-back' ? journal() : null), 300);
+    check('a build that will not come up is rolled back: the launcher put the build before it back',
+      rolledBack?.id === 'fails-to-start' && rolledBack?.reason === 'exited', JSON.stringify(journal()));
+    check('…app/ is the live build again, and the failed one is kept aside in update/failed/',
+      sha256Of(shellExe) === liveApplication
+        && sha256Of(join(install, ...STAGE, 'failed', ...SHELL_HOME, SHELL_EXE)) === sha256Of(exitsAtOnce));
+    check('…the build before it started again, its window up',
+      Boolean(await waitFor(async () => {
+        const after = applicationsAt(shellExe);
+        return after.length > 0 && !after.some((pid) => beforeRollback.includes(pid)) && windowUp() ? after : null;
+      }, 120)), JSON.stringify(applicationsAt(shellExe)));
+    // The build before it writes its log line as it comes up, which can be after its window is.
+    check('…and it says so once, in the machine log and the window',
+      (await waitFor(async () => (logged('update.rolled-back').some((line) => line.build === 'fails-to-start' && line.reason === 'exited') ? true : null), 60)) !== null
+        && (await waitFor(async () => ((await updateState())?.outcome?.phase === 'rolled-back' ? true : null), 60)) !== null,
+      `${JSON.stringify(logged('update.rolled-back'))}; the window's last read: ${lastUpdateRead}`);
+    const status = driverUpdate('');
+    check('`daoris-driver update` says the last swap rolled back', status.code === 0 && /rolled back/.test(status.out), status.out);
+
+    // 9f. Refused: a build whose file changed after its manifest is refused by the application's check, which closes nothing.
+    const runningNow = applicationsAt(shellExe);
+    stageLiveBuild(install, { id: 'fails-the-check', version: canonVersion, tamper: `${SHELL_HOME[0]}/Daoris.Desktop.App.dll` });
+    const refusedState = await waitFor(async () => {
+      const state = await updateState();
+      return state?.state === 'refused' ? state : null;
+    }, 30);
+    check('a build that fails the check is refused before anything closes, saying which check',
+      refusedState?.problem?.code === 'size' && applicationsAt(shellExe).join() === runningNow.join()
+        && sha256Of(shellExe) === liveApplication, `${JSON.stringify(refusedState)}; the window's last read: ${lastUpdateRead}`);
+    unstage(install);
+  }
+
+  // -------------------------------------------------------------- 10. report
+
+  section('10. Result');
   stopEverything();
   await sleep(500);
 
@@ -1336,7 +1627,10 @@ if (!done.ok) throw new Error(done.text);
   console.log('  the plugin’s process and the conversation’s harness went with it, and the record');
   console.log('  carries the close’s own note, not the sweep’s. And the install’s own doctrine tool, the');
   console.log('  package the release publishes, answered by its bare name from Command Prompt, PowerShell');
-  console.log('  and Git Bash where the runner has one, and adopted a repository of its own clean.');
+  console.log('  and Git Bash where the runner has one, and adopted a repository of its own clean. Then a build staged');
+  console.log('  beside the running install drained it: a quest published meanwhile waited, the working session was let');
+  console.log('  end, and the launcher swapped app/ and started the new build, which confirmed; a build that would not');
+  console.log('  come up was rolled back to the one before it, and one that failed its check was refused with nothing closed.');
   rmSync(scratch, { recursive: true, force: true });
 }
 

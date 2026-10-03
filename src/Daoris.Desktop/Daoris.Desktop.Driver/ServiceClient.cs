@@ -98,10 +98,17 @@ public sealed class ServiceClient : IDisposable
         // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
         // put a second opinion about it on this side of the wire.
         var records = await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false);
+        var lastRun = ReadLastRun(records);
+        // The closed quests a session written to served (MSG1b, D137 §2.2), read only where one waits: no open list holds them.
+        var open = quests.Select(quest => quest.Id).ToList();
+        var closed = lastRun.Any(run => run.Value.WordsWaiting && !open.Contains(run.Key, StringComparer.OrdinalIgnoreCase))
+            ? ReadClosed(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false), lastRun, open)
+            : [];
         return new Snapshot(quests, repositories, active, ReadStrikes(records))
         {
-            LastRun = ReadLastRun(records),
+            LastRun = lastRun,
             Started = ReadStarted(records, active),
+            Closed = closed,
         };
     }
 
@@ -275,6 +282,71 @@ public sealed class ServiceClient : IDisposable
 
         if (!ok) return (false, Text(answered, "error") ?? payload);
         return (Flag(answered, "kept"), Text(answered, "message") ?? "");
+    }
+
+    /// <summary>
+    /// Keep the person's words on a parked or ended session of this machine's for it to go on with (MSG1a's say door, MSG1d,
+    /// D137 §5.3): the words as said, and the names of what they gave with them, never where a file is kept. The kept word
+    /// comes back with the id the record's events say again where the session took it. Whether they were kept is an answer,
+    /// never an exception: a refusal carries the service's word beside its sentence, and a host without the door (one older
+    /// than MSG1a, or a shared one) says so.
+    /// </summary>
+    public async Task<SayAnswer> SayAsync(string id, string text, IReadOnlyList<string>? files = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("text", text);
+            if (files is { Count: > 0 })
+            {
+                writer.WriteStartArray("files");
+                foreach (var name in files) writer.WriteStringValue(name);
+                writer.WriteEndArray();
+            }
+
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/say", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return new SayAnswer(false, $"the service at {_base} has no door for words to a session that is not running ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return new SayAnswer(false, Text(answered, "error") ?? payload) { Refusal = Text(answered, "refusal") };
+        return new SayAnswer(true, Text(answered, "message") ?? "")
+        {
+            Word = answered.ValueKind == JsonValueKind.Object && answered.TryGetProperty("said", out var said) ? ReadWord(said) : null,
+        };
+    }
+
+    /// <summary>
+    /// Take the person's words off a record once a session took them (MSG1a's door, MSG1b): by their ids, so a word said
+    /// after the driver read the record stays for the next run; <paramref name="by"/> names the new session a fallback
+    /// handed them to. The service keeps each word said after the record ended on its ask as <c>reopened</c>. Whether they
+    /// were taken is an answer, never an exception: a refusal, or a host without the door (one older than MSG1a, or a shared
+    /// one), is false with a sentence saying which.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> TakenAsync(
+        string id, IReadOnlyList<string> said, string? by = null, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteStartArray("said");
+            foreach (var word in said) writer.WriteStringValue(word);
+            writer.WriteEndArray();
+            if (by is not null) writer.WriteString("by", by);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/taken", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return (false, $"the service at {_base} has no door for the words a session took ({status}) — is it older than this driver?");
+        }
+
+        return ok ? (true, Text(answered, "message") ?? "") : (false, Text(answered, "error") ?? payload);
     }
 
     /// <summary>
@@ -1068,10 +1140,52 @@ public sealed class ServiceClient : IDisposable
                 Adapter = Text(session, "adapter"),
                 HarnessVersion = Text(session, "harnessVersion"),
                 BaseCommit = Text(session, "baseCommit"),
+                // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
+                Said = ReadSaid(session),
+                Ask = Text(session, "ask"),
             }, at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The words waiting on a record (MSG1a, D137 §2.4), one by one, read without trusting the shape: a word without its id,
+    /// its words or a moment is skipped, a file's name that is not text is none. Null where the record answers no list, a
+    /// host from before MSG1a, which is not the same as nothing waiting.
+    /// </summary>
+    private static IReadOnlyList<SaidWordView>? ReadSaid(JsonElement session)
+    {
+        if (!session.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array) return null;
+        return [.. said.EnumerateArray().Select(ReadWord).OfType<SaidWordView>()];
+    }
+
+    /// <summary>
+    /// One word as the service answers it (MSG1a): its id, its words, when, its files' names and whether it was said after
+    /// the record ended. Null for one without its id, its words or a moment that reads.
+    /// </summary>
+    private static SaidWordView? ReadWord(JsonElement word) =>
+        word.ValueKind == JsonValueKind.Object
+        && Text(word, "id") is { Length: > 0 } id && Text(word, "text") is { } words && Moment(word, "at") is { } at
+            ? new SaidWordView(id, words, at, Strings(word, "files"), Flag(word, "reopens"))
+            : null;
+
+    /// <summary>
+    /// The closed quests whose last session here has the person's words waiting (MSG1b, D137 §2.2), read from every quest
+    /// the service holds: an open one is planned from the open list, and one with nothing waiting is not looked at.
+    /// </summary>
+    /// <param name="open">The ids of the quests the open list holds.</param>
+    internal static IReadOnlyList<QuestView> ReadClosed(
+        string json, IReadOnlyDictionary<string, PriorSession> lastRun, IReadOnlyCollection<string> open)
+    {
+        var listed = new HashSet<string>(open, StringComparer.OrdinalIgnoreCase);
+        return
+        [
+            .. ReadQuests(json).Where(quest =>
+                !listed.Contains(quest.Id)
+                && lastRun.TryGetValue(quest.Id, out var last)
+                && last.WordsWaiting),
+        ];
     }
 
     /// <summary>
@@ -1210,6 +1324,24 @@ public sealed record SessionOpened(string Session, string Kind, string Adapter, 
 
 /// <summary>A session record the ledger moved for this client (LOG1b), in the state's public spelling.</summary>
 public sealed record SessionMoved(string Session, string State);
+
+/// <summary>
+/// What the service said of the person's words to a parked or ended session of this machine's (MSG1a's say door, MSG1d):
+/// whether it kept them for the session to go on with, and its sentence.
+/// </summary>
+/// <param name="Kept">The words are on the record, waiting for it to go on with them.</param>
+/// <param name="Message">The service's sentence: its yes, or its refusal, verbatim.</param>
+public sealed record SayAnswer(bool Kept, string Message)
+{
+    /// <summary>
+    /// The refusal's word, which a reader acts on instead of the sentence: <c>running</c>, <c>not-ours</c>, <c>intake</c>,
+    /// <c>stood-down</c>, <c>not-found</c> or <c>no-words</c>. Null when kept, and for a host with no door.
+    /// </summary>
+    public string? Refusal { get; init; }
+
+    /// <summary>The word as kept: its id, which the record's events say again where the session took it. Null when refused.</summary>
+    public SaidWordView? Word { get; init; }
+}
 
 /// <summary>
 /// What the ledger said of deleting a session's record (SESSUX1f, D126 §5.4): whether it did, or would; and if not its

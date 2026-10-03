@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { code } from '../test/code';
 import { BODIES, CONVERGENT, RESTATEMENT } from './fixtures';
 import { FindingMainNotice, FindingPage } from './FindingPage';
@@ -65,5 +68,20 @@ describe("Convergence's main area with no finding", () => {
     render(<FindingMainNotice state="gone" at={0.82} />);
     expect(screen.getByText('This finding is no longer listed')).toBeInTheDocument();
     expect(screen.getByText(/no longer converge at 0.82 or above/)).toBeInTheDocument();
+  });
+});
+
+/** CTX1 (D138, design §4): each entry on a finding's page offers its own path on a right-click. */
+describe("a finding's entries on a right-click", () => {
+  it('offers each entry’s path, in its own section', async () => {
+    const copy = vi.fn();
+    const [first, second] = CONVERGENT.entries;
+    show({ [first!.id]: read(first!.id), [second!.id]: read(second!.id) });
+    render(<ContextMenus doors={{ copy }} />);
+
+    rightClick(screen.getByRole('heading', { level: 2, name: second!.title }));
+    expect(await menuActs(`Actions for ${second!.title}`)).toEqual(['Copy path']);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Copy path' }));
+    expect(copy).toHaveBeenCalledWith(second!.path);
   });
 });

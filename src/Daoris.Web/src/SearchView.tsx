@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
 import { EntryMainNotice, EntryPage } from './knowledge/EntryPage';
@@ -24,7 +24,7 @@ import type { ViewLayout } from './work/ViewFrame';
  * **What it remembers is its list's** (`listPanes.ts`, §3f): the entry chosen, by its id, and *local only*. What was
  * typed is not kept: it is what the person is typing now.
  */
-export function useSearchView({ active, chosen, onChoose, filters: kept, onFilters, notify, semantic, onConverge }: {
+export function useSearchView({ active, chosen, onChoose, filters: kept, onFilters, notify, semantic, onConverge, handed, onHanded }: {
   /** The view is in front: only then does it ask, and say its errors. */
   active: boolean;
   /** The list's chosen item, an entry's id, which the application remembers (`daoris.list.search.chosen`). */
@@ -38,10 +38,22 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
   semantic: boolean;
   /** Where an empty answer points: the view that finds a conclusion reached in other words. */
   onConverge: () => void;
+  /**
+   * Words another door asked Search for, once per `id`: a right-click's *Search Daoris for it* (CTX1). They replace what
+   * the box held, and the holder lets them go once in the box.
+   */
+  handed?: { text: string; id: number } | null;
+  onHanded?: () => void;
 }): ViewLayout {
   const { t } = useTranslation();
   const { localOnly } = searchFilters(kept);
   const [query, setQuery] = useState('');
+  // From the effect, never the render (frontend-architecture §4b): the holder clears what was taken.
+  useEffect(() => {
+    if (!handed) return;
+    setQuery(handed.text);
+    onHanded?.();
+  }, [handed?.id]);
   const debounced = useDebounced(query, 250).trim();
   const asked = debounced.length >= 2;
 

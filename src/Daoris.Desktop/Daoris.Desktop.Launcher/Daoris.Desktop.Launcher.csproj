@@ -15,4 +15,11 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- The update's check and swap (UPDATE1, D139 §5): the driver library's own source, compiled in rather than
+         referenced, so the launcher still references nothing and the check it runs before it moves a file is the one the
+         application runs before it closes. The file uses the base library alone; `StagedBuildTests` holds it. -->
+    <Compile Include="..\Daoris.Desktop.Driver\StagedBuild.cs" Link="StagedBuild.cs" />
+  </ItemGroup>
+
 </Project>

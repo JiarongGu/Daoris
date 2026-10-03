@@ -21,6 +21,8 @@ export const keys = {
   untrusted: ['untrusted'] as const,
   /** Ask Daoris's conversation opened ahead of the person (HELP5) — kept by the page, never fetched. */
   helpReadied: ['help-readied'] as const,
+  /** Where the install's update stands (UPDATE1, D139): asked once, then kept by the shell's `UPDATE_STATE`. */
+  update: ['update'] as const,
   allRepositories: ['repositories'] as const,
   repositories: (workspace: string | null) => ['repositories', workspace ?? '*'] as const,
   allRegistry: ['registry'] as const,

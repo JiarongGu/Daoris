@@ -22,6 +22,12 @@ namespace Daoris.Desktop;
 /// </remarks>
 public static class Refusals
 {
+    /// <summary>A word on an update with no install, or nothing staged beside it (UPDATE1, D139 §3): there is nothing to install.</summary>
+    public const string UpdateNothingStaged = "UPDATE_NOTHING_STAGED";
+
+    /// <summary>A word on an update that is not one of when-idle, now and not-now (UPDATE1).</summary>
+    public const string UpdateModeUnknown = "UPDATE_MODE_UNKNOWN";
+
     /// <summary>A remote with an address but no key, or the reverse — no remote in any loader.</summary>
     public const string RemoteHalfDeclared = "REMOTE_HALF_DECLARED";
 

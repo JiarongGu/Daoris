@@ -57,6 +57,14 @@ public sealed class DriverWatch(
     /// <summary>Handed to every look's driver: <see cref="Driver.Runner"/>, a test's in-process stand-in for a start's run (DEV3).</summary>
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
+    /// <summary>
+    /// Whether an update is draining this loop (UPDATE1, D139 §2), asked at every look: while it answers true, each look
+    /// plans with <see cref="InstallUpdate.Drained"/>, so nothing new starts, and says the hold as the update's
+    /// (<see cref="InstallUpdate.HeldFor"/>). The look itself goes on — the endings, the plugins' word on them, the sync —
+    /// and what runs is never touched. Null, as in the headless host, is never.
+    /// </summary>
+    public Func<bool>? Draining { get; init; }
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge()
@@ -127,11 +135,14 @@ public sealed class DriverWatch(
 
                     if (!followed) following ??= FollowEveryLineAsync(config, ct);
 
+                    // Asked once per look, so the plan and what the report says of it agree (UPDATE1).
+                    var draining = Draining?.Invoke() == true;
                     var report = await new Driver(
-                            service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events, browser,
-                            Running)
+                            service, draining ? InstallUpdate.Drained(config) : config, AdapterSet.Built(), home, processes, sync, output,
+                            _harnesses, usage, hooks, events, browser, Running)
                         { Runner = Runner }
                         .TickAsync(sessions.Token).ConfigureAwait(false);
+                    if (draining) report = report with { Considerations = InstallUpdate.HeldFor(report.Considerations, config) };
                     if (sweep.Count > 0)
                     {
                         report = report with { Events = [.. sweep, .. report.Events] };

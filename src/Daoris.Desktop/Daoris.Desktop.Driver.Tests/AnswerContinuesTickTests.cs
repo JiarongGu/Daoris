@@ -89,15 +89,24 @@ public sealed class AnswerContinuesTickTests : IDisposable
 
         var (answered, message) = await new ServiceClient(service.Url, null).AnswerSessionAsync("s1", "Port 8080.");
         Assert.True(answered, message);
-        Assert.Equal("awaiting-person", service.Session("s1")["state"]!.GetValue<string>());
+        // The precondition the next look plans from: the park, still parked, with the answer on it.
+        var park = service.Session("s1");
+        Assert.True(
+            park["state"]!.GetValue<string>() == "awaiting-person" && park["answer"]?.GetValue<string>() == "Port 8080.",
+            $"the answered park before the next look: {park.ToJsonString()}");
 
-        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var look = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
-        Assert.Equal(1, service.SessionCount);
+        // 🔴 Said whole on failure (the merge of 2026-10-03): the park before the look, the plan, what the look did, and the
+        // record and its quest after it. A park whose resumed run closed its quest once ended still parked here.
         var record = service.Session("s1");
-        Assert.Equal("completed", record["state"]!.GetValue<string>());
-        Assert.Equal("Done", service.Status("q1"));
-        Assert.Equal(["working", "completed"], service.MovesAfterAnswer("s1"));
+        var seen = $"before: {park.ToJsonString()}\nplan: {string.Join(" | ", look.Considerations.Select(c => $"{c.Quest.Id} {c.Verdict}: {c.Reason}"))}"
+                   + $"\nlook: {string.Join(" | ", look.Events)}\nafter: {record.ToJsonString()}\nquest: {service.Status("q1")}"
+                   + $"\nmoves since the answer: {string.Join(", ", service.MovesAfterAnswer("s1"))}";
+        Assert.True(service.SessionCount == 1, seen);
+        Assert.True(record["state"]!.GetValue<string>() == "completed", seen);
+        Assert.True(service.Status("q1") == "Done", seen);
+        Assert.True(service.MovesAfterAnswer("s1").SequenceEqual(["working", "completed"]), seen);
 
         var heard = Heard();
         Assert.Single(heard, line => line["method"]!.GetValue<string>() == "session/new");

@@ -96,9 +96,11 @@ export function useLinkOpener(notify: (text: string, kind?: 'ok' | 'error') => v
 
 /**
  * Daoris's own browser (D78): the window the person signs in to and watches an agent use. Not a route
- * into this bundle like the others — it shows pages that are not Daoris's, with no bridge.
+ * into this bundle like the others — it shows pages that are not Daoris's, with no bridge. Given an address,
+ * it opens there whatever the links setting says: a right-click's *Open in Daoris's browser* (CTX1). The shell
+ * checks the address by its own rule before it opens anything.
  */
 export const useOpenBrowser = () => useMutation({
-  mutationFn: () =>
-    getBridge().invoke<{ opened: boolean; windows: string[] }>('DAORIS.WINDOWS', 'OPEN_BROWSER', {}),
+  mutationFn: (url?: string) =>
+    getBridge().invoke<{ opened: boolean; windows: string[] }>('DAORIS.WINDOWS', 'OPEN_BROWSER', url ? { payload: { url } } : {}),
 });

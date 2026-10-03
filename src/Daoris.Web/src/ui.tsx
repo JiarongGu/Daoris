@@ -525,7 +525,8 @@ export function MetaLine({ items, className }: {
 export function PathText({ path, className }: { path: string; className?: string }) {
   const parts = path.split(/(?<=[\\/])/);
   return (
-    <span className={cn('font-mono wrap-anywhere', className)}>
+    // A right-click copies the path whole (CTX1, D138).
+    <span data-copy={path} className={cn('font-mono wrap-anywhere', className)}>
       {parts.map((part, index) => (
         <Fragment key={index}>{part}{index < parts.length - 1 && <wbr />}</Fragment>
       ))}
@@ -1101,6 +1102,50 @@ function MenuSeparator({ className, ...props }: ComponentProps<typeof DropdownMe
 }
 
 /**
+ * One act a menu offers (CTX1, D138): its name, its glyph, and what choosing it does. A surface's ⋯ and its right-click
+ * draw the same list, so the two never offer a different set.
+ */
+export type MenuAct = {
+  /** Its name in the surface's own rule (`answer`, `take`, `copy`), unique in its menu. */
+  id: string;
+  /** What it is called, in the reader's language: the same words its button says. */
+  label: string;
+  icon?: IconName;
+  /** Offered and not choosable now: an act on its way. */
+  disabled?: boolean;
+  /** What choosing it does. */
+  onSelect?: () => void;
+  /** Or the words it copies, which the menu's owner copies and says it copied, since nothing on the screen shows it. */
+  copy?: string;
+};
+
+/**
+ * A list of acts as a menu's rows (CTX1): its glyph in a column of its own, so the names line up whether or not each act
+ * has one, then its name. A copy goes to `onCopy`, the menu owner's.
+ */
+function MenuActRows({ acts, onCopy }: { acts: readonly MenuAct[]; onCopy?: (text: string) => void }) {
+  return (
+    <>
+      {acts.map((act) => (
+        <MenuRow
+          key={act.id}
+          disabled={act.disabled}
+          onSelect={() => {
+            if (act.onSelect) act.onSelect();
+            else if (act.copy !== undefined) onCopy?.(act.copy);
+          }}
+        >
+          {act.icon
+            ? <Icon name={act.icon} size={12} className="shrink-0 text-ink-faint" />
+            : <span aria-hidden className="w-3 shrink-0" />}
+          {act.label}
+        </MenuRow>
+      ))}
+    </>
+  );
+}
+
+/**
  * **The menu** (MENU1): every dropdown in the window, on Radix's dropdown menu, as `SelectField` is every select. Its
  * parts are Radix's names, so a menu reads as one did before it had an atom, and every pixel is here: the surface,
  * the cap, the row's density and look, the tick's column, a label and a rule.
@@ -1108,7 +1153,8 @@ function MenuSeparator({ className, ...props }: ComponentProps<typeof DropdownMe
  * @remarks
  * Eight files had each styled the primitive on their own, and none capped its height, so a long menu ran off the
  * window. `primitives.test.ts` now holds that no file but the atoms imports a primitive. No sub-menu is here, since no
- * menu has one; one is added here the day a menu needs it.
+ * menu has one; one is added here the day a menu needs it. `Acts` draws a surface's acts (CTX1), as its ⋯ and the
+ * right-click menu both do.
  */
 export const Menu = {
   Root: MenuRoot,
@@ -1120,6 +1166,7 @@ export const Menu = {
   RadioItem: MenuRadioRow,
   Label: MenuLabel,
   Separator: MenuSeparator,
+  Acts: MenuActRows,
 };
 
 /**
