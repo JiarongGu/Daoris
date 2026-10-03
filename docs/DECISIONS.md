@@ -10093,3 +10093,38 @@ when and edit, clear, the bound) and `ProjectsView.test.tsx` (shown on the repos
 (`HelpRoomTests`, seen failing with the list removed), so `daoris driver list` shows nothing the room does not. Not covered:
 no real agent was handed the answer, so whether it stops the go-ahead questions it answers is not measured; the page was
 not looked at on the window.
+
+**KNOWUSE1c, built 2026-10-03: a closing note keeps what needs the person apart from readings, each naming its source.**
+Every driven instruction (a claim, a D79 resume, a carry-on) ends its look-and-ask paragraphs with how the close is written
+(`TargetPrompt.Closing`): the note a quest closes with and the last message a stop ends on keep two lists apart. Under
+*Needs you*, only what the person alone can give, each with why and what was looked at first. Under *Readings*, everything
+else, said as the session's reading rather than asked, each naming what it rests on: the quest's or its linked ticket's
+line, quoted; a document's path and line; a code path. The look names the indexes the session's tree keeps
+(`RepositoryIndexes.Find`, read in `SessionTarget.ForQuest` beside the code map): the router `daoris.json` declares, then
+every markdown file with *index* as a word of its name, one level deep in the root, `docs/`, `.claude/`, `.claude/rules/`,
+`.claude/knowledge/`, `.agents/` and `.agents/knowledge/`. Choices §4 left open:
+- **An agreement the repository's own documents require is the person's**, listed beside a go-ahead, a sign-in and a
+  preference nothing records: point 7 keeps such a document standing, so it is not a reading to take.
+- **Both places the person reads**: a quest's close and a stop's last message, since 15 of the 46 came in parks.
+- **The headings are words, not a format.** The harness writes the note and nothing parses it; a fact gates and a
+  judgement reports (D54).
+- **Indexes are found by name, not by reading the instructions.** The evidence's repository named its indexes in its
+  instructions by file name alone, kept in its rules folder; a name over the folders documents and doctrine are kept in finds
+  them, Daoris's generated index and an unadopted repository's alike, with no one's prose parsed and no walk of the tree.
+- **The router is a pointer, not a twin** of `checkDocuments` and `RepositoryDocuments`. It is named only as a plain
+  repository-relative path (no `..`, no root, no drive) to a file the tree holds, and nothing is refused or gated on it,
+  so `.claude/knowledge/twins.md` gains no row.
+- **Eight named at most**, the rest counted beside them: a pointer, not a listing.
+- **The instruction is LF throughout.** `Carried` ended its lines in the platform's newline, so a quest with links, files or
+  a chain was handed CRLF lines inside an LF instruction on Windows. It now ends them in LF, which the golden needed to
+  hold one text on every machine.
+
+Proof: `AskAndWaitPromptTests` (every instruction keeps the two lists, each naming its source, after the stop; the indexes
+named where the tree keeps one, two or three, and bounded), seen failing before the wording; `RepositoryIndexesTests` (none;
+each folder in order; nothing deeper or elsewhere; the name table; the router's two shapes and its spellings, first; a
+router that is an index named once; twelve declarations that name nothing; a manifest that does not read; `ForQuest`), seen
+failing on a stub that found nothing; `TargetPromptGoldenTests`, new: three instructions (a repository's quest carrying
+nothing, an ask's with every section, a carry-on after the person's answer) pinned as they were, then the goldens gained the
+wording and failed before the instruction did. Not covered: no real agent was handed it, so whether a harness keeps the
+two lists and cites its sources is not measured, which a canary turn on the owner's install is for; nothing checks a
+closing note's shape, by design; an index named otherwise, or kept deeper, is not named.

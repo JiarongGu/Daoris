@@ -128,6 +128,90 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// KNOWUSE1c (D135 §4): 31 of the 46 items put to the owner came in closing notes, readings put as decisions under
+    /// headings such as "Decisions for you" beside the production yeses, and none quoting the ticket's line it rested on.
+    /// The close keeps what only the person can give apart from what the session took, and every item names its source.
+    /// </summary>
+    [Fact]
+    public void A_closing_note_keeps_what_needs_the_person_apart_from_readings_each_naming_its_source()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains(
+                "Your closing note, and your last message whenever you stop, keeps two lists apart.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Under **Needs you**, only what the person alone can give — a go-ahead, an agreement this repository's own "
+                + "documents require, a sign-in, a preference nothing records — each with why, and what you looked at first.",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Under **Readings**, everything else you decided or took on the evidence, each said as your reading rather than "
+                + "asked as a question, and each naming what it rests on: the line of the quest or of the ticket it links, quoted; "
+                + "a document's path and line; or a code path.",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "An item that names nothing it checked has not been looked into yet: look before you write it.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>The close's two lists are said after the stop for the person, which is one of the two places they are written.</summary>
+    [Fact]
+    public void The_closing_notes_two_lists_come_after_the_stop_for_the_person()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var person = prompt.IndexOf("Stop only for what no source holds", StringComparison.Ordinal);
+            var close = prompt.IndexOf("Your closing note, and your last message", StringComparison.Ordinal);
+            var propose = prompt.IndexOf("If a command the work genuinely needs is refused", StringComparison.Ordinal);
+            Assert.True(person >= 0 && person < close && close < propose, which);
+        }
+    }
+
+    /// <summary>
+    /// KNOWUSE1c (D135 §4): the look names the indexes the repository keeps for its own documents, where its tree keeps any,
+    /// so a session starts from them rather than from "this repository's own documents" alone. None, and the look reads as
+    /// it did.
+    /// </summary>
+    [Fact]
+    public void The_look_names_the_repositorys_own_indexes_where_its_tree_keeps_them()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            Assert.False(prompt.Contains("indexes its own documents", StringComparison.Ordinal), which);
+        }
+
+        foreach (var (indexes, named) in new (string[], string)[]
+        {
+            (["docs/README.md"], "`docs/README.md`"),
+            (["docs/README.md", ".claude/INDEX.md"], "`docs/README.md` and `.claude/INDEX.md`"),
+            (["docs/README.md", ".claude/rules/RULES_INDEX.md", ".claude/rules/RULES_INDEX_CROSS.md"],
+                "`docs/README.md`, `.claude/rules/RULES_INDEX.md` and `.claude/rules/RULES_INDEX_CROSS.md`"),
+        })
+        {
+            foreach (var (which, prompt) in EveryInstruction(Target() with { Indexes = indexes }))
+            {
+                Assert.True(Flat(prompt).Contains(
+                    $"through your connector's `knowledge_search`. This repository indexes its own documents in {named}: start the "
+                    + "look there, and read every document whose entry matches this work. A question one of these settles",
+                    StringComparison.Ordinal), $"{which}, {indexes.Length}");
+            }
+        }
+    }
+
+    /// <summary>A pointer, not a listing: past <see cref="TargetPrompt.IndexLimit"/> the rest are counted, not named.</summary>
+    [Fact]
+    public void The_look_names_a_bounded_number_of_indexes_and_counts_the_rest()
+    {
+        var indexes = Enumerable.Range(1, TargetPrompt.IndexLimit + 2).Select(n => $"docs/INDEX_{n:00}.md").ToArray();
+
+        var flat = Flat(TargetPrompt.Compose(Target() with { Indexes = indexes }));
+
+        Assert.Contains($"`docs/INDEX_{TargetPrompt.IndexLimit:00}.md` and 2 more like them: start the look there", flat);
+        Assert.DoesNotContain($"docs/INDEX_{TargetPrompt.IndexLimit + 1:00}.md", flat);
+    }
+
+    /// <summary>
     /// The look comes first, then asking another repository, then stopping for the person: the order a session
     /// should reach for them in.
     /// </summary>
