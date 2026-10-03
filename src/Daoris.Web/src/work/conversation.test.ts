@@ -88,6 +88,24 @@ describe('toTurns', () => {
   });
 
   /**
+   * CONTEXT1: a target's ask carries what it was composed of, its account, or null where its record keeps none, so the page
+   * says that rather than nothing; the person's own words carry none. The opening a long run reads from carries it too.
+   */
+  it('carries a target’s account onto its ask, null where its record kept none', () => {
+    const account = { chars: 12, sections: [{ name: 'quest', source: 'quest', said: 'the quest: 12 characters', chars: 12 }] };
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'take quest #q1', account }),
+      e(2, { kind: 'user', origin: 'person', text: 'and the changelog' }),
+    ]);
+    expect(turns[0]!.ask!.account).toEqual(account);
+    expect(turns[1]!.ask).not.toHaveProperty('account');
+
+    expect(toTurns([e(1, { kind: 'user', origin: 'target', text: 'go' })]).turns[0]!.ask!.account).toBeNull();
+    const opening = e(1, { kind: 'user', origin: 'target', text: 'go', account });
+    expect(toTurns([e(9, { kind: 'message', text: 'later' })], { opening }).turns[0]!.ask!.account).toEqual(account);
+  });
+
+  /**
    * STEER1 (D136): what the person tells a working session shows the moment it is said, in the turn it was said in, as
    * waiting — without opening a turn, since the agent is still on the one before. Where the session took the words, the
    * same words come again under the same id as that turn's ask, and they wait no longer.
