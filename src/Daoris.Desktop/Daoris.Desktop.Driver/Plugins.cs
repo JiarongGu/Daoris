@@ -36,6 +36,11 @@ public sealed record PluginServer(
     string Name, IReadOnlyList<string> Command, IReadOnlyDictionary<string, string> Environment);
 
 /// <summary>A plugin's manifest, as read — with everything a refused plugin would have contributed already removed.</summary>
+/// <param name="Icon">
+/// Its icon (PLUGUI2, D140 §3.1): a path inside its folder to an SVG or a PNG, as the manifest writes it, once the
+/// manifest's rules hold. Null with none, and with one those rules refuse. <see cref="PluginIcon.Read"/> judges the file.
+/// </param>
+/// <param name="IconProblem">Why its declared icon is not drawn, by the manifest's rules; never a reason to refuse the plugin.</param>
 public sealed record PluginManifest(
     string Id,
     int ApiVersion,
@@ -44,7 +49,9 @@ public sealed record PluginManifest(
     string Description,
     IReadOnlyList<PluginHarness> Harnesses,
     PluginHooks? Hooks,
-    IReadOnlyList<PluginServer> Servers)
+    IReadOnlyList<PluginServer> Servers,
+    string? Icon = null,
+    string? IconProblem = null)
 {
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);
@@ -208,7 +215,8 @@ public sealed class PluginCatalog
                 }
             }
 
-            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server.
+            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server. Its icon stays: it is how the
+            // person recognises the plugin the sentence is about, never something the plugin contributes (D140 §3.1).
             if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [] };
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
@@ -435,6 +443,11 @@ public sealed class PluginCatalog
                 }
             }
 
+            // Its icon, last: an icon's problem is said and never refuses the plugin (D140 §3.1).
+            var (icon, iconProblem) = root.TryGetProperty("icon", out var declaredIcon)
+                ? PluginIcon.Declared(declaredIcon)
+                : (null, null);
+
             return (new PluginManifest(
                 id,
                 apiVersion,
@@ -443,7 +456,9 @@ public sealed class PluginCatalog
                 Text(root, "description") ?? "",
                 harnesses,
                 hooks,
-                servers), null);
+                servers,
+                icon,
+                iconProblem), null);
         }
     }
 
