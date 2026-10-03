@@ -393,6 +393,54 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// <c>session.reopened</c> (D137 §3.3): written as the driver gives it, from which state, whether its own conversation
+    /// resumed, why not by a code, and the door the words were said at (MSG1d), null where none was kept. Never the words.
+    /// </summary>
+    [Fact]
+    public void A_reopen_taken_up_is_one_line_naming_the_door_its_words_were_said_at()
+    {
+        using var w = Watch();
+
+        w.Client.AccountSaid(Continuations.Reopened("s1", "claude-code-acp", "completed", why: null, door: "screen"));
+        w.Client.AccountSaid(Continuations.Reopened("s2", "claude-code-acp", "failed", ContinueWhy.Of(ContinueWhy.Tree), door: null));
+
+        var lines = Named("session.reopened").Select(Data).ToList();
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(("s1", "completed", true, "screen"), (
+            lines[0].GetProperty("session").GetString(), lines[0].GetProperty("from").GetString(),
+            lines[0].GetProperty("resumed").GetBoolean(), lines[0].GetProperty("door").GetString()));
+        Assert.Equal(("tree", JsonValueKind.Null), (lines[1].GetProperty("why").GetString(), lines[1].GetProperty("door").ValueKind));
+    }
+
+    /// <summary>
+    /// MSG1d (D137 §3.1): the person's words shown the moment they are said carry <c>reaches</c>, and are no prompt. The
+    /// open's wait and each turn are timed from the prompt that took them: a word said while a session opened, or to one that
+    /// had ended, times nothing from when it was said, and nobody's words are written.
+    /// </summary>
+    [Fact]
+    public async Task Words_shown_waiting_are_no_prompt_and_time_nothing()
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code-acp");
+        var s = id!;
+
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "said-1", Text = "the level file moved", Reaches = "next-step" }, 1);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the composed target" }, 3);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Message, Text = "on it" }, 4);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" }, 10);
+        // Written to after it ended, then gone on with: the turn is the resumed run's, from the words where it took them.
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "also the changelog", Reaches = "resume", Door = "screen" }, 100);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "also the changelog" }, 160);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Message, Text = "added" }, 161);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" }, 170);
+
+        Assert.Equal(3000, Data(Assert.Single(Named("session.opened"))).GetProperty("openMs").GetInt64());
+        Assert.Equal([1000L, 1000L], Named("turn.answered").Select(Data).Select(line => line.GetProperty("firstAnswerMs").GetInt64()));
+        Assert.Equal([7000L, 10000L], Named("turn.ended").Select(Data).Select(line => line.GetProperty("turnMs").GetInt64()));
+        Assert.DoesNotContain("changelog", Raw());
+    }
+
+    /// <summary>
     /// A park is the state the attention watch calls one (<see cref="SessionStates.IsParked"/>), and no other:
     /// <c>AttentionTests</c> holds the same rows, so what the log counts is what the person was told about.
     /// </summary>

@@ -119,6 +119,32 @@ public sealed record SessionEvent
     public string? Reaches { get; init; }
 
     /// <summary>
+    /// For the person's words shown the moment they are said (MSG1d, D137 §3.3): the door they were said at, <c>screen</c> or
+    /// <c>terminal</c>, which the machine log's <c>session.reopened</c> names when the words reopen the session. Null where
+    /// the door kept none.
+    /// </summary>
+    public string? Door { get; init; }
+
+    /// <summary>
+    /// For the driver's note about the person's words (MSG1d, D137 §3.1): the ids of the words it speaks of, as their record
+    /// gave them, so the note pairs with where the words were shown.
+    /// </summary>
+    public IReadOnlyList<string>? Words { get; init; }
+
+    /// <summary>
+    /// For the driver's note that the person's words went to a new session (MSG1d, D137 §3.1): that session's id, which the
+    /// page links.
+    /// </summary>
+    public string? To { get; init; }
+
+    /// <summary>
+    /// For the driver's note about the person's words (MSG1d, D137 §5.1): why they did not go on in this session, a code of
+    /// <see cref="ContinueWhy"/>. A reason is chrome, so the page says it in its own words from the code; the line beside it
+    /// is the driver's English.
+    /// </summary>
+    public string? Why { get; init; }
+
+    /// <summary>
     /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached (CONV4c) —
     /// names, never the kept paths or the lines Daoris added to reach them.
     /// </summary>
@@ -373,7 +399,8 @@ public sealed class SessionEvents(string directory)
     /// <remarks>
     /// Machine-local, like the record it is read from (D47 §4): what a session said never rides the
     /// session record, which travels. A driven session's composed target is not the person speaking, so
-    /// it has no opening; nor has a session with no record here, nor an id that is not one.
+    /// it has no opening, and the person's words to it later, shown waiting or taken, do not make it one
+    /// (MSG1d); nor has a session with no record here, nor an id that is not one.
     /// </remarks>
     public IReadOnlyDictionary<string, string> Openings(IEnumerable<string> sessionIds)
     {
@@ -382,9 +409,10 @@ public sealed class SessionEvents(string directory)
         {
             if (!IsId(id)) continue;
             var path = Path.Combine(directory, $"{id}.events.jsonl");
-            // Only as far as the first thing the person said, which is usually the file's first line.
-            var asked = Lines(path).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Origin == "person");
-            if (asked?.Text is not { } text) continue;
+            // Only as far as its first prompt, which is usually the file's first line, and only where the person said it. Words
+            // shown waiting are no prompt, and a driven session the person wrote to later was still opened by its target (MSG1d).
+            var asked = Lines(path).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Reaches is null);
+            if (asked?.Origin != "person" || asked.Text is not { } text) continue;
 
             var first = text.Split('\n', 2)[0].Trim();
             if (first.Length == 0) continue;
@@ -392,6 +420,27 @@ public sealed class SessionEvents(string directory)
         }
 
         return openings;
+    }
+
+    /// <summary>
+    /// The door the first of these words was said at (MSG1d, D137 §3.3), read from the event that showed it waiting: what the
+    /// machine log's <c>session.reopened</c> names. Null where no such event names one: words said before doors were kept,
+    /// a door that wrote no record, no record, or an id that is not one.
+    /// </summary>
+    public string? DoorOf(string sessionId, IReadOnlyCollection<string> words)
+    {
+        if (!IsId(sessionId) || words.Count == 0) return null;
+        var wanted = new HashSet<string>(words, StringComparer.Ordinal);
+        try
+        {
+            return Lines(PathOf(sessionId)).FirstOrDefault(e =>
+                e.Kind == SessionEventKind.User && e.Reaches is not null && e.Door is { Length: > 0 }
+                && e.Id is { } id && wanted.Contains(id))?.Door;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     /// <summary>

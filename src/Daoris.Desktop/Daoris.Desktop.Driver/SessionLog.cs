@@ -25,7 +25,9 @@ namespace Daoris.Driver;
 /// (UNBLOCK5, D122 §3.10). Beside the sessions, what the client says of the registry and of the workspace
 /// plans: <c>registry.followed</c> (WSSETUP5) and the <c>setup.*</c> lines (WSSETUP6); and of the accounts:
 /// <c>account.limited</c> and <c>starts.waiting</c> (TOOL4d). An answer taken up, <c>session.answered</c> (ANSWER1a,
-/// D131 §2), rides the account lines' channel, which writes a catalogued line as it is given.</para>
+/// D131 §2), and words that reopened an ended record, <c>session.reopened</c> with the door they were said at (MSG1b,
+/// MSG1d, D137 §3.3), ride the account lines' channel, which writes a catalogued line as it is given. The person's words
+/// shown the moment they are said (an event with <c>reaches</c>) are no prompt, and time nothing.</para>
 ///
 /// <para><b>A park is counted where it is made</b> (WSSETUP11, D124 §7.3): a session that stopped to ask the
 /// person (D83) is what setting a workspace up is meant to make rarer, so parks per week are its measure. Only
@@ -277,6 +279,12 @@ public sealed class SessionLog : IDisposable
 
             switch (e.Kind)
             {
+                // The person's words shown the moment they are said carry their reach, and are no prompt (MSG1d, D137 §3.1):
+                // the same words come again where the session took them, and that is where its open's wait and a turn end
+                // or begin. Timed from the saying, a word said to a session that had ended would open a turn of hours.
+                case SessionEventKind.User when e.Reaches is not null:
+                    break;
+
                 case SessionEventKind.User:
                     if (!watched.Asked && watched.Opened is { } opened)
                     {
