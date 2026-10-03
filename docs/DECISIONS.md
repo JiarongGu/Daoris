@@ -10016,3 +10016,80 @@ KNOWUSE3.
 records, the documents and the owner's later words; the owner did not class them, which is what KNOWUSE2 measures. One
 session was still running and an earlier ticket's ten sessions were not read. No session was re-run with the proposed
 wording. `verify` checks this entry's place and the evidence's links, and none of their words.
+
+**KNOWUSE1a, built 2026-10-03: a go-ahead is asked once and held on the ask.** A session asks through its connector's
+`go_ahead_ask` (`kind`, `on`, `act`, `why`), which the connector default now allows in both twins
+(`Permissions.cs`, `permissions.ts`). `SessionLedger.AskGoAheadAsync` derives the ask as a word's is (DRIFT1a) and keeps
+the request in the ask's `go_aheads` column, read, decided and written in one transaction
+(`AskStore.DecideGoAheadsAsync`). Both ask routes answer `goAheads`. The person answers at
+`POST /api/asks/{id}/go-aheads/{n}` (`approved` or `refused`, with their words), `daoris-driver ask --go-ahead <id> <n>
+approve|refuse ["…"]`, and the ask's page's *Go-aheads*. Every start on the ask (a claim, a D79 resume, a carry-on on any
+account, a follow-up step) is handed them beneath the person's words (`GoAheadsText.Beneath`). A conversation an answer
+resumes (ANSWER1a) is handed the answers to the go-aheads it asked, after the person's answer, while its record keeps only
+the answer as theirs (`GoAheadsText.Resumed`). A quest an ask asked tells its session to ask once, through the tool.
+Choices §2 left open:
+- **How an act is named** (`GoAheadAct`), from the evidence's thirteen asks. There are three parts: the kind, read from
+  five words and their usual names (*put*, *deploy*, *login*); where it lands, an environment's names read as one (*prod*,
+  *live*, *production*); and what it touches, by its words. Case, the small words, a possessive, a plural's ending and its
+  own kind and place said again are set aside. Words only, so no model answers it (D24).
+- **One act** is the same kind, the same place, and every word of the earlier act's: a later request may be more precise
+  (*menu entry*, then *the report's menu entries*). Among several that match, the most precise answers it.
+- **Where text cannot tell**: a request sharing some of an earlier act's words without all of them, a broader one
+  included, is asked once more as its own, with `near` naming the earlier, and the session is told it could not match it.
+  A yes never covers an act the person did not read. Another kind or place, or no word shared, is simply another act.
+- **The answer replaces** an earlier one, since the latest is what the person says now, and is the person's alone: no
+  connector tool and no Ask Daoris kind answers one (HELP9's room names the terminal's door). A request for a refused act
+  joins it and is told not to do it; the same session asking twice adds no second request.
+- **Bounded**: `on` and `act` at most 300 characters, the reason and the person's words 2,000, an ask at most 50
+  go-aheads; the instruction carries 8,000 characters of them and names the rest by number.
+- **Kept as written**: a go-ahead this build cannot read (a newer kind, a half-written entry) is passed over on read, kept
+  by the next write, and numbered past. A store from before gains the column, every ask holding none.
+
+Proof: `GoAheadTests` (a request kept as go-ahead 1; the proof, a carry-on's second request in other words joining the
+first; a more precise one joining; one the words cannot tell asked once more, saying so; another kind, place or thing;
+an answer kept and told to a later request; a refusal and its replacement; the refusals; no ask; a follow-up step; a later
+publish and close; an unreadable entry kept; a store from before; the naming tables), seen failing with the join removed;
+`McpToolsTests` (asked and joined through two sessions' connectors), seen failing without the tool; `LocalHostTests`
+(both ask routes, the answer door's 200, 400 and 404), seen failing with the route moved; `SharedHostTests` (no door on a
+shared host). In the driver, `GoAheadsHandedTests` (the proof, a carry-on handed what was approved, refused and waiting;
+every kind of start and a follow-up; the tool named only on an ask; the bound; the client's read; the resumed prompt; the
+terminal's door), seen failing with the section removed; `PermissionRulesTests` and `permissions.test.ts`, seen failing
+before the tool was allowed; the room's goldens gained the door's row. In the page, `asks.test.tsx` (each listed with the
+person's words, a yes with words, a no, an answer changed, no door, no section), seen failing before the list was drawn;
+`api.test.ts` (the door's path and body). Not covered: no real agent was handed the tool, so whether a harness asks
+through it rather than in its last message is not measured; nothing compares an act's words by meaning, so two wordings
+sharing no word are asked twice; the parked session's page does not show the go-aheads it asked, which are on the ask's
+page; the family rehearsal asks none; the page was not looked at on the window.
+
+**KNOWUSE1b, built 2026-10-03: a standing answer kept per repository.** It lives in `driver.json`'s `standing`, by
+repository, as the person's words with when they set them. Both twins read it by one table (`DriverConfig.Standing`,
+`driverconfig.ts`'s `standing`; `.claude/knowledge/twins.md` has the row). It is set at
+`daoris driver standing <repo> "…"|--clear`, on the repository's page under the driver's choices (`SET_STANDING`), and by
+Ask Daoris's `setting` kind's `standing` door. Every start reads it from the tick's config (`Driver.WithStanding`): a claim,
+a D79 resume, a carry-on on any account and a follow-up step, each for its own repository. It is quoted beneath the quest,
+after the person's words and the go-aheads, saying it answers what it covers and that the quest's words and the ask's are
+newer and win (`StandingText`). Choices §3 left open:
+- **`driver.json`, not a file of its own**: it is a standing choice of the person's for this machine's driver, read at each
+  start beside the lines and landings, and `daoris driver list` shows it there. It is never written into the repository
+  (D32).
+- **Verbatim, one per repository**: the words trimmed at the ends only, a later answer replacing the earlier under the
+  spelling first written, the time kept in UTC to the second. Clearing is its own act (`--clear`, or no words at the screen's
+  door); blank words are refused.
+- **Bounded at 2,000 characters**, which the three doors refuse past, for the instruction's command-line reason (DRIFT1b).
+  An answer longer in a hand-edited file is cut in the instruction and said to be.
+- **Every session there, and no other**: a chat is the person's own conversation, and an ANSWER1 resume was handed it at
+  its start. Ask Daoris proposes it as a card the person applies, since it only says what the person said.
+
+Proof: `StandingTests` and `driverconfig.test.ts` (the shared table, the CLI parsing the driver's theory cell for cell; the
+written shape; a later answer; the refusals; another edit keeping it), seen failing before either reader existed;
+`StandingHandedTests` (the proof, a claim, a resume, a carry-on and a follow-up each handed it beneath the quest; a step in
+another repository handed that one's; gone once cleared; the bound), seen failing with the section removed;
+`DriverModuleStandingTests` (the screen's door writing the terminal's file, the state's rows, the refusals), seen failing
+with no route; `HelpSettingProposalTests` and `HelpSettingProposalsTests` (the box's shape, the driver's plan and its edit),
+seen failing before the door existed; `HelpCoverageTests` holds the verb to its door and the room names it, its goldens
+gaining the row; the CLI's usage fixture gained the verb. In the page, `StandingAnswer.test.tsx` (none and add, words with
+when and edit, clear, the bound) and `ProjectsView.test.tsx` (shown on the repository's page, saved and cleared on
+`DAORIS.DRIVER`), seen failing before the field existed. Ask Daoris's room lists each workspace's answers after its table
+(`HelpRoomTests`, seen failing with the list removed), so `daoris driver list` shows nothing the room does not. Not covered:
+no real agent was handed the answer, so whether it stops the go-ahead questions it answers is not measured; the page was
+not looked at on the window.

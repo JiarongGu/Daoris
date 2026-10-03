@@ -9,9 +9,12 @@ namespace Daoris.Driver.Host;
 /// daoris-driver ask --publish &lt;id&gt; --to &lt;repo&gt;
 /// daoris-driver ask --close &lt;id&gt; --reason "…"
 /// daoris-driver ask --delete &lt;id&gt;
+/// daoris-driver ask --go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]
 /// </code>
 /// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
 /// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
+/// <para><c>--go-ahead</c> answers a go-ahead a session asked on the ask, with the person's words if any (KNOWUSE1a):
+/// every session on the ask is handed the answer. The ask's page's <i>Go-aheads</i> is the other door.</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
 /// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
@@ -24,7 +27,7 @@ internal static class AskConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null;
+        string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null, goAhead = null;
         var files = new List<string>();
         var links = new List<string>();
         var words = new List<string>();
@@ -42,6 +45,7 @@ internal static class AskConsole
                 case "--publish": publish = Value(); break;
                 case "--close": close = Value(); break;
                 case "--delete": delete = Value(); break;
+                case "--go-ahead": goAhead = Value(); break;
                 case "--reason": reason = Value(); break;
                 default: words.Add(args[i]); break;
             }
@@ -65,6 +69,14 @@ internal static class AskConsole
             if (delete is not null)
             {
                 var (ok, message) = await service.DeleteAskAsync(delete).ConfigureAwait(false);
+                Console.WriteLine(message);
+                return ok ? 0 : 1;
+            }
+
+            if (goAhead is not null)
+            {
+                if (GoAheadCommand.Read(words, out var problem) is not { } answer) return Usage(problem!);
+                var (ok, message) = await service.AnswerGoAheadAsync(goAhead, answer.Number, answer.Approved, answer.Words).ConfigureAwait(false);
                 Console.WriteLine(message);
                 return ok ? 0 : 1;
             }
@@ -111,6 +123,7 @@ internal static class AskConsole
         Console.Error.WriteLine("       daoris-driver ask --publish <id> --to <repo>");
         Console.Error.WriteLine("       daoris-driver ask --close <id> --reason \"…\"");
         Console.Error.WriteLine("       daoris-driver ask --delete <id>");
+        Console.Error.WriteLine("       daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]");
         return 2;
     }
 }

@@ -28,6 +28,13 @@ public sealed record AskWordView(string Kind, string Text, DateTimeOffset At, st
 public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, DateTimeOffset? KeptFrom = null)
 {
     /// <summary>
+    /// The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, read in the same answer as the
+    /// words: null where the service answered none, unread or a host from before them, and the instruction says nothing of
+    /// them then.
+    /// </summary>
+    public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
+
+    /// <summary>
     /// The sender a quest an ask asked carries, chain steps included (D65 §4). A twin of the service's
     /// <c>AskDesk.SenderOf</c>, duplicated deliberately: the driver and the service share no code.
     /// </summary>
@@ -46,7 +53,8 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
             : null;
 
     /// <summary>What an ask the service answered holds: its words, or unread where a host answered none.</summary>
-    public static AskWords Of(AskView ask) => ask.Words is { } said ? new(ask.Id, said, ask.WordsKeptFrom) : Unread(ask.Id);
+    public static AskWords Of(AskView ask) =>
+        (ask.Words is { } said ? new AskWords(ask.Id, said, ask.WordsKeptFrom) : Unread(ask.Id)) with { GoAheads = ask.GoAheads };
 
     /// <summary>
     /// The person's words on the ask a quest was asked by, read from the ask for a session's start (DRIFT1b): null for a

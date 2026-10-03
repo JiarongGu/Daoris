@@ -221,6 +221,10 @@ export const usePublishAsk = () =>
   useAskChange(({ id, to }: { id: string; to: string }) => api.publishAsk(id, to));
 export const useCloseAsk = () =>
   useAskChange(({ id, reason }: { id: string; reason: string }) => api.closeAsk(id, reason));
+/** The person answers a go-ahead on their ask (KNOWUSE1a): every session on the ask is handed it at its next start. */
+export const useAnswerGoAhead = () =>
+  useAskChange(({ id, number, approved, words }: { id: string; number: number; approved: boolean; words?: string }) =>
+    api.answerGoAhead(id, number, approved, words));
 
 export const useQuests = (repository: string | null, includeClosed: boolean) => {
   const { workspace } = useScope();

@@ -836,8 +836,11 @@ public sealed partial class Driver(
             // another account that is now cooling, which only a limit makes so.
             var (lastPlan, lastWords) = prior is null ? ([], null) : CarriedFrom(_events, home, prior.Session);
             var elsewhere = prior is not null && OnAnotherAccount(prior, selection.Profile);
-            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is.
-            var target = (await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false)) with
+            // The person's words on the ask the quest was asked by (DRIFT1b, D133 §2), read for this start whatever kind it is;
+            // and their standing answer for its repository (KNOWUSE1b), from this machine's config.
+            var target = WithStanding(
+                await WithAskWordsAsync(SessionTarget.ForQuest(quest, workTree, service.BaseUrl), service, ct).ConfigureAwait(false),
+                config) with
             {
                 ReadsAcross = across.Reads,
                 WritesAcross = across.Writes,
@@ -1286,8 +1289,9 @@ public sealed partial class Driver(
         // same process; the pipe door reads its text, or its structure where its own wire carries one
         // (D76, CONV3). All of them end the same way: the record is concluded from the exit code and
         // what the session was for, never from what the session said about itself (D46 §4).
-        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target.
-        var prompt = resume?.Answer ?? TargetPrompt.Compose(target);
+        // A resume's prompt is the answer as it is (ANSWER1a): the conversation already holds the target. After it, the answers
+        // to the go-aheads it asked since its start (KNOWUSE1a).
+        var prompt = resume?.Prompt ?? TargetPrompt.Compose(target);
         // A quest's session keeps the id its harness names, which an answer to a park resumes (ANSWER1a). Never an
         // intake's: it is answered through its ask.
         var keepAs = target.Ask is null ? adapter.Name : null;
@@ -1622,6 +1626,13 @@ public sealed partial class Driver(
     /// </summary>
     internal static async Task<SessionTarget> WithAskWordsAsync(SessionTarget target, ServiceClient service, CancellationToken ct) =>
         target with { Words = await AskWords.ReadAsync(service, target.Asker, ct).ConfigureAwait(false) };
+
+    /// <summary>
+    /// The person's standing answer for the quest's repository on this machine (KNOWUSE1b, D135 §3), read from the config this
+    /// tick holds for every start, whatever kind: a follow-up step in another repository is handed that repository's.
+    /// </summary>
+    internal static SessionTarget WithStanding(SessionTarget target, DriverConfig config) =>
+        target with { Standing = config.StandingFor(target.Repository) };
 
     /// <summary>
     /// Whether a start runs on another account than the session it carries on ran on (TOOL4f): the record's account

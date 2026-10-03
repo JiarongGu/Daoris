@@ -7,7 +7,7 @@ import { ProjectList, type RepositoryRowFacts } from './projects/ProjectList';
 import { type Driving, ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
-import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetTrees, useSweepPlan } from './shell';
+import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetStanding, useSetTrees, useSweepPlan } from './shell';
 import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
 import { ListMore } from './work/ListPane';
@@ -63,6 +63,7 @@ export function useProjectsView({
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
+  const setStanding = useSetStanding();
   // Each repository's line as the driver resolves it (WSR2) — shell-only, and absent in a browser.
   const lines = useLines();
   const lineOf = (repository: string) => (Array.isArray(lines.data?.lines) ? lines.data.lines : [])
@@ -128,6 +129,12 @@ export function useProjectsView({
       onHold: (next) => setHold.mutate({ repository, held: next }, { onError: onDriverError }),
       onTrees: (next) => setTrees.mutate({ repository, ownTree: next }, { onError: onDriverError }),
       note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
+      // Its standing answer (KNOWUSE1b), matched without case as the driver matches it; a shell older than it answers no
+      // `standing`, and nothing is offered rather than a field whose save would be refused.
+      standing: (driver.data.standing ?? []).find((row) => row.repository.toLowerCase() === repository.toLowerCase()) ?? null,
+      onStanding: driver.data.standing === undefined
+        ? undefined
+        : (says) => setStanding.mutate(says === null ? { repository } : { repository, says }, { onError: onDriverError }),
     };
   };
 

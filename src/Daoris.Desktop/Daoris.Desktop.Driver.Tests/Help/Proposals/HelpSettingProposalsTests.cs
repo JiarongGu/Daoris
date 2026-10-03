@@ -42,6 +42,31 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.NotNull(plan.Apply);
     }
 
+    /// <summary>
+    /// KNOWUSE1b (D135 §3): a standing answer for a registered repository, planned in the person's words with the terminal's
+    /// spelling, and applied as `SET_STANDING` and `daoris driver standing` make it; cleared with `--clear`. One for a
+    /// repository this machine does not hold, and blank words, are refused in the driver's own sentences.
+    /// </summary>
+    [Fact]
+    public void A_standing_answer_is_planned_in_the_persons_words_and_applied_as_the_terminal_makes_it()
+    {
+        var plan = HelpProposals.Plan(Setting("standing", "engine", null, "dev writes allowed; prod only on a yes"), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris driver standing engine \"dev writes allowed; prod only on a yes\"", plan.Terminal);
+        Assert.Contains("handed to every session in `engine`", plan.Describe);
+        var config = plan.Apply!(DriverConfig.Empty);
+        Assert.Equal("dev writes allowed; prod only on a yes", config.StandingFor("engine")!.Says);
+        Assert.NotNull(config.StandingFor("engine")!.At);
+
+        var clear = HelpProposals.Plan(Setting("standing", "engine", null, "--clear"), config, Facts);
+        Assert.Equal("daoris driver standing engine --clear", clear.Terminal);
+        Assert.Null(clear.Apply!(config).StandingFor("engine"));
+
+        Assert.Contains("is not registered on this machine", HelpProposals.Plan(Setting("standing", "elsewhere", null, "dev only"), DriverConfig.Empty, Facts).Refusal);
+        Assert.Equal(DriverConfig.StandingRefusal, HelpProposals.Plan(Setting("standing", "engine", null, new string('x', 2_001)), DriverConfig.Empty, Facts).Refusal);
+    }
+
     [Fact]
     public void Applying_a_plan_makes_the_edit_the_screens_route_makes()
     {
@@ -121,7 +146,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         [
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
-            ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("intake", null, null, "off"),
+            ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("standing", "engine", null, "dev only"),
+            ("intake", null, null, "off"),
             ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
             ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
         ];

@@ -31,8 +31,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "intake", "helper", "strikes", "retry",
-        "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "intake", "helper", "strikes",
+        "retry", "timeout", "notify", "cap", "adapter",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -136,6 +136,19 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 var (refused, across) = Across(target, workspace, value, facts);
                 if (refused is not null) return Refused(refused, "", "");
                 planned = across;
+                break;
+            }
+            case "standing":
+            {
+                // KNOWUSE1b (D135 §3): the person's words for one repository, kept on this machine as `SET_STANDING` and
+                // `daoris driver standing` keep them; `--clear` takes the answer back.
+                var says = value == "--clear" ? null : value;
+                var at = DateTimeOffset.UtcNow;
+                planned = (says is null
+                        ? $"Clear `{target}`'s standing answer: its sessions are handed none."
+                        : $"Keep a standing answer for `{target}`, handed to every session in `{target}` beneath its quest: \"{says}\"",
+                    $"daoris driver standing {target} {(says is null ? "--clear" : $"\"{says.Replace("\"", "\\\"", StringComparison.Ordinal)}\"")}",
+                    c => c.WithStanding(target!, says, at));
                 break;
             }
             case "intake" or "helper":

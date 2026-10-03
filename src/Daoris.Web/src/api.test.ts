@@ -58,3 +58,31 @@ describe('a read the service has nothing for', () => {
     expect(notFound(await api.entry('game:x.md').catch((error: unknown) => error))).toBe(false);
   });
 });
+
+/**
+ * KNOWUSE1a: the person's yes or no to a go-ahead reaches the ask's go-ahead door, the go-ahead by its number, their
+ * words only where they gave some, and a refusal is the service's own sentence.
+ */
+describe('answering a go-ahead', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('posts the answer to the go-ahead by its number, with the person\'s words only where they gave some', async () => {
+    const sent: { url: string; body: unknown }[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: RequestInit) => {
+      sent.push({ url, body: JSON.parse(init.body as string) });
+      return Response.json({ ask: { id: 'a1' }, message: 'Go-ahead 2 on ask `#a1` approved.' });
+    }));
+
+    const answered = await api.answerGoAhead('a1', 2, true, 'only on the report site');
+    await api.answerGoAhead('a1', 3, false);
+
+    expect(answered.message).toBe('Go-ahead 2 on ask `#a1` approved.');
+    expect(sent.map((request) => request.url)).toEqual(['/api/asks/a1/go-aheads/2', '/api/asks/a1/go-aheads/3']);
+    expect(sent.map((request) => request.body)).toEqual([
+      { answer: 'approved', words: 'only on the report site' }, { answer: 'refused' },
+    ]);
+
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'Ask `#a1` holds no go-ahead 7: it holds 1, 2.' }, { status: 404 })));
+    expect(sentence(await api.answerGoAhead('a1', 7, true).catch((error: unknown) => error))).toBe('Ask `#a1` holds no go-ahead 7: it holds 1, 2.');
+  });
+});
