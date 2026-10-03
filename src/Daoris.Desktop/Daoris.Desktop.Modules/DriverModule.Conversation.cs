@@ -74,34 +74,8 @@ public sealed partial class DriverModule
             .ConfigureAwait(false) ?? throw NotReady();
         // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
         // session takes them (MSG1a's taken door), so they are never posted twice.
-        if (said.Running) KeptOnAsk(id, text, took: true);
+        if (said.Running) _loop.Words.KeepOnAsk(id, text);
         return new { said.Sent, said.Reaches, said.Why };
-    }
-
-    /// <summary>
-    /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session took
-    /// it, its words go to the service's door for them by the session's own id, and the service judges which ask, if any.
-    /// Never awaited by the page's answer: the message has reached its session whatever the service says, so <c>kept:
-    /// false</c> (a session on no ask), a refusal and a service that does not answer change nothing the person is told.
-    /// Only the words travel, never the files or where the person is (DRIFT1a keeps words alone).
-    /// </summary>
-    /// <returns>Whether the session took it, as given.</returns>
-    private bool KeptOnAsk(string session, string text, bool took)
-    {
-        if (!took || _loop.Service is not { } service) return took;
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await service.AddedToSessionAsync(session, text).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or OperationCanceledException or DriverException
-                                              or JsonException or ObjectDisposedException or InvalidOperationException)
-            {
-                // The words are still in the session's own record; the ask misses one of them, and nothing else does.
-            }
-        });
-        return took;
     }
 
     // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says

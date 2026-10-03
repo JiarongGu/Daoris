@@ -21,8 +21,17 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
     /// <summary>Whether the words reached a running session's own door, which keeps them on its ask only as it takes them.</summary>
     public bool Running { get; init; }
 
+    /// <summary>
+    /// The id the record gave words it kept, which its events say again where the session took them: what a terminal's say
+    /// follows to tell whether the same session took them (MSG1e2). Null where nothing kept them yet.
+    /// </summary>
+    public string? Word { get; init; }
+
+    /// <summary>The service's sentence beside its refusal, which a terminal prints for a code it does not word itself.</summary>
+    public string? Message { get; init; }
+
     /// <summary>Nothing takes them, for this reason.</summary>
-    public static WordsAnswer Refused(string why) => new(false, null, why);
+    public static WordsAnswer Refused(string why, string? message = null) => new(false, null, why) { Message = message };
 }
 
 /// <summary>
@@ -32,10 +41,14 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
 /// record ends, then kept the same way, never refused.
 /// </summary>
 /// <remarks>
-/// <para><b>What never goes on is said by a code</b> (D137 §2.2), judged from the record before anything is posted: a
-/// teammate's record, an intake, a session that stood down, Ask Daoris's own conversation (its panel opens a new one, and
-/// the design leaves it out), and a session whose quest went on in a later session here, whose words no look would take
-/// up (MSG1b plans a quest's last session only). The service judges again as it keeps them, and its refusal is the answer.</para>
+/// <para><b>What never goes on is said by a code</b> (D137 §2.2), judged from the record before anything is posted by the
+/// driver library's one table, <see cref="WordsNever"/>, which the terminal's <c>sessions say</c> judges by too: a
+/// teammate's record, an intake, a session that stood down, Ask Daoris's own conversation, and a session whose quest went
+/// on in a later session here. The service judges again as it keeps them, and its refusal is the answer.</para>
+///
+/// <para><b>Both doors.</b> The screen's box says words through <see cref="SayAsync"/>; a terminal's <c>sessions say</c>
+/// reaches the shell's request watch, which hands it to <see cref="HoldAsync"/>, the same judgement at the door
+/// <c>terminal</c> (MSG1e2).</para>
 ///
 /// <para><b>Shown at once, under the record's id.</b> The words are written to the session's conversation the moment the
 /// say door keeps them, as the person's, with the reach <c>resume</c>, the id the record gave them and the door they were
@@ -111,8 +124,8 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         try
         {
             if (await ReadAsync(id, ct).ConfigureAwait(false) is not { } read) return new(false, null, null);
-            if (read.Record is not { } record) return WordsAnswer.Refused("not-found");
-            return Never(record, read.Last) is { } never ? WordsAnswer.Refused(never) : new(true, "resume", null);
+            if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
+            return WordsNever.Judge(record, read.Last) is { } never ? WordsAnswer.Refused(never) : new(true, "resume", null);
         }
         catch (Exception error) when (Unanswered(error))
         {
@@ -168,8 +181,8 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         }
 
         if (read is null) return null;
-        if (read.Record is not { } record) return WordsAnswer.Refused("not-found");
-        if (Never(record, read.Last) is { } never) return WordsAnswer.Refused(never);
+        if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
+        if (WordsNever.Judge(record, read.Last) is { } never) return WordsAnswer.Refused(never);
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
         var kept = files.Count > 0 ? ChatFiles.Keep(loop.Home, id, files) : [];
@@ -177,12 +190,86 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     }
 
     /// <summary>
+    /// A terminal's words (MSG1e2, D137 §5.2): the shell's half of <c>daoris-driver sessions say</c>, handed to its request
+    /// watch as <see cref="SessionRequestWatch.Say"/>. Judged as the box's words are (<see cref="SayAsync"/>), at the door
+    /// <c>terminal</c>, and answered in the request's shape: a conversation the window runs hears them, words a running
+    /// session took are kept on its ask, kept words are shown at once and the loop nudged, and words said as a session winds
+    /// up wait here for its record to end rather than being asked again.
+    /// </summary>
+    /// <exception cref="DriverException">
+    /// A file the request names that is not kept for the session, or what <see cref="SayAsync"/> refuses in the driver's
+    /// words; the watch answers it as the sentence it is.
+    /// </exception>
+    public async Task<WordsHeld> HoldAsync(SessionRequest request, CancellationToken ct)
+    {
+        var text = request.Text ?? "";
+        var said = await SayAsync(request.Session, text, Kept(request.Session, request.Files), preface: null, RequestDoor.Terminal, ct)
+            .ConfigureAwait(false);
+        if (said is null) return WordsHeld.Failed(NotUp);
+        if (said.Running) KeepOnAsk(request.Session, text);
+        if (said.Sent) return new WordsHeld(true, said.Reaches, null) { Word = said.Word };
+        return said.Why is { } why ? WordsHeld.Refused(why, said.Message) : WordsHeld.Failed(said.Message ?? NotUp);
+    }
+
+    /// <summary>
+    /// A terminal's files, by the names the verb kept them under for the session (MSG1e): read back from where they lie, so
+    /// the box's own path keeps them, which finds each already there since a file is kept by its content (CONV4c).
+    /// </summary>
+    private IReadOnlyList<ChatUpload> Kept(string id, IReadOnlyList<string> names)
+    {
+        if (names.Count == 0) return [];
+        var folder = ChatFiles.Folder(loop.Home, id);
+        var lying = Directory.Exists(folder) ? Directory.GetFiles(folder) : [];
+        return [.. names.Select(name =>
+        {
+            // Kept as `<first 12 of its hash>-<name>`; of two files given one name, the newer is the one just said.
+            var path = lying
+                .Where(each => Path.GetFileName(each) is var leaf
+                               && leaf.Length == name.Length + 13 && leaf[12] == '-' && leaf.EndsWith(name, StringComparison.Ordinal))
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault()
+                ?? throw new DriverException($"`{name}` is not kept for session `{id}`, so your words were not sent; say them again with it.");
+            return new ChatUpload(name, File.ReadAllBytes(path));
+        })];
+    }
+
+    /// <summary>
+    /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session took
+    /// it, its words go to the service's door for them by the session's own id, and the service judges which ask, if any.
+    /// Never awaited by the answer: the words have reached their session whatever the service says, so <c>kept: false</c>
+    /// (a session on no ask), a refusal and a service that does not answer change nothing the person is told. Only the
+    /// words travel, never the files or where the person is (DRIFT1a keeps words alone). Both doors keep them (MSG1e2).
+    /// </summary>
+    public void KeepOnAsk(string session, string text)
+    {
+        if (loop.Service is not { } service) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await service.AddedToSessionAsync(session, text).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is HttpRequestException or OperationCanceledException or DriverException
+                                              or JsonException or ObjectDisposedException or InvalidOperationException)
+            {
+                // The words are still in the session's own record; the ask misses one of them, and nothing else does.
+            }
+        });
+    }
+
+    /// <summary>
+    /// What a door is told while the loop's service is not answering and nothing here runs the session: nothing could keep
+    /// the words yet, which is a moment the person can wait out.
+    /// </summary>
+    private const string NotUp = "the driver is still coming up — its service is not answering yet. A moment.";
+
+    /// <summary>
     /// The words to the say door, behind any already held for this record: kept, shown and the loop nudged; held while the
     /// record still runs; or refused by the service's word.
     /// </summary>
     private async Task<WordsAnswer> KeepOrHoldAsync(string id, Word word, CancellationToken ct)
     {
-        var service = loop.Service ?? throw new DriverException("the driver is still coming up — its service is not answering yet. A moment.");
+        var service = loop.Service ?? throw new DriverException(NotUp);
         var waiting = WaitingFor(id);
         await waiting.Turn.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -210,7 +297,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
             if (said.Kept)
             {
                 Show(id, said, word);
-                return new(true, "resume", null);
+                return new(true, "resume", null) { Word = said.Word?.Id };
             }
 
             if (said.Refusal == "running")
@@ -222,7 +309,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
             }
 
             return said.Refusal is { } refusal
-                ? WordsAnswer.Refused(Code(refusal))
+                ? WordsAnswer.Refused(WordsNever.Code(refusal), said.Message)
                 : throw new DriverException(said.Message);
         }
         finally
@@ -334,7 +421,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         loop.Output.Append(id, line);
         loop.Events.Keep(id, new SessionEvent
         {
-            Kind = SessionEventKind.Note, Text = line, Why = said.Refusal is { } refusal ? Code(refusal) : null,
+            Kind = SessionEventKind.Note, Text = line, Why = said.Refusal is { } refusal ? WordsNever.Code(refusal) : null,
         }, null);
     }
 
@@ -343,30 +430,12 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     {
         if (loop.Service is not { } service) return null;
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
-        var records = SessionRecords.Parse(json);
-        var record = records.FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
-        var last = record?.Quest is { } quest
-                   && SessionLook.From(json, [], [], _ => 0).LastRun.TryGetValue(quest, out var run)
-            ? run.Session
-            : null;
-        return new Read(record, last);
+        var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
+        return new Read(record, WordsNever.LastHere(json, record?.Quest));
     }
 
     /// <summary>A record as read, and the session its quest last ran in here (D79's reading), or null for none.</summary>
     private sealed record Read(SessionRecord? Record, string? Last);
-
-    /// <summary>The code of what never goes on (D137 §2.2), or null where the record can go on with words.</summary>
-    private static string? Never(SessionRecord record, string? last) =>
-        record.Teammate ? "teammate"
-        : record.Repository == HelpRoom.Repository ? "help"
-        : record.Ask is not null ? "intake"
-        : record.State == "stood-down" ? "stood-down"
-        // MSG1b goes on with a quest's last session here only, so words to an earlier one would wait for nothing.
-        : record.Quest is not null && last is not null && !string.Equals(last, record.Id, StringComparison.Ordinal) ? "superseded"
-        : null;
-
-    /// <summary>The say door's word as the page's code: its word for a teammate's record is <c>teammate</c>.</summary>
-    private static string Code(string refusal) => refusal == "not-ours" ? "teammate" : refusal;
 
     /// <summary>A driven inbox's reach in the wire's spelling, as the record's events spell it (D136).</summary>
     private static string? Spelled(DrivenReach? reach) => reach switch

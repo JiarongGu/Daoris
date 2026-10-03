@@ -99,4 +99,63 @@ public sealed class DriverModuleConversationProcessTests : DriverModuleBridge
             loop.Processes.Stop("s1");
         }
     }
+
+    /// <summary>
+    /// MSG1e2 (D137 §5.2): a terminal's words reach a conversation the window runs, as the box's do. Its turns take them
+    /// through the loop's chat runner, here a text door's process taking the person's line, and the asker is told it takes
+    /// them as its next turn; nothing is posted to the say door, since the conversation is running.
+    /// </summary>
+    [Fact]
+    public async Task A_terminals_words_reach_a_conversation_the_window_runs()
+    {
+        var heard = Path.Combine(Home, "heard.txt");
+        var loop = Loop();
+        var posts = new List<string>();
+        using var service = new ServiceClient("http://stand-in", null, new HttpClient(new Answering(posts)));
+        using var chat = new ChatRunner(service, loop.Harnesses.Adapters, loop.Home, loop.Processes, loop.Output, loop.Harnesses, loop.Events);
+        await loop.ComeUpAsync(service, chat);
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            ArgumentList =
+            {
+                "-e",
+                "require('readline').createInterface({ input: process.stdin }).on('line', (line) => require('fs').appendFileSync(process.argv[1], line + '\\n'));",
+                heard,
+            },
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!;
+        using var tracked = loop.Processes.Track("c1", process);
+
+        try
+        {
+            var held = await loop.Words.HoldAsync(
+                new SessionRequest("c1", SessionMove.Say, DateTimeOffset.UtcNow) { Text = "and the readme", Key = SessionRequests.NewKey() },
+                CancellationToken.None);
+
+            Assert.Equal((true, (string?)null, (string?)null), (held.Sent, held.Reaches, held.Why));
+            await UntilAsync(() => File.Exists(heard) && File.ReadAllText(heard).Contains("and the readme", StringComparison.Ordinal));
+            lock (posts) Assert.DoesNotContain(posts, path => path.EndsWith("/say", StringComparison.Ordinal));
+        }
+        finally
+        {
+            loop.Processes.Stop("c1");
+        }
+    }
+
+    /// <summary>A service standing in that answers no record and keeps whatever is posted, each post heard by its path.</summary>
+    private sealed class Answering(List<string> posts) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (request.Method == HttpMethod.Post) lock (posts) posts.Add(request.RequestUri!.AbsolutePath);
+            var body = request.Method == HttpMethod.Get ? "[]" : """{"kept":true,"message":"Kept."}""";
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
 }

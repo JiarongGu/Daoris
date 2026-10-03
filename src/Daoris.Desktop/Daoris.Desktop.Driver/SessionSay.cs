@@ -2,8 +2,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What never goes on with the person's words (D137 §2.2; MSG1d's codes), by code: the one table the terminal's
-/// <c>sessions say</c> judges by before it asks anything (MSG1e), in the driver library so the modules' <c>SessionWords</c>
-/// can read it in place of its own copy.
+/// <c>sessions say</c> judges by before it asks anything (MSG1e), and the screen's judge, the modules' <c>SessionWords</c>,
+/// judges by too (MSG1e2), so the nevers have one source.
 /// </summary>
 /// <remarks>
 /// The first three are <see cref="ContinueWhy"/>'s nevers, the codes the driver's judgement says them by; the rest are the
@@ -84,10 +84,9 @@ public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
 /// its record, and the loop nudged, so its look goes on with them (MSG1b).
 /// </summary>
 /// <remarks>
-/// <para><b>The screen's judge is the modules' <c>SessionWords</c></b>, which this library cannot reach. A shell that carries it
-/// hands the watch its own (<see cref="SessionRequestWatch.Say"/>), and then a conversation the window runs hears a terminal too,
-/// and words said as a session winds up wait in the shell. This is what a loop without one does: the headless host's, and the
-/// shell's until it hands its own.</para>
+/// <para><b>The screen's judge is the modules' <c>SessionWords</c></b>, which this library cannot reach. The shell hands the
+/// watch its own (<see cref="SessionRequestWatch.Say"/>, MSG1e2), so a conversation the window runs hears a terminal too, and
+/// words said as a session winds up wait in the shell. This is what a loop without one does: the headless host's.</para>
 ///
 /// <para><b>Two things it does not.</b> A conversation this loop runs is <see cref="WordsHeld.Unreached"/>: its turns are its
 /// runner's, which takes the window's words. Words said as a session winds up, or before it opens (the say door answers
