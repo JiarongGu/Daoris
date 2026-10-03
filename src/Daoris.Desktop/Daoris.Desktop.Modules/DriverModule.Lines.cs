@@ -30,6 +30,26 @@ public sealed partial class DriverModule
         return State();
     }
 
+    // A repository's session language, or a workspace's (LANG1c, D142 point 7), or either cleared with no language — the
+    // same file `daoris driver language` edits: one truth, two doors (D50). A code the table does not hold is the driver's
+    // refusal.
+    [DriverRoute("SET_LANGUAGE")]
+    private object? SetLanguage(IpcRequest request)
+    {
+        var language = Optional(request, "language");
+        var repository = Optional(request, "repository");
+        var workspace = Optional(request, "workspace");
+        if ((repository is null) == (workspace is null))
+        {
+            throw new DriverException("a session language is set for a `repository` or a `workspace` — name one of them.");
+        }
+
+        Change(config => workspace is not null
+            ? config.WithWorkspaceLanguage(workspace, language)
+            : config.WithLanguage(repository!, language));
+        return State();
+    }
+
     // Every repository's line here and what said so (WSR2), for the screen. The checkouts are
     // the registry's, so this waits for the driver like the review does.
     [DriverRoute("LINES")]
@@ -58,6 +78,18 @@ public sealed partial class DriverModule
                     pair.landing.Rule.Tidy,
                     pair.landing.Rule.Plugin,
                     pair.landing.Source,
+                })
+                .ToArray(),
+            // What each one's sessions are asked to write to the person in, and where that was set (LANG1c): the driver's
+            // resolution, read rather than recomputed by the page. None leaves the language and its source out.
+            Languages = lines.Select(line => (line, language: SessionLanguages.Resolve(config, line.Repository, line.Workspace)))
+                .Select(pair => new
+                {
+                    pair.line.Repository,
+                    pair.line.Workspace,
+                    Language = pair.language?.Code,
+                    pair.language?.Name,
+                    pair.language?.Source,
                 })
                 .ToArray(),
         };
