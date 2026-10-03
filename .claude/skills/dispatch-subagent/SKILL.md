@@ -15,7 +15,7 @@ decision number (MOD9, `docs/2026-09-30-parallel-development-design.md` §3 rule
 Task: <ROW>: <what, and why>. The contract is <design document, section> and the <ROW> row in TASKS.md.
 Start from: main at <sha> or later.
 Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
-Decision number: D<n>, reserved for this branch. (Or: none. Write no decision.)
+Decision number: D<n>, reserved for this branch: write docs/decisions/D<n>.md. (Or: none. Write no decision.)
 Follow the dispatch-subagent skill's subagent half.
 ```
 
@@ -40,7 +40,8 @@ Follow the dispatch-subagent skill's subagent half.
   them. One exception: a path you add that no lane owns fails the lanes test in `verify` until the map
   places it. Place it, and name that change in the hand-back.
 - **Take exactly the reserved decision number.** With no reservation, write no decision. Never take
-  the next free number: branches that did that took one number between them (D106).
+  the next free number: branches that did that took one number between them (D106). A decision is its
+  own file, `docs/decisions/D<n>.md`, and a note on an older one goes at the end of that one's file (D134).
 - **TDD.** Write the failing test first and watch it fail.
 - **Follow `CLAUDE.md`'s conventions.** Writes are atomic, BOM-less UTF-8 and LF. No machine path or
   private repository name goes in a tracked file or a commit message. A code comment gives the reason
@@ -96,8 +97,8 @@ Follow the dispatch-subagent skill's subagent half.
 
 ## The parent's half
 
-1. **Reserve the decision number** before dispatching. It is the next number after both the highest in
-   `docs/DECISIONS.md` and every number already reserved for a branch in flight. Name it in the prompt.
+1. **Reserve the decision number** before dispatching. It is the next number after both the highest file
+   in `docs/decisions/` and every number already reserved for a branch in flight. Name it in the prompt.
 2. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
    which is anything a branch in flight holds. When two branches need the same lane, one waits for the
    other or the work is split.

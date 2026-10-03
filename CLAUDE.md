@@ -55,7 +55,7 @@ quest lock hardened into code, and the desktop's sync feeding up and rebasing qu
 rehearsal gates all of it with no model, no account and no credential** — it names its own
 phases when you run it, down to a quest carried over the ACP door and a plugin's hold.
 
-**The D48/D49/D50 arc is closed**, and `docs/DECISIONS.md` carries each piece. Two of its rules bind
+**The D48/D49/D50 arc is closed**, and `docs/decisions/` carries each piece. Two of its rules bind
 every change: **the workspace is wiring and the registry is the authority** (WSP1, WSP2) — a registry
 row set by `connect --workspace`, an explicit list `connect`, `retire` and `import` maintain, never a
 tracked declaration nor a view over a folder; and **everything has two doors** (D50): whatever a
@@ -83,7 +83,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log and why each was made. **D45 is the
+- `docs/decisions/` — one file per numbered decision, and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
@@ -214,7 +214,7 @@ Run every command from the **workspace root**, not from a package directory.
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to
   done over ACP by a stub agent that speaks the wire and nothing else. **It names its own phases when
-  you run it**; the reasoning is in `docs/DECISIONS.md` and the archive. Run when touching
+  you run it**; the reasoning is in `docs/decisions/` and the archive. Run when touching
   the service, `connect`, the driver, the remote, the toolchain, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
@@ -240,7 +240,7 @@ Run every command from the **workspace root**, not from a package directory.
   tests underneath.
 - **Desktop suites have two halves** (MOD8): a worktree runs `--filter Category!=Process`; the
   real-process half (`process.runsettings`, serial) runs only at the parent's merge (FLAKE1).
-- **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
+- **Changing what `sync` does with a file? Read `docs/decisions/D19.md` first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - **`npm run desktop -- <doctor|build|run|shot|eval|click|restart|kill>`** — the shell's dev loop, and
   **not a gate**: it starts the real window on a scratch machine of its own and lets you *see* it —

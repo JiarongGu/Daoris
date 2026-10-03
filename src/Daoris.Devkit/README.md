@@ -2,7 +2,7 @@
 
 **Status: built and run over this repository.** One self-contained 2.7 MB binary, with its tests (the count is kept in
 `TASKS.md`). The two
-questions this document was written to settle are settled — as `docs/DECISIONS.md` D26 and D27.
+questions this document was written to settle are settled — as `docs/decisions/D26.md` and `D27.md`.
 
 **The universal gates run here** (DEVKIT3, 2026-09-22): `universal` in `daoris.gates.json` and a step
 in the release workflow both run `verify --universal-only`. For a year of this file's life they did

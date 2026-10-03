@@ -8,7 +8,7 @@
  * the tracked example family in `examples/`: current doctrine in both projects, the HTTP host over a
  * scratch store, registration through the real `daoris connect`, a quest published, refused where it
  * should be, taken, finished, and still there after a restart — plus one project's knowledge
- * answering a search made from outside it. See docs/DECISIONS.md D39.
+ * answering a search made from outside it. See docs/decisions/D39.md.
  *
  *   npm run rehearse:family
  *

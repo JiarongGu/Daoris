@@ -5,7 +5,7 @@
   "coreBudgetBytes": 26000,
   "documents": {
     "router": "docs/README.md",
-    "decisions": "docs/DECISIONS.md",
+    "decisions": "docs/decisions",
     "backlog": { "path": "TASKS.md", "words": 6600 },
     "archive": "docs/task-archive.md",
     "fixes": "docs/FIX-LOG.md",
