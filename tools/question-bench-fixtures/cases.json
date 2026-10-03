@@ -1,0 +1,55 @@
+{
+  "about": "A constructed fixture for tools/question-bench.mjs (KNOWUSE2): one question of each shape the knowledge-use evidence classed (docs/2026-10-03-knowledge-use-evidence.md §4), about an invented repository. A K a word search finds, a K it misses, a B the ask's words settle, an O, an R and a D. Nothing here is from a recorded session.",
+  "knowledge": "knowledge",
+  "asks": {
+    "panel": "Build the humidity panel for the greenhouse dashboard.\nThe ticket says:\n- The target line comes from each greenhouse's configured threshold.\n- Compute each daily figure from the day's totals, never by averaging hourly percentages.\n- Missing readings show as gaps, never as zero.\nNothing goes to production without the owner's yes."
+  },
+  "cases": [
+    {
+      "id": "k-words",
+      "where": "close",
+      "class": "K",
+      "ask": "panel",
+      "question": "A direct link to /app/reports/humidity returns 404 from the server. Is that worth a fix in the hosting?",
+      "answer": { "source": "static-hosting.md", "quote": "returns 404 from the origin" }
+    },
+    {
+      "id": "k-missed",
+      "where": "close",
+      "class": "K",
+      "ask": "panel",
+      "question": "Which listing id should the new tile use? I picked the first one; tell me if you want another.",
+      "answer": { "source": "panel-registry.md", "quote": "Any entry will do" }
+    },
+    {
+      "id": "b-ask",
+      "where": "close",
+      "class": "B",
+      "ask": "panel",
+      "question": "The target line reads 70 %: it comes from each greenhouse's own threshold setting. Set another if that is not the one you want.",
+      "answer": { "source": "ask", "quote": "comes from each greenhouse's configured threshold" }
+    },
+    {
+      "id": "o-prod",
+      "where": "park",
+      "class": "O",
+      "ask": "panel",
+      "question": "May I publish the humidity panel to the production dashboards? It goes live at once for every grower."
+    },
+    {
+      "id": "r-shared",
+      "where": "close",
+      "class": "R",
+      "ask": "panel",
+      "question": "The gauge rounds before it compares, and it is shared by every dashboard, so I left it alone. Should I change it?"
+    },
+    {
+      "id": "d-drift",
+      "where": "park",
+      "class": "D",
+      "ask": "panel",
+      "question": "The daily figure averages the hourly percentages, following your earlier answer. Should it stay that way?",
+      "answer": { "source": "ask", "quote": "never by averaging hourly percentages" }
+    }
+  ]
+}
