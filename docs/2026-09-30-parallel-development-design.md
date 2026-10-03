@@ -93,7 +93,10 @@ status) or that printed nothing of its own, as the family rehearsal once exited 
 while three worktrees built. If the second run passes it reads FLAKE. A rehearsal that reported failed
 checks, or said why it stopped, has failed and is not run again. `--batch` is one merge at a time: git will
 not merge over an open merge and the tool never commits, so the parent commits each merge and
-`--continue` merges the next. The rehearsals run once, after the last. The brief is the local skill
+`--continue` merges the next. The rehearsals run once, after the last. At each merge's start and a
+batch's end the tool prunes (GATE2): a branch merged into main goes with its worktree, unless the
+worktree is locked (an agent runs in it), holds changes or untracked files, or has anything under
+`local/`; it never forces and never uses `-D`. A worktree made by hand is locked by whoever made it. The brief is the local skill
 `dispatch-subagent`.
 
 ## 4. The splits (the code half)

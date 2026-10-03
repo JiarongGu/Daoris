@@ -20,7 +20,10 @@ import { makeFixture } from './_fixture.ts';
 interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string }
 interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
-interface Options { branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean }
+interface Options { branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean }
+interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
+interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
+interface Facts { gone?: boolean; error?: string; tracked: string[]; untracked: string[]; local: string | null }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number }
 type Step = (command: string, cwd: string, fd: number) => Promise<number>;
 
@@ -54,6 +57,9 @@ const tool = await import(
   parseCommits: (text: string) => { sha: string; merge: boolean; subject: string; trailer: string }[];
   worktreeFor: (porcelain: string, branch: string) => string | null;
   isProcessGate: (gate: { name: string; run: string }) => boolean;
+  parseWorktrees: (porcelain: string) => Worktree[];
+  pruneCandidates: (facts: { merged: string[]; worktrees: Worktree[]; current: string; hold?: string[] }) => Candidate[];
+  pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean };
 };
 
 const TOOL = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'merge-branch.mjs');
@@ -73,7 +79,7 @@ function refusal(fn: () => unknown): { exitCode: number; message: string } {
 
 test('the arguments name one branch, or several after --batch, and the flags', () => {
   assert.deepEqual(tool.parseArgs(['mod9']), {
-    branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false,
+    branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
   });
   assert.deepEqual(tool.parseArgs(['a', '--batch', 'b', 'c']).branches, ['a', 'b', 'c']);
   const flagged = tool.parseArgs(['a', '--keep-going', '--no-commit-check']);
@@ -83,6 +89,13 @@ test('the arguments name one branch, or several after --batch, and the flags', (
   assert.equal(tool.parseArgs(['--continue', '--keep-going']).keepGoing, true);
   assert.equal(tool.parseArgs(['--drop-batch']).dropBatch, true);
   assert.equal(tool.parseArgs(['--plan', 'a', '--batch', 'b']).plan, true);
+  // GATE2: the prune on its own, its plan, and a merge that leaves the merged branches standing.
+  const prune = tool.parseArgs(['--prune']);
+  assert.deepEqual([prune.prune, prune.plan, prune.branches], [true, false, []]);
+  const planned = tool.parseArgs(['--prune', '--plan']);
+  assert.deepEqual([planned.prune, planned.plan], [true, true]);
+  assert.equal(tool.parseArgs(['a', '--no-prune']).autoPrune, false);
+  assert.equal(tool.parseArgs(['--continue', '--no-prune']).autoPrune, false);
 });
 
 test('the arguments refuse what would merge the wrong thing, with exit 2', () => {
@@ -96,6 +109,10 @@ test('the arguments refuse what would merge the wrong thing, with exit 2', () =>
     [['--continue', 'a'], /takes no branch/],
     [['--continue', '--drop-batch'], /one of/],
     [['--plan', '--continue'], /one of/],
+    [['--prune', 'a'], /--prune takes no branch/],
+    [['--prune', '--continue'], /one of/],
+    [['--prune', '--drop-batch'], /one of/],
+    [['--prune', '--no-prune'], /--no-prune/],
   ];
   for (const [argv, message] of cases) {
     const error = refusal(() => tool.parseArgs(argv));
@@ -164,6 +181,81 @@ test('the worktree a branch is checked out in is found in the porcelain list', (
   assert.equal(tool.worktreeFor(list, 'main'), '/work/repo');
   assert.equal(tool.worktreeFor(list, 'worktree-agent'), null, 'a prefix is not the branch');
   assert.equal(tool.worktreeFor(list, 'nope'), null);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// The prune (GATE2): which merged branches go, with their worktrees, and which stay and why
+
+const tree = (path: string, branch: string, more: Partial<Worktree> = {}): Worktree => ({
+  path, branch, locked: false, lockReason: '', prunable: false, bare: false, ...more,
+});
+
+test('the worktree list is read for each path, branch, lock and lock reason, and a folder git says is gone', () => {
+  const list = [
+    'worktree D:/work/repo', 'HEAD 0123456', 'branch refs/heads/main', '',
+    'worktree D:/work/repo/.claude/worktrees/agent-a', 'HEAD 89abcde', 'branch refs/heads/worktree-agent-a',
+    'locked claude agent agent-a (pid 57256)', '',
+    'worktree D:/work/repo/.claude/worktrees/agent-b', 'HEAD 89abcde', 'branch refs/heads/worktree-agent-b', 'locked', '',
+    'worktree D:/work/gone', 'HEAD 1234567', 'branch refs/heads/gone', 'prunable gitdir file points to non-existent location', '',
+    'worktree D:/work/elsewhere', 'HEAD 1234567', 'detached', '',
+  ].join('\r\n');
+  assert.deepEqual(tool.parseWorktrees(list), [
+    tree('D:/work/repo', 'main'),
+    tree('D:/work/repo/.claude/worktrees/agent-a', 'worktree-agent-a', { locked: true, lockReason: 'claude agent agent-a (pid 57256)' }),
+    tree('D:/work/repo/.claude/worktrees/agent-b', 'worktree-agent-b', { locked: true }),
+    tree('D:/work/gone', 'gone', { prunable: true }),
+    tree('D:/work/elsewhere', ''),
+  ]);
+});
+
+test('a prune considers each merged branch but main, the main checkout\'s, the one it runs in and the batch\'s still to merge', () => {
+  const worktrees = [tree('/r', 'park'), tree('/r/w/a', 'agent-a'), tree('/r/w/here', 'here')];
+  const candidates = tool.pruneCandidates({
+    merged: ['agent-a', 'here', 'main', 'next', 'park', 'plain'], worktrees, current: 'here', hold: ['next'],
+  });
+  assert.deepEqual(candidates.map((c) => [c.branch, c.worktree?.path ?? null, c.held !== null]), [
+    ['agent-a', '/r/w/a', false],
+    ['here', '/r/w/here', true],
+    ['next', null, true],
+    ['park', '/r', true],
+    ['plain', null, false],
+  ], 'main is the reference, never a candidate');
+  const held = Object.fromEntries(candidates.map((c) => [c.branch, c.held]));
+  assert.match(held['park']!, /main checkout/);
+  assert.match(held['here']!, /runs in/);
+  assert.match(held['next']!, /batch/);
+});
+
+test('a merged branch goes with its worktree only when that is unlocked, has no tracked change and holds nothing under local/', () => {
+  const clean: Facts = { tracked: [], untracked: [], local: null };
+  const at = (more: Partial<Worktree> = {}): Candidate => ({ branch: 'b', worktree: tree('/r/w/b', 'b', more), held: null });
+
+  assert.deepEqual(tool.pruneVerdict({ branch: 'b', worktree: null, held: null }, null), { remove: true, why: '' });
+  assert.deepEqual(tool.pruneVerdict(at(), clean), { remove: true, why: '' });
+  assert.deepEqual(tool.pruneVerdict(at({ prunable: true }), { ...clean, gone: true }), { remove: true, why: '', gone: true });
+  assert.deepEqual(tool.pruneVerdict({ branch: 'b', worktree: null, held: 'named in this batch' }, null), { remove: false, why: 'named in this batch' });
+
+  // A branch at main's tip is merged; a locked worktree is in use however it looks, and is never looked into.
+  const locked = tool.pruneVerdict(at({ locked: true, lockReason: 'claude agent agent-b (pid 1)' }), null);
+  assert.equal(locked.remove, false);
+  assert.match(locked.why, /locked, so in use \(claude agent agent-b \(pid 1\)\)/);
+  assert.equal(tool.pruneVerdict(at({ locked: true, prunable: true }), null).remove, false, 'a lock holds even when the folder is gone');
+
+  const changed = tool.pruneVerdict(at(), { ...clean, tracked: ['src/a.ts', 'b.md', 'c.md', 'd.md'] });
+  assert.equal(changed.remove, false);
+  assert.match(changed.why, /modified or staged tracked files \(src\/a\.ts, b\.md, c\.md, … 1 more\)/);
+  const local = tool.pruneVerdict(at(), { ...clean, local: 'local/scratch/out.md' });
+  assert.equal(local.remove, false);
+  assert.match(local.why, /under local\/ \(local\/scratch\/out\.md\), which nothing else keeps/);
+  const untracked = tool.pruneVerdict(at(), { ...clean, untracked: ['new.txt'] });
+  assert.equal(untracked.remove, false);
+  assert.match(untracked.why, /untracked files .*--force \(new\.txt\)/);
+  const unread = tool.pruneVerdict(at(), { ...clean, error: 'fatal: not a git repository' });
+  assert.equal(unread.remove, false);
+  assert.match(unread.why, /fatal: not a git repository/);
+  assert.equal(tool.pruneVerdict(at(), null).remove, false, 'a worktree nobody looked into is kept');
+  // Every reason is said, not only the first.
+  assert.match(tool.pruneVerdict(at(), { ...clean, tracked: ['a'], local: 'local/x' }).why, /tracked files[\s\S]*local\//);
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -803,6 +895,8 @@ const merging = (root: string) => spawnSync('git', ['rev-parse', '-q', '--verify
 describe('the tool, end to end in a scratch repository', { concurrency: true }, () => {
   test('it refuses before touching anything, and the commit check refuses what a hand-back left out', async () => {
     const repo = scratch('refusals', [{ name: 'first', run: 'node gate.mjs first' }]);
+    // Merged into main, so the merge's prune removes it (GATE2); a refusal comes first and touches nothing.
+    git(repo.root, 'branch', 'old');
     branch(repo.root, 'bare', { 'bare.txt': 'x\n' }, { trailer: false });
     const tree = join(dirname(repo.root), 'bare-tree');
     git(repo.root, 'worktree', 'add', '--quiet', tree, 'bare');
@@ -819,6 +913,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /no Co-Authored-By line/);
     assert.match(result.out, /uncommitted[\s\S]*forgotten\.txt/);
     assert.match(result.out, /--no-commit-check/);
+    assert.doesNotMatch(result.out, /prune/, 'the commit check refuses before the prune runs');
     writeFileSync(join(repo.root, 'stray.txt'), 'left here\n');
     result = await repo.run(['bare']);
     assert.equal(result.status, 2, result.out);
@@ -826,10 +921,15 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     rmSync(join(repo.root, 'stray.txt'));
     assert.equal(merging(repo.root), false, 'a refusal merged something');
     assert.deepEqual(repo.ran(), [], 'a refusal ran a gate');
+    assert.doesNotMatch(result.out, /prune/, 'a refusal pruned');
+    // `old` was still there to prune below: no refusal removed it.
 
     result = await repo.run(['bare', '--no-commit-check']);
     assert.equal(result.status, 0, result.out);
     assert.equal(merging(repo.root), true, '--no-commit-check lets the bare commit through');
+    assert.match(result.out, /prune: 1 branch merged into main\n\s+removed\s+old\s+the branch \(no worktree has it checked out\)/);
+    assert.ok(result.out.indexOf('removed') < result.out.indexOf('merged bare'), 'the prune runs before the merge');
+    assert.equal(git(repo.root, 'branch', '--list', 'old'), '', 'the merged branch is gone');
     git(repo.root, 'merge', '--abort');
     result = await repo.run(['--drop-batch']);
     assert.equal(result.status, 0, result.out);
@@ -857,7 +957,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(plan.out, /work\s+Work\s+1 file/);
     assert.match(plan.out, /1\.\s+first\s+suite\s+node gate\.mjs first/);
     assert.match(plan.out, /2\.\s+second/);
+    assert.match(plan.out, /prune \(at the merge's start; a plan, so nothing is removed\): no branch but main is merged into main/);
     assert.equal(merging(repo.root), false, '--plan merges nothing');
+    assert.match((await repo.run(['--plan', 'feature/one', '--no-prune'])).out, /prune: skipped \(--no-prune\)/);
 
     const result = await repo.run(['feature/one']);
     assert.equal(result.status, 0, result.out);
@@ -945,6 +1047,8 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // rehearsal that dies once.
     result = await repo.run(['--continue'], { FAKE_DOTNET: 'flake' });
     assert.equal(result.status, 0, result.out);
+    // The next merge's start prunes the branch the last one landed (GATE2).
+    assert.match(result.out, /removed\s+one\s+the branch/);
     assert.deepEqual(repo.ran(), [
       'dotnet-run', 'cli', 'dotnet-test',
       'dotnet-run', 'cli', 'dotnet-test', 'dotnet-test-alone FullyQualifiedName=N.ProcessJobTests.A_child',
@@ -962,7 +1066,89 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--continue']);
     assert.equal(result.status, 0, result.out);
     assert.match(result.out, /batch is done/);
+    // And the batch's end prunes the last.
+    assert.match(result.out, /removed\s+two\s+the branch/);
+    assert.equal(git(repo.root, 'branch', '--list', 'one', 'two'), '');
     assert.equal(existsSync(join(repo.root, 'local', 'scratch', 'merge-batch.json')), false);
+    repo.cleanup();
+  });
+
+  test('--prune removes each merged branch with its worktree, and keeps one in use, changed or holding private output, saying why', async () => {
+    const repo = scratch('prune', [{ name: 'first', run: 'node gate.mjs first' }], { '.gitignore': 'local/\nbuild/\n', 'tracked.txt': 'base\n' });
+    const trees = join(dirname(repo.root), 'trees');
+    const add = (name: string): string => {
+      const path = join(trees, name);
+      git(repo.root, 'worktree', 'add', '--quiet', '-b', name, path, 'main');
+      return path;
+    };
+    // `ahead` has a commit main lacks, made before main moved on: never merged, so never considered.
+    branch(repo.root, 'ahead', { 'ahead.txt': 'x\n' });
+    git(repo.root, 'commit', '--quiet', '--allow-empty', '-m', `main moves on${TRAILER}`);
+    git(repo.root, 'worktree', 'add', '--quiet', join(trees, 'ahead'), 'ahead');
+
+    // Clean but for ignored build output, which a plain `git worktree remove` takes with it.
+    const free = add('free');
+    mkdirSync(join(free, 'build'), { recursive: true });
+    writeFileSync(join(free, 'build', 'out.dll'), 'built\n');
+    // At main's tip, so merged: the case a naive rule deletes while an agent works in it. Locked, it is in
+    // use: `fresh` is an agent just dispatched, clean, and `in-use` one mid-edit, which is never looked into.
+    const fresh = add('fresh');
+    git(repo.root, 'worktree', 'lock', '--reason', 'claude agent agent-y (pid 2)', fresh);
+    const inUse = add('in-use');
+    git(repo.root, 'worktree', 'lock', '--reason', 'claude agent agent-x (pid 1)', inUse);
+    writeFileSync(join(inUse, 'tracked.txt'), 'the agent is mid-edit\n');
+    writeFileSync(join(add('changed'), 'tracked.txt'), 'changed\n');
+    const kept = add('private');
+    mkdirSync(join(kept, 'local'), { recursive: true });
+    writeFileSync(join(kept, 'local', 'out.md'), 'an agent left this\n');
+    const stray = add('stray');
+    writeFileSync(join(stray, 'new.txt'), 'never added\n');
+    // Its folder deleted by hand: git still lists the worktree, and holds the branch for it.
+    rmSync(add('gone'), { recursive: true, force: true });
+    git(repo.root, 'branch', 'plain');
+    // Merged into main, but its upstream lacks main's last commit, so `git branch -d` refuses; nothing forces it.
+    git(repo.root, 'branch', 'tracking');
+    git(repo.root, 'config', 'branch.tracking.remote', '.');
+    git(repo.root, 'config', 'branch.tracking.merge', 'refs/heads/ahead');
+    // A folder git does not know is not the prune's to remove.
+    mkdirSync(join(trees, 'orphan'), { recursive: true });
+    writeFileSync(join(trees, 'orphan', 'keep.txt'), 'mine\n');
+    const branches = () => git(repo.root, 'branch', '--format=%(refname:short)').split('\n');
+    const every = branches();
+
+    const plan = await repo.run(['--prune', '--plan']);
+    assert.equal(plan.status, 0, plan.out);
+    assert.match(plan.out, /prune \(a plan, so nothing is removed\): 9 branches merged into main/);
+    assert.match(plan.out, /\n\s+keep\s+fresh\s+its worktree is locked, so in use \(claude agent agent-y \(pid 2\)\)/);
+    assert.match(plan.out, /\n\s+remove\s+free\s+its worktree \.\.\/trees\/free and the branch\n/);
+    assert.match(plan.out, /\n\s+remove\s+gone\s+its worktree's record \(the folder \.\.\/trees\/gone is gone already\) and the branch\n/);
+    assert.match(plan.out, /\n\s+remove\s+plain\s+the branch \(no worktree has it checked out\)\n/);
+    assert.match(plan.out, /\n\s+remove\s+tracking\s/, 'only the deletion itself can hear git refuse');
+    const inUseLine = plan.out.split('\n').find((line) => /^\s+keep\s+in-use\s/.test(line)) ?? '';
+    assert.match(inUseLine, /its worktree is locked, so in use \(claude agent agent-x \(pid 1\)\)/);
+    assert.doesNotMatch(inUseLine, /tracked/, 'a locked worktree is never looked into');
+    assert.match(plan.out, /\n\s+keep\s+changed\s+its worktree has modified or staged tracked files \(tracked\.txt\)\n/);
+    assert.match(plan.out, /\n\s+keep\s+private\s+its worktree has private output under local\/ \(local\/out\.md\), which nothing else keeps\n/);
+    assert.match(plan.out, /\n\s+keep\s+stray\s+its worktree has untracked files git removes only with --force \(new\.txt\)\n/);
+    assert.ok(!plan.out.split('\n').some((line) => /^\s+(remove|keep)\s+(ahead|main)\s/.test(line)), 'an unmerged branch, and main, are never considered');
+    assert.deepEqual(branches(), every, '--plan removes nothing');
+    assert.ok(existsSync(free));
+
+    const result = await repo.run(['--prune']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /prune: 9 branches merged into main\n/);
+    for (const name of ['free', 'gone', 'plain']) assert.match(result.out, new RegExp(`\\n\\s+removed\\s+${name}\\s`));
+    for (const name of ['changed', 'fresh', 'in-use', 'private', 'stray']) assert.match(result.out, new RegExp(`\\n\\s+kept\\s+${name}\\s`));
+    assert.match(result.out, /\n\s+kept\s+tracking\s+git refused to delete the branch, which is never forced: error: the branch 'tracking' is not fully merged/);
+
+    assert.deepEqual(branches(), ['ahead', 'changed', 'fresh', 'in-use', 'main', 'private', 'stray', 'tracking']);
+    const listed = tool.parseWorktrees(git(repo.root, 'worktree', 'list', '--porcelain'));
+    assert.deepEqual(listed.map((t) => t.branch).sort(), ['ahead', 'changed', 'fresh', 'in-use', 'main', 'private', 'stray']);
+    assert.ok(listed.filter((t) => t.locked).map((t) => t.branch).sort().join() === 'fresh,in-use', 'a locked worktree is never unlocked');
+    assert.equal(readFileSync(join(inUse, 'tracked.txt'), 'utf8'), 'the agent is mid-edit\n');
+    assert.equal(existsSync(free), false, "the removed worktree's folder is gone, its ignored build output with it");
+    assert.ok(existsSync(join(kept, 'local', 'out.md')) && existsSync(join(stray, 'new.txt')));
+    assert.equal(readFileSync(join(trees, 'orphan', 'keep.txt'), 'utf8'), 'mine\n');
     repo.cleanup();
   });
 });

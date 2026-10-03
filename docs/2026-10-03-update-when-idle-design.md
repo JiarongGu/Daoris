@@ -92,8 +92,9 @@ Both write `$DAORIS_HOME/update.json` (`mode`, `build`, `at`). A word names the 
 holds for that build only. Absent or unreadable is when idle. The banner speaks both languages (D116), its buttons
 glossary-checked. Settings → Driver's row (UPDATE1b, `settings/Update.tsx`) stands where the banner is gone once
 dismissed: the staged build's id, version, commit and time, the drain and what it waits on, the last swap in the banner's
-words, and the same three words. It says the last swap after a *Dismiss* once `STATE` answers `last`, the journal's record
-told or not, which the modules do not answer yet.
+words, and the same three words. It says the last swap from `STATE`'s `last`, the journal's record told or not (UPDATE1d),
+so it stands after a *Dismiss* and at every later start; `last` is null with no journal and while a swap is under way, and
+a swap this start confirmed is installed, as the banner says it.
 
 ## 7. What it does not do
 

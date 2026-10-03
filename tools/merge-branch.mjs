@@ -19,20 +19,39 @@
  * 3. The commit check: every commit the branch adds carries its `Co-Authored-By:` line (a merge of main
  *    into the branch needs none), and the branch's worktree, if it has one, holds nothing uncommitted
  *    (work a hand-back calls done and left out of the merge). `--no-commit-check` skips it.
- * 4. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
+ * 4. The prune (below), unless `--no-prune`: one line per branch removed or kept.
+ * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
  *    their `merge=union` attribute (D106).
- * 5. The gates, one at a time, in a fixed order, fast first: every gate `daoris.gates.json` declares, plus
+ * 6. The gates, one at a time, in a fixed order, fast first: every gate `daoris.gates.json` declares, plus
  *    every `npm run` step the release workflow runs that the declaration does not (the release and
  *    family rehearsals). The order is by kind (a devkit check, then the suites, then the rehearsals);
  *    within a kind the declared order holds, and the workflow's own rehearsals go before the declared
  *    ones, so the declaration's last gate, the deployment rehearsal, ends the run. That rehearsal starts
  *    after `dotnet build-server shutdown`: on 2026-09-30 a long-lived build server carried a broken
  *    environment into a publish.
- * 6. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
+ * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
  *    beside and renamed when the gate ends, and one line per gate says its result and that file. The
  *    first failing gate stops the run (`--keep-going` runs the rest), and what did not run is named.
- * 7. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ * 8. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ *
+ * ## The prune (GATE2)
+ *
+ * Every subagent leaves a branch and a worktree, and so does every integration: 36 of 41 local branches
+ * were merged into main with 41 worktrees standing when this was built. So each merge starts by removing
+ * the merged ones, after its refusals and before `git merge` (a refusal still touches nothing), and a
+ * batch's last `--continue` does it again. `--prune [--plan]` runs it alone; its plan changes nothing.
+ *
+ * A candidate is a local branch merged into main, but main, the branch the main checkout has out, the one
+ * this runs in, and a batch's branches still to merge. It goes with its worktree, if one has it out, only
+ * when that worktree is not locked (the harness locks an agent's worktree while the agent runs, so a lock
+ * is in use: a locked worktree is never looked into or unlocked, and a branch at main's tip is merged),
+ * has no modified or staged tracked file, has no untracked file (`git worktree remove` refuses those
+ * without `--force`, and one may be work), and holds nothing under its gitignored `local/` (an agent's
+ * private output, which nothing else keeps). Removal is `git worktree remove`, never forced: ignored
+ * build output does not stop it, and whatever does is work to keep. Then `git branch -d`, never `-D`,
+ * and one `git worktree prune` at the end. What git refuses is kept and says why. A folder git does not
+ * list is never touched. The prune never stops a merge: what it cannot do it says, and the merge goes on.
  *
  * ## Flakes
  *
@@ -55,13 +74,15 @@
  * the checks and suites, the parent commits it, and `--continue` merges the next. The rehearsals run
  * once, after the last. The batch is recorded in `local/scratch/merge-batch.json`.
  *
- *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check]
- *   node tools/merge-branch.mjs --continue [--keep-going]
+ *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check] [--no-prune]
+ *   node tools/merge-branch.mjs --continue [--keep-going] [--no-prune]
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…]
+ *   node tools/merge-branch.mjs --prune [--plan]
  *   node tools/merge-branch.mjs --drop-batch
  *
- * Exit codes: 0 merged and every gate passed (flakes named) · 1 a conflict, a failed gate, or a failed
- * commit check · 2 refused (usage, not on main, a dirty tree, an unknown branch) or a tool error.
+ * Exit codes: 0 merged and every gate passed (flakes named), or pruned (a branch kept is the rule working)
+ * · 1 a conflict, a failed gate, or a failed commit check · 2 refused (usage, not on main, a dirty tree,
+ * an unknown branch) or a tool error.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
@@ -85,9 +106,10 @@ const KINDS = ['check', 'suite', 'rehearsal'];
 export const isProcessGate = (gate) => /process\.runsettings/.test(gate.run);
 
 export const USAGE = [
-  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check]',
-  '       node tools/merge-branch.mjs --continue [--keep-going]',
+  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check] [--no-prune]',
+  '       node tools/merge-branch.mjs --continue [--keep-going] [--no-prune]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…]',
+  '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs --drop-batch',
 ].join('\n');
 
@@ -106,7 +128,9 @@ const usageError = (message) => new Refusal(message, 2, true);
 // Arguments
 
 export function parseArgs(argv) {
-  const options = { branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false };
+  const options = {
+    branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
+  };
   let batch = false;
   let positional = 0;
   let batched = 0;
@@ -120,6 +144,8 @@ export function parseArgs(argv) {
     else if (arg === '--continue') options.resume = true;
     else if (arg === '--drop-batch') options.dropBatch = true;
     else if (arg === '--plan') options.plan = true;
+    else if (arg === '--prune') options.prune = true;
+    else if (arg === '--no-prune') options.autoPrune = false;
     else if (arg.startsWith('-')) throw usageError(`unknown option '${arg}'`);
     else {
       if (batch) batched += 1;
@@ -128,11 +154,15 @@ export function parseArgs(argv) {
       options.branches.push(arg);
     }
   }
-  if ([options.resume, options.dropBatch, options.plan].filter(Boolean).length > 1) {
-    throw usageError('give one of --continue, --drop-batch and --plan');
+  // `--plan` is a verb of its own, or the prune's plan.
+  if ([options.resume, options.dropBatch, options.plan && !options.prune, options.prune].filter(Boolean).length > 1) {
+    throw usageError('give one of --continue, --drop-batch, --plan and --prune (--prune takes --plan)');
   }
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
-  if (options.resume || options.dropBatch) {
+  if (options.prune) {
+    if (!options.autoPrune) throw usageError('--no-prune is for a merge; --prune is the prune itself');
+    if (options.branches.length) throw usageError('--prune takes no branch: it acts on every branch merged into main');
+  } else if (options.resume || options.dropBatch) {
     if (options.branches.length) {
       throw usageError(`${options.resume ? '--continue' : '--drop-batch'} takes no branch: it acts on the batch already recorded`);
     }
@@ -594,14 +624,29 @@ function branchCommits(root, branch) {
   return commits;
 }
 
+/**
+ * `git worktree list --porcelain`, read: each worktree's path, the branch it has out ('' when detached),
+ * whether it is locked and git's reason, and whether git says its folder is gone. The first is the main
+ * checkout.
+ */
+export function parseWorktrees(porcelain) {
+  const trees = [];
+  for (const line of porcelain.replace(/\r\n/g, '\n').split('\n')) {
+    const tree = trees.at(-1);
+    if (line.startsWith('worktree ')) {
+      trees.push({ path: line.slice('worktree '.length).trim(), branch: '', locked: false, lockReason: '', prunable: false, bare: false });
+    } else if (!tree) continue;
+    else if (line.startsWith('branch refs/heads/')) tree.branch = line.slice('branch refs/heads/'.length).trim();
+    else if (/^locked(?: |$)/.test(line)) Object.assign(tree, { locked: true, lockReason: line.slice('locked'.length).trim() });
+    else if (/^prunable(?: |$)/.test(line)) tree.prunable = true;
+    else if (line.trim() === 'bare') tree.bare = true;
+  }
+  return trees;
+}
+
 /** The path of the worktree `git worktree list --porcelain` shows a branch checked out in, or null. */
 export function worktreeFor(porcelain, branch) {
-  let path = null;
-  for (const line of porcelain.replace(/\r\n/g, '\n').split('\n')) {
-    if (line.startsWith('worktree ')) path = line.slice('worktree '.length).trim();
-    else if (line.trim() === `branch refs/heads/${branch}`) return path;
-  }
-  return null;
+  return (branch && parseWorktrees(porcelain).find((tree) => tree.branch === branch)?.path) || null;
 }
 
 /**
@@ -619,6 +664,207 @@ function commitProblems(root, branch, commits) {
     }
   }
   return problems;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// The prune (GATE2): merged branches go, with their worktrees, unless a worktree is in use or holds work
+
+/**
+ * The branches a prune considers: each local branch merged into main, but main, the branch the main
+ * checkout has out, the one this runs in, and the `hold` names: a batch's branches still to merge, since
+ * one merged already is refused by name at its turn, and a deleted one would read as a misspelling. Each
+ * comes with the worktree that has it out, if any; a held one says why it is held.
+ */
+export function pruneCandidates({ merged, worktrees, current, hold = [] }) {
+  const mainCheckout = worktrees[0]?.branch ?? '';
+  return merged.filter((branch) => branch !== MAIN).map((branch) => {
+    let held = null;
+    if (branch === mainCheckout) held = 'the main checkout has it checked out';
+    else if (branch === current) held = 'this runs in its checkout';
+    else if (hold.includes(branch)) held = 'named in this batch, still to merge';
+    return { branch, worktree: worktrees.find((tree) => tree.branch === branch) ?? null, held };
+  });
+}
+
+const listed = (files, max = 3) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
+
+/**
+ * Whether a candidate goes, and if it stays, why. `facts` is what was found in its worktree, and null
+ * where nothing was looked into: a locked worktree is in use, so the lock decides and what it holds does
+ * not, and nothing runs in it. Every reason to keep is said, not only the first.
+ */
+export function pruneVerdict(candidate, facts) {
+  if (candidate.held) return { remove: false, why: candidate.held };
+  const tree = candidate.worktree;
+  if (!tree) return { remove: true, why: '' };
+  if (tree.locked) {
+    return { remove: false, why: `its worktree is locked, so in use${tree.lockReason ? ` (${tree.lockReason})` : ''}; it is never looked into or unlocked here` };
+  }
+  if (!facts) return { remove: false, why: 'its worktree was not looked into' };
+  if (facts.gone) return { remove: true, why: '', gone: true };
+  const has = [];
+  if (facts.error) has.push(`a state git could not read (${facts.error})`);
+  if (facts.tracked.length) has.push(`modified or staged tracked files (${listed(facts.tracked)})`);
+  if (facts.local) has.push(`private output under local/ (${facts.local}), which nothing else keeps`);
+  if (facts.untracked.length) has.push(`untracked files git removes only with --force (${listed(facts.untracked)})`);
+  return has.length ? { remove: false, why: `its worktree has ${has.join('; ')}` } : { remove: true, why: '' };
+}
+
+/** The line of git's refusal worth printing: its `error:` or `fatal:` line, else its first. */
+const gitSays = (text) => {
+  const all = lines(text.replace(/\r\n/g, '\n')).map((line) => line.trim());
+  return all.find((line) => /^(?:error|fatal):/.test(line)) ?? all[0] ?? 'no reason given';
+};
+
+const samePath = (a, b) => {
+  const norm = (path) => resolve(path).split('\\').join('/').replace(/\/+$/, '');
+  return process.platform === 'win32' ? norm(a).toLowerCase() === norm(b).toLowerCase() : norm(a) === norm(b);
+};
+
+/**
+ * The first file under `dir`, as a `/` path from the folder that holds it, or null when it holds none.
+ * Links are not followed. A folder that cannot be read throws, and its worktree is kept.
+ */
+export function firstFile(dir) {
+  const walk = (at) => {
+    let entries;
+    try {
+      entries = readdirSync(at, { withFileTypes: true });
+    } catch (error) {
+      if (error?.code === 'ENOENT') return null;
+      throw error;
+    }
+    for (const entry of entries) {
+      const found = entry.isDirectory() ? walk(join(at, entry.name)) : join(at, entry.name);
+      if (found) return found;
+    }
+    return null;
+  };
+  const found = walk(dir);
+  return found && relative(dirname(dir), found).split('\\').join('/');
+}
+
+/** What a prune needs to know of an unlocked worktree: its folder gone, its changes, its `local/`. */
+function inspectWorktree(tree) {
+  if (tree.prunable || !existsSync(tree.path)) return { gone: true };
+  const facts = { tracked: [], untracked: [], local: null };
+  // git walks up: in a folder that lost its .git file, a status would answer for the repository above it.
+  if (!existsSync(join(tree.path, '.git'))) return { ...facts, error: 'its folder has no .git file' };
+  const status = git(tree.path, ['--no-optional-locks', 'status', '--porcelain'], { allowFail: true });
+  if (status.status !== 0) return { ...facts, error: gitSays(status.err || status.out) };
+  for (const line of lines(status.out)) (line.startsWith('?? ') ? facts.untracked : facts.tracked).push(line.slice(3));
+  try {
+    facts.local = firstFile(join(tree.path, 'local'));
+  } catch (error) {
+    facts.local = `local/ itself, which could not be read: ${error?.code ?? error?.message}`;
+  }
+  return facts;
+}
+
+/**
+ * The prune's plan, changing nothing: every candidate with its verdict, and the branch the checkout this
+ * runs in has out, since `git branch -d` asks whether a branch is merged into that one.
+ */
+export function planPrune(root, { hold = [] } = {}) {
+  const merged = lines(git(root, ['for-each-ref', `--merged=refs/heads/${MAIN}`, '--format=%(refname)', 'refs/heads/']).out)
+    .map((ref) => ref.trim().replace(/^refs\/heads\//, ''));
+  const worktrees = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out);
+  const current = worktrees.find((tree) => samePath(tree.path, root))?.branch ?? '';
+  const entries = pruneCandidates({ merged, worktrees, current, hold }).map((candidate) => {
+    const tree = candidate.worktree;
+    const facts = !candidate.held && tree && !tree.locked ? inspectWorktree(tree) : null;
+    return { ...candidate, ...pruneVerdict(candidate, facts) };
+  });
+  return { current, entries };
+}
+
+/** One removal: the worktree, then the branch. What git refuses is kept, with git's own reason. */
+function removeOne(root, entry) {
+  const tree = entry.worktree;
+  let left = '';
+  if (tree) {
+    const removed = git(root, ['worktree', 'remove', tree.path], { allowFail: true });
+    if (removed.status !== 0) {
+      const still = parseWorktrees(git(root, ['worktree', 'list', '--porcelain']).out).some((known) => samePath(known.path, tree.path));
+      if (still) return { ...entry, remove: false, why: `git refused to remove its worktree: ${gitSays(removed.err || removed.out)}` };
+      // git can let go of a worktree whose folder it could not wholly delete (a file held open): the
+      // branch is free, and what is left of the folder is no longer git's.
+      left = `; git could not delete all of its folder (${gitSays(removed.err || removed.out)}), and what is left is no longer git's`;
+    }
+  }
+  const deleted = git(root, ['branch', '-d', entry.branch], { allowFail: true });
+  if (deleted.status !== 0) {
+    return { ...entry, remove: false, why: `${tree ? 'its worktree is removed, but ' : ''}git refused to delete the branch, which is never forced: ${gitSays(deleted.err || deleted.out)}` };
+  }
+  return { ...entry, removed: true, left };
+}
+
+/**
+ * The plan, applied: `git worktree remove`, never forced (ignored build output does not stop it, and
+ * whatever does is work to keep), then `git branch -d`, never `-D`, then one `git worktree prune`.
+ * `onEach` hears each entry as it ends, so a long removal is not a silence.
+ */
+export function applyPrune(root, entries, onEach = () => {}) {
+  const done = entries.map((entry) => {
+    const outcome = entry.remove ? removeOne(root, entry) : entry;
+    onEach(outcome);
+    return outcome;
+  });
+  if (entries.some((entry) => entry.remove)) git(root, ['worktree', 'prune'], { allowFail: true });
+  return done;
+}
+
+function pruneHeader(entries, { plan = false, atMerge = false } = {}) {
+  const what = entries.length === 0
+    ? `no branch but ${MAIN} is merged into ${MAIN}`
+    : `${entries.length} ${entries.length === 1 ? 'branch' : 'branches'} merged into ${MAIN}`;
+  const note = [atMerge && "at the merge's start", plan && 'a plan, so nothing is removed'].filter(Boolean).join('; ');
+  return `prune${note ? ` (${note})` : ''}: ${what}`;
+}
+
+/** One branch's line, in the lane report's columns: what happens to it (or would), and why. */
+function pruneLine(root, entry, applied) {
+  const goes = applied ? entry.removed === true : entry.remove;
+  const verb = applied ? (goes ? 'removed' : 'kept') : (goes ? 'remove' : 'keep');
+  let text = entry.why;
+  if (goes) {
+    const at = entry.worktree && shown(root, entry.worktree.path);
+    if (!entry.worktree) text = 'the branch (no worktree has it checked out)';
+    else if (entry.gone) text = `its worktree's record (the folder ${at} is gone already) and the branch`;
+    else text = `its worktree ${at} and the branch${entry.left ?? ''}`;
+  }
+  return `  ${pad(verb, 8)} ${pad(entry.branch, 34)} ${text}`;
+}
+
+/** The prune a merge runs at its start and a batch at its end. It never stops the merge. */
+function pruneAround(root, hold) {
+  try {
+    const { current, entries } = planPrune(root, { hold });
+    if (current !== MAIN) {
+      console.log(`prune: skipped: this checkout has ${current || 'a detached HEAD'} out, not ${MAIN}`);
+      return;
+    }
+    console.log(pruneHeader(entries));
+    applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
+  } catch (error) {
+    console.log(`prune: skipped (${error?.message ?? error})`);
+  }
+}
+
+/** `--prune`: the prune alone, or its plan. Applying it runs from main's checkout, as a merge does. */
+function pruneOnly(root, options) {
+  const { current, entries } = planPrune(root);
+  if (options.plan) {
+    console.log(pruneHeader(entries, { plan: true }));
+    for (const entry of entries) console.log(pruneLine(root, entry, false));
+    return 0;
+  }
+  if (current !== MAIN) {
+    throw new Refusal(`--prune runs from ${MAIN}'s checkout: git branch -d asks whether a branch is merged into the one checked out, and here that is ${current || 'a detached HEAD'}`);
+  }
+  console.log(pruneHeader(entries));
+  applyPrune(root, entries, (entry) => console.log(pruneLine(root, entry, true)));
+  return 0;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -877,6 +1123,10 @@ async function mergeNext(root, state) {
     console.log('commit check: skipped (--no-commit-check)');
   }
 
+  // After every refusal, so a refused merge still touches nothing; the batch's branches are its own.
+  if (state.autoPrune === false) console.log('prune: skipped (--no-prune)');
+  else pruneAround(root, state.branches.slice(state.at));
+
   state.tips[branch] = tip;
   writeState(root, state);
   const merged = git(root, ['merge', '--no-ff', '--no-commit', branch], { allowFail: true });
@@ -899,7 +1149,7 @@ async function start(root, options) {
   for (const branch of options.branches.slice(1)) requireBranch(root, branch);
   readPlan(root);
   return mergeNext(root, {
-    branches: options.branches, at: 0, tips: {}, keepGoing: options.keepGoing, commitCheck: options.commitCheck,
+    branches: options.branches, at: 0, tips: {}, keepGoing: options.keepGoing, commitCheck: options.commitCheck, autoPrune: options.autoPrune,
   });
 }
 
@@ -908,6 +1158,8 @@ async function resume(root, options) {
   if (!state) throw new Refusal('nothing to continue: this tool has no merge recorded here');
   state.keepGoing = state.keepGoing || options.keepGoing;
   state.commitCheck = state.commitCheck && options.commitCheck;
+  // A batch recorded before the prune existed has no field, and prunes.
+  state.autoPrune = state.autoPrune !== false && options.autoPrune;
   const branch = state.branches[state.at];
 
   if (mergeInProgress(root)) {
@@ -926,6 +1178,8 @@ async function resume(root, options) {
     console.log(landed
       ? `merge-branch: the batch is done: ${state.branches.join(', ')} ${state.branches.length === 1 ? 'is' : 'are'} in ${MAIN}.`
       : `merge-branch: the batch is done, but ${branch} is not in ${MAIN}: its merge was abandoned.`);
+    // The batch's last branch landed after the last merge's prune ran, so it goes here.
+    if (state.autoPrune) pruneAround(root, []);
     return 0;
   }
   preconditions(root);
@@ -949,6 +1203,14 @@ function planOnly(root, options) {
     console.log(problems.length ? `  commit check would refuse it:\n${problems.map((problem) => `    ${problem}`).join('\n')}` : '  commit check: nothing to refuse');
   });
   console.log('');
+  if (options.autoPrune) {
+    const { entries } = planPrune(root, { hold: options.branches });
+    console.log(pruneHeader(entries, { plan: true, atMerge: true }));
+    for (const entry of entries) console.log(pruneLine(root, entry, false));
+  } else {
+    console.log('prune: skipped (--no-prune)');
+  }
+  console.log('');
   console.log(`gates, in order${options.branches.length > 1 ? ' (the rehearsals run after the last branch only)' : ''}:`);
   for (const line of planLines(plan)) console.log(line);
   console.log(`logs: ${SCRATCH}/merge-<branch>/<gate>.log`);
@@ -967,6 +1229,7 @@ export async function main(argv) {
   const options = parseArgs(argv);
   const root = locate(process.cwd());
   if (options.dropBatch) return dropBatch(root);
+  if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
   if (options.resume) return resume(root, options);
   return start(root, options);

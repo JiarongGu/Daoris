@@ -179,6 +179,24 @@ describe('the workspace topology', () => {
   });
 
   /**
+   * ANSWER1e (D131's ANSWER1c note, answer-continues design §5): a park the person answered stays parked until the
+   * driver's next look, and the same session goes on then, so nothing there waits on the person. Until that look it is
+   * marked as a queued session is: neither parked nor working, on a node or on a line.
+   */
+  it('marks no park the person answered as parked, on a node or on its quest\'s line', () => {
+    const answered: Session = { ...session('engine', 'awaiting-person'), quest: 'q1', answer: 'the second one' };
+    const asking: Session = { ...session('game', 'awaiting-person'), quest: 'q2', answer: null };
+    const map = buildTopology([repo('engine'), repo('game')], [quest('q1', 'game', 'engine'), quest('q2', 'engine', 'game')], [], [
+      answered, asking,
+    ]);
+
+    expect(map.nodes.map((n) => [n.id, n.parked, n.working, n.sessions])).toEqual([
+      ['engine', false, false, 0], ['game', true, false, 1],
+    ]);
+    expect(map.quests.map((e) => [e.from, e.to, e.live])).toEqual([['engine', 'game', 'parked'], ['game', 'engine', null]]);
+  });
+
+  /**
    * UX5 U49: scoped to every workspace, a circle's repositories sit together on the ring, so its
    * quests stay within its arc, where by name alone the circles interleaved with nothing saying which.
    */

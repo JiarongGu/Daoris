@@ -142,6 +142,14 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Settings → Browser",
             "`daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, "
             + "`daoris browser favorite add|remove <address>`"),
+        // UPDATE1f (D139): exempt from Ask Daoris, since an update is the person's act on the application; the room names both
+        // doors, as it does for `sessions say`.
+        ("install the build staged beside this install: when its work allows (nothing new starts, and once no driven session "
+            + "runs Daoris closes and starts again on it), now (Daoris closes at once, ending what runs as a close does), or not "
+            + "now (it stays staged, for that build only); plain `update` says what is staged and how the last update ended "
+            + "(Ask Daoris never proposes it: an update is your act on the application)",
+            "the update banner, and Settings → Driver → Update: *Update when idle*, *Update now*, *Not now*",
+            "`daoris-driver update --when-idle|--now|--cancel`, `daoris-driver update`"),
         ("start a task", "Quests → Ask", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
         // MSG1e (D137 §5.4): exempt from Ask Daoris, since the words are the person's (D133 §1); the room names both doors.
