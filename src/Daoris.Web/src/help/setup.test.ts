@@ -37,7 +37,7 @@ const MACHINES = {
     registry: [{ repository: 'engine' }, { repository: 'game' }],
     driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp', intakeAdapter: 'claude-code-acp' },
     harnesses: [door()],
-    sessions: [{ state: 'working' }],
+    sessions: [{ state: 'working' as const }],
     lines: [
       { repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'workspace' as const },
       // Not driven, so its missing line is not the setup's business — only a starter's.
@@ -54,7 +54,7 @@ const MACHINES = {
     registry: [{ repository: 'engine' }],
     driver: { drivable: ['engine'], helperAdapter: 'claude-code-acp' },
     harnesses: [door()],
-    sessions: [{ state: 'awaiting-person' }],
+    sessions: [{ state: 'awaiting-person' as const }],
     lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' as const }],
     landings: [],
   },
@@ -113,6 +113,26 @@ describe('the machine, read once for the guide and the starters', () => {
     const undriven = readMachine({ ...MACHINES.everythingDone, driver: { ...MACHINES.everythingDone.driver, drivable: [] } });
     expect(opensAtStart(setupSteps(undriven))).toBe(false);
     expect(setupProgress(setupSteps(undriven))).toEqual({ done: 3, of: 5 });
+  });
+
+  /**
+   * ANSWER1e (D131's ANSWER1c note, answer-continues design §5): a park the person answered stays parked until the
+   * driver's next look, and the same session goes on then, so Ask Daoris counts it among what waits on them no longer.
+   */
+  it('counts no park the person answered as waiting on them', () => {
+    const machine = readMachine({
+      ...MACHINES.everythingDone,
+      sessions: [
+        { state: 'awaiting-person', answer: 'the second one' },
+        { state: 'awaiting-person', answer: null },
+        { state: 'awaiting-person' },
+        { state: 'working' },
+      ],
+    });
+
+    expect(machine.waiting).toBe(2);
+    expect(starters(machine).find((starter) => starter.id === 'waiting')?.values).toEqual({ count: 2 });
+    expect(readMachine({ ...MACHINES.everythingDone, sessions: [{ state: 'awaiting-person', answer: 'go on' }] }).waiting).toBe(0);
   });
 
   /** The design's point (§2): the facts are the starters' facts, so the two never disagree. */
