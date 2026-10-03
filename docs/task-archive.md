@@ -10395,3 +10395,129 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > in a locked worktree kept.
 
 **Outcome** `merge-branch` prunes merged branches and their worktrees at each merge's start, at a batch's end, and on `--prune [--plan]`: it keeps a worktree that is locked (an agent runs in it), holds changes or untracked files, or has anything under `local/`, says why for each, never forces and never uses `-D`; `--no-prune` skips it once. A worktree made by hand is locked by whoever made it. Detail: the tool's header, the dispatch-subagent skill's parent half, `529e9bd1`, `1b690a22`.
+
+
+## MSG1e3 — the family rehearsal says words from a terminal (2026-10-03)
+
+> - [ ] **MSG1e3 — the family rehearsal says words from a terminal** (tools; after MSG1c). With the headless loop
+> running, `sessions say` to an ended stub session exits 0 with *going on* and the record works again; to the intake,
+> exits 1; before the loop starts, a say is held and the first look takes it. Contract: D137's MSG1e note. Proof: the
+> phase.
+
+**Outcome** Family phase 17a2 says words from a terminal with the headless loop as a real watch: held on an ended record before the loop starts and taken up by its first look, *going on* in the same record while it runs, `session.reopened` with the terminal's door twice, and an intake refused. Detail: D137's "MSG1e4 and MSG1e3" note, `d2ac3737`.
+
+
+## MSG1e4 — the headless loop keeps a terminal's words to a running session on its ask (2026-10-03)
+
+> - [ ] **MSG1e4 — the headless loop keeps a terminal's words to a running session on its ask** (driver; found by MSG1e2).
+> `LoopWords` holds words at a running session's inbox but never posts them to `/added`, so they miss the ask the shell
+> now keeps them on. Contract: D133 §1, D137's MSG1e2 and MSG1c2 note. Proof: a `SessionsSayCommandTests` row.
+
+**Outcome** The headless loop keeps a terminal's words to a running session on its ask through the driver library's `WordsOnAsk.Keep`, as the shell does; words to an ended record are not posted there, since the service keeps them on the ask once taken. Detail: D137's "MSG1e4 and MSG1e3" note, `6a44d018`.
+
+
+## MSG1c3 — the lost line has a code (2026-10-03)
+
+> - [ ] **MSG1c3 — the lost line has a code** (driver, web-shell; found by LANG1a). A stop while the person's words are on
+> their way writes *it may have read what you added; its answer was not kept* as an English conversation event, which
+> the page cannot word. Give the event a code the page words as `work.conversation.lost`. Contract: D137's MSG1c2 note,
+> the language design §9. Proof: a `ChatTurns` row; a `ConversationView` vitest row in both catalogues.
+
+**Outcome** The lost line, a stop while the person's words were on their way, carries a code (`lost`) the page words in both catalogues; the English is unchanged. Detail: D137's "MSG1c3, MSG1d3 and MSG1d4, built" note, `0e7d6e28`.
+
+
+## MSG1d3 — a resumed run is handed the files said with the words (2026-10-03)
+
+> - [ ] **MSG1d3 — a resumed run is handed the files said with the words** (driver; found by MSG1d). Files are kept
+> under the home and named on the record, but the resumed prompt passes only the words. Contract: §2.4. Proof: a
+> continuation test whose prompt names the kept files.
+
+**Outcome** A resumed run is handed the files said with the words, as path lines on the native door and resource links on the protocol door, and a driven resume may read the session's own files folder. Detail: D137's "MSG1c3, MSG1d3 and MSG1d4, built" note, `8d46a03e`.
+
+
+## MSG1d4 — words held while a session winds up survive a restart (2026-10-03)
+
+> - [ ] **MSG1d4 — words held while a session winds up survive a restart** (modules; found by MSG1d). The shell holds
+> them until the record keeps them, and a restart in that moment loses them. Contract: D137's MSG1d note. Proof: a
+> modules test across a new `SessionWords`.
+
+**Outcome** Words held while a session winds up are also kept in `sessions/held-words.json`, rewritten atomically and read back by a new `SessionWords`, so a restart in that moment loses none and says none twice. Detail: D137's "MSG1c3, MSG1d3 and MSG1d4, built" note, `9e5fdc12`.
+
+
+## MSG1e5 — one rule keeps a running session's words on its ask (2026-10-04)
+
+> - [ ] **MSG1e5 — one rule keeps a running session's words on its ask** (modules; after MSG1e4). `SessionWords.KeepOnAsk`
+> keeps its own copy of the rule the driver library's `WordsOnAsk.Keep` now owns, so the two can drift. Contract:
+> D137's MSG1e4 and MSG1e3 note. Proof: `SessionWordsTerminalTests`' running-session row green with the copy removed.
+
+**Outcome** `SessionWords.KeepOnAsk` keeps words by the driver library's `WordsOnAsk.Keep`, and its own copy of the rule is gone. Detail: D137's MSG1e5 note, `aa0d836d`.
+
+
+## ANSWER1f — Ask Daoris's preface reads an answered park (2026-10-04)
+
+> - [ ] **ANSWER1f — Ask Daoris's preface reads an answered park** (web-shell; found by ANSWER1e). `help/where.ts`'s
+> preface still tells the helper an attended answered park waits on the person. Read `answeredPark` in
+> `attendedOf`/`prefaceOf`. Contract: the answer-continues design §5, D131's ANSWER1c note. Proof: a `where.test.ts`
+> row.
+
+**Outcome** Ask Daoris's preface names an answered park as going on with the person's answer at the driver's next look, never as waiting on them. Detail: `6b2dd167`, a `where.test.ts` row.
+
+
+## STUB2 — the stub's resumed turn has a row of its own (2026-10-04)
+
+> - [ ] **STUB2 — the stub's resumed turn has a row of its own** (cli; found by MSG1e3). The ACP stub's resumed turn on a
+> quest that asks nothing is held only by family phase 17a2. Contract: D137's MSG1e4 and MSG1e3 note. Proof: a
+> `setup-kit.test.ts` row (initialize, `session/resume`, a prompt) that sees the words heard, `end_turn` after about
+> 3 s, and no take.
+
+**Outcome** A `setup-kit.test.ts` row holds the ACP stub's resumed turn: the words heard, `end_turn` about three seconds after the resume, and no take. Detail: `3fb76f53`.
+
+
+## FRAME2 — the title bar behaves as a window's does (2026-10-04)
+
+> - [ ] **FRAME2 — the title bar behaves as a window's does** (web-shell, desktop shell; owner, 2026-10-04: *"double
+> click on window top bar does not max the window and click on in maxed window mode it directly resets the max, this
+> is not regular window top bar behaviour"*). A double-click on the app strip's empty space toggles maximize, and a
+> single click on a maximized window does nothing; only a drag that moves restores it. Contract: D56 (the app strip is
+> the title bar), D138 (its system menu). Proof: vitest over the strip's handlers; the look on the install.
+
+**Outcome** The strip's press waits for a drag: a move past 4 CSS px starts it, restoring a maximized window first; a still click does nothing; a double-click toggles maximize. The restored window keeps its saved position, since the host's commands take none (FRAME2b). Detail: D56's FRAME2 note, `afab6ea0`.
+
+
+## GIT1 — Daoris's own git, built in: designed (2026-10-04)
+
+> - [ ] **GIT1 — Daoris's own git, built in** (design first; owner, 2026-10-04: *"since Daoris will need to use git anyway
+> we will need a self-managed git, also since we will have self-managed git then we probably need to do a built-in git
+> more like VS Code with GitLens"*). Daoris's managed Git exists (D121, TOOLS4) but the install still runs the
+> system's. Design the built-in git surface: a repository's lines and branches (session branches, landed `feature/`
+> branches, their pull requests), history as a graph, a commit's diff, a file's history and blame; which acts it takes
+> as the person's (fetch, branch, push) at both doors; how it stays fast (REVIEW3); where it stops short of an editor
+> (D55); and whether a setup offers managed Git. Contract: D55, D121, D113. Proof: the design and its decision.
+
+**Outcome** Designed as D147: a *Git* place on the desktop organised by branch and commit (a repository's lines, session and landed branches with their pull requests, history as a graph, a commit, a file's history and blame, a compare), read through the Tools' git one process per view and cached by commit id; acts on refs only (fetch, branch, delete, and a push only on the person's press, never forced); no editor, checkout or staging (D55); managed Git offered and never switched. Measured on this repository: one git start about 100 ms, a whole range's patch in one call 2.2 s against 215 ms a file. The build is GIT1a–k. Detail: `docs/2026-10-04-built-in-git-design.md`, D147, `ef678dc7`.
+
+
+## LAND2 — done work reaches a branch you can review, and a pull request: designed (2026-10-04)
+
+> - [ ] **LAND2 — done work reaches a branch you can review, and a pull request** (design first; owner, 2026-10-04:
+> *"so the thing is it's closed? but there is no PR branch opened and there is nothing I can really review on"*). Work
+> lands only at the person's Accept on its review (D87, D100), and lumachain's branch rule names no pull-request
+> plugin, so AR-2203's five done sessions sat on Daoris's session branches with nothing to review elsewhere. Design a
+> workspace's choice to land when its quest is done (the branch made, and the rule's plugin pushing it and opening the
+> pull request), today's Accept staying the default until set, and what *To review* then means. Contract: D87, D100,
+> D102. Proof: the design and its decision.
+
+**Outcome** Designed as D145: *Accept automatically* (自动采纳), a switch on a workspace's branch rule (a repository's own rule overriding it whole), off until set, lands a session's work once its quest is done and released, through the rule's plugin, which pushes the branch and opens the pull request, the person's last step; with no plugin it is allowed with a warning. A chain lands on one branch, and *To review* lists only what could not land. The build is LAND2a–c. Detail: `docs/2026-10-04-landing-and-proof-design.md`, D145, `4a82bd5d`.
+
+
+## EVID2 — proof of completion that outlives the environment: designed (2026-10-04)
+
+> - [ ] **EVID2 — proof of completion that outlives the environment** (design first; owner, 2026-10-04: *"there is no
+> proof it's completed if the server is stopped (for local development) it should take some screenshot for its
+> completion state since there are tasks not really related to code, it's configuration based"*). A done on
+> configuration work leaves no diff; capture its proof at the done (screenshots through the browser every session is
+> handed, an API read's answer), kept by Daoris on the record, not in the repository, and shown on the review and the
+> quest's page; whether a requirement may require it (D144 deferred browser evidence to "later"). Contract: D144 §7,
+> D133. Proof: the design and its decision.
+
+**Outcome** Designed as D146: a session captures proof of its done (screenshots through the browser it is handed, the answers of API reads it relied on) into a folder Daoris keeps on the record, never in the repository, checked for presence, kind, readability and size, redacted, and shown on the session's page, its review and the quest's page; a requirement may require it, and a done without it is held as D144 holds one. Only codes, hashes and sizes cross machines. The build is EVID2a–c. Detail: `docs/2026-10-04-landing-and-proof-design.md`, D146, `4a82bd5d`.

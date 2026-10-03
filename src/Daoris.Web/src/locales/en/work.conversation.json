@@ -24,6 +24,7 @@
   "work.conversation.held.reopen": "Held: the same conversation goes on with this as it opens again.",
   "work.conversation.held.cooling": "Held: its account is cooling until {{time}}; it goes on with this then.",
   "work.conversation.went": "Your words went to session {{id}}, because {{why}}.",
+  "work.conversation.lost": "It may have read this; its answer was not kept.",
   "work.conversation.plan": "Plan",
   "work.conversation.driver": "Driver",
   "work.conversation.raw": "an update this version does not know: {{title}}",

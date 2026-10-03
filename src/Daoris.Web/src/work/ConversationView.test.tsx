@@ -499,6 +499,39 @@ describe('ConversationView', () => {
   });
 
   /**
+   * MSG1c3 (D142 point 1): a word the person's stop cut off on its way is said in the page's words, in the reader's
+   * language, from the note's code: once, where the word was shown, which waits no longer. A code the page does not know
+   * leaves the driver's English line.
+   */
+  it('says in the reader’s language that the agent may have read a word the stop cut off', async () => {
+    const stopped = () => [
+      ev({ kind: 'user', origin: 'person', text: 'read the five files' }),
+      ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'PINEAPPLE' }),
+      ev({ kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['said-1'], code: 'lost' }),
+      ev({ kind: 'turn', stopReason: 'cancelled' }),
+    ];
+    const { unmount } = view(stopped());
+    expect(screen.getByText('It may have read this; its answer was not kept.')).toBeTruthy();
+    expect(screen.getByText('PINEAPPLE')).toBeTruthy();
+    expect(screen.queryByText(/— it may have read/)).toBeNull();
+    expect(screen.queryByText(/Held:/)).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const { unmount: shown } = view(stopped());
+      expect(screen.getByText('它可能已读到这条，但它的回复没有保留。')).toBeTruthy();
+      expect(screen.queryByText(/may have read/)).toBeNull();
+      shown();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    view([ev({ kind: 'note', text: '— a line a newer driver coded.', code: 'newer' })]);
+    expect(screen.getByText('— a line a newer driver coded.')).toBeTruthy();
+  });
+
+  /**
    * MSG1g2 (D137 §2.2, MSG1g's note): words a resume holds while the account its record ran on cools say so, naming its
    * reset, and offer *Go on in a new session*, saying the new session starts without this conversation's context. What the
    * press came to is said in the page's words; where nothing carries the words on by itself, the door is a conversation.

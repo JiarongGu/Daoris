@@ -24,6 +24,7 @@
   "work.conversation.held.reopen": "已暂存：同一个对话重新打开时会带着这条继续。",
   "work.conversation.held.cooling": "已暂存：它的账户冷却到 {{time}}，届时会带着这条继续。",
   "work.conversation.went": "你的话转给了会话 {{id}}，因为{{why}}。",
+  "work.conversation.lost": "它可能已读到这条，但它的回复没有保留。",
   "work.conversation.plan": "计划",
   "work.conversation.driver": "驱动",
   "work.conversation.raw": "此版本不认识的更新：{{title}}",
