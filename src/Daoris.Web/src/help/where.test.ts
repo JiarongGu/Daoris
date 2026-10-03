@@ -55,9 +55,33 @@ describe('where the person is', () => {
 
   it('finds the attended session in the list, and names none it cannot find', () => {
     const sessions = [{ id: 's1', repository: 'engine', state: 'awaiting-person', note: 'Which one?' } as Session];
-    expect(attendedOf('s1', sessions)).toEqual({ id: 's1', repository: 'engine', state: 'awaiting-person', note: 'Which one?' });
+    expect(attendedOf('s1', sessions))
+      .toEqual({ id: 's1', repository: 'engine', state: 'awaiting-person', note: 'Which one?', answered: false });
     expect(attendedOf('gone', sessions)).toBeNull();
     expect(attendedOf(null, sessions)).toBeNull();
+  });
+
+  /**
+   * ANSWER1f (D131's ANSWER1c note): a park the person answered stays `awaiting-person` until the driver's next look
+   * (ANSWER1b), and the same session goes on with the answer then. The helper is told so, as the session list says it,
+   * never that it waits on the person. A blank answer is none, as `answeredPark` reads it.
+   */
+  it('names an answered park as going on with the answer at the next look, never as waiting on the person', () => {
+    const sessions = [
+      { id: 'p4rk3d00', repository: 'engine', state: 'awaiting-person', note: 'Which port?\n\nAnswered: 8080', answer: '8080' },
+      { id: 'b1ank000', repository: 'engine', state: 'awaiting-person', note: 'Which port?', answer: '' },
+    ] as Session[];
+
+    const answered = attendedOf('p4rk3d00', sessions);
+    expect(answered?.answered).toBe(true);
+    const said = prefaceOf({ view: 'sessions', workspace: null, session: answered });
+    expect(said).toBe('Where the person is now: the Sessions view, every workspace, attending session `p4rk3d00` in `engine`, '
+      + 'which is answered: the same session goes on with the person\'s answer at the driver\'s next look. '
+      + 'It says: "Which port? Answered: 8080".');
+    expect(said).not.toContain('waiting on the person');
+
+    expect(prefaceOf({ view: 'sessions', workspace: null, session: attendedOf('b1ank000', sessions) }))
+      .toContain('which is waiting on the person.');
   });
 
   /**

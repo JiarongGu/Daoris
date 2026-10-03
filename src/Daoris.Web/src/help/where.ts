@@ -1,6 +1,7 @@
 import type { Session } from '../api';
 import type { View } from '../commands';
 import type { SettingsSection } from '../SettingsView';
+import { answeredPark } from '../ui';
 import type { ViewId } from '../work/placements';
 
 /**
@@ -12,7 +13,11 @@ export type HelpWhere = {
   /** The workspace in scope, or null for every workspace. */
   workspace: string | null;
   settings?: SettingsSection | null;
-  session?: { id: string; repository: string; state: string; note?: string | null } | null;
+  /**
+   * `answered` is a park the person answered (ANSWER1f), read by `answeredPark`: the same session goes on with the answer
+   * at the driver's next look, so nothing about it waits on the person.
+   */
+  session?: { id: string; repository: string; state: string; note?: string | null; answered?: boolean } | null;
   /** Where Sessions' views stand and which region is showing (HELP2): the helper cannot see the window. */
   layout?: { right: readonly ViewId[]; panel: readonly ViewId[]; rightShown: boolean; panelShown: boolean } | null;
 };
@@ -42,7 +47,9 @@ const DOMAINS: Record<SettingsSection, string> = {
 /** The attended session as the preface names it — or null when none is attended, or it is not in the list. */
 export function attendedOf(id: string | null, sessions: readonly Session[]): HelpWhere['session'] {
   const session = id ? sessions.find((row) => row.id === id) : undefined;
-  return session ? { id: session.id, repository: session.repository, state: session.state, note: session.note ?? null } : null;
+  return session
+    ? { id: session.id, repository: session.repository, state: session.state, note: session.note ?? null, answered: answeredPark(session) }
+    : null;
 }
 
 /** How much of what a session says the preface carries: enough to name the question, not the analysis. */
@@ -64,7 +71,10 @@ export function prefaceOf(where: HelpWhere): string {
 
   const session = where.view === 'sessions' ? where.session : null;
   if (session) {
-    const state = session.state === 'awaiting-person' ? 'waiting on the person' : session.state;
+    // An answered park still reads `awaiting-person` for up to one look (ANSWER1f): named as the list's *answered*.
+    const state = session.answered
+      ? "answered: the same session goes on with the person's answer at the driver's next look"
+      : session.state === 'awaiting-person' ? 'waiting on the person' : session.state;
     parts.push(`attending session \`${session.id}\` in \`${session.repository}\`, which is ${state}`);
   }
 
