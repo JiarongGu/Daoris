@@ -166,6 +166,8 @@ public sealed partial class HelpCoverageTests
         ("landing", new Door("setting", "landing")),
         ("across read", new Door("setting", "across")),
         ("across write-to", new Door("setting", "across")),
+        // KNOWUSE1b: a standing answer for a repository, the person's words, which Ask Daoris proposes and the person applies.
+        ("standing", new Door("setting", "standing")),
         ("notify", new Door("setting", "notify")),
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),

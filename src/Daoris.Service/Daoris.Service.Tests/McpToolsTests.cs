@@ -374,6 +374,40 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.True((await sessions.FindAsync(session.Id))!.Took);
     }
 
+    /// <summary>
+    /// KNOWUSE1a (D135 §2): a session asks the person for a go-ahead through its own connector, held on the ask its quest
+    /// was asked by; a second session asking for the act in other words joins it rather than asking again, and a connector
+    /// that speaks for no session is told there is no ask to hold one.
+    /// </summary>
+    [Fact]
+    public async Task A_go_ahead_is_asked_through_a_sessions_own_connector_and_a_second_request_joins_it()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var asks = await AskStore.OpenAsync(_connection);
+        var ledger = new SessionLedger(_quests, sessions, _service, asks);
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var asked = await desk.AskAsync(new AskRequest("default", "The dashboard figure reads zero.") { To = "Owner" }, DateTimeOffset.UtcNow);
+        var quest = asked.Quest!;
+        KnowledgeTools Connector(string? session) => new(
+            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
+            desk, new IntakeScope(null, session), ledger: ledger);
+        var first = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "a"))).Session!;
+        var second = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow, tree: Path.Combine(_root, "trees", "b"))).Session!;
+
+        var asking = await Connector(first.Id).AskGoAheadAsync("write", "production", "dashboard configuration", "The tile's target.");
+        var joining = await Connector(second.Id).AskGoAheadAsync("put", "prod", "the dashboard's configuration", "Still needed.");
+        var nobody = await Connector(null).AskGoAheadAsync("write", "production", "dashboard configuration", "why");
+
+        Assert.Contains($"Asked as go-ahead 1 on ask `#{asked.Ask!.Id}`", asking);
+        Assert.Contains("Go-ahead 1", joining);
+        Assert.Contains("not asked again", joining);
+        var held = Assert.Single((await desk.FindAsync(asked.Ask.Id))!.GoAheads);
+        Assert.Equal([first.Id, second.Id], held.Asked.Select(request => request.Session));
+        Assert.Contains("no session", nobody);
+        Assert.Contains("last message", nobody);
+    }
+
     [Fact]
     public async Task A_path_that_is_not_a_file_is_refused_and_nothing_is_published()
     {

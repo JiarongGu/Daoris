@@ -43,6 +43,18 @@ public sealed partial class DriverModule
         return State();
     }
 
+    // A repository's standing answer (KNOWUSE1b, D135 §3): the person's words, handed to every session there, over the same
+    // file `daoris driver standing <repo> "…"|--clear` edits — one truth, two doors (D50). No words clears it; blank words or
+    // words past the bound are the driver's refusal.
+    [DriverRoute("SET_STANDING")]
+    private object? SetStanding(IpcRequest request)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var says = Optional(request, "says");
+        Change(config => config.WithStanding(repository, says, DateTimeOffset.UtcNow));
+        return State();
+    }
+
     // Whether this machine interrupts the person at all (SURF5b). The same file
     // `daoris driver notify on|off` edits — one truth, two doors (D50).
     [DriverRoute("SET_NOTIFY")]
@@ -252,6 +264,9 @@ public sealed partial class DriverModule
                 .Select(p => new { Workspace = p.Key, Read = p.Value }).ToArray(),
             WriteAcross = config.WriteAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Repository = p.Key, To = p.Value }).ToArray(),
+            // Each repository's standing answer (KNOWUSE1b), as rows for the same reason; `at` in UTC, or null where unknown.
+            Standing = config.Standing.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, p.Value.Says, p.Value.At }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

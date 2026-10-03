@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, pausedAsk, pausedQuest,
-  readDriverChoices, releasedFor,
+  readDriverChoices, releasedFor, standingFor,
 } from '../src/driverconfig.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -443,7 +443,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, standing, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -734,6 +734,92 @@ test('retry --session releases a stop, and a retry without it still marks the st
   // A flag's value is never the quest (REV3), `--session`'s included.
   assert.match(captureError(() => run(['retry', '--session', 's1'], at(fx))).message, /needs a name/);
   assert.match(captureError(() => run(['retry', 'q1', '--session', 's1', '--at', '2'], at(fx))).message, /either/);
+  fx.cleanup();
+});
+
+/**
+ * `standing` (KNOWUSE1b, D135 §3): what the person has told this machine holds for every session in a repository, in their
+ * words, with when it was set. 🔴 A TWIN with the driver's `DriverConfig.Standing`: `StandingTests.cs` holds this table row
+ * for row, and the test below holds it to this one, cell for cell. A row's time is the moment read, in UTC to the second.
+ */
+const STANDING_ROWS: [name: string, file: string, repository: string, says: string | null, at: string | null][] = [
+  ['absent is none', '{}', 'app', null, null],
+  ['the person\'s words are the repository\'s answer', '{"standing":{"app":{"says":"dev writes allowed","at":"2026-10-03T09:00:00Z"}}}', 'app', 'dev writes allowed', '2026-10-03T09:00:00Z'],
+  ['a repository is matched in any case', '{"standing":{"App":{"says":"dev only"}}}', 'app', 'dev only', null],
+  ['the words are read without the spaces around them', '{"standing":{"app":{"says":"  dev only  "}}}', 'app', 'dev only', null],
+  ['blank words are no answer', '{"standing":{"app":{"says":"  "}}}', 'app', null, null],
+  ['words that are not text are not read', '{"standing":{"app":{"says":7}}}', 'app', null, null],
+  ['an entry that is not an object is not read', '{"standing":{"app":"dev only"}}', 'app', null, null],
+  ['a repository written twice in any case is read where first written', '{"standing":{"app":{"says":"first"},"APP":{"says":"second"}}}', 'app', 'first', null],
+  ['a time that does not read leaves the answer standing with its time unknown', '{"standing":{"app":{"says":"dev only","at":"Oct 3"}}}', 'app', 'dev only', null],
+  ['a time at an offset is read in UTC', '{"standing":{"app":{"says":"dev only","at":"2026-10-03T11:00:00+02:00"}}}', 'app', 'dev only', '2026-10-03T09:00:00Z'],
+  ['another repository\'s answer is not this one\'s', '{"standing":{"api":{"says":"dev only"}}}', 'app', null, null],
+  ['a list is not a map', '{"standing":["app"]}', 'app', null, null],
+  ['null is absent', '{"standing":null}', 'app', null, null],
+];
+
+test('a standing answer reads as the driver reads it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-standing-read');
+  for (const [name, file, repository, says, at_] of STANDING_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    const read = standingFor(readDriverChoices(at(fx)), repository);
+    assert.equal(read?.says ?? null, says, name);
+    assert.equal(read?.at ? read.at.toISOString().replace(/\.\d{3}Z$/, 'Z') : null, at_, `${name}: at`);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s standing table is this table, row for row and in this order', () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+    'Daoris.Desktop.Driver.Tests', 'StandingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(csharpRows(source, 'Standing_reads_as_the_cli_reads_it', {}, 'StandingTests'), STANDING_ROWS);
+});
+
+/**
+ * The terminal's door onto a standing answer (KNOWUSE1b, D50): set in the person's words, replaced under the spelling first
+ * written, listed, and cleared; the repository's page and Ask Daoris's `setting` kind are the other doors.
+ */
+test('standing keeps an answer for a repository, replaces it, lists it and clears it', () => {
+  const fx = makeFixture('driver-standing');
+
+  const said = run(['standing', 'Work-App', 'dev writes allowed;', 'test locally against dev;', 'prod only on a yes'], at(fx));
+  const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.equal(written.standing['Work-App'].says, 'dev writes allowed; test locally against dev; prod only on a yes');
+  assert.match(written.standing['Work-App'].at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+  assert.match(said.out, /every session in `Work-App` is handed your standing answer/);
+  assert.match(said.out, /never written into the repository/);
+
+  run(['standing', 'work-app', 'dev only'], at(fx));
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(at(fx), 'utf8')).standing), ['Work-App']);
+  assert.equal(standingFor(readDriverChoices(at(fx)), 'WORK-APP')?.says, 'dev only');
+  assert.match(run(['list'], at(fx)).out, /standing\s+Work-App\s+"dev only"/);
+
+  const cleared = run(['standing', 'work-app', '--clear'], at(fx));
+  assert.equal('standing' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(cleared.out, /keeps no standing answer/);
+  fx.cleanup();
+});
+
+test('standing refuses no repository, no words and words past the bound, and writes nothing', () => {
+  const fx = makeFixture('driver-standing-refused');
+  assert.match(captureError(() => run(['standing'], at(fx))).message, /`driver standing` needs <repository>/);
+  assert.match(captureError(() => run(['standing', 'app'], at(fx))).message, /`driver standing` needs <repository>/);
+  assert.match(captureError(() => run(['standing', 'app', 'x'.repeat(2001)], at(fx))).message, /at most 2,000 characters/);
+  assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+test('a standing answer is written only once set, and a verb that knows nothing of it preserves it', () => {
+  const fx = makeFixture('driver-standing-preserve');
+  run(['drive', 'app'], at(fx));
+  assert.equal('standing' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+
+  run(['standing', 'app', 'dev only'], at(fx));
+  run(['hold', 'app'], at(fx));
+  run(['retry', 'q1', '--session', 's1'], at(fx));
+
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).standing.app.says, 'dev only');
   fx.cleanup();
 });
 

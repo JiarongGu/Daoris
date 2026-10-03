@@ -4,7 +4,7 @@ import { linksOf, toUpload } from '../attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { askItem } from '../opener';
-import { useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
+import { useAnswerGoAhead, useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
 import { useDriver, useNudge, useRemotes, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
@@ -90,6 +90,7 @@ export function useAsksPart({
   const publish = usePublishAsk();
   const close = useCloseAsk();
   const remove = useDeleteAsk();
+  const answerGoAhead = useAnswerGoAhead();
   useErrorNotify(active ? asks.error : null, notify);
 
   const [draft, setDraft] = useState<AskDraft>(EMPTY_DRAFT);
@@ -110,7 +111,7 @@ export function useAsksPart({
     .map((row) => row.repository)
     .sort();
   const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, quest.title]));
-  const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || reading;
+  const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending || reading;
   const intakeOf = (item: Ask) => (item.intake ? sessions.data?.find((session) => session.id === item.intake) ?? null : null);
 
   const onAsk = async () => {
@@ -159,6 +160,14 @@ export function useAsksPart({
     onError: failure(notify),
   });
 
+  // The person's yes or no to a go-ahead (KNOWUSE1a): the record as the door answers it, and a nudge, since a session that
+  // waits on it is the driver's next move once the person answers it too.
+  const onAnswerGoAhead = (id: string, number: number, approved: boolean, words?: string) =>
+    answerGoAhead.mutate({ id, number, approved, words }, {
+      onSuccess: (result) => { notify(result.message); setHeld(result.ask); nudge(); },
+      onError: failure(notify),
+    });
+
   // Deleted with every quest asked by it (D95): the record is gone, so the list chooses nothing, on the service's
   // sentence. A refusal is the service's sentence too, and the page stays on the ask as it was.
   const onDelete = (id: string) => remove.mutate(id, {
@@ -205,6 +214,7 @@ export function useAsksPart({
           onClose={(reason) => onClose(shown.id, reason)}
           onDelete={() => onDelete(shown.id)}
           onOpenQuest={(id) => onChoose(id)}
+          onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
           work={workDoor(shown)}
         />
       )

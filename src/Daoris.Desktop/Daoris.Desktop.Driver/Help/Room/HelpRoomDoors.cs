@@ -79,6 +79,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Settings → Permissions → Across repositories",
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
+        // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
+        ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
+            "Repositories → the repository's page → Standing answer", "`daoris driver standing <repository> \"…\"|--clear`"),
         ("sign an agent in, or add an account", "Settings → Agents", "`daoris agent login <agent>`"),
         // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
         // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).
@@ -135,6 +138,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "`daoris browser favorite add|remove <address>`"),
         ("start a task", "Quests → Ask", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
+        // KNOWUSE1a: a go-ahead is the person's yes or no to an act outside a repository, asked once on the ask. Ask Daoris
+        // never answers one: the production acts stay the person's (D135 §2).
+        ("answer a go-ahead a session asked on an ask, for an act outside its repository: yes or no, which every session on "
+            + "the ask is handed", "Quests → the ask's page → Go-aheads", "`daoris-driver ask --go-ahead <id> <n> approve|refuse [\"…\"]`"),
     ];
 
     public string Render(HelpMachine machine)

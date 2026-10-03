@@ -7,6 +7,7 @@ import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../ui';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { DriverChoices } from './DriverChoices';
 import { RepositoryMarks } from './ProjectList';
+import { StandingAnswer } from './StandingAnswer';
 
 /** One fact of a repository: its label in the page's label column, its content wrapping beside it (POLISH4). */
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -28,6 +29,10 @@ export type Driving = {
   onTrees: (ownTree: boolean) => void;
   /** What driving here does that the choice alone does not say: a direct door leaves a quest here sitting (INT3c). */
   note?: string;
+  /** Its standing answer on this machine (KNOWUSE1b), the person's words and when they set them; null for none. */
+  standing?: { says: string; at?: string | null } | null;
+  /** Keep a standing answer, or with null clear it — absent on a shell older than it, and nothing is offered. */
+  onStanding?: (says: string | null) => void;
 };
 
 /**
@@ -190,6 +195,11 @@ export function ProjectPage({
             onTrees={driving.onTrees}
             note={driving.note}
           />
+          {driving.onStanding && (
+            /* What the person says holds for every session here (KNOWUSE1b), beside the other choices a session's
+               instruction is composed from. */
+            <StandingAnswer says={driving.standing?.says ?? null} at={driving.standing?.at ?? null} onSave={driving.onStanding} />
+          )}
         </PageSection>
       )}
 

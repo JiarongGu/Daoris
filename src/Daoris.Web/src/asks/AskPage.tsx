@@ -8,6 +8,7 @@ import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type W
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 import { ASK_TONE, firstLine, tierWords } from './AskRow';
+import { GoAheadList } from './GoAheadList';
 
 /**
  * An ask's page (INT4c; FRAME1d, D118 §3d): the record in Quests' main area, the screen twin of
@@ -34,6 +35,10 @@ import { ASK_TONE, firstLine, tierWords } from './AskRow';
  * the service says it may go (`deletable`), and asked once under the header, because nothing gives the
  * record back. `daoris-driver ask --delete <id>` is the terminal's twin.
  *
+ * **The go-aheads its sessions asked** (KNOWUSE1a, D135 §2) come first among its sections, each once, by its act: one
+ * waiting is answered here, yes or no with the person's words, and every session on the ask is handed the answer.
+ * `daoris-driver ask --go-ahead` is the terminal's twin.
+ *
  * The ask's files are named and never located: the host answers their path to this machine only, and a
  * page does not show a machine path (D47 §4, D65 §2).
  *
@@ -47,7 +52,8 @@ import { ASK_TONE, firstLine, tierWords } from './AskRow';
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function AskPage({
-  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, work,
+  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
+  work,
 }: {
   ask: Ask;
   /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
@@ -64,6 +70,8 @@ export function AskPage({
   /** Delete the ask with every quest asked by it (D95) — absent where there is no door to do it. */
   onDelete?: () => void;
   onOpenQuest: (id: string) => void;
+  /** The person's yes or no to a go-ahead its sessions asked (KNOWUSE1a) — absent where there is no door to give it. */
+  onAnswerGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
 }) {
@@ -239,6 +247,14 @@ export function AskPage({
       {!work && live && (
         /* A browser has no driver (D47 §4): none of the three is offered, and the terminal's commands are named. */
         <Prose className="mb-4 text-small"><Inline text={t('asks.record.noDriver', { id: ask.id })} /></Prose>
+      )}
+
+      {ask.goAheads && ask.goAheads.length > 0 && (
+        /* What its sessions asked the person for, each once (KNOWUSE1a): first among the sections, since one waiting
+           holds a session until the person answers it. */
+        <PageSection title={t('asks.record.goAheads')}>
+          <GoAheadList goAheads={ask.goAheads} busy={busy} onAnswer={onAnswerGoAhead} />
+        </PageSection>
       )}
 
       {ask.intake && (

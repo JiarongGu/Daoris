@@ -334,6 +334,30 @@ describe('ConversationView', () => {
     expect(screen.getByText(/The session ended here/)).toBeTruthy();
   });
 
+  /**
+   * STEER1 (D136): the person's words to a working session show the moment they are said, as theirs and waiting, saying
+   * when the session reads them — and, once the session has ended without taking them, that it never did.
+   */
+  it('shows the person\'s words waiting in the turn, saying when the session reads them', () => {
+    const working = [
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'tool', id: 'h1', title: 'npm run gates', toolKind: 'execute', status: 'in_progress' }),
+      ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'the budget is in level.json', files: ['level.json'] }),
+      ev({ kind: 'user', origin: 'person', id: 'said-2', reaches: 'turn-end', text: 'and cap it at 64 KiB' }),
+    ];
+    const { unmount } = view(working);
+
+    expect(screen.getByText('the budget is in level.json')).toBeTruthy();
+    expect(screen.getByText('Held: it reads this at its next step.')).toBeTruthy();
+    expect(screen.getByText('Held: it reads this when its turn ends.')).toBeTruthy();
+    expect(screen.getByText('level.json')).toBeTruthy();
+    unmount();
+
+    render(<Tooltip.Provider><ConversationView turns={settle(toTurns(working).turns, false)} /></Tooltip.Provider>);
+    expect(screen.getAllByText('It ended before reading this.')).toHaveLength(2);
+    expect(screen.queryByText(/Held:/)).toBeNull();
+  });
+
   /** SESS1 S5: a call the page holds only the updates of began earlier, and says so, never its id. */
   it('says a call began earlier where the page holds only its updates, never naming it by its id', () => {
     view([ev({ kind: 'tool', id: 'toolu_01ExampleCallId', status: 'completed' })]);

@@ -21,6 +21,12 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     public string? Preface { get; init; }
 
+    /// <summary>
+    /// The words' id in a driven session's record (STEER1, D136), stamped by its inbox: it pairs the words shown at once,
+    /// while they wait, with the same words where the session took them. Null for a conversation's message.
+    /// </summary>
+    public string? Id { get; init; }
+
     /// <summary>What the agent is handed: the preface, a blank line, then the person's words.</summary>
     public string Prompt => Preface is { Length: > 0 } preface ? $"{preface}\n\n{Text}" : Text;
 
