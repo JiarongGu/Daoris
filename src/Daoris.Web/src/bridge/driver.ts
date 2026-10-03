@@ -4,6 +4,7 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../queries';
 import type { Consideration, TrustHold } from '../signals';
 import type { LandingRule } from '../settings/Landings';
+import type { LanguageOption } from '../settings/Languages';
 import { call, refusedNotReady } from './call';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
@@ -89,6 +90,18 @@ export type DriverState = {
    * set them, or null where the file does not say — absent on a shell older than it.
    */
   standing?: { repository: string; says: string; at?: string | null }[];
+  /**
+   * The session languages as set (LANG1c, D142 point 7): what each repository's sessions are asked to write to the person in,
+   * a code of the driver's table — absent on a shell older than it.
+   */
+  languages?: { repository: string; language: string }[];
+  /** And by workspace, for each repository there that sets none of its own, and its intake. */
+  workspaceLanguages?: { workspace: string; language: string }[];
+  /**
+   * The driver's closed table each option is named from (LANG1c): its code and the name a session's line gives it, so adding a
+   * language is a row there and needs no catalogue here. Absent on a shell older than it, which offers no session language.
+   */
+  languageTable?: LanguageOption[];
 };
 
 export const useDriver = () => {

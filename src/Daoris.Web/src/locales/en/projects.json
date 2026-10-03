@@ -93,5 +93,11 @@
   "projects.standing.save": "Save",
   "projects.standing.placeholder": "dev writes allowed; test locally against dev; prod only on a yes",
   "projects.standing.tooLong": "{{count}} of {{most}} characters: a standing answer is at most {{most}}.",
-  "projects.standing.hint": "Your words are handed to every session in this repository, beneath its quest. Kept on this machine, never written into the repository."
+  "projects.standing.hint": "Your words are handed to every session in this repository, beneath its quest. Kept on this machine, never written into the repository.",
+  "projects.language.label": "Session language",
+  "projects.language.field": "The session language for {{repository}}",
+  "projects.language.from.repository": "Its sessions write to you in {{name}}, set for this repository.",
+  "projects.language.from.workspace": "Its sessions write to you in {{name}}, from the workspace {{workspace}}.",
+  "projects.language.from.none": "None is set here or for its workspace: its sessions are asked for no language.",
+  "projects.language.hint": "What its sessions write to you: their questions, closing notes, decline reasons and last words; code and anything quoted stay as written. The window's own language is in Settings → Appearance, and neither sets the other."
 }

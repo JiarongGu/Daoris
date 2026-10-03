@@ -63,6 +63,25 @@ export const WithAStandingAnswer: Story = {
 /** None kept yet: what one is for, and *Add*. */
 export const WithNoStandingAnswer: Story = { args: { driving: driving({ drivable: true, standing: null, onStanding: () => {} }) } };
 
+/**
+ * Its session language (LANG1c): beside its standing answer, what its sessions write to the person in, taken from its
+ * workspace here, named from the driver's table.
+ */
+export const WithASessionLanguage: Story = {
+  args: {
+    driving: driving({
+      drivable: true,
+      standing: { says: 'dev writes allowed; test locally against dev; prod only on a yes', at: new Date(Date.now() - 26 * 3_600_000).toISOString() },
+      onStanding: () => {},
+      language: {
+        resolved: { repository: 'engine', workspace: 'aurora', language: 'zh', name: 'Simplified Chinese (简体中文)', source: 'workspace' },
+        table: [{ code: 'en', name: 'English' }, { code: 'zh', name: 'Simplified Chinese (简体中文)' }],
+        onSet: () => {},
+      },
+    }),
+  },
+};
+
 /** Its line, as the driver resolves it (WSR2): the branch its work grows from and lands on, and what set it. */
 export const WithALine: Story = { args: { line: LINE } };
 

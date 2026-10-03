@@ -212,6 +212,7 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
+        ("workspace", "useSetLanguage", null, new Owed(LanguageOwed)),
         ("workspace", "useTreesSync", null, new Door("sync", "sync")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
