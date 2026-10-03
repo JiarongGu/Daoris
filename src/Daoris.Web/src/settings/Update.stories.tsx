@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { InTheme } from '../plugins/storyIcons';
-import { UpdateSection, type UpdateStanding } from './Update';
+import type { UpdateOutcome, UpdateState } from '../update/UpdateBanner';
+import { UpdateSection } from './Update';
 
 // The install's update in Settings (UPDATE1b, D139 §3, §6), in the shape `DAORIS.UPDATE` · `STATE` answers: nothing
 // staged, the drain and what it waits on, waiting after Not now, installing, a refusal, and how the last swap ended,
@@ -8,12 +9,15 @@ import { UpdateSection, type UpdateStanding } from './Update';
 
 const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
 
-const standing = (extra: Partial<UpdateStanding>): UpdateStanding => ({
-  state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, ...extra,
+const standing = (extra: Partial<UpdateState>): UpdateState => ({
+  state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null, ...extra,
 });
 
+/** The start after a swap: the banner's once-said `outcome`, and `last`, the journal's record the row reads (UPDATE1d). */
+const after = (swap: UpdateOutcome) => ({ outcome: swap, last: swap });
+
 const DRAINING = standing({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 2, turns: 1 });
-const INSTALLED = standing({ outcome: { phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' } });
+const INSTALLED = standing(after({ phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' }));
 
 const meta = {
   title: 'Settings/Update',
@@ -66,7 +70,7 @@ export const RolledBackWhileANewerDrains: Story = {
     update: standing({
       state: 'draining', staged: { ...STAGED, id: '20261004T090000Z-cd34ef56', commit: 'def5678', at: '2026-10-04T09:00:00Z' },
       mode: 'when-idle', driven: 1,
-      outcome: { phase: 'rolled-back', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'exited' },
+      ...after({ phase: 'rolled-back', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'exited' }),
     }),
   },
   decorators: [(Story) => <InTheme theme="dark"><Story /></InTheme>],
@@ -74,10 +78,10 @@ export const RolledBackWhileANewerDrains: Story = {
 
 /** The launcher's check refused the build before anything moved. */
 export const RefusedAtSwap: Story = {
-  args: { update: standing({ outcome: { phase: 'refused', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'missing' } }) },
+  args: { update: standing(after({ phase: 'refused', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'missing' })) },
 };
 
-/** After the banner's Dismiss, once `STATE` keeps the last swap as `last`. */
+/** After the banner's Dismiss, or at a later start: `outcome` put away, and `last` still the journal's swap. */
 export const AfterDismissal: Story = {
   args: { update: standing({ last: { phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' } }) },
 };

@@ -10,7 +10,8 @@ namespace Daoris.Desktop;
 /// <remarks>
 /// <para><b><c>STATE</c></b> answers <see cref="InstallUpdater.State"/>; <b><c>SET</c></b> takes <c>{ mode }</c>
 /// (<c>when-idle</c>, <c>now</c>, <c>not-now</c>) and answers the state after it, *Update now* already applying;
-/// <b><c>DISMISS</c></b> puts away an outcome already said. Each change also reaches the page as <c>UPDATE_STATE</c>.</para>
+/// <b><c>DISMISS</c></b> puts away an outcome already said, while <c>last</c>, the swap's journal told or not, stays on every
+/// state for Settings' row (UPDATE1d). Each change also reaches the page as <c>UPDATE_STATE</c>.</para>
 ///
 /// <para>Nothing it answers names a path: the staged build by its id, version and commit, a refusal by its code.</para>
 /// </remarks>

@@ -227,7 +227,7 @@ describe('the driver domain', () => {
 describe("the driver domain: the install's update", () => {
   const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
   const update = (extra: object) => ({
-    state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, ...extra,
+    state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null, ...extra,
   });
   /** The shell: the driver's state, the update's as given, and what `SET` answers after a word. */
   const answer = (state: object, after: object = state) => async (module: string, type: string) => {
@@ -337,7 +337,8 @@ describe("the driver domain: the install's update", () => {
 
   it('says how the last swap ended, installed, and still says it once the banner has put the outcome away', async () => {
     const installed = { phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' };
-    invoke.mockImplementation(answer(update({ outcome: installed })));
+    // The start after the swap: the banner's once-said `outcome`, and `last`, the journal's record, which the row reads.
+    invoke.mockImplementation(answer(update({ outcome: installed, last: installed })));
     const { unmount } = show(<SettingsView notify={() => {}} section="driver" />);
     let row = await section();
 
@@ -356,7 +357,7 @@ describe("the driver domain: the install's update", () => {
   it('says a swap rolled back with its reason, beside a newer build draining', async () => {
     invoke.mockImplementation(answer(update({
       state: 'draining', staged: { ...STAGED, id: '20261004T090000Z-cd34ef56', commit: 'def5678' }, mode: 'when-idle', driven: 1,
-      outcome: { phase: 'rolled-back', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'exited' },
+      last: { phase: 'rolled-back', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'exited' },
     })));
     show(<SettingsView notify={() => {}} section="driver" />);
     const row = await section();
@@ -371,7 +372,7 @@ describe("the driver domain: the install's update", () => {
 
   it('says a swap the launcher refused with its check', async () => {
     invoke.mockImplementation(answer(update({
-      outcome: { phase: 'refused', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'missing' },
+      last: { phase: 'refused', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'missing' },
     })));
     show(<SettingsView notify={() => {}} section="driver" />);
     const row = await section();

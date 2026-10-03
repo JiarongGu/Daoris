@@ -51,6 +51,8 @@ public sealed class UpdateModuleTests : Bridge
         Assert.Equal("when-idle", state.GetProperty("mode").GetString());
         Assert.Equal(1, state.GetProperty("driven").GetInt32());
         Assert.Equal(0, state.GetProperty("turns").GetInt32());
+        // No journal beside the install: no swap to tell of, said as null rather than left out.
+        Assert.Equal(JsonValueKind.Null, state.GetProperty("last").ValueKind);
         // No machine path reaches the page: the install is this machine's.
         Assert.DoesNotContain(_install.Replace("\\", "\\\\"), state.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
@@ -94,6 +96,33 @@ public sealed class UpdateModuleTests : Bridge
         var state = await AnswerAsync(module, "DISMISS");
 
         Assert.Equal(JsonValueKind.Null, state.GetProperty("outcome").ValueKind);
+    }
+
+    /// <summary>
+    /// UPDATE1d (D139's UPDATE1b note, D50): after *Dismiss*, <c>STATE</c> still answers the last swap as <c>last</c>, the
+    /// journal's record, so Settings → Driver says what the terminal's plain <c>daoris-driver update</c> says.
+    /// </summary>
+    [Fact]
+    public async Task State_after_Dismiss_still_answers_the_last_swap()
+    {
+        StagedBuild.WriteJournal(_install, new SwapRecord(
+            SwapPhase.RolledBack, "b1", "0.0.2", "def5678", Now, [], Reason: "exited", Detail: "it ended before it came up."));
+        var (module, updater) = Module();
+        using var _ = updater;
+        updater.Started();
+        Assert.Equal("rolled-back", (await AnswerAsync(module, "STATE")).GetProperty("last").GetProperty("phase").GetString());
+
+        await AnswerAsync(module, "DISMISS");
+        var state = await AnswerAsync(module, "STATE");
+
+        Assert.Equal(JsonValueKind.Null, state.GetProperty("outcome").ValueKind);
+        var last = state.GetProperty("last");
+        Assert.Equal("rolled-back", last.GetProperty("phase").GetString());
+        Assert.Equal("b1", last.GetProperty("build").GetString());
+        Assert.Equal("0.0.2", last.GetProperty("version").GetString());
+        Assert.Equal("def5678", last.GetProperty("commit").GetString());
+        Assert.Equal("exited", last.GetProperty("reason").GetString());
+        Assert.Equal("it ended before it came up.", last.GetProperty("detail").GetString());
     }
 
     [Fact]
