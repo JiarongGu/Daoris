@@ -85,6 +85,9 @@ public static class DriverCommand
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
+          update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
+              what is staged beside the install and how the last swap ended; or install it when idle (the
+              default), now (ending what runs as a close does), or not now, as the window's banner does.
           plugins install <file.nupkg>
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugins new <id> --point <point>… [--in <folder>]  ·  plugins try <folder|id> [--point <point>]
