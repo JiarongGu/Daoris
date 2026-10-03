@@ -17,7 +17,12 @@ public sealed record PausedBy(WorkScope Scope, string Id)
     /// What the record of a session this pause stopped says (design §4.1): a person reads it, and nothing decides from it
     /// (D104). Never translated: a record's note is data.
     /// </summary>
-    public string Note => Scope == WorkScope.Ask ? $"paused with ask `#{Id}`." : $"paused with quest `#{Id}`.";
+    public string Note => Noted.Note;
+
+    /// <summary><see cref="Note"/> with its code and the work's id (LANG1a, the language design §4 rows 52–53).</summary>
+    public Noted Noted => Scope == WorkScope.Ask
+        ? Noted.Of(NoteCodes.StoppedPausedAsk, $"paused with ask `#{Id}`.", ("ask", Id))
+        : Noted.Of(NoteCodes.StoppedPausedQuest, $"paused with quest `#{Id}`.", ("quest", Id));
 }
 
 /// <summary>

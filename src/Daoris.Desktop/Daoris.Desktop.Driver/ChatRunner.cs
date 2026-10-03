@@ -130,6 +130,9 @@ public sealed partial class ChatRunner : IDisposable
     public const string ClosedNote =
         "the application closed while this conversation ran; its process was ended with it.";
 
+    /// <summary><see cref="ClosedNote"/> with its code (LANG1a).</summary>
+    public static Noted ClosedNoted => Noted.Of(NoteCodes.ChatClosed, ClosedNote);
+
     /// <summary>
     /// Open a chat and put a harness behind it. The record is the service's; the process is this
     /// machine's, and never leaves it (D46 §7).
@@ -473,7 +476,9 @@ public sealed partial class ChatRunner : IDisposable
             var cancelled = error is OperationCanceledException && ct.IsCancellationRequested;
             await Conclude(
                 sessionId, "failed",
-                cancelled ? "the request that started it was cancelled before its process started." : error.Message,
+                cancelled
+                    ? Noted.Of(NoteCodes.ChatCancelled, "the request that started it was cancelled before its process started.")
+                    : Observation.Failure(error.Message),
                 onEnded).ConfigureAwait(false);
             if (cancelled) throw;
             return new(null, error.Message);
@@ -582,7 +587,7 @@ public sealed partial class ChatRunner : IDisposable
         }
 
         var watches = _watching.ToArray();
-        foreach (var (id, _) in watches) _processes.Stop(id, ClosedNote);
+        foreach (var (id, _) in watches) _processes.Stop(id, ClosedNoted);
 
         try
         {
@@ -831,6 +836,19 @@ public sealed partial class ChatRunner : IDisposable
     /// </summary>
     public const string NotKept = "Daoris kept no id for its conversation, so words written to it cannot go on in it.";
 
+    /// <summary>
+    /// How a conversation that simply ended says so (the language design §4 rows 61–62), and <see cref="NotKept"/> after it
+    /// where no id was kept (MSG1c; the code LANG1a added, its note under D142), each line with its code.
+    /// </summary>
+    /// <param name="stopped">The person ended it.</param>
+    internal static Noted EndedNote(bool stopped, bool notKept)
+    {
+        var ended = stopped
+            ? Noted.Of(NoteCodes.ChatEndedByPerson, "the person ended the conversation.")
+            : Noted.Of(NoteCodes.ChatEnded, "the conversation ended; its commits are its record.");
+        return notKept ? ended.Then(" ", Noted.Of(NoteCodes.ChatNotKept, NotKept)) : ended;
+    }
+
     /// <param name="measured">Told the conversation's high-water context at its end, where its door reported one (USAGE1).</param>
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
@@ -923,8 +941,7 @@ public sealed partial class ChatRunner : IDisposable
             // writes to it (MSG1c): a conversation whose harness named no id cannot go on in it. Never on the driver's own
             // reason, which a reader matches whole (ClosedNote's twin in the deployment rehearsal).
             var note = _processes.StopReason(sessionId)
-                ?? ((stopped ? "the person ended the conversation." : "the conversation ended; its commits are its record.")
-                    + (watched.Keeps && _conversations.Read(sessionId) is null ? $" {NotKept}" : ""));
+                ?? EndedNote(stopped, notKept: watched.Keeps && _conversations.Read(sessionId) is null);
             await Conclude(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
         }
         catch (Exception error)
@@ -941,7 +958,7 @@ public sealed partial class ChatRunner : IDisposable
                 return;
             }
 
-            await Conclude(sessionId, "failed", error.Message, onEnded).ConfigureAwait(false);
+            await Conclude(sessionId, "failed", Observation.Failure(error.Message), onEnded).ConfigureAwait(false);
         }
         finally
         {
@@ -1420,11 +1437,11 @@ public sealed partial class ChatRunner : IDisposable
     }
 
     private async Task Conclude(
-        string sessionId, string state, string note, Func<string, string, Task>? onEnded)
+        string sessionId, string state, Noted note, Func<string, string, Task>? onEnded)
     {
         try
         {
-            await _service.AdvanceAsync(sessionId, state, note: note).ConfigureAwait(false);
+            await _service.AdvanceAsync(sessionId, state, note).ConfigureAwait(false);
         }
         catch (Exception)
         {

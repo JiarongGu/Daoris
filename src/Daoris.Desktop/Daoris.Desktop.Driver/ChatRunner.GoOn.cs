@@ -290,7 +290,7 @@ public sealed partial class ChatRunner
         // is spawned: it holds the tree again, and refuses where another session holds it (D51).
         try
         {
-            await _service.AdvanceAsync(sessionId, "working", note: Continuations.GoingOn, ct: ct).ConfigureAwait(false);
+            await _service.AdvanceAsync(sessionId, "working", Continuations.GoingOnNoted, ct: ct).ConfigureAwait(false);
         }
         catch (DriverException refused)
         {
@@ -366,7 +366,7 @@ public sealed partial class ChatRunner
         try
         {
             await _service.AdvanceAsync(
-                    sessionId, record.State, note: Continuations.CannotNote(record, why), interrupted: record.Interrupted,
+                    sessionId, record.State, Continuations.CannotNote(record, why), interrupted: record.Interrupted,
                     limit: record.Limit)
                 .ConfigureAwait(false);
         }

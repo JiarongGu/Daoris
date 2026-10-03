@@ -273,6 +273,13 @@ public static class CoolingWords
     public static string Note(CoolingEntry entry, TimeZoneInfo zone) =>
         $"The account it ran on is cooling until {When(entry.Until, zone)}, {Why(entry)}, and nothing starts on it until then.";
 
+    /// <summary>
+    /// <see cref="Note"/> with its code (LANG1a, the language design §4 row 22): until when as a moment the page formats in the
+    /// reader's zone, and why by its code. It names no account, as the sentence does not.
+    /// </summary>
+    public static Noted NoteOf(CoolingEntry entry, TimeZoneInfo zone) =>
+        Noted.Of(NoteCodes.AccountCooling, Note(entry, zone), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)));
+
     /// <summary>What a conversation whose turn was refused is told in its record; the conversation goes on.</summary>
     public static string Conversation(CoolingEntry entry, TimeZoneInfo zone) =>
         $"The account this conversation runs on is cooling until {When(entry.Until, zone)}, {Why(entry)}, and nothing new "

@@ -15,10 +15,14 @@ namespace Daoris.Knowledge;
 /// That an account's limit failed it (TOOL4c, D125 §5.2). It travels because it names no account: a
 /// teammate sees that a session was cut off by a limit, never whose. False is the old reading.
 /// </param>
+/// <param name="NoteParts">
+/// The note's parts (LANG1a, D142 point 2), as <see cref="Knowledge.NoteParts"/> keeps them, every string in them cleaned
+/// as the note is before they leave the machine. Null is a record from before parts, or one whose note has none.
+/// </param>
 public sealed record FedSessionRecord(
     string? Id, string? Quest, string? Repository, string? Adapter, string? State,
     string? Note, string? Evidence, DateTimeOffset Created, DateTimeOffset Updated,
-    string? Kind = null, string? HarnessVersion = null, bool Limit = false);
+    string? Kind = null, string? HarnessVersion = null, bool Limit = false, string? NoteParts = null);
 
 /// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
 public enum SessionFeedRefusal
@@ -106,6 +110,8 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                 {
                     Origin = origin,
                     Limit = record.Limit,
+                    // Read back through the door's own reader, so only what a part is lands in the store (LANG1a).
+                    NoteParts = record.NoteParts,
                 }, ct)
                 .ConfigureAwait(false);
         }

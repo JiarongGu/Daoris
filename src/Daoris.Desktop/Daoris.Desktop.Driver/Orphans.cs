@@ -34,6 +34,9 @@ public static class Orphans
         "nothing on this machine was running it any more — its process ended with the application that "
         + "started it, and the record had not been told.";
 
+    /// <summary><see cref="Note"/> with its code (LANG1a).</summary>
+    public static Noted Noted => Noted.Of(NoteCodes.StoppedOrphan, Note);
+
     /// <param name="only">One record the person asked to stop, or null for the sweep.</param>
     /// <returns>The records ended, in the order the service listed them.</returns>
     public static async Task<IReadOnlyList<OrphanEnded>> EndAsync(
@@ -48,7 +51,7 @@ public static class Orphans
 
             try
             {
-                await service.AdvanceAsync(session.Id, "stopped", note: Note, ct: ct, interrupted: only is null).ConfigureAwait(false);
+                await service.AdvanceAsync(session.Id, "stopped", Noted, ct: ct, interrupted: only is null).ConfigureAwait(false);
                 ended.Add(new OrphanEnded(session.Id, session.Repository));
             }
             catch (DriverException)

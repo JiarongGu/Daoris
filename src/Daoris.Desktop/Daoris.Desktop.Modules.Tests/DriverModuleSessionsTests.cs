@@ -158,6 +158,55 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LANG1a (D142 point 2): a resolution carries the note's parts beside it, as the driver's own moves do. The person's
+    /// words are a part of their own, never a code, and a move with no words is the checkpoint's line by its code.
+    /// </summary>
+    [Theory]
+    [InlineData("completed", "looked at it; it is right.", null)]
+    [InlineData("stopped", null, "stopped.checkpoint-stopped")]
+    [InlineData("completed", null, "stopped.checkpoint-finished")]
+    public async Task A_resolution_hands_the_record_its_note_s_parts(string state, string? note, string? code)
+    {
+        var heard = new List<string>();
+        var standIn = new Answering(heard);
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+
+        await AnswerAsync(new DriverModule(Bus, loop), "RESOLVE_SESSION", new { id = "s1a2b3c4", state, note });
+
+        using var body = JsonDocument.Parse(Assert.Single(heard));
+        var part = Assert.Single(body.RootElement.GetProperty("noteParts").EnumerateArray());
+        if (code is null)
+        {
+            Assert.Equal(note, part.GetProperty("words").GetString());
+            Assert.Equal("person", part.GetProperty("by").GetString());
+        }
+        else
+        {
+            Assert.Equal(code, part.GetProperty("code").GetString());
+            Assert.Equal(body.RootElement.GetProperty("note").GetString(), part.GetProperty("text").GetString());
+        }
+    }
+
+    /// <summary>A service answering every move as made, each body heard.</summary>
+    private sealed class Answering(List<string> heard) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/state", StringComparison.Ordinal))
+            {
+                var body = await request.Content!.ReadAsStringAsync(ct);
+                lock (heard) heard.Add(body);
+            }
+
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"message":"moved"}""", System.Text.Encoding.UTF8, "application/json"),
+            };
+        }
+    }
+
+    /// <summary>
     /// SESSUX1a: where each session is listed reads the service's records and quests, so before the driver's service is up
     /// it is the cold-start sentence, and so is an archive, which is judged by the same reading.
     /// </summary>
