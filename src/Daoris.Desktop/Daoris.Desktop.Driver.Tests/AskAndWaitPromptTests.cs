@@ -128,6 +128,131 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// KNOWUSE1c (D135 §4): 31 of the 46 items put to the owner came in closing notes, readings put as decisions under
+    /// headings such as "Decisions for you" beside the production yeses, and none quoting the ticket's line it rested on.
+    /// The close keeps what only the person can give apart from what the session took, and every item names its source.
+    /// </summary>
+    [Fact]
+    public void A_closing_note_keeps_what_needs_the_person_apart_from_readings_each_naming_its_source()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains(
+                "Your closing note, and your last message whenever you stop, keeps two lists apart.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Under **Needs you**, only what the person alone can give — a go-ahead, an agreement this repository's own "
+                + "documents require, a sign-in, a preference nothing records — each with why, and what you looked at first.",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Under **Readings**, everything else you decided or took on the evidence, each said as your reading rather than "
+                + "asked as a question, and each naming what it rests on: the line of the quest or of the ticket it links, quoted; "
+                + "a document's path and line; or a code path.",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "An item that names nothing it checked has not been looked into yet: look before you write it.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// KNOWUSE1d (D135 §5, D133 §1): a fresh attempt found the person's answer, misread, in its first attempt's closed note
+    /// ("Per your answer") and in a document on that branch, and wrote into the repository's knowledge that the owner had
+    /// settled it. The person's words are those the instruction quotes as theirs, which the ask's record holds; a quote met
+    /// anywhere else is someone's reading, relied on only as one and never recorded as theirs.
+    /// </summary>
+    [Fact]
+    public void The_persons_words_quoted_second_hand_are_only_a_reading()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains("Only the words this instruction quotes as the person's own are theirs.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Their words quoted anywhere else — in a document, a closed quest's note, a commit, an earlier session's record — "
+                + "are someone's reading of them, however firmly attributed (\"per your answer\", \"as the owner decided\").",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Rely on one only as a reading: it goes under **Readings** in your closing note, naming where you found it, and "
+                + "nothing you write in this repository records it as the person's words or decision.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// Said with the look, where such a quote is met, and below the words the instruction quotes as the person's from the
+    /// ask's record (DRIFT1b), so what "quotes as theirs" points to is already above it.
+    /// </summary>
+    [Fact]
+    public void A_second_hand_quote_is_said_after_the_look_and_below_the_words_the_ask_holds()
+    {
+        foreach (var (which, prompt) in EveryInstruction(TargetPromptGoldenTests.Full))
+        {
+            var words = prompt.IndexOf("The person's own words on ask `#a1b2c3`", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var attributed = prompt.IndexOf("Only the words this instruction quotes", StringComparison.Ordinal);
+            var neighbour = prompt.IndexOf("do not guess: ask it.", StringComparison.Ordinal);
+            Assert.True(words >= 0 && words < look && look < attributed && attributed < neighbour, which);
+        }
+    }
+
+    /// <summary>The close's two lists are said after the stop for the person, which is one of the two places they are written.</summary>
+    [Fact]
+    public void The_closing_notes_two_lists_come_after_the_stop_for_the_person()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var person = prompt.IndexOf("Stop only for what no source holds", StringComparison.Ordinal);
+            var close = prompt.IndexOf("Your closing note, and your last message", StringComparison.Ordinal);
+            var propose = prompt.IndexOf("If a command the work genuinely needs is refused", StringComparison.Ordinal);
+            Assert.True(person >= 0 && person < close && close < propose, which);
+        }
+    }
+
+    /// <summary>
+    /// KNOWUSE1c (D135 §4): the look names the indexes the repository keeps for its own documents, where its tree keeps any,
+    /// so a session starts from them rather than from "this repository's own documents" alone. None, and the look reads as
+    /// it did.
+    /// </summary>
+    [Fact]
+    public void The_look_names_the_repositorys_own_indexes_where_its_tree_keeps_them()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            Assert.False(prompt.Contains("indexes its own documents", StringComparison.Ordinal), which);
+        }
+
+        foreach (var (indexes, named) in new (string[], string)[]
+        {
+            (["docs/README.md"], "`docs/README.md`"),
+            (["docs/README.md", ".claude/INDEX.md"], "`docs/README.md` and `.claude/INDEX.md`"),
+            (["docs/README.md", ".claude/rules/RULES_INDEX.md", ".claude/rules/RULES_INDEX_CROSS.md"],
+                "`docs/README.md`, `.claude/rules/RULES_INDEX.md` and `.claude/rules/RULES_INDEX_CROSS.md`"),
+        })
+        {
+            foreach (var (which, prompt) in EveryInstruction(Target() with { Indexes = indexes }))
+            {
+                Assert.True(Flat(prompt).Contains(
+                    $"through your connector's `knowledge_search`. This repository indexes its own documents in {named}: start the "
+                    + "look there, and read every document whose entry matches this work. A question one of these settles",
+                    StringComparison.Ordinal), $"{which}, {indexes.Length}");
+            }
+        }
+    }
+
+    /// <summary>A pointer, not a listing: past <see cref="TargetPrompt.IndexLimit"/> the rest are counted, not named.</summary>
+    [Fact]
+    public void The_look_names_a_bounded_number_of_indexes_and_counts_the_rest()
+    {
+        var indexes = Enumerable.Range(1, TargetPrompt.IndexLimit + 2).Select(n => $"docs/INDEX_{n:00}.md").ToArray();
+
+        var flat = Flat(TargetPrompt.Compose(Target() with { Indexes = indexes }));
+
+        Assert.Contains($"`docs/INDEX_{TargetPrompt.IndexLimit:00}.md` and 2 more like them: start the look there", flat);
+        Assert.DoesNotContain($"docs/INDEX_{TargetPrompt.IndexLimit + 1:00}.md", flat);
+    }
+
+    /// <summary>
     /// The look comes first, then asking another repository, then stopping for the person: the order a session
     /// should reach for them in.
     /// </summary>

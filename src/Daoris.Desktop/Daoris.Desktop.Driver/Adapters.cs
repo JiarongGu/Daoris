@@ -71,6 +71,14 @@ public sealed record SessionTarget(
     public string? CodeMap { get; init; }
 
     /// <summary>
+    /// The indexes the session's tree keeps for the repository's own documents (KNOWUSE1c, D135 §4), repository-relative:
+    /// the router its manifest declares, then each file named as an index where documents and doctrine are kept
+    /// (<see cref="RepositoryIndexes"/>). The look before asking names them; empty where it keeps none, and the look reads
+    /// as it did.
+    /// </summary>
+    public IReadOnlyList<string> Indexes { get; init; } = [];
+
+    /// <summary>
     /// For a session that RESUMES a waiting quest (D79): the question an earlier session asked another
     /// repository, now closed, with its answer. Null composes the first start's claiming instruction.
     /// </summary>
@@ -165,6 +173,7 @@ public sealed record SessionTarget(
             Parent = quest.Parent,
             Requirements = quest.Requirements,
             CodeMap = CodeMapFile.Find(workTree),
+            Indexes = RepositoryIndexes.Find(workTree),
         };
 
     /// <summary>
@@ -422,22 +431,29 @@ public static class TargetPrompt
     /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
     /// out of it; and only then to the person, for what no source holds. A session that asks or stops
     /// commits, ends its turn and keeps the quest, and the driver starts it again here with the answer.
+    /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
+    /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
+    /// readings the session took, each naming its source.
     /// </summary>
     /// <remarks>
     /// The person's stop once offered "a choice between options that is theirs", and a session read which
     /// report a ticket meant as one, though its repository's notes and code settled it. A reading the
     /// evidence leans to is taken and said in the close instead: it is committed on the session's branch and
-    /// reviewed with the diff, so the person corrects it in review rather than being stopped by it.
+    /// reviewed with the diff, so the person corrects it in review rather than being stopped by it. Those
+    /// readings then reached the person in closing notes, mixed with the production yeses under one heading
+    /// and resting on a ticket line none of them quoted, so the close now keeps them apart and cites each.
     /// </remarks>
     private static string Asking(SessionTarget target) =>
         $"""
         Look before you ask. The quest, its links and its files; this repository's own documents, code and
         history (its log, and the commits that last changed what you are changing); the workspace's
-        knowledge, through your connector's `knowledge_search`{Checkouts(target)}. A question one of these
+        knowledge, through your connector's `knowledge_search`{Checkouts(target)}.{Indexes(target)} A question one of these
         settles is not a question: decide it, and keep what settled it for your closing note. Where the
         evidence leans one way without settling it, take that reading, carry on, and say in your closing
         note which reading you took and on what evidence, so the person can correct it in review rather than
         be stopped by it.
+
+        {Attributed}
 
         {Needs(target)} Publish a quest to it saying
         what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
@@ -449,7 +465,66 @@ public static class TargetPrompt
         what and why, and what you looked at, in your last message, commit what you have, and
         end your turn with the quest still taken, rather than declining. The person answers, and you are
         started again here, in this tree, with their words.
+
+        {Closing}
         """;
+
+    /// <summary>
+    /// The person's words met second-hand while looking (KNOWUSE1d, D135 §5): theirs are the words this instruction quotes as
+    /// theirs, which the ask's record holds (D133 §1); a quote anywhere else is someone's reading, relied on only as one and
+    /// never recorded as theirs. Said for every quest alike: on one no ask asked, nothing quoted second-hand is theirs either.
+    /// </summary>
+    /// <remarks>
+    /// A fresh attempt at a ticket found the person's answer, as an earlier attempt had misread it, in that attempt's closed
+    /// note ("per your answer") and in a document on its branch, and wrote into the repository's knowledge that the person
+    /// had settled it, where every later session would meet the misreading as knowledge.
+    /// </remarks>
+    private const string Attributed =
+        """
+        Only the words this instruction quotes as the person's own are theirs. Their words quoted anywhere
+        else — in a document, a closed quest's note, a commit, an earlier session's record — are someone's
+        reading of them, however firmly attributed ("per your answer", "as the owner decided"). Rely on one
+        only as a reading: it goes under **Readings** in your closing note, naming where you found it, and
+        nothing you write in this repository records it as the person's words or decision.
+        """;
+
+    /// <summary>
+    /// How the close is written (KNOWUSE1c, D135 §4): what only the person can give, apart from the readings the session
+    /// took, and every item naming what it rests on, so a reading is corrected in review and a question that names nothing
+    /// checked shows itself. Said for the note a quest closes with and the last message a stop ends on alike.
+    /// </summary>
+    private const string Closing =
+        """
+        Your closing note, and your last message whenever you stop, keeps two lists apart. Under **Needs
+        you**, only what the person alone can give — a go-ahead, an agreement this repository's own documents
+        require, a sign-in, a preference nothing records — each with why, and what you looked at first.
+        Under **Readings**, everything else you decided or took on the evidence, each said as your reading
+        rather than asked as a question, and each naming what it rests on: the line of the quest or of the
+        ticket it links, quoted; a document's path and line; or a code path. An item that names nothing it
+        checked has not been looked into yet: look before you write it.
+        """;
+
+    /// <summary>
+    /// The most indexes the look names (KNOWUSE1c): a pointer to where the look starts, not a listing. The repository the
+    /// evidence read kept four, and this one two; past the limit the rest are counted, beside those named.
+    /// </summary>
+    internal const int IndexLimit = 8;
+
+    /// <summary>
+    /// The indexes the session's tree keeps for the repository's own documents (KNOWUSE1c, D135 §4), named as where the
+    /// look starts, at most <see cref="IndexLimit"/> of them. Nothing where it keeps none, so the look reads as it did.
+    /// </summary>
+    private static string Indexes(SessionTarget target)
+    {
+        if (target.Indexes.Count == 0) return "";
+        var named = target.Indexes.Take(IndexLimit).Select(path => $"`{path}`").ToList();
+        var more = target.Indexes.Count - named.Count;
+        var listed = more > 0 ? $"{string.Join(", ", named)} and {more} more like them"
+            : named.Count == 1 ? named[0]
+            : $"{string.Join(", ", named.Take(named.Count - 1))} and {named[^1]}";
+        return $" This repository indexes its own documents in {listed}: start the look there, and read every document "
+               + "whose entry matches this work.";
+    }
 
     /// <summary>
     /// For a quest an ask asked (KNOWUSE1a, D135 §2): a go-ahead is asked once, on the ask, through the connector, so a
@@ -602,12 +677,16 @@ public static class TargetPrompt
 
         var text = new StringBuilder();
 
+        // Every line ends in LF, as the rest of the instruction does: AppendLine would end these in the platform's own
+        // newline, so the instruction's bytes would differ between machines and no golden could hold it (KNOWUSE1c).
+        void Line(string line = "") => text.Append(line).Append('\n');
+
         // Where it sits in a chain the asker composed: what it follows, and what its close publishes —
         // so a verifying session knows whose work it checks, and a developing one that a check comes.
         if (target.Parent is { } parent)
         {
-            text.AppendLine().AppendLine(
-                $"It follows quest `#{parent}`, which is done — read that quest for the work this one builds on."
+            Line();
+            Line($"It follows quest `#{parent}`, which is done — read that quest for the work this one builds on."
                 + (target.GrewFrom is { } branch
                     ? $" That work is in this tree: it grew from `{branch}`, the branch `#{parent}` landed on, "
                       + "which is not merged yet — so there is no merge to wait for or to make."
@@ -617,26 +696,28 @@ public static class TargetPrompt
         if (target.Then.Count > 0)
         {
             var next = target.Then[0];
-            text.AppendLine().AppendLine(
-                $"When you close it `done`, the asker's next step is published to `{next.To}`: \"{next.Title}\""
+            Line();
+            Line($"When you close it `done`, the asker's next step is published to `{next.To}`: \"{next.Title}\""
                 + (target.Then.Count > 1 ? $", with {target.Then.Count - 1} more after it." : ".")
                 + " Close it `done` only when that step can start from what you landed.");
         }
 
         if (target.Links.Count > 0)
         {
-            text.AppendLine().AppendLine("Links the asker gave with it — read them; they are part of the ask:");
-            foreach (var link in target.Links) text.AppendLine($"- {link}");
+            Line();
+            Line("Links the asker gave with it — read them; they are part of the ask:");
+            foreach (var link in target.Links) Line($"- {link}");
         }
 
         if (target.Attachments.Count > 0)
         {
-            text.AppendLine().AppendLine(target.AttachmentsDirectory is { } directory
+            Line();
+            Line(target.AttachmentsDirectory is { } directory
                 ? $"Files the asker attached, kept for you in `{directory}` (also `DAORIS_QUEST_ATTACHMENTS`) — read them, never edit them:"
                 : "Files the asker attached:");
             foreach (var file in target.Attachments)
             {
-                text.AppendLine(file.Path is { } path
+                Line(file.Path is { } path
                     ? $"- `{file.Name}` — {path}"
                     : $"- `{file.Name}` — not on this machine: it stayed where the quest was published. Ask for "
                       + "what it shows if the work needs it.");

@@ -10336,3 +10336,60 @@ packages, the maker's source and one binary's help at the versions in design §1
 installed on this machine, and Daoris pins no Codex version. Whether Codex's steer ever cuts a step short, whether Codex
 locks a thread across processes, and whether Claude Code notices a second writer were not read. `verify` checks this
 entry's place and the design's links, and none of their words.
+**KNOWUSE1c, built 2026-10-03: a closing note keeps what needs the person apart from readings, each naming its source.**
+Every driven instruction (a claim, a D79 resume, a carry-on) ends its look-and-ask paragraphs with how the close is written
+(`TargetPrompt.Closing`): the note a quest closes with and the last message a stop ends on keep two lists apart. Under
+*Needs you*, only what the person alone can give, each with why and what was looked at first. Under *Readings*, everything
+else, said as the session's reading rather than asked, each naming what it rests on: the quest's or its linked ticket's
+line, quoted; a document's path and line; a code path. The look names the indexes the session's tree keeps
+(`RepositoryIndexes.Find`, read in `SessionTarget.ForQuest` beside the code map): the router `daoris.json` declares, then
+every markdown file with *index* as a word of its name, one level deep in the root, `docs/`, `.claude/`, `.claude/rules/`,
+`.claude/knowledge/`, `.agents/` and `.agents/knowledge/`. Choices §4 left open:
+- **An agreement the repository's own documents require is the person's**, listed beside a go-ahead, a sign-in and a
+  preference nothing records: point 7 keeps such a document standing, so it is not a reading to take.
+- **Both places the person reads**: a quest's close and a stop's last message, since 15 of the 46 came in parks.
+- **The headings are words, not a format.** The harness writes the note and nothing parses it; a fact gates and a
+  judgement reports (D54).
+- **Indexes are found by name, not by reading the instructions.** The evidence's repository named its indexes in its
+  instructions by file name alone, kept in its rules folder; a name over the folders documents and doctrine are kept in finds
+  them, Daoris's generated index and an unadopted repository's alike, with no one's prose parsed and no walk of the tree.
+- **The router is a pointer, not a twin** of `checkDocuments` and `RepositoryDocuments`. It is named only as a plain
+  repository-relative path (no `..`, no root, no drive) to a file the tree holds, and nothing is refused or gated on it,
+  so `.claude/knowledge/twins.md` gains no row.
+- **Eight named at most**, the rest counted beside them: a pointer, not a listing.
+- **The instruction is LF throughout.** `Carried` ended its lines in the platform's newline, so a quest with links, files or
+  a chain was handed CRLF lines inside an LF instruction on Windows. It now ends them in LF, which the golden needed to
+  hold one text on every machine.
+
+Proof: `AskAndWaitPromptTests` (every instruction keeps the two lists, each naming its source, after the stop; the indexes
+named where the tree keeps one, two or three, and bounded), seen failing before the wording; `RepositoryIndexesTests` (none;
+each folder in order; nothing deeper or elsewhere; the name table; the router's two shapes and its spellings, first; a
+router that is an index named once; twelve declarations that name nothing; a manifest that does not read; `ForQuest`), seen
+failing on a stub that found nothing; `TargetPromptGoldenTests`, new: three instructions (a repository's quest carrying
+nothing, an ask's with every section, a carry-on after the person's answer) pinned as they were, then the goldens gained the
+wording and failed before the instruction did. Not covered: no real agent was handed it, so whether a harness keeps the
+two lists and cites its sources is not measured, which a canary turn on the owner's install is for; nothing checks a
+closing note's shape, by design; an index named otherwise, or kept deeper, is not named.
+
+**KNOWUSE1d, built 2026-10-03: the person's words quoted second-hand are only a reading.** Every driven instruction says,
+below the look (`TargetPrompt.Attributed`), that only the words it quotes as the person's own are theirs: their words on
+the ask (DRIFT1b), a requirement's quote, a go-ahead's answer, the standing answer and a parked session's answer, each from
+a record Daoris keeps. Their words quoted anywhere else (a document, a closed quest's note, a commit, an earlier session's
+record) are someone's reading, however firmly attributed. A session relies on one only as a reading, under *Readings* with
+where it found it, and writes nothing into the repository that records it as the person's words or decision. Choices §5
+left open:
+- **What the instruction quotes is the measure**, not the ask's record read again: no connector tool reads an ask's
+  words, and the instruction already carries them. A word the bound left out is said to be kept on the ask's record, so a
+  quote of one met elsewhere reads as a reading, which is the safe side.
+- **One sentence for every quest**, on an ask or not, its words read or not: where the instruction quotes none of the
+  person's words, nothing met second-hand is theirs either.
+- **Said, not checked.** Whether a note or a document a session writes attributes words truly is a judgement (D54);
+  DRIFT1d's done already refuses a departure quoting words that are not on the ask.
+- **Below the look and above asking another repository**, where such a quote is met, and below the words the instruction
+  quotes, so what it points to is above it.
+
+Proof: `AskAndWaitPromptTests` (every instruction says it; on an ask, after the person's words and the look and before
+asking another repository) and the three goldens of `TargetPromptGoldenTests` gaining the paragraph, each seen failing
+before the wording. Not covered: no real agent was handed it, so whether a session stops recording an attributed reading
+as the person's is not measured; the repository document that already records the misread answer stands until the
+person's request (KNOWUSE4) reaches that repository.
