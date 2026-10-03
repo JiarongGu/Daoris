@@ -80,11 +80,16 @@ present it as the tree.
   work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for
   every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
   then lists what the press would do; apply acts on those rows only. Daoris never pushes.
+- `accept_propose`: the person's yes to a quest a done's departure holds: it closed done departing from what
+  the person required, so the chain's next step and a quest waiting on it wait (`quest_list` marks it held for
+  the person's yes). Propose it only when the person asks to accept it, never on your own reading of the
+  departure. Its card shows each departure with the person's words it relied on, as the quest's page does.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
 a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),
 a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
+an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**),
 and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
 
 ## Making a plugin
@@ -150,7 +155,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | (no screen yet) | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | (no screen yet) | `daoris-driver ask --abandon <id> [--reason "…" --yes]`, `daoris-driver quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
-| accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | (no screen yet) | `daoris-driver quest accept <id>` |
+| accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest waiting on it | Quests → the quest's page → Accept the departure | `daoris-driver quest accept <id>` |
 | add a plugin that has landed, or switch one on or off | Settings → Plugins (its switch) | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
 | install one of Daoris's own plugins, or update one from where it came from | Settings → Plugins (Install beside Daoris's own; Update on an installed one's row) | `daoris plugin add --offer <id>`, `daoris plugin update <id>` |
 | choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |

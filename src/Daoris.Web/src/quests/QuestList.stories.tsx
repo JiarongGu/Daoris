@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { INTAKE_ASKED, PROPOSED, PUBLISHED } from '../asks/fixtures';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
 import { ListMore, ListPane } from '../work/ListPane';
-import { CHAINED, CJK, CONFLICTED, DECLINED, DONE, HELD_BY_PERSON, LANED, OPEN, SITTING, TAKEN, WAITING } from './fixtures';
+import { CHAINED, CJK, CONFLICTED, DECLINED, DONE, HELD, HELD_BY_PERSON, LANED, OPEN, SITTING, TAKEN, WAITING } from './fixtures';
 import { type AskRowFacts, QuestList, type QuestRowFacts } from './QuestList';
 
 // Quests' list (FRAME1d, D118 §2) on its list pane, in every state the design names: the asks then the quests by
@@ -112,6 +112,12 @@ export const FilteredToOneReceiver: Story = { args: { filteredTo: 'engine', ques
 
 /** A held repository's quest says why it waits, and its resume sits beside its row's door (USE1). */
 export const HeldWithItsResume: Story = { args: { quests: [{ quest: OPEN, sitting: HELD_BY_PERSON }, ...QUESTS.slice(1)], chosen: null } };
+
+/**
+ * A done a departure holds for the person's yes (DRIFT1d2): first among the quests, with closed quests not shown, its row
+ * saying it awaits them and never dimmed as ended.
+ */
+export const AwaitingYourYes: Story = { args: { quests: [{ quest: HELD }, ...QUESTS], chosen: HELD.id } };
 
 /** Asks and no quests: the asks, then the line that says no quest is open. */
 export const OnlyAsks: Story = { args: { quests: [] } };

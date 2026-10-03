@@ -27,12 +27,12 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpProposalBox.Doors</c>).</summary>
     /// <remarks>
     /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
-    /// <c>retry</c>, once the facts carried the parked quests.
+    /// <c>retry</c>, once the facts carried the parked quests; LANG1c2 <c>language</c>, once the service's writer listed it.
     /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "intake", "helper", "strikes",
-        "retry", "timeout", "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "standing", "language", "intake", "helper",
+        "strikes", "retry", "timeout", "notify", "cap", "adapter",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -154,8 +154,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             case "language":
             {
                 // LANG1c (D142 point 7): the work's session language, for a repository or a workspace, judged by the closed
-                // table as `SET_LANGUAGE` and `daoris driver language` judge it. Not among `Doors` until the service's writer
-                // lists it beside them (HelpCoverageTests), so only a proposal file naming it reaches here meanwhile.
+                // table as `SET_LANGUAGE` and `daoris driver language` judge it. A door since LANG1c2, whose service writer
+                // checks only the shape; the registry and the workspace are judged here.
                 var circle = workspace is { Length: > 0 };
                 if (circle == target is { Length: > 0 })
                 {

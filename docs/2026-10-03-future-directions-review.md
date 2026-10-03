@@ -170,3 +170,22 @@ columns.
 
 **What this review does not cover.** It reads the record and runs nothing. Each *exists* is the record's claim, and
 the *not covered* notes inside those decisions stand.
+
+**OUTCOME1, built 2026-10-03.** `tools/usage-report.mjs --service <url>` adds an *Outcomes* section. It lists each quest
+the period touched with its sessions and how each ended, its carry-ons (a run after a cut-off on its quest), the person's
+answers from its ask's words, its departures and the yes (D133), its strikes (D58 as amended), the limits it met counted
+apart, and how, when and how long after publish it closed. A roll-up by repository and by agent and account follows, each
+quest under its first working session: first passes, carry-ons and answers per quest, each with its count, and no score
+(D54). It reads three GETs of the local host (quests, session records and asks, closed ones included) and the machine
+log's parks. It stores and writes nothing, and refuses a host that is not this machine's. A fact no store keeps is said
+missing, with why (D57, D143). The tool's header and `usage-report.test.ts` hold the rest. The stores could not give
+these:
+
+- the done's own moment once a departure's yes moves the quest's, since a local host serves no operations
+- the person's answers on a quest no ask asked, since D133 keeps words on asks and a record's `answer` holds the latest
+- parks before the log's period, or on a teammate's machine
+- a carry-on as a stated link (D143's note), so it is read from the order of the records
+- who declined a quest, beyond a session here that ended `declined`
+- a cause per failure (§18), which needs a decision
+
+It has not been run on a real install.

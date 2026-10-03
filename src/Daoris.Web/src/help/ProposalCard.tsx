@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ago } from '../format';
+import { RequirementItem } from '../quests/Requirements';
 import { Button, Inline } from '../ui';
 
 /**
@@ -32,16 +33,30 @@ export type HelpPluginShown = {
  * Since PLUG9 a plugin that has landed, added from its folder, or one switched on or off, with what it runs.
  * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it. Since HELP10 Daoris's
  * browser's settings, a card as a setting's is, and bringing repositories up to date, which is looked at first.
+ * Since DRIFT1d2 the person's yes to a done's departure, with each departure shown before the press.
  */
 export type HelpProposal = {
   id: string;
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync' | 'accept';
   describe: string;
   terminal: string;
   why: string;
   plugin?: HelpPluginShown | null;
   /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
+  /** A yes to a departure (DRIFT1d2): the quest, and each departure its done answered. */
+  accept?: HelpAcceptShown | null;
+};
+
+/**
+ * What an accept card shows (DRIFT1d2, D133 §4), as the driver's judge read the quest: each departure by its requirement's
+ * number, the person's words the requirement quotes and its check, the done's reason, and the person's words the reason
+ * relied on — each as the service answered it.
+ */
+export type HelpAcceptShown = {
+  quest: string;
+  title: string;
+  departures: { requirement: number; quote: string; check: string; departed: string; words: string }[];
 };
 
 /**
@@ -163,6 +178,10 @@ function SyncApart({ apart }: { apart: string[] }) {
  * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
  * show those rows, each as the terminal says it, with Apply, which does only the rows that move. Beside them it says
  * what they do not (LEFT3): the lines the look could not fetch, and the repositories it left apart (D112).
+ *
+ * **A yes to a departure shows each departure first** (DRIFT1d2, D133 §4): its requirement in the person's words, its
+ * check, the done's reason and the words that reason relied on, drawn as the quest's page draws them (`RequirementItem`),
+ * so the person reads what they say yes to; its press is *accept*, the quest page's word.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -177,6 +196,8 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const handing = proposal.kind === 'hand';
   const syncing = proposal.kind === 'sync' ? proposal.sync ?? { looked: false, rows: [] } : null;
   const looking = syncing !== null && !syncing.looked;
+  const accepting = proposal.kind === 'accept';
+  const departures = accepting ? proposal.accept?.departures ?? [] : [];
 
   return (
     <li className={deleting
@@ -188,10 +209,25 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
           : going ? 'help.proposal.titleGo'
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
               : handing ? 'help.proposal.titleHand'
-                : syncing ? 'help.proposal.titleSync' : 'help.proposal.title')}
+                : syncing ? 'help.proposal.titleSync'
+                  : accepting ? 'help.proposal.titleAccept' : 'help.proposal.title')}
       </p>
       <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>
       {plugin && <PluginRuns plugin={plugin} />}
+      {departures.length > 0 && (
+        <ol aria-label={t('help.proposal.departures')} className="m-0 mt-2 grid list-none gap-2.5 p-0">
+          {departures.map((departure) => (
+            <RequirementItem
+              key={departure.requirement}
+              number={departure.requirement}
+              requirement={{ quote: departure.quote, check: departure.check }}
+              answer={{ requirement: departure.requirement, departed: departure.departed, quote: departure.words }}
+              waiting
+            />
+          ))}
+        </ol>
+      )}
+      {accepting && <p className="m-0 mt-2 text-meta text-ink-soft">{t('help.proposal.acceptNote')}</p>}
       {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
       {syncing?.looked && (
         <>
@@ -230,7 +266,10 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {proposal.why && <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={t('help.proposal.why', { why: proposal.why })} /></p>}
       <div className="mt-2 flex flex-wrap gap-2">
         <Button variant={deleting ? 'danger' : 'primary'} disabled={pending} onClick={() => onApply(proposal.id)}>
-          {t(deleting ? 'help.proposal.delete' : going ? 'help.proposal.go' : looking ? 'help.proposal.look' : 'help.proposal.apply')}
+          {t(deleting ? 'help.proposal.delete'
+            : going ? 'help.proposal.go'
+              : looking ? 'help.proposal.look'
+                : accepting ? 'help.proposal.accept' : 'help.proposal.apply')}
         </Button>
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>{t('help.proposal.dismiss')}</Button>
       </div>

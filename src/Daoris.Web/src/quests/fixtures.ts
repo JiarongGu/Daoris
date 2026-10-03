@@ -57,6 +57,55 @@ export const DECLINED: Quest = {
 /** Nobody has started on it, so the service says it may go (D95). */
 export const DELETABLE: Quest = { ...OPEN, deletable: true };
 
+/** What the person required (DRIFT1c, D133 §3): their words, each with the check that proves them. */
+const REQUIRED: NonNullable<Quest['requirements']> = [
+  { quote: 'use the v3 bridge', check: 'the tiles arrive through the v3 bridge, as its trace shows' },
+  { quote: 'keep the budget under the ceiling the engine sets', check: 'no frame hydrates more than the ceiling in a playtest' },
+];
+
+/** Taken, with what the person required and no answer yet: its done answers each. */
+export const REQUIRING: Quest = { ...TAKEN, id: 'rq0rq0', requirements: REQUIRED };
+
+/** Done, each requirement met (DRIFT1d, D133 §4), with how its check was met in the done's words. */
+export const MET: Quest = {
+  ...DONE, id: 'me0me0', title: 'Stream the tiles over the v3 bridge', requirements: REQUIRED,
+  answers: [
+    { requirement: 1, met: 'the tiles go through the v3 bridge; the trace in the closing note shows each hop' },
+    { requirement: 2, met: 'a playtest held every frame under the ceiling' },
+  ],
+};
+
+/** The departure's reason, in the done's words. */
+export const DEPARTED_WHY = 'a cold cache cannot hold the ceiling on its first frame, so that frame may hydrate twice the ceiling';
+
+/** Done, departing from its second requirement with the person's words it turns on, held for their yes, holding its next step. */
+export const HELD: Quest = {
+  ...MET, id: 'he0he0', title: 'Stream the tiles from the cold cache',
+  answers: [
+    MET.answers![0],
+    { requirement: 2, departed: DEPARTED_WHY, quote: 'keep the budget under the ceiling the engine sets' },
+  ],
+  held: true,
+  then: [{ to: 'game', title: 'Verify {parent} in a playtest', body: 'Say whether the first frame still seams.' }],
+};
+
+/** The same departure, accepted an hour ago: what it held went on. */
+export const ACCEPTED: Quest = { ...HELD, id: 'ac0ac0', held: false, accepted: hoursAgo(1), then: [] };
+
+/** Held, in 中文: the person's words and the done's as they were written, the chrome in the window's language. */
+export const HELD_CJK: Quest = {
+  ...HELD, id: 'hz0hz0', from: '游戏', to: '引擎', title: '冷缓存时按帧流式加载瓦片',
+  requirements: [
+    { quote: '用 v3 桥接', check: '瓦片经由 v3 桥接到达，追踪记录可证' },
+    { quote: '每帧的加载量不能超过引擎设定的上限', check: '试玩中没有任何一帧超过上限' },
+  ],
+  answers: [
+    { requirement: 1, met: '瓦片经由 v3 桥接传输，完成说明里的追踪记录列出了每一跳' },
+    { requirement: 2, departed: '冷缓存的第一帧做不到不超过上限，所以第一帧允许加载上限的两倍', quote: '每帧的加载量不能超过引擎设定的上限' },
+  ],
+  then: [{ to: '游戏', title: '在试玩中验证 {parent}', body: '说明第一帧是否仍有接缝。' }],
+};
+
 /** A title in 中文, long enough to try the row's one line and the page's title. */
 export const CJK: Quest = {
   ...OPEN, id: 'cj1cj1', from: '游戏', to: '引擎', title: '为分块接口公开每帧的流式加载预算，并在冷缓存时限制水合量',

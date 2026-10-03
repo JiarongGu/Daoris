@@ -82,8 +82,8 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
             "Repositories → the repository's page → Standing answer", "`daoris driver standing <repository> \"…\"|--clear`"),
-        // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris's `language` door waits on the
-        // service's writer (HelpCoverageTests).
+        // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris proposes it as the `setting`
+        // kind's `language` door since LANG1c2.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
             "Repositories → the repository's page → Session language; Settings → Workspace → Session language",
@@ -127,10 +127,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris-driver ask --abandon <id> [--reason \"…\" --yes]`, `daoris-driver quest abandon <id> [--reason \"…\" --yes]`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → Delete…",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
-        // DRIFT1d: the person's yes to a done's departure, the terminal's door; the quest page's yes and Ask Daoris's are
-        // owed meanwhile (HelpCoverageTests' AcceptDoor).
+        // DRIFT1d: the person's yes to a done's departure, the terminal's door; DRIFT1d2 gave it the quest page's yes and
+        // Ask Daoris's `accept` kind.
         ("accept a quest's departure from what you required, so what it held goes on: the chain's next step, a quest "
-            + "waiting on it", "(no screen yet)", "`daoris-driver quest accept <id>`"),
+            + "waiting on it", "Quests → the quest's page → Accept the departure", "`daoris-driver quest accept <id>`"),
         // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
         // Daoris's own (d) and updates one from where it came from (c).
         ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",

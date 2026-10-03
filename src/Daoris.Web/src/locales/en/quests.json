@@ -104,5 +104,20 @@
   "quests.detail.pausedOwn": "You paused it on this machine: nothing of its work starts here until you resume it.",
   "quests.detail.openAsk": "Open ask #{{id}}",
   "quests.detail.openPausing": "Open quest #{{id}}",
-  "quests.detail.noDriver": "Pausing and abandoning are a machine's driver's, so a browser offers neither: on the desktop, or at a terminal, `daoris-driver quest pause {{id}}` and `daoris-driver quest abandon {{id}}`."
+  "quests.detail.noDriver": "Pausing and abandoning are a machine's driver's, so a browser offers neither: on the desktop, or at a terminal, `daoris-driver quest pause {{id}}` and `daoris-driver quest abandon {{id}}`.",
+  "quests.groups.held": "Awaiting your yes ({{count}})",
+  "quests.card.held": "awaits your yes",
+  "quests.card.heldHint": "Its done departed from what you required, so what follows it waits until you accept the departure on its page.",
+  "quests.requirements.title": "What you required",
+  "quests.requirements.check": "Check",
+  "quests.requirements.met": "met",
+  "quests.requirements.departed": "departed",
+  "quests.requirements.reliedOn": "Relied on",
+  "quests.requirements.held": "Its done departed from what you required, so it is held for your yes: nothing it holds goes on, and its ask does not read done, until you accept the departure.",
+  "quests.requirements.heldNext": "Accepting publishes its next step, “{{title}}” to {{to}}.",
+  "quests.requirements.join": "{{first}} {{second}}",
+  "quests.requirements.accept": "Accept the departure",
+  "quests.requirements.accepted": "You accepted the departure {{ago}}.",
+  "quests.requirements.toAnswer": "Its done answers each: met, or departed with the reason and your words it relied on.",
+  "quests.requirements.unanswered": "Its done answered none of these: it closed before a done had to answer each."
 }
