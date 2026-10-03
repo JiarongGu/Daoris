@@ -688,6 +688,40 @@ public sealed partial class AcpSession(
         SendPromptAsync(text, files, ct, sent, words: null);
 
     /// <summary>
+    /// One turn of one or more text blocks, each its own (MSG1c, D137 §2.2): a conversation that goes on is resumed with the
+    /// person's words waiting on its record, each its own block in the order said, as a driven record's are (MSG1b).
+    /// </summary>
+    /// <param name="sent">Told once the prompt is on the wire: the words it carries went to the session.</param>
+    public Task<string> PromptAsync(IReadOnlyList<string> blocks, CancellationToken ct, Action? sent = null) =>
+        SendPromptAsync(blocks, null, ct, sent, words: null);
+
+    /// <summary>
+    /// Whether this session's agent said it takes a prompt during a turn (STEER1, D136), read from its <c>initialize</c>
+    /// answer once the session is open: a conversation's words then go at once, at its next step (MSG1c, D137 §2.1).
+    /// </summary>
+    public bool NextStep => _takesWordsMidTurn;
+
+    /// <summary>
+    /// Told each of the person's words as the session takes them (MSG1c): a conversation's, whose words said during a turn
+    /// are taken when the turn before them is handed off, so the record keeps them there as the person's ask.
+    /// </summary>
+    public void OnTaken(Action<ChatMessage> taken) => _asked = taken;
+
+    /// <summary>
+    /// The person's words to a conversation whose turn is running, sent at once as a prompt of the same session (MSG1c,
+    /// D137 §2.1): taken at the agent's next step, told through <see cref="OnTaken"/> where the wire says so, and answered
+    /// by their own stop reason at the turn's real end.
+    /// </summary>
+    /// <exception cref="DriverException">
+    /// The agent did not say it takes a prompt during a turn: a second prompt would reset <c>codex-acp</c>'s running turn
+    /// (STEER1 §5), so nothing is sent.
+    /// </exception>
+    public Task<string> SayAsync(ChatMessage words, CancellationToken ct) =>
+        _takesWordsMidTurn
+            ? SendPromptAsync(words.Prompt, words.Files, ct, sent: null, words)
+            : throw new DriverException("this agent did not say it takes words during a turn — they wait for the turn to end.");
+
+    /// <summary>
     /// One prompt on the open session, answered by the agent's stop reason: the driver's own, or the person's words
     /// (<paramref name="words"/>), which the session takes as they go when no prompt is open, and when the one before
     /// them is answered otherwise (STEER1) — the moment <c>claude-agent-acp</c> hands the running turn off to them.

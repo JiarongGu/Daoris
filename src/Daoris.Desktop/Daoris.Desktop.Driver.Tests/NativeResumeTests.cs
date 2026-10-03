@@ -176,6 +176,67 @@ public sealed class NativeResumeTests
         Assert.False(inbox.Hold(new ChatMessage("Too late.", [])));
     }
 
+    /// <summary>
+    /// 🔴 A conversation that goes on, on the native door (MSG1c, D137 §4.2): its own conversation resumed by the id it kept,
+    /// <c>--resume &lt;id&gt;</c> beside the structured stdin a conversation always has, so the words go as its first message.
+    /// Never <c>--continue</c>, which takes the newest conversation in the folder.
+    /// </summary>
+    [Fact]
+    public void A_conversation_that_goes_on_resumes_its_kept_conversation_on_the_native_door()
+    {
+        var target = new ChatTarget("Game", "D:/trees/chat-1", "http://localhost:5177") { Resume = "0b5e7c1a" };
+
+        var arguments = new ClaudeCodeAdapter().PrepareChat(target, ["claude"]).ArgumentList.ToList();
+
+        Assert.Equal("0b5e7c1a", arguments[arguments.IndexOf("--resume") + 1]);
+        Assert.Equal("stream-json", arguments[arguments.IndexOf("--input-format") + 1]);
+        Assert.Equal("acceptEdits", arguments[arguments.IndexOf("--permission-mode") + 1]);
+        Assert.DoesNotContain("--continue", arguments);
+        Assert.DoesNotContain("-c", arguments);
+    }
+
+    /// <summary>A new conversation resumes nothing; and a protocol door resumes on its wire, so its spawn never carries the flag.</summary>
+    [Fact]
+    public void A_new_conversation_and_a_protocol_door_carry_no_resume_flag()
+    {
+        var fresh = new ChatTarget("Game", "D:/trees/chat-1", "http://localhost:5177");
+        var going = fresh with { Resume = "0b5e7c1a" };
+
+        Assert.DoesNotContain("--resume", new ClaudeCodeAdapter().PrepareChat(fresh, ["claude"]).ArgumentList);
+        Assert.DoesNotContain("--resume", new ClaudeAcpAdapter().PrepareChat(going, ["claude-agent-acp"]).ArgumentList);
+        Assert.DoesNotContain("--resume", new AcpStubAdapter().PrepareChat(going, ["node", "agent.mjs"]).ArgumentList);
+    }
+
+    /// <summary>
+    /// The native capture tells the conversation's id the moment its <c>init</c> line names it (MSG1c), once, so a
+    /// conversation that lives for hours keeps it before it ends, as the protocol door keeps <c>session/new</c>'s.
+    /// </summary>
+    [Fact]
+    public async Task The_native_capture_tells_the_conversation_once_as_the_init_line_names_it()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "daoris-native-named-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var told = new List<string>();
+            var stdout = new StringReader(string.Join('\n',
+                """{"type":"system","subtype":"init","session_id":"0b5e7c1a","cwd":"D:/trees/chat-1","tools":[],"model":"x"}""",
+                """{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Logged the port."}]}}""",
+                """{"type":"result","subtype":"success","is_error":false,"result":"ok"}""",
+                """{"type":"system","subtype":"init","session_id":"0b5e7c1a","cwd":"D:/trees/chat-1","tools":[],"model":"x"}"""));
+
+            await Daoris.Driver.Driver.CaptureStructuredAsync(
+                stdout, new StringReader(""), Path.Combine(folder, "s1.log"), "s1", output: null, events: null,
+                new ClaudeStreamJson(), prompt: null, CancellationToken.None, named: told.Add);
+
+            Assert.Equal(["0b5e7c1a"], told);
+        }
+        finally
+        {
+            try { Directory.Delete(folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>A mapper that knows no conversation names none: the default every other wire keeps.</summary>
     [Fact]
     public void A_wire_that_names_no_conversation_says_none()

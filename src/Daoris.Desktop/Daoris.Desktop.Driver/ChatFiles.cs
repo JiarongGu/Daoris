@@ -27,6 +27,13 @@ public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
     /// </summary>
     public string? Id { get; init; }
 
+    /// <summary>
+    /// The person's words a conversation goes on with (MSG1c, D137 §2.2), kept on its record while it had ended: its first
+    /// turn, each word its own block on the protocol door and said again under its id as the door takes it. The record
+    /// already shows them waiting, so the queue a page is told never lists them. Null for every other message.
+    /// </summary>
+    internal ResumeAsk? GoesOn { get; init; }
+
     /// <summary>What the agent is handed: the preface, a blank line, then the person's words.</summary>
     public string Prompt => Preface is { Length: > 0 } preface ? $"{preface}\n\n{Text}" : Text;
 

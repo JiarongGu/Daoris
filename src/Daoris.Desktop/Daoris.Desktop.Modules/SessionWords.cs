@@ -103,8 +103,9 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
 
         if (loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && loop.Processes.RefusesInput(id) is null)
         {
-            // A conversation this machine runs (D49 §3): a word waits for its turn to end, or starts one now (CONV4a).
-            return new(true, loop.Chat?.Taking(id) == true ? "turn-end" : null, null);
+            // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
+            // next step (MSG1c), waits for the turn to end elsewhere, or starts one now (CONV4a).
+            return new(true, loop.Chat?.Reach(id), null);
         }
 
         try
@@ -144,9 +145,9 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         var refuses = loop.Processes.RefusesInput(id);
         if (running && refuses is null && loop.Chat is { } chat)
         {
-            // A conversation this machine runs (D49 §3): its turns take the words, now or when the running one ends (CONV4a).
-            var taking = chat.Taking(id);
-            if (chat.Say(id, text, files, preface)) return new(true, taking ? "turn-end" : null, null) { Running = true };
+            // A conversation this machine runs (D49 §3): its turns take the words, into the running turn at its next step where
+            // its agent takes them then (MSG1c), when the running one ends elsewhere (CONV4a), or now; its runner says which.
+            if (chat.Say(id, text, out var reaches, files, preface)) return new(true, reaches, null) { Running = true };
         }
 
         Read? read;

@@ -61,6 +61,13 @@ public sealed class HarnessConversations(string home)
         }
     }
 
+    /// <summary>
+    /// What a door tells the id its harness named to, for this session's record (MSG1c, D137 §4.2): a chat keeps its
+    /// conversation as a quest's session does, on the protocol door from <c>session/new</c>'s answer and on the native door
+    /// from its <c>init</c> line, so an ended chat the person writes to goes on in it.
+    /// </summary>
+    public Action<string> Keeping(string session, string adapter) => conversation => Keep(session, adapter, conversation);
+
     /// <summary>What was kept for this session, or null for nothing, a file that does not read, or an id that is not one.</summary>
     public HarnessConversation? Read(string session)
     {

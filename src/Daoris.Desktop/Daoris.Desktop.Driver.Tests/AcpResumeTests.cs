@@ -251,6 +251,31 @@ public sealed class AcpResumeTests
         Assert.Equal(["Port 8080.", "No, 9090."], prompt.EnumerateArray().Select(block => block.GetProperty("text").GetString()));
     }
 
+    /// <summary>
+    /// 🔴 A conversation that goes on (MSG1c, D137 §2.2): resumed on the id it kept, never opened anew, and its first turn
+    /// the person's words waiting, each its own text block in the order said, told once the prompt is on the wire.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_that_goes_on_is_resumed_and_its_first_turn_is_each_word_as_its_own_block()
+    {
+        var agent = Answering(Both);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        var sent = false;
+
+        await session.ResumeAsync("D:/trees/chat-1", "0b5e7c1a", CancellationToken.None, Servers);
+        var stop = await session.PromptAsync(["Port 8080.", "No, 9090."], CancellationToken.None, () => sent = true);
+
+        Assert.Equal(["initialize", "session/resume", "session/prompt"], agent.Methods);
+        var prompt = agent.Params("session/prompt");
+        Assert.Equal("0b5e7c1a", prompt.GetProperty("sessionId").GetString());
+        Assert.Equal(
+            ["Port 8080.", "No, 9090."],
+            prompt.GetProperty("prompt").EnumerateArray().Select(block => block.GetProperty("text").GetString()));
+        Assert.True(sent);
+        Assert.Equal("end_turn", stop);
+        session.Release();
+    }
+
     /// <summary>The posture is set on the resume's answer as on a new session's (D81): the adapter's first offered mode.</summary>
     [Fact]
     public async Task The_posture_is_set_on_the_resumed_conversation()

@@ -35,6 +35,19 @@ public sealed record ChatQueue(
     public static readonly ChatQueue Idle = new(false, []);
 }
 
+/// <summary>What became of a word said to a conversation (MSG1c, D137 §2.1), in the reach the record and the page speak of.</summary>
+public enum TurnReach
+{
+    /// <summary>No turn ran: it is the next turn, sent at once.</summary>
+    Now,
+
+    /// <summary>Handed to the turn on the wire at once, read at the agent's next step (D136).</summary>
+    NextStep,
+
+    /// <summary>Waiting for the running turn to end, then its own turn (CONV4a).</summary>
+    TurnEnd,
+}
+
 /// <summary>
 /// One conversation's turns: one at a time, in the order the person sent them — the same on both doors
 /// (CONV3b, CONV4a).
@@ -66,20 +79,30 @@ public sealed record ChatQueue(
 /// </param>
 /// <param name="interrupt">The door's own way of stopping the turn in flight.</param>
 /// <param name="changed">Where the turns stand, each time that changes.</param>
+/// <param name="steer">
+/// The door's next step (MSG1c, D137 §2.1): hand a word to the turn on the wire at once, returning what completes when the
+/// agent has answered it, or null where the door takes no word during a turn now. Called under the turns' own lock, so it
+/// must not call back into them. Null for a door that never does (the native door, a text pipe).
+/// </param>
 internal sealed class ChatTurns(
     Func<Task<bool>> ready,
     Func<ChatMessage, Action, Task> take,
     Func<Task> interrupt,
-    Action<ChatQueue> changed)
+    Action<ChatQueue> changed,
+    Func<ChatMessage, Task?>? steer = null)
 {
     private readonly object _gate = new();
     private readonly List<ChatMessage> _waiting = [];
+    // The words handed to the turn in flight at its next step (MSG1c), each until the agent answered it: the turn lasts as long.
+    private readonly List<Task> _steered = [];
     private ChatMessage? _holding;
     private bool _pumping;
     private bool _opening;
     private bool _inFlight;
     private bool _sent;
     private bool _stopPending;
+    // The person stopped the turn in flight: what they say next waits for it to end, never joins a turn winding up (MSG1c).
+    private bool _stopped;
     private bool _finishing;
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
@@ -104,13 +127,38 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>Whether the person stopped the turn in flight, which a word said now then waits for (MSG1c).</summary>
+    public bool Stopped
+    {
+        get
+        {
+            lock (_gate) return _inFlight && _stopped;
+        }
+    }
+
     /// <summary>Queue a turn. False once the conversation is finishing or gone: nothing more will be heard.</summary>
-    public bool Say(ChatMessage message)
+    public bool Say(ChatMessage message) => Take(message) is not null;
+
+    /// <summary>
+    /// Take a word: handed to the turn on the wire where the door takes words at its next step and nothing waits before it
+    /// (MSG1c), else queued as a turn of its own. Null once the conversation is finishing or gone: nothing more is heard.
+    /// </summary>
+    public TurnReach? Take(ChatMessage message)
     {
         bool start;
         lock (_gate)
         {
-            if (_finishing || _gone) return false;
+            if (_finishing || _gone) return null;
+
+            // At its next step (D137 §2.1): only into a turn already on the wire, never one the person stopped, and never
+            // ahead of a word still waiting, which would make the agent read them out of the order said.
+            if (steer is not null && _inFlight && _sent && !_stopped && !_stopPending && _holding is null && _waiting.Count == 0
+                && steer(message) is { } answered)
+            {
+                _steered.Add(answered);
+                return TurnReach.NextStep;
+            }
+
             _waiting.Add(message);
             start = !_pumping;
             if (start)
@@ -124,7 +172,7 @@ internal sealed class ChatTurns(
         // so the message it took is never announced as waiting.
         if (start) _ = PumpAsync();
         lock (_gate) Publish();
-        return true;
+        return start ? TurnReach.Now : TurnReach.TurnEnd;
     }
 
     /// <summary>
@@ -147,6 +195,7 @@ internal sealed class ChatTurns(
             withdrawn.AddRange(_waiting);
             _waiting.Clear();
             cancelled = _inFlight;
+            if (_inFlight) _stopped = true;
             // Taken but not yet on the wire: the interrupt goes the moment it is (see `take`).
             now = _inFlight && _sent;
             if (_inFlight && !_sent) _stopPending = true;
@@ -154,6 +203,9 @@ internal sealed class ChatTurns(
         }
 
         if (now) await interrupt().ConfigureAwait(false);
+        // The words a conversation goes on with are not handed back (MSG1c): the page never listed them, and they stay on
+        // the record, which takes them off only once they went.
+        withdrawn.RemoveAll(message => message.GoesOn is not null);
         return !cancelled && withdrawn.Count == 0 ? TurnStop.Nothing : new TurnStop(cancelled, withdrawn);
     }
 
@@ -241,6 +293,7 @@ internal sealed class ChatTurns(
                 _inFlight = true;
                 _sent = false;
                 _stopPending = false;
+                _stopped = false;
                 Publish();
             }
 
@@ -253,22 +306,42 @@ internal sealed class ChatTurns(
                 // The door says what failed in its own words; the queue outlives one bad turn, or every
                 // later message would wait on a pump that is gone.
             }
-            finally
+
+            // 🔴 The turn lasts until every word handed to it at its next step is answered (MSG1c, D137 §2.1): the agent
+            // answers the prompt before them when it takes them, and works on. Found empty under the lock that ends the
+            // turn, so no word is handed to a turn that has already ended.
+            while (true)
             {
+                Task[] steered;
                 lock (_gate)
                 {
-                    // The end of a turn that reached the harness is the chat's last move (RAIL2), told
-                    // at once: the next message may start straight away and leave nothing else changed
-                    // for the page to hear. One that never went out moved nothing.
-                    if (_sent)
+                    steered = [.. _steered];
+                    _steered.Clear();
+                    if (steered.Length == 0)
                     {
-                        _lastEnded = DateTimeOffset.UtcNow;
-                        Publish();
-                    }
+                        // The end of a turn that reached the harness is the chat's last move (RAIL2), told
+                        // at once: the next message may start straight away and leave nothing else changed
+                        // for the page to hear. One that never went out moved nothing.
+                        if (_sent)
+                        {
+                            _lastEnded = DateTimeOffset.UtcNow;
+                            Publish();
+                        }
 
-                    _inFlight = false;
-                    _sent = false;
-                    _stopPending = false;
+                        _inFlight = false;
+                        _sent = false;
+                        _stopPending = false;
+                        break;
+                    }
+                }
+
+                try
+                {
+                    await Task.WhenAll(steered).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // Each word's door says what became of it; the turn ends all the same.
                 }
             }
         }
@@ -290,10 +363,11 @@ internal sealed class ChatTurns(
 
     private ChatQueue Now() => new(_pumping, Snapshot(), _lastEnded, _opening);
 
+    // The words a conversation goes on with are left out (MSG1c): its record shows them waiting already, at its foot.
     private List<ChatMessage> Snapshot()
     {
-        List<ChatMessage> now = _holding is null ? [] : [_holding];
-        now.AddRange(_waiting);
+        List<ChatMessage> now = _holding is null || _holding.GoesOn is not null ? [] : [_holding];
+        now.AddRange(_waiting.Where(message => message.GoesOn is null));
         return now;
     }
 
