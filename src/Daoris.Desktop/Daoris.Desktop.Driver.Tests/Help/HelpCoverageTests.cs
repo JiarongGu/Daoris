@@ -153,6 +153,14 @@ public sealed partial class HelpCoverageTests
         + "list, each a change the person applies as a card, so Ask Daoris should propose them; that is SESSUX1h's `session` "
         + "kind and the `delete` kind's `session` door, while finishing and declining stay the person's answer (D126 §7.3).");
 
+    /// <summary>
+    /// MSG1e's <c>daoris-driver sessions say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
+    /// session are the person's (D133 §1). The room says where the box is and names the command, so the helper points there.
+    /// </summary>
+    private static readonly Exempt SayDoor = new(
+        "the words said to a session are the person's own (D133 §1), so Ask Daoris composes none in their name; the room says "
+        + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -388,6 +396,7 @@ public sealed partial class HelpCoverageTests
             .Append(SessionDeleteDoor)
             .Append(SessionsVerbDoor)
             .Append(AbandonDoor)
+            .Append(SayDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -491,6 +500,20 @@ public sealed partial class HelpCoverageTests
             && door.Terminal.Contains("`daoris-driver quest abandon <id> [--reason \"…\" --yes]`", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D37", AbandonDoor.Reason);
+    }
+
+    /// <summary>
+    /// MSG1e: the headless host's <c>sessions say</c> is exempt from Ask Daoris (D137 §5.4) while its usage spells it; the room
+    /// names it, marked exempt with its reason, and says where the box is, so the helper points the person at both doors.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_say_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("sessions say <id> \"…\" [--file <path>]…", DriverCommand.Usage);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver sessions say <id> \"…\" [--file <path>]…`", StringComparison.Ordinal)
+            && door.Screen.Contains("box", StringComparison.Ordinal)
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("D133", SayDoor.Reason);
     }
 
     /// <summary>
