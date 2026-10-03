@@ -578,6 +578,45 @@ describe('the Work frame', () => {
     expect(onOpenQuest).toHaveBeenCalledWith('def456');
   });
 
+  /**
+   * TRACE1b (D143, D50): how the attended session came to be, folded on its page and read through `TRACE` only on the
+   * press, for that session; its quest opens where quests are read.
+   */
+  it('folds how the attended session came to be, reads it only on the press, and opens its quest', async () => {
+    const chain = {
+      chain: {
+        kind: 'session', id: 's1a2b3c4', unread: [],
+        links: [{
+          kind: 'quest',
+          quest: {
+            id: 'abc123', source: 'quests', address: 'engine', title: 'Expose a streaming budget', status: 'Taken',
+            from: 'game', requirements: [], then: [], records: [{ id: 's1a2b3c4', state: 'working' }],
+          },
+        }],
+      },
+      unread: [],
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TRACE' ? chain : DRIVER_STATE));
+    const onOpenQuest = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onOpenQuest={onOpenQuest} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const section = await screen.findByRole('region', { name: 'How this came to be' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRACE', expect.anything());
+    await userEvent.click(within(section).getByRole('button', { name: /How this came to be/ }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRACE', { payload: { kind: 'session', id: 's1a2b3c4' } }));
+    expect(await within(section).findByText(/On no ask/)).toBeInTheDocument();
+    await userEvent.click(within(section).getByRole('button', { name: 'Quest #abc123' }));
+    expect(onOpenQuest).toHaveBeenCalledWith('abc123');
+  });
+
   it('lets the head and the composer follow the centre\'s width, however wide the window', async () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');
@@ -2531,13 +2570,35 @@ describe('reviewing what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
 
     expect(await screen.findByText('src/chunk.ts')).toBeTruthy();
+    // Within the review's own bound (REVIEW4): the bridge's 30 seconds gave up on a diff git took most of a minute over.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', {
-      payload: { id: 's1a2b3c4' },
+      payload: { id: 's1a2b3c4' }, timeoutMs: 180_000,
     });
     // The range it is measured from, stated — a review that does not say so is an opinion.
     expect(screen.getByText(/abc12345/)).toBeTruthy();
     // And a binary file is listed as uncounted rather than as an empty change.
     expect(screen.getByText('binary')).toBeTruthy();
+  });
+
+  /**
+   * REVIEW4: while git reads, the review's frame is the attended record's — its own branch, the commit it began at, the
+   * commits it reported — above the skeleton and the words saying what is read. The installed window sat blank here.
+   */
+  it('stands the review’s frame from the attended record at once while git reads', async () => {
+    SESSIONS = [{
+      ...DRIVEN, state: 'completed', tree: 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9',
+      baseCommit: 'abc1234567890', evidence: 'commits landed:\nabc1234 Cap the streaming budget',
+    }];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? new Promise(() => {}) : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+
+    expect(await screen.findByText('Reading the changes in engine…')).toBeTruthy();
+    expect(screen.getByText('daoris/s-2394e5d9')).toBeTruthy();
+    expect(screen.getByText('since abc12345')).toBeTruthy();
+    expect(screen.getByText('1 commit')).toBeTruthy();
   });
 
   /**

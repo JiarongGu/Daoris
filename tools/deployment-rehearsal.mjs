@@ -1631,7 +1631,9 @@ if (!done.ok) throw new Error(done.text);
   console.log('  beside the running install drained it: a quest published meanwhile waited, the working session was let');
   console.log('  end, and the launcher swapped app/ and started the new build, which confirmed; a build that would not');
   console.log('  come up was rolled back to the one before it, and one that failed its check was refused with nothing closed.');
-  rmSync(scratch, { recursive: true, force: true });
+  // The last build's processes may still be letting go of their files as the result prints; a held file read as a failed
+  // run after every check had passed (FIX-LOG 2026-10-04), so this waits as the start's clean does.
+  rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
 }
 
 /**

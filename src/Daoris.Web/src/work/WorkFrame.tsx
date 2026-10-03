@@ -9,7 +9,7 @@ import {
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace,
 } from '../shell';
 import { doorOf } from '../tools';
 import {
@@ -394,6 +394,10 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
+  // How the attended session came to be (TRACE1b): read only while its section is open, for the session it was opened
+  // on, since the read takes every session record and quest. Attending another opens it folded.
+  const [tracing, setTracing] = useState<string | null>(null);
+  const trace = useTrace('session', tracing);
   // A stop's ask is a question asked now, of the session it was asked of (D126 §3.3): attending another by any door
   // puts it down, so coming back later does not find it still open.
   useEffect(() => {
@@ -795,6 +799,9 @@ export function WorkFrame({
       return withWhose(
         <DiffPane
           session={attended?.id ?? null}
+          // What its frame says while git reads (REVIEW4); off Sessions the line above already names the session.
+          record={attended}
+          title={attended && !elsewhere ? sessionTitle(attended, quest, openings[attended.id]) : null}
           // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
           hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
           onSendBack={attended && (takesWords(box) || onSendBack) ? sendBack : undefined}
@@ -1122,6 +1129,16 @@ export function WorkFrame({
             // Its review, wherever the review stands (SESS2 H4): the head's move beside unlanded work.
             onReview={() => openView('review')}
             branch={branch}
+            trace={attended && trace.available ? {
+              open: tracing === attended.id,
+              onToggle: () => setTracing(tracing === attended.id ? null : attended.id),
+              answer: tracing === attended.id ? trace.query.data : undefined,
+              reading: tracing === attended.id && trace.query.isPending,
+              refusal: tracing === attended.id && trace.query.error ? sentence(trace.query.error) : null,
+              onSession: attend,
+              onQuest: onOpenQuest,
+              onAsk: onAnswerAsk,
+            } : undefined}
           />
           {/* The conversation (D76): below the record, in the same scroll, so the head is read once
               and the words are what the region follows. Only where the session ran: a teammate's

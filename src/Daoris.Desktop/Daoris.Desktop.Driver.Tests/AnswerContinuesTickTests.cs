@@ -159,9 +159,10 @@ public sealed class AnswerContinuesTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A different account never resumes (D131 §1): the park ran on stub account 1, and the start now runs on stub account
-    /// 2, so the stub is never asked to resume. The park ends saying why, naming no account, and the carry-on runs on
-    /// account 2 in the same tree.
+    /// 🔴 A different account never resumes (D131 §1): the park ran on stub account 1, and the person's default moved to stub
+    /// account 2 with no list, so account 1 is no longer an account this work may use (MSG1g asks for the park's own account,
+    /// and finds it off the scope) and the stub is never asked to resume. The park ends saying why, the reason's line then its
+    /// own, naming no account, and the carry-on runs on account 2 in the same tree.
     /// </summary>
     [Fact]
     public async Task An_answer_on_another_account_never_resumes_and_is_carried_on_saying_why()
@@ -186,7 +187,8 @@ public sealed class AnswerContinuesTickTests : IDisposable
         var park = service.Session("s1");
         Assert.Equal("completed", park["state"]!.GetValue<string>());
         Assert.EndsWith(
-            "Carried on in a new session, because its conversation stays with the account it ran on, and this start runs on another.",
+            "Carried on in a new session, because its conversation stays with the account it ran on, and this start runs on another. "
+            + "This work no longer uses that account.",
             park["note"]!.GetValue<string>());
         var carried = service.Session("s2");
         Assert.Equal(("completed", "account-2"), (carried["state"]!.GetValue<string>(), carried["profile"]!.GetValue<string>()));

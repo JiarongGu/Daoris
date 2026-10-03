@@ -4,8 +4,11 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver sessions</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2).</summary>
-/// <param name="Verb"><c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c> or <c>say</c>.</param>
+/// <summary>What <c>daoris-driver sessions</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2; MSG1g's <c>go-on-new</c>).</summary>
+/// <param name="Verb">
+/// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c> or
+/// <c>go-on-new</c>.
+/// </param>
 public sealed record SessionsAsk(string Verb)
 {
     /// <summary>The sessions a verb names.</summary>
@@ -58,6 +61,12 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// say up, so the verb keeps the words on the record itself (MSG1e, D137 §5.2).
     /// </summary>
     public Func<bool> LoopRuns { get; init; } = () => DriverLock.HeldBy(Home) is not null;
+
+    /// <summary>
+    /// The cool-off a start on an adapter would read for an account, or null where it is ready (MSG1g's <c>go-on-new</c>): read
+    /// from this home's cool-offs by the account's owner, as the roster reads them, plugins' harnesses included.
+    /// </summary>
+    public Func<string?, string?, CoolingEntry?>? CoolingOf { get; init; }
 }
 
 /// <summary>
@@ -89,6 +98,7 @@ public static class SessionsCommand
                daoris-driver sessions stop <id>  ·  sessions finish <id> [--note "…"]  ·  sessions decline <id> --reason "…"
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
                daoris-driver sessions say <id> "…" [--file <path>]…
+               daoris-driver sessions go-on-new <id>
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -139,6 +149,11 @@ public static class SessionsCommand
                 return null;
             case ["say", ..]:
                 return ReadSay(args, out problem);
+            case ["go-on-new", var id] when Id(id):
+                return new SessionsAsk("go-on-new") { Ids = [id] };
+            case ["go-on-new", ..]:
+                problem = "`go-on-new` takes one session's id.";
+                return null;
         }
 
         var ask = new SessionsAsk("list");
@@ -201,6 +216,7 @@ public static class SessionsCommand
         ask.Verb switch
         {
             "say" => await SayAsync(world, ask, output, ct).ConfigureAwait(false),
+            "go-on-new" => await GoOnNewAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
@@ -875,6 +891,30 @@ public static class SessionsCommand
     }
 
     private static int Seconds(SessionsWorld world) => (int)Math.Round(world.Wait.TotalSeconds);
+
+    // ——— Go on in a new session (MSG1g, D137 §2.2): the screen's press, at a terminal.
+
+    /// <summary>
+    /// Words a resume holds while their account cools go on in a new session at the driver's next look (<see cref="GoOnNew"/>):
+    /// one line, exit 0 where the choice is kept, 1 where it is refused, 2 where it could not be kept.
+    /// </summary>
+    private static async Task<int> GoOnNewAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
+    {
+        var answer = await GoOnNew.AskAsync(
+                world.Service, world.Home, world.CoolingOf ?? CoolingOn(world.Home), id, DateTimeOffset.UtcNow, ct)
+            .ConfigureAwait(false);
+        output.WriteLine($"sessions: {answer.Message}");
+        return answer.Sent ? 0 : answer.Why is null ? 2 : 1;
+    }
+
+    /// <summary>The home's cool-offs as a start reads them: by the account's owner, the build's harnesses and the plugins' (D64).</summary>
+    private static Func<string?, string?, CoolingEntry?> CoolingOn(string home)
+    {
+        var built = AdapterSet.Built();
+        var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
+        var roster = new HarnessRoster(adapters, Path.Combine(home, "harnesses.json"));
+        return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
+    }
 
     // ——— Archive, unarchive and delete: the screen's owners.
 

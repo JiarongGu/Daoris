@@ -436,6 +436,9 @@ public static class AccountRotation
     private static string? Keep(RotationScope scope, IReadOnlyList<string> among) =>
         scope.Use.Keep is { } keep && among.Any(name => Same(name, keep)) && among.Any(name => !Same(name, keep)) ? keep : null;
 
+    /// <summary>The account a scope keeps for conversations, as the walk reads it (§4.6); null where it keeps none (MSG1g).</summary>
+    public static string? KeptOf(RotationScope scope) => Keep(scope, scope.List);
+
     /// <summary>
     /// The first step at which <paramref name="a"/> and <paramref name="b"/> differ, and which goes first there (negative:
     /// <paramref name="a"/>); <see cref="WalkStep.List"/> and zero where none does. Under <c>order</c> only near is a step.
