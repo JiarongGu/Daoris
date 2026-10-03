@@ -127,6 +127,15 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>Whether the person stopped the turn in flight, which a word said now then waits for (MSG1c).</summary>
+    public bool Stopped
+    {
+        get
+        {
+            lock (_gate) return _inFlight && _stopped;
+        }
+    }
+
     /// <summary>Queue a turn. False once the conversation is finishing or gone: nothing more will be heard.</summary>
     public bool Say(ChatMessage message) => Take(message) is not null;
 
