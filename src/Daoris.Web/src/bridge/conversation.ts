@@ -355,25 +355,59 @@ const reachOf = (answer: unknown): Reach => {
 };
 
 /**
+ * The reach a shell that tells it live carries (MSG1f2): `reach`, an object present whenever the shell says it, `{}` for a
+ * word that would start a turn at once, since the bridge leaves a null out. Undefined from an older shell, which carries
+ * none, and where nothing is known yet.
+ */
+const toldReach = (answer: unknown): Reach | undefined => {
+  const reach = (answer as { reach?: unknown } | null | undefined)?.reach;
+  return reach !== null && typeof reach === 'object' ? reachOf(reach) : undefined;
+};
+
+/**
  * What a word said now to this session would do (MSG1d, D137 §5.3): `SESSION_QUEUE`'s `reaches` and `why`, which decide
  * the box the page offers and the line it draws where nothing takes words (`boxOf`). Undefined until the driver answers.
  *
  * @remarks
- * **Asked again whenever what it reads moves**: keyed by the session's state and whether its inbox listens, so a session
- * that winds up, ends, or goes on is asked again as it moves, and under the sessions' key, so whatever asks the listing
- * again (a word kept, a tick) asks this too. The live queue (`SESSION_QUEUED`) does not carry it. Desktop-only, as a
- * conversation is.
+ * **Followed live where the shell tells it** (MSG1f2): an answer or a `SESSION_QUEUED` carrying `reach` says the shell
+ * tells it as the session's door changes, as its record moves and as a later session of its quest opens, so it is asked
+ * once per session and then taken from the events, never asked again as the session moves. An event that carries none
+ * changes nothing.
+ *
+ * **An older shell is asked again whenever what it reads moves**: keyed by the session's state and whether its inbox
+ * listens, so a session that winds up, ends, or goes on is asked again as it moves, and under the sessions' key, so
+ * whatever asks the listing again (a word kept, a tick) asks this too. Desktop-only, as a conversation is.
  */
 export const useSessionReach = (session: { id: string; state: string } | null, listening = false): Reach | undefined => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const [told, setTold] = useState(false);
+  const id = session?.id ?? '';
   const answer = useQuery({
-    queryKey: keys.sessionReach(session?.id ?? '', session?.state ?? '', listening),
-    queryFn: async () => reachOf(await call<unknown>('SESSION_QUEUE', { id: session!.id })),
+    queryKey: told ? keys.sessionReachTold(id) : keys.sessionReach(id, session?.state ?? '', listening),
+    queryFn: async () => {
+      const answered = await call<unknown>('SESSION_QUEUE', { id });
+      const live = toldReach(answered);
+      if (!live) return reachOf(answered);
+      // Kept where the live key reads it before that key is the one read, so switching to it asks nothing again.
+      client.setQueryData(keys.sessionReachTold(id), live);
+      setTold(true);
+      return live;
+    },
     enabled: isAvailable && session !== null,
-    staleTime: 30_000,
+    staleTime: told ? Infinity : 30_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+  useShenoraEvent('DAORIS', 'SESSION_QUEUED', (payload) => {
+    const queued = payload as { session?: unknown } | undefined;
+    const live = toldReach(payload);
+    if (typeof queued?.session !== 'string' || !live) return;
+    client.setQueryData(keys.sessionReachTold(queued.session), live);
+    setTold(true);
+  });
+
   return session ? answer.data : undefined;
 };
 

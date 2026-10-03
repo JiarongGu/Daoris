@@ -772,7 +772,35 @@ describe('the words’ answers', () => {
   const wrapper = ({ children }: { children: ReactNode }) => createElement(
     QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }, children);
 
-  it('reads what a word said now would do, and asks again when the session moves', async () => {
+  /**
+   * MSG1f2: a shell that tells the reach live says so by carrying `reach`, so the session is asked once and then followed by
+   * `SESSION_QUEUED`, never asked again as it moves; an event that carries no reach changes nothing, and `{}` is a word that
+   * would start a turn at once.
+   */
+  it('follows a shell that tells the reach live, asking once', async () => {
+    invoke.mockResolvedValue({ session: 's1', queued: [], taking: true, reaches: 'next-step', reach: { reaches: 'next-step' } });
+    // One client across renders, as the application holds one: what an event kept is there when the session moves.
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const held = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result, rerender } = renderHook(({ state }) => useSessionReach({ id: 's1', state }, true), {
+      wrapper: held, initialProps: { state: 'working' },
+    });
+    await waitFor(() => expect(result.current).toEqual({ reaches: 'next-step', why: null }));
+
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: false, listening: false, reach: { reaches: 'resume' } }); });
+    await waitFor(() => expect(result.current).toEqual({ reaches: 'resume', why: null }));
+
+    rerender({ state: 'completed' });
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: false }); });
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's2', queued: [], taking: false, reach: { why: 'teammate' } }); });
+    expect(result.current).toEqual({ reaches: 'resume', why: null });
+
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: true, reach: {} }); });
+    await waitFor(() => expect(result.current).toEqual({ reaches: null, why: null }));
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads what a word said now would do, and asks an older shell again when the session moves', async () => {
     invoke.mockResolvedValueOnce({ session: 's1', queued: [], taking: true, reaches: 'next-step' })
       .mockResolvedValueOnce({ session: 's1', queued: [], taking: false, reaches: 'resume' });
     const { result, rerender } = renderHook(({ state }) => useSessionReach({ id: 's1', state }, true), {

@@ -94,6 +94,9 @@ export const keys = {
    * tick asks it again too.
    */
   sessionReach: (id: string, state: string, listening: boolean) => ['sessions', 'reach', id, state, listening] as const,
+  // What a word said now would do, as a shell that tells it live keeps it (MSG1f2): one entry per session, set by
+  // `SESSION_QUEUED`, never under the sessions' key, so reading the list again does not ask it again.
+  sessionReachTold: (id: string) => ['reach', id] as const,
   allAsks: ['asks'] as const,
   asks: (includeClosed: boolean, workspace: string | null) => ['asks', includeClosed, workspace ?? '*'] as const,
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null) =>

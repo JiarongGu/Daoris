@@ -1751,6 +1751,23 @@ describe('the box on every session that takes words', () => {
     expect(onSelect).toHaveBeenCalledWith('n3wn3w00');
   });
 
+  /**
+   * MSG1f2: a shell that tells the reach live is followed by its events: the box goes as the session's quest goes on in a
+   * later session here, said by the event alone, and the queue is asked once.
+   */
+  it('follows the reach the shell tells live, without asking again', async () => {
+    driver({ reaches: 'resume', reach: { reaches: 'resume' } });
+    show('s1a2b3c4');
+
+    await screen.findByLabelText('Message');
+    await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_QUEUED')).toBe(true));
+    act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, reach: { why: 'superseded' } }));
+
+    expect(await screen.findByText(/went on in a later session here, so write to that one\./)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(invoke.mock.calls.filter(([, type]) => type === 'SESSION_QUEUE')).toHaveLength(1);
+  });
+
   /** Words a closed quest's session cannot go on with: two said, and the driver's line saying why. */
   const CANNOT = {
     session: 's1a2b3c4', earlier: false, latest: 5,
