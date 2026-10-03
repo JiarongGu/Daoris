@@ -111,7 +111,7 @@ const REVIEWS: Attention[] = [
   'Expose the chunk budget', 'Fix the pipeline’s knowledge check', 'Rename the scheduler’s queue',
 ].map((title, index) => ({
   id: `r3v13w0${index}`, kind: 'review', title, where: index % 2 ? 'game' : 'engine', since: at(60 * (24 - index)),
-  detail: index === 3 ? 'uncommitted changes' : `${index + 1} commits to review`,
+  detail: index === 3 ? 'uncommitted changes' : index === 0 ? '1 commit to review' : `${index + 1} commits to review`,
 }));
 
 /** A start the driver holds for the agent's trust (D73) — neutral paths, as every fixture here. */
@@ -129,6 +129,7 @@ const TRUST_ROW: Attention = {
   since: at(95),
   detail: 'The agent ignores this folder\'s own permissions.allow until you trust it there, so the driver is holding what would run in it.',
   trust: { folder: HOLD.folder, trustFile: HOLD.trustFile },
+  quest: HOLD.quest,
 };
 
 const meta: Meta = { title: 'Work/Attention' };

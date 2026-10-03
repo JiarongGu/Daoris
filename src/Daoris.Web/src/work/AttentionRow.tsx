@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { elapsed } from '../format';
+import { cn } from '../lib/cn';
 import type { TrustHold } from '../signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../ui';
 import { ASKS_ONCE, type AttentionActId, attentionActs } from './attention';
@@ -185,34 +186,45 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
   };
 
   return (
-    <li aria-labelledby={titleId} className="border-l-[3px] border-l-st-open px-3 py-2">
-      {/* Status leads (D41 §4): the kind, then what, where and how long. The title moves to its own line where the main
-          area is narrow, so the kind, where and how long keep one line above it. */}
-      <p className="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small">
-        <Dot tone="parked" label={t(`work.attention.${item.kind}`)} />
-        <span
-          id={titleId}
-          className="order-last min-w-0 max-w-full basis-full truncate text-body font-semibold text-ink @3xl/main:order-none @3xl/main:basis-auto"
-        >
-          {item.title}
-        </span>
-        {where && <><span aria-hidden className="text-ink-faint">·</span><span className="text-accent">{where}</span></>}
-        <span aria-hidden className="text-ink-faint">·</span>
-        <span className="font-mono text-meta text-ink-faint">{t('work.attention.since', { span: elapsed(item.since) })}</span>
-      </p>
-      {/* 🔴 No display utility beside the clamp: `block` overrode the box it needs, and a parked
-          session's whole analysis filled the band (2026-09-29). */}
-      {item.note && hasNote(item.note)
-        ? (
-          <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft">
-            <Note note={item.note.note} parts={item.note.parts} compact />
-          </p>
-        )
-        : item.detail && (
-          <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></p>
-        )}
+    <li
+      aria-labelledby={titleId}
+      className={cn(
+        'grid gap-x-4 gap-y-1.5 border-l-[3px] border-l-st-open px-3 py-2 @3xl/main:grid-cols-[minmax(0,1fr)_auto] @3xl/main:items-center',
+        doorOnly && offered.length === 0 && 'grid-cols-[minmax(0,1fr)_auto] items-center',
+      )}
+    >
+      {/* What waits and why on the left; its acts and its door at its right where the main area is wide, as the design
+          draws them at 1546 px, and under it where it is narrow, except a row whose door is its one control, which keeps
+          it at its right at any width. A row of acts on a line of its own doubled each row. */}
+      <div className="min-w-0">
+        {/* Status leads (D41 §4): the kind, then what, where and how long. The title moves to its own line where the main
+            area is narrow, so the kind, where and how long keep one line above it. */}
+        <p className="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-small">
+          <Dot tone="parked" label={t(`work.attention.${item.kind}`)} />
+          <span
+            id={titleId}
+            className="order-last min-w-0 max-w-full basis-full truncate text-body font-semibold text-ink @3xl/main:order-none @3xl/main:basis-auto"
+          >
+            {item.title}
+          </span>
+          {where && <><span aria-hidden className="text-ink-faint">·</span><span className="text-accent">{where}</span></>}
+          <span aria-hidden className="text-ink-faint">·</span>
+          <span className="font-mono text-meta text-ink-faint">{t('work.attention.since', { span: elapsed(item.since) })}</span>
+        </p>
+        {/* 🔴 No display utility beside the clamp: `block` overrode the box it needs, and a parked
+            session's whole analysis filled the band (2026-09-29). */}
+        {item.note && hasNote(item.note)
+          ? (
+            <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft">
+              <Note note={item.note.note} parts={item.note.parts} compact />
+            </p>
+          )
+          : item.detail && (
+            <p className="m-0 mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></p>
+          )}
+      </div>
       {(offered.length > 0 || onOpen) && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 @3xl/main:justify-end">
           {offered.map((act) => (
             <Button key={act} disabled={busy || asking !== null} onClick={() => press(act)}>{label(act)}</Button>
           ))}
@@ -227,7 +239,7 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
                 type="button"
                 onClick={() => onOpen(item)}
                 aria-describedby={titleId}
-                className="ml-auto inline-flex min-h-[1.75rem] items-center gap-0.5 rounded-control px-1.5 text-small font-medium text-accent hover:bg-accent-soft"
+                className="ml-auto inline-flex min-h-[1.75rem] items-center gap-0.5 rounded-control px-1.5 text-small font-medium text-accent hover:bg-accent-soft @3xl/main:ml-0"
               >
                 {t('work.attention.door.open')}
                 <Icon name="chevronRight" size={13} />
@@ -236,24 +248,27 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
         </div>
       )}
       {asking && (
-        <AskOnce
-          act={asking}
-          item={item}
-          label={label(asking)}
-          busy={busy}
-          words={words}
-          onWords={setWords}
-          choice={choice}
-          onChoice={setChoice}
-          onCancel={done}
-          onConfirm={() => {
-            if (asking === 'approve' || asking === 'refuse') acts.answer?.(item, asking === 'approve', words.trim() || undefined);
-            else if (asking === 'choose') acts.publish?.(item, [choice]);
-            else if (asking === 'trust') acts.trust?.(item);
-            else if (asking === 'accept-rule') acts.acceptRule?.(item);
-            done();
-          }}
-        />
+        // Under the whole row, both columns, where the question has room for its sentence.
+        <div className="@3xl/main:col-span-2">
+          <AskOnce
+            act={asking}
+            item={item}
+            label={label(asking)}
+            busy={busy}
+            words={words}
+            onWords={setWords}
+            choice={choice}
+            onChoice={setChoice}
+            onCancel={done}
+            onConfirm={() => {
+              if (asking === 'approve' || asking === 'refuse') acts.answer?.(item, asking === 'approve', words.trim() || undefined);
+              else if (asking === 'choose') acts.publish?.(item, [choice]);
+              else if (asking === 'trust') acts.trust?.(item);
+              else if (asking === 'accept-rule') acts.acceptRule?.(item);
+              done();
+            }}
+          />
+        </div>
       )}
     </li>
   );
