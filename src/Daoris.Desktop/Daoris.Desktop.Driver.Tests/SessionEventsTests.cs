@@ -153,6 +153,55 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Equal(taken.Seq, hit.Seq);
     }
 
+    /// <summary>
+    /// MSG1d (D137 §3.1, §3.3): words said to a session that ended are kept the moment they are said, with the reach
+    /// <c>resume</c> and the door they were said at. The door of the first of them is read back by their ids, for the machine
+    /// log's <c>session.reopened</c>; the words where the session took them name no door; and words shown waiting are never
+    /// a session's opening, so a driven session the person wrote to after it ended still has none.
+    /// </summary>
+    [Fact]
+    public void Words_said_to_an_ended_session_keep_their_door_and_are_never_its_opening()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("drive1", Asked("You are the engine repository's agent…", origin: "target"));
+        events.Append("drive1", Message("Done."));
+        events.Append("drive1", new SessionEvent
+        {
+            Kind = SessionEventKind.User, Origin = "person", Id = "w1", Text = "also the changelog", Reaches = "resume", Door = "screen",
+        });
+        events.Append("drive1", new SessionEvent
+        {
+            Kind = SessionEventKind.User, Origin = "person", Id = "w2", Text = "and the readme", Reaches = "resume", Door = "terminal",
+        });
+        events.Append("drive1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Id = "w3", Text = "taken only" });
+
+        var kept = events.Page("drive1").Events[2];
+        Assert.Equal(("w1", "resume", "screen"), (kept.Id, kept.Reaches, kept.Door));
+        Assert.Equal("screen", events.DoorOf("drive1", ["w1", "w2"]));
+        Assert.Equal("terminal", events.DoorOf("drive1", ["w2"]));
+        Assert.Null(events.DoorOf("drive1", ["w3"]));
+        Assert.Null(events.DoorOf("drive1", ["w9"]));
+        Assert.Null(events.DoorOf("nothing1", ["w1"]));
+        Assert.Null(events.DoorOf("../escape", ["w1"]));
+        Assert.False(events.Openings(["drive1"]).ContainsKey("drive1"));
+    }
+
+    /// <summary>
+    /// MSG1d (D137 §3.1): where a fallback handed the person's words to a new session, the driver's note keeps their ids, that
+    /// session and the reason's code beside its line, so the page links the session and says the reason in its own words.
+    /// </summary>
+    [Fact]
+    public void A_note_that_the_persons_words_went_elsewhere_keeps_their_ids_the_session_and_why()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("drive1", Continuations.Went(["w1", "w2"], "s2", ContinueWhy.Of(ContinueWhy.Tree)));
+
+        var went = Assert.Single(new SessionEvents(_directory).Page("drive1").Events);
+        Assert.Equal((SessionEventKind.Note, "s2", "tree"), (went.Kind, went.To, went.Why));
+        Assert.Equal(["w1", "w2"], went.Words!);
+        Assert.Equal("— your words went to session `s2`, because its tree is gone.", went.Text);
+    }
+
     /// <summary>The answer is bounded and says so: a few hits per session, the snippet a window, not the whole text.</summary>
     [Fact]
     public void Search_is_bounded_and_says_when_it_left_hits_out()

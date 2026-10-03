@@ -43,6 +43,28 @@ public sealed class DrivenInboxTests
         Assert.Equal(ChatQueue.Idle, told.Last());
     }
 
+    /// <summary>
+    /// MSG1d (D137 §5.3): when a word said now reaches the session, which the modules answer the page with: not known until
+    /// the door is (a word said while it opens waits for its first prompt either way), at its next step where the door sends
+    /// words during a turn, at the turn's end where it does not, and nothing once it has closed.
+    /// </summary>
+    [Fact]
+    public void Its_reach_is_its_doors_once_known_and_none_once_closed()
+    {
+        var opening = new DrivenInbox(_ => { });
+        var holding = new DrivenInbox(_ => { });
+        var sending = new DrivenInbox(_ => { });
+
+        holding.Attach(interrupt: null);
+        sending.Attach(() => Task.CompletedTask, _ => Task.FromResult("end_turn"));
+
+        Assert.Null(opening.Reach);
+        Assert.Equal(DrivenReach.TurnEnd, holding.Reach);
+        Assert.Equal(DrivenReach.NextStep, sending.Reach);
+        holding.TakeOrClose();
+        Assert.Null(holding.Reach);
+    }
+
     [Fact]
     public async Task Sending_now_stops_the_turn_so_what_is_held_goes_next_and_nothing_is_withdrawn()
     {

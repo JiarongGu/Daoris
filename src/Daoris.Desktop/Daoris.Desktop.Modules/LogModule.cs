@@ -70,7 +70,9 @@ public sealed class LogModule(
             ["view.opened"] = ("info", [("view", Kind.Name)]),
             ["command.run"] = ("info", [("command", Kind.Name)]),
             ["panel.moved"] = ("info", [("view", Kind.Name), ("region", Kind.Name)]),
-            ["message.sent"] = ("info", [("session", Kind.Name), ("kind", Kind.Name), ("length", Kind.Count), ("files", Kind.Count)]),
+            // `reach` (MSG1d, D137 §3.3): where the words reach the session, as SESSION_INPUT answered it.
+            ["message.sent"] = ("info",
+                [("session", Kind.Name), ("kind", Kind.Name), ("length", Kind.Count), ("files", Kind.Count), ("reach", Kind.Name)]),
             ["proposal.settled"] = ("info", [("applied", Kind.Flag)]),
             ["page.error"] = ("error", [("where", Kind.Name), ("message", Kind.Text)]),
         };

@@ -413,15 +413,35 @@ public sealed class ContinuationTests : IDisposable
     [Fact]
     public void The_reopen_line_says_from_where_whether_it_resumed_and_why_not()
     {
-        var resumed = Continuations.Reopened("s1", "claude-code-acp", "completed", why: null);
-        var carried = Continuations.Reopened("s1", "claude-code-acp", "failed", ContinueWhy.Of(ContinueWhy.Account));
+        var resumed = Continuations.Reopened("s1", "claude-code-acp", "completed", why: null, door: "screen");
+        var carried = Continuations.Reopened("s1", "claude-code-acp", "failed", ContinueWhy.Of(ContinueWhy.Account), door: null);
 
         Assert.Equal("session.reopened", resumed.Event);
         Assert.Equal(
-            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "completed"), ("resumed", true), ("why", null)],
+            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "completed"), ("resumed", true), ("why", null), ("door", "screen")],
             resumed.Data);
         Assert.Equal(
-            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "failed"), ("resumed", false), ("why", "account")],
+            [("session", (object?)"s1"), ("kind", "driven"), ("adapter", "claude-code-acp"), ("from", "failed"), ("resumed", false), ("why", "account"), ("door", null)],
             carried.Data);
+    }
+
+    /// <summary>
+    /// MSG1d (D137 §3.1, §5.1): the driver's notes about the person's words carry their ids and the reason's code beside the
+    /// line, since a reason is chrome the page words itself: where they went, naming the session, and where they cannot go on.
+    /// </summary>
+    [Fact]
+    public void A_note_about_the_persons_words_names_them_and_the_reason_by_its_code()
+    {
+        var went = Continuations.Went(["w1"], "s2", ContinueWhy.Of(ContinueWhy.Gone));
+        var cannot = Continuations.Cannot(["w1", "w2"], ContinueWhy.CannotResume("dsh"));
+        var none = Continuations.Cannot([], ContinueWhy.Of(ContinueWhy.StoodDown));
+
+        Assert.Equal((SessionEventKind.Note, "— your words went to session `s2`, because the agent no longer has its conversation."), (went.Kind, went.Text));
+        Assert.Equal(["w1"], went.Words!);
+        Assert.Equal(("s2", "gone"), (went.To, went.Why));
+        Assert.Equal("— It cannot go on in this session, because `dsh` cannot resume a conversation.", cannot.Text);
+        Assert.Equal(["w1", "w2"], cannot.Words!);
+        Assert.Equal(((string?)null, "unable"), (cannot.To, cannot.Why));
+        Assert.Null(none.Words);
     }
 }

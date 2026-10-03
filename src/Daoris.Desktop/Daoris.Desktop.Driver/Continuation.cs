@@ -196,9 +196,39 @@ public static class Continuations
     /// </summary>
     /// <param name="from">The ended state it went on from, in the record's spelling.</param>
     /// <param name="why">Null where it resumed.</param>
-    public static AccountLine Reopened(string session, string adapter, string from, ContinueReason? why) =>
+    /// <param name="door">Where the words were said, <c>screen</c> or <c>terminal</c> (MSG1d); null where no door was kept.</param>
+    public static AccountLine Reopened(string session, string adapter, string from, ContinueReason? why, string? door = null) =>
         new("session.reopened",
-            [("session", session), ("kind", "driven"), ("adapter", adapter), ("from", from), ("resumed", why is null), ("why", why?.Code)]);
+        [
+            ("session", session), ("kind", "driven"), ("adapter", adapter), ("from", from), ("resumed", why is null), ("why", why?.Code),
+            ("door", door),
+        ]);
+
+    /// <summary>
+    /// The driver's note in a record whose person's words went to a new session (MSG1b, D137 §3.1): its line, then the words'
+    /// ids, that session and the reason's code (MSG1d), so the page links the session and words the reason itself.
+    /// </summary>
+    /// <param name="words">The ids of the words handed on; none for an answer a host from before <c>said</c> kept.</param>
+    public static SessionEvent Went(IReadOnlyList<string> words, string to, ContinueReason why) => new()
+    {
+        Kind = SessionEventKind.Note,
+        Text = $"— your words went to session `{to}`, because {why.Sentence}.",
+        Words = words.Count > 0 ? words : null,
+        To = to,
+        Why = why.Code,
+    };
+
+    /// <summary>
+    /// The driver's note in a record whose person's words cannot go on in it and that nothing carries on (MSG1b, D137 §2.2):
+    /// its line, then the words' ids and the reason's code (MSG1d), which the page words as <c>work.say.cannot</c>.
+    /// </summary>
+    public static SessionEvent Cannot(IReadOnlyList<string> words, ContinueReason why) => new()
+    {
+        Kind = SessionEventKind.Note,
+        Text = $"— It cannot go on in this session, because {why.Sentence}.",
+        Words = words.Count > 0 ? words : null,
+        Why = why.Code,
+    };
 
     /// <summary>The note a fallback ends the park with: what it asked, as its record said, and why the answer went to a new session.</summary>
     public static string EndedNote(PriorSession park, ContinueReason why) =>

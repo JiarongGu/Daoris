@@ -368,10 +368,12 @@ public sealed partial class Driver
     /// </summary>
     private StartRun CannotGoOn(QuestView quest, PriorSession record, ContinueReason why)
     {
-        _marks.Mark(record.Session, record.Waiting.Select(word => word.Id).OfType<string>(), why, DateTimeOffset.UtcNow);
-        var line = $"— It cannot go on in this session, because {why.Sentence}.";
-        output?.Append(record.Session, line);
-        _events.Keep(record.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
+        var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
+        _marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
+        // The words' ids and the code beside the line (MSG1d), so the page says why in its own words.
+        var note = Continuations.Cannot(words, why);
+        output?.Append(record.Session, note.Text!);
+        _events.Keep(record.Session, note, say: null);
         return new StartRun(
             $"cannot  session {record.Session} (#{quest.Id} → {quest.To}): it cannot go on in this session, because {why.Sentence}.",
             false);
@@ -387,14 +389,15 @@ public sealed partial class Driver
     {
         if (!record.WordsWaiting) return;
 
+        var ids = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         if (!record.Parked)
         {
-            var line = $"— your words went to session `{to}`, because {why.Sentence}.";
-            output?.Append(record.Session, line);
-            _events.Keep(record.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
+            // The words' ids, the session and the code beside the line (MSG1d, D137 §3.1): the page links where they went.
+            var note = Continuations.Went(ids, to, why);
+            output?.Append(record.Session, note.Text!);
+            _events.Keep(record.Session, note, say: null);
         }
 
-        var ids = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         if (ids.Count == 0) return;
         try
         {
@@ -410,12 +413,15 @@ public sealed partial class Driver
 
     /// <summary>
     /// The machine log's line for words taken up (D94 §4): a park's answer is <c>session.answered</c> (D131 §2), and words to
-    /// a record that had ended are <c>session.reopened</c> (D137 §3.3), from the state it ended in.
+    /// a record that had ended are <c>session.reopened</c> (D137 §3.3), from the state it ended in, naming the door the first
+    /// of them was said at, as the record showed them (MSG1d).
     /// </summary>
-    private static AccountLine Took(PriorSession record, string adapter, ContinueReason? why) =>
+    private AccountLine Took(PriorSession record, string adapter, ContinueReason? why) =>
         record.Parked || !record.WordsWaiting
             ? Continuations.Answered(record.Session, adapter, why)
-            : Continuations.Reopened(record.Session, adapter, record.State, why);
+            : Continuations.Reopened(
+                record.Session, adapter, record.State, why,
+                _events.DoorOf(record.Session, [.. record.Waiting.Select(word => word.Id).OfType<string>()]));
 
     /// <summary>
     /// How a native run goes on with the words the person said while it ran (MSG1b, D137 §2.1): its own conversation

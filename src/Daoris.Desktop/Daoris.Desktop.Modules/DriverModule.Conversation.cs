@@ -57,23 +57,25 @@ public sealed partial class DriverModule
         return new { start.SessionId, start.Message };
     }
 
-    // The person's half of the turn-taking. False is an answer — the session ended while they
-    // were typing — and never an error. 🔴 A session that takes no input is REFUSED instead, in
-    // the driver's words (INT4h): false would tell a stale page it ended when it is running.
+    // The person's words to a session, whatever its state (MSG1d, D137 §5.3): `{ sent, reaches, why }`. A running session
+    // hears them at its door as before (SESS3, D136, CONV4a); one that parked or ended has them kept on its record and the
+    // loop nudged, so the same session goes on with them (MSG1b); words said as one winds up are held until its record ends,
+    // never refused. What never goes on is `sent: false` with its code. 🔴 A session running here that takes no input at
+    // all is REFUSED instead, in the driver's words (INT4h): false would tell a stale page it ended when it is running.
     [DriverRoute("SESSION_INPUT")]
-    private object? SessionInput(IpcRequest request)
+    private async Task<object?> SessionInputAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
         var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
-        // A driven session on the protocol door hears what the person adds (SESS3): held, and the
-        // next prompt of its own session — never a line in its stream, which INT4i still refuses.
-        // False once it has stopped taking any: it is ending, and its record will say so.
-        if (_loop.Processes.InboxOf(id) is { } inbox) return new { Sent = KeptOnAsk(id, text, inbox.Hold(new ChatMessage(text, []))) };
-        if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
-        // What the person attached, kept for this conversation before the message goes (CONV4c).
+        // What the person attached, kept for its session before the words go (CONV4c).
         var files = request.Payload is { } payload ? FilesOf(payload) : [];
-        // Where the person is (HELP1b), which the agent is handed ahead of the words; absent for most.
-        return new { Sent = KeptOnAsk(id, text, _loop.Chat?.Say(id, text, files, Optional(request, "preface")) ?? false) };
+        // Where the person is (HELP1b), which a conversation's agent is handed ahead of the words; absent for most.
+        var said = await _loop.Words.SayAsync(id, text, files, Optional(request, "preface"), door: "screen", cancellationToken)
+            .ConfigureAwait(false) ?? throw NotReady();
+        // Words a running session took are kept on its ask now (DRIFT1a2); words kept on a record are kept there once a
+        // session takes them (MSG1a's taken door), so they are never posted twice.
+        if (said.Running) KeptOnAsk(id, text, took: true);
+        return new { said.Sent, said.Reaches, said.Why };
     }
 
     /// <summary>
@@ -164,19 +166,23 @@ public sealed partial class DriverModule
     // Where a conversation's turns stand (CONV4a): whether one is in flight, and what is waiting.
     // A page that just opened it asks once, and takes every change after that as `SESSION_QUEUED`.
     [DriverRoute("SESSION_QUEUE")]
-    private object? SessionQueue(IpcRequest request)
+    private async Task<object?> SessionQueueAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        // `Listening` says a driven session hears what the person adds (SESS3), which is when the
-        // page offers it a box: never to one on the pipe door, where nothing could hear it.
+        // `Listening` says a running driven session's inbox is open (SESS3), on the protocol door or, where its run can go
+        // on in its own conversation, the native door (MSG1b). Whether the page offers a box is `reaches` and `why`'s: what
+        // a word said now would do (MSG1d, D137 §5.3), and why nothing takes one, which is when it draws the line instead.
         var inbox = _loop.Processes.InboxOf(id);
         var queue = inbox?.State ?? _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+        var reach = await _loop.Words.ReachAsync(id, cancellationToken).ConfigureAwait(false);
         return new
         {
             Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, queue.Opening,
             Listening = inbox is not null,
             // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
             LastTurn = queue.LastTurnEnded,
+            reach.Reaches,
+            reach.Why,
         };
     }
 

@@ -68,6 +68,18 @@ public sealed class DrivenInbox(Action<ChatQueue> changed)
     }
 
     /// <summary>
+    /// When a word said now reaches the session (MSG1d, D137 §5.3), which the modules answer the page with: null until the
+    /// door is known, since a word said while it opens waits for its first prompt either way, and null once it has closed.
+    /// </summary>
+    public DrivenReach? Reach
+    {
+        get
+        {
+            lock (_gate) return _closed ? null : _reach;
+        }
+    }
+
+    /// <summary>
     /// The door, once the session is open: its way of stopping the running turn, and — where the agent takes a prompt
     /// during its turn — its way of sending one (STEER1). What is held then is told with when it reaches the session; a
     /// word goes only once the door says the turn has begun (<see cref="Flow"/>), so none overtakes the prompt it follows.
