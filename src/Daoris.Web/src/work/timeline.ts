@@ -1,4 +1,4 @@
-import type { Quest, Session, SessionState } from '../api';
+import type { NotePart, Quest, Session, SessionState } from '../api';
 
 // The observed audit layer (design §3), derived from the record and nothing else.
 
@@ -18,7 +18,7 @@ import type { Quest, Session, SessionState } from '../api';
  */
 export type TimelineEvent =
   | { kind: 'opened'; at: string }
-  | { kind: 'state'; at: string; state: SessionState; note?: string | null }
+  | { kind: 'state'; at: string; state: SessionState; note?: string | null; noteParts?: NotePart[] | null }
   | { kind: 'quest'; at: string; status: Quest['status']; note?: string | null }
   | { kind: 'evidence'; at: string; text: string; commits: Commit[] };
 
@@ -66,7 +66,7 @@ export function sessionTimeline(session: Session, quest?: Quest | null): Timelin
   const events: TimelineEvent[] = [{ kind: 'opened', at: session.created }];
 
   if (session.updated !== session.created) {
-    events.push({ kind: 'state', at: session.updated, state: session.state, note: session.note });
+    events.push({ kind: 'state', at: session.updated, state: session.state, note: session.note, noteParts: session.noteParts });
   }
 
   if (quest && quest.updated > session.created) {

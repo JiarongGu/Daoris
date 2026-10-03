@@ -215,7 +215,7 @@ describe('the attended session\'s head', () => {
 
     const long = `the agent's turn failed with the quest still taken: ${'the ACP agent refused the call. '.repeat(12)}`;
     const second = render(<SessionHead session={session({ state: 'failed', note: long })} />);
-    expect(screen.getByText(long.trim(), { collapseWhitespace: false, exact: false }).className).toContain('line-clamp-3');
+    expect(screen.getByText(long.trim(), { collapseWhitespace: false, exact: false }).closest('.line-clamp-3')).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
     expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument();
     second.unmount();
@@ -292,6 +292,81 @@ describe('the attended session\'s head', () => {
     expect(screen.getByText('仓库')).toBeInTheDocument();
     expect(screen.getByText('工作中')).toBeInTheDocument();
     await i18n.changeLanguage('en');
+  });
+});
+
+/**
+ * LANG1b (D142 points 1, 4, 5): the head words Daoris's lines in the record's note in the reader's language, wherever it
+ * shows the note — how an ended session stands, a park's card, the card with no moves, a parked intake's — keeps the
+ * agent's words as written beneath their lead-in, and shows a record from before parts as it was kept, marked.
+ */
+describe('the head’s note, in the reader’s language', () => {
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    await i18n.changeLanguage('zh');
+  });
+  afterEach(async () => {
+    vi.useRealTimers();
+    await i18n.changeLanguage('en');
+  });
+
+  const PARKED: Partial<Session> = {
+    state: 'awaiting-person',
+    note: 'It stopped with its quest still taken, to ask you:\nWhich branch should the release land on?',
+    noteParts: [
+      { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+      { words: 'Which branch should the release land on?\n\n1. main\n2. release/1.0', by: 'agent' },
+    ],
+  };
+
+  it('says how an ended session stands in the reader’s words, and an old record as it was kept', () => {
+    const { unmount } = render(
+      <SessionHead
+        session={session({
+          state: 'failed',
+          note: 'exit 2 with the quest still taken.',
+          noteParts: [{ code: 'ended.taken-exit', values: { exit: 2 }, text: 'exit 2 with the quest still taken.' }],
+        })}
+      />,
+    );
+    expect(screen.getByText('退出码 2，委托仍已接下。')).toBeInTheDocument();
+    expect(screen.queryByText(/with the quest still taken/)).toBeNull();
+    expect(screen.queryByText('按原文显示')).toBeNull();
+    unmount();
+
+    render(<SessionHead session={session({ state: 'failed', note: 'exit 2 with the quest still taken.' })} />);
+    expect(screen.getByText('按原文显示')).toBeInTheDocument();
+    expect(screen.getByText('exit 2 with the quest still taken.')).toBeInTheDocument();
+  });
+
+  it('words a park’s lead-in on its card and keeps the agent’s question beneath it as written', () => {
+    render(<SessionHead session={session(PARKED)} onResolve={vi.fn()} onAnswerSession={vi.fn()} />);
+
+    const card = screen.getByRole('heading', { name: '这个会话在等你' }).closest('section')!;
+    expect(within(card).getByText('它停了下来，委托仍已接下，想问你：')).toBeInTheDocument();
+    const question = within(card).getByText(/Which branch should the release land on\?/);
+    expect(question.closest('blockquote')!.textContent).toBe('Which branch should the release land on?\n\n1. main\n2. release/1.0');
+  });
+
+  it('words the note on the card a browser is shown, with no moves', () => {
+    render(<SessionHead session={session(PARKED)} />);
+    expect(screen.getByText('它停了下来，委托仍已接下，想问你：')).toBeInTheDocument();
+    expect(screen.getByText(/Which branch should the release land on\?/).closest('blockquote')).not.toBeNull();
+  });
+
+  it('words a parked intake’s line on its card', () => {
+    render(
+      <SessionHead
+        session={session({
+          ...INTAKE,
+          note: 'published nothing: …',
+          noteParts: [{ code: 'intake.asks', values: { ask: '0fda18' }, text: 'published nothing: …' }],
+        })}
+        onAnswerAsk={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/它什么也没发布：声明无法确定需求 #0fda18/)).toBeInTheDocument();
   });
 });
 

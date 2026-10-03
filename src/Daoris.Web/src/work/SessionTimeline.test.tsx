@@ -49,11 +49,29 @@ describe('one timeline entry', () => {
     expect(screen.getByText('reached waiting on you')).toBeInTheDocument();
   });
 
-  it('carries the driver\'s observation verbatim beside it', () => {
+  it('carries a record from before parts as it was kept, marked, beside it', () => {
     render(<TimelineEntry
       event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'the process exited 1' }}
     />);
     expect(screen.getByText('the process exited 1')).toBeInTheDocument();
+    expect(screen.getByText('shown as recorded')).toBeInTheDocument();
+  });
+
+  /** LANG1b (D142 points 1, 4): Daoris's lines in the record's note, worded in the reader's language. */
+  it('words the record’s note in the reader’s language', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<TimelineEntry
+        event={{
+          kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'Timed out after 30 minutes and was killed.',
+          noteParts: [{ code: 'ended.timeout', values: { minutes: 30 }, text: 'Timed out after 30 minutes and was killed.' }],
+        }}
+      />);
+      expect(screen.getByText('运行超过 30 分钟，已被终止。')).toBeInTheDocument();
+      expect(screen.queryByText('按原文显示')).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('names a quest transition by its status word', () => {

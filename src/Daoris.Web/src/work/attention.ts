@@ -102,20 +102,19 @@ export function needsAPerson(
     .map((ask): Attention => {
       const intake = intakeOf(ask);
       const asked = intake?.state === 'awaiting-person';
+      const row = { id: ask.id, title: firstLine(ask.sentence), where: ask.workspace };
+      // The intake's own note, which the row words in the reader's language (LANG1b).
+      if (asked) return { ...row, kind: 'intake', since: intake.updated, note: { note: intake.note, parts: intake.noteParts } };
       return {
-        id: ask.id,
-        kind: asked ? 'intake' : 'proposal',
-        title: firstLine(ask.sentence),
-        where: ask.workspace,
-        since: asked ? intake.updated : ask.asked,
-        detail: asked
-          ? intake.note
-          // A refused receiver's sentence is the service's, verbatim; otherwise what was proposed.
-          : ask.note ?? (ask.proposal.length > 0
-            ? i18n.t('work.attention.proposalWhy', {
-              repositories: ask.proposal.map((match) => match.repository).join(', '),
-            })
-            : i18n.t('work.attention.proposalNobody')),
+        ...row,
+        kind: 'proposal',
+        since: ask.asked,
+        // A refused receiver's sentence is the service's, verbatim; otherwise what was proposed.
+        detail: ask.note ?? (ask.proposal.length > 0
+          ? i18n.t('work.attention.proposalWhy', {
+            repositories: ask.proposal.map((match) => match.repository).join(', '),
+          })
+          : i18n.t('work.attention.proposalNobody')),
       };
     });
 
@@ -129,7 +128,8 @@ export function needsAPerson(
       title: sessionTitle(session, quests.find((quest) => quest.id === session.quest)),
       where: session.repository,
       since: session.updated,
-      detail: session.note,
+      // Its note whole, parts beside the English, which the row words in the reader's language (LANG1b).
+      note: { note: session.note, parts: session.noteParts },
     }));
 
   const parkedQuests = considered

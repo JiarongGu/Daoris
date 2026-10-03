@@ -81,6 +81,25 @@ export const WithItsSession: Story = {
 /** The same session read in a browser: the record, and no door. */
 export const WithItsSessionInABrowser: Story = { args: { session: WORKING } };
 
+/**
+ * Its session's note by code (LANG1b, D142): Daoris's lines in the window's language, and the agent's last words beneath
+ * them as written. The record above is one from before parts, shown as kept and marked.
+ */
+export const WithItsSessionByCode: Story = {
+  args: {
+    quest: TAKEN,
+    onAttend: nothing,
+    session: {
+      ...FAILED,
+      note: 'Exit 1 with the quest still taken.',
+      noteParts: [
+        { code: 'ended.carried-unfinished', values: { exit: 1 }, text: 'It carried the quest on, and ended with it still taken (exit 1).' },
+        { code: 'started.other-account', values: {}, text: 'It runs on another account.' },
+      ],
+    },
+  },
+};
+
 /** Declined, with the reason the asker can act on. */
 export const Declined: Story = { args: { quest: DECLINED } };
 

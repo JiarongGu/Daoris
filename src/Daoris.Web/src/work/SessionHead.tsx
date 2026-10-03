@@ -4,7 +4,6 @@ import type { SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
 import { GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool } from '../format';
-import { cn } from '../lib/cn';
 import {
   answeredPark, Button, MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../ui';
@@ -12,6 +11,8 @@ import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
+import { Note } from './Note';
+import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
 
@@ -109,6 +110,7 @@ export function SessionHead({
   const waiting = parked && !answered;
   const intake = isIntake(session);
   const shown = shownState(session, taking);
+  const noted = hasNote({ note: session.note, parts: session.noteParts });
 
   return (
     <header className="grid gap-2.5">
@@ -116,7 +118,7 @@ export function SessionHead({
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {answered && <AnsweredPark answer={session.answer!} />}
       {waiting && intake && (onResolve || onAnswerAsk) && (
-        <AwaitingIntake ask={session.ask!} note={session.note} onAnswer={onAnswerAsk} />
+        <AwaitingIntake ask={session.ask!} note={session.note} parts={session.noteParts} onAnswer={onAnswerAsk} />
       )}
       {waiting && !intake && (onResolve || onAnswerSession) && (
         // Keyed: a half-written decline reason belongs to the session it was written for, and it
@@ -124,6 +126,7 @@ export function SessionHead({
         <AwaitingPerson
           key={session.id}
           note={session.note}
+          parts={session.noteParts}
           pending={resolving}
           onResolve={onResolve}
           // A driven session parked to ask the person has no process left to message (STANDDOWN2).
@@ -132,9 +135,9 @@ export function SessionHead({
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
-      {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && session.note && (
+      {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && noted && (
         <WaitingCard title={t('work.head.waiting')}>
-          <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{session.note}</p>
+          <Note note={session.note} parts={session.noteParts} className="mt-1.5 text-body leading-relaxed" />
         </WaitingCard>
       )}
       {parked && !intake && goAheads.length > 0 && (
@@ -164,10 +167,11 @@ export function SessionHead({
         )}
       </div>
 
-      {/* How it stands, in the record's own words (SESS2 H5, H6): why a failed session failed, how a
-          finished one ended. Not while it runs, when the conversation below is the answer; not parked,
-          where the card above already carries it. */}
-      {!running && session.note && <Said note={session.note} />}
+      {/* How it stands, in the record's note (SESS2 H5, H6): why a failed session failed, how a finished
+          one ended, Daoris's lines in the reader's language and the agent's words as written (LANG1b).
+          Not while it runs, when the conversation below is the answer; not parked, where the card above
+          already carries it. */}
+      {!running && noted && <Said note={session.note} parts={session.noteParts} />}
 
       {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}
@@ -205,14 +209,24 @@ export function SessionHead({
 /** How much of the record's note the head shows before the rest is a press away. */
 const NOTE_LINES = 3;
 
-/** The record's own sentence about how the session stands — content, never translated. */
-function Said({ note }: { note: string }) {
-  const { t } = useTranslation();
+/**
+ * The record's note about how the session stands (LANG1b): Daoris's lines worded in the reader's language, someone's
+ * words as written, a record from before as it was kept. Long is judged on what is shown, a block at least a line each.
+ */
+function Said({ note, parts }: { note?: string | null; parts?: Session['noteParts'] }) {
+  const { t, i18n } = useTranslation();
   const [whole, setWhole] = useState(false);
-  const long = note.length > 280 || note.split('\n').length > NOTE_LINES;
+  const blocks = noteBlocks(t, noteLines(t, { note, parts }, i18n.language));
+  const shown = blocks.reduce((count, block) => count + block.text.split('\n').length, 0);
+  const long = blocks.reduce((count, block) => count + block.text.length, 0) > 280 || shown > NOTE_LINES;
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn('m-0 whitespace-pre-wrap text-body leading-relaxed text-ink-soft', !whole && 'line-clamp-3')}>{note}</p>
+      <Note
+        note={note}
+        parts={parts}
+        clamp={whole ? undefined : NOTE_LINES}
+        className="w-full text-body leading-relaxed text-ink-soft"
+      />
       {long && (
         <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
           {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}

@@ -11,7 +11,7 @@ import { code } from '../test/code';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDON_ANSWER, ABANDONED_ASK, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK } from '../work/pausingFixtures';
 import { AskPage } from './AskPage';
-import { CLOSED, PUBLISHED } from './fixtures';
+import { BY_INTAKE, CLOSED, INTAKE_SESSION, PUBLISHED } from './fixtures';
 
 // An ask's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…*, *Resume* and *Abandon…* in its header, each where
 // it applies and absent where it does not; the pause's ask and the abandon's list under it; *What went* and *What stayed*
@@ -188,5 +188,47 @@ describe("an ask's page on a right-click", () => {
     withMenus(door());
     onPage();
     expect(await menuActs()).toEqual(['暂缓…', '关闭需求', '放弃…', '删除…', '复制需求 ID']);
+  });
+});
+
+/**
+ * LANG1b (D142 points 1, 4, 5): the intake that answered says how it ended in the reader's language, its quests joined the
+ * reader's way, and a record from before parts as it was kept, marked *shown as recorded*.
+ */
+describe("an ask's intake note", () => {
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  const intakePage = (intake: typeof INTAKE_SESSION) => render(
+    <AskPage
+      ask={BY_INTAKE}
+      intake={intake}
+      receivers={['engine']}
+      questTitles={{}}
+      onPublish={vi.fn()}
+      onClose={vi.fn()}
+      onDelete={vi.fn()}
+      onOpenQuest={vi.fn()}
+    />,
+  );
+
+  it('words the intake’s line in the reader’s language', async () => {
+    await i18n.changeLanguage('zh');
+    intakePage({
+      ...INTAKE_SESSION,
+      noteParts: [{
+        code: 'intake.published',
+        values: { quests: ['9a8b7c', '1d2e3f'], ask: '3e4f5a6b7c8d' },
+        text: 'published `#9a8b7c`, `#1d2e3f` onto ask `#3e4f5a6b7c8d`.',
+      }],
+    });
+
+    expect(screen.getByText('已在需求 #3e4f5a6b7c8d 下发布 #9a8b7c和#1d2e3f。')).toBeInTheDocument();
+    expect(screen.queryByText('按原文显示')).toBeNull();
+  });
+
+  it('shows a record from before parts as it was kept, marked', () => {
+    intakePage(INTAKE_SESSION);
+    expect(screen.getByText('shown as recorded')).toBeInTheDocument();
+    expect(screen.getByText(code('#3e4f5a6b7c8d'))).toBeInTheDocument();
   });
 });
