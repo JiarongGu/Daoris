@@ -151,6 +151,12 @@ public sealed class SessionRequestsTests : IDisposable
         new(session, SessionMove.Say, Now) { Text = "also the changelog; 中文 too.", Files = ["notes.md"], Key = key };
 
     /// <summary>
+    /// A say asked just now, for the loop's half: its watch reads the wall clock through the constructor the loop calls, so a
+    /// request stamped at <see cref="Now"/> was dropped as expired once the day passed that minute.
+    /// </summary>
+    private static SessionRequest SaidNow(string session) => Say(session) with { At = DateTimeOffset.UtcNow };
+
+    /// <summary>
     /// MSG1e (D137 §5.2): a terminal's words are a request of their own, under the session's id and their own key, so two said
     /// at once both wait and a stop for the same session is not replaced by them; read back whole.
     /// </summary>
@@ -249,7 +255,7 @@ public sealed class SessionRequestsTests : IDisposable
         var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
         var inbox = processes.OpenInbox("s1");
         inbox.Attach(interrupt: null);
-        var request = Say("s1");
+        var request = SaidNow("s1");
         Requests.Write(request);
         await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1));
 
@@ -272,7 +278,7 @@ public sealed class SessionRequestsTests : IDisposable
 
         var ledger = new SayingLedger();
         using var service = ledger.Client();
-        Requests.Write(Say("s1"));
+        Requests.Write(SaidNow("s1"));
         await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => service, every: TimeSpan.FromHours(1));
 
         Assert.Empty(await watch.HonourAsync());
@@ -290,7 +296,7 @@ public sealed class SessionRequestsTests : IDisposable
         var ledger = new SayingLedger();
         using var service = ledger.Client();
         ServiceClient? up = null;
-        var request = Say("s1");
+        var request = SaidNow("s1");
         Requests.Write(request);
         await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => up, every: TimeSpan.FromHours(1));
 
