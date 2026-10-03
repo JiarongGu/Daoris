@@ -1,7 +1,16 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { I18nextProvider } from 'react-i18next';
 import type { Quest, Session } from '../api';
+import i18n from '../i18n';
 import { buildChain } from '../map/chain';
+import { InTheme } from '../plugins/storyIcons';
 import { AttendedSession } from './AttendedSession';
+import { answer, SESSION_CHAIN } from './traceFixtures';
+
+/** A reader of 中文, whatever the window's language, sharing the catalogues. */
+const zh = i18n.cloneInstance({ lng: 'zh' });
+const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
+const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // The assembled region: the record and the observed layer over it. The stream is deliberately not
 // part of this — it has one home, the frame's output panel (D55) — and neither is the composer,
@@ -91,3 +100,27 @@ export const Finished: Story = {
     quest: { ...QUEST, status: 'Done', updated: at(51) },
   },
 };
+
+// ——— How it came to be (TRACE1b, D143): folded at the foot of its record, then open on its chain.
+
+const nothing = () => {};
+
+/** How it came to be, folded: a line above the conversation, nothing read until it opens. */
+export const HowItCameToBeFolded: Story = { args: { trace: { open: false, onToggle: nothing } } };
+
+/** How it came to be, open: its ask and the person's words, its quest, and this session whole. */
+export const HowItCameToBeOpen: Story = {
+  args: {
+    session: { ...SESSION, id: 's2', state: 'completed' },
+    trace: { open: true, onToggle: nothing, answer: answer(SESSION_CHAIN), onSession: nothing, onQuest: nothing },
+  },
+};
+
+/** Open, in 中文. */
+export const HowItCameToBeChinese: Story = { ...HowItCameToBeOpen, decorators: [chinese] };
+
+/** Open, in dark. */
+export const HowItCameToBeDark: Story = { ...HowItCameToBeOpen, decorators: [dark] };
+
+/** Open, in 中文 and dark. */
+export const HowItCameToBeChineseDark: Story = { ...HowItCameToBeOpen, decorators: [chinese, dark] };

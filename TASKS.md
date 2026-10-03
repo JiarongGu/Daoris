@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1143 CLI tests, 1124 service and 67 HTTP host, 4235 driver,
-684 desktop modules, 80 devkit, 3661 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1152 CLI tests, 1124 service and 67 HTTP host, 4438 driver,
+703 desktop modules, 80 devkit, 3763 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -206,20 +206,19 @@ record: 18 of its sections exist, 38 partly, 15 are new, 2 conflict (routing by 
 execution with D46). The review is `docs/2026-10-03-future-directions-review.md`; ROADMAP's horizon section points
 to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
 
-- [ ] **TRACE1b — what the trace cannot reach yet** (driver, service, modules, web-shell; found by TRACE1). A screen
-  door: a trace section on a session's and a quest's page through a modules route calling the driver's `Trace`, both
-  languages. And the links it could not read: the rules handed kept past a run's end; a local door to one quest's
-  operations; a merge landing naming its merge commit; a carry-on's link kept on the record. Contract: D143 and its
-  TRACE1 note. Proof: route, driver and service tests; vitest and stories; the look.
-- [ ] **GIT1a — the branch list, read** (driver). One `for-each-ref` per repository naming each ref's commit, its tree
-  (`worktreepath`) and its distance from the line (`ahead-behind`); kinds from `daoris/`, `landings.json` and the
-  line; the last fetch from `FETCH_HEAD`; a fallback for a git without the atom. Contract: the built-in git design
-  §2.2, §4.1, D147. Proof: parser tests; `GitBranchesTests` over fixtures (the parent's).
+- [ ] **TRACE1c — the links the trace still cannot read** (driver, service, web-shell; found by TRACE1b). The rules
+  handed kept past a run's end; a local door to one quest's operations; a merge landing naming its merge commit; a
+  carry-on's link kept on the record. And two doors TRACE1b left: the section in a detached session window, and the
+  commit kind from the page (the route accepts it; nothing sends it). Contract: D143 and its TRACE1b note. Proof:
+  `TraceChainTests`, route and service tests, vitest and stories, the look.
+- [ ] **STORY2 — a 中文 story leaves the next story load in 中文** (web-shell; found by TRACE1b). A module-scope
+  `i18n.cloneInstance({ lng: 'zh' })` in the 中文 stories writes `zh` under `daoris.language` in localStorage, so the
+  next page load in the same browser profile shows the English stories in 中文 (HandedAccount, Note and the trace
+  among them). A clone for a story keeps its language off the store. Proof: a vitest that a 中文 story's module leaves
+  `daoris.language` as it found it; the story shots in both languages from one profile.
 - [ ] **GIT1b — the reads behind a page** (driver; after GIT1a and REVIEW3). A graph page, a commit through REVIEW3's
   one-call reader, a file's history, a blame and a compare, each one call in a machine format; a memory cache keyed by
   commit ids, never a ref. Contract: design §2.3–§2.6, §4. Proof: parser and cache tests; fixtures (the parent's).
-- [ ] **GIT1c — the terminal's read door** (driver; after GIT1a). `daoris-driver git branches [--repository] [--all]`,
-  and the git command each read shows. Contract: design §3.3. Proof: `DriverCommandTests`, `HelpCoverageTests`.
 - [ ] **GIT1d — the routes** (modules, web-shell; after GIT1b). `GIT_BRANCHES`, `GIT_LOG`, `GIT_COMMIT`, `GIT_HISTORY`,
   `GIT_BLAME`, `GIT_COMPARE`, on the shell's bridge only; each refusal a code in both catalogues. Contract: design §4,
   §6. Proof: `DriverModuleGitTests`, catalogue parity.
@@ -246,20 +245,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
 - [ ] **GIT1k — Ask Daoris's `git` kind** (service, driver, web-shell; after GIT1h). Fetch, branch, push and delete as
   proposals the person confirms. Contract: design §3.3, D110. Proof: the kinds tables on both sides; coverage with no
   owed row.
-- [ ] **STUB3 — the setup kit's `speak()` waits with a bound** (cli; found by GIT1's run). `setup-kit.test.ts`'s ANSWER1b
-  row hung ten minutes when the stub exited without answering under load, since `speak()` awaits its answers with no
-  timeout; it passed alone. Bound the wait and say which answer never came. Contract: FLAKE1. Proof: a row whose stub
-  exits early fails in seconds, naming the missing answer.
-- [ ] **LAND2a — a branch rule may accept automatically** (driver, cli, web-settings). `autoAccept` on a branch rule,
-  per workspace or a repository's own rule; the CLI's `--auto-accept` and Settings' *Accept automatically* (自动采纳)
-  each say the push sentence; a merge is refused and no plugin is warned; the instruction, the glossary, and Ask
-  Daoris's landing kind (`--auto-accept`, `--plugin`). Contract: the landing and proof design §1, §6, D145. Proof:
-  `LandingTests`, driverconfig tests, vitest, both catalogues, `HelpCoverageTests`, the goldens.
-- [ ] **LAND2b — done work lands itself** (driver, modules; after LAND2a). A session ending on a done, released quest
-  under the switch is due, and the look lands it as a press would; a plugin that cannot land leaves the branch, and a
-  refusal is retried only on a change; the record keeps `acceptedBy`, each try and its code. Contract: design §2,
-  §4–§5, §8. Proof: `AutoLandingTests` over git fixtures and a fake plugin, `LandedRecordTests`, `TraceTests`,
-  vitest, the family rehearsal.
 - [ ] **LAND2c — one branch and one pull request for one piece of work** (driver, cli, examples; after LAND2b; owner,
   2026-10-04: *"the PR should be generated one for all those related Daoris work, currently by approve one by one this
   creates multiple PR branch for the same work"*). The design lands a chain (a quest and its steps) on one branch; the
@@ -269,14 +254,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   `pullRequest` and `acceptedBy`, and a plugin pushes without opening a second pull request. Contract: design §3, §7,
   D145 (amended by the owner's words). Proof: advance and refusal cases in `LandingTests`, a lineage case across two
   asks, `landing-plugins.test.ts`.
-- [ ] **LAND3 — a landing tidies every session branch its work holds** (driver; owner, 2026-10-04: *"and also it didn't
-  remove the Daoris work branch after"*). The tidy removes the pressed session's tree and branch only: AR-2203's first
-  session (`daoris/s-795e8ad4`), whose commit rode into the sessions accepted after it, and a failed attempt
-  (`daoris/s-d8e2df01`) stayed in the repository, and `session-branches.json` still lists branches already gone. A
-  landing's tidy removes each session branch whose commits the landed branch contains, a failed or superseded
-  session's branch is offered for removal on its page and at the terminal, and the record drops what is gone.
-  Contract: D102, the rule's `tidy`. Proof: driver tests over git fixtures (a chain whose earlier session's branch is
-  contained; a failed one kept until removed); the install's report-ui read again.
 - [ ] **SETUP2 — a set-up runs the repository's own checks and moves what reads the moved files** (driver, canon; owner,
   2026-10-04: *"also found a bug for CI pipeline after the merge of knowledge update … so this is also a good check
   when building Daoris"*). The work repository's set-up moved its agent documents to `.agents/` and its pipeline's
@@ -286,16 +263,24 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   result in its closing note; the adoption playbook the press hands says so. Contract: D124 §2 (the press), LAYOUT7,
   D144's gate evidence (later). Proof: a press test that the playbook names the step; the family rehearsal's set-up
   phase with a stub repository whose script reads a moved path.
-- [ ] **PLUGHOOK1 — plugins hook into more of the work's life** (design first; owner, 2026-10-04: *"this is more like an
-  Azure DevOps related logic so we need to do this as a plugin change, and also this is a good chance to design plugin
-  hooks into other processes"*). Found on the owner's report-ui: a pull request completed by squash leaves the session
-  branches it carried looking unmerged to git (`merge-base --is-ancestor` fails), so LAND3's tidy cannot see them as
-  landed; only the platform knows the pull request completed and with which commit. Design the hook points beyond
-  `work/land` — first, a point where Daoris asks the landing plugin whether a landed branch's work has merged on the
-  platform (completed, abandoned, its merge commit and how), so the tidy and D102's clean-up act on it; then the others
-  worth having (a pull request's review comments back to its session, a pipeline's verdict as evidence, the
-  platform's work items as asks) and their frames, results, permissions and bounds. Contract: D64 §4, D100, D102,
-  D145. Proof: the design and its decision.
+- [ ] **PLUGHOOK1a — a squash-merged pull request's branches go on its plugin's word** (driver, examples; after LAND3
+  reaches main). After a squash git sees no ancestor, so the branches stay. The query point `work/state`,
+  `pullRequestState` on the landing entry, the Azure DevOps plugin's answer, and LAND3's tidy and the clean-up asking
+  it. Contract: plugin hooks design §2.1–§2.6, §4, D148. Proof: `HookTests`, the kit's table, `LandedRecordTests`, git
+  fixtures per §2.3 code, a fake `az`.
+- [ ] **PLUGHOOK1b — the GitHub plugin answers `work/state`** (examples; after PLUGHOOK1a). The same query through
+  `gh pr view` and `gh pr list --head`, so a GitHub repository's squash-merged branches go too. Contract: design §2.7,
+  D148 point 7. Proof: `landing-plugins.test.ts` with a fake `gh`.
+- [ ] **PLUGHOOK1c — the terminal reads and asks it** (driver; after PLUGHOOK1a). `trees state`, the state on
+  `trees land --plan`, the clean-up's codes and `git branches` (GIT1a's list reads `pullRequestState`), and bringing up
+  to date asking after its fetch, where a merge commit first arrives. Contract: design §2.1, §2.5. Proof:
+  `DriverCommandTests`, `HelpCoverageTests`, `GitBranchesReadTests`, the sync's git fixtures.
+- [ ] **PLUGHOOK1d — the page reads and asks it** (modules, web-shell, web-settings; after PLUGHOOK1c). The review's
+  note with *Ask again*, and the codes on the Session branches and sync rows, in both catalogues. Contract: design
+  §2.4–§2.5. Proof: module route tests, vitest and stories, catalogue parity, `names-check`, the look in both themes.
+- [ ] **PLUGHOOK2 — a pull request's review threads back to its session** (held; driver, examples, web-shell; after
+  LAND2c). Read at a press through `work/review`, and sent only as the person's words or a new ask. Trigger: the
+  first change request carried over by hand. Contract: plugin hooks design §3.1.
 - [ ] **LAND2d — the page says who accepted a landing, and the rehearsal lands one itself** (web-shell, tools; found by
   LAND2b). The review's note words `acceptedBy` (*accepted automatically when its quest was done*, with its pull
   request), and the conversation words a note event's `parts`; the family rehearsal sets a workspace rule
@@ -375,21 +360,17 @@ owner on 1 October.
 - [ ] **MSG1d2 — a chat's waiting words are record events** (driver, web-shell; with MSG1c). A queued chat word is
   written with an id and its reach, taken under that id, and a withdrawn word says so, so a restart loses nothing.
   Contract: §3.1, D137's MSG1d note. Proof: `ChatTurns` tests, `conversation.test.ts`.
-- [ ] **MSG1f2 — what the box needs from the modules** (modules, driver; found by MSG1f). A `SESSION_START_FROM` route
-  that starts a conversation with a record's words and takes them off it naming the new session (the page joins
-  `START_CHAT` and `SESSION_INPUT` with an English preface today); `SESSION_QUEUED` carrying `reaches` and `why`, so
-  the page need not ask again on each move; and `SessionGroups.Read` answering *going on* for an ended record and
-  *Resumes later* with what holds the words. Contract: §3.1, §5.3, D137's MSG1f note. Proof: modules and driver
-  tests; the page's fallbacks retired.
-- [ ] **MSG1g2 — the page's *Go on in a new session*** (web-shell; after MSG1g). Under words a cooling account holds,
-  the held line with a press that calls `SESSION_GO_ON_NEW`, a sentence for each refusal code in both catalogues, and
-  *Start a conversation with these words* where the answer is `conversation` or `closed`. Contract: the
-  session-messages design §2.2, §5.1, D137's MSG1g note. Proof: vitest over a mocked bridge, both catalogues, the look.
 - [ ] **MSG1g3 — the cooling held note has a code, and the new-session codes a twin** (driver, web-shell; found by
   MSG1g2). The driver's "— it does not go on yet: …" line beside held words carries no code, so the page shows it in
   English next to its own sentence; give it one, as MSG1c3 did for `lost`, and hold `newSessionSaid`'s codes to
   `GoOnNew.cs` and `WordsNever` with a parsed-declarations test like `note.test.ts`. Contract: D137's MSG1g and MSG1g2
   notes, D142 point 1. Proof: the `NoteCodes`/`CONVERSATION_CODES` twin rows; the new twin test.
+- [ ] **MSG1f3 — the start-from's terminal door, and what the listing cannot see** (driver; found by MSG1f2). D50 wants
+  the page's *Start a conversation with these words* at a terminal: `daoris-driver sessions start-from <id>` through
+  `StartFrom`, handing the words on and taking them off the record. And two readings MSG1f2 left: a chat with waiting
+  words is grouped as it ended (the planner does not consider chats), and the terminal listing's fresh plan cannot see
+  a cool-off, so a cooling record reads *going on* there. Contract: D137's MSG1f2 note, the working-surface components
+  §5.2–§5.3. Proof: `SessionsCommandTests`, `HelpCoverageTests`, the listing's cases.
 - [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn, which needs Codex installed).
   The next-step door for `codex-acp` over `_session/steering`, steering only while a turn is live and waiting for a
   turn it started. Contract: §1.3, §2.1. Proof: STEER3's measurement, then `AcpSteerTests` rows.

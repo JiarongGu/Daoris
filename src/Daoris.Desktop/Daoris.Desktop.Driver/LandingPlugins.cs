@@ -33,9 +33,12 @@ public sealed class LandingPlugins(
     // The process's machine log (PLUGUI1d). Null writes none.
     MachineLog? log = null,
     // The loop's own record of each plugin's health (D119 §2), in the process that runs the loop. Null keeps none.
-    PluginHealth? health = null)
+    PluginHealth? health = null,
+    // The loop's own writer of the plugin lines, where the loop lands work itself (LAND2b): its hook set's, so a landing at
+    // done is logged and recorded where its hooks are. It outranks the two above.
+    PluginLog? pluginLog = null)
 {
-    private readonly PluginLog _log = new(log, health);
+    private readonly PluginLog _log = pluginLog ?? new(log, health);
 
     /// <summary>
     /// How long a plugin has to push and open the pull request. Longer than a decision's ten seconds: a

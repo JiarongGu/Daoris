@@ -103,7 +103,8 @@ public sealed class SessionWords : IDisposable
     private static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>
-    /// A record moved through this machine's client (<see cref="ServiceClient.Moved"/>): words held for it are tried now.
+    /// A record moved through this machine's client (<see cref="ServiceClient.Moved"/>): words held for it are tried now, and
+    /// what a word said to it now would do is told again (MSG1f2), since a move is what changes it.
     /// </summary>
     public void OnMoved(SessionMoved moved)
     {
@@ -118,6 +119,113 @@ public sealed class SessionWords : IDisposable
         }
 
         told?.TrySetResult();
+        Tell(moved.Session);
+    }
+
+    /// <summary>
+    /// A record opened through this machine's client (<see cref="ServiceClient.Opened"/>): a driven session's quest went on in
+    /// it, so its earlier sessions here take no words now (<c>superseded</c>), and theirs is told again (MSG1f2), since
+    /// nothing moved their records.
+    /// </summary>
+    public void OnOpened(SessionOpened opened)
+    {
+        if (opened.Kind != SessionOpened.Driven || _loop.Service is not { } service) return;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var records = SessionRecords.Parse(await service.SessionRecordsJsonAsync(_stopping.Token).ConfigureAwait(false));
+                var quest = records.FirstOrDefault(each => string.Equals(each.Id, opened.Session, StringComparison.Ordinal))?.Quest;
+                if (quest is null) return;
+                foreach (var earlier in records.Where(each =>
+                             !each.Teammate && !string.Equals(each.Id, opened.Session, StringComparison.Ordinal)
+                             && string.Equals(each.Quest, quest, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Tell(earlier.Id);
+                }
+            }
+            catch (Exception error) when (Unanswered(error) || error is ObjectDisposedException)
+            {
+                // Nothing told is nothing claimed: the page keeps what it was told, and a word said refuses as before. The
+                // loop closing under it disposes the client, which says nothing either.
+            }
+        });
+    }
+
+    /// <summary>
+    /// What a word said now to a session would do, told again (MSG1f2, D137 §5.3): the shell writes it on
+    /// <c>SESSION_QUEUED</c>, so the page follows the box it offers without asking again on each move.
+    /// </summary>
+    public event Action<string, WordsAnswer>? Reached;
+
+    // The sessions whose reach is being read to be told, each with whether it was asked again meanwhile: one read at a time
+    // per session, so what is told last is what was read last, and a burst of moves costs one more read, not one each.
+    private readonly Dictionary<string, bool> _telling = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Read this session's reach and tell it (<see cref="Reached"/>), in the background. Asked again while a read is on its
+    /// way, it reads once more after; a service that does not answer tells nothing, since nothing known is no claim.
+    /// </summary>
+    public void Tell(string id)
+    {
+        lock (_gate)
+        {
+            if (_telling.ContainsKey(id))
+            {
+                _telling[id] = true;
+                return;
+            }
+
+            _telling[id] = false;
+        }
+
+        _ = Task.Run(() => TellingAsync(id));
+    }
+
+    private async Task TellingAsync(string id)
+    {
+        while (true)
+        {
+            try
+            {
+                var reach = await ReachAsync(id, _stopping.Token).ConfigureAwait(false);
+                if (reach is not { Sent: false, Why: null }) Reached?.Invoke(id, reach);
+            }
+            catch (Exception error) when (Unanswered(error) || error is ObjectDisposedException)
+            {
+                // The loop is closing, or its service went away: the next move tells it again.
+            }
+
+            lock (_gate)
+            {
+                if (_stopping.IsCancellationRequested || !_telling[id])
+                {
+                    _telling.Remove(id);
+                    return;
+                }
+
+                _telling[id] = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// What a word said now to a session that runs here would do, known without reading its record (MSG1f2): an open door's
+    /// reach (D136), or a conversation's turns (MSG1c). Null where only the record can say: nothing here runs it, or its door
+    /// has closed and it winds up.
+    /// </summary>
+    public WordsAnswer? ReachHere(string id)
+    {
+        if (_loop.Processes.InboxOf(id) is { State.Taking: true } inbox) return new(true, Spelled(inbox.Reach), null);
+
+        if (_loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && _loop.Processes.RefusesInput(id) is null)
+        {
+            // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
+            // next step (MSG1c), waits for the turn to end elsewhere, or starts one now (CONV4a).
+            return new(true, _loop.Chat?.Reach(id), null);
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -127,15 +235,8 @@ public sealed class SessionWords : IDisposable
     /// </summary>
     public async Task<WordsAnswer> ReachAsync(string id, CancellationToken ct)
     {
-        if (_loop.Processes.InboxOf(id) is { } inbox) return new(true, Spelled(inbox.Reach), null);
+        if (ReachHere(id) is { } here) return here;
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
-
-        if (_loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && _loop.Processes.RefusesInput(id) is null)
-        {
-            // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
-            // next step (MSG1c), waits for the turn to end elsewhere, or starts one now (CONV4a).
-            return new(true, _loop.Chat?.Reach(id), null);
-        }
 
         try
         {

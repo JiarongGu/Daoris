@@ -69,6 +69,15 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Tell the watchers an account's line (<see cref="AccountLined"/>).</summary>
     public void AccountSaid(AccountLine line) => Raise(AccountLined, line);
 
+    /// <summary>
+    /// A landing at done's line (LAND2b, design §8): <c>landing.auto</c>, one per try. The look lands through this client's
+    /// reads, so a watcher here logs each try as it logs the opens and moves, without the lander knowing the log.
+    /// </summary>
+    public event Action<LandingLine>? LandingLined;
+
+    /// <summary>Tell the watchers a landing's line (<see cref="LandingLined"/>).</summary>
+    public void LandingSaid(LandingLine line) => Raise(LandingLined, line);
+
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 

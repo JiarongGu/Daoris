@@ -267,6 +267,8 @@ public sealed partial class DriverModule
         var config = DriverConfig.Load(_loop.ConfigPath);
         var look = await SessionGroups.LookAsync(service, config, Door(config), _loop.Look.Latest, _loop.Home, only, cancellationToken)
             .ConfigureAwait(false);
+        // The cool-offs the loop's last look held starts on (MSG1f2): what a record whose words one holds says, its reset.
+        look = look with { Waits = _loop.Look.Waits };
         return (look, SessionGroups.Read(look, only));
     }
 
@@ -352,6 +354,8 @@ public sealed partial class DriverModule
         row.HoldsQuest,
         // PAUSE1b (D132 §6.1): whose pause holds its quest, which its line says and whose *Resume* stands in *Try again*'s place.
         PausedBy = row.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
+        // MSG1f2 (D137 §3.2): what holds the person's words on a record that resumes later, which its line says.
+        Holds = row.Holds is { } holds ? new { holds.Why, holds.Reason, holds.Repository, holds.Until } : null,
         // SESSUX1f (D126 §5.4): *Delete…* is offered only where it would be taken.
         row.Deletable,
     };

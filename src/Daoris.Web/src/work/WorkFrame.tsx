@@ -9,10 +9,12 @@ import {
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
-  useParkGoAhead,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace,
 } from '../shell';
 import { doorOf } from '../tools';
-import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, takesWords, tooLong } from './say';
+import {
+  boxOf, coolingFor, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
+} from './say';
 import { SessionBox } from './SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing';
 import { goAheadsAsked, goAheadToast } from './parkGoAheads';
@@ -188,6 +190,8 @@ export function WorkFrame({
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
   // palette, a quest's record) must not show one session's "went nowhere" on another's composer (REV3).
   const [refusal, setRefusal] = useState<{ session: string; text: string } | null>(null);
+  // What *Go on in a new session* came to (MSG1g2), the session's own, as a refusal is: said under its words alone.
+  const [newSession, setNewSession] = useState<{ session: string; answer: NewSessionAnswer } | null>(null);
   // Why the last start was refused, said in the start form until it closes or starts again (UX5 U68).
   const [startRefusal, setStartRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -265,6 +269,8 @@ export function WorkFrame({
   const quests = useQuests(null, true);
   const registry = useRegistry();
   const harnesses = useHarnesses();
+  // Each account's cool-off (TOOL4g), which says when words a cooling account holds go on (MSG1g2).
+  const accounts = useAccounts();
 
   const startChat = useStartChat();
   const resolve = useResolveSession();
@@ -388,6 +394,10 @@ export function WorkFrame({
     onSelect(id);
     setRefusal(null);
   };
+  // How the attended session came to be (TRACE1b): read only while its section is open, for the session it was opened
+  // on, since the read takes every session record and quest. Attending another opens it folded.
+  const [tracing, setTracing] = useState<string | null>(null);
+  const trace = useTrace('session', tracing);
   // A stop's ask is a question asked now, of the session it was asked of (D126 §3.3): attending another by any door
   // puts it down, so coming back later does not find it still open.
   useEffect(() => {
@@ -497,12 +507,18 @@ export function WorkFrame({
     });
   };
   // *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the repository, its first message the words
-  // this session could not go on with, attended once it opens. The driver's sentence when none could start is said whole.
+  // this session could not go on with, attended once it opens. One act of the driver's (MSG1f2), which reads the words off
+  // the record and takes them off it, so the words the page shows are not sent. A refusal is said by its code; the driver's
+  // sentence when none could start is said whole.
   const startFrom = useStartFrom();
-  const onStartFrom = (words: string[]) => {
+  const onStartFrom = () => {
     if (!attended || startFrom.isPending) return;
-    startFrom.mutate({ session: attended.id, repository: attended.repository, words }, {
+    startFrom.mutate({ session: attended.id }, {
       onSuccess: (started) => {
+        if (started.why) {
+          notify(startFromRefusal(t, started.why, { quest: attended.quest }), 'error');
+          return;
+        }
         if (!started.sessionId) {
           notify(started.message, 'error');
           return;
@@ -510,6 +526,17 @@ export function WorkFrame({
         attend(started.sessionId);
         if (!started.sent) notify(t('work.say.notTaken'), 'error');
       },
+      onError: failure(notify),
+    });
+  };
+  // *Go on in a new session* (MSG1g2, D137 §2.2): words a cooling account holds go on in a new session at the driver's next
+  // look. The driver judges and keeps the choice; what it came to is said under the words, in the page's words.
+  const goOnNew = useGoOnNew();
+  const onGoOnNew = () => {
+    if (!attended || goOnNew.isPending) return;
+    const session = attended.id;
+    goOnNew.mutate(session, {
+      onSuccess: (answer) => setNewSession({ session, answer }),
       onError: failure(notify),
     });
   };
@@ -836,6 +863,11 @@ export function WorkFrame({
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
+  // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
+  // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
+  const between = attended && here && attended.kind !== 'chat'
+    && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
+  const coolsUntil = between ? coolingFor(attended, roster, accounts.data, new Date()) : null;
 
   // What only this frame can do with a session (SESSUX1d, D126 §3.1), handed to the one owner of the acts at both doors,
   // the page header and the rows: each attends the session first, as a press on its row would.
@@ -1097,6 +1129,16 @@ export function WorkFrame({
             // Its review, wherever the review stands (SESS2 H4): the head's move beside unlanded work.
             onReview={() => openView('review')}
             branch={branch}
+            trace={attended && trace.available ? {
+              open: tracing === attended.id,
+              onToggle: () => setTracing(tracing === attended.id ? null : attended.id),
+              answer: tracing === attended.id ? trace.query.data : undefined,
+              reading: tracing === attended.id && trace.query.isPending,
+              refusal: tracing === attended.id && trace.query.error ? sentence(trace.query.error) : null,
+              onSession: attend,
+              onQuest: onOpenQuest,
+              onAsk: onAnswerAsk,
+            } : undefined}
           />
           {/* The conversation (D76): below the record, in the same scroll, so the head is read once
               and the words are what the region follows. Only where the session ran: a teammate's
@@ -1120,6 +1162,14 @@ export function WorkFrame({
                   // that starts a conversation with them, where a chat can start here (MSG1f, D137 §3.1, §2.2).
                   onSession={(id) => attend(id)}
                   onStartFrom={rootOf(attended.repository) ? onStartFrom : undefined}
+                  // Words its cooling account holds, and *Go on in a new session* with what it came to (MSG1g2, D137 §2.2).
+                  cooling={coolsUntil ? {
+                    until: coolsUntil,
+                    quest: attended.quest,
+                    onGoOnNew,
+                    pending: goOnNew.isPending,
+                    answer: newSession?.session === attended.id ? newSession.answer : null,
+                  } : undefined}
                   reasons={{
                     from: attended.adapter,
                     to: harnesses.data?.adapter,

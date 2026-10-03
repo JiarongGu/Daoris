@@ -77,6 +77,24 @@ public sealed partial class DriverModule
         return new { said.Sent, said.Reaches, said.Why };
     }
 
+    // *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): words a session cannot go on with, and that nothing
+    // carries on by itself, start a conversation in its repository on the machine's adapter, handed with a preface naming the
+    // session, and leave its record naming that conversation, as one act of the chat runner's. `{ sessionId, sent, why,
+    // message }`: what never goes on, a session still running, no words waiting and a quest that carries them on by itself are
+    // refused by their codes before anything starts. Its end reaches the page as a start's does.
+    [DriverRoute("SESSION_START_FROM")]
+    private async Task<object?> SessionStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var chat = _loop.Chat ?? throw NotReady();
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var started = await chat.StartFromAsync(
+                id, config.Adapter, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+            .ConfigureAwait(false);
+        _loop.Nudge();
+        return new { started.SessionId, started.Sent, started.Why, started.Message };
+    }
+
     // A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press where the ask's
     // page and the box took two. The go-ahead first, on its ask, so the conversation the answer resumes is handed it as the
     // driver takes the park up (KNOWUSE1a's resumed prompt); then the park, with the person's words through the box's own
@@ -173,22 +191,45 @@ public sealed partial class DriverModule
     private async Task<object?> SessionQueueAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        // `Listening` says a running driven session's inbox is open (SESS3), on the protocol door or, where its run can go
-        // on in its own conversation, the native door (MSG1b). Whether the page offers a box is `reaches` and `why`'s: what
-        // a word said now would do (MSG1d, D137 §5.3), and why nothing takes one, which is when it draws the line instead.
-        var inbox = _loop.Processes.InboxOf(id);
-        var queue = inbox?.State ?? _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
         var reach = await _loop.Words.ReachAsync(id, cancellationToken).ConfigureAwait(false);
+        return QueueAnswer(_loop, id, reach);
+    }
+
+    /// <summary>
+    /// Where a session's turns stand and what a word said now would do, whole (CONV4a, MSG1d, MSG1f2): the queue's answer, and
+    /// <c>SESSION_QUEUED</c> where a record's move or a later session of its quest told it again, in one shape.
+    /// </summary>
+    /// <remarks>
+    /// <c>Listening</c> says a running driven session's door is open (SESS3), on the protocol door or, where its run can go on
+    /// in its own conversation, the native door (MSG1b); a door that closed listens no longer, though the registry holds it a
+    /// moment longer. Whether the page offers a box is <c>reaches</c> and <c>why</c>'s: what a word said now would do (D137
+    /// §5.3), and why nothing takes one, which is when it draws the line instead. <c>reach</c> says the same as an object
+    /// (<see cref="ReachOf"/>), which tells a page this shell follows it live.
+    /// </remarks>
+    internal static object QueueAnswer(DriverLoop loop, string id, WordsAnswer reach)
+    {
+        var inbox = loop.Processes.InboxOf(id);
+        var queue = inbox?.State ?? loop.Chat?.Queue(id) ?? ChatQueue.Idle;
         return new
         {
             Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, queue.Opening,
-            Listening = inbox is not null,
+            Listening = inbox is { State.Taking: true },
             // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
             LastTurn = queue.LastTurnEnded,
             reach.Reaches,
             reach.Why,
+            Reach = ReachOf(reach),
         };
     }
+
+    /// <summary>
+    /// What a word said now would do, as <c>SESSION_QUEUED</c> carries it (MSG1f2): <c>{ reaches, why }</c>, an object even
+    /// where both are null (a word that would start a turn at once), because the bridge leaves a null out and an absent
+    /// field could not tell that from a shell older than the field. Null, and so absent, where nothing is known: nothing here
+    /// runs the session and its record has not answered.
+    /// </summary>
+    public static object? ReachOf(WordsAnswer? reach) =>
+        reach is null or { Sent: false, Why: null } ? null : new { reach.Reaches, reach.Why };
 
     /// <summary>
     /// A conversation's options as the page reads them (AGT6b), the answer and the live event alike: each

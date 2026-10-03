@@ -411,6 +411,10 @@ public sealed partial class Driver
             .ConfigureAwait(false);
         service.AccountSaid(Took(park, adapter.Name, why: null));
 
+        // LAND2b: as a first run's ending, so a resumed session that closes its quest done is due too. One that went on after
+        // its landing meets its own branch until LAND2c advances it.
+        ConcludedForLanding(sessionId, quest, status, conclusion.State, workTree, quest.Workspace);
+
         return (new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}) [resumed its conversation]: {conclusion.Note}",
             true,

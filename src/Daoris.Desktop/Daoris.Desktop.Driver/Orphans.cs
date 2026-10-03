@@ -1,7 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>One record ended because nothing on this machine was running it.</summary>
-public sealed record OrphanEnded(string Id, string Repository);
+public sealed record OrphanEnded(string Id, string Repository)
+{
+    /// <summary>The quest it served, or null: whether its done lands at the next look (LAND2b, design §2).</summary>
+    public string? Quest { get; init; }
+
+    /// <summary>The tree its record names, or null.</summary>
+    public string? Tree { get; init; }
+}
 
 /// <summary>
 /// Records that say a session runs when nothing on this machine runs it (2026-09-25): left by a crash,
@@ -52,7 +59,7 @@ public static class Orphans
             try
             {
                 await service.AdvanceAsync(session.Id, "stopped", Noted, ct: ct, interrupted: only is null).ConfigureAwait(false);
-                ended.Add(new OrphanEnded(session.Id, session.Repository));
+                ended.Add(new OrphanEnded(session.Id, session.Repository) { Quest = session.Quest, Tree = session.Tree });
             }
             catch (DriverException)
             {

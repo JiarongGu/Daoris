@@ -64,41 +64,18 @@ public static class TraceCommand
         }
     }
 
-    /// <summary>Read the stores, find what the id names, read the asks the chain names, and print the chain.</summary>
+    /// <summary>Read the chain (<see cref="Trace.ReadChainAsync"/>, the screen's read too) and print it in the driver's words.</summary>
     public static async Task<int> RunAsync(TraceAsk asked, TraceSources sources, TextWriter output, CancellationToken ct = default)
     {
-        var facts = await Trace.ReadAsync(sources, ct).ConfigureAwait(false);
-        var unread = TraceWords.Unread(facts);
-        var (found, problem) = Trace.Resolve(asked, facts);
-        if (found is null)
+        var read = await Trace.ReadChainAsync(asked, sources, ct).ConfigureAwait(false);
+        if (read.Chain is not { } chain)
         {
-            output.WriteLine($"trace: {problem}");
-            foreach (var line in unread) output.WriteLine($"  {line}");
-            return unread.Count > 0 ? 2 : 1;
+            output.WriteLine($"trace: {read.Problem}");
+            foreach (var line in TraceWords.Unread(read.Unread)) output.WriteLine($"  {line}");
+            return read.Unread.Count > 0 ? 2 : 1;
         }
 
-        var asks = new Dictionary<string, TraceAskRead>(StringComparer.OrdinalIgnoreCase);
-        foreach (var id in TraceWords.AsksNamed(found, facts))
-        {
-            asks[id] = await ReadAskAsync(sources.Service, id, ct).ConfigureAwait(false);
-        }
-
-        output.Write(TraceWords.Say(found, facts, asks, sources, unread));
+        output.Write(TraceWords.Say(chain));
         return 0;
-    }
-
-    /// <summary>One ask, whole, from its door (<c>GET /api/asks/{id}</c>): never a failure of the trace.</summary>
-    private static async Task<TraceAskRead> ReadAskAsync(ServiceClient service, string id, CancellationToken ct)
-    {
-        try
-        {
-            return new TraceAskRead(id, await service.FindAskAsync(id, ct).ConfigureAwait(false), null);
-        }
-        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
-                                          or InvalidOperationException
-                                          || (error is OperationCanceledException && !ct.IsCancellationRequested))
-        {
-            return new TraceAskRead(id, null, error.Message);
-        }
     }
 }

@@ -374,37 +374,10 @@ public sealed class DriverLoop(
         using var chat = new ChatRunner(
             service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser,
             plugins: new PluginLog(log, Health));
-        // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is
-        // waiting, which is in no record until it is sent. Each change is the whole state, so a missed one
-        // costs nothing.
-        chat.QueueChanged += (session, queue) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
-            {
-                Session = session,
-                // The words and the names of their files — never where the files are kept.
-                Queued = queue.Queued.Select(message => new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() }).ToArray(),
-                queue.Taking,
-                // Whether what waits, waits for the door to open rather than for a turn (HELP4).
-                queue.Opening,
-                // When its last turn ended here (RAIL2): the chat's last move, which its record never
-                // says. Machine-local, like everything this event carries.
-                LastTurn = queue.LastTurnEnded,
-            });
         // A conversation's model and effort each time they change (AGT6b, D98), in the shape `SESSION_OPTIONS`
         // answers with, so a page that asked once follows them. Machine-local, like the queue.
         chat.OptionsChanged += (session, options) =>
             _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", DriverModule.OptionsAnswer(session, options));
-        // What a person told a driven session, waiting for its turn to end (SESS3), told the same way —
-        // and `Listening` false once it stops taking any, so the page takes its box away.
-        Processes.HeldChanged += (session, queue) =>
-            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
-            {
-                Session = session,
-                Queued = queue.Queued.Select(message => new { message.Text, Files = Array.Empty<string>() }).ToArray(),
-                queue.Taking,
-                // An open inbox always has a turn in hand; a closed one tells Idle.
-                Listening = queue.Taking,
-            });
         await ComeUpAsync(service, chat).ConfigureAwait(false);
 
         // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
@@ -492,8 +465,9 @@ public sealed class DriverLoop(
                 // retry only of a quest the drawer would offer Retry on.
                 Parked.Record(report.Considerations);
 
-                // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts.
-                Look.Record(report.Considerations);
+                // And all of it, whole, for the session list's groups (SESSUX1a): parked and awaiting reply are its verdicts;
+                // with the cool-offs it held starts on, which a record whose words one holds names (MSG1f2).
+                Look.Record(report.Considerations, report.Waits);
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,
@@ -585,10 +559,54 @@ public sealed class DriverLoop(
     /// <param name="chat">The loop's conversations, built over <paramref name="service"/>; null keeps none.</param>
     public async Task ComeUpAsync(ServiceClient service, ChatRunner? chat = null)
     {
-        // Words held while a session winds up are tried the moment its record moves here (MSG1d).
+        // Words held while a session winds up are tried the moment its record moves here (MSG1d), and what a word said now
+        // would do is told again as a record moves or a later session of its quest opens (MSG1f2).
         service.Moved += Words.OnMoved;
+        service.Opened += Words.OnOpened;
+        Words.Reached += (session, reach) =>
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", DriverModule.QueueAnswer(this, session, reach));
+
+        // What a person told a driven session, waiting for its turn to end (SESS3), told as the queue is — and `Listening`
+        // false once it stops taking any, so the page takes its box away. An open door's reach rides it (MSG1f2); one that
+        // closed leaves the session winding up, which only its record answers for, so that is told once it has.
+        Processes.HeldChanged += (session, queue) =>
+        {
+            var reach = queue.Taking ? Words.ReachHere(session) : null;
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
+            {
+                Session = session,
+                Queued = queue.Queued.Select(message => new { message.Text, Files = Array.Empty<string>() }).ToArray(),
+                queue.Taking,
+                // An open inbox always has a turn in hand; a closed one tells Idle.
+                Listening = queue.Taking,
+                Reach = DriverModule.ReachOf(reach),
+            });
+            if (reach is null) Words.Tell(session);
+        };
+
         if (chat is not null)
         {
+            // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is waiting, which
+            // is in no record until it is sent. Each change is the whole state, so a missed one costs nothing. What a word said
+            // now would do rides it where the conversation runs here (MSG1f2); one that ended is told once its record answers.
+            chat.QueueChanged += (session, queue) =>
+            {
+                var reach = Words.ReachHere(session);
+                _ = eventBus.EmitAsync("DAORIS", "SESSION_QUEUED", new
+                {
+                    Session = session,
+                    // The words and the names of their files — never where the files are kept.
+                    Queued = queue.Queued.Select(message => new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() }).ToArray(),
+                    queue.Taking,
+                    // Whether what waits, waits for the door to open rather than for a turn (HELP4).
+                    queue.Opening,
+                    // When its last turn ended here (RAIL2): the chat's last move, which its record never
+                    // says. Machine-local, like everything this event carries.
+                    LastTurn = queue.LastTurnEnded,
+                    Reach = DriverModule.ReachOf(reach),
+                });
+                if (reach is null) Words.Tell(session);
+            };
             chat.TakenUpEnded += (session, state) => _ = Ended(eventBus, session, state);
             Chat = chat;
         }

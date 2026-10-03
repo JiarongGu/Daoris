@@ -10554,3 +10554,116 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > §2.2's account paragraph. Proof: plan tests, `AccountRotationTickTests` (the parent's).
 
 **Outcome** A resume asks for its record's own account: a cool-off holds the words, with *Go on in a new session* as the way out (`SESSION_GO_ON_NEW`, `daoris-driver sessions go-on-new`); an account that cannot run there carries the words on at once, the reason `account` with a coded line saying why; a chat's account is asked as its picker names one. Detail: D137's MSG1g note, `f26d28fa`..`90c28d0e`.
+
+
+## GIT1a — the branch list, read (2026-10-04)
+
+> - [ ] **GIT1a — the branch list, read** (driver). One `for-each-ref` per repository naming each ref's commit, its tree
+> (`worktreepath`) and its distance from the line (`ahead-behind`); kinds from `daoris/`, `landings.json` and the
+> line; the last fetch from `FETCH_HEAD`; a fallback for a git without the atom. Contract: the built-in git design
+> §2.2, §4.1, D147. Proof: parser tests; `GitBranchesTests` over fixtures (the parent's).
+
+**Outcome** `GitBranches` reads each repository's line and branches by kind (the line, Daoris's session branches, landed branches with their push and origin standing, the person's own, origin's) from one `for-each-ref` through the Tools' git, with fallbacks for git before 2.41 and 2.23 found by asking rather than by git's words. Detail: D147's "GIT1a and GIT1c, built" note, `9ccd0927`.
+
+
+## GIT1c — the terminal's read door (2026-10-04)
+
+> - [ ] **GIT1c — the terminal's read door** (driver; after GIT1a). `daoris-driver git branches [--repository] [--all]`,
+> and the git command each read shows. Contract: design §3.3. Proof: `DriverCommandTests`, `HelpCoverageTests`.
+
+**Outcome** `daoris-driver git branches [--repository <name>] [--all] [--json]` prints each repository's line and branches by kind with the git each read ran, exempt from Ask Daoris as a read. Detail: D147's "GIT1a and GIT1c, built" note, `1be74d80`.
+
+
+## MSG1g2 — the page's Go on in a new session (2026-10-04)
+
+> - [ ] **MSG1g2 — the page's *Go on in a new session*** (web-shell; after MSG1g). Under words a cooling account holds,
+> the held line with a press that calls `SESSION_GO_ON_NEW`, a sentence for each refusal code in both catalogues, and
+> *Start a conversation with these words* where the answer is `conversation` or `closed`. Contract: the
+> session-messages design §2.2, §5.1, D137's MSG1g note. Proof: vitest over a mocked bridge, both catalogues, the look.
+
+**Outcome** The page says words a cooling account holds wait for its reset and offers *Go on in a new session*, its answer worded by code in both languages, with *Start a conversation with these words* where nothing carries the words on. Detail: D137's MSG1g2 note, `d5028279`.
+
+
+## STUB3 — the setup kit's speak() waits with a bound (2026-10-04)
+
+> - [ ] **STUB3 — the setup kit's `speak()` waits with a bound** (cli; found by GIT1's run). `setup-kit.test.ts`'s ANSWER1b
+> row hung ten minutes when the stub exited without answering under load, since `speak()` awaits its answers with no
+> timeout; it passed alone. Bound the wait and say which answer never came. Contract: FLAKE1. Proof: a row whose stub
+> exits early fails in seconds, naming the missing answer.
+
+**Outcome** The setup kit's waits on the stub are bounded: a stub that exits or stays silent fails its row in seconds, naming the answers that never came, and is stopped. Detail: `3afffa64`.
+
+
+## LAND2a — a branch rule may accept automatically (2026-10-04)
+
+> - [ ] **LAND2a — a branch rule may accept automatically** (driver, cli, web-settings). `autoAccept` on a branch rule,
+> per workspace or a repository's own rule; the CLI's `--auto-accept` and Settings' *Accept automatically* (自动采纳)
+> each say the push sentence; a merge is refused and no plugin is warned; the instruction, the glossary, and Ask
+> Daoris's landing kind (`--auto-accept`, `--plugin`). Contract: the landing and proof design §1, §6, D145. Proof:
+> `LandingTests`, driverconfig tests, vitest, both catalogues, `HelpCoverageTests`, the goldens.
+
+**Outcome** `autoAccept` on a branch rule in both twins, set at three doors (`--auto-accept` and `--no-auto-accept` at the terminal, Settings' *Accept automatically*, Ask Daoris), each saying that the rule's plugin pushes and opens a pull request without asking, or warning that with no plugin nothing leaves the machine; a merge is refused. It acts once LAND2b lands. Detail: D145's LAND2a note, `871c3b8b`, `00645afb`.
+
+
+## LAND2b — done work lands itself (2026-10-04)
+
+> - [ ] **LAND2b — done work lands itself** (driver, modules; after LAND2a). A session ending on a done, released quest
+> under the switch is due, and the look lands it as a press would; a plugin that cannot land leaves the branch, and a
+> refusal is retried only on a change; the record keeps `acceptedBy`, each try and its code. Contract: design §2,
+> §4–§5, §8. Proof: `AutoLandingTests` over git fixtures and a fake plugin, `LandedRecordTests`, `TraceTests`,
+> vitest, the family rehearsal.
+
+**Outcome** A done session under `autoAccept` becomes due at its conclusion and lands at a look exactly as the review's Accept would (the branch, its record, the rule's plugin, LAND3's tidy); a plugin that cannot land leaves the branch made with the hand-off named; the landing keeps who accepted it (`person` or `auto`) and the rule, each try keeps its code, tip and status, and a refusal is retried only when the tree changed. Detail: D145's "LAND2b, built" note, `2f2ffbae`..`75c4f5a8`.
+
+
+## LAND3 — a landing tidies every session branch its work holds (2026-10-04)
+
+> - [ ] **LAND3 — a landing tidies every session branch its work holds** (driver; owner, 2026-10-04: *"and also it didn't
+> remove the Daoris work branch after"*). The tidy removes the pressed session's tree and branch only: AR-2203's first
+> session (`daoris/s-795e8ad4`), whose commit rode into the sessions accepted after it, and a failed attempt
+> (`daoris/s-d8e2df01`) stayed in the repository, and `session-branches.json` still lists branches already gone. A
+> landing's tidy removes each session branch whose commits the landed branch contains, a failed or superseded
+> session's branch is offered for removal on its page and at the terminal, and the record drops what is gone.
+> Contract: D102, the rule's `tidy`. Proof: driver tests over git fixtures (a chain whose earlier session's branch is
+> contained; a failed one kept until removed); the install's report-ui read again.
+
+**Outcome** A tidying landing removes every recorded session branch its landed work contains, keeping and naming one a running session holds, one with uncommitted work, or one checked out elsewhere; `session-branches.json` drops what is gone; `daoris-driver trees remove <session|branch> --force` is a failed attempt's door, offered by `trees clean`. Detail: D102's LAND3 note, `1e6897c9`.
+
+
+## MSG1f2 — what the box needs from the modules (2026-10-04)
+
+> - [ ] **MSG1f2 — what the box needs from the modules** (modules, driver; found by MSG1f). A `SESSION_START_FROM` route
+> that starts a conversation with a record's words and takes them off it naming the new session (the page joins
+> `START_CHAT` and `SESSION_INPUT` with an English preface today); `SESSION_QUEUED` carrying `reaches` and `why`, so
+> the page need not ask again on each move; and `SessionGroups.Read` answering *going on* for an ended record and
+> *Resumes later* with what holds the words. Contract: §3.1, §5.3, D137's MSG1f note. Proof: modules and driver
+> tests; the page's fallbacks retired.
+
+**Outcome** *Start a conversation with these words* is one act (`SESSION_START_FROM`: the chat started with the words and files, then the words taken off the old record naming it, the went line's reason `started`); `SESSION_QUEUED` carries what a word said now would do; the session list says *going on* for an ended record whose run is planned, and *Resumes later* with what holds its words (paused, held, the cap, a cooling account and its reset). Detail: D137's MSG1f2 note, `5dcd2744`..`d696c6ff`, merged with MSG1g2 in `c1f336c8`.
+
+
+## TRACE1b — what the trace cannot reach yet (2026-10-04)
+
+> - [ ] **TRACE1b — what the trace cannot reach yet** (driver, service, modules, web-shell; found by TRACE1). A screen
+> door: a trace section on a session's and a quest's page through a modules route calling the driver's `Trace`, both
+> languages. And the links it could not read: the rules handed kept past a run's end; a local door to one quest's
+> operations; a merge landing naming its merge commit; a carry-on's link kept on the record. Contract: D143 and its
+> TRACE1 note. Proof: route, driver and service tests; vitest and stories; the look.
+
+**Outcome** 2026-10-04: the screen door built. *How this came to be* on a session's page and a quest's, folded until opened, through the `TRACE` route over the driver's one chain reading (`Trace.ReadChainAsync`, each link naming its store and each gap a code); the terminal's output is byte-identical over 27 captured traces; no machine path reaches the page. The four links it could not read stay open as TRACE1c, with the detached window and a commit door. Detail: D143's note "TRACE1b's screen door, built", commits `375787d7`..`0a346b3e`.
+
+
+## PLUGHOOK1 — plugins hook into more of the work's life (2026-10-04)
+
+> - [ ] **PLUGHOOK1 — plugins hook into more of the work's life** (design first; owner, 2026-10-04: *"this is more like an
+> Azure DevOps related logic so we need to do this as a plugin change, and also this is a good chance to design plugin
+> hooks into other processes"*). Found on the owner's report repository: a pull request completed by squash leaves the session
+> branches it carried looking unmerged to git (`merge-base --is-ancestor` fails), so LAND3's tidy cannot see them as
+> landed; only the platform knows the pull request completed and with which commit. Design the hook points beyond
+> `work/land` — first, a point where Daoris asks the landing plugin whether a landed branch's work has merged on the
+> platform (completed, abandoned, its merge commit and how), so the tidy and D102's clean-up act on it; then the others
+> worth having (a pull request's review comments back to its session, a pipeline's verdict as evidence, the
+> platform's work items as asks) and their frames, results, permissions and bounds. Contract: D64 §4, D100, D102,
+> D145. Proof: the design and its decision.
+
+**Outcome** 2026-10-04: designed. A query point, `work/state`, asks a landed branch's plugin for its pull request's state, so a squash-merged pull request's branches go where git confirms its merge commit on the line; asked only where Daoris's own proofs cannot tell and the answer could remove something, never at a removing press, a read or a timer, bounded at 30 s a frame. Other processes were weighed (review threads, a pipeline's verdict, work items, capabilities, a quest's close), and none gains a point now. D148 lifts D102's rejection of asking the platform for plugins only. Detail in D148 and `docs/2026-10-04-plugin-hooks-design.md`; rows PLUGHOOK1a–d, with PLUGHOOK2 held (`08681e59`).

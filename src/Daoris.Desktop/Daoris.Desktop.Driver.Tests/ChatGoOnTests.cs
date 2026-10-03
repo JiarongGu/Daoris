@@ -415,8 +415,27 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>Each take of words: the session and the ids joined.</summary>
     public List<(string Session, string Ids)> Taken { get; } = [];
 
+    /// <summary>Each take of words with the session it named as taking them (MSG1f2's start-from), or null for its own.</summary>
+    public List<(string Session, string Ids, string? By)> TakenBy { get; } = [];
+
+    private readonly List<JsonObject> _quests = [];
+
     /// <summary>A client over this ledger.</summary>
     public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
+
+    /// <summary>A quest the ledger lists, closed ones included, as the quests door answers it.</summary>
+    public ChatLedger Quest(string id, string status)
+    {
+        lock (_gate)
+        {
+            _quests.Add(new JsonObject
+            {
+                ["id"] = id, ["from"] = "game", ["to"] = "engine", ["title"] = $"The work of #{id}", ["body"] = "A body.", ["status"] = status,
+            });
+        }
+
+        return this;
+    }
 
     public ChatLedger Register(string repository, string root)
     {
@@ -432,15 +451,20 @@ internal sealed class ChatLedger : HttpMessageHandler
     }
 
     /// <summary>A record of this machine's: a chat unless said otherwise, in the state given, on the account named or the tool's own.</summary>
-    public Words Chat(string id, string state, string adapter, string tree, string kind = "chat", string? profile = null)
+    /// <param name="quest">The quest a driven record serves (MSG1f2's start-from), or null.</param>
+    /// <param name="ask">The ask an intake answers, or null.</param>
+    public Words Chat(
+        string id, string state, string adapter, string tree, string kind = "chat", string? quest = null, string repository = "engine",
+        string? ask = null, string? profile = null)
     {
         lock (_gate)
         {
             _sessions.Add(new JsonObject
             {
-                ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
+                ["id"] = id, ["repository"] = repository, ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
                 ["harnessVersion"] = "1.0.0", ["tree"] = tree, ["note"] = "the conversation ended; its commits are its record.",
-                ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["profile"] = profile,
+                ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["quest"] = quest, ["ask"] = ask,
+                ["profile"] = profile,
             });
         }
 
@@ -459,13 +483,15 @@ internal sealed class ChatLedger : HttpMessageHandler
     /// <summary>A record's words, as the say door keeps them.</summary>
     public sealed class Words(ChatLedger ledger, string id)
     {
-        public Words Say(string word, string text)
+        /// <param name="files">The names of the files said with the words, as the record keeps them.</param>
+        public Words Say(string word, string text, params string[] files)
         {
             lock (ledger._gate)
             {
                 ledger.Find(id)["said"]!.AsArray().Add(new JsonObject
                 {
-                    ["id"] = word, ["text"] = text, ["at"] = "2026-10-03T09:00:00Z", ["files"] = new JsonArray(), ["reopens"] = true,
+                    ["id"] = word, ["text"] = text, ["at"] = "2026-10-03T09:00:00Z",
+                    ["files"] = new JsonArray([.. files.Select(name => (JsonNode)JsonValue.Create(name))]), ["reopens"] = true,
                 });
             }
 
@@ -518,7 +544,7 @@ internal sealed class ChatLedger : HttpMessageHandler
                     return (HttpStatusCode.OK, new JsonArray([.. _registry.Select(row => row.DeepClone())]).ToJsonString());
 
                 case ("GET", "/api/quests"):
-                    return (HttpStatusCode.OK, "[]");
+                    return (HttpStatusCode.OK, new JsonArray([.. _quests.Select(quest => quest.DeepClone())]).ToJsonString());
 
                 case ("POST", "/api/sessions/chat"):
                 {
@@ -566,11 +592,13 @@ internal sealed class ChatLedger : HttpMessageHandler
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
                 {
                     var id = IdOf(path, "/taken");
-                    var ids = JsonNode.Parse(body!)!["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
+                    var asked = JsonNode.Parse(body!)!;
+                    var ids = asked["said"]!.AsArray().Select(word => word!.GetValue<string>()).ToList();
                     var session = Find(id);
                     session["said"] = new JsonArray([.. session["said"]!.AsArray()
                         .Where(word => !ids.Contains(word!["id"]!.GetValue<string>())).Select(word => word!.DeepClone())]);
                     Taken.Add((id, string.Join(',', ids)));
+                    TakenBy.Add((id, string.Join(',', ids), asked["by"]?.GetValue<string>()));
                     return (HttpStatusCode.OK, """{"message":"taken"}""");
                 }
 

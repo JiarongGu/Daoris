@@ -128,9 +128,12 @@ public sealed class DriverWatch(
 
                     if (!swept)
                     {
-                        sweep = [.. (await Orphans.EndAsync(service, processes, ct: ct).ConfigureAwait(false))
-                            .Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}")];
+                        var orphans = await Orphans.EndAsync(service, processes, ct: ct).ConfigureAwait(false);
+                        sweep = [.. orphans.Select(ended => $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}")];
                         swept = true;
+                        // A record the sweep ended concludes too (LAND2b, design §2): one whose quest its session closed done
+                        // before the crash is due, and this first look lands it.
+                        await OrphansDueAsync(orphans, config, ct).ConfigureAwait(false);
                     }
 
                     if (!followed) following ??= FollowEveryLineAsync(config, ct);
@@ -231,6 +234,32 @@ public sealed class DriverWatch(
                 return null;
             }
         }, CancellationToken.None);
+
+    /// <summary>
+    /// Each record the sweep ended that served a quest, read against its repository's rule (LAND2b): its done under the switch
+    /// is due. Only a done is acted on: the sweep's stop is an interruption, carried on at the next start (D104), so an end that
+    /// is not a done says nothing here.
+    /// </summary>
+    private async Task OrphansDueAsync(IReadOnlyList<OrphanEnded> orphans, DriverConfig config, CancellationToken ct)
+    {
+        foreach (var ended in orphans.Where(ended => ended.Quest is not null && ended.Tree is { Length: > 0 }))
+        {
+            QuestView? quest;
+            try
+            {
+                quest = await service.FindQuestAsync(ended.Quest!, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+            {
+                // Not due, then: its work waits for the person's Accept, as it would have before the switch.
+                continue;
+            }
+
+            if (quest is not { Status: "Done" }) continue;
+            AutoLander.Concluded(home, config, events ?? new SessionEvents(Path.Combine(home, "sessions")), ended.Id, quest, quest.Status,
+                "stopped", ended.Tree!, quest.Workspace);
+        }
+    }
 
     /// <summary>The standing choices, or the driver's own sentence about why they could not be read.</summary>
     private static DriverConfig Load(string path)

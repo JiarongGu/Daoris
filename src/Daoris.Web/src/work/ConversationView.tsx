@@ -1,24 +1,42 @@
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { compact, span } from '../format';
+import { compact, moment, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Tip } from '../ui';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
-import { reasonOf, type ReasonValues } from './say';
+import { type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from './say';
 import { ToolCard } from './ToolCard';
 
 /**
+ * Words a cooling account holds (MSG1g2, D137 §2.2): a resume asks for the account its record ran on, so while that account
+ * cools the words wait for its reset, and *Go on in a new session* carries them on now, without this conversation.
+ */
+export type Cooling = {
+  /** When the account cools until (ISO 8601), which the held line names. */
+  until: string;
+  /** The quest the session served, which a refusal names. */
+  quest?: string | null;
+  /** *Go on in a new session*; absent, the held line alone. */
+  onGoOnNew?: () => void;
+  /** The press is on its way. */
+  pending?: boolean;
+  /** What the press came to, once the route answered. */
+  answer?: NewSessionAnswer | null;
+};
+
+/**
  * What the person's words to a session that parked or ended need below the conversation (MSG1f, D137 §3.1): whether it
- * is a chat, the doors a note about them offers, and what a reason may name. Handed down by the view itself, so a block
- * deep in a turn reads it without every level between carrying it.
+ * is a chat, the doors a note about them offers, what a reason may name, and a cool-off that holds them (MSG1g2). Handed
+ * down by the view itself, so a block deep in a turn reads it without every level between carrying it.
  */
 type Said = {
   chat: boolean;
   onSession?: (id: string) => void;
   onStartFrom?: (words: string[]) => void;
   reasons: ReasonValues;
+  cooling?: Cooling;
 };
 
 const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
@@ -44,13 +62,21 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  *   cannot go on here it says why, with one press that starts a conversation with them.
  * - **A driver's note with a code is said in the reader's language** (MSG1c3, D142 point 1): the line that
  *   a stop cut a word off on its way. A code this page does not know leaves the driver's English.
+ * - **Words a cooling account holds** (MSG1g2, D137 §2.2) say they wait for its reset, and under them
+ *   *Go on in a new session* carries them on now, without this conversation's context; a driven
+ *   session's alone, since nothing carries a chat's words on by itself.
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
-  reveal, toolbar, onSession, onStartFrom, reasons = {},
+  reveal, toolbar, onSession, onStartFrom, reasons = {}, cooling,
 }: {
+  /**
+   * The account the person's words wait for cools (MSG1g2): until when, and *Go on in a new session* with what it came to.
+   * Absent where nothing cools.
+   */
+  cooling?: Cooling;
   /** Attend a session the person's words went to (MSG1f): the went line's door. Absent, the session is named as text. */
   onSession?: (id: string) => void;
   /**
@@ -113,7 +139,8 @@ export function ConversationView({
     // conversation past the centre (seen on the window with a real session, CONV3). No measure of its
     // own: the agent's words are content, shown at the width they are given (UX5 U16: a 768px
     // cap was half a maximized window).
-    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons }}>
+    // A chat's words go on with the next word said to it, never by themselves at a reset (MSG1c), so its cool-off is not said.
+    <SaidDoors.Provider value={{ chat, onSession, onStartFrom, reasons, cooling: chat ? undefined : cooling }}>
       <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
         {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
             height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
@@ -180,6 +207,7 @@ function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
       {parts.map((part) => (part.kind === 'run'
         ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} reveal={reveal} />
         : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} /></Held>))}
+      {turn.waiting && <NewSessionDoor turn={turn} />}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
       {/* The session ended inside this turn (SESS1 S4): said once, in the passive, never as a failure —
           the driver's note above says why, when it knows. */}
@@ -299,17 +327,25 @@ const heldKey = (reaches: string | null | undefined, chat: boolean) => {
   return 'work.conversation.held.turnEnd';
 };
 
+/** Words waiting at a record's foot that no driver's note has settled: what a cool-off holds (MSG1g2). */
+const waitingWords = (turn: Turn) =>
+  turn.items.filter((item) => item.kind === 'held' && item.reaches === 'resume' && !item.settled && !item.unreached);
+
 /**
  * The person's words to a session, waiting to reach it (STEER1, D136; MSG1f, D137 §3.1): theirs, as written, dashed as
  * the composer's waiting words are, and saying when the session reads them — at its next step, at its turn's end, or as
- * the same session goes on — or, the session over, that it never did. Where the session takes them they become the ask
- * of that turn, and this goes. Where a driver's note below says where they went, or that they cannot go on here, that
- * note is their line and this says none.
+ * the same session goes on, or at its account's reset where that account cools (MSG1g2) — or, the session over, that it
+ * never did. Where the session takes them they become the ask of that turn, and this goes. Where a driver's note below
+ * says where they went, or that they cannot go on here, that note is their line and this says none.
  */
 function HeldAsk({ block }: { block: Block }) {
   const { t } = useTranslation();
-  const { chat } = useContext(SaidDoors);
-  const when = block.settled ? null : block.unreached ? t('work.conversation.held.never') : t(heldKey(block.reaches, chat));
+  const { chat, cooling } = useContext(SaidDoors);
+  const reset = block.reaches === 'resume' && cooling;
+  const when = block.settled ? null
+    : block.unreached ? t('work.conversation.held.never')
+      : reset ? t('work.conversation.held.cooling', { time: moment(cooling.until) })
+        : t(heldKey(block.reaches, chat));
 
   return (
     <div className="rounded-card border border-dashed border-line-strong px-3 py-2">
@@ -386,6 +422,37 @@ function CodedLine({ block }: { block: Block }) {
   const key = block.code ? CONVERSATION_CODES[block.code] : undefined;
   if (!key) return <NoteLine text={block.text ?? ''} />;
   return <p className="m-0 text-small text-ink-soft">{t(key)}</p>;
+}
+
+/**
+ * *Go on in a new session* (MSG1g2, D137 §2.2), under words a cooling account holds: what it costs (the new session starts
+ * without this conversation's context, so it is the person's press), the press, and then what it came to in the page's
+ * words. Where nothing carries the words on by itself, a conversation or a closed quest's session, MSG1f's press starts a
+ * conversation with every word waiting. The press is offered again only for a choice the driver could not keep.
+ */
+function NewSessionDoor({ turn }: { turn: Turn }) {
+  const { t } = useTranslation();
+  const { cooling, onStartFrom } = useContext(SaidDoors);
+  const words = waitingWords(turn);
+  if (!cooling?.onGoOnNew || words.length === 0) return null;
+  const { answer, onGoOnNew, pending, quest } = cooling;
+  const said = answer ? newSessionSaid(t, answer, { quest }) : null;
+  const again = !answer || (!answer.sent && !answer.why);
+
+  return (
+    <div className="grid justify-items-start gap-1.5">
+      {said && <p className="m-0 text-small text-ink-soft">{said.sentence}</p>}
+      {again && (
+        <>
+          {!said && <p className="m-0 text-small text-ink-soft">{t('work.say.newSession.loses')}</p>}
+          <Button onClick={onGoOnNew} disabled={pending}>{t('work.say.goOnNew')}</Button>
+        </>
+      )}
+      {said?.startChat && onStartFrom && (
+        <Button onClick={() => onStartFrom(words.map((word) => word.text ?? ''))}>{t('work.say.startChat')}</Button>
+      )}
+    </div>
+  );
 }
 
 function BlockView({ block, tree }: { block: Block; tree?: string | null }) {

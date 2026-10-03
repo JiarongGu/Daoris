@@ -115,6 +115,12 @@ public sealed partial class SessionTrees
     {
         var known = repositories.ToList();
         var sessions = await SweepAsync(known, inUse, only, ct).ConfigureAwait(false);
+        // The record of where session branches grew from drops what is gone (LAND3), this press's removals among them.
+        foreach (var (repository, _, root) in known)
+        {
+            if (!string.IsNullOrWhiteSpace(root) && Directory.Exists(root)) await ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
+        }
+
         var landed = await CleanLandedAsync(known, only, ct).ConfigureAwait(false);
         // The empty folders trees left where something held them open (the first real post-merge run), tried again.
         return new(sessions, landed, EmptyFoldersGone());

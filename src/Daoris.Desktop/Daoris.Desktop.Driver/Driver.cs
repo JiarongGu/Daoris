@@ -355,6 +355,10 @@ public sealed partial class Driver(
 
         await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
 
+        // Done work lands itself (LAND2b, D145 point 2): after the endings and their sync, so a done that just closed is read
+        // as the service now holds it. The look chooses; the landings run beside it, as its starts do.
+        await LandDueAsync(events, ct).ConfigureAwait(false);
+
         return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded)
         {
             Untrusted = untrusted,
@@ -401,6 +405,40 @@ public sealed partial class Driver(
 
         return waits;
     }
+
+    /// <summary>
+    /// The sessions due to land automatically (LAND2b, D145 point 2, design §2): chosen in this look, landed beside it. One pass
+    /// at a time, since a plugin's two minutes may outlast a look; what it says joins a later look's report. A due list or a
+    /// service that does not answer is said, and its sessions are tried again at the next look: landing is never a dead look.
+    /// </summary>
+    private async Task LandDueAsync(List<string> events, CancellationToken ct)
+    {
+        if (_runs.Landing) return;
+        try
+        {
+            // The rule's plugin says its lines on the console under its name, as at a press (D100), and what the landing did
+            // with it is logged where the loop's hooks are (PLUGUI1d).
+            var lander = new AutoLander(
+                home, new ServiceAutoLandingWorld(service),
+                new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => output?.Append($"plugin:{plugin}", line), pluginLog: hooks?.Log)),
+                _events, service.LandingSaid);
+            var (chosen, said) = await lander.ChooseAsync(config, ct).ConfigureAwait(false);
+            events.AddRange(said);
+            if (chosen.Count > 0) _runs.Beside(token => lander.LandAsync(chosen, token), ct);
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or JsonException or IOException
+                                          or UnauthorizedAccessException)
+        {
+            events.Add($"landing  the sessions due to land could not be looked at this look, and are tried again at the next: {error.Message}");
+        }
+    }
+
+    /// <summary>
+    /// A driven record that just concluded, read against its repository's rule (LAND2b): a done under the switch joins the due
+    /// list, and the rest under it is said in its conversation. Never a reason to fail the run: the record has concluded.
+    /// </summary>
+    private void ConcludedForLanding(string sessionId, QuestView quest, string? status, string state, string workTree, string? workspace) =>
+        AutoLander.Concluded(home, config, _events, sessionId, quest, status, state, workTree, workspace);
 
     /// <summary>
     /// Each repository whose line Daoris moved since it was last followed, registered from its line (WSSETUP5), with what
@@ -1000,6 +1038,9 @@ public sealed partial class Driver(
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
                         parts: conclusion.Parts).ConfigureAwait(false);
+
+                    // LAND2b: a done under a rule that accepts automatically is due, and a later look lands it beside itself.
+                    ConcludedForLanding(sessionId, quest, after?.Status, conclusion.State, workTree, start.Workspace);
 
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that

@@ -44,5 +44,10 @@
   "work.rail.ended": "Ended",
   "work.rail.pausedAsk": "paused with ask #{{id}}",
   "work.rail.pausedQuest": "paused with quest #{{id}}",
-  "work.rail.pausedTip": "Its quest is paused on this machine: nothing of its work starts here until you resume it, and Resume carries it on."
+  "work.rail.pausedTip": "Its quest is paused on this machine: nothing of its work starts here until you resume it, and Resume carries it on.",
+  "work.rail.wordsHeld.hold": "goes on with your words once {{repository}} is no longer held",
+  "work.rail.wordsHeld.cap": "goes on with your words when a running session here ends",
+  "work.rail.wordsHeld.cooling": "goes on with your words once its account cools, at {{time}}",
+  "work.rail.wordsHeld.waits": "your words wait: {{why}}",
+  "work.rail.wordsHeldTip": "You wrote to this session after it ended: the same session goes on with your words by itself once what holds them lifts."
 }

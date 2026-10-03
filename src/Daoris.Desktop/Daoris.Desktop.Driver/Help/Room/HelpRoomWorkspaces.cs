@@ -94,6 +94,8 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
             : "merged into the line";
         if (landing.Rule.Plugin is { } plugin) rule += $", pushed with a pull request opened by plugin `{plugin}`";
         if (landing.Rule.Tidy) rule += ", tree removed once landed";
+        // LAND2a (D145): the switch rides the rule, so the room says it where it says the rule.
+        if (landing.Rule.AutoAccept) rule += ", accepted automatically when its quest is done";
         var source = landing.Source switch
         {
             LandingSource.Repository => "set for it",
