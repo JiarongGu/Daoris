@@ -22,6 +22,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from '../SettingsView';
+import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 
 describe('the driver domain', () => {
@@ -200,7 +201,7 @@ describe('the driver domain', () => {
     // Found by its loaded STATE rather than by its label, because the switch renders before the
     // machine has answered and its default is on — a bare label query would pass either way.
     const check = await screen.findByRole('checkbox', { checked: true });
-    expect(screen.getByText(/daoris driver notify on\|off/)).toBeTruthy();
+    expect(screen.getByText(code(/daoris driver notify on\|off/))).toBeTruthy();
 
     await userEvent.click(check);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_NOTIFY', { payload: { notify: false } });

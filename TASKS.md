@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1091 service and 66 HTTP host, 3703 driver,
-597 desktop modules, 80 devkit, 2839 web unit, 24 Playwright**, 114/114 release rehearsal, **357/357
+**Counts, and this is their one home:** seventeen commands, **1091 CLI tests, 1094 service and 66 HTTP host, 3703 driver,
+597 desktop modules, 80 devkit, 2844 web unit, 24 Playwright**, 114/114 release rehearsal, **357/357
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -210,9 +210,6 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
   page reads as a list of manifests; design it as a catalogue (installed, Daoris's own, available) with each plugin's
   icon, declared in its manifest with a generated fallback. Contract: a short design (D64, D120 amended). Proof: stories,
   the manifest's twin tables, the look.
-- [ ] **LOOK5 — a setting's terminal command breaks inside a flag** (seen on the install, 2026-10-03, Settings → Agents
-  in 中文). `--keep <account>|--no-keep` wraps as `--no-` / `keep`, and `--workspace` as `--` / `workspace`; break a
-  command only between its words. Contract: D41 §3, the components' code span. Proof: the look at 1280, 888 and 680.
 - [ ] **LAYOUT11 — content that does not size with its pane** (owner, 2026-10-03: *"some page content still not auto
   sizing with the outer like quest body and plugin detail"*). A quest's body and a plugin's detail keep a fixed measure
   inside a wider or narrower pane. Find every such surface by looking at 1280, 888 and 680, and size each by its pane
@@ -377,8 +374,6 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
   `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
   both doors; the composed settings' tests.
-- [ ] **DOC8c — a folder's record titled by its heading** (service; after DOC8a). The scanner titles a record in a declared
-  folder by its first heading, so search shows *D130 — …*. Contract: D134 §3.5. Proof: `RepositoryScannerTests`.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
   a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
   (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.

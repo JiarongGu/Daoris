@@ -9192,6 +9192,8 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 **Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A finished turn's meter says what the agent read anew apart from what it re-read from its cache: "in" is new input plus what it wrote to its cache, "cached" what it read from it, then "out" (输入 / 缓存 / 输出), and the hover sentence says the same split. AR-2203's 48-minute turn had shown "69.1M in" for 663K read anew and 68.5M re-read from the cache across about a thousand calls. The view's test was changed first and seen failing; both catalogues agree.
 
+**Corrected 2026-10-03.** The fix was never committed: integrate-h carried PARK1's commit from `park1`, and METER1's edits stayed uncommitted in that worktree. Found clearing merged worktrees; committed as `38255137` and merged in integrate-ac.
+
 
 ## PLUGDIST1a — the package and its reader, offline (2026-10-01)
 
@@ -9992,3 +9994,20 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > §3.1–§3.5, §4. Proof: the concatenation check in the commit body; `verify`; the service suite and family rehearsal.
 
 **Outcome** The decisions record is 136 files in `docs/decisions/` (D1–D137 without D114), proved byte for byte against the old record in its heading order; `docs/DECISIONS.md` is the page, and the attributes, manifest, dogfood rule and the lines naming the record moved with it. Detail: D134's DOC8a note, `ee2654a9`.
+
+
+## DOC8c — a folder's record titled by its heading (2026-10-03)
+
+> - [ ] **DOC8c — a folder's record titled by its heading** (service; after DOC8a). The scanner titles a record in a declared
+> folder by its first heading, so search shows *D130 — …*. Contract: D134 §3.5. Proof: `RepositoryScannerTests`.
+
+**Outcome** A record in a declared decisions, fixes or archive folder is titled by its first heading, or by its file name without one; a router folder keeps file names. Detail: D134's DOC8c note, `23523aaf`.
+
+
+## LOOK5 — a terminal command breaks only between its words (2026-10-03)
+
+> - [ ] **LOOK5 — a setting's terminal command breaks inside a flag** (seen on the install, 2026-10-03, Settings → Agents
+> in 中文). `--keep <account>|--no-keep` wraps as `--no-` / `keep`, and `--workspace` as `--` / `workspace`; break a
+> command only between its words. Contract: D41 §3, the components' code span. Proof: the look at 1280, 888 and 680.
+
+**Outcome** Every code span is `CodeText`, one box per word, so a command breaks only at its spaces; the machine log's terminal command now renders as code. Detail: platform-ux §3, the components' atom row, `7524e625`.

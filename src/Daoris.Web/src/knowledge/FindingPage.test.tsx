@@ -5,6 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
+import { code } from '../test/code';
 import { BODIES, CONVERGENT, RESTATEMENT } from './fixtures';
 import { FindingMainNotice, FindingPage } from './FindingPage';
 import type { EntryReading } from './records';
@@ -25,7 +26,7 @@ describe("a finding's page", () => {
     show({ [CONVERGENT.entries[0]!.id]: read(CONVERGENT.entries[0]!.id), [CONVERGENT.entries[1]!.id]: read(CONVERGENT.entries[1]!.id) });
 
     expect(screen.getByText(/Two repositories learned this separately/)).toBeInTheDocument();
-    expect(screen.getByText('daoris upstream <file>').tagName).toBe('CODE');
+    expect(screen.getByText(code('daoris upstream <file>'))).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
   });
 

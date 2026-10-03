@@ -32,7 +32,8 @@ link, a junction or a link held as text (`RepositoryLayout`, `RepositoryLinks`, 
 
 Since **D122** (DOC5) the scanner also reads where a repository says its records are, in its manifest's
 `documents`. The declared decisions, fixes and archive are each the first candidate for their log, a file
-or a folder of records, so a log at a name no candidate knows is found, and found once. The declared
+or a folder of records, so a log at a name no candidate knows is found, and found once. A record in a
+folder is titled by its first heading, or by its file name where it has none (D134, DOC8c). The declared
 router is indexed as one document. A declaration adds a path and is never required. One the CLI
 refuses is read as none, so the scanner reads its candidates as it did before (`RepositoryDocuments`, a
 twin of the CLI's `documents.ts`).

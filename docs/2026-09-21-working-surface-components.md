@@ -167,6 +167,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `StripMark` | one item on a list closed to its strip: an initial and its mark, named in words (FRAME1b, D118) | working · chosen · waiting · idle · unmarked · off · a 中文 name |
 | `Menu` | every dropdown menu, as `SelectField` is every select: its content capped at the room on its side and scrolled inside, one row density with the bars' raised highlight or the lists' accent one, the tick's column, a label and a rule (MENU1). `primitives.test.ts` holds that no file but the atoms imports a Radix primitive. `Menu.Acts` draws a list of `MenuAct`s, a glyph column then each name, which a surface's ⋯ and its right-click both draw (CTX1, D138) | a menu of sixty rows (`LongMenu`) · ticked, reserved, no tick column · a checkbox and a radio item |
 | `QuickPanel` | a box at the palette's place, between the frame's bars: the command palette and Quick Ask (MENU1) | held by `ui.test.tsx` and the two boxes' own tests |
+| `CodeText` | a command or a name set as code, breaking only between its words, one box per word (LOOK5): every span `Inline` sets, and a command a screen sets itself. A test finds a span of several words by `test/code.ts`, since its words are no longer its own text | `CodeSpans`: three widths, 中文, a word wider than its line |
 
 `Pill`, `Button`, `Chip`, `Card`, `EmptyState`, `SkeletonRows`, `Tip` are reused unchanged.
 

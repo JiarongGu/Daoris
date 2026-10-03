@@ -154,6 +154,81 @@ public sealed class RepositoryScannerTests : IDisposable
         Assert.All(fixes, e => Assert.Equal("2026-09-25", e.Title));
     }
 
+    // ── a folder of records (DOC8c; D134 §5, docs/2026-10-03-decisions-record-design.md §3.5) ────────
+    //
+    // Since DOC8a this repository's decisions are a folder, one file each, and the scanner titled each by
+    // its file name: a search showed *D130* where the file's own heading says what D130 decided.
+
+    private void DeclareFolders(string documents) =>
+        Write("daoris.json", $$"""{"source":"s","packs":[],"documents":{{documents}}}""");
+
+    /// <summary>The row's proof: a record in a declared folder is titled by its first heading, its id unchanged.</summary>
+    [Fact]
+    public void A_record_in_a_declared_folder_is_titled_by_its_first_heading()
+    {
+        DeclareFolders("""{"decisions":"docs/decisions"}""");
+        Write("docs/decisions/D130.md", "## D130 — The accounts are used by a goal (2026-10-02)\n\n**Decision.** Why.\n\n**Built 2026-10-03.** A note.\n");
+        Write("docs/adr/0001-one.md", "Not declared, never read.\n");
+
+        var record = Assert.Single(new RepositoryScanner().Scan(_root), e => e.Kind == EntryKind.Decision);
+
+        Assert.Equal("D130 — The accounts are used by a goal (2026-10-02)", record.Title);
+        // Located by its path, as before: a title is what a search shows, never what the index keys on.
+        Assert.Equal($"{new DirectoryInfo(_root).Name}:docs/decisions/D130.md", record.Id);
+        Assert.Null(record.Anchor);
+        Assert.Contains("A note.", record.Body);
+    }
+
+    /// <summary>
+    /// The first heading at any level, since an ADR opens with `#` where this repository's records open with
+    /// `##`; one inside a fence or a frontmatter block is not a heading; and a record with none keeps its file
+    /// name, as before.
+    /// </summary>
+    [Fact]
+    public void A_folder_record_is_titled_by_the_first_heading_outside_a_fence_or_by_its_file_name()
+    {
+        DeclareFolders("""{"decisions":"docs/adr","fixes":"docs/fixes","archive":"docs/done"}""");
+        Write("docs/adr/0001-record.md", "# 1. Record architecture decisions\n\n## Context\n\nWhy.\n");
+        Write("docs/adr/0002-fenced.md", "Quoted first:\n\n```markdown\n## An example\n```\n\n### 2. The real one\n\nBody.\n");
+        Write("docs/adr/0003-fronted.md", "---\nstatus: accepted\n# a comment in the fields\n---\n\n# 3. Under its fields\n\nBody.\n");
+        Write("docs/adr/0004-none.md", "No heading here, and #tag is a word.\n");
+        Write("docs/adr/0005-empty.md", "#\n\nAn empty heading names nothing.\n");
+        Write("docs/fixes/2026-10-03-wrap.md", "## 2026-10-03 — a flag broke its line\n\nFixed.\n");
+        Write("docs/done/LOOK5.md", "## LOOK5 — closed\n\nDone.\n");
+
+        var titles = new RepositoryScanner().Scan(_root)
+            .Select(e => $"{e.Kind} {e.Title} @ {e.RelativePath}")
+            .ToList();
+
+        Assert.Equal(
+            [
+                "Decision 1. Record architecture decisions @ docs/adr/0001-record.md",
+                "Decision 2. The real one @ docs/adr/0002-fenced.md",
+                "Decision 3. Under its fields @ docs/adr/0003-fronted.md",
+                "Decision 0004-none @ docs/adr/0004-none.md",
+                "Decision 0005-empty @ docs/adr/0005-empty.md",
+                "Fix 2026-10-03 — a flag broke its line @ docs/fixes/2026-10-03-wrap.md",
+                "TaskOutcome LOOK5 — closed @ docs/done/LOOK5.md",
+            ],
+            titles);
+    }
+
+    /// <summary>
+    /// A router declared as a folder holds documents, not records, and a document is named by its file as the
+    /// knowledge tier's are (D122): only the logs' folders are titled by their headings.
+    /// </summary>
+    [Fact]
+    public void A_router_declared_as_a_folder_keeps_its_file_names()
+    {
+        DeclareFolders("""{"router":"docs/map"}""");
+        Write("docs/map/contracts.md", "# The contracts\n\nRows.\n");
+
+        var document = Assert.Single(new RepositoryScanner().Scan(_root));
+
+        Assert.Equal(EntryKind.Knowledge, document.Kind);
+        Assert.Equal("contracts", document.Title);
+    }
+
     [Fact]
     public void The_generated_index_is_not_indexed()
     {
