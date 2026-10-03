@@ -34,7 +34,7 @@ export type PluginShown = {
    * the same, null with no record that reads. An older shell sends none.
    */
   update?: 'waits' | 'current' | null;
-  /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none until PLUGUI2b hands it. */
+  /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none from a shell older than PLUGUI2b. */
   icon?: string | null;
   /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
   iconProblem?: string | null;
@@ -53,7 +53,7 @@ export type OfferShown = {
   servers: string[];
   needs: string[];
   installed: boolean;
-  /** Its declared icon as its bytes (D140 §3.2); none until PLUGUI2b hands it. */
+  /** Its declared icon as its bytes (D140 §3.2); none from a shell older than PLUGUI2b. */
   icon?: string | null;
   iconProblem?: string | null;
 };

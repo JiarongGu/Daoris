@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -47,6 +48,15 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
         answered.GetProperty("plugins").EnumerateArray().Single(p => p.GetProperty("id").GetString() == id);
 
     private static string[] Strings(JsonElement array) => [.. array.EnumerateArray().Select(e => e.GetString()!)];
+
+    /// <summary>Every string an answer holds, at any depth: what a path would have to ride in to reach the page.</summary>
+    private static IEnumerable<string> StringsIn(JsonElement element) => element.ValueKind switch
+    {
+        JsonValueKind.String => [element.GetString()!],
+        JsonValueKind.Array => element.EnumerateArray().SelectMany(StringsIn),
+        JsonValueKind.Object => element.EnumerateObject().SelectMany(property => StringsIn(property.Value)),
+        _ => [],
+    };
 
     /// <summary>
     /// P3 (D119 §4.1): the list answers what each plugin hands sessions and speaks on, which points its running process
@@ -104,6 +114,73 @@ public sealed class DriverModulePluginPageTests : DriverModuleBridge, IDisposabl
 
         await AnswerAsync(module, "PLUGIN_ACTION", new { id = "acme.gate", action = "disable" });
         Assert.Equal("off", Row(await AnswerAsync(module, "PLUGINS"), "acme.gate").GetProperty("health").GetProperty("state").GetString());
+    }
+
+    /// <summary>
+    /// PLUGUI2b (D140 §5, the catalogue design §3.2): the list hands each plugin and each offer its icon as a data URI that
+    /// <see cref="PluginIcon.Read"/> built from the bytes it judged, or why a declared icon does not draw. 🔴 Never the
+    /// icon's path, which the page would have to reach for; and an icon's problem never refuses the plugin (§4).
+    /// </summary>
+    [Fact]
+    public async Task The_list_hands_each_plugin_and_offer_its_icon_as_its_bytes_or_why_it_does_not_draw_never_its_path()
+    {
+        const string svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>""";
+        string Plugin(string root, string id, string? icon)
+        {
+            var folder = Path.Combine(root, id);
+            Directory.CreateDirectory(folder);
+            var field = icon is null ? "" : $", \"icon\": \"{icon}\"";
+            File.WriteAllText(Path.Combine(folder, "plugin.json"), $"{{ \"id\": \"{id}\", \"name\": \"{id}\"{field} }}");
+            return folder;
+        }
+
+        var plugins = Path.Combine(Home, "plugins");
+        var drawn = Plugin(plugins, "acme.drawn", "assets/icon.svg");
+        Directory.CreateDirectory(Path.Combine(drawn, "assets"));
+        File.WriteAllText(Path.Combine(drawn, "assets", "icon.svg"), svg);
+        var bad = Plugin(plugins, "acme.bad", "icon.png");
+        File.WriteAllText(Path.Combine(bad, "icon.png"), "hello");
+        Plugin(plugins, "acme.bare", null);
+        var offers = Path.Combine(Checkout, "offers");
+        var offered = Plugin(offers, "acme.offered", "icon.svg");
+        File.WriteAllText(Path.Combine(offered, "icon.svg"), svg);
+        var missing = Plugin(offers, "acme.missing", "icon.svg");
+        Plugin(offers, "acme.plain", null);
+        var module = new DriverModule(Bus, Loop()) { Offers = offers };
+
+        var answered = await AnswerAsync(module, "PLUGINS");
+        JsonElement Offer(string id) => answered.GetProperty("offers").EnumerateArray().Single(o => o.GetProperty("id").GetString() == id);
+
+        var uri = "data:image/svg+xml;base64," + Convert.ToBase64String(Encoding.UTF8.GetBytes(svg));
+        Assert.Equal(uri, Row(answered, "acme.drawn").GetProperty("icon").GetString());
+        Assert.Equal(JsonValueKind.Null, Row(answered, "acme.drawn").GetProperty("iconProblem").ValueKind);
+        var refused = Row(answered, "acme.bad");
+        Assert.Equal(JsonValueKind.Null, refused.GetProperty("icon").ValueKind);
+        Assert.Equal("`icon` `icon.png` is not a PNG image.", refused.GetProperty("iconProblem").GetString());
+        // 🔴 The plugin stays sound: an icon is how it is recognised, never what it does.
+        Assert.Equal(JsonValueKind.Null, refused.GetProperty("problem").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Row(answered, "acme.bare").GetProperty("icon").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Row(answered, "acme.bare").GetProperty("iconProblem").ValueKind);
+
+        Assert.Equal(uri, Offer("acme.offered").GetProperty("icon").GetString());
+        Assert.Equal(JsonValueKind.Null, Offer("acme.offered").GetProperty("iconProblem").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Offer("acme.missing").GetProperty("icon").ValueKind);
+        Assert.Equal("`icon` `icon.svg` is not a file in the plugin's folder.", Offer("acme.missing").GetProperty("iconProblem").GetString());
+        Assert.Equal(JsonValueKind.Null, Offer("acme.plain").GetProperty("icon").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Offer("acme.plain").GetProperty("iconProblem").ValueKind);
+
+        // 🔴 No string in the answer names an icon's file on this machine, with either separator, as joined or as resolved.
+        static string Plain(string path) => path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        var answer = StringsIn(answered).Select(Plain).ToList();
+        foreach (var file in new[]
+        {
+            Path.Combine(drawn, "assets", "icon.svg"), Path.Combine(bad, "icon.png"),
+            Path.Combine(offered, "icon.svg"), Path.Combine(missing, "icon.svg"),
+        })
+        {
+            Assert.DoesNotContain(answer, value => value.Contains(Plain(file), StringComparison.OrdinalIgnoreCase)
+                || value.Contains(Plain(Path.GetFullPath(file)), StringComparison.OrdinalIgnoreCase));
+        }
     }
 
     /// <summary>
