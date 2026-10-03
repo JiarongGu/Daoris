@@ -30,7 +30,8 @@ public static class LandingForm
 /// <i>Accept automatically</i> (LAND2a, D145): a quest's done lands its work as the person's Accept would, and the rule's
 /// plugin pushes it and opens the pull request with no press, the pull request being the last human step. Only a branch
 /// rule takes it; off, the default, is the press as it always was. It rides the rule, so a repository's own rule replaces
-/// its workspace's switch with the rest of it. Nothing acts on it until LAND2b.
+/// its workspace's switch with the rest of it. LAND2b acts on it: a session concluding on a done quest becomes due
+/// (<see cref="AutoLandings"/>), and the next look lands it (<see cref="AutoLander"/>).
 /// </param>
 public sealed record LandingRule(string Form, string? Pattern = null, bool Tidy = false, string? Plugin = null, bool AutoAccept = false)
 {
@@ -57,7 +58,11 @@ public sealed record LandingSubject(string Session, string? Quest, string? Title
 /// <summary>What a press would do: the form, where the work would go (the line, or the branch it would make), and what said so.</summary>
 /// <param name="Plugin">The plugin that pushes the branch once it is made (D100), or null for the person.</param>
 /// <param name="Problem">Why that plugin cannot land work here now — the sentence a press would be refused with — or null.</param>
-public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null);
+/// <param name="AutoAccept">
+/// Whether the rule accepts automatically (LAND2b, D145): the quest's done lands the work, with no press, and the session's
+/// instruction says so.
+/// </param>
+public sealed record LandingPlan(string Form, string Target, string Source, string? Plugin = null, string? Problem = null, bool AutoAccept = false);
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
 /// <param name="Plugin">What the rule's plugin answered once the branch was made (D100) — null where no plugin was spoken to.</param>
@@ -66,7 +71,21 @@ public sealed record LandingPlan(string Form, string Target, string Source, stri
 /// null where no tidy ran. The message says the same, so the landing's note keeps it.
 /// </param>
 public sealed record TreeLanding(
-    bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null, IReadOnlyList<TidiedBranch>? Tidied = null);
+    bool Landed, string Message, string? Branch = null, PluginLanding? Plugin = null, IReadOnlyList<TidiedBranch>? Tidied = null)
+{
+    /// <summary>
+    /// A refusal's code (LAND2b), one of <see cref="AutoLandingCode"/>: <c>uncommitted</c>, <c>nothing</c> or <c>exists</c>
+    /// where the branch form said so, else null, which a landing at done keeps as <c>refused</c>. The message says it to a person.
+    /// </summary>
+    public string? Refusal { get; init; }
+
+    /// <summary>
+    /// Why the rule's plugin could not land work here, where a landing at done made the branch without it (LAND2b, D145
+    /// point 2): nobody is there to fix the plugin, so the branch is made and the push is not tried. Null at a press, which
+    /// refuses before anything is made instead (D100).
+    /// </summary>
+    public string? Unready { get; init; }
+}
 
 /// <summary>
 /// What a plugin answered at a landing (WSR4, D100): whether it pushed the branch, the pull request it
@@ -212,7 +231,20 @@ public static class LandingRules
     /// session record, which travels (D64 §4).
     /// </summary>
     public static SessionEvent Note(TreeLanding landed) =>
-        new() { Kind = SessionEventKind.Note, Text = $"the person accepted this work: {landed.Message}" };
+        new() { Kind = SessionEventKind.Note, Text = $"{PersonAccepted} {landed.Message}" };
+
+    /// <summary>How the conversation's note of a press opens: what the trace knows an acceptance by (TRACE1).</summary>
+    public const string PersonAccepted = "the person accepted this work:";
+
+    /// <summary>
+    /// How the conversation's note of a landing at done opens (LAND2b, D145 point 4): who accepted it, which the review's note
+    /// and the trace name. The rest of the note is its code's (<see cref="AutoLandingNotes"/>).
+    /// </summary>
+    public const string AutoAccepted = "accepted automatically when its quest was done:";
+
+    /// <summary>Whether a conversation's note is an acceptance of the session's work: a press's, or a landing at done.</summary>
+    public static bool IsAcceptance(string text) =>
+        text.StartsWith(PersonAccepted, StringComparison.Ordinal) || text.StartsWith(AutoAccepted, StringComparison.Ordinal);
 
     /// <summary>
     /// What the conversation's record keeps of a hand-off after the landing (WSR5b): the whole sentence, the

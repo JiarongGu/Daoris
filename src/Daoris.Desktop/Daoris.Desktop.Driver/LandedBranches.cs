@@ -44,6 +44,15 @@ public sealed record LandedBranch(
 
     /// <summary>Where that proof held: the form of the line, or the landed branch it was inside.</summary>
     public string? RemovedOn { get; init; }
+
+    /// <summary>
+    /// Who accepted it (LAND2b, D145 point 6), one of <see cref="Daoris.Driver.AcceptedBy"/>: the person's press, or the rule's switch at
+    /// the quest's done. Null for a landing recorded before it was kept, which a reader says is not kept (D143 point 3).
+    /// </summary>
+    public string? AcceptedBy { get; init; }
+
+    /// <summary>The landing rule it was made under, as it stood then (LAND2b, design §8); null for one recorded before it was kept.</summary>
+    public LandedRule? Rule { get; init; }
 }
 
 /// <summary>
@@ -231,6 +240,16 @@ public sealed class LandedBranches(string home)
                 if (entry.GoneAt is { } gone) writer.WriteString("goneAt", gone.ToString("O", CultureInfo.InvariantCulture));
                 if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
                 if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
+                if (entry.AcceptedBy is not null) writer.WriteString("acceptedBy", entry.AcceptedBy);
+                if (entry.Rule is { } rule)
+                {
+                    writer.WriteStartObject("rule");
+                    if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
+                    writer.WriteBoolean("autoAccept", rule.AutoAccept);
+                    writer.WriteString("source", rule.Source);
+                    writer.WriteEndObject();
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -266,6 +285,13 @@ public sealed class LandedBranches(string home)
                 : null,
             RemovedAs = Text(element, "removedAs"),
             RemovedOn = Text(element, "removedOn"),
+            AcceptedBy = Text(element, "acceptedBy"),
+            Rule = element.TryGetProperty("rule", out var rule) && rule.ValueKind == JsonValueKind.Object
+                ? new LandedRule(
+                    Text(rule, "plugin"),
+                    rule.TryGetProperty("autoAccept", out var auto) && auto.ValueKind == JsonValueKind.True,
+                    Text(rule, "source") ?? LandingSource.Default)
+                : null,
         };
     }
 

@@ -91,6 +91,17 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'chat.ended': { values: [] },
   'chat.cancelled': { values: [] },
   'chat.not-kept': { values: [] },
+  // A landing at the quest's done, under a rule that accepts automatically (LAND2b).
+  'landing.accepted': { values: ['branch'] },
+  'landing.plugin-unready': { values: ['branch', 'plugin'] },
+  'landing.plugin-failed': { values: ['branch', 'plugin'] },
+  'landing.nothing': { values: [] },
+  'landing.held': { values: [] },
+  'landing.uncommitted': { values: ['paths'] },
+  'landing.exists': { values: ['branch'] },
+  'landing.refused': { values: [] },
+  'landing.no-tree': { values: [] },
+  'landing.not-done': { values: [] },
   // The service's own lines.
   'ledger.answered': { values: [] },
   'ledger.parked': { values: [] },
@@ -106,8 +117,8 @@ export const NOTE_VALUES: Readonly<Record<string, 'id' | 'ids' | 'moment' | 'num
   awaits: 'id', answered: 'id', ask: 'id', quest: 'id', session: 'id',
   quests: 'ids',
   until: 'moment', at: 'moment',
-  exit: 'number', minutes: 'number',
-  owner: 'text', branch: 'text', basedOn: 'text',
+  exit: 'number', minutes: 'number', paths: 'number',
+  owner: 'text', branch: 'text', basedOn: 'text', plugin: 'text',
   why: 'why',
 };
 

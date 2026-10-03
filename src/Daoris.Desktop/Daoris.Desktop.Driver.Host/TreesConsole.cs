@@ -91,8 +91,31 @@ internal static class TreesConsole
         var line = $"trees: accepting `{session}` would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source})";
         if (plan.Plugin is { } plugin) line += $", then plugin `{plugin}` would push it and open the pull request";
         line += ".";
-        return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
+        // LAND2b: the rule's switch lands it at its quest's done with no press, and a plugin it cannot use does not stop the branch.
+        if (plan.AutoAccept) line += " The rule accepts automatically, so its quest's done lands it with no press.";
+        return plan.Problem is { } problem
+            ? $"{line} {(plan.AutoAccept ? "Its push would not be tried now" : "It would be refused now")}: {problem}"
+            : line;
     }
+
+    /// <summary>
+    /// A session's entry on the due list (LAND2b, design §8), for <c>trees land --plan</c>: when it became due, and its last try
+    /// by its code; null where it was never due.
+    /// </summary>
+    internal static string? Due(AutoLanding? entry)
+    {
+        if (entry is null) return null;
+        var due = $"trees: due to land automatically since {Minute(entry.DueAt)} UTC";
+        if (entry.Last is not { } last) return $"{due}; not tried yet — the loop's next look tries it.";
+        var tried = $"{due}; last tried {Minute(last.At)} UTC: {last.Code}"
+                    + (last.Branch is { } branch ? $" (`{branch}`)" : "");
+        return entry.Closed is null
+            ? $"{tried}. It waits: {(last.Code == AutoLandingCode.Held ? "its quest's release" : "a change in its tree, or your press")} lands it."
+            : $"{tried}.";
+    }
+
+    private static string Minute(DateTimeOffset at) =>
+        at.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// The lines this press moved, registered from the line at once (WSSETUP5, D124 §3.1) rather than at a loop's next
@@ -315,6 +338,7 @@ internal static class TreesConsole
                         if (args.Contains("--plan"))
                         {
                             Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
+                            if (Due(new AutoLandings(home).Of(session)) is { } landedDue) Console.WriteLine(landedDue);
                             return 0;
                         }
 
@@ -344,6 +368,8 @@ internal static class TreesConsole
                     Console.WriteLine(Planned(session, plan));
                     // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
                     if (before is not null) Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
+                    // Due to land at its quest's done (LAND2b): what its tries came to, which the review's note shows.
+                    if (Due(new AutoLandings(home).Of(session)) is { } due) Console.WriteLine(due);
                     return 0;
                 }
 

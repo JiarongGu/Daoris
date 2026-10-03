@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Daoris.Driver;
 
 /// <param name="Path">Where the tree is — what the session record carries and the lock keys on.</param>
@@ -346,7 +348,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // Who pushes it, said before the press, and what would refuse the press where something would (D100).
             var plugin = landing.Rule.Plugin;
             return new(LandingForm.Branch, LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), landing.Source,
-                plugin, plugin is null ? null : _plugins.Problem(plugin));
+                plugin, plugin is null ? null : _plugins.Problem(plugin), landing.Rule.AutoAccept);
         }
 
         var (code, commonDir, _) = Directory.Exists(full)
@@ -376,12 +378,28 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// The trees sessions still running or waiting name, asked when the rule's tidy reaches the other session branches the
     /// landed work holds (LAND3); null keeps every one of those that still has a tree, since nobody asked.
     /// </param>
+    /// <param name="acceptedBy">
+    /// Who accepts it (LAND2b, D145), kept on the landing record: the person's press, the default, or the rule's switch at the
+    /// quest's done. 🔴 One thing differs for <see cref="AcceptedBy.Auto"/>: a plugin that cannot land work here does not stop
+    /// the branch, since nobody is there to fix it, so the branch is made and recorded and the push is not tried.
+    /// </param>
     public async Task<TreeLanding> LandAsync(
-        string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null)
+        string path, LandingSubject subject, CancellationToken ct = default, Func<CancellationToken, Task<IReadOnlySet<string>>>? inUse = null,
+        string acceptedBy = AcceptedBy.Person)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
         var landing = LandingRules.Choose(Config(), repository, workspace);
+        // 🔴 Read again here, not only where the look chose it (LAND2b): a rule changed between the two must never let a landing
+        // at done merge into the person's checkout with no press (D145 point 1, D51 rule 6), nor land under a switch now off.
+        if (acceptedBy == AcceptedBy.Auto && landing.Rule is not { Form: LandingForm.Branch, AutoAccept: true })
+        {
+            return new(false, "its repository's rule no longer accepts automatically, so nothing was landed: your Accept lands it.")
+            {
+                Refusal = AutoLandingCode.Off,
+            };
+        }
+
         TreeLanding landed;
         if (landing.Rule.Form != LandingForm.Branch)
         {
@@ -391,9 +409,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         else
         {
             var plugin = landing.Rule.Plugin;
-            if (plugin is not null && _plugins.Problem(plugin) is { } problem)
+            var unready = plugin is null ? null : _plugins.Problem(plugin);
+            if (unready is not null && acceptedBy != AcceptedBy.Auto)
             {
-                return new(false, $"{problem} Nothing was landed: the rule hands the branch to that plugin, so fix the "
+                return new(false, $"{unready} Nothing was landed: the rule hands the branch to that plugin, so fix the "
                     + "plugin or the rule (`daoris driver landing`), then accept again.");
             }
 
@@ -409,10 +428,27 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 var from = branched.Source is { } source ? Grown.Of(repository, source)?.From : null;
                 landed = Remember(landed, () => Recorded.Record(new LandedBranch(
                     repository, workspace, landed.Branch!, branched.Base, tip, subject.Session, subject.Quest, subject.Title,
-                    DateTimeOffset.UtcNow) { From = from }));
+                    DateTimeOffset.UtcNow)
+                {
+                    From = from,
+                    // Who accepted it, and the rule as it stood (LAND2b, D145 point 6): a choice keeps its facts (D143).
+                    AcceptedBy = acceptedBy,
+                    Rule = new LandedRule(plugin, landing.Rule.AutoAccept, landing.Source),
+                }));
             }
 
-            if (landed.Landed && plugin is not null)
+            if (landed.Landed && unready is not null)
+            {
+                // At done (D145 point 2): the branch is the half Daoris owns, so it stands, and the hand-off pushes it later (D102).
+                landed = landed with
+                {
+                    Unready = unready,
+                    Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" {Sentence(unready)} So its push was not "
+                        + $"tried: the branch stands, and `daoris-driver trees hand {subject.Session}` hands it to `{plugin}` once it can "
+                        + "land work here." + TreeStays,
+                };
+            }
+            else if (landed.Landed && plugin is not null)
             {
                 var said = await _plugins.LandAsync(plugin, new LandingFrame(
                     repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
@@ -468,6 +504,29 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct).ConfigureAwait(false);
         return code != 0 ? null : log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
     }
+
+    /// <summary>
+    /// How many commits a session tree's HEAD holds beyond its repository's line (LAND2b): zero is a done that made no commits,
+    /// which lands nothing; null is git unable to say, or no line it can name, and the landing then decides.
+    /// </summary>
+    public async Task<int?> AheadOfLineAsync(string tree, CancellationToken ct = default)
+    {
+        var full = Path.GetFullPath(tree);
+        if (!Holds(full) || !Directory.Exists(full)) return null;
+        var (code, commonDir, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct)
+            .ConfigureAwait(false);
+        if (code != 0) return null;
+        var root = Path.GetDirectoryName(commonDir.Trim())!;
+        var (workspace, repository) = OwnerOf(full);
+        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
+        if (against is null) return null;
+        var (countCode, count, _) = await WorkingTree.GitAsync(full, ["rev-list", "--count", $"{against}..HEAD"], ct).ConfigureAwait(false);
+        return countCode == 0 && int.TryParse(count.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var ahead) ? ahead : null;
+    }
+
+    /// <summary>A tree's workspace and repository, read from the layout this home chose (<c>trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>).</summary>
+    public (string Workspace, string Repository) Owner(string tree) => OwnerOf(Path.GetFullPath(tree));
 
     private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(string cwd, string revision, CancellationToken ct) =>
         WorkingTree.GitAsync(cwd,
@@ -683,7 +742,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             return new TreeLanding(false,
                 $"the session's tree has uncommitted work — {dirty.Trim().Split('\n').Length} path(s) — which a "
-                + "branch would leave behind. Commit it in the tree first, or decide it is not wanted.");
+                + "branch would leave behind. Commit it in the tree first, or decide it is not wanted.")
+            { Refusal = AutoLandingCode.Uncommitted };
         }
 
         var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
@@ -699,7 +759,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
         if (string.IsNullOrWhiteSpace(ahead))
         {
-            return new TreeLanding(false, $"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to land.");
+            return new TreeLanding(false, $"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to land.")
+            { Refusal = AutoLandingCode.Nothing };
         }
 
         if (!BranchName.IsValid(name))
@@ -712,8 +773,10 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}"], ct).ConfigureAwait(false);
         if (exists == 0)
         {
+            // LAND2c will move one Daoris made and recorded on as a fast-forward (D145 point 3); until then every one is refused.
             return new TreeLanding(false, $"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it "
-                + "did not make. Rename or delete it there, or change the pattern with `daoris driver landing`.");
+                + "did not make. Rename or delete it there, or change the pattern with `daoris driver landing`.")
+            { Refusal = AutoLandingCode.Exists };
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, branch], ct).ConfigureAwait(false);

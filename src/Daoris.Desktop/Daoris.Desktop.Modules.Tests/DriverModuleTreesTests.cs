@@ -204,6 +204,19 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.True(landed.GetProperty("asLanded").GetBoolean());
         Assert.Equal(JsonValueKind.Null, landed.GetProperty("reads").ValueKind);
         Assert.Equal(JsonValueKind.Null, landed.GetProperty("removed").ValueKind);
+        // A landing from before who accepted it was kept says none (D143 point 3).
+        Assert.Equal(JsonValueKind.Null, landed.GetProperty("acceptedBy").ValueKind);
+    }
+
+    /// <summary>LAND2b (D145 point 4): the review's answer says who accepted the landing, which the note words.</summary>
+    [Fact]
+    public void A_landing_at_done_is_answered_as_accepted_automatically()
+    {
+        var review = new LandedReview(Landing() with { AcceptedBy = AcceptedBy.Auto }, LandedState.Standing);
+
+        var answer = JsonSerializer.SerializeToElement(DriverModule.ReviewAnswer("s1a2b3c4", null, "branch", review, treeGone: true), Camel);
+
+        Assert.Equal("auto", answer.GetProperty("landed").GetProperty("acceptedBy").GetString());
     }
 
     /// <summary>A branch gone since: no files, what the clean-up proved when it removed it, and whether its work reads on the line now.</summary>

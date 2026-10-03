@@ -173,6 +173,13 @@ public sealed record SessionEvent
     public string? Code { get; init; }
 
     /// <summary>
+    /// For a driver's note whose lines are worded by code (LAND2b, LANG1a): its parts, as a session record's note carries them
+    /// beside its English (<see cref="NotePart"/>), each coded part from <see cref="NoteCodes"/>. <see cref="Text"/> stays the
+    /// whole English, for the console, the terminal, the trace and a page that does not read the parts. Null on every other.
+    /// </summary>
+    public IReadOnlyList<NotePart>? Parts { get; init; }
+
+    /// <summary>
     /// For <see cref="SessionEventKind.User"/>: the names of the files the person attached (CONV4c) —
     /// names, never the kept paths or the lines Daoris added to reach them.
     /// </summary>
