@@ -44,6 +44,7 @@
   "errors.SESSION_LIVE_delete": "{{session}} 仍在运行，所以没有删除。请先停止它。",
   "errors.SESSION_NOT_OURS": "{{session}} 是在 {{machine}} 上运行的，它的记录属于那里：在本机只能归档。",
   "errors.SESSION_SERVED_QUEST": "{{session}} 为委托 #{{quest}} 工作过，它的记录属于那项工作，所以没有删除。请改为归档。",
+  "errors.SESSION_SERVED_QUEST_took": "{{session}} 接下过一个委托，它的记录属于那项工作，所以没有删除。请改为归档。",
   "errors.SESSION_NAMED": "需求 #{{ask}} 把 {{session}} 记作它的受理会话，所以它的记录要保留。请改为归档。",
   "errors.SESSION_NAMED_quest": "委托 #{{quest}} 是由 {{session}} 发布的，所以它的记录要保留。请改为归档。",
   "errors.SESSION_NAMED_landing": "有一次落地记着 {{session}}，所以它的记录要保留。请改为归档。",
