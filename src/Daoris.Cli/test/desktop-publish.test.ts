@@ -144,6 +144,24 @@ test('a stage replaces what was staged whole, and a publish in place removes it'
   assert.ok(existsSync(join(at, ...STAGE, SWAP_JOURNAL)), 'the last swap’s record stays to read');
 });
 
+test('a stage whose rename stays refused is copied into place, its manifest last, so a half copy is nothing staged', () => {
+  const at = folder();
+  markInstalled(at);
+  const staging = join(at, ...STAGE, '.staging');
+  mkdirSync(join(staging, 'app'), { recursive: true });
+  writeFileSync(join(staging, 'app', 'Daoris.Desktop.exe'), 'new application');
+  writeFileSync(join(staging, BUILD_MANIFEST), '{ "id": "b2" }');
+  const written: string[] = [];
+  const held = () => { throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' }); };
+
+  promoteStage(staging, at, { rename: held, tries: 2, waitMs: 1, copied: (path: string) => written.push(path) });
+
+  assert.equal(readFileSync(join(at, ...STAGED, 'app', 'Daoris.Desktop.exe'), 'utf8'), 'new application');
+  assert.equal(readFileSync(join(at, ...STAGED, BUILD_MANIFEST), 'utf8'), '{ "id": "b2" }');
+  assert.equal(written.at(-1), BUILD_MANIFEST, 'the manifest is the last file written');
+  assert.ok(!existsSync(staging));
+});
+
 test('a folder that does not exist, or is empty, is fine', () => {
   const at = folder();
   assert.equal(refusal(join(at, 'not-yet'), { beside: false }), null);

@@ -1428,11 +1428,21 @@ if (!done.ok) throw new Error(done.text);
   }, null, 2)}\n`);
 
   /** The update as the install's own page answers it over the bridge (`DAORIS.UPDATE` · `STATE`), or null. */
+  // Why the last read of the window's update state came back empty, so a check that waited on it can say so.
+  let lastUpdateRead = 'not read yet';
   const updateState = async () => {
-    const { cdp: page } = await shellPage(cdpPort, base);
-    if (!page) return null;
+    const { cdp: page, found } = await shellPage(cdpPort, base);
+    if (!page) {
+      // Who holds the debug port, by process, so a page that never answers says whether the port is bound at all.
+      const holders = spawnSync('powershell', ['-NoProfile', '-Command',
+        `Get-NetTCPConnection -LocalPort ${cdpPort} -ErrorAction SilentlyContinue | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; "$($_.State) pid $($_.OwningProcess) $($p.Path)" }`],
+      { encoding: 'utf8' }).stdout?.trim();
+      lastUpdateRead = `${found}; the port: ${holders || 'nothing bound'}`;
+      return null;
+    }
     try {
-      const answer = await bounded(page.evaluate(bridgeCall('DAORIS.UPDATE', 'STATE', {})).catch(() => null), 20_000, null);
+      const answer = await bounded(page.evaluate(bridgeCall('DAORIS.UPDATE', 'STATE', {})).catch((error) => ({ ok: false, error: error.message })), 20_000, null);
+      lastUpdateRead = answer === null ? 'the bridge call did not answer in 20 s' : JSON.stringify(answer).slice(0, 400);
       return answer?.ok ? answer.data : null;
     } finally {
       page.close();
@@ -1521,8 +1531,6 @@ if (!done.ok) throw new Error(done.text);
   const listedLibrary = stagedManifest?.files?.find((file) => file.path === `${SHELL_HOME[0]}/Daoris.Desktop.App.dll`);
   check('…app/ is the staged build, by its manifest’s hash',
     Boolean(listedLibrary) && sha256Of(join(install, ...SHELL_HOME, 'Daoris.Desktop.App.dll')) === listedLibrary.sha256);
-  check(`…and neither ${STAGED.join('/')}/ nor the build before it is left`,
-    !existsSync(join(install, ...STAGED)) && !existsSync(join(install, ...STAGE, 'previous')));
   const restarted = await waitFor(async () => {
     const now = applicationsAt(shellExe);
     return now.length > 0 && !now.some((pid) => firstApplication?.includes(pid)) && windowUp() ? now : null;
@@ -1530,6 +1538,11 @@ if (!done.ok) throw new Error(done.text);
   check('…a new application runs from the same place, its window up', Boolean(restarted), JSON.stringify(applicationsAt(shellExe)));
   const launcherGone = await waitFor(async () => (running(launcherExe).length === 0 ? true : null), 30);
   check('…and the launcher that swapped it has exited', Boolean(launcherGone), running(launcherExe).join(', '));
+  // The launcher cannot delete its own running launcher inside update/previous/, so the new application clears what the
+  // swap left once the launcher has gone (UPDATE1), at its next look.
+  check(`…and neither ${STAGED.join('/')}/ nor the build before it is left`,
+    Boolean(await waitFor(async () => (!existsSync(join(install, ...STAGED)) && !existsSync(join(install, ...STAGE, 'previous')) ? true : null), 30)),
+    readdirSync(join(install, ...STAGE)).join(', '));
   check('the machine log says it applied when idle and was installed',
     logged('update.applying').some((line) => line.by === 'idle' && line.build === stagedManifest?.id)
       && logged('update.installed').some((line) => line.build === stagedManifest?.id && line.confirmed === true));
@@ -1564,9 +1577,11 @@ if (!done.ok) throw new Error(done.text);
         const after = applicationsAt(shellExe);
         return after.length > 0 && !after.some((pid) => beforeRollback.includes(pid)) && windowUp() ? after : null;
       }, 120)), JSON.stringify(applicationsAt(shellExe)));
+    // The build before it writes its log line as it comes up, which can be after its window is.
     check('…and it says so once, in the machine log and the window',
-      logged('update.rolled-back').some((line) => line.build === 'fails-to-start' && line.reason === 'exited')
-        && (await waitFor(async () => ((await updateState())?.outcome?.phase === 'rolled-back' ? true : null), 60)) !== null);
+      (await waitFor(async () => (logged('update.rolled-back').some((line) => line.build === 'fails-to-start' && line.reason === 'exited') ? true : null), 60)) !== null
+        && (await waitFor(async () => ((await updateState())?.outcome?.phase === 'rolled-back' ? true : null), 60)) !== null,
+      `${JSON.stringify(logged('update.rolled-back'))}; the window's last read: ${lastUpdateRead}`);
     const status = driverUpdate('');
     check('`daoris-driver update` says the last swap rolled back', status.code === 0 && /rolled back/.test(status.out), status.out);
 
@@ -1579,7 +1594,7 @@ if (!done.ok) throw new Error(done.text);
     }, 30);
     check('a build that fails the check is refused before anything closes, saying which check',
       refusedState?.problem?.code === 'size' && applicationsAt(shellExe).join() === runningNow.join()
-        && sha256Of(shellExe) === liveApplication, JSON.stringify(refusedState));
+        && sha256Of(shellExe) === liveApplication, `${JSON.stringify(refusedState)}; the window's last read: ${lastUpdateRead}`);
     unstage(install);
   }
 

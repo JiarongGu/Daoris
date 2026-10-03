@@ -168,9 +168,13 @@ public static class Launcher
 
         // Not the tools' environment (TOOLS5): the application is Daoris's own program, and every child it starts is
         // handed the tools' environment there, read at each start; its own environment is never rewritten (§2.4).
+        // Through the shell (UPDATE1): a start that does not go through it hands the application every inheritable handle
+        // this launcher holds, which it inherited from the application that asked for the update, so the new one found the
+        // engine's DevTools port held by the builds before it. The shell's start inherits none and still hands the
+        // environment.
         var start = new ProcessStartInfo(shell)
         {
-            UseShellExecute = false,
+            UseShellExecute = true,
             WorkingDirectory = Path.GetDirectoryName(shell)!,
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);

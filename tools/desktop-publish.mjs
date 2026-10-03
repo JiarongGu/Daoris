@@ -45,7 +45,7 @@ import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
 import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
-import { copyTree, isMain } from './fsx.mjs';
+import { copyTree, isMain, renameHeld } from './fsx.mjs';
 import { running } from './processes.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -461,11 +461,43 @@ export function stageRefusal(to, { service = false } = {}) {
   return null;
 }
 
-/** The finished staging folder into `update/staged/`, replacing whatever was staged before, whole. */
-export function promoteStage(staging, install) {
+/**
+ * The finished staging folder into `update/staged/`, replacing whatever was staged before, whole. A folder of fresh
+ * executables: Windows refuses its rename while something still holds a file in it, the scanner most often (UPDATE1),
+ * so the rename is tried for half a minute, and then the build is copied into place with its manifest written last.
+ * Whatever reads `update/staged/` reads the manifest first, so a half copy is nothing staged, never a broken build.
+ */
+export function promoteStage(staging, install, { rename, tries = 150, waitMs = 200, copied = () => {} } = {}) {
   const staged = join(install, ...STAGED);
   rmSync(staged, { recursive: true, force: true });
-  renameSync(staging, staged);
+  try {
+    renameHeld(staging, staged, { tries, waitMs, ...(rename ? { rename } : {}) });
+    return staged;
+  } catch (error) {
+    if (!['EPERM', 'EACCES', 'EBUSY'].includes(error?.code)) throw error;
+  }
+
+  const copyInto = (from, to, at) => {
+    mkdirSync(to, { recursive: true });
+    for (const entry of readdirSync(from, { withFileTypes: true })) {
+      const path = at ? `${at}/${entry.name}` : entry.name;
+      if (!at && entry.name === BUILD_MANIFEST) continue;
+      if (entry.isDirectory()) copyInto(join(from, entry.name), join(to, entry.name), path);
+      else {
+        copyFileSync(join(from, entry.name), join(to, entry.name));
+        copied(path);
+      }
+    }
+  };
+  copyInto(staging, staged, '');
+  copyFileSync(join(staging, BUILD_MANIFEST), join(staged, BUILD_MANIFEST));
+  copied(BUILD_MANIFEST);
+  // The staging folder is spent either way; one still held is cleared by the next stage, which starts by removing it.
+  try {
+    rmSync(staging, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  } catch {
+    // Left for the next stage.
+  }
   return staged;
 }
 

@@ -244,6 +244,26 @@ public sealed class InstallUpdaterTests : Bridge
         Assert.Null(later.State.Outcome);
     }
 
+    /// <summary>
+    /// The launcher finishes a swap with its own running launcher inside <c>update/previous/</c>, which Windows will not
+    /// delete, so a whole build was left there until the next update. The application clears it once the swap is done.
+    /// </summary>
+    [Fact]
+    public void A_build_left_in_previous_after_a_finished_swap_is_cleared_by_a_look_and_never_during_one()
+    {
+        Write("update/previous/Daoris.exe", "the launcher that swapped");
+        Write("update/previous/app/Daoris.Desktop.exe", "the build before it");
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Swapping, "b1", "0.0.2", null, Now, []));
+        using var updater = Updater();
+
+        updater.Look();
+        Assert.True(Directory.Exists(Path.Combine(_install, "update", "previous")), "never while the launcher swaps");
+
+        StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Installed, "b1", "0.0.2", null, Now, [], Confirmed: true));
+        updater.Look();
+        Assert.False(Directory.Exists(Path.Combine(_install, "update", "previous")));
+    }
+
     [Fact]
     public void A_word_with_nothing_staged_or_in_a_mode_this_build_does_not_know_is_refused_and_nothing_is_written()
     {

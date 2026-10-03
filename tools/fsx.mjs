@@ -2,7 +2,7 @@
  * The one filesystem helper the tooling shares. It existed five times — both rehearsals, the package
  * stager, and the web e2e host — each copy carrying the same one-line justification.
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,6 +21,26 @@ export function isMain(url) {
     return realpathSync(invoked) === realpathSync(fileURLToPath(url));
   } catch {
     return false;
+  }
+}
+
+/** The refusals that mean something still holds a file in the way, and give way once it lets go. */
+const HELD = new Set(['EPERM', 'EACCES', 'EBUSY']);
+
+/**
+ * A rename tried again while a held file refuses it (UPDATE1's stage). On Windows a folder of executables written a
+ * moment ago cannot be renamed while something still holds a file in it, the virus scanner most often, and the refusal
+ * is EPERM; it gives way within seconds. Any other failure throws at once, and the last refusal throws after the tries.
+ */
+export function renameHeld(from, to, { tries = 50, waitMs = 200, rename = renameSync } = {}) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      rename(from, to);
+      return;
+    } catch (error) {
+      if (attempt >= tries || !HELD.has(error?.code)) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
+    }
   }
 }
 

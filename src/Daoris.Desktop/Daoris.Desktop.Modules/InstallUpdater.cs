@@ -162,6 +162,9 @@ public sealed class InstallUpdater(
             _applying = false;
         }
 
+        // The build a finished swap left behind (UPDATE1): the launcher cannot delete its own running launcher inside it.
+        StagedBuild.ClearPrevious(install);
+
         var manifest = StagedBuild.Read(install, out var unread);
         if (manifest is null && unread is null)
         {

@@ -58,3 +58,46 @@ test('two trees disagree on changed bytes and on a file either side lacks, and o
   assert.deepEqual(treeDiff(left, left), []);
   fx.cleanup();
 });
+
+/**
+ * A folder renamed just after it was written (UPDATE1's stage, 2026-10-03): on Windows the rename of a folder of fresh
+ * executables fails with EPERM while something still holds a file in it, the virus scanner most often, and gives way a
+ * moment later. The deployment rehearsal's update phase failed on exactly that.
+ */
+type Rename = (from: string, to: string) => void;
+type RenameHeld = (from: string, to: string, options?: { tries?: number; waitMs?: number; rename?: Rename }) => void;
+const held = (code: string) => Object.assign(new Error(`${code}: operation not permitted, rename`), { code });
+
+test('a rename a held file refuses is tried again until it gives way', async () => {
+  const { renameHeld } = await import(fsx) as { renameHeld: RenameHeld };
+  const calls: string[] = [];
+  let refusals = 2;
+  renameHeld('a', 'b', {
+    waitMs: 1,
+    rename: (from, to) => {
+      calls.push(`${from}->${to}`);
+      if (refusals-- > 0) throw held('EPERM');
+    },
+  });
+  assert.deepEqual(calls, ['a->b', 'a->b', 'a->b']);
+});
+
+test('a rename still refused after its tries throws the last refusal', async () => {
+  const { renameHeld } = await import(fsx) as { renameHeld: RenameHeld };
+  let calls = 0;
+  assert.throws(
+    () => renameHeld('a', 'b', { tries: 3, waitMs: 1, rename: () => { calls++; throw held('EBUSY'); } }),
+    (error: NodeJS.ErrnoException) => error.code === 'EBUSY',
+  );
+  assert.equal(calls, 3);
+});
+
+test('a rename that fails for any other reason fails at once', async () => {
+  const { renameHeld } = await import(fsx) as { renameHeld: RenameHeld };
+  let calls = 0;
+  assert.throws(
+    () => renameHeld('a', 'b', { waitMs: 1, rename: () => { calls++; throw held('ENOENT'); } }),
+    (error: NodeJS.ErrnoException) => error.code === 'ENOENT',
+  );
+  assert.equal(calls, 1);
+});

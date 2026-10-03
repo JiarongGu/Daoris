@@ -385,6 +385,28 @@ public static class StagedBuild
         if (ReadJournal(install) is { Told: false } record) WriteJournal(install, record with { Told = true });
     }
 
+    /// <summary>
+    /// The build before a finished swap, removed. The launcher finishes with its own running launcher inside
+    /// <c>update/previous/</c>, which Windows will not delete, so its own clearing leaves a whole build there; the application
+    /// tries again at each look once the journal says the swap ended, never while one is under way. True when it is gone.
+    /// </summary>
+    public static bool ClearPrevious(string install)
+    {
+        var previous = Path.Combine(install, Folder, Previous);
+        if (!Directory.Exists(previous)) return true;
+        if (ReadJournal(install) is not { Phase: SwapPhase.Installed or SwapPhase.RolledBack or SwapPhase.Refused }) return false;
+        try
+        {
+            Directory.Delete(previous, recursive: true);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Still held, the launcher not yet gone: the next look tries again.
+            return false;
+        }
+    }
+
     /// <summary>Remove what is staged (a publish in place supersedes it), leaving the journal and the failed build to read.</summary>
     public static void Unstage(string install)
     {
