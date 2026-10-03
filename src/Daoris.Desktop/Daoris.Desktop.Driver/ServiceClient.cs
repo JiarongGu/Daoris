@@ -629,6 +629,29 @@ public sealed class ServiceClient : IDisposable
         PostAskAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}/close", w => w.WriteString("reason", reason), ct);
 
     /// <summary>
+    /// Decline a quest with the person's reason, verbatim (PAUSE1d, D132 §4.1): an abandon's decline. With
+    /// <paramref name="whileOpen"/> it applies only while the quest is open (PAUSE1c, D132 point 10), so a take that reached
+    /// a remote first stands and the decline is kept on the quest as a conflict. The service's sentence comes back
+    /// verbatim, a refusal included: a decline refused because the quest was taken meanwhile is an answer, not an exception.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> DeclineQuestAsync(string id, string reason, bool whileOpen, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("action", "decline");
+            writer.WriteString("reason", reason);
+            // Written only when set, so a plain decline is the request it always was.
+            if (whileOpen) writer.WriteBoolean("whileOpen", true);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/respond", body, ct).ConfigureAwait(false);
+        if (root is not { } answer) return (false, $"the service at {_base} has no respond door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answer, "message") ?? "") : (false, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
     /// A person deletes an ask made by mistake, with every quest asked by it (D95). The service's
     /// sentence comes back verbatim, and a refusal is an answer too.
     /// </summary>
@@ -864,6 +887,7 @@ public sealed class ServiceClient : IDisposable
                 // Absent is a person's publish or a chain's step: a host from before SESS1 answers without it.
                 PublishedBy = Text(quest, "publishedBy") is { Length: > 0 } by ? by : null,
                 Note = Text(quest, "note"),
+                Workspace = RemoteTarget.Workspace(Text(quest, "workspace")),
                 Deletable = Flag(quest, "deletable"),
                 // The lanes of `to` it addresses (D115 §2.2). Absent is none: the whole repository.
                 Lanes = quest.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array

@@ -36,6 +36,7 @@
   "errors.QUEST_PAUSED_quest": "#{{id}} 已单独暂缓；恢复后会继续。",
   "errors.WORK_UNKNOWN": "本机没有需求 #{{id}}。",
   "errors.WORK_UNKNOWN_quest": "这里没有委托 #{{id}}。",
+  "errors.WORK_REASON": "放弃需要你的原因：每条被谢绝的委托都会留存它。",
   "errors.SESSION_UNKNOWN_folder": "本机没有会话 {{session}}，所以没有可打开的文件夹。",
   "errors.SESSION_UNKNOWN_delete": "本机没有会话 {{session}}，所以没有可删除的。",
   "errors.SESSION_LIVE_delete": "{{session}} 仍在运行，所以没有删除。请先停止它。",

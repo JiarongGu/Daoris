@@ -340,8 +340,11 @@ quest.* Offline, the decline is unconfirmed and travels on the next pass, where 
 
 - **A decline of a quest this machine took** carries no flag: it is this machine's work to decline.
 - **The flag is part of the operation and the wire** (`QuestWire`, the store's column). It is written only when set.
-- **An older reader ignores it**, and replays the decline as a plain one: a remote built before this applies it over
-  a take. Named in §13.
+- **An older remote does not decide the race** (PAUSE1c's note under D132; amended by PAUSE1d). It reads the flag as
+  absent and hands the decline back plain, but this machine's rebase judges the flag before it pushes, and a remote
+  judges a push only when nothing reached the quest after the base it was rebased on. Take first or decline first, the
+  take stands and the decline is a conflict on the quest. Only a push nobody rebased, which no machine of this build
+  sends, would be kept over a take there. Named in §13.
 - **Only the abandon sets it.** The quest page's *Decline…* stays the plain answer, since a person declining a quest
   they see taken means to.
 
@@ -651,8 +654,9 @@ This change is documents only, and nothing is built.
 - **Assumed, not read**: that SESSUX1g's request folder will be built as D126 §7.1 says, and PAUSE1b waits on it.
   D131 (ANSWER1) and D133 (DRIFT1) were in flight and not read; §2.1 holds whatever an answer starts, in either
   shape.
-- **An older remote applies a `whileOpen` decline as a plain one** (§5.2). The two versions of one workspace's
-  machines and remote are not held to agree by anything here.
+- **An older remote honours no `whileOpen` on a push nobody rebased** (§5.2, as PAUSE1c read it; amended by PAUSE1d).
+  No machine of this build sends one, so the race still ends with the take standing. The two versions of one
+  workspace's machines and remote are not held to agree by anything here.
 - **Found while reading, and filed rather than decided here**:
   - **D124's set-up plan *Pause*** stops nothing that runs, only what it would publish next. By this glossary that
     is a hold, so WSSETUP7 names it *Hold* (暂停), or makes it stop the set-ups that run and keeps *Pause* (暂缓).

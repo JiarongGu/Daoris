@@ -9536,7 +9536,8 @@ named, not touched.
 
 **What the gate does not cover.** This decision is documents only. The code was read at `32cbf03`, as the design's
 §13 lists. That SESSUX1g's request folder is built as D126 §7.1 says is assumed, and PAUSE1b waits on it. An older
-remote applies a `whileOpen` decline as a plain one. Found while reading and filed: D124's set-up plan *Pause* stops
+remote honours no `whileOpen` on a push nobody rebased, which no machine of this build sends (as PAUSE1c's note reads it;
+amended by PAUSE1d). Found while reading and filed: D124's set-up plan *Pause* stops
 nothing that runs, so by this glossary it is a hold, for WSSETUP7 to name. The code's comments call a repository's
 hold *paused*, which PAUSE1b rewords. Not measured: every item of the design's §12. `verify` checks this entry's shape
 and the design's links, and none of their words.
@@ -9641,6 +9642,53 @@ decline first, an older record, an older remote); `QuestShareTests`; `LocalHostT
 `ServiceClient`, which this branch did not touch. Reading each decline's answer from the pass is the abandon's. No real
 remote ran, an older one included: the older remote here is the real store behind the real wire with the flag taken
 out. The rehearsals were not run by this branch.
+
+**Built 2026-10-03 (PAUSE1d): abandon** (points 6–10; design §3, §4, §7.2, §7.3). `WorkAbandoning` plans and abandons for
+both doors: `WORK_PLAN`'s abandon half and `WORK_ABANDON` (`DriverModule.Work.cs`), and `daoris-driver ask --abandon` and
+`quest abandon` with `--reason` and `--yes` (`WorkCommand`). The proof is `SessionTrees.OnlyHereAsync`; the record is
+`AbandonRecord` (`<home>/abandoned.json`); the log gains `work.abandoned` (the machine log design's §4); `WORK_REASON` is in
+both catalogues. What building it settled:
+- **Whose take a taken quest is** is this machine's claim (`ClaimAsync`, D68 §4) and the records' `Took` (STANDDOWN2). This
+  machine's take with a record of its own that took it is declined; with none, it was taken outside Daoris and stays;
+  another machine's stays, named by a teammate's record where one is on it, else *another machine*, since the service names
+  no taker. The driver now reads `took` and `baseCommit` on its records and `workspace` on its quests. 🔴 The family's stub
+  takes over HTTP and marks no `Took`, so a quest it holds reads as taken outside Daoris.
+- **The proof judges from the tree's first session's base** (a carry-on's base is later), against every branch but local
+  `daoris/*`, every remote and every tag, so a pushed `daoris/*` counts. Checked out anywhere but its own tree, a base git
+  does not know, a path outside this home's trees and a branch not `daoris/*` are each kept. A branch whose tree went
+  without git being told has that stale registration pruned before `branch -D`.
+- **A piece is its key** (`quest:`, `session:`, `tree:<repository>:<branch>`, `ask:`), and `abandon.pieces` is what the
+  second press sends. One listed that the reader no longer takes changed since the list and is counted. One the reader
+  takes that the list did not hold joined since and is not taken, and **the scope stays paused**, as after a failed step:
+  joined work starting again once the pause is gone is the harm §3.4 names.
+- **A quest whose session could not be stopped is not declined**, and a tree a session still runs in is not discarded. A
+  decline, a close or a discard the service or git refuses is a failed step with its sentence, never a change. Each leaves
+  the scope paused.
+- **A session stopped whose tree stays with work went** (its stop) and is named to review. An archive the list held alone
+  that the reader now refuses changed. A parked session is ended through `WorkPausing.StopAsync`, which now takes one, by a
+  request with `by: abandon` and `parked` where another process runs it.
+- **The pass reads each decline back**: lost where the quest is no longer declined, unconfirmed where the pass met a wall or
+  left the quest behind (`SyncStanding.Behind`), confirmed otherwise. A workspace with no remote answers none. The screen
+  runs the loop's own pass; the terminal runs `RemoteSyncSet` over the same map.
+- **The record** keeps each tree's sessions and an `alone` mark for a branch whose tree was gone, `changed` on each kept
+  piece the list had held to go, and never git's or the service's sentence, which may name a path. An entry whose ask or
+  quest the service no longer lists is dropped as the next is written.
+- **The room's doors** gain abandon's row, marked exempt (D132 §7.4), and `HelpCoverageTests` holds the exemption.
+- **D132's gate note and the design's §5.2 and §13** now read an older remote as PAUSE1c's note does.
+
+**What the gates do not cover.** Held by `AbandonTests`, `DriverModuleWorkTests`, `HelpCoverageTests` and the room's golden
+files, each seen failing first: `AbandonTests` against stubbed bodies (its unknown case passed early, through the resume
+verb), the module's abandon cases with the route unmarked and the keep words blanked, and the catalogue and README route
+tests before their rows. `SessionTreeOnlyHereTests` (the `Process` half, real git) and the family rehearsal's phase 16a are
+written and were not run here; the ranges the proof asks were checked by hand on a scratch repository (a branch, a tag,
+another `daoris/*` branch, a pushed one). 🔴 The phase's first run, at the merge, failed at its set-up: a person's
+`ask --publish` to the receiver the ask already named answers that same quest again, so the "second" quest was the first,
+its branch was the one pushed, and the list rightly found nothing only Daoris held. The phase now publishes its other
+quests through the ask's publish door with words of their own, as an intake does, prints the work beside every check, and
+holds that nothing outside the ask's work moves; the proof was then run by hand over a copy of that layout and cleared the
+tree. The phase wires no remote, so the `whileOpen` race over a real one stays PAUSE1c's suite's. A queued session nothing
+runs is not reached, as for a pause. How long `WORK_PLAN` takes now that it walks
+git per tree is not measured (design §12). The page's acts and its words for each act and why are PAUSE1e's.
 
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 

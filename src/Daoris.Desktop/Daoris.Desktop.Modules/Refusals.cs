@@ -161,6 +161,12 @@ public static class Refusals
     public const string WorkUnknown = "WORK_UNKNOWN";
 
     /// <summary>
+    /// An abandon's second press with no reason (PAUSE1d, D132 §7.3): each declined quest keeps the person's reason, verbatim,
+    /// and the ask's close keeps it too, so an abandon without one is refused before anything is asked or written.
+    /// </summary>
+    public const string WorkReason = "WORK_REASON";
+
+    /// <summary>
     /// *Open folder* or *Open a terminal here* asked of a session whose folder this machine no longer holds (SESSUX1d, D126
     /// §3.5): a tidy or the clean-up took its tree, or it names no tree this home opened and no checkout here, or it is a
     /// teammate's record. The page offers neither where it knows the folder is gone, so this answers a race. Its

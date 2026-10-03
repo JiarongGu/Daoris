@@ -44,6 +44,13 @@ using Daoris.Driver;
 //                 Daoris process runs through the request in <home>/sessions/requests/ its loop takes, `by: pause`), and
 //                 nothing of it starts until you resume it, which releases each stop the pause made and names what still
 //                 holds a quest. A session waiting on you stays parked, a running intake goes on, and a teammate's is named.
+//   ask --abandon <id> [--reason "…" --yes] · quest abandon <id> [--reason "…" --yes]
+//                 abandon an ask's work, or one quest's, on this machine (PAUSE1d, D132 §3): without --yes, the list of
+//                 what it would decline, discard and archive, and what it keeps and why, changing nothing. With --reason
+//                 and --yes: the scope paused, its sessions stopped, each quest declined with your reason (an open one
+//                 only while open), the ask closed with it, one sync pass, each tree and branch discarded only where no
+//                 commit of it is on any ref but this machine's local daoris/* branches, the sessions archived, and
+//                 <home>/abandoned.json written with each discarded branch's tip. A step that fails leaves it paused.
 //
 //   setup <repository> [--plan]
 //                 ask a repository's own session to set it up for every agent (LAYOUT7; D117 §6, D124 §2): take up
@@ -158,8 +165,8 @@ try
         return await Daoris.Driver.Host.ChatConsole.RunAsync(chatArgs);
     }
 
-    // Pausing and resuming an ask's work from a terminal (PAUSE1b, D132 §7.2, D50): the ask's page is the other door. Asked
-    // for before the ask's other words, which would take `--pause` as the words of a new ask.
+    // Pausing, resuming and abandoning an ask's work from a terminal (PAUSE1b, PAUSE1d, D132 §7.2, D50): the ask's page is the
+    // other door. Asked for before the ask's other words, which would take `--pause` as the words of a new ask.
     if (args is ["ask", .. var workArgs] && WorkCommand.Asks(WorkScope.Ask, workArgs))
     {
         return await Daoris.Driver.Host.WorkConsole.RunAsync(WorkScope.Ask, workArgs, log);
@@ -188,8 +195,8 @@ try
     }
 
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
-    // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing
-    // and resuming one quest's work (PAUSE1b, D132 §7.2): the quest's page is the other door.
+    // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing,
+    // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door.
     if (args is ["quest", .. var questArgs])
     {
         if (WorkCommand.Asks(WorkScope.Quest, questArgs))
@@ -199,7 +206,9 @@ try
 
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
-            Console.Error.WriteLine("usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest pause <id>  ·  quest resume <id>");
+            Console.Error.WriteLine(
+                "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest pause <id>  ·  quest resume <id>  ·  "
+                + "quest abandon <id> [--reason \"…\" --yes]");
             return 2;
         }
 
