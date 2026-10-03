@@ -75,6 +75,58 @@ export type SessionEvent = {
   /** For `turn`: what it consumed, where the wire said (CONV5). */
   tokens?: TurnTokens | null;
   raw?: string | null;
+  /**
+   * For the target the driver composed (`origin: 'target'`): what it was handed, section by section (CONTEXT1, D143 point 1).
+   * Absent on every other event, and on a target handed before the driver kept one.
+   */
+  account?: InstructionAccount | null;
+};
+
+/**
+ * What a session was handed, section by section (CONTEXT1): the driver's `InstructionAccount`, kept beside its instruction.
+ * The sections handed, in the instruction's order, then what was handed beside it, then those not handed, each saying why.
+ */
+export type InstructionAccount = {
+  /** The instruction's length in characters. */
+  chars: number;
+  sections: HandedSection[];
+};
+
+/**
+ * One section (the driver's `HandedSection`): codes the page words, and the driver's own English (`said`) for a code it
+ * does not know. A count the record does not give is absent, never zero.
+ */
+export type HandedSection = {
+  /** What part it is: a `work.handed.section.*` code. */
+  name: string;
+  /** Where it came from: a `work.handed.source.*` code. */
+  source: string;
+  /** The driver's English for it. */
+  said: string;
+  /** Its characters in the instruction: 0 for one not handed, absent for what is handed beside it (the rules). */
+  chars?: number | null;
+  /** What its source names: a quest's or an ask's id, a repository's name, a repository-relative file, a branch, a language. */
+  from?: string | null;
+  /** How many of its items it handed, of how many. */
+  shown?: number | null;
+  of?: number | null;
+  /** When its source was set (a standing answer). */
+  at?: string | null;
+  /** Why nothing of it was handed: a `work.handed.none.*` code. */
+  none?: string | null;
+  /** What was left out of it, each with why. */
+  cuts?: HandedCut[] | null;
+};
+
+/** What a section's bound left out (the driver's `HandedCut`): a `work.handed.cut.*` code and the facts its entry says. */
+export type HandedCut = {
+  code: string;
+  said: string;
+  /** How many were left out; the catalogue calls it `n`. */
+  count?: number | null;
+  limit?: number | null;
+  from?: string | null;
+  to?: string | null;
 };
 
 /**
@@ -161,8 +213,13 @@ export type Block = {
   finished?: string;
 };
 
-/** What was asked — by the person, or the target the driver composed — and what the person attached. */
-export type Ask = { key: string; text: string; origin: string; at: string; files?: string[] };
+/**
+ * What was asked — by the person, or the target the driver composed — and what the person attached. A target carries what
+ * it was composed of (CONTEXT1): its account, or `null` for one handed before the driver kept one.
+ */
+export type Ask = {
+  key: string; text: string; origin: string; at: string; files?: string[]; account?: InstructionAccount | null;
+};
 
 /**
  * A message as the driver tells the page of one it has not sent yet, or handed back (CONV4a/c): the
@@ -252,6 +309,8 @@ export function toTurns(
   const asked = (event: SessionEvent, key: string): Ask => ({
     key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
     ...(event.files?.length ? { files: event.files } : {}),
+    // What a target was composed of (CONTEXT1), or null where its record keeps none: said missing, never left out.
+    ...(event.origin === 'target' ? { account: event.account ?? null } : {}),
   });
 
   // What was asked first, where the page began past it (SESS1 S1): the run reads from its ask, and the

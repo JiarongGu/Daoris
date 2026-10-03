@@ -1,0 +1,131 @@
+{
+  "chars": 7186,
+  "sections": [
+    {
+      "name": "quest",
+      "source": "quest",
+      "said": "the quest: 326 characters, quest #abc123 asked by `ask #a1b2c3`, as the service answered it",
+      "chars": 326,
+      "from": "abc123"
+    },
+    {
+      "name": "carried",
+      "source": "quest",
+      "said": "what the quest carries: 99 characters from quest #abc123: 1 link",
+      "chars": 99,
+      "from": "abc123"
+    },
+    {
+      "name": "requirements",
+      "source": "quest",
+      "said": "the requirements: 777 characters, 1 of 1 from quest #abc123",
+      "chars": 777,
+      "from": "abc123",
+      "shown": 1,
+      "of": 1
+    },
+    {
+      "name": "words",
+      "source": "ask",
+      "said": "the person's words: 504 characters, 3 of 3 from ask #a1b2c3",
+      "chars": 504,
+      "from": "a1b2c3",
+      "shown": 3,
+      "of": 3
+    },
+    {
+      "name": "go-aheads",
+      "source": "ask",
+      "said": "the go-aheads: 554 characters, 2 of 2 from ask #a1b2c3",
+      "chars": 554,
+      "from": "a1b2c3",
+      "shown": 2,
+      "of": 2
+    },
+    {
+      "name": "standing",
+      "source": "repository",
+      "said": "the standing answer: 347 characters, the person's for `reports` on this machine, set 2026-09-30 02:26 UTC",
+      "chars": 347,
+      "from": "reports",
+      "at": "2026-09-30T02:26:00+00:00"
+    },
+    {
+      "name": "carry-on",
+      "source": "record",
+      "said": "what the session before left: 373 characters: its record's end, the person's answer and 1 uncommitted change",
+      "chars": 373
+    },
+    {
+      "name": "close",
+      "source": "driver",
+      "said": "how to carry it on and close it: 279 characters, the driver's own words",
+      "chars": 279
+    },
+    {
+      "name": "reading",
+      "source": "checkouts",
+      "said": "the checkouts it may read: 274 characters, 1 checkout the person declared it may read and not change",
+      "chars": 274,
+      "shown": 1
+    },
+    {
+      "name": "look",
+      "source": "driver",
+      "said": "where to look before asking: 623 characters, the driver's own words",
+      "chars": 623
+    },
+    {
+      "name": "indexes",
+      "source": "tree",
+      "said": "the repository's indexes: 213 characters, naming 3 of the 3 its tree keeps",
+      "chars": 213,
+      "shown": 3,
+      "of": 3
+    },
+    {
+      "name": "attributed",
+      "source": "driver",
+      "said": "the person's words met second-hand: 481 characters, the driver's own words",
+      "chars": 481
+    },
+    {
+      "name": "asking",
+      "source": "driver",
+      "said": "asking another repository, and stopping for the person, a go-ahead asked once on the ask: 1,081 characters, the driver's own words",
+      "chars": 1081
+    },
+    {
+      "name": "closing",
+      "source": "driver",
+      "said": "the closing note's two lists, each item naming its source: 655 characters, the driver's own words",
+      "chars": 655
+    },
+    {
+      "name": "proposing",
+      "source": "driver",
+      "said": "proposing a rule: 298 characters, the driver's own words",
+      "chars": 298
+    },
+    {
+      "name": "boundary",
+      "source": "driver",
+      "said": "the boundary: 302 characters, the driver's own words",
+      "chars": 302
+    },
+    {
+      "name": "language",
+      "source": "repository",
+      "said": "the session language: none set for its repository or its workspace on this machine",
+      "chars": 0,
+      "none": "not-set"
+    },
+    {
+      "name": "map",
+      "source": "tree",
+      "said": "the code map: none, since its tree keeps none",
+      "chars": 0,
+      "none": "empty"
+    }
+  ]
+}

@@ -47,10 +47,12 @@ public sealed class SessionRequestWatch : IAsyncDisposable
 
     /// <summary>A loop's watch over its own registry, looking every <paramref name="every"/> (a second) until it is disposed.</summary>
     /// <param name="service">The loop's service once it answers; null before, when a request that needs the ledger waits.</param>
-    public SessionRequestWatch(string home, SessionProcesses processes, Func<ServiceClient?> service, TimeSpan? every = null)
+    /// <param name="clock">What a request's age is measured against; the real clock unless a test hands its own.</param>
+    public SessionRequestWatch(
+        string home, SessionProcesses processes, Func<ServiceClient?> service, TimeSpan? every = null, Func<DateTimeOffset>? clock = null)
         : this(
             home, id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase), (id, note) => processes.Stop(id, note: note),
-            service, clock: null)
+            service, clock)
     {
         _hears = id => processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) || processes.InboxOf(id) is not null;
         _aliveHere = processes.AliveOnThisMachine;

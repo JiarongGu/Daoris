@@ -7,7 +7,7 @@ import '../i18n';
 import { PROPOSED } from '../asks/fixtures';
 import { ContextMenus } from '../menus/ContextMenu';
 import { menuActs, rightClick } from '../test/contextMenu';
-import { HELD_BY_PERSON, OPEN, SITTING, TAKEN } from './fixtures';
+import { HELD, HELD_BY_PERSON, OPEN, SITTING, TAKEN } from './fixtures';
 import { QuestList } from './QuestList';
 
 // Quests' list as a molecule (FRAME1d, D118 §2): rows arrive with what each says, and every press goes out.
@@ -41,6 +41,17 @@ describe("Quests' list", () => {
     await userEvent.click(screen.getByRole('button', { name: /Expose a streaming budget/ }));
     await userEvent.click(screen.getByRole('button', { name: /The chunk streamer stalls/ }));
     expect(onChoose.mock.calls).toEqual([[OPEN.id], [`ask:${PROPOSED.id}`]]);
+  });
+
+  /** DRIFT1d2: a done a departure holds is listed first, closed quests shown or not, its row saying it awaits the person. */
+  it('lists a quest a departure holds first, its row saying it awaits the person’s yes', () => {
+    list({ quests: [{ quest: OPEN }, { quest: HELD }] });
+
+    expect(screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      'Awaiting your yes (1)', 'Open — waiting to be taken (1)',
+    ]);
+    expect(within(screen.getByRole('button', { name: /Stream the tiles from the cold cache/ })).getByText('awaits your yes'))
+      .toBeInTheDocument();
   });
 
   it('marks a week of silence on its row', () => {

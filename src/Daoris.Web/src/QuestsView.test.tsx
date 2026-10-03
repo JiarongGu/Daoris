@@ -389,6 +389,59 @@ describe('QuestsView', () => {
     });
   });
 
+  // ——— The person's yes to a done's departure (DRIFT1d2, D133 §4): listed first while it waits on them, one press on its
+  // page, through the service's accept door, and answered in the service's own words.
+
+  describe('accepting a departure', () => {
+    const HELD = [{
+      ...QUESTS[0], status: 'Done', held: true,
+      requirements: [{ quote: 'cap each frame', check: 'no frame hydrates past the cap' }],
+      answers: [{ requirement: 1, departed: 'the first frame from a cold cache cannot be capped', quote: 'cap each frame' }],
+    }];
+    let accepted: string[] = [];
+
+    function stub(answer: () => Response) {
+      accepted = [];
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (init?.method === 'POST' && url.endsWith('/accept')) {
+          accepted.push(url);
+          return answer();
+        }
+        return url.startsWith('/api/quests') ? Response.json(HELD) : respond(url);
+      }));
+    }
+
+    it('is listed first while it awaits the yes, accepted in one press, and answered verbatim', async () => {
+      stub(() => Response.json({
+        quest: { ...HELD[0], held: false, accepted: '2026-09-03T00:00:00Z' },
+        message: 'Accepted the departure on quest `#abc123`: what it held goes on.',
+      }));
+      const notify = view();
+      expect(await within(questList()).findByText('Awaiting your yes (1)')).toBeInTheDocument();
+      const page = await chooseRow('Expose a streaming budget');
+
+      await userEvent.click(within(page).getByRole('button', { name: 'Accept the departure' }));
+
+      await waitFor(() => expect(accepted).toEqual(['/api/quests/abc123/accept']));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith('Accepted the departure on quest `#abc123`: what it held goes on.'));
+      // The page shows the quest as the answer left it, before the list catches up: no second yes.
+      await waitFor(() => expect(within(questMain()).queryByRole('button', { name: 'Accept the departure' })).toBeNull());
+    });
+
+    it('a refusal reaches the person in the service\'s words, and the quest stays held', async () => {
+      const refusal = 'Quest `#abc123`\'s departure was already accepted, 2026-09-03 00:00 UTC: nothing waits for a yes.';
+      stub(() => Response.json({ error: refusal }, { status: 409 }));
+      const notify = view();
+      const page = await chooseRow('Expose a streaming budget');
+
+      await userEvent.click(within(page).getByRole('button', { name: 'Accept the departure' }));
+
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
+      expect(within(questMain()).getByRole('button', { name: 'Accept the departure' })).toBeEnabled();
+    });
+  });
+
   /** The sync item's conflict list names a quest through the opener; Quests' list has it chosen, and its page opens. */
   it('a quest a door names opens on the page', async () => {
     window.localStorage.setItem('daoris.list.quests.chosen', 'abc123');

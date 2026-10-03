@@ -205,7 +205,8 @@ installed here switched on or off; since D103 also one of the install's own plug
 branch a landing made, handed to a landing plugin that pushes it and opens the pull request), and since
 HELP10 `browser_propose` (Daoris's browser's settings and favorites, as Settings → Browser sets them) and
 `sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which
-fetches, and only then offers the press). Each writes
+fetches, and only then offers the press), and since DRIFT1d2 `accept_propose` (the person's yes to a quest a done's
+departure holds, which the card shows with the words each departure relied on). Each writes
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before

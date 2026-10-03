@@ -5,6 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
+import { CLAIMED } from './handedFixtures';
 
 // The conversation's molecule (D76, CONV2), props in: every state it can be in is a turn list built
 // by the same fold the organism uses, so what is asserted here is what a session would show.
@@ -127,6 +128,27 @@ describe('ConversationView', () => {
     expect(screen.getByText('The target Daoris composed')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
     expect(screen.getByRole('button', { name: 'Fold' })).toBeTruthy();
+  });
+
+  /**
+   * CONTEXT1: beneath the target, what it was composed of, from the account its event keeps — folded to its size and its
+   * sections; a target from before the account was kept says so; the person's own words carry none.
+   */
+  it('shows beneath the target what it was handed, section by section, and says when that was not kept', async () => {
+    view([
+      ev({ kind: 'user', origin: 'target', text: 'take quest #abc123', account: CLAIMED }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'user', origin: 'person', text: 'and the changelog' }),
+    ]);
+
+    const handed = screen.getByRole('button', { name: /What it was handed/ });
+    expect(handed).toHaveTextContent('6,786 characters in 15 sections');
+    await userEvent.click(handed);
+    expect(screen.getByRole('rowheader', { name: 'The quest' })).toBeInTheDocument();
+    expect(screen.getAllByRole('region', { name: 'What it was handed' })).toHaveLength(1);
+
+    view([ev({ kind: 'user', origin: 'target', text: 'take quest #q1' })]);
+    expect(screen.getByText('Its sections were not kept: it was handed before Daoris kept them.')).toBeInTheDocument();
   });
 
   /**

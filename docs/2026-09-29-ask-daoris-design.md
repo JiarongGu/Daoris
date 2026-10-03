@@ -54,7 +54,7 @@ a `SessionTree`:
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
   `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
-  `browser_propose` and `sync_propose`, §9.10), and nothing else. Over the protocol door
+  `browser_propose` and `sync_propose`, §9.10, and since DRIFT1d2 `accept_propose`, D133's note), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -116,6 +116,10 @@ does those rows only.
 (`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
 the plugin's, signed in as the person, which the card says before Apply, exactly as the review's *hand it
 to* would.
+
+**A yes to a departure** (DRIFT1d2, D133 §4): a quest a done's departure holds (`accept_propose`), proposed only when
+the person asks to accept it, its card showing each departure with the person's words it relied on, and applied through
+the local host's accept door, the quest page's *Accept the departure*.
 
 **Never**: a push of Daoris's own, a merge, a discard, a sign-in, a key. Those stay the person's own
 presses where they already are; a hand-off's push is the plugin the person named, on their Apply.

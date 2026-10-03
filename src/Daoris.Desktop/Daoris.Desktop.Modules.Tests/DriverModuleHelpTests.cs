@@ -81,6 +81,28 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// DRIFT1d2: an accept card carries, in the shape the page's <c>HelpAcceptShown</c> reads, the quest and each departure
+    /// its done answered: the requirement's number, the person's words it quotes and its check, the done's reason and the
+    /// person's words the reason relied on. Every other kind carries none.
+    /// </summary>
+    [Fact]
+    public void An_accept_card_carries_each_departure_in_the_pages_shape()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var plan = new HelpAcceptPlan("q3done00", "Stream the tiles", [new HelpDeparture(2, "keep it under", "it is under", "it cannot", "keep it under")]);
+
+        var shown = JsonSerializer.SerializeToElement(DriverModule.AcceptShown(plan), camel);
+
+        Assert.Equal(("q3done00", "Stream the tiles"), (shown.GetProperty("quest").GetString(), shown.GetProperty("title").GetString()));
+        var departure = Assert.Single(shown.GetProperty("departures").EnumerateArray());
+        Assert.Equal(
+            (2, "keep it under", "it is under", "it cannot", "keep it under"),
+            (departure.GetProperty("requirement").GetInt32(), departure.GetProperty("quote").GetString(), departure.GetProperty("check").GetString(),
+                departure.GetProperty("departed").GetString(), departure.GetProperty("words").GetString()));
+        Assert.Null(DriverModule.AcceptShown(null));
+    }
+
+    /// <summary>
     /// HELP10's guard (LEFT3 d): an Apply names an agent action for the Agents screen to follow only where one started,
     /// an update's or a pin's. A default is a file edit that starts nothing, so an applied one names none, and nor does
     /// an update the route refused.

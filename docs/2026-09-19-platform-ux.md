@@ -308,7 +308,12 @@ controls are in the frame design's §3.
   row** (a link glyph and a paperclip, each with its number) and **listed on its page**: links as
   links, files by name and size, a picture shown as one. The composer takes links one per line and
   files by drop, paste or *Choose files…*, and says why a file was left off while the person is still
-  choosing. **A chain** (D65 §4) is behind *Add a next step…*; the page shows it as one strip
+  choosing. **What the person required is quoted on the page** (DRIFT1d2, D133 §3–§4): each requirement in their words,
+  set off by a rule and kept as said, with its check, then how the done answered it, *met* in done's hue or *departed* with
+  the reason and the words it relied on. A departure that holds the quest for their yes is what it waits on, so it sits
+  above the body as a conflict does, in open's hue, says what the yes lets go on and carries *Accept the departure*, one
+  press; its header and its row say *awaits your yes*, and the list puts it first, since the default list leaves closed
+  quests out. Ask Daoris's accept card draws each departure the same way. **A chain** (D65 §4) is behind *Add a next step…*; the page shows it as one strip
   (MAP1a): the ask, the quests before and after, the steps still to come as written, and every
   session under its quest, the one being read marked and the others underlined doors.
 - **A folder waiting on trust** (D73) — the grant is offered where the hold is read: the quest's

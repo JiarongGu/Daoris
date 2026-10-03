@@ -91,16 +91,8 @@ public static class GoAheadsText
             .Append("An approved act is yours to do as approved and no further; a refused one is not to be done; one still ")
             .Append("waiting is already before the person, so name it by its number rather than listing it as a new question.\n");
 
-        var used = 0;
-        var shown = 0;
-        foreach (var goAhead in held)
-        {
-            var item = Item(goAhead);
-            if (shown > 0 && used + item.Length > Limit) break;
-            used += item.Length;
-            shown++;
-            text.Append(item);
-        }
+        var shown = Shown(held);
+        foreach (var goAhead in held.Take(shown)) text.Append(Item(goAhead));
 
         if (shown < held.Count)
         {
@@ -109,6 +101,25 @@ public static class GoAheadsText
         }
 
         return text.ToString();
+    }
+
+    /// <summary>
+    /// How many go-aheads an instruction lists by <see cref="Limit"/>: the first always, then each while its item fits beside
+    /// those before it. The instruction and its account (CONTEXT1) count by this one rule.
+    /// </summary>
+    internal static int Shown(IReadOnlyList<GoAheadView> held)
+    {
+        var used = 0;
+        var shown = 0;
+        foreach (var goAhead in held)
+        {
+            var length = Item(goAhead).Length;
+            if (shown > 0 && used + length > Limit) break;
+            used += length;
+            shown++;
+        }
+
+        return shown;
     }
 
     /// <summary>

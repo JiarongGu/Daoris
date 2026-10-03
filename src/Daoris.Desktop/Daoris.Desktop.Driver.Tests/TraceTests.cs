@@ -289,6 +289,42 @@ public sealed class TraceTests : IDisposable
         Assert.Contains("landing: no branch landing on this machine names it; its record keeps the acceptance above, which is all a landing into the line (merge) keeps, without the merge's own commit", said);
     }
 
+    /// <summary>
+    /// CONTEXT1: an instruction is read by its sections from the account kept beside it, in the driver's words, each with what
+    /// its bound left out, then what was handed beside it and what was not; never its words. One from before the account was
+    /// kept says so.
+    /// </summary>
+    [Fact]
+    public async Task An_instruction_is_read_by_the_sections_its_account_keeps_and_one_from_before_says_not_kept()
+    {
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        events.Append("s1", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest, from before", At = At(9, 5) });
+        var composed = TargetPrompt.Composed(TargetPromptGoldenTests.Full with
+        {
+            Indexes = [.. Enumerable.Range(1, 10).Select(n => $"docs/INDEX{n}.md")],
+        });
+        var account = composed.Account.Beside(new HandedSection(HandedSections.Rules, HandedSources.Permissions, "the permission rules: 12 handed beside it") { Shown = 12 });
+        events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = composed.Text, Account = account, At = At(9, 40) });
+        JsonArray sessions = [Record("s1", "completed", "q1", 5, 15), Record("s2", "completed", "q1", 40, 60)];
+
+        var (_, said, _) = await TraceAsync(new TraceAsk("q1"), sessions: sessions);
+        var s1 = Block(said, "session s1");
+        var s2 = Block(said, "session s2");
+
+        Assert.Contains("    its sections: not kept, since it was handed before the driver kept an account of them", s1);
+        Assert.Contains(string.Create(System.Globalization.CultureInfo.InvariantCulture, $"    its sections, as the driver composed them (event 1, {composed.Text.Length:N0} characters):"), s2);
+        Assert.Contains("      the quest: ", s2);
+        Assert.Contains("      the person's words: ", s2);
+        Assert.Contains("      the repository's indexes: ", s2);
+        Assert.Contains("        left out: 2 more counted, not named, past the 8 it names", s2);
+        Assert.Contains("      the permission rules: 12 handed beside it", s2);
+        // What could have been handed and was not, after what was.
+        Assert.Contains("      not handed:\n        the session language: none set for its repository or its workspace on this machine\n", s2);
+        Assert.Contains("        the code map: none, since its tree keeps none\n", s2);
+        Assert.True(s2.IndexOf("the permission rules", StringComparison.Ordinal) < s2.IndexOf("not handed:", StringComparison.Ordinal), s2);
+        Assert.DoesNotContain("The ticket asks for a daily comparison report", said);
+    }
+
     /// <summary>A live session's rules are read from the file it was handed, by count, while it runs.</summary>
     [Fact]
     public async Task A_running_sessions_rules_are_read_from_the_file_it_was_handed()

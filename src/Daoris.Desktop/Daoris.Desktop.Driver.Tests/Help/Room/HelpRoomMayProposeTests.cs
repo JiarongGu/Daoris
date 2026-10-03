@@ -39,6 +39,20 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
+    /// DRIFT1d2 (D133 §4): the person's yes to a done's departure is proposed only when they ask for it, of a quest
+    /// <c>quest_list</c> shows held, and the room says its card's press as the card labels it.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_a_yes_to_a_departure_is_proposed()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `accept_propose`: the person's yes to a quest a done's departure holds", proposes);
+        Assert.Contains("only when the person asks to accept it", proposes);
+        Assert.Contains("an accept card **accept** and **not now** (in 中文 **采纳** and **暂不**)", proposes);
+    }
+
+    /// <summary>
     /// HELP6: every door built since HELP1c is a proposal too — an agent's update or pin, a delete of a
     /// record made by mistake, an account's model and effort, and a screen to open — each named with its
     /// tool and the rule its route judges it by, so the helper does not propose what would be refused.
