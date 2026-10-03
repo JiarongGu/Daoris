@@ -320,7 +320,12 @@ public static class IntakeRoom
 /// </summary>
 public static class IntakePrompt
 {
-    public static string Compose(AskView ask)
+    /// <param name="ask">The ask the intake answers.</param>
+    /// <param name="language">
+    /// Its workspace's session language (LANG1c, D142 point 7), named in one line after the close; null where none is set,
+    /// and the instruction reads as it did.
+    /// </param>
+    public static string Compose(AskView ask, SessionLanguage? language = null)
     {
         var text = new StringBuilder();
         text.Append($"You are the intake for workspace `{ask.Workspace}`. You are not any repository's agent: this\n");
@@ -407,6 +412,9 @@ public static class IntakePrompt
         text.Append("When they do not settle it — nothing points at one repository, or more than one could —\n");
         text.Append("do not guess, and publish nothing. End by saying plainly what you would need to know; the\n");
         text.Append("person decides.\n\n");
+
+        // LANG1c: what it says to the person in the workspace's language, beside the close it governs; nothing where none is set.
+        if (language is not null) text.Append(SessionLanguageText.Line(language)).Append("\n\n");
 
         text.Append("Never edit a repository, and never write outside this room: publishing is the whole of your work.\n");
         return text.ToString();

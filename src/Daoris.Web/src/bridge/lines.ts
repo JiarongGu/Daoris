@@ -3,6 +3,7 @@ import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
+import type { LanguageChange, RepositoryLanguage } from '../settings/Languages';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { call, lookBound, pressBound } from './call';
@@ -22,7 +23,7 @@ export const useLines = () => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.lines,
-    queryFn: () => call<{ lines: RepositoryLine[]; landings?: RepositoryLanding[] }>('LINES'),
+    queryFn: () => call<{ lines: RepositoryLine[]; landings?: RepositoryLanding[]; languages?: RepositoryLanguage[] }>('LINES'),
     enabled: isAvailable,
   });
 };
@@ -208,6 +209,22 @@ export const useSetLine = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (change: LineChange) => call<DriverState>('SET_LINE', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+    },
+  });
+};
+
+/**
+ * Set the language a repository's sessions write to the person in, or a workspace's, or clear it with no language (LANG1c) —
+ * the file `daoris driver language` edits (D50). What each repository resolves to moves with it, so the lines are asked again.
+ * A code the driver's table does not hold is its refusal, its sentence verbatim.
+ */
+export const useSetLanguage = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: LanguageChange) => call<DriverState>('SET_LANGUAGE', change),
     onSuccess: (state) => {
       client.setQueryData(keys.driver, state);
       void client.invalidateQueries({ queryKey: keys.lines });
