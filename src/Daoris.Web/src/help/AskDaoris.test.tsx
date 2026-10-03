@@ -22,6 +22,7 @@ vi.mock('@shenora/react', () => ({
 
 import '../i18n';
 import { keys } from '../queries';
+import { code } from '../test/code';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
 
@@ -469,7 +470,7 @@ describe('Ask Daoris, with an agent named', () => {
     show();
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    expect(within(cards).getByText('daoris driver drive engine', { selector: 'code' })).toBeInTheDocument();
+    expect(within(cards).getByText(code('daoris driver drive engine'))).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id } });
 
     await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));

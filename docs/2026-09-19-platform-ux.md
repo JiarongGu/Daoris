@@ -99,6 +99,9 @@ D75), where its own rules live; this is what a view may assume of it.
 - **A path breaks at its separators**: `PathText`, never `break-all`, which broke a tree inside a name
   (`family\g` / `ame`). Anything else that may be wider than its line (an account name, a tool's raw
   output) wraps `anywhere`, which breaks inside a word only when that one word will not fit (U8).
+- **A command breaks between its words**: `CodeText`, every code span, one box per word, since a line
+  may break after any hyphen and a setting's terminal twin read `--no-` / `keep` in 中文 (LOOK5). A word
+  breaks inside only when it alone is wider than its line.
 - **Motion**: 140ms ease-out on overlays and hovers; `prefers-reduced-motion` disables it. No shimmer
   anywhere — loading placeholders are static two-tone.
 

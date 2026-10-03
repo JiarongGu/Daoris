@@ -648,9 +648,38 @@ export function Inline({ text }: { text: string }) {
     <>
       {parts.map((part, i) => (i % 2 === 1
         // Mono at the sentence's own size and colour, so a command reads as one without shouting.
-        ? <code key={i} className="font-mono">{part}</code>
+        ? <CodeText key={i} text={part} />
         : part))}
     </>
+  );
+}
+
+/** One word of a code span: moved whole to the next line, and broken inside only when it alone is wider than the line. */
+const CODE_WORD = 'inline-block max-w-full wrap-break-word';
+
+/**
+ * A command or a name set as code, which breaks only between its words: every code span the console shows, a
+ * setting's terminal twin among them.
+ *
+ * @remarks
+ * **A browser may break a line after any hyphen**, so on the installed window a setting's terminal twin read
+ * `--no-` over `keep`, and `--` over `workspace` (LOOK5): in 中文, where a sentence fills its line to the edge, the
+ * break fell inside a flag. Each word is a box of its own, as wide as the word and never wider than the line, so it
+ * moves to the next line whole, and breaks inside only when that one word is wider than the line (U8). The spaces
+ * between the words stay where a line may break. The text is unchanged, so a copy is still the command.
+ *
+ * `break-word`, not the `anywhere` a path wears: it leaves a sentence's narrowest width what it was, so a flex row
+ * cannot squeeze a command to a character a line, where `anywhere` would let it.
+ *
+ * A span of one word is that word's box itself, and a span of several holds one box per word.
+ */
+export function CodeText({ text, className }: { text: string; className?: string }) {
+  const words = text.split(/(\s+)/).filter(Boolean);
+  if (words.length < 2) return <code className={cn('font-mono', CODE_WORD, className)}>{text}</code>;
+  return (
+    <code className={cn('font-mono', className)}>
+      {words.map((word, i) => (/^\s+$/.test(word) ? word : <span key={i} className={CODE_WORD}>{word}</span>))}
+    </code>
   );
 }
 

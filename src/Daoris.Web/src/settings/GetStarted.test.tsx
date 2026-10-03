@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import '../i18n';
 import i18n from '../i18n';
 import { readMachine } from '../help/machine';
+import { code } from '../test/code';
 import { setupSteps } from '../help/setup';
 import { GetStarted } from './GetStarted';
 
@@ -86,10 +87,13 @@ describe('Get started', () => {
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
 
     const agent = step(/An agent/);
-    expect(within(agent).getByText('daoris agent install <agent>')).toBeInTheDocument();
-    expect(within(agent).getByText('daoris agent login <agent>')).toBeInTheDocument();
-    expect(within(step(/repositories/)).getByText('daoris import <folder>')).toBeInTheDocument();
-    expect(within(step(/agents may do/)).getByText('daoris agent rules')).toBeInTheDocument();
+    expect(within(agent).getByText(code('daoris agent install <agent>'))).toBeInTheDocument();
+    // The console's one code span, so a step's command breaks only between its words (LOOK5).
+    const login = within(agent).getByText(code('daoris agent login <agent>'));
+    expect([...login.children].map((word) => word.textContent)).toEqual(['daoris', 'agent', 'login', '<agent>']);
+    for (const word of login.children) expect(word).toHaveClass('inline-block', 'max-w-full');
+    expect(within(step(/repositories/)).getByText(code('daoris import <folder>'))).toBeInTheDocument();
+    expect(within(step(/agents may do/)).getByText(code('daoris agent rules'))).toBeInTheDocument();
 
     await user.click(within(agent).getByRole('button', { name: 'copy daoris agent login <agent>' }));
     expect(writeText).toHaveBeenCalledWith('daoris agent login <agent>');
@@ -129,7 +133,7 @@ describe('Get started', () => {
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual(['3. A workspace and its repositories']);
     expect(within(items[0]!).getByText('to do')).toBeInTheDocument();
     expect(within(items[0]!).queryByRole('button', { name: /Add repository/ })).toBeNull();
-    expect(within(items[0]!).getByText('daoris connect')).toBeInTheDocument();
+    expect(within(items[0]!).getByText(code('daoris connect'))).toBeInTheDocument();
     expect(screen.getByText(/the desktop's Setup shows them/)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Set up with Ask Daoris' })).toBeNull();

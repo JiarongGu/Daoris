@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from '../SettingsView';
+import { code } from '../test/code';
 import { DRIVER_STATE, respond, serviceCalls, show } from '../test/shellHarness';
 
 /**
@@ -107,7 +108,7 @@ describe('the browser domain', () => {
 
     // A shell that sends no `links` is the system's, as a link always was.
     expect(await screen.findByRole('radio', { name: "System browser" })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByText(/daoris browser links system\|daoris/)).toBeTruthy();
+    expect(screen.getByText(code(/daoris browser links system\|daoris/))).toBeTruthy();
     await userEvent.click(screen.getByRole('radio', { name: "Daoris's browser" }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_LINKS', { payload: { links: 'daoris' } });

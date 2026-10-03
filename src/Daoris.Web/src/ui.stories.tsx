@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Button, CheckField, Chip, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill, SettingRow,
+  Button, CheckField, Chip, CodeText, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill, SettingRow,
   SkeletonRows, Tile, Toasts,
 } from './ui';
 
@@ -66,6 +66,39 @@ export const SettingRows: StoryObj = {
         hint="Every file on this page lives under it."
         control={<PathText path="C:/somewhere/Daoris/data" className="text-small text-ink" />}
       />
+    </div>
+  ),
+};
+
+/**
+ * A code span breaks only between its words (LOOK5): the installed window broke a setting's terminal twin inside
+ * `--no-keep` and `--workspace`, in 中文, at a narrow row. Three widths and both languages, a word wider than its
+ * line, and a command a screen sets itself.
+ */
+export const CodeSpans: StoryObj = {
+  render: () => (
+    <div className="grid gap-6">
+      {['w-[22rem]', 'w-[30rem]', 'w-[44rem]'].map((width) => (
+        <div key={width} className={`${width} max-w-full rounded-card border border-line bg-raised px-4 py-3`}>
+          <SettingRow
+            label="对话保留在"
+            hint="`daoris agent profile use claude-code --keep <account>|--no-keep --workspace engine`"
+            control={<CheckField hideLabel label="保留" checked onChange={() => {}} />}
+          />
+          <SettingRow
+            label="Keep for conversations"
+            hint="Or `daoris agent profile order claude-code <account>…|--clear --workspace engine` at a terminal."
+          />
+          <SettingRow
+            label="A word wider than its line"
+            hint="`C:/somewhere/a-very-long-folder-name-that-will-not-fit/beside-anything-at-all/plugins`"
+          />
+          <p className="m-0 mt-2 flex flex-wrap items-baseline gap-1.5 text-meta text-ink-faint">
+            <span>At a terminal:</span>
+            <CodeText text="daoris agent settings claude-code --account work model <model> effort <effort>" />
+          </p>
+        </div>
+      ))}
     </div>
   ),
 };
