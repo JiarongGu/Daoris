@@ -166,7 +166,8 @@ public sealed partial class Driver
                 Attachments = ask.Attachments,
                 Ask = ask.Id,
                 Session = sessionId,
-                Prompt = IntakePrompt.Compose(ask),
+                // Its workspace's session language (LANG1c): an intake answers a workspace's ask, in no repository.
+                Prompt = IntakePrompt.Compose(ask, SessionLanguages.OfWorkspace(config, ask.Workspace)),
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 

@@ -67,6 +67,40 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(DriverConfig.StandingRefusal, HelpProposals.Plan(Setting("standing", "engine", null, new string('x', 2_001)), DriverConfig.Empty, Facts).Refusal);
     }
 
+    /// <summary>
+    /// LANG1c (D142 point 7): a session language for a registered repository or a workspace, judged by the closed table and
+    /// the registry, planned with the terminal's spelling and applied as `SET_LANGUAGE` and `daoris driver language` make it.
+    /// Not yet one of the kind's doors: the service's setting writer does not list it (HelpCoverageTests' language row).
+    /// </summary>
+    [Fact]
+    public void A_session_language_is_judged_by_the_table_and_the_registry_and_applied_as_the_terminal_makes_it()
+    {
+        var plan = HelpProposals.Plan(Setting("language", "engine", null, "zh"), DriverConfig.Empty, Facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris driver language engine zh", plan.Terminal);
+        Assert.Contains("Sessions in `engine` write to you in Simplified Chinese (简体中文)", plan.Describe);
+        var config = plan.Apply!(DriverConfig.Empty);
+        Assert.Equal("zh", config.Languages["engine"]);
+
+        var shared = HelpProposals.Plan(Setting("language", null, "work", "EN"), config, Facts);
+        Assert.Equal("daoris driver language --workspace work en", shared.Terminal);
+        Assert.Contains("that sets none of its own write to you in English", shared.Describe);
+        config = shared.Apply!(config);
+        Assert.Equal("en", config.WorkspaceLanguages["work"]);
+
+        var clear = HelpProposals.Plan(Setting("language", "engine", null, "--clear"), config, Facts);
+        Assert.Equal("daoris driver language engine --clear", clear.Terminal);
+        Assert.False(clear.Apply!(config).Languages.ContainsKey("engine"));
+
+        Assert.Equal(SessionLanguages.Refusal("fr"), HelpProposals.Plan(Setting("language", "engine", null, "fr"), DriverConfig.Empty, Facts).Refusal);
+        Assert.Contains("`en` or `zh`", HelpProposals.Plan(Setting("language", "engine", null, null), DriverConfig.Empty, Facts).Refusal);
+        Assert.Contains("is not registered on this machine", HelpProposals.Plan(Setting("language", "elsewhere", null, "zh"), DriverConfig.Empty, Facts).Refusal);
+        Assert.Contains("no workspace `elsewhere`", HelpProposals.Plan(Setting("language", null, "elsewhere", "zh"), DriverConfig.Empty, Facts).Refusal);
+        Assert.Contains("a repository or a workspace", HelpProposals.Plan(Setting("language", "engine", "work", "zh"), DriverConfig.Empty, Facts).Refusal);
+        Assert.DoesNotContain("language", new HelpSettingProposals().Doors);
+    }
+
     [Fact]
     public void Applying_a_plan_makes_the_edit_the_screens_route_makes()
     {

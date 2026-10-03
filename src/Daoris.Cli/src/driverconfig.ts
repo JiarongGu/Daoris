@@ -19,6 +19,7 @@ import { flagValue, operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { isoMoment } from './cooling.ts';
 import { readPlugins, type PluginCatalog } from './plugins.ts';
+import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -90,7 +91,60 @@ export interface DriverChoices {
    * when it was set. The driver's `DriverConfig.Standing` is the twin, read by the same table.
    */
   standing: Record<string, StandingAnswer>;
+  /**
+   * The language each repository's sessions are asked to write to the person in (LANG1c, D142 point 7), a code of
+   * `SESSION_LANGUAGES`; it wins over its workspace's. The driver's `DriverConfig.Languages` is the twin, read by the same table.
+   */
+  languages: Record<string, string>;
+  /** A workspace's session language, for every repository in it that sets none, and for its intake. */
+  workspaceLanguages: Record<string, string>;
   rest: Record<string, unknown>;
+}
+
+/**
+ * The closed table of session languages (LANG1c, D142 point 7): each code and the name the line gives the agent — the driver's
+ * `SessionLanguages.Table`, a deliberate copy, held row for row by both sides' tests. Adding a language is a row in both, and
+ * needs no window catalogue: a session may write in a language the window does not speak.
+ */
+export const SESSION_LANGUAGES: Readonly<Record<string, string>> = {
+  en: 'English',
+  zh: 'Simplified Chinese (简体中文)',
+};
+
+/** A session language as it resolves (LANG1c): the table's code, the name the line gives it, and where it was set. */
+export interface SessionLanguage {
+  code: string;
+  name: string;
+  source: 'repository' | 'workspace';
+}
+
+/** The table's code a person's spelling names, in any case and without the spaces around it, or null — `SessionLanguages.Code`. */
+export function languageCode(spelled: unknown): string | null {
+  if (typeof spelled !== 'string') return null;
+  const code = spelled.trim().toLowerCase();
+  return Object.hasOwn(SESSION_LANGUAGES, code) ? code : null;
+}
+
+/** The refusal both doors say for a code the table does not hold — `SessionLanguages.Refusal`, in the same words. */
+export function languageRefusal(spelled: string): string {
+  return `\`${spelled.trim()}\` is not a language a session can be asked to write in here — one of `
+    + `${Object.keys(SESSION_LANGUAGES).map((code) => `\`${code}\``).join(', ')}.`;
+}
+
+/**
+ * What a session in this repository is asked to write in (LANG1c): its own, else its workspace's (one in none is in the default
+ * one), else null — the driver's `SessionLanguages.Resolve`, names matched without case.
+ */
+export function languageFor(choices: DriverChoices, repository: string, workspace: string | null): SessionLanguage | null {
+  const own = entryIn(choices.languages, repository.trim());
+  if (own !== null) return { code: own, name: SESSION_LANGUAGES[own]!, source: 'repository' };
+  const shared = entryIn(choices.workspaceLanguages, normalizeWorkspace(workspace));
+  return shared === null ? null : { code: shared, name: SESSION_LANGUAGES[shared]!, source: 'workspace' };
+}
+
+function entryIn(map: Record<string, string>, name: string): string | null {
+  const key = Object.keys(map).find((each) => each.toLowerCase() === name.toLowerCase());
+  return key === undefined ? null : map[key]!;
 }
 
 /** A standing answer (KNOWUSE1b): the person's words, and when they set them, or null where the file does not say. */
@@ -124,7 +178,8 @@ export const DEFAULT_COOLOFF_MINUTES = 60;
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
-  landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, rest: {},
+  landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
+  workspaceLanguages: {}, rest: {},
 };
 
 /**
@@ -264,13 +319,15 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   if (parsed === null) {
     return {
       ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
-      workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, rest: {},
+      workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, standing: {}, languages: {},
+      workspaceLanguages: {}, rest: {},
     };
   }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, released, intakeAdapter, helperAdapter, timeoutMinutes,
-    cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing, ...rest
+    cooloff, lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, standing,
+    languages, workspaceLanguages, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -319,6 +376,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     writeAcross: targetMap(writeAcross),
     // The person's words by repository, as the driver reads them (KNOWUSE1b): an answer the driver would not read is not listed.
     standing: standings(standing),
+    // A code of the table by name, as the driver reads them (LANG1c): a language the driver would not hand is not listed.
+    languages: languageMap(languages),
+    workspaceLanguages: languageMap(workspaceLanguages),
     rest,
   };
 }
@@ -364,6 +424,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
           }])),
         }
       : {}),
+    // Written only when set (LANG1c), as the driver writes them: absent is no language, and no line handed.
+    ...(Object.keys(choices.languages).length > 0 ? { languages: choices.languages } : {}),
+    ...(Object.keys(choices.workspaceLanguages).length > 0 ? { workspaceLanguages: choices.workspaceLanguages } : {}),
   });
 }
 
@@ -846,10 +909,58 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // The session language (LANG1c, D142 point 7): what a repository's sessions — or, with `--workspace`, those of each
+    // repository there that sets none of its own — are asked to write to the person in. The work's, set apart from the
+    // window's (Settings → Appearance); unset, no line is handed. A repository's page, Settings → Workspace and Ask Daoris's
+    // `setting` kind are its other doors (D50).
+    case 'language': {
+      const workspace = flagValue(argv, '--workspace');
+      const clear = argv.includes('--clear');
+      const [, first, second] = operands(argv, new Set(['--workspace']));
+      const name = workspace ?? first;
+      const spelled = workspace ? first : second;
+      if (!name || (!clear && !spelled)) {
+        throw new DaorisError(
+          '`driver language` needs <repository>|--workspace <name>, then en|zh|--clear — '
+          + 'e.g. `daoris driver language aurora-engine zh`.');
+      }
+
+      const code = clear ? null : languageCode(spelled);
+      if (!clear && code === null) throw new DaorisError(languageRefusal(spelled!));
+
+      const map = workspace ? choices.workspaceLanguages : choices.languages;
+      // The name's spelling first written, when it has one in another case: one entry, never two.
+      const key = Object.keys(map).find((each) => each.toLowerCase() === name.toLowerCase()) ?? name;
+      const rest = Object.fromEntries(Object.entries(map).filter(([each]) => each !== key));
+      const next = code === null ? rest : { ...rest, [key]: code };
+      writeDriverChoices(path, workspace ? { ...choices, workspaceLanguages: next } : { ...choices, languages: next });
+
+      if (code === null) {
+        write(workspace
+          ? `daoris: repositories in the workspace \`${key}\` keep their own session language, else none.`
+          : `daoris: \`${key}\` takes its workspace's session language again, else none.`);
+      } else {
+        write(workspace
+          ? `daoris: sessions in each repository in the workspace \`${key}\` that sets none of its own write to you in `
+            + `${SESSION_LANGUAGES[code]}: their questions, closing notes, decline reasons and last words.`
+          : `daoris: sessions in \`${key}\` write to you in ${SESSION_LANGUAGES[code]}: their questions, closing notes, `
+            + 'decline reasons and last words.');
+        write('  One line in each instruction asks it; code, commands and anything quoted stay as written. The window\'s own');
+        write('  language is Settings → Appearance, and neither sets the other.');
+        if (workspace) {
+          write('  A repository with a language of its own keeps it — `daoris driver language <repository> --clear` hands it back.');
+        }
+      }
+
+      write('  A session already running keeps what it was handed.');
+      write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+      return 0;
+    }
+
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, standing, `
-        + 'notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
+        + 'language, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -955,6 +1066,20 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       write(`  standing   ${repository}  "${answer.says}"${when}`);
     }
 
+    // LANG1c: each session language and where it was set. This command reads no registry (D50), so a workspace's is said for
+    // the repositories there that set none; the screen names each repository's resolution.
+    for (const [repository, code] of Object.entries(choices.languages)) {
+      write(`  language   ${repository}  ${code} (${SESSION_LANGUAGES[code]})  (set for it)`);
+    }
+
+    for (const [workspace, code] of Object.entries(choices.workspaceLanguages)) {
+      write(`  language   workspace ${workspace}  ${code} (${SESSION_LANGUAGES[code]})  (for each repository there that sets none)`);
+    }
+
+    if (Object.keys(choices.languages).length === 0 && Object.keys(choices.workspaceLanguages).length === 0) {
+      write('  language   none set — sessions are asked for no language; `daoris driver language <repository> en|zh` sets one');
+    }
+
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
     // and is not. Reported even when NOTHING is drivable — which is exactly the machine where a
     // person is most likely to believe a hold is what is stopping things.
@@ -1034,6 +1159,25 @@ function standings(value: unknown): Record<string, StandingAnswer> {
     if (typeof says !== 'string' || says.trim().length === 0) continue;
     if (Object.keys(held).some((name) => name.toLowerCase() === repository.toLowerCase())) continue;
     held[repository] = { says: says.trim(), at: isoMoment(at) };
+  }
+
+  return held;
+}
+
+/**
+ * The session languages, as the driver reads them (LANG1c): each name a code of the table, read in any case without the spaces
+ * around it. A code the table does not hold, a value that is not text, a blank name and a map that is not one are not read; a
+ * name written twice in any case is read where first written.
+ */
+function languageMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, string> = {};
+  for (const [name, spelled] of Object.entries(value as Record<string, unknown>)) {
+    const code = languageCode(spelled);
+    const named = name.trim();
+    if (code === null || named.length === 0) continue;
+    if (Object.keys(held).some((each) => each.toLowerCase() === named.toLowerCase())) continue;
+    held[named] = code;
   }
 
   return held;

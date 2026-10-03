@@ -151,6 +151,39 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     c => c.WithStanding(target!, says, at));
                 break;
             }
+            case "language":
+            {
+                // LANG1c (D142 point 7): the work's session language, for a repository or a workspace, judged by the closed
+                // table as `SET_LANGUAGE` and `daoris driver language` judge it. Not among `Doors` until the service's writer
+                // lists it beside them (HelpCoverageTests), so only a proposal file naming it reaches here meanwhile.
+                var circle = workspace is { Length: > 0 };
+                if (circle == target is { Length: > 0 })
+                {
+                    return Refused("a session language is set for a repository or a workspace — name exactly one.", "", "");
+                }
+
+                var code = value == "--clear" ? null : SessionLanguages.Code(value);
+                if (value != "--clear" && code is null)
+                {
+                    return Refused(value.Length == 0
+                        ? "`language` names a language, `en` or `zh`, or `--clear` — e.g. `daoris driver language engine zh`."
+                        : SessionLanguages.Refusal(value), "", "");
+                }
+
+                var language = code is null ? null : SessionLanguages.NameOf(code);
+                planned = (language is null
+                        ? circle
+                            ? $"Clear workspace `{workspace}`'s session language: each repository there keeps its own, else none."
+                            : $"Clear `{target}`'s session language: it takes its workspace's again, else none."
+                        : (circle
+                            ? $"Sessions in each repository of workspace `{workspace}` that sets none of its own write to you in {language}"
+                            : $"Sessions in `{target}` write to you in {language}")
+                          + ": a question to you, a closing note, a decline's reason, their last words. The window's own language "
+                          + "stays yours, in Settings → Appearance.",
+                    $"daoris driver language {scope} {code ?? "--clear"}",
+                    c => circle ? c.WithWorkspaceLanguage(workspace!, code) : c.WithLanguage(target!, code));
+                break;
+            }
             case "intake" or "helper":
             {
                 var agent = value == "off" ? null : value;

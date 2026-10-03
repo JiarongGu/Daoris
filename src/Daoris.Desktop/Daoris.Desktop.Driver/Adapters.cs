@@ -114,6 +114,13 @@ public sealed record SessionTarget(
     public StandingAnswer? Standing { get; init; }
 
     /// <summary>
+    /// The language the work asks its sessions to write to the person in (LANG1c, D142 point 7): its repository's, else its
+    /// workspace's, read from <c>driver.json</c> for this start and named in one line after the close instruction. Null where
+    /// neither is set, and the instruction reads as it did.
+    /// </summary>
+    public SessionLanguage? Language { get; init; }
+
+    /// <summary>
     /// Whether the session before was stopped by the person, who has since released the quest from that stop with *Try
     /// again* (SESSUX1b): the carry-on is told so, rather than that the session before was cut off.
     /// </summary>
@@ -218,7 +225,7 @@ public static class TargetPrompt
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
-        taken or closed, stand down and finish without changing anything.
+        taken or closed, stand down and finish without changing anything.{Language(target)}
         {Mapped(target)}{Landing(target)}{Reading(target)}
         {Asking(target)}
 
@@ -249,7 +256,7 @@ public static class TargetPrompt
 
         Carry on from there, inside this repository under its own doctrine and gates, then close
         `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part
-        the asker can act on.
+        the asker can act on.{Language(target)}
         {Mapped(target)}{Landing(target)}{Reading(target)}
         {Asking(target)}
 
@@ -279,7 +286,7 @@ public static class TargetPrompt
 
         Finish from there rather than starting again, inside this repository under its own doctrine and
         gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
-        the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less.
+        the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less.{Language(target)}
         {Mapped(target)}{Landing(target)}{Reading(target)}
         {Asking(target)}
 
@@ -326,6 +333,12 @@ public static class TargetPrompt
     /// its ask: their words, verbatim, with when they set them. Nothing where the repository keeps none.
     /// </summary>
     private static string Standing(SessionTarget target) => StandingText.Beneath(target.Standing, target.Repository);
+
+    /// <summary>
+    /// The work's session language (LANG1c, the language design §7), as a paragraph of its own after the close instruction it
+    /// governs: what the agent writes to the person in. Nothing where none is set, so the instruction reads as it did.
+    /// </summary>
+    private static string Language(SessionTarget target) => SessionLanguageText.AfterClose(target.Language);
 
     /// <summary>
     /// For a first start handed the words the person wrote to an earlier session on its quest after it ended, which could
