@@ -75,6 +75,9 @@ public static class DriverCommand
               decline one that waits on you.
           sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
               take ended sessions out of the list, or bring them back; delete a conversation that served no quest.
+          sessions say <id> "…" [--file <path>]…
+              say something to a session of this machine's: read at its next step or when its turn ends while it
+              works, or, parked or ended, the same session goes on with it. Prints where the words stand.
           trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
                 | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | sync [--repository <name>] [--all] [--yes]]

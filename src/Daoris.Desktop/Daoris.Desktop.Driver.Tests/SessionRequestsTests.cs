@@ -11,7 +11,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The registry is the watch's test seam (what runs here, and how a stop is made), so no process starts: the suite's fast
-/// half. The same pass over real processes and a real tick is <see cref="SessionRequestTickTests"/>.
+/// half. The same pass over real processes and a real tick is <see cref="SessionRequestTickTests"/>. A terminal's words
+/// (MSG1e) are a request of their own, answered beside it; the verb's whole door is <see cref="SessionsSayCommandTests"/>.
 /// </remarks>
 public sealed class SessionRequestsTests : IDisposable
 {
@@ -144,6 +145,192 @@ public sealed class SessionRequestsTests : IDisposable
         Assert.True(Requests.Withdraw("s1"));
         Assert.False(Requests.Withdraw("s1"));
         Assert.Empty(Requests.Pending(Now));
+    }
+
+    private static SessionRequest Say(string session, string key = "a1b2c3d4e5f6") =>
+        new(session, SessionMove.Say, Now) { Text = "also the changelog; 中文 too.", Files = ["notes.md"], Key = key };
+
+    /// <summary>
+    /// MSG1e (D137 §5.2): a terminal's words are a request of their own, under the session's id and their own key, so two said
+    /// at once both wait and a stop for the same session is not replaced by them; read back whole.
+    /// </summary>
+    [Fact]
+    public void A_say_is_written_under_its_own_name_beside_a_stop_and_read_back_whole()
+    {
+        Requests.Write(new SessionRequest("s1", SessionMove.Stop, Now));
+        Requests.Write(Say("s1"));
+        Requests.Write(Say("s1", key: "0f0f0f0f0f0f"));
+
+        Assert.True(File.Exists(Path.Combine(Requests.Folder, "s1.a1b2c3d4e5f6.json")));
+        var pending = Requests.Pending(Now.AddSeconds(5));
+        Assert.Equal(3, pending.Count);
+        var said = Assert.Single(pending, request => request.Key == "a1b2c3d4e5f6");
+        Assert.Equal(("s1", SessionMove.Say, "also the changelog; 中文 too.", RequestDoor.Terminal, Now),
+            (said.Session, said.Move, said.Text, said.By, said.At));
+        Assert.Equal(["notes.md"], said.Files);
+    }
+
+    [Theory]
+    [InlineData("../x")]
+    [InlineData("A1B2")]
+    [InlineData("")]
+    public void A_say_whose_key_could_name_a_path_is_refused(string key)
+    {
+        Assert.Throws<DriverException>(() => Requests.Write(Say("s1", key)));
+    }
+
+    /// <summary>A say is taken by its own name, once; its answer is kept beside it for the asker, and read once.</summary>
+    [Fact]
+    public void A_say_is_taken_by_its_own_name_and_its_answer_read_once()
+    {
+        var request = Say("s1");
+        Requests.Write(request);
+
+        Assert.NotNull(Requests.Take(request));
+        Assert.Null(Requests.Take(request));
+        Assert.Null(Requests.AnswerOf(request));
+
+        Requests.Answer(request, new WordsHeld(true, "resume", null) { Word = "w1" });
+
+        Assert.Equal(new WordsHeld(true, "resume", null) { Word = "w1" }, Requests.AnswerOf(request));
+        Assert.Null(Requests.AnswerOf(request));
+        Assert.Empty(Requests.Pending(Now));
+    }
+
+    /// <summary>
+    /// An answer something else holds open that moment (a reader that lets it be deleted and nothing else) is read at the next
+    /// ask, never dropped unread: the asker would otherwise wait out its time for words that were held.
+    /// </summary>
+    [Fact]
+    public void An_answer_held_open_is_read_at_the_next_ask_never_dropped()
+    {
+        var request = Say("s1");
+        Requests.Answer(request, new WordsHeld(true, "turn-end", null));
+        var path = Path.Combine(Requests.Folder, "s1.a1b2c3d4e5f6.answer.json");
+
+        using (File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Delete))
+        {
+            Assert.Null(Requests.AnswerOf(request));
+        }
+
+        Assert.Equal(new WordsHeld(true, "turn-end", null), Requests.AnswerOf(request));
+    }
+
+    /// <summary>A say's answer is its asker's: a look never lists it as a request, and drops one nobody read for a minute.</summary>
+    [Fact]
+    public void An_answer_is_never_a_request_and_one_nobody_read_is_dropped()
+    {
+        Requests.Answer(Say("s1"), new WordsHeld(true, "turn-end", null));
+        var path = Path.Combine(Requests.Folder, "s1.a1b2c3d4e5f6.answer.json");
+
+        Assert.Empty(Requests.Pending(DateTimeOffset.UtcNow));
+        Assert.True(File.Exists(path));
+
+        Assert.Empty(Requests.Pending(DateTimeOffset.UtcNow.AddMinutes(2)));
+        Assert.False(File.Exists(path));
+    }
+
+    [Fact]
+    public void A_say_nobody_took_is_withdrawn_by_its_own_name()
+    {
+        var request = Say("s1");
+        Requests.Write(request);
+        Requests.Write(new SessionRequest("s1", SessionMove.Stop, Now));
+
+        Assert.True(Requests.Withdraw(request));
+        Assert.False(Requests.Withdraw(request));
+        Assert.Equal(SessionMove.Stop, Assert.Single(Requests.Pending(Now)).Move);
+    }
+
+    /// <summary>A loop's half (MSG1e): a session its registry runs hears the words at its door, as the screen's box hands them.</summary>
+    [Fact]
+    public async Task A_say_for_a_session_this_loop_runs_is_held_at_its_door_and_answered()
+    {
+        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
+        var inbox = processes.OpenInbox("s1");
+        inbox.Attach(interrupt: null);
+        var request = Say("s1");
+        Requests.Write(request);
+        await using var watch = new SessionRequestWatch(_home, processes, () => null, every: TimeSpan.FromHours(1));
+
+        var honoured = await watch.HonourAsync();
+
+        Assert.Equal("s1", Assert.Single(honoured).Session);
+        Assert.Equal("also the changelog; 中文 too.", Assert.Single(inbox.State.Queued).Text);
+        Assert.Equal(new WordsHeld(true, "turn-end", null), Requests.AnswerOf(request));
+    }
+
+    /// <summary>A session another process on this machine runs is that process's loop's to answer: the request is left.</summary>
+    [Fact]
+    public async Task A_say_for_a_session_another_process_runs_is_left()
+    {
+        Directory.CreateDirectory(Path.Combine(_home, "sessions"));
+        using (var self = System.Diagnostics.Process.GetCurrentProcess())
+        {
+            File.WriteAllText(Path.Combine(_home, "sessions", "s1.pid"), $"{self.Id} {self.StartTime.ToUniversalTime().Ticks}");
+        }
+
+        var ledger = new SayingLedger();
+        using var service = ledger.Client();
+        Requests.Write(Say("s1"));
+        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => service, every: TimeSpan.FromHours(1));
+
+        Assert.Empty(await watch.HonourAsync());
+        Assert.Single(Requests.Pending(Now));
+        Assert.Equal(0, ledger.Says);
+    }
+
+    /// <summary>
+    /// A session nothing on this machine runs is any loop's to keep the words for, once its service answers: kept on the
+    /// record by the say door, and the word's id answered.
+    /// </summary>
+    [Fact]
+    public async Task A_say_for_a_session_nothing_here_runs_waits_for_the_loops_service_then_is_kept()
+    {
+        var ledger = new SayingLedger();
+        using var service = ledger.Client();
+        ServiceClient? up = null;
+        var request = Say("s1");
+        Requests.Write(request);
+        await using var watch = new SessionRequestWatch(_home, new SessionProcesses(Path.Combine(_home, "sessions")), () => up, every: TimeSpan.FromHours(1));
+
+        Assert.Empty(await watch.HonourAsync());
+        Assert.Single(Requests.Pending(Now));
+
+        up = service;
+        Assert.Single(await watch.HonourAsync());
+        Assert.Equal(new WordsHeld(true, "resume", null) { Word = "w1" }, Requests.AnswerOf(request));
+        Assert.Equal(("also the changelog; 中文 too.", "notes.md"), (ledger.Text, ledger.File));
+    }
+
+    /// <summary>The service's say door, standing in: it keeps every word as <c>w1</c>, and remembers what it was handed.</summary>
+    private sealed class SayingLedger : HttpMessageHandler
+    {
+        public int Says { get; private set; }
+
+        public string? Text { get; private set; }
+
+        public string? File { get; private set; }
+
+        public ServiceClient Client() => new("http://ledger.test", null, new HttpClient(this, disposeHandler: false));
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(ct))!.AsObject();
+            Says++;
+            Text = body["text"]!.GetValue<string>();
+            File = body["files"]?.AsArray().Select(name => (string?)name).FirstOrDefault();
+            return new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    new JsonObject
+                    {
+                        ["session"] = new JsonObject { ["id"] = "s1", ["state"] = "completed" }, ["message"] = "Kept.",
+                        ["said"] = new JsonObject { ["id"] = "w1", ["text"] = Text, ["at"] = Now.ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true },
+                    }.ToJsonString(),
+                    System.Text.Encoding.UTF8, "application/json"),
+            };
+        }
     }
 
     /// <summary>The service's state door, standing in for one session: it moves the record and says how.</summary>
