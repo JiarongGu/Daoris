@@ -75,6 +75,7 @@ changes no row (D127).
 | `2026-10-03-evidence-design.md` | contract | Evidence Daoris checks: a requirement names a path the done's commit must hold, or a declared gate read from the queue's verdict; a met answer without it holds the quest as a departure does (EVID1) | Designed (D144); nothing built. Amends D46, D133 §3–§4, D65 §4 and D115 §5. D146 amends its §7 |
 | `2026-10-04-landing-and-proof-design.md` | contract | Accepting done work automatically, the pull request the last human step, a chain on one branch (LAND2); captured proof, screenshots and API answers kept on the machine, which a requirement may require (EVID2) | Designed (D145, D146); nothing built. Amends D82, D87, D100, D113 §3, D144 and D78 §3.5 |
 | `2026-10-04-built-in-git-design.md` | contract | Git built in: a place holding each repository's branches by kind, history as a graph, a commit, a file's history and blame, a compare; acts on refs, a push only on the person's press, managed Git offered (GIT1) | Designed (D147); nothing built. Amends the push in D87, D100 and D109, D97 and D66 |
+| `2026-10-04-plugin-hooks-design.md` | contract | Plugin hooks: the points plugins speak at today; a query asking a landed branch's plugin for its pull request's state, so a squash-merged pull request's branches can go; other processes weighed (PLUGHOOK1) | Designed (D148); nothing built. Amends D102's rejection of asking the platform, D88, D113, D147 §3.4 and D64 §4 |
 
 ## Studies and evidence
 
