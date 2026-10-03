@@ -16,7 +16,7 @@ namespace Daoris.Driver.Tests;
 ///
 /// <para><b>Three answers.</b> A door names the kind and its door, held against <see cref="IHelpProposalKind.Doors"/>.
 /// An exemption is a principle: one of D89's own presses (a sign-in, a key, a discard), something that changes
-/// nothing, a viewer's own look, or what an agent may do. A door owed is a door Ask Daoris should have, and says
+/// nothing, a viewer's own look, what an agent may do, or the person's act on the application itself (D139). A door owed is a door Ask Daoris should have, and says
 /// what it waits on.</para>
 /// </remarks>
 public sealed partial class HelpCoverageTests
@@ -213,6 +213,12 @@ public sealed partial class HelpCoverageTests
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Owed(CoolOffOwed)),
+        // UPDATE1e: the install's update, *Update when idle*, *Update now* and *Not now*, read once the hooks exported as
+        // functions were.
+        ("driver", "useSayUpdate", null, new Exempt(
+            "an update is the person's act on the application, not on the work it drives (D139): *Update now* closes Daoris, "
+            + "Ask Daoris's window with it, and *Not now* keeps a build from installing, so each stays their own press on the "
+            + "banner, Settings → Driver or `daoris-driver update --when-idle|--now|--cancel`.")),
 
         // TOOL4g: how an agent's accounts are used. The `use` door is judged and applied on this side already
         // (`HelpAgentProposals`); every one waits on the service's writer.
@@ -547,6 +553,20 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
+    /// UPDATE1e: a hook exported as a function is read as one exported as a constant is, whether it changes something
+    /// included, so the update's words on Settings → Driver are answered for rather than unseen.
+    /// </summary>
+    [Fact]
+    public void A_hook_exported_as_a_function_is_read_as_one_exported_as_a_constant_is()
+    {
+        var hooks = BridgeHooks();
+
+        Assert.True(hooks.TryGetValue("useSayUpdate", out var say) && say.Changes);
+        Assert.True(hooks.TryGetValue("useUpdateState", out var state) && !state.Changes);
+        Assert.Contains("useSetNotify", hooks.Keys);
+    }
+
+    /// <summary>
     /// SESSUX1f: the delete's bridge hook changes something, and the `delete` kind takes no `session` door yet, so it is a door
     /// owed to SESSUX1h (D126 §7.3). When the door lands, this owed door becomes it.
     /// </summary>
@@ -671,7 +691,7 @@ public sealed partial class HelpCoverageTests
                     .SelectMany(union => Quoted().Matches(union.Groups[1].Value).Select(action => action.Groups[1].Value))
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
-                hooks[exported.Groups[1].Value] = (Changes().IsMatch(part), actions);
+                hooks[exported.Groups["hook"].Value] = (Changes().IsMatch(part), actions);
             }
         }
 
@@ -731,7 +751,9 @@ public sealed partial class HelpCoverageTests
     [GeneratedRegex(@"\n(?=export |const |function |type |/\*\*|//)")]
     private static partial Regex TopLevel();
 
-    [GeneratedRegex(@"^export const (use[A-Z]\w*)\s*=")]
+    // Both forms a hook is exported in (UPDATE1e): `export const useX =` and `export function useX(`, which the update's
+    // bridge uses, and which this read alone missed, leaving Settings → Driver's three words answered for nowhere.
+    [GeneratedRegex(@"^export (?:const (?<hook>use[A-Z]\w*)\s*=|function (?<hook>use[A-Z]\w*)\s*[(<])")]
     private static partial Regex ExportedHook();
 
     [GeneratedRegex(@"useMutation\(|\buse[A-Z]\w*Change\b")]

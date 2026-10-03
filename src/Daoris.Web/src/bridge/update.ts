@@ -7,8 +7,9 @@ import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 // door is `daoris-driver update`; both write the same request under the home (D50).
 
 /**
- * Where the install's update stands — what the banner renders. Desktop only: the update is the install's, and a browser
- * over the service has no bridge to ask (D47 §4). Kept current by the shell's `UPDATE_STATE`, each change once.
+ * Where the install's update stands — what the banner renders, and the last swap (`last`) Settings' row says after the
+ * banner's *Dismiss* (UPDATE1d). Desktop only: the update is the install's, and a browser over the service has no bridge to
+ * ask (D47 §4). Kept current by the shell's `UPDATE_STATE`, each change once.
  */
 export function useUpdateState() {
   const { isAvailable } = useShenora();
