@@ -12,7 +12,7 @@ import {
   useParkGoAhead,
 } from '../shell';
 import { doorOf } from '../tools';
-import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, takesWords, tooLong } from './say';
+import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, startFromRefusal, takesWords, tooLong } from './say';
 import { SessionBox } from './SessionBox';
 import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing';
 import { goAheadsAsked, goAheadToast } from './parkGoAheads';
@@ -497,12 +497,18 @@ export function WorkFrame({
     });
   };
   // *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the repository, its first message the words
-  // this session could not go on with, attended once it opens. The driver's sentence when none could start is said whole.
+  // this session could not go on with, attended once it opens. One act of the driver's (MSG1f2), which reads the words off
+  // the record and takes them off it, so the words the page shows are not sent. A refusal is said by its code; the driver's
+  // sentence when none could start is said whole.
   const startFrom = useStartFrom();
-  const onStartFrom = (words: string[]) => {
+  const onStartFrom = () => {
     if (!attended || startFrom.isPending) return;
-    startFrom.mutate({ session: attended.id, repository: attended.repository, words }, {
+    startFrom.mutate({ session: attended.id }, {
       onSuccess: (started) => {
+        if (started.why) {
+          notify(startFromRefusal(t, started.why, { quest: attended.quest }), 'error');
+          return;
+        }
         if (!started.sessionId) {
           notify(started.message, 'error');
           return;

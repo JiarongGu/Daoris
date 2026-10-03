@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Session } from '../api';
-import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, reasonOf, takesWords, tooLong } from './say';
+import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, reasonOf, startFromRefusal, takesWords, tooLong } from './say';
 
 // The box on a session's page (MSG1f, D137 §5.1), as one pure answer: which box a session is offered, by what its record
 // says and what a word said now would do (`SESSION_QUEUE`'s `reaches` and `why`, MSG1d), and the sentences for what
@@ -120,6 +120,23 @@ describe('neverSentence', () => {
   });
 });
 
+describe('startFromRefusal', () => {
+  /** MSG1f2: what *Start a conversation with these words* is refused by, each in the page's own words, in both catalogues. */
+  it.each([
+    ['running', 'It still runs, so your words reach it there; it needs no new conversation.'],
+    ['no-words', 'No words wait on this session now, so there is nothing to start a conversation with.'],
+    ['carried', 'Its quest is still open, so the driver carries these words on with it by itself.'],
+    ['stood-down', 'It stood down: #q1 is someone else\'s, so it has nothing to go on with.'],
+  ])('says %s in its own sentence', (code, said) => {
+    expect(startFromRefusal(t, code, { quest: 'q1' })).toBe(said);
+    expect(startFromRefusal(zh, code, { quest: 'q1' })).not.toBe(said);
+  });
+
+  it('names a code it has no sentence for, rather than saying nothing', () => {
+    expect(startFromRefusal(t, 'something-newer', {})).toBe('It takes no words now (something-newer).');
+  });
+});
+
 describe('reasonOf', () => {
   /** §5.1: a reason is chrome, so the page words the code, never the note's English. */
   it.each([
@@ -133,6 +150,7 @@ describe('reasonOf', () => {
     ['teammate', 'it ran on another machine, where its conversation is'],
     ['intake', 'an intake is answered through its ask'],
     ['stood-down', 'it stood down, so it has nothing to go on with'],
+    ['started', 'you started a conversation with them'],
   ])('words %s', (code, said) => {
     expect(reasonOf(t, code, {})).toBe(said);
   });

@@ -300,6 +300,7 @@ public static class NoteCodes
         new(ContinueWhy.Teammate, [], "work.say.why.teammate"),
         new(ContinueWhy.Intake, [], "work.say.why.intake"),
         new(ContinueWhy.StoodDown, [], "work.say.why.stoodDown"),
+        new(ContinueWhy.Started, [], "work.say.why.started"),
     ]);
 
     /// <summary>Why a cool-off lasts until then, as the page words it (<c>harness.cooling.why.*</c>).</summary>

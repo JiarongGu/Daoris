@@ -77,6 +77,24 @@ public sealed partial class DriverModule
         return new { said.Sent, said.Reaches, said.Why };
     }
 
+    // *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): words a session cannot go on with, and that nothing
+    // carries on by itself, start a conversation in its repository on the machine's adapter, handed with a preface naming the
+    // session, and leave its record naming that conversation, as one act of the chat runner's. `{ sessionId, sent, why,
+    // message }`: what never goes on, a session still running, no words waiting and a quest that carries them on by itself are
+    // refused by their codes before anything starts. Its end reaches the page as a start's does.
+    [DriverRoute("SESSION_START_FROM")]
+    private async Task<object?> SessionStartFromAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var chat = _loop.Chat ?? throw NotReady();
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var started = await chat.StartFromAsync(
+                id, config.Adapter, config, onEnded: (session, state) => DriverLoop.Ended(_events, session, state), cancellationToken)
+            .ConfigureAwait(false);
+        _loop.Nudge();
+        return new { started.SessionId, started.Sent, started.Why, started.Message };
+    }
+
     // A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press where the ask's
     // page and the box took two. The go-ahead first, on its ask, so the conversation the answer resumes is handed it as the
     // driver takes the park up (KNOWUSE1a's resumed prompt); then the park, with the person's words through the box's own

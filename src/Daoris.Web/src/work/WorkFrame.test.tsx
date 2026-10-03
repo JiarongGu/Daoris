@@ -1751,23 +1751,27 @@ describe('the box on every session that takes words', () => {
     expect(onSelect).toHaveBeenCalledWith('n3wn3w00');
   });
 
+  /** Words a closed quest's session cannot go on with: two said, and the driver's line saying why. */
+  const CANNOT = {
+    session: 's1a2b3c4', earlier: false, latest: 5,
+    events: [
+      { seq: 1, at: '2026-10-03T10:00:00Z', kind: 'user', origin: 'target', text: 'take quest #abc123' },
+      { seq: 2, at: '2026-10-03T10:00:05Z', kind: 'turn', stopReason: 'end_turn' },
+      { seq: 3, at: '2026-10-03T11:00:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' },
+      { seq: 4, at: '2026-10-03T11:00:01Z', kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' },
+      { seq: 5, at: '2026-10-03T11:00:30Z', kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' },
+    ],
+  };
+
   /**
-   * §2.2: words a closed quest's session cannot go on with offer one press: a new conversation in the same repository whose
-   * first message is the words, its opening naming the session they were written to, attended once it opens.
+   * §2.2, MSG1f2: words a closed quest's session cannot go on with offer one press, the driver's one act: a new conversation
+   * in the same repository whose first message is the words, taken off this session, attended once it opens. The page sends
+   * the session alone; the driver reads the words off its record, and nothing else is asked.
    */
   it('starts a conversation with the words that cannot go on, and attends it', async () => {
     driver({ reaches: 'resume' }, { sent: true }, {
-      START_CHAT: { sessionId: 'c4a7c4a7', message: 'started' },
-      SESSION_HISTORY: {
-        session: 's1a2b3c4', earlier: false, latest: 5,
-        events: [
-          { seq: 1, at: '2026-10-03T10:00:00Z', kind: 'user', origin: 'target', text: 'take quest #abc123' },
-          { seq: 2, at: '2026-10-03T10:00:05Z', kind: 'turn', stopReason: 'end_turn' },
-          { seq: 3, at: '2026-10-03T11:00:00Z', kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' },
-          { seq: 4, at: '2026-10-03T11:00:01Z', kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' },
-          { seq: 5, at: '2026-10-03T11:00:30Z', kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' },
-        ],
-      },
+      SESSION_START_FROM: { sessionId: 'c4a7c4a7', sent: true, message: 'started' },
+      SESSION_HISTORY: CANNOT,
     });
     const { onSelect } = show('s1a2b3c4');
 
@@ -1775,10 +1779,25 @@ describe('the box on every session that takes words', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Start a conversation with these words' }));
 
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith('c4a7c4a7'));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', { payload: { repository: 'engine' } });
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
-      payload: { id: 'c4a7c4a7', text: 'first\n\nsecond', preface: expect.stringContaining('session `s1a2b3c4`') },
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_START_FROM', { payload: { id: 's1a2b3c4' } });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', expect.anything());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+  });
+
+  /** MSG1f2: a press the driver refuses is said by its code in the page's words, and attends nothing. */
+  it('says a refused press by its code', async () => {
+    driver({ reaches: 'resume' }, { sent: true }, {
+      SESSION_START_FROM: { sent: false, why: 'no-words', message: 'no words wait on s1a2b3c4 to start a conversation with.' },
+      SESSION_HISTORY: CANNOT,
     });
+    const notify = vi.fn();
+    const { onSelect } = show('s1a2b3c4', notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Start a conversation with these words' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'No words wait on this session now, so there is nothing to start a conversation with.', 'error'));
+    expect(onSelect).not.toHaveBeenCalledWith(expect.stringMatching(/^c/));
   });
 
   /**

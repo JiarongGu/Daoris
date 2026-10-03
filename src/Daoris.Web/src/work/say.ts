@@ -98,6 +98,22 @@ export function neverSentence(t: Translate, code: string, { quest }: { quest?: s
   return key ? t(key, { quest: quest ?? '' }) : t('work.say.takesNone', { code });
 }
 
+/** The sentence for each code *Start a conversation with these words* is refused by that is not a never (MSG1f2), by its key. */
+const START_FROM: Record<string, string> = {
+  'running': 'work.say.startFrom.running',
+  'no-words': 'work.say.startFrom.noWords',
+  'carried': 'work.say.startFrom.carried',
+};
+
+/**
+ * Why *Start a conversation with these words* started nothing, in the page's own words (MSG1f2): its own codes, a session
+ * still running, no words waiting and a quest that carries them on by itself, then what never goes on, as the box says it.
+ */
+export function startFromRefusal(t: Translate, code: string, { quest }: { quest?: string | null }): string {
+  const key = START_FROM[code];
+  return key ? t(key) : neverSentence(t, code, { quest });
+}
+
 /** The agents a reason may name (D137 §5.1): the adapter a session ran on, the one starts ride now, and its agent's name. */
 export type ReasonValues = {
   /** The adapter the session ran on. */
@@ -128,6 +144,8 @@ export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (k
   'teammate': { key: 'work.say.why.teammate' },
   'intake': { key: 'work.say.why.intake' },
   'stood-down': { key: 'work.say.why.stoodDown' },
+  // The person started a conversation with them (MSG1f2): the reason the went line gives where the press took them.
+  'started': { key: 'work.say.why.started' },
 };
 
 /**

@@ -232,6 +232,26 @@ describe('toTurns', () => {
     expect(items[2]).toMatchObject({ why: 'refused', said: ['first', 'second'] });
   });
 
+  /**
+   * MSG1f2: once a later note says the words went to another session (the press started a conversation with them), the note
+   * that they could not go on here hands them over no longer, so it offers no second conversation with words already gone.
+   */
+  it('takes the words back from a note whose words a later note says went elsewhere', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'go' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      e(4, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+      e(5, { kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' }),
+      e(6, { kind: 'note', text: '— your words went to session `c4a7c4a7`, because you started a conversation with them.', words: ['w1', 'w2'], to: 'c4a7c4a7', why: 'started' }),
+    ]);
+
+    const items = turns[1]!.items;
+    expect(items.map((b) => b.kind)).toEqual(['held', 'held', 'note', 'note']);
+    expect(items[2]!.said).toBeUndefined();
+    expect(items[3]).toMatchObject({ to: 'c4a7c4a7', why: 'started', words: ['w1', 'w2'] });
+  });
+
   it('hands a note no words where it names a word the page does not hold', () => {
     const { turns } = toTurns([
       e(1, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),

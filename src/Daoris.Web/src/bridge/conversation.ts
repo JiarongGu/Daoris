@@ -444,36 +444,35 @@ export const useParkGoAhead = () => {
   });
 };
 
-/** What *Start a conversation with these words* did: the conversation it opened, or the driver's sentence why none. */
-export type StartedFrom = { sessionId: string | null; message: string; sent: boolean };
+/**
+ * What *Start a conversation with these words* did (MSG1f2): the conversation it opened, whether the words are its first
+ * message and off the session they were written to, why nothing was done by a code where it refused, and the driver's
+ * sentence.
+ */
+export type StartedFrom = { sessionId: string | null; sent: boolean; why: string | null; message: string };
+
+/** The press's answer read defensively: the bridge leaves a null out, and an answer that is not one started nothing. */
+const startedOf = (answer: unknown): StartedFrom => {
+  const started = answer as { sessionId?: unknown; sent?: unknown; why?: unknown; message?: unknown } | null | undefined;
+  return {
+    sessionId: typeof started?.sessionId === 'string' && started.sessionId ? started.sessionId : null,
+    sent: started?.sent === true,
+    why: typeof started?.why === 'string' && started.why ? started.why : null,
+    message: typeof started?.message === 'string' ? started.message : '',
+  };
+};
 
 /**
- * *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the session's repository whose first message is
- * the words the session could not go on with, its opening naming the session they were written to.
- *
- * @remarks
- * **Two doors a chat already has**, until the modules route the press of their own. D137 §5.3 names
- * `SESSION_START_FROM` for it, which the modules do not have yet, so this starts a chat where `START_CHAT` would start
- * one (the workspace's account and the machine's agent, as every start takes them) and sends the words as its first
- * message, with a preface naming the session. The preface is the agent's to read, so it is not translated, and the driver
- * keeps it on the new record as its note. The words stay on the old record, which the driver no longer tries (its
- * *cannot* mark), until the modules' press takes them off.
+ * *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): `SESSION_START_FROM`, one act of the driver's. A new
+ * chat in the session's repository whose first message is the words the session could not go on with, handed with a
+ * preface naming it, which is the agent's to read; then the words leave that session's record naming the new one, and its
+ * conversation says where they went. What it refuses, it refuses before anything starts, by a code.
  */
 export const useStartFrom = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (from: { session: string; repository: string; words: readonly string[] }): Promise<StartedFrom> => {
-      const start = await call<{ sessionId?: string | null; message?: string } | null>('START_CHAT', { repository: from.repository });
-      const sessionId = start?.sessionId ?? null;
-      if (!sessionId) return { sessionId: null, message: start?.message ?? '', sent: false };
-      const said = wordsOf(await call<unknown>('SESSION_INPUT', {
-        id: sessionId,
-        text: from.words.join('\n\n'),
-        preface: `The person first wrote these words to session \`${from.session}\`, which could not go on with them; `
-          + 'this conversation has none of that session\'s context.',
-      }));
-      return { sessionId, message: start?.message ?? '', sent: said.sent };
-    },
+    mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
+      startedOf(await call<unknown>('SESSION_START_FROM', { id: from.session })),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });
