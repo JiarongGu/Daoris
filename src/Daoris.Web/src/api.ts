@@ -255,7 +255,29 @@ export type Session = {
    * (ANSWER1c). The person's own words, answered to this machine only: null over a keyed remote and on a teammate's.
    */
   answer?: string | null;
+  /**
+   * The note's lines, one part each, beside the note's English (LANG1a, D142 point 2): the page words a coded part in the
+   * reader's language and shows a words part as written (LANG1b, `work/note.ts`). Absent or null for a record from before
+   * parts, and from a host older than the field, whose note is shown as kept.
+   */
+  noteParts?: NotePart[] | null;
 };
+
+/**
+ * Whose words a words part is (LANG1a, D142 point 1): the agent's, the person's, a program's passed through, or `before`,
+ * an English note from before parts carried whole. A newer writer may name another, which is shown as written too.
+ */
+export type NoteBy = 'agent' | 'person' | 'program' | 'before';
+
+/**
+ * One line of a session's note (LANG1a, D142 point 2; the language design §3). A **coded part** is Daoris's: its code, the
+ * facts its line carries (values, never sentences: ids, a list of quest ids, an exit code, a count of minutes, an ISO 8601
+ * UTC moment, a reason's code with its own values), and `text`, its English as its writer wrote it, which a page that does
+ * not know the code shows. A **words part** is someone's words and whose they are.
+ */
+export type NotePart =
+  | { code: string; values?: Record<string, unknown> | null; text?: string | null; words?: undefined }
+  | { words: string; by?: NoteBy | (string & {}) | null; code?: undefined };
 
 /**
  * The "repository" Ask Daoris's sessions are recorded in (HELP1a, D89): a colon is in no folder name,

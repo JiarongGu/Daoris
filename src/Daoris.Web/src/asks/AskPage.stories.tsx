@@ -58,6 +58,24 @@ export const LongCjk: Story = { args: { ask: LONG_CJK } };
 export const ByIntake: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION, onAttend: nothing } };
 /** The same page in a browser: the session is named, and is not a door. */
 export const ByIntakeInABrowser: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION } };
+/**
+ * Its intake's note by code (LANG1b, D142): the line in the window's language, its quests joined the reader's way. The
+ * two above are a record from before parts, shown as kept and marked.
+ */
+export const ByIntakeByCode: Story = {
+  args: {
+    ask: BY_INTAKE,
+    onAttend: nothing,
+    intake: {
+      ...INTAKE_SESSION,
+      noteParts: [{
+        code: 'intake.published',
+        values: { quests: ['9a8b7c', '1d2e3f'], ask: BY_INTAKE.id },
+        text: 'published `#9a8b7c`, `#1d2e3f` onto ask `#3e4f5a6b7c8d`.',
+      }],
+    },
+  },
+};
 /** Its intake could not settle whose it is and parked asking — the proposal is still the person's. */
 export const IntakeAsked: Story = { args: { ask: INTAKE_ASKED, intake: INTAKE_PARKED, onAttend: nothing } };
 /** An intake the page has not loaded: named by its id, and no door that would open nothing. */

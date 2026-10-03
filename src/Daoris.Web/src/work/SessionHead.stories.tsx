@@ -205,6 +205,40 @@ export const Failed: Story = {
 };
 
 /**
+ * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
+ * lead-in as written. The two stories above are records from before parts, shown as kept and marked.
+ */
+export const FailedByCode: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'failed', created: at(40), updated: at(31),
+      note: 'The agent’s turn failed with the quest still taken: the ACP agent refused the call. It exited with code 1.',
+      noteParts: [
+        { code: 'ended.turn-failed-taken', values: {}, text: 'The agent’s turn failed with the quest still taken:' },
+        { words: 'the ACP agent refused the call: rate limited until 16:00.', by: 'agent' },
+        { code: 'account.cooling', values: { until: '2026-10-03T16:00:00Z', why: 'stated' }, text: 'The account it ran on is cooling until 2026-10-03 16:00 UTC (the agent said so); nothing starts on it until then.' },
+      ],
+    },
+  },
+};
+
+/** Parked, its lead-in by code and its question as the agent wrote it (LANG1b), with the moves a shell has. */
+export const ParkedByCode: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'awaiting-person', created: at(52), updated: at(11),
+      note: 'It stopped with its quest still taken, to ask you: …',
+      noteParts: [
+        { code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' },
+        { words: 'Two ways forward.\n\n1. Cap hydration in the scheduler.\n2. Cap it on the chunk API itself.\n\nI recommend the second.', by: 'agent' },
+      ],
+    },
+    onResolve: () => {},
+    onAnswerSession: () => {},
+  },
+};
+
+/**
  * A record mirrored from another machine (D47 §6): the machine is named, and the tree and the
  * account are absent because they never travelled. Three absences, none of them an error.
  */

@@ -253,9 +253,12 @@ controls are in the frame design's §3.
   way the reader's language writes it, with the machine's habits when the machine speaks that language
   (`format.ts`, and nothing else formats: a bare `en` wrote a British machine's dates the US's way). A
   sentence the driver writes is chrome, so 中文 translates it by its typed half (a verdict, a code),
-  never by matching the English; where the words need what the page is not told, the driver's words
-  stand (U27, U28). A default's reason passes the driver's sentence through in English and is
-  translated in 中文. A count is said in its number, never with *(s)* (U54).
+  never by matching the English. A session's note is drawn by `Note` from its parts (D142): Daoris's
+  lines worded from `note.json`, someone's words as written; a part the page cannot word, and a record
+  from before parts, show their English marked *shown as recorded* / 按原文显示, which retires *the
+  driver's words stand* for a note (U27, U28 stand elsewhere). A default's reason passes the driver's
+  sentence through in English and is translated in 中文. A count is said in its number, never with
+  *(s)* (U54).
 - **One word per thing, in each language**: the glossary (`src/Daoris.Web/src/locales/glossary.json`,
   D116) names each concept once in each, and `names:check --strict` in the web's build holds every
   label to it (NAME1b): 智能体 for an agent, 驱动 for the driver (never 驱动器, a disk drive), 委托 for a

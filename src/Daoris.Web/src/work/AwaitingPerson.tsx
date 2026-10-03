@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { NotePart } from '../api';
 import { Button, WaitingCard } from '../ui';
+import { Note } from './Note';
 
 /** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
 export type Resolution = 'completed' | 'declined' | 'stopped';
@@ -33,9 +35,14 @@ export type Resolution = 'completed' | 'declined' | 'stopped';
  * A molecule: it is handed the note and reports a move, so a parked session with a three-paragraph
  * analysis and one with none are both reachable by passing them.
  */
-export function AwaitingPerson({ note, pending = false, onResolve, onAnswer }: {
-  /** The session's own analysis, rendered word for word. */
+export function AwaitingPerson({ note, parts, pending = false, onResolve, onAnswer }: {
+  /** The session's note: its English, shown as kept where it has no parts. */
   note?: string | null;
+  /**
+   * Its lines (LANG1a): Daoris's lead-in worded in the reader's language, and the agent's analysis beneath it word for
+   * word (LANG1b, `Note`).
+   */
+  parts?: readonly NotePart[] | null;
   pending?: boolean;
   /** The ledger's moves this card makes, finish and decline, where this surface can make them (the shell). */
   onResolve?: (state: Resolution, note: string | null) => void;
@@ -53,9 +60,7 @@ export function AwaitingPerson({ note, pending = false, onResolve, onAnswer }: {
   return (
     <WaitingCard title={t('work.head.waiting')}>
 
-      {note && (
-        <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{note}</p>
-      )}
+      <Note note={note} parts={parts} className="mt-1.5 text-body leading-relaxed" />
 
       <p className="m-0 mt-2 text-small text-ink-faint">{t('work.awaiting.hint')}</p>
 

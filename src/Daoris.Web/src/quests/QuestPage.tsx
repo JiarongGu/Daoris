@@ -9,6 +9,7 @@ import { ChainStrip } from '../map/ChainStrip';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, type IconName, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
+import { Note } from '../work/Note';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
@@ -65,8 +66,9 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  * - **A delete asks once** (D95): its first press opens a sentence saying the second removes the record, which
  *   nothing gives back; offered only where the service says it may go (`deletable`).
  * - **A decline needs its reason**, which the service refuses without; the form does not offer the mistake.
- * - **What the service and the driver say is said verbatim**: the session's note and evidence, a conflict's
- *   note, the driver's sentence about why it sits (translated by its verdict, never by its words, U27).
+ * - **What the service and the driver say is said verbatim**: the session's evidence, a conflict's note, the driver's
+ *   sentence about why it sits (translated by its verdict, never by its words, U27). The session's note is `Note`'s
+ *   (LANG1b): Daoris's lines by their codes in the reader's language, someone's words as written.
  * - **A page never prints a machine path it was answered** (D47 §4): a kept file opens through the host's own
  *   route, and one kept elsewhere says so.
  * - **Its work is paused and abandoned here** (PAUSE1e, D132 §7.1), from this machine's driver's plan: *Pause…* while open
@@ -499,8 +501,9 @@ export function QuestPage({
 
       {session && (
         /* The driven session's RECORD (D46 §4) — read-only here: a quest is decided on its page, and its sessions
-           are managed on theirs (D126 §3.6), so the stop is the session's page header's, behind the door below. The
-           note and evidence are the driver's observations and render verbatim, like every system sentence. */
+           are managed on theirs (D126 §3.6), so the stop is the session's page header's, behind the door below. Its
+           note's Daoris lines are worded in the reader's language and the agent's words shown as written (LANG1b);
+           the evidence is the driver's observation and renders verbatim. */
         <section className="mt-5" aria-label={t('quests.session.title')}>
           <SectionTitle>{t('quests.session.title')}</SectionTitle>
           <div className="flex flex-wrap items-center gap-2">
@@ -510,7 +513,7 @@ export function QuestPage({
               {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
             </span>
           </div>
-          {session.note && <p className="mt-2 mb-0 text-body text-ink-soft">{session.note}</p>}
+          <Note note={session.note} parts={session.noteParts} className="mt-2 text-body text-ink-soft" />
           {session.evidence && (
             <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line-strong bg-raised px-3 py-2.5 font-mono text-small">
               {session.evidence}
