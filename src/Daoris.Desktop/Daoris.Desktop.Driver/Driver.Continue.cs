@@ -109,6 +109,53 @@ public sealed partial class Driver
     // The words a record could not go on with (MSG1b), beside the conversations, so a later look leaves them waiting.
     private readonly GoOnMarks _marks = new(home);
 
+    // The person's choices to go on in a new session rather than wait for a cooling account (MSG1g), beside the marks.
+    private readonly NewSessionChoices _newSessions = new(home);
+
+    /// <summary>
+    /// The record a start goes on in with the person's words, where its resume asks for that record's own account (MSG1g, D137
+    /// §2.2): words the planner took up, on the adapter the record ran on. Null for every other start, and for a record that ran
+    /// on another adapter, whose conversation cannot go on here whichever account runs (D131 §2's <c>adapter</c>), so its words
+    /// are carried on by the walk's pick as before.
+    /// </summary>
+    private PriorSession? ResumesOwn(Consideration start)
+    {
+        if (!start.GoesOn || start.Resumes is not { WordsWaiting: true } words || start.Quest.Awaits is { Length: > 0 }) return null;
+        var ranOn = words.Adapter ?? _conversations.Read(words.Session)?.Adapter;
+        return ranOn is not { Length: > 0 } || string.Equals(ranOn, config.Adapter, StringComparison.OrdinalIgnoreCase) ? words : null;
+    }
+
+    /// <summary>
+    /// Why the words wait (MSG1g): the account, its reset and that its conversation is there, then the door out of the wait. A
+    /// taken or open quest's session goes on in a new session at the person's choice; a closed quest's has nothing to carry it
+    /// on by itself, so its door is a conversation with the words (D137 §2.2). Machine-local: it names the account.
+    /// </summary>
+    private static string WaitsFor(QuestView quest, PriorSession record, HarnessSelection held) =>
+        $"{held.Refusal} "
+        + (quest.Status is "Open" or "Taken" ? ResumeWords.NewSessionDoor(record.Session) : ResumeWords.ChatDoor(record.Repository ?? quest.To));
+
+    /// <summary>
+    /// The record's conversation says why its words wait (MSG1g, D143 point 1), once for each wait: a look that finds it saying
+    /// the same as its last event writes nothing more, and a word said since is answered again. The person wrote to it, so it
+    /// stays in view while it waits (D137 §2.3). The words stay waiting and unmarked: the reset lets them go on.
+    /// </summary>
+    private void HeldForAccount(PriorSession record, string why)
+    {
+        var line = $"— it does not go on yet: {why}";
+        try
+        {
+            if (_events.Page(record.Session, limit: 1).Events is [{ Kind: SessionEventKind.Note, Text: var last }] && last == line) return;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // A record that does not read is said again: one line more, never none.
+        }
+
+        if (!record.Parked) new SessionArchive(home).Unarchive([record.Session]);
+        output?.Append(record.Session, line);
+        _events.Keep(record.Session, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
+    }
+
     /// <summary>
     /// Continue the record the person's words wait on, or end it saying why (ANSWER1a, D131 §1–§2; MSG1b, D137 §2.2).
     /// </summary>
@@ -117,9 +164,13 @@ public sealed partial class Driver
     /// <see cref="RunAsync"/> to hand the words on; and whether the words are already in the record, as a resume that was
     /// tried puts them.
     /// </returns>
+    /// <param name="account">
+    /// Why the record's own account could not carry the words, where its resume asked for it (MSG1g): the walk's pick carries
+    /// them, and the reason says why. Null where its own account runs it, or nobody asked.
+    /// </param>
     private async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
         Consideration start, PriorSession park, HarnessSelection selection, IReadOnlyList<RepoView> registry,
-        TreeLock? starting, Action onOpened, CancellationToken ct)
+        TreeLock? starting, Action onOpened, CancellationToken ct, ContinueReason? account = null)
     {
         var quest = start.Quest;
         ISessionAdapter? adapter = null;
@@ -136,7 +187,7 @@ public sealed partial class Driver
         var kept = _conversations.Read(park.Session);
         var why = adapter is null
             ? ContinueWhy.Of(ContinueWhy.Refused)
-            : Continuations.Judge(park, adapter.Name, adapter.Resumes, selection.Profile, kept);
+            : Continuations.Judge(park, adapter.Name, adapter.Resumes, selection.Profile, kept, account);
         if (why is not null || adapter is null || kept is null)
         {
             var reason = why ?? ContinueWhy.Of(ContinueWhy.Refused);
@@ -331,6 +382,8 @@ public sealed partial class Driver
         {
             var (taken, message) = await service.TakenAsync(sessionId, resume.Ids, by: null, ct).ConfigureAwait(false);
             if (!taken) _events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = $"— your words could not be taken off its record: {message}" }, say: null);
+            // Its own account carried them, so a choice of a new session made while it cooled is spent with them (MSG1g).
+            _newSessions.Clear(sessionId);
         }
 
         var stoppedFor = _processes.StopReason(sessionId);
@@ -403,12 +456,14 @@ public sealed partial class Driver
     {
         var words = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         _marks.Mark(record.Session, words, why, DateTimeOffset.UtcNow);
+        // A choice of a new session is spent with the words it named (MSG1g): words said later wait for the account again.
+        _newSessions.Clear(record.Session);
         // The words' ids and the code beside the line (MSG1d), so the page says why in its own words.
         var note = Continuations.Cannot(words, why);
         output?.Append(record.Session, note.Text!);
         _events.Keep(record.Session, note, say: null);
         return new StartRun(
-            $"cannot  session {record.Session} (#{quest.Id} → {quest.To}): it cannot go on in this session, because {why.Sentence}.",
+            $"cannot  session {record.Session} (#{quest.Id} → {quest.To}): it cannot go on in this session, because {why.Said}.",
             false);
     }
 
@@ -422,6 +477,8 @@ public sealed partial class Driver
     {
         if (!record.WordsWaiting) return;
 
+        // A choice of a new session is spent with the words it named, which went now (MSG1g).
+        _newSessions.Clear(record.Session);
         var ids = record.Waiting.Select(word => word.Id).OfType<string>().ToList();
         if (!record.Parked)
         {

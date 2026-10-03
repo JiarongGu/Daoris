@@ -153,6 +153,15 @@ public sealed partial class HelpCoverageTests
         + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
 
     /// <summary>
+    /// MSG1g's <c>daoris-driver sessions go-on-new</c> (D137 §2.2), a verb of the headless host: exempt, since it moves the
+    /// person's words and trades their conversation's context for time, both the person's to choose (D133 §1, D143 point 4).
+    /// </summary>
+    private static readonly Exempt GoOnNewDoor = new(
+        "going on in a new session moves the person's own words (D133 §1) and gives up their session's conversation for time, "
+        + "a choice that stays the person's (D143 point 4), so Ask Daoris proposes none; it can name "
+        + "`daoris-driver sessions go-on-new` and the screen's press once the page has it (D137 §2.2).");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -551,6 +560,19 @@ public sealed partial class HelpCoverageTests
             && door.Screen.Contains("box", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D133", SayDoor.Reason);
+    }
+
+    /// <summary>
+    /// MSG1g: the headless host's <c>sessions go-on-new</c> is exempt from Ask Daoris while its usage spells it: the person's
+    /// words, and the person's choice to give up their conversation for time, with no kind of that name to take it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_go_on_new_is_exempt_as_the_person_s_choice()
+    {
+        Assert.Contains("sessions go-on-new <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("go-on-new"));
+        Assert.Contains("D133", GoOnNewDoor.Reason);
+        Assert.Contains("D143", GoOnNewDoor.Reason);
     }
 
     /// <summary>

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1143 CLI tests, 1124 service and 67 HTTP host, 4167 driver,
-683 desktop modules, 80 devkit, 3608 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1143 CLI tests, 1124 service and 67 HTTP host, 4235 driver,
+684 desktop modules, 80 devkit, 3661 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -250,12 +250,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   row hung ten minutes when the stub exited without answering under load, since `speak()` awaits its answers with no
   timeout; it passed alone. Bound the wait and say which answer never came. Contract: FLAKE1. Proof: a row whose stub
   exits early fails in seconds, naming the missing answer.
-- [ ] **REVIEW3 — the review loads in one git call, not one per file** (driver; owner, 2026-10-04: *"I found the 审阅
-  loads really slow"*). Measured on the install: `SESSION_DIFF` took 52.7 s for 61 files, 55.4 s for 71, 8 s for 7:
-  `WorkingTree.RangeAsync` runs `git diff -M <range> -- <path>` once per file, about a second each on the work
-  repository. Read the range's whole patch in one call and split it by file, the budget applied as it splits.
-  Contract: D113, REVIEW2. Proof: `WorkingTree` tests (renames, binary, quoted paths, the budget) counting one patch
-  call; the install's review timed again.
 - [ ] **LAND2a — a branch rule may accept automatically** (driver, cli, web-settings). `autoAccept` on a branch rule,
   per workspace or a repository's own rule; the CLI's `--auto-accept` and Settings' *Accept automatically* (自动采纳)
   each say the push sentence; a merge is refused and no plugin is warned; the instruction, the glossary, and Ask
@@ -283,6 +277,39 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   session's branch is offered for removal on its page and at the terminal, and the record drops what is gone.
   Contract: D102, the rule's `tidy`. Proof: driver tests over git fixtures (a chain whose earlier session's branch is
   contained; a failed one kept until removed); the install's report-ui read again.
+- [ ] **SETUP2 — a set-up runs the repository's own checks and moves what reads the moved files** (driver, canon; owner,
+  2026-10-04: *"also found a bug for CI pipeline after the merge of knowledge update … so this is also a good check
+  when building Daoris"*). The work repository's set-up moved its agent documents to `.agents/` and its pipeline's
+  knowledge check then failed: the repository's own checker still reads `.claude/rules/RULES_INDEX.md`. A set-up's
+  done should run the checks the repository declares (its pipeline's steps and package scripts that read the agent
+  documents), search its tooling for every path it moved and repoint or report each, and name each check and its
+  result in its closing note; the adoption playbook the press hands says so. Contract: D124 §2 (the press), LAYOUT7,
+  D144's gate evidence (later). Proof: a press test that the playbook names the step; the family rehearsal's set-up
+  phase with a stub repository whose script reads a moved path.
+- [ ] **PLUGHOOK1 — plugins hook into more of the work's life** (design first; owner, 2026-10-04: *"this is more like an
+  Azure DevOps related logic so we need to do this as a plugin change, and also this is a good chance to design plugin
+  hooks into other processes"*). Found on the owner's report-ui: a pull request completed by squash leaves the session
+  branches it carried looking unmerged to git (`merge-base --is-ancestor` fails), so LAND3's tidy cannot see them as
+  landed; only the platform knows the pull request completed and with which commit. Design the hook points beyond
+  `work/land` — first, a point where Daoris asks the landing plugin whether a landed branch's work has merged on the
+  platform (completed, abandoned, its merge commit and how), so the tidy and D102's clean-up act on it; then the others
+  worth having (a pull request's review comments back to its session, a pipeline's verdict as evidence, the
+  platform's work items as asks) and their frames, results, permissions and bounds. Contract: D64 §4, D100, D102,
+  D145. Proof: the design and its decision.
+- [ ] **LAND2d — the page says who accepted a landing, and the rehearsal lands one itself** (web-shell, tools; found by
+  LAND2b). The review's note words `acceptedBy` (*accepted automatically when its quest was done*, with its pull
+  request), and the conversation words a note event's `parts`; the family rehearsal sets a workspace rule
+  `--auto-accept` with a stub plugin pushing to a bare origin, closes a quest done, runs `drive --until-idle`, and
+  asserts the branch, `acceptedBy: auto`, the due list closed `landed`, the trace's line, and *To review* without it;
+  then an uncommitted file stays to review and lands once committed. Contract: D145's LAND2b note. Proof: vitest and
+  stories; the rehearsal's phase.
+- [ ] **LANDSVC1 — Ask Daoris's tool names `--auto-accept`** (service; found by LAND2a). The `setting_propose`
+  description and the landing refusal sentence in `HelpProposalBox.Setting.cs` do not name it, so the agent learns the
+  flag from the room only. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
+- [ ] **LAND3b — a failed session's branch removed from the screen** (modules, web-shell, web-settings; found by LAND3).
+  Only `trees remove … --force` reaches a branch whose tree is gone; offer it on the session's page and beside an
+  unlanded row in Settings → Session branches. Contract: D102's LAND3 note. Proof: modules tests; vitest over a mocked
+  bridge.
 - [ ] **EVID2a — a requirement may require captured proof, and a done names it** (service; after EVID1a).
   `screenshot` and `answer` evidence at every publish door, `proof` on `quest_respond`'s done, `Evidenced` items for
   captures with their codes; no bytes, address or path cross machines. Contract: design §9–§10, §12, D146. Proof:
@@ -301,12 +328,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   down restores at its saved place rather than under the pointer, as a native caption drag does. The request: a
   restore-and-drag command that places the window under the pointer, or a position on restore. Never written into
   that repository from here (D32). Contract: D56's FRAME2 note. Proof: the kit's answer, then FRAME2's handler using it.
-- [ ] **REVIEW4 — the review says what it is doing while it loads** (web-shell; owner, 2026-10-04: *"we do need to
-  improve the loading states for this view too"*). The review sat blank for up to a minute (REVIEW3's measurement):
-  show its frame at once with the session's facts, a skeleton per file row (D41's loading rules), what it is reading
-  and for how long, an error that says why (a record with no tree here, a base git cannot find), and a second open
-  served from the cache, since a commit range never changes. Contract: D41's interaction rules, D113. Proof: vitest
-  over a slow and a failing mocked bridge; stories; the look on the install.
 - [ ] **EVID1a — a requirement names a path, and a met answer waits for its reading** (service; after DRIFT1d). Add
   `evidence` at the three publish doors (a `gate` is refused, naming EVID1d). A met answer on one holds its done, and
   `POST /api/quests/{id}/evidence` keeps an `Evidenced` verdict: found lifts the hold and publishes the step, missing
@@ -360,13 +381,15 @@ owner on 1 October.
   the page need not ask again on each move; and `SessionGroups.Read` answering *going on* for an ended record and
   *Resumes later* with what holds the words. Contract: §3.1, §5.3, D137's MSG1f note. Proof: modules and driver
   tests; the page's fallbacks retired.
-- [ ] **MSG1g — a resume asks for its own account** (driver). The selection names the record's account, a cool-off
-  holds the words with *Go on in a new session*, and an account that cannot run there carries on at once. Contract:
-  §2.2's account paragraph. Proof: plan tests, `AccountRotationTickTests` (the parent's).
 - [ ] **MSG1g2 — the page's *Go on in a new session*** (web-shell; after MSG1g). Under words a cooling account holds,
   the held line with a press that calls `SESSION_GO_ON_NEW`, a sentence for each refusal code in both catalogues, and
   *Start a conversation with these words* where the answer is `conversation` or `closed`. Contract: the
   session-messages design §2.2, §5.1, D137's MSG1g note. Proof: vitest over a mocked bridge, both catalogues, the look.
+- [ ] **MSG1g3 — the cooling held note has a code, and the new-session codes a twin** (driver, web-shell; found by
+  MSG1g2). The driver's "— it does not go on yet: …" line beside held words carries no code, so the page shows it in
+  English next to its own sentence; give it one, as MSG1c3 did for `lost`, and hold `newSessionSaid`'s codes to
+  `GoOnNew.cs` and `WordsNever` with a parsed-declarations test like `note.test.ts`. Contract: D137's MSG1g and MSG1g2
+  notes, D142 point 1. Proof: the `NoteCodes`/`CONVERSATION_CODES` twin rows; the new twin test.
 - [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn, which needs Codex installed).
   The next-step door for `codex-acp` over `_session/steering`, steering only while a turn is live and waiting for a
   turn it started. Contract: §1.3, §2.1. Proof: STEER3's measurement, then `AcpSteerTests` rows.
@@ -814,6 +837,15 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it` and the modules'
   `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` failed in the
   full runs and passed alone, with three branches building and two real sessions running on the install.
+  **And the CLI, on PLUGHOOK1's branch** (2026-10-04): `plugin-sources.test.ts:317` and `plugins.test.ts:409` failed with
+  EPERM removing a fixture folder a child still held, and passed alone (41/41) and in the next full verify.
+  **And merging REVIEW3, REVIEW4 and MSG1g** (2026-10-04): the modules' `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
+  again, caught by the merge tool as a FLAKE, with one branch building beside it.
+- [ ] **TESTGIT1 — every test's git helper reads both streams at once** (driver tests; found merging REVIEW3). A helper
+  that reads stdout to its end before stderr hangs once git writes more to stderr than the pipe holds, and it hung the
+  merge's real-process half for 1 h 33 m (FIX-LOG 2026-10-04). About eighteen helpers keep that read; one shared
+  `GitFixture.RunAsync` that starts both reads replaces them. Proof: a test that runs `add -A` over two hundred files
+  where line endings convert, and the helpers gone from the classes.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.

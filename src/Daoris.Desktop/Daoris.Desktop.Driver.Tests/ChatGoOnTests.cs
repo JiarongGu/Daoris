@@ -143,6 +143,58 @@ public sealed class ChatGoOnTests : IDisposable
     }
 
     /// <summary>
+    /// MSG1g (D137 §2.2): a chat's own account cooling holds its words for the reset, said in its conversation with the door
+    /// out of the wait, a conversation with these words, since nothing carries a chat on by itself. The words wait unmarked and
+    /// the record does not move, so the reset lets them go on.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_whose_account_is_cooling_waits_for_its_reset_and_says_the_door_out()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1").Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-c1");
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "stub", "account-1"));
+        var until = DateTimeOffset.UtcNow.AddHours(2);
+        AccountCooling.Cool(_home, new CoolingEntry("stub", "account-1", until, true, "session", DateTimeOffset.UtcNow, "s0"), DateTimeOffset.UtcNow);
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        var held = await NoteAsync(events, "c1", e => e.Text?.Contains("does not go on yet") == true);
+        Assert.Contains("the `stub` account `account-1` is cooling until", held.Text);
+        Assert.Contains("its conversation is on that account, so your words wait to go on in it then.", held.Text);
+        Assert.EndsWith("`daoris-driver chat --repository engine`.", held.Text);
+        Assert.Null(held.Words);
+        Assert.Equal(("completed", 0), (ledger.State("c1"), ledger.Moves("c1").Count));
+        Assert.Equal(["w1"], ledger.Said("c1"));
+        Assert.Null(new GoOnMarks(_home).Read("c1"));
+    }
+
+    /// <summary>
+    /// MSG1g: a chat whose own account is gone from this machine cannot go on, at once, its conversation with it; it says so by
+    /// the reason <c>account</c> and the line that says why, and its words wait marked for *Start a conversation with these words*.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_whose_account_is_gone_cannot_go_on_at_once_and_says_why()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-9").Say("w1", "Also log the port.");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-c1");
+        var events = Events;
+        using var runner = Runner(ledger, events);
+
+        events.Append("c1", Shown("w1", "Also log the port."));
+
+        var cannot = await NoteAsync(events, "c1", e => e.Why is not null);
+        Assert.Equal(ContinueWhy.Account, cannot.Why);
+        Assert.Equal(["w1"], cannot.Words!);
+        Assert.EndsWith("this start runs on another. That account is not on this machine any more.", cannot.Text);
+        Assert.Equal(("completed", 0), (ledger.State("c1"), ledger.Moves("c1").Count));
+        Assert.Equal(ContinueWhy.Account, new GoOnMarks(_home).Read("c1")!.Why);
+    }
+
+    /// <summary>
     /// A chat taken up by itself reads the machine's choices from the home's <c>driver.json</c>; one torn mid-write holds the
     /// words, said in the conversation, rather than ending the runner's look at them silently.
     /// </summary>
@@ -379,8 +431,8 @@ internal sealed class ChatLedger : HttpMessageHandler
         return this;
     }
 
-    /// <summary>A record of this machine's: a chat unless said otherwise, in the state given.</summary>
-    public Words Chat(string id, string state, string adapter, string tree, string kind = "chat")
+    /// <summary>A record of this machine's: a chat unless said otherwise, in the state given, on the account named or the tool's own.</summary>
+    public Words Chat(string id, string state, string adapter, string tree, string kind = "chat", string? profile = null)
     {
         lock (_gate)
         {
@@ -388,7 +440,7 @@ internal sealed class ChatLedger : HttpMessageHandler
             {
                 ["id"] = id, ["repository"] = "engine", ["state"] = state, ["kind"] = kind, ["adapter"] = adapter,
                 ["harnessVersion"] = "1.0.0", ["tree"] = tree, ["note"] = "the conversation ended; its commits are its record.",
-                ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(),
+                ["created"] = "2026-10-03T08:00:00Z", ["said"] = new JsonArray(), ["profile"] = profile,
             });
         }
 
