@@ -441,12 +441,13 @@ check(
     && answered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.',
   answered.text,
 );
+// A second answer joins the first (MSG1a, D137 §2.4): the person's words are all kept, and `answer` is them joined.
 const reanswered = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in on the device.' } });
 check(
-  '…a second answer before the driver looks replaces the first, on the record and on its note',
+  '…a second answer before the driver looks joins the first, on the record and on its note',
   reanswered.status === 200 && reanswered.json?.session?.state === 'awaiting-person'
-    && reanswered.json?.session?.answer === 'Signed in on the device.'
-    && reanswered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in on the device.',
+    && reanswered.json?.session?.answer === 'Signed in.\n\nSigned in on the device.'
+    && reanswered.json?.session?.note === 'it needs a sign-in.\n\nAnswered: Signed in.\n\nAnswered: Signed in on the device.',
   reanswered.text,
 );
 const whileParked = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
@@ -454,7 +455,7 @@ check('…and nothing new opens on its quest while the park holds it', whilePark
 await api('POST', `/api/sessions/${askingId}/state`, {
   body: {
     state: 'completed',
-    note: 'it needs a sign-in.\n\nAnswered: Signed in on the device.\n\nCarried on in a new session, because its tree is gone.',
+    note: 'it needs a sign-in.\n\nAnswered: Signed in.\n\nAnswered: Signed in on the device.\n\nCarried on in a new session, because its tree is gone.',
   },
 });
 const afterAnswer = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
@@ -462,7 +463,7 @@ const endedPark = ((await api('GET', '/api/sessions?repository=engine&includeClo
   .find((s) => s.id === askingId);
 check(
   '…and once the driver’s fallback ends the park, its answer kept, a session opens on the taken quest to carry it on',
-  afterAnswer.status === 200 && endedPark?.state === 'completed' && endedPark?.answer === 'Signed in on the device.',
+  afterAnswer.status === 200 && endedPark?.state === 'completed' && endedPark?.answer === 'Signed in.\n\nSigned in on the device.',
   `${afterAnswer.text}\n${JSON.stringify(endedPark)}`,
 );
 await api('POST', `/api/sessions/${afterAnswer.json?.session?.id}/state`, { body: { state: 'stopped' } });

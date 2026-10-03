@@ -401,9 +401,11 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionAdvanceRefusal.None, answered.Refusal);
         Assert.Equal($"Answered session `{working.Id}`: it carries on with `#{quest.Id}` at the driver's next look.", answered.Message);
         var record = (await _sessions.FindAsync(working.Id))!;
-        Assert.Equal(record, answered.Session);
+        Assert.Equal((record.State, record.Note, record.Answer), (answered.Session!.State, answered.Session.Note, answered.Session.Answer));
         Assert.Equal(SessionState.AwaitingPerson, record.State);
         Assert.Equal("Signed in; apply to dev.", record.Answer);
+        var word = Assert.Single(record.Said);
+        Assert.Equal(("Signed in; apply to dev.", Now.AddMinutes(5), false), (word.Text, word.At, word.Reopens));
         Assert.Equal("needs a merge, a sign-in and a go-ahead.\n\nAnswered: Signed in; apply to dev.", record.Note);
         Assert.Equal(Now.AddMinutes(5), record.Updated);
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
@@ -422,11 +424,12 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// ANSWER1b: a second answer before the driver looks replaces the first, on the record and on its note, so what the
-    /// session goes on with is what the person said last and the note never holds an answer it will not hear.
+    /// MSG1a (D137 §6, amending ANSWER1b): a second answer before the driver looks joins the first, on the record and on
+    /// its note, each its own word with its own id, so the session goes on with everything the person said, in order,
+    /// and reads a correction as a correction. `Answer` is the words joined by a blank line, for a reader from before.
     /// </summary>
     [Fact]
-    public async Task A_second_answer_replaces_the_first()
+    public async Task A_second_answer_joins_the_first()
     {
         var (_, parked) = await Parked();
         await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
@@ -435,8 +438,13 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         Assert.Equal(SessionAdvanceRefusal.None, again.Refusal);
         var record = (await _sessions.FindAsync(parked.Id))!;
-        Assert.Equal((SessionState.AwaitingPerson, "Port 9090, not 8080."), (record.State, record.Answer));
-        Assert.Equal("needs a merge, a sign-in and a go-ahead.\n\nAnswered: Port 9090, not 8080.", record.Note);
+        Assert.Equal(SessionState.AwaitingPerson, record.State);
+        Assert.Equal(["Port 8080.", "Port 9090, not 8080."], record.Said.Select(word => word.Text));
+        Assert.Equal([Now.AddMinutes(1), Now.AddMinutes(2)], record.Said.Select(word => word.At));
+        Assert.Equal(2, record.Said.Select(word => word.Id).Distinct().Count());
+        Assert.Equal("Port 8080.\n\nPort 9090, not 8080.", record.Answer);
+        Assert.Equal(
+            "needs a merge, a sign-in and a go-ahead.\n\nAnswered: Port 8080.\n\nAnswered: Port 9090, not 8080.", record.Note);
     }
 
     /// <summary>
@@ -457,6 +465,7 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         var reparked = (await _sessions.FindAsync(parked.Id))!;
         Assert.Equal((SessionState.AwaitingPerson, null, "and which host?"), (reparked.State, reparked.Answer, reparked.Note));
+        Assert.Empty(reparked.Said);
 
         await _ledger.AnswerAsync(parked.Id, "localhost.", Now.AddMinutes(4));
         var ended = await _ledger.AdvanceAsync(
@@ -480,6 +489,325 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionAdvanceRefusal.InvalidMove, late.Refusal);
         Assert.Equal($"Session `{parked.Id}` is working, not waiting on you — there is nothing to answer.", late.Message);
         Assert.Equal("Port 8080.", (await _sessions.FindAsync(parked.Id))!.Answer);
+    }
+
+    // ——— MSG1a (D137 §2.3, §2.4): the person's words wait on the record, and an ended record goes on with them.
+
+    /// <summary>A driven session on a quest of its own, brought to working and then ended as <paramref name="ending"/>.</summary>
+    private async Task<Session> Ended(string ending, string note = "it ended so.", bool interrupted = false, bool limit = false)
+    {
+        var quest = await Publish(title: $"Ends {ending}");
+        var session = await Working(quest, Now);
+        var ended = await _ledger.AdvanceAsync(
+            session.Id, ending, note, "abc123 landed", null, Now.AddMinutes(10), interrupted: interrupted, limit: limit);
+        Assert.Equal(SessionAdvanceRefusal.None, ended.Refusal);
+        return ended.Session!;
+    }
+
+    private async Task<long> RevisionOf(string id) =>
+        (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Single(changed => changed.Session.Id == id).Revision;
+
+    /// <summary>
+    /// MSG1a (D137 §2.4): words said to an ended session wait on its record, in order, each with its own id, when, its
+    /// files' names (never a path) and that it was said after the record ended. The record does not move: the driver
+    /// takes it up. Nothing that travels changes, since the words are this machine's alone, so no revision is written.
+    /// Every ended state but a stand-down takes them.
+    /// </summary>
+    [Theory]
+    [InlineData("completed")]
+    [InlineData("declined")]
+    [InlineData("failed")]
+    [InlineData("stopped")]
+    public async Task Words_to_an_ended_session_wait_on_its_record_and_it_does_not_move(string ending)
+    {
+        var ended = await Ended(ending);
+        var revision = await RevisionOf(ended.Id);
+
+        var said = await _ledger.SayAsync(ended.Id, "  Also add the changelog line. ", ["C:/notes/plan.md", "shot.png"], Now.AddMinutes(20));
+        var again = await _ledger.SayAsync(ended.Id, "And bump nothing.", null, Now.AddMinutes(21));
+
+        Assert.Equal((SessionSayRefusal.None, SessionSayRefusal.None), (said.Refusal, again.Refusal));
+        Assert.Equal(
+            $"Kept for session `{ended.Id}`: the same session goes on with your words at the driver's next look.", said.Message);
+        var record = (await _sessions.FindAsync(ended.Id))!;
+        Assert.Equal((ended.State, ended.Note, ended.Updated), (record.State, record.Note, record.Updated));
+        Assert.Equal(["Also add the changelog line.", "And bump nothing."], record.Said.Select(word => word.Text));
+        Assert.Equal([said.Word!.Id, again.Word!.Id], record.Said.Select(word => word.Id));
+        Assert.NotEqual(said.Word.Id, again.Word.Id);
+        Assert.Equal([Now.AddMinutes(20), Now.AddMinutes(21)], record.Said.Select(word => word.At));
+        Assert.Equal(["plan.md", "shot.png"], record.Said[0].Files);
+        Assert.Empty(record.Said[1].Files);
+        Assert.All(record.Said, word => Assert.True(word.Reopens));
+        Assert.Equal(revision, await RevisionOf(ended.Id));
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.3): the ledger's one move out of an ended state is to working, with the person's words waiting. The
+    /// record's history stays: its note keeps what ended it and gains when it went on, and its evidence stays. It forgives
+    /// what ended it, so a stop the sweep made or a failure a limit made never reads as the new run's ending. The words
+    /// stay until the run takes them.
+    /// </summary>
+    [Theory]
+    [InlineData("completed", false, false)]
+    [InlineData("declined", false, false)]
+    [InlineData("failed", false, true)]
+    [InlineData("stopped", true, false)]
+    [InlineData("stopped", false, false)]
+    public async Task An_ended_session_with_words_waiting_goes_on_to_working(string ending, bool interrupted, bool limit)
+    {
+        var ended = await Ended(ending, interrupted: interrupted, limit: limit);
+        await _ledger.SayAsync(ended.Id, "Also add the changelog line.", null, Now.AddMinutes(20));
+
+        var reopened = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(30));
+
+        Assert.Equal(SessionAdvanceRefusal.None, reopened.Refusal);
+        Assert.Equal($"Session `{ended.Id}` is working again: it goes on from {ending} with the person's words.", reopened.Message);
+        var record = (await _sessions.FindAsync(ended.Id))!;
+        Assert.Equal(SessionState.Working, record.State);
+        Assert.Equal("it ended so.\n\nWent on with your words at 2026-09-19 10:30 UTC.", record.Note);
+        Assert.Equal("abc123 landed", record.Evidence);
+        Assert.Equal((false, false), (record.Interrupted, record.Limit));
+        Assert.Equal(["Also add the changelog line."], record.Said.Select(word => word.Text));
+        Assert.Equal(Now.AddMinutes(30), record.Updated);
+    }
+
+    /// <summary>MSG1a: a note the driver passes with the reopen follows the line that says it went on, so nothing is lost.</summary>
+    [Fact]
+    public async Task A_note_passed_with_the_reopen_follows_the_line_that_says_it_went_on()
+    {
+        var ended = await Ended("completed", note: "landed.");
+        await _ledger.SayAsync(ended.Id, "One more thing.", null, Now.AddMinutes(20));
+
+        var reopened = await _ledger.AdvanceAsync(ended.Id, "working", "resumes its own conversation.", null, null, Now.AddMinutes(30));
+
+        Assert.Equal("landed.\n\nWent on with your words at 2026-09-19 10:30 UTC.\n\nresumes its own conversation.", reopened.Session!.Note);
+    }
+
+    /// <summary>
+    /// MSG1a: an ended chat goes on too — a conversation the person writes to again — and says so in a conversation's
+    /// words, since a chat is taken up by its runner rather than the driver's look.
+    /// </summary>
+    [Fact]
+    public async Task An_ended_chat_takes_words_and_goes_on()
+    {
+        var chat = (await _ledger.OpenChatAsync("Owner", "stub", Now)).Session!;
+        foreach (var state in new[] { "starting", "working", "completed" }) await Advance(chat.Id, state);
+
+        var said = await _ledger.SayAsync(chat.Id, "And the other file?", null, Now.AddMinutes(5));
+        var reopened = await _ledger.AdvanceAsync(chat.Id, "working", null, null, null, Now.AddMinutes(6));
+
+        Assert.Equal($"Kept for session `{chat.Id}`: the same conversation goes on with your words as it opens again.", said.Message);
+        Assert.Equal((SessionAdvanceRefusal.None, SessionState.Working), (reopened.Refusal, reopened.Session!.State));
+    }
+
+    /// <summary>
+    /// MSG1a: a finished record with no words waiting still does not move, and with words waiting it moves only to
+    /// working: the one way out of an ended state is going on with them.
+    /// </summary>
+    [Fact]
+    public async Task A_finished_session_moves_only_to_working_and_only_with_words_waiting()
+    {
+        var ended = await Ended("completed");
+
+        var bare = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(20));
+        await _ledger.SayAsync(ended.Id, "One more thing.", null, Now.AddMinutes(21));
+        var elsewhere = await _ledger.AdvanceAsync(ended.Id, "failed", null, null, null, Now.AddMinutes(22));
+
+        Assert.Equal(SessionAdvanceRefusal.Terminal, bare.Refusal);
+        Assert.Equal(
+            $"Session `{ended.Id}` is completed — a finished session goes on only with the person's words, and none wait for it.",
+            bare.Message);
+        Assert.Equal(SessionAdvanceRefusal.Terminal, elsewhere.Refusal);
+        Assert.Equal($"Session `{ended.Id}` is completed — a finished session does not move.", elsewhere.Message);
+        Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(ended.Id))!.State);
+    }
+
+    /// <summary>
+    /// 🔴 MSG1a (D137 §2.2): a stood-down session never goes on — its quest is someone else's, so it has nothing to go on
+    /// with. Words to it are refused naming the quest, and words that reach its record anyway do not move it.
+    /// </summary>
+    [Fact]
+    public async Task A_stood_down_session_takes_no_words_and_never_goes_on()
+    {
+        var stood = await Ended("stood-down", note: "someone else has it.");
+
+        var said = await _ledger.SayAsync(stood.Id, "Do it anyway.", null, Now.AddMinutes(20));
+        Assert.Equal(SessionSayRefusal.StoodDown, said.Refusal);
+        Assert.Equal(
+            $"Session `{stood.Id}` stood down: `#{stood.Quest}` is someone else's, so it has nothing to go on with.", said.Message);
+        Assert.Equal(stood.Quest, said.Quest);
+        Assert.Empty((await _sessions.FindAsync(stood.Id))!.Said);
+
+        // The store is blind (it judges nothing), so words can be put on the record past the ledger.
+        await _sessions.KeepSaidAsync(stood.Id, new SaidWord("planted1", "Do it anyway.", Now.AddMinutes(21), [], Reopens: true));
+        var moved = await _ledger.AdvanceAsync(stood.Id, "working", null, null, null, Now.AddMinutes(22));
+
+        Assert.Equal(SessionAdvanceRefusal.Terminal, moved.Refusal);
+        Assert.Equal($"Session `{stood.Id}` stood down — a stand-down has nothing to go on with, so it does not move.", moved.Message);
+        Assert.Equal(SessionState.StoodDown, (await _sessions.FindAsync(stood.Id))!.State);
+    }
+
+    /// <summary>
+    /// 🔴 MSG1a (D137 §2.2): a teammate's record is never written to and never goes on here — its process and its
+    /// conversation are on their machine and account. Words are refused naming whose machine, and a teammate's record
+    /// holding words, which no door here writes, still does not move.
+    /// </summary>
+    [Fact]
+    public async Task A_teammates_record_takes_no_words_and_never_goes_on()
+    {
+        var quest = await Publish();
+        const string Theirs = "alice-laptop/ab12cd34";
+        await _sessions.MirrorAsync(new Session(
+            Theirs, quest.Id, "Owner", "claude-code", SessionState.Completed, "landed.", null, null, Now, Now.AddMinutes(3)));
+
+        var said = await _ledger.SayAsync(Theirs, "One more thing.", null, Now.AddMinutes(5));
+        Assert.Equal(SessionSayRefusal.NotOurs, said.Refusal);
+        Assert.Equal("alice-laptop", said.Origin);
+        Assert.Equal(
+            $"Session `{Theirs}` ran on `alice-laptop`, where its conversation is; it cannot go on here.", said.Message);
+        Assert.Empty((await _sessions.FindAsync(Theirs))!.Said);
+
+        await using (var plant = _connection.CreateCommand())
+        {
+            plant.CommandText =
+                """UPDATE sessions SET said = '[{"id":"ab12cd34","text":"One more thing.","at":"2026-09-19T10:05:00+00:00"}]' WHERE id = $id""";
+            plant.Parameters.AddWithValue("$id", Theirs);
+            Assert.Equal(1, await plant.ExecuteNonQueryAsync());
+        }
+
+        Assert.Single((await _sessions.FindAsync(Theirs))!.Said);
+        var moved = await _ledger.AdvanceAsync(Theirs, "working", null, null, null, Now.AddMinutes(6));
+
+        Assert.Equal(SessionAdvanceRefusal.Terminal, moved.Refusal);
+        Assert.Equal($"Session `{Theirs}` ran on `alice-laptop`; a finished record of another machine's does not move here.", moved.Message);
+        Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(Theirs))!.State);
+    }
+
+    /// <summary>
+    /// MSG1a (INT4h): an intake is answered through its ask, so it takes no words in any state, and an ended intake
+    /// holding words does not go on.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_takes_no_words_and_never_goes_on()
+    {
+        var intake = await _sessions.CreateAsync(null, "ask #a1b2c3", "stub", Now, kind: SessionKind.Chat, ask: "a1b2c3");
+
+        var said = await _ledger.SayAsync(intake.Id, "Ask the reports repository.", null, Now);
+        await _sessions.SetStateAsync(intake.Id, SessionState.Completed, "published.", null, null, Now);
+        await _sessions.KeepSaidAsync(intake.Id, new SaidWord("planted2", "Ask the reports repository.", Now, [], Reopens: true));
+        var moved = await _ledger.AdvanceAsync(intake.Id, "working", null, null, null, Now.AddMinutes(1));
+
+        Assert.Equal(SessionSayRefusal.Intake, said.Refusal);
+        Assert.Equal(
+            $"Session `{intake.Id}` is an intake — answer its ask `#a1b2c3` instead: publish it or close it.", said.Message);
+        Assert.Equal("a1b2c3", said.Ask);
+        Assert.Equal(SessionAdvanceRefusal.Terminal, moved.Refusal);
+        Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(intake.Id))!.State);
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §5.3): the record keeps words only for a parked or ended session. A running one hears them through the
+    /// driver that runs it (D136), so the record refuses them, naming its state; no words at all are refused; and a
+    /// session nobody holds is not found.
+    /// </summary>
+    [Fact]
+    public async Task Words_to_a_running_session_and_no_words_are_refused_at_the_record()
+    {
+        var quest = await Publish();
+        var session = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        var queued = await _ledger.SayAsync(session.Id, "Hello.", null, Now);
+        await Advance(session.Id, "starting");
+        await Advance(session.Id, "working");
+
+        var working = await _ledger.SayAsync(session.Id, "Hello.", null, Now);
+        var blank = await _ledger.SayAsync(session.Id, "   ", null, Now);
+        var unknown = await _ledger.SayAsync("zzzzzzzz", "Hello.", null, Now);
+
+        Assert.Equal((SessionSayRefusal.Running, SessionSayRefusal.Running), (queued.Refusal, working.Refusal));
+        Assert.Equal(
+            $"Session `{session.Id}` is working: words to a running session reach it through the driver that runs it, not its record.",
+            working.Message);
+        Assert.Equal(SessionSayRefusal.Empty, blank.Refusal);
+        Assert.Equal("There are no words to keep: the person said nothing.", blank.Message);
+        Assert.Equal(SessionSayRefusal.NotFound, unknown.Refusal);
+        Assert.Equal("No session `zzzzzzzz`.", unknown.Message);
+        Assert.Empty((await _sessions.FindAsync(session.Id))!.Said);
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.2, §5.3): words said to a parked session are its answer — kept with their line on its note, the park
+    /// kept, joining what was said before — so the answer door is the parked case of saying.
+    /// </summary>
+    [Fact]
+    public async Task Words_said_to_a_parked_session_are_its_answer()
+    {
+        var (quest, parked) = await Parked();
+        await _ledger.AnswerAsync(parked.Id, "Port 8080.", Now.AddMinutes(1));
+
+        var said = await _ledger.SayAsync(parked.Id, "Port 9090, not 8080.", null, Now.AddMinutes(2));
+
+        Assert.Equal(SessionSayRefusal.None, said.Refusal);
+        Assert.Equal($"Kept for session `{parked.Id}`: it carries on with `#{quest.Id}` at the driver's next look.", said.Message);
+        var record = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal(SessionState.AwaitingPerson, record.State);
+        Assert.Equal(["Port 8080.", "Port 9090, not 8080."], record.Said.Select(word => word.Text));
+        Assert.All(record.Said, word => Assert.False(word.Reopens));
+        Assert.Equal(
+            "needs a merge, a sign-in and a go-ahead.\n\nAnswered: Port 8080.\n\nAnswered: Port 9090, not 8080.", record.Note);
+        Assert.Equal(Now.AddMinutes(2), record.Updated);
+    }
+
+    /// <summary>
+    /// 🔴 One session per working tree holds for going on too (D51): an ended record whose tree another session now holds
+    /// does not go on there, and the refusal names the holder, never the path. Once that one ends, it goes on.
+    /// </summary>
+    [Fact]
+    public async Task Going_on_waits_for_the_tree()
+    {
+        var ended = await Ended("completed");
+        await _ledger.SayAsync(ended.Id, "One more thing.", null, Now.AddMinutes(20));
+        var chat = (await _ledger.OpenChatAsync("Owner", "stub", Now.AddMinutes(21))).Session!;
+
+        var busy = await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(22));
+
+        Assert.Equal(SessionAdvanceRefusal.Busy, busy.Refusal);
+        Assert.Contains($"`{chat.Id}`", busy.Message);
+        Assert.DoesNotContain(MainTree, busy.Message);
+        Assert.Equal(SessionState.Completed, (await _sessions.FindAsync(ended.Id))!.State);
+
+        await Advance(chat.Id, "stopped");
+        Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(ended.Id, "working", null, null, null, Now.AddMinutes(23))).Refusal);
+    }
+
+    /// <summary>
+    /// MSG1a (D137 §2.4): taken words leave the record by their ids — the resumed run's first prompt went, or a fallback's
+    /// session took them — so a word said after the driver read the record stays for the next run. A word already gone
+    /// is passed over, and the last one taken leaves nothing waiting. A teammate's record, and a taker nobody holds, are
+    /// refused.
+    /// </summary>
+    [Fact]
+    public async Task Taken_words_leave_the_record_by_their_ids()
+    {
+        var ended = await Ended("completed");
+        var first = (await _ledger.SayAsync(ended.Id, "One more thing.", null, Now.AddMinutes(20))).Word!;
+        var second = (await _ledger.SayAsync(ended.Id, "And another.", null, Now.AddMinutes(21))).Word!;
+
+        var taken = await _ledger.TakeSaidAsync(ended.Id, [first.Id, "gone1234"], by: null);
+
+        Assert.Equal(SessionSayRefusal.None, taken.Refusal);
+        Assert.Equal([first.Id], taken.Taken.Select(word => word.Id));
+        Assert.Equal([second.Id], taken.Session!.Said.Select(word => word.Id));
+        Assert.Equal([second.Id], (await _sessions.FindAsync(ended.Id))!.Said.Select(word => word.Id));
+
+        await _ledger.TakeSaidAsync(ended.Id, [second.Id], by: null);
+        var record = (await _sessions.FindAsync(ended.Id))!;
+        Assert.Empty(record.Said);
+        Assert.Null(record.Answer);
+
+        Assert.Equal(SessionSayRefusal.NotFound, (await _ledger.TakeSaidAsync(ended.Id, [first.Id], by: "nobody12")).Refusal);
+        await _sessions.MirrorAsync(new Session(
+            "alice-laptop/ab12cd34", null, "Owner", "claude-code", SessionState.Completed, null, null, null, Now, Now));
+        Assert.Equal(SessionSayRefusal.NotOurs, (await _ledger.TakeSaidAsync("alice-laptop/ab12cd34", ["ab12cd34"], by: null)).Refusal);
     }
 
     [Fact]

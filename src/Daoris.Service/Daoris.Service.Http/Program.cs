@@ -800,6 +800,66 @@ if (mode == ServiceMode.Local)
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
     });
+
+    // What the person says to a parked or ended session of this machine's (MSG1a, D137 §5.3): kept on its record for it
+    // to go on with, the record staying as it is. LOCAL mode only: a session goes on only where its process and its
+    // conversation are, and a shared host runs none. What never goes on is refused by its word.
+    app.MapPost("/api/sessions/{id}/say", async (
+        ComposedService s, HttpContext http, string id, SayRequest body, CancellationToken ct) =>
+    {
+        var now = DateTimeOffset.UtcNow;
+        var outcome = await s.Ledger.SayAsync(id, body.Text, body.Files, now, ct);
+        if (outcome.Refusal == SessionSayRefusal.None)
+        {
+            // Words to a park are its answer, kept on its ask at once as the answer door keeps one (DRIFT1a); words to an
+            // ended session are kept there once a session took them (the taken door, D137 §2.4).
+            if (!outcome.Word!.Reopens)
+            {
+                await s.Ledger.KeepOnAskAsync(id, AskWordKind.Answered, outcome.Word.Text, now, ct);
+            }
+
+            var local = MachineLocal(http);
+            return Results.Ok(new SaidResponse(ToSession(outcome.Session!, local), outcome.Message, local ? ToSaid(outcome.Word) : null));
+        }
+
+        var refused = new SessionSayRefusalResponse(
+            outcome.Message, SayRefusal(outcome.Refusal), outcome.Quest, outcome.Ask, outcome.Origin);
+        return outcome.Refusal switch
+        {
+            SessionSayRefusal.NotFound => Results.NotFound(refused),
+            SessionSayRefusal.Empty => Results.BadRequest(refused),
+            // A teammate's, an intake, a stand-down, a running session: a conflict with the record as it stands.
+            _ => Results.Conflict(refused),
+        };
+    });
+
+    // The words a session took off its record (MSG1a, D137 §2.4): the resumed run's first prompt went, or the session a
+    // fallback handed them to took them. Each said after the record ended is kept on the ask its work is for, as
+    // `reopened`, said to the session that took it, beside the take as the answer door keeps an answer (DRIFT1a).
+    app.MapPost("/api/sessions/{id}/taken", async (
+        ComposedService s, HttpContext http, string id, TakenRequest body, CancellationToken ct) =>
+    {
+        var ids = (body.Said ?? []).OfType<string>().Where(word => word.Length > 0).ToList();
+        var outcome = await s.Ledger.TakeSaidAsync(id, ids, string.IsNullOrWhiteSpace(body.By) ? null : body.By, ct);
+        if (outcome.Refusal == SessionSayRefusal.None)
+        {
+            foreach (var word in outcome.Taken.Where(word => word.Reopens))
+            {
+                await s.Ledger.KeepOnAskAsync(
+                    string.IsNullOrWhiteSpace(body.By) ? id : body.By, AskWordKind.Reopened, word.Text, word.At, ct);
+            }
+
+            return Results.Ok(new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message));
+        }
+
+        var refused = new SessionSayRefusalResponse(outcome.Message, SayRefusal(outcome.Refusal));
+        return outcome.Refusal switch
+        {
+            SessionSayRefusal.NotFound => Results.NotFound(refused),
+            SessionSayRefusal.Empty => Results.BadRequest(refused),
+            _ => Results.Conflict(refused),
+        };
+    });
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is
@@ -884,8 +944,9 @@ app.MapPost("/api/sessions/{id}/state", async (
             new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
         SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // Terminal and an illegal move are conflicts with the record's current state — 409 like the
-        // quest door. Only an unknown state name is a bad request.
-        SessionAdvanceRefusal.Terminal or SessionAdvanceRefusal.InvalidMove =>
+        // quest door, and so is a tree another session holds when an ended record would go on (MSG1a).
+        // Only an unknown state name is a bad request.
+        SessionAdvanceRefusal.Terminal or SessionAdvanceRefusal.InvalidMove or SessionAdvanceRefusal.Busy =>
             Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
@@ -1492,7 +1553,22 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Answer: loopback ? s.Answer : null,
     Interrupted: s.Interrupted,
     // A limit names no account (TOOL4c), so it is answered to every caller, as the state beside it is.
-    Limit: s.Limit);
+    Limit: s.Limit,
+    // The same words, one by one (MSG1a), under the same guard.
+    Said: loopback ? s.Said.Select(ToSaid).ToList() : null);
+
+static SaidWordResponse ToSaid(SaidWord word) => new(word.Id, word.Text, word.At, word.Files, word.Reopens);
+
+// A say or a take refused (MSG1a), its word as the wire spells it, kebab-case like a session's state.
+static string SayRefusal(SessionSayRefusal refusal) => refusal switch
+{
+    SessionSayRefusal.Empty => "no-words",
+    SessionSayRefusal.NotFound => "not-found",
+    SessionSayRefusal.NotOurs => "not-ours",
+    SessionSayRefusal.Intake => "intake",
+    SessionSayRefusal.StoodDown => "stood-down",
+    _ => "running",
+};
 
 // A session delete's judgement as its doors answer it (SESSUX1f): the sentence as `error`, beside its word and the facts
 // the word names. The words are the wire's, kebab-case like a session's state.

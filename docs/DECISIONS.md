@@ -10394,3 +10394,46 @@ packages, the maker's source and one binary's help at the versions in design §1
 installed on this machine, and Daoris pins no Codex version. Whether Codex's steer ever cuts a step short, whether Codex
 locks a thread across processes, and whether Claude Code notices a second writer were not read. `verify` checks this
 entry's place and the design's links, and none of their words.
+entry's place and the design's links, and none of their words.
+
+**MSG1a, built 2026-10-03: the record keeps the person's words and goes on** (points 5 and 6; design §2.3, §2.4, §5.3),
+held by `SessionLedgerTests`, `SessionStoreTests`, `LocalHostTests`, `SharedHostTests` and `SessionSyncTests`. What
+building it settled:
+- **`said` is a list beside the old column.** Each word has a random id, its words trimmed at the ends, when, its files'
+  names (cut after either separator, never a path) and `reopens`, said after the record ended. A record from before reads
+  its `answer` as its first word, id `answer`, said when the record last changed; the first word kept after it moves
+  both into the list in one statement (REV3) and empties the old column. `answer` stays on the wire as the words joined
+  by a blank line; both answer to this machine only.
+- **Keeping words on an ended record writes no revision**, since nothing that travels changed. A park's answer still
+  writes its line on the note, which travels; a second answer adds its own line.
+- **The say door** keeps words for a parked or ended session of this machine's and refuses the rest by a word beside the
+  sentence: `no-words` 400, `not-found` 404, and `not-ours`, `intake`, `stood-down` and `running` 409, with the machine,
+  ask or quest each names. A queued, starting or working session is `running`: it hears words through its driver (D136).
+- **The one move out of an ended state is the state door's `working`.** Refused for a teammate's record, a stand-down, an
+  intake and a record with no words waiting; any other move from an ended state keeps today's sentence. Not in the
+  design: **one session per working tree (D51) holds for going on too**, so a tree another session holds refuses it,
+  `Busy`, 409, naming the holder. The note keeps what ended it, then *Went on with your words at* the UTC minute, then a
+  note passed with the move. `interrupted` and `limit` are forgiven, so a later stop or failure reads as the new run's.
+- **Taken words leave by their ids**, through a door the design left unnamed: `POST /api/sessions/{id}/taken`
+  (`said`, `by` for a fallback's session), local mode, which MSG1b calls once the resumed run's first prompt went. A
+  word said after the driver read the record stays. A move into `awaiting-person` still clears them all; every other
+  move keeps them, so a fallback's open still reads `answer` on a `completed` record (ANSWER1b).
+- **On the ask**: a park's words through the say door are kept at once as `answered`, as the answer door keeps them.
+  Words said after a record ended are kept once taken, as `reopened`, said to the session that took them, at when they
+  were said.
+- **The remote takes a record that left an ended state**: its feed judges no state. The words have no field on the
+  wire. A shared host has neither new door.
+
+Proof: the ledger's refusals (a stand-down, a teammate's record, an intake, a running session, no words, no record) and
+its move (each ended state, the forgiving, the note, a chat, the tree), the store's order, take and a record from
+before, the doors' answers and refusals, the ask's two kinds, and a reopened record pushed and seen working by a
+teammate. Each was seen failing on stubs. The guards for a teammate's record, a stand-down, the tree, the forgiving and
+the shared host were each seen failing with their line removed. The family rehearsal's section 4 now expects a second
+answer to join the first (written, not run).
+
+**What the gates do not cover.** Nothing calls the say or taken doors yet (MSG1b, MSG1d), and no driver takes a record
+out of its ended state, so nothing is on the window. Clearing the archive mark on going on is the driver's (§2.3). The
+say door does not refuse Ask Daoris's conversation: §5.3 names three refusals, and the modules' door decides (MSG1d).
+Words a reopen could not take stay on the ended record, and the record says nothing of the failed try, so MSG1b's
+judgement must keep a look from trying again.
+words on the window; the steer box still says nothing of its door, and *send now* stays disabled on the next-step door.
