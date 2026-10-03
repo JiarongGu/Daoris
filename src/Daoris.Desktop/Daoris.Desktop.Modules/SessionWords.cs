@@ -280,28 +280,11 @@ public sealed class SessionWords : IDisposable
     ];
 
     /// <summary>
-    /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session took
-    /// it, its words go to the service's door for them by the session's own id, and the service judges which ask, if any.
-    /// Never awaited by the answer: the words have reached their session whatever the service says, so <c>kept: false</c>
-    /// (a session on no ask), a refusal and a service that does not answer change nothing the person is told. Only the
-    /// words travel, never the files or where the person is (DRIFT1a keeps words alone). Both doors keep them (MSG1e2).
+    /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1), once the session took
+    /// it. Both doors keep them (MSG1e2), by the driver library's one rule, <see cref="WordsOnAsk.Keep"/>, which the headless
+    /// host's loop keeps them by too (MSG1e5): never awaited, so nothing the service answers changes what the person is told.
     /// </summary>
-    public void KeepOnAsk(string session, string text)
-    {
-        if (_loop.Service is not { } service) return;
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await service.AddedToSessionAsync(session, text).ConfigureAwait(false);
-            }
-            catch (Exception error) when (error is HttpRequestException or OperationCanceledException or DriverException
-                                              or JsonException or ObjectDisposedException or InvalidOperationException)
-            {
-                // The words are still in the session's own record; the ask misses one of them, and nothing else does.
-            }
-        });
-    }
+    public void KeepOnAsk(string session, string text) => _ = WordsOnAsk.Keep(_loop.Service, session, text);
 
     /// <summary>
     /// What a door is told while the loop's service is not answering and nothing here runs the session: nothing could keep
