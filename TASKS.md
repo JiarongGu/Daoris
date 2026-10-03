@@ -332,10 +332,6 @@ owner on 1 October.
   `sessions say`; and two hooks that change something no Settings domain uses (`useDismissUpdate`, `useLinkOpener`)
   are read but unanswered. Contract: D110, D139. Proof: the room's goldens; a `HelpCoverageTests` fact like
   `sessions say`'s.
-- [ ] **UPDATE1c — the install's first staged update** (the parent's, after the first publish in place carrying
-  UPDATE1). Stage the next build with `publish:desktop --stage` while a session works, and see the drain, the swap, the
-  confirmation and the banner's outcome, light and dark, en and 中文. Contract: D139. Proof: the run; `update.*` lines in
-  the machine log.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.

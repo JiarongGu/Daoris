@@ -10310,3 +10310,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > build.
 
 **Outcome** Settings → Driver shows the install's update: what is staged, the drain and what it waits on, the last swap, and the three words, over `STATE` and `SET`, worded as the banner words them. The last swap after the banner is dismissed waits on `STATE` answering it (UPDATE1d). Detail: D139's UPDATE1b note, the update design §6, `a40d4318`.
+
+
+## UPDATE1c — the install's first staged update (2026-10-03)
+
+> - [ ] **UPDATE1c — the install's first staged update** (the parent's, after the first publish in place carrying
+> UPDATE1). Stage the next build with `publish:desktop --stage` while a session works, and see the drain, the swap, the
+> confirmation and the banner's outcome, light and dark, en and 中文. Contract: D139. Proof: the run; `update.*` lines in
+> the machine log.
+
+**Outcome** The owner's install took its first staged update on 2026-10-03: `publish:desktop --stage` beside the running install at 13:24:27, drained with nothing running, applied when idle a second later, the new build up and confirmed 13 seconds after, `update/` left holding only the journal, the window saying *Daoris 已更新到 0.0.1 (2249a6bc)* once, and the debug port still answering after the swap. No session was working, so the drain waiting on one is still the rehearsal's proof, not the install's.
