@@ -91,6 +91,10 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `plugin.served` | desktop, driver | plugin, server, session, handed | which sessions each plugin's server was handed to, or withheld from |
 | `plugin.tried` (warn when failed) | desktop, driver | plugin, passed, checks, failed, ms, door | a trial of an installed plugin with the kit, from the screen or a terminal |
 | `plugin.tested` (warn when failed) | desktop, driver | plugin, passed, code, ms, door | a run of a plugin's own tests (its runner is PLUGUI1g's; the shape is reserved) |
+| `update.staged` / `update.draining` | desktop | build, version / build, driven, turns | a build staged beside the install, and the drain it began with what still ran (UPDATE1, D139) |
+| `update.requested` | desktop, driver | mode, door, build | the person's word on it: `when-idle`, `now` or `not-now`, from the `screen` or the `terminal` |
+| `update.applying` | desktop | build, version, by, waitedSeconds | the application closing for it, `by` `idle` or `now`, and how long the drain waited |
+| `update.installed` / `update.rolled-back` (warn) / `update.refused` (warn) | desktop | build, version, confirmed / build, reason | how the swap ended, said once at the start after it; a refusal by the application's own check is said as it happens, its reason the check's code |
 
 **The page reports through the bridge**, one request (`DAORIS.LOG` · `EVENT`), and the module takes
 only the page's events above with only their fields: anything else is dropped. That is where the

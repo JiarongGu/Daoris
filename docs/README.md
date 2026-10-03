@@ -66,6 +66,7 @@ changes no row (D127).
 | `2026-10-02-pause-and-clean-up-design.md` | contract | Pausing and abandoning an ask or a quest: a pause that stops what runs and keeps its place, and an abandon listed first that declines with the person's reason and discards only what nothing else holds (PAUSE1) | Designed (D132); nothing built. Amends D126 §3.3, D88's removal and D68 rule 2 |
 | `2026-10-03-decisions-record-design.md` | contract | The decisions record under parallel merges: how often union merges tore it and in which shapes, four options weighed, one file per decision with its notes, a check per file, and the migration (DOC8) | Designed (D134); nothing built. Amends D106's and D117 §2.4's rejection of a file per decision |
 | `2026-10-03-session-messages-design.md` | contract | Session messages: a person's words reach a session at its next step, its turn's end, or by reopening its record and resuming its own conversation; Codex's and the native doors read (MSG1) | Designed (D137); nothing built. Amends D131's rejection of reopening a finished record, D90, D136 and CONV4a |
+| `2026-10-03-update-when-idle-design.md` | contract | Update when idle: a build staged beside the install, a drain that starts nothing new, the launcher swapping `app/` while the application is closed, and its roll-back (UPDATE1) | Built (D139); the deployment rehearsal's phase 9 is its gate. Amends D60's and D93's publish |
 
 ## Studies and evidence
 
