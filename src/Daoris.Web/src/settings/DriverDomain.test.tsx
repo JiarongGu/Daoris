@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // The Driver domain in SHELL mode: where this machine's Daoris lives and the driver's dials over
@@ -22,6 +22,8 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from '../SettingsView';
+import { moment } from '../format';
+import i18n from '../i18n';
 import { code } from '../test/code';
 import { DRIVER_STATE, respond, show, WIRING } from '../test/shellHarness';
 
@@ -214,5 +216,181 @@ describe('the driver domain', () => {
     show(<SettingsView notify={() => {}} section="driver" />);
 
     expect(await screen.findByRole('checkbox', { checked: false })).toBeTruthy();
+  });
+});
+
+/**
+ * UPDATE1b (D139 §3, §6): the install's update in the application's own domain, read from `DAORIS.UPDATE` · `STATE` and
+ * said with `SET`. The banner is the screen's other door and is gone once dismissed; this row stands: what is staged, the
+ * drain and what it waits on, how the last swap ended, and the three words the terminal's `daoris-driver update` takes.
+ */
+describe("the driver domain: the install's update", () => {
+  const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
+  const update = (extra: object) => ({
+    state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, ...extra,
+  });
+  /** The shell: the driver's state, the update's as given, and what `SET` answers after a word. */
+  const answer = (state: object, after: object = state) => async (module: string, type: string) => {
+    if (module === 'DAORIS.DRIVER') return DRIVER_STATE;
+    if (module === 'DAORIS.UPDATE') return type === 'SET' ? after : state;
+    return WIRING;
+  };
+  const section = async () => within(await screen.findByRole('region', { name: 'Update' }));
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    await i18n.changeLanguage('en');
+  });
+
+  it('with nothing staged, says so, names the terminal\'s door, and offers none of the three words', async () => {
+    invoke.mockImplementation(answer(update({})));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText('Nothing is staged beside this install.')).toBeTruthy();
+    expect(row.getByText(code(/daoris-driver update --when-idle/))).toBeTruthy();
+    for (const word of ['Update when idle', 'Update now', 'Not now']) expect(row.queryByRole('button', { name: word })).toBeNull();
+    // No swap to tell of: no row for one.
+    expect(row.queryByText('Last update')).toBeNull();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.UPDATE', 'STATE');
+  });
+
+  it('while draining, names the build, its version, commit and when, what the drain waits on, and offers Update now and Not now', async () => {
+    invoke.mockImplementation(answer(
+      update({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 2, turns: 1 }),
+      update({ state: 'waiting', staged: STAGED, mode: 'not-now' }),
+    ));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText(STAGED.id)).toBeTruthy();
+    expect(row.getByText('0.0.1')).toBeTruthy();
+    expect(row.getByText('abc1234')).toBeTruthy();
+    expect(row.getByText(moment(STAGED.at))).toBeTruthy();
+    expect(row.getByText('when idle')).toBeTruthy();
+    expect(row.getByText(/Installs when the work running now ends; nothing new starts meanwhile\./)).toBeTruthy();
+    expect(row.getByText(/Waits on 2 driven sessions and 1 conversation mid-turn\./)).toBeTruthy();
+    expect(row.queryByRole('button', { name: 'Update when idle' })).toBeNull();
+
+    await userEvent.click(row.getByRole('button', { name: 'Not now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.UPDATE', 'SET', { payload: { mode: 'not-now' } });
+    // The answer is the state after the word, which the row takes at once.
+    expect(await row.findByText('not now')).toBeTruthy();
+  });
+
+  it('draining with nothing left running, says it installs at the next look', async () => {
+    invoke.mockImplementation(answer(update({ state: 'draining', staged: STAGED, mode: 'when-idle' })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText(/Nothing runs now, so it installs at the next look\./)).toBeTruthy();
+    await userEvent.click(row.getByRole('button', { name: 'Update now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.UPDATE', 'SET', { payload: { mode: 'now' } });
+  });
+
+  it('waiting after Not now, says work goes on and offers Update when idle and Update now', async () => {
+    invoke.mockImplementation(answer(update({ state: 'waiting', staged: STAGED, mode: 'not-now' })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText(/You said Not now: work goes on, and this build waits for your word\./)).toBeTruthy();
+    expect(row.getByText('not now')).toBeTruthy();
+    expect(row.queryByRole('button', { name: 'Not now' })).toBeNull();
+    await userEvent.click(row.getByRole('button', { name: 'Update when idle' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.UPDATE', 'SET', { payload: { mode: 'when-idle' } });
+    await userEvent.click(row.getByRole('button', { name: 'Update now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.UPDATE', 'SET', { payload: { mode: 'now' } });
+  });
+
+  it('says a word the shell refused in the shell\'s sentence', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module === 'DAORIS.UPDATE' && type === 'SET') {
+        throw Object.assign(new Error('nothing is staged'), { code: 'UPDATE_NOTHING_STAGED' });
+      }
+      return answer(update({ state: 'waiting', staged: STAGED, mode: 'not-now' }))(module, type);
+    });
+    show(<SettingsView notify={notify} section="driver" />);
+    const row = await section();
+
+    await userEvent.click(await row.findByRole('button', { name: 'Update when idle' }));
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Nothing is staged beside this install, so there is nothing to install.', 'error'));
+  });
+
+  it('refused, says which check failed and that it is not tried again, and offers nothing to press', async () => {
+    invoke.mockImplementation(answer(update({
+      state: 'refused', staged: STAGED, problem: { code: 'hash', message: 'app/Daoris.Desktop.App.dll is not the file its manifest names.' },
+    })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText(/Not installed: a file is not the one its manifest names\. It is not tried again/)).toBeTruthy();
+    expect(row.getByText('refused')).toBeTruthy();
+    expect(row.getByText(STAGED.id)).toBeTruthy();
+    expect(row.queryByRole('button')).toBeNull();
+  });
+
+  it('says how the last swap ended, installed, and still says it once the banner has put the outcome away', async () => {
+    const installed = { phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' };
+    invoke.mockImplementation(answer(update({ outcome: installed })));
+    const { unmount } = show(<SettingsView notify={() => {}} section="driver" />);
+    let row = await section();
+
+    expect(await row.findByText('Last update')).toBeTruthy();
+    expect(row.getByText('Daoris was updated to 0.0.1 (abc1234).')).toBeTruthy();
+    expect(row.getByText('installed')).toBeTruthy();
+    unmount();
+
+    // After *Dismiss*: `outcome` is put away, and `last` keeps the swap the row tells of.
+    invoke.mockImplementation(answer(update({ last: installed })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    row = await section();
+    expect(await row.findByText('Daoris was updated to 0.0.1 (abc1234).')).toBeTruthy();
+  });
+
+  it('says a swap rolled back with its reason, beside a newer build draining', async () => {
+    invoke.mockImplementation(answer(update({
+      state: 'draining', staged: { ...STAGED, id: '20261004T090000Z-cd34ef56', commit: 'def5678' }, mode: 'when-idle', driven: 1,
+      outcome: { phase: 'rolled-back', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'exited' },
+    })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText(
+      'Daoris 0.0.1 (abc1234) could not start, so Daoris went back to the build before it: the new build ended before it came up.',
+    )).toBeTruthy();
+    expect(row.getByText('rolled back')).toBeTruthy();
+    expect(row.getByText('def5678')).toBeTruthy();
+    expect(row.getByText(/Waits on 1 driven session\./)).toBeTruthy();
+  });
+
+  it('says a swap the launcher refused with its check', async () => {
+    invoke.mockImplementation(answer(update({
+      outcome: { phase: 'refused', build: STAGED.id, version: '0.0.1', commit: 'abc1234', reason: 'missing' },
+    })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = await section();
+
+    expect(await row.findByText(
+      'The staged Daoris 0.0.1 (abc1234) was refused before anything was replaced: a file its manifest names is missing.',
+    )).toBeTruthy();
+    expect(row.getByText('refused')).toBeTruthy();
+  });
+
+  it('speaks 中文', async () => {
+    await i18n.changeLanguage('zh');
+    invoke.mockImplementation(answer(update({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 1, turns: 2 })));
+    show(<SettingsView notify={() => {}} section="driver" />);
+    const row = within(await screen.findByRole('region', { name: '更新' }));
+
+    expect(await row.findByText('暂存的构建')).toBeTruthy();
+    expect(row.getByText(/还在等 1 个驱动的会话和 2 个对话的当前一轮结束。/)).toBeTruthy();
+    expect(row.getByRole('button', { name: '立即更新' })).toBeTruthy();
+    expect(row.getByRole('button', { name: '暂不更新' })).toBeTruthy();
   });
 });

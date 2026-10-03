@@ -82,7 +82,7 @@ No path retries a build: whatever did not install is in `update/failed/`, and th
 
 | | The screen | The terminal |
 |---|---|---|
-| What stands | the banner under the app strip (`DAORIS.UPDATE` · `STATE`, `UPDATE_STATE`) | `daoris-driver update [--install <folder>]` |
+| What stands | the banner under the app strip (`DAORIS.UPDATE` · `STATE`, `UPDATE_STATE`), and Settings → Driver's row | `daoris-driver update [--install <folder>]` |
 | When idle | *Update when idle* | `--when-idle` |
 | Now | *Update now* | `--now` |
 | Not now | *Not now* | `--cancel` |
@@ -90,7 +90,10 @@ No path retries a build: whatever did not install is in `update/failed/`, and th
 
 Both write `$DAORIS_HOME/update.json` (`mode`, `build`, `at`). A word names the build staged when it was said, so *Not now*
 holds for that build only. Absent or unreadable is when idle. The banner speaks both languages (D116), its buttons
-glossary-checked; Settings' row is web-settings' to mount (D139, what it does not do).
+glossary-checked. Settings → Driver's row (UPDATE1b, `settings/Update.tsx`) stands where the banner is gone once
+dismissed: the staged build's id, version, commit and time, the drain and what it waits on, the last swap in the banner's
+words, and the same three words. It says the last swap after a *Dismiss* once `STATE` answers `last`, the journal's record
+told or not, which the modules do not answer yet.
 
 ## 7. What it does not do
 

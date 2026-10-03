@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDriver, useSetCoolOff, useSetNotify, useSetStrikes } from '../shell';
+import { useDriver, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState } from '../shell';
 import { Card, CheckField, failure, type Notify, PathText, SettingRow } from '../ui';
+import { UpdateSection } from './Update';
 
 /**
  * The home's hint for how the home stands to the account's DAORIS_HOME, which a terminal's daoris reads
@@ -46,6 +47,9 @@ export function DriverDomain({ notify }: { notify: Notify }) {
   // The cool-off's minutes as typed (TOOL4g), held as text for the strikes' reason.
   const setCoolOffMutation = useSetCoolOff();
   const [coolOff, setCoolOff] = useState<string | null>(null);
+  // The install's update (UPDATE1b, D139 §6): the query the banner reads, and the same word it says.
+  const update = useUpdateState();
+  const sayUpdate = useSayUpdate();
   const onError = failure(notify);
 
   return (
@@ -180,6 +184,15 @@ export function DriverDomain({ notify }: { notify: Notify }) {
           />
         )}
       </Card>
+
+      {/* The install's update (UPDATE1b): the banner, its other door on the screen, is gone once dismissed, and this
+          stands. Here because the update is the application's own, as the home above is, and holds the driver's starts
+          while it drains. A word the shell refuses is said in its sentence; one it takes is shown by the row itself. */}
+      <UpdateSection
+        update={update.data}
+        busy={sayUpdate.isPending}
+        onSay={(mode) => sayUpdate.mutate(mode, { onError })}
+      />
     </>
   );
 }
