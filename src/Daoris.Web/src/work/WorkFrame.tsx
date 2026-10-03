@@ -3,17 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
-import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
+import { useAnswerSession, useAsks, useQuests, useRegistry, useSessions } from '../queries';
 import {
   type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
+  useParkGoAhead,
 } from '../shell';
 import { doorOf } from '../tools';
 import { boxOf, NATIVE_WORDS_LIMIT, neverSentence, takesWords, tooLong } from './say';
 import { SessionBox } from './SessionBox';
-import { pauseAsk, wiredFor, type WorkTarget } from './pausing';
+import { askOf, pauseAsk, wiredFor, type WorkTarget } from './pausing';
+import { goAheadsAsked, goAheadToast } from './parkGoAheads';
 import { PauseAsk } from './WorkAsks';
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
@@ -315,6 +317,12 @@ export function WorkFrame({
   // there sent a person's words into nothing, or into the middle of the JSON-RPC stream. The driver
   // refuses such a line too; the frame offers no box, and the page header carries the stop (D126 §3.3).
   const intake = attended ? isIntake(attended) : false;
+  // The go-aheads a park asked on its quest's ask (KNOWUSE1a2, D135 §2), read only for a driven park whose quest an ask
+  // asked: shown in its head, where answering one answers the park too. The asks are asked for nowhere else here.
+  const parkAsk = attended?.state === 'awaiting-person' && !intake ? askOf(quest) : null;
+  const asks = useAsks(false, parkAsk !== null);
+  const goAheads = attended && parkAsk ? goAheadsAsked(asks.data, parkAsk, attended.id) : [];
+  const parkGoAhead = useParkGoAhead();
   const talking = Boolean(attended && conversation && here && !intake);
   // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
@@ -568,6 +576,22 @@ export function WorkFrame({
         if (words) setDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n'));
         failure(notify)(error);
       },
+    });
+  };
+
+  // A go-ahead the park asked, answered on its page (KNOWUSE1a2, D135 §2): the go-ahead and the park through one door, so
+  // the same session goes on with one press. The person's words, where they gave any, are the park's answer too, counted
+  // as an answer's are once they went; with none, the park takes its blank answer and nothing is counted.
+  const onGoAhead = (number: number, approved: boolean, words?: string) => {
+    if (!attended || !parkAsk) return;
+    const session = attended.id;
+    const sessionQuest = attended.quest;
+    parkGoAhead.mutate({ id: session, ask: parkAsk, number, approved, words }, {
+      onSuccess: (answered) => {
+        if (answered.sent && words) counted(session, 'answer', words, 0, answered);
+        notify(goAheadToast(t, number, approved, answered, { quest: sessionQuest }));
+      },
+      onError: failure(notify),
     });
   };
 
@@ -1056,10 +1080,13 @@ export function WorkFrame({
             lastTurn={attended ? lastTurns[attended.id] : undefined}
             // The page header above carries its state, its id and its stop (D126 §3.2): said once.
             headed
-            resolving={resolve.isPending || answer.isPending}
+            resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}
+            // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
+            goAheads={goAheads}
+            onGoAhead={here ? onGoAhead : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             onSession={(session) => attend(session.id)}

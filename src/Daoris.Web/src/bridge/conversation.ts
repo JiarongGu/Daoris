@@ -413,6 +413,37 @@ export const useSay = () => {
   });
 };
 
+/** What a go-ahead answered on a park's page did (KNOWUSE1a2): the go-ahead's sentence, then what became of the park. */
+export type GoAheadAnswered = WordsAnswer & { message: string };
+
+/**
+ * A go-ahead a parked session asked, answered on the session's own page (KNOWUSE1a2, D135 §2): one press, where the ask's
+ * page and the box took two. `SESSION_GO_AHEAD` answers the go-ahead on its ask first, so the conversation the answer
+ * resumes is handed it, then the park: with the person's words as the box keeps them, or, with none, the park's blank
+ * answer. A refused go-ahead answers nothing else, in the service's sentence. The person's words go only where they gave
+ * some: the record keeps no words they did not write (D137).
+ *
+ * The sessions and the asks are asked again whatever came of it, since a park that could not be answered may still have
+ * had its go-ahead answered.
+ */
+export const useParkGoAhead = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (answer: { id: string; ask: string; number: number; approved: boolean; words?: string }): Promise<GoAheadAnswered> => {
+      const answered = await call<unknown>('SESSION_GO_AHEAD', {
+        id: answer.id, ask: answer.ask, number: answer.number, approved: answer.approved,
+        ...(answer.words ? { words: answer.words } : {}),
+      });
+      const message = (answered as { message?: unknown } | null | undefined)?.message;
+      return { ...wordsOf(answered), message: typeof message === 'string' ? message : '' };
+    },
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: keys.allAsks });
+    },
+  });
+};
+
 /** What *Start a conversation with these words* did: the conversation it opened, or the driver's sentence why none. */
 export type StartedFrom = { sessionId: string | null; message: string; sent: boolean };
 

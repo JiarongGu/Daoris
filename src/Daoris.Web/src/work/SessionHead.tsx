@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SweepBranch } from '../settings/Sweep';
-import type { Quest, Session } from '../api';
+import type { GoAhead, Quest, Session } from '../api';
+import { GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool } from '../format';
 import { cn } from '../lib/cn';
 import {
@@ -33,6 +34,10 @@ import { RunningIntake } from './RunningIntake';
  * driver's next look, when the same session goes on, so the head shows the answer and says so, with no moves, wherever
  * the frame could act.
  *
+ * **The go-aheads a park asked stand beneath its card** (KNOWUSE1a2, D135 §2), the ask's own list: each with *Approve*
+ * and *Refuse* where the frame can answer, and answering one there answers the park too, so the same session goes on with
+ * one press. They stay while it is parked, answered or not, so one still waiting can be answered before it goes on.
+ *
  * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
  * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
  * the side bar, which starts closed (U7) — so a failed session's reason and a finished one's ending
@@ -49,8 +54,15 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, onReview, headed = false,
+  onAnswerSession, branch, onReview, headed = false, goAheads = [], onGoAhead,
 }: {
+  /** The go-aheads this session asked on its quest's ask (KNOWUSE1a2), as the frame read them; shown while it is parked. */
+  goAheads?: GoAhead[];
+  /**
+   * Answer one of them, and the park with it (KNOWUSE1a2): which go-ahead, yes or no, and the person's words where they
+   * gave any. Absent where nothing can answer them here, and then they are shown with no door.
+   */
+  onGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /**
    * A page header above carries its state and its id (SESSUX1d, D126 §3.2): the head opens on the quest's whole title
    * and says neither again. Absent, a window with no header (a detached session), the head keeps both beside the title.
@@ -124,6 +136,17 @@ export function SessionHead({
         <WaitingCard title={t('work.head.waiting')}>
           <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{session.note}</p>
         </WaitingCard>
+      )}
+      {parked && !intake && goAheads.length > 0 && (
+        <section aria-labelledby={`go-aheads-${session.id}`} className="grid gap-1">
+          <h3 id={`go-aheads-${session.id}`} className="m-0 text-small font-semibold">{t('work.awaiting.goAheads')}</h3>
+          <GoAheadList
+            goAheads={goAheads}
+            busy={resolving}
+            onAnswer={onGoAhead}
+            lead={t('work.awaiting.goAheadsLead')}
+          />
+        </section>
       )}
 
       {/* The state follows the title rather than the far edge (§4: status leads): the head is as wide
