@@ -5,7 +5,7 @@ import i18n from '../i18n';
 import { moment } from '../format';
 import { HowItCameToBe } from './HowItCameToBe';
 import {
-  answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER,
+  answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
 } from './traceFixtures';
 
 // Props-only, like every molecule here (TRACE1b, D143): how a session or a quest came to be, worded from the chain's codes in
@@ -82,6 +82,34 @@ describe('how this came to be', () => {
     expect(second).toHaveTextContent('1a2b3c4 Read the figure through v3');
     expect(second).toHaveTextContent(`Landed on feature/q1-fix-the-dashboard-figure from main, ${at('2026-10-03T10:05:00Z')} · pushed by the plugin github`);
     expect(within(second).getByRole('link', { name: 'its pull request' })).toHaveAttribute('href', 'https://example.test/pull/7');
+  });
+
+  it('says who accepted a landing and the rule it was made under, and its entry on the due list try by try (LAND2b)', () => {
+    render(<HowItCameToBe kind="session" id="s2" open onToggle={() => {}} answer={answer(SESSION_CHAIN)} />);
+
+    const session = screen.getByText('Session s2').closest('li')!;
+    expect(session).toHaveTextContent(
+      'accepted automatically when its quest was done · under the workspace\'s rule · naming the plugin github · accepting automatically');
+    const due = within(session).getByText('Due to land automatically').parentElement!;
+    expect(due).toHaveTextContent(`due since ${at('2026-10-03T10:00:00Z')} · closed ${at('2026-10-03T10:05:00Z')}`);
+    expect(due).toHaveTextContent("from this machine's list of work due to land");
+    expect(due).toHaveTextContent(`${at('2026-10-03T10:01:00Z')} · its tree holds uncommitted work · 2 uncommitted paths · at 9f8e7d6`);
+    expect(due).toHaveTextContent(`${at('2026-10-03T10:05:00Z')} · landed · branch feature/q1-fix-the-dashboard-figure · 2 commits · at 1a2b3c4`);
+  });
+
+  it('says a session still waiting to land, and an earlier landing from before who accepted it was kept', () => {
+    const { rerender } = render(<HowItCameToBe kind="session" id="s8" open onToggle={() => {}} answer={answer(WAITING_CHAIN)} />);
+
+    const session = screen.getByText('Session s8').closest('li')!;
+    expect(session).toHaveTextContent('who accepted it is not kept: it landed before landings kept it');
+    expect(session).not.toHaveTextContent('under the');
+    expect(session).toHaveTextContent(`due since ${at('2026-10-03T12:30:00Z')} · still waiting`);
+    expect(session).toHaveTextContent('the branch already stands, and Daoris does not move it · branch feature/q8-tidy-the-legend');
+
+    const untried = structuredClone(WAITING_CHAIN);
+    untried.links[0]!.session!.landing!.due!.tries = [];
+    rerender(<HowItCameToBe kind="session" id="s8" open onToggle={() => {}} answer={answer(untried)} />);
+    expect(screen.getByText('Not tried yet.')).toBeInTheDocument();
   });
 
   it('says what stood when each session started, by the moments kept', () => {

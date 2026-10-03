@@ -6,8 +6,8 @@ import { ExternalLink } from '../links';
 import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../ui';
 import { HandedAccount } from './HandedAccount';
 import {
-  short, type TraceAnswer, type TraceAskLink, type TraceBranch, type TraceKind, type TraceQuestLink, type TraceSessionLink,
-  type TraceState, traceStory,
+  short, type TraceAnswer, type TraceAskLink, type TraceBranch, type TraceDue, type TraceKind, type TraceQuestLink,
+  type TraceSessionLink, type TraceState, traceStory,
 } from './trace';
 
 /** What the page holds of the trace: the fold, and the read once asked. */
@@ -427,6 +427,7 @@ function SessionStep({ session, doors }: { session: TraceSessionLink; doors: Doo
       {session.landing && (
         <div className="grid min-w-0 gap-1">
           {session.landing.branches.map((branch) => <Landed key={branch.branch + branch.at} branch={branch} />)}
+          {session.landing.due && <Due due={session.landing.due} />}
           {session.landing.missing && <Gap text={t(`work.trace.landing.gap.${session.landing.missing}`)} />}
         </div>
       )}
@@ -512,16 +513,63 @@ function Landed({ branch }: { branch: TraceBranch }) {
       ? t('work.trace.session.removedInside', { on: branch.removedOn })
       : t('work.trace.session.removed')),
   ].filter((part): part is string => Boolean(part));
+  // Who accepted it and the rule it was made under (LAND2b): a landing from before they were kept says so, and no rule is made up.
+  const accepted = [
+    branch.acceptedBy === 'auto' || branch.acceptedBy === 'person'
+      ? t(`work.trace.acceptedBy.${branch.acceptedBy}`)
+      : t('work.trace.acceptedUnknown'),
+    ...(branch.rule ? [
+      t(`work.trace.rule.${branch.rule.source}`, { defaultValue: branch.rule.source }),
+      branch.rule.plugin ? t('work.trace.rulePlugin', { plugin: branch.rule.plugin }) : t('work.trace.ruleNoPlugin'),
+      t(branch.rule.autoAccept ? 'work.trace.ruleAuto' : 'work.trace.rulePress'),
+    ] : []),
+  ];
   return (
-    <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
-      <Inline text={parts.join(' · ')} />
-      {branch.pullRequest && branch.pushed && (
-        <>
-          {' · '}
-          <ExternalLink href={branch.pullRequest} className="text-accent underline underline-offset-2">{t('work.trace.session.pullRequest')}</ExternalLink>
-        </>
+    <div className="grid min-w-0 gap-0.5">
+      <p className="m-0 text-small text-ink-soft [overflow-wrap:anywhere]">
+        <Inline text={parts.join(' · ')} />
+        {branch.pullRequest && branch.pushed && (
+          <>
+            {' · '}
+            <ExternalLink href={branch.pullRequest} className="text-accent underline underline-offset-2">{t('work.trace.session.pullRequest')}</ExternalLink>
+          </>
+        )}
+      </p>
+      <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={accepted.join(' · ')} /></p>
+    </div>
+  );
+}
+
+/** Its entry on the due list (LAND2b): when it became due, whether a try closed it, and each try by its code. */
+function Due({ due }: { due: TraceDue }) {
+  const { t, i18n } = useTranslation();
+  const at = (iso: string) => moment(iso, i18n.language);
+  return (
+    <Part title={t('work.trace.due.title')}>
+      <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink-soft">
+        <span>
+          {due.closed
+            ? t('work.trace.due.closed', { since: at(due.since), closed: at(due.closed) })
+            : t('work.trace.due.waiting', { since: at(due.since) })}
+        </span>
+        <span className="text-meta text-ink-faint">{t('work.trace.from', { source: t(`work.trace.source.${due.source}`) })}</span>
+      </p>
+      {due.tries.length === 0 ? <p className="m-0 text-small text-ink-soft">{t('work.trace.due.untried')}</p> : (
+        <ol className="m-0 grid list-none gap-0.5 p-0">
+          {due.tries.map((tried, index) => (
+            <li key={index} className="min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">
+              <Inline text={[
+                `${at(tried.at)} · ${t(`work.trace.try.${tried.code}`, { defaultValue: tried.code })}`,
+                tried.branch && t('work.trace.due.branch', { branch: tried.branch }),
+                tried.commits != null && t('work.trace.due.commits', { count: tried.commits }),
+                tried.uncommitted != null && t('work.trace.due.uncommitted', { count: tried.uncommitted }),
+                tried.tip && t('work.trace.due.tip', { tip: short(tried.tip) }),
+              ].filter((part): part is string => Boolean(part)).join(' · ')} />
+            </li>
+          ))}
+        </ol>
       )}
-    </p>
+    </Part>
   );
 }
 

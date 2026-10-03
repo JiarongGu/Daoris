@@ -374,6 +374,122 @@ test('a rule\'s plugin is read and kept as the driver keeps it, and a merge nami
   fx.cleanup();
 });
 
+/**
+ * LAND2a (D145): *Accept automatically*, `autoAccept` on a branch rule — a quest's done lands its work and the rule's
+ * plugin pushes it and opens the pull request with no press. 🔴 A TWIN with the driver's `LandingRules.Problem` and
+ * `DriverConfig`: `LandingAutoAcceptTests.cs` holds both tables row for row, and the tests below hold them to these, cell
+ * for cell. Only a branch rule takes it, with a plugin or without; a merge naming a plugin is told that first.
+ */
+const AUTO_ACCEPT_SHAPES: [form: string, pattern: string | null, plugin: string | null, autoAccept: boolean, problem: string | null][] = [
+  ['branch', 'feature/{quest}-{slug}', 'example.github-pull-request', true, null],
+  ['branch', 'feature/{quest}-{slug}', null, true, null],
+  ['branch', 'feature/{quest}-{slug}', null, false, null],
+  ['merge', null, null, true, 'only a branch rule accepts automatically'],
+  ['merge', null, null, false, null],
+  ['merge', null, 'example.github-pull-request', true, 'only a branch rule hands its work to a plugin'],
+];
+
+/** What the file says, read: absent is off, only JSON `true` is on, and a merge carrying it is not read at all. */
+const AUTO_ACCEPT_ROWS: [name: string, file: string, map: string, key: string, expected: 'on' | 'off' | 'none'][] = [
+  ['absent is off', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}"}}}', 'landings', 'engine', 'off'],
+  ['true on a branch rule is on', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":true}}}', 'landings', 'engine', 'on'],
+  ['without a plugin it is still on', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","tidy":true,"autoAccept":true}}}', 'landings', 'engine', 'on'],
+  ['false is off', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":false}}}', 'landings', 'engine', 'off'],
+  ['text is not true', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":"true"}}}', 'landings', 'engine', 'off'],
+  ['a number is not true', '{"landings":{"engine":{"form":"branch","pattern":"feature/{quest}","autoAccept":1}}}', 'landings', 'engine', 'off'],
+  ['a merge carrying it is not read', '{"landings":{"engine":{"form":"merge","autoAccept":true}}}', 'landings', 'engine', 'none'],
+  ['a merge without it is read', '{"landings":{"engine":{"form":"merge","autoAccept":false}}}', 'landings', 'engine', 'off'],
+  ['a workspace\'s rule carries it', '{"workspaceLandings":{"aurora":{"form":"branch","pattern":"review/{session}","autoAccept":true}}}', 'workspaceLandings', 'aurora', 'on'],
+];
+
+const LANDING_TESTS = () => readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+  'Daoris.Desktop.Driver.Tests', 'LandingAutoAcceptTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+test('only a branch rule accepts automatically (the twin\'s shapes)', () => {
+  for (const [form, pattern, plugin, autoAccept, problem] of AUTO_ACCEPT_SHAPES) {
+    const said = landingProblem({
+      form, ...(pattern ? { pattern } : {}), ...(plugin ? { plugin } : {}), ...(autoAccept ? { autoAccept } : {}),
+    });
+    if (problem === null) assert.equal(said, null, JSON.stringify([form, plugin, autoAccept]));
+    else assert.ok(said?.includes(problem), `${JSON.stringify([form, plugin, autoAccept])}: ${said}`);
+  }
+});
+
+test('an automatic acceptance reads as the driver reads it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-landing-auto-read');
+  for (const [name, file, map, key, expected] of AUTO_ACCEPT_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    const rule = (map === 'workspaceLandings' ? choices.workspaceLandings : choices.landings)[key];
+    assert.equal(rule === undefined ? 'none' : rule.autoAccept ? 'on' : 'off', expected, name);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s automatic acceptance tables are these tables, row for row and in this order', () => {
+  const source = LANDING_TESTS();
+  assert.deepEqual(csharpRows(source, 'Only_a_branch_rule_accepts_automatically', {}, 'LandingAutoAcceptTests'), AUTO_ACCEPT_SHAPES);
+  assert.deepEqual(csharpRows(source, 'AutoAccept_reads_as_the_cli_reads_it', {}, 'LandingAutoAcceptTests'), AUTO_ACCEPT_ROWS);
+});
+
+test('landing --auto-accept with a plugin says it pushes without a press, is listed, and is written only when on (LAND2a)', () => {
+  const fx = makeFixture('driver-landing-auto');
+  plugin(fx, 'example.github-pull-request', ['work/land']);
+
+  const said = run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}', '--tidy',
+    '--plugin', 'example.github-pull-request', '--auto-accept'], at(fx));
+  assert.match(said.out, /`example\.github-pull-request` pushes it and opens a pull request without asking you each time/);
+  assert.match(said.out, /Switch it off to accept each one yourself/);
+  assert.deepEqual(readDriverChoices(at(fx)).workspaceLandings, {
+    aurora: { form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'example.github-pull-request', tidy: true, autoAccept: true },
+  });
+  // The same key in the same place the driver writes it: after the tidy.
+  assert.match(readFileSync(at(fx), 'utf8'), /"tidy": true,\s*"autoAccept": true/);
+  assert.match(run(['list'], at(fx)).out, /landing\s+workspace aurora\s+branch feature\/\{quest\}-\{slug\}, plugin example\.github-pull-request, tidy, accept automatically/);
+
+  run(['cap', '2'], at(fx));
+  assert.equal(readDriverChoices(at(fx)).workspaceLandings.aurora?.autoAccept, true, 'another verb keeps it');
+
+  run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}', '--plugin', 'example.github-pull-request'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).workspaceLandings.aurora.autoAccept, undefined);
+  fx.cleanup();
+});
+
+test('landing --auto-accept with no plugin is allowed, and warns that nothing leaves the machine', () => {
+  const fx = makeFixture('driver-landing-auto-alone');
+
+  const said = run(['landing', 'engine', 'branch', 'review/{session}', '--auto-accept'], at(fx));
+  assert.match(said.out, /no plugin opens a pull request, so each done's branch waits here for you to push it/);
+  assert.match(said.out, /nothing leaves this machine/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, { engine: { form: 'branch', pattern: 'review/{session}', autoAccept: true } });
+  fx.cleanup();
+});
+
+test('a repository\'s --no-auto-accept replaces the workspace\'s switch whole, and --clear hands it back', () => {
+  const fx = makeFixture('driver-landing-auto-repository');
+  run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}', '--auto-accept'], at(fx));
+
+  const byHand = run(['landing', 'engine', 'branch', 'feature/{quest}-{slug}', '--no-auto-accept'], at(fx));
+  assert.match(byHand.out, /waits for your Accept/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, { engine: { form: 'branch', pattern: 'feature/{quest}-{slug}' } });
+
+  run(['landing', 'engine', '--clear'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  assert.equal(readDriverChoices(at(fx)).workspaceLandings.aurora?.autoAccept, true);
+  fx.cleanup();
+});
+
+test('landing refuses a merge that accepts automatically, and both switches at once, and writes nothing', () => {
+  const fx = makeFixture('driver-landing-auto-refused');
+
+  assert.match(captureError(() => run(['landing', 'engine', 'merge', '--auto-accept'], at(fx))).message,
+    /only a branch rule accepts automatically/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'review/{session}', '--auto-accept', '--no-auto-accept'], at(fx))).message,
+    /`--auto-accept` or `--no-auto-accept`/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  fx.cleanup();
+});
+
 test('the landing rules survive edits by verbs that do not know them, and one that could not land is not read', () => {
   const fx = makeFixture('driver-landing-preserve');
   writeFileSync(at(fx), JSON.stringify({

@@ -129,6 +129,18 @@ export type TraceBranch = {
   gone?: string | null;
   removedAs?: string | null;
   removedOn?: string | null;
+  /** Who accepted it (LAND2b): `person` or `auto`; absent for a landing recorded before it was kept. */
+  acceptedBy?: string | null;
+  /** The landing rule it was made under, as it stood then: absent for one recorded before it was kept. */
+  rule?: { plugin?: string | null; autoAccept: boolean; source: string } | null;
+};
+
+/** A session's entry on the due list (LAND2b): when it became due, when a try closed it, and each try by its code. */
+export type TraceDue = {
+  since: string;
+  source: string;
+  closed?: string | null;
+  tries: { at: string; code: string; branch?: string | null; commits?: number | null; uncommitted?: number | null; tip?: string | null }[];
 };
 
 export type TraceSessionLink = {
@@ -166,7 +178,7 @@ export type TraceSessionLink = {
     hard: number;
     guarded: boolean;
   } | null;
-  landing?: { source: string; missing?: string | null; branches: TraceBranch[] } | null;
+  landing?: { source: string; missing?: string | null; branches: TraceBranch[]; due?: TraceDue | null } | null;
   stood?: {
     missing?: string | null;
     standing?: { repository: string; state: string; source: string; at?: string | null; says?: string | null } | null;

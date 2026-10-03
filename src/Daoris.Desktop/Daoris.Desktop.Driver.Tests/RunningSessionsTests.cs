@@ -137,4 +137,55 @@ public sealed class RunningSessionsTests
         await closing.CancelAsync();
         await closed.WaitAsync(Bound);
     }
+
+    /// <summary>
+    /// LAND2b: the landing pass runs beside the looks, one at a time; while it works nothing is idle, what it says joins the next
+    /// report and wakes the wait as an ending does, and a closing driver waits for it.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_pass_runs_beside_the_looks_one_at_a_time_and_its_lines_join_the_next_report()
+    {
+        var running = new RunningSessions();
+        var release = new TaskCompletionSource();
+
+        Assert.True(running.Beside(async _ =>
+        {
+            await release.Task;
+            return ["landing  session s1 (#q1 → engine): accepted automatically when its quest was done: its work is on `feature/q1`."];
+        }, CancellationToken.None));
+
+        Assert.True(running.Landing);
+        Assert.False(running.Idle);
+        Assert.False(running.Beside(_ => Task.FromResult<IReadOnlyList<string>>(["a second pass"]), CancellationToken.None));
+        var settled = running.SettledAsync();
+        var waiting = running.NextAsync(TimeSpan.FromMinutes(5), CancellationToken.None);
+        Assert.False(settled.IsCompleted);
+
+        release.SetResult();
+        await waiting.WaitAsync(Bound);
+        await settled.WaitAsync(Bound);
+
+        Assert.False(running.Landing);
+        var said = Assert.Single(running.Drain());
+        Assert.StartsWith("landing  session s1", said.Line);
+        Assert.Null(said.Ended);
+        Assert.True(running.Idle);
+    }
+
+    /// <summary>A pass that fails past its own catches is said once, in the next report; one a closing loop cancelled says nothing.</summary>
+    [Fact]
+    public async Task A_landing_pass_that_fails_is_said_once_and_a_cancelled_one_says_nothing()
+    {
+        var running = new RunningSessions();
+        running.Beside(_ => throw new InvalidOperationException("the record would not write"), CancellationToken.None);
+        await running.SettledAsync().WaitAsync(Bound);
+        Assert.Contains("the record would not write", Assert.Single(running.Drain()).Line);
+
+        using var closing = new CancellationTokenSource();
+        await closing.CancelAsync();
+        running.Beside(token => Task.FromCanceled<IReadOnlyList<string>>(token), closing.Token);
+        await running.SettledAsync().WaitAsync(Bound);
+        Assert.Empty(running.Drain());
+        Assert.True(running.Idle);
+    }
 }

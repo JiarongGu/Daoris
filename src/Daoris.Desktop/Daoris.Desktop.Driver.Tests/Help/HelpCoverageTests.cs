@@ -161,6 +161,15 @@ public sealed partial class HelpCoverageTests
         + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
 
     /// <summary>
+    /// GIT1c's <c>daoris-driver git branches</c> (D147 §3.3), a verb of the headless host: exempt, since it reads each
+    /// repository's branches and changes nothing, as <c>trace</c> is. The acts (fetch, branch, push, delete) are owed to a
+    /// <c>git</c> kind, GIT1k's, once GIT1g and GIT1h build them.
+    /// </summary>
+    private static readonly Exempt GitBranchesDoor = new(
+        "it reads each repository's line and branches and changes nothing, so there is nothing to propose, as `trace` is "
+        + "exempt (D147 §3.3, D110 §4); the acts it will sit beside are owed to GIT1k's `git` kind.");
+
+    /// <summary>
     /// The install's update (D139): *Update when idle*, *Update now* and *Not now* on the banner and Settings → Driver
     /// (UPDATE1e's <c>useSayUpdate</c>), and the headless host's <c>daoris-driver update</c> (UPDATE1f). Exempt, since it is
     /// the person's act on the application; the room names both doors, so the helper points there.
@@ -433,6 +442,7 @@ public sealed partial class HelpCoverageTests
             .Append(AbandonDoor)
             .Append(SayDoor)
             .Append(TraceDoor)
+            .Append(GitBranchesDoor)
             .Append(UpdateDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
@@ -604,6 +614,19 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("trace"));
         Assert.Contains("changes nothing", TraceDoor.Reason);
         Assert.Contains("D143", TraceDoor.Reason);
+    }
+
+    /// <summary>
+    /// GIT1c: the headless host's <c>git branches</c> is exempt from Ask Daoris (D147 §3.3, D110 §4) while its usage spells it:
+    /// a read that changes nothing. The <c>git</c> kind GIT1k builds takes the acts, and never the read.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_git_branches_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("git branches [--repository <name>] [--all] [--json]", DriverCommand.Usage);
+        Assert.DoesNotContain("branches", HelpProposalKinds.Find("git")?.Doors ?? []);
+        Assert.Contains("changes nothing", GitBranchesDoor.Reason);
+        Assert.Contains("D147", GitBranchesDoor.Reason);
     }
 
     /// <summary>

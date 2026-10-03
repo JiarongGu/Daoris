@@ -81,7 +81,16 @@ export const SECOND: TraceSessionLink = {
     branches: [{
       branch: 'feature/q1-fix-the-dashboard-figure', tip: '1a2b3c4d5e6f708192a3b4c5d6e7f80910111213', at: '2026-10-03T10:05:00Z',
       line: 'main', from: 'abc1234def567890', plugin: 'github', pushed: true, pullRequest: 'https://example.test/pull/7',
+      acceptedBy: 'auto', rule: { plugin: 'github', autoAccept: true, source: 'workspace' },
     }],
+    // LAND2b: it became due at its quest's done, waited once on uncommitted work, then landed.
+    due: {
+      since: '2026-10-03T10:00:00Z', source: 'auto-landings', closed: '2026-10-03T10:05:00Z',
+      tries: [
+        { at: '2026-10-03T10:01:00Z', code: 'uncommitted', uncommitted: 2, tip: '9f8e7d6c5b4a3210' },
+        { at: '2026-10-03T10:05:00Z', code: 'landed', branch: 'feature/q1-fix-the-dashboard-figure', commits: 2, tip: '1a2b3c4d5e6f7081' },
+      ],
+    },
   },
   stood: {
     standing: { repository: 'dashboards', state: 'before', source: 'config', at: '2026-10-03T09:25:00Z', says: 'test on dev first, never production' },
@@ -211,6 +220,34 @@ export const OLD_CHAIN: TraceChain = {
       },
     },
   ],
+};
+
+/**
+ * Waiting to land automatically (LAND2b): done, due, held once by a branch that already stands, and still waiting; and a
+ * landing of an earlier session from before who accepted it was kept.
+ */
+export const WAITING_CHAIN: TraceChain = {
+  kind: 'session', id: 's8', unread: [],
+  links: [{
+    kind: 'session',
+    session: {
+      id: 's8', source: 'sessions', kind: 'driven', state: { state: 'completed' }, opened: '2026-10-03T12:00:00Z',
+      moved: '2026-10-03T12:30:00Z', agent: { adapter: 'claude-code', harness: '2.1.4', account: 'work' }, tree: 'dashboards-q8',
+      baseCommit: 'abc1234def', quest: 'q8', before: { first: true },
+      evidence: { said: 'commits landed:', lines: ['5e5e5e5 Tidy the legend'], commits: [{ sha: '5e5e5e5', line: '5e5e5e5 Tidy the legend' }] },
+      events: { source: 'events', starts: [], instructions: [{ seq: 1, chars: 4200, account: null }], accepted: [] },
+      rules: { source: 'rules', missing: 'gone-with-run', allowed: 0, asked: 0, denied: 0, hard: 0, guarded: false },
+      landing: {
+        source: 'landings',
+        branches: [{ branch: 'feature/q8-earlier', tip: '4d4d4d4d4d4d', at: '2026-10-02T09:00:00Z', line: 'main' }],
+        due: {
+          since: '2026-10-03T12:30:00Z', source: 'auto-landings',
+          tries: [{ at: '2026-10-03T12:31:00Z', code: 'exists', branch: 'feature/q8-tidy-the-legend', tip: '5e5e5e5e5e5e' }],
+        },
+      },
+      stood: { standing: { repository: 'dashboards', state: 'none', source: 'config' }, goAheads: [] },
+    },
+  }],
 };
 
 /** A store that did not answer: the session records, so the quest names none and no session is read. */

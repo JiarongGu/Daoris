@@ -131,6 +131,28 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("on laptop", said);
     }
 
+    /// <summary>
+    /// MSG1f2 (D137 §3.2): words that wait on an ended record are said where it is listed, under Resumes later, with what
+    /// holds them in the line <c>sessions say</c> prints, from the planner's own verdict: here a repository this machine
+    /// was never opted into driving.
+    /// </summary>
+    [Fact]
+    public async Task Words_held_on_an_ended_record_are_listed_under_resumes_later_saying_what_holds_them()
+    {
+        var held = Record("h0ld0000", "completed", "q5", minutes: 60);
+        held["said"] = new JsonArray(new JsonObject
+        {
+            ["id"] = "w1", ["text"] = "Also the readme.", ["at"] = T0.AddMinutes(70).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+        });
+
+        var (exit, said) = await RunAsync(new Ledger([held], [Quest("q5", "Trim the readme", "Done")]), []);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Resumes later (1)", said);
+        Assert.Contains("h0ld0000  completed  engine — Trim the readme", said);
+        Assert.Contains("held: it waits: `engine` has not been opted into driving on this machine.", said);
+    }
+
     [Fact]
     public async Task The_listing_takes_a_group_and_a_repository()
     {

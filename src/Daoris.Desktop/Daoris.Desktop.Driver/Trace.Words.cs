@@ -354,6 +354,7 @@ internal static class TraceWords
     private static void Landing(StringBuilder text, TraceLanding landing)
     {
         foreach (var branch in landing.Branches) text.Append($"  landing: {Landed(branch)}\n");
+        if (landing.Due is { } due) DueToLand(text, due);
         text.Append(landing.Missing switch
         {
             null => "",
@@ -389,7 +390,41 @@ internal static class TraceWords
             if (landing.RemovedAs is { } kind) said.Append($", removed as {kind}{(landing.RemovedOn is { } on ? $" on {on}" : "")}");
         }
 
+        // Who accepted it, and the rule it was made under (LAND2b, D145 point 6): kept since then, and said missing before (D143).
+        said.Append(landing.AcceptedBy switch
+        {
+            AcceptedBy.Auto => "; accepted automatically when its quest was done",
+            AcceptedBy.Person => "; accepted by the person's press",
+            _ => "; who accepted it is not kept: it landed before landings kept it",
+        });
+        if (landing.Rule is { } rule)
+        {
+            said.Append($"; under the {rule.Source}'s rule, ")
+                .Append(rule.Plugin is { } named ? $"naming plugin {named}" : "naming no plugin")
+                .Append(rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
+        }
+
         return said.ToString();
+    }
+
+    /// <summary>
+    /// Its entry on the due list (LAND2b, design §8), where it has one: when it became due, and each try by its code, with the
+    /// branch it made or met. A session never due has none, and says nothing here.
+    /// </summary>
+    private static void DueToLand(StringBuilder text, TraceDue due)
+    {
+        text.Append($"  due to land automatically since {When(due.Since)} ({AutoLandings.FileName}, this machine's)")
+            .Append(due.Closed is { } closed ? $", closed {When(closed)}\n" : ", still waiting\n");
+        if (due.Tries.Count == 0) text.Append("    not tried yet\n");
+        foreach (var tried in due.Tries)
+        {
+            text.Append($"    {When(tried.At)} · {tried.Code}")
+                .Append(tried.Branch is { } branch ? $" · branch {branch}" : "")
+                .Append(tried.Commits is { } commits ? $" · {commits} commit(s)" : "")
+                .Append(tried.Uncommitted is { } paths ? $" · {paths} uncommitted path(s)" : "")
+                .Append(tried.Tip is { } tip ? $" · at {tip[..Math.Min(12, tip.Length)]}" : "")
+                .Append('\n');
+        }
     }
 
     /// <summary>

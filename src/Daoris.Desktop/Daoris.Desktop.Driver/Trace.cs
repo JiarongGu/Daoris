@@ -122,7 +122,11 @@ public sealed record TracedQuest(string Id, string From, string To, string Title
 internal sealed record TraceFacts(
     IReadOnlyList<TracedSession> Sessions, string? SessionsUnread,
     IReadOnlyList<TracedQuest> Quests, string? QuestsUnread,
-    IReadOnlyList<LandedBranch> Landings, string? LandingsUnread);
+    IReadOnlyList<LandedBranch> Landings, string? LandingsUnread)
+{
+    /// <summary>This machine's due list (LAND2b, design §8): each session due to land automatically, and each try's code.</summary>
+    public IReadOnlyList<AutoLanding> AutoLandings { get; init; } = [];
+}
 
 /// <summary>What an id was found to name, before the chain is read: the sessions and quests it starts from, and how each was found.</summary>
 /// <param name="Kind">The kind it names, one of <see cref="TraceEntry"/>.</param>
@@ -225,7 +229,11 @@ public static class Trace
             questsUnread = error.Message;
         }
 
-        var landed = new LandedBranches(sources.Home);        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries(), LandingsProblem(landed.FilePath));
+        var landed = new LandedBranches(sources.Home);
+        return new TraceFacts(sessions, sessionsUnread, quests, questsUnread, landed.Entries(), LandingsProblem(landed.FilePath))
+        {
+            AutoLandings = new AutoLandings(sources.Home).All(),
+        };
     }
 
     /// <summary>

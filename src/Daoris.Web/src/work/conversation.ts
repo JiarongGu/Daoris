@@ -305,7 +305,8 @@ export type Usage = { used: number; size: number; most: number };
  * - **A driver's note about the words is their line** (MSG1f): a note naming their ids, that they went
  *   to a new session or cannot go on here, settles the words it names, which stay as written and wait
  *   no longer, and carries what they said where the page holds every one. So does the note that a stop
- *   cut a word off on its way (MSG1c3), which carries the code the page words it by.
+ *   cut a word off on its way (MSG1c3), which carries the code the page words it by. A later note that
+ *   they went to another session takes them back from the note that carried them (MSG1f2).
  */
 export function toTurns(
   events: readonly SessionEvent[], { opening }: { opening?: SessionEvent | null } = {},
@@ -341,6 +342,9 @@ export function toTurns(
 
   // The person's words waiting to reach a session (STEER1, MSG1f), by their id: where each was said, and its block.
   const waiting = new Map<string, { turn: Turn; key: string; seq: number; block: Block }>();
+  // The note that hands over what each word said (MSG1f), by the word's id: a later note saying the word went elsewhere
+  // takes it back (MSG1f2), so no second conversation is offered with words already gone.
+  const handing = new Map<string, Block>();
 
   for (const event of events) {
     const key = `e${event.seq}`;
@@ -455,13 +459,22 @@ export function toTurns(
           waiting.delete(named[index]!);
         }
         const said = named.length > 0 && held.every(Boolean) ? held.map((was) => was!.block.text ?? '') : undefined;
+        if (event.to) {
+          for (const id of named) {
+            const handed = handing.get(id);
+            if (handed) delete handed.said;
+            handing.delete(id);
+          }
+        }
         // A note about one call carries its id (SESS1 S6), so it folds with that call's run.
-        here(key).items.push({
+        const note: Block = {
           key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}),
           ...(event.to ? { to: event.to } : {}), ...(event.why ? { why: event.why } : {}),
           ...(named.length > 0 ? { words: named } : {}), ...(said ? { said } : {}),
           ...(event.code ? { code: event.code } : {}),
-        });
+        };
+        if (said) for (const id of named) handing.set(id, note);
+        here(key).items.push(note);
         where[event.seq] = key;
         break;
       }

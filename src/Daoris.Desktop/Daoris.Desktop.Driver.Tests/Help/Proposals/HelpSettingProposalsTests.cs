@@ -261,6 +261,42 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             plan.Apply!(DriverConfig.Empty).WorkspaceLandings["work"]);
     }
 
+    /// <summary>
+    /// LAND2a (D145): a branch rule that accepts automatically, proposed the way the terminal spells it, its card saying
+    /// that the plugin pushes and opens pull requests with no press, or, with none, that nothing leaves the machine.
+    /// </summary>
+    [Theory]
+    [InlineData("branch feature/{quest}-{slug} --plugin example.lands --auto-accept", "example.lands", "`example.lands` pushes it and opens a pull request without asking you each time")]
+    [InlineData("branch feature/{quest}-{slug} --auto-accept --tidy --plugin example.lands", "example.lands", "`example.lands` pushes it and opens a pull request without asking you each time")]
+    [InlineData("branch feature/{quest}-{slug} --auto-accept", null, "no plugin opens a pull request, so each done's branch waits here for you to push it")]
+    public void A_landing_may_accept_automatically(string value, string? plugin, string says)
+    {
+        var plan = HelpProposals.Plan(Setting("landing", null, "work", value), DriverConfig.Empty, WithPlugin("example.lands"));
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal($"daoris driver landing --workspace work {value}", plan.Terminal);
+        Assert.Contains("accepted automatically", plan.Describe);
+        Assert.Contains(says, plan.Describe);
+        var rule = plan.Apply!(DriverConfig.Empty).WorkspaceLandings["work"];
+        Assert.True(rule.AutoAccept);
+        Assert.Equal(plugin, rule.Plugin);
+    }
+
+    /// <summary>A repository's own rule saying off out loud replaces the workspace's switch; a merge and both at once are refused.</summary>
+    [Fact]
+    public void A_landing_that_waits_for_the_press_is_said_and_a_merge_that_accepts_automatically_is_refused()
+    {
+        var byHand = HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest}-{slug} --no-auto-accept"), DriverConfig.Empty, Facts);
+        Assert.Null(byHand.Refusal);
+        Assert.Contains("waits for your Accept", byHand.Describe);
+        Assert.False(byHand.Apply!(DriverConfig.Empty).Landings["engine"].AutoAccept);
+
+        Assert.Contains("only a branch rule accepts automatically",
+            HelpProposals.Plan(Setting("landing", "engine", null, "merge --auto-accept"), DriverConfig.Empty, Facts).Refusal);
+        Assert.Contains("`--auto-accept` or `--no-auto-accept`",
+            HelpProposals.Plan(Setting("landing", "engine", null, "branch feature/{quest} --auto-accept --no-auto-accept"), DriverConfig.Empty, Facts).Refusal);
+    }
+
     /// <summary>HELP8: what `daoris driver landing` refuses about a plugin, refused here in the same words.</summary>
     [Theory]
     [InlineData("branch feature/{quest} --plugin nowhere.lands", "", "not installed on this machine")]

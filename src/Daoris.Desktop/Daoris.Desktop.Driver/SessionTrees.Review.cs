@@ -65,7 +65,9 @@ public static class LandedReviewWords
         var when = entry.LandedAt == DateTimeOffset.MinValue
             ? ""
             : $" on {entry.LandedAt.ToUniversalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} UTC";
-        var landed = $"`{session}` landed on `{entry.Branch}` in `{entry.Repository}`{when}";
+        // Who accepted it (LAND2b, D145 point 4): said where it was the rule's switch, since a press is what the review offers.
+        var by = entry.AcceptedBy == AcceptedBy.Auto ? ", accepted automatically when its quest was done" : "";
+        var landed = $"`{session}` landed on `{entry.Branch}` in `{entry.Repository}`{when}{by}";
         var pullRequest = entry is { Pushed: true, PullRequest: { } pr } ? $" Its pull request: {pr}" : "";
         return review.State switch
         {

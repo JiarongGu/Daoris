@@ -12,11 +12,14 @@ import { QUEST_CHAIN, SESSION_CHAIN } from './traceFixtures';
  */
 
 const root = join(process.cwd(), '..', '..');
-const source = readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Trace.Chain.cs'), 'utf8');
+const driver = (file: string) => readFileSync(join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', file), 'utf8');
+const source = driver('Trace.Chain.cs');
+// LAND2b's codes, which the chain carries as their own declarations name them: a try's, who accepted, a rule's source.
+const landing = driver('AutoLanding.cs') + driver('Landing.cs');
 
 /** A class's codes as the driver declares them: each `const string`, by its name and value. */
-function declared(holder: string): Map<string, string> {
-  const block = new RegExp(`public static class ${holder}\\s*\\{([\\s\\S]*?)\\n\\}`).exec(source)?.[1] ?? '';
+function declared(holder: string, text = holder.startsWith('Trace') ? source : landing): Map<string, string> {
+  const block = new RegExp(`public static class ${holder}\\s*\\{([\\s\\S]*?)\\n\\}`).exec(text)?.[1] ?? '';
   return new Map([...block.matchAll(/public const string (\w+) = "([^"]+)";/g)].map((match) => [match[1]!, match[2]!]));
 }
 
@@ -34,6 +37,9 @@ const FAMILIES = [
   ['work.trace.answer.', 'TraceAnswers'],
   ['work.trace.tree.', 'TraceTrees'],
   ['work.trace.namedBy.', 'TraceNamers'],
+  ['work.trace.try.', 'AutoLandingCode'],
+  ['work.trace.acceptedBy.', 'AcceptedBy'],
+  ['work.trace.rule.', 'LandingSource'],
 ] as const;
 
 /** The stores the chain says did not answer, each a `TraceUnread` the driver makes. */
@@ -49,8 +55,12 @@ const codesOf = (catalogue: Record<string, string>, prefix: string) =>
 describe('a trace’s codes, held to both catalogues', () => {
   it('reads the driver’s declarations', () => {
     // A scan that matched nothing would pass on a moved or renamed file: it has to see them.
-    expect([...declared('TraceStores').values()].sort()).toEqual(['asks', 'config', 'events', 'landings', 'quests', 'rules', 'sessions']);
+    expect([...declared('TraceStores').values()].sort())
+      .toEqual(['asks', 'auto-landings', 'config', 'events', 'landings', 'quests', 'rules', 'sessions']);
     expect([...declared('TraceLandingGaps').values()].sort()).toEqual(['merge-accepted', 'none', 'unknown', 'unread']);
+    expect([...declared('AcceptedBy').values()].sort()).toEqual(['auto', 'person']);
+    expect([...declared('LandingSource').values()].sort()).toEqual(['default', 'repository', 'workspace']);
+    expect(declared('AutoLandingCode').size).toBeGreaterThanOrEqual(14);
     expect(unreadStores()).toEqual(['landings', 'quests', 'sessions']);
     for (const [, holder] of FAMILIES) expect(declared(holder).size, holder).toBeGreaterThan(0);
   });

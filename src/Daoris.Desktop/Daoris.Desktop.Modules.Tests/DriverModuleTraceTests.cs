@@ -56,7 +56,15 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.Note, Text = "carried on from session `s1` on `work`.", At = At(9, 40) });
         events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = new string('y', 2000), At = At(9, 40) });
         new LandedBranches(Home).Record(new LandedBranch(
-            "dashboards", "work", "feature/q1-fix", "main", "1a2b3c4d5e6f", "s2", "q1", "Fix", At(10, 45)) { Plugin = "github", Pushed = true });
+            "dashboards", "work", "feature/q1-fix", "main", "1a2b3c4d5e6f", "s2", "q1", "Fix", At(10, 45))
+        {
+            Plugin = "github", Pushed = true, AcceptedBy = AcceptedBy.Auto, Rule = new LandedRule("github", AutoAccept: true, LandingSource.Workspace),
+        });
+        // LAND2b's due list: the entry keeps its tree as a machine path, which never reaches the page.
+        var due = new AutoLandings(Home);
+        due.Due(new AutoLanding("s2", "q1", "dashboards", "work", Tree, At(10, 40)));
+        due.Tried("s2", new AutoTry(At(10, 41), AutoLandingCode.Uncommitted) { Uncommitted = 2, Tip = "9f8e7d6c5b4a", Status = "sha256:abcd" }, close: false);
+        due.Tried("s2", new AutoTry(At(10, 45), AutoLandingCode.Landed) { Branch = "feature/q1-fix", Commits = 1, Tip = "1a2b3c4d5e6f" }, close: true);
         Directory.CreateDirectory(Path.Combine(Home, SpawnServers.Folder));
         File.WriteAllText(Path.Combine(Home, SpawnServers.Folder, "s1.settings.json"), "{not json");
         DriverConfig.Empty.WithStanding("dashboards", "test on dev first", At(9, 20)).Save(DriverConfigPath);
@@ -105,8 +113,19 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
         Assert.Equal(("s1", "same"), (second.GetProperty("before").GetProperty("session").GetString(), second.GetProperty("before").GetProperty("tree").GetString()));
         Assert.Equal("carried on from session `s1` on `work`.", second.GetProperty("events").GetProperty("starts")[0].GetString());
         Assert.Equal(2000, second.GetProperty("events").GetProperty("instructions")[0].GetProperty("chars").GetInt32());
-        Assert.Equal(("landings", "feature/q1-fix"), (second.GetProperty("landing").GetProperty("source").GetString(),
-            second.GetProperty("landing").GetProperty("branches")[0].GetProperty("branch").GetString()));
+        var landing = second.GetProperty("landing");
+        Assert.Equal(("landings", "feature/q1-fix"), (landing.GetProperty("source").GetString(), landing.GetProperty("branches")[0].GetProperty("branch").GetString()));
+        // LAND2b: who accepted it and the rule it was made under, and its entry on the due list with each try by its code.
+        var branch = landing.GetProperty("branches")[0];
+        Assert.Equal(("auto", "workspace", true), (branch.GetProperty("acceptedBy").GetString(),
+            branch.GetProperty("rule").GetProperty("source").GetString(), branch.GetProperty("rule").GetProperty("autoAccept").GetBoolean()));
+        var due = landing.GetProperty("due");
+        Assert.Equal("auto-landings", due.GetProperty("source").GetString());
+        Assert.Equal(["uncommitted", "landed"], due.GetProperty("tries").EnumerateArray().Select(tried => tried.GetProperty("code").GetString()));
+        Assert.Equal(2, due.GetProperty("tries")[0].GetProperty("uncommitted").GetInt32());
+        Assert.NotEqual(JsonValueKind.Null, due.GetProperty("closed").ValueKind);
+        Assert.False(due.TryGetProperty("tree", out _));
+        Assert.False(due.TryGetProperty("status", out _));
         var standing = second.GetProperty("stood").GetProperty("standing");
         Assert.Equal(("config", "before", "test on dev first"),
             (standing.GetProperty("source").GetString(), standing.GetProperty("state").GetString(), standing.GetProperty("says").GetString()));

@@ -17,7 +17,9 @@ vi.mock('@shenora/react', () => ({
 import { sentence } from '../format';
 import i18n from '../i18n';
 import { keys } from '../queries';
-import { useArchiveSessions, useDeleteSession, useOpenSessionFolder, useSessionGroups, type SessionGrouping } from './sessions';
+import {
+  useArchiveSessions, useDeleteSession, useGoOnNew, useOpenSessionFolder, useSessionGroups, type SessionGrouping,
+} from './sessions';
 
 const wrapper = (client: QueryClient) => ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -173,5 +175,26 @@ describe('the sessions domain', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+
+  /**
+   * MSG1g2 (D137 §2.2): *Go on in a new session* names the session alone, and its answer is read field by field, so a
+   * refusal keeps its code and a shell older than the route answers no choice kept; the sessions and the driver are asked
+   * again, since the loop takes the choice up at its next look.
+   */
+  it('asks a new session of DAORIS.DRIVER by the session’s id, and reads its answer defensively', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    invoke.mockImplementation(async () => ({ sent: false, why: 'closed', message: '#q1 has closed' }));
+    const { result } = renderHook(() => useGoOnNew(), { wrapper: wrapper(client) });
+
+    expect(await result.current.mutateAsync('s1')).toEqual({ sent: false, why: 'closed', message: '#q1 has closed' });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_ON_NEW', { payload: { id: 's1' } });
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSessions }));
+
+    invoke.mockImplementation(async () => ({ sent: true, why: null, message: 'it goes on in a new session' }));
+    expect(await result.current.mutateAsync('s1')).toEqual({ sent: true, why: null, message: 'it goes on in a new session' });
+    invoke.mockImplementation(async () => null);
+    expect(await result.current.mutateAsync('s1')).toEqual({ sent: false, why: null, message: '' });
   });
 });

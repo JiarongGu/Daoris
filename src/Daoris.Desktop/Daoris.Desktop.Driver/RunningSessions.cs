@@ -39,10 +39,59 @@ public sealed class RunningSessions
         get { lock (_gate) return _running; }
     }
 
-    /// <summary>Whether nothing runs and nothing ended that a look has not yet reported.</summary>
+    /// <summary>Whether nothing runs, no landing pass works beside the looks, and nothing ended that a look has not yet reported.</summary>
     public bool Idle
     {
-        get { lock (_gate) return _running == 0 && _ended.Count == 0; }
+        get { lock (_gate) return _running == 0 && _ended.Count == 0 && _landing is null; }
+    }
+
+    // The landing pass beside the looks (LAND2b), while it works: one at a time, since a plugin's two minutes may outlast a look.
+    private Task? _landing;
+
+    /// <summary>Whether a landing pass still works beside the looks (LAND2b): the next look chooses again only once it ended.</summary>
+    public bool Landing
+    {
+        get { lock (_gate) return _landing is not null; }
+    }
+
+    /// <summary>
+    /// Run a landing pass beside the looks (LAND2b, D145 point 2), as a start runs beside the look that began it, so a plugin's
+    /// two minutes never hold one. What it says joins the next look's report, as an ending does, and wakes a wait as one does.
+    /// </summary>
+    /// <returns>False where a pass already works: one at a time, and the next look chooses again.</returns>
+    internal bool Beside(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            if (_landing is not null) return false;
+            _landing = Task.Run(() => KeepLandingAsync(pass, ct), CancellationToken.None);
+            return true;
+        }
+    }
+
+    private async Task KeepLandingAsync(Func<CancellationToken, Task<IReadOnlyList<string>>> pass, CancellationToken ct)
+    {
+        IReadOnlyList<string> said;
+        try
+        {
+            said = await pass(ct).ConfigureAwait(false);
+        }
+        catch (Exception error)
+        {
+            // A closing loop cancels it; anything else past its own catches is said once, in the next report.
+            said = ct.IsCancellationRequested ? [] : [$"landing  the sessions due to land could not be landed this look, and are tried again at the next: {error.Message}"];
+        }
+
+        TaskCompletionSource moved;
+        lock (_gate)
+        {
+            _ended.AddRange(said.Select(line => new StartRun(line, Opened: false)));
+            _landing = null;
+            moved = _moved;
+            _moved = NewSignal();
+        }
+
+        moved.TrySetResult();
     }
 
     /// <summary>
@@ -102,8 +151,8 @@ public sealed class RunningSessions
     }
 
     /// <summary>
-    /// Completes once nothing runs: every session concluded and its record written. Never cancelled, on
-    /// purpose — it is what a closing driver waits on, so every record says how it ended (REV3, D104).
+    /// Completes once nothing runs: every session concluded and its record written, and no landing pass works (LAND2b). Never
+    /// cancelled, on purpose — it is what a closing driver waits on, so every record says how it ended (REV3, D104).
     /// </summary>
     public async Task SettledAsync()
     {
@@ -112,7 +161,7 @@ public sealed class RunningSessions
             Task moved;
             lock (_gate)
             {
-                if (_running == 0) return;
+                if (_running == 0 && _landing is null) return;
                 moved = _moved.Task;
             }
 

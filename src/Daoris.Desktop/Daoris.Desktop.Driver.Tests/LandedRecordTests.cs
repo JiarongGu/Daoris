@@ -178,6 +178,52 @@ public sealed class LandedRecordTests : IDisposable
         // A landing whose moment did not read says no moment rather than the year one.
         Assert.StartsWith("`s1a2b3c4` landed on `feature/q1-fix` in `engine`; ",
             Say(new LandedReview(entry with { LandedAt = DateTimeOffset.MinValue }, LandedState.Standing)));
+        // LAND2b: a landing at done says who accepted it; a press, and one from before it was kept, say what they always said.
+        Assert.Equal(
+            "`s1a2b3c4` landed on `feature/q1-fix` in `engine` on 2026-09-30 12:00 UTC, accepted automatically when its quest was done; "
+            + "that branch still stands. Its pull request: https://example.test/pr/7",
+            Say(new LandedReview(entry with { AcceptedBy = AcceptedBy.Auto, Pushed = true, PullRequest = "https://example.test/pr/7" }, LandedState.Standing)));
+        Assert.Equal("`s1a2b3c4` landed on `feature/q1-fix` in `engine` on 2026-09-30 12:00 UTC; that branch still stands.",
+            Say(new LandedReview(entry with { AcceptedBy = AcceptedBy.Person }, LandedState.Standing)));
+    }
+
+    /// <summary>
+    /// LAND2b (D145 point 6, design §8): the record keeps who accepted a landing and the rule as it stood, read back whole; one
+    /// recorded before either was kept reads as neither, which a reader says is not kept (D143 point 3).
+    /// </summary>
+    [Fact]
+    public void Who_accepted_a_landing_and_its_rule_round_trip_and_an_older_record_keeps_neither()
+    {
+        var landings = new LandedBranches(_home);
+        landings.Record(Entry("feature/q1-fix", "s1") with
+        {
+            AcceptedBy = AcceptedBy.Auto,
+            Rule = new LandedRule("acme.lands", AutoAccept: true, LandingSource.Workspace),
+        });
+        landings.Record(Entry("feature/q2-fix", "s2") with { AcceptedBy = AcceptedBy.Person, Rule = new LandedRule(null, false, LandingSource.Repository) });
+
+        var text = File.ReadAllText(Path.Combine(_home, LandedBranches.FileName));
+        Assert.Contains("\"acceptedBy\": \"auto\"", text);
+        Assert.Matches("\"rule\": \\{\\s*\"plugin\": \"acme.lands\",\\s*\"autoAccept\": true,\\s*\"source\": \"workspace\"", text);
+
+        var again = new LandedBranches(_home);
+        var auto = again.Landing("s1")!;
+        Assert.Equal(AcceptedBy.Auto, auto.AcceptedBy);
+        Assert.Equal(new LandedRule("acme.lands", true, LandingSource.Workspace), auto.Rule);
+        var pressed = again.Landing("s2")!;
+        Assert.Equal(AcceptedBy.Person, pressed.AcceptedBy);
+        Assert.Equal(new LandedRule(null, false, LandingSource.Repository), pressed.Rule);
+        // A later write keeps both, as every field: the clean-up's mark rewrites the file whole.
+        again.Removed("engine", "feature/q1-fix", LandedKind.Merged, "main");
+        Assert.Equal(AcceptedBy.Auto, new LandedBranches(_home).Landing("s1")!.AcceptedBy);
+
+        File.WriteAllText(Path.Combine(_home, LandedBranches.FileName), """
+            { "branches": [ { "repository": "engine", "branch": "feature/q3", "tip": "abcd1234", "session": "s3",
+                              "landedAt": "2026-09-30T12:00:00.0000000+00:00" } ] }
+            """);
+        var older = new LandedBranches(_home).Landing("s3")!;
+        Assert.Null(older.AcceptedBy);
+        Assert.Null(older.Rule);
     }
 
     /// <summary>

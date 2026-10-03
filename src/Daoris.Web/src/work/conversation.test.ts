@@ -232,6 +232,26 @@ describe('toTurns', () => {
     expect(items[2]).toMatchObject({ why: 'refused', said: ['first', 'second'] });
   });
 
+  /**
+   * MSG1f2: once a later note says the words went to another session (the press started a conversation with them), the note
+   * that they could not go on here hands them over no longer, so it offers no second conversation with words already gone.
+   */
+  it('takes the words back from a note whose words a later note says went elsewhere', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'target', text: 'go' }),
+      e(2, { kind: 'turn', stopReason: 'end_turn' }),
+      e(3, { kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'first' }),
+      e(4, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
+      e(5, { kind: 'note', text: '— It cannot go on in this session, because its conversation could not be resumed.', words: ['w1', 'w2'], why: 'refused' }),
+      e(6, { kind: 'note', text: '— your words went to session `c4a7c4a7`, because you started a conversation with them.', words: ['w1', 'w2'], to: 'c4a7c4a7', why: 'started' }),
+    ]);
+
+    const items = turns[1]!.items;
+    expect(items.map((b) => b.kind)).toEqual(['held', 'held', 'note', 'note']);
+    expect(items[2]!.said).toBeUndefined();
+    expect(items[3]).toMatchObject({ to: 'c4a7c4a7', why: 'started', words: ['w1', 'w2'] });
+  });
+
   it('hands a note no words where it names a word the page does not hold', () => {
     const { turns } = toTurns([
       e(1, { kind: 'user', origin: 'person', id: 'w2', reaches: 'resume', text: 'second' }),
@@ -752,7 +772,35 @@ describe('the words’ answers', () => {
   const wrapper = ({ children }: { children: ReactNode }) => createElement(
     QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }, children);
 
-  it('reads what a word said now would do, and asks again when the session moves', async () => {
+  /**
+   * MSG1f2: a shell that tells the reach live says so by carrying `reach`, so the session is asked once and then followed by
+   * `SESSION_QUEUED`, never asked again as it moves; an event that carries no reach changes nothing, and `{}` is a word that
+   * would start a turn at once.
+   */
+  it('follows a shell that tells the reach live, asking once', async () => {
+    invoke.mockResolvedValue({ session: 's1', queued: [], taking: true, reaches: 'next-step', reach: { reaches: 'next-step' } });
+    // One client across renders, as the application holds one: what an event kept is there when the session moves.
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const held = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result, rerender } = renderHook(({ state }) => useSessionReach({ id: 's1', state }, true), {
+      wrapper: held, initialProps: { state: 'working' },
+    });
+    await waitFor(() => expect(result.current).toEqual({ reaches: 'next-step', why: null }));
+
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: false, listening: false, reach: { reaches: 'resume' } }); });
+    await waitFor(() => expect(result.current).toEqual({ reaches: 'resume', why: null }));
+
+    rerender({ state: 'completed' });
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: false }); });
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's2', queued: [], taking: false, reach: { why: 'teammate' } }); });
+    expect(result.current).toEqual({ reaches: 'resume', why: null });
+
+    act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: true, reach: {} }); });
+    await waitFor(() => expect(result.current).toEqual({ reaches: null, why: null }));
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads what a word said now would do, and asks an older shell again when the session moves', async () => {
     invoke.mockResolvedValueOnce({ session: 's1', queued: [], taking: true, reaches: 'next-step' })
       .mockResolvedValueOnce({ session: 's1', queued: [], taking: false, reaches: 'resume' });
     const { result, rerender } = renderHook(({ state }) => useSessionReach({ id: 's1', state }, true), {

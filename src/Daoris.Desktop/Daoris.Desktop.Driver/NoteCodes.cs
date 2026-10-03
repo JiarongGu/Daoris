@@ -300,6 +300,7 @@ public static class NoteCodes
         new(ContinueWhy.Teammate, [], "work.say.why.teammate"),
         new(ContinueWhy.Intake, [], "work.say.why.intake"),
         new(ContinueWhy.StoodDown, [], "work.say.why.stoodDown"),
+        new(ContinueWhy.Started, [], "work.say.why.started"),
     ]);
 
     /// <summary>Why a cool-off lasts until then, as the page words it (<c>harness.cooling.why.*</c>).</summary>
@@ -386,6 +387,18 @@ public static class NoteCodes
     public static readonly NoteCode ChatEnded = new("chat.ended", []);
     public static readonly NoteCode ChatCancelled = new("chat.cancelled", []);
     public static readonly NoteCode ChatNotKept = new("chat.not-kept", []);
+
+    // ——— A landing at the quest's done, under a rule that accepts automatically (LAND2b): said in the conversation's record.
+    public static readonly NoteCode LandingAccepted = new("landing.accepted", ["branch"]);
+    public static readonly NoteCode LandingUnready = new("landing.plugin-unready", ["branch", "plugin"]);
+    public static readonly NoteCode LandingPluginFailed = new("landing.plugin-failed", ["branch", "plugin"]);
+    public static readonly NoteCode LandingNothing = new("landing.nothing", []);
+    public static readonly NoteCode LandingHeld = new("landing.held", []);
+    public static readonly NoteCode LandingUncommitted = new("landing.uncommitted", ["paths"]);
+    public static readonly NoteCode LandingExists = new("landing.exists", ["branch"]);
+    public static readonly NoteCode LandingRefused = new("landing.refused", []);
+    public static readonly NoteCode LandingNoTree = new("landing.no-tree", []);
+    public static readonly NoteCode LandingNotDone = new("landing.not-done", []);
 
     /// <summary>Every code above, read off the declarations so none escapes the catalogue test.</summary>
     public static IReadOnlyList<NoteCode> All { get; } =

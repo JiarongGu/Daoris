@@ -13,7 +13,7 @@ public sealed class TraceChainTests
     [Theory]
     [InlineData("C:/trees/dashboards-q1", "dashboards-q1")]
     [InlineData(@"C:\trees\dashboards-q1\", "dashboards-q1")]
-    [InlineData("/home/someone/trees/reports-q5", "reports-q5")]
+    [InlineData("/srv/data/trees/reports-q5", "reports-q5")]
     [InlineData("reports-q5", "reports-q5")]
     [InlineData("/", null)]
     [InlineData(null, null)]

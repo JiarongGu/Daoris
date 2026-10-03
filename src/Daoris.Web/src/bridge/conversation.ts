@@ -355,25 +355,59 @@ const reachOf = (answer: unknown): Reach => {
 };
 
 /**
+ * The reach a shell that tells it live carries (MSG1f2): `reach`, an object present whenever the shell says it, `{}` for a
+ * word that would start a turn at once, since the bridge leaves a null out. Undefined from an older shell, which carries
+ * none, and where nothing is known yet.
+ */
+const toldReach = (answer: unknown): Reach | undefined => {
+  const reach = (answer as { reach?: unknown } | null | undefined)?.reach;
+  return reach !== null && typeof reach === 'object' ? reachOf(reach) : undefined;
+};
+
+/**
  * What a word said now to this session would do (MSG1d, D137 §5.3): `SESSION_QUEUE`'s `reaches` and `why`, which decide
  * the box the page offers and the line it draws where nothing takes words (`boxOf`). Undefined until the driver answers.
  *
  * @remarks
- * **Asked again whenever what it reads moves**: keyed by the session's state and whether its inbox listens, so a session
- * that winds up, ends, or goes on is asked again as it moves, and under the sessions' key, so whatever asks the listing
- * again (a word kept, a tick) asks this too. The live queue (`SESSION_QUEUED`) does not carry it. Desktop-only, as a
- * conversation is.
+ * **Followed live where the shell tells it** (MSG1f2): an answer or a `SESSION_QUEUED` carrying `reach` says the shell
+ * tells it as the session's door changes, as its record moves and as a later session of its quest opens, so it is asked
+ * once per session and then taken from the events, never asked again as the session moves. An event that carries none
+ * changes nothing.
+ *
+ * **An older shell is asked again whenever what it reads moves**: keyed by the session's state and whether its inbox
+ * listens, so a session that winds up, ends, or goes on is asked again as it moves, and under the sessions' key, so
+ * whatever asks the listing again (a word kept, a tick) asks this too. Desktop-only, as a conversation is.
  */
 export const useSessionReach = (session: { id: string; state: string } | null, listening = false): Reach | undefined => {
   const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const [told, setTold] = useState(false);
+  const id = session?.id ?? '';
   const answer = useQuery({
-    queryKey: keys.sessionReach(session?.id ?? '', session?.state ?? '', listening),
-    queryFn: async () => reachOf(await call<unknown>('SESSION_QUEUE', { id: session!.id })),
+    queryKey: told ? keys.sessionReachTold(id) : keys.sessionReach(id, session?.state ?? '', listening),
+    queryFn: async () => {
+      const answered = await call<unknown>('SESSION_QUEUE', { id });
+      const live = toldReach(answered);
+      if (!live) return reachOf(answered);
+      // Kept where the live key reads it before that key is the one read, so switching to it asks nothing again.
+      client.setQueryData(keys.sessionReachTold(id), live);
+      setTold(true);
+      return live;
+    },
     enabled: isAvailable && session !== null,
-    staleTime: 30_000,
+    staleTime: told ? Infinity : 30_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
+
+  useShenoraEvent('DAORIS', 'SESSION_QUEUED', (payload) => {
+    const queued = payload as { session?: unknown } | undefined;
+    const live = toldReach(payload);
+    if (typeof queued?.session !== 'string' || !live) return;
+    client.setQueryData(keys.sessionReachTold(queued.session), live);
+    setTold(true);
+  });
+
   return session ? answer.data : undefined;
 };
 
@@ -444,36 +478,35 @@ export const useParkGoAhead = () => {
   });
 };
 
-/** What *Start a conversation with these words* did: the conversation it opened, or the driver's sentence why none. */
-export type StartedFrom = { sessionId: string | null; message: string; sent: boolean };
+/**
+ * What *Start a conversation with these words* did (MSG1f2): the conversation it opened, whether the words are its first
+ * message and off the session they were written to, why nothing was done by a code where it refused, and the driver's
+ * sentence.
+ */
+export type StartedFrom = { sessionId: string | null; sent: boolean; why: string | null; message: string };
+
+/** The press's answer read defensively: the bridge leaves a null out, and an answer that is not one started nothing. */
+const startedOf = (answer: unknown): StartedFrom => {
+  const started = answer as { sessionId?: unknown; sent?: unknown; why?: unknown; message?: unknown } | null | undefined;
+  return {
+    sessionId: typeof started?.sessionId === 'string' && started.sessionId ? started.sessionId : null,
+    sent: started?.sent === true,
+    why: typeof started?.why === 'string' && started.why ? started.why : null,
+    message: typeof started?.message === 'string' ? started.message : '',
+  };
+};
 
 /**
- * *Start a conversation with these words* (MSG1f, D137 §2.2): a new chat in the session's repository whose first message is
- * the words the session could not go on with, its opening naming the session they were written to.
- *
- * @remarks
- * **Two doors a chat already has**, until the modules route the press of their own. D137 §5.3 names
- * `SESSION_START_FROM` for it, which the modules do not have yet, so this starts a chat where `START_CHAT` would start
- * one (the workspace's account and the machine's agent, as every start takes them) and sends the words as its first
- * message, with a preface naming the session. The preface is the agent's to read, so it is not translated, and the driver
- * keeps it on the new record as its note. The words stay on the old record, which the driver no longer tries (its
- * *cannot* mark), until the modules' press takes them off.
+ * *Start a conversation with these words* (MSG1f2, D137 §2.2, §5.3): `SESSION_START_FROM`, one act of the driver's. A new
+ * chat in the session's repository whose first message is the words the session could not go on with, handed with a
+ * preface naming it, which is the agent's to read; then the words leave that session's record naming the new one, and its
+ * conversation says where they went. What it refuses, it refuses before anything starts, by a code.
  */
 export const useStartFrom = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (from: { session: string; repository: string; words: readonly string[] }): Promise<StartedFrom> => {
-      const start = await call<{ sessionId?: string | null; message?: string } | null>('START_CHAT', { repository: from.repository });
-      const sessionId = start?.sessionId ?? null;
-      if (!sessionId) return { sessionId: null, message: start?.message ?? '', sent: false };
-      const said = wordsOf(await call<unknown>('SESSION_INPUT', {
-        id: sessionId,
-        text: from.words.join('\n\n'),
-        preface: `The person first wrote these words to session \`${from.session}\`, which could not go on with them; `
-          + 'this conversation has none of that session\'s context.',
-      }));
-      return { sessionId, message: start?.message ?? '', sent: said.sent };
-    },
+    mutationFn: async (from: { session: string }): Promise<StartedFrom> =>
+      startedOf(await call<unknown>('SESSION_START_FROM', { id: from.session })),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.allSessions });
       void client.invalidateQueries({ queryKey: keys.driver });

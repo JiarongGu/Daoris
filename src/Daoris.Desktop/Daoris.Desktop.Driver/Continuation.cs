@@ -73,6 +73,12 @@ public static class ContinueWhy
     /// <summary>A session that stood down: its quest is someone else's, so it has nothing to go on with. A never.</summary>
     public const string StoodDown = "stood-down";
 
+    /// <summary>
+    /// The person started a conversation with them (MSG1f2): *Start a conversation with these words*, which takes them off
+    /// the record naming that conversation. Never judged: only that press says it, on the went note it leaves.
+    /// </summary>
+    public const string Started = "started";
+
     /// <summary>A reason whose line is fixed: every code but <see cref="Adapter"/> and <see cref="Unable"/>, which name adapters.</summary>
     public static ContinueReason Of(string code) => new(code, code switch
     {
@@ -89,6 +95,7 @@ public static class ContinueWhy
         Teammate => "it ran on another machine, where its conversation is",
         Intake => "an intake is answered through its ask",
         StoodDown => "it stood down, so it has nothing to go on with",
+        Started => "you started a conversation with them",
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, "a reason whose line names an adapter is made by its own method"),
     });
 

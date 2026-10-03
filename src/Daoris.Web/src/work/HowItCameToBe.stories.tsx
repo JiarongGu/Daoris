@@ -4,7 +4,9 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
 import { InTheme } from '../plugins/storyIcons';
 import { HowItCameToBe } from './HowItCameToBe';
-import { answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER } from './traceFixtures';
+import {
+  answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
+} from './traceFixtures';
 
 // How a session or a quest came to be (TRACE1b, D143, D50), as its page's section shows it: folded, as every page first
 // shows it; folded once read, with its story; a quest's chain whole, open; a session's; links nothing keeps, each said
@@ -74,6 +76,12 @@ export const NoAsk: Story = { args: { id: 'q5', answer: answer(NO_ASK_CHAIN) } }
 
 /** An ask from before words were kept, a merge kept only as the person's acceptance, and a teammate's record. */
 export const OldRecords: Story = { args: { id: 'q7', answer: answer(OLD_CHAIN) } };
+
+/** Waiting to land automatically (LAND2b): held once by a branch that stands, and an earlier landing not saying who accepted it. */
+export const WaitingToLand: Story = { args: { kind: 'session', id: 's8', answer: answer(WAITING_CHAIN) } };
+
+/** Waiting to land, in 中文. */
+export const WaitingToLandChinese: Story = { ...WaitingToLand, decorators: [chinese] };
 
 /** A store that did not answer: the session records, so no session is read, and the terminal's door named. */
 export const StoreUnread: Story = { args: { answer: UNREAD_ANSWER } };
