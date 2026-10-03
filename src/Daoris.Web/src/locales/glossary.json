@@ -60,7 +60,7 @@
       "keys": [
         "asks.group", "asks.record.files", "asks.record.goAheads", "asks.record.intake", "asks.record.links", "asks.record.proposal",
         "asks.record.stayed", "asks.record.went", "quests.detail.stayed", "quests.detail.went", "work.abandon.goes",
-        "work.abandon.stays",
+        "work.abandon.stays", "work.awaiting.goAheads",
         "asks.record.quests", "browser.driving.menu", "chain.title", "convergence.methods.Convergent.label",
         "convergence.methods.Identical.label", "convergence.methods.Restatement.label", "harness.accounts",
         "harness.doors", "harness.title", "harness.use.machine", "harness.use.title", "harness.use.workspace",

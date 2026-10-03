@@ -3256,3 +3256,168 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.queryByText(/too narrow to sit beside the session/)).toBeNull();
   });
 });
+
+/** A quest an ask asked (D65 §4): its sender names the ask, which is where the go-aheads its sessions asked are held. */
+const ASKED_QUEST = {
+  id: 'q4sk00', from: 'ask #a5k001', to: 'engine', title: 'Ship the comparison report', body: 'Both sites need it.',
+  status: 'Taken', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+};
+
+/** A session on that quest, parked asking the person for two go-aheads. */
+const PARKED_ASKING = {
+  ...PARKED, id: 'g0ah3ad0', quest: 'q4sk00', note: 'I need go-aheads 1 and 2 before I can finish.',
+};
+
+/** The ask: two go-aheads the park asked, and one another session asked, which is not the park's to show. */
+const ASK_WITH_GO_AHEADS = {
+  id: 'a5k001', workspace: 'default', sentence: 'Ship the comparison report', state: 'Published', tier: 'declarations',
+  asked: '2026-09-01T00:00:00Z', updated: '2026-09-02T00:00:00Z', links: [], attachments: [], proposal: [],
+  quests: ['q4sk00'],
+  goAheads: [
+    {
+      number: 1, kind: 'write', on: 'production', act: 'dashboard configuration', state: 'asked',
+      asked: [{ session: 'g0ah3ad0', quest: 'q4sk00', at: '2026-09-02T00:30:00Z', why: 'The tile reads its target from it.' }],
+    },
+    {
+      number: 2, kind: 'release', on: 'production', act: 'comparison report', state: 'asked',
+      asked: [{ session: 'g0ah3ad0', quest: 'q4sk00', at: '2026-09-02T00:40:00Z', why: 'Ship it.' }],
+    },
+    {
+      number: 3, kind: 'push', on: 'main', act: 'the release branch', state: 'asked',
+      asked: [{ session: 'o7h3r000', quest: 'q4sk00', at: '2026-09-02T00:50:00Z', why: 'Another session’s.' }],
+    },
+  ],
+};
+
+/**
+ * KNOWUSE1a2 (D135 §2, D131, D137): a park that asked go-aheads shows them on its page with *Approve* and *Refuse*, and
+ * answering one there answers the park too, through one door, so the same session goes on: one press where the ask's
+ * page and the box took two. The go-aheads are read from its quest's ask, and only where its quest was asked by one.
+ */
+describe('a park\'s go-aheads', () => {
+  let ASKS: unknown[] = [ASK_WITH_GO_AHEADS];
+  beforeEach(() => {
+    SESSIONS = [PARKED_ASKING];
+    ASKS = [ASK_WITH_GO_AHEADS];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/asks')) return Response.json(ASKS);
+      if (url.startsWith('/api/quests')) return Response.json([...QUESTS, ASKED_QUEST]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GO_AHEAD'
+      ? { message: 'Go-ahead answered.', sent: true, reaches: 'resume' }
+      : DRIVER_STATE));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+    eventHandlers.clear();
+    window.localStorage.removeItem('daoris.drafts');
+  });
+
+  const asksRead = () => vi.mocked(fetch).mock.calls.filter(([input]) => String(input).startsWith('/api/asks')).length;
+
+  it('shows the go-aheads the park asked, each with Approve and Refuse, and not another session\'s', async () => {
+    show('g0ah3ad0');
+
+    const section = await screen.findByRole('region', { name: 'Go-aheads it asked' });
+    const items = within(section).getAllByRole('listitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+      expect.stringContaining('dashboard configuration'),
+      expect.stringContaining('comparison report'),
+    ]);
+    expect(section).not.toHaveTextContent('the release branch');
+    for (const item of items) {
+      expect(within(item).getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+      expect(within(item).getByRole('button', { name: 'Refuse' })).toBeInTheDocument();
+    }
+    // The park's own card and box stay: its question can still be answered in words.
+    expect(screen.getByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toBeInTheDocument();
+  });
+
+  it('approves one with the person\'s words through one door, which answers it and the park, and says it goes on', async () => {
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const section = await screen.findByRole('region', { name: 'Go-aheads it asked' });
+    const second = within(section).getAllByRole('listitem')[1]!;
+    const before = asksRead();
+
+    await userEvent.type(within(second).getByLabelText('your words, if any'), 'dev first, then production');
+    await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 2, approved: true, words: 'dev first, then production' },
+    }));
+    expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
+    // One press: neither the ask's own door nor the box's was asked as well.
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/asks/a5k001/go-aheads/2', expect.anything());
+    // The ask is read again, so the go-ahead shows what became of it.
+    await waitFor(() => expect(asksRead()).toBeGreaterThan(before));
+  });
+
+  it('refuses one with no words, sending none, and says the same session goes on with the refusal', async () => {
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const first = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+
+    await userEvent.click(within(first).getByRole('button', { name: 'Refuse' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_GO_AHEAD', {
+      payload: { id: 'g0ah3ad0', ask: 'a5k001', number: 1, approved: false },
+    }));
+    expect(notify).toHaveBeenCalledWith("Refused go-ahead #1; the same session goes on with it at the driver's next look.");
+  });
+
+  it('says when the session was no longer waiting, so only the go-ahead was answered', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GO_AHEAD'
+      ? { message: 'Go-ahead answered.', sent: false }
+      : DRIVER_STATE));
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const first = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[0]!;
+
+    await userEvent.click(within(first).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Answered go-ahead #1. The session was no longer waiting on you, so the ask keeps your answer for every later start.',
+    ));
+  });
+
+  it('says a refused go-ahead in the service\'s words, and keeps the go-aheads to answer', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type !== 'SESSION_GO_AHEAD') return DRIVER_STATE;
+      throw Object.assign(new Error('fallback'), {
+        code: 'DRIVER_REFUSED', parameters: { message: 'Ask `#a5k001` holds no go-ahead 2: it holds 1.' },
+      });
+    });
+    const notify = vi.fn();
+    show('g0ah3ad0', notify);
+    const second = within(await screen.findByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('listitem')[1]!;
+
+    await userEvent.click(within(second).getByRole('button', { name: 'Approve' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Ask `#a5k001` holds no go-ahead 2: it holds 1.', 'error'));
+    expect(within(screen.getByRole('region', { name: 'Go-aheads it asked' })).getAllByRole('button', { name: 'Approve' }))
+      .toHaveLength(2);
+  });
+
+  it('shows nothing new for a park whose ask holds none of its own, and asks for no asks where no ask asked its quest', async () => {
+    ASKS = [{ ...ASK_WITH_GO_AHEADS, goAheads: [ASK_WITH_GO_AHEADS.goAheads[2]] }];
+    const { unmount } = show('g0ah3ad0');
+    expect(await screen.findByText(/I need go-aheads 1 and 2/)).toBeInTheDocument();
+    await waitFor(() => expect(asksRead()).toBeGreaterThan(0));
+    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    unmount();
+
+    vi.mocked(fetch).mockClear();
+    SESSIONS = [PARKED];
+    show('p4rk3d00');
+    expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Go-aheads it asked' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
+    expect(asksRead()).toBe(0);
+  });
+});

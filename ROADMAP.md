@@ -113,6 +113,21 @@ persistent vector store is SEM1's question.
 `TASKS.md`, each saying what it waits on. Surface work comes from looking at the deployed application
 after every change.
 
+## The horizon after: work that proves itself (reviewed 2026-10-03)
+
+An outside analysis the owner brought in, `docs/DAORIS_FUTURE_DIRECTIONS.md`, asks whether Daoris can
+prove, explain, recover and learn from the work it drives. Read against the record, most of it is built
+or designed. What is missing is reading the records together and checking what a fact can check.
+`docs/2026-10-03-future-directions-review.md` has each section's standing, the order and why. It is a
+recommendation, not a decision: the owner decides.
+
+| Step | What | State |
+|---|---|---|
+| **TRACE1** | One read from a commit back to its session, quest and ask, from what is recorded | Proposed |
+| **EVID1** | A requirement's check that Daoris verifies as a fact, not as the agent's word | Proposed; design first |
+| **CONTEXT1** | What a session was handed, section by section, with sizes | Proposed |
+| **OUTCOME1** | An outcome per quest, derived from the records and reported | Proposed |
+
 ---
 
 ## Five artefacts

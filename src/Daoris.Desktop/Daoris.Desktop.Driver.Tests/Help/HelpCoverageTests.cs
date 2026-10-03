@@ -171,6 +171,14 @@ public sealed partial class HelpCoverageTests
         "the words said to a session are the person's own (D133 §1), so Ask Daoris composes none in their name; the room says "
         + "where the box is and names `daoris-driver sessions say` (D137 §5.4).");
 
+    /// <summary>
+    /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
+    /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
+    /// </summary>
+    private static readonly Exempt TraceDoor = new(
+        "it reads from a commit, a session or a quest back to its ask and changes nothing, so there is nothing to propose, as "
+        + "`driver list` is exempt (D110 §4); a screen's door to the same read is a row of its own (D143).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -410,6 +418,7 @@ public sealed partial class HelpCoverageTests
             .Append(SessionsVerbDoor)
             .Append(AbandonDoor)
             .Append(SayDoor)
+            .Append(TraceDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -527,6 +536,19 @@ public sealed partial class HelpCoverageTests
             && door.Screen.Contains("box", StringComparison.Ordinal)
             && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
         Assert.Contains("D133", SayDoor.Reason);
+    }
+
+    /// <summary>
+    /// TRACE1: the headless host's <c>trace</c> is exempt from Ask Daoris (D110 §4, D143) while its usage spells it: a read that
+    /// changes nothing, with no kind of that name to take it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_trace_is_exempt_since_it_changes_nothing()
+    {
+        Assert.Contains("trace <commit|session|quest>  ·  trace commit|session|quest <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("trace"));
+        Assert.Contains("changes nothing", TraceDoor.Reason);
+        Assert.Contains("D143", TraceDoor.Reason);
     }
 
     /// <summary>
