@@ -94,6 +94,24 @@ public sealed class HarnessConversationsTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_home, "sessions")) && Directory.EnumerateFiles(Path.Combine(_home, "sessions")).Any());
     }
 
+    /// <summary>
+    /// A chat keeps its conversation too (MSG1c, D137 §4.2): what its door is told the id through keeps it under the chat's
+    /// record with the adapter that opened it, read back as the conversation an ended chat goes on in; a blank id keeps
+    /// nothing, and a record id that is not one names no file.
+    /// </summary>
+    [Fact]
+    public void What_a_chats_door_is_told_keeps_the_conversation_under_its_record()
+    {
+        var kept = new HarnessConversations(_home);
+
+        kept.Keeping("c1a2b3c4", "claude-code")("0b5e7c1a-1f6e");
+        kept.Keeping("c1a2b3c4", "claude-code")(" ");
+        kept.Keeping("../escape", "claude-code")("abc");
+
+        Assert.Equal(new HarnessConversation("claude-code", "0b5e7c1a-1f6e"), kept.Read("c1a2b3c4"));
+        Assert.Equal(["c1a2b3c4.harness.json"], Directory.EnumerateFiles(Path.Combine(_home, "sessions")).Select(Path.GetFileName));
+    }
+
     /// <summary>A blank conversation id is nothing to keep: the wire said none.</summary>
     [Fact]
     public void A_blank_conversation_is_not_kept()

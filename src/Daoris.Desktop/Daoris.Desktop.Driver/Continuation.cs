@@ -197,10 +197,12 @@ public static class Continuations
     /// <param name="from">The ended state it went on from, in the record's spelling.</param>
     /// <param name="why">Null where it resumed.</param>
     /// <param name="door">Where the words were said, <c>screen</c> or <c>terminal</c> (MSG1d); null where no door was kept.</param>
-    public static AccountLine Reopened(string session, string adapter, string from, ContinueReason? why, string? door = null) =>
+    /// <param name="kind">The record's kind: <c>driven</c>, or <c>chat</c> for an ended chat the person wrote to (MSG1c).</param>
+    public static AccountLine Reopened(
+        string session, string adapter, string from, ContinueReason? why, string? door = null, string kind = "driven") =>
         new("session.reopened",
         [
-            ("session", session), ("kind", "driven"), ("adapter", adapter), ("from", from), ("resumed", why is null), ("why", why?.Code),
+            ("session", session), ("kind", kind), ("adapter", adapter), ("from", from), ("resumed", why is null), ("why", why?.Code),
             ("door", door),
         ]);
 

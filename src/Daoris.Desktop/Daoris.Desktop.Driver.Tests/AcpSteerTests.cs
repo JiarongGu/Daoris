@@ -386,4 +386,81 @@ public sealed class AcpSteerTests
         Assert.Contains(record.Lines, line => line.StartsWith("note:", StringComparison.Ordinal) && line.Contains("Internal error: busy"));
         Assert.Equal("session/close", agent.Methods[^1]);
     }
+
+    /// <summary>
+    /// 🔴 A conversation on the next-step door (MSG1c, D137 §2.1): the session says so once it opens, and the person's word
+    /// said while a turn runs goes at once as a prompt of the same session. It is taken when the agent hands the turn before
+    /// it off, and the record reads as the driven door's does: the turn the wire ended there, the words taken, the work after.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_word_said_during_a_turn_goes_at_once_and_is_taken_at_the_hand_off()
+    {
+        var first = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var agent = new Agent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize":
+                    return Ok(frame, Queues);
+                case "session/new":
+                    return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt" when !first.Task.IsCompleted:
+                    first.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                case "session/prompt":
+                    self.Push(Answer(first.Task.Result, "end_turn"));
+                    self.Push(Said("PINEAPPLE"));
+                    second.SetResult(frame.GetProperty("id").GetInt32());
+                    return null;
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+        var record = new Record();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: record.Event);
+
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        session.OnTaken(record.Asked);
+        Assert.True(session.NextStep);
+        var turn = session.PromptAsync("read the five files", CancellationToken.None);
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var words = session.SayAsync(new ChatMessage("put PINEAPPLE after the words", []) { Id = "said-c1" }, CancellationToken.None);
+        var id = await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal("end_turn", await turn.WaitAsync(TimeSpan.FromSeconds(10)));
+        await Poll.Until(() => record.Lines.Contains("message:PINEAPPLE"), () => string.Join(" | ", record.Lines), TimeSpan.FromSeconds(10));
+        Assert.False(words.IsCompleted);
+
+        agent.Push(Answer(id, "end_turn"));
+        Assert.Equal("end_turn", await words.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Equal(["read the five files", "put PINEAPPLE after the words"], agent.Prompts);
+        Assert.Equal(
+            ["turn:end_turn", "taken:said-c1:put PINEAPPLE after the words", "message:PINEAPPLE", "turn:end_turn"],
+            record.Lines);
+        session.Release();
+    }
+
+    /// <summary>
+    /// 🔴 A conversation whose agent did not say it takes prompts during a turn is never sent one (evidence §5): the session
+    /// says so, and a word handed to it anyway is refused before anything reaches the wire.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_whose_agent_does_not_say_so_is_never_sent_a_word_mid_turn()
+    {
+        var agent = new Agent((frame, self) => frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, Silent),
+            "session/new" => Ok(frame, """{"sessionId":"s-1"}"""),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        Assert.False(session.NextStep);
+        await Assert.ThrowsAsync<DriverException>(() => session.SayAsync(new ChatMessage("one more thing", []), CancellationToken.None));
+        Assert.DoesNotContain("session/prompt", agent.Methods);
+        session.Release();
+    }
 }

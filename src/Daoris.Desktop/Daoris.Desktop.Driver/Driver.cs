@@ -1852,9 +1852,13 @@ public sealed partial class Driver(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
         Action<SessionEvent>? observed = null, string? personSaid = null,
-        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null)
+        IReadOnlyList<SessionEvent>? opened = null, bool append = false, Action<JsonElement>? said = null,
+        Action<string>? named = null)
     {
         await using var file = new StreamWriter(transcript, append);
+        // Told once, the moment the harness names its conversation (MSG1c): a conversation that lives for hours keeps it
+        // before it ends, as the protocol door keeps `session/new`'s id.
+        var told = false;
 
         void Line(string text)
         {
@@ -1880,6 +1884,20 @@ public sealed partial class Driver(
         {
             if (beside?.Take(line) == true) continue;
             var mapped = mapper.Read(line);
+            if (named is not null && !told && mapper.Conversation is { } conversation)
+            {
+                told = true;
+                try
+                {
+                    named(conversation);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    // Keeping the id enriches the session; losing it costs a resume, never the run.
+                    Line($"[the session's conversation id could not be kept: {error.Message}]");
+                }
+            }
+
             foreach (var text in mapped.Lines) Line(text);
             foreach (var e in mapped.Events)
             {

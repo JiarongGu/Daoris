@@ -1129,25 +1129,52 @@ public sealed class ServiceClient : IDisposable
 
             var at = DateTimeOffset.TryParse(Text(session, "created"), out var created) ? created : DateTimeOffset.MinValue;
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
-            last[quest] = (new PriorSession(
-                Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-                Text(session, "repository"), Text(session, "answer"), Interrupted(session))
-            {
-                // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
-                Profile = Text(session, "profile"),
-                Limit = Limit(session),
-                // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
-                Adapter = Text(session, "adapter"),
-                HarnessVersion = Text(session, "harnessVersion"),
-                BaseCommit = Text(session, "baseCommit"),
-                // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
-                Said = ReadSaid(session),
-                Ask = Text(session, "ask"),
-            }, at);
+            last[quest] = (Prior(session), at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// One record as a run that goes on reads it (MSG1c): its state, its words waiting, the adapter, account, tree and
+    /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
+    /// </summary>
+    public async Task<PriorSession?> RecordAsync(string id, CancellationToken ct = default) =>
+        ReadRecord(await GetAsync(SessionRecords.Door, ct).ConfigureAwait(false), id);
+
+    /// <summary>The record with this id among the answer's, read as <see cref="RecordAsync"/> reads it; a teammate's is none here.</summary>
+    internal static PriorSession? ReadRecord(string json, string id)
+    {
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Array) return null;
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || IsTeams(session)) continue;
+            if (string.Equals(Text(session, "id"), id, StringComparison.Ordinal)) return Prior(session);
+        }
+
+        return null;
+    }
+
+    /// <summary>A record as what a later run on it is compared with and told (D79, D80, ANSWER1a, MSG1b).</summary>
+    private static PriorSession Prior(JsonElement session) =>
+        new(
+            Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
+            Text(session, "repository"), Text(session, "answer"), Interrupted(session))
+        {
+            // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
+            Profile = Text(session, "profile"),
+            Limit = Limit(session),
+            // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
+            Adapter = Text(session, "adapter"),
+            HarnessVersion = Text(session, "harnessVersion"),
+            BaseCommit = Text(session, "baseCommit"),
+            // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
+            Said = ReadSaid(session),
+            Ask = Text(session, "ask"),
+            // A chat goes on through the chat runner, never the planner (MSG1c).
+            Kind = Text(session, "kind") ?? "driven",
+        };
 
     /// <summary>
     /// The words waiting on a record (MSG1a, D137 §2.4), one by one, read without trusting the shape: a word without its id,
