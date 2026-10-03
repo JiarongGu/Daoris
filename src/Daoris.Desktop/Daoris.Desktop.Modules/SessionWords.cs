@@ -57,11 +57,27 @@ public sealed record WordsAnswer(bool Sent, string? Reaches, string? Why)
 /// them, so they are shown once it does.</para>
 ///
 /// <para><b>Held words wait in this process</b>, for the record to move through this machine's client or for a slow look,
-/// whichever comes first. A restart before the record ends loses them: the page was told they are held, and nothing else
-/// holds them yet (MSG1d's note says so).</para>
+/// whichever comes first, <b>and in a small file under the home</b> (<see cref="HeldPath"/>, MSG1d4), written whole beside
+/// and renamed each time a word is held or leaves. The page was told they are held, so a restart in that moment must not
+/// lose them: the next shell's judge reads them back as it starts and tries them as before.</para>
 /// </remarks>
-public sealed class SessionWords(DriverLoop loop) : IDisposable
+public sealed class SessionWords : IDisposable
 {
+    private readonly DriverLoop _loop;
+
+    /// <summary>The loop's judge; it reads back the words an earlier shell held and was closed with (MSG1d4).</summary>
+    public SessionWords(DriverLoop loop)
+    {
+        _loop = loop;
+        Restore();
+    }
+
+    /// <summary>
+    /// Where words held while a session winds up are kept across a restart (MSG1d4): each in the order said, with its session,
+    /// its text, the names its files are kept under and the door it was said at. Absent while nothing is held.
+    /// </summary>
+    public static string HeldPath(string home) => Path.Combine(home, "sessions", "held-words.json");
+
     /// <summary>The longest held words wait for a move before they are tried again: a move made by another client says nothing here.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromSeconds(30);
 
@@ -111,14 +127,14 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     /// </summary>
     public async Task<WordsAnswer> ReachAsync(string id, CancellationToken ct)
     {
-        if (loop.Processes.InboxOf(id) is { } inbox) return new(true, Spelled(inbox.Reach), null);
+        if (_loop.Processes.InboxOf(id) is { } inbox) return new(true, Spelled(inbox.Reach), null);
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
 
-        if (loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && loop.Processes.RefusesInput(id) is null)
+        if (_loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase) && _loop.Processes.RefusesInput(id) is null)
         {
             // A conversation this machine runs (D49 §3): a word goes into the running turn where its agent takes words at its
             // next step (MSG1c), waits for the turn to end elsewhere, or starts one now (CONV4a).
-            return new(true, loop.Chat?.Reach(id), null);
+            return new(true, _loop.Chat?.Reach(id), null);
         }
 
         try
@@ -147,16 +163,16 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         string id, string text, IReadOnlyList<ChatUpload> files, string? preface, string door, CancellationToken ct)
     {
         // A driven session that hears words during its run (SESS3, D136; the native door's run, MSG1b).
-        if (loop.Processes.InboxOf(id) is { } inbox && inbox.Hold(new ChatMessage(text, [])))
+        if (_loop.Processes.InboxOf(id) is { } inbox && inbox.Hold(new ChatMessage(text, [])))
         {
             return new(true, Spelled(inbox.Reach), null) { Running = true };
         }
 
         if (id.Contains('/')) return WordsAnswer.Refused("teammate");
 
-        var running = loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase);
-        var refuses = loop.Processes.RefusesInput(id);
-        if (running && refuses is null && loop.Chat is { } chat)
+        var running = _loop.Processes.Running.Contains(id, StringComparer.OrdinalIgnoreCase);
+        var refuses = _loop.Processes.RefusesInput(id);
+        if (running && refuses is null && _loop.Chat is { } chat)
         {
             // A conversation this machine runs (D49 §3): its turns take the words, into the running turn at its next step where
             // its agent takes them then (MSG1c), when the running one ends elsewhere (CONV4a), or now; its runner says which.
@@ -185,7 +201,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         if (WordsNever.Judge(record, read.Last) is { } never) return WordsAnswer.Refused(never);
 
         // Kept as a conversation keeps what is attached (CONV4c), so the names on the record name files that exist.
-        var kept = files.Count > 0 ? ChatFiles.Keep(loop.Home, id, files) : [];
+        var kept = files.Count > 0 ? ChatFiles.Keep(_loop.Home, id, files) : [];
         return await KeepOrHoldAsync(id, new Word(text, [.. kept.Select(file => file.Name)], door), ct).ConfigureAwait(false);
     }
 
@@ -211,7 +227,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
             throw new DriverException($"the service did not answer for session `{id}`, so it was not answered: {error.Message}");
         }
 
-        if (read is null || loop.Service is not { } service) throw new DriverException(NotUp);
+        if (read is null || _loop.Service is not { } service) throw new DriverException(NotUp);
         if (read.Record is not { } record) return WordsAnswer.Refused(WordsNever.NotFound);
         if (WordsNever.Judge(record, read.Last) is { } never) return WordsAnswer.Refused(never);
         if (record.State != "awaiting-person") return new(false, null, null);
@@ -222,7 +238,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
             if (!answered) return new(false, null, null) { Message = message };
         }
 
-        loop.Nudge();
+        _loop.Nudge();
         return new(true, "resume", null);
     }
 
@@ -252,23 +268,16 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     /// A terminal's files, by the names the verb kept them under for the session (MSG1e): read back from where they lie, so
     /// the box's own path keeps them, which finds each already there since a file is kept by its content (CONV4c).
     /// </summary>
-    private IReadOnlyList<ChatUpload> Kept(string id, IReadOnlyList<string> names)
-    {
-        if (names.Count == 0) return [];
-        var folder = ChatFiles.Folder(loop.Home, id);
-        var lying = Directory.Exists(folder) ? Directory.GetFiles(folder) : [];
-        return [.. names.Select(name =>
+    private IReadOnlyList<ChatUpload> Kept(string id, IReadOnlyList<string> names) =>
+    [
+        .. names.Select(name =>
         {
-            // Kept as `<first 12 of its hash>-<name>`; of two files given one name, the newer is the one just said.
-            var path = lying
-                .Where(each => Path.GetFileName(each) is var leaf
-                               && leaf.Length == name.Length + 13 && leaf[12] == '-' && leaf.EndsWith(name, StringComparison.Ordinal))
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault()
+            // Of two files given one name, the newer is the one just said (ChatFiles.Find, which a resumed run reads by too).
+            var kept = ChatFiles.Find(_loop.Home, id, name)
                 ?? throw new DriverException($"`{name}` is not kept for session `{id}`, so your words were not sent; say them again with it.");
-            return new ChatUpload(name, File.ReadAllBytes(path));
-        })];
-    }
+            return new ChatUpload(name, File.ReadAllBytes(kept.Path));
+        }),
+    ];
 
     /// <summary>
     /// What the person said to a running session, kept on the ask its work is for (DRIFT1a2, D133 §1): once the session took
@@ -279,7 +288,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     /// </summary>
     public void KeepOnAsk(string session, string text)
     {
-        if (loop.Service is not { } service) return;
+        if (_loop.Service is not { } service) return;
         _ = Task.Run(async () =>
         {
             try
@@ -306,7 +315,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     /// </summary>
     private async Task<WordsAnswer> KeepOrHoldAsync(string id, Word word, CancellationToken ct)
     {
-        var service = loop.Service ?? throw new DriverException(NotUp);
+        var service = _loop.Service ?? throw new DriverException(NotUp);
         var waiting = WaitingFor(id);
         await waiting.Turn.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -314,7 +323,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
             // Behind the words already held, so the record keeps them in the order said.
             if (waiting.Words.Count > 0)
             {
-                waiting.Words.Enqueue(word);
+                Hold(waiting, word);
                 return new(true, "resume", null);
             }
 
@@ -340,7 +349,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
             if (said.Refusal == "running")
             {
                 // It winds up, or runs where this machine's routes do not reach (D137 §2.1): held for its record to end.
-                waiting.Words.Enqueue(word);
+                Hold(waiting, word);
                 StartPump(id, waiting, moved);
                 return new(true, "resume", null);
             }
@@ -391,7 +400,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
                     lock (_gate) moved = waiting.Moved;
                     while (waiting.Words.TryPeek(out var word))
                     {
-                        if (loop.Service is not { } service) break;
+                        if (_loop.Service is not { } service) break;
                         SayAnswer said;
                         try
                         {
@@ -403,7 +412,8 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
                         }
 
                         if (said.Refusal == "running") break;
-                        waiting.Words.Dequeue();
+                        // Off the file before it is shown: the record has it now, and a restart must not say it twice.
+                        Taken(waiting);
                         if (said.Kept) Show(id, said, word);
                         else Lost(id, said);
                     }
@@ -422,8 +432,141 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // The loop is closing: what is held goes with this process, as the remarks say.
+            // The loop is closing: what is held stays in its file for the next shell to try (MSG1d4).
         }
+    }
+
+    /// <summary>A word held behind the others for this record, and the file written with it (MSG1d4).</summary>
+    private void Hold(Waiting waiting, Word word)
+    {
+        lock (_gate)
+        {
+            waiting.Words.Enqueue(word);
+            Save();
+        }
+    }
+
+    /// <summary>The first word held for this record, kept or refused for good, off the queue and the file (MSG1d4).</summary>
+    private void Taken(Waiting waiting)
+    {
+        lock (_gate)
+        {
+            waiting.Words.Dequeue();
+            Save();
+        }
+    }
+
+    /// <summary>
+    /// Every word held, written whole to <see cref="HeldPath"/> beside and renamed, LF, as every file under the home is; the
+    /// file removed once nothing is held (MSG1d4). Called under the gate, where every queue is changed, so the file is never
+    /// written from a queue mid-change. A write that fails costs only the words' surviving a restart: they are still held here.
+    /// </summary>
+    private void Save()
+    {
+        var path = HeldPath(_loop.Home);
+        try
+        {
+            var held = _waiting
+                .SelectMany(pair => pair.Value.Words.Select(word => (Session: pair.Key, Word: word)))
+                .ToList();
+            if (held.Count == 0)
+            {
+                if (File.Exists(path)) File.Delete(path);
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var buffer = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(buffer, new JsonWriterOptions { Indented = true }))
+            {
+                writer.WriteStartObject();
+                writer.WriteStartArray("held");
+                foreach (var (session, word) in held)
+                {
+                    writer.WriteStartObject();
+                    writer.WriteString("session", session);
+                    writer.WriteString("text", word.Text);
+                    writer.WriteStartArray("files");
+                    foreach (var name in word.Files) writer.WriteStringValue(name);
+                    writer.WriteEndArray();
+                    writer.WriteString("door", word.Door);
+                    writer.WriteEndObject();
+                }
+
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            }
+
+            AtomicFile.WriteText(path, System.Text.Encoding.UTF8.GetString(buffer.ToArray()).Replace("\r\n", "\n") + "\n");
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Still held in this process; only a restart before the record keeps them would lose them, as before MSG1d4.
+        }
+    }
+
+    /// <summary>
+    /// The words an earlier shell held and was closed with (MSG1d4), read back as this one starts: each queued for its record
+    /// in the order said, and tried at once, then as any held words are, since the record may well have ended while no shell
+    /// ran. A file that does not read holds nothing, and the next word held replaces it.
+    /// </summary>
+    private void Restore()
+    {
+        List<(string Session, Word Word)> held;
+        try
+        {
+            held = ReadHeld(HeldPath(_loop.Home));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return;
+        }
+
+        foreach (var words in held.GroupBy(each => each.Session, StringComparer.OrdinalIgnoreCase))
+        {
+            var waiting = WaitingFor(words.Key);
+            lock (_gate)
+            {
+                foreach (var (_, word) in words) waiting.Words.Enqueue(word);
+            }
+
+            var now = Signal();
+            now.SetResult();
+            StartPump(words.Key, waiting, now);
+        }
+    }
+
+    /// <summary>The held words in a file <see cref="Save"/> wrote, in order; an entry missing its session, text or door is skipped.</summary>
+    private static List<(string Session, Word Word)> ReadHeld(string path)
+    {
+        if (!File.Exists(path)) return [];
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
+        if (document.RootElement.ValueKind != JsonValueKind.Object
+            || !document.RootElement.TryGetProperty("held", out var held) || held.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        static string? Text(JsonElement entry, string name) =>
+            entry.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+        var words = new List<(string Session, Word Word)>();
+        foreach (var entry in held.EnumerateArray())
+        {
+            if (entry.ValueKind != JsonValueKind.Object) continue;
+            if (Text(entry, "session") is not { Length: > 0 } session || Text(entry, "text") is not { } text
+                || Text(entry, "door") is not { Length: > 0 } door)
+            {
+                continue;
+            }
+
+            IReadOnlyList<string> files = entry.TryGetProperty("files", out var named) && named.ValueKind == JsonValueKind.Array
+                ? [.. named.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
+                : [];
+            words.Add((session, new Word(text, files, door)));
+        }
+
+        return words;
     }
 
     /// <summary>
@@ -435,8 +578,8 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     {
         if (said.Word is { } kept)
         {
-            loop.Output.Append(id, $"— the person said, which the same session goes on with: {kept.Text}");
-            loop.Events.Keep(id, new SessionEvent
+            _loop.Output.Append(id, $"— the person said, which the same session goes on with: {kept.Text}");
+            _loop.Events.Keep(id, new SessionEvent
             {
                 Kind = SessionEventKind.User,
                 Origin = "person",
@@ -445,18 +588,18 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
                 Files = kept.Files.Count > 0 ? kept.Files : null,
                 Reaches = "resume",
                 Door = word.Door,
-            }, line => loop.Output.Append(id, line));
+            }, line => _loop.Output.Append(id, line));
         }
 
-        loop.Nudge();
+        _loop.Nudge();
     }
 
     /// <summary>Held words the record would not keep once it ended, said where the person wrote them, never dropped silently.</summary>
     private void Lost(string id, SayAnswer said)
     {
         var line = $"— what you said as it wound up was not kept for it to go on with: {said.Message}";
-        loop.Output.Append(id, line);
-        loop.Events.Keep(id, new SessionEvent
+        _loop.Output.Append(id, line);
+        _loop.Events.Keep(id, new SessionEvent
         {
             Kind = SessionEventKind.Note, Text = line, Why = said.Refusal is { } refusal ? WordsNever.Code(refusal) : null,
         }, null);
@@ -465,7 +608,7 @@ public sealed class SessionWords(DriverLoop loop) : IDisposable
     /// <summary>The records, and this one among them with its quest's last session here; null with no service yet.</summary>
     private async Task<Read?> ReadAsync(string id, CancellationToken ct)
     {
-        if (loop.Service is not { } service) return null;
+        if (_loop.Service is not { } service) return null;
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var record = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, id, StringComparison.Ordinal));
         return new Read(record, WordsNever.LastHere(json, record?.Quest));

@@ -167,4 +167,47 @@ public sealed class ChatTurnsTests
         await Poll.Until(() => !turns.Running, () => "the first turn never ended");
         lock (told) Assert.All(told, queue => Assert.Empty(queue.Queued));
     }
+
+    /// <summary>
+    /// MSG1c3 (D137's MSG1c2 note, D142 point 1): a word handed to the turn at its next step, whose turn the person stopped
+    /// while it was on its way and the agent then answered <c>cancelled</c>, may have been read with its answer dropped
+    /// (STEER1 §3). The line the conversation keeps of it carries a code the page words in the reader's language, the word's
+    /// id so the page settles the word it shows waiting, and the driver's English beside them, unchanged. Any other answer
+    /// keeps no line: the agent's answer is in the turn.
+    /// </summary>
+    [Fact]
+    public void A_word_a_stop_cut_off_on_its_way_is_said_lost_by_its_code()
+    {
+        var lost = ChatTurns.Lost("said-1", stoppedUnder: true, stopReason: "cancelled");
+
+        Assert.NotNull(lost);
+        Assert.Equal(
+            (SessionEventKind.Note, (string?)SessionEventCodes.Lost, (string?)"— it may have read what you added; its answer was not kept."),
+            (lost.Kind, lost.Code, lost.Text));
+        Assert.Equal(["said-1"], lost.Words!);
+        Assert.Null(lost.Why);
+        Assert.Null(ChatTurns.Lost("said-1", stoppedUnder: true, stopReason: "end_turn"));
+        Assert.Null(ChatTurns.Lost("said-1", stoppedUnder: false, stopReason: "cancelled"));
+    }
+
+    /// <summary>
+    /// A conversation note's codes are a twin (MSG1c3; <c>.claude/knowledge/twins.md</c>): every code the driver declares is
+    /// the page's <c>work.conversation.&lt;code&gt;</c>, worded in both catalogues, so a line the driver codes never reaches a
+    /// 中文 window as its English. The page's <c>work/conversation.test.ts</c> parses the declarations from its side.
+    /// </summary>
+    [Theory]
+    [InlineData("en")]
+    [InlineData("zh")]
+    public void Every_code_a_conversations_note_carries_is_worded_in_both_catalogues(string language)
+    {
+        var catalogue = NoteCodesTests.Catalogue(language);
+
+        Assert.Equal([SessionEventCodes.Lost], SessionEventCodes.All);
+        foreach (var code in SessionEventCodes.All)
+        {
+            Assert.Matches("^[a-z]+(-[a-z]+)*$", code);
+            // A conversation's coded line says no value: the facts it needs (the word's id) ride beside it.
+            Assert.Empty(NoteCodesTests.Placeholders(NoteCodesTests.Entry(catalogue, $"work.conversation.{code}", language)));
+        }
+    }
 }

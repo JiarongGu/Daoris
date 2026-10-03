@@ -322,6 +322,57 @@ public sealed class ContinuationTests : IDisposable
     }
 
     /// <summary>
+    /// MSG1d3 (D137 §2.4): words said with files are kept under the home, and the record names the files. The resumed run is
+    /// handed where each word's files lie, as a conversation's message is: on the native door each word's paths beneath it
+    /// in the one argument, on the protocol door a link per file after the words' blocks, which stay the words alone. A name
+    /// nothing keeps any more is left out, never named as a path that is not there.
+    /// </summary>
+    [Fact]
+    public void A_resumed_run_is_handed_the_files_said_with_its_words()
+    {
+        var kept = ChatFiles.Keep(_tree, "s1", [new ChatUpload("trace.txt", "exit 3"u8.ToArray())]);
+        var words = new[]
+        {
+            new SaidWordView("w1", "See the trace.", DateTimeOffset.UnixEpoch, ["trace.txt", "gone.png"], Reopens: true),
+            new SaidWordView("w2", "And log the port.", DateTimeOffset.UnixEpoch, [], Reopens: true),
+        };
+
+        var resume = new ResumeAsk("0b5e7c1a", words, "— your words are the next turn.", files: word => ChatFiles.Kept(_tree, "s1", word.Files));
+
+        Assert.Equal("See the trace." + ChatFiles.PathLines(kept) + "\n\nAnd log the port.", resume.Prompt);
+        Assert.Contains(kept[0].Path, resume.Prompt);
+        Assert.DoesNotContain("gone.png", resume.Prompt);
+        Assert.Equal(kept, resume.Files);
+        Assert.Equal(["See the trace.", "And log the port."], resume.Blocks);
+        // The run is handed a read of exactly where they lie, outside its tree, or every read there is asked and refused (D52).
+        Assert.Equal(ChatFiles.Folder(_tree, "s1"), Daoris.Driver.Driver.SaidFilesFolder(_tree, "s1", resume));
+
+        // Handed nothing to find them by, it is handed the words alone, as before, and no read.
+        var alone = new ResumeAsk("0b5e7c1a", words, "— your words are the next turn.");
+        Assert.Equal("See the trace.\n\nAnd log the port.", alone.Prompt);
+        Assert.Empty(alone.Files);
+        Assert.Null(Daoris.Driver.Driver.SaidFilesFolder(_tree, "s1", alone));
+    }
+
+    /// <summary>
+    /// A file the record names is found where it was kept (MSG1d3): `&lt;first 12 of its hash&gt;-&lt;name&gt;` in the session's
+    /// files folder, the newer of two given one name, never another name that ends the same way.
+    /// </summary>
+    [Fact]
+    public void A_kept_file_is_found_by_the_name_the_record_gives_it()
+    {
+        var older = ChatFiles.Keep(_tree, "s1", [new ChatUpload("trace.txt", "exit 3"u8.ToArray())])[0];
+        File.SetLastWriteTimeUtc(older.Path, DateTime.UtcNow.AddMinutes(-5));
+        var newer = ChatFiles.Keep(_tree, "s1", [new ChatUpload("trace.txt", "exit 4"u8.ToArray())])[0];
+        ChatFiles.Keep(_tree, "s1", [new ChatUpload("old-trace.txt", "exit 5"u8.ToArray())]);
+
+        Assert.Equal(newer, ChatFiles.Find(_tree, "s1", "trace.txt"));
+        Assert.Null(ChatFiles.Find(_tree, "s1", "race.txt"));
+        Assert.Null(ChatFiles.Find(_tree, "s2", "trace.txt"));
+        Assert.Equal([newer], ChatFiles.Kept(_tree, "s1", ["trace.txt", "gone.png"]));
+    }
+
+    /// <summary>
     /// The notes a resume that cannot happen leaves on an ended record: on a closed quest it cannot go on, and nothing else
     /// carries the words on by itself; on a taken or open one they went to a new session.
     /// </summary>
