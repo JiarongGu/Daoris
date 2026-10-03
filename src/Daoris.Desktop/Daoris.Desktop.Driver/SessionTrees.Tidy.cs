@@ -6,7 +6,14 @@ namespace Daoris.Driver;
 /// </summary>
 /// <param name="Tree">Whether it had a tree here, which went with it where it was removed.</param>
 /// <param name="Why">Kept: why, in a clause the landing's sentence carries.</param>
-public sealed record TidiedBranch(string Branch, bool Removed, bool Tree, string? Why = null);
+public sealed record TidiedBranch(string Branch, bool Removed, bool Tree, string? Why = null)
+{
+    /// <summary>
+    /// The landed branch whose completed pull request carried it (PLUGHOOK1a, D148 point 4), where the platform's word took it
+    /// rather than the landed ref's containment; null for the latter.
+    /// </summary>
+    public string? CarriedBy { get; init; }
+}
 
 public sealed partial class SessionTrees
 {
@@ -70,6 +77,10 @@ public sealed partial class SessionTrees
             }
         }
 
+        // PLUGHOOK1a: a squash leaves no ancestor, so the branches a completed pull request carried go on its plugin's word,
+        // where git confirms its merge commit on the line.
+        results.AddRange(await TidyCarriedAsync(root, repository, workspace, held.Select(each => each.Branch).ToList(), pressed, inUse, ct)
+            .ConfigureAwait(false));
         await ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
         return results;
     }
@@ -111,19 +122,29 @@ public sealed partial class SessionTrees
     private static string TidiedSaid(IReadOnlyList<TidiedBranch> tidied, string landed)
     {
         var said = "";
-        var removed = tidied.Where(each => each.Removed).Select(each => $"`{each.Branch}`" + (each.Tree ? " (with its tree)" : "")).ToArray();
-        if (removed.Length > 0)
-        {
-            var list = removed.Length == 1 ? removed[0] : $"{string.Join(", ", removed[..^1])} and {removed[^1]}";
-            said += $" Also removed {list}, whose commits `{landed}` holds.";
-        }
+        var removed = tidied.Where(each => each.Removed && each.CarriedBy is null).Select(Named).ToArray();
+        if (removed.Length > 0) said += $" Also removed {Listed(removed)}, whose commits `{landed}` holds.";
 
-        foreach (var kept in tidied.Where(each => !each.Removed))
+        foreach (var kept in tidied.Where(each => !each.Removed && each.CarriedBy is null))
         {
             said += $" Kept `{kept.Branch}`, whose commits `{landed}` holds: {kept.Why}.";
         }
 
+        // PLUGHOOK1a: each landed branch's completed pull request, and what it carried.
+        foreach (var by in tidied.Where(each => each.CarriedBy is not null).GroupBy(each => each.CarriedBy!, StringComparer.Ordinal))
+        {
+            var went = by.Where(each => each.Removed).Select(Named).ToArray();
+            if (went.Length > 0) said += $" Also removed {Listed(went)}, whose work `{by.Key}`'s completed pull request carried.";
+            foreach (var kept in by.Where(each => !each.Removed))
+            {
+                said += $" Kept `{kept.Branch}`, whose work `{by.Key}`'s completed pull request carried: {kept.Why}.";
+            }
+        }
+
         return said;
+
+        static string Named(TidiedBranch each) => $"`{each.Branch}`" + (each.Tree ? " (with its tree)" : "");
+        static string Listed(string[] names) => names.Length == 1 ? names[0] : $"{string.Join(", ", names[..^1])} and {names[^1]}";
     }
 
     /// <summary>

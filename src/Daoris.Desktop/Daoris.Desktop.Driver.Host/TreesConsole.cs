@@ -22,6 +22,7 @@ internal static class TreesConsole
         SweepKind.Unlanded => item.Commits > 0
             ? $"{item.Commits} commit(s) no branch of yours holds"
             : $"unlanded — {item.Detail}",
+        SweepKind.Carried => $"{item.Commits} commit(s) `{item.Where}`'s completed pull request carried",
         SweepKind.Dirty => $"its tree has uncommitted work ({item.Detail})",
         SweepKind.InUse => "a session still running or waiting holds its tree",
         _ => item.Kind,

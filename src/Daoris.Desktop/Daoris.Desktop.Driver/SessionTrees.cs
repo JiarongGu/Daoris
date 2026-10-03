@@ -577,10 +577,12 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
             var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
             var line = (await LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
+            // The completed pull requests the record keeps, confirmed here (PLUGHOOK1a): nothing is asked at a list or a press.
+            var carriers = await CarriersAsync(root, repository, line, ct).ConfigureAwait(false);
             foreach (var branch in refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 items.Add(await JudgeAsync(
-                    root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, ct)
+                    root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, carriers, ct)
                     .ConfigureAwait(false));
             }
         }
@@ -616,13 +618,20 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
             var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
             var line = (await LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
-            var now = await JudgeAsync(root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, ct)
+            var carriers = item.Kind == SweepKind.Carried ? await CarriersAsync(root, item.Repository, line, ct).ConfigureAwait(false) : [];
+            var now = await JudgeAsync(
+                    root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, carriers, ct)
                 .ConfigureAwait(false);
             if (!now.Removable)
             {
                 results.Add(new(now, false, "it changed since the list, and is kept"));
                 continue;
             }
+
+            // The commit it goes at, for the record of what a pull request's answer removed (PLUGHOOK1a, design §2.5).
+            var (_, carriedTip, _) = now.CarriedBy is null
+                ? (0, "", "")
+                : await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{now.Branch}"], ct).ConfigureAwait(false);
 
             string? left = null;
             if (now.Tree is { } tree)
@@ -648,14 +657,26 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             results.Add(deleteCode == 0
                 ? new(now, true, (now.Tree is null ? "removed" : "removed, with its tree") + (left is null ? "" : $". {left}"))
                 : new(now, false, $"git would not delete the branch: {FirstLine(deleteErr)}"));
+            if (deleteCode == 0 && now.CarriedBy is { } carrier)
+            {
+                try
+                {
+                    Recorded.Carried(carrier, new CarriedBranch(now.Branch, carriedTip.Trim(), _plugins.Now, CarriedBy.CleanUp));
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // The branch went on a confirmed answer; only the note of it on the record is lost.
+                }
+            }
         }
 
         return results;
     }
 
-    private static async Task<SweepItem> JudgeAsync(
+    /// <param name="carriers">The completed pull requests the record keeps that carried work here (PLUGHOOK1a); a branch they carried goes.</param>
+    private async Task<SweepItem> JudgeAsync(
         string root, string repository, string workspace, string branch, string? tree, string? line,
-        HashSet<string> busy, CancellationToken ct)
+        HashSet<string> busy, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)
     {
         SweepItem Item(string kind, int commits = 0, string? where = null, string? detail = null) =>
             new(repository, workspace, branch, tree, kind, commits, where, detail);
@@ -674,7 +695,17 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         var (code, log, err) = await UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
         if (code != 0) return Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}");
         var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (unlanded.Length > 0) return Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3)));
+        if (unlanded.Length > 0)
+        {
+            // PLUGHOOK1a: a squash left these commits on no branch of the person's, and a completed pull request carried them.
+            // A branch checked out outside the trees home is the person's to move, so it is never taken on the platform's word.
+            if ((tree is null || Holds(tree)) && await CarrierOfAsync(root, $"refs/heads/{branch}", carriers, ct).ConfigureAwait(false) is { } carrier)
+            {
+                return Item(SweepKind.Carried, unlanded.Length, carrier.Entry.Branch, string.Join('\n', unlanded.Take(3))) with { CarriedBy = carrier.Entry };
+            }
+
+            return Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3)));
+        }
 
         var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
         if (against is not null)

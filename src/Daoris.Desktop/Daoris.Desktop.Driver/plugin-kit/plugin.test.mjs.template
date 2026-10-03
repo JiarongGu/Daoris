@@ -56,6 +56,32 @@ const ANSWERS = {
     if (answer.message !== undefined && answer.message !== null && typeof answer.message !== 'string') return wrong;
     return null;
   },
+  'work/state': (answer) => {
+    const wrong = `${JSON.stringify(answer)}, which is not a pull request's state — `
+      + '{ "state": "open" | "completed" | "abandoned" | "unknown", … }, a completed one naming its mergeCommit and sourceCommit in full';
+    if (answer === null || typeof answer !== 'object' || Array.isArray(answer)) return wrong;
+    if (!['open', 'completed', 'abandoned', 'unknown'].includes(answer.state)) return wrong;
+    // Every other field is text or absent; null is absent.
+    const fields = ['pullRequest', 'mergeCommit', 'sourceCommit', 'target', 'how', 'at', 'message'];
+    if (fields.some((name) => answer[name] !== undefined && answer[name] !== null && typeof answer[name] !== 'string')) return wrong;
+    const given = (name) => typeof answer[name] === 'string';
+    if (given('pullRequest')) {
+      let address;
+      try {
+        address = new URL(answer.pullRequest);
+      } catch {
+        return wrong;
+      }
+      if (address.protocol !== 'https:' && address.protocol !== 'http:') return wrong;
+    }
+    const full = /^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$/;
+    if (['mergeCommit', 'sourceCommit'].some((name) => given(name) && !full.test(answer[name]))) return wrong;
+    if (answer.state === 'completed' && !(given('mergeCommit') && given('sourceCommit'))) return wrong;
+    if (given('target') && answer.target.length === 0) return wrong;
+    if (given('at') && Number.isNaN(Date.parse(answer.at))) return wrong;
+    // A word for how it merged that the driver has no word for is read as none, never refused.
+    return null;
+  },
 };
 
 /** The handshake's answer, read by the driver's rules and the kit's one more: every declared point is listened on. */

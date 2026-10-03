@@ -1,10 +1,12 @@
 # `azure-devops-pull-request` — a plugin that lands work on Azure DevOps
 
 A plugin is a folder with a `plugin.json` (`docs/2026-09-23-plugin-design.md`, D64). This one speaks
-at one point, `work/land` (D100): once a workspace's **branch** landing rule has put a session's
+at two points. At `work/land` (D100): once a workspace's **branch** landing rule has put a session's
 accepted work on a new branch, the landing hands that branch to this plugin, which pushes it and opens
-the pull request in Azure Repos. **Daoris itself never pushes and never opens a pull request** (D87) —
-this process does, signed in as your `az` is.
+the pull request in Azure Repos. At `work/state` (D148): where a look may remove a branch a landing
+made, it says whether that branch's pull request completed, and with which commit. **Daoris itself
+never pushes, never opens a pull request and never asks Azure DevOps** (D87) — this process does,
+signed in as your `az` is.
 
 ## Nothing runs until you ask for it
 
@@ -16,7 +18,8 @@ Tracked here as an example, it does nothing on its own. It runs only when **both
    --plugin azure-devops-pull-request`, or Settings → Workspace → How work lands.
 
 Installed and not named, it is never started: the driver loop keeps no process for a plugin that
-speaks only at a landing. Named, it is started for one accepted landing, told the branch, and stopped.
+speaks only at a landing and a query. Named, it is started for one accepted landing, told the branch,
+and stopped; and a look that may remove a branch it pushed starts it once for that look's questions.
 
 ## What it runs
 
@@ -52,6 +55,32 @@ A pull request that is completed or abandoned, or a status `az` cannot read, ans
 saying which: commits pushed to it now would ride no pull request. The branch stands, and a new pull
 request for the rest is yours to open.
 
+## When a look asks whether its pull request completed
+
+A pull request completed by squash puts one new commit on the line, so git sees no ancestor and the
+branches it carried look unmerged forever. Only Azure DevOps knows it completed, so where a look may
+remove a branch a landing made (the landing's tidy, and the clean-up's list) and git cannot tell,
+Daoris asks this plugin about it: at most 30 seconds a branch, and never on a timer.
+
+```sh
+az repos pr list --source-branch <branch> --status all --output json   # only where the record holds no pull request
+az repos pr show --id <number> --output json
+```
+
+It finds the pull request by the number its address ends in, or, with none, among those from the
+branch: into the line where there are any, a completed one, else an active one, else the newest
+abandoned one. None found is *unknown*. It answers `active` as *open*, `completed` and `abandoned` as
+themselves, and anything else as *unknown*. For a completed one it reads `lastMergeCommit` as the
+merge commit, `lastMergeSourceCommit` as the commit it merged, `targetRefName` as the target,
+`closedDate` as when, and `completionOptions.mergeStrategy` as how (`noFastForward` is *merge*,
+`squash` and `rebase` keep their names, `rebaseMerge` is *rebase-merge*). A completed one with no
+merge commit is answered *unknown*, saying so. An `az` that fails, not signed in or without the devops
+extension, is the call's error with `az`'s last line.
+
+**Daoris removes nothing on this word alone.** A branch goes only where git confirms the answer here:
+the merge commit is on the line (local, or `origin/<line>`), and the branch stands at or under the
+commit the pull request merged. A reading that is wrong keeps the branch.
+
 ## What it needs
 
 - **node** on the PATH (it is a `node` script, as the other example plugins are).
@@ -71,4 +100,6 @@ quotes become single ones and a percent sign is spelled out, because cmd would r
 
 `land.mjs` is the whole of it; `src/Daoris.Cli/test/landing-plugins.test.ts` drives it against a bare
 repository and a fake `az`, never a network. It has not been run against a real Azure DevOps
-organisation: the arguments are `az repos pr create`'s and `az repos pr show`'s documented ones.
+organisation: the arguments are `az repos pr create`'s, `az repos pr list`'s and `az repos pr show`'s
+documented ones, and whether `lastMergeCommit` names a squash's commit on the target was never
+measured; git's confirmation is what keeps a wrong reading safe.

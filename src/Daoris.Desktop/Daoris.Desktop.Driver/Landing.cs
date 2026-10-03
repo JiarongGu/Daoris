@@ -179,6 +179,24 @@ public static class LandingAdvance
                 + "Switch that tree to another branch, then accept again.");
         }
 
+        // PLUGHOOK1a (D149 point 3): the platform's kept word refuses as git's own proof does, since git cannot see a squash once
+        // the line has moved on, and a closed pull request takes no new commits.
+        if (recorded.PullRequestState is { State: PullRequestStates.Completed or PullRequestStates.Abandoned } kept)
+        {
+            var completed = kept.State == PullRequestStates.Completed;
+            var answered = (kept.Plugin is { } plugin ? $", as `{plugin}` answered" : "")
+                + (kept.AskedAt > DateTimeOffset.MinValue ? $" at {kept.AskedAt.UtcDateTime:yyyy-MM-dd HH:mm} UTC" : "");
+            return new TreeLanding(false,
+                $"`{name}`'s pull request {(completed ? "completed" : "was abandoned")}{answered}, so Daoris does not move it on: "
+                + "commits added to it now would ride no pull request. "
+                + (completed
+                    ? "Bring the repository up to date (`daoris-driver trees sync`, or Bring up to date on the page), which replays "
+                      + "this session's own commits onto the line and removes that branch; "
+                    : $"Delete or rename `{name}` once you no longer want its work; ")
+                + $"then Accept lands this work on a fresh `{name}`, and its plugin opens a new pull request.")
+            { Refusal = AutoLandingCode.Completed };
+        }
+
         if (facts.Completed is { } where)
         {
             return new TreeLanding(false,
@@ -206,7 +224,7 @@ public static class LandingAdvance
     private static string Short(string commit) => commit[..Math.Min(8, commit.Length)];
 }
 
-/// <summary>What a session branch holds, for the clean-up's list (D88). Only the first two go.</summary>
+/// <summary>What a session branch holds, for the clean-up's list (D88). Only the empty, the landed and the carried go.</summary>
 public static class SweepKind
 {
     /// <summary>Nothing beyond the line.</summary>
@@ -218,6 +236,12 @@ public static class SweepKind
     /// <summary>Commits only Daoris's branches hold — kept, and named.</summary>
     public const string Unlanded = "unlanded";
 
+    /// <summary>
+    /// Commits no branch of the person's holds, which a landed branch's completed pull request carried, as its plugin answered and
+    /// git confirms (PLUGHOOK1a, D148 point 4): what a squash leaves once the platform deleted the source branch.
+    /// </summary>
+    public const string Carried = "carried";
+
     /// <summary>Its tree holds uncommitted work — kept.</summary>
     public const string Dirty = "dirty";
 
@@ -225,13 +249,16 @@ public static class SweepKind
     public const string InUse = "in-use";
 }
 
-/// <param name="Commits">Unlanded: how many only Daoris holds. Landed: how many it carried.</param>
-/// <param name="Where">Landed: the first branch of the person's that holds it. Empty: the line.</param>
+/// <param name="Commits">Unlanded and carried: how many only Daoris holds. Landed: how many it carried.</param>
+/// <param name="Where">Landed: the first branch of the person's that holds it. Empty: the line. Carried: the landed branch whose pull request carried it.</param>
 /// <param name="Detail">Git's own lines where they say more: the unlanded commits, the uncommitted count.</param>
 public sealed record SweepItem(
     string Repository, string Workspace, string Branch, string? Tree, string Kind, int Commits, string? Where, string? Detail)
 {
-    public bool Removable => Kind is SweepKind.Empty or SweepKind.Landed;
+    public bool Removable => Kind is SweepKind.Empty or SweepKind.Landed or SweepKind.Carried;
+
+    /// <summary>Carried: the landing entry whose completed pull request carried it (PLUGHOOK1a), on which its removal is kept.</summary>
+    public LandedBranch? CarriedBy { get; init; }
 }
 
 /// <summary>What the clean-up did with one branch, in the driver's words.</summary>
