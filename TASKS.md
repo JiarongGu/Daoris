@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1142 CLI tests, 1124 service and 67 HTTP host, 4159 driver,
-681 desktop modules, 80 devkit, 3592 web unit, 24 Playwright**, 114/114 release rehearsal, **366/366
+**Counts, and this is their one home:** seventeen commands, **1143 CLI tests, 1124 service and 67 HTTP host, 4167 driver,
+683 desktop modules, 80 devkit, 3608 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -211,13 +211,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   languages. And the links it could not read: the rules handed kept past a run's end; a local door to one quest's
   operations; a merge landing naming its merge commit; a carry-on's link kept on the record. Contract: D143 and its
   TRACE1 note. Proof: route, driver and service tests; vitest and stories; the look.
-- [ ] **GIT1 — Daoris's own git, built in** (design first; owner, 2026-10-04: *"since Daoris will need to use git anyway
-  we will need a self-managed git, also since we will have self-managed git then we probably need to do a built-in git
-  more like VS Code with GitLens"*). Daoris's managed Git exists (D121, TOOLS4) but the install still runs the
-  system's. Design the built-in git surface: a repository's lines and branches (session branches, landed `feature/`
-  branches, their pull requests), history as a graph, a commit's diff, a file's history and blame; which acts it takes
-  as the person's (fetch, branch, push) at both doors; how it stays fast (REVIEW3); where it stops short of an editor
-  (D55); and whether a setup offers managed Git. Contract: D55, D121, D113. Proof: the design and its decision.
 - [ ] **GIT1a — the branch list, read** (driver). One `for-each-ref` per repository naming each ref's commit, its tree
   (`worktreepath`) and its distance from the line (`ahead-behind`); kinds from `daoris/`, `landings.json` and the
   line; the last fetch from `FETCH_HEAD`; a fallback for a git without the atom. Contract: the built-in git design
@@ -303,11 +296,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   *Proof* section on a session's page, its review and the quest's page, *Capture proof* through D137's reopen,
   *Remove proof*, and `daoris-driver proof [--save|--remove]`, both languages. Contract: design §11–§12. Proof:
   stories, vitest, both catalogues, `HelpCoverageTests`, `DriverCommandTests`, the look.
-- [ ] **FRAME2 — the title bar behaves as a window's does** (web-shell, desktop shell; owner, 2026-10-04: *"double
-  click on window top bar does not max the window and click on in maxed window mode it directly resets the max, this
-  is not regular window top bar behaviour"*). A double-click on the app strip's empty space toggles maximize, and a
-  single click on a maximized window does nothing; only a drag that moves restores it. Contract: D56 (the app strip is
-  the title bar), D138 (its system menu). Proof: vitest over the strip's handlers; the look on the install.
 - [ ] **FRAME2b — a request to the window kit: restore a maximized window under the pointer** (the owner's to send to
   the window kit's repository; found by FRAME2). The kit's commands take no position, so a maximized window dragged
   down restores at its saved place rather than under the pointer, as a native caption drag does. The request: a
@@ -319,20 +307,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   and for how long, an error that says why (a record with no tree here, a base git cannot find), and a second open
   served from the cache, since a commit range never changes. Contract: D41's interaction rules, D113. Proof: vitest
   over a slow and a failing mocked bridge; stories; the look on the install.
-- [ ] **LAND2 — done work reaches a branch you can review, and a pull request** (design first; owner, 2026-10-04:
-  *"so the thing is it's closed? but there is no PR branch opened and there is nothing I can really review on"*). Work
-  lands only at the person's Accept on its review (D87, D100), and lumachain's branch rule names no pull-request
-  plugin, so AR-2203's five done sessions sat on Daoris's session branches with nothing to review elsewhere. Design a
-  workspace's choice to land when its quest is done (the branch made, and the rule's plugin pushing it and opening the
-  pull request), today's Accept staying the default until set, and what *To review* then means. Contract: D87, D100,
-  D102. Proof: the design and its decision.
-- [ ] **EVID2 — proof of completion that outlives the environment** (design first; owner, 2026-10-04: *"there is no
-  proof it's completed if the server is stopped (for local development) it should take some screenshot for its
-  completion state since there are tasks not really related to code, it's configuration based"*). A done on
-  configuration work leaves no diff; capture its proof at the done (screenshots through the browser every session is
-  handed, an API read's answer), kept by Daoris on the record, not in the repository, and shown on the review and the
-  quest's page; whether a requirement may require it (D144 deferred browser evidence to "later"). Contract: D144 §7,
-  D133. Proof: the design and its decision.
 - [ ] **EVID1a — a requirement names a path, and a met answer waits for its reading** (service; after DRIFT1d). Add
   `evidence` at the three publish doors (a `gate` is refused, naming EVID1d). A met answer on one holds its done, and
   `POST /api/quests/{id}/evidence` keeps an `Evidenced` verdict: found lifts the hold and publishes the step, missing
@@ -377,42 +351,22 @@ owner on 1 October.
 - [ ] **CHATTAKE1b — a pipe-door chat is handed its session** (driver; found by CHATTAKE1). `Spawning.ChatInRoot` sets no
   `DAORIS_SESSION_ID`, so a repository chat on the pipe door speaks for no session: its take marks nothing and its
   publish names no session. Contract: D126's CHATTAKE1 note. Proof: a chat spawn's environment carries its session id.
-- [ ] **MSG1c3 — the lost line has a code** (driver, web-shell; found by LANG1a). A stop while the person's words are on
-  their way writes *it may have read what you added; its answer was not kept* as an English conversation event, which
-  the page cannot word. Give the event a code the page words as `work.conversation.lost`. Contract: D137's MSG1c2 note,
-  the language design §9. Proof: a `ChatTurns` row; a `ConversationView` vitest row in both catalogues.
 - [ ] **MSG1d2 — a chat's waiting words are record events** (driver, web-shell; with MSG1c). A queued chat word is
   written with an id and its reach, taken under that id, and a withdrawn word says so, so a restart loses nothing.
   Contract: §3.1, D137's MSG1d note. Proof: `ChatTurns` tests, `conversation.test.ts`.
-- [ ] **MSG1d3 — a resumed run is handed the files said with the words** (driver; found by MSG1d). Files are kept
-  under the home and named on the record, but the resumed prompt passes only the words. Contract: §2.4. Proof: a
-  continuation test whose prompt names the kept files.
-- [ ] **MSG1d4 — words held while a session winds up survive a restart** (modules; found by MSG1d). The shell holds
-  them until the record keeps them, and a restart in that moment loses them. Contract: D137's MSG1d note. Proof: a
-  modules test across a new `SessionWords`.
 - [ ] **MSG1f2 — what the box needs from the modules** (modules, driver; found by MSG1f). A `SESSION_START_FROM` route
   that starts a conversation with a record's words and takes them off it naming the new session (the page joins
   `START_CHAT` and `SESSION_INPUT` with an English preface today); `SESSION_QUEUED` carrying `reaches` and `why`, so
   the page need not ask again on each move; and `SessionGroups.Read` answering *going on* for an ended record and
   *Resumes later* with what holds the words. Contract: §3.1, §5.3, D137's MSG1f note. Proof: modules and driver
   tests; the page's fallbacks retired.
-- [ ] **MSG1e5 — one rule keeps a running session's words on its ask** (modules; after MSG1e4). `SessionWords.KeepOnAsk`
-  keeps its own copy of the rule the driver library's `WordsOnAsk.Keep` now owns, so the two can drift. Contract:
-  D137's MSG1e4 and MSG1e3 note. Proof: `SessionWordsTerminalTests`' running-session row green with the copy removed.
-- [ ] **STUB2 — the stub's resumed turn has a row of its own** (cli; found by MSG1e3). The ACP stub's resumed turn on a
-  quest that asks nothing is held only by family phase 17a2. Contract: D137's MSG1e4 and MSG1e3 note. Proof: a
-  `setup-kit.test.ts` row (initialize, `session/resume`, a prompt) that sees the words heard, `end_turn` after about
-  3 s, and no take.
-- [ ] **MSG1e4 — the headless loop keeps a terminal's words to a running session on its ask** (driver; found by MSG1e2).
-  `LoopWords` holds words at a running session's inbox but never posts them to `/added`, so they miss the ask the shell
-  now keeps them on. Contract: D133 §1, D137's MSG1e2 and MSG1c2 note. Proof: a `SessionsSayCommandTests` row.
-- [ ] **MSG1e3 — the family rehearsal says words from a terminal** (tools; after MSG1c). With the headless loop
-  running, `sessions say` to an ended stub session exits 0 with *going on* and the record works again; to the intake,
-  exits 1; before the loop starts, a say is held and the first look takes it. Contract: D137's MSG1e note. Proof: the
-  phase.
 - [ ] **MSG1g — a resume asks for its own account** (driver). The selection names the record's account, a cool-off
   holds the words with *Go on in a new session*, and an account that cannot run there carries on at once. Contract:
   §2.2's account paragraph. Proof: plan tests, `AccountRotationTickTests` (the parent's).
+- [ ] **MSG1g2 — the page's *Go on in a new session*** (web-shell; after MSG1g). Under words a cooling account holds,
+  the held line with a press that calls `SESSION_GO_ON_NEW`, a sentence for each refusal code in both catalogues, and
+  *Start a conversation with these words* where the answer is `conversation` or `closed`. Contract: the
+  session-messages design §2.2, §5.1, D137's MSG1g note. Proof: vitest over a mocked bridge, both catalogues, the look.
 - [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn, which needs Codex installed).
   The next-step door for `codex-acp` over `_session/steering`, steering only while a turn is live and waiting for a
   turn it started. Contract: §1.3, §2.1. Proof: STEER3's measurement, then `AcpSteerTests` rows.
@@ -439,10 +393,6 @@ owner on 1 October.
      install is a publish in place, and every one after it is staged (UPDATE1c).
 - [ ] **ANSWER1d — the canary on the install** (the parent's, after the republish). One park answered on the install shows
   one row, the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
-- [ ] **ANSWER1f — Ask Daoris's preface reads an answered park** (web-shell; found by ANSWER1e). `help/where.ts`'s
-  preface still tells the helper an attended answered park waits on the person. Read `answeredPark` in
-  `attendedOf`/`prefaceOf`. Contract: the answer-continues design §5, D131's ANSWER1c note. Proof: a `where.test.ts`
-  row.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.

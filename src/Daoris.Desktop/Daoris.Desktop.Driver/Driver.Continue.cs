@@ -10,15 +10,34 @@ namespace Daoris.Driver;
 /// What the prompt carries after the person's words: the answers to the go-aheads it asked, which it was not handed at its
 /// start (KNOWUSE1a). The record keeps only the person's words as theirs. Null or empty for none.
 /// </param>
-internal sealed class ResumeAsk(string conversation, IReadOnlyList<SaidWordView> words, string firstLine, string? appendix = null)
+/// <param name="files">
+/// Where each word's files are kept (MSG1d3, D137 §2.4): the record names them, and the run is handed where they lie, as a
+/// conversation's message is (CONV4c). Read once, as the ask is made. Null hands the words alone.
+/// </param>
+internal sealed class ResumeAsk(
+    string conversation, IReadOnlyList<SaidWordView> words, string firstLine, string? appendix = null,
+    Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null)
 {
+    // Each word's files, by its place in the words; read once, so both doors are handed the same.
+    private readonly IReadOnlyList<IReadOnlyList<KeptFile>> _files =
+        [.. words.Select(word => files is null || word.Files.Count == 0 ? Array.Empty<KeptFile>() : files(word))];
+
     public string Conversation => conversation;
 
     /// <summary>The person's words, in the order said, each with the id its record's <c>said</c> gave it.</summary>
     public IReadOnlyList<SaidWordView> Words => words;
 
-    /// <summary>The person's words joined by a blank line: as the native door's one argument carries them.</summary>
-    public string Answer => string.Join("\n\n", words.Select(word => word.Text));
+    /// <summary>
+    /// Every word's files in the order said (MSG1d3): the protocol door's links after the words' blocks, and what a run is
+    /// handed a read of. Empty where none was said, or none is kept any more.
+    /// </summary>
+    public IReadOnlyList<KeptFile> Files => [.. _files.SelectMany(each => each)];
+
+    /// <summary>
+    /// The person's words joined by a blank line, as the native door's one argument carries them: each with where its files
+    /// are kept beneath it, as a conversation's message names them on that door (MSG1d3, <see cref="ChatFiles.PathLines"/>).
+    /// </summary>
+    public string Answer => string.Join("\n\n", words.Select((word, at) => word.Text + ChatFiles.PathLines(_files[at])));
 
     /// <summary>What the conversation is resumed with on the native door: the words, then the appendix after a blank line.</summary>
     public string Prompt => appendix is { Length: > 0 } more ? $"{Answer}\n\n{more}" : Answer;
@@ -148,10 +167,12 @@ public sealed partial class Driver
         // Then the work's session language where one is set (LANG1c), since it may have changed since the conversation was
         // handed it; none set, and the appendix is what it was.
         var asked = await AskWords.ReadAsync(service, quest.From, ct).ConfigureAwait(false);
+        // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words.
         var resume = new ResumeAsk(
             kept.Conversation, park.Waiting,
             Continuations.Opening(adapter.Name, selection.Version, park.HarnessVersion, answer: park.Parked),
-            SessionLanguageText.Resumed(GoAheadsText.Resumed("", asked, sessionId).TrimStart(), target.Language));
+            SessionLanguageText.Resumed(GoAheadsText.Resumed("", asked, sessionId).TrimStart(), target.Language),
+            files: word => ChatFiles.Kept(home, sessionId, word.Files));
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
 
         try
@@ -165,7 +186,9 @@ public sealed partial class Driver
             var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
             hooks?.Log.Served(_catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
-            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across);
+            var rules = HandRules(
+                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across,
+                said: SaidFilesFolder(home, sessionId, resume));
 
             onOpened();
             _runs.Live[quest.Id] = sessionId;
@@ -242,6 +265,15 @@ public sealed partial class Driver
             starting?.Dispose();
         }
     }
+
+    /// <summary>
+    /// The folder a resumed run is handed a read of for the files said with its words (MSG1d3, D137 §2.4): the session's own
+    /// files folder, outside its tree, where any word it goes on with carries a kept file; null where none does. A read of
+    /// exactly that folder, INT4j's rule, as a conversation is handed its own (CONV4c): every other read there would be
+    /// asked, and every ask is refused (D52).
+    /// </summary>
+    internal static string? SaidFilesFolder(string home, string sessionId, ResumeAsk resume) =>
+        resume.Files.Count > 0 ? ChatFiles.Folder(home, sessionId) : null;
 
     /// <summary>
     /// The resumed run's conclusion: from the exit code and the quest's own state (D46 §4) as any start's, its evidence

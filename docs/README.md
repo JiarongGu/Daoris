@@ -36,7 +36,7 @@ changes no row (D127).
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
 | `2026-09-23-intake-design.md` | contract | an ask becomes quests (D65) | Current, with D70, D72 and D77 noted, and USE1c's done ask |
 | `2026-09-23-map-design.md` | contract | the maps (D67 §3, MAP) | Current |
-| `2026-09-23-plugin-design.md` | contract | plugins (D64), and making one with the kit (§9, D101) | Current, with D71, D77's `${data}`, D78's `${browser}`, D100's `work/land` (D102: a landed branch handed on after its landing) and PLUG9's making and installing from Ask Daoris noted |
+| `2026-09-23-plugin-design.md` | contract | plugins (D64), and making one with the kit (§9, D101) | Current, with D71, D77's `${data}`, D78's `${browser}`, D100's `work/land` (D102: a landed branch handed on after its landing) and PLUG9's making and installing from Ask Daoris noted. D145 adds two frame fields, D146 `${proof}` |
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 and D95 (a delete travels as `deleted`) noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74), and what it may reach across (D107, §4a) | Current |
@@ -72,7 +72,9 @@ changes no row (D127).
 | `2026-10-03-context-menu-design.md` | contract | The right-click menu: the page's own, each surface's acts from the owner it has, selected text, a link and a code span; the engine's menu kept for fields and suppressed elsewhere (CTX1) | Current (D138). Amends the platform language §4 and §6 |
 | `2026-10-03-plugin-catalogue-design.md` | contract | The plugins page as a catalogue (installed, Daoris's own, available), a plugin's icon declared in its manifest and handed to the page as its bytes, and the monogram in its place (PLUGUI2) | Current (D140), built (PLUGUI2, PLUGUI2b). Amends the plugin design §3 and the plugins screen design §3.1–§3.2 |
 | `2026-10-03-language-design.md` | contract | Languages: Daoris's lines in a session's note worded by code, someone's words shown as written, every line the driver writes coded, and a session language set for the work, apart from the window's (LANG1) | Designed (D142); LANG1a and LANG1c built (D142's notes). Amends the platform language §4 and the frontend architecture §3 |
-| `2026-10-03-evidence-design.md` | contract | Evidence Daoris checks: a requirement names a path the done's commit must hold, or a declared gate read from the queue's verdict; a met answer without it holds the quest as a departure does (EVID1) | Designed (D144); nothing built. Amends D46, D133 §3–§4, D65 §4 and D115 §5 |
+| `2026-10-03-evidence-design.md` | contract | Evidence Daoris checks: a requirement names a path the done's commit must hold, or a declared gate read from the queue's verdict; a met answer without it holds the quest as a departure does (EVID1) | Designed (D144); nothing built. Amends D46, D133 §3–§4, D65 §4 and D115 §5. D146 amends its §7 |
+| `2026-10-04-landing-and-proof-design.md` | contract | Accepting done work automatically, the pull request the last human step, a chain on one branch (LAND2); captured proof, screenshots and API answers kept on the machine, which a requirement may require (EVID2) | Designed (D145, D146); nothing built. Amends D82, D87, D100, D113 §3, D144 and D78 §3.5 |
+| `2026-10-04-built-in-git-design.md` | contract | Git built in: a place holding each repository's branches by kind, history as a graph, a commit, a file's history and blame, a compare; acts on refs, a push only on the person's press, managed Git offered (GIT1) | Designed (D147); nothing built. Amends the push in D87, D100 and D109, D97 and D66 |
 
 ## Studies and evidence
 

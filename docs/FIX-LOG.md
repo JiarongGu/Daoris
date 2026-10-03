@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two tests stamped a fixed minute their watch read by the wall clock (2026-10-04)
+
+**Symptom.** `SessionRequestsTests`' three say rows started failing at 09:01 UTC on 2026-10-03 on every branch, and
+`WorkPausingTests.A_session_another_process_runs_is_stopped_through_a_request_by_the_pause_with_its_words` at 14:03
+the same day; the merge gate's fast driver half failed on main with no change to the code.
+
+**Root cause.** Each test wrote its request at a fixed instant (09:00 and 14:02:11 that day) and built the request
+watch with a constructor that measured a request's age by the real clock against a one-minute lifetime. Once the
+wall clock passed the fixed instant by a minute, every request read as expired and was dropped, so nothing was
+stopped and the say went unanswered. The tests passed on the day they were written, which is why no gate caught them.
+
+**Fix.** The registry constructor of `SessionRequestWatch` takes an optional clock, as its other constructor did,
+and each test hands the watch the clock its requests were stamped by.
+
+**Verification.** The three say rows and the pause row pass on 2026-10-04; a search found no other test that both
+stamps a fixed instant and builds a clockless watch.
+
 ## A staged build could not be renamed into place while Windows scanned it (2026-10-03)
 
 **Symptom.** The deployment rehearsal's first run of UPDATE1's update phase failed at its first step:

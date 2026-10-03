@@ -439,11 +439,15 @@ public sealed partial class AcpSession(
     /// Told once the first prompt is on the wire (MSG1b): the words it carries were taken by the session, where a refusal
     /// before it, or a failure of the handshake, took nothing.
     /// </param>
+    /// <param name="files">
+    /// The files said with <paramref name="blocks"/>' words (MSG1d3, D137 §2.4), each a <c>resource_link</c> to where it is
+    /// kept after the blocks, as a conversation's message carries what was attached (CONV4c). Null or empty for none.
+    /// </param>
     /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
     public async Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
         DrivenInbox? inbox = null, Action<ChatMessage>? asked = null, string? resume = null,
-        IReadOnlyList<string>? blocks = null, Action? prompted = null)
+        IReadOnlyList<string>? blocks = null, Action? prompted = null, IReadOnlyList<KeptFile>? files = null)
     {
         _asked = asked;
         try
@@ -465,7 +469,7 @@ public sealed partial class AcpSession(
                     prompted?.Invoke();
                 };
             var stopReason = blocks is { Count: > 0 }
-                ? await SendPromptAsync(blocks, null, ct, sent, words: null).ConfigureAwait(false)
+                ? await SendPromptAsync(blocks, files, ct, sent, words: null).ConfigureAwait(false)
                 : await PromptAsync(prompt, ct, sent).ConfigureAwait(false);
 
             // The person's words, one prompt each, in the order said — the session keeps its context. A word sent during
@@ -692,8 +696,13 @@ public sealed partial class AcpSession(
     /// person's words waiting on its record, each its own block in the order said, as a driven record's are (MSG1b).
     /// </summary>
     /// <param name="sent">Told once the prompt is on the wire: the words it carries went to the session.</param>
-    public Task<string> PromptAsync(IReadOnlyList<string> blocks, CancellationToken ct, Action? sent = null) =>
-        SendPromptAsync(blocks, null, ct, sent, words: null);
+    /// <param name="files">
+    /// The files said with the words (MSG1d3, D137 §2.4), each a <c>resource_link</c> after the blocks, as a conversation's
+    /// message carries them (CONV4c).
+    /// </param>
+    public Task<string> PromptAsync(
+        IReadOnlyList<string> blocks, CancellationToken ct, Action? sent = null, IReadOnlyList<KeptFile>? files = null) =>
+        SendPromptAsync(blocks, files, ct, sent, words: null);
 
     /// <summary>
     /// Whether this session's agent said it takes a prompt during a turn (STEER1, D136), read from its <c>initialize</c>

@@ -136,6 +136,26 @@ internal sealed class ChatTurns(
         }
     }
 
+    /// <summary>
+    /// The line a conversation keeps of a word handed to its turn at the next step (MSG1c, D137 §2.1), once the agent answered
+    /// it: where the person's stop was asked while the word was on its way and the agent answered it <c>cancelled</c>, the
+    /// agent may have read it and its answer was not kept (STEER1 §3). Null for any other answer, which is in the turn.
+    /// </summary>
+    /// <remarks>
+    /// Its code (MSG1c3), which the page words as <c>work.conversation.lost</c> in the reader's language, and the word's id, so
+    /// the page settles the word it still shows waiting (MSG1f). The English beside them is the console's and the terminal's.
+    /// </remarks>
+    /// <param name="word">The word's id, as the record showed it waiting.</param>
+    /// <param name="stoppedUnder">The person's stop was asked while the word was on its way.</param>
+    /// <param name="stopReason">The agent's answer to the word.</param>
+    public static SessionEvent? Lost(string word, bool stoppedUnder, string stopReason) =>
+        stoppedUnder && stopReason == "cancelled"
+            ? new SessionEvent { Kind = SessionEventKind.Note, Text = LostLine, Words = [word], Code = SessionEventCodes.Lost }
+            : null;
+
+    /// <summary>The driver's English for <see cref="Lost"/>: what its console says and a page that does not know the code shows.</summary>
+    public const string LostLine = "— it may have read what you added; its answer was not kept.";
+
     /// <summary>Queue a turn. False once the conversation is finishing or gone: nothing more will be heard.</summary>
     public bool Say(ChatMessage message) => Take(message) is not null;
 

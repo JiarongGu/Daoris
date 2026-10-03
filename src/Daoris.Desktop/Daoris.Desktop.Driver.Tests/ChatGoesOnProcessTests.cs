@@ -299,7 +299,10 @@ public sealed class ChatGoesOnProcessTests : IDisposable
         await Poll.Until(
             () => events.After(id, 0).Events.Any(e => e.Kind == SessionEventKind.Note && e.Text!.Contains("may have read")),
             () => Seen(ledger, events, id));
-        Assert.Equal([word], events.After(id, 0).Events.Single(e => e.Text?.Contains("may have read") == true).Words!);
+        var lost = events.After(id, 0).Events.Single(e => e.Text?.Contains("may have read") == true);
+        Assert.Equal([word], lost.Words!);
+        // Its code, which the page words in the reader's language (MSG1c3).
+        Assert.Equal(SessionEventCodes.Lost, lost.Code);
         Assert.True(runner.Finish(id));
     }
 

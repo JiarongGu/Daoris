@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { compact, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Tip } from '../ui';
-import { type Ask, type Block, type PlanEntry, runCount, segments, type Turn } from './conversation';
+import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
 import { reasonOf, type ReasonValues } from './say';
@@ -42,6 +42,8 @@ const SaidDoors = createContext<Said>({ chat: false, reasons: {} });
  * - **Words said after it parked or ended wait at its foot** (MSG1f, D137 §3.1), saying the same session
  *   goes on with them; where they went to a new session the line says which, a door to it; where they
  *   cannot go on here it says why, with one press that starts a conversation with them.
+ * - **A driver's note with a code is said in the reader's language** (MSG1c3, D142 point 1): the line that
+ *   a stop cut a word off on its way. A code this page does not know leaves the driver's English.
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
@@ -375,6 +377,17 @@ function CannotLine({ block }: { block: Block }) {
   );
 }
 
+/**
+ * A driver's note the page words itself (MSG1c3, D142 point 1): its code's sentence in the reader's language, said as the
+ * went line is, where the word it names was shown. A code this page does not know leaves the driver's English line.
+ */
+function CodedLine({ block }: { block: Block }) {
+  const { t } = useTranslation();
+  const key = block.code ? CONVERSATION_CODES[block.code] : undefined;
+  if (!key) return <NoteLine text={block.text ?? ''} />;
+  return <p className="m-0 text-small text-ink-soft">{t(key)}</p>;
+}
+
 function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
   switch (block.kind) {
     case 'message':
@@ -386,6 +399,8 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
     case 'plan':
       return <PlanView entries={block.entries ?? []} />;
     case 'note':
+      // A note the page words by its code (MSG1c3): a word a stop cut off on its way.
+      if (block.code) return <CodedLine block={block} />;
       // A note about the person's words (MSG1f): where they went, or why they cannot go on here.
       if (block.to) return <WentLine block={block} />;
       if (block.why) return <CannotLine block={block} />;

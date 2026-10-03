@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -7,21 +7,50 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // is WinForms and has no test project by construction — `npm run desktop -- shot` is its gate — so
 // everything that could live here does, and what is left there is wiring with no branches in it.
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+const { invoke, commands, window_ } = vi.hoisted(() => {
+  // Every gesture command the strip can send, logged in the order sent, so a test can say "restored,
+  // then dragged" and "sent nothing" over the same list.
+  const sent: string[] = [];
+  const command = (name: string) => vi.fn(() => {
+    sent.push(name);
+    return Promise.resolve();
+  });
+  return {
+    invoke: vi.fn(),
+    commands: {
+      sent,
+      toggleMaximize: command('toggleMaximize'),
+      startDrag: command('startDrag'),
+      startResize: command('startResize'),
+      showSystemMenu: command('showSystemMenu'),
+    },
+    window_: { maximized: false },
+  };
+});
 
 vi.mock('@shenora/react', async () => {
   const actual = await vi.importActual<typeof import('@shenora/react')>('@shenora/react');
+  class WindowCommands {
+    toggleMaximize = commands.toggleMaximize;
+    startDrag = commands.startDrag;
+    startResize = commands.startResize;
+    showSystemMenu = commands.showSystemMenu;
+    setCaptionButtons = () => Promise.resolve();
+    setTheme = () => Promise.resolve();
+  }
   return {
     ...actual,
+    WindowCommands,
     isShenoraAvailable: () => true,
     getBridge: () => ({ isAvailable: true, invoke, notifyReady: () => Promise.resolve() }),
     useShenora: () => ({ isAvailable: true, bridge: { notifyReady: () => Promise.resolve() } }),
+    useWindowMaximized: () => window_.maximized,
   };
 });
 
 import './i18n';
-import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects } from './windowChrome';
-import { AppStrip, STRIP_SPACE } from './work/frame';
+import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects, useWindowChrome } from './windowChrome';
+import { AppStrip, DRAG_DISTANCE, STRIP_SPACE } from './work/frame';
 
 /** A strip with three laid-out slots, as the real one has once the browser has measured it. */
 function strip(sizes: Partial<Record<string, DOMRect>> = {}): HTMLElement {
@@ -106,10 +135,10 @@ describe('the app strip as a title bar', () => {
   it('drags from the strip itself and never from a control on it', async () => {
     const { onDragStart } = show();
 
-    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('banner') });
+    await press(screen.getByRole('banner'), { x: DRAG_DISTANCE + 1, y: 0 });
     expect(onDragStart).toHaveBeenCalledTimes(1);
 
-    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('button', { name: 'app menu' }) });
+    await press(screen.getByRole('button', { name: 'app menu' }), { x: 40, y: 40 });
     expect(onDragStart).toHaveBeenCalledTimes(1);
   });
 
@@ -122,8 +151,33 @@ describe('the app strip as a title bar', () => {
     const spaces = [...document.querySelectorAll<HTMLElement>(`[${STRIP_SPACE}]`)];
     expect(spaces).toHaveLength(3);
 
-    for (const space of spaces) await userEvent.pointer({ keys: '[MouseLeft]', target: space });
+    for (const space of spaces) await press(space, { x: 0, y: DRAG_DISTANCE + 1 });
     expect(onDragStart).toHaveBeenCalledTimes(3);
+  });
+
+  /**
+   * 🔴 FRAME2: a press used to hand off to the OS move loop at once, so a still click on a maximized
+   * window restored it, and the loop swallowed a double-click's second press. A caption's press only
+   * notes where it went down; the drag begins once the pointer has travelled past the drag distance.
+   */
+  it('starts no drag on a still click, nor on a press that stays within the drag distance', async () => {
+    const { onDragStart } = show();
+
+    await press(screen.getByRole('banner'));
+    await press(screen.getByRole('banner'), { x: DRAG_DISTANCE, y: -DRAG_DISTANCE });
+    expect(onDragStart).not.toHaveBeenCalled();
+  });
+
+  it('forgets the press once the button is up: a later move with no button down drags nothing', async () => {
+    const { onDragStart } = show();
+    const user = userEvent.setup();
+
+    await user.pointer([
+      { keys: '[MouseLeft>]', target: screen.getByRole('banner'), coords: { x: 100, y: 10 } },
+      { keys: '[/MouseLeft]' },
+      { coords: { x: 300, y: 200 } },
+    ]);
+    expect(onDragStart).not.toHaveBeenCalled();
   });
 
   /**
@@ -166,7 +220,11 @@ describe('the app strip as a title bar', () => {
 
   it('ignores a press that is not the primary button — a right-click is a menu, not a drag', async () => {
     const { onDragStart } = show();
-    await userEvent.pointer({ keys: '[MouseRight>]', target: screen.getByRole('banner') });
+    await userEvent.setup().pointer([
+      { keys: '[MouseRight>]', target: screen.getByRole('banner'), coords: { x: 100, y: 10 } },
+      { coords: { x: 160, y: 60 } },
+      { keys: '[/MouseRight]' },
+    ]);
     expect(onDragStart).not.toHaveBeenCalled();
   });
 
@@ -188,3 +246,103 @@ describe('the app strip as a title bar', () => {
     expect(document.querySelector('.cursor-ns-resize')).toBeTruthy();
   });
 });
+
+/**
+ * FRAME2: the strip wired to its window as the application wires it, over a mocked `WindowCommands`, so
+ * each gesture is read as the commands the window would receive. A title bar's still click does
+ * nothing, its drag moves the window (restoring a maximized one first), and its double-click toggles
+ * maximize.
+ */
+describe('the strip wired to the window, gesture by gesture', () => {
+  beforeEach(() => {
+    invoke.mockResolvedValue({});
+    commands.sent.length = 0;
+  });
+  afterEach(() => {
+    invoke.mockReset();
+    window_.maximized = false;
+  });
+
+  /** The strip as `App` binds it: every handler from `useWindowChrome`, the menus a control on it. */
+  function Wired() {
+    const chrome = useWindowChrome();
+    return (
+      <AppStrip
+        menus={<button type="button">app menu</button>}
+        captionRoom={chrome.present}
+        stripRef={chrome.stripRef}
+        onDragStart={chrome.onDragStart}
+        onToggleMaximize={chrome.onToggleMaximize}
+        onResizeTop={chrome.onResizeTop}
+        onSystemMenu={chrome.onSystemMenu}
+      />
+    );
+  }
+
+  const wire = ({ maximized }: { maximized: boolean }) => {
+    window_.maximized = maximized;
+    render(
+      <Tooltip.Provider>
+        <Wired />
+      </Tooltip.Provider>,
+    );
+    return screen.getByRole('banner');
+  };
+
+  it('sends nothing for a still click on a maximized window — it stays maximized', async () => {
+    await press(wire({ maximized: true }));
+    // Long enough for a fire-and-forget command to have landed, had one been sent.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(commands.sent).toEqual([]);
+  });
+
+  it('restores a maximized window, then drags it, once the press travels past the drag distance', async () => {
+    await press(wire({ maximized: true }), { x: 0, y: DRAG_DISTANCE + 6 });
+    await waitFor(() => expect(commands.sent).toEqual(['toggleMaximize', 'startDrag']));
+  });
+
+  it('drags a restored window without touching its maximize', async () => {
+    await press(wire({ maximized: false }), { x: DRAG_DISTANCE + 1, y: 0 });
+    await waitFor(() => expect(commands.sent).toEqual(['startDrag']));
+  });
+
+  it('toggles maximize once on a double-click, and starts no drag', async () => {
+    for (const maximized of [false, true]) {
+      commands.sent.length = 0;
+      await userEvent.dblClick(wire({ maximized }));
+      await waitFor(() => expect(commands.sent).toEqual(['toggleMaximize']));
+      cleanup();
+    }
+  });
+
+  it('sends nothing for a press or a drag on a control inside the strip', async () => {
+    wire({ maximized: true });
+    const menu = screen.getByRole('button', { name: 'app menu' });
+
+    await press(menu);
+    await press(menu, { x: 60, y: 30 });
+    await userEvent.dblClick(menu);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(commands.sent).toEqual([]);
+  });
+
+  it('keeps the right-click system menu and the top resize sliver as they were', async () => {
+    const strip = wire({ maximized: true });
+
+    await userEvent.pointer({ keys: '[MouseRight]', target: strip });
+    await userEvent.pointer({ keys: '[MouseLeft>]', target: strip.querySelector('.cursor-ns-resize')! });
+    await waitFor(() => expect(commands.sent).toEqual(['showSystemMenu', 'startResize']));
+  });
+});
+
+/**
+ * A primary press on `target` at a fixed point, a move of `travel` with the button held, and the release,
+ * as one pointer, so the move is seen with the button down.
+ */
+async function press(target: Element, travel: { x: number; y: number } = { x: 0, y: 0 }) {
+  await userEvent.setup().pointer([
+    { keys: '[MouseLeft>]', target, coords: { x: 100, y: 10 } },
+    { coords: { x: 100 + travel.x, y: 10 + travel.y } },
+    { keys: '[/MouseLeft]' },
+  ]);
+}

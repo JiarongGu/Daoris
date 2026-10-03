@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import '../i18n';
+import i18n from '../i18n';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
@@ -496,6 +496,39 @@ describe('ConversationView', () => {
       ev({ kind: 'note', text: '— It cannot go on in this session, because its conversation is open in another client of its agent.', words: ['w1'], why: 'elsewhere' }),
     ], { reasons: { agent: 'Codex' } });
     expect(screen.getByText('It cannot go on in this session, because its conversation is open in another client of Codex.')).toBeTruthy();
+  });
+
+  /**
+   * MSG1c3 (D142 point 1): a word the person's stop cut off on its way is said in the page's words, in the reader's
+   * language, from the note's code: once, where the word was shown, which waits no longer. A code the page does not know
+   * leaves the driver's English line.
+   */
+  it('says in the reader’s language that the agent may have read a word the stop cut off', async () => {
+    const stopped = () => [
+      ev({ kind: 'user', origin: 'person', text: 'read the five files' }),
+      ev({ kind: 'user', origin: 'person', id: 'said-1', reaches: 'next-step', text: 'PINEAPPLE' }),
+      ev({ kind: 'note', text: '— it may have read what you added; its answer was not kept.', words: ['said-1'], code: 'lost' }),
+      ev({ kind: 'turn', stopReason: 'cancelled' }),
+    ];
+    const { unmount } = view(stopped());
+    expect(screen.getByText('It may have read this; its answer was not kept.')).toBeTruthy();
+    expect(screen.getByText('PINEAPPLE')).toBeTruthy();
+    expect(screen.queryByText(/— it may have read/)).toBeNull();
+    expect(screen.queryByText(/Held:/)).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const { unmount: shown } = view(stopped());
+      expect(screen.getByText('它可能已读到这条，但它的回复没有保留。')).toBeTruthy();
+      expect(screen.queryByText(/may have read/)).toBeNull();
+      shown();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    view([ev({ kind: 'note', text: '— a line a newer driver coded.', code: 'newer' })]);
+    expect(screen.getByText('— a line a newer driver coded.')).toBeTruthy();
   });
 
   /** SESS1 S5: a call the page holds only the updates of began earlier, and says so, never its id. */
