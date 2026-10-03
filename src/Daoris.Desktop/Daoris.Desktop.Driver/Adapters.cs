@@ -710,22 +710,39 @@ public static class TargetPrompt
           """;
 
     /// <summary>
-    /// How the work lands, said only where it goes through review: the branch the person will push and
-    /// open a pull request from, and that the session makes neither move itself (D87).
+    /// How the work lands, said only where it goes onto a branch: the branch the person will push and
+    /// open a pull request from, and that the session makes neither move itself (D87). Under a rule that
+    /// accepts automatically (LAND2b), that its quest's done lands it, so its work must be committed by then.
     /// </summary>
-    private static string Landing(SessionTarget target) => target.LandsOn is not { Form: LandingForm.Branch } plan
-        ? ""
-        : $"""
+    private static string Landing(SessionTarget target) => target.LandsOn switch
+    {
+        { Form: LandingForm.Branch, AutoAccept: true } plan => $"""
 
-          This work goes through review. {Lands(plan)} Commit your work on this branch as you go —
-          do not merge it, push it, or open a pull request yourself.
+            This work is accepted automatically. {Lands(plan)} Commit all of your work on this branch
+            before you close the quest done — uncommitted work does not land — and do not merge it, push
+            it, or open a pull request yourself.
 
-          """;
+            """,
+        { Form: LandingForm.Branch } plan => $"""
 
-    /// <summary>Who takes the branch on from there: the person, or the plugin the rule names (D100) once the person accepts it.</summary>
-    private static string Lands(LandingPlan plan) => plan.Plugin is null
-        ? $"When it is done, the person puts this tree's branch on `{plan.Target}` and opens a pull request from it."
-        : $"When it is done and the person accepts it, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it.";
+            This work goes through review. {Lands(plan)} Commit your work on this branch as you go —
+            do not merge it, push it, or open a pull request yourself.
+
+            """,
+        _ => "",
+    };
+
+    /// <summary>
+    /// Who takes the branch on from there: the person, or the plugin the rule names (D100) once the person accepts it; or, under
+    /// a rule that accepts automatically (LAND2b, D145), the quest's done, with no press.
+    /// </summary>
+    private static string Lands(LandingPlan plan) => (plan.AutoAccept, plan.Plugin) switch
+    {
+        (true, null) => $"When you close the quest done, this tree's branch is put on `{plan.Target}`, for the person to push and open a pull request from.",
+        (true, _) => $"When you close the quest done, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it, where the work is judged.",
+        (false, null) => $"When it is done, the person puts this tree's branch on `{plan.Target}` and opens a pull request from it.",
+        _ => $"When it is done and the person accepts it, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it.",
+    };
 
     /// <summary>
     /// What the asker gave beside their words, said plainly — each link, each file where it lies, and a

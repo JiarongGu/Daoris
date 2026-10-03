@@ -437,6 +437,54 @@ public sealed class TraceTests : IDisposable
         Assert.All(standIn.Requests, request => Assert.StartsWith("GET ", request));
     }
 
+    /// <summary>
+    /// LAND2b (D145 point 6, design §8): a landing at the quest's done is read back as accepted automatically, with the rule it
+    /// was made under; the conversation's acceptance note is read as one; the due list's tries are each read by their code. A
+    /// landing from before who accepted it was kept says so, never guessed.
+    /// </summary>
+    [Fact]
+    public async Task An_automatic_acceptance_reads_back_with_its_rule_its_note_and_each_try()
+    {
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        events.Append("s2", new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the quest", At = At(9, 40) });
+        var landed = new TreeLanding(true, "put the work on `feature/q1-fix-the-dashboard-figure` — 2 commit(s) from `main`.",
+            "feature/q1-fix-the-dashboard-figure");
+        events.Append("s2", AutoLandingNotes.Of(AutoLandingCode.Landed, landed) with { At = At(10, 5) });
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5))
+        {
+            Plugin = "acme.lands", Pushed = true, PullRequest = "https://example.test/pull/7", AcceptedBy = AcceptedBy.Auto,
+            Rule = new LandedRule("acme.lands", AutoAccept: true, LandingSource.Workspace),
+        });
+        var due = new AutoLandings(_home);
+        due.Due(new AutoLanding("s2", "q1", "dashboards", "work", "C:/trees/dashboards-q1", At(10, 0)));
+        due.Tried("s2", new AutoTry(At(10, 1), AutoLandingCode.Uncommitted) { Tip = "9f8e7d6c5b4a", Status = "sha256:abcd", Uncommitted = 2 }, close: false);
+        due.Tried("s2", new AutoTry(At(10, 5), AutoLandingCode.Landed)
+        {
+            Tip = "1a2b3c4d5e6f708192", Status = "clean", Branch = "feature/q1-fix-the-dashboard-figure", Commits = 2,
+        }, close: true);
+
+        var (exit, said, _) = await TraceAsync(new TraceAsk("s2"));
+        var block = Block(said, "session s2");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("2026-10-03 10:05 UTC · accepted automatically when its quest was done: its work is on `feature/q1-fix-the-dashboard-figure`.", block);
+        Assert.Contains("pushed by plugin acme.lands, pull request https://example.test/pull/7; accepted automatically when its quest was done; "
+            + "under the workspace's rule, naming plugin acme.lands, accepting automatically", block);
+        Assert.Contains("due to land automatically since 2026-10-03 10:00 UTC (auto-landings.json, this machine's), closed 2026-10-03 10:05 UTC", block);
+        Assert.Contains("2026-10-03 10:01 UTC · uncommitted · 2 uncommitted path(s) · at 9f8e7d6c5b4a", block);
+        Assert.Contains("2026-10-03 10:05 UTC · landed · branch feature/q1-fix-the-dashboard-figure · 2 commit(s)", block);
+
+        // A landing recorded before LAND2b kept who accepted it: said not kept, and no rule is made up.
+        new LandedBranches(_home).Record(new LandedBranch(
+            "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
+            "Fix the dashboard figure", At(10, 5)));
+        var (_, older, _) = await TraceAsync(new TraceAsk("s2"));
+        Assert.Contains("; who accepted it is not kept: it landed before landings kept it", older);
+        Assert.DoesNotContain("'s rule, naming", Block(older, "session s2"));
+    }
+
     /// <summary>A service that cannot be read is said, store by store, and a trace that needed it could not: exit 2.</summary>
     [Fact]
     public async Task A_service_that_does_not_answer_is_said_and_the_trace_could_not()

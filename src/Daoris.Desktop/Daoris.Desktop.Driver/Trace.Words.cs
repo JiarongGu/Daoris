@@ -316,12 +316,13 @@ internal static partial class TraceWords
     }
 
     /// <summary>
-    /// What a landing's press keeps in the session's record (D100), read from the writer itself so a reworded note is read the
-    /// same: the person's acceptance, a merge into the line's included, and a hand-off after it.
+    /// What a landing keeps in the session's record (D100), read from the writer itself so a reworded note is read the same: the
+    /// person's acceptance, a merge into the line's included, an acceptance at the quest's done (LAND2b), and a hand-off after it.
     /// </summary>
     private static readonly string[] Acceptances =
     [
-        LandingRules.Note(new TreeLanding(true, "")).Text!,
+        LandingRules.PersonAccepted,
+        LandingRules.AutoAccepted,
         LandingRules.HandNote(new TreeHand(true, "")).Text!,
     ];
 
@@ -479,6 +480,7 @@ internal static partial class TraceWords
 
         var landings = facts.Landings.Where(each => Same(each.Session, session.Id)).ToList();
         foreach (var landing in landings) text.Append($"  landing: {Landed(landing)}\n");
+        DueToLand(text, session, facts);
         if (landings.Count > 0) return;
 
         text.Append(accepted switch
@@ -514,7 +516,42 @@ internal static partial class TraceWords
             if (landing.RemovedAs is { } kind) said.Append($", removed as {kind}{(landing.RemovedOn is { } on ? $" on {on}" : "")}");
         }
 
+        // Who accepted it, and the rule it was made under (LAND2b, D145 point 6): kept since then, and said missing before (D143).
+        said.Append(landing.AcceptedBy switch
+        {
+            AcceptedBy.Auto => "; accepted automatically when its quest was done",
+            AcceptedBy.Person => "; accepted by the person's press",
+            _ => "; who accepted it is not kept: it landed before landings kept it",
+        });
+        if (landing.Rule is { } rule)
+        {
+            said.Append($"; under the {rule.Source}'s rule, ")
+                .Append(rule.Plugin is { } named ? $"naming plugin {named}" : "naming no plugin")
+                .Append(rule.AutoAccept ? ", accepting automatically" : ", accepting at a press");
+        }
+
         return said.ToString();
+    }
+
+    /// <summary>
+    /// Its entry on the due list (LAND2b, design §8), where it has one: when it became due, and each try by its code, with the
+    /// branch it made or met. A session never due has none, and says nothing here.
+    /// </summary>
+    private static void DueToLand(StringBuilder text, TracedSession session, TraceFacts facts)
+    {
+        if (facts.AutoLandings.FirstOrDefault(each => Same(each.Session, session.Id)) is not { } entry) return;
+        text.Append($"  due to land automatically since {When(entry.DueAt)} ({AutoLandings.FileName}, this machine's)")
+            .Append(entry.Closed is { } closed ? $", closed {When(closed)}\n" : ", still waiting\n");
+        if (entry.Tries.Count == 0) text.Append("    not tried yet\n");
+        foreach (var tried in entry.Tries)
+        {
+            text.Append($"    {When(tried.At)} · {tried.Code}")
+                .Append(tried.Branch is { } branch ? $" · branch {branch}" : "")
+                .Append(tried.Commits is { } commits ? $" · {commits} commit(s)" : "")
+                .Append(tried.Uncommitted is { } paths ? $" · {paths} uncommitted path(s)" : "")
+                .Append(tried.Tip is { } tip ? $" · at {tip[..Math.Min(12, tip.Length)]}" : "")
+                .Append('\n');
+        }
     }
 
     /// <summary>
