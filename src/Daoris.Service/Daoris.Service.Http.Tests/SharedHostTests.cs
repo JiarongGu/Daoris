@@ -279,4 +279,17 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     {
         Assert.DoesNotContain(("POST", "/api/quests/{id}/accept"), host.Routes());
     }
+
+    /// <summary>
+    /// MSG1a (D137 §2.3): the person's words wait on a record of their own machine's, and only there does it go on — so a
+    /// shared host, which holds the team's records and runs no session, has neither the say door nor the taken door.
+    /// </summary>
+    [Fact]
+    public void The_say_and_taken_doors_do_not_exist_on_a_shared_host()
+    {
+        var routes = host.Routes();
+
+        Assert.DoesNotContain(("POST", "/api/sessions/{id}/say"), routes);
+        Assert.DoesNotContain(("POST", "/api/sessions/{id}/taken"), routes);
+    }
 }

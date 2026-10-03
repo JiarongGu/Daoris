@@ -107,7 +107,8 @@ public sealed record AskResponse(
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
     IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
     IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null);
-// One word (DRIFT1a): `kind` is `asked`, `answered` or `added`; the ask's own sentence names no session.
+// One word (DRIFT1a): `kind` is `asked`, `answered`, `added` or `reopened` (MSG1a: said after its session ended, which
+// went on with it); the ask's own sentence names no session.
 public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 // DRIFT1a: what the person added to a running session, as its driver reports it.
@@ -185,7 +186,8 @@ public sealed record SessionResponse(
     // D65 §1b: the ask an intake answers — null for every other session.
     string? Ask = null,
     // STANDDOWN2: whether it took its own quest, through its own connector; and the person's answer to
-    // one that parked to ask them.
+    // one that parked to ask them — since MSG1a the words waiting in `Said`, joined by a blank line, for a client
+    // from before.
     bool Took = false,
     string? Answer = null,
     // D104: a stop that was not the person's — the sweep's, or a shutdown's — which the driver carries on.
@@ -194,7 +196,25 @@ public sealed record SessionResponse(
     bool Limit = false,
     // SESSUX1f (D126 §5.4): whether the ledger would delete its record, D95's way, so the driver offers *Delete…* only
     // where it would be taken. False at a shared deployment, which has no delete door.
-    bool Deletable = false);
+    bool Deletable = false,
+    // MSG1a (D137 §2.4): the person's words waiting for it to go on with them, in order. Their own words, which may name
+    // anything on this machine: answered to it only, like `Answer` and the transcript.
+    IReadOnlyList<SaidWordResponse>? Said = null);
+// MSG1a: one word waiting on a record — its id, which the record's events say again where the session took it; the
+// words; when; its files' names, never where they are; and whether it was said after the record ended.
+public sealed record SaidWordResponse(string Id, string Text, DateTimeOffset At, IReadOnlyList<string> Files, bool Reopens);
+// MSG1a (D137 §5.3): what the person says to a parked or ended session. `Files` are the names of what they gave with it;
+// a path is cut to its name before it is kept.
+public sealed record SayRequest(string? Text, IReadOnlyList<string>? Files = null);
+// The session as it stands, the ledger's sentence, and the word as kept (to this machine only).
+public sealed record SaidResponse(SessionResponse Session, string Message, SaidWordResponse? Said);
+// A say refused: the sentence as `error`, beside its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`,
+// `stood-down`, `running`), which a reader acts on instead of the sentence, and the quest, ask or machine it names.
+public sealed record SessionSayRefusalResponse(
+    string Error, string Refusal, string? Quest = null, string? Ask = null, string? Origin = null);
+// MSG1a (D137 §2.4): the words a session took, by their ids; `By` the session that took them where it is not this one
+// (a fallback's new session).
+public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = null);
 // SESSUX1f (D126 §5.4): a session delete refused, or its judgement alone. `error` is the ledger's sentence, the field every
 // reader already knows; `refusal` its word, which a reader acts on instead of the sentence; and the facts the word names.
 public sealed record SessionDeletionResponse(
@@ -310,6 +330,10 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
 [JsonSerializable(typeof(SessionDeletionResponse))]
+[JsonSerializable(typeof(SayRequest))]
+[JsonSerializable(typeof(SaidResponse))]
+[JsonSerializable(typeof(SessionSayRefusalResponse))]
+[JsonSerializable(typeof(TakenRequest))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedCodeMapRequest))]
