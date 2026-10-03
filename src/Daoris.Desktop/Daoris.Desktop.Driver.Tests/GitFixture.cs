@@ -4,14 +4,15 @@ using System.Text;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// git for a test's fixture (TESTGIT1): the one runner the driver's test classes share, so each reads git's two streams
-/// the one way that cannot wait forever.
+/// git for a test's fixture (TESTGIT1): the runner the driver's test classes share, so each reads git's two streams the
+/// one way that cannot wait forever.
 /// </summary>
 /// <remarks>
 /// 🔴 Both reads start before anything is written to git or waited on. A helper that read stdout to its end and only then
 /// stderr waited on git forever once git wrote more to stderr than its pipe holds: `add -A` where line endings convert
 /// writes a warning per file, and one such helper held the merge's real-process half for 1 h 33 m (FIX-LOG 2026-10-04).
-/// Each class kept its own copy of that read, and a copy is where it comes back, so the classes call this instead.
+/// Classes kept their own copies of that read, and a copy is where it comes back, so a class calls this instead of keeping
+/// one.
 ///
 /// Both streams are read as UTF-8, which is what git writes. Nothing here judges the exit: a step whose failure matters
 /// asserts on <see cref="GitRun.ExitCode"/> itself.
@@ -40,6 +41,13 @@ internal static class GitFixture
 
         return StartAsync(info, input);
     }
+
+    /// <summary>
+    /// git with its arguments as one command line, for <see cref="GitTree"/>, whose callers write them that way and wait
+    /// for the answer. Blocking on it is safe: nothing below resumes on the caller's context.
+    /// </summary>
+    public static GitRun RunLine(string cwd, string commandLine) =>
+        StartAsync(new ProcessStartInfo("git", commandLine) { WorkingDirectory = cwd }, null).GetAwaiter().GetResult();
 
     private static async Task<GitRun> StartAsync(ProcessStartInfo info, string? input)
     {

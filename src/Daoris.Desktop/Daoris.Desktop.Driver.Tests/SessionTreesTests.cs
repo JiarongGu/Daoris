@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -207,7 +207,7 @@ public sealed class SessionTreesTests : IDisposable
         var error = await Assert.ThrowsAsync<DriverException>(() => trees.OpenAsync(inside, "x", "default"));
 
         Assert.Contains("INSIDE", error.Message);
-        var (_, worktrees, _) = await GitTupleAsync(outer, "worktree", "list");
+        var worktrees = await GitAsync(outer, "worktree", "list");
         Assert.DoesNotContain("daoris", worktrees);
     }
 
@@ -262,8 +262,8 @@ public sealed class SessionTreesTests : IDisposable
             var deep = string.Concat(Enumerable.Repeat(segment, room / segment.Length)) + "x.ts";
             Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(root, deep))!);
             await File.WriteAllTextAsync(Path.Combine(root, deep), "x\n");
-            var added = await GitTupleAsync(root, "add", ".");
-            Assert.True(added.Code == 0, $"the fixture must fit under its own root: {added.Stderr}");
+            var added = await RunAsync(root, "add", ".");
+            Assert.True(added.ExitCode == 0, $"the fixture must fit under its own root: {added.Stderr}");
             await GitAsync(root, "commit", "-m", "a deep file");
 
             var opened = await new SessionTrees(home).OpenAsync(root, "engine", "aurora");
@@ -350,30 +350,6 @@ public sealed class SessionTreesTests : IDisposable
         await GitAsync(root, "add", ".");
         await GitAsync(root, "commit", "-m", "first");
         return root;
-    }
-
-    private static async Task<string> GitAsync(string cwd, params string[] arguments)
-    {
-        var (_, stdout, _) = await GitTupleAsync(cwd, arguments);
-        return stdout;
-    }
-
-    private static async Task<(int Code, string Stdout, string Stderr)> GitTupleAsync(
-        string cwd, params string[] arguments)
-    {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = cwd,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        return (process.ExitCode, await stdout, await stderr);
     }
 
     /// <summary>Walk up from the test binary to the workspace manifest — the family's own locator shape.</summary>
