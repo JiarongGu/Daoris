@@ -248,6 +248,29 @@ public sealed class DriverCommandTests
         Assert.DoesNotContain("MachineLog", console);
     }
 
+    /// <summary>
+    /// GIT1c (D147 §3.3, D50): the branch list is a door the usage names, routed by the host to its console before the machine
+    /// log opens, since that open prunes old files and the list writes nothing anywhere. The words are the library's, which
+    /// <c>GitBranchesCommandTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_branch_list_and_the_host_routes_it_before_anything_is_written()
+    {
+        Assert.Contains("\n  git branches [--repository <name>] [--all] [--json]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.StartsWith("usage: daoris-driver git branches [--repository <name>] [--all] [--json]", GitBranchesCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var git = program.IndexOf("if (args is [\"git\", .. var gitArgs])", StringComparison.Ordinal);
+        var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
+        Assert.True(git > 0 && log > git, $"the branch list routed at {git}, the machine log opened at {log}");
+        Assert.Contains("GitConsole.RunAsync(gitArgs)", program);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "GitConsole.cs"));
+        Assert.Contains("GitBranchesCommand.Read(args, out var problem)", console);
+        Assert.Contains("GitBranchesCommand.RunAsync(", console);
+        Assert.DoesNotContain("MachineLog", console);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

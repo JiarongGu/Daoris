@@ -132,6 +132,14 @@ using Daoris.Driver;
 //                 its landing, and what stood when it started, each from the store that keeps it, and a link nothing keeps
 //                 said missing. It writes nothing; the screen's door to the same read is a row of its own.
 //
+//   git branches [--repository <name>] [--all] [--json]
+//                 each repository's line and branches by kind (GIT1c, D147 §2.2, §3.3): the line with how it stands to
+//                 origin's copy and when the checkout last fetched, the sessions' branches named by their sessions, the
+//                 landed ones with whether they are on origin and their pull request, yours, and how many only origin
+//                 holds, each with its distance from the line, from one `git for-each-ref` per repository through the git
+//                 Tools resolves; and the git each read ran, ready to copy. The repositories holding Daoris's branches, the
+//                 rest named (D112); --all every one. It writes nothing.
+//
 //   update [--install <folder>] · update --when-idle | --now | --cancel [--install <folder>]
 //                 an install's update (UPDATE1, D139): what `publish:desktop --stage` put beside the install, what holds
 //                 for it and how the last swap ended; or the word on it, written to <home>/update.json as the window's
@@ -174,6 +182,12 @@ if (OperatingSystem.IsWindows())
 if (args is ["trace", .. var traceArgs])
 {
     return await Daoris.Driver.Host.TraceConsole.RunAsync(traceArgs);
+}
+
+// The branch list (GIT1c, D147 §3.3, D50): a read, routed before the machine log opens for the trace's reason, with its own catch.
+if (args is ["git", .. var gitArgs])
+{
+    return await Daoris.Driver.Host.GitConsole.RunAsync(gitArgs);
 }
 
 // The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its

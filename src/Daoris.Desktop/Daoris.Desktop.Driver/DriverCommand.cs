@@ -91,6 +91,10 @@ public static class DriverCommand
           trace <commit|session|quest>  ·  trace commit|session|quest <id>
               one read back to the ask: the person's words and go-aheads, the quest's requirements and answers, each
               session's agent, account, instruction, rules and landing, each from the store that keeps it. Reads only.
+          git branches [--repository <name>] [--all] [--json]
+              each repository's line and branches: the sessions', the landed (on origin or not, their pull
+              request), yours, and how many only origin holds, each against the line; and the git each read
+              ran. Those holding Daoris's branches, every one with --all. Reads only.
           update [--install <folder>]  ·  update --when-idle | --now | --cancel [--install <folder>]
               what is staged beside the install and how the last swap ended; or install it when idle (the
               default), now (ending what runs as a close does), or not now, as the window's banner does.
