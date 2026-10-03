@@ -35,9 +35,10 @@ Three places keep a menu that is not the page's:
 | A text field (an input, a textarea, the terminal) | The engine's own: cut, copy, paste | Pasting from the page needs a clipboard permission the engine's own menu does not, and an edit menu is the one menu every field already has |
 | The app strip's own space | The window's system menu, through `showSystemMenu` | It is the title bar, and a caption's right-click is the window's (D56) |
 | Daoris's browser (`daoris-browser`, D99) | The engine's own | It shows other sites' pages, holds no Daoris page and no handler of the page's runs there; its menu is a browser's (open in a new tab, save, inspect) |
+| The page in a person's own browser (no shell, D47 §4) | The browser's own, wherever no surface offers acts | It is the person's browser, with its own acts (a new tab, its translation, its extensions); the page's menu opens only for a surface's acts |
 
-**Where nothing is offered, the engine's menu is suppressed**: a web page's *Back*, *Reload* and *Inspect* are not
-this application's acts.
+**On the desktop, where nothing is offered, the engine's menu is suppressed**: a web page's *Back*, *Reload* and
+*Inspect* are not this application's acts.
 
 ## 3. What a press is on
 
@@ -51,7 +52,8 @@ The handler reads what was pressed, in this order:
    - **a link**: *Open*, *Open in Daoris's browser*, *Copy link*;
    - **a code span or a path**, where no text is selected: *Copy*;
    - **the nearest surface that offers acts**: its own (§4).
-5. **None**: nothing, and the engine's menu suppressed; the strip's own space opens the system menu.
+5. **None**: nothing, and the engine's menu suppressed; the strip's own space opens the system menu. In a browser, a
+   press no surface offers acts for is the browser's, a link and selected words included.
 
 *Open* on a link is the link's own click, so it opens where the person chose (BRW7). *Open in Daoris's browser* is
 offered only on a shell, for a web address, and never for a link that must open in the system's browser (a sign-in, D78
