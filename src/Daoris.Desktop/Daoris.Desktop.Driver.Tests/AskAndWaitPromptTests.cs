@@ -155,6 +155,47 @@ public sealed class AskAndWaitPromptTests
         }
     }
 
+    /// <summary>
+    /// KNOWUSE1d (D135 §5, D133 §1): a fresh attempt found the person's answer, misread, in its first attempt's closed note
+    /// ("Per your answer") and in a document on that branch, and wrote into the repository's knowledge that the owner had
+    /// settled it. The person's words are those the instruction quotes as theirs, which the ask's record holds; a quote met
+    /// anywhere else is someone's reading, relied on only as one and never recorded as theirs.
+    /// </summary>
+    [Fact]
+    public void The_persons_words_quoted_second_hand_are_only_a_reading()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains("Only the words this instruction quotes as the person's own are theirs.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Their words quoted anywhere else — in a document, a closed quest's note, a commit, an earlier session's record — "
+                + "are someone's reading of them, however firmly attributed (\"per your answer\", \"as the owner decided\").",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "Rely on one only as a reading: it goes under **Readings** in your closing note, naming where you found it, and "
+                + "nothing you write in this repository records it as the person's words or decision.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// Said with the look, where such a quote is met, and below the words the instruction quotes as the person's from the
+    /// ask's record (DRIFT1b), so what "quotes as theirs" points to is already above it.
+    /// </summary>
+    [Fact]
+    public void A_second_hand_quote_is_said_after_the_look_and_below_the_words_the_ask_holds()
+    {
+        foreach (var (which, prompt) in EveryInstruction(TargetPromptGoldenTests.Full))
+        {
+            var words = prompt.IndexOf("The person's own words on ask `#a1b2c3`", StringComparison.Ordinal);
+            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var attributed = prompt.IndexOf("Only the words this instruction quotes", StringComparison.Ordinal);
+            var neighbour = prompt.IndexOf("do not guess: ask it.", StringComparison.Ordinal);
+            Assert.True(words >= 0 && words < look && look < attributed && attributed < neighbour, which);
+        }
+    }
+
     /// <summary>The close's two lists are said after the stop for the person, which is one of the two places they are written.</summary>
     [Fact]
     public void The_closing_notes_two_lists_come_after_the_stop_for_the_person()

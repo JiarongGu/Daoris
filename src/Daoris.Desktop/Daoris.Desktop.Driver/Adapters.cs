@@ -431,8 +431,9 @@ public static class TargetPrompt
     /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
     /// out of it; and only then to the person, for what no source holds. A session that asks or stops
     /// commits, ends its turn and keeps the quest, and the driver starts it again here with the answer.
-    /// Last, how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart
-    /// from the readings the session took, each naming its source.
+    /// Beside the look, that the person's words met second-hand are a reading (KNOWUSE1d, D135 §5); last,
+    /// how what reaches the person is written (KNOWUSE1c, D135 §4): what only they can give, apart from the
+    /// readings the session took, each naming its source.
     /// </summary>
     /// <remarks>
     /// The person's stop once offered "a choice between options that is theirs", and a session read which
@@ -452,6 +453,8 @@ public static class TargetPrompt
         note which reading you took and on what evidence, so the person can correct it in review rather than
         be stopped by it.
 
+        {Attributed}
+
         {Needs(target)} Publish a quest to it saying
         what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
         on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
@@ -464,6 +467,25 @@ public static class TargetPrompt
         started again here, in this tree, with their words.
 
         {Closing}
+        """;
+
+    /// <summary>
+    /// The person's words met second-hand while looking (KNOWUSE1d, D135 §5): theirs are the words this instruction quotes as
+    /// theirs, which the ask's record holds (D133 §1); a quote anywhere else is someone's reading, relied on only as one and
+    /// never recorded as theirs. Said for every quest alike: on one no ask asked, nothing quoted second-hand is theirs either.
+    /// </summary>
+    /// <remarks>
+    /// A fresh attempt at a ticket found the person's answer, as an earlier attempt had misread it, in that attempt's closed
+    /// note ("per your answer") and in a document on its branch, and wrote into the repository's knowledge that the person
+    /// had settled it, where every later session would meet the misreading as knowledge.
+    /// </remarks>
+    private const string Attributed =
+        """
+        Only the words this instruction quotes as the person's own are theirs. Their words quoted anywhere
+        else — in a document, a closed quest's note, a commit, an earlier session's record — are someone's
+        reading of them, however firmly attributed ("per your answer", "as the owner decided"). Rely on one
+        only as a reading: it goes under **Readings** in your closing note, naming where you found it, and
+        nothing you write in this repository records it as the person's words or decision.
         """;
 
     /// <summary>

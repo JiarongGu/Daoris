@@ -10128,3 +10128,26 @@ nothing, an ask's with every section, a carry-on after the person's answer) pinn
 wording and failed before the instruction did. Not covered: no real agent was handed it, so whether a harness keeps the
 two lists and cites its sources is not measured, which a canary turn on the owner's install is for; nothing checks a
 closing note's shape, by design; an index named otherwise, or kept deeper, is not named.
+
+**KNOWUSE1d, built 2026-10-03: the person's words quoted second-hand are only a reading.** Every driven instruction says,
+below the look (`TargetPrompt.Attributed`), that only the words it quotes as the person's own are theirs: their words on
+the ask (DRIFT1b), a requirement's quote, a go-ahead's answer, the standing answer and a parked session's answer, each from
+a record Daoris keeps. Their words quoted anywhere else (a document, a closed quest's note, a commit, an earlier session's
+record) are someone's reading, however firmly attributed. A session relies on one only as a reading, under *Readings* with
+where it found it, and writes nothing into the repository that records it as the person's words or decision. Choices §5
+left open:
+- **What the instruction quotes is the measure**, not the ask's record read again: no connector tool reads an ask's
+  words, and the instruction already carries them. A word the bound left out is said to be kept on the ask's record, so a
+  quote of one met elsewhere reads as a reading, which is the safe side.
+- **One sentence for every quest**, on an ask or not, its words read or not: where the instruction quotes none of the
+  person's words, nothing met second-hand is theirs either.
+- **Said, not checked.** Whether a note or a document a session writes attributes words truly is a judgement (D54);
+  DRIFT1d's done already refuses a departure quoting words that are not on the ask.
+- **Below the look and above asking another repository**, where such a quote is met, and below the words the instruction
+  quotes, so what it points to is above it.
+
+Proof: `AskAndWaitPromptTests` (every instruction says it; on an ask, after the person's words and the look and before
+asking another repository) and the three goldens of `TargetPromptGoldenTests` gaining the paragraph, each seen failing
+before the wording. Not covered: no real agent was handed it, so whether a session stops recording an attributed reading
+as the person's is not measured; the repository document that already records the misread answer stands until the
+person's request (KNOWUSE4) reaches that repository.
