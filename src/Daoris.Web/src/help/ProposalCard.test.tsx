@@ -375,3 +375,52 @@ describe('the kinds that reach every door', () => {
     }
   });
 });
+
+// DRIFT1d2 (D133 §4): the person's yes to a done's departure, its card showing each departure with the person's words it
+// relied on, as the quest's page does, and its press the yes.
+
+const ACCEPT: HelpProposal = {
+  id: 'p12', kind: 'accept',
+  describe: 'Accept the departure on quest `#q3done00` “Stream the tiles”, for `engine`: it departed from requirement 2, '
+    + 'and what it held goes on — its next step, “Report on q3done00” to `game`, is published.',
+  terminal: 'daoris-driver quest accept q3done00',
+  why: 'the person said the first frame may go over',
+  accept: {
+    quest: 'q3done00', title: 'Stream the tiles',
+    departures: [{
+      requirement: 2, quote: 'keep the budget under the ceiling', check: 'no frame hydrates past the ceiling',
+      departed: 'a cold cache cannot hold the ceiling on its first frame', words: 'keep the budget under the ceiling',
+    }],
+  },
+};
+
+describe('a yes to a departure', () => {
+  it('shows each departure with the person’s words it relied on before the yes, and its Apply is the yes', async () => {
+    await press(ACCEPT, 'Accept');
+
+    expect(screen.getByText('Ask Daoris proposes a yes')).toBeInTheDocument();
+    const departures = within(screen.getByRole('list', { name: 'what it departed from' }));
+    expect(departures.getByText('2')).toBeInTheDocument();
+    expect(departures.getAllByText('keep the budget under the ceiling')).toHaveLength(2);
+    expect(departures.getByText('no frame hydrates past the ceiling')).toBeInTheDocument();
+    expect(departures.getByText('departed')).toBeInTheDocument();
+    expect(departures.getByText('a cold cache cannot hold the ceiling on its first frame')).toBeInTheDocument();
+    expect(screen.getByText(/the departure stays on its record/)).toBeInTheDocument();
+    expect(screen.getByText(code(ACCEPT.terminal))).toBeInTheDocument();
+  });
+
+  it('speaks 中文, the person’s words and the done’s as they were written', async () => {
+    const { default: i18n } = await import('../i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      render(<ul><ProposalCard proposal={ACCEPT} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('问道衍提议采纳')).toBeInTheDocument();
+      expect(within(screen.getByRole('list', { name: '偏离之处' })).getByText('偏离')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '采纳' })).toBeInTheDocument();
+      expect(screen.getAllByText('keep the budget under the ceiling')).toHaveLength(2);
+    } finally {
+      cleanup();
+      await i18n.changeLanguage('en');
+    }
+  });
+});

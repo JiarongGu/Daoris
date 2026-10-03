@@ -10,12 +10,13 @@ import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } 
 import { Button, Icon, type IconName, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { Note } from '../work/Note';
+import { QuestRequirements } from './Requirements';
 import { TrustAsk } from '../work/TrustAsk';
 import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 
 /** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
-type QuestAct = 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'resume' | 'retry' | 'trust' | 'session';
+type QuestAct = 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'accept' | 'resume' | 'retry' | 'trust' | 'session';
 
 /** Each act's name, the one its button says, and its glyph in a menu. */
 const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
@@ -25,6 +26,7 @@ const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
   decline: { label: 'quests.detail.decline' },
   abandon: { label: 'quests.detail.abandon' },
   delete: { label: 'quests.detail.delete', icon: 'remove' },
+  accept: { label: 'quests.requirements.accept', icon: 'check' },
   resume: { label: 'quests.detail.resume', icon: 'resume' },
   retry: { label: 'quests.detail.retry', icon: 'refresh' },
   trust: { label: 'trust.open', icon: 'shield' },
@@ -76,11 +78,15 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   listing first and abandoning on its second press with the person's reason (§3.1). *Resume* stands under *Sitting* for
  *   its own pause, where *Try again* stands for a stop; for another's pause the sentence names whose, and a door opens it.
  *   After an abandon it says when, *What went* and *What stayed* (§4.2). A browser names the terminal's commands instead.
+ * - **What the person required, and how its done answered** (DRIFT1d2, D133 §3–§4): each requirement in their words with
+ *   its check, met or departed with the reason and the words it relied on, after the body. A departure that holds the
+ *   quest for their yes is what it waits on, so it moves above the body, as a conflict sits, with *Accept the departure*:
+ *   one press, the service's accept door, and its header says *awaits your yes*.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
-  busy = false, retrying = false, trusting = false, granting = false, dismissing = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, work,
+  busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
+  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work,
 }: {
   quest: Quest;
   /** Its lanes as its repository declares them (D115 §2.2), each named where its registration says. */
@@ -104,6 +110,8 @@ export function QuestPage({
   trusting?: boolean;
   granting?: boolean;
   dismissing?: boolean;
+  /** The person's yes to a departure is on its way (DRIFT1d2). */
+  accepting?: boolean;
   onRespond: (action: 'take' | 'done' | 'decline', reason?: string) => void;
   /** Delete the quest (D95) — absent where there is no door to do it. */
   onDelete?: () => void;
@@ -122,6 +130,11 @@ export function QuestPage({
   onAttend?: (session: string) => void;
   /** Open an ask's page: where the pause that holds this quest is resumed (PAUSE1e). */
   onOpenAsk?: (id: string) => void;
+  /**
+   * The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): the service's accept door, which
+   * lets what the departure held go on. Absent where there is no door to say it through.
+   */
+  onAccept?: () => void;
   /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
 }) {
@@ -171,7 +184,12 @@ export function QuestPage({
   const ownResume = (ownPause || pausedUnseen) && work !== undefined;
   const retryable = (because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry !== undefined;
   const trustable = Boolean(hold && onGrant && onTrusting && !trusting);
+  // A departure that holds it for the person's yes (DRIFT1d2): what it waits on, so the yes leads its body's acts.
+  const held = quest.held === true;
+  const requirements = quest.requirements ?? [];
+  const acceptable = held && onAccept !== undefined;
   const bodyActs: QuestAct[] = [
+    ...(acceptable ? ['accept' as const] : []),
     ...(ownResume ? ['resume' as const] : []),
     ...(retryable ? ['retry' as const] : []),
     ...(trustable ? ['trust' as const] : []),
@@ -186,6 +204,7 @@ export function QuestPage({
       case 'decline': setAsking('decline'); return;
       case 'abandon': setListed(work!.plan); setAsking('abandon'); return;
       case 'delete': setAsking('delete'); return;
+      case 'accept': onAccept?.(); return;
       case 'resume': work?.onResume(); return;
       case 'retry': onRetry?.(); return;
       case 'trust': onTrusting?.(true); return;
@@ -210,7 +229,7 @@ export function QuestPage({
       ...[...headActs, ...bodyActs].map((act) => ({
         id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon,
         // What waits on a press waits in the menu too: the header's on the quest's own, Try again on its own.
-        disabled: act === 'retry' ? retrying : act === 'session' || act === 'trust' ? false : waiting,
+        disabled: act === 'retry' ? retrying : act === 'accept' ? accepting : act === 'session' || act === 'trust' ? false : waiting,
         onSelect: () => press(act),
       })),
       { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id },
@@ -220,7 +239,13 @@ export function QuestPage({
   const head = (
     <PageHead
       title={quest.title}
-      pills={<Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>}
+      pills={(
+        <>
+          <Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>
+          {/* Open's hue is the person's (D126 §2.3): a departure waits on their yes (DRIFT1d2). */}
+          {held && <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>}
+        </>
+      )}
       id={`#${quest.id}`}
       line={t(`statusHint.${quest.status}`)}
       acts={acts || undefined}
@@ -391,6 +416,22 @@ export function QuestPage({
         </div>
       )}
 
+      {held && requirements.length > 0 && (
+        /* A departure that holds the quest for the person's yes (DRIFT1d2, D133 §4): what it waits on, so above the body,
+           as a conflict sits, with the yes where the departure is read. */
+        <QuestRequirements
+          className="mb-4"
+          id={quest.id}
+          requirements={requirements}
+          answers={quest.answers}
+          status={quest.status}
+          held
+          next={quest.then?.[0]}
+          accepting={accepting}
+          onAccept={acceptable ? () => press('accept') : undefined}
+        />
+      )}
+
       {(quest.conflicts?.length ?? 0) > 0 && (
         /* A move that reached the remote second (D68 §5): kept on the quest for a person and never merged, so
            it sits above the body — it is what this quest is waiting on. The note is that session's own words. */
@@ -425,6 +466,19 @@ export function QuestPage({
       {/* The ask itself, as the asker wrote it: content, wrapping at the column's edge with the title above it (D141: a
           65ch body beside a title that ran the pane left 750 px empty on the install). */}
       <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{quest.body}</p>
+
+      {!held && requirements.length > 0 && (
+        /* What the person required (DRIFT1c, D133 §3), in their words: the measure, where the body above is the intake's
+           reading of the ask. Then how its done answered each, and when a departure was accepted. */
+        <QuestRequirements
+          className="mt-4"
+          id={quest.id}
+          requirements={requirements}
+          answers={quest.answers}
+          status={quest.status}
+          accepted={quest.accepted}
+        />
+      )}
 
       {(quest.links?.length ?? 0) > 0 && (
         /* The asker's addresses, as links — the service accepted only http and https, so each is an address

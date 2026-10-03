@@ -6,7 +6,9 @@ import { useAsksPart } from './asks/AsksPart';
 import { sentence } from './format';
 import { buildChain } from './map/chain';
 import { askItem, questsItem } from './opener';
-import { useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
+import {
+  useAcceptQuest, useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
+} from './queries';
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './quests/QuestComposer';
 import { QuestList } from './quests/QuestList';
 import {
@@ -130,6 +132,8 @@ export function useQuestsView({
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
   const remove = useDeleteQuest();
+  // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris-driver quest accept`'s twin.
+  const accept = useAcceptQuest();
   // The chosen quest's work on this machine (PAUSE1e, D132 §7.1): its plan while Quests is in front, and the three presses.
   const work = useWorkPlan(item && 'quest' in item ? { scope: 'quest', id: item.quest } : null, { enabled: active });
   const wiring = useRemotes().data;
@@ -159,7 +163,7 @@ export function useQuestsView({
   // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
   const nobody = registry.data !== undefined && adopters.length === 0;
   const target = (registry.data ?? []).find((row) => row.repository === draft.to);
-  const busy = publish.isPending || respond.isPending || remove.isPending || reading;
+  const busy = publish.isPending || respond.isPending || remove.isPending || accept.isPending || reading;
   // A quest's lanes as its repository names them (D115 §2.2): the id, and its title where the registration gives
   // one. The ids are the repository's words, so they are shown as it spells them.
   const laneNames = (quest: Quest) => {
@@ -231,6 +235,17 @@ export function useQuestsView({
       onError: failure(notify),
     });
 
+  // The person's yes to a departure (DRIFT1d2, D133 §4): the page stays on the quest as the answer left it, released, and
+  // a refusal (nothing waits for a yes) is the service's sentence, the quest unmoved.
+  const onAccept = (quest: Quest) =>
+    accept.mutate(quest.id, {
+      onSuccess: (result) => {
+        notify(result.message);
+        setHeld(result.quest);
+      },
+      onError: failure(notify),
+    });
+
   // The ＋'s kinds (D118 §2): asking first, since the regular task enters at the workspace (D65), then a quest to a
   // repository the person already knows.
   const kinds = [{ id: 'ask', label: t('asks.ask') }, { id: 'quest', label: t('quests.new') }];
@@ -278,7 +293,10 @@ export function useQuestsView({
         trusting={trustingFor === quest.id}
         granting={trust.isPending}
         dismissing={dismiss.isPending}
+        accepting={accept.isPending}
         onRespond={(action, reason) => onRespond(quest, action, reason ?? null)}
+        // The service's own door, so a browser on this machine says yes as the desktop does (D50).
+        onAccept={() => onAccept(quest)}
         onDelete={() => onDelete(quest)}
         onDismiss={(machine, sequence) => onDismiss(quest, machine, sequence)}
         // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered. Said as the

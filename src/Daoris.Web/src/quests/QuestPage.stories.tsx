@@ -3,8 +3,9 @@ import { buildChain } from '../map/chain';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import {
-  CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD_BY_PERSON, LANED, OPEN, PAUSED_ITSELF,
-  PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
+  ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD, HELD_BY_PERSON, HELD_CJK, LANED, MET,
+  OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REQUIRING, STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT,
+  WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -111,6 +112,30 @@ export const Deletable: Story = { args: { quest: DELETABLE } };
 
 /** A title in 中文, which the header wraps. */
 export const ChineseTitle: Story = { args: { quest: CJK } };
+
+// ——— What the person required, and how its done answered (DRIFT1d2, D133 §3–§4). *Open* above names none, and draws no
+// section.
+
+/** Taken, with what the person required in their words and each check; its done answers each. */
+export const ItsRequirements: Story = { args: { quest: REQUIRING } };
+
+/** Done, each requirement met, with how its check was met in the done's words. */
+export const RequirementsMet: Story = { args: { quest: MET } };
+
+/**
+ * A departure holds it for the person's yes: above the body, as a conflict sits, in open's hue, each departure with its
+ * reason and the words it relied on, what the yes publishes, and *Accept the departure*; its header says it awaits them.
+ */
+export const HeldForYourYes: Story = { args: { quest: HELD, onAccept: nothing } };
+
+/** The yes on its way: the press waits. */
+export const Accepting: Story = { args: { quest: HELD, onAccept: nothing, accepting: true } };
+
+/** Accepted: back after the body, the departure neutral, and when the person said yes. */
+export const DepartureAccepted: Story = { args: { quest: ACCEPTED, onAccept: nothing } };
+
+/** Held, in 中文: the person's words and the done's as written, the chrome in the window's language. */
+export const HeldForYourYesChinese: Story = { args: { quest: HELD_CJK, onAccept: nothing } };
 
 // ——— Its work on this machine (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header, beside *Decline…*; *Resume*
 // under *Sitting* for its own pause.

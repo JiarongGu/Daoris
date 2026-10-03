@@ -340,6 +340,15 @@ export const useRespondQuest = () => {
 };
 
 /**
+ * The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): the service publishes the step the
+ * departure held and a quest waiting on it goes on, so the quests and the asks are read again, as a respond's are.
+ */
+export const useAcceptQuest = () => {
+  const invalidate = useInvalidateQuestWork();
+  return useMutation({ mutationFn: (id: string) => api.acceptQuest(id), onSuccess: invalidate });
+};
+
+/**
  * Answer a driven session that parked to ask the person (STANDDOWN2): its record stays parked with
  * their words (ANSWER1b), and the same session goes on with them at the driver's next tick (D131). The
  * sessions are read again, so the page shows it going on (ANSWER1c) rather than still waiting.

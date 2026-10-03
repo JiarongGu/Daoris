@@ -23,19 +23,28 @@ export function keptFilters(filters: QuestFilters): Record<string, unknown> | nu
   return { ...(filters.to ? { to: filters.to } : {}), ...(filters.closed ? { closed: true } : {}) };
 }
 
-/** A group of the list's quests: where each is in its life (D41 §5). */
-export type QuestGroup = { group: 'open' | 'progress' | 'closed'; quests: Quest[] };
+/** A group of the list's quests: where each is in its life (D41 §5), and what awaits the person's yes (DRIFT1d2). */
+export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quests: Quest[] };
 
 /**
- * The quests by where they are in their life: open, taken, then closed where closed ones are shown. An empty group
- * is kept, and the list leaves it out, so the groups' order is one place.
+ * The quests by where they are in their life: what a departure holds for the person's yes first, then open, taken, then
+ * closed where closed ones are shown. An empty group is kept, and the list leaves it out, so the groups' order is one place.
+ *
+ * @remarks
+ * **A held quest is outstanding** (DRIFT1d, D133 §4): closed done, and listed by the service without closed ones, since
+ * what follows it waits on the person. Grouped by its status it fell in *Closed*, which the default list does not show, so
+ * the person never found it; it is first, as the asks are, since it waits on them, and never in *Closed* too.
  */
 export function questGroups(quests: readonly Quest[], closed: boolean): QuestGroup[] {
   return [
+    { group: 'held' as const, quests: quests.filter((quest) => quest.held === true) },
     { group: 'open' as const, quests: quests.filter((quest) => quest.status === 'Open') },
     { group: 'progress' as const, quests: quests.filter((quest) => quest.status === 'Taken') },
     ...(closed
-      ? [{ group: 'closed' as const, quests: quests.filter((quest) => quest.status === 'Done' || quest.status === 'Declined') }]
+      ? [{
+        group: 'closed' as const,
+        quests: quests.filter((quest) => (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true),
+      }]
       : []),
   ];
 }
