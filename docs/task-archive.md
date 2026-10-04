@@ -11039,3 +11039,20 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > over two branches that each append a note.
 
 **Outcome** 2026-10-04: built. After a merge (and at `--continue`, and in `--rerun`), the merge tool sets a blank line before each note label a union merge left glued under the line above it, in each decision file the merge changed, before it writes `docs/index/`, and names each note it set apart; `doc-duplicates` exports `gluedLabels`, so the fix and the check share one definition. Detail: D106's MERGEJOIN1 note, `79fdbf32`.
+
+
+## ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris (2026-10-04)
+
+> - [ ] **ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris** (design first;
+> canon, driver, service; owner, 2026-10-04: *"so this should also apply to the repositories Daoris drives too, and an
+> even better knowledge system since Daoris is there"* · *"and it should not break the general workflow if the system
+> running the code does not have Daoris (this is for sharing repositories)"*). ORIENT1 measured the cost here; a driven
+> session pays it in every repository. The floor is committed files that any agent on any machine reads (D48 §2a): a
+> generated index of where things are and a digest of the repository's decisions and knowledge, kept fresh by the
+> repository's own check; the canon teaches the principle and leaves the mechanism to the repository; the set-up session
+> writes both in the repository's own tooling (D124, D128). Where Daoris is present the knowledge service indexes them
+> too, the deployment may turn on the semantic tier (D24), and driven sessions are handed the search; without Daoris
+> nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
+> after.
+
+**Outcome** 2026-10-04: designed (D151). Every driven repository keeps a generated folder of where things are (a README, up to four lookup tables, outlines of large files, a decisions digest), written and checked by its own tooling so a clone without Daoris works; the canon changes three on-demand files and no always-loaded byte; the set-up publishes an index quest; where Daoris runs the service indexes it and hits name their lines, with the semantic tier per deployment and words-only answering with none. Build rows ORIENT2a–g; ORIENT1e reads the before from driven sessions' typed events. Detail: `docs/2026-10-04-orientation-everywhere-design.md`, D151.

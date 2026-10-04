@@ -148,17 +148,34 @@ Order: PLUGUI1c, then f and g; FRAME1i, then PLUGUI1h. Each is looked at on the 
 KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
 3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
 
-- [ ] **ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris** (design first;
-  canon, driver, service; owner, 2026-10-04: *"so this should also apply to the repositories Daoris drives too, and an
-  even better knowledge system since Daoris is there"* · *"and it should not break the general workflow if the system
-  running the code does not have Daoris (this is for sharing repositories)"*). ORIENT1 measured the cost here; a driven
-  session pays it in every repository. The floor is committed files that any agent on any machine reads (D48 §2a): a
-  generated index of where things are and a digest of the repository's decisions and knowledge, kept fresh by the
-  repository's own check; the canon teaches the principle and leaves the mechanism to the repository; the set-up session
-  writes both in the repository's own tooling (D124, D128). Where Daoris is present the knowledge service indexes them
-  too, the deployment may turn on the semantic tier (D24), and driven sessions are handed the search; without Daoris
-  nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
-  after.
+- [ ] **ORIENT2a — the canon teaches the index** (canon, examples). Every adopter learns to keep a generated index its
+  own tooling keeps true. `development-documents` gains the `index` role and a section, `doc-loader` and
+  `set-up-documents` a step each, with `templates/index.md`, a changelog entry and both examples re-synced. Contract:
+  design §1.3, D151 §3. Proof: canon tests, the D48 §2a scan; core bytes unchanged.
+- [ ] **ORIENT2b — the index declared** (cli). The brief's line is what sends a session to the index first. `index`
+  joins `ROLES` after `router`; `sync` renders its row in *Where things are*; `check` fails on a missing declared path;
+  Daoris declares `docs/index/README.md`. Contract: design §1.4, D151 §4. Proof: documents tests; the region measured,
+  about 120 bytes more.
+- [ ] **ORIENT2c — the index quest** (driver). A driven repository gets its index from its own session, once set up.
+  The press and plan publish *Give this repository an index of where things are*: inventory first, a generator at a
+  named path with its two commands granted, its check, the declaration, nothing else. Contract: design §2, D151 §5.
+  Proof: `SetupBriefTests`; the family rehearsal.
+- [ ] **ORIENT2d — the driven look starts at the index** (driver). A session told where things are reads ranges, not
+  files. `RepositoryIndexes.Find` names the declared `documents.index` first, and the look says to open its row, then
+  its lines, before searching. With none declared the instruction reads as today. Contract: design §3.3, D151 §6.
+  Proof: `AskAndWaitPromptTests` goldens, each failing first.
+- [ ] **ORIENT2e — the service indexes the index; hits name lines** (service). With Daoris present, a where-question
+  finds a place across the workspace. The scanner reads the declared index, split at headings, as
+  kind `index`; entries keep their lines; a hit names `path:start-end`; `knowledge_get` takes a range. Contract: design
+  §3.1–§3.2, D151 §6. Proof: scanner and tool tests; the tier line.
+- [ ] **ORIENT2f — the fresh-clone proof** (examples, tools). An index must work where nothing of Daoris is installed.
+  One example gains a generator, its check in its own test, and its declaration; the family rehearsal clones it with no
+  `daoris` and no service, moves a line, sees the check fail, regenerates, passes. Contract: design §4, D151 §2. Proof:
+  the new phase.
+- [ ] **ORIENT2g — the after** (the owner's install, read only). Once index quests land at the plan's pace, ORIENT1e
+  reads the same home again. Targets before the first edit: calls, characters, and shell searches and dumps halved;
+  whole reads of outlined files a quarter; 8 in 10 open the index; parks no higher. Contract: design §5.3–§5.4, D151
+  §7. Proof: an evidence note.
 - [ ] **KNOWUSE2b — the 46 through the bench** (the owner's). The 46 go through the floor against the work repository's
   own knowledge and through the model tier on the install's harness, with the account the owner chooses. KNOWUSE3 waits
   until the count answered in the person's place is zero. Contract: D135 §6 and its KNOWUSE2 note, whose command lines
