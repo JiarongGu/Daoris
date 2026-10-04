@@ -7,7 +7,7 @@ import type { Tool } from '../tools';
 
 const tool = (over: Partial<Tool> = {}): Tool => ({
   name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [],
-  machineDefault: null, present: true, ownLogin: 'in', ownAccount: null, workspaceDefaults: [], ...over,
+  machineDefault: null, present: true, ownLogin: 'in', ownAccount: null, ownRead: null, takesRules: false, workspaceDefaults: [], ...over,
 });
 
 const READY = {
@@ -46,7 +46,7 @@ describe('starters', () => {
     const out = starters({ ...READY, tools: [tool({ ownLogin: 'out' }), tool({ name: 'codex', product: 'Codex', ownLogin: 'unknown' })] });
 
     expect(out).toEqual([expect.objectContaining({
-      id: 'agent-signed-out', values: { tool: 'Claude Code' }, door: { view: 'settings', section: 'agents' },
+      id: 'agent-signed-out', values: { tool: 'Claude Code' }, door: { view: 'agents', item: 'claude-code', agentPart: 'accounts' },
       command: 'daoris agent login claude-code',
     })]);
     // A named account signed in is an account, whatever the tool's own home says.

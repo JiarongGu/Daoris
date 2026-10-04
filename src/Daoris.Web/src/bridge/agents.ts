@@ -183,11 +183,16 @@ export const useHarnessCancel = () =>
       call<{ cancelled: boolean }>('HARNESS_CANCEL', target),
   });
 
-/** Ask the tools again rather than answering from before — the person pressing "look again". */
+/**
+ * Ask the tools again rather than answering from before — the person pressing *Read again* (UX6e, D150 §5.3): every agent,
+ * or with `agent` that agent's accounts alone, one at a time, and its own sign-in. Never asked by a look, a timer or a view
+ * opening: only this press reads an account's state.
+ */
 export const useRefreshHarnesses = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: () => call<HarnessRoster>('HARNESSES', { refresh: true }),
+    mutationFn: (target?: { agent?: string }) =>
+      call<HarnessRoster>('HARNESSES', { refresh: true, ...(target?.agent ? { agent: target.agent } : {}) }),
     onSuccess: (roster) => {
       client.setQueryData(keys.harnesses, roster);
       // Looking again also lets a refused account through (AGT3b), which changes what a start takes.

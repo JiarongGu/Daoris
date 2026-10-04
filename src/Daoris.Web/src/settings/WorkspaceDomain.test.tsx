@@ -252,3 +252,48 @@ describe("the workspace domain: the machine's wiring", () => {
     expect(await screen.findByText(/environment names this machine's remote/i)).toBeTruthy();
   });
 });
+
+/**
+ * MAP1b: what a start in each workspace would run on, beside the workspaces. The circles are the registry's, the answer is
+ * the driver's, and the account is named the way the roster names it. Moved here from Settings → Agents' suite with UX6e,
+ * since the card is this domain's.
+ */
+describe('what a start in each workspace runs on', () => {
+  const ROSTER = {
+    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
+    adapter: 'claude-code',
+    harnesses: [{
+      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
+      machineDefault: 'personal', pinned: null, managed: null, pinnable: true, ownLogin: 'in',
+      profiles: [{ name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' }],
+    }],
+  };
+  const STARTS = {
+    adapter: 'claude-code',
+    starts: [{
+      job: 'work', workspace: 'default', adapter: 'claude-code', owner: 'claude-code', product: 'Claude Code',
+      profile: 'personal', profileFrom: 'machine', version: 'claude 9.9.9', versionFrom: 'unset',
+      commanded: false, refusal: null,
+    }],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('says what a start in each workspace would run on, asking the driver for the registry\'s circles', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'HARNESSES' ? ROSTER : type === 'STARTS' ? STARTS : WIRING));
+    show(<SettingsView notify={() => {}} section="workspace" />);
+
+    const row = await screen.findByRole('listitem', { name: 'a start in default' });
+    expect(within(row).getByText('personal')).toBeTruthy();
+    expect(within(row).getByText("this machine's default")).toBeTruthy();
+    expect(within(row).getByText('from PATH')).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STARTS', { payload: { workspaces: ['default'] } });
+  });
+});

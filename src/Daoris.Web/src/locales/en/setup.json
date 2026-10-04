@@ -25,7 +25,7 @@
   "setup.door.import": "Import a folder…",
   "setup.door.projects": "Open Repositories",
   "setup.door.workspace": "Open Workspace",
-  "setup.door.permissions": "Open Permissions",
+  "setup.door.agentRules": "Open what agents may do",
   "setup.copy": "copy {{command}}",
   "setup.copied": "copied",
   "setup.desktop": "An agent, Ask Daoris's agent, what is driven, how work lands and what agents may do are this machine's own: the desktop's Setup shows them.",

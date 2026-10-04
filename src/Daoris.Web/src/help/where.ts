@@ -36,12 +36,12 @@ function listed(views: readonly ViewId[]): string {
 // The window's own names (NAME1b), so the agent names a place the person can find.
 const VIEWS: Record<View, string> = {
   overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Repositories',
-  map: 'Map', convergence: 'Convergence', search: 'Search', plugins: 'Plugins', settings: 'Settings',
+  map: 'Map', convergence: 'Convergence', search: 'Search', agents: 'Agents', plugins: 'Plugins', settings: 'Settings',
 };
 
 const DOMAINS: Record<SettingsSection, string> = {
   start: 'Setup', appearance: 'Appearance', ai: 'AI features', workspace: 'Workspace', driver: 'Driver',
-  agents: 'Agents', tools: 'Tools', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser', logs: 'Machine log',
+  tools: 'Tools', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser', logs: 'Machine log',
 };
 
 /** The attended session as the preface names it — or null when none is attended, or it is not in the list. */

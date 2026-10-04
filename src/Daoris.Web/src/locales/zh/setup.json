@@ -25,7 +25,7 @@
   "setup.door.import": "导入文件夹…",
   "setup.door.projects": "打开仓库",
   "setup.door.workspace": "打开工作区",
-  "setup.door.permissions": "打开权限",
+  "setup.door.agentRules": "打开智能体可以做什么",
   "setup.copy": "复制 {{command}}",
   "setup.copied": "已复制",
   "setup.desktop": "智能体、问道衍的智能体、驱动范围、落地方式与智能体权限，都属于本机：桌面应用的「配置」会显示它们。",

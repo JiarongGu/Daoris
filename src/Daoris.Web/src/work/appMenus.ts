@@ -1,4 +1,5 @@
 import i18n from '../i18n';
+import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { MenuItem } from './AppMenu';
@@ -15,6 +16,11 @@ export type MenuAction =
   | { kind: 'settings'; section: SettingsSection; anchor?: SettingsAnchor }
   /** A view of the activity bar: Plugins, since PLUGUI1b (D119 §5). */
   | { kind: 'view'; view: View }
+  /**
+   * The Agents place (UX6e, D150 §2.4): an agent's page, or the part of one, which opens on the agent that has it where
+   * the item names none.
+   */
+  | { kind: 'agents'; agent?: string; part?: AgentPart }
   | { kind: 'scope'; workspace: string | null }
   | { kind: 'add' }
   | { kind: 'import' }
@@ -37,13 +43,15 @@ export type MenuAction =
  * The workspace list is the scope's second door, beside the status bar's switcher (WSP5): with
  * several it offers *every workspace* too, with one it names that one, and with none it says so.
  */
-export function appMenus({ attached, workspaces, scope, waiting }: {
+export function appMenus({ attached, workspaces, scope, waiting, agents = [] }: {
   attached: boolean;
   workspaces: readonly MenuWorkspace[];
   /** The workspace the window is scoped to, or null for every one. */
   scope: string | null;
   /** Proposals waiting on the person (PERM2), counted where they are answered. */
   waiting: number;
+  /** Each agent the Agents place lists, by its id and what a person calls it (UX6e): each opens its page. */
+  agents?: readonly { name: string; label: string }[];
 }): { daoris: MenuItem[]; workspace: MenuItem[]; agents: MenuItem[] } {
   const t = i18n.t.bind(i18n);
   const machine = (items: MenuItem[]) => (attached ? items : []);
@@ -88,31 +96,38 @@ export function appMenus({ attached, workspaces, scope, waiting }: {
     ]),
   ];
 
-  const agents: MenuItem[] = [
+  // D150 §2.4: each agent, which opens its page; then signing in to another account, what agents may do (the page of the
+  // agent Daoris hands the rules file, at that section), the proposals (Overview's rule rows), usage and AI features.
+  const agentItems: MenuItem[] = [
     ...machine([
-      { id: 'settings:agents', label: t('menu.agents.tools'), icon: 'account' },
-      { id: 'settings:permissions', label: t('menu.agents.rules'), icon: 'shield' },
+      ...agents.map((agent) => ({ id: `agent:${agent.name}`, label: agent.label, icon: 'account' as const })),
+      { id: 'agents:signIn', label: t('menu.agents.signIn'), icon: 'plus', separated: agents.length > 0 },
+      { id: 'agents:rules', label: t('menu.agents.rules'), icon: 'shield' },
       { id: 'proposals', label: t('menu.agents.proposals'), icon: 'inbox', badge: waiting },
       { id: 'usage', label: t('menu.agents.usage'), icon: 'gauge' },
     ]),
     { id: 'settings:ai', label: t('menu.agents.ai'), icon: 'search', separated: attached },
   ];
 
-  return { daoris, workspace, agents };
+  return { daoris, workspace, agents: agentItems };
 }
 
 /** What an item's id names — the one reading of the ids `appMenus` writes. */
 export function menuAction(id: string): MenuAction {
   if (id.startsWith('settings:')) return { kind: 'settings', section: id.slice('settings:'.length) as SettingsSection };
   if (id.startsWith('view:')) return { kind: 'view', view: id.slice('view:'.length) as View };
+  if (id.startsWith('agent:')) return { kind: 'agents', agent: id.slice('agent:'.length) };
   if (id.startsWith('scope:')) {
     const name = id.slice('scope:'.length);
     return { kind: 'scope', workspace: name === '*' ? null : name };
   }
   switch (id) {
-    // Proposals are answered beside the rules they would change; usage sits under the accounts.
-    case 'proposals': return { kind: 'settings', section: 'permissions', anchor: 'proposals' };
-    case 'usage': return { kind: 'settings', section: 'agents', anchor: 'usage' };
+    // D150 §2.4: the proposals are *What needs you*'s rule rows, which lead Overview; signing in, what agents may do and
+    // usage are on an agent's page (UX6e), the agent that has each where the item names none.
+    case 'proposals': return { kind: 'view', view: 'overview' };
+    case 'agents:signIn': return { kind: 'agents', part: 'accounts' };
+    case 'agents:rules': return { kind: 'agents', part: 'rules' };
+    case 'usage': return { kind: 'agents', part: 'usage' };
     case 'wire': return { kind: 'settings', section: 'workspace', anchor: 'wiring' };
     case 'add': return { kind: 'add' };
     case 'import': return { kind: 'import' };

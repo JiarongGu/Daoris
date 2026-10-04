@@ -75,7 +75,7 @@ describe('SettingsView in a browser', () => {
    * was asked for that it cannot show, one a shell remembered, opens on Appearance.
    */
   it('offers only what a browser may know, and opens a machine domain on Appearance', async () => {
-    view('agents');
+    view('driver');
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))

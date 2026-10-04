@@ -1,3 +1,4 @@
+import type { AgentPart } from './agents/agents';
 import type { View } from './commands';
 import type { StarterDoor } from './help/starters';
 import type { SettingsAnchor } from './SettingsView';
@@ -21,7 +22,7 @@ export function questsItem(item: string): { ask: string } | { quest: string } {
  * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, or the repository whose
  * code map the Map opens on.
  */
-export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; code?: string };
+export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; code?: string; agentPart?: AgentPart };
 
 /** What opening a view does, as a value. */
 export type Opening = {
@@ -40,6 +41,11 @@ export type Opening = {
    * list (§4), so this is no chosen item: it is the page one level in.
    */
   code?: string;
+  /**
+   * The part of an agent's page to open and bring into view (UX6e, D150 §2.4): its accounts, what it may do, its usage. A
+   * door naming a part and no agent opens the agent that has it.
+   */
+  agentPart?: AgentPart;
 };
 
 const listed = (view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -56,6 +62,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}): 
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
   if (view === 'projects' && part.drawer) plan.drawer = part.drawer;
   if (view === 'map' && part.code) plan.code = part.code;
+  if (view === 'agents' && part.agentPart) plan.agentPart = part.agentPart;
   return plan;
 }
 

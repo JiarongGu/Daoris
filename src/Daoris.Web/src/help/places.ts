@@ -16,8 +16,19 @@ export type HelpPlace = { view: string; domain?: string | null; part?: string | 
  */
 export const PLACE_VIEWS: readonly View[] = ['overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'settings'];
 
-export const PLACE_DOMAINS: readonly SettingsSection[] = [
+export const PLACE_DOMAINS: readonly (SettingsSection | 'agents')[] = [
   'start', 'appearance', 'ai', 'workspace', 'driver', 'agents', 'permissions', 'plugins', 'browser', 'logs',
+];
+
+/**
+ * The places the twin still names in Settings that moved to the Agents place (UX6e, D150 §3.1): Settings → Agents, its
+ * Usage, and Permissions' Proposals, which are what an agent may do. A go naming one opens its new home, so the room's
+ * places hold while the driver's twin still spells them the old way; the twins change together when it does.
+ */
+const MOVED: readonly { domain: string; part: string | null; door: StarterDoor }[] = [
+  { domain: 'agents', part: null, door: { view: 'agents' } },
+  { domain: 'agents', part: 'usage', door: { view: 'agents', agentPart: 'usage' } },
+  { domain: 'permissions', part: 'proposals', door: { view: 'agents', agentPart: 'rules' } },
 ];
 
 /** The parts, each within a view (Projects) or a Settings domain. */
@@ -46,6 +57,9 @@ export function placeDoor(place: HelpPlace): StarterDoor | null {
   if (domain !== null) {
     const section = view === 'settings' ? PLACE_DOMAINS.find((known) => known === domain) : undefined;
     if (!section) return null;
+    const moved = MOVED.find((each) => each.domain === section && each.part === part);
+    if (moved) return moved.door;
+    if (section === 'agents') return null;
     if (part === null) return { view, section };
     if (!PLACE_PARTS.some((known) => known.within === section && known.part === part)) return null;
     // A setup step is found by its own id in the guide (SETUP1a), a card by its domain's.

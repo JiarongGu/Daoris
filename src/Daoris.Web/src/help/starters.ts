@@ -1,3 +1,4 @@
+import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { Machine } from './machine';
@@ -6,10 +7,12 @@ import type { Machine } from './machine';
  * Where the screen that fixes a starter, or does a setup step, is: a view, and in Settings its domain
  * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
  * folder (SETUP1a). Since FRAME1c it may name the item it opens in its view — a session, a quest, a
- * repository, a plugin — which the application's one opener chooses there (D118 §3i).
+ * repository, a plugin — which the application's one opener chooses there (D118 §3i); since UX6e an agent
+ * and the part of its page.
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
+  agentPart?: AgentPart;
 };
 
 /**
@@ -51,7 +54,8 @@ export function starters(
     if (tool.present && tool.ownLogin === 'out' && !tool.accounts.some((account) => account.login === 'in')) {
       found.push({
         id: 'agent-signed-out', values: { tool: tool.product ?? tool.name },
-        door: { view: 'settings', section: 'agents' }, command: `daoris agent login ${tool.name}`,
+        // The agent's page, at its accounts (UX6e, D150 §5): where an account is signed in.
+        door: { view: 'agents', item: tool.name, agentPart: 'accounts' }, command: `daoris agent login ${tool.name}`,
       });
     }
   }

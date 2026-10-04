@@ -51,48 +51,29 @@ describe('the rules card', () => {
     invoke.mockReset();
   });
 
-  it('shows the defaults and each scope from the machine\'s own file, asking no service', async () => {
-    show(<SettingsView notify={() => {}} section="permissions" />);
+  /**
+   * UX6e (D150 §3.1): Daoris's defaults, the rules for every session on this machine and the proposals are what the agent
+   * may do, on its page. What is left here is the rules a workspace or a repository adds, with a door to the rest.
+   */
+  it('shows the rules a repository adds from the machine\'s own file, and says where the rest went', async () => {
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="permissions" onGo={onGo} />);
 
     expect(await screen.findByText('C:/somewhere/data/permissions.json')).toBeTruthy();
-    expect(screen.getByRole('listitem', { name: 'no-push' })).toBeTruthy();
     expect(within(screen.getByRole('list', { name: 'Repository engine' })).getByText('Bash(make:*)')).toBeTruthy();
+    expect(screen.queryByRole('listitem', { name: 'no-push' })).toBeNull();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULES', {});
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open what it may do' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'agents', agentPart: 'rules' });
   });
 
-  it('a default switched and a rule removed land on the bridge as the actions a terminal has', async () => {
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="permissions" />);
+  it('a rule removed lands on the bridge as the action a terminal has', async () => {
+    show(<SettingsView notify={() => {}} section="permissions" />);
 
-    const push = await screen.findByRole('listitem', { name: 'no-push' });
-    await userEvent.click(within(push).getByRole('checkbox'));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'default', id: 'no-push', on: false } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('The default no-push is off on this machine.'));
-
-    await userEvent.click(screen.getByRole('button', { name: 'remove Bash(make:*)' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'remove Bash(make:*)' }));
     expect(invoke).toHaveBeenCalledWith(
       'DAORIS.DRIVER', 'RULE_ACTION', { payload: { action: 'remove', rule: 'Bash(make:*)', scope: 'repository', name: 'engine' } });
-  });
-
-  /** PERM2 (D74): the person's answer to an agent's proposal lands as `daoris agent rules accept|decline` would. */
-  it('a proposal accepted on the screen lands on the bridge by its id, and says what changed', async () => {
-    const proposed = {
-      ...RULES,
-      proposals: [{
-        id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
-        why: 'The docs it needs are on the web.', session: 'i9n8t7k6', proposed: '2026-09-24T11:00:00Z',
-      }],
-    };
-    invoke.mockImplementation(async (_module: string, type: string) =>
-      (type === 'RULES' || type === 'RULE_PROPOSAL' ? proposed : WIRING));
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="permissions" />);
-
-    const row = await screen.findByRole('listitem', { name: 'proposal #p0000002' });
-    await userEvent.click(within(row).getByRole('button', { name: 'Accept' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      'Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.'));
   });
 
   /** A shell older than the rules answers something else to a question it never heard: no card, no blank page. */

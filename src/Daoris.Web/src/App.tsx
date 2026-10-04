@@ -35,9 +35,10 @@ import { useProjectsView } from './ProjectsView';
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useConsidered, useDismissUpdate, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules,
-  useSayUpdate, useSessionGroups, useSyncNow, useUntrusted, useUpdateState,
+  logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
+  useRules, useSayUpdate, useSessionGroups, useSyncNow, useUntrusted, useUpdateState,
 } from './shell';
+import { byTool } from './tools';
 import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
@@ -61,6 +62,8 @@ import { store, stored } from './lib/stored';
 import { figure } from './format';
 import { HarnessRuns } from './harnessRuns';
 import { usePluginsView } from './plugins/PluginsView';
+import { useAgentsView, useAgentsWaiting } from './agents/AgentsView';
+import type { AgentPart } from './agents/agents';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
 type Tab = View;
@@ -95,7 +98,9 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
  * (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g), and Convergence and Search (FRAME1f): every view but
  * Overview and Map, which have none (§4).
  */
-const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins', 'quests', 'projects', 'convergence', 'search', 'settings']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>([
+  'sessions', 'plugins', 'quests', 'projects', 'convergence', 'search', 'agents', 'settings',
+]);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
@@ -121,6 +126,8 @@ export function App() {
   const settingsSection = (lists.pane('settings').chosen as SettingsSection | null) ?? 'appearance';
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
+  // And the part of an agent's page a door named (UX6e, D150 §2.4): its accounts, what it may do, its usage.
+  const [agentPart, setAgentPart] = useState<AgentPart | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
@@ -212,6 +219,8 @@ export function App() {
   // What agents proposed about the rules (PERM2): the menus count those waiting, and the band lists them.
   const rules = useRules();
   const proposals = Array.isArray(rules.data?.proposals) ? rules.data.proposals : [];
+  // The agents this machine has, for the Agents menu (UX6e): the roster the frame holds, asked once and kept.
+  const roster = useHarnesses();
   // Where Sessions' list places each session (D126): Overview's badge counts the work to review the band lists (UX6c).
   // The frame reads the same answer under the same key on every view, so this asks nothing more; a browser has none.
   const sessionGroups = useSessionGroups();
@@ -249,6 +258,22 @@ export function App() {
     notify,
     onAsk: attached ? askSetup : undefined,
   });
+
+  // The Agents place (UX6e, D150 §5): held on every view, as Plugins is; it reads the roster the frame holds and the
+  // accounts' files, and opening it asks no account. A sign-in started there outlives leaving it (SIGNIN1).
+  const agentsPane = lists.pane('agents');
+  const agents = useAgentsView({
+    active: view === 'agents',
+    chosen: agentsPane.chosen,
+    onChoose: (item) => lists.choose('agents', item),
+    filters: agentsPane.filters,
+    onFilters: (filters) => lists.setFilters('agents', filters),
+    notify,
+    part: agentPart,
+    onAnchored: () => setAgentPart(null),
+  });
+  // Its badge (D150 §2.1): the accounts a list or a default holds that read signed out, in open's hue. A browser has none.
+  const agentsWaiting = useAgentsWaiting();
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
   // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
@@ -385,6 +410,7 @@ export function App() {
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
     else if (plan.view !== view && isListed(plan.view)) lists.reopen(plan.view);
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
+    setAgentPart(plan.agentPart ?? null);
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
     // A door naming a code map opens the Map on it; any other way onto the Map opens the workspace, as it always has.
@@ -425,12 +451,17 @@ export function App() {
     workspaces: holdings.data ?? [],
     scope: scope.workspace,
     waiting: proposals.filter((proposal) => proposal.state === 'waiting').length,
+    // Each agent installed here, as the Agents place lists it (UX6e, D150 §2.4).
+    agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
+      .filter((tool) => tool.present)
+      .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
   });
   const onMenu = (_menu: string, item: string) => {
     const action = menuAction(item);
     switch (action.kind) {
       case 'settings': openSettings(action.section, action.anchor); return;
       case 'view': open(action.view); return;
+      case 'agents': open('agents', action.agent ?? null, action.part ? { agentPart: action.part } : undefined); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
       case 'add': open('projects', null, { drawer: 'add' }); return;
       // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
@@ -592,9 +623,9 @@ export function App() {
         else if (item.ask) openAsk(item.ask);
       },
     } : {}),
-    // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is
-    // answered beside them. Only a shell reads the rules.
-    ...(attached ? { rule: () => openSettings('permissions') } : {}),
+    // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is answered beside them:
+    // what the agent may do, on its page since UX6e (D150 §3.1). Only a shell reads the rules.
+    ...(attached ? { rule: () => open('agents', null, { agentPart: 'rules' }) } : {}),
     // Work to review opens in Sessions with its review open (D126, D113): accepting needs looking. A shell's alone.
     ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent('review'); } } : {}),
   };
@@ -621,7 +652,7 @@ export function App() {
    * Convergence and Search (FRAME1f) moved onto it: each hands its list and its pages whole. Overview and Map have
    * no list (§4), and their page is their main area.
    */
-  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, convergence, search, settings };
+  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, convergence, search, agents, settings };
 
   // The right-click menu's doors (CTX1, D138 §3): a copy, said once copied, since nothing on the screen shows it; Search
   // with the words in its box; and, a shell's, Quick Ask with them quoted and Daoris's browser at the address.
@@ -805,8 +836,9 @@ export function App() {
             // Both are that status and wear its hue; outstanding quests are a quantity, in the accent.
             badge: target === 'quests' ? outstandingCount
               : target === 'overview' ? waiting
-                : target === 'sessions' ? sessionsWaiting : undefined,
-            tone: target === 'overview' || target === 'sessions' ? 'open' as const : undefined,
+                : target === 'sessions' ? sessionsWaiting
+                  : target === 'agents' ? agentsWaiting : undefined,
+            tone: target === 'overview' || target === 'sessions' || target === 'agents' ? 'open' as const : undefined,
           }))}
           // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
           end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}

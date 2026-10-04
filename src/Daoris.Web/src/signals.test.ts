@@ -263,7 +263,9 @@ describe('sittingSentence', () => {
     expect(waits).toContain('account-2、account-3 未登录');
     expect(waits).toContain('`daoris agent login claude-code --profile account-2`');
     expect(waits).toContain('`daoris agent login claude-code --profile account-3`');
-    expect(waits).toContain('设置 → 智能体');
+    // The Agents place, where Settings → Agents went (UX6e, D150 §5).
+    expect(waits).toContain('「智能体」');
+    expect(waits).not.toContain('设置 → 智能体');
     const none = sittingSentence(alone);
     expect(none).toContain('account-2、account-3 未登录');
     expect(none).toContain('`daoris agent login claude-code --profile account-3`');

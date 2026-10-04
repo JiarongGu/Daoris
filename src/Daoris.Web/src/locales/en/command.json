@@ -5,6 +5,7 @@
   "command.go.convergence": "Convergence",
   "command.go.map": "Map",
   "command.go.search": "Search",
+  "command.go.agents": "Agents",
   "command.go.settings": "Settings",
   "command.go.sessions": "Sessions",
   "command.go.plugins": "Plugins",

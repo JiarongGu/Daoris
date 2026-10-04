@@ -1,25 +1,25 @@
 import { useTranslation } from 'react-i18next';
+import type { StarterDoor } from '../help/starters';
 import { useRegistry } from '../queries';
-import {
-  useAcross, useDriver, useRuleAction, useRuleProposal, useRules, useSetReadAcross, useSetWriteAcross,
-} from '../shell';
-import { failure, type Notify, useErrorNotify } from '../ui';
+import { useAcross, useDriver, useRuleAction, useRules, useSetReadAcross, useSetWriteAcross } from '../shell';
+import { Button, failure, Inline, type Notify, useErrorNotify } from '../ui';
 import { workspacesOf } from '../workspaces';
 import { AcrossList } from './Across';
 import { AgentRules } from './AgentRules';
 import { DomainLoading } from './DomainLoading';
-import { proposalChange } from './proposals';
 
 /**
  * What an agent Daoris starts may do: whether it reads and writes across repositories (READ1, D107), then
- * the machine's `permissions.json` (PERM1, D72), the file the driver composes each spawn's rules from and
- * `daoris agent rules` edits (D50).
+ * the rules a workspace or a repository adds in the machine's `permissions.json` (PERM1, D72), the file the
+ * driver composes each spawn's rules from and `daoris agent rules` edits (D50). Daoris's defaults, the rules
+ * for every session on this machine and the proposals are the agent's page's since UX6e (D150 §3.1); this
+ * domain says so with a door, until a workspace's and a repository's pages take the rest (UX6f, UX6g).
  */
-export function PermissionsDomain({ notify }: { notify: Notify }) {
+export function PermissionsDomain({ notify, onGo }: { notify: Notify; onGo?: (door: StarterDoor) => void }) {
   return (
     <>
       <AcrossSettings notify={notify} />
-      <RulesSettings notify={notify} />
+      <RulesSettings notify={notify} onGo={onGo} />
     </>
   );
 }
@@ -69,14 +69,13 @@ function AcrossSettings({ notify }: { notify: Notify }) {
 }
 
 /**
- * The rules (PERM1, D72). **The scopes a rule can reach are the registry's**: its circles and its
- * repositories, by the names the driver composes against. A refusal is the driver's sentence, verbatim.
+ * The rules a workspace or a repository adds (PERM1, D72). **The scopes a rule can reach are the registry's**: its
+ * circles and its repositories, by the names the driver composes against. A refusal is the driver's sentence, verbatim.
  */
-function RulesSettings({ notify }: { notify: Notify }) {
+function RulesSettings({ notify, onGo }: { notify: Notify; onGo?: (door: StarterDoor) => void }) {
   const { t } = useTranslation();
   const answer = useRules();
   const act = useRuleAction();
-  const settle = useRuleProposal();
   const registry = useRegistry('machine');
   useErrorNotify(answer.error, notify);
 
@@ -98,22 +97,23 @@ function RulesSettings({ notify }: { notify: Notify }) {
   return (
     <AgentRules
       rules={rules}
+      part="scoped"
       circles={circles}
       repositories={repositories}
-      busy={act.isPending || settle.isPending}
-      onAnswer={(id, accept) => {
-        const proposal = rules.proposals?.find((one) => one.id === id);
-        settle.mutate({ id, accept }, {
-          onSuccess: () => notify(t(accept ? 'settings.rules.proposals.accepted' : 'settings.rules.proposals.declined', {
-            change: proposal ? proposalChange(proposal) : `#${id}`,
-          })),
-          onError: failed,
-        });
-      }}
-      onSwitchDefault={(id, on) => act.mutate({ action: 'default', id, on }, {
-        onSuccess: () => notify(t('settings.rules.switched', { id, state: t(on ? 'settings.rules.on' : 'settings.rules.off') })),
-        onError: failed,
-      })}
+      busy={act.isPending}
+      // The rest of what agents may do is on the agent's page (UX6e): said once, with its door.
+      elsewhere={(
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-l-[3px] border-accent bg-page/60 px-3 py-2">
+          <span className="min-w-0 flex-1 basis-72 text-small text-ink-soft"><Inline text={t('settings.rules.elsewhere')} /></span>
+          {onGo && (
+            <Button variant="ghost" onClick={() => onGo({ view: 'agents', agentPart: 'rules' })}>
+              {t('settings.rules.elsewhereOpen')}
+            </Button>
+          )}
+        </div>
+      )}
+      onAnswer={() => {}}
+      onSwitchDefault={() => {}}
       onRemove={({ scope, name, rule }) => act.mutate({ action: 'remove', rule, scope, name }, {
         onSuccess: () => notify(t('settings.rules.removed', { rule, where: where(scope, name) })),
         onError: failed,

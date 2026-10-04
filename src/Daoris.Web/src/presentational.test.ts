@@ -64,6 +64,9 @@ const ORGANISMS = new Set<string>([
   // The Plugins view's organism (PLUGUI1b, D119): it holds the catalogue and the plugin's acts, so the list, the
   // strip, the page and the offer's page below it hold none.
   './plugins/PluginsView.tsx',
+  // The Agents place's organism (UX6e, D150 §5): it holds the roster, the accounts and every act on an agent, so the
+  // list, the strip, the page and an account's row below it hold none.
+  './agents/AgentsView.tsx',
 ]);
 
 /**
@@ -114,7 +117,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `update/` since UPDATE1: the update's banner, drawn from props — the application holds the update's hooks.
 // `menus/` since CTX1: the right-click menu and its one handler, handed the frame's doors — App and the secondary
 // window's root hold the bridge, so a surface that offers its acts reaches no data through it.
-const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx}}', {
+// `agents/` since UX6e: the Agents place's list, strip, page and account rows, drawn from props — AgentsView holds the data.
+const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

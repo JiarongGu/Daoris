@@ -23,7 +23,7 @@ export const LacksEverything: Story = {
       repositories: [], drivable: [], waiting: 2, unnamedLines: [], helper: null,
       tools: [{
         name: 'claude-code', product: 'Claude Code', maker: 'Anthropic', doors: [], accounts: [], machineDefault: null,
-        present: true, ownLogin: 'out', ownAccount: null, workspaceDefaults: [],
+        present: true, ownLogin: 'out', ownAccount: null, ownRead: null, takesRules: false, workspaceDefaults: [],
       }],
     }),
   },

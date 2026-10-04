@@ -98,9 +98,9 @@ describe('the command registry', () => {
 
     expect(ids(commands(world({ attached: false })))).not.toContain('go.plugins');
     expect(ids(commands(world({ current: 'plugins' })))).not.toContain('go.plugins');
-    // After Search, as the activity bar holds it, with Settings at the bar's foot.
+    // After Agents, which follows Search since UX6e (D150 §2.1), as the activity bar holds them, with Settings at the foot.
     expect(ids(shell).filter((id) => id.startsWith('go.'))).toEqual([
-      'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.search', 'go.plugins', 'go.settings',
+      'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.search', 'go.agents', 'go.plugins', 'go.settings',
     ]);
   });
 

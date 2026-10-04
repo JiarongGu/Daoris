@@ -394,7 +394,9 @@ describe('the doors into the Plugins view', () => {
     // A shell-only place is on the bar once the driver has answered.
     await within(bar()).findByRole('button', { name: 'Plugins' });
     const names = within(bar()).getAllByRole('button').map((place) => place.getAttribute('aria-label') ?? place.textContent);
-    expect(names.indexOf('Plugins')).toBe(names.indexOf('Search') + 1);
+    // After Agents, the place UX6e put after Search (D150 §2.1).
+    expect(names.indexOf('Agents')).toBe(names.indexOf('Search') + 1);
+    expect(names.indexOf('Plugins')).toBe(names.indexOf('Agents') + 1);
     await userEvent.click(within(bar()).getByRole('button', { name: 'Plugins' }));
     expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
     // The list's doors are named for it (D118 §3a).
