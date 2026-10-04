@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
+import { usePublishedOffer } from '../menus/mainOffer';
 
 /**
  * A page's header in the main area (D118 §3b, D119 §3.2): its title, with what is beside it (a version, its pills); its
@@ -228,6 +229,9 @@ const GUTTERS = {
  *
  * **A right-click on the page offers what is done to its record** (CTX1, D138 §2): `menu`, the page's header's acts and
  * its body's, from the owner each already has. A field, a link, a selection and a code span on it add their own.
+ *
+ * **The menu bar reads the same offer** (UX7a, D152 §2): Run's record group and Edit's *Copy ID* run what the page offers,
+ * by the page's own presses, so a menu row applies exactly when the page offers it.
  */
 export function ViewMain({ header, state = 'chosen', none, gone, gutters = 'page', menu, ref, children }: {
   /** The page header: the chosen item's title, its line and its acts, or the view's own where it has no list. */
@@ -245,6 +249,7 @@ export function ViewMain({ header, state = 'chosen', none, gone, gutters = 'page
   children?: ReactNode;
 }) {
   const notice = state === 'none' ? none : state === 'gone' ? gone : undefined;
+  usePublishedOffer(state === 'chosen' ? menu : null);
   return (
     <main
       ref={ref}

@@ -45,23 +45,26 @@ export function CommandCenter({ scope, detail, shortcut, onOpen, label }: {
       // centred on the strip while there is room, and narrows rather than covering the menus when
       // there is not. It is a container so what it holds can give way in order as it narrows.
       className={cn(
+        // Below 8rem it is its glyph alone, centred (UX7a, D152 §3.1): the seven menus keep their room, and a scope cut
+        // to a few letters said nothing the status bar does not.
         '@container flex h-6 w-full min-w-0 max-w-md items-center gap-2 overflow-hidden rounded-md px-2.5',
         'border border-line bg-sunken text-small text-ink-soft',
         'transition-colors hover:border-line-strong hover:bg-raised hover:text-ink',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
       )}
     >
-      <Icon name="search" size={12} className="shrink-0 text-ink-faint" />
+      {/* Centred once it is alone: the button is the container its children query, so the glyph centres itself. */}
+      <Icon name="search" size={12} className="shrink-0 text-ink-faint @max-[8rem]:mx-auto" />
 
       {/* The scope is the stable half: the detail yields first, because "which circle" survives a
           narrow window better than "which session". A shrink a hundredth of the detail's is what
           makes that the order, and the scope then ends in an ellipsis rather than a cut: at a 500px
           window it read `defau`, clipped mid-letter (UX5 U15). */}
-      <span className="min-w-0 shrink-[0.01] truncate font-medium">{scope}</span>
+      <span className="min-w-0 shrink-[0.01] truncate font-medium @max-[8rem]:hidden">{scope}</span>
       {detail && (
         <>
-          <span aria-hidden className="shrink-0 text-ink-faint">·</span>
-          <span className="min-w-0 truncate">{detail}</span>
+          <span aria-hidden className="shrink-0 text-ink-faint @max-[8rem]:hidden">·</span>
+          <span className="min-w-0 truncate @max-[8rem]:hidden">{detail}</span>
         </>
       )}
 

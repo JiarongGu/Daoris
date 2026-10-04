@@ -19,18 +19,18 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/e2e/platform.spec.ts` | 54 | 940 |
-| `src/Daoris.Web/src/App.test.tsx` | 41 | 804 |
-| `src/Daoris.Web/src/App.tsx` | 60 | 1107 |
+| `src/Daoris.Web/e2e/platform.spec.ts` | 55 | 942 |
+| `src/Daoris.Web/src/App.test.tsx` | 45 | 875 |
+| `src/Daoris.Web/src/App.tsx` | 65 | 1224 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 60 | 1124 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 56 | 1100 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 54 | 1145 |
-| `src/Daoris.Web/src/ui.tsx` | 70 | 1522 |
+| `src/Daoris.Web/src/ui.tsx` | 72 | 1569 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 41 | 782 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 183 | 3630 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 71 | 1335 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 72 | 1365 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 43 | 841 |
-| `src/Daoris.Web/src/work/frame.tsx` | 40 | 876 |
+| `src/Daoris.Web/src/work/frame.tsx` | 40 | 879 |
 
 ### Driver library (`driver`)
 

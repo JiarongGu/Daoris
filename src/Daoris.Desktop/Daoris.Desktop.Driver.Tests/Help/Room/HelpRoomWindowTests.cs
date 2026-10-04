@@ -36,6 +36,20 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
+    /// UX7a (D152 §1): the menu bar holds the window's verbs and places, as VS Code's does, and lists every key, so asked
+    /// where a verb is the helper names a menu the window has rather than guessing one, as HELP2's guessed a region.
+    /// </summary>
+    [Fact]
+    public void The_room_names_the_menu_bar_by_its_menus_and_where_every_key_is_listed()
+    {
+        var agents = HelpRoom.Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help", agents);
+        Assert.Contains("(`Ctrl+1` to `Ctrl+8`)", agents);
+        Assert.Contains("Help → Keyboard shortcuts lists every key", agents);
+    }
+
+    /// <summary>
     /// HELP10: PREVIEW1's file preview (D111) — its two doors, where it opens, that it reads and never writes — so the
     /// helper asked how to read a file an agent touched points at it rather than at an editor there is none of.
     /// </summary>

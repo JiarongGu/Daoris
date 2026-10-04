@@ -1,15 +1,19 @@
 import { useTranslation } from 'react-i18next';
+import { keysOf } from '../commands';
 import { Button, Icon, type IconName, Tip } from '../ui';
 import { LIST_DOOR } from './listKeys';
 
 /** A region the strip toggles: the view's list, the output panel, the right side bar. */
 export type LayoutRegion = 'list' | 'panel' | 'right';
 
-/** Each region's picture and key — VS Code's, so a hand that knows one knows the other. */
+/**
+ * Each region's picture and key — VS Code's, so a hand that knows one knows the other. The key is the table's (UX7a,
+ * D152 §3.5), View's item for the region, so the tip and the menu never print two.
+ */
 export const LAYOUT_KEYS: Record<LayoutRegion, { icon: IconName; keys: string }> = {
-  list: { icon: 'layoutRail', keys: 'Ctrl+B' },
-  panel: { icon: 'layoutPanel', keys: 'Ctrl+J' },
-  right: { icon: 'layoutRight', keys: 'Ctrl+Alt+B' },
+  list: { icon: 'layoutRail', keys: keysOf('view.list')[0]! },
+  panel: { icon: 'layoutPanel', keys: keysOf('view.panel')[0]! },
+  right: { icon: 'layoutRight', keys: keysOf('view.side')[0]! },
 };
 
 /**

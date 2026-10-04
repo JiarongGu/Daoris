@@ -1,143 +1,67 @@
-import i18n from '../i18n';
-import type { AgentPart } from '../agents/agents';
-import type { View } from '../commands';
-import type { WorkspaceTab } from '../projects/tabs';
-import type { SettingsAnchor, SettingsSection } from '../SettingsView';
+import type { CommandEntry, MenuId } from '../commands';
 import type { MenuItem } from './AppMenu';
 
-/** A workspace as the Workspace menu lists it: its name and how many repositories it holds. */
-export type MenuWorkspace = { name: string; repositories: number };
-
-/** What choosing a menu item does, read from its id (`menuAction`). */
-export type MenuAction =
-  /**
-   * A domain of Settings, and the part of it an item is named for, which the page brings into view
-   * (UX5 U72: *Usage* opened its domain at the top, a screen above the usage).
-   */
-  | { kind: 'settings'; section: SettingsSection; anchor?: SettingsAnchor }
-  /** A view of the activity bar: Plugins, since PLUGUI1b (D119 §5). */
-  | { kind: 'view'; view: View }
-  /**
-   * The Agents place (UX6e, D150 §2.4): an agent's page, or the part of one, which opens on the agent that has it where
-   * the item names none.
-   */
-  | { kind: 'agents'; agent?: string; part?: AgentPart }
-  /** A workspace's page at its tab (UX6g, D150 §2.4): the workspace in view's, which the application knows. */
-  | { kind: 'workspace'; tab: WorkspaceTab }
-  | { kind: 'scope'; workspace: string | null }
-  | { kind: 'add' }
-  | { kind: 'import' }
-  | { kind: 'refresh' }
-  | { kind: 'language' }
-  | { kind: 'about' }
-  | { kind: 'none' };
-
 /**
- * The app strip's menus (D75 §1): Daoris, Workspace and Agents are the setup domains, and each
- * setup item opens its own domain of Settings. *View* is the frame's and is not built here.
+ * One menu of the bar, as its rows (UX7a, D152 §2): built from the one table, so a menu holds exactly what the palette
+ * and the keys do, and nothing a list kept by care.
  *
  * @remarks
- * 🔴 **Before this every setup item opened the same long page at its top**: three names, one place.
+ * - **A rule between groups**, as VS Code's menus have them; a record's group (Run's *This session*, *This quest*) is named
+ *   over its first row, with the tip that says what to open while its acts are off (the design §3.3).
+ * - **A row is disabled where its surface exists and the state forbids it**, so its place is learned, and absent where the
+ *   surface is absent: the table has already left out what a browser may not know (D47 §4).
+ * - **A row prints its first key** at its right, as VS Code's do; a key a browser keeps is not printed there.
+ * - **A submenu is one row** (View's *Theme ▸*, *Language ▸*), at its first choice's place, its choices a radio group.
  *
- * Built as data, so a desktop's menus and a browser's are asserted without mounting the application
- * over a mocked bridge, and an item's id is the act it names (`menuAction`). A browser's menus hold
- * only what a browser may know (D47 §4): no machine item is offered there, disabled or otherwise.
- *
- * The workspace list is the scope's second door, beside the status bar's switcher (WSP5): with
- * several it offers *every workspace* too, with one it names that one, and with none it says so.
+ * Built as data, so a desktop's menus and a browser's are asserted without mounting the application.
  */
-export function appMenus({ attached, workspaces, scope, waiting, agents = [] }: {
-  attached: boolean;
-  workspaces: readonly MenuWorkspace[];
-  /** The workspace the window is scoped to, or null for every one. */
-  scope: string | null;
-  /** Proposals waiting on the person (PERM2), counted where they are answered. */
-  waiting: number;
-  /** Each agent the Agents place lists, by its id and what a person calls it (UX6e): each opens its page. */
-  agents?: readonly { name: string; label: string }[];
-}): { daoris: MenuItem[]; workspace: MenuItem[]; agents: MenuItem[] } {
-  const t = i18n.t.bind(i18n);
-  const machine = (items: MenuItem[]) => (attached ? items : []);
+export function menuRows(entries: readonly CommandEntry[], menu: MenuId): MenuItem[] {
+  const rows: MenuItem[] = [];
+  let group: string | null = null;
 
-  const daoris: MenuItem[] = [
-    // The setup guide (SETUP1a, D97): a browser's too, holding the one step a browser can know.
-    { id: 'settings:start', label: t('menu.setup'), icon: 'plan' },
-    { id: 'settings:appearance', label: t('menu.settings'), icon: 'settings' },
-    ...machine([
-      { id: 'settings:driver', label: t('menu.driver'), icon: 'frameWork' },
-      // The Plugins view (D119 §5), where it opened Settings → Plugins: its glossary door names `nav.plugins`.
-      { id: 'view:plugins', label: t('menu.plugins'), icon: 'plug' },
-    ]),
-    { id: 'refresh', label: t('menu.refresh'), icon: 'refresh', separated: true },
-    { id: 'language', label: t('menu.language'), icon: 'languages' },
-    { id: 'about', label: t('menu.about'), icon: 'info', separated: true },
-  ];
+  for (const entry of entries) {
+    if (entry.menu !== menu || !entry.menuItem) continue;
+    const separated = group !== null && entry.group !== group;
+    const firstOfGroup = entry.group !== group;
+    group = entry.group;
 
-  // With one workspace it IS the scope, whatever the scope says; "every" is a choice only among two.
-  const only = workspaces.length === 1;
-  const scopes: MenuItem[] = workspaces.length === 0
-    ? [{ id: 'none', label: t('menu.workspace.none'), disabled: true }]
-    : [
-      ...(workspaces.length > 1
-        ? [{ id: 'scope:*', label: t('scope.every', { count: workspaces.length }), checked: scope === null }]
-        : []),
-      ...workspaces.map((workspace) => ({
-        id: `scope:${workspace.name}`,
-        label: workspace.name,
-        badge: workspace.repositories,
-        checked: only || scope === workspace.name,
-      })),
-    ];
+    if (entry.submenu) {
+      const sub: MenuItem = {
+        id: entry.id,
+        label: entry.label,
+        ...(entry.checked !== undefined ? { checked: entry.checked } : {}),
+        ...(entry.enabled ? {} : { disabled: true }),
+      };
+      const parentId = entry.id.split(':')[0]!;
+      const parent = rows.find((row) => row.id === parentId);
+      if (parent) {
+        parent.sub!.push(sub);
+        continue;
+      }
+      rows.push({ id: parentId, label: entry.submenu, sub: [sub], ...(separated ? { separated } : {}) });
+      continue;
+    }
 
-  const workspace: MenuItem[] = [
-    ...scopes,
-    ...machine([
-      { id: 'add', label: t('menu.workspace.add'), icon: 'plus', separated: true },
-      { id: 'import', label: t('menu.workspace.import'), icon: 'projects' },
-      // D150 §2.4: the workspace in view's page at Setup (UX6g), where its defaults, its remote and its rules are; its
-      // *Wire…* is there, as Settings → Workspace's was.
-      { id: 'workspace:setup', label: t('menu.workspace.settings'), icon: 'settings', separated: true },
-    ]),
-  ];
-
-  // D150 §2.4: each agent, which opens its page; then signing in to another account, what agents may do (the page of the
-  // agent Daoris hands the rules file, at that section), the proposals (Overview's rule rows), usage and AI features.
-  const agentItems: MenuItem[] = [
-    ...machine([
-      ...agents.map((agent) => ({ id: `agent:${agent.name}`, label: agent.label, icon: 'account' as const })),
-      { id: 'agents:signIn', label: t('menu.agents.signIn'), icon: 'plus', separated: agents.length > 0 },
-      { id: 'agents:rules', label: t('menu.agents.rules'), icon: 'shield' },
-      { id: 'proposals', label: t('menu.agents.proposals'), icon: 'inbox', badge: waiting },
-      { id: 'usage', label: t('menu.agents.usage'), icon: 'gauge' },
-    ]),
-    { id: 'settings:ai', label: t('menu.agents.ai'), icon: 'search', separated: attached },
-  ];
-
-  return { daoris, workspace, agents: agentItems };
-}
-
-/** What an item's id names — the one reading of the ids `appMenus` writes. */
-export function menuAction(id: string): MenuAction {
-  if (id.startsWith('settings:')) return { kind: 'settings', section: id.slice('settings:'.length) as SettingsSection };
-  if (id.startsWith('view:')) return { kind: 'view', view: id.slice('view:'.length) as View };
-  if (id.startsWith('agent:')) return { kind: 'agents', agent: id.slice('agent:'.length) };
-  if (id.startsWith('scope:')) {
-    const name = id.slice('scope:'.length);
-    return { kind: 'scope', workspace: name === '*' ? null : name };
+    rows.push({
+      id: entry.id,
+      label: entry.label,
+      ...(entry.icon ? { icon: entry.icon } : {}),
+      ...(entry.badge !== undefined ? { badge: entry.badge } : {}),
+      ...(separated ? { separated } : {}),
+      ...(entry.checked !== undefined ? { checked: entry.checked } : {}),
+      ...(entry.enabled ? {} : { disabled: true }),
+      ...(entry.keys[0] ? { shortcut: entry.keys[0].combo } : {}),
+      ...(firstOfGroup && entry.heading ? { heading: entry.heading } : {}),
+    });
   }
-  switch (id) {
-    // D150 §2.4: the proposals are *What needs you*'s rule rows, which lead Overview; signing in, what agents may do and
-    // usage are on an agent's page (UX6e), the agent that has each where the item names none.
-    case 'proposals': return { kind: 'view', view: 'overview' };
-    case 'agents:signIn': return { kind: 'agents', part: 'accounts' };
-    case 'agents:rules': return { kind: 'agents', part: 'rules' };
-    case 'usage': return { kind: 'agents', part: 'usage' };
-    case 'workspace:setup': return { kind: 'workspace', tab: 'setup' };
-    case 'add': return { kind: 'add' };
-    case 'import': return { kind: 'import' };
-    case 'refresh': return { kind: 'refresh' };
-    case 'language': return { kind: 'language' };
-    case 'about': return { kind: 'about' };
-    default: return { kind: 'none' };
+
+  // A group's tip says what to open while every act in it is off; once one applies, its name is enough.
+  const groupOf = new Map(entries.map((entry) => [entry.id, entry.group]));
+  for (const row of rows) {
+    if (!row.heading) continue;
+    const group = groupOf.get(row.id);
+    const live = rows.some((other) => groupOf.get(other.id) === group && !other.disabled);
+    if (live) row.heading = { label: row.heading.label };
   }
+  return rows;
 }

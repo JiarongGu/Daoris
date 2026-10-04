@@ -411,12 +411,15 @@ describe('the doors into the Plugins view', () => {
     expect(calls('PLUGINS')).toEqual([]);
   });
 
-  it('opens from the Daoris menu', async () => {
+  /** Go › Plugins, Ctrl+8 (UX7a, D152 §3.7): the Daoris menu's *Plugins* before it. */
+  it('opens from the Go menu, and on Ctrl+8', async () => {
     start();
     const user = userEvent.setup();
-    (await screen.findByRole('button', { name: 'Daoris' })).focus();
+    (await screen.findByRole('button', { name: 'Go' })).focus();
     await user.keyboard('{Enter}');
-    await user.click(await screen.findByRole('menuitem', { name: /^Plugins/ }));
+    const plugins = await screen.findByRole('menuitem', { name: /^Plugins/ });
+    expect(plugins).toHaveTextContent('Ctrl+8');
+    await user.click(plugins);
     expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
   });
 
