@@ -124,7 +124,10 @@ Follow the dispatch-subagent skill's subagent half.
      refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
      on the checkout, or `--full` on the day's last merge. A verdict stands until a path its gate reaches
      changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and
-     the path that made it so. `--force-ungated` is the person's override.
+     the path that made it so. After the full set, on a clean checkout with no merge open, `--rerun <gate>…`
+     runs a gate that flaked, with each stale gate, and `--stale` runs only the stale ones after a fix you
+     committed (GATE6b). A refusal names the smallest of these that would pass the tree, and `--full` only
+     when nothing smaller would. `--force-ungated` is the person's override.
    - On a conflict the tool stops and names the files. Resolve them, `git add` them, then run
      `--continue`. On a failed gate, read that gate's log, then fix it in the merge and run
      `--rerun <gate>` (it re-runs that gate, any gate not yet run and any whose verdict the fix's paths

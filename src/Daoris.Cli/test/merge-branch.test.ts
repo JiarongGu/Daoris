@@ -24,7 +24,7 @@ interface Lane { id: string; title: string; summary: string; steward: boolean; p
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
-  full: boolean; rerun: string[]; passed: boolean;
+  full: boolean; rerun: string[]; passed: boolean; stale: boolean;
 }
 interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
 interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
@@ -39,6 +39,8 @@ interface Verdict { gate: string; verdict: string; tree: string | null; at: stri
 interface Standing { standing: 'exact' | 'records' | 'unreached' | 'stale'; paths: string[]; records: string[] }
 /** What a stage judges by: this tree, the paths another differs by (null when git cannot say), which are records, which reach a gate. */
 interface Judging { tree: string; drift: (from: string) => string[] | null; isRecord: (path: string) => boolean; reaching: (gate: string, paths: string[]) => string[] }
+/** One gate as the stage judges it: the verdict that counts and how it stands, or a newer one that no longer does. */
+interface Judged { name: string; verdict: Verdict | null; exact: boolean; standing: Standing | null; stale: (Standing & { verdict: Verdict }) | null }
 
 const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
@@ -87,14 +89,22 @@ const tool = await import(
   };
   VERDICTS_FILE: string;
   verdictStanding: (facts: Judging & { from: string | null; gate: string }) => Standing;
-  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[] }) => {
-    passed: boolean; missing: string[];
-    gates: { name: string; verdict: Verdict | null; exact: boolean; standing: Standing | null; stale: (Standing & { verdict: Verdict }) | null }[];
+  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[] }) => { passed: boolean; missing: string[]; gates: Judged[] };
+  stageRemedy: (gates: Judged[]) => { command: string; what: string; runs: string[] } | null;
+  checkoutRerun: (gates: Judged[], named: string[]) => {
+    run: string[]; kept: { name: string; verdict: string; at: string }[]; stale: { name: string; verdict: string; at: string; paths: string[] }[]; none: string[];
   };
+  FULL_COMMAND: string;
+  STALE_COMMAND: string;
   recordMatcher: (map: { lanes?: Lane[]; union?: string[] }) => (path: string) => boolean;
   trxCommand: (run: string, file: string) => string;
   slowestClasses: (trx: string, count?: number) => Slow[];
 };
+
+// The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
+const publish = await import(
+  // @ts-expect-error — untyped workspace tooling; the same seam as the merge tool above
+  '../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string) => { refusal: string | null; note: string | null } };
 
 const TOOL = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'merge-branch.mjs');
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -114,8 +124,11 @@ function refusal(fn: () => unknown): { exitCode: number; message: string } {
 test('the arguments name one branch, or several after --batch, and the flags', () => {
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false,
+    full: false, rerun: [], passed: false, stale: false,
   });
+  // GATE6b: each stale gate run again on the checkout as it stands.
+  assert.equal(tool.parseArgs(['--stale']).stale, true);
+  assert.equal(tool.parseArgs(['--stale', '--keep-going']).keepGoing, true);
   // GATE3: every gate for one merge, or for the checkout as it stands; and whether the full set passed it.
   assert.equal(tool.parseArgs(['a', '--full']).full, true);
   assert.equal(tool.parseArgs(['--plan', 'a', '--full']).full, true);
@@ -165,6 +178,11 @@ test('the arguments refuse what would merge the wrong thing, with exit 2', () =>
     [['--passed', 'a'], /--passed takes no branch/],
     [['--passed', '--full'], /one of/],
     [['--prune', '--full'], /--full is for a merge or the checkout/],
+    [['--stale', 'a'], /--stale takes no branch/],
+    [['--stale', '--rerun', 'web'], /one of/],
+    [['--stale', '--passed'], /one of/],
+    [['--stale', '--full'], /--stale takes only --keep-going/],
+    [['--stale', '--no-prune'], /--stale takes only --keep-going/],
   ];
   for (const [argv, message] of cases) {
     const error = refusal(() => tool.parseArgs(argv));
@@ -1243,6 +1261,66 @@ test("the records a stage forgives are the steward's lane and the records that m
 });
 
 // ---------------------------------------------------------------------------------------------------
+// GATE6b: a gate re-run on the checkout as it stands, and the smallest command a refusal names
+
+const hourOf = (hour: number) => `2026-10-05T${String(hour).padStart(2, '0')}:00:00Z`;
+// T is the checkout; S is a tree before a fix that reaches every gate here.
+const fixJudging: Judging = {
+  tree: 'T', drift: (from: string) => ({ S: ['src/fix.ts'] } as Record<string, string[]>)[from] ?? null,
+  isRecord: () => false, reaching: (_gate: string, paths: string[]) => paths,
+};
+
+test('a refusal names the smallest command that would pass the stage: --stale, --rerun naming what failed or never ran, or --full', () => {
+  const plan = ['universal', 'cli', 'web', 'deployment'];
+  const judge = (verdicts: Verdict[]) => tool.stageJudgement({ ...fixJudging, plan, verdicts }).gates;
+  const onT: Verdict[] = plan.map((gate) => ({ gate, verdict: 'PASS', tree: 'T', at: hourOf(9) }));
+  const beforeFix = (gate: string): Verdict => ({ gate, verdict: 'PASS', tree: 'S', at: hourOf(9) });
+
+  assert.equal(tool.stageRemedy(judge(onT)), null, 'nothing to name when the stage passes');
+  // A fix committed past the full set: the gates it reaches are stale, and --stale runs exactly those.
+  const fixed = [...onT.filter((v) => v.gate !== 'cli' && v.gate !== 'web'), beforeFix('cli'), beforeFix('web')];
+  assert.deepEqual(tool.stageRemedy(judge(fixed)), { command: tool.STALE_COMMAND, what: 'the 2 stale gates', runs: ['cli', 'web'] });
+  assert.deepEqual(tool.stageRemedy(judge([...onT.filter((v) => v.gate !== 'web'), beforeFix('web')]))!.what, 'the stale gate');
+  assert.equal(tool.STALE_COMMAND, 'node tools/merge-branch.mjs --stale');
+  // One gate flaked on this tree: --rerun names it alone.
+  const flaked = onT.map((v) => (v.gate === 'cli' ? { ...v, verdict: 'FAIL' } : v));
+  assert.deepEqual(tool.stageRemedy(judge(flaked)), { command: 'node tools/merge-branch.mjs --rerun cli', what: 'the gate it lacks', runs: ['cli'] });
+  // A failure, a gate never run and a stale one: --rerun names the first two, and runs the stale one with them.
+  const mixed = [...flaked.filter((v) => v.gate !== 'web' && v.gate !== 'deployment'), beforeFix('web')];
+  assert.deepEqual(tool.stageRemedy(judge(mixed)), {
+    command: 'node tools/merge-branch.mjs --rerun cli deployment', what: 'the 3 gates it lacks', runs: ['cli', 'web', 'deployment'],
+  });
+  // When that would run every gate anyway, the full set is named.
+  assert.deepEqual(tool.stageRemedy(judge([])), { command: tool.FULL_COMMAND, what: 'every gate', runs: plan });
+  assert.deepEqual(tool.stageRemedy(judge(onT.map((v) => ({ ...v, verdict: 'FAIL' }))))!.command, tool.FULL_COMMAND);
+});
+
+test("a re-run on the checkout runs the named gates and each the stage calls stale, in the plan's order, and keeps every other verdict", () => {
+  const plan = ['universal', 'cli', 'devkit', 'web', 'deployment'];
+  const gates = tool.stageJudgement({
+    ...fixJudging, plan, verdicts: [
+      { gate: 'universal', verdict: 'PASS', tree: 'T', at: hourOf(9) },
+      { gate: 'cli', verdict: 'FAIL', tree: 'T', at: hourOf(9) },
+      // Passed before the fix, then failed on this tree: the newest that stands says FAIL, and it is not stale.
+      { gate: 'devkit', verdict: 'PASS', tree: 'S', at: hourOf(9) },
+      { gate: 'devkit', verdict: 'FAIL', tree: 'T', at: hourOf(11) },
+      { gate: 'web', verdict: 'PASS', tree: 'S', at: hourOf(9) },
+    ],
+  }).gates;
+  const named = tool.checkoutRerun(gates, ['cli']);
+  assert.deepEqual(named.run, ['cli', 'web']);
+  assert.deepEqual(named.stale, [{ name: 'web', verdict: 'PASS', at: hourOf(9), paths: ['src/fix.ts'] }]);
+  assert.deepEqual(named.kept.map((kept) => `${kept.name} ${kept.verdict}`), ['universal PASS', 'devkit FAIL']);
+  assert.deepEqual(named.none, ['deployment'], 'a gate with no verdict at all runs only when named');
+  // --stale names nothing: the stale gates alone.
+  const stale = tool.checkoutRerun(gates, []);
+  assert.deepEqual(stale.run, ['web']);
+  assert.deepEqual(stale.kept.map((kept) => kept.name), ['universal', 'cli', 'devkit']);
+  assert.deepEqual(tool.checkoutRerun(gates, ['deployment']).run, ['web', 'deployment']);
+  assert.deepEqual(tool.checkoutRerun(gates, ['deployment']).none, []);
+});
+
+// ---------------------------------------------------------------------------------------------------
 // PROC1: a Process gate leaves a trx with each test's duration, and the slowest classes are named
 
 const TRX = [
@@ -1814,9 +1892,13 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       { name: 'third', run: 'node gate.mjs third' },
     ]);
     branch(repo.root, 'fix', { 'fix.txt': 'x\n' });
+    // A merge this tool did not leave is not one it re-gates; with none open, --rerun gates the checkout (GATE6b).
+    git(repo.root, 'merge', '--quiet', '--no-ff', '--no-commit', 'fix');
     let result = await repo.run(['--rerun', 'first']);
     assert.equal(result.status, 2, result.out);
-    assert.match(result.out, /nothing to re-run/);
+    assert.match(result.out, /a merge is open here that this tool did not leave/);
+    assert.deepEqual(repo.ran(), []);
+    git(repo.root, 'merge', '--abort');
 
     result = await repo.run(['fix']);
     assert.equal(result.status, 1, result.out);
@@ -1963,6 +2045,93 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.match(result.out, /driver\s+stale\s+PASS .*, on a tree before src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/LandingTests\.cs changed, which reaches it/);
     assert.match(result.out, /driver-process\s+stale/);
     assert.match(result.out, /web\s+PASS .*only by paths it does not reach \(src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/LandingTests\.cs\)/);
+    repo.cleanup();
+  });
+
+  // GATE6b's proof: a fix committed on the checkout after the full set stages once the gates it reaches run again.
+  test('--stale runs exactly the gates a fix committed past the full set reaches, and the stage then accepts the tree', async () => {
+    const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
+    const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
+    const repo = scratch('stale', [
+      { name: 'cli', run: 'node gate.mjs cli' },
+      { name: 'driver', run: 'node gate.mjs driver' },
+      { name: 'driver-process', run: 'node gate.mjs driver-process' },
+      { name: 'web', run: 'node gate.mjs web' },
+    ], { [spec]: 'one\n', [driverTest]: 'one\n' });
+    let result = await repo.run(['--full']);
+    assert.equal(result.status, 0, result.out);
+
+    // The refusal names --stale, which runs two gates, not a second full run.
+    writeFileSync(join(repo.root, spec), 'two\n');
+    git(repo.root, 'commit', '--quiet', '-am', `fix the spec${TRAILER}`);
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /\n {2}Run the 2 stale gates on it: node tools\/merge-branch\.mjs --stale\n/);
+    assert.doesNotMatch(result.out, /--full/);
+
+    // Work left uncommitted is refused, by name, and nothing runs.
+    writeFileSync(join(repo.root, 'stray.txt'), 'left here\n');
+    result = await repo.run(['--stale']);
+    assert.equal(result.status, 2, result.out);
+    assert.match(result.out, /not clean:\s+\?\? stray\.txt/);
+    rmSync(join(repo.root, 'stray.txt'));
+    assert.deepEqual(repo.ran().slice(4), [], 'a refusal ran a gate');
+
+    result = await repo.run(['--stale']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(4), ['cli', 'web'], "the baseline and the web gate; the driver's verdicts stand");
+    assert.match(result.out, /stale\s+web\s+PASS\s+from .* UTC: src\/Daoris\.Web\/e2e\/platform\.spec\.ts changed since, which reaches it/);
+    assert.match(result.out, /driver-process\s+PASS .* UTC\s+on a tree that differs from this one only by paths it does not reach/);
+    assert.match(result.out, /2 gates run and passed on [0-9a-f]{7}; the full set has passed this checkout: 4 of 4 gates\. A stage of this tree is allowed\./);
+    assert.equal(merging(repo.root), false, 'nothing is merged');
+    // What publish:desktop asks before it builds.
+    assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), repo.root).refusal, null);
+
+    // Nothing is stale now: --stale runs nothing, and says the stage passes.
+    result = await repo.run(['--stale']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /nothing is stale on the checkout/);
+    assert.deepEqual(repo.ran().slice(6), []);
+    repo.cleanup();
+  });
+
+  test('a flaked gate re-run alone on the checkout makes the stage accept it, and a dirty tree is refused, naming the files', async () => {
+    const repo = scratch('flake-rerun', [
+      { name: 'first', run: 'node gate.mjs first' },
+      // Fails the first time only: a test that timed out under load.
+      { name: 'second', run: 'node gate.mjs second 3 once' },
+      { name: 'third', run: 'node gate.mjs third' },
+    ], { 'code.txt': 'base\n' });
+    let result = await repo.run(['--full', '--keep-going']);
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(repo.ran(), ['first', 'second', 'third']);
+    assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/, 'the failed full set names the smaller command');
+
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /second\s+FAIL\s+.* UTC\s+on this tree/);
+    assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/);
+
+    writeFileSync(join(repo.root, 'code.txt'), 'changed\n');
+    result = await repo.run(['--rerun', 'second']);
+    assert.equal(result.status, 2, result.out);
+    assert.match(result.out, /not clean:\s+\.M code\.txt/);
+    git(repo.root, 'checkout', '--', 'code.txt');
+    result = await repo.run(['--rerun', 'nope']);
+    assert.equal(result.status, 2, result.out);
+    assert.match(result.out, /no gate 'nope' in the plan: first, second, third/);
+    assert.deepEqual(repo.ran().slice(3), [], 'a refusal ran a gate');
+
+    result = await repo.run(['--rerun', 'second']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(3), ['second'], 'the flaked gate alone: nothing changed, so no other verdict is stale');
+    assert.match(result.out, /re-run on the checkout \(HEAD [0-9a-f]{7}\): second; 2 verdicts kept/);
+    assert.match(result.out, /PASS\s+second\s.*local\/scratch\/full-[0-9a-f]{7}\/second\.log/);
+    assert.match(result.out, /A stage of this tree is allowed\./);
+    assert.equal(merging(repo.root), false, 'nothing is merged');
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /second\s+PASS .* UTC\s+on this tree/);
     repo.cleanup();
   });
 
