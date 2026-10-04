@@ -276,7 +276,8 @@ public static partial class PluginKit
           "hooks": {
             "command": ["node", "${plugin}/{{Script}}"],
             "points": [{{string.Join(", ", points.Select(point => Json(point.Name)))}}]
-          }
+          },
+          "tools": []
         }
 
         """;
