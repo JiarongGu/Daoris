@@ -52,7 +52,10 @@ Follow the dispatch-subagent skill's subagent half.
 
 - **You may run** `npm run verify` at the root (`npm ci` first in a fresh worktree), `node --test` in
   `src/Daoris.Cli`, the web's vitest loop (`npm --prefix src/Daoris.Web run test`, after
-  `npm --prefix src/Daoris.Web ci`) when your lane is the web, and `dotnet test` on the .NET project
+  `npm --prefix src/Daoris.Web ci`) when your lane is the web, and **whenever you change a catalogue or a
+  word the page shows, from any lane**, the web's `i18n:check` and `names:check -- --strict`: the build and
+  the web gate run both, and a catalogue gap otherwise surfaces only at the merge, failing the publish
+  with it. Also `dotnet test` on the .NET project
   your lane changes, one suite at a time. A desktop suite runs its fast half only:
   `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
 - **Never run** any of these:
