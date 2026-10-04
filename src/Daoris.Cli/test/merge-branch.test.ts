@@ -72,6 +72,8 @@ const tool = await import(
   BASELINE: readonly string[];
   GENERATED: readonly { folder: string; tool: string }[];
   isGenerated: (path: string) => boolean;
+  setApart: (text: string) => { text: string; set: { line: number; label: string }[] };
+  noteName: (label: string) => string;
   REACH: readonly Rule[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
   selectGates: (plan: Gate[], changed: string[], options?: { lanes?: Lane[]; full?: boolean; reach?: readonly Rule[] }) => { gates: Selected[]; unplaced: string[] };
@@ -454,6 +456,45 @@ test('what a merge writes rather than merges is the orientation index, by its fo
     // A hand merge meets no textual merge of it either: the attribute keeps one side whole, and the tool writes it again.
     assert.match(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'), new RegExp(`^${folder.replace(/\//g, '\\/')}/\\*\\* -merge$`, 'm'));
   }
+});
+
+// MERGEJOIN1: what union leaves when two branches each append a note to one decision, set apart by the merge.
+test("a note's label straight under a line gets one blank line above it; nothing else in the file moves", () => {
+  const glued = [
+    '## D1 — a thing (2026-10-04)', '',
+    'Body of it.', '',
+    '**UX6e, built 2026-10-04: left.** Left text', 'more left.',
+    '**UX6f, built 2026-10-04: right.** Right text.',
+    '*Amended by D130 (ROW3, 2026-10-02): the change.*',
+    // A fence's lines are text, and an emphasised sentence is not a note: neither is touched.
+    '```', 'text', '**Built 2026-10-02 (EX1).**', '```',
+    'A paragraph.', '**Proven without the rehearsal**: the checks.', '',
+  ].join('\n');
+  const { text, set } = tool.setApart(glued);
+  assert.equal(text, [
+    '## D1 — a thing (2026-10-04)', '',
+    'Body of it.', '',
+    '**UX6e, built 2026-10-04: left.** Left text', 'more left.', '',
+    '**UX6f, built 2026-10-04: right.** Right text.', '',
+    '*Amended by D130 (ROW3, 2026-10-02): the change.*',
+    '```', 'text', '**Built 2026-10-02 (EX1).**', '```',
+    'A paragraph.', '**Proven without the rehearsal**: the checks.', '',
+  ].join('\n'));
+  // Each label with its line once set apart, 1-based, as a reader opens it.
+  assert.deepEqual(set, [
+    { line: 8, label: '**UX6f, built 2026-10-04: right.** Right text.' },
+    { line: 10, label: '*Amended by D130 (ROW3, 2026-10-02): the change.*' },
+  ]);
+  // Set apart already, it is left alone; and a file of CRLF lines gains a CRLF blank line, not a bare one.
+  assert.deepEqual(tool.setApart(text), { text, set: [] });
+  assert.equal(tool.setApart('A.\r\n**Built 2026-10-04 (X1).**\r\n').text, 'A.\r\n\r\n**Built 2026-10-04 (X1).**\r\n');
+});
+
+test('a note set apart is named by its task, or by its label when it names none', () => {
+  assert.equal(tool.noteName('**UX6e, built 2026-10-04: Agents is a place.** The bar.'), 'UX6e note');
+  assert.equal(tool.noteName('**Built 2026-10-03 (DOC8b): the check for a folder** (point 4).'), 'DOC8b note');
+  assert.equal(tool.noteName('*Amended by D130 (ROW3, 2026-10-02): the change.*'), 'ROW3 note');
+  assert.equal(tool.noteName('**Read 2026-10-02: the reading.** More.'), 'note "Read 2026-10-02: the reading."');
 });
 
 test('a path no rule places runs every gate but the long ones, and says which path; --full runs every gate and says so', () => {
@@ -1460,6 +1501,100 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(index(), 'base.txt\nleft.txt\nmain.txt\nright.txt\n');
     assert.equal(unmerged(), '');
     assert.deepEqual(repo.ran(), ['first', 'first']);
+    repo.cleanup();
+  });
+
+  test('two notes a union merge leaves touching under one decision are set apart in the merge, and at --continue after a conflict', async () => {
+    const decision = '## D1 — a thing (2026-10-04)\n\nBody of it.\n';
+    const note = (task: string, words: string) => `\n**${task}, built 2026-10-04: ${words}.** What it settled.\n`;
+    // The merge's one gate is the real check `verify` runs, copied with the one module it imports.
+    const repo = scratch('notes', [{ name: 'duplicates', run: 'node tools/doc-duplicates.mjs' }], {
+      '.gitattributes': 'CHANGELOG.md merge=union\ndocs/decisions/*.md merge=union\n',
+      'daoris.json': JSON.stringify({ documents: { decisions: 'docs/decisions' } }),
+      'tools/doc-duplicates.mjs': readFileSync(join(repoRoot, 'tools', 'doc-duplicates.mjs'), 'utf8'),
+      'tools/fsx.mjs': readFileSync(join(repoRoot, 'tools', 'fsx.mjs'), 'utf8'),
+      'docs/decisions/D1.md': decision,
+      'shared.md': 'base\n',
+    });
+    const file = () => readFileSync(join(repo.root, 'docs', 'decisions', 'D1.md'), 'utf8');
+    const duplicates = () => spawnSync(process.execPath, ['tools/doc-duplicates.mjs'], { cwd: repo.root, encoding: 'utf8' });
+
+    // Main took one branch's note; a branch from before it appended its own to the same decision.
+    branch(repo.root, 'right', { 'docs/decisions/D1.md': decision + note('UX6f', 'right') });
+    writeFileSync(join(repo.root, 'docs', 'decisions', 'D1.md'), decision + note('UX6e', 'left'));
+    git(repo.root, 'commit', '--quiet', '-am', `main took a note${TRAILER}`);
+
+    // Without the tool: union keeps once the blank line both sides opened with, so the second label lands under the first note.
+    git(repo.root, 'merge', '--quiet', '--no-ff', '--no-commit', 'right');
+    assert.equal(file(), decision + note('UX6e', 'left') + note('UX6f', 'right').slice(1));
+    const without = duplicates();
+    assert.equal(without.status, 1, without.stdout);
+    assert.match(without.stderr, /docs\/decisions\/D1\.md: a note label after a non-blank line: \*\*UX6f/);
+    git(repo.root, 'merge', '--abort');
+
+    // With it: one blank line before the gates choose, said with its file and line, staged, and the check passes as the gate.
+    let result = await repo.run(['right']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /set apart: D1's UX6f note \(docs\/decisions\/D1\.md:7\)/);
+    assert.ok(result.out.indexOf('set apart') < result.out.indexOf('gates for right'), 'set apart before the gates choose');
+    assert.equal(file(), decision + note('UX6e', 'left') + note('UX6f', 'right'));
+    assert.equal(git(repo.root, 'diff', '--name-only'), '', 'what was set apart is staged with the merge');
+    assert.match(result.out, /PASS\s+duplicates/);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+
+    // Beside a conflict a person resolves, nothing is set apart until --continue.
+    const merged = file();
+    branch(repo.root, 'third', { 'docs/decisions/D1.md': merged + note('UX6c', 'third'), 'shared.md': 'third\n' });
+    writeFileSync(join(repo.root, 'docs', 'decisions', 'D1.md'), merged + note('UX6b', 'main'));
+    writeFileSync(join(repo.root, 'shared.md'), 'main\n');
+    git(repo.root, 'commit', '--quiet', '-am', `main moved${TRAILER}`);
+    result = await repo.run(['third']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /conflict in 1 file:\n\s+shared\.md/);
+    assert.doesNotMatch(result.out, /set apart/);
+    writeFileSync(join(repo.root, 'shared.md'), 'resolved\n');
+    git(repo.root, 'add', 'shared.md');
+    result = await repo.run(['--continue']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /set apart: D1's UX6c note \(docs\/decisions\/D1\.md:11\)/);
+    assert.equal(file(), merged + note('UX6b', 'main') + note('UX6c', 'third'));
+    assert.match(result.out, /PASS\s+duplicates/);
+    repo.cleanup();
+  });
+
+  test('the knowledge server is rebuilt once a merge\'s gates pass, and a build that fails is said and fails nothing', async () => {
+    // A stand-in for the server's tool: `build` notes itself and says what the real one says, failing on request.
+    const server = [
+      "import { appendFileSync, existsSync } from 'node:fs';",
+      "appendFileSync('local/ran.txt', `knowledge-server ${process.argv.slice(2).join(' ')}\\n`);",
+      "if (existsSync('local/fail-build')) { console.error('knowledge-server: the build failed (no build yet); sessions keep the build they had'); process.exit(1); }",
+      "console.log('knowledge-server: built 20261004T100000Z-aaaaaaaa (no build yet) in 9 s; 0 older removed');",
+      '',
+    ].join('\n');
+    const repo = scratch('knowledge-server', [{ name: 'first', run: 'node gate.mjs first' }], { 'tools/knowledge-server.mjs': server });
+
+    branch(repo.root, 'one', { 'one.txt': '1\n' });
+    let result = await repo.run(['one']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran(), ['first', 'knowledge-server build'], 'built after the gates, never before them');
+    assert.match(result.out, /knowledge server: built 20261004T100000Z-aaaaaaaa \(no build yet\)/);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+
+    // A failed gate builds nothing: the merge is not one to serve.
+    branch(repo.root, 'two', { 'two.txt': '2\n' });
+    writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node gate.mjs first 1' }] }, null, 2)}\n`);
+    git(repo.root, 'commit', '--quiet', '-am', `a failing gate${TRAILER}`);
+    result = await repo.run(['two']);
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(repo.ran(), ['first', 'knowledge-server build', 'first']);
+    git(repo.root, 'merge', '--abort');
+
+    writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node gate.mjs first' }] }, null, 2)}\n`);
+    git(repo.root, 'commit', '--quiet', '-am', `the gate passes again${TRAILER}`);
+    writeFileSync(join(repo.root, 'local', 'fail-build'), '');
+    result = await repo.run(['two']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /knowledge server: NOT rebuilt, and the merge stands \(knowledge-server: the build failed/);
     repo.cleanup();
   });
 

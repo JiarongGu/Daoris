@@ -11021,3 +11021,79 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
 
 **Outcome** 2026-10-04: built. Agents is a place on the activity bar after Search: each agent once, whatever doors reach it, its accounts in a phrase and its badge the signed-out accounts a list or default holds; an agent's page lists its accounts once, each with its last known state and when it was read, its acts on the row, and How accounts are used, Workspaces, Ways in, What it may do, Model and effort and Usage folded beneath. Opening it asks no account; *Read again* asks one agent's. Settings → Agents retired; TOOL4m's rest built (the picker's groups, *on your own sign-in*). Detail: D150's UX6e note, `8ec5accd`..`e0b6ee35`.
+
+
+## PLUGTOOL1b — the two pull-request plugins declare their CLI (2026-10-04)
+
+> - [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
+
+**Outcome** 2026-10-04: built. The two pull-request plugins declare Node.js, Git and their platform's CLI in `tools` (GitHub 1.2.0: `gh >=1.9.0`, its sign-in a check; Azure DevOps 1.3.0: `az >=2.0.79`, its extension and sign-in as checks), each floor read from the flags `land.mjs` uses and cited in the README; `plugins try` on each answered as the machine stands. Detail: D150's PLUGTOOL1b note, `f11d148e`, `a80f2b51`.
+
+
+## MERGEJOIN1 — a union merge never leaves two decision notes touching (2026-10-04)
+
+> - [ ] **MERGEJOIN1 — a union merge never leaves two decision notes touching** (tools; seen three times merging the day's
+> UX6 branches). Two branches each appending a dated note to one decision leave the second label straight under the
+> first's last line, and `doc-duplicates` fails `verify` at the merge. The merge tool sets a blank line before such a
+> label in the merged decision files, as it writes `docs/index/`, and says so. Contract: D106. Proof: a merge-tool test
+> over two branches that each append a note.
+
+**Outcome** 2026-10-04: built. After a merge (and at `--continue`, and in `--rerun`), the merge tool sets a blank line before each note label a union merge left glued under the line above it, in each decision file the merge changed, before it writes `docs/index/`, and names each note it set apart; `doc-duplicates` exports `gluedLabels`, so the fix and the check share one definition. Detail: D106's MERGEJOIN1 note, `79fdbf32`.
+
+
+## ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris (2026-10-04)
+
+> - [ ] **ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris** (design first;
+> canon, driver, service; owner, 2026-10-04: *"so this should also apply to the repositories Daoris drives too, and an
+> even better knowledge system since Daoris is there"* · *"and it should not break the general workflow if the system
+> running the code does not have Daoris (this is for sharing repositories)"*). ORIENT1 measured the cost here; a driven
+> session pays it in every repository. The floor is committed files that any agent on any machine reads (D48 §2a): a
+> generated index of where things are and a digest of the repository's decisions and knowledge, kept fresh by the
+> repository's own check; the canon teaches the principle and leaves the mechanism to the repository; the set-up session
+> writes both in the repository's own tooling (D124, D128). Where Daoris is present the knowledge service indexes them
+> too, the deployment may turn on the semantic tier (D24), and driven sessions are handed the search; without Daoris
+> nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
+> after.
+
+**Outcome** 2026-10-04: designed (D151). Every driven repository keeps a generated folder of where things are (a README, up to four lookup tables, outlines of large files, a decisions digest), written and checked by its own tooling so a clone without Daoris works; the canon changes three on-demand files and no always-loaded byte; the set-up publishes an index quest; where Daoris runs the service indexes it and hits name their lines, with the semantic tier per deployment and words-only answering with none. Build rows ORIENT2a–g; ORIENT1e reads the before from driven sessions' typed events. Detail: `docs/2026-10-04-orientation-everywhere-design.md`, D151.
+
+
+## ORIENT1e — the orientation report reads a Daoris home (2026-10-04)
+
+> - [ ] **ORIENT1e — the orientation report reads a Daoris home** (tools). Driven sessions are kept as typed events, not
+> harness transcripts. `--home <dir>` reads each quest session's `.events.jsonl` (named by `session.started`), finds
+> its first edit inside its tree, and splits each repository at the commit that landed its index. Contract: design §5,
+> D151 §7. Proof: fixtures from both doors; the before.
+
+**Outcome** 2026-10-04: built. `orient-report --home <dir> [--repository] [--since] [--json]` reads each driven session's typed events (never the rendered log, never an account's home): calls before the first edit by kind, characters read where events carry them (unknown said, never zero), whole versus ranged reads, index reads, shell searches and dumps; per repository, workspace and all, the median editing session, opening the index first, parks and the files read most. A test holds the driver's spellings it depends on. Detail: commit `ebdbb10a`.
+
+
+## ORIENT1c — the knowledge server for agents, from a built binary (2026-10-04)
+
+> - [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
+> starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
+> worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps
+> current, index this repository's documents and `docs/index/`, and measure with `orient-report` whether agents ask it.
+> Contract: D24, D135. Proof: a session that connects; the report's reads of the knowledge search.
+
+**Outcome** 2026-10-04: built. `.mcp.json` starts `tools/knowledge-server.mjs`, which runs a build of the MCP host under `local/knowledge-server/` (`npm run knowledge:build`, rebuilt by the merge tool after a merge's gates) and never builds at a session's start; with no build it answers the handshake saying so. Hand and subagent sessions get the main checkout alone, `docs/` a section each and `docs/index/` a row each, by words only; a worktree reaches the main checkout's build. A route question gets its row first. `orient-report` counts asks of it. Detail: D24's ORIENT1c note, `a3f660f5`..`3f986a82`.
+
+
+## UX6e2 — the words and the twins follow the Agents place (2026-10-04)
+
+> - [ ] **UX6e2 — the words and the twins follow the Agents place** (driver, cli; found by UX6e). The driver's sentences
+> (`RotationWords`, `HelpRoomDoors`), the room's places and `HelpPlaces`, and the CLI's `agent list` still say Settings →
+> Agents; the page's `places.ts` maps the old names until they move. Contract: D150 §3.1. Proof: the twins' tables and
+> the room's golden files.
+
+**Outcome** 2026-10-04: built. Ask Daoris's places twin (`HelpPlaces` and `help/places.ts`) gains the Agents place with its accounts, rules and usage parts and `projects/setup`, `MOVED` retired; the room's doors name a repository's Setup sections for its own values and the agent's page for every former Settings → Agents row; the rotation's sign-in, the cool-off's *Read again*, the set-up press's refusals and the CLI's `agent list` name the new homes; the coverage test reads Repositories as a place. Detail: D150's note, `41290ab9`..`8176b4c4`.
+
+
+## HELPSETUP1 — Ask Daoris names a repository's Setup (2026-10-04)
+
+> - [ ] **HELPSETUP1 — Ask Daoris names a repository's Setup** (driver; found by UX6f). The help room's text and places
+> still send a person to Settings → Workspace and Permissions, or the old page, for a repository's line, landing,
+> reading across, standing answer and language (`HelpRoomDoors.cs`, `HelpRoomMayDo.cs:75`, `RegistrationFollow.cs:215`).
+> Contract: D150 §3.1. Proof: `HelpRoomGoldenTests`, `HelpCoverageTests`, the `places.ts` twin table.
+
+**Outcome** 2026-10-04: built. Ask Daoris's places twin (`HelpPlaces` and `help/places.ts`) gains the Agents place with its accounts, rules and usage parts and `projects/setup`, `MOVED` retired; the room's doors name a repository's Setup sections for its own values and the agent's page for every former Settings → Agents row; the rotation's sign-in, the cool-off's *Read again*, the set-up press's refusals and the CLI's `agent list` name the new homes; the coverage test reads Repositories as a place. Detail: D150's note, `41290ab9`..`8176b4c4`.

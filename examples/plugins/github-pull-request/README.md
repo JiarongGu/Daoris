@@ -52,9 +52,28 @@ rest is yours to open.
 
 ## What it needs
 
-- **node** on the PATH (it is a `node` script, as the other example plugins are).
-- **git**, with `origin` pointing at the GitHub repository and push access for whoever `git` pushes as.
-- **gh**, the GitHub CLI, installed and signed in: `gh auth login` (check with `gh auth status`).
+- **The tools its `plugin.json` declares under `tools`**, each at the version it names or newer, with GitHub
+  CLI signed in: `gh auth login`. `daoris-driver plugins try github-pull-request` checks them on this machine.
+- **`origin`** pointing at the GitHub repository, with push access for whoever `git` pushes as.
+
+## Why each version
+
+Each floor in `tools` is the oldest release that has everything this plugin runs with that tool: the
+calls above, the check, and the version question Daoris asks.
+
+- **GitHub CLI 1.9.0**: `gh pr view --json`, which reads a pull request's state at an advance, came in
+  [1.9.0](https://github.com/cli/cli/releases/tag/v1.9.0). The rest is older: `gh pr create`'s body from a
+  file in [1.7.0](https://github.com/cli/cli/releases/tag/v1.7.0) ([#3018](https://github.com/cli/cli/pull/3018),
+  `--body-file`), its `--head` in [1.0.0](https://github.com/cli/cli/releases/tag/v1.0.0), `gh auth status`
+  in [0.12.0](https://github.com/cli/cli/releases/tag/v0.12.0), and `--title`, `--base` and `--version` are
+  in 0.12.0's source. Known from the release notes, and from that source for the last three.
+- **Git 1.7.0**: `git push`'s `-u` and `--quiet` are both in 1.7.0's options
+  ([`builtin-push.c` at v1.7.0](https://github.com/git/git/blob/v1.7.0/builtin-push.c)), and its
+  [release notes](https://github.com/git/git/blob/master/Documentation/RelNotes/1.7.0.adoc) name
+  `--set-upstream`. A reading of the source: no Git that old was run.
+- **Node.js 16.6.0**: `land.mjs` takes a command's last line with `Array.prototype.at`, which came with V8
+  9.2 in [Node.js 16.6.0](https://nodejs.org/en/blog/release/v16.6.0). That everything else it uses is
+  older is a reading of the script, not a run on 16.6.0.
 
 ## When something fails
 

@@ -32,7 +32,9 @@
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
  *    their `merge=union` attribute (D106). The orientation index is written from the merged tree and
  *    staged before the gates choose (`GENERATED`, ORIENT1a), so a conflict in it alone does not stop the
- *    merge, and one beside others is written once they are resolved.
+ *    merge, and one beside others is written once they are resolved. Before it, each decision file the merge
+ *    changed has a blank line set before a note's label union left under another note, one line said per
+ *    note (`setApart`, MERGEJOIN1).
  * 6. The gates, one at a time, in a fixed order, fast first. The plan is every gate `daoris.gates.json`
  *    declares, plus every `npm run` step the release workflow runs that the declaration does not (the
  *    release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
@@ -53,7 +55,10 @@
  *    printed after its line (PROC1), so where its time goes is measured at every merge that runs it.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
  *    `--rerun` and the stage read (below).
- * 9. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ * 9. Once the gates pass, the knowledge server agents ask is rebuilt from the merged tree when the service's
+ *    sources changed (`tools/knowledge-server.mjs build`, ORIENT1c); one line says so, and a build that fails
+ *    is said and fails nothing.
+ * 10. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
  *
  * ## A fixed gate re-runs alone (GATE4)
  *
@@ -129,7 +134,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import {
   closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
+import { gluedLabels, records } from './doc-duplicates.mjs';
 import { isMain } from './fsx.mjs';
 
 export const MAIN = 'main';
@@ -452,6 +458,84 @@ function writeGenerated(root) {
     git(root, ['add', '-A', '--', folder]);
     console.log(`${folder}/: written from the merged tree (${run.stdout.trim().replace(/^[\w-]+: /, '')})`);
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// MERGEJOIN1: two notes a union merge leaves touching
+
+/**
+ * A decision's file with one blank line set before each note's label that follows a non-blank line outside a fence,
+ * and every other byte as it was; with each label set apart and its line once set (1-based).
+ *
+ * Two branches that each append a note to one decision both open it with a blank line. Git's union merge takes that
+ * line, the same on both sides, as common to them and keeps it once, then keeps both notes one after the other, so
+ * the second label lands straight under the first note's last line. `doc-duplicates` refuses that (D134 §3.4), and
+ * on 2026-10-04 three merges in a row failed `verify` on it, each mended by hand with one blank line. What is set
+ * apart is the check's own fact (`gluedLabels`), so the two never disagree. A CRLF file gains a CRLF blank line.
+ */
+export function setApart(text) {
+  const lines = text.split('\n');
+  const glued = new Set(gluedLabels(lines));
+  if (glued.size === 0) return { text, set: [] };
+  const out = [];
+  const set = [];
+  lines.forEach((line, i) => {
+    if (glued.has(i)) {
+      out.push(lines[i - 1].endsWith('\r') ? '\r' : '');
+      set.push({ line: out.length + 1, label: line.replace(/\r$/, '') });
+    }
+    out.push(line);
+  });
+  return { text: out.join('\n'), set };
+}
+
+/** How a note set apart is named: by the first task its label names (`UX6e`, not the decision `D130`), else by its label. */
+export function noteName(label) {
+  const span = label.replace(/^\*+/, '').split('*')[0].trim();
+  const task = /\b[A-Z]{2,}\d+[a-z]*\b/.exec(span)?.[0];
+  return task ? `${task} note` : `note "${span.length > 60 ? `${span.slice(0, 60)}…` : span}"`;
+}
+
+/**
+ * Each decision file the merge in place changed, with its glued notes set apart and staged; one line per note. Only
+ * the decisions record as a folder carries the fact: the other union records `doc-duplicates` checks are checked for
+ * a line twice, which a join cannot make, and a record still one file is checked for a number twice.
+ */
+function setApartNotes(root) {
+  const folders = records(root).filter((record) => record.kind === 'decisions').map((record) => record.file.slice(0, -'/*.md'.length));
+  if (folders.length === 0) return;
+  // What the merge brought, the parent's resolutions with it; a deleted file has nothing to set apart.
+  const changed = zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', '--diff-filter=d', 'HEAD']).out);
+  for (const path of changed) {
+    if (!folders.some((folder) => path.startsWith(`${folder}/`) && /^[^/]+\.md$/.test(path.slice(folder.length + 1)))) continue;
+    const file = join(root, path);
+    const { text, set } = setApart(readFileSync(file, 'utf8'));
+    if (set.length === 0) continue;
+    writeFileSync(`${file}.partial`, text);
+    renameSync(`${file}.partial`, file);
+    git(root, ['add', '--', path]);
+    for (const note of set) console.log(`set apart: ${basename(path, '.md')}'s ${noteName(note.label)} (${path}:${note.line})`);
+  }
+}
+
+// ORIENT1c: the workspace's knowledge server, rebuilt from the merged tree
+
+/** The tool that builds the knowledge server agents ask; a repository without it builds nothing. */
+export const KNOWLEDGE_SERVER = 'tools/knowledge-server.mjs';
+
+/**
+ * Once a merge's gates pass, the knowledge server is rebuilt from the merged tree when the service's sources
+ * changed, so a session started after the merge, in any worktree, runs what main holds and never builds it at
+ * its start. An instrument, not a gate: a build that fails is said and fails nothing, and sessions keep the
+ * build they had.
+ */
+function refreshKnowledgeServer(root) {
+  if (!existsSync(join(root, KNOWLEDGE_SERVER))) return;
+  const run = spawnSync(process.execPath, [KNOWLEDGE_SERVER, 'build'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const last = (text) => (text ?? '').trim().split('\n').filter(Boolean).at(-1) ?? '';
+  console.log(run.status === 0
+    ? `knowledge server: ${last(run.stdout).replace(/^knowledge-server: /, '')}`
+    : `knowledge server: NOT rebuilt, and the merge stands (${last(run.stderr) || last(run.stdout) || `exit ${run.status}`}); npm run knowledge:build says why`);
 }
 
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
@@ -1603,7 +1687,9 @@ const owedLine = (skipped) => (skipped
 async function gateMerge(root, state, plan) {
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
-  // Before the gates choose, so the merge's changed paths include what the writing changed (ORIENT1a).
+  // Before the gates choose, so the merge's changed paths include what the writing changed (ORIENT1a). The notes
+  // first (MERGEJOIN1): a blank line moves the lines the decisions digest points to.
+  setApartNotes(root);
   writeGenerated(root);
   const { gates: selection, chosen: gates, skipped } = chooseGates(root, state, plan);
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
@@ -1637,6 +1723,7 @@ async function gateMerge(root, state, plan) {
   }
   const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
   console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(results.length, 'gate')} passed${flakeNote}.`);
+  refreshKnowledgeServer(root);
   const owed = owedLine(skipped);
   if (owed) console.log(owed);
   if (last) {
@@ -1665,7 +1752,9 @@ async function rerunGates(root, options) {
   }
   const { blocking, generated } = conflicts(root);
   if (blocking.length) return reportConflict(branch, blocking, generated);
-  // A fix made in the merge may have moved what the index points to: it is written again before any gate.
+  // A fix made in the merge may have moved what the index points to: it is written again before any gate, and a
+  // note a fix glued is set apart first.
+  setApartNotes(root);
   writeGenerated(root);
   const plan = readPlan(root);
   const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));
@@ -1722,6 +1811,7 @@ async function rerunGates(root, options) {
     return 1;
   }
   console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length, 'gate')} run and passed; ${keptNote}.`);
+  refreshKnowledgeServer(root);
   console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
   return 0;
 }

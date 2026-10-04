@@ -63,4 +63,39 @@ public sealed class HelpRoomDoorsTests
         Assert.Contains("`ask_propose`", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
     }
+
+    /// <summary>
+    /// UX6e2 and HELPSETUP1 (D150 §3.1): a change is named where it is made now. An agent's accounts, ways in and model are
+    /// on its page in the Agents place, and a repository's own driving, line, landing, session language, standing answer,
+    /// reach and rules on its Setup; a workspace's default keeps its Settings home until its own page takes it (UX6g).
+    /// </summary>
+    [Fact]
+    public void Each_change_is_named_on_its_home_an_agents_on_its_page_and_a_repositorys_on_its_setup()
+    {
+        var screens = HelpRoomDoors.Doors.ToDictionary(door => door.To, door => door.Screen);
+        string Screen(string to) => screens.Single(each => each.Key.StartsWith(to, StringComparison.Ordinal)).Value;
+
+        Assert.DoesNotContain(HelpRoomDoors.Doors, door => door.Screen.Contains("Settings → Agents", StringComparison.Ordinal));
+        Assert.Equal("Agents → the agent's page → Accounts", Screen("sign an agent in"));
+        Assert.Equal("Agents → the agent's page → Ways in → Update, Pin a version", Screen("update an agent"));
+        Assert.Equal("Agents → the agent's page → Model and effort", Screen("set an account's own model"));
+        Assert.Equal("Agents → the agent's page → the account's Try now", Screen("end an account's cool-off"));
+        Assert.StartsWith("Agents → the agent's page → What it may do", Screen("allow, ask or deny"));
+
+        Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("drive a repository"));
+        Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("hold one"));
+        Assert.Equal("Repositories → the repository's page → Setup → Driving", Screen("give its sessions their own tree"));
+        Assert.Equal("Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → Lines",
+            Screen("set the line"));
+        Assert.Equal(
+            "Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → How work lands",
+            Screen("set how accepted work lands"));
+        Assert.Equal(
+            "Repositories → the repository's page → Setup → Reach; a workspace's reading, Settings → Permissions → Across repositories",
+            Screen("let agents read"));
+        Assert.Equal("Repositories → the repository's page → Setup → Sessions", Screen("keep a standing answer"));
+        Assert.Equal("Repositories → the repository's page → Setup → Sessions; a workspace's, Settings → Workspace → Session language",
+            Screen("set the language"));
+        Assert.Contains("a repository's, Repositories → the repository's page → Setup → Reach", Screen("allow, ask or deny"));
+    }
 }

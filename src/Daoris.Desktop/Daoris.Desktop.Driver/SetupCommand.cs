@@ -64,7 +64,9 @@ public static class SetupCommand
         {
             output.WriteLine($"added to `{setup.Repository}`'s rules, so its session may run the doctrine tool:");
             foreach (var rule in outcome.Added) output.WriteLine($"  {rule}");
-            output.WriteLine($"  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --repository {setup.Repository}`.");
+            // HELPSETUP1: a repository's rules are on its Setup → Reach since UX6f (D150 §3.1).
+            output.WriteLine("  taken back in Repositories → the repository's page → Setup → Reach, or "
+                + $"`daoris agent rules remove <rule> --repository {setup.Repository}`.");
         }
 
         return 0;

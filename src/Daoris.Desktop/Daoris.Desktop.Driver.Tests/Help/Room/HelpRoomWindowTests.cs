@@ -31,6 +31,8 @@ public sealed class HelpRoomWindowTests
 
         // It cannot see the window: what it is told of it comes with the message, and otherwise it asks.
         Assert.Contains("You cannot see the window", agents);
+        // UX6e2: the activity bar holds Agents since UX6e (D150 §2.1).
+        Assert.Contains("Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot", agents);
     }
 
     /// <summary>

@@ -49,7 +49,7 @@ public sealed partial class HelpCoverageTests
         + "side's doors, and until then `daoris driver cooloff` and Settings → Driver are its doors.";
 
     /// <summary>
-    /// How an agent's accounts are used, Settings → Agents' controls (TOOL4g; D125 §6, D130 §9): each a door of the `agent`
+    /// How an agent's accounts are used, the agent's page's controls (TOOL4g, UX6e; D125 §6, D130 §9): each a door of the `agent`
     /// kind that the service's `agent_propose` does not write yet, which another lane's row holds.
     /// </summary>
     private static Owed AccountDoorOwed(string door, string what, string terminal) => new(
@@ -337,6 +337,27 @@ public sealed partial class HelpCoverageTests
         ("permissions", "useRuleAction", "remove", new Exempt(Rules)),
         ("permissions", "useRuleAction", "default", new Exempt(Rules)),
         ("permissions", "useSetReadAcross", null, new Door("setting", "across")),
+
+        // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), each value the `setting` kind's door that `daoris driver`
+        // spells; the Settings domains above keep a workspace's defaults until its page takes them (UX6g).
+        ("projects", "useSetDrivable", null, new Door("setting", "drive")),
+        ("projects", "useSetHold", null, new Door("setting", "hold")),
+        ("projects", "useSetTrees", null, new Door("setting", "trees")),
+        ("projects", "useSetLine", null, new Door("setting", "line")),
+        ("projects", "useSetLanding", null, new Door("setting", "landing")),
+        ("projects", "useSetLanguage", null, new Door("setting", "language")),
+        ("projects", "useSetStanding", null, new Door("setting", "standing")),
+        ("projects", "useSetReadAcross", null, new Door("setting", "across")),
+        ("projects", "useSetWriteAcross", null, new Door("setting", "across")),
+        ("projects", "useRuleAction", "add", new Exempt(Rules)),
+        ("projects", "useRuleAction", "remove", new Exempt(Rules)),
+        ("projects", "useRuleAction", "default", new Exempt(Rules)),
+        // Repositories' own drawers, read with the view that holds them.
+        ("projects", "useWriteDeclaration", null, new Exempt(
+            "it writes a tracked file in the repository, left uncommitted for its own review (D48 §7), which is that "
+            + "repository's own work: Ask Daoris routes such a change there with `ask_propose`, as it routes every change "
+            + "to a repository's tree.")),
+        ("projects", "usePickFolder", null, new Exempt("it is the system's folder picker, for the person's own choice.")),
 
         ("plugins", "usePluginAction", "enable", new Door("plugin", "enable")),
         ("plugins", "usePluginAction", "disable", new Door("plugin", "disable")),
@@ -846,9 +867,15 @@ public sealed partial class HelpCoverageTests
     /// <summary>
     /// The places whose controls left a Settings domain for a place of their own, read as that domain was, under its id
     /// (UX6e, D150 §5): the Agents place, from its view's file and everything it imports, so Settings → Agents' controls
-    /// stay answered for where they are pressed now.
+    /// stay answered for where they are pressed now. And Repositories (HELPSETUP1), whose view presses a repository's Setup
+    /// (UX6f, D150 §4.2): its line, landing, language and reach left Settings → Workspace and Permissions for it, beside its
+    /// driving and standing answer, and its drawers' controls come with the view.
     /// </summary>
-    private static readonly (string Id, string File)[] Places = [("agents", Path.Combine("agents", "AgentsView"))];
+    private static readonly (string Id, string File)[] Places =
+    [
+        ("agents", Path.Combine("agents", "AgentsView")),
+        ("projects", "ProjectsView"),
+    ];
 
     /// <summary>
     /// Each Settings domain, by its id, with its component's file and every file that file imports, and so on: not

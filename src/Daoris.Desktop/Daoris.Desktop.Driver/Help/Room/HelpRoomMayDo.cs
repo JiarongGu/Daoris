@@ -72,9 +72,11 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         text.Append("present it as the tree.\n\n");
         if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
-            text.Append("Reading the checkouts here is switched off. The person turns it on under Settings → Permissions →\n");
-            text.Append("Across repositories, or with `daoris driver across <repository> read on` (`--workspace <name>`\n");
-            text.Append("in place of the repository for a whole workspace).\n\n");
+            // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's keeps Settings until UX6g.
+            text.Append("Reading the checkouts here is switched off. The person turns it on for a repository under\n");
+            text.Append("Repositories → the repository's page → Setup → Reach, and for a whole workspace under\n");
+            text.Append("Settings → Permissions → Across repositories, or with `daoris driver across <repository> read on`\n");
+            text.Append("(`--workspace <name>` in place of the repository for a whole workspace).\n\n");
         }
 
         return text.ToString();

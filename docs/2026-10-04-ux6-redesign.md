@@ -624,7 +624,7 @@ looked up by its `command` on the tools' `PATH` and the agents' resolver, as a h
 - **GitHub pull request** declares Node.js, Git and GitHub CLI, with `gh auth status` as its check, *fix* `gh auth login`.
 
 The version floors above are illustrative. PLUGTOOL1b sets each from the flags the plugin's own calls use, and each
-README's *What it needs* points at the manifest instead of listing the tools in prose.
+README's *What it needs* points at the manifest instead of listing the tools in prose. Built: D150's PLUGTOOL1b note.
 
 ### 7.5 On the plugin's page, and in Tools
 

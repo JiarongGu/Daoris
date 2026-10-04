@@ -2340,7 +2340,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 
     /// <summary>
     /// Which account the next start on <paramref name="agent"/>'s accounts in <paramref name="workspace"/> would take, the
-    /// step that chose it, and what holds each other account (TOOL6e, D130 §3–§4): what Settings → Agents says.
+    /// step that chose it, and what holds each other account (TOOL6e, D130 §3–§4): what the agent's page in Agents says.
     /// </summary>
     /// <remarks>
     /// 🔴 <b>The walk's own pieces, never a second judgement</b>, as <see cref="WiringAsync"/> holds: the one scope

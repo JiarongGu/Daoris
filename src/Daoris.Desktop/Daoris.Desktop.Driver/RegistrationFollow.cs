@@ -211,8 +211,9 @@ public static class RegistrationFollow
         if (files.Line is null || files.Commit is null)
         {
             return new(name, RegistryOutcome.NoLine,
+                // HELPSETUP1: a repository's line is set on its Setup since UX6f (D150 §4.2).
                 $"`{name}` has no line here to register from: {files.Problem ?? "git names none"}. Set one with "
-                + $"`daoris driver line {name} <branch>`, or on Settings → Workspace → Lines.");
+                + $"`daoris driver line {name} <branch>`, or on Repositories → the repository's page → Setup → Line and landing.");
         }
 
         var at = $"`{files.Line}` at `{Short(files.Commit)}`";

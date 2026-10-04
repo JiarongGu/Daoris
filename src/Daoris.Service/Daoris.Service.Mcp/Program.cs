@@ -27,6 +27,10 @@ using ModelContextProtocol.Server;
 //   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: $DAORIS_HOME/remotes.json —
 //                          D48 §5; DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read when a
 //                          take claims by push and when a chain is composed.
+//   DAORIS_KNOWLEDGE_REPOSITORY  the one checkout served, for a workspace's own server (ORIENT1c):
+//                          registered alone, and re-read once its reading is a minute old
+//   DAORIS_KNOWLEDGE_DOCUMENTS / _INDEX  repository-relative folders read in each registered checkout:
+//                          documents a section each, a generated index a row each (ORIENT1c)
 
 // JSON-RPC over stdio is UTF-8, and on Windows the console defaults to the system ANSI codepage —
 // so without this every em dash and every CJK character in the corpus arrives as mojibake. This
@@ -121,7 +125,13 @@ var circle = intake.Ask is { } askId ? (await composed.Asks.FindAsync(askId).Con
 builder.Services.AddSingleton(new AmbientWorkspace(Directory.GetCurrentDirectory(), circle));
 
 builder.Services
-    .AddMcpServer(options => options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" })
+    .AddMcpServer(options =>
+    {
+        options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" };
+        // A server over one checkout says what it reads and which tier answers, before the first search
+        // (ORIENT1c); one over a family says nothing its tools do not.
+        options.ServerInstructions = KnowledgeTools.Instructions(serviceOptions, composed.SemanticEnabled);
+    })
     .WithStdioServerTransport()
     .WithTools<KnowledgeTools>();
 
@@ -142,8 +152,10 @@ static string DefaultRepositoryRoot()
     if (HostComposition.AboveWorkspace() is { } aboveWorkspace) return aboveWorkspace;
 
     var fallback = Directory.GetCurrentDirectory();
-    // This default is computed eagerly even when the environment decides; only warn when it will be used.
-    if (Environment.GetEnvironmentVariable(ServiceOptions.RootVariable) is not null) return fallback;
+    // This default is computed eagerly even when the environment decides; only warn when it will be used. A
+    // server over one checkout never uses it: the checkout is named (ORIENT1c).
+    if (Environment.GetEnvironmentVariable(ServiceOptions.RootVariable) is not null
+        || Environment.GetEnvironmentVariable(ServiceOptions.RepositoryVariable) is not null) return fallback;
     Console.Error.WriteLine(
         $"daoris-knowledge: no workspace manifest above the binary and {ServiceOptions.RootVariable} is not set — "
         + $"falling back to '{fallback}', which is probably not the family. Set {ServiceOptions.RootVariable} "

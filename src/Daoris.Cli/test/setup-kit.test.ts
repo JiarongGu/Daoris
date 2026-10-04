@@ -87,9 +87,9 @@ const REFUSED = [
   ...head,
   'refused:',
   '  - `atlas` is not driven here: it is not opted into driving on this machine, and only a driven session carries '
-    + 'a set-up. Settings → Driver, or `daoris driver drive atlas`.',
-  '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Give it trees on Repositories, or with '
-    + '`daoris driver trees atlas on`.',
+    + 'a set-up. Drive it under Repositories → the repository\'s page → Setup → Driving, or with `daoris driver drive atlas`.',
+  '  - `atlas`\'s sessions run in its checkout, not a tree of their own. Give it trees under Repositories → the '
+    + 'repository\'s page → Setup → Driving, or with `daoris driver trees atlas on`.',
   '--plan: nothing was published, and no rule was added.',
   '',
 ];
@@ -100,7 +100,7 @@ const PRESSED = [
   '  quest  #0123456789ab',
   'added to `atlas`\'s rules, so its session may run the doctrine tool:',
   ...rules,
-  '  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --repository atlas`.',
+  '  taken back in Repositories → the repository\'s page → Setup → Reach, or `daoris agent rules remove <rule> --repository atlas`.',
   '',
 ];
 

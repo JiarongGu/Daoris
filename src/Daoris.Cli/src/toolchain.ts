@@ -994,7 +994,7 @@ export function nextStartLines(scope: Scope, says = false, anySaid = false): { r
  * @remarks
  * 🔴 It never names the account a step would choose. Fewest running and least recently started read Daoris's session
  * records, which this command does not read, so a walk here without them would not be the driver's (D57: absent is never
- * zero). Settings → Agents asks the driver's own judgement (`AccountRotation.Next`), and no `daoris-driver` verb answers
+ * zero). The agent's page asks the driver's own judgement (`AccountRotation.Next`), and no `daoris-driver` verb answers
  * it, so the pointer names the screen alone. A hold the roster alone knows (refused, signed out by the agent's last word)
  * is not said here; each account's own line says what its probe found.
  *
@@ -1036,9 +1036,10 @@ export function nextStartBeneath(scope: Scope, owner: string, home: string, now:
     }
   }
 
+  // UX6e2: the screen that names it is the agent's page in the Agents place since UX6e (D150 §5.2).
   if (scope.list.length > 1) {
-    lines.push('Settings → Agents names the account it takes, from the sessions Daoris runs and its last starts, which this '
-      + 'terminal does not read');
+    lines.push('Agents → the agent\'s page → How accounts are used names the account it takes, from the sessions Daoris '
+      + 'runs and its last starts, which this terminal does not read');
   }
   return lines;
 }

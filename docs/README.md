@@ -77,6 +77,7 @@ changes no row (D127).
 | `2026-10-04-built-in-git-design.md` | contract | Git built in: a place holding each repository's branches by kind, history as a graph, a commit, a file's history and blame, a compare; acts on refs, a push only on the person's press, managed Git offered (GIT1) | Designed (D147); GIT1a–c built, their notes under D147. Amends the push in D87, D100 and D109, D97 and D66 |
 | `2026-10-04-plugin-hooks-design.md` | contract | Plugin hooks: the points plugins speak at today; a query asking a landed branch's plugin for its pull request's state, so a squash-merged pull request's branches can go; other processes weighed (PLUGHOOK1) | Designed (D148); PLUGHOOK1a and 1c built. Amends D102's rejection of asking the platform, D88, D113, D147 §3.4 and D64 §4 |
 | `2026-10-04-ux6-redesign.md` | contract | Simpler as it grows: a setting on its thing, a repository's setup and git on its page, Agents a place with one account list, What needs you leading Overview, a plugin's tools, each screen measured (UX6, PLUGTOOL1) | Designed (D150); nothing built. Amends D66, D75, D118 §2, D147 §6–§7, D121 §1 and D64 §3 |
+| `2026-10-04-orientation-everywhere-design.md` | contract | Every driven repository keeps a generated index of where things are, checked by its own tooling so a clone without Daoris works; the service indexes it, hits name lines, driven sessions measured (ORIENT2) | Designed (D151); nothing built. Amends the map design's ORIENT1a note, D122 §2.7, D124 §3, §7 and D128 §3 |
 
 ## Studies and evidence
 

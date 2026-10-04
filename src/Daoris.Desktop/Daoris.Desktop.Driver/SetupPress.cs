@@ -172,11 +172,13 @@ public static partial class SetupPress
         }
 
         var refusals = new List<SetupRefusal>();
+        // HELPSETUP1: driving and a tree per session are the repository's own, on its Setup → Driving since UX6f (D150 §4.2).
         if (!config.Drivable.Contains(row.Repository, StringComparer.OrdinalIgnoreCase))
         {
             refusals.Add(new(SetupRefusals.NotDriven,
                 $"`{row.Repository}` is not driven here: it is not opted into driving on this machine, and only a driven "
-                + $"session carries a set-up. Settings → Driver, or `daoris driver drive {row.Repository}`."));
+                + "session carries a set-up. Drive it under Repositories → the repository's page → Setup → Driving, or with "
+                + $"`daoris driver drive {row.Repository}`."));
         }
         else if (!row.Adopted && door != SessionWire.Acp)
         {
@@ -190,8 +192,8 @@ public static partial class SetupPress
         {
             refusals.Add(new(SetupRefusals.NoOwnTree,
                 $"`{row.Repository}`'s sessions run in its checkout, not a tree of their own, and a set-up rewrites what "
-                + "every later session there reads, so it lands on a branch of its own. Give it trees on Repositories, "
-                + $"or with `daoris driver trees {row.Repository} on`."));
+                + "every later session there reads, so it lands on a branch of its own. Give it trees under Repositories → "
+                + $"the repository's page → Setup → Driving, or with `daoris driver trees {row.Repository} on`."));
         }
 
         var line = await world.ReadLineAsync(row, config, ct).ConfigureAwait(false);

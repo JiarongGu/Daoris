@@ -6,6 +6,7 @@ import { delimiter, dirname, join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { makeFixture, type Fixture } from './_fixture.ts';
+import { readManifest, readNeeds } from '../src/plugins.ts';
 
 /**
  * WSR4 (D100): the two example plugins that land work — one for GitHub, one for Azure DevOps — driven
@@ -314,6 +315,75 @@ test('each example plugin declares only points the loop never asks, so installin
     assert.ok(existsSync(join(examples, plugin, 'README.md')), `${plugin} has a README`);
   }
 });
+
+// ——— PLUGTOOL1b (D150 point 7, the UX6 design §7.4): each plugin declares the tools its process runs
+
+/**
+ * What each plugin declares: Node.js for its `land.mjs`, Git for its push, and its platform's CLI with the checks a person
+ * puts right with its `fix`. Each floor is the oldest release that has everything the plugin runs with that tool, the
+ * version question Daoris asks included, and its README's *Why each version* says where each was read.
+ */
+const DECLARED: Record<string, { id: string; kind: string; versions: string; checks: [string, string, string][] }[]> = {
+  'github-pull-request': [
+    { id: 'node', kind: 'own', versions: '>=16.6.0', checks: [] },
+    { id: 'git', kind: 'own', versions: '>=1.7.0', checks: [] },
+    { id: 'gh', kind: 'known', versions: '>=1.9.0', checks: [['gh auth status', 'Signed in', 'gh auth login']] },
+  ],
+  'azure-devops-pull-request': [
+    { id: 'node', kind: 'own', versions: '>=16.6.0', checks: [] },
+    { id: 'git', kind: 'own', versions: '>=1.7.0', checks: [] },
+    {
+      id: 'az', kind: 'known', versions: '>=2.0.79', checks: [
+        ['az extension show --name azure-devops --output none', 'Its devops extension is added', 'az extension add --name azure-devops'],
+        ['az account show --output none', 'Signed in', 'az login'],
+      ],
+    },
+  ],
+};
+
+for (const [plugin, declared] of Object.entries(DECLARED)) {
+  test(`the ${plugin} plugin declares Node.js, Git and its platform's CLI, each with its floor, read with no problem`, () => {
+    const { manifest, problem } = readManifest(plugin, join(examples, plugin), true);
+    assert.equal(problem, null);
+    assert.equal(manifest.toolsProblem, null);
+    assert.deepEqual(manifest.tools.map((tool) => tool.problem), declared.map(() => null));
+    assert.deepEqual(
+      manifest.tools.map((tool) => ({ id: tool.id, kind: tool.kind, versions: tool.versions, checks: tool.ready.map((check) => [check.run.join(' '), check.says, check.fix]) })),
+      declared,
+    );
+    for (const tool of manifest.tools) {
+      assert.ok(tool.for, `${tool.id} says why the plugin runs it`);
+      // A check runs its own tool, so it is found as that tool is.
+      for (const check of tool.ready) assert.equal(check.run[0], tool.id);
+    }
+  });
+
+  test(`the ${plugin} plugin declares exactly the programs it starts`, () => {
+    const { manifest } = readManifest(plugin, join(examples, plugin), true);
+    const source = readFileSync(join(examples, plugin, 'land.mjs'), 'utf8');
+    const started = new Set([manifest.hooks!.command[0]!, ...[...source.matchAll(/\brun\('([^']+)'/g)].map((found) => found[1]!)]);
+    assert.deepEqual([...started].sort(), manifest.tools.map((tool) => tool.id).sort());
+  });
+
+  test(`the ${plugin} plugin's README points at its manifest for what it needs, and says where each floor was read`, () => {
+    const folder = join(examples, plugin);
+    const { manifest } = readManifest(plugin, folder, true);
+    assert.ok(readNeeds(folder).some((need) => need.includes('`plugin.json`') && need.includes('`tools`')), readNeeds(folder).join(' | '));
+    // No floor is written twice: the manifest holds each, and the README's needs name none.
+    for (const tool of manifest.tools) {
+      const floor = tool.versions!.slice(2);
+      assert.ok(!readNeeds(folder).some((need) => need.includes(floor)), `${tool.id}'s floor ${floor} is in the needs`);
+    }
+
+    const readme = readFileSync(join(folder, 'README.md'), 'utf8').replace(/\r\n/g, '\n');
+    const start = readme.indexOf('\n## Why each version\n');
+    assert.ok(start >= 0, 'the README has its Why each version section');
+    const why = readme.slice(start + 1).split(/\n## /)[0]!;
+    for (const tool of manifest.tools) {
+      assert.match(why, new RegExp(`^- \\*\\*${tool.name!.replace('.', '\\.')} ${tool.versions!.slice(2).replace(/\./g, '\\.')}\\*\\*`, 'm'), `${tool.id}'s floor is cited`);
+    }
+  });
+}
 
 // ——— PLUGHOOK1a (D148 point 7, the plugin hooks design §2.6): the Azure DevOps plugin answers `work/state`
 

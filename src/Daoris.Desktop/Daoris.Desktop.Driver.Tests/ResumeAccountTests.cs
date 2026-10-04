@@ -185,7 +185,8 @@ public sealed class ResumeAccountTests : IDisposable
             "To start a conversation with these words now instead, without that one: `daoris-driver chat --repository engine`.",
             ResumeWords.ChatDoor("engine"));
         Assert.EndsWith(
-            "If you have signed in to another account at your own terminal since, refresh Settings → Agents.",
+            "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's "
+            + "page → Accounts.",
             ResumeWords.Waits(cooling with { Account = null }, TimeZoneInfo.Utc));
     }
 

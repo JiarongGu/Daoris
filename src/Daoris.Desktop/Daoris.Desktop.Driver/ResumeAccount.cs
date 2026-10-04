@@ -91,8 +91,10 @@ public static class ResumeWords
     {
         var said = $"{CoolingWords.Who(cooling)} is cooling until {CoolingWords.When(cooling.Until, zone)}, {CoolingWords.Why(cooling)}, "
                    + "and its conversation is on that account, so your words wait to go on in it then.";
+        // UX6e2: the refresh is the Agents place's Read again, since opening it asks nothing (D150 §5.3).
         return cooling.Account is null
-            ? $"{said} If you have signed in to another account at your own terminal since, refresh Settings → Agents."
+            ? $"{said} If you have signed in to another account at your own terminal since, press Read again under Agents → "
+              + "the agent's page → Accounts."
             : said;
     }
 

@@ -13,6 +13,12 @@ namespace Daoris.Driver;
 /// </remarks>
 internal sealed class HelpRoomDoors : IHelpRoomSection
 {
+    /// <summary>A repository's Setup (UX6f, D150 §4.2), where its own values are set, before the section that holds one.</summary>
+    private const string Setup = "Repositories → the repository's page → Setup → ";
+
+    /// <summary>An agent's page in the Agents place (UX6e, D150 §5.2), before the section or press that holds a change.</summary>
+    private const string Agent = "Agents → the agent's page → ";
+
     /// <summary>What each change is, where it is on the screen, and the command that does the same (D50).</summary>
     internal static readonly (string To, string Screen, string Terminal)[] Doors =
     [
@@ -21,10 +27,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, "
             + "what is driven, how work lands, what agents may do", "Settings → Setup (the Daoris menu's *Setup*)",
             "(each step shows its own command there)"),
-        ("drive a repository, or stop", "Repositories", "`daoris driver drive|undrive <repository>`"),
+        // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's default keeps its
+        // Settings home until the workspace's page takes it (UX6g).
+        ("drive a repository, or stop", Setup + "Driving", "`daoris driver drive|undrive <repository>`"),
         // PAUSE1b (D132 §13): a repository's hold, never a pause; a pause is an ask's or a quest's, and stops what runs.
-        ("hold one, so nothing new starts there, or resume it", "Repositories", "`daoris driver hold|resume <repository>`"),
-        ("give its sessions their own tree", "Repositories", "`daoris driver trees <repository> on|off`"),
+        ("hold one, so nothing new starts there, or resume it", Setup + "Driving", "`daoris driver hold|resume <repository>`"),
+        ("give its sessions their own tree", Setup + "Driving", "`daoris driver trees <repository> on|off`"),
         // LAYOUT7: the set-up press's terminal door; its screen and Ask Daoris's `setup` kind are LAYOUT8's, owed meanwhile.
         ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
             + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
@@ -40,9 +48,9 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("register a repository from what its line declares, as `connect` would, without running it: after a set-up's "
             + "branch is merged and brought up to date, or a declaration changed outside Daoris",
             "(no screen yet)", "`daoris-driver register [--repository <name>]`"),
-        ("set the line its work grows from and lands on", "Settings → Workspace → Lines",
+        ("set the line its work grows from and lands on", Setup + "Line and landing; a workspace's, Settings → Workspace → Lines",
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
-        ("set how accepted work lands", "Settings → Workspace → How work lands",
+        ("set how accepted work lands", Setup + "Line and landing; a workspace's, Settings → Workspace → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and "
             + "`--auto-accept`: a quest's done lands it with no press)"),
@@ -83,46 +91,50 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver cooloff <minutes>`"),
         ("bound how many sessions run at once", "(no screen yet)", "`daoris driver cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
-        ("allow, ask or deny what an agent may do", "Settings → Permissions", "`daoris agent rules …`"),
+        // UX6e2: the rules for every session and Daoris's defaults are the agent's page's (UX6e); a repository's are on its
+        // Setup (UX6f); a workspace's stay in Settings → Permissions until UX6g.
+        ("allow, ask or deny what an agent may do",
+            Agent + "What it may do; a repository's, " + Setup + "Reach; a workspace's, Settings → Permissions", "`daoris agent rules …`"),
         // D107: reading other checkouts is on unless switched off; writing into one is a declared relationship.
         ("let agents read a repository's checkout, or not; let one repository's sessions write into another",
-            "Settings → Permissions → Across repositories",
+            Setup + "Reach; a workspace's reading, Settings → Permissions → Across repositories",
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
         // KNOWUSE1b: what the person says holds for every session in one repository, kept on this machine (D135 §3).
         ("keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test",
-            "Repositories → the repository's page → Standing answer", "`daoris driver standing <repository> \"…\"|--clear`"),
+            Setup + "Sessions", "`daoris driver standing <repository> \"…\"|--clear`"),
         // LANG1c (D142 points 7–8): the work's language, apart from the window's; Ask Daoris proposes it as the `setting`
         // kind's `language` door since LANG1c2.
         ("set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline "
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
-            "Repositories → the repository's page → Session language; Settings → Workspace → Session language",
+            Setup + "Sessions; a workspace's, Settings → Workspace → Session language",
             "`daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
-        ("sign an agent in, or add an account", "Settings → Agents", "`daoris agent login <agent>`"),
+        // UX6e2: an agent's accounts, ways in and model are on its page in the Agents place since UX6e (D150 §5.2).
+        ("sign an agent in, or add an account", Agent + "Accounts", "`daoris agent login <agent>`"),
         // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
         // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).
         ("choose which account an agent's sessions use, for the machine or a workspace",
-            "Settings → Agents → Make default, use for a workspace",
+            Agent + "an account's ⋯ → Use by default, Use by default in a workspace",
             "`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: "
             + "the tool's own home, or for a workspace the machine's default)"),
         // TOOL4e (D125 §6): the order and *Try now*, the terminal's doors; TOOL4g gave them the screen. Ask Daoris's `order`
         // and `ready` wait on the service's writer (HelpCoverageTests).
         ("choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never "
-            + "rotates)", "Settings → Agents → How accounts are used → Use, up and down, and a workspace's Its own accounts",
+            + "rotates)", Agent + "How accounts are used → Use, up and down; and Workspaces → Its own accounts",
             "`daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]`"),
         // TOOL6a (D130 §16.6): how a list is used, the terminal's door; TOOL4g gave it the screen's controls, and judges Ask
         // Daoris's `use` door (`use`, `keep`, `early`, `near`), offered once the service's writer spells it.
         ("choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one "
             + "in order (`order`), one kept for conversations, and switching before a limit",
-            "Settings → Agents → How accounts are used → Use accounts, Keep for conversations, Switch before the limit",
+            Agent + "How accounts are used → Use accounts, Keep for conversations, Switch before the limit",
             "`daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] "
             + "[--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults)"),
-        ("end an account's cool-off now, after its agent hit a limit", "Settings → Agents → the account's Try now",
+        ("end an account's cool-off now, after its agent hit a limit", Agent + "the account's Try now",
             "`daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in)"),
         // HELP6: the doors built since, which the helper now proposes too.
-        ("update an agent, or pin it to one version", "Settings → Agents → Update, Pin a version",
+        ("update an agent, or pin it to one version", Agent + "Ways in → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
-        ("set an account's own model and effort", "Settings → Agents → Model & effort",
+        ("set an account's own model and effort", Agent + "Model and effort",
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
         // PAUSE1b (D132 §7.2): the terminal's doors; the pages' and a session's acts are PAUSE1e's, and Ask Daoris's `pause` kind
         // PAUSE1f's, owed meanwhile (HelpCoverageTests).

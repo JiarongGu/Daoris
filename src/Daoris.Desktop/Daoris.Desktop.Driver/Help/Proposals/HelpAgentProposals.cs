@@ -80,8 +80,9 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         {
             if (!door.Present)
             {
+                // UX6e2: an agent's ways in, Install among them, are on its page in the Agents place since UX6e.
                 return Refused($"`{name}` is not installed on this machine, so there is nothing to update — install it under "
-                    + $"Settings → Agents, or with `daoris agent install {name}`.");
+                    + $"Agents → the agent's page → Ways in → Install, or with `daoris agent install {name}`.");
             }
 
             return door.Updates switch

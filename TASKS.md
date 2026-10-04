@@ -56,16 +56,18 @@ Measured on the day's three integrations: the driver's real-process half took 30
 everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
 running them again.
 
-- [ ] **MERGEJOIN1 — a union merge never leaves two decision notes touching** (tools; seen three times merging the day's
-  UX6 branches). Two branches each appending a dated note to one decision leave the second label straight under the
-  first's last line, and `doc-duplicates` fails `verify` at the merge. The merge tool sets a blank line before such a
-  label in the merged decision files, as it writes `docs/index/`, and says so. Contract: D106. Proof: a merge-tool test
-  over two branches that each append a note.
-- [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
-  starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
-  worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps
-  current, index this repository's documents and `docs/index/`, and measure with `orient-report` whether agents ask it.
-  Contract: D24, D135. Proof: a session that connects; the report's reads of the knowledge search.
+- [ ] **ORIENT1f — search splits identifiers** (service; found by ORIENT1c). `ProbeLock` is one token, so "what decided
+  the probe lock" misses the note that decided it. Index and query a camel-case or snake-case name also as its words.
+  Contract: `Text.Tokenize`/`Segment`. Proof: that question answers first with the FIX-LOG entry or D125's TOOL6g note;
+  `SearchTests` green.
+- [ ] **ORIENT1g — a decision's dated notes are entries of their own** (service; found by ORIENT1c). A 60 KB decision
+  is one entry and its length buries it. Index each dated note as its own entry, the digest's note label the twin.
+  Contract: D134 §5 (amended). Proof: the probe-lock question lands on D125's TOOL6g note.
+- [ ] **AGENTREAD1 — the terminal's account listing keeps what it read** (cli; found by ROSTER1). `daoris agent list`
+  asks every account and the own sign-in and writes nothing, so the screen and the loop learn nothing from the
+  terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
+- [ ] **ROSTER1b — a start that fails on an account never read reads it once** (driver; found by ROSTER1). D150 §5.3
+  lists a start's refusal as a reason to read; not built. Proof: a Process test where the next start walks past it.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
@@ -91,7 +93,6 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
 - [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).
 - [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings; §2.1, §2.3, §2.4).
-- [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
 - [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
   driver; after PLUGUI1c; §7.5).
 - [ ] **ROSTER1 — the roster asks no account at start, and reads one account on a press** (driver, modules; found by
@@ -99,18 +100,10 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
   TOOL6g, and an account edit re-reads them all. The driver's report says when it read each account, reads one into the
   report on a press (an account's *Read again*), and starts from what it last read; `RosterReads` retires. Contract:
   D150 §5.3, D125's TOOL6g note. Proof: a tick and a route test showing no probe at a look or at start.
-- [ ] **UX6e2 — the words and the twins follow the Agents place** (driver, cli; found by UX6e). The driver's sentences
-  (`RotationWords`, `HelpRoomDoors`), the room's places and `HelpPlaces`, and the CLI's `agent list` still say Settings →
-  Agents; the page's `places.ts` maps the old names until they move. Contract: D150 §3.1. Proof: the twins' tables and
-  the room's golden files.
 - [ ] **TRYTOOLS1 — a folder's trial starts its hook with the machine's tools** (driver; found by PLUGTOOL1a).
   `TryFolderAsync` hands the plugin a scratch home and `HookProcess.StartInfo` reads tools from it, so a folder trial
   starts PATH's node where the machine manages one, while its tool steps read the machine's. Contract: D101 (*as the
   driver would*), D121 §3. Proof: a Process test with node set as a named file.
-- [ ] **HELPSETUP1 — Ask Daoris names a repository's Setup** (driver; found by UX6f). The help room's text and places
-  still send a person to Settings → Workspace and Permissions, or the old page, for a repository's line, landing,
-  reading across, standing answer and language (`HelpRoomDoors.cs`, `HelpRoomMayDo.cs:75`, `RegistrationFollow.cs:215`).
-  Contract: D150 §3.1. Proof: `HelpRoomGoldenTests`, `HelpCoverageTests`, the `places.ts` twin table.
 - [ ] ⏸ **COWORK1 — agents that work together** (design; held until the owner shapes it). Today agents cooperate
   only through a quest (a request one way, a done back) and an ask's intake (one ask split into quests). What
   working together should add (seeing each other's progress on related work, asking mid-work, handing off, one
@@ -142,17 +135,34 @@ Order: PLUGUI1c, then f and g; FRAME1i, then PLUGUI1h. Each is looked at on the 
 KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
 3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
 
-- [ ] **ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris** (design first;
-  canon, driver, service; owner, 2026-10-04: *"so this should also apply to the repositories Daoris drives too, and an
-  even better knowledge system since Daoris is there"* · *"and it should not break the general workflow if the system
-  running the code does not have Daoris (this is for sharing repositories)"*). ORIENT1 measured the cost here; a driven
-  session pays it in every repository. The floor is committed files that any agent on any machine reads (D48 §2a): a
-  generated index of where things are and a digest of the repository's decisions and knowledge, kept fresh by the
-  repository's own check; the canon teaches the principle and leaves the mechanism to the repository; the set-up session
-  writes both in the repository's own tooling (D124, D128). Where Daoris is present the knowledge service indexes them
-  too, the deployment may turn on the semantic tier (D24), and driven sessions are handed the search; without Daoris
-  nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
-  after.
+- [ ] **ORIENT2a — the canon teaches the index** (canon, examples). Every adopter learns to keep a generated index its
+  own tooling keeps true. `development-documents` gains the `index` role and a section, `doc-loader` and
+  `set-up-documents` a step each, with `templates/index.md`, a changelog entry and both examples re-synced. Contract:
+  design §1.3, D151 §3. Proof: canon tests, the D48 §2a scan; core bytes unchanged.
+- [ ] **ORIENT2b — the index declared** (cli). The brief's line is what sends a session to the index first. `index`
+  joins `ROLES` after `router`; `sync` renders its row in *Where things are*; `check` fails on a missing declared path;
+  Daoris declares `docs/index/README.md`. Contract: design §1.4, D151 §4. Proof: documents tests; the region measured,
+  about 120 bytes more.
+- [ ] **ORIENT2c — the index quest** (driver). A driven repository gets its index from its own session, once set up.
+  The press and plan publish *Give this repository an index of where things are*: inventory first, a generator at a
+  named path with its two commands granted, its check, the declaration, nothing else. Contract: design §2, D151 §5.
+  Proof: `SetupBriefTests`; the family rehearsal.
+- [ ] **ORIENT2d — the driven look starts at the index** (driver). A session told where things are reads ranges, not
+  files. `RepositoryIndexes.Find` names the declared `documents.index` first, and the look says to open its row, then
+  its lines, before searching. With none declared the instruction reads as today. Contract: design §3.3, D151 §6.
+  Proof: `AskAndWaitPromptTests` goldens, each failing first.
+- [ ] **ORIENT2e — the service indexes the index; hits name lines** (service). With Daoris present, a where-question
+  finds a place across the workspace. The scanner reads the declared index, split at headings, as
+  kind `index`; entries keep their lines; a hit names `path:start-end`; `knowledge_get` takes a range. Contract: design
+  §3.1–§3.2, D151 §6. Proof: scanner and tool tests; the tier line.
+- [ ] **ORIENT2f — the fresh-clone proof** (examples, tools). An index must work where nothing of Daoris is installed.
+  One example gains a generator, its check in its own test, and its declaration; the family rehearsal clones it with no
+  `daoris` and no service, moves a line, sees the check fail, regenerates, passes. Contract: design §4, D151 §2. Proof:
+  the new phase.
+- [ ] **ORIENT2g — the after** (the owner's install, read only). Once index quests land at the plan's pace, ORIENT1e
+  reads the same home again. Targets before the first edit: calls, characters, and shell searches and dumps halved;
+  whole reads of outlined files a quarter; 8 in 10 open the index; parks no higher. Contract: design §5.3–§5.4, D151
+  §7. Proof: an evidence note.
 - [ ] **KNOWUSE2b — the 46 through the bench** (the owner's). The 46 go through the floor against the work repository's
   own knowledge and through the model tier on the install's harness, with the account the owner chooses. KNOWUSE3 waits
   until the count answered in the person's place is zero. Contract: D135 §6 and its KNOWUSE2 note, whose command lines

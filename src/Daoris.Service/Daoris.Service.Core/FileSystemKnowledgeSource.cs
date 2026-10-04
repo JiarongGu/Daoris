@@ -9,13 +9,19 @@ namespace Daoris.Knowledge;
 /// the refresh reported success and a count that looked right. That is the ghost rule's mirror image,
 /// and it fails the same way — by looking fine.
 /// </remarks>
-public sealed class FileSystemKnowledgeSource(Func<IReadOnlyList<string>> repositoryRoots) : IKnowledgeSource
+/// <param name="repositoryRoots">The checkouts to read, listed afresh on every read.</param>
+/// <param name="scanner">
+/// How each is read: the scanner a deployment configured, with the documents and the index it names
+/// (ORIENT1c), or the default, which reads neither.
+/// </param>
+public sealed class FileSystemKnowledgeSource(
+    Func<IReadOnlyList<string>> repositoryRoots, RepositoryScanner? scanner = null) : IKnowledgeSource
 {
-    private readonly RepositoryScanner _scanner = new();
+    private readonly RepositoryScanner _scanner = scanner ?? new();
 
     /// <summary>An explicit, fixed set of repository roots.</summary>
-    public FileSystemKnowledgeSource(IReadOnlyList<string> repositoryRoots)
-        : this(() => repositoryRoots)
+    public FileSystemKnowledgeSource(IReadOnlyList<string> repositoryRoots, RepositoryScanner? scanner = null)
+        : this(() => repositoryRoots, scanner)
     {
     }
 
