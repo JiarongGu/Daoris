@@ -286,6 +286,26 @@ public sealed class DriverCommandTests
         Assert.DoesNotContain("MachineLog", console);
     }
 
+    /// <summary>
+    /// PLUGHOOK1c (D148 point 2, design §2.1 occasion 4, D50): <i>Ask again</i> from a terminal is a <c>trees</c> verb the usage
+    /// names, the host reads and routes to the library's ask, whose words the library says (<c>PullRequestWordsTests</c>). The
+    /// plugin's lines are said under its name, and its frames written to the machine log, as a landing's are. The clean-up's and
+    /// bringing up to date's looks, which ask too, say and write theirs the same way.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_asking_a_landed_branchs_plugin_again_and_the_host_routes_it()
+    {
+        Assert.Contains("| state <session|branch> [--repository <name>]", DriverCommand.Usage);
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        Assert.Contains("case [\"state\", var named, ..]", console);
+        Assert.Contains("| state <session|branch> [--repository <name>]", console);
+        Assert.Contains("asking.AskAgainAsync(root, entry)", console);
+        Assert.Contains("PullRequestWords.AskedAgain(again)", console);
+        Assert.Contains("asking.CleanPlanAsync(repositories, inUse)", console);
+        Assert.Contains("asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope)", console);
+        Assert.Contains("new LandingPlugins(home, say: (id, line) => Console.WriteLine($\"  plugin:{id}  {line}\"), log: log)", console);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

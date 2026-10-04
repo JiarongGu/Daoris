@@ -14,8 +14,8 @@ Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1170 CLI tests, 1124 service and 67 HTTP host, 4626 driver,
-704 desktop modules, 80 devkit, 3798 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1187 CLI tests, 1124 service and 67 HTTP host, 4626 driver,
+704 desktop modules, 80 devkit, 3901 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -56,23 +56,18 @@ Measured on the day's three integrations: the driver's real-process half took 30
 everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
 running them again.
 
-- [ ] **GATE3 — a merge runs the gates its lanes reach; the full set runs before the install is staged** (tools). The
-  merge tool maps each lane to the gates that can see it (docs: universal, code-map, verify; web: those and the web;
-  driver and modules: their suites and halves and the family rehearsal; the desktop and publish scripts: the deployment
-  rehearsal), and `publish:desktop --stage` refuses a commit the full set has not passed. The "web only batch broke main"
-  lesson holds through the staging gate, the same day. Contract: MOD8, MOD9, D60. Proof: the plan's gate list per lane
-  set; the stage refusing an ungated commit.
-- [ ] **GATE4 — a fixed gate re-runs alone** (tools). `merge-branch --rerun <gate>…` re-runs only the named gates on the
-  merge in place and keeps the rest's verdicts, where `--continue` runs every gate again. Proof: a plan test; the
-  summary naming which verdicts were kept and from when.
+- [ ] **GATE5 — a merge skips the long halves; they run once before the install is staged** (tools; owner, 2026-10-04:
+  *"didn't we discuss that we should make the test gate or review gate smaller for this long-running development"*).
+  GATE3's lane table still sends any driver change through the real-process halves and the deployment rehearsal, 30 to
+  70 minutes a merge. A merge runs the baseline, the fast halves of the suites its lanes reach, the web gate and the
+  release and family rehearsals it reaches; the Process halves and the deployment rehearsal run only in `--full`, which
+  `publish:desktop` already requires (first done by hand, merging integrate-al). Contract: GATE3, D115's note, MOD8.
+  Proof: the plan's gate list for a driver change; `--full` still naming every gate.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
   flakes' common factor, so parallel workers need their own homes, not shared ones). Proof: three serial-equivalent
   runs green and the timing.
-- [ ] **WEBFAST1 — the web's unit tests build jsdom once per worker** (web-shell). Vitest reports jsdom created 225
-  times, 27% of its time; `pool: 'vmThreads'` keeps per-file isolation and creates it once. Proof: the suite green and
-  its time before and after.
 - [ ] **GATE1 — the docs gate is blind at the merge** (tools; found 2026-10-02): the devkit's `docs` gate reads committed
   dates, so a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once
   committed (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
@@ -87,8 +82,6 @@ The contract is `docs/2026-10-04-ux6-redesign.md`; its §12 carries each row's f
 d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c.
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
-- [ ] **UX6b — a remembered choice ends with its item; the side bar follows only live work** (web-shell; §1, §2.5).
-- [ ] **UX6c — What needs you leads Overview and settles what it can** (web-shell; §6).
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
 - [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; §5, §2.4), with
   TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
@@ -195,10 +188,6 @@ rows have a heading of their own below, and AFTER1 is held.
 - [ ] **PLUGHOOK1b — the GitHub plugin answers `work/state`** (examples; after PLUGHOOK1a). The same query through
   `gh pr view` and `gh pr list --head`, so a GitHub repository's squash-merged branches go too. Contract: design §2.7,
   D148 point 7. Proof: `landing-plugins.test.ts` with a fake `gh`.
-- [ ] **PLUGHOOK1c — the terminal reads and asks it** (driver; after PLUGHOOK1a). `trees state`, the state on
-  `trees land --plan`, the clean-up's codes and `git branches` (GIT1a's list reads `pullRequestState`), and bringing up
-  to date asking after its fetch, where a merge commit first arrives. Contract: design §2.1, §2.5. Proof:
-  `DriverCommandTests`, `HelpCoverageTests`, `GitBranchesReadTests`, the sync's git fixtures.
 - [ ] **PLUGHOOK1d — the page reads and asks it** (modules, web-shell, web-settings; after PLUGHOOK1c). The review's
   note with *Ask again*; the codes on the session-branch and sync rows (a workspace's Branches tab after UX6g) in both
   catalogues; `Sweep.tsx`'s kinds `pull-request` and `carried`; `plugin.kit.kind.query`'s words; a failing

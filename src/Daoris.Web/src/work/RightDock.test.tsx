@@ -4,8 +4,9 @@ import { act, render as rtlRender, screen, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
+import type { SessionState } from '../api';
 import { layTabs } from '../test/tabRoom';
-import { type DockPreview, RightDock } from './RightDock';
+import { type DockPreview, dockOpensOn, followed, RightDock } from './RightDock';
 import type { ViewId } from './placements';
 
 /** The provider the application mounts once (`main.tsx`), with no delay so a tip is read at once. */
@@ -29,6 +30,36 @@ const dock = (props: Partial<Parameters<typeof RightDock>[0]> = {}) => (
     <p>the surface</p>
   </RightDock>
 );
+
+/**
+ * UX6b (design §2.5, D150 §8): off Sessions the side bar kept an ended session from the day before, its whole done note
+ * running past the window's foot. A session's views follow the attended session off Sessions only while it runs or waits
+ * on the person; with none followed the side bar opens on Ask Daoris. On Sessions nothing changes.
+ */
+describe('what the side bar follows', () => {
+  const session = (state: SessionState) => ({ id: 's1a2b3c4', state });
+  const ENDED: SessionState[] = ['completed', 'declined', 'stood-down', 'failed', 'stopped'];
+  const LIVE: SessionState[] = ['queued', 'starting', 'working', 'awaiting-person'];
+
+  it('follows the attended session on Sessions, whatever its state', () => {
+    for (const state of [...LIVE, ...ENDED]) expect(followed(session(state), false)).toEqual(session(state));
+    expect(followed(null, false)).toBeNull();
+  });
+
+  it('follows it off Sessions only while it runs or waits on the person', () => {
+    for (const state of LIVE) expect(followed(session(state), true)).toEqual(session(state));
+    for (const state of ENDED) expect(followed(session(state), true)).toBeNull();
+    expect(followed(null, true)).toBeNull();
+  });
+
+  it('opens on Ask Daoris off Sessions with no session followed, and on the timeline otherwise', () => {
+    expect(dockOpensOn(true, false)).toBe('ask');
+    expect(dockOpensOn(true, true)).toBe('timeline');
+    // On Sessions it opens on the timeline as it always has, attended or not: nothing changes there.
+    expect(dockOpensOn(false, false)).toBe('timeline');
+    expect(dockOpensOn(false, true)).toBe('timeline');
+  });
+});
 
 /** Each tab as the eye reads it: the words it shows, which are none when it is drawn as its icon. */
 const shown = () => screen.getAllByRole('tab').map((tab) => [tab.getAttribute('aria-label'), tab.textContent]);

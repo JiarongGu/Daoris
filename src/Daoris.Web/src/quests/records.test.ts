@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Quest, Session } from '../api';
-import { answered, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf } from './records';
+import type { Ask, Quest, Session } from '../api';
+import {
+  answered, askStanding, freshest, keptFilters, latestSessions, questFilters, questGroups, questionOf, questStanding,
+} from './records';
 
 // Quests' list and its memory as values (FRAME1d, D118 §2, §3f): every list a person could have is an argument.
 
@@ -106,5 +108,50 @@ describe('the question a quest waits on (D79)', () => {
     expect(answered(quest({ status: 'Done' }))).toBe(true);
     expect(answered(quest({ status: 'Declined' }))).toBe(true);
     expect(answered(undefined)).toBe(false);
+  });
+});
+
+// UX6b (design §1 rule 6): Quests reopens its chosen record only while it still waits on something. The install reopened
+// yesterday's done quest while two asks waited to be published.
+describe('whether a chosen record still waits', () => {
+  const ask = (over: Partial<Ask>): Ask => ({
+    id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration.', state: 'Proposed', tier: 'declarations',
+    asked: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z', links: [], attachments: [], proposal: [], quests: [], ...over,
+  });
+
+  it('is unread while every quest is still on its way, and gone once they answered without it', () => {
+    expect(questStanding(undefined, false)).toBe('unread');
+    expect(questStanding(undefined, true)).toBe('gone');
+  });
+
+  it('waits while open or taken, and closes done or declined', () => {
+    expect(questStanding(quest({ status: 'Open' }), true)).toBe('live');
+    expect(questStanding(quest({ status: 'Taken' }), true)).toBe('live');
+    expect(questStanding(quest({ status: 'Done' }), true)).toBe('closed');
+    expect(questStanding(quest({ status: 'Declined' }), true)).toBe('closed');
+  });
+
+  it('still waits closed while a departure holds it for the person, or a move another machine made waits on them', () => {
+    expect(questStanding(quest({ status: 'Done', held: true }), true)).toBe('live');
+    const conflict = { machine: 'm2', sequence: 3, attempted: 'Taken' as const, at: '2026-09-02T00:00:00Z' };
+    expect(questStanding(quest({ status: 'Done', conflicts: [conflict] }), true)).toBe('live');
+    expect(questStanding(quest({ status: 'Done', conflicts: [] }), true)).toBe('closed');
+  });
+
+  it('waits on an ask while it is proposed, open or published, and closes it done or closed', () => {
+    expect(askStanding(undefined, false)).toBe('unread');
+    expect(askStanding(undefined, true)).toBe('gone');
+    expect(askStanding(ask({ state: 'Proposed' }), true)).toBe('live');
+    expect(askStanding(ask({ state: 'Open' }), true)).toBe('live');
+    expect(askStanding(ask({ state: 'Published' }), true)).toBe('live');
+    expect(askStanding(ask({ state: 'Done' }), true)).toBe('closed');
+    expect(askStanding(ask({ state: 'Closed' }), true)).toBe('closed');
+  });
+
+  it('still waits on a done ask whose go-ahead the person has not answered', () => {
+    const request = { session: 's1', at: '2026-09-02T00:00:00Z', why: 'to push' };
+    const goAhead = { number: 1, kind: 'push', on: 'origin', act: 'main', asked: [request] };
+    expect(askStanding(ask({ state: 'Done', goAheads: [{ ...goAhead, state: 'asked' }] }), true)).toBe('live');
+    expect(askStanding(ask({ state: 'Done', goAheads: [{ ...goAhead, state: 'approved' }] }), true)).toBe('closed');
   });
 });

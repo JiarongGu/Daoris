@@ -7,8 +7,15 @@
  * The parent merges subagents' branches into main many times a day, and until this tool it typed each
  * gate chain by hand. On 2026-09-30 that went wrong twice: a hand-typed chain lost a rehearsal's reason,
  * and a batch of a "web only" branch skipped the .NET suites, so two C# tests that read the web's
- * catalogues broke on main unseen. So nothing here chooses gates by what a branch touched. The plan is
- * read from what the repository already declares, and every merge runs all of it.
+ * catalogues broke on main unseen. So the plan is read from what the repository already declares.
+ *
+ * Every merge ran all of it, and that became the cost (GATE3, 2026-10-04): the driver's real-process half
+ * took 30, 48 and 126 minutes on one day's three integrations, and everything else about 25. So a merge
+ * now runs the gates its changed paths can reach, by the lane table below (`REACH`), and the lesson of
+ * that batch is kept in two places. The table is held by tests to what each suite reads and what each
+ * rehearsal runs, so a skipped gate is one that could not see the change. And the full set still runs
+ * before the install is built: `publish:desktop` refuses a tree no full set passed (`--passed` below),
+ * the same day, so a table that is wrong is caught before the person runs the build.
  *
  * ## What it does
  *
@@ -23,17 +30,42 @@
  * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
  *    their `merge=union` attribute (D106).
- * 6. The gates, one at a time, in a fixed order, fast first: every gate `daoris.gates.json` declares, plus
- *    every `npm run` step the release workflow runs that the declaration does not (the release and
- *    family rehearsals). The order is by kind (a devkit check, then the suites, then the rehearsals);
- *    within a kind the declared order holds, and the workflow's own rehearsals go before the declared
- *    ones, so the declaration's last gate, the deployment rehearsal, ends the run. That rehearsal starts
- *    after `dotnet build-server shutdown`: on 2026-09-30 a long-lived build server carried a broken
+ * 6. The gates, one at a time, in a fixed order, fast first. The plan is every gate `daoris.gates.json`
+ *    declares, plus every `npm run` step the release workflow runs that the declaration does not (the
+ *    release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
+ *    rehearsals); within a kind the declared order holds, and the workflow's own rehearsals go before the
+ *    declared ones, so the declaration's last gate, the deployment rehearsal, ends the run. That rehearsal
+ *    starts after `dotnet build-server shutdown`: on 2026-09-30 a long-lived build server carried a broken
  *    environment into a publish.
+ *    Of the plan, a merge runs the baseline (`BASELINE`: the universal gates, the code map and the CLI's
+ *    `verify`, at every merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
+ *    places runs every gate, and so does a gate the table never names. The lines before the run say why
+ *    each gate runs or is skipped. `--full` runs the whole plan.
  * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
  *    beside and renamed when the gate ends, and one line per gate says its result and that file. The
- *    first failing gate stops the run (`--keep-going` runs the rest), and what did not run is named.
- * 8. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ *    first failing gate stops the run (`--keep-going` runs the rest), and what did not run is named. A
+ *    Process gate also writes `<gate>.trx` there, each test's duration, and the ten slowest classes are
+ *    printed after its line (PROC1), so where its time goes is measured at every merge that runs it.
+ * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
+ *    `--rerun` and the stage read (below).
+ * 9. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ *
+ * ## A fixed gate re-runs alone (GATE4)
+ *
+ * `--rerun <gate>…` runs the named gates again on the merge in place, then any gate of its selection that
+ * has no verdict yet (the ones a failure stopped, or one a fix's paths now reach), and keeps every other
+ * verdict. The summary names each kept verdict and when it was given. `--continue` runs every selected
+ * gate again, as it always did.
+ *
+ * ## The full set before the install (GATE3)
+ *
+ * `--full` with no branch runs the whole plan on the checkout as it stands, merging nothing. `--passed`
+ * answers whether the full set passed the checkout's tree: every gate's newest verdict there is a pass,
+ * on this tree or on one that differs from it only by the records the parent writes after the gates (the
+ * steward's lane and the records that merge by union), since the install carries none of them.
+ * `tools/desktop-publish.mjs` asks it before it publishes anywhere but a scratch folder under `_fixtures`.
+ * A tree is the checkout's content as `git add -A` would stage it, written with an index of its own in
+ * the git folder, so an uncommitted fix and an untracked file count, and the person's index is untouched.
  *
  * ## The prune (GATE2)
  *
@@ -74,19 +106,23 @@
  * the checks and suites, the parent commits it, and `--continue` merges the next. The rehearsals run
  * once, after the last. The batch is recorded in `local/scratch/merge-batch.json`.
  *
- *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check] [--no-prune]
- *   node tools/merge-branch.mjs --continue [--keep-going] [--no-prune]
- *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…]
+ *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]
+ *   node tools/merge-branch.mjs --continue [--full] [--keep-going] [--no-prune]
+ *   node tools/merge-branch.mjs --rerun <gate>… [--keep-going]
+ *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
+ *   node tools/merge-branch.mjs --full [--keep-going]
+ *   node tools/merge-branch.mjs --passed
  *   node tools/merge-branch.mjs --prune [--plan]
  *   node tools/merge-branch.mjs --drop-batch
  *
- * Exit codes: 0 merged and every gate passed (flakes named), or pruned (a branch kept is the rule working)
- * · 1 a conflict, a failed gate, or a failed commit check · 2 refused (usage, not on main, a dirty tree,
- * an unknown branch) or a tool error.
+ * Exit codes: 0 merged and every gate passed (flakes named), or pruned (a branch kept is the rule working),
+ * or the full set passed the checkout · 1 a conflict, a failed gate, a failed commit check, or a checkout
+ * the full set has not passed · 2 refused (usage, not on main, a dirty tree, an unknown branch) or a tool
+ * error.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  closeSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { isMain } from './fsx.mjs';
@@ -98,6 +134,16 @@ const SHUTDOWN = 'dotnet build-server shutdown';
 const KINDS = ['check', 'suite', 'rehearsal'];
 
 /**
+ * Which gates passed which tree (GATE3): gitignored, under `local/`, and outside `local/scratch/`, which
+ * holds what a merge can throw away. `--rerun` reads the merge's own verdicts from the batch record; this
+ * one outlives the batch, for the stage.
+ */
+export const VERDICTS_FILE = 'local/gate-verdicts.json';
+
+/** The command that runs the full set on the checkout as it stands: what a refused stage names. */
+export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
+
+/**
  * The gates that run the `Process` test category (MOD8): every test in one starts a real process or runs a
  * real tick, so a failure there may be the load and is re-run alone once. Named by the settings file those
  * gates run with, not by a list of classes: a list goes stale the day a new real-process class is written,
@@ -106,9 +152,12 @@ const KINDS = ['check', 'suite', 'rehearsal'];
 export const isProcessGate = (gate) => /process\.runsettings/.test(gate.run);
 
 export const USAGE = [
-  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check] [--no-prune]',
-  '       node tools/merge-branch.mjs --continue [--keep-going] [--no-prune]',
-  '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…]',
+  'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]',
+  '       node tools/merge-branch.mjs --continue [--full] [--keep-going] [--no-prune]',
+  '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going]',
+  '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
+  '       node tools/merge-branch.mjs --full [--keep-going]',
+  '       node tools/merge-branch.mjs --passed',
   '       node tools/merge-branch.mjs --prune [--plan]',
   '       node tools/merge-branch.mjs --drop-batch',
 ].join('\n');
@@ -130,11 +179,15 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
+    full: false, rerun: [], passed: false,
   };
   let batch = false;
+  let rerun = false;
   let positional = 0;
   let batched = 0;
+  const flags = [];
   for (const arg of argv) {
+    if (arg.startsWith('-')) flags.push(arg);
     if (arg === '--batch') {
       if (batch) throw usageError('--batch is given once, before the branches it adds');
       if (positional === 0) throw usageError('--batch follows the first branch: <branch> --batch <branch>…');
@@ -146,27 +199,43 @@ export function parseArgs(argv) {
     else if (arg === '--plan') options.plan = true;
     else if (arg === '--prune') options.prune = true;
     else if (arg === '--no-prune') options.autoPrune = false;
+    else if (arg === '--full') options.full = true;
+    else if (arg === '--passed') options.passed = true;
+    else if (arg === '--rerun') rerun = true;
     else if (arg.startsWith('-')) throw usageError(`unknown option '${arg}'`);
-    else {
+    else if (rerun) {
+      // GATE4: what follows --rerun are gates, not branches.
+      if (options.rerun.includes(arg)) throw usageError(`'${arg}' is named twice`);
+      options.rerun.push(arg);
+    } else {
       if (batch) batched += 1;
       else if (++positional > 1) throw usageError('two branches without --batch: name the rest after --batch');
       if (options.branches.includes(arg)) throw usageError(`'${arg}' is named twice`);
       options.branches.push(arg);
     }
   }
-  // `--plan` is a verb of its own, or the prune's plan.
-  if ([options.resume, options.dropBatch, options.plan && !options.prune, options.prune].filter(Boolean).length > 1) {
-    throw usageError('give one of --continue, --drop-batch, --plan and --prune (--prune takes --plan)');
+  // `--plan` is a verb of its own, or the prune's plan; `--full` is one when it names no branch and modifies nothing else.
+  const fullAlone = options.full && options.branches.length === 0 && !options.plan && !options.resume && !options.prune && !rerun;
+  if ([options.resume, options.dropBatch, options.plan && !options.prune, options.prune, rerun, options.passed, fullAlone].filter(Boolean).length > 1) {
+    throw usageError('give one of --continue, --rerun, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
   }
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
-  if (options.prune) {
+  if (rerun) {
+    if (options.rerun.length === 0) throw usageError('--rerun names the gates to run again: --rerun <gate>…');
+    if (flags.some((flag) => flag !== '--rerun' && flag !== '--keep-going')) throw usageError('--rerun takes gate names and --keep-going');
+    if (options.branches.length) throw usageError('--rerun takes no branch: it acts on the merge in place');
+  } else if (options.passed) {
+    if (options.branches.length) throw usageError('--passed takes no branch: it asks about the checkout as it stands');
+  } else if (options.prune) {
     if (!options.autoPrune) throw usageError('--no-prune is for a merge; --prune is the prune itself');
+    if (options.full) throw usageError('--full is for a merge or the checkout; --prune runs no gate');
     if (options.branches.length) throw usageError('--prune takes no branch: it acts on every branch merged into main');
   } else if (options.resume || options.dropBatch) {
     if (options.branches.length) {
       throw usageError(`${options.resume ? '--continue' : '--drop-batch'} takes no branch: it acts on the batch already recorded`);
     }
-  } else if (options.branches.length === 0) {
+  } else if (options.branches.length === 0 && !(options.full && !options.plan)) {
+    // `--full` alone gates the checkout as it stands (GATE3); everything else names a branch.
     throw usageError('name the branch to merge');
   }
   return options;
@@ -252,6 +321,283 @@ export function readPlan(root) {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// GATE3: the gates a merge's paths can reach
+
+/**
+ * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
+ * maps all the code, and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
+ */
+export const BASELINE = Object.freeze(['universal', 'code-map', 'cli']);
+
+// The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
+const PAGE_READERS = ['service', 'driver', 'modules'];
+const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'modules-process'];
+
+/**
+ * Which gates can see a changed path, beyond the baseline: the first rule that places the path decides.
+ * A rule places paths by glob (`paths`, the lanes file's grammar) or by a lane of `daoris.lanes.json`
+ * (`lane`). Narrow rules come before the lanes, and the laneless paths after. `'*'` is every gate. A
+ * path no rule places runs every gate, and so does a gate no rule names. A gate named here that the
+ * repository does not run names nothing.
+ *
+ * Held by `merge-branch.test.ts` to what each .NET suite reads of the repository, to what each rehearsal
+ * imports and starts, and to every tracked file and lane. What a fast suite may read is given generously:
+ * it costs minutes. The precision is in the Process halves and the rehearsals, which cost the hours.
+ */
+export const REACH = Object.freeze([
+  {
+    paths: ['daoris.gates.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs'],
+    gates: '*',
+    why: 'it changes how every gate runs: the declared gates, the scripts that run them, line endings, what is tracked, or the file helpers every rehearsal imports',
+  },
+  { paths: ['tools/rehearsal-kit.mjs'], gates: ['rehearse', 'rehearse-family', 'deployment'], why: "the rehearsals' kit" },
+  { paths: ['tools/release-rehearsal.mjs', 'tools/release-prep.mjs', 'tools/service-publish.mjs'], gates: ['rehearse'], why: 'release tooling' },
+  { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
+  { paths: ['tools/family-rehearsal.mjs', 'tools/setup-kit.mjs', 'tools/usage-report.mjs'], gates: ['rehearse-family'], why: 'the family rehearsal, what it imports, and what it runs' },
+  {
+    paths: ['tools/desktop-publish.mjs', 'tools/processes.mjs'],
+    gates: ['deployment', 'rehearse-family'],
+    why: 'the publish the deployment rehearsal drives, and what it imports; the family rehearsal runs usage-report, which imports it',
+  },
+  { paths: ['tools/deployment-rehearsal.mjs', 'tools/desktop.mjs', 'tools/cdp.mjs'], gates: ['deployment'], why: 'the deployment rehearsal and what it imports' },
+  { paths: ['src/Daoris.Devkit/**'], gates: ['devkit'], why: 'its own suite; it is also the universal gates and the code map, which every merge runs' },
+  { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver-process', 'modules-process'], why: "the Process halves' settings (MOD8)" },
+  {
+    paths: ['src/Daoris.Desktop/Directory.Build.props', 'src/Daoris.Desktop/Directory.Packages.props'],
+    gates: [...DESKTOP_SUITES, 'rehearse-family', 'deployment'],
+    why: 'every desktop project builds with it: the suites, the headless host the family rehearsal drives, and the deployed shell',
+  },
+  { paths: ['src/Daoris.Desktop/README.md'], gates: ['modules', 'service'], why: "the modules' route test reads its table, and the service's suite reads this repository's documents" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process'], why: "the driver's tests, both halves" },
+  { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
+  { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
+  { paths: ['src/Daoris.Cli/test/fixtures/vendor/**'], gates: ['driver', 'driver-process'], why: "the driver's release-channel tests read the vendor's files" },
+  { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
+  { lane: 'web-shell', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
+  { lane: 'web-settings', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
+  {
+    lane: 'driver',
+    gates: [...DESKTOP_SUITES, 'rehearse-family', 'deployment'],
+    why: 'the modules build on it, the family rehearsal drives its headless host, and the deployed shell runs its loop (D60): ServiceHostLocator, the staged build, a session',
+  },
+  { lane: 'modules', gates: ['modules', 'modules-process', 'deployment'], why: 'the application, its launcher and the modules it hosts: the deployed shell (D60)' },
+  {
+    lane: 'service',
+    gates: ['service', 'devkit', 'driver', 'rehearse-family', 'web', 'deployment'],
+    why: "its suite; the devkit's and the driver's read its sources; the family rehearsal, the page's end-to-end suite and the install run its HTTP host",
+  },
+  {
+    lane: 'cli',
+    gates: ['driver', 'rehearse', 'rehearse-family', 'web', 'deployment'],
+    why: "the release rehearsal packs it, the family rehearsal and the page's end-to-end suite run it, the install carries it, and the driver's tests read its permissions",
+  },
+  { lane: 'tools', gates: [], why: "the rest of the tooling, which the CLI's suite tests" },
+  { lane: 'records', gates: ['service'], why: "the service's suite scans this repository's own documents" },
+  { paths: ['canon/**'], gates: ['service', 'rehearse', 'rehearse-family'], why: 'the package ships it, the examples must be current with it, and the service scans the doctrine synced from it' },
+  {
+    paths: ['examples/plugins/**'],
+    gates: ['service', 'rehearse-family', 'web', 'deployment'],
+    why: 'the example family the rehearsals and the end-to-end suite run on, and the offers the install lays out',
+  },
+  { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
+  { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse'], why: 'staged into the package the release rehearsal packs' },
+  {
+    paths: ['docs/**', 'CHANGELOG.md', 'CLAUDE.md', 'ROADMAP.md', 'AGENTS.md', 'daoris.json', 'daoris.lock', '.claude/**'],
+    gates: ['service'],
+    why: "the service's suite scans this repository's own doctrine and decisions",
+  },
+  { paths: ['.mcp.json'], gates: [], why: "the harness's settings" },
+]);
+
+/** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
+function ruleFor(path, rules, lanes) {
+  return rules.find((rule) => {
+    if (rule.paths) return laneMatcher(rule.paths)(path);
+    const lane = lanes.find((candidate) => candidate.id === rule.lane);
+    return lane ? laneMatcher(lane.paths)(path) : false;
+  }) ?? null;
+}
+
+const andMore = (paths) => `${paths[0]}${paths.length > 1 ? ` and ${paths.length - 1} more` : ''}`;
+
+/**
+ * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order: the
+ * baseline; each gate a changed path's rule names; every gate when a path has no rule, or `full`; and a
+ * gate no rule names at all. `unplaced` is the paths no rule placed.
+ */
+export function selectGates(plan, changed, { lanes = [], full = false, reach = REACH } = {}) {
+  const names = new Set(plan.map((gate) => gate.name));
+  const named = new Set(reach.flatMap((rule) => (rule.gates === '*' ? [] : rule.gates)));
+  const reachedBy = new Map();
+  const unplaced = [];
+  for (const path of changed) {
+    const rule = ruleFor(path, reach, lanes);
+    if (!rule) {
+      unplaced.push(path);
+      continue;
+    }
+    for (const gate of rule.gates === '*' ? names : rule.gates) {
+      if (!names.has(gate)) continue;
+      if (!reachedBy.has(gate)) reachedBy.set(gate, { paths: [], rule });
+      reachedBy.get(gate).paths.push(path);
+    }
+  }
+  const gates = plan.map((gate) => {
+    if (BASELINE.includes(gate.name)) return { gate, run: true, why: 'runs at every merge' };
+    if (full) return { gate, run: true, why: '--full runs every gate' };
+    if (unplaced.length) return { gate, run: true, why: `everything runs: no rule of the lane table places ${andMore(unplaced)}` };
+    const by = reachedBy.get(gate.name);
+    if (by) {
+      const label = by.rule.lane ? `${by.rule.lane}: ` : '';
+      return { gate, run: true, why: `${andMore(by.paths)} (${label}${by.rule.why})` };
+    }
+    if (!named.has(gate.name)) return { gate, run: true, why: 'the lane table does not name it, so it runs at every merge' };
+    return { gate, run: false, why: 'no changed path reaches it' };
+  });
+  return { gates, unplaced };
+}
+
+/** The selection as lines: each gate run, numbered, with why; then each skipped, with why. */
+export function selectionLines(gates) {
+  const run = gates.filter((entry) => entry.run);
+  const skipped = gates.filter((entry) => !entry.run);
+  const out = run.map((entry, i) => `  ${pad(`${i + 1}.`, 4)}${pad(entry.gate.name, 16)} ${pad(entry.gate.kind, 10)} ${entry.why}`);
+  if (skipped.length) {
+    out.push(`  skipped (${skipped.length}):`);
+    for (const entry of skipped) out.push(`      ${pad(entry.gate.name, 16)} ${pad(entry.gate.kind, 10)} ${entry.why}`);
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// GATE4: a fixed gate re-runs alone
+
+/**
+ * What `--rerun` runs and keeps, in the plan's order: each named gate, and each chosen gate with no
+ * verdict yet (one a failure stopped, or one a fix's paths now reach); every other chosen gate's verdict
+ * is kept. `fresh` is the gates run that were not named.
+ */
+export function rerunPlan(plan, chosen, results, named) {
+  const run = plan.filter((name) => named.includes(name) || (chosen.includes(name) && !results[name]));
+  const kept = plan.filter((name) => chosen.includes(name) && !named.includes(name) && results[name])
+    .map((name) => ({ name, verdict: results[name].verdict, at: results[name].at }));
+  const fresh = run.filter((name) => !named.includes(name));
+  return { run, kept, fresh };
+}
+
+/** A moment as people read it in a summary: minutes, in UTC, which is how the record keeps it. */
+export const when = (iso) => (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(iso) ? `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC` : 'an unknown time');
+
+const nowIso = () => new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+
+// ---------------------------------------------------------------------------------------------------
+// The verdicts record (GATE3): which gate passed which tree
+
+/** `local/gate-verdicts.json`, or an empty record where there is none or it does not read. */
+export function readVerdicts(root) {
+  const file = join(root, VERDICTS_FILE);
+  if (!existsSync(file)) return { schema: 1, verdicts: [] };
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8'));
+    return { schema: 1, verdicts: Array.isArray(parsed?.verdicts) ? parsed.verdicts.filter((entry) => typeof entry?.gate === 'string') : [] };
+  } catch {
+    return { schema: 1, verdicts: [] };
+  }
+}
+
+/** Verdicts appended, newest last, the oldest dropped past `keep`: written beside, then renamed. */
+export function addVerdicts(root, entries, { keep = 400 } = {}) {
+  const file = join(root, VERDICTS_FILE);
+  const verdicts = [...readVerdicts(root).verdicts, ...entries].slice(-keep);
+  mkdirSync(dirname(file), { recursive: true });
+  const record = {
+    schema: 1,
+    _why: 'Written by tools/merge-branch.mjs (GATE3): each gate verdict with the tree it ran on. publish:desktop asks `merge-branch --passed`, which reads it.',
+    verdicts,
+  };
+  writeFileSync(`${file}.partial`, `${JSON.stringify(record, null, 2)}\n`);
+  renameSync(`${file}.partial`, file);
+}
+
+/**
+ * The checkout's content as a tree id, as `git add -A` would stage it: tracked changes and untracked files
+ * that are not ignored included. Written through an index of its own in the git folder, a copy of the
+ * real one, so the person's index and a merge in progress are untouched. Null when git cannot say.
+ */
+export function contentTree(root) {
+  let index = null;
+  try {
+    const real = resolve(root, git(root, ['rev-parse', '--git-path', 'index']).out.trim());
+    index = resolve(root, git(root, ['rev-parse', '--git-path', `daoris-content-${process.pid}.index`]).out.trim());
+    const env = { GIT_INDEX_FILE: index };
+    if (existsSync(real)) copyFileSync(real, index);
+    else git(root, ['read-tree', 'HEAD'], { env, allowFail: true });
+    if (git(root, ['add', '-A'], { env, allowFail: true }).status !== 0) return null;
+    const tree = git(root, ['write-tree'], { env, allowFail: true });
+    return tree.status === 0 && /^[0-9a-f]{40,64}$/.test(tree.out.trim()) ? tree.out.trim() : null;
+  } catch {
+    return null;
+  } finally {
+    if (index) for (const file of [index, `${index}.lock`]) rmSync(file, { force: true });
+  }
+}
+
+/** The paths that differ between two trees, or null when git cannot say (a tree long gone). */
+function treeDrift(root, from, to) {
+  if (!from || !to) return null;
+  if (from === to) return [];
+  const diff = git(root, ['diff', '--name-only', '--no-renames', from, to], { allowFail: true });
+  return diff.status === 0 ? lines(diff.out) : null;
+}
+
+/**
+ * The records the parent writes after a merge's gates and before its commit: the steward's lane and the
+ * records that merge by union (`.gitattributes`). The install carries none of them, so a tree that
+ * differs from a gated one only by these is the gated tree as far as a stage can tell. A union pattern
+ * names the record at the root here, where git reads a pattern with no slash at any depth: the canon's
+ * own `CHANGELOG.md` merges by union too, and the package ships it.
+ */
+export function recordMatcher({ lanes = [], union = [] } = {}) {
+  const steward = lanes.find((lane) => lane.steward);
+  const stewardOwns = steward ? laneMatcher(steward.paths) : () => false;
+  const unionPatterns = union.map((pattern) => globToRegExp(pattern.replace(/^\//, '')));
+  return (path) => stewardOwns(path) || unionPatterns.some((pattern) => pattern.test(path));
+}
+
+/** A verdict that passed: PASS, or FLAKE, a pass that was said. */
+const passing = (verdict) => verdict === 'PASS' || verdict === 'FLAKE';
+
+/**
+ * Whether the full set passed `tree`: for each gate of the plan, its newest verdict on this tree or on one
+ * that differs from it only by the records (`recordsOnly`) must pass. A verdict with no tree counts for
+ * none. `missing` names each gate that has no such passing verdict.
+ */
+export function stageJudgement({ plan, verdicts, tree, recordsOnly }) {
+  const forgiven = new Map();
+  const acceptable = (entry) => {
+    if (!entry.tree) return null;
+    if (entry.tree === tree) return 'exact';
+    if (!forgiven.has(entry.tree)) forgiven.set(entry.tree, recordsOnly(entry.tree));
+    return forgiven.get(entry.tree) ? 'records' : null;
+  };
+  const gates = plan.map((name) => {
+    let newest = null;
+    let exact = false;
+    for (const entry of verdicts) {
+      if (entry.gate !== name) continue;
+      const how = acceptable(entry);
+      if (how && (!newest || String(entry.at) >= String(newest.at))) {
+        newest = entry;
+        exact = how === 'exact';
+      }
+    }
+    return { name, verdict: newest, exact };
+  });
+  const missing = gates.filter((gate) => !gate.verdict || !passing(gate.verdict.verdict)).map((gate) => gate.name);
+  return { passed: missing.length === 0, missing, gates };
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Flakes
 
 const FAILED_TEST = /^\s+Failed (\S.*?) \[[^\]]*\]\s*$/;
@@ -302,6 +648,48 @@ export function flakeDecision(output, isProcess = () => true) {
 }
 
 export const rerunCommand = (run, test) => `${run.trim()} --no-build --filter "FullyQualifiedName=${test}"`;
+
+// ---------------------------------------------------------------------------------------------------
+// PROC1: where a Process half's time goes
+
+/** A Process gate's command with a trx logger writing each test's duration to `file`. Its re-runs add none. */
+export const trxCommand = (run, file) => `${run.trim()} --logger "trx;LogFileName=${file}"`;
+
+const XML_ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const attributes = (tag) => Object.fromEntries([...tag.matchAll(/([A-Za-z_:][\w:.-]*)="([^"]*)"/g)]
+  .map(([, name, value]) => [name, value.replace(/&(amp|lt|gt|quot|apos);/g, (_, entity) => XML_ENTITIES[entity])]));
+
+/** A trx duration, `hh:mm:ss.fffffff`, in milliseconds; absent is none. */
+function trxMs(duration) {
+  const parts = /^(\d+):(\d{2}):(\d{2}(?:\.\d+)?)$/.exec(duration ?? '');
+  return parts ? Math.round(((Number(parts[1]) * 60 + Number(parts[2])) * 60 + Number(parts[3])) * 1000) : 0;
+}
+
+/**
+ * The slowest classes of a trx, at most `count`: each class's tests' durations summed, slowest first, by the
+ * class's simple name (a nested class keeps its outer name, `Outer+Inner`). A test's class is its
+ * definition's `TestMethod className`, matched to its result by `testId`; a test with no definition is
+ * placed by its name. The Process half runs one class at a time, so the sums are its wall time.
+ */
+export function slowestClasses(trx, count = 10) {
+  const classOf = new Map();
+  for (const [, id, body] of trx.matchAll(/<UnitTest\b[^>]*?\bid="([^"]+)"[^>]*>([\s\S]*?)<\/UnitTest>/g)) {
+    const method = /<TestMethod\b[^>]*>/.exec(body);
+    if (method) classOf.set(id, attributes(method[0]).className ?? '');
+  }
+  const classes = new Map();
+  for (const [tag] of trx.matchAll(/<UnitTestResult\b[^>]*>/g)) {
+    const result = attributes(tag);
+    const fullName = classOf.get(result.testId) || (result.testName ?? '').replace(/\(.*$/, '').split('.').slice(0, -1).join('.');
+    if (!fullName) continue;
+    const name = fullName.split('.').at(-1);
+    const entry = classes.get(name) ?? { name, ms: 0, tests: 0 };
+    entry.ms += trxMs(result.duration);
+    entry.tests += 1;
+    classes.set(name, entry);
+  }
+  return [...classes.values()].sort((a, b) => b.ms - a.ms || a.name.localeCompare(b.name)).slice(0, count);
+}
 
 /** A re-run passes only when a test ran and none failed: a filter that matches nothing exits 0 too. */
 export function rerunPassed(output) {
@@ -522,8 +910,8 @@ export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) 
 // ---------------------------------------------------------------------------------------------------
 // Git
 
-function git(cwd, args, { allowFail = false } = {}) {
-  const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+function git(cwd, args, { allowFail = false, env } = {}) {
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...(env ? { env: { ...process.env, ...env } } : {}) });
   if (result.error) throw new Refusal(`git could not start: ${result.error.message}`);
   if (result.status !== 0 && !allowFail) {
     throw new Refusal(`git ${args.join(' ')} failed: ${(result.stderr || result.stdout).trim()}`);
@@ -596,6 +984,14 @@ function preconditions(root) {
   // Asked last, and only of a checkout that passed the rest: it is one more git start.
   if (git(root, ['check-ignore', '-q', `${SCRATCH}/merge-probe.log`], { allowFail: true }).status !== 0) {
     throw new Refusal(startRefusal({ ...facts, ignored: false }));
+  }
+  requireVerdictsIgnored(root);
+}
+
+/** The verdicts record is written as each gate ends: tracked or untracked, it would change the tree it judges. */
+function requireVerdictsIgnored(root) {
+  if (git(root, ['check-ignore', '-q', VERDICTS_FILE], { allowFail: true }).status !== 0) {
+    throw new Refusal(`${VERDICTS_FILE} is not ignored here, so each verdict written would change the tree it is a verdict on`);
   }
 }
 
@@ -947,15 +1343,15 @@ async function rerunAlone(root, gate, dir, tests, step) {
   return { passed, log };
 }
 
-/** A gate's steps before it, then the gate, into one log: the gate's exit. */
-function runSteps(root, gate, log, step) {
+/** A gate's steps before it, then the gate (as `command`, its own run unless given), into one log: the gate's exit. */
+function runSteps(root, gate, log, step, command = gate.run) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
   return withLog(log, async (fd) => {
     for (const before of gate.before) {
       const beforeCode = await step(before, root, fd);
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
     }
-    const exit = await step(gate.run, cwd, fd);
+    const exit = await step(command, cwd, fd);
     writeSync(fd, `\n(exited ${exit})\n`);
     return exit;
   });
@@ -965,8 +1361,12 @@ function runSteps(root, gate, log, step) {
 export async function runGate(root, gate, dir, { step = runStep } = {}) {
   const log = join(dir, `${gate.name}.log`);
   const started = Date.now();
-  const code = await runSteps(root, gate, log, step);
+  // PROC1: a Process half also leaves each test's duration beside its log, read once it ends.
+  const trx = isProcessGate(gate) ? join(dir, `${gate.name}.trx`) : null;
+  if (trx) rmSync(trx, { force: true });
+  const code = await runSteps(root, gate, log, step, trx ? trxCommand(gate.run, trx) : gate.run);
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
+  if (trx && existsSync(trx)) Object.assign(result, { trx, slowest: slowestClasses(readFileSync(trx, 'utf8')) });
   if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
     // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
     const decision = rehearsalDecision(readFileSync(log, 'utf8'), code, gate.run);
@@ -1006,9 +1406,18 @@ function resultLine(root, result) {
   return `  ${pad(result.verdict, 8)} ${pad(result.gate.name, 16)} ${pad(duration(result.ms), 9)} ${shown(root, result.log)}${note}`;
 }
 
+/** PROC1: the slowest classes of a Process gate's run, under its line. */
+function slowestLines(root, result) {
+  if (!result.slowest?.length) return [];
+  return [
+    `           slowest classes of ${result.gate.name}, from ${shown(root, result.trx)}:`,
+    ...result.slowest.map((slow, i) => `           ${pad(`${i + 1}.`, 4)}${pad(duration(slow.ms), 10)} ${pad(count(slow.tests, 'test'), 10)} ${slow.name}`),
+  ];
+}
+
 /**
- * The gates in order, one line each as it ends. The first failure stops the run and every gate after it
- * is named as not run, unless `keepGoing`.
+ * The gates in order, one line each as it ends (and a Process gate's slowest classes under it). The first
+ * failure stops the run and every gate after it is named as not run, unless `keepGoing`.
  */
 export async function runGates(root, gates, dir, { keepGoing = false, run = runGate, print = console.log } = {}) {
   const results = [];
@@ -1016,6 +1425,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, run = runG
     const result = await run(root, gates[i], dir);
     results.push(result);
     print(resultLine(root, result));
+    for (const line of slowestLines(root, result)) print(line);
     if (result.verdict === 'FAIL' && !keepGoing) {
       for (const skipped of gates.slice(i + 1)) print(`  ${pad('NOT RUN', 8)} ${skipped.name}`);
       break;
@@ -1027,7 +1437,7 @@ export async function runGates(root, gates, dir, { keepGoing = false, run = runG
 function clearLogs(dir) {
   mkdirSync(dir, { recursive: true });
   for (const name of readdirSync(dir)) {
-    if (/\.(log|partial)$/.test(name)) rmSync(join(dir, name), { force: true });
+    if (/\.(log|partial|trx)$/.test(name)) rmSync(join(dir, name), { force: true });
   }
 }
 
@@ -1069,33 +1479,264 @@ function planLines(plan) {
 // ---------------------------------------------------------------------------------------------------
 // The verbs
 
+/** Paths from a `-z` listing: git quotes nothing there, so a name with any character comes back whole. */
+const zPaths = (text) => text.split('\0').map((path) => path.trim()).filter(Boolean);
+
+/** What the merge in place changes on main: tracked paths against HEAD, the parent's fixes included, and new files. */
+function mergeChanges(root) {
+  const tracked = zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', 'HEAD']).out);
+  const untracked = zPaths(git(root, ['ls-files', '-z', '--others', '--exclude-standard']).out);
+  return [...new Set([...tracked, ...untracked])];
+}
+
+/** What a branch changes since it left main: a plan's question, asked before anything is merged. */
+const branchChanges = (root, branch) => zPaths(git(root, ['diff', '-z', '--name-only', '--no-renames', `HEAD...${branch}`]).out);
+
+/**
+ * The gates the merge in place runs, and every gate of the plan with why it runs or is skipped. Checks and
+ * suites run at each merge of a batch by its own paths; the rehearsals run once, at the batch's last merge,
+ * each one any of the batch's merges reached. `state.reached` keeps what each merge reached, for that.
+ */
+function chooseGates(root, state, plan) {
+  const branch = state.branches[state.at];
+  const last = state.at === state.branches.length - 1;
+  const selection = selectGates(plan, mergeChanges(root), { lanes: readLanes(root)?.lanes ?? [], full: state.full === true });
+  state.reached = { ...(state.reached ?? {}), [branch]: selection.gates.filter((entry) => entry.run).map((entry) => entry.gate.name) };
+  const waiting = new Set();
+  const display = selection.gates.map((entry) => {
+    if (entry.gate.kind !== 'rehearsal') return entry;
+    if (!last) {
+      if (!entry.run) return entry;
+      waiting.add(entry.gate.name);
+      return { ...entry, run: false, why: `waits for the batch's last branch (${state.branches.at(-1)}); ${entry.why}` };
+    }
+    if (entry.run) return entry;
+    const by = state.branches.filter((other) => other !== branch && state.reached[other]?.includes(entry.gate.name));
+    return by.length ? { ...entry, run: true, why: `reached by ${by.join(', ')}, earlier in this batch` } : entry;
+  });
+  return {
+    gates: display,
+    chosen: display.filter((entry) => entry.run).map((entry) => entry.gate),
+    // What the lane table left out of this merge, not counting a rehearsal that waits for the batch's end.
+    skipped: display.filter((entry) => !entry.run && !waiting.has(entry.gate.name)).length,
+  };
+}
+
+const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true }).out.trim() || null;
+
+/**
+ * The gates run in order, each verdict recorded with the tree it ran on (GATE3), as its gate ends, so a run
+ * cut short keeps what it learned. `onResult` hears each result.
+ */
+function runRecorded(root, gates, dir, { keepGoing = false, branch = null, onResult = () => {} } = {}) {
+  const commit = headCommit(root);
+  return runGates(root, gates, dir, {
+    keepGoing,
+    run: async (where, gate, logs) => {
+      const tree = contentTree(where);
+      const started = nowIso();
+      const result = await runGate(where, gate, logs);
+      Object.assign(result, { tree, at: started });
+      addVerdicts(where, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch }]);
+      onResult(result);
+      return result;
+    },
+  });
+}
+
+/** The line that ends a merge's run with gates skipped: the full set is still owed before a stage. */
+const owedLine = (skipped) => (skipped
+  ? `  ${count(skipped, 'gate')} of the plan skipped by the lane table; the full set runs before the install is staged (${FULL_COMMAND}, or --full on a merge).`
+  : null);
+
 async function gateMerge(root, state, plan) {
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
-  const gates = last ? plan : plan.filter((gate) => gate.kind !== 'rehearsal');
+  const { gates: selection, chosen: gates, skipped } = chooseGates(root, state, plan);
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
   clearLogs(dir);
+  // `--continue` gates the merge again whole: the verdicts of an earlier run are dropped.
+  state.results = { [branch]: {} };
+  writeState(root, state);
 
-  console.log(`gates for ${branch}: ${gates.length}, fast first${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
-  const results = await runGates(root, gates, dir, { keepGoing: state.keepGoing });
+  console.log(`gates for ${branch}: ${gates.length} of ${plan.length}, fast first${state.full ? ' (--full)' : ', by the lanes it reaches'}${last ? '' : `; the rehearsals wait for the batch's last branch (${state.branches.at(-1)})`}`);
+  for (const line of selectionLines(selection)) console.log(line);
+  const results = await runRecorded(root, gates, dir, {
+    keepGoing: state.keepGoing,
+    branch,
+    onResult: (result) => {
+      state.results[branch][result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
+      writeState(root, state);
+    },
+  });
   const failed = results.filter((result) => result.verdict === 'FAIL');
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   const notRun = gates.length - results.length;
 
   console.log('');
   if (failed.length) {
+    const names = failed.map((result) => result.gate.name).join(' ');
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map((result) => result.gate.name).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);
-    console.log('  The merge is left in place. Read the failing log, fix it in the merge, and run --continue to gate it again, or git merge --abort.');
+    console.log('  The merge is left in place. Read the failing log and fix it in the merge; then');
+    console.log(`  node tools/merge-branch.mjs --rerun ${names} runs it again alone, keeping the other verdicts (and runs what did not run),`);
+    console.log('  or --continue gates the merge again whole. Or git merge --abort.');
     return 1;
   }
   const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
   console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(results.length, 'gate')} passed${flakeNote}.`);
+  const owed = owedLine(skipped);
+  if (owed) console.log(owed);
   if (last) {
     console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
   } else {
     console.log(`  Next: read the diff (git diff --cached), write the records, commit the merge; then node tools/merge-branch.mjs --continue merges ${state.branches[state.at + 1]}.`);
   }
   return 0;
+}
+
+/**
+ * `--rerun <gate>…` (GATE4): the named gates again on the merge in place, then any gate of its selection with
+ * no verdict yet, keeping every other verdict and saying when each was given. A kept verdict from a tree that
+ * differs from this one by more than the records still stands for the merge, and the summary says a stage
+ * will not count it.
+ */
+async function rerunGates(root, options) {
+  const state = readState(root);
+  if (!state || !mergeInProgress(root)) {
+    throw new Refusal('nothing to re-run: --rerun runs gates again on a merge this tool left in place, and none is open here');
+  }
+  requireMain(root);
+  const branch = state.branches[state.at];
+  if (git(root, ['rev-parse', 'MERGE_HEAD']).out.trim() !== state.tips[branch]) {
+    throw new Refusal(`the merge in progress is not ${branch}'s, which is the one recorded`);
+  }
+  const unmerged = unmergedPaths(root);
+  if (unmerged.length) return reportConflict(branch, unmerged);
+  const plan = readPlan(root);
+  const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));
+  if (unknown.length) {
+    throw new Refusal(`--rerun: no gate ${unknown.map((name) => `'${name}'`).join(', ')} in the plan: ${plan.map((gate) => gate.name).join(', ')}`);
+  }
+
+  const { chosen } = chooseGates(root, state, plan);
+  const results = state.results?.[branch] ?? {};
+  const planned = rerunPlan(plan.map((gate) => gate.name), chosen.map((gate) => gate.name), results, options.rerun);
+  const gates = plan.filter((gate) => planned.run.includes(gate.name));
+  const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
+  mkdirSync(dir, { recursive: true });
+  for (const gate of gates) {
+    for (const suffix of ['.log', '.rerun.log', '.trx']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
+  }
+
+  // A kept verdict the stage would not count: given on a tree that differs from this one by more than the records.
+  const tree = contentTree(root);
+  const isRecord = recordMatcher({ lanes: readLanes(root)?.lanes ?? [], union: unionRecords(root) });
+  const earlier = (kept) => {
+    const from = results[kept.name]?.tree;
+    if (!tree || !from || from === tree) return false;
+    const drift = treeDrift(root, from, tree);
+    return drift === null || !drift.every(isRecord);
+  };
+
+  const fresh = planned.fresh.length ? `, then ${planned.fresh.join(', ')}, which ${planned.fresh.length === 1 ? 'has' : 'have'} no verdict yet` : '';
+  console.log(`re-run on the merge of ${branch}: ${options.rerun.join(', ')}${fresh}; ${count(planned.kept.length, 'verdict')} kept`);
+  for (const kept of planned.kept) {
+    const note = earlier(kept) ? '  (on an earlier tree: a stage does not count it)' : '';
+    console.log(`  ${pad('kept', 8)} ${pad(kept.name, 16)} ${pad(kept.verdict, 8)} from ${when(kept.at)}  ${results[kept.name]?.log ?? ''}${note}`);
+  }
+  state.results = { [branch]: results };
+  const ran = await runRecorded(root, gates, dir, {
+    keepGoing: state.keepGoing || options.keepGoing,
+    branch,
+    onResult: (result) => {
+      results[result.gate.name] = { verdict: result.verdict, at: result.at, tree: result.tree, note: result.note, log: shown(root, result.log) };
+      writeState(root, state);
+    },
+  });
+
+  const failed = [...ran.filter((result) => result.verdict === 'FAIL').map((result) => result.gate.name),
+    ...planned.kept.filter((kept) => kept.verdict === 'FAIL').map((kept) => kept.name)];
+  const notRun = gates.length - ran.length;
+  const keptNote = planned.kept.length
+    ? `${count(planned.kept.length, 'verdict')} kept (${planned.kept.map((kept) => `${kept.name}, from ${when(kept.at)}`).join('; ')})`
+    : 'no verdict kept';
+  console.log('');
+  if (failed.length || notRun) {
+    console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.join(', ')}${notRun ? `; ${notRun} not run` : ''}; ${keptNote}.`);
+    console.log('  The merge is left in place: fix it and --rerun the gate again, or --continue gates the merge again whole, or git merge --abort.');
+    return 1;
+  }
+  console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length, 'gate')} run and passed; ${keptNote}.`);
+  console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
+  return 0;
+}
+
+/** `--full` on its own (GATE3): the whole plan on the checkout as it stands, merging nothing, every verdict recorded. */
+async function gateCheckout(root, options) {
+  if (mergeInProgress(root)) {
+    throw new Refusal('a merge is open here: node tools/merge-branch.mjs --continue --full gates it with every gate, or git merge --abort');
+  }
+  const head = headCommit(root);
+  if (!head) throw new Refusal('this checkout has no commit to gate');
+  if (git(root, ['check-ignore', '-q', `${SCRATCH}/full-probe.log`], { allowFail: true }).status !== 0) {
+    throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
+  }
+  requireVerdictsIgnored(root);
+  const plan = readPlan(root);
+  const dir = join(root, SCRATCH, `full-${head.slice(0, 7)}`);
+  clearLogs(dir);
+  const dirty = treeState(root).changed.length > 0;
+  console.log(`the full set on ${head.slice(0, 7)}${dirty ? ' and its uncommitted changes' : ''}: ${plan.length} gates, fast first; nothing is merged`);
+  const results = await runRecorded(root, plan, dir, { keepGoing: options.keepGoing });
+  const failed = results.filter((result) => result.verdict === 'FAIL');
+  const flakes = results.filter((result) => result.verdict === 'FLAKE');
+  console.log('');
+  if (failed.length || results.length < plan.length) {
+    console.log(`merge-branch: the full set did NOT pass ${head.slice(0, 7)}: ${failed.map((result) => result.gate.name).join(', ')} failed${results.length < plan.length ? `; ${plan.length - results.length} not run` : ''}.`);
+    return 1;
+  }
+  const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
+  console.log(`merge-branch: the full set passed ${head.slice(0, 7)}: ${count(results.length, 'gate')}${flakeNote}. A stage of this tree is allowed.`);
+  return 0;
+}
+
+/**
+ * `--passed` (GATE3): whether the full set passed the checkout as it stands, gate by gate, read from the
+ * verdicts record. What `publish:desktop` asks before it builds. Exit 0 when it did, 1 when it did not.
+ */
+function passedOnly(root) {
+  const plan = readPlan(root);
+  const tree = contentTree(root);
+  if (!tree) throw new Refusal("git could not write the checkout's tree, so whether the full set passed it cannot be told");
+  const head = git(root, ['rev-parse', '--short', 'HEAD'], { allowFail: true }).out.trim() || 'no commit';
+  const isRecord = recordMatcher({ lanes: readLanes(root)?.lanes ?? [], union: unionRecords(root) });
+  const drifts = new Map();
+  const drift = (from) => {
+    if (!drifts.has(from)) drifts.set(from, treeDrift(root, from, tree));
+    return drifts.get(from);
+  };
+  const judged = stageJudgement({
+    plan: plan.map((gate) => gate.name),
+    verdicts: readVerdicts(root).verdicts,
+    tree,
+    recordsOnly: (from) => {
+      const paths = drift(from);
+      return paths !== null && paths.every(isRecord);
+    },
+  });
+  console.log(`merge-branch: the full set has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${tree.slice(0, 7)}, HEAD ${head}): `
+    + `${plan.length - judged.missing.length} of ${plan.length} gates.`);
+  for (const gate of judged.gates) {
+    const verdict = gate.verdict;
+    if (!verdict) {
+      console.log(`  ${pad(gate.name, 16)} ${pad('none', 6)} no verdict on this tree`);
+      continue;
+    }
+    const where = gate.exact ? 'on this tree' : `on a tree that differs from this one only by the records (${listed(drift(verdict.tree), 4)})`;
+    console.log(`  ${pad(gate.name, 16)} ${pad(verdict.verdict, 6)} ${when(verdict.at)}  ${where}`);
+  }
+  if (!judged.passed) console.log(`  Run every gate on it: ${FULL_COMMAND}`);
+  return judged.passed ? 0 : 1;
 }
 
 function reportConflict(branch, unmerged) {
@@ -1150,6 +1791,7 @@ async function start(root, options) {
   readPlan(root);
   return mergeNext(root, {
     branches: options.branches, at: 0, tips: {}, keepGoing: options.keepGoing, commitCheck: options.commitCheck, autoPrune: options.autoPrune,
+    full: options.full,
   });
 }
 
@@ -1157,6 +1799,7 @@ async function resume(root, options) {
   const state = readState(root);
   if (!state) throw new Refusal('nothing to continue: this tool has no merge recorded here');
   state.keepGoing = state.keepGoing || options.keepGoing;
+  state.full = state.full === true || options.full;
   state.commitCheck = state.commitCheck && options.commitCheck;
   // A batch recorded before the prune existed has no field, and prunes.
   state.autoPrune = state.autoPrune !== false && options.autoPrune;
@@ -1192,6 +1835,8 @@ async function resume(root, options) {
 
 function planOnly(root, options) {
   const plan = readPlan(root);
+  const lanes = readLanes(root)?.lanes ?? [];
+  const reachedAny = new Set();
   console.log(`plan (nothing is merged; the current branch is ${treeState(root).branch || 'a detached HEAD'}):`);
   options.branches.forEach((branch, i) => {
     requireBranch(root, branch);
@@ -1201,6 +1846,12 @@ function planOnly(root, options) {
     for (const line of laneReport(root, branch)) console.log(`  ${line}`);
     const problems = options.commitCheck ? commitProblems(root, branch, commits) : [];
     console.log(problems.length ? `  commit check would refuse it:\n${problems.map((problem) => `    ${problem}`).join('\n')}` : '  commit check: nothing to refuse');
+    // GATE3: what this branch's paths reach, each gate with why it runs or is skipped.
+    const selection = selectGates(plan, branchChanges(root, branch), { lanes, full: options.full });
+    const runs = selection.gates.filter((entry) => entry.run);
+    console.log(`  gates it reaches: ${runs.length} of ${plan.length}${options.full ? ' (--full)' : ''}`);
+    for (const line of selectionLines(selection.gates)) console.log(`  ${line}`);
+    for (const entry of runs) reachedAny.add(entry.gate.name);
   });
   console.log('');
   if (options.autoPrune) {
@@ -1211,8 +1862,11 @@ function planOnly(root, options) {
     console.log('prune: skipped (--no-prune)');
   }
   console.log('');
-  console.log(`gates, in order${options.branches.length > 1 ? ' (the rehearsals run after the last branch only)' : ''}:`);
-  for (const line of planLines(plan)) console.log(line);
+  const order = plan.filter((gate) => reachedAny.has(gate.name));
+  console.log(`gates, in order${options.branches.length > 1 ? ' (the rehearsals run after the last branch only, each one any branch reached)' : ''}:`);
+  for (const line of planLines(order)) console.log(line);
+  const owed = owedLine(plan.length - order.length);
+  if (owed) console.log(owed);
   console.log(`logs: ${SCRATCH}/merge-<branch>/<gate>.log`);
   return 0;
 }
@@ -1231,7 +1885,10 @@ export async function main(argv) {
   if (options.dropBatch) return dropBatch(root);
   if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
+  if (options.passed) return passedOnly(root);
+  if (options.rerun.length) return rerunGates(root, options);
   if (options.resume) return resume(root, options);
+  if (options.full && options.branches.length === 0) return gateCheckout(root, options);
   return start(root, options);
 }
 

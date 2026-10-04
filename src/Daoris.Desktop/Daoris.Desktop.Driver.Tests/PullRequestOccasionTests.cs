@@ -15,10 +15,10 @@ public sealed class PullRequestOccasionTests
         ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
     /// <summary>
-    /// The occasions that may ask, each by the method it is asked from: LAND3's tidy, and the clean-up's look. PLUGHOOK1c adds
-    /// bringing up to date's look after its fetch and <i>Ask again</i> here, and nothing else joins them.
+    /// The occasions that may ask, each by the method it is asked from: LAND3's tidy, the clean-up's look, bringing up to date's
+    /// look after its fetch, and <i>Ask again</i> (PLUGHOOK1c). Nothing else joins them.
     /// </summary>
-    private static readonly string[] Occasions = ["TidyCarriedAsync", "CleanPlanAsync"];
+    private static readonly string[] Occasions = ["TidyCarriedAsync", "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync"];
 
     [Fact]
     public void The_loop_keeps_no_process_for_the_query_and_has_nothing_to_ask_it()
@@ -69,6 +69,73 @@ public sealed class PullRequestOccasionTests
             .ToList();
 
         Assert.Equal(["DriverModule.Lines.cs", "TreesConsole.cs"], doors);
+    }
+
+    /// <summary>
+    /// PLUGHOOK1c (design §2.1 occasion 3): bringing up to date's look asks, after its fetch, where a merge commit first reaches
+    /// this machine, and it is started by a person's door alone: the page's *Look for updates*, Ask Daoris's card's first press
+    /// and `trees sync`. Its press, which removes, asks nothing.
+    /// </summary>
+    [Fact]
+    public void Bringing_up_to_dates_look_asks_after_its_fetch_and_only_a_persons_door_opens_it()
+    {
+        var doors = Calls(@"\bSyncPlanAsync\s*\(")
+            .Where(call => call.Method != "SyncPlanAsync")
+            .Select(call => Path.GetFileName(call.File))
+            .Distinct()
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Equal(["DriverModule.Lines.cs", "HelpSyncProposals.cs", "TreesConsole.cs"], doors);
+        var look = Body(Source("Daoris.Desktop.Driver", "SessionTrees.Sync.cs"), "SyncPlanAsync");
+        var fetched = look.IndexOf("FetchedAsync(", StringComparison.Ordinal);
+        var asked = look.IndexOf("AskStatesAsync(", StringComparison.Ordinal);
+        Assert.True(fetched >= 0 && asked > fetched, "the look asks after its fetch, which is where a merge commit first arrives");
+        Assert.DoesNotContain("AskStatesAsync(", Body(Source("Daoris.Desktop.Driver", "SessionTrees.Sync.cs"), "SyncAsync"));
+    }
+
+    /// <summary>PLUGHOOK1c (design §2.1 occasion 4): <i>Ask again</i> is a person's press: `trees state` today, the review's press with PLUGHOOK1d.</summary>
+    [Fact]
+    public void Ask_again_is_a_persons_door()
+    {
+        var doors = Calls(@"\bAskAgainAsync\s*\(")
+            .Where(call => call.Method != "AskAgainAsync")
+            .Select(call => Path.GetFileName(call.File))
+            .Distinct()
+            .ToList();
+
+        Assert.Equal(["TreesConsole.cs"], doors);
+    }
+
+    /// <summary>
+    /// No look of the loop, and nothing on a timer, opens an occasion: the loop's files and the modules' loop name none of the
+    /// looks that ask, so a plugin is never asked a question nobody is waiting on (D147, D148 point 2).
+    /// </summary>
+    [Fact]
+    public void No_look_of_the_loop_opens_an_occasion()
+    {
+        var looks = new[] { "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync" };
+        var loop = Directory.EnumerateFiles(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver"), "Driver*.cs")
+            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver", "AutoLander.cs"))
+            .Append(Path.Combine(SourceRoot(), "Daoris.Desktop.Modules", "DriverLoop.cs"))
+            .Where(File.Exists)
+            .ToList();
+
+        Assert.True(loop.Count >= 3, $"expected the loop's files, found {loop.Count}");
+        foreach (var file in loop)
+        {
+            var source = File.ReadAllText(file);
+            foreach (var look in looks) Assert.DoesNotContain($"{look}(", source);
+        }
+    }
+
+    /// <summary>The body of the first method of that name in <paramref name="source"/>: from its declaration to the next declaration.</summary>
+    private static string Body(string source, string method)
+    {
+        var start = Regex.Match(source, $@"^[ \t]*(?:public|private|internal)[^\n;=(]*?\b{method}\s*\(", RegexOptions.Multiline);
+        Assert.True(start.Success, $"`{method}` is declared");
+        var next = Regex.Match(source[(start.Index + start.Length)..], @"^[ \t]*(?:public|private|internal|protected)\b", RegexOptions.Multiline);
+        return next.Success ? source.Substring(start.Index, start.Length + next.Index) : source[start.Index..];
     }
 
     /// <summary>Each call of a pattern in the desktop's source that is not its declaration, with the method it is made from.</summary>

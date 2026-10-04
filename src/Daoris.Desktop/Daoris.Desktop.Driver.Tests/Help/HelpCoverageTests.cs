@@ -179,6 +179,15 @@ public sealed partial class HelpCoverageTests
         + "exempt (D147 §3.3, D110 §4); the acts it will sit beside are owed to GIT1k's `git` kind.");
 
     /// <summary>
+    /// PLUGHOOK1c's <c>daoris-driver trees state</c> (D148 point 2, design §2.5), a verb of the headless host: exempt, since it
+    /// asks a landed branch's plugin about its pull request and keeps the answer, changing nothing of the person's and nothing on
+    /// the platform (D110 §4). The room names it, so the helper can point the person at it.
+    /// </summary>
+    private static readonly Exempt TreesStateDoor = new(
+        "it asks a landed branch's plugin whether its pull request completed and keeps the answer, which changes nothing of the "
+        + "person's and nothing on the platform, so there is nothing to propose, as `trace` is exempt (D148, D110 §4).");
+
+    /// <summary>
     /// The install's update (D139): *Update when idle*, *Update now* and *Not now* on the banner and Settings → Driver
     /// (UPDATE1e's <c>useSayUpdate</c>), and the headless host's <c>daoris-driver update</c> (UPDATE1f). Exempt, since it is
     /// the person's act on the application; the room names both doors, so the helper points there.
@@ -452,6 +461,7 @@ public sealed partial class HelpCoverageTests
             .Append(SayDoor)
             .Append(TraceDoor)
             .Append(GitBranchesDoor)
+            .Append(TreesStateDoor)
             .Append(UpdateDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
@@ -649,6 +659,23 @@ public sealed partial class HelpCoverageTests
         Assert.DoesNotContain("branches", HelpProposalKinds.Find("git")?.Doors ?? []);
         Assert.Contains("changes nothing", GitBranchesDoor.Reason);
         Assert.Contains("D147", GitBranchesDoor.Reason);
+    }
+
+    /// <summary>
+    /// PLUGHOOK1c: the headless host's <c>trees state</c> is exempt from Ask Daoris (D148, D110 §4) while its usage spells it: it
+    /// asks and keeps, and changes nothing of the person's or on the platform. The room names it, marked exempt, so the helper
+    /// points the person at it, and its room reads the kept answer for itself.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_trees_state_is_exempt_and_the_room_says_so()
+    {
+        Assert.Contains("state <session|branch> [--repository <name>]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("state"));
+        Assert.DoesNotContain("state", HelpProposalKinds.Find("sync")!.Doors);
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver trees state <session|branch> [--repository <name>]`", StringComparison.Ordinal)
+            && door.To.Contains("Ask Daoris never proposes it", StringComparison.Ordinal));
+        Assert.Contains("changes nothing", TreesStateDoor.Reason);
+        Assert.Contains("D148", TreesStateDoor.Reason);
     }
 
     /// <summary>

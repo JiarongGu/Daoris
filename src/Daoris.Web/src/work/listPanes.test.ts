@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { LIST_BOUNDS, type ListView } from './layout';
-import { listKey, readList, useListPanes } from './listPanes';
+import { endsChoice, listKey, readList, useListPanes } from './listPanes';
 
 // Each view's list remembers its own (D118 §3f): its closing, its width, its chosen item and its filters,
 // per view, because each list differs in kind and in width. Sessions' and Settings' keys predate the frame,
@@ -106,5 +106,79 @@ describe('what a list remembers', () => {
     rerender();
     expect(result.current.choose).toBe(first.choose);
     expect(result.current.setClosed).toBe(first.setClosed);
+    expect(result.current.reopen).toBe(first.reopen);
+    expect(result.current.settle).toBe(first.settle);
+  });
+});
+
+// UX6b (design §1 rule 6, D150 §8): a remembered choice ends with what it chose. Quests reopened yesterday's done quest,
+// and Convergence a finding the index no longer held, because a list kept its choice whatever became of the item.
+describe('a remembered choice, once its view reads what became of it', () => {
+  it('ends with an item that closed or went, and stands while the item still waits or is not read yet', () => {
+    expect(endsChoice('closed')).toBe(true);
+    expect(endsChoice('gone')).toBe(true);
+    expect(endsChoice('live')).toBe(false);
+    expect(endsChoice('unread')).toBe(false);
+  });
+
+  it('lets go of a remembered quest that closed, in its memory too, once its view has read it', () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'd0d0d0');
+    const { result } = renderHook(() => useListPanes());
+
+    // Not read yet: the view is still asking, and nothing is let go on a guess.
+    act(() => result.current.settle('quests', 'unread'));
+    expect(result.current.pane('quests').chosen).toBe('d0d0d0');
+
+    act(() => result.current.settle('quests', 'closed'));
+    expect(result.current.pane('quests').chosen).toBeNull();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
+  });
+
+  it('lets go of a remembered finding that went, never opening on its gone state', () => {
+    window.localStorage.setItem('daoris.list.convergence.chosen', 'a|b');
+    const { result } = renderHook(() => useListPanes());
+    act(() => result.current.settle('convergence', 'gone'));
+    expect(result.current.pane('convergence').chosen).toBeNull();
+  });
+
+  it('keeps a remembered item that still waits, and then holds it as it changes while open', () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'abc123');
+    const { result } = renderHook(() => useListPanes());
+    act(() => result.current.settle('quests', 'live'));
+    expect(result.current.pane('quests').chosen).toBe('abc123');
+
+    // Marked done while its page is open: the page stays on it as the act left it (platform language §5).
+    act(() => result.current.settle('quests', 'closed'));
+    expect(result.current.pane('quests').chosen).toBe('abc123');
+  });
+
+  it('never lets go of an item chosen now: one that goes while open keeps its gone state', () => {
+    const { result } = renderHook(() => useListPanes());
+    act(() => result.current.choose('quests', 'f1f1f1'));
+    act(() => result.current.settle('quests', 'gone'));
+    expect(result.current.pane('quests').chosen).toBe('f1f1f1');
+  });
+
+  it('reads the choice again when its view is opened by a door that names nothing', () => {
+    const { result } = renderHook(() => useListPanes());
+    act(() => result.current.choose('quests', 'd0d0d0'));
+    act(() => result.current.settle('quests', 'closed'));
+    expect(result.current.pane('quests').chosen).toBe('d0d0d0');
+
+    // Left, then opened again by its place: the done quest is a remembered choice now, and ends.
+    act(() => result.current.reopen('quests'));
+    act(() => result.current.settle('quests', 'closed'));
+    expect(result.current.pane('quests').chosen).toBeNull();
+  });
+
+  it('keeps each view its own: one view reopened lets go of nothing another remembers', () => {
+    window.localStorage.setItem('daoris.list.projects.chosen', 'engine');
+    const { result } = renderHook(() => useListPanes());
+    act(() => result.current.choose('quests', 'd0d0d0'));
+    act(() => result.current.reopen('projects'));
+    act(() => result.current.settle('quests', 'closed'));
+    expect(result.current.pane('quests').chosen).toBe('d0d0d0');
+    act(() => result.current.settle('projects', 'live'));
+    expect(result.current.pane('projects').chosen).toBe('engine');
   });
 });

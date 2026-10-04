@@ -1,7 +1,7 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LIST_BOUNDS, type ListChoice, type ListLayout, type ListMode, type ListView, listLayout, listToggled } from './layout';
 import { type ListMake, ListPane } from './ListPane';
-import type { ListPanes } from './listPanes';
+import type { ChoiceStanding, ListPanes } from './listPanes';
 
 /**
  * A view's list, as it hands it to the frame (D118 §2, §5): what `ListPane` draws, less where it stands,
@@ -19,6 +19,12 @@ export type ListSpec = {
   empty?: { headline: string; body: string };
   /** The item the list has chosen: a change of it is a choice, which closes a list laid over the main area. */
   chosen?: string | null;
+  /**
+   * What the chosen item is now, as the view reads it (UX6b, D150 §8): a remembered choice whose item closed or went is
+   * let go, so the view opens with nothing chosen. Absent with nothing chosen, and for a view whose items never close
+   * or go (Settings' domains, Sessions' attended session).
+   */
+  standing?: ChoiceStanding;
   /** The list itself: its rows, each carrying `data-list-row`. */
   body: ReactNode;
 };
@@ -81,6 +87,10 @@ export function useListMode(
  * Its closing and its width are the view's own (`listPanes.ts`); laying it over the main area is the
  * frame's, and never kept. **A choice closes a list laid over**: a change of the chosen item, and the `＋`,
  * which opens a form.
+ *
+ * **A remembered choice ends with what it chose** (UX6b, design §1 rule 6): what the view reads of its chosen item is
+ * told to the list's memory, which lets go of a remembered one that closed or went. Before paint, so a done quest's page
+ * is never drawn on the way to nothing chosen.
  */
 export function ViewListPane({ spec, layout, lists, onOver }: {
   spec: ListSpec;
@@ -96,6 +106,11 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
     if (was.current !== chosen && laid) onOver(false);
     was.current = chosen;
   }, [chosen, laid, onOver]);
+  const { settle } = lists;
+  const standing = chosen ? spec.standing : undefined;
+  useLayoutEffect(() => {
+    if (standing) settle(spec.view, standing);
+  }, [settle, spec.view, standing]);
 
   const make = spec.make;
   return (

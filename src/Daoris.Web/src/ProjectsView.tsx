@@ -208,6 +208,8 @@ export function useProjectsView({
           }
         : undefined,
       chosen,
+      // A remembered repository reopens only while the registry still holds it (UX6b): one retired opens nothing chosen.
+      standing: !chosen ? undefined : shown ? 'live' : registry.data !== undefined ? 'gone' : 'unread',
       body: (
         <ProjectList
           adopted={rows.filter((row) => row.adopted).map(facts)}

@@ -78,8 +78,20 @@ public sealed class HelpRoomGoldenTests
         Landed =
         [
             new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", Pushed: false, PullRequest: null),
-            new HelpLanded("game", "feature/q3-third", "s3", Pushed: true, PullRequest: "https://example.test/pr/3"),
-            new HelpLanded("game", "feature/q4-fourth", "s4", Pushed: true, PullRequest: null),
+            // PLUGHOOK1c: the kept answer about its pull request, which the helper reads rather than asks.
+            new HelpLanded("game", "feature/q3-third", "s3", Pushed: true, PullRequest: "https://example.test/pr/3")
+            {
+                State = new PullRequestState(PullRequestStates.Completed)
+                {
+                    PullRequest = "https://example.test/pr/3", MergeCommit = new string('a', 40), SourceCommit = new string('b', 40),
+                    Target = "main", How = MergeHow.Squash, At = new DateTimeOffset(2026, 10, 4, 13, 50, 0, TimeSpan.Zero),
+                    Plugin = "example.lands", AskedAt = new DateTimeOffset(2026, 10, 4, 14, 2, 0, TimeSpan.Zero),
+                },
+            },
+            new HelpLanded("game", "feature/q4-fourth", "s4", Pushed: true, PullRequest: null)
+            {
+                AskFailed = new PullRequestAskFailed(PluginEvents.Late, "example.lands", new DateTimeOffset(2026, 10, 4, 14, 30, 0, TimeSpan.Zero)),
+            },
         ],
         Offers =
         [

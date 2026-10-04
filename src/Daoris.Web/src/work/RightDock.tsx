@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { type ReactNode, useState } from 'react';
-import { Button, Icon, Tip } from '../ui';
+import type { SessionState } from '../api';
+import { Button, Icon, SESSION_ACTIVE, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';
 import type { DockMode } from './layout';
@@ -21,6 +22,39 @@ export type DockTab = ViewId | 'preview';
 
 /** A file's preview as the dock's tab: its name, its path for the tip, and its own ×. */
 export type DockPreview = { name: string; path: string; onClose: () => void };
+
+/**
+ * The session a session's views follow (UX6b, D150 §8, design §2.5): on Sessions the attended one, whatever its state;
+ * off Sessions only while it runs or waits on the person. An ended session's record is read on Sessions, and off it the
+ * side bar kept one from the day before, its whole done note running past the window's foot.
+ */
+export function followed<S extends { state: SessionState }>(attended: S | null, offSessions: boolean): S | null {
+  return attended && (!offSessions || SESSION_ACTIVE.has(attended.state)) ? attended : null;
+}
+
+/**
+ * The tab the side bar opens on before the person picks one for the session it follows: Ask Daoris off Sessions with no
+ * session followed, since a session's views have nothing to say there (UX6b); the timeline otherwise (FRAME6).
+ */
+export const dockOpensOn = (offSessions: boolean, following: boolean): DockTab => (offSessions && !following ? 'ask' : 'timeline');
+
+/**
+ * What a session's view says off Sessions with no session followed: that none is attended, without naming a list the
+ * view does not have (audit SE11), or that the one attended has ended and is read on Sessions (UX6b); and the door there.
+ */
+export function NothingFollowed({ ended, onOpenSessions }: {
+  /** A session is attended on Sessions, and has ended. */
+  ended: boolean;
+  onOpenSessions?: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="grid justify-items-start gap-2 p-3">
+      <p className="m-0 text-small text-ink-faint">{t(ended ? 'work.frame.ended' : 'work.frame.none')}</p>
+      {onOpenSessions && <Button onClick={onOpenSessions}>{t('work.frame.goSessions')}</Button>}
+    </div>
+  );
+}
 
 /**
  * The right dock: per-session surfaces, keyed to whatever the person is attending.

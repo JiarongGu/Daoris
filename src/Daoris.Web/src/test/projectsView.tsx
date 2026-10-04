@@ -5,21 +5,25 @@ import { useProjectsView } from '../ProjectsView';
 import type { Notify } from '../ui';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
+import { useDoor } from './door';
 
 // Repositories alone, as its suites hold it (FRAME1e): the view's list and its main area on a browser's frame, with
 // the application's list memory, so what a test chooses is what a relaunch would remember. The doors' events are
 // props, held the way `App` holds them.
 
-export function ProjectsView({ notify, onOpenCode, addRequested, onAddOpened, importRequested, onImportOpened }: {
+export function ProjectsView({ notify, onOpenCode, addRequested, onAddOpened, importRequested, onImportOpened, door }: {
   notify: Notify;
   onOpenCode?: (repository: string) => void;
   addRequested?: boolean;
   onAddOpened?: () => void;
   importRequested?: boolean;
   onImportOpened?: () => void;
+  /** The repository a door names as it opens the view (`useDoor`). */
+  door?: string;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  useDoor(lists, 'projects', door);
   const layout = useProjectsView({
     active: true,
     chosen: lists.pane('projects').chosen,

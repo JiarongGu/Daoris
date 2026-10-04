@@ -549,7 +549,9 @@ describe('every door names its item', () => {
       links: [], attachments: [], quests: [], proposal: [{ repository: 'engine', score: 3, matched: ['frame'] }],
     }];
     shell();
-    await userEvent.click(await screen.findByRole('button', { name: /Cap the hydration per frame\./ }));
+    // UX6c: the row is named by its title, and its door is the press at its end, beside its acts.
+    const row = await screen.findByRole('listitem', { name: 'Cap the hydration per frame.' });
+    await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
@@ -634,11 +636,14 @@ describe('the attention band', () => {
     window.localStorage.removeItem('daoris.list.quests.chosen');
   });
 
-  it('is absent entirely when nothing is waiting — an always-there all-clear is not read', async () => {
+  /** UX6c (design §6.1): one line when nothing is waiting, never a card saying all clear, which is not read. */
+  it('is one line when nothing is waiting, never a card', async () => {
     shell();
     await screen.findByRole('heading', { name: 'Overview' });
 
-    expect(screen.queryByText('What needs you')).toBeNull();
+    const band = await screen.findByRole('region', { name: 'What needs you' });
+    expect(within(band).getByText('Nothing needs you')).toBeInTheDocument();
+    expect(within(band).queryByRole('heading')).toBeNull();
   });
 
   it('names a parked session and a quest nobody here can take', async () => {
@@ -656,11 +661,13 @@ describe('the attention band', () => {
     shell();
 
     expect(await screen.findByText('What needs you')).toBeInTheDocument();
-    expect(screen.getByText('parked at a checkpoint')).toBeInTheDocument();
-    expect(screen.getByText('nobody here can take this')).toBeInTheDocument();
-    // The category the design names third is not invented: SURF6's viewed mark is not kept, so
-    // nothing records looking — and the band says that, not that it waits on review (POLISH4).
-    expect(screen.getByText(/nothing yet keeps a record of what you have looked at/)).toBeInTheDocument();
+    // UX6c: each in its group, the parked session holding work and the quest waiting for the person's word.
+    expect(within(screen.getByRole('group', { name: 'Holding work' })).getByText('parked at a checkpoint')).toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'Waiting for your word' })).getByText('nobody here can take this')).toBeInTheDocument();
+    // Work to review is a row of its own now, so the sentence that said it was not listed went with it; a browser has
+    // no Sessions, so nothing is ever ready for review there.
+    expect(screen.queryByText(/nothing yet keeps a record of what you have looked at/)).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Ready for you' })).toBeNull();
   });
 
   /**
@@ -724,11 +731,12 @@ describe('the attention band', () => {
     }];
     shell();
 
-    const band = await screen.findByRole('region', { name: 'What needs you' });
-    expect(within(band).queryByRole('button', { name: /two ways forward/ })).toBeNull();
-    expect(within(band).getByText('two ways forward.')).toBeInTheDocument();
+    const parked = await screen.findByRole('listitem', { name: 'Chat' });
+    expect(within(parked).queryByRole('button')).toBeNull();
+    expect(within(parked).getByText('two ways forward.')).toBeInTheDocument();
 
-    await userEvent.click(within(band).getByRole('button', { name: /Expose a streaming budget/ }));
+    const nobody = screen.getByRole('listitem', { name: 'Expose a streaming budget' });
+    await userEvent.click(within(nobody).getByRole('button', { name: 'Open' }));
     await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     expect(within(screen.getByRole('main')).getByText('#7a82cc')).toBeInTheDocument();
   });
@@ -761,7 +769,8 @@ describe('the attention band', () => {
       expect(screen.getByText('its intake asked you')).toBeInTheDocument();
       expect(screen.queryByText('parked at a checkpoint')).toBeNull();
 
-      await userEvent.click(screen.getByRole('button', { name: /Cap the hydration per frame\./ }));
+      const row = screen.getByRole('listitem', { name: 'Cap the hydration per frame.' });
+      await userEvent.click(within(row).getByRole('button', { name: 'Open' }));
       await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' });
       expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     } finally {

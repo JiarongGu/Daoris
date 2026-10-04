@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, screen, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { chooseRow, listOf, mainArea, pageTitled, showSearch } from './test/knowledgeViews';
 
@@ -128,15 +128,23 @@ describe('Search', () => {
   });
 
   /** D118 §3b: with nothing chosen the main area says how to choose; an entry the index let go says it has gone. */
-  it('says how to choose with nothing chosen, and that a chosen entry has gone', async () => {
+  it('says how to choose with nothing chosen, and that an entry chosen now has gone', async () => {
     showSearch();
     expect(within(mainArea()).getByText('Choose a result')).toBeInTheDocument();
 
     cleanup();
-    window.localStorage.setItem(CHOSEN, 'game:.claude/knowledge/retired.md');
-    showSearch();
+    showSearch({ door: 'game:.claude/knowledge/retired.md' });
     await screen.findByText('This entry is no longer in the index');
     expect(within(mainArea()).getByText('This entry is no longer in the index')).toBeInTheDocument();
+  });
+
+  // UX6b (design §1 rule 6): a remembered entry the index let go opens nothing chosen, never on its gone state.
+  it('opens with nothing chosen on a remembered entry that has gone, and forgets it', async () => {
+    window.localStorage.setItem(CHOSEN, 'game:.claude/knowledge/retired.md');
+    showSearch();
+    await waitFor(() => expect(window.localStorage.getItem(CHOSEN)).toBeNull());
+    expect(mainArea()).toHaveTextContent('Choose a result');
+    expect(screen.queryByText('This entry is no longer in the index')).toBeNull();
   });
 
   /**

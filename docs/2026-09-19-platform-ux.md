@@ -280,10 +280,15 @@ controls are in the frame design's §3.
   (row = pill · title · route · how long — and, on the desktop, *sitting — why*, the driver's own
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
-  quest's page on Quests (FRAME1d); repository rows go to Repositories. Above the tiles, *What needs you* (working surface
-  §4) lists parked sessions, then quests parked on their failed sessions here (SESSUX1i, a shell's alone), then
-  folders waiting on trust, asks waiting on a person (INT4d), agents' proposals to widen the rules, and quests nobody
-  can take, and it is absent when nothing waits; Overview's badge counts every row. **The band is live, or it lies**: an
+  quest's page on Quests (FRAME1d); repository rows go to Repositories. **The page leads with *What needs you***
+  (UX6c, D150 §6): *Holding work* (parked sessions, quests parked on their failed sessions, go-aheads, folders waiting on
+  trust), *Waiting for your word* (asks to publish or whose intake asked, departures, widenings, quests nobody can take)
+  and *Ready for you* (work to review, five rows then *N more in Sessions*), the longest waiting first in each group and
+  an empty group not shown; with nothing waiting it is one line, *Nothing needs you* and the sessions working. A row reads
+  `kind · what · where · how long` and its why, acts where one press is safe (*Publish to …*, *Try again*, *Accept the
+  departure*), asks once under itself before a go-ahead's answer, a trust or a widening, and keeps a reading-first answer
+  (a park, an intake, a review) as its door alone; every other row's door is *Open* at its end. No row starts a process to
+  find out. Overview's badge counts every row. **The band is live, or it lies**: an
   ask made by another door moves nothing else a tick reports, so the shell forwards a tick when the
   asks change and the page refetches them. A wait is a span (*waiting 4d 3h*, U40).
 - **Quests** (on the frame since FRAME1d, D118 §2) — a list pane and a main area. The list's `＋` offers
@@ -323,8 +328,8 @@ controls are in the frame design's §3.
   the store it was read from; someone's words quoted as written, the driver's own notes marked *shown as recorded*, and a
   link nothing keeps marked *missing* where it would have been. A browser has none, since it has no driver.
 - **A folder waiting on trust** (D73) — the grant is offered where the hold is read: the quest's
-  page carries *Trust this folder…* under its sitting line, and *What needs you* a `trust` row, the
-  only place an intake's held room shows. The question is the agent's own, asked in the open: the
+  page carries *Trust this folder…* under its sitting line, and *What needs you* a `trust` row with the same press, asking
+  under the row (UX6c), the only place an intake's held room shows. The question is the agent's own, asked in the open: the
   folder, what trusting means in the agent's terms, what the driver is holding, and the one file
   written. It is never wider than the hold, since the shell refuses any pair the driver did not
   produce, and there is one row per folder.

@@ -12,7 +12,7 @@ import {
 import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './quests/QuestComposer';
 import { QuestList } from './quests/QuestList';
 import {
-  answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf,
+  answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf, questStanding,
 } from './quests/records';
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import {
@@ -395,6 +395,8 @@ export function useQuestsView({
         ? { headline, body: t('quests.empty.body') }
         : undefined,
       chosen,
+      // A remembered record reopens only while it still waits (UX6b): yesterday's done quest opens nothing chosen.
+      standing: item && 'ask' in item ? asks.standing : item ? questStanding(shownQuest, everything.data !== undefined) : undefined,
       body: (
         <QuestList
           asks={asks.rows}

@@ -187,6 +187,17 @@ public sealed class LandedBranches(string home)
             .Reverse()];
 
     /// <summary>
+    /// The landings a person names — by the session that landed it, or by the branch — standing or traces, in one repository
+    /// where they say which, the newest first (PLUGHOOK1c): what <c>trees state</c> asks about, since a trace's pull request may
+    /// still carry a session branch that stands.
+    /// </summary>
+    public IReadOnlyList<LandedBranch> FindAll(string sessionOrBranch, string? repository = null) =>
+        [.. Everything()
+            .Where(entry => repository is null || string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => entry.Names(sessionOrBranch) || string.Equals(entry.Branch, sessionOrBranch, StringComparison.Ordinal))
+            .Reverse()];
+
+    /// <summary>
     /// Record one, replacing any standing entry for the same branch in the same repository. An earlier session's trace
     /// of that name stays, since its review still says where that session's work went.
     /// </summary>

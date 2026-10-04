@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import type { ListMode } from './layout';
-import { useListPanes } from './listPanes';
+import { type ChoiceStanding, useListPanes } from './listPanes';
 import { type ListSpec, ViewFrame } from './ViewFrame';
 import { ViewMain } from './ViewMain';
 
@@ -14,8 +14,15 @@ import { ViewMain } from './ViewMain';
 
 const ROWS = ['Expose a streaming budget', 'Read the budget from the level file'];
 
-/** The application's half, as `App` holds it in a browser: the lists' memory and a list laid over. */
-function Browser({ withList = true, onMode }: { withList?: boolean; onMode?: (mode: ListMode | null) => void }) {
+/**
+ * The application's half, as `App` holds it in a browser: the lists' memory and a list laid over. `standings` is what
+ * the view reads of each item (UX6b); an item it does not name still waits.
+ */
+function Browser({ withList = true, onMode, standings = {} }: {
+  withList?: boolean;
+  onMode?: (mode: ListMode | null) => void;
+  standings?: Record<string, ChoiceStanding>;
+}) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
   const chosen = lists.pane('quests').chosen;
@@ -24,6 +31,7 @@ function Browser({ withList = true, onMode }: { withList?: boolean; onMode?: (mo
     name: 'Quests',
     labels: { open: 'Show the quest list', close: 'Hide the quest list', resize: 'quest list width' },
     chosen,
+    standing: chosen ? standings[chosen] ?? 'live' : undefined,
     body: (
       <ul>
         {ROWS.map((title) => (
@@ -101,5 +109,44 @@ describe("a browser's frame", () => {
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(document.querySelector('[data-region="list"]')).toBeNull();
     expect(modes).toEqual([null]);
+  });
+});
+
+// UX6b (design §1 rule 6): the list is told what its chosen item is now, and a remembered one that closed or went is let
+// go before the main area shows it. Quests reopened yesterday's done quest on the owner's install.
+describe("a view's remembered choice", () => {
+  const DONE = ROWS[1]!;
+
+  it('opens with nothing chosen on a remembered item that closed, and forgets it', () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', DONE);
+    show({ standings: { [DONE]: 'closed' } });
+    expect(screen.getByRole('main')).toHaveTextContent('Nothing chosen');
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
+  });
+
+  it('opens with nothing chosen on a remembered item that went, never on its gone state', () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', DONE);
+    show({ standings: { [DONE]: 'gone' } });
+    expect(screen.getByRole('main')).toHaveTextContent('Nothing chosen');
+  });
+
+  it('reopens a remembered item that still waits', () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', DONE);
+    show();
+    expect(screen.getByRole('heading', { level: 1, name: DONE })).toBeInTheDocument();
+  });
+
+  it('keeps a remembered item its view has not read yet, and lets it go once read closed', () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', DONE);
+    const { rerender } = show({ standings: { [DONE]: 'unread' } });
+    expect(screen.getByRole('heading', { level: 1, name: DONE })).toBeInTheDocument();
+    rerender(<Tooltip.Provider><Browser standings={{ [DONE]: 'closed' }} /></Tooltip.Provider>);
+    expect(screen.getByRole('main')).toHaveTextContent('Nothing chosen');
+  });
+
+  it('keeps an item the person chooses now, closed or not', async () => {
+    show({ standings: { [DONE]: 'closed' } });
+    await userEvent.click(screen.getByRole('button', { name: DONE }));
+    expect(screen.getByRole('heading', { level: 1, name: DONE })).toBeInTheDocument();
   });
 });

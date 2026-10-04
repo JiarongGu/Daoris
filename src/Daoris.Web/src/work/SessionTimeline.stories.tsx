@@ -70,6 +70,53 @@ export const Parked: Story = {
   },
 };
 
+/**
+ * A long note folds to four lines, with *Show all* (UX6b, design §2.5): the install's side bar showed an ended session's
+ * whole verify report, in italics, past the window's foot. Drawn at the side bar's usual width.
+ */
+export const ALongNoteFolds: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      note: [
+        'verify passed: typecheck clean across the CLI, the web and the desktop modules.',
+        'cli: 1214 tests in 96 files, all passed, in 41 seconds.',
+        'web: 3798 tests in 225 files, all passed, in 268 seconds.',
+        'daoris check: the doctrine is current and the index is in step with the files.',
+        'doc-budgets: two documents over their ceiling, reported and not enforced.',
+        'doc-duplicates: nothing held twice. release-prep --check: every version reference agrees.',
+        'devkit: the five universal gates are green.',
+      ].join('\n'),
+      evidence: undefined,
+    },
+  },
+  decorators: [(Story) => <div className="w-[400px] p-3"><Story /></div>],
+};
+
+/** The same fold across a note's blocks: Daoris's line worded in the reader's language, then the agent's words set apart. */
+export const ALongNoteOfSeveralBlocksFolds: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      note: 'The quest reached done.',
+      noteParts: [
+        { code: 'ended.done', values: {}, text: 'The quest reached done.' },
+        {
+          words: [
+            'Capped hydration at four chunks a frame and exposed the budget on the chunk API.',
+            'The playtest streamed the whole world with no seams; the slowest frame took 14 ms.',
+            'Two follow-ups for the game: read the budget from the level file, and show it in the debug overlay.',
+            'Nothing else was touched.',
+          ].join('\n'),
+          by: 'agent',
+        },
+      ],
+      evidence: undefined,
+    },
+  },
+  decorators: [(Story) => <div className="w-[400px] p-3"><Story /></div>],
+};
+
 /** Work that produced nothing. The driver's sentence says so and the timeline does not soften it. */
 export const NothingLanded: Story = {
   args: { session: { ...SESSION, evidence: 'no commits landed' }, quest: null },

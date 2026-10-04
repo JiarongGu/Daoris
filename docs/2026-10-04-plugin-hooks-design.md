@@ -1,6 +1,6 @@
 # Plugin hooks: a landed branch's state on its platform, and where else a plugin may speak
 
-> PLUGHOOK1, decided as D148 (2026-10-04). PLUGHOOK1a is built (its note on D148); 1b–1d and PLUGHOOK2 are not. `Dnn` is `docs/decisions/Dnn.md`, and the plugin design
+> PLUGHOOK1, decided as D148 (2026-10-04). PLUGHOOK1a and 1c are built (their notes on D148); 1b, 1d and PLUGHOOK2 are not. `Dnn` is `docs/decisions/Dnn.md`, and the plugin design
 > is [`2026-09-23-plugin-design.md`](2026-09-23-plugin-design.md). The owner, on what the work repository showed: *"this
 > is more like an Azure DevOps related logic so we need to do this as a plugin change, and also this is a good chance
 > to design plugin hooks into other processes"*.

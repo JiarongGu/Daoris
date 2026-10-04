@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { RightDock } from './RightDock';
+import { NothingFollowed, RightDock } from './RightDock';
 
 // The dock in each of its modes (FRAME6, components plan §3a): beside the session, at its floor asking
 // to be closed, over the whole frame, and closed to the strip that opens it again. The frame decides
@@ -93,3 +93,24 @@ export const APreviewAtTheFloor: Story = {
 
 /** Closed with a preview open: its strip carries the file's door after the views'. */
 export const ClosedWithAPreview: Story = { args: { mode: 'closed', width: 32, preview: PREVIEW } };
+
+/**
+ * Off Sessions with no session followed (UX6b, design §2.5): the side bar opens on Ask Daoris. On the install it kept an
+ * ended session from the day before, its whole done note running past the window's foot.
+ */
+export const OffSessionsOnAskDaoris: Story = {
+  args: {
+    views: ['timeline', 'review', 'ask'], tab: 'ask',
+    children: <div className="p-3 text-small text-ink-soft">Ask Daoris: its conversation and its box.</div>,
+  },
+};
+
+/** Its timeline there, once the session attended in Sessions has ended: it says so, and offers Sessions. */
+export const OffSessionsTheAttendedSessionEnded: Story = {
+  args: { views: ['timeline', 'review', 'ask'], tab: 'timeline', children: <NothingFollowed ended onOpenSessions={() => {}} /> },
+};
+
+/** And with nothing attended at all, as before: no session list is named on a view that has none (audit SE11). */
+export const OffSessionsNothingAttended: Story = {
+  args: { views: ['timeline', 'review', 'ask'], tab: 'timeline', children: <NothingFollowed ended={false} onOpenSessions={() => {}} /> },
+};

@@ -1,4 +1,5 @@
-import type { Quest, Session } from '../api';
+import type { Ask, Quest, Session } from '../api';
+import type { ChoiceStanding } from '../work/listPanes';
 
 // Quests' list and its memory as values (FRAME1d, D118 §2, §3f): its filters as kept, its groups, the record a
 // page shows, and the session that marks a quest. Pure, so every list a person could have is an argument.
@@ -72,6 +73,27 @@ export function freshest<T extends { id: string; updated: string }>(listed: T | 
   if (!held || (listed && listed.id !== held.id)) return listed;
   if (!listed) return held;
   return Date.parse(listed.updated) > Date.parse(held.updated) ? listed : held;
+}
+
+/**
+ * Whether the chosen quest still waits on something (UX6b, design §1 rule 6), so Quests reopens on it: open or taken, or
+ * closed while a departure holds it for the person's yes (DRIFT1d) or a move another machine made waits on their dismissal
+ * (SYNC6c). `read` is whether every quest has answered, since a quest missing from a list still on its way has not gone.
+ */
+export function questStanding(quest: Quest | undefined, read: boolean): ChoiceStanding {
+  if (!quest) return read ? 'gone' : 'unread';
+  const closed = quest.status === 'Done' || quest.status === 'Declined';
+  return closed && quest.held !== true && !quest.conflicts?.length ? 'closed' : 'live';
+}
+
+/**
+ * Whether the chosen ask still waits on something (UX6b): proposed, open or published, or done with a go-ahead the person
+ * has not answered (KNOWUSE1a). A closed ask, and a done one whose quests have all closed, wait on nothing.
+ */
+export function askStanding(ask: Ask | undefined, read: boolean): ChoiceStanding {
+  if (!ask) return read ? 'gone' : 'unread';
+  const closed = ask.state === 'Done' || ask.state === 'Closed';
+  return closed && !(ask.goAheads ?? []).some((goAhead) => goAhead.state === 'asked') ? 'closed' : 'live';
 }
 
 /**
