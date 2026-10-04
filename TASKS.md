@@ -68,11 +68,6 @@ running them again.
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
 - [ ] **ROSTER1b — a start that fails on an account never read reads it once** (driver; found by ROSTER1). D150 §5.3
   lists a start's refusal as a reason to read; not built. Proof: a Process test where the next start walks past it.
-- [ ] **MERGEJOIN1 — a union merge never leaves two decision notes touching** (tools; seen three times merging the day's
-  UX6 branches). Two branches each appending a dated note to one decision leave the second label straight under the
-  first's last line, and `doc-duplicates` fails `verify` at the merge. The merge tool sets a blank line before such a
-  label in the merged decision files, as it writes `docs/index/`, and says so. Contract: D106. Proof: a merge-tool test
-  over two branches that each append a note.
 - [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
   starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
   worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps

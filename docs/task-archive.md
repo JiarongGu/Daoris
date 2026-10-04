@@ -11028,3 +11028,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
 
 **Outcome** 2026-10-04: built. The two pull-request plugins declare Node.js, Git and their platform's CLI in `tools` (GitHub 1.2.0: `gh >=1.9.0`, its sign-in a check; Azure DevOps 1.3.0: `az >=2.0.79`, its extension and sign-in as checks), each floor read from the flags `land.mjs` uses and cited in the README; `plugins try` on each answered as the machine stands. Detail: D150's PLUGTOOL1b note, `f11d148e`, `a80f2b51`.
+
+
+## MERGEJOIN1 — a union merge never leaves two decision notes touching (2026-10-04)
+
+> - [ ] **MERGEJOIN1 — a union merge never leaves two decision notes touching** (tools; seen three times merging the day's
+> UX6 branches). Two branches each appending a dated note to one decision leave the second label straight under the
+> first's last line, and `doc-duplicates` fails `verify` at the merge. The merge tool sets a blank line before such a
+> label in the merged decision files, as it writes `docs/index/`, and says so. Contract: D106. Proof: a merge-tool test
+> over two branches that each append a note.
+
+**Outcome** 2026-10-04: built. After a merge (and at `--continue`, and in `--rerun`), the merge tool sets a blank line before each note label a union merge left glued under the line above it, in each decision file the merge changed, before it writes `docs/index/`, and names each note it set apart; `doc-duplicates` exports `gluedLabels`, so the fix and the check share one definition. Detail: D106's MERGEJOIN1 note, `79fdbf32`.
