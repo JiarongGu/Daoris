@@ -448,6 +448,8 @@ app.MapPost("/api/quests", async (
             // exchange naming which step — the same sentence every door gives.
             Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
             Requirements = RequirementsOf(body.Requirements),
+            // The person's short title from the composer (SESSUX1j), judged by the exchange with every other door's.
+            Short = body.Short,
         },
         DateTimeOffset.UtcNow, ct);
 
@@ -649,7 +651,7 @@ if (mode == ServiceMode.Local)
         // A person's publish names a receiver and nothing else; an intake's carries its own words (D65
         // §1b). Anything beyond `to` makes a draft — words, links, files or a chain alone included.
         var drafted = body.Title is not null || body.Body is not null || body.Links is { Count: > 0 }
-            || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 };
+            || uploads.Count > 0 || body.Then is { Count: > 0 } || body.Requirements is { Count: > 0 } || body.Short is not null;
         var draft = drafted
             ? new AskDraft(body.Title, body.Body)
             {
@@ -657,6 +659,8 @@ if (mode == ServiceMode.Local)
                 Uploads = uploads,
                 Then = (body.Then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList(),
                 Requirements = RequirementsOf(body.Requirements),
+                // The intake's short title (SESSUX1j), judged by the exchange with every other door's.
+                Short = body.Short,
             }
             : null;
 
@@ -1487,7 +1491,9 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.Requirements.Select(r => new QuestRequirementWire(r.Quote, r.Check)).ToList(),
     q.Answers.Select(a => new QuestAnswerWire(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
     q.Held,
-    q.Accepted);
+    q.Accepted,
+    // What a list calls it (SESSUX1j): the publisher's short title, else the name read from its words, from this host.
+    q.Name);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
 // blank and is refused there naming which — the same sentence every door gives.

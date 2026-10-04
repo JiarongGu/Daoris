@@ -401,6 +401,37 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// SESSUX1j: the quest door takes the composer's short title and answers every quest with what a list calls it, the
+    /// publisher's short title or a name read from its words; one past 40 characters is refused, 400, in the service's words.
+    /// </summary>
+    [Fact]
+    public async Task The_quest_door_keeps_a_short_title_and_answers_every_quest_with_its_name()
+    {
+        var given = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Cap the frame's work so the editor stays responsive", body = "It stalls.",
+            @short = "Frame cap",
+        });
+        Assert.Equal(200, given.Status);
+        Assert.Equal("Frame cap", given.Json.GetProperty("quest").GetProperty("short").GetString());
+
+        var derived = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "Read the field names from the configuration file instead", body = "Hard-coded.",
+        });
+        Assert.Equal(200, derived.Status);
+        Assert.Equal("Read the field names from the…", derived.Json.GetProperty("quest").GetProperty("short").GetString());
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "A quest with too long a short title", body = "b",
+            @short = "A short title that runs well past the forty characters a list gives it",
+        });
+        Assert.Equal(400, refused.Status);
+        Assert.Contains("40 characters", refused.Error);
+    }
+
+    /// <summary>
     /// DRIFT1c: the quest door keeps working for a client that names no requirements, answering the quest
     /// with none; a repository naming some is asking on no ask, so there is nothing to quote, 400.
     /// </summary>

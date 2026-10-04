@@ -44,6 +44,19 @@ public sealed record Quest(
     string Workspace = Workspaces.Default)
 {
     /// <summary>
+    /// The short title its publisher gave (SESSUX1j): the few words that tell it apart in a list, at most
+    /// <see cref="QuestTitles.MaxShort"/> characters on one line, as written. Null where none was given, which is every
+    /// quest from before the field; <see cref="Name"/> is then read from its own words.
+    /// </summary>
+    public string? Short { get; init; }
+
+    /// <summary>
+    /// What a list calls it (SESSUX1j): its publisher's short title, else a name read from its own words
+    /// (<see cref="QuestTitles.Derive"/>), never written into the record.
+    /// </summary>
+    public string Name => Short ?? QuestTitles.Derive(Title, Body);
+
+    /// <summary>
     /// Moves that lost to another machine's (D68 §5), in the order they were recorded — kept, not
     /// dropped, until a person acts. Empty for a quest nobody raced.
     /// </summary>
@@ -380,7 +393,8 @@ public sealed class QuestStore
                   requirements TEXT NOT NULL DEFAULT '[]',
                   answers     TEXT NOT NULL DEFAULT '[]',
                   accepted    TEXT NULL,
-                  held        INTEGER NOT NULL DEFAULT 0
+                  held        INTEGER NOT NULL DEFAULT 0,
+                  short_title TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -413,6 +427,8 @@ public sealed class QuestStore
             ("quests", "answers", "answers TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "accepted", "accepted TEXT NULL"),
             ("quests", "held", "held INTEGER NOT NULL DEFAULT 0"),
+            // The publisher's short title (SESSUX1j); a quest from before was given none, and is named from its words.
+            ("quests", "short_title", "short_title TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -577,6 +593,7 @@ public sealed class QuestStore
     /// <param name="publishedBy">The session whose connector published it, when one did (SESS1).</param>
     /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange (D115 §2.2).</param>
     /// <param name="requirements">What the person requires, already judged by the exchange against their words (DRIFT1c).</param>
+    /// <param name="shortTitle">The publisher's short title, already judged by the exchange (SESSUX1j); null for none.</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
@@ -586,7 +603,8 @@ public sealed class QuestStore
         CancellationToken ct = default,
         string? publishedBy = null,
         IReadOnlyList<string>? lanes = null,
-        IReadOnlyList<QuestRequirement>? requirements = null)
+        IReadOnlyList<QuestRequirement>? requirements = null,
+        string? shortTitle = null)
     {
         var sorted = (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         var id = MakeId(from, to, title, lanes: sorted);
@@ -607,6 +625,7 @@ public sealed class QuestStore
                 PublishedBy = string.IsNullOrWhiteSpace(publishedBy) ? null : publishedBy.Trim(),
                 Lanes = sorted,
                 Requirements = requirements ?? [],
+                Short = string.IsNullOrWhiteSpace(shortTitle) ? null : shortTitle.Trim(),
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -710,8 +729,8 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes, requirements, answers, accepted, held, short_title)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes, $requirements, $answers, $accepted, $held, $short)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
@@ -719,8 +738,9 @@ public sealed class QuestStore
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
               awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes,
               requirements = excluded.requirements, answers = excluded.answers, accepted = excluded.accepted,
-              held = excluded.held
+              held = excluded.held, short_title = excluded.short_title
             """;
+        command.Parameters.AddWithValue("$short", (object?)quest.Short ?? DBNull.Value);
         command.Parameters.AddWithValue("$publishedBy", (object?)quest.PublishedBy ?? DBNull.Value);
         command.Parameters.AddWithValue("$lanes", LinksJson(quest.Lanes));
         command.Parameters.AddWithValue("$requirements", RequirementsJson(quest.Requirements));
@@ -1687,6 +1707,7 @@ public sealed class QuestStore
         Accepted = reader.IsDBNull(reader.GetOrdinal("accepted"))
             ? null
             : DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("accepted")), System.Globalization.CultureInfo.InvariantCulture),
+        Short = reader.IsDBNull(reader.GetOrdinal("short_title")) ? null : reader.GetString(reader.GetOrdinal("short_title")),
     };
 
     /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
@@ -1722,6 +1743,8 @@ public sealed class QuestStore
                 Lanes = payload.TryGetProperty("lanes", out var lanes) ? ReadLinks(lanes) : [],
                 // Absent from every publish before requirements, and from one that names none (DRIFT1c).
                 Requirements = payload.TryGetProperty("requirements", out var required) ? ReadRequirements(required) : [],
+                // Absent from every publish before short titles, and from one that gave none (SESSUX1j).
+                Short = payload.TryGetProperty("short", out var shortTitle) ? shortTitle.GetString() : null,
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -1799,6 +1822,9 @@ public sealed class QuestStore
                 writer.WritePropertyName("requirements");
                 WriteRequirements(writer, published.Requirements);
             }
+
+            // Only when its publisher gave one (SESSUX1j), for the lanes' reason; a derived name is never written.
+            if (published.Short is not null) writer.WriteString("short", published.Short);
         }
 
         if (note is not null) writer.WriteString("note", note);

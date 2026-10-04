@@ -377,6 +377,10 @@ public sealed partial class KnowledgeTools(
             + "they never said is refused, naming it; your reading of their words belongs in the body. Every step "
             + "of the chain inherits them. A quest one repository asks of another carries none.")]
         Requirement[]? requirements = null,
+        [Description(
+            "A short title: the few words that tell this quest apart in a list, at most 40 characters, about 20 in Chinese. "
+            + "Your own words, never the title cut short. Omit it and the quest is named from its own words.")]
+        string? shortTitle = null,
         CancellationToken ct = default)
     {
         // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
@@ -401,7 +405,10 @@ public sealed partial class KnowledgeTools(
         {
             var answered = await asks.PublishAsync(
                     askId, to, DateTimeOffset.UtcNow, ct,
-                    new AskDraft(title, body) { Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required },
+                    new AskDraft(title, body)
+                    {
+                        Links = links ?? [], Uploads = uploads, Then = steps, Requirements = required, Short = shortTitle,
+                    },
                     intake.Session)
                 .ConfigureAwait(false);
             return answered.Refusal == AskRefusal.None
@@ -419,6 +426,7 @@ public sealed partial class KnowledgeTools(
                     Uploads = uploads,
                     Then = steps,
                     Requirements = required,
+                    Short = shortTitle,
                     // Which session asked (SESS1), as the driver named it on this connector (PERM2).
                     PublishedBy = intake?.Session,
                 },
@@ -455,6 +463,8 @@ public sealed partial class KnowledgeTools(
             foreach (var quest in group)
             {
                 text.AppendLine($"- `#{quest.Id}` **{quest.Title}** — {quest.Status}, from `{quest.From}`");
+                // Its publisher's short title (SESSUX1j), where one was given: the words a list shows for it.
+                if (quest.Short is { } shortTitle) text.AppendLine($"  short title: {shortTitle}");
                 text.AppendLine($"  {Text.Excerpt(quest.Body, null, 200)}");
                 // The lanes of the repository it asks (D115 §2.2); none is the whole repository.
                 if (quest.Lanes.Count > 0) text.AppendLine($"  lanes: {string.Join(" · ", quest.Lanes.Select(lane => $"`{lane}`"))}");
