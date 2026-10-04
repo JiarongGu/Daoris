@@ -56,6 +56,19 @@ Measured on the day's three integrations: the driver's real-process half took 30
 everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
 running them again.
 
+- [ ] **ORIENT1 — agents start from an index, not a search** (tools, docs, service; owner, 2026-10-04: *"I think we're
+  missing docs and indexing, so every agent spends a lot searching before anything happens"*). Measured on ten of the
+  day's branches: 60–100 tool calls and 370–600 KB read before the first edit, about a third of each branch; 278 shell
+  greps and 117 shell dumps between them; decision files read whole 21 times (299 KB); files of 80–120 KB read whole.
+  The code map lists projects only, nothing points to it, and the knowledge server, started by `dotnet run` at each
+  session, did not connect. In order:
+  - **a** — a generated index, held fresh by a gate as the code map is: bridge routes to their handler and page caller,
+    terminal verbs to their files, catalogue prefixes to their files, test fixtures and helpers, and an outline of
+    each large file's classes and methods with line ranges.
+  - **b** — a generated decisions digest: each decision's line and its dated notes' headings, with where each starts.
+  - **c** — the knowledge server for agents from a built binary, indexing this repository's own documents.
+  - **d** — `tools/orient-report.mjs`: calls and bytes before the first edit per branch, from its transcript.
+  Proof: d's report before and after a and b, with the target of halving both.
 - [ ] **GATE5 — a merge skips the long halves; they run once before the install is staged** (tools; owner, 2026-10-04:
   *"didn't we discuss that we should make the test gate or review gate smaller for this long-running development"*).
   GATE3's lane table still sends any driver change through the real-process halves and the deployment rehearsal, 30 to
