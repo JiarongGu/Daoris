@@ -339,6 +339,15 @@ public static class NoteCodes
     public static readonly NoteCode AccountCooling = new("account.cooling", ["until", "why"]) { Why = Cooling };
     public static readonly NoteCode AccountRefused = new("account.refused", ["owner"]);
     public static readonly NoteCode AccountRefusedOwn = new("account.refused-own", ["owner"]);
+    public static readonly NoteCode AccountSignedOut = new("account.signed-out", ["owner"]);
+    public static readonly NoteCode AccountSignedOutOwn = new("account.signed-out-own", ["owner"]);
+
+    /// <summary>
+    /// The account's lines that say its agent or its provider refused the account a start ran on, its sign-in (ROSTER1b) or
+    /// its credential (AGT3b): the fault is the account's, never the quest's, so a failure carrying one is no strike
+    /// (<see cref="ServiceClient.ReadStrikes"/>), read by the code the driver wrote, never by the words.
+    /// </summary>
+    public static IReadOnlyList<NoteCode> AccountsOwn { get; } = [AccountRefused, AccountRefusedOwn, AccountSignedOut, AccountSignedOutOwn];
 
     // ——— Why the account a resume asked for could not carry the person's words (MSG1g), after a line whose reason is
     // `account`: by TOOL6e's holds, naming no account, since the note travels.

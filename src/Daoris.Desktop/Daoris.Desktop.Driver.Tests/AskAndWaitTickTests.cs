@@ -313,7 +313,14 @@ public sealed class AskAndWaitTickTests : IDisposable
                         var body = Body();
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
-                        if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                        if (body["note"] is { } note)
+                        {
+                            session["note"] = note.GetValue<string>();
+                            // Its parts beside it, as the service keeps them (LANG1a): a note sent without them clears them.
+                            // The strikes read an account's line by its code (ROSTER1b).
+                            session["noteParts"] = body["noteParts"]?.DeepClone();
+                        }
+
                         // Kept once said, as the service keeps it (TOOL4c).
                         if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());

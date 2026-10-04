@@ -23,6 +23,8 @@
   "note.account.cooling": "The account it ran on is cooling until {{until}} ({{why}}); nothing starts on it until then.",
   "note.account.refused": "Its provider refused the {{owner}} account it ran on (401). Replace the key or sign in again, in Settings or with `daoris agent`, and Daoris starts sessions on it again.",
   "note.account.refused-own": "Its provider refused {{owner}}'s own sign-in (401). Replace the key or sign in again, in Settings or with `daoris agent`, and Daoris starts sessions on it again.",
+  "note.account.signed-out": "The agent refused the {{owner}} account it ran on for its sign-in, so it reads signed out and nothing more starts on it until it is signed in again, on the agent's page in Agents or with `daoris agent`.",
+  "note.account.signed-out-own": "The agent refused {{owner}}'s own sign-in, so nothing more starts on it until you sign in again at your terminal and read it again on the agent's page in Agents.",
   "note.account.resume-signed-out": "That account is not signed in any more.",
   "note.account.resume-refused": "Its provider refused that account.",
   "note.account.resume-gone": "That account is not on this machine any more.",

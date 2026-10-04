@@ -1161,7 +1161,9 @@ public sealed class StubAdapter : ISessionAdapter
         // And its weekly reset fixed per account (TOOL6b), mirrored so a rehearsal can gate a week carried on.
         WeekFixed: true,
         // And its words for an account's windows (TOOL6c), mirrored so a frame replayed on its doors is read as Claude Code's.
-        Windows: ClaudeWindows.Words);
+        Windows: ClaudeWindows.Words,
+        // And its words for a start refused for its sign-in (ROSTER1b), mirrored so a tick can gate one with no account.
+        SignIn: ClaudeSignIn.Words);
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -1716,7 +1718,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         WeekFixed: true,
         // What it says about an account's windows (TOOL6c, limit-signals evidence §1): each window's use and reset on every
         // `rate_limit_event`, which its ACP door forwards as `usage_update._meta["_claude/rateLimit"]` and reads as its owner's.
-        Windows: ClaudeWindows.Words);
+        Windows: ClaudeWindows.Words,
+        // What its ACP door says when it refuses a start for its sign-in (ROSTER1b): recorded on the install, 2026-10-04, on an
+        // account nobody had signed in to. Its ACP door reads these as its owner's (AGT7).
+        SignIn: ClaudeSignIn.Words);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

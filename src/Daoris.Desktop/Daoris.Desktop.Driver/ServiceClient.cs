@@ -1129,6 +1129,10 @@ public sealed class ServiceClient : IDisposable
     /// says trying again spends an account without progress; a limit is the account's state, with its own reset, and
     /// the cool-off bounds it. Counted, three refusals by one spent account parked a healthy quest in seconds on
     /// 1 October.</para>
+    /// <para>🔴 <b>Nor is a failure whose account was refused</b> (ROSTER1b): its agent refused the start for its sign-in, or
+    /// its provider refused its credential (AGT3b), which its note says by an account's line (<see cref="NoteCodes.AccountsOwn"/>).
+    /// The account reads signed out and the next start walks past it; counted, four starts on one empty account parked a
+    /// healthy quest on the install in two minutes (2026-10-04).</para>
     /// </remarks>
     internal static IReadOnlyDictionary<string, int> ReadStrikes(string json)
     {
@@ -1140,7 +1144,7 @@ public sealed class ServiceClient : IDisposable
             // says nothing about whether THIS machine's next try would fail.
             if (IsTeams(session)) continue;
             var state = Text(session, "state");
-            var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session))
+            var cutOff = (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase) && !Limit(session) && !AccountRefused(session))
                          || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
             if (!cutOff) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
@@ -1289,6 +1293,14 @@ public sealed class ServiceClient : IDisposable
     /// <summary>Whether a record says an account's limit made its failure (TOOL4c) — absent is false, the old reading.</summary>
     private static bool Limit(JsonElement session) =>
         session.TryGetProperty("limit", out var limit) && limit.ValueKind == JsonValueKind.True;
+
+    /// <summary>
+    /// Whether a record's note says its account was refused, its sign-in or its credential (ROSTER1b): by an account's line's
+    /// code, never by its words; a record from before parts is false, the old reading.
+    /// </summary>
+    private static bool AccountRefused(JsonElement session) =>
+        NotePart.Read(session) is { } parts
+        && parts.Any(part => part.Code is { } code && NoteCodes.AccountsOwn.Any(own => own.Code == code));
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;
