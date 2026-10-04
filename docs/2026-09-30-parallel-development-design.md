@@ -108,7 +108,8 @@ with the tree it ran on, and `publish:desktop` refuses a tree the full set has n
 it (`--full` alone runs the plan on the checkout), so a wrong table is caught before the install is built.
 `--rerun <gate>…` re-runs a fixed gate on the merge in place and keeps the other verdicts, saying from when. A
 Process half leaves a trx, and the ten slowest classes are printed after it (PROC1). D115's note says what this
-amends.
+amends. **GATE5** then took the long gates out of every merge, reached or not: the two `Process` halves and the
+deployment rehearsal run only with `--full`, so rule 5's process suites run in the full set before staging.
 
 ## 4. The splits (the code half)
 

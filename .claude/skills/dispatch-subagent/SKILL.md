@@ -68,8 +68,9 @@ Follow the dispatch-subagent skill's subagent half.
   - anything that touches the owner's running install: its folder, its home, its processes. Never stop
     a Daoris process.
 
-  The parent runs these serially when it merges. Several worktrees building at once is the load that
-  makes real-process tests fail (FLAKE1).
+  The parent runs these serially: the rehearsals a merge reaches when it merges, and the `Process` halves
+  and the deployment rehearsal in the full set before the install is staged. Several worktrees building
+  at once is the load that makes real-process tests fail (FLAKE1).
 - **What you cannot run, read.** When you change words a person or a test reads (a sentence, a label, a
   refusal), search for the old words in every test you may not run: the desktop suites' `Process` half,
   `tools/*rehearsal*.mjs` and the web's `e2e/` specs. Update each hit, and list them in the hand-back.
@@ -109,22 +110,26 @@ Follow the dispatch-subagent skill's subagent half.
 4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`. It then runs the baseline (the universal gates, the code
-     map, `verify`) and each gate the merge's changed paths can reach, by the tool's lane table (GATE3),
-     and prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares
-     and every rehearsal the release workflow adds. Each gate's whole log goes to
+     map, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
+     and the release and family rehearsals they reach, by the tool's lane table (GATE3). **It skips the
+     long halves** (GATE5): the driver's and the modules' `Process` halves and the deployment rehearsal
+     never run at a merge, and every run and `--plan` says each is in the full set before staging. It
+     prints why each gate runs or is skipped. `--full` runs every gate `daoris.gates.json` declares and
+     every rehearsal the release workflow adds. Each gate's whole log goes to
      `local/scratch/merge-<branch>/`; a Process half also leaves a `.trx` there, with its ten slowest
      classes printed after it (PROC1). The lane report names lanes by id and title. Look harder at the
      diff of a branch that crossed lanes or touched the steward's records.
-   - **The full set is owed before the install is built.** `publish:desktop` refuses a tree no full set
-     passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full` on the checkout, or
-     `--full` on the day's last merge; records written after the gates are forgiven. `--force-ungated`
-     is the person's override.
+   - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
+     refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
+     on the checkout, or `--full` on the day's last merge; records written after the gates are forgiven.
+     `--force-ungated` is the person's override.
    - On a conflict the tool stops and names the files. Resolve them, `git add` them, then run
      `--continue`. On a failed gate, read that gate's log, then fix it in the merge and run
-     `--rerun <gate>` (it re-runs that gate and any gate not yet run, keeping the other verdicts), or
-     `--continue` to gate the merge again whole, or run `git merge --abort`.
-   - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites.
-     Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
+     `--rerun <gate>` (it re-runs that gate and any gate not yet run, keeping the other verdicts; it runs
+     a long half only when named), or `--continue` to gate the merge again whole, or run
+     `git merge --abort`.
+   - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites its
+     paths reach. Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
    - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that
      died (its process ended, or it printed nothing) and passed when run again. Record it under FLAKE1;
      never let it through unrecorded.
