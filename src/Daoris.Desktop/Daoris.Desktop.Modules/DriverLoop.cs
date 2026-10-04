@@ -251,9 +251,11 @@ public sealed class DriverLoop(
             PausedBy = consideration.PausedBy is { } pause ? new { Scope = pause.Word, pause.Id } : null,
             parked?.Strikes,
             parked?.Since,
-            WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Until, waiting.Stated },
+            // Each account with the name the person gave it, read when the look said it (ACCT2b): the page says the name, null
+            // where there is none, and the id stays the fact a sign-in takes.
+            WaitsFor = waiting is null ? null : new { waiting.Agent, waiting.Account, waiting.Name, waiting.Until, waiting.Stated },
             // The accounts its start passed not signed in (TOOL6g), whose: the page says each with its sign-in. Null otherwise.
-            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts } : null,
+            SignedOut = consideration.SignedOut is { } passed ? new { passed.Agent, passed.Accounts, passed.Names } : null,
             // Held by an update's drain (UPDATE1, D139 §2): a fact the page says in the reader's language. Null otherwise.
             ForUpdate = InstallUpdate.IsHeldForUpdate(consideration) ? true : (bool?)null,
         };

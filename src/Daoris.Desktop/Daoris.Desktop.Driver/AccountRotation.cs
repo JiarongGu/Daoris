@@ -23,7 +23,21 @@ public enum AccountReadiness
 /// them. Machine-local, as every account name is: the page says them in the reader's language, and the log by name.
 /// </summary>
 /// <param name="Agent">Whose accounts: the owner a door runs as (AGT7), which `daoris agent login` takes.</param>
-public sealed record SignedOutAccounts(string Agent, IReadOnlyList<string> Accounts);
+public sealed record SignedOutAccounts(string Agent, IReadOnlyList<string> Accounts)
+{
+    /// <summary>
+    /// The name the person gave each of <see cref="Accounts"/> (ACCT2b), in the same order, null where one has none: read when
+    /// the hold was said, so the page says each by it. The ids stay the facts a sign-in and the log take.
+    /// </summary>
+    public IReadOnlyList<string?> Names { get; init; } = [];
+
+    /// <summary>The accounts, each with the name the person gave it where <paramref name="names"/> holds one.</summary>
+    public static SignedOutAccounts Of(string agent, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, string>? names) =>
+        new(agent, accounts)
+        {
+            Names = [.. accounts.Select(account => names is not null && names.TryGetValue(account, out var name) ? name : null)],
+        };
+}
 
 /// <summary>What a start is, for the walk (TOOL6b, D130 §4.6, §16.3): driven work never starts on a kept account.</summary>
 public enum StartKind
@@ -567,6 +581,11 @@ public static class RotatedOpening
 /// These name accounts, so each is said only where this machine reads it: a start's hold, a conversation's refusal, the
 /// conversation record (D76). 🔴 None of them goes into a session's note, which travels, and whose scrubber knows only
 /// the record's own account (§3.6).
+/// <para>What a person reads names an account by the name they gave it (ACCT2b, D125's ACCT2b note), from the owner's names
+/// read as the sentence is said, else by its id: a wait, a hold, a pick refused, what a wait adds. A command in a sentence
+/// keeps the id, which a terminal takes whatever the account is called by then; and the record's opening line
+/// (<see cref="Opened(string, string)"/>, <see cref="CarriedOn(string, string, string, long?, long?)"/>, <see cref="Clause"/>)
+/// keeps the ids, so a record is read back to its account after a rename.</para>
 /// </remarks>
 public static class RotationWords
 {
@@ -574,13 +593,16 @@ public static class RotationWords
     /// Every account a start may use is not ready, and one at least is cooling (§4): the start waits for the first
     /// reset. Every account cooling is said as such; otherwise each account and why.
     /// </summary>
-    public static string Wait(string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone)
+    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says each by its id.</param>
+    public static string Wait(
+        string agent, IReadOnlyList<AccountState> states, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
         var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until)!;
-        var when = $"the first ready, `{first.Account}`, at {CoolingWords.When(first.Until, zone)}, {CoolingWords.Why(first)}";
+        var when = $"the first ready, `{(first.Account is { } account ? AccountNames.Said(names, account) : null)}`, at "
+                   + $"{CoolingWords.When(first.Until, zone)}, {CoolingWords.Why(first)}";
         var every = states.All(state => state.Readiness == AccountReadiness.Cooling)
             ? $"every `{agent}` account this start may use is cooling"
-            : $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, zone)))}";
+            : $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, zone, names)))}";
         // TOOL6g: an account not signed in waits for a person, never for the reset, so its sign-in is said beside the wait.
         return $"{every}; {when}. Daoris starts nothing on them until then." + SignIn(agent, SignedOut(states), "A sign-in starts it sooner");
     }
@@ -589,8 +611,9 @@ public static class RotationWords
     /// No account a start may use is ready and none is cooling, over a list of more than one (TOOL6g): nothing comes ready
     /// by itself, so each account is named with why, and every one not signed in with its sign-in.
     /// </summary>
-    public static string NoneReady(string agent, IReadOnlyList<AccountState> states) =>
-        $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, TimeZoneInfo.Utc)))}."
+    /// <param name="names">The owner's names by id, read as the hold is said (ACCT2b); null says each by its id.</param>
+    public static string NoneReady(string agent, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string>? names = null) =>
+        $"no `{agent}` account this start may use is ready: {string.Join(", ", states.Select(state => Clause(state, TimeZoneInfo.Utc, names)))}."
         + SignIn(agent, SignedOut(states), "A sign-in starts it");
 
     /// <summary>The accounts of a walk not signed in, in the order it tried them.</summary>
@@ -609,11 +632,13 @@ public static class RotationWords
     /// A conversation the person started on an account they picked, which is cooling (§3.3): refused, since the person
     /// chose it, with the accounts that are ready by name.
     /// </summary>
-    public static string Picked(CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone) =>
-        $"{CoolingWords.Hold(cooling, zone)} "
+    /// <param name="names">The owner's names by id, read as the refusal is said (ACCT2b); null says each by its id.</param>
+    public static string Picked(
+        CoolingEntry cooling, IReadOnlyList<string> ready, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null) =>
+        $"{CoolingWords.Hold(cooling, zone, names)} "
         + (ready.Count == 0
             ? $"No other `{cooling.Agent}` account is ready."
-            : $"Ready now: {string.Join(", ", ready.Select(name => $"`{name}`"))}.");
+            : $"Ready now: {string.Join(", ", ready.Select(name => $"`{AccountNames.Said(names, name)}`"))}.");
 
     /// <summary>Why an account was not ready, as a clause: the account named, and the time where it waits for one.</summary>
     public static string Why(string agent, AccountState state, TimeZoneInfo zone) => state.Readiness switch
@@ -778,7 +803,9 @@ public static class RotationWords
     /// <summary>
     /// What a driven start's wait adds where the one account its kept-for-conversations rule passed is ready (§4.6).
     /// </summary>
-    public static string KeptAside(string kept) => $"`{kept}` is kept for conversations.";
+    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says the id.</param>
+    public static string KeptAside(string kept, IReadOnlyDictionary<string, string>? names = null) =>
+        $"`{AccountNames.Said(names, kept)}` is kept for conversations.";
 
     /// <summary>
     /// What a wait adds where the scope names accounts of its own and others are ready (§3.3): the accounts it does not
@@ -787,23 +814,30 @@ public static class RotationWords
     /// </summary>
     /// <param name="listed">The accounts the scope may use: its list, or its one account where it names no list.</param>
     /// <param name="outside">The agent's other accounts, neither cooling nor refused, in name order.</param>
-    public static string Outside(string agent, string? workspace, IReadOnlyList<string> listed, IReadOnlyList<string> outside)
+    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b): the door keeps the ids.</param>
+    public static string Outside(
+        string agent, string? workspace, IReadOnlyList<string> listed, IReadOnlyList<string> outside,
+        IReadOnlyDictionary<string, string>? names = null)
     {
         var who = workspace is { } name ? $"`{name}`" : "this machine's starts";
         var door = $"daoris agent profile order {agent} {string.Join(' ', [.. listed, outside[0]])}"
                    + (workspace is { } scoped ? $" --workspace {scoped}" : "");
-        return $"Not cooling, and not among the accounts {who} may use: {string.Join(", ", outside.Select(account => $"`{account}`"))} — "
-               + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{outside[0]}`.";
+        return $"Not cooling, and not among the accounts {who} may use: {string.Join(", ", outside.Select(account => $"`{AccountNames.Said(names, account)}`"))} — "
+               + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{AccountNames.Said(names, outside[0])}`.";
     }
 
     /// <summary>One account in a wait's list: its name and why, short.</summary>
-    private static string Clause(AccountState state, TimeZoneInfo zone) => state.Readiness switch
+    private static string Clause(AccountState state, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names)
     {
-        AccountReadiness.Cooling => $"`{state.Account}` is cooling until {CoolingWords.When(state.Cooling!.Until, zone)}",
-        AccountReadiness.Refused => $"`{state.Account}` was refused by its provider",
-        AccountReadiness.SignedOut => $"`{state.Account}` is not signed in",
-        _ => $"`{state.Account}` is ready",
-    };
+        var account = state.Account is { } id ? AccountNames.Said(names, id) : null;
+        return state.Readiness switch
+        {
+            AccountReadiness.Cooling => $"`{account}` is cooling until {CoolingWords.When(state.Cooling!.Until, zone)}",
+            AccountReadiness.Refused => $"`{account}` was refused by its provider",
+            AccountReadiness.SignedOut => $"`{account}` is not signed in",
+            _ => $"`{account}` is ready",
+        };
+    }
 
     private static string Who(string agent, string? account) =>
         account is { } named ? $"the `{agent}` account `{named}`" : $"`{agent}`'s own sign-in";

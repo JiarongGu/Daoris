@@ -256,9 +256,13 @@ public static class CoolingWords
     /// A start's hold, a conversation's refusal, and a quest's reason while it waits: the account by its owner and its
     /// profile name. Shown on this machine only — a consideration is the machine's — so it may name the account.
     /// </summary>
-    public static string Hold(CoolingEntry entry, TimeZoneInfo zone)
+    /// <param name="names">
+    /// The owner's names by id, read as the hold is said (ACCT2b): the account is said by the name the person gave it, else its
+    /// id. Null says the id.
+    /// </param>
+    public static string Hold(CoolingEntry entry, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
-        var said = $"{Who(entry)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
+        var said = $"{Who(entry, names)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
         // The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its
         // cool-off, since Daoris cannot see that sign-in change (D125 §3.7). UX6e2: opening the Agents place asks nothing
         // (D150 §5.3), so the refresh is its Read again.
@@ -291,9 +295,12 @@ public static class CoolingWords
     public static string When(DateTimeOffset moment, TimeZoneInfo zone) =>
         $"{TimeZoneInfo.ConvertTime(moment, zone).ToString("MMM d, HH:mm", CultureInfo.InvariantCulture)} ({ZoneName(zone)})";
 
-    /// <summary>Whose account: by its owner and profile name, or the tool's own sign-in. Read by <see cref="RotationWords"/> too (TOOL4f).</summary>
-    internal static string Who(CoolingEntry entry) =>
-        entry.Account is { } account ? $"the `{entry.Agent}` account `{account}`" : $"`{entry.Agent}`'s own sign-in";
+    /// <summary>
+    /// Whose account: by its owner and profile name, or the tool's own sign-in. Read by <see cref="RotationWords"/> too (TOOL4f),
+    /// whose record's opening line passes no names, so a record keeps the id (ACCT2b).
+    /// </summary>
+    internal static string Who(CoolingEntry entry, IReadOnlyDictionary<string, string>? names = null) =>
+        entry.Account is { } account ? $"the `{entry.Agent}` account `{AccountNames.Said(names, account)}`" : $"`{entry.Agent}`'s own sign-in";
 
     /// <summary>Why it lasts until then: the agent said so, or Daoris's default stood in.</summary>
     internal static string Why(CoolingEntry entry) =>
@@ -418,4 +425,10 @@ public sealed record AccountWait(
     /// sooner than the reset. Empty where none was.
     /// </summary>
     public IReadOnlyList<string> SignedOut { get; init; } = [];
+
+    /// <summary>
+    /// The name the person gave <see cref="Account"/> (ACCT2b), read when the look said the wait; null where it has none, and
+    /// for the tool's own home. The page says the wait by it, and the log keeps <see cref="Account"/>.
+    /// </summary>
+    public string? Name { get; init; }
 }

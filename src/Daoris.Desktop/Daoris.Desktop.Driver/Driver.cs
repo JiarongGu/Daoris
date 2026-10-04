@@ -393,14 +393,17 @@ public sealed partial class Driver(
                 var held = account.ToList();
                 var cooling = held[0].Came!.Cooling!;
                 var workspaces = held.Select(each => each.Started.Workspace).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                // The person's name for the account, read as the look says the wait (ACCT2b): the page says it, the log the id.
+                var names = AccountNames.Of(_harnesses.Home, cooling.Agent);
                 return new AccountWait(
                     held[0].Started.Adapter, cooling.Agent, cooling.Account, workspaces.Count == 1 ? workspaces[0] : null,
-                    cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, _harnesses.Zone))
+                    cooling.Until, cooling.Stated, held[0].Came!.Held ?? CoolingWords.Hold(cooling, _harnesses.Zone, names))
                 {
                     Quests = [.. held.Select(each => each.Started.Quest).OfType<string>()],
                     Asks = [.. held.Select(each => each.Started.Ask).OfType<string>()],
                     Repositories = [.. held.Select(each => each.Started.Where).Distinct(StringComparer.OrdinalIgnoreCase)],
                     SignedOut = SignedOutOf(held),
+                    Name = cooling.Account is { } id && names.TryGetValue(id, out var name) ? name : null,
                 };
             })
             .ToList();
@@ -1402,8 +1405,10 @@ public sealed partial class Driver(
         }
 
         var owner = refusing.Owner(adapter.Name);
-        var reason = RefusedReason(owner, selection.Profile);
-        _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
+        // The hold a later start says names the account by the person's name, read now (ACCT2b); the note, which travels and
+        // whose cleaner knows only the record's own id, keeps the id.
+        var named = selection.Profile is { } profile ? AccountNames.Said(AccountNames.Of(_harnesses.Home, owner), profile) : null;
+        _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {RefusedReason(owner, named)}");
         _harnesses.SignedOut(adapter.Name, selection.Profile);
         return conclusion.Then(" ", RefusedNote(owner, selection.Profile));
     }
