@@ -1279,8 +1279,9 @@ check(
   doomedQuest.text,
 );
 
-// And the person's way back in, from a terminal — the second door (D50).
-const retried = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+// And the person's way back in, from a terminal — the second door (D50). It counts the quest's failures from this
+// machine's records, as the driver does (RETRY1b), so it asks the host the driver watches.
+const retried = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE });
 const afterRetry = drive();
 const retriedSessions = await api('GET', '/api/sessions?includeClosed=true');
 check(
@@ -1288,6 +1289,18 @@ check(
   retried.code === 0
     && (retriedSessions.json ?? []).filter((s) => s.quest === doomedId && s.state === 'failed').length === 6,
   `${retried.out}\n${afterRetry.out}`,
+);
+
+// 🔴 RETRY1b: parked a second time, six failures against a mark of three. A mark at the limit (3) left it parked, as both
+// doors did on the install; a retry marks it at its six, and it runs again.
+const retriedAgain = run(`node "${cliBin}" driver retry ${doomedId}`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE });
+const afterSecondRetry = drive();
+const retriedAgainSessions = await api('GET', '/api/sessions?includeClosed=true');
+check(
+  'a quest parked a second time is retried from its real failures, and runs again',
+  retriedAgain.code === 0 && /Counting from 6 failure\(s\)/.test(retriedAgain.out)
+    && (retriedAgainSessions.json ?? []).filter((s) => s.quest === doomedId && s.state === 'failed').length === 9,
+  `${retriedAgain.out}\n${afterSecondRetry.out}`,
 );
 
 // Driving is additive, never exclusive (D46 §2): a quest an outside session already took is not the

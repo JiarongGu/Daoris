@@ -7,6 +7,7 @@ import {
   DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
   pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor,
 } from '../src/driverconfig.ts';
+import type { RecordsReader } from '../src/strikes.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
@@ -821,9 +822,10 @@ test('the driver’s release table is this table, row for row and in this order'
 });
 
 /**
- * The terminal's Try again for a stop (D126 §3.4, §7.1). `daoris driver` talks to nothing (D50), so it cannot see whether the
+ * The terminal's Try again for a stop (D126 §3.4, §7.1). `daoris driver` reads no verdict, so it cannot see whether the
  * driver parked a quest or a stop holds it: the stop's sentence names the session, `--session` releases that stop, and a
- * retry without it marks the strikes as RETRY1 always did. A stop is not a strike, so a release moves no mark.
+ * retry without it marks the strikes, here at the count `--at` gives (RETRY1b reads it from the records when none is given).
+ * A stop is not a strike, so a release moves no mark.
  */
 test('retry --session releases a stop, and a retry without it still marks the strikes', () => {
   const fx = makeFixture('driver-release');
@@ -1187,6 +1189,85 @@ test('a file written before strikes existed gets the default rather than none', 
 
   assert.equal(readDriverChoices(at(fx)).strikes, 3);
 
+  fx.cleanup();
+});
+
+/**
+ * A verb that may answer later (RETRY1b): `retry <quest>` without `--at` counts the quest's failures from the records the
+ * reader hands it, which the `driver` row hands in from the service client.
+ */
+async function retried(argv: string[], path: string, records: RecordsReader): Promise<{ code: number; out: string }> {
+  const saved = process.env.DAORIS_DRIVER_CONFIG;
+  process.env.DAORIS_DRIVER_CONFIG = path;
+  const lines: string[] = [];
+  try {
+    const code = await commandDriver({
+      root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
+    }, records);
+    return { code, out: lines.join('\n') };
+  } finally {
+    if (saved === undefined) delete process.env.DAORIS_DRIVER_CONFIG;
+    else process.env.DAORIS_DRIVER_CONFIG = saved;
+  }
+}
+
+/** Six failures on `q1`, as the records door answers them, beside records that are no strike against it. */
+const SECOND_PARK = [
+  ...['s1', 's2', 's3', 's4', 's5'].map((id) => ({ id, quest: 'q1', repository: 'Game', state: 'failed' })),
+  { id: 's6', quest: 'q1', repository: 'Game', state: 'stopped', interrupted: true },
+  { id: 's7', quest: 'q1', repository: 'Game', state: 'failed', limit: true },
+  { id: 's8', quest: 'q1', repository: 'Game', state: 'stopped' },
+  { id: 'origin/s9', quest: 'q1', repository: 'Game', state: 'failed' },
+  { id: 's10', quest: 'q2', repository: 'Game', state: 'failed' },
+];
+
+/**
+ * RETRY1b: a quest retried once at the limit (3) and parked again has six failures, so a mark at the limit left it parked
+ * (6 − 3 is still 3), as both doors did on the install. Without `--at`, the retry counts its failures from this machine's
+ * records as the driver does and marks it there, so the planner's count (failures less the mark) is under the limit and
+ * the quest starts; three more park it again.
+ */
+test('a retry after a second park marks the quest at its failures as the records count them, so it starts', async () => {
+  const fx = makeFixture('driver-retry-second-park');
+  run(['retry', 'q1', '--at', '3'], at(fx));
+
+  const said = await retried(['retry', '#q1'], at(fx), async () => ({ records: SECOND_PARK }));
+
+  const choices = readDriverChoices(at(fx));
+  assert.equal(said.code, 0);
+  assert.equal(choices.forgiven.q1, 6);
+  // The planner's own expression (`Planner.cs`): the quest starts while failures less the mark are under the limit.
+  assert.ok(6 - choices.forgiven.q1! < choices.strikes, 'the mark leaves the quest parked');
+  assert.match(said.out, /quest `#q1` may be started again/);
+  assert.match(said.out, /Counting from 6 failure\(s\), as this machine's records count them/);
+  assert.match(said.out, /3 more failure\(s\) will park it again/);
+  fx.cleanup();
+});
+
+/**
+ * RETRY1b: a terminal that cannot read the records never guesses a mark. It says why, writes nothing, and says how to give
+ * the count: the failures the quest's *Sitting* names are counted past its mark, so the mark is added back.
+ */
+test('a retry that cannot read the records refuses, says how to give --at, and writes nothing', async () => {
+  const fx = makeFixture('driver-retry-unread');
+  run(['retry', 'q1', '--at', '3'], at(fx));
+  const unread = async () => ({ unread: 'no DAORIS_SERVICE_URL is set' });
+
+  await assert.rejects(retried(['retry', 'q1'], at(fx), unread), (error: Error) => {
+    assert.match(error.message, /^cannot count the failures of `#q1`: this machine's session records could not be read — no DAORIS_SERVICE_URL is set\./);
+    assert.match(error.message, /Nothing was written\./);
+    assert.match(error.message, /`daoris driver retry q1 --at <n>`, with n the failures its \*Sitting\* names plus 3, the mark its last retry left\./);
+    assert.match(error.message, /The quest's page's \*Try again\* counts them for you\./);
+    return true;
+  });
+  assert.equal(readDriverChoices(at(fx)).forgiven.q1, 3);
+
+  // A quest never retried has no mark to add back.
+  await assert.rejects(retried(['retry', 'q2'], at(fx), unread), (error: Error) => {
+    assert.match(error.message, /`daoris driver retry q2 --at <n>`, with n the failures its \*Sitting\* names\./);
+    return true;
+  });
+  assert.equal(readDriverChoices(at(fx)).forgiven.q2, undefined);
   fx.cleanup();
 });
 

@@ -715,7 +715,19 @@ test('tool download reaches a host only through the fetcher the dispatcher hands
 
   // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
   const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
-  assert.deepEqual(reaching.sort(), ['cli/agent.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/tool.ts']);
+  assert.deepEqual(reaching.sort(), ['cli/agent.ts', 'cli/connect.ts', 'cli/driver.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/tool.ts']);
+});
+
+/**
+ * `driver retry <quest>` without `--at` reads this machine's session records since RETRY1b (D126's RETRY1b note), to mark
+ * the quest at its failures as the driver counts them. The same shape again: the count (`strikes.ts`) and the verb
+ * (`driverconfig.ts`) import no network module (the file-local test above), and the records arrive through
+ * `service.ts`, handed in by the `driver` row, `cli/driver.ts`, the one line where the two meet.
+ */
+test('driver retry reads the session records only through the reader the dispatcher hands in', () => {
+  const row = readText(join(cliRoot, 'src', 'cli', 'driver.ts'));
+  assert.match(row, /import \{ sessionRecords \} from '\.\.\/service\.ts';/);
+  assert.match(row, /run: \(args\) => commandDriver\(args, \(\) => sessionRecords\(\)\)/);
 });
 
 /**

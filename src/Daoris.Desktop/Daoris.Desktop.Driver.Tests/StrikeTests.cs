@@ -115,6 +115,48 @@ public sealed class StrikeTests
         Assert.Equal(["q1"], strikes.Keys);
     }
 
+    /// <summary>
+    /// RETRY1b: the count `daoris driver retry` marks a quest at, read by the CLI from the same records. 🔴 A TWIN with the
+    /// CLI's `failuresOf` (`strikes.ts`): `strikes.test.ts` holds this table, row for row and in this order, cell for cell.
+    /// Each row is one record as the records door answers it, and whether it is a strike against <c>q1</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed" }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "Q1", "state": "FAILED" }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": true }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": false }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "limit": "true" }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped" }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": false }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "completed", "interrupted": true }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stood-down" }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "declined" }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "working" }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1" }""", false)]
+    [InlineData("""{ "id": "origin/s1", "quest": "q1", "state": "failed" }""", false)]
+    [InlineData("""{ "id": 7, "quest": "q1", "state": "failed" }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q2", "state": "failed" }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "", "state": "failed" }""", false)]
+    [InlineData("""{ "id": "s1", "state": "failed" }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "code": "account.refused", "values": { "owner": "claude-code" }, "text": "x" }] }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "code": "account.refused-own", "values": { "owner": "claude-code" }, "text": "x" }] }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "code": "account.signed-out", "values": { "owner": "claude-code" }, "text": "x" }] }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "code": "account.signed-out-own", "values": { "owner": "claude-code" }, "text": "x" }] }""", false)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "code": "ended.untouched-exit", "values": { "exit": 1 }, "text": "x" }] }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "code": "ACCOUNT.REFUSED" }] }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": [{ "words": "account.refused", "by": "agent" }] }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "noteParts": "account.refused" }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "failed", "note": "The agent refused the account for its sign-in." }""", true)]
+    [InlineData("""{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true, "noteParts": [{ "code": "account.refused" }] }""", true)]
+    [InlineData("""42""", false)]
+    public void A_record_strikes_as_the_cli_counts_it(string record, bool strikes)
+    {
+        var counted = ServiceClient.ReadStrikes($"[{record}]");
+
+        Assert.Equal(strikes ? 1 : 0, counted.TryGetValue("q1", out var count) ? count : 0);
+    }
+
     /// <summary>The words alone spare nothing: a record whose English says it, with no coded line, is a strike as it was.</summary>
     [Fact]
     public void An_account_s_words_with_no_coded_line_are_still_a_strike()

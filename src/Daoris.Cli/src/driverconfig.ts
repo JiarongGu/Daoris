@@ -21,6 +21,7 @@ import { isoMoment } from './cooling.ts';
 import { readPlugins, type PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 import { TOOLCHAINS } from './toolchain.ts';
+import { failuresOf, type RecordsReader } from './strikes.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
 
@@ -456,16 +457,25 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
   });
 }
 
+/** No way to read the records was handed in, so a retry that needs them is refused (RETRY1b). */
+const unhanded: RecordsReader = async () => ({ unread: 'this command was handed no way to read them' });
+
 /**
- * Read or change what this machine drives.
+ * Read or change what this machine drives. Every verb edits `driver.json` and answers at once, but `retry <quest>` without
+ * `--at`, which counts the quest's failures from the records `records` reads (RETRY1b) and answers when they are read.
  *
  * @remarks
  * `drive`/`undrive` and `hold`/`resume` are pairs of verbs rather than one verb with a boolean,
  * because they mean different things: opting a repository IN is a standing decision, and holding one
  * is a pause on something already opted in. A surface that collapsed them would lose that a held
  * repository is still drivable.
+ *
+ * @param records How this machine's session records are read: the `driver` row hands in the service client's, so this
+ * module reaches no network. Absent, they cannot be read, and such a retry is refused.
  */
-export function commandDriver({ argv, write }: CommandArgs): ExitCode {
+export function commandDriver(
+  { argv, write }: CommandArgs, records: RecordsReader = unhanded,
+): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = driverConfigPath();
   const choices = readDriverChoices(path);
@@ -577,9 +587,9 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     // Not `unpark` or `forgive`: the person is saying "try this again", and the mark records where
     // to count from rather than erasing what happened — the records still say it.
-    // SESSUX1b (D126 §3.4): with `--session`, it releases the person's stop of that session instead. This command talks to
-    // nothing (D50), so it cannot see which hold a quest is under: the stop's sentence names the session, and a stop is not
-    // a strike, so a release moves no mark.
+    // SESSUX1b (D126 §3.4): with `--session`, it releases the person's stop of that session instead. This command reads no
+    // verdict (only the records, for a mark, RETRY1b), so it cannot see which hold a quest is under: the stop's sentence
+    // names the session, and a stop is not a strike, so a release moves no mark.
     case 'retry': {
       const quest = named(argv, 'retry').replace(/^#/, '');
       const sessionAt = argv.indexOf('--session');
@@ -603,18 +613,41 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
         return 0;
       }
 
+      // RETRY1b: the mark is the quest's failures as the records count them, which the person may give with `--at`. Without
+      // it they are read from this machine's records, as the driver counts them (`strikes.ts`): the strike limit, which this
+      // marked before, was right only on a first park. A count it cannot read is refused, never guessed.
+      const marked = (mark: number, counted: boolean): ExitCode => {
+        // Read again: the records were read over the network, and the driver may have written the file meanwhile.
+        const now = counted ? readDriverChoices(path) : choices;
+        writeDriverChoices(path, { ...now, forgiven: { ...now.forgiven, [quest]: mark } });
+        write(`daoris: quest \`#${quest}\` may be started again.`);
+        write(`  Counting from ${mark} failure(s)${counted ? ', as this machine\'s records count them' : ''} — what already`);
+        write(`  happened is still in the records, and ${now.strikes || 'no'} more failure(s) will park it again.`);
+        write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+        return 0;
+      };
+
       const at = argv.indexOf('--at');
-      const mark = at !== -1 && argv[at + 1] ? Number(argv[at + 1]) : choices.strikes;
-      if (!Number.isInteger(mark) || mark < 0) {
-        throw new DaorisError('`driver retry --at` needs a whole number of failures to count from.');
+      if (at !== -1) {
+        const mark = argv[at + 1] ? Number(argv[at + 1]) : Number.NaN;
+        if (!Number.isInteger(mark) || mark < 0) {
+          throw new DaorisError('`driver retry --at` needs a whole number of failures to count from.');
+        }
+        return marked(mark, false);
       }
 
-      writeDriverChoices(path, { ...choices, forgiven: { ...choices.forgiven, [quest]: mark } });
-      write(`daoris: quest \`#${quest}\` may be started again.`);
-      write(`  Counting from ${mark} failure(s) — what already happened is still in the records, and`);
-      write(`  ${choices.strikes || 'no'} more failure(s) will park it again.`);
-      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
-      return 0;
+      return records().then((read) => {
+        const failures = 'records' in read ? failuresOf(read.records, quest) : null;
+        if (failures === null) {
+          const why = 'unread' in read ? read.unread : 'the records answered were not a list';
+          const before = choices.forgiven[quest] ?? 0;
+          throw new DaorisError(`cannot count the failures of \`#${quest}\`: this machine's session records could not be read — `
+            + `${why}.\n  Nothing was written. Give the count yourself: \`daoris driver retry ${quest} --at <n>\`, with n the `
+            + `failures its *Sitting* names${before > 0 ? ` plus ${before}, the mark its last retry left` : ''}.\n`
+            + '  The quest\'s page\'s *Try again* counts them for you.');
+        }
+        return marked(failures, true);
+      });
     }
 
     // How long one session may run before the driver kills it. A real development turn — the work,
