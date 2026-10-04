@@ -15,7 +15,7 @@ Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names
 ## State
 
 **Counts, and this is their one home:** seventeen commands, **1274 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
-704 desktop modules, 80 devkit, 4017 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+704 desktop modules, 80 devkit, 4087 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -104,11 +104,7 @@ and also we should be utilizing the top menu, so instead of calling this 'agent'
 like VS Code); also the account page itself needs its UI/UX improved; also Codex and DeepSeek are missing"* · *"both
 title sections, for quest and session, need their UI/UX improved"*):
 
-- [ ] **UX7a — the top menu works as VS Code's does** (web-shell, desktop). The strip's four menus (Daoris, Workspace,
-  Agents, View) become a menu bar a person reaches for: every verb Daoris has, grouped as an IDE groups them (a
-  File-like menu for workspaces and repositories, Edit, View, Go to each place, Run for sessions and quests,
-  Terminal, Help), each with its shortcut and the palette's name; no menu named after one place. Contract: D56, D75,
-  D150 §2.4. Proof: the menu tables' tests against the palette; the look.
+
 - [ ] **UX7b — the account page reads at a glance** (web-shell). On the install, the agent's page leads with the tool's
   own sign-in, a long paragraph about it and a fine-print paragraph, before and between the accounts; an account's
   title is its email with its name secondary; states, reads and counts stack in grey lines. One clear row per
@@ -125,6 +121,17 @@ title sections, for quest and session, need their UI/UX improved"*):
 - [ ] **UX7d — what else the look found** (web-shell, driver). Absent agents listed with *Install* (AGENTS2's screen);
   two-letter strip marks; a version without its product's name; tight 中文 summaries; the record's *opened on* line worded
   by code, its backticks as code. Contract: D152, design §1, §4.6. Proof: stories, the note codes' twin, the look.
+- [ ] **UX7a2 — what the menu bar left** (web-settings, web-shell; found building UX7a). *Update* opens Settings →
+  Driver at its top, because `SettingsAnchor` has no `'update'` (the card already has `id="settings-update"`); and
+  below about 590 CSS px the strip has no room for seven menus, so they fold into one ☰. Contract: D152's UX7a note,
+  design §3. Proof: the anchor's vitest; a story at 560 px.
+- [ ] **UX7e — the menu bar and the heads tried on the install** (the parent's, after the republish carrying UX7a–c).
+  Alt alone and F10 on the frameless window, where Windows' own menu mode must not take the focus (the story
+  `Chrome/MenuBar → KeysReachingThePage` in the window's engine); Alt+letter and every key in the table; Ctrl+N in
+  the terminal still the shell's; Edit's Undo, Cut and Paste on a composer; each menu at 1546 and 680 px, both themes
+  and languages. A session's head against §6.2's 200 px (UX7c estimates about 220), a quest's cut title, the
+  composer's *Short title*, the next landing's branch name. Contract: D152 §6, its UX7a and UX7c notes. Proof: the
+  shots and measures in a dated note on D152.
 
 - [ ] **LANDNAME1 — a landing's branch named by the person** (driver, web-shell; found landing the owner's two quests,
   2026-10-05). The `{slug}` now comes from the quest's short title (SESSUX1j), its ticket key leading; what remains is

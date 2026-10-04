@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
@@ -9,7 +9,9 @@ import { AskDaoris } from './help/AskDaoris';
 import type { AskOpening } from './help/AskConversation';
 import { QuickAsk } from './help/QuickAsk';
 import { ContextMenus } from './menus/ContextMenu';
-import { clipped, type ContextDoors } from './menus/press';
+import { clipped, type ContextDoors, isTextField } from './menus/press';
+import { MainOffer, offerStore, useMainOffer } from './menus/mainOffer';
+import { fieldTracker, findTarget, runEdit } from './menus/editing';
 import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
 import { useSetupAtStart } from './setupGuide';
@@ -17,11 +19,13 @@ import { useFrameClosings } from './work/closings';
 import { type ListMode, type ListView, listToggled } from './work/layout';
 import { useListPanes } from './work/listPanes';
 import { usePlacements, viewsIn } from './work/placements';
-import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
-import { frameShortcut } from './shortcuts';
+import { type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
+import { commandForKey } from './shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
-import { askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening, workspaceItem } from './opener';
+import {
+  askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
+} from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts, useToasts,
@@ -46,9 +50,11 @@ import { UpdateBanner } from './update/UpdateBanner';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
 import { browserDrivers } from './work/browserDrivers';
-import { appMenus, menuAction } from './work/appMenus';
+import { menuRows } from './work/appMenus';
+import { KeyboardShortcuts } from './work/KeyboardShortcuts';
+import { offeredActs } from './work/acts';
 import { SyncStatus } from './work/SyncStatus';
-import { MONITOR_WINDOW, sessionWindowName } from './work/window';
+import { MONITOR_WINDOW } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import { ViewFrame, type ViewLayout } from './work/ViewFrame';
 import { ViewMain } from './work/ViewMain';
@@ -57,10 +63,15 @@ import type { Attention } from './work/AttentionRow';
 import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
-import { type Command, commands, type View, VIEWS } from './commands';
+import {
+  type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, MENUS, paletteCommands, shortcutGroups,
+  type View, VIEWS,
+} from './commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
-import { AppMenu, AppMenuBar } from './work/AppMenu';
+import { AppMenuBar, type BarMenu, focusMenuBar } from './work/AppMenu';
+import { useThemeChoice } from './theme';
+import { SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
 import { HarnessRuns } from './harnessRuns';
@@ -106,11 +117,23 @@ const LISTED: ReadonlySet<ListView> = new Set<ListView>([
 ]);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
+/**
+ * A command's id as the machine log takes it (LOG1b): a family's row by its family (`workspace.scope`, `go.agent`), so a
+ * workspace's or an agent's name never reaches the log.
+ */
+const loggedId = (id: string) => id.split(':')[0]!;
+
+/**
+ * The strip's layout toggles, which leave it below the width the seven menus and the caption room need (UX7a, measured
+ * on the stories at 680 px and above, `docs/2026-10-05-ux7-design.md` §3.1).
+ */
+const TOGGLES_ROOM = 'flex items-center max-[54rem]:hidden';
+
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
 const counted = (command: Command): Command => ({
   ...command,
   run: () => {
-    logEvent('command.run', { command: command.id });
+    logEvent('command.run', { command: loggedId(command.id) });
     command.run();
   },
 });
@@ -167,7 +190,14 @@ export function App() {
   const [palette, setPalette] = useState(false);
   // The application's own card. It is where the NAME lives now that the strip carries only the mark.
   const [about, setAbout] = useState(false);
-  const [workIntent, setWorkIntent] = useState<'start' | 'review' | null>(null);
+  // Help › Keyboard shortcuts (UX7a): every key the table holds, by menu.
+  const [shortcuts, setShortcuts] = useState(false);
+  // The menu bar's open menu, which moves with the pointer once one is open (D152 §3.3), and whether Alt is held, which
+  // shows each menu's letter.
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [mnemonics, setMnemonics] = useState(false);
+  // What a menu, the palette or a key asked the Work frame to do with the session attended there (D118 §5): an event.
+  const [workIntent, setWorkIntent] = useState<FrameIntent | null>(null);
   const { toasts, notify, dismiss } = useToasts();
 
   // The window this page is the chrome of (SURF7). In a browser `present` is false and the strip is
@@ -316,8 +346,6 @@ export function App() {
     else return false;
     return true;
   };
-  const toggleRegionRef = useRef(toggleRegion);
-  toggleRegionRef.current = toggleRegion;
 
   // The scope (WSP5): which circle this window is looking at. The roster comes from the registry
   // unscoped — the one reader that must see every workspace — and a remembered choice the deployment
@@ -468,73 +496,199 @@ export function App() {
     open: () => openSettings('start'),
   });
 
-  // The menus by domain (D75), as data. The count waiting is the rules' own, where they are answered.
-  const menus = appMenus({
-    attached,
-    workspaces: holdings.data ?? [],
-    scope: scope.workspace,
-    waiting: proposals.filter((proposal) => proposal.state === 'waiting').length,
-    // Each agent installed here, as the Agents place lists it (UX6e, D150 §2.4).
-    agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
-      .filter((tool) => tool.present)
-      .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
-  });
-  const onMenu = (_menu: string, item: string) => {
-    const action = menuAction(item);
-    switch (action.kind) {
-      case 'settings': openSettings(action.section, action.anchor); return;
-      case 'view': open(action.view); return;
-      case 'agents': open('agents', action.agent ?? null, action.part ? { agentPart: action.part } : undefined); return;
-      case 'scope': scope.setWorkspace(action.workspace); return;
-      // *This workspace's setup* (D150 §2.4): the workspace in view's page, at the tab the item names (UX6g).
-      case 'workspace': open('projects', null, { workspaceTab: action.tab }); return;
-      case 'add': open('projects', null, { drawer: 'add' }); return;
-      // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
-      // and names the workspace, and the service's sentence says what it registered.
-      case 'import': open('projects', null, { drawer: 'import' }); return;
-      case 'refresh': onRefresh(); return;
-      case 'language': void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh'); return;
-      case 'about': setAbout(true); return;
-      default:
-    }
+  // The record in the main area, as its page offers it to a right-click (CTX1), read by Run's record groups and Edit's
+  // *Copy ID* (UX7a, D152 §2): each act has one owner, whichever door pressed it.
+  const copyText = useRef<(text: string) => void>(() => {});
+  const offers = useMemo(() => offerStore((text) => copyText.current(text)), []);
+  const offered = useMainOffer(offers);
+  // The field the person was last in, which Edit's acts go back to once a menu has taken the focus (D152 §3.4).
+  const fields = useRef<ReturnType<typeof fieldTracker> | null>(null);
+  useEffect(() => {
+    const tracker = fieldTracker(document);
+    fields.current = tracker;
+    return () => {
+      tracker.stop();
+      fields.current = null;
+    };
+  }, []);
+  const [theme, setTheme] = useThemeChoice();
+  const attendedSession = (running.data ?? []).find((session) => session.id === attending) ?? null;
+  const chosenQuest = lists.pane('quests').chosen;
+
+  /**
+   * What is true now, which decides what the menus, the palette and the keys offer (D152 §2). The box Find goes to and
+   * the field Edit acts on are read from the page as it stands, so a key reads them at the press.
+   */
+  const commandState = (): CommandState => {
+    const live = (offered?.acts ?? []).filter((act) => !act.disabled).map((act) => act.id);
+    return {
+      attached,
+      view,
+      list: listed ? { shown: listShown } : null,
+      panelShown: !closings.panel,
+      sideShown: !closings.dock,
+      moved: placements.moved,
+      workspaces: holdings.data ?? [],
+      scope: scope.workspace,
+      circle,
+      wired: Boolean(wired),
+      theme,
+      language: i18n.language.startsWith('zh') ? 'zh' : 'en',
+      // Each agent installed here, as the Agents place lists it (UX6e): the palette goes to each one's page.
+      agents: byTool(Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [])
+        .filter((tool) => tool.present)
+        .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
+      domains: SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine).map(({ id, label }) => ({ id, label })),
+      // The session attended on Sessions, with what its header offers; *Answer…* is its card's, offered where its row's is.
+      session: view === 'sessions' && offered
+        ? { acts: live, answer: attached && attendedSession !== null && offeredActs({ session: attendedSession }, 'row').includes('answer') }
+        : null,
+      // A quest open on Quests (an ask's page is not a quest's), with what its header and its body offer.
+      quest: view === 'quests' && offered && chosenQuest && 'quest' in questsItem(chosenQuest) ? { acts: live } : null,
+      record: live.includes('copy'),
+      find: findTarget(document, view) !== null,
+      field: fields.current?.field() != null,
+    };
   };
 
-  // Ctrl/Cmd+K, the one this class of application has agreed on. Captured on the window so it works
-  // wherever focus is — except inside a text field, where a person typing is typing. F1 is help's key
-  // everywhere, a field included, since it types nothing (HELP1).
+  /** What the Work frame does with the session attended there; answering, starting and archiving are Sessions' own. */
+  const frameIntent = (intent: FrameIntent) => {
+    if (intent === 'start' || intent === 'answer' || intent === 'archiveEnded' || intent === 'review') open('sessions');
+    setWorkIntent(intent);
+  };
+
+  /** What each verb runs: the application's doors, handed to the table (D152 §2). */
+  const commandDoors: CommandDoors = {
+    // Asking lives at the head of Quests (INT4c); the menu goes there and opens the composer, and a quest's composer too.
+    ask: () => { open('quests'); setAsking(true); },
+    quest: () => { open('quests'); setOpening({}); },
+    scope: scope.setWorkspace,
+    add: () => open('projects', null, { drawer: 'add' }),
+    // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder and names the workspace.
+    import: () => open('projects', null, { drawer: 'import' }),
+    // The workspace in view's page at Setup (UX6g), where its defaults, its remote and its rules are.
+    workspaceSetup: () => open('projects', null, { workspaceTab: 'setup' }),
+    sync: () => { if (circle) onSyncNow(circle); },
+    wire: () => { if (circle) open('projects', workspaceItem(circle), { workspaceSection: 'remote' }); },
+    // At a domain the row names, or at the one Settings' list remembers (D75).
+    settings: (section) => (section ? openSettings(section as SettingsSection) : open('settings')),
+    edit: (act) => {
+      void runEdit(act, fields.current?.field() ?? null).then((done) => {
+        if (!done && act === 'paste') notify(t('menu.pasteRefused'), 'error');
+      });
+    },
+    find: () => findTarget(document, view)?.focus(),
+    searchKnowledge: () => {
+      open('search');
+      // A beat after the view is drawn, as Quick Ask's box is opened (DOCK1d): its box is in its list.
+      window.setTimeout(() => findTarget(document, 'search')?.focus(), 0);
+    },
+    copyId: () => { offers.run('copy'); },
+    palette: () => setPalette(true),
+    toggle: (region: LayoutRegion) => { toggleRegion(region); },
+    reset: () => placements.reset(),
+    frame: frameIntent,
+    // A window is the shell's to open (SURF8), so neither is in a browser's table.
+    monitor: () => openWindow.mutate(MONITOR_WINDOW),
+    browser: () => openBrowser.mutate(),
+    theme: setTheme,
+    language: (language) => void i18n.changeLanguage(language),
+    refresh: onRefresh,
+    go: (target) => open(target),
+    agent: (name) => open('agents', name),
+    agentPart: (part) => open('agents', null, { agentPart: part }),
+    region: (previous) => focusRegion(document, previous),
+    // A record's act by its page's own press (D152 §2): the session's through `sessionActs.ts`, the quest's by its page.
+    sessionAct: (act) => { offers.run(act); },
+    questAct: (act) => { offers.run(act); },
+    help: openHelp,
+    quickAsk: () => askQuickly(),
+    setup: () => openSettings('start'),
+    shortcuts: () => setShortcuts(true),
+    // Settings → Driver, where the install's update is (UPDATE1b): nothing here checks a release channel.
+    update: () => openSettings('driver'),
+    about: () => setAbout(true),
+  };
+  const translate = (key: string, values?: Record<string, unknown>) => (values ? t(key, values) : t(key));
+  const entries = commandTable(commandState(), commandDoors, translate);
+  // The menus as the bar draws them; a browser has no Terminal (D152 §3.6), and claims no Alt (§3.4), so shows no letter.
+  const barMenus: BarMenu[] = MENUS.filter((menu) => !menu.shell || attached).map((menu) => ({
+    id: menu.id,
+    label: t(menu.label),
+    ...(attached ? { letter: menu.letter } : {}),
+    items: menuRows(entries, menu.id),
+  }));
+  const onMenu = (_menu: string, item: string) => {
+    const entry = entries.find((each) => each.id === item);
+    if (!entry) return;
+    logEvent('command.run', { command: loggedId(entry.id) });
+    entry.run();
+  };
+
+  // The keys (D152 §3.4), read from the one table at the press, so a key runs what its menu row runs and only while it
+  // applies: a field keeps what a field means, the terminal that and a shell's next line, and a browser what it keeps.
+  const tableNow = useRef<() => ReturnType<typeof commandTable>>(() => []);
+  tableNow.current = () => commandTable(commandState(), commandDoors, translate);
+  const menuOpen = useRef(openMenu);
+  menuOpen.current = openMenu;
   useEffect(() => {
+    // Alt pressed and let go with nothing between reaches the bar, as Windows' menu bars do (the design §3.3).
+    let altAlone = false;
     const onKey = (event: KeyboardEvent) => {
-      // The frame's own keys (`shortcuts.ts`), the one list the terminal leaves to the frame too: Quick
-      // Ask (DOCK1d), Ask Daoris (HELP1), and the region toggles (DOCK1c). Anywhere, a field included:
-      // none of them types anything there.
-      const shortcut = frameShortcut(event);
-      // The regions in turn (D118 §3e): in a browser too, whose window has its bar, its view and its status.
-      if (shortcut === 'nextRegion' || shortcut === 'previousRegion') {
+      // A shell's alone: a browser keeps Alt and F10 for its own menu.
+      if (attached && event.key === 'Alt' && !event.ctrlKey && !event.shiftKey && !event.metaKey) {
+        altAlone = true;
+        setMnemonics(true);
+        return;
+      }
+      altAlone = false;
+      if (attached && event.altKey && !event.ctrlKey && !event.shiftKey && !event.metaKey) {
+        const menu = MENUS.find((each) => (!each.shell || attached) && event.code === `Key${each.letter}`);
+        if (menu) {
+          event.preventDefault();
+          setMnemonics(false);
+          setOpenMenu(menu.id);
+          return;
+        }
+      }
+      if (attached && event.key === 'F10' && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
         event.preventDefault();
-        focusRegion(document, shortcut === 'previousRegion');
+        focusMenuBar(document);
         return;
       }
-      if (shortcut === 'quickAsk' || shortcut === 'help') {
-        if (!attached) return;
-        event.preventDefault();
-        if (shortcut === 'quickAsk') setQuick(true);
-        else openHelp();
-        return;
-      }
-      if (shortcut) {
-        const region: LayoutRegion = shortcut;
-        if (toggleRegionRef.current(region)) event.preventDefault();
-        return;
-      }
-      if (event.key !== 'k' || !(event.ctrlKey || event.metaKey)) return;
-      const inside = event.target as HTMLElement | null;
-      if (inside?.tagName === 'INPUT' || inside?.tagName === 'TEXTAREA') return;
+      if (event.defaultPrevented) return;
+      const target = event.target instanceof Element ? event.target : null;
+      const entry = commandForKey(tableNow.current(), event, {
+        field: isTextField(target), terminal: Boolean(target?.closest('.xterm')),
+      });
+      if (!entry) return;
       event.preventDefault();
-      setPalette((was) => !was);
+      logEvent('command.run', { command: loggedId(entry.id) });
+      entry.run();
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt') return;
+      setMnemonics(false);
+      if (!altAlone) return;
+      altAlone = false;
+      event.preventDefault();
+      // With a menu open, Alt closes it, as Windows' does; with none, it reaches the bar.
+      if (menuOpen.current !== null) setOpenMenu(null);
+      else focusMenuBar(document);
+    };
+    const reset = () => {
+      altAlone = false;
+      setMnemonics(false);
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [attached, openHelp]);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', reset);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', reset);
+    };
+  }, [attached]);
 
   // The attended session is remembered alongside the view (D56), so a relaunch into Sessions reopens
   // what the person was watching rather than an empty column.
@@ -704,6 +858,8 @@ export function App() {
       openInBrowser: (address: string) => openBrowser.mutate(address, { onError: failure(notify) }),
     } : {}),
   };
+  // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way (UX7a).
+  copyText.current = contextDoors.copy;
   const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
       // No cap: content follows the window (UX5 U59), as the session's centre does since U16. It was 72rem,
@@ -739,6 +895,8 @@ export function App() {
     <HarnessRuns notify={notify}>
     {/* Every link on the page opens through one place, told here where to (BRW7). */}
     <LinkOpener.Provider value={linkOpener}>
+    {/* What the main area's page offers, which the menu bar's record groups read (UX7a). */}
+    <MainOffer.Provider value={offers}>
     {/* A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
         the status bar is therefore always where it was. Page scrolling would put the output panel
         below the fold exactly when a session is producing output. */}
@@ -753,55 +911,19 @@ export function App() {
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
         onSystemMenu={chrome.present ? chrome.onSystemMenu : undefined}
-        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE, and since D75 they
-        // are the setup domains: Daoris, Workspace, Agents, then View. Each setup item opens its own
-        // domain of Settings. Navigating is NOT here: that is the rail's, and since D66 the rail is
-        // the only navigation there is. The items are `appMenus`'s, built as data.
+        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE, and since D152 they are
+        // its verbs and places, as VS Code's bar holds them: Workspace, Edit, View, Go, Run, Terminal,
+        // Help, every row a row of the one table (`commands.ts`) that the palette and the keys read too.
+        // The activity bar is still the one navigation region (D66); Go is its keyboard twin.
         menus={(
-          <AppMenuBar>
-            <AppMenu label={t('menu.app')} trigger="app" items={menus.daoris} onChoose={onMenu} />
-            <AppMenu label={t('menu.workspace')} trigger="workspace" items={menus.workspace} onChoose={onMenu} />
-            <AppMenu label={t('menu.agents')} trigger="agents" items={menus.agents} onChoose={onMenu} />
-            <AppMenu
-              label={t('menu.view')}
-              trigger="view"
-              items={[
-                { id: 'palette', label: t('palette.title'), icon: 'search' },
-                // A window is the shell's to open, so a browser is offered none — the item was there
-                // and did nothing (REV3), which the machine items above already knew not to do.
-                ...(attached ? [
-                  { id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor' as const, separated: true },
-                  // Daoris's own browser (D78): where the person signs in, and watches a session use it.
-                  { id: 'browser', label: t('work.menu.browser'), icon: 'browser' as const },
-                ] : []),
-                // The region toggles' second door (DOCK1c, SURF11), with their keys, ticked while shown: the
-                // view's list, named for the view (D118 §3a), and the panel and the side bar on every view (DOCK1a).
-                ...(listed ? [
-                  {
-                    id: 'layout:list', label: t(`layout.menu.list.${view}`), icon: LAYOUT_KEYS.list.icon, shortcut: LAYOUT_KEYS.list.keys,
-                    checked: listShown, separated: true,
-                  },
-                ] : []),
-                ...(attached ? [
-                  {
-                    id: 'layout:panel', label: t('layout.menu.panel'), icon: LAYOUT_KEYS.panel.icon, shortcut: LAYOUT_KEYS.panel.keys,
-                    checked: !closings.panel, separated: !listed,
-                  },
-                  { id: 'layout:right', label: t('layout.menu.right'), icon: LAYOUT_KEYS.right.icon, shortcut: LAYOUT_KEYS.right.keys, checked: !closings.dock },
-                  // VS Code's *Reset View Locations* (DOCK1b): every view back where it started. Said, and
-                  // not choosable, while nothing has moved.
-                  { id: 'views:reset', label: t('work.views.reset'), icon: 'refresh' as const, disabled: !placements.moved, separated: true },
-                ] : []),
-              ]}
-              onChoose={(_, item) => {
-                if (item === 'palette') { setPalette(true); return; }
-                if (item === 'views:reset') { placements.reset(); return; }
-                if (item.startsWith('layout:')) { toggleRegion(item.slice('layout:'.length) as LayoutRegion); return; }
-                if (item === 'monitor' && attached) openWindow.mutate(MONITOR_WINDOW);
-                if (item === 'browser' && attached) openBrowser.mutate();
-              }}
-            />
-          </AppMenuBar>
+          <AppMenuBar
+            label={t('menu.bar')}
+            menus={barMenus}
+            open={openMenu}
+            onOpen={setOpenMenu}
+            onChoose={onMenu}
+            mnemonics={mnemonics}
+          />
         )}
         // The palette's way in is the command center now, not a 14px glyph wedged against the
         // caption buttons — same dialog, a target a person can find.
@@ -818,24 +940,30 @@ export function App() {
         // it has one, named for it (D118 §3a). Ask Daoris has no button of its own up here: it is a tab of
         // the side bar, so the right toggle, F1 and Ctrl+Alt+I are its doors. Before them, Daoris's browser
         // (BRW7): an act of the application's, one press from every view, where View → Browser was the only one.
+        // 🔴 On a narrow window the toggles leave the strip before any menu does (UX7a, D152 §3.1): each is View's,
+        // with its key, and seven menus beside a command center reduced to its glyph need the room.
         trailing={attached ? (
           <div className="flex items-center gap-2">
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
-            <LayoutToggles
-              regions={['list', 'panel', 'right']}
-              list={listed ? t(`layout.list.${view}`) : undefined}
-              closed={{ list: !listShown, panel: closings.panel, right: closings.dock }}
-              onToggle={toggleRegion}
-            />
+            <div className={TOGGLES_ROOM}>
+              <LayoutToggles
+                regions={['list', 'panel', 'right']}
+                list={listed ? t(`layout.list.${view}`) : undefined}
+                closed={{ list: !listShown, panel: closings.panel, right: closings.dock }}
+                onToggle={toggleRegion}
+              />
+            </div>
           </div>
         ) : listed ? (
           // A browser's strip holds the list's toggle alone (D118 §4): it has no side bar and no panel.
-          <LayoutToggles
-            regions={['list']}
-            list={t(`layout.list.${view}`)}
-            closed={{ list: !listShown, panel: true, right: true }}
-            onToggle={toggleRegion}
-          />
+          <div className={TOGGLES_ROOM}>
+            <LayoutToggles
+              regions={['list']}
+              list={t(`layout.list.${view}`)}
+              closed={{ list: !listShown, panel: true, right: true }}
+              onToggle={toggleRegion}
+            />
+          </div>
         ) : undefined}
       />
 
@@ -873,9 +1001,14 @@ export function App() {
                 : target === 'sessions' ? sessionsWaiting
                   : target === 'agents' ? agentsWaiting : undefined,
             tone: target === 'overview' || target === 'sessions' || target === 'agents' ? 'open' as const : undefined,
+            // Its key from the table, as Go prints it (UX7a); none in a browser, which keeps Ctrl+1–8.
+            keys: entries.find((entry) => entry.id === `go.${target}`)?.keys[0]?.combo,
           }))}
           // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
-          end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}
+          end={[{
+            tab: 'settings', label: t('nav.settings'), icon: 'settings',
+            keys: entries.find((entry) => entry.id === 'workspace.settings')?.keys[0]?.combo,
+          }]}
           active={view}
           onSelect={(target) => open(target)}
           // The list's fourth door (D118 §3a): the place you are on, pressed again, toggles its list.
@@ -1044,33 +1177,16 @@ export function App() {
         </Drawer>
       )}
 
+      {/* Help › Keyboard shortcuts (UX7a): the table's keys by menu, as the menus print them. */}
+      {shortcuts && (
+        <KeyboardShortcuts groups={shortcutGroups(entries, translate)} browser={!attached} onClose={() => setShortcuts(false)} />
+      )}
+
       <CommandPalette
         open={palette}
         onClose={() => setPalette(false)}
-        commands={commands({
-          label: (id) => t(`command.${id}`),
-          group: (id) => t(`palette.group.${id}`),
-          attached,
-          current: view,
-          go: (target) => open(target),
-          refresh: onRefresh,
-          toggleLanguage: () => void i18n.changeLanguage(
-            i18n.language.startsWith('zh') ? 'en' : 'zh'),
-          startSession: () => { open('sessions'); setWorkIntent('start'); },
-          review: () => { open('sessions'); setWorkIntent('review'); },
-          // The second screen (SURF8). Opening a window is the shell's act, so both of these are
-          // absent in a browser by the same omission every other shell-only command uses.
-          monitor: () => openWindow.mutate(MONITOR_WINDOW),
-          browser: () => openBrowser.mutate(),
-          detach: attending
-            ? () => openWindow.mutate(sessionWindowName(attending))
-            : undefined,
-          // Asking lives at the head of Quests (INT4c); the palette goes there and opens the composer.
-          ask: () => { open('quests'); setAsking(true); },
-          help: openHelp,
-          quickAsk: () => askQuickly(),
-          setup: () => openSettings('start'),
-        }).map(counted)}
+        // The menus' rows that apply now, under their menu's name (D152 §2): one table, so a palette row is a menu row.
+        commands={paletteCommands(entries, translate).map(counted)}
         // The command center's one question (DOCK1d): what was typed, asked in Quick Ask.
         onAsk={attached ? (question) => { logEvent('command.run', { command: 'ask' }); askQuickly(question); } : undefined}
       />
@@ -1101,6 +1217,7 @@ export function App() {
           rather than on whatever was last open. */}
       <ShellSignals notify={notify} onAttend={openInWork} />
     </div>
+    </MainOffer.Provider>
     </LinkOpener.Provider>
     </HarnessRuns>
   );

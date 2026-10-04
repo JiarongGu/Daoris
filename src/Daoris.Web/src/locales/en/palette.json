@@ -5,8 +5,5 @@
   "palette.nothing": "Nothing matches “{{typed}}”.",
   "palette.ask": "Ask Daoris: “{{typed}}”",
   "palette.placeholderAsk": "What do you want to do? Or ask Daoris anything.",
-  "palette.open": "Commands (Ctrl+K)",
-  "palette.group.go": "Go to",
-  "palette.group.do": "Actions",
-  "palette.group.work": "Sessions"
+  "palette.open": "Commands (Ctrl+K)"
 }

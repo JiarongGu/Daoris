@@ -10,12 +10,12 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
-  CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
-  LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
-  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Reply,
-  RotateCw, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, Trash2, TriangleAlert,
-  Wrench, X,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp,
+  ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info,
+  Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
+  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
+  RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
+  Undo2, Wrench, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
@@ -127,6 +127,14 @@ const ICONS = {
   // An ask's or a quest's work paused and carried on (PAUSE1e): a player's pause and play, never the stop's square.
   pause: Pause,
   resume: Play,
+  // The menu bar's Edit (UX7a, D152 §3.2): a field's own acts, drawn as every editor's Edit menu draws them.
+  undo: Undo2,
+  redo: Redo2,
+  cut: Scissors,
+  paste: ClipboardPaste,
+  selectAll: TextSelect,
+  // Help › Keyboard shortcuts (UX7a): the list of every key the window answers.
+  keyboard: Keyboard,
 } as const;
 
 export type IconName = keyof typeof ICONS;
@@ -1144,6 +1152,42 @@ function MenuSeparator({ className, ...props }: ComponentProps<typeof DropdownMe
 }
 
 /**
+ * A row that opens a menu to its side (UX7a, D152 §3.3): View's *Theme* and *Language*, on hover or →. Its tick column
+ * is kept, so its name lines up with the rows around it, and the chevron says it opens rather than acts.
+ */
+function MenuSubRow({ className, children, ...props }: ComponentProps<typeof DropdownMenu.SubTrigger>) {
+  const row = useMenuRow(className, 'data-[state=open]:bg-raised data-[state=open]:text-ink');
+  return (
+    <DropdownMenu.SubTrigger {...props} className={row}>
+      <MenuTickColumn />
+      {children}
+      <Icon name="chevronRight" size={12} className="ml-auto shrink-0 text-ink-faint" />
+    </DropdownMenu.SubTrigger>
+  );
+}
+
+/** The menu a sub-row opens, in its portal, with a parent's surface and cap, 4px off the row. */
+function MenuSubContent({ className, children, ...props }: ComponentProps<typeof DropdownMenu.SubContent>) {
+  const highlight = useContext(MenuHighlightContext);
+  return (
+    <DropdownMenu.Portal>
+      <DropdownMenu.SubContent
+        sideOffset={4}
+        collisionPadding={8}
+        {...props}
+        className={cn(
+          'z-30 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto overflow-x-hidden',
+          'rounded-control border border-line bg-overlay p-1 text-small shadow-lg',
+          className,
+        )}
+      >
+        <MenuHighlightContext.Provider value={highlight}>{children}</MenuHighlightContext.Provider>
+      </DropdownMenu.SubContent>
+    </DropdownMenu.Portal>
+  );
+}
+
+/**
  * One act a menu offers (CTX1, D138): its name, its glyph, and what choosing it does. A surface's ⋯ and its right-click
  * draw the same list, so the two never offer a different set.
  */
@@ -1194,8 +1238,8 @@ function MenuActRows({ acts, onCopy }: { acts: readonly MenuAct[]; onCopy?: (tex
  *
  * @remarks
  * Eight files had each styled the primitive on their own, and none capped its height, so a long menu ran off the
- * window. `primitives.test.ts` now holds that no file but the atoms imports a primitive. No sub-menu is here, since no
- * menu has one; one is added here the day a menu needs it. `Acts` draws a surface's acts (CTX1), as its ⋯ and the
+ * window. `primitives.test.ts` now holds that no file but the atoms imports a primitive. The sub-menu came with the menu
+ * bar's View (UX7a), whose *Theme* and *Language* each open one. `Acts` draws a surface's acts (CTX1), as its ⋯ and the
  * right-click menu both do.
  */
 export const Menu = {
@@ -1208,6 +1252,9 @@ export const Menu = {
   RadioItem: MenuRadioRow,
   Label: MenuLabel,
   Separator: MenuSeparator,
+  Sub: DropdownMenu.Sub,
+  SubTrigger: MenuSubRow,
+  SubContent: MenuSubContent,
   Acts: MenuActRows,
 };
 

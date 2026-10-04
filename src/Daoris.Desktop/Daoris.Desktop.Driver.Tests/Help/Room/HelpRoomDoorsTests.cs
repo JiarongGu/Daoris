@@ -54,8 +54,10 @@ public sealed class HelpRoomDoorsTests
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
         Assert.Contains("Settings → AI features", agents);
-        // SETUP1b: the setup guide the person may be walked through, by the names the window gives it.
-        Assert.Contains("Settings → Setup (the Daoris menu's *Setup*)", agents);
+        // SETUP1b: the setup guide the person may be walked through, by the names the window gives it; Help's since UX7a
+        // (D152), where the Daoris menu held it.
+        Assert.Contains("Settings → Setup (Help → *Setup*)", agents);
+        Assert.DoesNotContain("Daoris menu", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
         // It proposes (HELP1c): a card the person applies, through the connector's two tools.

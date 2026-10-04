@@ -213,6 +213,8 @@ export type ActivityItem<T extends string> = {
    * quantity. The only status hue on the bar, because it is the only status on it.
    */
   tone?: 'accent' | 'open';
+  /** Its key, as the Go menu prints it (UX7a, D152 §3.4), said in its tip: a place's position is its key. */
+  keys?: string;
 };
 
 /**
@@ -252,11 +254,12 @@ export function ActivityBar<T extends string>({
   /** Actions, not state: refresh and language. State went to the status bar. */
   footer?: ReactNode;
 }) {
-  const place = ({ tab, label: name, icon, badge, tone }: ActivityItem<T>) => (
-    <Tip key={tab} content={name} side="right">
+  const place = ({ tab, label: name, icon, badge, tone, keys }: ActivityItem<T>) => (
+    <Tip key={tab} content={keys ? `${name} (${keys})` : name} side="right">
       <button
         type="button"
         aria-label={name}
+        aria-keyshortcuts={keys}
         aria-current={active === tab ? 'page' : undefined}
         // The current place is a door to its list where it toggles it (D118 §3a).
         {...(active === tab && onToggleCurrent ? { [LIST_DOOR]: '' } : {})}
