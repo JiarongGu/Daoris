@@ -127,6 +127,9 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal([HookPoints.QuestConsider], manifest.Hooks!.Points);
         Assert.Equal(["node", Path.Combine(folder, "plugin.mjs")], manifest.Hooks.Command.Select(Path.GetFullPath).Skip(1).Prepend("node"));
         Assert.Empty(manifest.Harnesses);
+        // It declares no tools until it runs one (PLUGTOOL1a): `tools: []`, read as none.
+        Assert.Empty(manifest.Tools);
+        Assert.Null(manifest.ToolsProblem);
 
         // Every file is BOM-less UTF-8 with LF, whatever the checkout did to the templates.
         foreach (var name in written)
@@ -565,6 +568,82 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(1, trial.ExitCode);
     }
 
+    // ——— the tools it declares (PLUGTOOL1a)
+
+    /// <summary>
+    /// `try` finds each tool a manifest declares as the driver would, asks its version against its range, and runs its
+    /// checks, each a step in its own sentence, before it starts the plugin (D150 point 7, the UX6 design §7.2).
+    /// </summary>
+    [Fact]
+    public async Task Try_finds_each_declared_tool_asks_its_version_and_runs_its_checks_each_in_its_own_sentence()
+    {
+        var folder = New("acme.tools", [HookPoints.SessionEnded]);
+        DeclareTools(folder, """
+            [{ "id": "node", "versions": ">=18", "for": "Runs the wire script.",
+               "ready": [{ "run": ["node", "-e", "process.exit(0)"], "says": "It runs a script" }] }]
+            """);
+
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
+
+        Assert.True(trial.Passed, Describe(trial));
+        Assert.Equal(["tool node", "node check 1", "handshake", HookPoints.SessionEnded, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
+        Assert.Matches(@"^Node\.js \d+\.\d+\.\d+, the system's, in its range \(18 or newer\)\.$", trial.Steps[0].Sentence);
+        Assert.Equal("ready: It runs a script.", trial.Steps[1].Sentence);
+    }
+
+    /// <summary>
+    /// A bad manifest's tools fail their own steps, each in its own sentence, and the rest of the trial still runs: a problem
+    /// in `tools` is shown, never a refusal. A check that does not pass names its fix, which Daoris never runs.
+    /// </summary>
+    [Fact]
+    public async Task A_bad_manifests_tools_fail_their_own_steps_and_the_plugin_is_still_tried()
+    {
+        var folder = New("acme.tools", [HookPoints.SessionEnded]);
+        var marker = Path.Combine(_scratch, "fixed");
+        DeclareTools(folder, $$"""
+            [{ "id": "node", "versions": ">=999",
+               "ready": [{ "run": ["node", "-e", "process.exit(3)"], "says": "It exits clean",
+                           "fix": "node -e \"require('fs').writeFileSync('{{marker.Replace("\\", "/", StringComparison.Ordinal)}}', '')\"" }] },
+             { "id": "Az" },
+             { "id": "acme-missing", "command": "daoris-no-such-program" }]
+            """);
+
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
+
+        Assert.False(trial.Passed);
+        Assert.Equal(1, trial.ExitCode);
+        Assert.Equal(
+            ["tool node", "node check 1", "tool 2", "tool acme-missing", "handshake", HookPoints.SessionEnded, "shutdown", "stdout"],
+            trial.Steps.Select(s => s.Name));
+        Assert.Matches(@"needs 999 or newer; this is \d+\.\d+\.\d+\.$", Failed(trial, "tool node").Sentence);
+        Assert.StartsWith("not ready: It exits clean. `node -e process.exit(3)` exited 3. Run `node -e", Failed(trial, "node check 1").Sentence);
+        Assert.Contains("has the `id` `Az`, which is not one", Failed(trial, "tool 2").Sentence);
+        Assert.Contains("`daoris-no-such-program` is not on this machine's PATH", Failed(trial, "tool acme-missing").Sentence);
+        // The plugin itself was tried, and answered well.
+        Assert.All(trial.Steps.Skip(4), s => Assert.True(s.Ok, s.Sentence));
+        // 🔴 The fix is shown, never run.
+        Assert.False(File.Exists(marker));
+    }
+
+    [Fact]
+    public async Task The_terminal_tries_a_plugins_tools_and_its_exit_is_the_verdict()
+    {
+        var good = New("acme.good", [HookPoints.SessionEnded]);
+        DeclareTools(good, """[{ "id": "node", "versions": ">=18" }]""");
+        var bad = New("acme.bad", [HookPoints.SessionEnded]);
+        DeclareTools(bad, """[{ "id": "node", "versions": "latest" }]""");
+
+        var passed = new StringWriter();
+        Assert.Equal(0, await PluginKitCommand.RunAsync(["try", good], passed, home: Home));
+        Assert.Contains("ok    tool node", passed.ToString());
+
+        var failed = new StringWriter();
+        Assert.Equal(1, await PluginKitCommand.RunAsync(["try", bad], failed, home: Home));
+        Assert.Contains("fail  tool node", failed.ToString());
+        Assert.Contains("tool `node`'s `versions` must be a range", failed.ToString());
+        Assert.Contains("failed 1 of 5 checks", failed.ToString());
+    }
+
     // ——— the two checkers agree
 
     /// <summary>
@@ -764,6 +843,15 @@ public sealed class PluginKitTests : IDisposable
         // The sabotage must have applied, or the test proves nothing about try.
         Assert.Contains(from, script);
         File.WriteAllText(path, script.Replace(from, to, StringComparison.Ordinal));
+    }
+
+    /// <summary>Put a manifest's tools where the scaffold wrote none (PLUGTOOL1a).</summary>
+    private static void DeclareTools(string folder, string tools)
+    {
+        var path = Path.Combine(folder, "plugin.json");
+        var text = File.ReadAllText(path);
+        Assert.Contains("\"tools\": []", text);
+        File.WriteAllText(path, text.Replace("\"tools\": []", $"\"tools\": {tools}", StringComparison.Ordinal));
     }
 
     private static TrialStep Failed(PluginTrial trial, string name)
