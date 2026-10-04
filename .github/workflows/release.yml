@@ -234,6 +234,12 @@ jobs:
       - name: Code map gate
         run: dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check
 
+      # The orientation index is what the code and the decisions say (ORIENT1a): the routes, verbs, catalogue
+      # areas, fixtures, large files' outlines and the decisions digest under docs/index/. A fact, so it gates
+      # (D54); the merge tool writes it into every merge, so a stale one here is a commit made beside the tool.
+      - name: Orientation index gate
+        run: node tools/orient-index.mjs --check
+
       # Everything that protects a consumer, in the order a consumer meets it — ending with the devkit's
       # five universal gates over THIS repository (DEVKIT3, SEN1). They ran here as a step of their own
       # as well, the same command twice (REV3 CLEAN1); `verify` is their one home, and the dogfood test

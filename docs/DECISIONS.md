@@ -15,6 +15,7 @@ work that made it; an amendment written elsewhere leaves a pointer there instead
   `docs/decisions/` and every number already reserved for a branch in flight. A new decision is a new file.
 - **`grep '^## D' docs/decisions/*.md` lists them all**, one heading per file.
 
-This page holds no decision and no note, and there is no index: the folder and a search are the index.
+This page holds no decision and no note, and no branch keeps an index: the folder and a search are the index, and
+`docs/index/decisions.md` is a digest generated from the folder, each title and note with its lines (D134's note).
 `tools/doc-duplicates.mjs` refuses a decision or a note written here, and checks each file for what a union
 merge can leave in it.

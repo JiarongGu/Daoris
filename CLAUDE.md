@@ -198,6 +198,8 @@ directory, and D11 makes shipping the canon *inside* the package load-bearing.
 
 Run every command from the **workspace root**, not from a package directory.
 
+- **Read `docs/index/` before searching** (ORIENT1): routes, verbs, keys, fixtures, outlines, decisions.
+
 - **`npm run verify`** — the "am I done?" gate: **`typecheck` first** (the dev loop strips types
   rather than compiling them, so without this a type error reaches `npm pack` and nothing sooner —
   FIX-LOG 2026-09-21), then every CLI test, `daoris check` against Daoris's own doctrine,

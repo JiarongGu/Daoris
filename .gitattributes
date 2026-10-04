@@ -17,6 +17,11 @@ src/Daoris.Cli/test/fixtures/vendor/** -text
 # hand: regenerate it instead.
 daoris.lock -merge
 
+# Written by `tools/orient-index.mjs` from the tree (ORIENT1a), its line numbers moving with nearly every
+# change. A textual merge of two copies is neither copy's tree, so none is attempted: `tools/merge-branch.mjs`
+# writes the folder again from the merged tree, and a hand merge runs the tool.
+docs/index/** -merge
+
 # The append-only records merge by union (MOD1, D106): every branch adds lines at one insertion point,
 # and nothing about the work collides, only the place. Union keeps both sides' lines. It also keeps both
 # versions of a line two branches changed, so `tools/doc-duplicates.mjs` (run by `verify`) refuses a

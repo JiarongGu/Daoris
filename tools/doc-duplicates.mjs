@@ -85,8 +85,11 @@ export function duplicates(text, kind) {
   return twice;
 }
 
-/** Where `daoris.json` declares the decisions record, `/`-separated and without a trailing slash. */
-function declaredDecisions(root) {
+/**
+ * Where `daoris.json` declares the decisions record, `/`-separated and without a trailing slash. The orientation
+ * index's digest reads the record from here too (ORIENT1b).
+ */
+export function declaredDecisions(root) {
   const manifest = join(root, 'daoris.json');
   if (!existsSync(manifest)) return PAGE;
   const entry = JSON.parse(readFileSync(manifest, 'utf8')).documents?.decisions;
@@ -117,9 +120,9 @@ const lines = (text) => text.replace(/\r\n/g, '\n').split('\n');
 
 /**
  * Whether a fenced block holds each line, its fences too: a fence's lines are text, never a heading or a
- * label (as `doc-shapes` reads a fence).
+ * label (as `doc-shapes` reads a fence). The orientation index reads headings and notes the same way.
  */
-function fenced(text) {
+export function fenced(text) {
   let open = false;
   return text.map((line) => {
     if (/^\s*```/.test(line)) {
@@ -145,7 +148,7 @@ const NOTE_LABEL = [
   /^\*\*[^*]*\b(built|landed|amended)\b[^*]*\d{4}-\d{2}-\d{2}/,
 ];
 
-const isNoteLabel = (line) => NOTE_LABEL.some((form) => form.test(line));
+export const isNoteLabel = (line) => NOTE_LABEL.some((form) => form.test(line));
 
 /** The `## D<n>` headings outside a fence, as `{ id, line }`. */
 function decisionHeadings(text) {
@@ -157,7 +160,7 @@ function decisionHeadings(text) {
 }
 
 /** Decision files in their numbers' order (D2 before D10), any other name after them. */
-const byNumber = (a, b) => {
+export const byNumber = (a, b) => {
   const [m, n] = [/^D(\d+)\.md$/.exec(a), /^D(\d+)\.md$/.exec(b)];
   if (m && n) return Number(m[1]) - Number(n[1]) || a.localeCompare(b);
   return m ? -1 : n ? 1 : a.localeCompare(b);

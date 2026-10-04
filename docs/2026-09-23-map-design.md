@@ -354,6 +354,18 @@ map. MAP3b: the feed to a shared deployment, with WSP4's provenance. MAP3c: a to
 devkit reads project references, which is exact for C# without Roslyn, and a package's
 dependencies for TS). MAP3d: the agent producer, by the session prompt.
 
+**ORIENT1a, built 2026-10-04: a second generated map, of this repository, for its own agents.**
+`tools/orient-index.mjs` writes `docs/index/` the way MAP3c writes the code map: from the files, by a tool,
+held by a declared gate (`orient-index`, its `--check`) and never edited by hand. It is finer than a module:
+the bridge routes with their handlers and senders, the terminal verbs, the catalogue areas, the test
+fixtures, an outline of every file over 40 KB with line ranges, and the decisions digest (ORIENT1b). Measured
+before it: sessions spent a third of their calls finding their way (ORIENT1). Three things differ from the
+code map. It is this repository's tooling, not the contract above: no service reads it, the page draws
+nothing from it, and no other repository is asked to keep one. Its line numbers move with nearly every
+change, so `tools/merge-branch.mjs` writes it into each merge from the merged tree, and a conflict in it is
+never resolved by hand (`docs/index/** -merge`). And it runs at every merge, in the baseline beside the
+code map, because a change in any lane can move it.
+
 ## 4. What does not move
 
 D24: no map needs a model, and none names one. D32: a map of another repository is read, never

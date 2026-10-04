@@ -7,6 +7,7 @@
     { "name": "service", "run": "dotnet test src/Daoris.Service" },
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },
     { "name": "code-map", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check" },
+    { "name": "orient-index", "run": "node tools/orient-index.mjs --check" },
     { "name": "driver", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process" },
     { "name": "modules", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process" },
     { "name": "driver-process", "run": "dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings" },

@@ -27,6 +27,7 @@ Follow the dispatch-subagent skill's subagent half.
    commit the prompt names.
 2. Read `CLAUDE.md` and `AGENTS.md`, run `doc-loader`, and read what it routes you to, starting with the
    design document the prompt names. Say which documents you read.
+   Read `docs/index/README.md` for where things are before searching the code: open the outline, then the lines.
 3. Count the tests in the suites your lane touches before changing anything. The hand-back reports the
    count before and after.
 
@@ -109,8 +110,8 @@ Follow the dispatch-subagent skill's subagent half.
 3. **Run at most three at once.** More load makes real-process tests flake.
 4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
-   - `<branch>` merges with `--no-ff --no-commit`. It then runs the baseline (the universal gates, the code
-     map, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
+   - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
+     the baseline (the universal gates, the code map, the orientation index's check, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
      and the release and family rehearsals they reach, by the tool's lane table (GATE3). **It skips the
      long halves** (GATE5): the driver's and the modules' `Process` halves and the deployment rehearsal
      never run at a merge, and every run and `--plan` says each is in the full set before staging. It
