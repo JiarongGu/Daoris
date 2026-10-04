@@ -28,8 +28,8 @@ describe('where the person is', () => {
       expect(prefaceOf({ view, workspace: null }), view)
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
-    // Agents left Settings for a place of its own (UX6e), which the views above name.
-    for (const domain of PLACE_DOMAINS.filter((name) => name !== 'agents')) {
+    // Agents left Settings for a place of its own (UX6e), which the views above name since the twins moved it (UX6e2).
+    for (const domain of PLACE_DOMAINS) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
     }

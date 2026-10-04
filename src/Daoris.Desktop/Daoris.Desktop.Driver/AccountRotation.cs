@@ -327,7 +327,7 @@ public static class AccountRotation
 
     /// <summary>
     /// Which account the next start would take, the step that chose it, and what holds each other account (TOOL6e, D130
-    /// §3–§4 as §16.3 amends them): what Settings → Agents says, so a person sees why a start runs where it does.
+    /// §3–§4 as §16.3 amends them): what the agent's page in Agents says, so a person sees why a start runs where it does.
     /// </summary>
     /// <remarks>
     /// <para>The account is the first ready one of <paramref name="tried"/>, as a start takes it. The reason is weighed as
@@ -599,11 +599,11 @@ public static class RotationWords
 
     /// <summary>
     /// The sign-in for each account not signed in, after <paramref name="lead"/>, both doors named (D50): the terminal's for
-    /// each account, and the screen's. Empty where none is.
+    /// each account, and the screen's, the agent's page in the Agents place since UX6e (UX6e2, D150 §5.2). Empty where none is.
     /// </summary>
     private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead) => accounts.Count == 0
         ? ""
-        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --profile {account}`"))}, or Settings → Agents.";
+        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --profile {account}`"))}, or Agents → the agent's page → Accounts.";
 
     /// <summary>
     /// A conversation the person started on an account they picked, which is cooling (§3.3): refused, since the person

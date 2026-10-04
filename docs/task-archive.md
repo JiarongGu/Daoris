@@ -11077,3 +11077,23 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Contract: D24, D135. Proof: a session that connects; the report's reads of the knowledge search.
 
 **Outcome** 2026-10-04: built. `.mcp.json` starts `tools/knowledge-server.mjs`, which runs a build of the MCP host under `local/knowledge-server/` (`npm run knowledge:build`, rebuilt by the merge tool after a merge's gates) and never builds at a session's start; with no build it answers the handshake saying so. Hand and subagent sessions get the main checkout alone, `docs/` a section each and `docs/index/` a row each, by words only; a worktree reaches the main checkout's build. A route question gets its row first. `orient-report` counts asks of it. Detail: D24's ORIENT1c note, `a3f660f5`..`3f986a82`.
+
+
+## UX6e2 — the words and the twins follow the Agents place (2026-10-04)
+
+> - [ ] **UX6e2 — the words and the twins follow the Agents place** (driver, cli; found by UX6e). The driver's sentences
+> (`RotationWords`, `HelpRoomDoors`), the room's places and `HelpPlaces`, and the CLI's `agent list` still say Settings →
+> Agents; the page's `places.ts` maps the old names until they move. Contract: D150 §3.1. Proof: the twins' tables and
+> the room's golden files.
+
+**Outcome** 2026-10-04: built. Ask Daoris's places twin (`HelpPlaces` and `help/places.ts`) gains the Agents place with its accounts, rules and usage parts and `projects/setup`, `MOVED` retired; the room's doors name a repository's Setup sections for its own values and the agent's page for every former Settings → Agents row; the rotation's sign-in, the cool-off's *Read again*, the set-up press's refusals and the CLI's `agent list` name the new homes; the coverage test reads Repositories as a place. Detail: D150's note, `41290ab9`..`8176b4c4`.
+
+
+## HELPSETUP1 — Ask Daoris names a repository's Setup (2026-10-04)
+
+> - [ ] **HELPSETUP1 — Ask Daoris names a repository's Setup** (driver; found by UX6f). The help room's text and places
+> still send a person to Settings → Workspace and Permissions, or the old page, for a repository's line, landing,
+> reading across, standing answer and language (`HelpRoomDoors.cs`, `HelpRoomMayDo.cs:75`, `RegistrationFollow.cs:215`).
+> Contract: D150 §3.1. Proof: `HelpRoomGoldenTests`, `HelpCoverageTests`, the `places.ts` twin table.
+
+**Outcome** 2026-10-04: built. Ask Daoris's places twin (`HelpPlaces` and `help/places.ts`) gains the Agents place with its accounts, rules and usage parts and `projects/setup`, `MOVED` retired; the room's doors name a repository's Setup sections for its own values and the agent's page for every former Settings → Agents row; the rotation's sign-in, the cool-off's *Read again*, the set-up press's refusals and the CLI's `agent list` name the new homes; the coverage test reads Repositories as a place. Detail: D150's note, `41290ab9`..`8176b4c4`.

@@ -11,10 +11,14 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
-    [InlineData("settings", "agents", null, "Open Settings → Agents.")]
+    // UX6e2 (D150 §3.1): Agents is a place, and its parts are the agent's page's.
+    [InlineData("agents", null, null, "Open Agents.")]
+    [InlineData("agents", null, "rules", "Open Agents → What it may do.")]
     [InlineData("settings", "workspace", "lines", "Open Settings → Workspace → Lines.")]
     [InlineData("settings", "start", "helper", "Open Settings → Setup at step 2, Ask Daoris's agent.")]
     [InlineData("projects", null, "import", "Open Repositories → Import a folder.")]
+    // HELPSETUP1: a repository's own values are on its Setup.
+    [InlineData("projects", null, "setup", "Open Repositories → a repository's Setup.")]
     public void A_screen_is_a_go_that_changes_nothing(string view, string? domain, string? part, string says)
     {
         var plan = HelpProposals.Plan(Go(view, domain, part), DriverConfig.Empty, Machine);
@@ -32,6 +36,10 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("settings", "workspace", "colours", "no part `colours`")]
     [InlineData("quests", null, "drawer", "no part `drawer`")]
     [InlineData("quests", "agents", null, "a domain is a part of Settings")]
+    // UX6e2: Settings → Agents and Permissions' Proposals left Settings for the Agents place.
+    [InlineData("settings", "agents", null, "no Settings domain `agents`")]
+    [InlineData("settings", "permissions", "proposals", "no part `proposals` of `permissions`")]
+    [InlineData("agents", null, "workspaces", "no part `workspaces` of `agents`")]
     public void A_screen_the_window_does_not_have_is_refused(string view, string? domain, string? part, string says)
     {
         var plan = HelpProposals.Plan(Go(view, domain, part), DriverConfig.Empty, Machine);
@@ -47,14 +55,15 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [Fact]
     public void The_places_are_the_pages_twin()
     {
-        Assert.Equal(["overview", "sessions", "quests", "projects", "map", "convergence", "search", "settings"], HelpPlaces.Views.Select(view => view.Id));
-        Assert.Equal(["start", "appearance", "ai", "workspace", "driver", "agents", "permissions", "plugins", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
+        Assert.Equal(["overview", "sessions", "quests", "projects", "map", "convergence", "search", "agents", "settings"], HelpPlaces.Views.Select(view => view.Id));
+        Assert.Equal(["start", "appearance", "ai", "workspace", "driver", "permissions", "plugins", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
         Assert.Equal(
             [
-                "projects/add", "projects/import",
+                "projects/add", "projects/import", "projects/setup",
                 "start/agent", "start/helper", "start/repositories", "start/driven", "start/landing", "start/rules",
                 "workspace/wiring", "workspace/lines", "workspace/landing", "workspace/sweep",
-                "agents/usage", "permissions/proposals", "permissions/across",
+                "agents/accounts", "agents/rules", "agents/usage",
+                "permissions/across",
             ],
             HelpPlaces.Parts.Select(part => $"{part.Within}/{part.Id}"));
     }

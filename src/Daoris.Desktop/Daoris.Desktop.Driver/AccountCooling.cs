@@ -260,9 +260,11 @@ public static class CoolingWords
     {
         var said = $"{Who(entry)} is cooling until {When(entry.Until, zone)}, {Why(entry)}. Daoris starts nothing on it until then.";
         // The own home holds whoever last signed in at the person's terminal, and the roster's refresh ends its
-        // cool-off, since Daoris cannot see that sign-in change (D125 §3.7).
+        // cool-off, since Daoris cannot see that sign-in change (D125 §3.7). UX6e2: opening the Agents place asks nothing
+        // (D150 §5.3), so the refresh is its Read again.
         return entry.Account is null
-            ? $"{said} If you have signed in to another account at your own terminal since, refresh Settings → Agents."
+            ? $"{said} If you have signed in to another account at your own terminal since, press Read again under Agents → "
+              + "the agent's page → Accounts."
             : said;
     }
 

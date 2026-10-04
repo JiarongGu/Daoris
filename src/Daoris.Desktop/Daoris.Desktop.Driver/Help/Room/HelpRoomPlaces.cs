@@ -27,6 +27,9 @@ internal sealed class HelpRoomPlaces : IHelpRoomSection
                 : $"- Parts of `{within}`: {Listed(parts)}.\n");
         }
 
+        // UX6e2, HELPSETUP1: a go carries no item, so the helper is told where the two parts that need one land.
+        text.Append("\nA go names no repository and no agent: `setup` opens the Setup of the repository Repositories has chosen,\n");
+        text.Append("where the person picks the one they mean, and a part of `agents` opens the agent that has it.\n");
         text.Append('\n');
         return text.ToString();
     }

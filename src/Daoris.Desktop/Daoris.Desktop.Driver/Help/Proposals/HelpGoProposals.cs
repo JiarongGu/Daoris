@@ -78,7 +78,8 @@ public sealed record HelpPlace(string View, string? Domain, string? Part);
 
 /// <summary>
 /// The places on the window a go may name (HELP6): the views, Settings' domains, and the parts of them a
-/// door already opens — the setup guide's steps, a domain's cards, Projects' drawers.
+/// door already opens — the setup guide's steps, a domain's cards, Repositories' drawers and a repository's Setup,
+/// an agent's page's sections.
 /// </summary>
 /// <remarks>
 /// A twin (`.claude/knowledge/twins.md`) of the page's <c>help/places.ts</c>, which navigates to them:
@@ -87,29 +88,32 @@ public sealed record HelpPlace(string View, string? Domain, string? Part);
 /// </remarks>
 public static class HelpPlaces
 {
+    // UX6e2: Agents is a place since UX6e (D150 §5), after Search on the bar.
     public static readonly IReadOnlyList<(string Id, string Name)> Views =
     [
         ("overview", "Overview"), ("sessions", "Sessions"), ("quests", "Quests"), ("projects", "Repositories"),
-        ("map", "Map"), ("convergence", "Convergence"), ("search", "Search"), ("settings", "Settings"),
+        ("map", "Map"), ("convergence", "Convergence"), ("search", "Search"), ("agents", "Agents"), ("settings", "Settings"),
     ];
 
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
         ("start", "Setup"), ("appearance", "Appearance"), ("ai", "AI features"), ("workspace", "Workspace"),
-        ("driver", "Driver"), ("agents", "Agents"), ("permissions", "Permissions"), ("plugins", "Plugins"),
+        ("driver", "Driver"), ("permissions", "Permissions"), ("plugins", "Plugins"),
         ("browser", "Browser"), ("logs", "Machine log"),
     ];
 
-    /// <summary>The parts, each within a view (Projects) or a Settings domain.</summary>
+    /// <summary>The parts, each within a view (Repositories, Agents) or a Settings domain.</summary>
     public static readonly IReadOnlyList<(string Within, string Id, string Name)> Parts =
     [
-        ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"),
+        // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
+        ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"), ("projects", "setup", "a repository's Setup"),
         ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Ask Daoris's agent"),
         ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "driven", "step 4, what is driven"),
         ("start", "landing", "step 5, how work lands"), ("start", "rules", "step 6, what agents may do"),
         ("workspace", "wiring", "Wiring"), ("workspace", "lines", "Lines"), ("workspace", "landing", "How work lands"),
         ("workspace", "sweep", "Session branches"),
-        ("agents", "usage", "Usage"), ("permissions", "proposals", "Proposals"),
+        // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
+        ("agents", "accounts", "Accounts"), ("agents", "rules", "What it may do"), ("agents", "usage", "Usage"),
         // HELP10: the card READ1 built (D107), which the page finds by its own `settings-across`.
         ("permissions", "across", "Across repositories"),
     ];

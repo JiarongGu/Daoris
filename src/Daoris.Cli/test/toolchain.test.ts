@@ -671,8 +671,9 @@ function moment(hours: number): { until: string; said: string } {
   return { until, said: coolingWhen(new Date(until), machineZone()).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') };
 }
 
-const POINTER = 'Settings → Agents names the account it takes, from the sessions Daoris runs and its last starts, which this '
-  + 'terminal does not read';
+// UX6e2: the screen that names it is the agent's page in the Agents place since UX6e (D150 §5.2).
+const POINTER = 'Agents → the agent\'s page → How accounts are used names the account it takes, from the sessions Daoris '
+  + 'runs and its last starts, which this terminal does not read';
 
 /**
  * TOOL6g: one account list per tool. A door onto another agent's accounts (`claude-code-acp`) listed the same accounts
@@ -757,7 +758,7 @@ test('`agent list` says the machine\'s next start where it has no list: its defa
 
   // Its one account is the settings', not a step's choice, so it is named; no walk, so no pointer.
   assert.match(named, /\n\s+next start\s+`account-1`, this machine's default — with no list, the one account its starts run on\n/);
-  assert.doesNotMatch(named, /Settings → Agents|held now|waits until/);
+  assert.doesNotMatch(named, /names the account it takes|held now|waits until/);
   assert.match(cooling, new RegExp(`next start\\s+\`account-1\`[^\\n]+\\n\\s+held now: \`account-1\` is cooling until ${held.said}, `
     + 'so the next start waits until then\\n'));
   // No default and no list: the tool's own sign-in, which its own lines say; nothing is guessed here.

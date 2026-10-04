@@ -102,7 +102,7 @@ public sealed class SignedOutLooksTests : IDisposable
             $"no `stub` account this start may use is ready: `account-1` is not signed in, `account-2` is not signed in, `gmail` "
             + $"is cooling until Oct 6, 08:58 ({Zone.Id}); the first ready, `gmail`, at Oct 6, 08:58 ({Zone.Id}), as the agent "
             + "said. Daoris starts nothing on them until then. A sign-in starts it sooner: `daoris agent login stub --profile "
-            + "account-1`, `daoris agent login stub --profile account-2`, or Settings → Agents.",
+            + "account-1`, `daoris agent login stub --profile account-2`, or Agents → the agent's page → Accounts.",
             sitting.Reason);
         Assert.Equal("stub", sitting.SignedOut!.Agent);
         Assert.Equal(["account-1", "account-2"], sitting.SignedOut.Accounts);
@@ -132,7 +132,7 @@ public sealed class SignedOutLooksTests : IDisposable
         Assert.Equal(
             "no `stub` account this start may use is ready: `account-1` is not signed in, `account-2` is not signed in, `gmail` is "
             + "not signed in. A sign-in starts it: `daoris agent login stub --profile account-1`, `daoris agent login stub "
-            + "--profile account-2`, `daoris agent login stub --profile gmail`, or Settings → Agents.",
+            + "--profile account-2`, `daoris agent login stub --profile gmail`, or Agents → the agent's page → Accounts.",
             sitting.Reason);
         Assert.Equal(["account-1", "account-2", "gmail"], sitting.SignedOut!.Accounts);
         Assert.Empty(last.Waits);

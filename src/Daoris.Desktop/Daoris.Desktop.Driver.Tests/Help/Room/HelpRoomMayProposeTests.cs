@@ -73,6 +73,10 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("an ask goes with every quest it became, or not at all", agents);
         // An agent: Update where the Agents screen offers it, a pin to one exact release.
         Assert.Contains("a pin names one exact release, like 2.1.300, never `latest`", agents);
+        // UX6e2: both are said where they are made now, the agent's page in the Agents place.
+        Assert.Contains("an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them", agents);
+        Assert.Contains("an account's own model and effort, as Agents → the agent's page → Model and\n  effort sets them", agents);
+        Assert.DoesNotContain("Settings → Agents", agents);
         // An account: the tool's own values, and `max` never an account's default.
         Assert.Contains("`max` is for one conversation, never an account's default", agents);
         // The doors table carries the terminal twins of the new kinds (D50).

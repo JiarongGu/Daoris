@@ -101,11 +101,13 @@ public sealed class SetupPressTests : IDisposable
     }
 
     [Fact]
-    public async Task A_repository_not_driven_here_is_refused_naming_the_driver_settings_and_the_command()
+    public async Task A_repository_not_driven_here_is_refused_naming_its_setup_and_the_command()
     {
         var plan = await PlanAsync(new World(), config: Driven.WithDrivable("reports", false));
 
-        Refused(plan, SetupRefusals.NotDriven, "Settings → Driver");
+        // HELPSETUP1: driving is the repository's own, on its Setup (UX6f); Settings → Driver never held it.
+        Refused(plan, SetupRefusals.NotDriven, "Repositories → the repository's page → Setup → Driving");
+        Assert.DoesNotContain("Settings → Driver", Find(plan, SetupRefusals.NotDriven).Sentence);
         Assert.Contains("`daoris driver drive reports`", Find(plan, SetupRefusals.NotDriven).Sentence);
     }
 
@@ -126,6 +128,8 @@ public sealed class SetupPressTests : IDisposable
         var plan = await PlanAsync(new World(), config: Driven.WithTrees("reports", false));
 
         Refused(plan, SetupRefusals.NoOwnTree, "`daoris driver trees reports on`");
+        // HELPSETUP1: a tree per session is on the repository's Setup (UX6f).
+        Assert.Contains("Repositories → the repository's page → Setup → Driving", Find(plan, SetupRefusals.NoOwnTree).Sentence);
     }
 
     [Fact]
@@ -320,7 +324,8 @@ public sealed class SetupPressTests : IDisposable
         Assert.Equal(0, code);
         Assert.Single(world.Published);
         Assert.Contains("Asked as `#a1b2c3`", output.ToString());
-        Assert.Contains("Settings → Permissions", output.ToString());
+        // HELPSETUP1: a repository's rules are on its Setup → Reach (UX6f).
+        Assert.Contains("taken back in Repositories → the repository's page → Setup → Reach, or `daoris agent rules remove", output.ToString());
     }
 
     [Theory]

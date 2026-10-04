@@ -24,6 +24,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     [Theory]
     [InlineData("update", "dsh", null, "offers no Update")]
     [InlineData("update", "codex-acp", null, "not installed")]
+    // UX6e2: an agent is installed on its page in the Agents place, its Ways in.
+    [InlineData("update", "codex-acp", null, "install it under Agents → the agent's page → Ways in → Install, or with `daoris agent install codex-acp`.")]
     [InlineData("update", "gpt-agent", null, "no agent `gpt-agent`")]
     [InlineData("pin", "dsh", "1.0.0", "no package or release channel")]
     [InlineData("pin", "claude-code", "latest", "never a pointer such as latest")]
