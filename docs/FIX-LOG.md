@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A test's one-minute window read the wall clock (2026-10-04)
+
+**Symptom.** Merging PLUGHOOK1a beside two other branches, `PullRequestStateTests.The_clean_up_removes_a_squash_merged_branch…`
+failed in the driver's real-process half and again alone: the plugin was asked 6 times where 5 were expected. It had
+passed on its own branch.
+
+**Root cause.** An answer a plugin gave within the last minute is reused (`PullRequestStates.Fresh`). The test plans
+the clean-up twice and expects the second plan to reuse the first's five answers, but its asks read the wall clock;
+under load the first plan took longer than a minute, so the second asked its first entry again. The same class of
+defect as the fixed-minute tests above, the other way round.
+
+**Fix.** The test hands `LandingPlugins` a clock held for the whole test, and the one case that dates a kept answer
+dates it from that clock.
+
+**Verification.** The class alone on the merge's tree, serial, with three branches building: 4/4 in 5 m 43 s.
+
 ## An install started by the dev loop answered bad requests with source paths (2026-10-04)
 
 **Symptom.** A malformed body posted to the install's host (`/api/asks`, an attachment that was not base64) came back

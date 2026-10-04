@@ -21,6 +21,12 @@ public sealed class PullRequestStateTests : LandedFixture
 
     private int _asked;
 
+    /// <summary>
+    /// The asks' clock, held for the whole test: an answer from the last minute is reused (PLUGHOOK1a), and on the wall
+    /// clock a first plan slower than a minute under load made the second plan ask again (merging integrate-ak, 2026-10-04).
+    /// </summary>
+    private readonly DateTimeOffset _now = DateTimeOffset.UtcNow;
+
     public PullRequestStateTests()
     {
         var folder = Path.Combine(Home, "plugins", Plugin);
@@ -37,7 +43,8 @@ public sealed class PullRequestStateTests : LandedFixture
         DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Tidy: tidy, Plugin: Plugin))
             .Save(Path.Combine(Home, "driver.json"));
 
-    private SessionTrees Trees() => new(Home, new LandingPlugins(Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this))));
+    private SessionTrees Trees() => new(Home, new LandingPlugins(
+        Home, start: (_, _, _) => Task.FromResult<IHookChannel>(new Platform(this)), clock: () => _now));
 
     private static PullRequestState Completed(string merge, string source, string target = "main") => new(PullRequestStates.Completed)
     {
@@ -197,7 +204,7 @@ public sealed class PullRequestStateTests : LandedFixture
         trees.Recorded.Answered(trees.Recorded.Landing("s1")!, new PullRequestState(PullRequestStates.Open)
         {
             Plugin = Plugin,
-            AskedAt = DateTimeOffset.UtcNow.AddHours(-1),
+            AskedAt = _now.AddHours(-1),
         });
         _answers[landed.Branch!] = () => throw PluginFailures.Mark(new DriverException("az: not signed in"), PluginEvents.Errored);
 

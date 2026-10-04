@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1158 CLI tests, 1124 service and 67 HTTP host, 4528 driver,
-703 desktop modules, 80 devkit, 3795 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1170 CLI tests, 1124 service and 67 HTTP host, 4626 driver,
+704 desktop modules, 80 devkit, 3798 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -147,12 +147,6 @@ running them again.
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
   flakes' common factor, so parallel workers need their own homes, not shared ones). Proof: three serial-equivalent
   runs green and the timing.
-- [ ] **CANON10 — the doctrine verifies in proportion** (canon, examples; owner: *"this also applies to Daoris's
-  doctrine itself"*). `autonomous-development` says done means gates green, and nothing on how often: a driven session
-  that re-runs every suite each round spends time and allowance and learns nothing. One bullet: the checks a change can
-  reach while working, the full set once at the boundary, a fixed failure re-run alone, the slowest check measured and
-  made faster rather than skipped. Project-agnostic. Proof: the canon's tests, `examples/` re-synced, the canon
-  changelog's entry.
 - [ ] **WEBFAST1 — the web's unit tests build jsdom once per worker** (web-shell). Vitest reports jsdom created 225
   times, 27% of its time; `pool: 'vmThreads'` keeps per-file isolation and creates it once. Proof: the suite green and
   its time before and after.
@@ -166,26 +160,58 @@ running them again.
 > *"also the current permissions in Settings are mostly about repositories, and we probably should have a repository
 > setup in the repository screen, since repository management (with git) is also planned"*
 
-- [ ] **UX6 — Daoris gets simpler as it grows** (design first; web-shell, web-settings, modules). A redesign that
-  holds many kinds of agent, not a tidy of today's screens: an agent is a product (Claude Code, Codex, those to come)
-  with its accounts listed once, and the ways Daoris runs it (its own door, the ACP door) are a property of it, never
-  a second roster; adding an agent adds a row, not a screen. **A setting lives on the thing it is about**: a
-  repository's (reading and writing across, its line, its landing rule, its language, whether it is driven) on that
-  repository's page beside its git (GIT1e's place), an agent's on the agent, a plugin's on the plugin with the tools it
-  needs (PLUGTOOL1); Settings keeps only what is the machine's or the person's. Today Permissions is 29 repositories
-  each repeating one control. Measured on the install, not the source: each screen's
-  concepts, controls and words counted; what the person must decide set apart from what Daoris can decide;
-  duplicates merged (Claude Code's accounts are listed twice today, once per door, in two states); what is rarely
-  changed folded behind its section; and one place that says what needs the person now (a sign-in, a go-ahead, a
-  review) before anything else. Found the day it was asked: a start sat behind a cooling account while two
-  signed-out accounts went unsaid (TOOL6g). Contract: D41 (platform-ux), D53, D55, D56, D57, D66, D67, the UX5 ledger.
-  Proof: the design and its decision; per-screen counts before and after; the look in both themes and languages.
-- [ ] **PLUGTOOL1 — a plugin brings the tools it needs** (design with UX6; driver, cli, examples, web-settings). Azure CLI
-  and GitHub CLI sit in Tools (D121) beside Git, Node.js and PowerShell, though only the Azure DevOps and GitHub
-  pull-request plugins use them. A plugin's manifest declares the tools it runs (name, version range, how to find or
-  fetch one); the plugin's page shows and manages them; Tools keeps what Daoris itself runs. An installed plugin whose
-  tool is missing says so on its page, and D121's managed download serves it. Contract: D64, D101, D120, D121. Proof:
-  the manifest's schema and the kit's check; a plugin page test; the two pull-request plugins declaring their CLI.
+- [ ] **UX6a — the counter, and the baseline on the install** (tools). One function counts a screen's concepts,
+  controls, words and height, over stories through Playwright and on the window through `desktop -- eval`, so every row
+  proves its counts the same way. Contract: design §9.1–§9.2. Proof: the counter's test over a fixed page; the parent
+  re-takes §9.3's *before* on the install in both languages.
+- [ ] **UX6b — a remembered choice ends with its item; the side bar follows only live work** (web-shell). Quests reopened
+  a done quest, Convergence a gone finding, Overview's side bar an ended session's note. A closed or gone item opens
+  nothing chosen; off Sessions, session views follow a running or waiting session, else Ask Daoris; a long note folds.
+  Contract: §1 rule 6, §2.5. Proof: `listPanes` and `RightDock` tests.
+- [ ] **UX6c — What needs you leads Overview and settles what it can** (web-shell). The band becomes the page's lead in
+  three groups, gains go-aheads, departures and work to review, and acts where one press is safe: *Publish to …*, *Try
+  again*, *Accept the departure*, with trust, go-aheads and widenings asking once. Contract: §6. Proof: `attention`
+  tests per kind, the stories, Overview's vitest.
+- [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; after TOOL6g; takes TOOL4m's row). A
+  start waiting on cooling or signed-out accounts, and a signed-out account a list holds, are rows with *Sign in* and
+  *Let … run …*, saying when each was read. No row starts a process. Contract: §6.2–§6.3. Proof: a tick asserting no
+  probe; vitest.
+- [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; after TOOL6g). A list
+  of agents and a page each: accounts in four states with when each was read, *Read again* one at a time on the press,
+  how accounts are used, workspaces, ways in, what it may do. Settings → Agents retires. Contract: §5, §2.4. Proof:
+  stories, vitest, the coverage test.
+- [ ] **UX6f — a repository's setup on its page** (web-shell, web-settings). The repository's page gains its Details and
+  Setup tabs; Setup holds driving, line, landing, session language, standing answer, reach and its rules, folded to what
+  Daoris decides. Settings' per-repository rows leave their four lists. Contract: §4.2, §3.1. Proof: `ProjectPage`
+  stories per section, vitest, the counts.
+- [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings). Repositories'
+  list groups by workspace and gains a filter past twelve; a workspace's page holds its defaults, remote, what a start runs
+  on and its rules; clean-up and bring up to date move to its Branches tab. Contract: §4.1, §4.3. Proof: stories,
+  vitest, `domains.test.ts`, the coverage test.
+- [ ] **UX6h — Git inside Repositories** (web-shell; GIT1e and GIT1f land here, after GIT1d). Branches and History tabs
+  carry D147's list and pages for a repository, and Branches a workspace's; a branch, commit, file or compare opens in the
+  main area with its way back. No Git place on the bar. Contract: §4.4, D147 §2–§4. Proof: GIT1e–f's stories and tests,
+  in place.
+- [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell). One place whose list head switches between
+  Search and Convergence, remembered, each mode keeping its list, main area and memory; every door into either opens its
+  mode. Contract: §2.2. Proof: `SearchView` and `ConvergenceView` suites through the place, the palette's go entries,
+  `test:web`'s search.
+- [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings). Refresh and the language toggle leave the
+  bar for the Daoris menu, the palette and Appearance; Settings keeps Get started, Appearance, AI features, Driver, Tools,
+  Browser and Machine log; *Setup* names the tabs. Contract: §2.1, §2.3, §2.4. Proof: `domains.test.ts`, the chrome test,
+  the names check.
+- [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver). `tools` in `plugin.json`, read by both twins
+  by one table: an id, a range, why, at most four checks run only on a press or at *Try*. A problem is shown, never a
+  refusal, and the kit checks it. Contract: §7.2–§7.3. Proof: the twins' test tables; `plugins try` on good and bad
+  manifests.
+- [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples). Azure DevOps pull request declares
+  Node.js, Git and Azure CLI, its extension and sign-in as checks; GitHub pull request Node.js, Git and GitHub CLI, its
+  sign-in as a check. Each floor is read from the flags it uses, and the README points at the manifest. Contract: §7.4.
+  Proof: `landing-plugins.test.ts`; the kit's `try`.
+- [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
+  driver; after PLUGUI1c). A Tools section shows each tool's way, version against its range and checks on *Check*;
+  Settings → Tools keeps Git, Node.js and PowerShell and what no plugin declares; `tool list` names each declarer.
+  Contract: §7.5. Proof: stories, vitest, the CLI's list test.
 - [ ] ⏸ **COWORK1 — agents that work together** (design; held until the owner shapes it). Today agents cooperate
   only through a quest (a request one way, a done back) and an ask's intake (one ask split into quests). What
   working together should add (seeing each other's progress on related work, asking mid-work, handing off, one
@@ -323,11 +349,6 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   result in its closing note; the adoption playbook the press hands says so. Contract: D124 §2 (the press), LAYOUT7,
   D144's gate evidence (later). Proof: a press test that the playbook names the step; the family rehearsal's set-up
   phase with a stub repository whose script reads a moved path.
-- [ ] **PLUGHOOK1a — a squash-merged pull request's branches go on its plugin's word** (driver, examples; after LAND3
-  reaches main). After a squash git sees no ancestor, so the branches stay. The query point `work/state`,
-  `pullRequestState` on the landing entry, the Azure DevOps plugin's answer, and LAND3's tidy and the clean-up asking
-  it. Contract: plugin hooks design §2.1–§2.6, §4, D148. Proof: `HookTests`, the kit's table, `LandedRecordTests`, git
-  fixtures per §2.3 code, a fake `az`.
 - [ ] **PLUGHOOK1b — the GitHub plugin answers `work/state`** (examples; after PLUGHOOK1a). The same query through
   `gh pr view` and `gh pr list --head`, so a GitHub repository's squash-merged branches go too. Contract: design §2.7,
   D148 point 7. Proof: `landing-plugins.test.ts` with a fake `gh`.
@@ -336,8 +357,10 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   to date asking after its fetch, where a merge commit first arrives. Contract: design §2.1, §2.5. Proof:
   `DriverCommandTests`, `HelpCoverageTests`, `GitBranchesReadTests`, the sync's git fixtures.
 - [ ] **PLUGHOOK1d — the page reads and asks it** (modules, web-shell, web-settings; after PLUGHOOK1c). The review's
-  note with *Ask again*, and the codes on the Session branches and sync rows, in both catalogues. Contract: design
-  §2.4–§2.5. Proof: module route tests, vitest and stories, catalogue parity, `names-check`, the look in both themes.
+  note with *Ask again*, and the codes on the Session branches and sync rows, in both catalogues; `Sweep.tsx` learns
+  the landed kind `pull-request` and the session kind `carried`, the kit's `plugin.kit.kind.query` gets its words, and
+  a plugin failing at `work/state` gets its cost line (found by PLUGHOOK1a). Contract: design §2.4–§2.5. Proof: module
+  route tests, vitest and stories, catalogue parity, `names-check`, the look in both themes.
 - [ ] **PLUGHOOK2 — a pull request's review threads back to its session** (held; driver, examples, web-shell; after
   LAND2c). Read at a press through `work/review`, and sent only as the person's words or a new ask. Trigger: the
   first change request carried over by hand. Contract: plugin hooks design §3.1.
@@ -679,22 +702,14 @@ the ACP door, not a registry**.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
-- [ ] **TOOL6g — a signed-out account is said, never waited behind a cooling one** (driver, modules, web-settings; found
-  on the install, 2026-10-04). All three `claude-code` accounts read signed out (`claude auth status`: `loggedIn: false`;
-  each `.credentials.json` left with no refresh token, account-1 and account-2 rewritten the evening before, Gmail the
-  minute the new build started), and the intake for two new asks sat behind `starts.waiting` on Gmail's cool-off until
-  10-06, saying nothing of the other two. A start whose ready accounts are signed out says so and names the sign-in
-  (`daoris agent login <harness> --profile <name>`, Settings → Agents); the account line and the page say *signed out*
-  beside *cooling*; Claude Code's accounts are one list, not one per door (owner: *"there should be just one account
-  management for Claude Code"*); and what signed three accounts out is found and stopped. Each was blanked about ten
-  seconds after the app started (account-1 and account-2 two seconds apart on 10-03 at 12:35Z, Gmail at 21:03Z), so
-  the first reading is two account probes at start running `claude auth status` on one profile at once, racing one
-  refresh token (unconfirmed). **Seen live the next morning**: while two quests were refused at every look, the app
-  started `claude auth status` three times in 45 s (a refused start re-runs the whole probe, the tool's own home
-  included, which is the person's default sign-in); pausing both asks stopped it, and in that window the developer's
-  own Claude Code sign-in expired. No probe per look, none of the own home but at the person's press. Contract: D125
-  §2–§5, D130. Proof: a fake `claude` reproducing the race and the fix
-  holding; a rotation case with signed-out and cooling accounts; the machine log's line; the look.
+- [ ] **TESTGIT1b — the last landing fixtures call the shared git runner** (driver tests). `LandingPluginTests` and
+  `LandingTidyTests` still read git's stdout before its stderr; `LandedFixture` (fixed by PLUGHOOK1a), `LandingTests`
+  and `AutoLandingTests` keep their own both-streams copies. Move them onto `GitFixture`. Proof: the classes' serial
+  Process run; no `FileName = "git"` left in them.
+- [ ] **TOOL6h — an account that signs out after its last probe** (driver; found by TOOL6g). One that read signed in
+  stays ready until a start on it fails or the person presses refresh; read a session's refusal on it as a reason to
+  ask that one account once. Contract: D125's TOOL6g note. Proof: a tick where a start is refused on an account last
+  read signed in.
 - [ ] **TOOL4l — Ask Daoris's account doors, the service's half** (service, driver; found by TOOL4g). `agent_propose`
   writes `use` (with `use`, `keep`, `early`, `near`), `order` and `ready`, and the setting writer lists `cooloff`, so the
   cards the screen's controls owe can be offered. Contract: D125 §6, D130 §9, §16.6. Proof: the proposal-kind tests with
@@ -895,11 +910,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   EPERM removing a fixture folder a child still held, and passed alone (41/41) and in the next full verify.
   **And merging REVIEW3, REVIEW4 and MSG1g** (2026-10-04): the modules' `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
   again, caught by the merge tool as a FLAKE, with one branch building beside it.
-- [ ] **TESTGIT1 — every test's git helper reads both streams at once** (driver tests; found merging REVIEW3). A helper
-  that reads stdout to its end before stderr hangs once git writes more to stderr than the pipe holds, and it hung the
-  merge's real-process half for 1 h 33 m (FIX-LOG 2026-10-04). About eighteen helpers keep that read; one shared
-  `GitFixture.RunAsync` that starts both reads replaces them. Proof: a test that runs `add -A` over two hundred files
-  where line endings convert, and the helpers gone from the classes.
+  **And merging TOOL6g, TESTGIT1 and PLUGHOOK1a** (2026-10-04): the modules' `HarnessProfileTests.Signing_in_to_another_account_keeps_it_and_the_end_names_who`
+  failed in the full run and passed alone, with three branches building. It signs in through the path TOOL6g's
+  probe lock now guards; a second sighting reads that lock first.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.
