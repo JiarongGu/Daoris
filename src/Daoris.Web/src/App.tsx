@@ -21,7 +21,7 @@ import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutTogg
 import { frameShortcut } from './shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
-import { askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening } from './opener';
+import { askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening, workspaceItem } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts, useToasts,
@@ -32,8 +32,10 @@ import { MapView } from './MapView';
 import { useSearchView } from './SearchView';
 import { useQuestsView } from './QuestsView';
 import { useProjectsView } from './ProjectsView';
-import { type ProjectTab, readProjectTab, storeProjectTab } from './projects/tabs';
-import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
+import {
+  type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
+} from './projects/tabs';
+import { SETTINGS_SECTIONS, type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
@@ -124,7 +126,10 @@ export function App() {
   // What each view's list remembers (D118 §3f): its closing, its width, its chosen item, its filters.
   const lists = useListPanes();
   const attending = lists.pane('sessions').chosen;
-  const settingsSection = (lists.pane('settings').chosen as SettingsSection | null) ?? 'appearance';
+  // A domain remembered from before it left Settings (Agents, UX6e; Workspace and Permissions, UX6g) reads as Appearance,
+  // which Settings opens on, so Ask Daoris is told the domain shown.
+  const rememberedSection = lists.pane('settings').chosen;
+  const settingsSection: SettingsSection = SETTINGS_SECTIONS.find((id) => id === rememberedSection) ?? 'appearance';
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   // And the part of an agent's page a door named (UX6e, D150 §2.4): its accounts, what it may do, its usage.
@@ -143,6 +148,14 @@ export function App() {
     setProjectTab(next);
     storeProjectTab(next);
   }, []);
+  // A workspace's page's tab (UX6g, D150 §4.3), remembered apart, and the Setup section a door asked for: a door into a
+  // workspace's remote or its defaults names both, so they are held here too.
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(readWorkspaceTab);
+  const chooseWorkspaceTab = useCallback((next: WorkspaceTab) => {
+    setWorkspaceTab(next);
+    storeWorkspaceTab(next);
+  }, []);
+  const [workspaceSection, setWorkspaceSection] = useState<WorkspaceSection | null>(null);
   // The repository whose code map a door opened the Map on (MAP3a; FRAME1e): a repository's page names it. The Map
   // goes one level in on it, and back to the workspace from there by its own door.
   const [mapCode, setMapCode] = useState<string | null>(null);
@@ -422,6 +435,8 @@ export function App() {
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
     if (plan.tab) chooseProjectTab(plan.tab);
+    if (plan.workspaceTab) chooseWorkspaceTab(plan.workspaceTab);
+    setWorkspaceSection(plan.workspaceSection ?? null);
     // A door naming a code map opens the Map on it; any other way onto the Map opens the workspace, as it always has.
     if (plan.code !== undefined) setMapCode(plan.code);
     else if (plan.view !== view) setMapCode(null);
@@ -430,7 +445,8 @@ export function App() {
     setTab(plan.view);
     store(VIEW, plan.view === 'sessions' ? 'sessions' : null);
   };
-  const open = (target: View, item?: string | null, part?: OpenPart) => apply(plannedOpening(target, item, part));
+  // A door naming a workspace's page and no workspace opens the one in view (UX6g).
+  const open = (target: View, item?: string | null, part?: OpenPart) => apply(plannedOpening(target, item, part, circle));
 
   /** A domain chosen in Settings' own list opens at its top: an anchor its part never answered is dropped. */
   const chooseSettings = (section: SettingsSection) => {
@@ -472,6 +488,8 @@ export function App() {
       case 'view': open(action.view); return;
       case 'agents': open('agents', action.agent ?? null, action.part ? { agentPart: action.part } : undefined); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
+      // *This workspace's setup* (D150 §2.4): the workspace in view's page, at the tab the item names (UX6g).
+      case 'workspace': open('projects', null, { workspaceTab: action.tab }); return;
       case 'add': open('projects', null, { drawer: 'add' }); return;
       // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
       // and names the workspace, and the service's sentence says what it registered.
@@ -537,7 +555,7 @@ export function App() {
   const openAsk = (id: string) => open('quests', askItem(id));
   // Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): a view and the item
   // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Repositories.
-  const go = (door: StarterDoor) => apply(doorOpening(door));
+  const go = (door: StarterDoor) => apply(doorOpening(door, circle));
 
   // The Quests view (FRAME1d, D118 §2): held on every view, as Plugins is, so what its composers hold lasts while
   // Daoris is open; its list and its main area read the list's memory, which every door into it names (§3i).
@@ -563,8 +581,15 @@ export function App() {
     onChoose: (item) => lists.choose('projects', item),
     tab: projectTab,
     onTab: chooseProjectTab,
+    workspaceTab,
+    onWorkspaceTab: chooseWorkspaceTab,
+    workspaceSection,
     notify,
     onOpenCode: (repository) => open('map', null, { code: repository }),
+    // A workspace's Details names each agent's accounts there, set on the agent's page (UX6e).
+    onOpenAgent: (agent) => open('agents', agent),
+    onSyncNow,
+    syncing: syncNow.isPending,
     addRequested,
     onAddOpened: () => setAddRequested(false),
     importRequested,
@@ -962,8 +987,8 @@ export function App() {
               // offered a button that could not run it.
               onSyncNow={attached ? () => onSyncNow(circle) : undefined}
               onOpenQuest={openQuest}
-              // Named for the part (NAME1b, UX5 U72), so it opens at Wiring, as *Wire to a remote…* does.
-              onRemotes={attached ? () => openSettings('workspace', 'wiring') : undefined}
+              // Named for the part (NAME1b, UX5 U72): the workspace's page at its remote, where it is wired (UX6g).
+              onRemotes={attached ? () => open('projects', workspaceItem(circle), { workspaceSection: 'remote' }) : undefined}
             />
           )
           : undefined}
@@ -976,7 +1001,8 @@ export function App() {
            machine settings at all, and `driver === 'absent'` is exactly that case — the bar drops
            the target itself rather than making every caller remember to. */
         onDriver={() => openSettings('driver')}
-        onRemote={() => openSettings('workspace')}
+        // Where the workspace in view syncs is its page's (UX6g): at its remote on a shell, its Details in a browser.
+        onRemote={() => open('projects', null, attached ? { workspaceSection: 'remote' } : { workspaceTab: 'details' })}
         onSessions={attached ? () => open('sessions') : undefined}
         onIndex={() => open('projects')}
         // Settings holds Daoris's own AI (AGT6) in a browser too, so the tier leads there everywhere.

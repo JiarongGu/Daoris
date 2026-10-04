@@ -12,6 +12,7 @@
   "contextMenu.act.copyPlugin": "Copy plugin ID",
   "contextMenu.act.copyAgent": "Copy agent ID",
   "contextMenu.act.copyRepository": "Copy repository name",
+  "contextMenu.act.copyWorkspace": "Copy workspace name",
   "contextMenu.act.copyPath": "Copy path",
   "contextMenu.copied": "Copied {{what}}."
 }

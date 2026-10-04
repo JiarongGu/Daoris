@@ -8,10 +8,8 @@ import { AppearanceDomain } from './AppearanceDomain';
 import { BrowserDomain } from './BrowserDomain';
 import { DriverDomain } from './DriverDomain';
 import { LogsDomain } from './LogsDomain';
-import { PermissionsDomain } from './PermissionsDomain';
 import { PluginsDomain } from './PluginsDomain';
 import { ToolsDomain } from './ToolsDomain';
-import { WorkspaceDomain } from './WorkspaceDomain';
 
 /**
  * What the frame hands every domain; each takes the part it uses. `attached` is the frame's one answer
@@ -49,14 +47,15 @@ export const SETTINGS_DOMAINS = [
   { id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain },
   { id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain },
   { id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain },
-  // Its list of workspaces is for everyone; its wiring is the machine's, and only a shell sees that.
-  { id: 'workspace', label: 'settings.domain.workspace', machine: false, component: WorkspaceDomain },
+  // Workspace left for a workspace's page and each repository's (UX6g, D150 §3.1): its list is Repositories' list, its
+  // wiring, defaults and clean-up the workspace's page, its rows per repository the repository's Setup.
   { id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain },
   // Agents left for a place of its own (UX6e, D150 §5): an agent is a product with accounts, and its page holds them.
   // The programs Daoris runs beside its agents (TOOLS7, D121 §4.1): each a file of this machine's, so a browser is
   // offered no such domain.
   { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
-  { id: 'permissions', label: 'settings.domain.permissions', machine: true, component: PermissionsDomain },
+  // Permissions left as Workspace did (UX6g): reading across and a workspace's rules are its page's, a repository's its
+  // Setup's, and the rules for every session and the proposals the agent's page's (UX6e).
   { id: 'plugins', label: 'settings.domain.plugins', machine: true, component: PluginsDomain },
   { id: 'browser', label: 'settings.domain.browser', machine: true, component: BrowserDomain },
   // The machine log (LOG1c, D94): the machine's alone, so a browser is offered no such domain.

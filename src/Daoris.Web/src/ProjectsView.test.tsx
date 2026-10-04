@@ -26,8 +26,10 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { code } from './test/code';
-import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, show } from './test/shellHarness';
-import { chooseRepository, openSetup, ProjectsView, repositoryList, repositoryMain, repositoryRow } from './test/projectsView';
+import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, serviceCalls, show, WIRING } from './test/shellHarness';
+import {
+  chooseRepository, chooseWorkspace, openSetup, ProjectsView, repositoryList, repositoryMain, repositoryRow,
+} from './test/projectsView';
 
 const CHOSEN = 'daoris.list.projects.chosen';
 const TAB = 'daoris.list.projects.tab';
@@ -90,9 +92,11 @@ describe('the shell-attached platform', () => {
     }));
     show(<ProjectsView notify={() => {}} />);
 
-    const adopted = await within(repositoryList()).findByRole('heading', { name: 'Adopted (1)' });
+    // A group per workspace (UX6g, D150 §4.1): a row that names none is in `default`, its head first, then its adopted.
+    const head = await within(repositoryList()).findByRole('heading', { level: 3, name: 'default 2 repositories' });
     const outside = within(repositoryList()).getByRole('heading', { name: 'Registered, not adopted (1)' });
-    expect(adopted.compareDocumentPosition(outside)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(head.compareDocumentPosition(await repositoryRow('engine'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect((await repositoryRow('engine')).compareDocumentPosition(outside)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     // A row says the repository and its one line: its summary, content shown as it is.
     expect(within(await repositoryRow('engine')).getByText('the engine')).toBeInTheDocument();
     // With nothing chosen, the main area says how to choose and offers the ＋.
@@ -372,6 +376,299 @@ describe("a repository's Setup on its page (UX6f)", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', {
       payload: { action: 'remove', rule: 'Bash(npm run test:*)', scope: 'repository', name: 'engine' },
     });
+  });
+});
+
+/**
+ * UX6g (D150 §4.1, §4.3, §3.1): a workspace's page, where Settings → Workspace and Permissions went. Its row heads its group
+ * in the list; its page holds Details (its repositories, what a start runs on, its accounts), Branches (the clean-up and
+ * bringing up to date) and Setup (its defaults, its remote, its rules), each set over the same file its terminal twin
+ * edits. The wiring rides DAORIS.REMOTES and never the service. Moved here from the retired domains' suites.
+ */
+describe("a workspace's page (UX6g)", () => {
+  const REGISTRY_TWO = [
+    { repository: 'engine', adopted: true, registered: true, summary: 'the engine', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
+    { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1, workspace: 'aurora' },
+    { repository: 'tools', adopted: false, registered: true, owns: [], accepts: [], packs: [], entries: 0, workspace: 'forge' },
+  ];
+  const STATE = {
+    ...DRIVER_STATE, drivable: ['engine'], workspaceLines: [], workspaceLandings: [], workspaceLanguages: [], workspaceReadAcross: [],
+    languageTable: [{ code: 'en', name: 'English' }, { code: 'zh', name: 'Simplified Chinese (简体中文)' }],
+  };
+  const ROSTER = {
+    settingsPath: 'C:/somewhere/.daoris/harnesses.json',
+    adapter: 'claude-code',
+    harnesses: [{
+      harness: 'claude-code', product: 'Claude Code', maker: 'Anthropic', present: true, version: 'claude 9.9.9', problem: null,
+      machineDefault: 'personal', pinned: null, managed: null, pinnable: true, ownLogin: 'in',
+      profiles: [{ name: 'personal', home: 'C:/somewhere/.daoris/harnesses/claude-code/personal', login: 'in' }],
+    }],
+  };
+  const STARTS = {
+    adapter: 'claude-code',
+    starts: [
+      {
+        job: 'work', workspace: 'aurora', adapter: 'claude-code', owner: 'claude-code', product: 'Claude Code',
+        profile: 'personal', profileFrom: 'machine', version: 'claude 9.9.9', versionFrom: 'unset', commanded: false, refusal: null,
+      },
+      {
+        job: 'intake', workspace: 'aurora', adapter: 'claude-code', owner: 'claude-code', product: 'Claude Code',
+        profile: 'personal', profileFrom: 'machine', version: 'claude 9.9.9', versionFrom: 'unset', commanded: false, refusal: null,
+      },
+    ],
+  };
+  const SWEEP = {
+    branches: [
+      { repository: 'engine', workspace: 'aurora', branch: 'daoris/s-one', hasTree: false, kind: 'empty', commits: 0, removable: true },
+      { repository: 'tools', workspace: 'forge', branch: 'daoris/s-two', hasTree: false, kind: 'empty', commits: 0, removable: true },
+    ],
+    landed: [],
+  };
+  const RULES = {
+    path: 'C:/somewhere/data/permissions.json',
+    defaults: [],
+    scopes: [{ scope: 'workspace', name: 'aurora', allow: ['Bash(make:*)'], ask: [], deny: [] }],
+  };
+  const ACROSS = { repositories: [{ repository: 'engine', workspace: 'aurora', checkout: true, read: true, source: 'default', writesTo: [] }] };
+  const WIRED = 'workspace:aurora';
+  const WORKSPACE_TAB = 'daoris.list.projects.workspaceTab';
+
+  /** The machine, answered over the bridge; `over` names a type's answer of its own. */
+  const machine = (over: Record<string, unknown> = {}) => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/registry') ? Response.json(REGISTRY_TWO) : respond(url);
+    }));
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (type in over) {
+        const answer = over[type];
+        if (answer instanceof Error) throw answer;
+        return answer;
+      }
+      if (module === 'DAORIS.REMOTES') return WIRING;
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'STARTS') return STARTS;
+      if (type === 'ACCOUNTS') return { agents: [] };
+      if (type === 'SWEEP_PLAN') return SWEEP;
+      if (type === 'TREES_SYNC_SCOPE') return { repositories: [{ repository: 'engine', workspace: 'aurora', holds: true }] };
+      if (type === 'RULES' || type === 'RULE_ACTION') return RULES;
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'PLUGINS') return { folder: 'C:/somewhere/data/plugins', plugins: [] };
+      if (type === 'LINES') return { lines: [], landings: [], languages: [] };
+      return STATE;
+    });
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  /** §4.1: a group per workspace, its head a door to the workspace's page, remembered as the list's chosen item. */
+  it("groups the list by workspace, and opens a workspace's page from its head, remembered", async () => {
+    machine();
+    show(<ProjectsView notify={() => {}} />);
+
+    const page = await chooseWorkspace('aurora');
+    expect(within(page).getByText('2 repositories · syncs with aurora.example.com')).toBeInTheDocument();
+    expect(window.localStorage.getItem(CHOSEN)).toBe(WIRED);
+    expect(within(page).getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+
+    cleanup();
+    show(<ProjectsView notify={() => {}} />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
+  });
+
+  /** MAP1b, moved here from Settings → Workspace: the driver's answer for this workspace's starts, its intake's among them. */
+  it('says on Details what a start in it runs on, its intake included, asking the driver for this workspace alone', async () => {
+    machine();
+    const onOpenAgent = vi.fn();
+    show(<ProjectsView notify={() => {}} onOpenAgent={onOpenAgent} />);
+    const page = await chooseWorkspace('aurora');
+
+    const row = await within(page).findByRole('listitem', { name: 'a start in aurora' });
+    expect(within(row).getByText('personal')).toBeInTheDocument();
+    expect(within(row).getByText("this machine's default")).toBeInTheDocument();
+    expect(within(page).getByRole('listitem', { name: 'an intake in aurora' })).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STARTS', { payload: { workspaces: ['aurora'] } });
+
+    // Its repositories are doors, and its accounts' agent opens its page, where they are set (UX6e).
+    expect(within(page).getByRole('listitem', { name: 'Claude Code' })).toHaveTextContent("this machine's: personal");
+    await userEvent.click(within(page).getByRole('button', { name: 'Open Claude Code' }));
+    expect(onOpenAgent).toHaveBeenCalledWith('claude-code');
+    await userEvent.click(within(page).getByRole('button', { name: 'Open game' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'game' })).toBeInTheDocument();
+  });
+
+  /** WSR2, WSR1, LANG1c, READ1: a workspace's defaults, each the screen's half of `daoris driver <verb> --workspace`. */
+  it('sets its defaults on Setup, each on DAORIS.DRIVER, and says what changed', async () => {
+    machine();
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Setup' }));
+    expect(window.localStorage.getItem(WORKSPACE_TAB)).toBe('setup');
+    const head = await within(repositoryMain()).findByRole('button', { name: 'Defaults' });
+    await userEvent.click(head);
+    const defaults = within(repositoryMain()).getByRole('region', { name: 'Defaults' });
+
+    await userEvent.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[0]!);
+    await userEvent.type(within(defaults).getByRole('textbox', { name: 'The line for aurora' }), 'develop{Enter}');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LINE', { payload: { workspace: 'aurora', branch: 'develop' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('In aurora, work grows from `develop`')));
+
+    // The bridge answers no line set, so the field stays open; *Never mind* closes it, and the rows keep their order.
+    await userEvent.click(within(defaults).getByRole('button', { name: 'Never mind' }));
+    const user = userEvent.setup();
+    await vi.waitFor(() => expect(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[2]).toBeEnabled());
+    await user.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' })[2]!);
+    within(defaults).getByRole('combobox', { name: 'The session language for aurora' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('option', { name: 'Simplified Chinese (简体中文)' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANGUAGE', { payload: { workspace: 'aurora', language: 'zh' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Sessions in aurora write to you in Simplified Chinese (简体中文) now. A session already running keeps what it was handed.'));
+
+    await vi.waitFor(() => expect(within(defaults).getAllByRole('button', { name: 'Set for this workspace' }).at(-1)).toBeEnabled());
+    await user.click(within(defaults).getAllByRole('button', { name: 'Set for this workspace' }).at(-1)!);
+    await user.click(within(defaults).getByRole('radio', { name: 'Off' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { workspace: 'aurora', read: false } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'aurora: its checkout is read by no agent outside it. A session already running keeps what it began with.'));
+  });
+
+  /**
+   * The machine's wiring (D48 §5, D50): which deployment serves the workspace here. Shell-only and more strictly than the
+   * rest: the service has no route onto it, so every call lands on the bridge and none on the API, and a key goes in and
+   * comes back only as its audit prefix.
+   */
+  it('reads and unwires the remote over the bridge and never the service, showing only the key\'s audit prefix', async () => {
+    machine();
+    const notify = vi.fn();
+    const { container } = show(<ProjectsView notify={notify} door={WIRED} section="remote" />);
+
+    const remote = await screen.findByRole('region', { name: 'Remote and reach' });
+    expect(await within(remote).findByText('https://aurora.example.com')).toBeInTheDocument();
+    expect(within(remote).getByText('dk_abcd1234…')).toBeInTheDocument();
+    expect(container.textContent).not.toContain('dk_abcd1234wxyz');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'STATE', {});
+
+    await userEvent.click(within(remote).getByRole('button', { name: 'Unwire' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'REMOVE', { payload: { workspace: 'aurora' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing at the deployment changed')));
+    // Only what every browser is given goes over the service: the registry and the index's counts the list reads.
+    expect(serviceCalls().filter((url) => !url.startsWith('/api/repositories'))).toEqual([]);
+  });
+
+  it('wires a workspace from its header, and lets the key go once it has landed', async () => {
+    machine({ SET: { ...WIRING, remotes: [...WIRING.remotes, { workspace: 'forge', url: 'https://forge.example.com', key: 'dk_forg…' }] } });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    const page = await chooseWorkspace('forge');
+
+    await userEvent.click(await within(page).findByRole('button', { name: 'Wire to a remote…' }));
+    const remote = within(repositoryMain()).getByRole('region', { name: 'Remote and reach' });
+    await userEvent.type(within(remote).getByLabelText('Deployment'), 'https://forge.example.com');
+    await userEvent.type(within(remote).getByLabelText('Key'), 'dk_forgekey0000');
+    await userEvent.click(within(remote).getByRole('button', { name: 'Wire' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'SET', {
+      payload: { workspace: 'forge', url: 'https://forge.example.com', key: 'dk_forgekey0000' },
+    });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('forge is wired on this machine.'));
+    expect(within(repositoryMain()).queryByLabelText('Key')).toBeNull();
+  });
+
+  /** PERM1 (D72): Claude Code's rules for the workspace, where Settings → Permissions listed them (UX6g). */
+  it("removes one of Claude Code's rules for the workspace, as the terminal's action", async () => {
+    machine();
+    show(<ProjectsView notify={() => {}} door={WIRED} section="remote" />);
+
+    const remote = await screen.findByRole('region', { name: 'Remote and reach' });
+    await userEvent.click(await within(remote).findByRole('button', { name: 'remove Bash(make:*)' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', {
+      payload: { action: 'remove', rule: 'Bash(make:*)', scope: 'workspace', name: 'aurora' },
+    });
+  });
+
+  /**
+   * WSR3, WSR6 (D88, D112): the clean-up and bringing up to date, moved here from Settings → Workspace. The clean-up lists
+   * this workspace's session branches alone, and its press removes only what it listed; a look reaches the network as
+   * the person, so it is asked by its own press, never on opening the tab.
+   */
+  it('cleans up only this workspace\'s branches on Branches, and looks for updates only when asked', async () => {
+    machine({ SWEEP: { results: [], landed: [], removed: 1 } });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const branches = within(repositoryMain());
+    expect(await branches.findByText('daoris/s-one')).toBeInTheDocument();
+    expect(branches.queryByText('daoris/s-two')).toBeNull();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.anything());
+    expect(await branches.findByRole('button', { name: 'Look for updates' })).toBeInTheDocument();
+
+    await userEvent.click(branches.getByRole('button', { name: /^Clean up/ }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SWEEP', { payload: { only: ['engine:daoris/s-one'] } });
+  });
+
+  /**
+   * WSR6, WSR7: a look takes what the driver takes, every repository holding Daoris's branches here; this workspace's page
+   * lists and brings up to date its own rows alone, each waiting as long as the host may work.
+   */
+  it("brings up to date only this workspace's rows of what the look listed", async () => {
+    const plan = {
+      lines: [
+        { repository: 'engine', workspace: 'aurora', line: 'main', kind: 'fast-forward', commits: 1, moves: true },
+        { repository: 'tools', workspace: 'forge', line: 'main', kind: 'fast-forward', commits: 2, moves: true },
+      ],
+      rebases: [{ repository: 'engine', workspace: 'aurora', branch: 'daoris/s-step', landed: false, kind: 'replay', onto: 'main', commits: 1, replays: true }],
+      deletes: [],
+    };
+    machine({ TREES_SYNC_PLAN: plan, TREES_SYNC: { lines: [], rebases: [], deletes: [], changed: 2 } });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Look for updates' }));
+    const updates = within(await screen.findByRole('region', { name: 'Updates' }));
+    expect(await updates.findByRole('group', { name: 'engine' })).toBeInTheDocument();
+    expect(updates.queryByRole('group', { name: 'tools' })).toBeNull();
+    await userEvent.click(updates.getByRole('button', { name: 'Bring up to date (2)' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', expect.objectContaining({
+      payload: { only: ['engine:main', 'engine:daoris/s-step'] },
+    }));
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('2 of 2 done. What did not happen is still listed, with why.'));
+  });
+
+  /** WSR7: a look the page stopped waiting for is said in the section, where it was asked, not only in a toast. */
+  it('says on Branches that it stopped waiting for a look', async () => {
+    machine({ TREES_SYNC_PLAN: Object.assign(new Error('DAORIS.DRIVER.TREES_SYNC_PLAN timed out'), { code: 'TIMEOUT' }) });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    await userEvent.click(await within(repositoryMain()).findByRole('button', { name: 'Look for updates' }));
+    const updates = within(screen.getByRole('region', { name: 'Updates' }));
+    expect((await updates.findByRole('alert')).textContent).toMatch(/stopped waiting before the look answered/);
+    expect(notify).not.toHaveBeenCalledWith(expect.stringMatching(/did not answer in time/), 'error');
+  });
+
+  /** §3b, UX6b: a workspace no repository here is in now says so, and a remembered one opens nothing chosen. */
+  it('says a workspace chosen now has gone, and opens with nothing chosen on a remembered one that went', async () => {
+    machine();
+    show(<ProjectsView notify={() => {}} door="workspace:retired" />);
+    expect(await within(repositoryMain()).findByText('This workspace is no longer here')).toBeInTheDocument();
+
+    cleanup();
+    window.localStorage.setItem(CHOSEN, 'workspace:retired');
+    show(<ProjectsView notify={() => {}} />);
+    await vi.waitFor(() => expect(repositoryMain()).toHaveTextContent('Choose a repository'));
+    expect(window.localStorage.getItem(CHOSEN)).toBeNull();
   });
 });
 

@@ -24,7 +24,7 @@
   "setup.door.add": "Add repository…",
   "setup.door.import": "Import a folder…",
   "setup.door.projects": "Open Repositories",
-  "setup.door.workspace": "Open Workspace",
+  "setup.door.workspace": "Open the workspace's setup",
   "setup.door.agentRules": "Open what agents may do",
   "setup.copy": "copy {{command}}",
   "setup.copied": "copied",

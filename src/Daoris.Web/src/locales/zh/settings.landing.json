@@ -1,12 +1,10 @@
 {
-  "settings.landing.title": "落地方式",
   "settings.landing.body": "采纳一个会话的工作时会发生什么。合并：把它并入仓库的主线，在仓库自己的检出中进行。分支：从会话的分支出发，把它放到按模式命名的新分支上，由你推送并发起拉取请求——若规则指定了本机安装的插件，则由该插件推送并发起。Daoris 自己从不推送。模式可以使用 `{quest}`、`{session}`、`{slug}`（标题中的词）和 `{repository}`。",
   "settings.landing.byPlugin": "随后由插件 `{{plugin}}` 推送并发起拉取请求。",
   "settings.landing.plugin": "{{name}} 的分支由谁推送",
   "settings.landing.pluginNone": "由你推送",
   "settings.landing.pluginNamed": "插件 {{plugin}}",
   "settings.landing.savedBranchPlugin": "{{name}} 中采纳的工作现在会放到分支 `{{pattern}}` 上，并由插件 `{{plugin}}` 推送并发起拉取请求。",
-  "settings.landing.workspaceHint": "该工作区中未自行设置规则的仓库所用的规则。",
   "settings.landing.field": "{{name}} 的工作如何落地",
   "settings.landing.pattern": "{{name}} 的分支模式",
   "settings.landing.form.merge": "合并",

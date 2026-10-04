@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Card, Chip, Prose, SectionTitle, SettingRow } from '../ui';
-import { OnItsPage } from './OnItsPage';
+import { Button } from '../ui';
 
 /** Where a repository's line came from (WSR2): set for it, set for its workspace, the checkout's guess, or nothing. */
 export type LineSource = 'repository' | 'workspace' | 'checkout' | 'none';
@@ -12,68 +11,6 @@ export type RepositoryLine = { repository: string; workspace: string; branch?: s
 
 /** A change to a line: a repository's or a workspace's, cleared when it names no branch. */
 export type LineChange = { repository?: string; workspace?: string; branch?: string };
-
-/**
- * The default line each workspace gives the repositories in it that set none of their own (WSR2), and where a
- * repository's own is set: its page, under Setup (UX6f).
- *
- * @remarks
- * A line a person sets: it was only ever git's own
- * guess, so a repository whose work lands on `develop` had sessions grown from, and merged into,
- * `main`. **What each row shows is the driver's own resolution**, read rather than recomputed — so
- * the page cannot name a line a session would not take. A row's control is the screen's half of
- * `daoris driver line --workspace` (D50). A name git would refuse comes back as the driver's own sentence.
- *
- * **A repository's own line has one home, its Setup** (UX6f, D150 §1, §3.1): its row left this list, which keeps a line
- * naming the repositories that set their own, each a door to its Setup, until UX6g moves the workspace's default too.
- */
-export function LineList({ lines, workspaceLines, busy, onSet, onOpen }: {
-  lines: RepositoryLine[];
-  /** What each workspace sets, by name. A workspace with no repository here still shows its own. */
-  workspaceLines: { workspace: string; branch: string }[];
-  busy?: boolean;
-  onSet: (change: LineChange) => void;
-  /** Open a repository's page at Setup, or with null Repositories at Setup. */
-  onOpen?: (repository: string | null) => void;
-}) {
-  const { t } = useTranslation();
-  const circles = [...new Set([...lines.map((line) => line.workspace), ...workspaceLines.map((w) => w.workspace)])]
-    .sort((a, b) => a.localeCompare(b));
-
-  return (
-    <Card id="settings-lines" className="mt-3.5 scroll-mt-3">
-      <SectionTitle>{t('settings.lines.title')}</SectionTitle>
-      <Prose className="mt-1 text-small text-ink-soft">{t('settings.lines.body')}</Prose>
-
-      {circles.length === 0 && <Prose className="mt-3">{t('settings.lines.none')}</Prose>}
-
-      {circles.map((workspace) => {
-        const shared = workspaceLines.find((w) => w.workspace === workspace)?.branch;
-        return (
-          <section key={workspace} aria-label={workspace} className="mt-3 border-t border-line pt-3">
-            <SettingRow
-              label={<Chip accent>{workspace}</Chip>}
-              hint={t('settings.lines.workspaceHint')}
-              control={(
-                <LineField
-                  label={t('settings.lines.workspaceField', { workspace })}
-                  set={shared}
-                  placeholder={t('settings.lines.eachCheckout')}
-                  busy={busy}
-                  onSave={(branch) => onSet({ workspace, branch })}
-                />
-              )}
-            />
-            <OnItsPage
-              own={lines.filter((line) => line.workspace === workspace && line.source === 'repository').map((line) => line.repository)}
-              onOpen={onOpen}
-            />
-          </section>
-        );
-      })}
-    </Card>
-  );
-}
 
 /**
  * One line's field: what is set, with what would stand without it as the placeholder, and a clear

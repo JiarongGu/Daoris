@@ -432,18 +432,41 @@ describe('the views, in a browser', () => {
     expect(screen.queryByRole('button', { name: /show or hide the panel/ })).toBeNull();
   });
 
-  /** FRAME1e (D118 §4): Repositories is a browser's list too, and it makes nothing there, since adding is a shell's. */
+  /**
+   * FRAME1e (D118 §4): Repositories is a browser's list too, and it makes nothing there, since adding is a shell's. Its
+   * groups are the workspaces (UX6g, D150 §4.1), each headed by its row.
+   */
   it("keeps Repositories' list and its main area, and offers a browser nothing to add or import", async () => {
     shell();
     await userEvent.click(within(await screen.findByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Repositories' }));
 
     const list = await screen.findByRole('complementary', { name: 'Repositories' });
-    expect(await within(list).findByRole('heading', { name: 'Adopted (2)' })).toBeInTheDocument();
+    expect((await within(list).findAllByRole('heading', { level: 3 })).map((heading) => heading.textContent))
+      .toEqual(['aurora 1 repository', 'default 1 repository']);
     expect(screen.getByRole('button', { name: 'show or hide the repository list (Ctrl+B)' })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByText('Choose a repository')).toBeInTheDocument();
     // Adding and importing touch machine paths (D48 §7): the list's ＋ and its ⋯ are absent, never disabled.
     expect(within(list).queryByRole('button', { name: 'Add repository' })).toBeNull();
     expect(within(list).queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
+  /**
+   * UX6g (D150 §4.3, D47 §4): a browser is given a workspace's page with what it may know, its repositories and whether it
+   * syncs, read from this machine's own host; no tab, since branches, setup and accounts are this machine's.
+   */
+  it("gives a browser a workspace's page read-only: its repositories, and no tab, branch or setting", async () => {
+    shell();
+    await userEvent.click(within(await screen.findByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Repositories' }));
+    const list = await screen.findByRole('complementary', { name: 'Repositories' });
+    await userEvent.click(await within(list).findByRole('button', { name: 'aurora 1 repository' }));
+
+    const page = screen.getByRole('main');
+    expect(await within(page).findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
+    expect(await within(page).findByText('1 repository · local only')).toBeInTheDocument();
+    expect(within(page).getByRole('button', { name: 'Open studio' })).toBeInTheDocument();
+    expect(within(page).queryByRole('tablist')).toBeNull();
+    expect(within(page).queryByRole('button', { name: 'Wire to a remote…' })).toBeNull();
+    expect(within(page).queryByText('What a start runs on')).toBeNull();
   });
 
   /**

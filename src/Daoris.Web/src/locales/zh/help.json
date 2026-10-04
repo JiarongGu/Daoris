@@ -62,7 +62,6 @@
   "help.door.sessions": "打开会话",
   "help.door.projects": "打开仓库",
   "help.door.agents": "打开智能体",
-  "help.door.workspace": "打开工作区",
   "help.door.ai": "打开 AI 功能",
   "help.setup": "逐步配置 Daoris：{{of}} 步已完成 {{done}} 步"
 }

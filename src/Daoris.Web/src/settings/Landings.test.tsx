@@ -2,29 +2,32 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import { LandingList, type RepositoryLanding } from './Landings';
+import { useState } from 'react';
+import { AcceptingNote, type Accepting, LandingField, type LandingRule } from './Landings';
 
-// WSR1 (D87): how work lands in each workspace's repositories that set none of their own, set from here as `daoris
-// driver landing --workspace` sets it from a terminal (D50). Daoris never pushes. Since UX6f (D150 §3.1) a repository's
-// own rule is on its page, under Setup: the card names the repositories that set their own, each a door there. The
-// rule's control is one, here and on a repository's Setup, so its behaviour is held here on a workspace's row.
+// WSR1 (D87): how work lands, set as `daoris driver landing` sets it from a terminal (D50). Daoris never pushes. The
+// rule's control is one, on a workspace's Setup and a repository's (UX6f, UX6g; D150 §4.2, §4.3), so its behaviour is
+// held here on two rows as either page draws them: aurora, which sets its own branch rule, and forge, which stands on
+// Daoris's merge. Each row is a region, as each page's section is.
 
-const LANDINGS: RepositoryLanding[] = [
-  { repository: 'engine', workspace: 'aurora', form: 'merge', source: 'repository' },
-  { repository: 'game', workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}', source: 'workspace' },
-  { repository: 'tools', workspace: 'forge', form: 'merge', source: 'default' },
-];
+const MERGE: LandingRule = { form: 'merge' };
 
-const draw = (onSet = vi.fn(), landers: string[] = [], landings: RepositoryLanding[] = LANDINGS, onOpen = vi.fn()) => {
+/** One row: the field, and beneath it what accepting automatically gives, as both Setups draw it. */
+function Row({ name, set, landers, onSet }: { name: string; set?: LandingRule; landers: string[]; onSet: (change: Record<string, unknown>) => void }) {
+  const [accepting, setAccepting] = useState<Accepting>(null);
+  return (
+    <section aria-label={name}>
+      <LandingField name={name} set={set} inherited={MERGE} landers={landers} onSave={(rule) => onSet({ workspace: name, ...rule })} onAccepting={setAccepting} />
+      <AcceptingNote accepting={accepting} />
+    </section>
+  );
+}
+
+const draw = (onSet = vi.fn(), landers: string[] = []) => {
   render(
     <Tooltip.Provider>
-      <LandingList
-        landings={landings}
-        workspaceLandings={[{ workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}' }]}
-        landers={landers}
-        onSet={onSet}
-        onOpen={onOpen}
-      />
+      <Row name="aurora" set={{ form: 'branch', pattern: 'feature/{quest}-{slug}' }} landers={landers} onSet={onSet} />
+      <Row name="forge" landers={landers} onSet={onSet} />
     </Tooltip.Provider>,
   );
   return onSet;
@@ -41,7 +44,7 @@ async function choose(name: string, option: string) {
 const forgeForm = () => screen.getByRole('radiogroup', { name: 'How work in forge lands' });
 const forgeSave = () => within(screen.getByRole('region', { name: 'forge' })).getByRole('button', { name: 'Save' });
 
-describe('the landing card', () => {
+describe("the landing rule's control", () => {
   it('offers merge and branch only — the form that pushes is a plugin\'s', () => {
     draw();
 
@@ -176,19 +179,5 @@ describe('the landing card', () => {
     expect(within(aurora).queryByRole('checkbox', { name: 'Accept automatically' })).toBeNull();
     await user.click(within(aurora).getByRole('button', { name: 'Save' }));
     expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', form: 'merge' });
-  });
-
-  // UX6f: a repository's own rule has one home, its Setup.
-  it('keeps no row per repository, and names those that set their own, each a door to its Setup', async () => {
-    const onOpen = vi.fn();
-    draw(vi.fn(), [], LANDINGS, onOpen);
-
-    expect(screen.queryByRole('radiogroup', { name: 'How work in engine lands' })).toBeNull();
-    expect(screen.queryByRole('radiogroup', { name: 'How work in game lands' })).toBeNull();
-    const aurora = screen.getByRole('region', { name: 'aurora' });
-    expect(within(aurora).getAllByRole('button', { name: /'s setup$/ }).map((door) => door.textContent)).toEqual(['engine']);
-    await userEvent.click(within(aurora).getByRole('button', { name: "Open engine's setup" }));
-    expect(onOpen).toHaveBeenLastCalledWith('engine');
-    expect(within(screen.getByRole('region', { name: 'forge' })).getByText(/No repository here sets its own/)).toBeInTheDocument();
   });
 });

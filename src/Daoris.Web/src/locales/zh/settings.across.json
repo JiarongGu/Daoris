@@ -1,11 +1,7 @@
 {
-  "settings.across.title": "跨仓库读写",
   "settings.across.body": "仓库之外的智能体能否读取它的检出：同一工作区其他仓库中的会话，以及问道衍。它们读取文件、`git status` 和分支列表，不在那里写入任何东西。读取默认开启，除非被关闭：工作区在这里关闭，仓库在它的配置中关闭；仓库自身的设置优先于其工作区的设置。写入另一个仓库默认关闭，只有你在仓库的配置中声明的除外：这份声明就是你长期的许可，且只有一个方向。也可用 `daoris driver across`：同一个文件。",
-  "settings.across.none": "本机还没有仓库。",
-  "settings.across.workspaceHint": "适用于此工作区中未单独设置的每个检出。",
   "settings.across.workspaceField": "{{workspace}} 中的跨仓库读取",
   "settings.across.repositoryField": "读取 {{repository}} 的检出",
-  "settings.across.inherited": "继承（{{state}}）",
   "settings.across.on": "开启",
   "settings.across.off": "关闭",
   "settings.across.readBy": "可被 {{workspace}} 中的会话和 问道衍 读取，从不写入。",

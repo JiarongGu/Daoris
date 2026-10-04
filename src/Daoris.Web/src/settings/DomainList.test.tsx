@@ -11,7 +11,7 @@ const DOMAINS = [
   { id: 'start', label: 'Setup' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'ai', label: 'AI features' },
-  { id: 'workspace', label: 'Workspace' },
+  { id: 'driver', label: 'Driver' },
 ];
 
 function Keyed(props: Parameters<typeof DomainList>[0]) {
@@ -32,7 +32,7 @@ describe("Settings' domain list", () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Setup', 'Appearance', 'AI features', 'Workspace']);
+      .toEqual(['Setup', 'Appearance', 'AI features', 'Driver']);
     expect(within(domains).getByRole('button', { name: 'AI features' })).toHaveAttribute('aria-current', 'page');
     expect(within(domains).getByRole('button', { name: 'Setup' })).not.toHaveAttribute('aria-current');
   });
@@ -49,10 +49,10 @@ describe("Settings' domain list", () => {
     const onChoose = draw();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole('button', { name: 'Workspace' }));
-    expect(onChoose).toHaveBeenLastCalledWith('workspace');
+    await user.click(screen.getByRole('button', { name: 'Driver' }));
+    expect(onChoose).toHaveBeenLastCalledWith('driver');
 
-    // ↑ from Workspace reaches AI features, Home the first, and Enter opens the row it is on.
+    // ↑ from Driver reaches AI features, Home the first, and Enter opens the row it is on.
     await user.keyboard('{ArrowUp}');
     expect(screen.getByRole('button', { name: 'AI features' })).toHaveFocus();
     await user.keyboard('{Home}');

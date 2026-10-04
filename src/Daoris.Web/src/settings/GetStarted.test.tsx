@@ -76,8 +76,9 @@ describe('Get started', () => {
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'import' });
     await userEvent.click(within(step(/driven/)).getByRole('button', { name: 'Open Repositories' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects' });
-    await userEvent.click(within(step(/work lands/)).getByRole('button', { name: 'Open Workspace' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'workspace', anchor: 'landing' });
+    // UX6g: how work lands for each repository that sets none is the workspace's default, on its page's Setup.
+    await userEvent.click(within(step(/work lands/)).getByRole('button', { name: "Open the workspace's setup" }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', workspaceSection: 'defaults' });
     // And what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
     await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'Open what agents may do' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'rules' });

@@ -16,7 +16,7 @@ export type HelpPlace = { view: string; domain?: string | null; part?: string | 
  */
 export const PLACE_VIEWS: readonly View[] = ['overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'settings'];
 
-export const PLACE_DOMAINS: readonly (SettingsSection | 'agents')[] = [
+export const PLACE_DOMAINS: readonly (SettingsSection | 'agents' | 'workspace' | 'permissions')[] = [
   'start', 'appearance', 'ai', 'workspace', 'driver', 'agents', 'permissions', 'plugins', 'browser', 'logs',
 ];
 
@@ -24,11 +24,21 @@ export const PLACE_DOMAINS: readonly (SettingsSection | 'agents')[] = [
  * The places the twin still names in Settings that moved to the Agents place (UX6e, D150 §3.1): Settings → Agents, its
  * Usage, and Permissions' Proposals, which are what an agent may do. A go naming one opens its new home, so the room's
  * places hold while the driver's twin still spells them the old way; the twins change together when it does.
+ *
+ * And Settings → Workspace and Permissions, which retired into a workspace's page with UX6g (D150 §3.1): a go naming one
+ * opens the workspace in view's page where its part went, and Permissions alone opens what agents may do.
  */
 const MOVED: readonly { domain: string; part: string | null; door: StarterDoor }[] = [
   { domain: 'agents', part: null, door: { view: 'agents' } },
   { domain: 'agents', part: 'usage', door: { view: 'agents', agentPart: 'usage' } },
   { domain: 'permissions', part: 'proposals', door: { view: 'agents', agentPart: 'rules' } },
+  { domain: 'workspace', part: null, door: { view: 'projects', workspaceTab: 'details' } },
+  { domain: 'workspace', part: 'wiring', door: { view: 'projects', workspaceSection: 'remote' } },
+  { domain: 'workspace', part: 'lines', door: { view: 'projects', workspaceSection: 'defaults' } },
+  { domain: 'workspace', part: 'landing', door: { view: 'projects', workspaceSection: 'defaults' } },
+  { domain: 'workspace', part: 'sweep', door: { view: 'projects', workspaceTab: 'branches' } },
+  { domain: 'permissions', part: null, door: { view: 'agents', agentPart: 'rules' } },
+  { domain: 'permissions', part: 'across', door: { view: 'projects', workspaceSection: 'defaults' } },
 ];
 
 /** The parts, each within a view (Projects) or a Settings domain. */
@@ -59,7 +69,7 @@ export function placeDoor(place: HelpPlace): StarterDoor | null {
     if (!section) return null;
     const moved = MOVED.find((each) => each.domain === section && each.part === part);
     if (moved) return moved.door;
-    if (section === 'agents') return null;
+    if (section === 'agents' || section === 'workspace' || section === 'permissions') return null;
     if (part === null) return { view, section };
     if (!PLACE_PARTS.some((known) => known.within === section && known.part === part)) return null;
     // A setup step is found by its own id in the guide (SETUP1a), a card by its domain's.

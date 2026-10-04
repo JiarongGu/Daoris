@@ -62,7 +62,6 @@
   "help.door.sessions": "Open Sessions",
   "help.door.projects": "Open Repositories",
   "help.door.agents": "Open Agents",
-  "help.door.workspace": "Open Workspace",
   "help.door.ai": "Open AI features",
   "help.setup": "Set up Daoris step by step: {{done}} of {{of}} done"
 }

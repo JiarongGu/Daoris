@@ -233,11 +233,13 @@ export function ProjectPage({
 
 /**
  * Repositories' main area with no page to show (D118 §3b): **nothing chosen** says how to choose and offers the list's
- * `＋` where there is one; **gone** says the chosen repository is no longer here; **loading** is skeleton rows, never
- * the empty state; and a registry that never answered says its sentence in place.
+ * `＋` where there is one; **gone** says the chosen repository, or workspace, is no longer here; **loading** is skeleton
+ * rows, never the empty state; and a registry that never answered says its sentence in place.
  */
-export function ProjectsMainNotice({ state, sentence, action }: {
+export function ProjectsMainNotice({ state, of = 'repository', sentence, action }: {
   state: 'none' | 'gone' | 'loading' | 'unanswered';
+  /** What has gone: the chosen repository, or the chosen workspace (UX6g). */
+  of?: 'repository' | 'workspace';
   /** The sentence for a registry that has never had an answer. */
   sentence?: string;
   /** The list's `＋`, offered with nothing chosen: a shell's. */
@@ -251,6 +253,8 @@ export function ProjectsMainNotice({ state, sentence, action }: {
     body: t('projects.none.body'),
     action: action && <Button onClick={action.onAct}>{action.label}</Button>,
   };
-  const gone: MainNotice = { icon: 'projects', headline: t('projects.gone.headline'), body: t('projects.gone.body') };
+  const gone: MainNotice = of === 'workspace'
+    ? { icon: 'projects', headline: t('projects.workspace.gone.headline'), body: t('projects.workspace.gone.body') }
+    : { icon: 'projects', headline: t('projects.gone.headline'), body: t('projects.gone.body') };
   return <ViewMain state={state} none={none} gone={gone} />;
 }

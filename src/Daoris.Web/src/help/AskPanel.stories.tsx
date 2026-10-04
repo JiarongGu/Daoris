@@ -49,7 +49,7 @@ export const Talking: Story = {
       body: (
         <div className="grid gap-3 text-small text-ink">
           <p className="m-0 rounded-control bg-raised px-3 py-2">how do I make engine land on a feature branch?</p>
-          <p className="m-0">Settings → Workspace → How work lands, or `daoris driver landing engine branch feature/&#123;slug&#125;`.</p>
+          <p className="m-0">Repositories → engine → Setup → Line and landing, or `daoris driver landing engine branch feature/&#123;slug&#125;`.</p>
         </div>
       ),
       composer: <div className="border-t border-line px-4 py-3 text-small text-ink-faint">the composer</div>,

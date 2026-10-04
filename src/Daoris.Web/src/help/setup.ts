@@ -81,8 +81,11 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'landing',
       state: machineState(machine.drivable.length > 0 && unnamedDriven.length === 0 && machine.unlanded.length === 0),
-      // The lines card sits above the landing card: a missing line is the first thing to set.
-      doors: doors({ view: 'settings', section: 'workspace', anchor: unnamedDriven.length > 0 ? 'lines' : 'landing' }),
+      // A missing line is the first thing to set, on the first such repository's Setup (UX6f); else the workspace's
+      // defaults, which set how work lands for each repository there that sets none (UX6g, D150 §4.3).
+      doors: doors(unnamedDriven.length > 0
+        ? { view: 'projects', item: unnamedDriven[0]!, tab: 'setup' }
+        : { view: 'projects', workspaceSection: 'defaults' }),
       commands: ['daoris driver line <repository> <branch>', 'daoris driver landing <repository> merge|branch <pattern>'],
     },
     {

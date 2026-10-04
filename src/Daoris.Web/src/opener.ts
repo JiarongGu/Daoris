@@ -1,7 +1,7 @@
 import type { AgentPart } from './agents/agents';
 import type { View } from './commands';
 import type { StarterDoor } from './help/starters';
-import type { ProjectTab } from './projects/tabs';
+import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
 import type { SettingsAnchor } from './SettingsView';
 import { LIST_BOUNDS, type ListView } from './work/layout';
 
@@ -19,11 +19,24 @@ export function questsItem(item: string): { ask: string } | { quest: string } {
   return item.startsWith(ASK) ? { ask: item.slice(ASK.length) } : { quest: item };
 }
 
+const WORKSPACE = 'workspace:';
+
+/** A workspace's item: Repositories' list holds workspaces and repositories, so an item there names which (UX6g, §4.1). */
+export const workspaceItem = (name: string) => `${WORKSPACE}${name}`;
+
+/** What one of Repositories' items is: a workspace, or a repository. */
+export function projectsItem(item: string): { workspace: string } | { repository: string } {
+  return item.startsWith(WORKSPACE) ? { workspace: item.slice(WORKSPACE.length) } : { repository: item };
+}
+
 /**
- * What a door names besides its item: the part of a Settings domain, one of Repositories' forms or a repository page's tab,
- * or the repository whose code map the Map opens on.
+ * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, a repository page's tab
+ * or a workspace page's tab and Setup section, or the repository whose code map the Map opens on.
  */
-export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; tab?: ProjectTab; code?: string; agentPart?: AgentPart };
+export type OpenPart = {
+  anchor?: SettingsAnchor; drawer?: 'add' | 'import'; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
+  workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection;
+};
 
 /** What opening a view does, as a value. */
 export type Opening = {
@@ -52,22 +65,36 @@ export type Opening = {
    * door naming a part and no agent opens the agent that has it.
    */
   agentPart?: AgentPart;
+  /**
+   * The tab a workspace's page opens at (UX6g, D150 §4.3), and the section of its Setup to open: the remote, or its
+   * defaults. Its doors are where Settings → Workspace and Permissions were.
+   */
+  workspaceTab?: WorkspaceTab;
+  workspaceSection?: WorkspaceSection;
 };
 
-const listed = (view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
+const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
 
 /**
  * What `open(view, item?)` does: the view, and the item its list now has chosen. A view with no list,
  * Overview or Map, keeps no chosen item (§4). An item a view cannot show is the view's own business, as a
  * session that has gone or a domain this window lacks always was.
+ *
+ * `here` is the workspace in view, where there is one (the scope, or the only workspace): a door naming a workspace's page
+ * and no workspace opens that one (UX6g), as a door naming an agent's part and no agent opens the agent that has it.
  */
-export function opening(view: View, item?: string | null, part: OpenPart = {}): Opening {
+export function opening(view: View, item?: string | null, part: OpenPart = {}, here: string | null = null): Opening {
   const plan: Opening = { view };
-  if (item && listed(view)) plan.chosen = { view, item };
+  // A section is a part of Setup, so a door naming one opens Setup.
+  const workspaceTab = part.workspaceTab ?? (part.workspaceSection ? 'setup' : undefined);
+  const named = item || (view === 'projects' && workspaceTab && here ? workspaceItem(here) : null);
+  if (named && listed(view)) plan.chosen = { view, item: named };
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
   if (view === 'projects' && part.drawer) plan.drawer = part.drawer;
   if (view === 'projects' && part.tab) plan.tab = part.tab;
+  if (view === 'projects' && workspaceTab) plan.workspaceTab = workspaceTab;
+  if (view === 'projects' && part.workspaceSection) plan.workspaceSection = part.workspaceSection;
   if (view === 'map' && part.code) plan.code = part.code;
   if (view === 'agents' && part.agentPart) plan.agentPart = part.agentPart;
   return plan;
@@ -75,8 +102,9 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}): 
 
 /**
  * Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): its view and the
- * item it names, a Settings domain at its part, or one of Repositories' forms.
+ * item it names, a Settings domain at its part, one of Repositories' forms, or a workspace's page, the one in view
+ * (`here`) where it names none.
  */
-export function doorOpening(door: StarterDoor): Opening {
-  return opening(door.view, door.item ?? door.section, door);
+export function doorOpening(door: StarterDoor, here: string | null = null): Opening {
+  return opening(door.view, door.item ?? door.section, door, here);
 }

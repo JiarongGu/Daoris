@@ -1,11 +1,7 @@
 {
-  "settings.across.title": "Across repositories",
   "settings.across.body": "Whether agents outside a repository read its checkout: sessions in its workspace's other repositories, and Ask Daoris. They read its files and `git status` and the branch list, and write nothing there. Reading is on unless it is switched off, for a workspace here or for a repository on its Setup, a repository's own setting over its workspace's. Writing into another repository is off, except where you declare it on a repository's Setup: that declaration is your standing say-so, in one direction. Also `daoris driver across`: the same file.",
-  "settings.across.none": "No repository on this machine yet.",
-  "settings.across.workspaceHint": "For each checkout in this workspace that sets none of its own.",
   "settings.across.workspaceField": "Reading across in {{workspace}}",
   "settings.across.repositoryField": "Reading {{repository}}'s checkout",
-  "settings.across.inherited": "Inherit ({{state}})",
   "settings.across.on": "On",
   "settings.across.off": "Off",
   "settings.across.readBy": "Read by sessions in {{workspace}} and by Ask Daoris, never written.",
