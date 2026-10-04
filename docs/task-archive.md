@@ -11139,3 +11139,12 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > roster with an absent agent; the DeepSeek configuration's probe evidence.
 
 **Outcome** 2026-10-05: built. The Agents list shows every agent this build knows, an absent one with *Install* on its row (and in its right-click menu), with no hidden fold. DeepSeek's own agent, DeepSeek Harness, already reaches Daoris: it speaks ACP itself (`dsh --profile acp`), which is ACP3's `dsh` configuration, now named DeepSeek Harness in both twins and proven over a stub of its documented wire. Detail: D57's AGENTS2 note, `93930921`, `36f4d924`, `4fe522a7`.
+
+
+## UX7 — a look at the built redesign, then its fixes (2026-10-05)
+
+> - [ ] **UX7 — a look at the built redesign, then its fixes** (design first; web-shell, web-settings). The owner judged
+> the screens UX6 built on the install. Photograph each at 1546 and 680 px, both themes and languages, and set down
+> what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
+
+**Outcome** 2026-10-05: designed (D152). The built redesign looked at on the install and in the stories, line by line (§1): a VS Code-like menu bar of seven menus (Workspace, Edit, View, Go, Run, Terminal, Help) from one command table the menus, palette, keys and a shortcuts drawer read; one row and one act per account, the add flow offering an existing signed-out row first and asking which workspaces it joins; heads of state, title and a facts line chosen by state, ids folded, nothing said twice. Build rows UX7a–d; SESSUX1j ahead of UX7c, UX7c before UX7b. Detail: `docs/2026-10-05-ux7-design.md`, D152.

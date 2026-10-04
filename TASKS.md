@@ -104,9 +104,6 @@ and also we should be utilizing the top menu, so instead of calling this 'agent'
 like VS Code); also the account page itself needs its UI/UX improved; also Codex and DeepSeek are missing"* · *"both
 title sections, for quest and session, need their UI/UX improved"*):
 
-- [ ] **UX7 — a look at the built redesign, then its fixes** (design first; web-shell, web-settings). The owner judged
-  the screens UX6 built on the install. Photograph each at 1546 and 680 px, both themes and languages, and set down
-  what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
 - [ ] **UX7a — the top menu works as VS Code's does** (web-shell, desktop). The strip's four menus (Daoris, Workspace,
   Agents, View) become a menu bar a person reaches for: every verb Daoris has, grouped as an IDE groups them (a
   File-like menu for workspaces and repositories, Edit, View, Go to each place, Run for sessions and quests,
@@ -121,6 +118,9 @@ title sections, for quest and session, need their UI/UX improved"*):
   title, a raw id, a chip and a dense row of eight facts; a quest's title wraps two lines over a chip and a raw id.
   Title first, short (SESSUX1j's short title where there is one), state and the one or two facts that matter beside
   it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
+- [ ] **UX7d — what else the look found** (web-shell, driver). Absent agents listed with *Install* (AGENTS2's screen);
+  two-letter strip marks; a version without its product's name; tight 中文 summaries; the record's *opened on* line worded
+  by code, its backticks as code. Contract: D152, design §1, §4.6. Proof: stories, the note codes' twin, the look.
 - [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
   *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
   says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
