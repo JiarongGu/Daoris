@@ -3090,6 +3090,11 @@ const loggedOutAsk = await api('POST', '/api/quests', {
 });
 const sessionsBeforeRefusal =
   ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? []).length;
+// What the person's press read (ROSTER1): a look reads no account, so the start is held only once `fresh` is known to be
+// signed out. Any read time holds it: should the hour's backstop ask again, the stub still answers logged out.
+writeFileSync(join(toolchainHome, 'reads.json'), `${JSON.stringify({
+  stub: { accounts: { fresh: { login: 'out', read: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') } } },
+}, null, 2)}\n`);
 const loggedOutRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV });
 check(
   'a logged-out profile holds the start, naming the login action rather than failing bare',
