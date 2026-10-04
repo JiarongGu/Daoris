@@ -10,14 +10,7 @@ the family, kept from drifting, and improved from wherever the improvement was f
 **Daoris as the driver**: the workflow manager that triggers and coordinates the agent sessions doing
 the family's work.
 
-**Every arc is closed and in the archive**: the driver (D45), the remote (D47),
-workspaces, the interactive surface and management parity (D48–D50), the working surface (D51–D56),
-the protocol door (D53), the toolchain (D57, bar TOOL5; TOOL4 designed as D125), the instruction file (D59), the
-first deployment (D60–D63), plugins (D64), the remote as a git remote (D68), permission scopes
-(D72–D74), the menus (D75), and the conversation (D76, bar its held file tools), closed by UX5's
-screen-by-screen pass. [`docs/README.md`](docs/README.md) names each arc's contract. Two
-reviews read the code rather than re-running it, REV2 and REV3, and CLEAN1 settled REV3's cleanup
-lists.
+Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names each arc's contract.
 
 ## State
 
@@ -38,94 +31,24 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-🔴 **Where 2026-10-01 left it.** The owner's direction: *Daoris is the master development tool, doctrine
-and knowledge sharing*; their ticket work runs through the local Daoris, and Ask Daoris should reach
-everything. **The owner's round of 2026-10-01 is being built in parallel** from the designs below (D115–D122):
-one frame for every view, plugins with a view and a workshop of their own, Daoris.Plugins as the default plugin
-repository published to NuGet, self-managed tools, the development-documents standard and fewer asks. Each row
-is built by a subagent through the `dispatch-subagent` skill, gathered into an integration branch, and merged
-with `tools/merge-branch.mjs`; the archive has every landed row. Daoris.Plugins' work is asked of it through
-the platform and taken by its own sessions (PLUGREPO2c, PLUGREPO2d). The kit's own relay leaves a pump
-unobserved as Daoris's did: a request for the kit's owner, not Daoris's to change (LOG2b).
-- **The owner's ticket AR-2203** was asked through the window (2026-10-01, the lumachain workspace), and its intake
-  session is proposing the quests; follow it there.
-- **The owner's ticket AR-2201 is done on Daoris's side**: both follow-ups merged by the owner's pull
-  requests, and the post-merge step ran through *Bring up to date* on the window, which proved the landed
-  work on the line and deleted the branch. What is left is the owner's production config update. Everything
-  deleted earlier was backed up first, and the private notes say where.
-- **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
-  on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
-  (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
-- **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
-  rehearsals when nothing else builds.
-- **Open and the owner's:** BUDGET1, TRUST2, AGT2c, FG5, BRW3, UNBLOCK4c, LAYOUT2, PLUGDIST1f; on a trigger: TOOL5,
-  PLUG7, SEM2, CANON9, REH1. **A new direction from the owner outranks all of them.**
+The owner's direction: *Daoris is the master development tool, doctrine and knowledge sharing*. Each row is
+built by a subagent through the `dispatch-subagent` skill and merged with `tools/merge-branch.mjs`; Daoris.Plugins'
+work is asked of it through the platform and taken by its own sessions.
+- **The install** takes staged updates (`publish:desktop --stage`, applied when no session works; UPDATE1). Start
+  it the normal way, not through the dev tool, unless the instruments are needed: a start from Git Bash hands
+  sessions a `PATH` their shell cannot read.
+- **Load makes flakes** (FLAKE1): run the rehearsals when nothing else builds.
+- **Rows marked *the owner's*** wait on a grant, a download, a run or a call only the owner makes. **A new
+  direction from the owner outranks every row.**
 
-**Start by reading the contract the item cites** — every backlog row names one, and
-`docs/README.md` says which documents are current. `CLAUDE.md` carries the standing rules and the
-dev loop. The bullets below are the traps that are not in any contract, because they were found
-rather than designed.
-
-- **Three shapes from the driver and the remote still bind anything new** (D45–D47): what may leave a
-  machine is two manifest declarations, silence meaning local; the quest state machine is the only
-  lock and outside sessions stay first-class; and a session's record is concluded from its exit code
-  and its quest's state, never from what it said about itself (D46 §4).
-- **Adding a refusal to a desktop module is three things**, and a test holds each: a code in
-  `Refusals`, an entry in **both** locale catalogues, and a throw site using it. A thrown exception's
-  message reaches nobody — the host maps it to a generic code carrying only the exception type, which
-  is why every module sentence was invisible until REV2 (`docs/FIX-LOG.md`). `DriverException` is the
-  one exemption and it is mapped once, at the module boundary, so the driver's own wording travels.
-- **Adding a `DAORIS.DRIVER` door is three things since MOD5**, and `DriverModuleRoutesTests` checks all
-  three: a handler marked `[DriverRoute("NAME")]` in `DriverModule.<Domain>.cs` (the domain named as the
-  page's `bridge/<domain>.ts` that calls it), its name in that domain's row of the Desktop README, and a
-  call from the bridge or a test. A proposal kind, a room section, a CLI verb, a catalogue area and a
-  Settings domain are each a file and a registry line the same way (MOD2–MOD7).
-- **The modules tests are serialized on purpose** (`Parallelism.cs`): those modules resolve every path
-  from process-global environment variables, so two test classes at once trample each other. Found by
-  a second class turning two passing tests red.
-- **A schema change rebuilds the entry store and adds columns everywhere else.** The knowledge
-  entries are an index, rebuilt on a schema bump; the registration and session stores add columns
-  (`SchemaColumns`), because a registration that vanished on an upgrade is the failure those stores
-  exist to prevent.
-- **Two endings that mean different things:** end of input lets the harness wind up (`completed`);
-  `stop` is the person's interrupt (`stopped`). Anything that grows a third way out should say which
-  of those it is.
-- **Four things that will bite if forgotten:** being in a folder is no longer being a member (a
-  repository joins by `connect` and leaves by `retire`); the bootstrap import runs **once** per store,
-  and anything that re-ran it would resurrect every repository someone retired; **a feed never names
-  its own workspace** — the receiving deployment's wiring decides where material lands; and **a
-  checkout with no git history feeds no knowledge**, because a wholesale replacement the receiver
-  cannot order against what it holds is not safe (the driver says so itself rather than sending it).
-- **Two artefacts agreeing on a file are twins** (`.claude/knowledge/twins.md`): the remotes map has
-  three, and the environment pair replaces the file for the **whole machine**, which is what the
-  rehearsal's hermetic guard rests on.
-- **A refusal can be INFORMATION** (D48 §6). The flag rides the wire (`{"error": …, "information":
-  true}`); a client that classified by matching the sentence would turn every rewording into a silent
-  behaviour change. Anything that grows a new "not taken, and that is fine" answer belongs in that
-  class rather than in the failure one.
-- **Verify before claiming done, always**, with the gates `CLAUDE.md`'s dev loop lists: `npm run
-  verify`, the three .NET suites, `npm run rehearse:family`, `npm run test:web`, and — when the
-  desktop, the publish or the locator moved — `npm run rehearse:deploy`, which publishes the shell to
-  `_fixtures/` and drives **that**. 🔴 **Phase 4 asserts the started host is the INSTALL's own**; the
-  gate plants a decoy under the scratch home's `bin/` itself, so every machine can express the
-  defect. If a `bin`-driven gate is red while `npm test` is green, suspect a stale gitignored `dist/`
-  first (FIX-LOG).
+**Start by reading the contract the item cites**; `docs/README.md` says which documents are current, and
+`CLAUDE.md` carries the standing rules and the dev loop.
 
 ## Backlog
 
-**Eighty-three rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** SESSUX1b with SESSUX1b2, SESSUX1c, SESSOPT1a/b/c. **Building:** SESSUX1e, WSSETUP14's design (D128).
-  The pilot (WSSETUP12) ran; its branch waits for WSSETUP14.
-- **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
-  LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
-- **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
-  downloads), FG5 and BRW3 (the owner present).
-- **Parked on a trigger (eight):** TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
-  and FLAKE1 and TEST1, which wait for their next sighting (the Process category runs serially since MOD8,
-  and the final serial run was clean). None is work until its trigger arrives.
-
-Every closed row is in `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle`
-rule it also ships. A heading below holds open rows only.
+The owner's two asks of 2026-10-04 lead: *Faster development* and *Simpler to use*, each in its own order. The
+other headings are designs being built, each with its order line. Rows marked *the owner's* wait on the owner, and
+the rows under *Held* are not work until their trigger arrives. A heading below holds open rows only.
 
 ### Faster development (owner, 2026-10-04: *"I think we do need to speed up the development of Daoris, currently we have too many rounds of tests?"*)
 
@@ -150,106 +73,48 @@ running them again.
 - [ ] **WEBFAST1 — the web's unit tests build jsdom once per worker** (web-shell). Vitest reports jsdom created 225
   times, 27% of its time; `pool: 'vmThreads'` keeps per-file isolation and creates it once. Proof: the suite green and
   its time before and after.
+- [ ] **GATE1 — the docs gate is blind at the merge** (tools; found 2026-10-02): the devkit's `docs` gate reads committed
+  dates, so a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once
+  committed (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
+- [ ] **TESTGIT1b — the last landing fixtures call the shared git runner** (driver tests). `LandingPluginTests` and
+  `LandingTidyTests` still read git's stdout before its stderr; `LandedFixture` (fixed by PLUGHOOK1a), `LandingTests`
+  and `AutoLandingTests` keep their own both-streams copies. Move them onto `GitFixture`. Proof: the classes' serial
+  Process run; no `FileName = "git"` left in them.
 
-### Simpler to use, and agents that work together (owner, 2026-10-04)
+### Simpler to use, and agents that work together (owner, 2026-10-04 → D150)
 
-> *"this is confusing right now since I have logged 3 accounts in before and also there should be just one account
-> management for Claude Code"* · *"you kind of need to improve the UI/UX since this is getting more and more complex, and
-> we do need to add features later for coworking between agents"* · *"and there probably will be more types of agents
-> later too so the UI/UX redesign is needed"* · *"and I saw the Azure CLI is in Tools, which should be in a plugin"* ·
-> *"also the current permissions in Settings are mostly about repositories, and we probably should have a repository
-> setup in the repository screen, since repository management (with git) is also planned"*
+The contract is `docs/2026-10-04-ux6-redesign.md`; its §12 carries each row's full text and proof. Order: UX6a, b, c;
+d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c.
 
-- [ ] **UX6a — the counter, and the baseline on the install** (tools). One function counts a screen's concepts,
-  controls, words and height, over stories through Playwright and on the window through `desktop -- eval`, so every row
-  proves its counts the same way. Contract: design §9.1–§9.2. Proof: the counter's test over a fixed page; the parent
-  re-takes §9.3's *before* on the install in both languages.
-- [ ] **UX6b — a remembered choice ends with its item; the side bar follows only live work** (web-shell). Quests reopened
-  a done quest, Convergence a gone finding, Overview's side bar an ended session's note. A closed or gone item opens
-  nothing chosen; off Sessions, session views follow a running or waiting session, else Ask Daoris; a long note folds.
-  Contract: §1 rule 6, §2.5. Proof: `listPanes` and `RightDock` tests.
-- [ ] **UX6c — What needs you leads Overview and settles what it can** (web-shell). The band becomes the page's lead in
-  three groups, gains go-aheads, departures and work to review, and acts where one press is safe: *Publish to …*, *Try
-  again*, *Accept the departure*, with trust, go-aheads and widenings asking once. Contract: §6. Proof: `attention`
-  tests per kind, the stories, Overview's vitest.
-- [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; after TOOL6g; takes TOOL4m's row). A
-  start waiting on cooling or signed-out accounts, and a signed-out account a list holds, are rows with *Sign in* and
-  *Let … run …*, saying when each was read. No row starts a process. Contract: §6.2–§6.3. Proof: a tick asserting no
-  probe; vitest.
-- [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; after TOOL6g). A list
-  of agents and a page each: accounts in four states with when each was read, *Read again* one at a time on the press,
-  how accounts are used, workspaces, ways in, what it may do. Settings → Agents retires. Contract: §5, §2.4. Proof:
-  stories, vitest, the coverage test.
-- [ ] **UX6f — a repository's setup on its page** (web-shell, web-settings). The repository's page gains its Details and
-  Setup tabs; Setup holds driving, line, landing, session language, standing answer, reach and its rules, folded to what
-  Daoris decides. Settings' per-repository rows leave their four lists. Contract: §4.2, §3.1. Proof: `ProjectPage`
-  stories per section, vitest, the counts.
-- [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings). Repositories'
-  list groups by workspace and gains a filter past twelve; a workspace's page holds its defaults, remote, what a start runs
-  on and its rules; clean-up and bring up to date move to its Branches tab. Contract: §4.1, §4.3. Proof: stories,
-  vitest, `domains.test.ts`, the coverage test.
-- [ ] **UX6h — Git inside Repositories** (web-shell; GIT1e and GIT1f land here, after GIT1d). Branches and History tabs
-  carry D147's list and pages for a repository, and Branches a workspace's; a branch, commit, file or compare opens in the
-  main area with its way back. No Git place on the bar. Contract: §4.4, D147 §2–§4. Proof: GIT1e–f's stories and tests,
-  in place.
-- [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell). One place whose list head switches between
-  Search and Convergence, remembered, each mode keeping its list, main area and memory; every door into either opens its
-  mode. Contract: §2.2. Proof: `SearchView` and `ConvergenceView` suites through the place, the palette's go entries,
-  `test:web`'s search.
-- [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings). Refresh and the language toggle leave the
-  bar for the Daoris menu, the palette and Appearance; Settings keeps Get started, Appearance, AI features, Driver, Tools,
-  Browser and Machine log; *Setup* names the tabs. Contract: §2.1, §2.3, §2.4. Proof: `domains.test.ts`, the chrome test,
-  the names check.
-- [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver). `tools` in `plugin.json`, read by both twins
-  by one table: an id, a range, why, at most four checks run only on a press or at *Try*. A problem is shown, never a
-  refusal, and the kit checks it. Contract: §7.2–§7.3. Proof: the twins' test tables; `plugins try` on good and bad
-  manifests.
-- [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples). Azure DevOps pull request declares
-  Node.js, Git and Azure CLI, its extension and sign-in as checks; GitHub pull request Node.js, Git and GitHub CLI, its
-  sign-in as a check. Each floor is read from the flags it uses, and the README points at the manifest. Contract: §7.4.
-  Proof: `landing-plugins.test.ts`; the kit's `try`.
+- [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
+- [ ] **UX6b — a remembered choice ends with its item; the side bar follows only live work** (web-shell; §1, §2.5).
+- [ ] **UX6c — What needs you leads Overview and settles what it can** (web-shell; §6).
+- [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
+- [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; §5, §2.4), with
+  TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
+- [ ] **UX6f — a repository's setup on its page** (web-shell, web-settings; §4.2, §3.1).
+- [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
+- [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; §4.4), taking GIT1e: D147's list by kind and a
+  branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
+- [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).
+- [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings; §2.1, §2.3, §2.4).
+- [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver; §7.2–§7.3).
+- [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
 - [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
-  driver; after PLUGUI1c). A Tools section shows each tool's way, version against its range and checks on *Check*;
-  Settings → Tools keeps Git, Node.js and PowerShell and what no plugin declares; `tool list` names each declarer.
-  Contract: §7.5. Proof: stories, vitest, the CLI's list test.
+  driver; after PLUGUI1c; §7.5).
 - [ ] ⏸ **COWORK1 — agents that work together** (design; held until the owner shapes it). Today agents cooperate
   only through a quest (a request one way, a done back) and an ask's intake (one ask split into quests). What
   working together should add (seeing each other's progress on related work, asking mid-work, handing off, one
   branch shared by related work as LAND2c began) is the owner's to shape. Start from D32, D65, D145 and D149, and
   the quest's life as built. Proof: the design and its decision.
 
+### One product, not a set of screens (owner, 2026-10-01 → D118, D119)
 
-### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
+Order: PLUGUI1c, then f and g; FRAME1i, then PLUGUI1h. Each is looked at on the install in both themes and languages.
 
-
-
-**Found looking at the republished install (2026-10-01)**, each on the owner's real workspace of 29
-repositories, which no fixture has:
-
-
-### One product, not a set of screens (owner, 2026-10-01) — after the night's in-flight work
-
-> *"because plugin will be a big part of daoris so it need to have a panel/screen itself, and develop
-> proper ui/ux also why only session has more layout option we do need to make everything consitant and
-> also for naming (for example in settings) we do need to have properly named in both en/zh since this is
-> not just translation this is part of the ui element (this also apply to other display too) … also we
-> should be able to run sub-agents cross darois development … daoris itself need to have a proper
-> develpment cycle too, this also need to be designed properly"*
-
-Proposed order: NAME1's glossary first, since every screen's names follow it, the new one's included;
-then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design document and can run beside
-them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
-install in both themes and both languages.
-
-- [ ] **COST1 — what a long driven turn costs** (found with METER1): that turn ran about a thousand tool calls,
-  and its context grew from 48K to 679K tokens on a 1M window, every call re-reading it from the cache. Nothing in
-  Daoris sets an agent's window or when its harness compacts. Measure first (each driven session's context
-  high-water and cache reads per turn, from the usage record and the turn events, over a week), then offer a
-  per-agent ceiling, a smaller window or the harness's own compaction setting, on both doors. The owner's call,
-  since it trades cost for what a session remembers.
-- [ ] **NAME2b — seven names, looked at on the window** (NAME2's hand-back; 888 px, both languages): `help.setup`
+- [ ] **NAME2b — four names, looked at on the window** (NAME2's hand-back; 888 px, both languages): `help.setup`
   (Ask Daoris at its 300 px floor before setup is done), `scope.every` (the status bar with *Every workspace*),
-  `signin.titleNew` (Settings → Agents, signing in to another account, the side bar at its floor) and
+  `signin.titleNew` (signing in to another account, on the Agents place once UX6e lands) and
   `work.group.noCheckout` (English: a repository with no checkout here); each renamed or accepted after the look.
 - [ ] **PLUGUI1c — Settings keeps only what is a setting** (after b): the domain retires, its anchors repoint,
   the folder row joins Settings → Driver; crosses five lanes on purpose.
@@ -258,20 +123,10 @@ install in both themes and both languages.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
-  Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
-
-### Doctrine, plugins and tools (owner, 2026-10-01)
-
-> *"remember daoris still have role for doctrine (and we do need to research a good development doc pattern
-> for code generation and use it as standard for all repo setup so its good for sessions, and the goal is to
-> unblock the repo as far as possible so less ask human permission during development) and I also created
-> folder for plugins [Daoris.Plugins] … this repo will for our default plugin development and later will be
-> release to nuget so we can use nuget as plugin site and we need to find a way to filter on nuget for daoris
-> plugin (or we can use npm, you can decide …) … all tools that daoris using like git, [terminal] should all
-> have a self managed option (and can be setup in settings) which can be download from locations … I perfer
-> provide default download location and built into the app with a resouce json file that can be updated if
-> need other resouce location"*
-
+- [ ] **FRAME2b — ask the window kit to restore a maximized window under the pointer** (the owner's to send; found by
+  FRAME2). The kit's commands take no position, so a dragged maximized window restores at its saved place, not under
+  the pointer as a native caption does. The request goes to the kit's repository, never an edit from here (D32).
+  Contract: D56's FRAME2 note. Proof: the kit's answer, then FRAME2's handler using it.
 
 ### Knowledge that sessions actually use (owner, 2026-10-03) — D135
 
@@ -291,33 +146,28 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
 
 ### The horizon after: work that proves itself (an outside analysis, reviewed 2026-10-03)
 
-The owner brought an outside future-directions analysis (`docs/DAORIS_FUTURE_DIRECTIONS.md`: *"this is some
-suggestion from analyze for direction and you can review and update our roadmap and TASKS"*). Reviewed against the
-record: 18 of its sections exist, 38 partly, 15 are new, 2 conflict (routing by outcome with D130, speculative
-execution with D46). The review is `docs/2026-10-03-future-directions-review.md`; ROADMAP's horizon section points
-to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
+The review is `docs/2026-10-03-future-directions-review.md`; ROADMAP's horizon section points to it. Its evidence
+rows have a heading of their own below, and AFTER1 is held.
 
 - [ ] **TRACE1c — the links the trace still cannot read** (driver, service, web-shell; found by TRACE1b). The rules
-  handed kept past a run's end; a local door to one quest's operations; a merge landing naming its merge commit; a
-  carry-on's link kept on the record; an advance (LAND2c) listed under the session that made it. And two doors
-  TRACE1b left: the section in a detached session window, and the commit kind from the page (the route accepts it;
-  nothing sends it). Contract: D143 and its TRACE1b note. Proof: `TraceChainTests`, route and service tests, vitest
-  and stories, the look.
+  handed past a run's end, one quest's operations at a local door, a merge landing's merge commit, a carry-on's link,
+  and a LAND2c advance under its session; and TRACE1b's two doors left, the detached window's section and the commit
+  kind from the page. Contract: D143's TRACE1b note. Proof: `TraceChainTests`, route and service tests, vitest,
+  stories, the look.
 - [ ] **STORY2 — a 中文 story leaves the next story load in 中文** (web-shell; found by TRACE1b). A module-scope
-  `i18n.cloneInstance({ lng: 'zh' })` in the 中文 stories writes `zh` under `daoris.language` in localStorage, so the
-  next page load in the same browser profile shows the English stories in 中文 (HandedAccount, Note and the trace
-  among them). A clone for a story keeps its language off the store. Proof: a vitest that a 中文 story's module leaves
-  `daoris.language` as it found it; the story shots in both languages from one profile.
+  `i18n.cloneInstance({ lng: 'zh' })` writes `zh` under `daoris.language`, so the next load in that browser profile
+  shows English stories in 中文; a story's clone keeps its language off the store. Proof: a vitest that a 中文 story's
+  module leaves `daoris.language` as found; story shots in both languages from one profile.
+
+### Git, built in (owner, 2026-10-04 → D147, as D150 amends it)
+
 - [ ] **GIT1d — the routes** (modules, web-shell; after GIT1b). `GIT_BRANCHES`, `GIT_LOG`, `GIT_COMMIT`, `GIT_HISTORY`,
   `GIT_BLAME`, `GIT_COMPARE`, on the shell's bridge only; each refusal a code in both catalogues. Contract: design §4,
   §6. Proof: `DriverModuleGitTests`, catalogue parity.
-- [ ] **GIT1e — the place, its list and a branch's page** (web-shell; after GIT1d). *Git* on the activity bar after
-  Projects, desktop only; the list by repository and kind; a branch's graph from a pure `graphLanes.ts`; both
-  languages. Contract: design §2.2–§2.3, §6. Proof: stories, vitest, `names-check`, the look in both themes.
-- [ ] **GIT1f — a commit, a file's history and blame, a compare** (web-shell; after GIT1e). Reusing `DiffFileRow` and
-  `PatchView`, with the trace's chain; the blame gutter; a compare's two sides. Contract: design §2.4–§2.6. Proof:
-  stories, vitest, the look.
-- [ ] **GIT1g — fetch, create and delete** (driver, modules, web-shell; after GIT1e). One judge for both doors, plan
+- [ ] **GIT1f — a commit, a file's history and blame, a compare** (web-shell; after UX6h, in its tabs). Reusing
+  `DiffFileRow` and `PatchView`, with the trace's chain; the blame gutter; a compare's two sides. Contract: design
+  §2.4–§2.6. Proof: stories, vitest, the look.
+- [ ] **GIT1g — fetch, create and delete** (driver, modules, web-shell; after UX6h). One judge for both doors, plan
   then apply at the commit judged; `daoris-driver git fetch|branch|delete`, the presses, the console and the machine
   log. Contract: design §3.1, §3.3–§3.4. Proof: `GitActsTests` with a bare origin (the parent's), vitest.
 - [ ] **GIT1h — push, and the pull request press** (driver, modules, web-shell; after GIT1g). `git push origin
@@ -325,30 +175,23 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   forced), kept in the landing entry, and *Open its pull request* as D102's hand-off. Contract: design §3.1–§3.2, D147
   amending D87, D100 and D109 to "never pushes on its own". Proof: fixtures with a bare origin and a pre-push hook,
   vitest, the look.
-- [ ] **GIT1i — Git from a session** (web-shell; after GIT1e). The review's head line (the branch against its line,
+- [ ] **GIT1i — Git from a session** (web-shell; after UX6h). The review's head line (the branch against its line,
   where it landed, pushed, its pull request), *Show in Git*, the preview's *History and blame*. Contract: design §2.7,
   §6. Proof: vitest, stories, the look.
 - [ ] **GIT1j — managed Git offered** (web-settings, web-shell, driver; after TOOLS6 and TOOLS10). The setup guide's
-  first step *Git*, the place's header naming the git that answered, *Use Daoris's own Git…*; nothing switches without
+  first step *Git*, Repositories naming the git that answered, *Use Daoris's own Git…*; nothing switches without
   a press. Contract: design §5. Proof: the setup facts' tests, vitest, `HelpCoverageTests`.
 - [ ] **GIT1k — Ask Daoris's `git` kind** (service, driver, web-shell; after GIT1h). Fetch, branch, push and delete as
   proposals the person confirms. Contract: design §3.3, D110. Proof: the kinds tables on both sides; coverage with no
   owed row.
+
+### Landing and pull requests (owner, 2026-10-04 → D145, D148, D149)
+
 - [ ] **LAND2e — work after a landing, and the advance on the page** (driver, modules, web-shell; found by LAND2c). A
-  session that kept working after its landing (its tree here, its branch standing) reads as landed at the review and
-  `trees land`, so with *Accept automatically* off its new commits cannot land at either door; accept it again as an
-  advance. Once its tree is gone a chain session's review shows the whole branch, later steps included; show its own
-  part. The review's note and Ask Daoris do not read an advance yet. Contract: D149 point 2, D113 §3 (`ReadsAsLanded`).
-  Proof: the review answer and `trees land` advancing it; vitest over a mocked bridge; the proposals' tables.
-- [ ] **SETUP2 — a set-up runs the repository's own checks and moves what reads the moved files** (driver, canon; owner,
-  2026-10-04: *"also found a bug for CI pipeline after the merge of knowledge update … so this is also a good check
-  when building Daoris"*). The work repository's set-up moved its agent documents to `.agents/` and its pipeline's
-  knowledge check then failed: the repository's own checker still reads `.claude/rules/RULES_INDEX.md`. A set-up's
-  done should run the checks the repository declares (its pipeline's steps and package scripts that read the agent
-  documents), search its tooling for every path it moved and repoint or report each, and name each check and its
-  result in its closing note; the adoption playbook the press hands says so. Contract: D124 §2 (the press), LAYOUT7,
-  D144's gate evidence (later). Proof: a press test that the playbook names the step; the family rehearsal's set-up
-  phase with a stub repository whose script reads a moved path.
+  session that kept committing after its landing reads as landed (`ReadsAsLanded`), so with *Accept automatically* off
+  its new commits cannot land at either door; accept them as an advance, show a gone tree's chain session only its own
+  part, and let the review's note and Ask Daoris read an advance. Contract: D149 point 2, D113 §3. Proof: the review and
+  `trees land` advancing it; vitest; the proposals' tables.
 - [ ] **PLUGHOOK1b — the GitHub plugin answers `work/state`** (examples; after PLUGHOOK1a). The same query through
   `gh pr view` and `gh pr list --head`, so a GitHub repository's squash-merged branches go too. Contract: design §2.7,
   D148 point 7. Proof: `landing-plugins.test.ts` with a fake `gh`.
@@ -357,45 +200,27 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   to date asking after its fetch, where a merge commit first arrives. Contract: design §2.1, §2.5. Proof:
   `DriverCommandTests`, `HelpCoverageTests`, `GitBranchesReadTests`, the sync's git fixtures.
 - [ ] **PLUGHOOK1d — the page reads and asks it** (modules, web-shell, web-settings; after PLUGHOOK1c). The review's
-  note with *Ask again*, and the codes on the Session branches and sync rows, in both catalogues; `Sweep.tsx` learns
-  the landed kind `pull-request` and the session kind `carried`, the kit's `plugin.kit.kind.query` gets its words, and
-  a plugin failing at `work/state` gets its cost line (found by PLUGHOOK1a). Contract: design §2.4–§2.5. Proof: module
-  route tests, vitest and stories, catalogue parity, `names-check`, the look in both themes.
-- [ ] **PLUGHOOK2 — a pull request's review threads back to its session** (held; driver, examples, web-shell; after
-  LAND2c). Read at a press through `work/review`, and sent only as the person's words or a new ask. Trigger: the
-  first change request carried over by hand. Contract: plugin hooks design §3.1.
+  note with *Ask again*; the codes on the session-branch and sync rows (a workspace's Branches tab after UX6g) in both
+  catalogues; `Sweep.tsx`'s kinds `pull-request` and `carried`; `plugin.kit.kind.query`'s words; a failing
+  `work/state`'s cost line. Contract: design §2.4–§2.5. Proof: route tests, vitest, stories, catalogue parity,
+  `names-check`, the look.
 - [ ] **LAND2d — the page says who accepted a landing, and the rehearsal lands one itself** (web-shell, tools; found by
-  LAND2b). The review's note words `acceptedBy` (*accepted automatically when its quest was done*, with its pull
-  request), and the conversation words a note event's `parts`; the family rehearsal sets a workspace rule
-  `--auto-accept` with a stub plugin pushing to a bare origin, closes a quest done, runs `drive --until-idle`, and
-  asserts the branch, `acceptedBy: auto`, the due list closed `landed`, the trace's line, and *To review* without it;
-  then an uncommitted file stays to review and lands once committed. Contract: D145's LAND2b note. Proof: vitest and
-  stories; the rehearsal's phase.
+  LAND2b). The review's note words `acceptedBy` and the conversation a note event's `parts`; the family rehearsal drives
+  an `--auto-accept` rule with a stub plugin and a bare origin through `drive --until-idle` (the branch, `acceptedBy:
+  auto`, the trace's line, *To review* without it), and an uncommitted file stays to review until committed. Contract:
+  D145's LAND2b note. Proof: vitest and stories; the rehearsal's phase.
 - [ ] **LANDSVC1 — Ask Daoris's tool names `--auto-accept`** (service; found by LAND2a). The `setting_propose`
   description and the landing refusal sentence in `HelpProposalBox.Setting.cs` do not name it, so the agent learns the
   flag from the room only. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
 - [ ] **LAND3b — a failed session's branch removed from the screen** (modules, web-shell, web-settings; found by LAND3).
   Only `trees remove … --force` reaches a branch whose tree is gone; offer it on the session's page and beside an
-  unlanded row in Settings → Session branches. Contract: D102's LAND3 note. Proof: modules tests; vitest over a mocked
-  bridge.
-- [ ] **EVID2a — a requirement may require captured proof, and a done names it** (service; after EVID1a).
-  `screenshot` and `answer` evidence at every publish door, `proof` on `quest_respond`'s done, `Evidenced` items for
-  captures with their codes; no bytes, address or path cross machines. Contract: design §9–§10, §12, D146. Proof:
-  `QuestEvidenceTests`, `QuestSyncTests`, `McpToolsTests`, `LocalHostTests`, `SharedHostTests`.
-- [ ] **EVID2b — the driver keeps what the session captured** (driver, examples; after EVID1b and EVID2a). `${proof}`
-  made at spawn and handed to the browser plugins as `--output-dir`; at session end each named capture checked,
-  redacted, copied under the home with `proof.json`, and the verdict posted; the instruction and the intake ask for
-  captures. Contract: design §9–§11. Proof: `ProofKeepTests`, `RequirementsHandedTests`, the goldens, the in-app
-  browser server tests, the family rehearsal.
-- [ ] **EVID2c — proof on the pages and at the terminal** (web-shell, modules, driver; after EVID1c and EVID2b). A
-  *Proof* section on a session's page, its review and the quest's page, *Capture proof* through D137's reopen,
-  *Remove proof*, and `daoris-driver proof [--save|--remove]`, both languages. Contract: design §11–§12. Proof:
-  stories, vitest, both catalogues, `HelpCoverageTests`, `DriverCommandTests`, the look.
-- [ ] **FRAME2b — a request to the window kit: restore a maximized window under the pointer** (the owner's to send to
-  the window kit's repository; found by FRAME2). The kit's commands take no position, so a maximized window dragged
-  down restores at its saved place rather than under the pointer, as a native caption drag does. The request: a
-  restore-and-drag command that places the window under the pointer, or a position on restore. Never written into
-  that repository from here (D32). Contract: D56's FRAME2 note. Proof: the kit's answer, then FRAME2's handler using it.
+  unlanded session-branch row (a workspace's Branches tab after UX6g). Contract: D102's LAND3 note. Proof: modules
+  tests; vitest over a mocked bridge.
+
+### Evidence Daoris checks, and proof that outlives the environment (D144, D146)
+
+Order: EVID1a, b and c in turn, each EVID2 row after its EVID1 row; EVID1d after DEV5 and DEV7.
+
 - [ ] **EVID1a — a requirement names a path, and a met answer waits for its reading** (service; after DRIFT1d). Add
   `evidence` at the three publish doors (a `gate` is refused, naming EVID1d). A met answer on one holds its done, and
   `POST /api/quests/{id}/evidence` keeps an `Evidenced` verdict: found lifts the hold and publishes the step, missing
@@ -414,26 +239,27 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
   `gate`: the queue's gate set gains every gate a requirement names, and the check reads the landing's verdict per gate
   and path evidence at the landed merge; a repository off the queue reads `no-queue`. Contract: design §4. Proof: the
   queue's tests with a stand-in gate, the family rehearsal's queue phase.
-- [ ] **AFTER1 — a chain step after several quests** (held until an ask needs it; service, driver). A step names the
-  quests it starts after, and the planner holds it saying which are open, as data on the quest. Contract: review §3,
-  amending the intake design §1g's linear chain. Proof: the trigger, then service and planner tests.
+- [ ] **EVID2a — a requirement may require captured proof, and a done names it** (service; after EVID1a).
+  `screenshot` and `answer` evidence at every publish door, `proof` on `quest_respond`'s done, `Evidenced` items for
+  captures with their codes; no bytes, address or path cross machines. Contract: design §9–§10, §12, D146. Proof:
+  `QuestEvidenceTests`, `QuestSyncTests`, `McpToolsTests`, `LocalHostTests`, `SharedHostTests`.
+- [ ] **EVID2b — the driver keeps what the session captured** (driver, examples; after EVID1b and EVID2a). `${proof}`
+  made at spawn and handed to the browser plugins as `--output-dir`; at session end each named capture checked,
+  redacted, copied under the home with `proof.json`, and the verdict posted; the instruction and the intake ask for
+  captures. Contract: design §9–§11. Proof: `ProofKeepTests`, `RequirementsHandedTests`, the goldens, the in-app
+  browser server tests, the family rehearsal.
+- [ ] **EVID2c — proof on the pages and at the terminal** (web-shell, modules, driver; after EVID1c and EVID2b). A
+  *Proof* section on a session's page, its review and the quest's page, *Capture proof* through D137's reopen,
+  *Remove proof*, and `daoris-driver proof [--save|--remove]`, both languages. Contract: design §11–§12. Proof:
+  stories, vitest, both catalogues, `HelpCoverageTests`, `DriverCommandTests`, the look.
 
-### Sessions that are easy to manage (owner, 2026-10-02) — D126
+### Sessions that are easy to manage (owner, 2026-10-02) — D126, D131, D132, D136, D137
 
-> *"so there is no way to easily managed sessions in daoris rn and it's not really smooth for ui/ux lets also set this
-> improve task too"*
+The contract is `docs/2026-10-02-session-management-design.md`; §9 carries each SESSUX row's full text, proof and
+look. Order: SESSUX1j any time; SESSUX1h after FRAME1i; the looks (MSG1j, ANSWER1d, PAUSE1g, SESSUX1l) once their
+rows are on the install.
 
-Read from the code the same day: a session row's ⋯ offers only *Review* and *Copy session ID*; a quest parked on its
-strikes is started again only by *重试* on the quest's page, under its "sitting" fact (the 1 October limit left the
-owner's AR-2203 work there); a parked session is answered in its conversation; what ended folds under one heading,
-with no view by state (needs you, failed, parked, waiting for an account) and no clearing; titles run long.
-
-The contract is `docs/2026-10-02-session-management-design.md`; §9 carries each row's full text, proof and look.
-Order: SESSUX1a ∥ SESSUX1j; the driver lane a → b → g; the web shell lane c → d → e → i; f after e; h after d–g and
-FRAME1i; k after TOOL4c, TOOL4d and c; then the look (l). b alone ends the silent stop; i alone would have told the
-owner on 1 October.
-
-- [ ] **CARRY1 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
+- [ ] **CARRY2 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
   cut-off without asking whose take the quest is, so a start that failed before its take carries on over someone else's.
   Contract: D80, D126's SESSUX1b2 note. Proof: a ledger row refused, seen failing first.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
@@ -443,42 +269,25 @@ owner on 1 October.
 - [ ] **MSG1d2 — a chat's waiting words are record events** (driver, web-shell; with MSG1c). A queued chat word is
   written with an id and its reach, taken under that id, and a withdrawn word says so, so a restart loses nothing.
   Contract: §3.1, D137's MSG1d note. Proof: `ChatTurns` tests, `conversation.test.ts`.
-- [ ] **MSG1g3 — the cooling held note has a code, and the new-session codes a twin** (driver, web-shell; found by
-  MSG1g2). The driver's "— it does not go on yet: …" line beside held words carries no code, so the page shows it in
-  English next to its own sentence; give it one, as MSG1c3 did for `lost`, and hold `newSessionSaid`'s codes to
-  `GoOnNew.cs` and `WordsNever` with a parsed-declarations test like `note.test.ts`. Contract: D137's MSG1g and MSG1g2
-  notes, D142 point 1. Proof: the `NoteCodes`/`CONVERSATION_CODES` twin rows; the new twin test.
-- [ ] **MSG1f3 — the start-from's terminal door, and what the listing cannot see** (driver; found by MSG1f2). D50 wants
-  the page's *Start a conversation with these words* at a terminal: `daoris-driver sessions start-from <id>` through
-  `StartFrom`, handing the words on and taking them off the record. And two readings MSG1f2 left: a chat with waiting
-  words is grouped as it ended (the planner does not consider chats), and the terminal listing's fresh plan cannot see
-  a cool-off, so a cooling record reads *going on* there. Contract: D137's MSG1f2 note, the working-surface components
-  §5.2–§5.3. Proof: `SessionsCommandTests`, `HelpCoverageTests`, the listing's cases.
-- [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn, which needs Codex installed).
-  The next-step door for `codex-acp` over `_session/steering`, steering only while a turn is live and waiting for a
-  turn it started. Contract: §1.3, §2.1. Proof: STEER3's measurement, then `AcpSteerTests` rows.
-- [ ] **MSG1i — the native door hears words at its next step** (driver; after STEER3's native turn, with
-  `--replay-user-messages`). Driven and chat runs that take words on stdin, which removes the argument's bound.
-  Contract: §2.1, §2.4. Proof: STEER3's measurement, then native tests.
-- [ ] **MSG1j — the canary on the install** (the parent's, after a republish carrying a–f). A session in *To review*
-  written to goes on in its own row; a stopped one too; a chat from yesterday goes on. Contract: §9. Proof: the run,
-  `session.reopened` with `resumed` true.
-- [ ] **MSG1k — a terminal conversation forked into Daoris** (held until a real use asks). Contract: §4.3. Proof: a
-  protocol stub that speaks `session/list` and `session/fork`.
+- [ ] **MSG1g3 — the cooling held note gets a code, and the new-session codes a twin test** (driver, web-shell; found
+  by MSG1g2). The driver's "— it does not go on yet: …" line carries no code, so the page shows it in English beside
+  its own sentence, and no test holds `newSessionSaid`'s codes to `GoOnNew.cs` and `WordsNever`. Contract: D137's MSG1g
+  and MSG1g2 notes, D142 point 1. Proof: the `NoteCodes`/`CONVERSATION_CODES` twin rows; a parsed-declarations test.
+- [ ] **MSG1f3 — the start-from's terminal door, and what the listing cannot see** (driver; found by MSG1f2).
+  `daoris-driver sessions start-from <id>` through `StartFrom`, the terminal twin D50 asks of *Start a conversation with
+  these words*; and MSG1f2's two gaps, a chat with waiting words grouped as ended and a cool-off the listing's fresh
+  plan cannot see. Contract: D137's MSG1f2 note. Proof: `SessionsCommandTests`, `HelpCoverageTests`, the listing's cases.
+- [ ] **MSG1h — Codex hears words at its next step** (driver; after STEER3's Codex turn; session-messages design §8).
+- [ ] **MSG1i — the native door hears words at its next step** (driver; after STEER3's native turn; that design §8).
+- [ ] **MSG1j — the canary on the install** (the parent's; that design §8 and §9; the install carries MSG1a–f since
+  2026-10-03).
 - [ ] **STEER2 — *Send now* on the next-step door, and a box that knows its door** (driver, modules, web; after STEER1).
   *Send now* has nothing to act on where words already reach the next step; send the draft through `_session/steering`
   and let the queue say when words arrive. Contract: D136 §4. Proof: driver, modules and page tests; one steer measured.
 - [ ] **STEER3 — the other doors** (driver; after STEER1). A native driven session on `--input-format stream-json`, and
   `codex-acp`'s `turn/steer`, each measured for one turn before it is built. Contract: D136 §5. Proof: the measurement.
-- [ ] **ANSWER1 on the install — the plan** (owner, 2026-10-03: *"you need to fix the ANSWER1 bug too"*). The fix is on
-  main (ANSWER1a–c, 2026-10-02/03): an answer keeps its session and resumes the agent's own conversation. The install
-  still runs the build before it, because a session has been running at every chance to republish. In order:
-  1. **Republish** at the first moment no session runs (the watcher on the drill-down quest says when), carrying
-     ANSWER1a–c, DRIFT1, TOOL6c and TOOL4g; or, on the owner's word, stop the running one and republish now.
-  2. **ANSWER1d**, below: answer the next park on the install and see the same row go on.
-  3. **ANSWER1e**, below. **UPDATE1** is built (2026-10-03), so the next fix need not wait on a free moment: its first
-     install is a publish in place, and every one after it is staged (UPDATE1c).
-- [ ] **ANSWER1d — the canary on the install** (the parent's, after the republish). One park answered on the install shows
+- [ ] **ANSWER1d — the canary on the install** (the parent's; the install carries ANSWER1a–c since 2026-10-03; owner,
+  2026-10-03: *"you need to fix the ANSWER1 bug too"*). One park answered on the install shows
   one row, the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
@@ -488,21 +297,22 @@ owner on 1 October.
 - [ ] **PAUSE1g — looked at on the install** (the parent's, after a–f). An ask paused mid-session and resumed in its tree;
   one abandoned with a landed session kept. Contract: D132 §12. Proof: a ledger at every width, both themes and languages.
 - [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
-- [ ] **SESSUX1k — waits for an account, in the list** (§2.2; driver, web-shell; after TOOL4c, TOOL4d and c).
+- [ ] **SESSUX1k — a session ended on a limit, in the list** (§2.2; driver, web-shell; after UX6e). MSG1f2 and TOOL4g
+  built *Resumes later* with a cooling account's reset for held words; what is left is a limit-ended session whose
+  carry-on waits, and its ⋯ door to the account on the agent's page.
 - [ ] **SESSUX1l — looked at on the install** (the parent's, after a republish carrying a–i): real sessions by state, a
   parked quest carried on from its session, a stop's hold and Try again, Archive what ended; every width, both themes and
   languages, with a ledger like SESS1's.
 
 ### What a session reads and writes (owner, 2026-10-02) — D127
 
-> *"this is not about how we split its about how we optimize the session and this should also belong to doctrine too"*
+The contract is `docs/2026-10-02-session-economy-design.md`.
 
-Found the same day: the archive is 9,400 lines and 125,000 words because its outcomes run 150–300 words where the
-canon's `task-lifecycle` asks for **a one-line outcome**, and they repeat the decisions record's notes; this
-repository's own `dispatch-subagent` skill asks each subagent for "an outcome paragraph", against the canon. The
-backlog, which every session reads whole, is 7,600 words of its 6,600, its rows pasted long. What a session pays for
-is what it reads and what it is led to read.
-
+- [ ] **COST1 — what a long driven turn costs** (the owner's call; found with METER1). One driven turn ran about a
+  thousand tool calls while its context grew from 48K to 679K tokens, each call re-reading it from the cache, and
+  nothing in Daoris sets an agent's window or compaction. Measure each driven session's context high-water and cache
+  reads per turn for a week, then offer a per-agent ceiling, window or compaction setting on both doors. Contract:
+  METER1, D127.
 - [ ] **SESSOPT1d — the backlog, trimmed by the rule** (the steward's, after b and c). Each over-long line moves to §4.3's
   home; FLAKE1, TEST1 and REH1 get open fix-log entries. Proof: `doc-budgets` ≤ 5,300 words; no row over 60.
 - [ ] **DOC7 — what sessions read, measured** (folded into D127 §6.1): `session.read` and `session.skill` in the machine
@@ -510,40 +320,28 @@ is what it reads and what it is led to read.
 
 ### A workspace that knows itself (owner, 2026-10-01) — D124
 
-> *"since all is known knowledge it should be able to figure out itself"* … *"its more like leaking of knowledge for
+> *"since all is known knowledge it should be able to figure out itself"* … *"it's more like leaking of knowledge for
 > workspace, so the repo should be registered and apply the doctrine and also initialize the knowledge"*
 
-Measured the same day: the owner's work workspace holds 29 drivable repositories, none adopted, none registered
-(`connect` refuses one with no `domain`), 23 with no indexed knowledge at all; the intake router said none declares
-what it owns, and a driven session asked the person what its own notes and code could answer.
-
-The contract is `docs/2026-10-01-workspace-setup-design.md`; §8 carries each row's full text and proof. Order: WSSETUP9
-first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 and WSSETUP2 any time; WSSETUP3 after
-TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
-FRAME1e and WSSETUP6. Then the owner's two runs.
+The contracts are `docs/2026-10-01-workspace-setup-design.md` (§8) and, for WSSETUP14, D128's pilot-lessons design.
+Order: WSSETUP14b–e in turn, then the owner's WSSETUP14f and WSSETUP13; WSSETUP7 after LAYOUT8.
 
 - [ ] **WSSETUP7 — the workspace on the screen and in Ask Daoris** (§4.4, §4.5; modules, web-shell, service, driver;
-  after LAYOUT8, FRAME1e and WSSETUP6), both languages.
-- [ ] **WSSETUP12 — the pilot** (the owner's run, after a republish carrying WSSETUP2, 3, 5, 6, 9 and LAYOUT7): two
-  repositories; what each wrote, its review, its cost, its registration, and a canary: a neighbour's session finds
-  the answer by search and does not park.
-  **Ran 2026-10-02 on the report repository** (quest `#b466447ce4d3`, one turn: 52.3M cached reads, 464K new, 170K out):
-  done on its own branch, 7 commits, not pushed; its three knowledge documents cite every fact by file and line. Not
-  mergeable as it stands, by three faults of Daoris's own (WSSETUP14): CI and 218 links still read the moved
-  `.claude/` paths, which the quest's bounds forbade it to fix; `AGENTS.md` grew to 61 KB because the index lists all
-  169 knowledge documents in the always-loaded region (budget raised to 54,000; one agent reads only 32 KB); 166 old
-  documents have no frontmatter. The second repository waits for WSSETUP14.
+  after LAYOUT8; on a workspace's page once UX6g lands), both languages.
 - [ ] **WSSETUP14b — a knowledge folder declared in place** (after 14a). `documents.knowledge` names a folder the index lists
   and the service indexes, which `sync` never writes. Contract: §1.2, §1.3. Proof: the twin tables matched.
 - [ ] **WSSETUP14c — a document without frontmatter, by its heading** (after 14a). Contract: §3.1, §3.2. Proof: `node --test`.
-- [ ] **WSSETUP14d — the set-up keeps the checks green** (after 14b). Checks first and at the close; knowledge kept in place;
-  only a moved path rewritten; never `done` red. As D129 amends it: the close names each hand-written index, deletes none,
-  and new documents are named by their subject. Contract: §1.1, §1.4–§1.6, §3.3; D129's review §4.5. Proof:
-  `SetupBriefTests`, the playbook twin.
+- [ ] **WSSETUP14d — the set-up keeps the checks green** (after 14b; takes SETUP2, owner, 2026-10-04: *"also found a bug
+  for CI pipeline after the merge of knowledge update … so this is also a good check when building Daoris"*). Checks
+  first and at the close, each named with its result; knowledge kept in place; only a moved path rewritten, every
+  reader of it repointed or reported; never `done` red. As D129 amends it: the close names each hand-written index,
+  deletes none, and new documents are named by their subject. Contract: §1.1, §1.4–§1.6, §3.3; D129's review §4.5.
+  Proof: `SetupBriefTests`, the playbook twin; the family rehearsal's set-up phase with a script reading a moved path.
 - [ ] **WSSETUP14e — the follow-up for a set-up's branch** (after 14d). *Finish setting up this repository*, with the exact
   merge rule. Contract: §4.2. Proof: composer and press tests; the family rehearsal's set-up phase.
-- [ ] **WSSETUP14f — the pilot, finished** (the owner's run, after a republish). Checks green before and after, knowledge
-  declared, the root file under 32,768 bytes, the budget back to the default. Contract: §4. Then WSSETUP13.
+- [ ] **WSSETUP14f — the pilot, finished** (the owner's run, after a republish; WSSETUP12 ran its first turn 2026-10-02).
+  The report repository: checks green before and after, knowledge declared, the root file under 32,768 bytes, the budget
+  back to the default; then the pilot's second repository. Contract: §4.
 - [ ] **KNOW3a — the bench at 169 documents, with opaque names** (KNOW3's hand-back). Whether D128's index is still read
   whole at 54 KB, whether a harness shortens a long skill listing, and how the control fares when names say nothing.
   Contract: the bench results §5, §6.1. Proof: a re-run with `tools/knowledge-bench.mjs`; its tests join `verify`.
@@ -556,11 +354,8 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
   `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
   both doors; the composed settings' tests.
-- [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
-  a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
-  (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
-- [ ] **WSSETUP13 — the rest** (the owner's run): the plan resumed with the pilot's numbers; parks per week before and
-  after.
+- [ ] **WSSETUP13 — the rest** (the owner's run; takes LAYOUT10's other half): the plan resumed with the pilot's
+  numbers, one repository with instruction files of its own among them; parks per week before and after.
 
 ### Plugins: the workshop, Daoris.Plugins and a catalogue (D120) — the build
 
@@ -573,11 +368,11 @@ Every task in Daoris.Plugins is an ask to it, taken by its own session (the owne
 - [ ] **WORKSHOP1b — the workshop and its sessions** (§2.2); **WORKSHOP1c — the workshop on the view; Ask Daoris
   makes plugins there** (§2.3, §2.5); **WORKSHOP1d — hand-over and a named source** (§2.4).
 - [ ] **PLUGDIST1b — the pack and release workflow** (an ask to Daoris.Plugins); **PLUGDIST1c — a package source over HTTP** (§5.3–§5.8);
-  **PLUGDIST1d — the host answers**; **PLUGDIST1e — Find plugins** (§6, after PLUGUI1f).
+  **PLUGDIST1d — the host answers**; **PLUGDIST1e — the catalogue's Available** (§6 as D140 amends it, after PLUGUI1f).
 - [ ] **PLUGDIST1a's leftovers** (its hand-back, 2026-10-01): the modules' plugin page calls a package record
-  `folder` with no folder (PLUGDIST1d says `package`); `install` is routed in the host's `Program.cs` ahead of the
-  `plugins` catch-all and moves into `PluginsCommand` once PLUGUI1d is on main; extraction has no size bound, so
-  PLUGDIST1c bounds it before a package arrives over HTTP.
+  `folder` with no folder (PLUGDIST1d says `package`); `install` is still routed in the host's `Program.cs` ahead of
+  the `plugins` catch-all and moves into `PluginsCommand` now that PLUGUI1d is on main; extraction has no size bound,
+  so PLUGDIST1c bounds it before a package arrives over HTTP.
 - [ ] **PLUGDIST1f — the first publish** (the owner's: the nuget.org account, trusted publishing, the prefix), then
   **PLUGDIST1g — the offers from packages**. ⏸ **PLUGDIST1h — the repository signature checked** (held).
 - [ ] **INIT1 — `init` writes line endings it can keep** (found setting up Daoris.Plugins): a `.gitattributes`
@@ -587,16 +382,11 @@ Every task in Daoris.Plugins is an ask to it, taken by its own session (the owne
 ### Development documents and fewer asks (D122) — the build
 
 The contract is `docs/2026-10-01-development-documents-design.md`; §6 carries each row's full text and proof.
-Order: UNBLOCK5 first (a week of *before*); then DOC2, DOC3 and UNBLOCK2 side by side; the driver lane runs
-UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the canon.
+Order: UNBLOCK2 (after DEV5) → UNBLOCK3 → UNBLOCK6–8.
 
 - [ ] **UNBLOCK4c — the push canary** (the owner's to allow): one turn per form against a local bare remote in
   scratch, by UNBLOCK4's procedure (its archive entry and hand-back): `git -C . push`, `-c`, `--no-pager`, a quoted
   subcommand, an alias, on both doors; the remote's tip must not move, and what refused each is recorded.
-- [ ] **DEV3a — a stop is reported in the run that made it** (found merging, 2026-10-01): the family rehearsal's
-  lost-claim check failed once under load (311/312, green alone): the losing session was stood down with its
-  reason, but the driver printed no `stop  session` line, since sessions outlive their tick (DEV3) and the stop's
-  report can land after the run's last print. Make `--once`/`--until-idle` wait for and print every report it caused.
 - [ ] **UNBLOCK2 — the declaration and its judge** (§3.1–§3.3, after DEV5): `safe` beside `gates`, read from the line.
 - [ ] **UNBLOCK3 — the person's one yes** (§3.4, §3.5, after UNBLOCK2 and a week of UNBLOCK5): the `declare`
   proposal, exact rules on both Claude Code doors.
@@ -607,9 +397,8 @@ UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the 
 
 ### Self-managed tools (D121) — the build
 
-The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full text and proof. Order: TOOLS2 →
-TOOLS3 → TOOLS4, then TOOLS5 ∥ TOOLS6, then TOOLS7 ∥ TOOLS8, then TOOLS9; TOOLS10 before any session runs a
-managed git; TOOLS11 last.
+The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full text and proof. Order: TOOLS6 ∥
+TOOLS8, then TOOLS9; TOOLS10 before any session runs a managed git; TOOLS11 last.
 
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
   includes, the version floors; and `SessionTrees.Sync.cs`'s sentence "the git Daoris runs (the one on the
@@ -623,8 +412,8 @@ managed git; TOOLS11 last.
 ### Daoris develops Daoris (D115) — the build
 
 The contract is `docs/2026-10-01-self-development-design.md`; each row names its sections, which carry the
-detail and the proof. Order: DEV2 ∥ DEV3 ∥ DEV4, then DEV5 → DEV6 → DEV7 (one lane, in sequence), then
-DEV8 ∥ DEV9, then DEV10 and DEV11.
+detail and the proof. Order: DEV5 → DEV6 → DEV7 (one lane, in sequence), then DEV8 ∥ DEV9, then DEV10 and
+DEV11.
 
 - [ ] **DEV5 — the queue lands a branch from outside** (§4.2–§4.8): the `queue` form in a detached tree under
   the home, gates by declared `kind` with the `quiet` re-run, the fast-forward under TreeLock,
@@ -645,8 +434,8 @@ DEV8 ∥ DEV9, then DEV10 and DEV11.
 
 ### One repository, every agent (D117) — the build
 
-The contract is `docs/2026-10-01-agent-layout-design.md`; §7 carries each row's full text and proof.
-LAYOUT2 first: until it measures, the layout's entry points are the design's reading, not the harnesses'.
+The contract is `docs/2026-10-01-agent-layout-design.md`; §7 carries each row's full text and proof. Until
+LAYOUT2 measures, the layout's entry points are the design's reading, not the harnesses'.
 
 - [ ] **LAYOUT2 — the canary turn** (the owner's to allow). The keyless half is done and archived
   (`docs/2026-10-01-entry-point-evidence.md`: the ACP adapter loads project instructions). One turn per
@@ -657,14 +446,9 @@ LAYOUT2 first: until it measures, the layout's entry points are the design's rea
   `records`' (DEV2), so the branch touches the steward's records.
 - [ ] **LAYOUT6 — the brief moves** (§4.2): `CLAUDE.md` into the root `AGENTS.md` (about 1,300 words, under
   codex's documented 32 KiB) and eight rooms; `CLAUDE.md` keeps the import alone.
-- [ ] **LAYOUT7 — the layout facts and the set-up quest** (§6.1–§6.3): read from the line, `daoris-driver
-  setup <repo> [--plan]`, the quest composer, the permission rule the press adds.
-- [ ] **LAYOUT8 — the layout on the screen, and its Ask Daoris door** (§6.1, §6.5): Projects' rows, *Set up
-  for agents*, the `setup` kind; both languages, looked at on the window.
-- [ ] **LAYOUT9 — a lane names its rooms** (§2.5), after DEV2 and DEV6.
-- [ ] **LAYOUT10 — the first real set-ups** (the owner's run; since D124 no longer after the first publish, and its
-  unadopted half is WSSETUP12): one unadopted
-  repository, and one with instruction files of its own.
+- [ ] **LAYOUT8 — the layout on the screen, and its Ask Daoris door** (§6.1, §6.5): Repositories' rows and a
+  repository's Setup tab (UX6f), *Set up for agents*, the `setup` kind; both languages, looked at on the window.
+- [ ] **LAYOUT9 — a lane names its rooms** (§2.5), after DEV6.
 
 ### What REV3 left (2026-09-25)
 
@@ -676,14 +460,13 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
   counted: the rest of `AGENTS.md`, `CLAUDE.md`, a local `.claude/rules/` file. The README and the
   instruction-file design still say the budget guards it, and `analyze` projects the pre-D59
   quantity (`config.ts` now says so). Decide what the number caps, then move all three together.
+
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
 Measured: rules and hooks Daoris hands over at spawn reach an untrusted session on both doors, and a
 repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).
-- [ ] **TRUST2 — what D73 leaves unmeasured.** Whether Claude Code honours a trust key Daoris wrote
-  as its own; whether a trusted parent covers a child, since the hold matches the exact folder; and
-  whether the screen should offer a grant before any hold exists (FG5's onboarding). The first
-  needs one grant, and a grant is the owner's.
+- [ ] **TRUST2 — what D73 leaves unmeasured** (the owner's: one grant). Whether Claude Code honours a trust key Daoris
+  wrote as its own, and whether a trusted parent covers a child, since the hold matches the exact folder.
 
 ### The toolchain and its accounts (owner, 2026-09-22 → D57)
 
@@ -692,20 +475,9 @@ repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidenc
 the archive: **usage is measured before it is managed**, and breadth is **more native adapters plus
 the ACP door, not a registry**.
 
-- [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to check
-  daoris continue"*): **designed as D125** (`docs/2026-10-01-account-rotation-design.md`), which lifts D57 §b's hold:
-  five observed limits (design §0.2) answer its three questions. A limit is read from the door's failure by a table
-  that grows only with recorded sentences; its account cools until the reset the agent names (60 minutes when it names
-  none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
-  accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
-  waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
-- [ ] **TESTGIT1b — the last landing fixtures call the shared git runner** (driver tests). `LandingPluginTests` and
-  `LandingTidyTests` still read git's stdout before its stderr; `LandedFixture` (fixed by PLUGHOOK1a), `LandingTests`
-  and `AutoLandingTests` keep their own both-streams copies. Move them onto `GitFixture`. Proof: the classes' serial
-  Process run; no `FileName = "git"` left in them.
 - [ ] **TOOL6h — an account that signs out after its last probe** (driver; found by TOOL6g). One that read signed in
   stays ready until a start on it fails or the person presses refresh; read a session's refusal on it as a reason to
   ask that one account once. Contract: D125's TOOL6g note. Proof: a tick where a start is refused on an account last
@@ -714,9 +486,6 @@ the ACP door, not a registry**.
   writes `use` (with `use`, `keep`, `early`, `near`), `order` and `ready`, and the setting writer lists `cooloff`, so the
   cards the screen's controls owe can be offered. Contract: D125 §6, D130 §9, §16.6. Proof: the proposal-kind tests with
   the doors listed; `HelpCoverageTests`' owed rows become doors.
-- [ ] **TOOL4m — the rest of TOOL4g's screen** (web-shell; found by TOOL4g). *What needs you*'s row for a start waiting for
-  an account with *Let … run …* (D130 §3.3), the conversation picker's split (§3.2), and a session head's *your own
-  sign-in*. Contract: D130 §3.2–§3.3. Proof: vitest, stories, the look.
 - [ ] **TOOL4h — the rehearsal and the report** (tools; §8, §2.2; after TOOL4j): two stub accounts; the usage report's
   limits section per account and window, *Daoris's sessions only*; *in parallel* over N stub accounts (D130 §5.4).
 - [ ] **TOOL4i — a real rotation on the install** (the owner's run). *One by one* seen 2026-10-02: a spend limit on the
@@ -725,20 +494,6 @@ the ACP door, not a registry**.
 - [ ] **AGT3c — two readings that trust what a session printed** (found designing D125): AGT3b's 401 detection reads the
   transcript's last lines, so a session whose own output ends with `API Error: 401` holds its account; and the ACPEND1
   note carries the agent's sentence, zone included, to every machine (`SessionNote.ForAnotherMachine` removes no zone).
-- [ ] **TOOL5 — more native adapters** (design §5). D23 applied more times: a native adapter per tool
-  worth matching properly (its own flags, configuration home, login flow, version question), with the
-  ACP door for tools that speak the protocol and a tool free to be both. **Not a registry** — the
-  components plan's rejection stands and D24 with it. Largely folds into **ACP3**, which already
-  brings dsh and codex as configurations of the door; this item is what remains once that lands.
-  ⛔ **Read against what is built, 2026-09-22: what remains is a TRIGGER, not work.** Every sentence
-  of §5 is realised — the adapter seam, the ACP door, a tool being both (`codex` is managed with no
-  native adapter and its sessions ride `codex-acp`, which §5 names as the sanctioned shape), the
-  declaration duplicated in two artefacts, no registry, no model named. **Nothing is waiting except a
-  tool somebody actually wants**, so this is held on the same bar CANON9 and HARNESS1 use: start it
-  when a repository names the tool, because an adapter's every field is a claim about somebody else's
-  program and a guessed one fails in a person's terminal. The reading did find one real gap, and that
-  is fixed rather than carried — the twin tables pinned the three ACP arrivals and left `claude-code`
-  asserted on neither side.
 
 ### Agents, their accounts, and the map (owner, 2026-09-23 → D67)
 
@@ -749,217 +504,64 @@ was checked. Every AGT and MAP item is archived but this one.
   under `DISABLE_UPDATES`, and that a pinned Codex outside its own layout takes no update action (the
   evidence says so; nothing measured it). Spends two real downloads — the owner's call.
 
-### The in-app browser — Daoris's own, driven over MCP (owner, 2026-09-27 → D78)
+### The in-app browser — Daoris's own, driven over MCP (owner, 2026-09-27 → D78, D84)
 
-> *"so instead rely on things like claude extension we can have our own built-in browser system
-> (or use plugin to support this)"*
+`docs/2026-09-27-in-app-browser-design.md` is the contract.
 
-`docs/2026-09-27-in-app-browser-design.md` is the contract. It was measured first: Playwright MCP
-attached over CDP drives a WebView2.
+- [ ] **BRW14 — a page's file reaches the quest** (design first; found on the owner's ticket, 2026-10-01). An intake
+  reading a ticket whose mock-up is an attachment could not save it and fell back to a cropped capture, since the
+  engine's downloads are its own (CHR3 §3.2). Design where a session's download lands and how the quest's attachments
+  take it. Contract: D78, CHR3.
 
-- [ ] **BRW11 — a page's file reaches the room** (found on AR-2203, 2026-10-01): the intake session read a ticket
-  whose mock-up is an attachment, and could not save it into its room; it fell back to a viewport capture,
-  cropped. The engine's downloads are its own (CHR3 §3.2), so an agent driving the browser over MCP has no way to
-  bring a signed-in page's file to the quest. Design first: where a download lands for a session, and how the
-  quest's attachments take it.
-- [ ] **BRW3 — the owner's machine** (with FG5). The plugin, the one sign-in in the in-app browser,
-  `mcp__browser` allowed, and the first ask whose ticket the intake reads through it.
-  **2026-09-27: set up to the owner's step.** The install is republished at `b287580`. The
-  `in-app-browser` plugin replaces the Edge one, `mcp__browser` stays allowed for the workspace, and
-  the browser window was opened on the install for the sign-in. **Then the owner signed in and
-  asked** (2026-09-27, 19:51 UTC), and the loop ran for real. The intake's `WebFetch` was refused
-  (the protocol door refuses every request, and the room's allow-list is not the handed rules). It
-  found `mcp__browser` itself, read the signed-in ticket in the in-app window, and published one
-  quest to the right repository, with a browser-verify `then` step, tier `intake`. The development
-  session's tree then failed on Windows' path limit and left a branch per tick (FIX-LOG,
-  2026-09-27). Fixed, republished, and the session opened its tree and took the quest. Its outcome
-  is FG5's report.
+### Tests that fail under load
 
-#### The browser as a browser (owner, 2026-09-27) — after BRW3 and FG5
-
-> *"the browser itself should have similar features as regular browser (for example edge, favriate,
-> and etc, which can help to managed the use) and also should be able to start from the daoris app
-> … start them after you complate current task (which is more important as the core workflow)"*
-
-🔴 **D84 changed the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
-Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The engine landed as CHR3
-(below), in place of the WebView2 window, and the Edge option as BRW12 and BRW13, in the archive.
-### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
-
-> *"I think we still does not meet the first goal: setup [the named workspace] as workspace and use
-> mcp to control chrome with jira to read ticket and start task (and does not need to locate which
-> repo just start the task in daoris)"*
-
-`docs/2026-09-27-first-goal-study.md` is the study. It found three walls in the code between D65 and
-the real workspace: nothing unadopted could be chosen, an import stated no workspace, and a ticket
-is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
-
-- [ ] **FG5 — the first run on the named workspace** (the owner present; INT6 as it now stands).
-  The study's §5, in order: republish, import as a workspace, a browser plugin for this machine,
-  the person's one sign-in, the browser allowed for the workspace, the loop (intake, the protocol
-  door's adapter, drivable, own trees), then an ask with a real ticket. What it produces is the
-  report: the room it rendered, whether the intake read the ticket and chose, and what the session
-  did. Every part up to the ask can be run by an agent. The sign-in and the ticket are the owner's.
-  **The loop is met** (2026-09-27): six legs, from the first ask to a chain that ran end to end, are
-  the study's §8. **Still the owner's:** the verify step's camera-GUID defect and the daily view's note
-  chip, both in that repository, and the branches its sessions left (WSR3).
-- [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
-  process, on first use. The MCP host is one process per session, so with an embedder configured,
-  each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
-  keep them in `knowledge.db`. It needs Lyntai 3.5, its version floors (Microsoft.Data.Sqlite
-  10.0.12, SQLitePCLRaw 3.0.5), Dapper and FluentMigrator, and a re-embed when the model changes.
-  **The trigger is a measurement**: a machine running with an embedder, and a first search whose
-  cost somebody notices. No machine here runs with one yet (the install says `lexical only`).
-
-### Plugins — a folder that declares, and may speak (owner, 2026-09-23 → D64)
-
-`docs/2026-09-23-plugin-design.md` is the contract. **Two standing decisions are NOT reopened**: no
-adapter registry (D23/D24/D57 — a declared harness is a file on one machine, and the ACP door is the
-seam), and no plugin runtime for the surface (D52). **No code loads into a host, ever.**
-
-- [ ] ⏸ **PLUG7 — service-side points** (held): the same wire reaches the knowledge service when a
-  plugin somebody writes asks for a point there. PLUG4–6 are in the archive.
-
-### The reference gap (owner, 2026-09-24)
-
-> *"lets keep push the ui/ux design and I still think this does not meet the reference projects
-> capbility"*
-
-`docs/2026-09-24-reference-gap-study.md` measured it: the attended session's centre is a record, not
-a conversation, because ACP's structure is flattened to text lines before the bridge, a chat does not
-use a structured wire at all, and nothing is kept for the page across a restart. A chrome pass cannot
-close that. **The owner chose the conversation model and every extra → D76** (2026-09-25), with
-*"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
-TDD, looked at on the window, and the ones that touch a real session use one (authorised
-2026-09-24). **CONV4 was split (2026-09-25)**, and all four parts are in the archive.
-- [ ] ⏸ **Held, after the conversation:** a file tree in the dock, when a person asks to browse a tree
-  rather than open a named file. The rest of this row is built: the document preview (PREVIEW1, D111,
-  opened from a tool card or the review) and the terminal (CONSOLE4, D96).
-
-### Open — the arc's leftovers, in the order they are worth doing
-
-
-
-- [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.** *Narrowed by MOD8
-  (2026-09-30): every class that starts a real process or runs a real tick carries the `Process` category,
-  subagents never run it, and the parent and the release run it serially; the final serial run on an idle
-  machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit
-  threw through a chat's cleanup; being fixed), `LandingPluginTests.A_plugin_that_never_answers…` (a 3 s
-  patience against a slow `initialize`), and `DrivenSessionInputTests` (acp-stub, "the pipe is being
-  closed", once in a parallel run). The history below stands.* *`SessionProcesses.Stop` is fixed (FIX-LOG,
-  2026-09-30); the merge tool now re-runs any failure in a Process gate, whatever its class.*
-  `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the
-  intake opened, and its stub agent published nothing onto the ask (2026-09-25, under a loaded full
-  run). It passed 10 runs in a row after. Its assertion now carries the session's transcript and the
-  tick's events, so the next failure says why: a `fetch` to the stand-in that failed, an exit, or
-  something else. A gate that fails one run in twenty is a gate people learn to re-run, which is how
-  a real failure gets waved through. **A second of the same shape** (2026-09-27, with two more
-  real-tick classes in the suite): `DrivenSessionInputTests`' `acp-stub` case failed once in a full
-  run, and passed alone and on the next full run. Its wait for the session to start is 15 seconds,
-  under a suite that spawns node in several classes at once. The assertion does not say which step
-  was slow, so it needs the same treatment. **Seen again 2026-09-28**, beside a third: in consecutive
-  full runs the `acp-stub` case failed once, then `HookTests.A_real_hook_process_is_started_in_its_folder_with_its_data_and_id_in_the_environment`
-  failed in its cleanup, the plugin folder still held by the hook's process, and the next full run
-  passed 862/862. The cleanup deletes before the process has let go. *Fixed 2026-09-30: the hook tests' cleanup now waits for the process to let go.* **Seen again 2026-09-29**: one
-  failure in a full run of 898 during HELP1c, not named because only the summary line was kept; the
-  next three full runs passed 898/898. Keep a full run's whole output, so the next one names itself.
-  **Seen again 2026-09-30**, the output kept: `DrivenSessionInputTests`' `acp-stub` case, 935/936,
-  the record `failed` where `stopped` was expected after the person's stop, during LOG1a with the
-  rest of the chain queued behind it; ten runs alone passed. Unconfirmed reading: the stop lands while
-  the stub's process is already ending, and the record takes the exit's word over the person's.
-  **And a fourth class the same day**: `CanonicalLineTests.A_session_tree_grows_from_the_line_set_for_its_repository`
-  failed once (*"the tree grew from main, not develop"*, 993/994) while five subagents built in
-  parallel; its class passed three runs alone. Load is the common factor in every sighting. The driven-session assertion now carries the record and the tick's lines, so its next failure names
-  itself; a stop landing mid-handshake was tested and is not the cause. **A fifth class, twice on
-  2026-09-30** (LOG2's baseline, then its merge while WSR4 built beside it):
-  `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`, 1144/1145,
-  green alone three times running. **A seventh, the same night, caught by the merge tool as a FLAKE**
-  (its first: the category rule, not the old list): `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`,
-  547/548 in a serial Process run loaded by a subagent's build and a live session, green alone. **A sixth class the same evening**, merging DRV8 while three
-  worktrees built: `LandedBranchTests.A_branch_landing_records_the_branch_it_made_under_the_home`,
-  1415/1416, green alone three times. **And a rehearsal the same day**: the family rehearsal exited 127
-  straight after building the HTTP host, writing no transcript of its own, while three worktrees
-  built beside it. It passed 301/301 run alone. **Since LEFT1 the merge tool runs a rehearsal that died**
-  (a process-level exit, or nothing printed of its own) once more and reads FLAKE if it passes; one that
-  reported a failed check has failed. The three merges after it (PREVIEW1, WSR6, LEFT1) needed no re-run.
-  **Two more at LEFT3's merge (2026-10-01)**, with three subagents building beside it, each failing in the full
-  serial run and passing alone: `TurnStopTests.A_conversation_on_the_native_door_is_handed_the_plugins_servers`
-  (driver, 571/572) and `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
-  (modules, 113/114). Both spawn real processes; load is again the common factor. **And one at NAME1a's merge**:
-  `PluginKitTests.A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`, a timing test under
-  three subagents' builds (the driver's Process half took 37 minutes), green alone. **And `PseudoConsoleTests` again**
-  (its second sighting) at the designs integration's merge, under three builds, green alone.
-  **And a rehearsal check, a new kind** (merging PLUG10, UNBLOCK4 and UNBLOCK5, three builds beside it): the family
-  rehearsal's *its driver stops its own losing session* failed on its printed line (DEV3a), 311/312, green alone.
-
-  **Sighted 2026-10-02** (merging WSSETUP3/5, four branches building at once): `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
-  failed in the modules' Process half and passed alone. And `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`
-  failed twice, alone too: its read of a heartbeat file the child rewrites every 100 ms asked to share only reading and
-  met the writer's handle; fixed in that merge (TEST4: read sharing read and write, retried briefly), three runs green.
-  **And merging TOOL4e and SESSUX1a**: `HostSupervisorTests.A_host_that_ignores_its_input_ending_is_killed_after_the_bound`
-  failed in the modules' Process half and passed alone, under four branches' load.
-  **And merging TOOL6b, SESSUX1i and WSSETUP14a** (2026-10-02): `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how`
-  failed in the driver's Process half and passed alone, with three branches building beside it.
-  **And merging ANSWER1b, PAUSE1a and DRIFT1a** (2026-10-03): `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`
-  failed in the driver's Process half and passed alone, with four branches building beside it.
-  **And merging ANSWER1c, DRIFT1b and TOOL4g** (2026-10-03): `AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own`,
-  `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it` and the modules'
-  `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` failed in the
-  full runs and passed alone, with three branches building and two real sessions running on the install.
-  **And the CLI, on PLUGHOOK1's branch** (2026-10-04): `plugin-sources.test.ts:317` and `plugins.test.ts:409` failed with
-  EPERM removing a fixture folder a child still held, and passed alone (41/41) and in the next full verify.
-  **And merging REVIEW3, REVIEW4 and MSG1g** (2026-10-04): the modules' `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
-  again, caught by the merge tool as a FLAKE, with one branch building beside it.
-  **And merging TOOL6g, TESTGIT1 and PLUGHOOK1a** (2026-10-04): the modules' `HarnessProfileTests.Signing_in_to_another_account_keeps_it_and_the_end_names_who`
-  failed in the full run and passed alone, with three branches building. It signs in through the path TOOL6g's
-  probe lock now guards; a second sighting reads that lock first.
-- [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
-  second sighting was its trigger. Both runs died with `worker process exited unexpectedly
-  (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.
-  - 2026-09-21, during SURF2, mid-suite. The identical run passed after.
-  - 2026-09-25, during CONV4b's gate, at test 4 (*a chain moves on when its quest closes done*),
-    0 ms in, after three passed; the other 17 did not run. CONV4b changed no e2e path or host code.
-  - 2026-10-01, **outside Playwright for the first time**: the deployment rehearsal's own process exited
-    `3221226505` in phase 6 (closing the deployed shell), merging TABS1 after a night of parallel builds.
-    LEFT1's re-run rule ran it again, which then refused at its first step with EPERM on the scratch folder
-    the dying run's processes still held; the rehearsal's removal now waits them out (`maxRetries`). Alone,
-    straight after, it passed 70/70. So it is not the test runner's: the common factor is a Node process on
-    Windows ending while its children are killed, as the sibling's reproducer says.
-
-  **A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing
-  reproducer (spawn a server, poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row
-  used to say *capture the Playwright HTML report*, but the config runs the list reporter, so no
-  such report exists. The next step is a capture that can exist: an HTML or JSON reporter in
-  `playwright.config.ts`, then the comparison with the sibling's notes. Do not tune timeouts on two
-  data points either.
+- [ ] **FLAKE1 — real-process tests that fail under load and pass alone** (driver, modules tests). Every sighting
+  since 2026-09-25 shares load (parallel builds or live sessions beside a full run); the repeaters are
+  `DriverModulePluginsTests.The_kit_makes_a_plugin…` (four times), `DrivenSessionInputTests`' acp-stub case and
+  `ProcessJobTests`. Make each repeater's wait name its slow step and bound it, rather than re-run. Sightings: the
+  fix log's FLAKE1 (open). Contract: MOD8, PROC1. Proof: each repeater's failure names its step; three loaded serial
+  runs green.
+- [ ] **DEV3a — a stop is reported in the run that made it** (driver; found merging, 2026-10-01): the family
+  rehearsal's lost-claim check failed once under load (311/312) because sessions outlive their tick (DEV3) and the
+  stop's report can land after the run's last print. Make `--once`/`--until-idle` wait for and print every report it
+  caused. Proof: a driver test that a stop caused by the run is printed before it exits.
+- [ ] **TEST1 — a Node process on Windows aborts with `0xC0000409`** (web e2e, tools). Three sightings with no output,
+  two under Playwright and one in the deployment rehearsal closing its shell; the common factor is a Node process
+  ending while its children are killed, which a family sibling reproduces at about 1 in 300 rounds. Capture first (a
+  JSON reporter in `playwright.config.ts`, the rehearsal's exit kept); no timeout tuning on three points. Sightings:
+  the fix log's TEST1 (open). Proof: the next sighting captured.
 
 ### Held — each waits on a trigger that has not arrived
 
-- [ ] **REH1 — the release rehearsal intermittently reports 45/52.** Seen twice, **always exactly 7
-  failures** — precisely the canon-upgrade phase's 7 checks, so a whole phase fails on a broken
-  precondition rather than a flaky assertion. Both times it ran straight after canon files were edited
-  and synced. **Every run now writes a transcript to `_fixtures/rehearsal-logs/` by construction**
-  (2026-09-18), so the next failure is captured without anyone remembering to. Eight runs that day —
-  several straight after canon edits and syncs, the suspected trigger — all passed 52/52, and a ninth
-  ran clean 2026-09-20 after the whole DRV5 arc (no canon edits that session, which is the case that
-  has always passed). Stays open until a captured failure explains it. Do not tag a release while this
-  is open. **Not this**: on 2026-09-21 the rehearsal failed at `npm pack` before any check ran — a
-  deterministic broken publish build, fixed and gated (FIX-LOG). REH1 is 45/52 with the canon-upgrade
-  phase's 7 checks failing; a run that never reaches a check is a different animal.
-
+- [ ] **REH1 — the release rehearsal's canon-upgrade phase failed whole, twice** (tools). Seen 2026-09-18 straight
+  after canon edits and syncs, as exactly that phase's 7 checks, and never since; every run keeps a transcript in
+  `_fixtures/rehearsal-logs/`. No tag while it is open: it closes on a captured failure, or by the owner's call after
+  clean runs that follow canon edits. Sightings: the fix log's REH1 (open).
 - [ ] **CANON9 — `desktop-winforms`, the last pack candidate.** One 11 KB source, one repository —
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until
   a second repository needs the same thing.
+- [ ] **TOOL5 — more native adapters** (design §5; D23, D24, D57). Every sentence of §5 is realised (the seam, the ACP
+  door, a tool being both, no registry), so what remains is a trigger: an adapter when a repository names its tool,
+  since each field is a claim about someone else's program. The reading is D57's TOOL5 note.
+- [ ] **SEM2 — vectors that persist** (service; after SEM1). The MCP host is one process per session, so with an
+  embedder each session's first search embeds the corpus; keep vectors in `knowledge.db` through
+  Lyntai.Storage.Sqlite, with Dapper, FluentMigrator and a re-embed when the model changes. Trigger: a machine running
+  an embedder whose first search somebody notices (the install says `lexical only`).
+- [ ] **PLUG7 — service-side points** (D64): the same wire reaches the knowledge service when a plugin somebody writes
+  asks for a point there.
+- [ ] **A file tree in the dock** (D76): when a person asks to browse a tree rather than open a named file. The
+  preview (PREVIEW1, D111) and the terminal (CONSOLE4, D96) are built.
+- [ ] **AFTER1 — a chain step after several quests** (service, driver; until an ask needs it). A step names the quests
+  it starts after, and the planner holds it saying which are open, as data on the quest. Contract: the review §3,
+  amending the intake design §1g's linear chain. Proof: the trigger, then service and planner tests.
+- [ ] **MSG1k — a terminal conversation forked into Daoris** (until a real use asks). Contract: the session-messages
+  design §4.3. Proof: a protocol stub that speaks `session/list` and `session/fork`.
+- [ ] **PLUGHOOK2 — a pull request's review threads back to its session** (driver, examples, web-shell). Read at a press
+  through `work/review`, sent only as the person's words or a new ask. Trigger: the first change request carried over
+  by hand. Contract: plugin hooks design §3.1.
 
 
 ## How to work a task
 
-- **TDD:** failing test → run it fail → minimal implementation → run it pass → commit.
-- **Commit per task, automatically, once gates are green** (D37 as amended). Push, publish, release
-  and history rewrites stay the owner's call.
-- **`npm run verify` before claiming done.**
-- **A canon file is project-agnostic** — the principle and the reason, never the mechanism. See
-  `.claude/knowledge/canon-authoring.md`.
-- **When a task completes, move it to `docs/task-archive.md`** with the date and outcome.
-- **Work an arc leaves behind goes in the backlog as a row**, never as a handover sentence — that is
-  how work quietly stops being work.
+`CLAUDE.md` carries the dev loop and the conventions. **Work an arc leaves behind goes in the backlog as a row**,
+never as a handover sentence — that is how work quietly stops being work.

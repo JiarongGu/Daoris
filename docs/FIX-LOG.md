@@ -5,6 +5,131 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## FLAKE1 (open): real-process tests that fail under load and pass alone (since 2026-09-25)
+
+**Symptom.** A test that starts a real process or runs a real tick fails in a full run and passes alone, and the
+next full run is green. Every sighting shares load: parallel builds or live sessions beside the run. The backlog's
+FLAKE1 row keeps what to do and its proof; this entry keeps the evidence the cause will be found from (D127 §4.3).
+
+**Sightings** (in place of a root cause until one is found; moved from the backlog on 2026-10-04, as written there).
+
+*Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
+category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle
+machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit threw
+through a chat's cleanup; being fixed), `LandingPluginTests.A_plugin_that_never_answers…` (a 3 s patience against a
+slow `initialize`), and `DrivenSessionInputTests` (acp-stub, "the pipe is being closed", once in a parallel run). The
+history below stands.* *`SessionProcesses.Stop` is fixed (FIX-LOG, 2026-09-30); the merge tool now re-runs any
+failure in a Process gate, whatever its class.*
+
+`IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the intake opened, and
+its stub agent published nothing onto the ask (2026-09-25, under a loaded full run). It passed 10 runs in a row after.
+Its assertion now carries the session's transcript and the tick's events, so the next failure says why: a `fetch` to
+the stand-in that failed, an exit, or something else. A gate that fails one run in twenty is a gate people learn to
+re-run, which is how a real failure gets waved through. **A second of the same shape** (2026-09-27, with two more
+real-tick classes in the suite): `DrivenSessionInputTests`' `acp-stub` case failed once in a full run, and passed
+alone and on the next full run. Its wait for the session to start is 15 seconds, under a suite that spawns node in
+several classes at once. The assertion does not say which step was slow, so it needs the same treatment. **Seen again
+2026-09-28**, beside a third: in consecutive full runs the `acp-stub` case failed once, then
+`HookTests.A_real_hook_process_is_started_in_its_folder_with_its_data_and_id_in_the_environment` failed in its
+cleanup, the plugin folder still held by the hook's process, and the next full run passed 862/862. The cleanup deletes
+before the process has let go. *Fixed 2026-09-30: the hook tests' cleanup now waits for the process to let go.*
+**Seen again 2026-09-29**: one failure in a full run of 898 during HELP1c, not named because only the summary line was
+kept; the next three full runs passed 898/898. Keep a full run's whole output, so the next one names itself. **Seen
+again 2026-09-30**, the output kept: `DrivenSessionInputTests`' `acp-stub` case, 935/936, the record `failed` where
+`stopped` was expected after the person's stop, during LOG1a with the rest of the chain queued behind it; ten runs
+alone passed. Unconfirmed reading: the stop lands while the stub's process is already ending, and the record takes the
+exit's word over the person's. **And a fourth class the same day**:
+`CanonicalLineTests.A_session_tree_grows_from_the_line_set_for_its_repository` failed once (*"the tree grew from main,
+not develop"*, 993/994) while five subagents built in parallel; its class passed three runs alone. Load is the common
+factor in every sighting. The driven-session assertion now carries the record and the tick's lines, so its next
+failure names itself; a stop landing mid-handshake was tested and is not the cause. **A fifth class, twice on
+2026-09-30** (LOG2's baseline, then its merge while WSR4 built beside it):
+`ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`, 1144/1145, green alone three
+times running. **A seventh, the same night, caught by the merge tool as a FLAKE** (its first: the category rule, not
+the old list): `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`, 547/548 in a serial Process run
+loaded by a subagent's build and a live session, green alone. **A sixth class the same evening**, merging DRV8 while
+three worktrees built: `LandedBranchTests.A_branch_landing_records_the_branch_it_made_under_the_home`, 1415/1416,
+green alone three times. **And a rehearsal the same day**: the family rehearsal exited 127 straight after building the
+HTTP host, writing no transcript of its own, while three worktrees built beside it. It passed 301/301 run alone.
+**Since LEFT1 the merge tool runs a rehearsal that died** (a process-level exit, or nothing printed of its own) once
+more and reads FLAKE if it passes; one that reported a failed check has failed. The three merges after it (PREVIEW1,
+WSR6, LEFT1) needed no re-run. **Two more at LEFT3's merge (2026-10-01)**, with three subagents building beside it,
+each failing in the full serial run and passing alone:
+`TurnStopTests.A_conversation_on_the_native_door_is_handed_the_plugins_servers` (driver, 571/572) and
+`DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` (modules,
+113/114). Both spawn real processes; load is again the common factor. **And one at NAME1a's merge**:
+`PluginKitTests.A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`, a timing test under three
+subagents' builds (the driver's Process half took 37 minutes), green alone. **And `PseudoConsoleTests` again** (its
+second sighting) at the designs integration's merge, under three builds, green alone. **And a rehearsal check, a new
+kind** (merging PLUG10, UNBLOCK4 and UNBLOCK5, three builds beside it): the family rehearsal's *its driver stops its
+own losing session* failed on its printed line (DEV3a), 311/312, green alone.
+
+**Sighted 2026-10-02** (merging WSSETUP3/5, four branches building at once):
+`DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` failed in
+the modules' Process half and passed alone. And `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`
+failed twice, alone too: its read of a heartbeat file the child rewrites every 100 ms asked to share only reading and
+met the writer's handle; fixed in that merge (TEST4: read sharing read and write, retried briefly), three runs green.
+**And merging TOOL4e and SESSUX1a**: `HostSupervisorTests.A_host_that_ignores_its_input_ending_is_killed_after_the_bound`
+failed in the modules' Process half and passed alone, under four branches' load. **And merging TOOL6b, SESSUX1i and
+WSSETUP14a** (2026-10-02): `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how`
+failed in the driver's Process half and passed alone, with three branches building beside it. **And merging ANSWER1b,
+PAUSE1a and DRIFT1a** (2026-10-03): `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`
+failed in the driver's Process half and passed alone, with four branches building beside it. **And merging ANSWER1c,
+DRIFT1b and TOOL4g** (2026-10-03):
+`AccountGoalTickTests.One_look_spreads_K_starts_over_N_accounts_and_a_limit_cuts_off_only_its_own`,
+`IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it` and the modules'
+`DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` failed in
+the full runs and passed alone, with three branches building and two real sessions running on the install. **And the
+CLI, on PLUGHOOK1's branch** (2026-10-04): `plugin-sources.test.ts:317` and `plugins.test.ts:409` failed with EPERM
+removing a fixture folder a child still held, and passed alone (41/41) and in the next full verify. **And merging
+REVIEW3, REVIEW4 and MSG1g** (2026-10-04): the modules'
+`DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one` again,
+caught by the merge tool as a FLAKE, with one branch building beside it. **And merging TOOL6g, TESTGIT1 and
+PLUGHOOK1a** (2026-10-04): the modules' `HarnessProfileTests.Signing_in_to_another_account_keeps_it_and_the_end_names_who`
+failed in the full run and passed alone, with three branches building. It signs in through the path TOOL6g's probe
+lock now guards; a second sighting reads that lock first.
+
+## TEST1 (open): a Node process on Windows aborts with 0xC0000409 (since 2026-09-21)
+
+**Symptom.** A Node process dies with `worker process exited unexpectedly (code=3221226505)`, Windows `__fastfail`: no
+output, no stack, no WER entry. The backlog's TEST1 row keeps what to do; this entry keeps the sightings (D127 §4.3).
+
+**Sightings** (in place of a root cause until one is found; moved from the backlog on 2026-10-04, as written there).
+The second sighting was its trigger.
+
+- 2026-09-21, during SURF2, mid-suite. The identical run passed after.
+- 2026-09-25, during CONV4b's gate, at test 4 (*a chain moves on when its quest closes done*), 0 ms in, after three
+  passed; the other 17 did not run. CONV4b changed no e2e path or host code.
+- 2026-10-01, **outside Playwright for the first time**: the deployment rehearsal's own process exited `3221226505` in
+  phase 6 (closing the deployed shell), merging TABS1 after a night of parallel builds. LEFT1's re-run rule ran it
+  again, which then refused at its first step with EPERM on the scratch folder the dying run's processes still held;
+  the rehearsal's removal now waits them out (`maxRetries`). Alone, straight after, it passed 70/70. So it is not the
+  test runner's: the common factor is a Node process on Windows ending while its children are killed, as the
+  sibling's reproducer says.
+
+**A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing reproducer (spawn a server,
+poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row used to say *capture the Playwright HTML report*,
+but the config runs the list reporter, so no such report exists. The next step is a capture that can exist: an HTML or
+JSON reporter in `playwright.config.ts`, then the comparison with the sibling's notes. Do not tune timeouts on two
+data points either.
+
+## REH1 (open): the release rehearsal's canon-upgrade phase failed whole (since 2026-09-18)
+
+**Symptom.** The release rehearsal reported 45/52, seen twice, **always exactly 7 failures**: precisely the
+canon-upgrade phase's 7 checks, so a whole phase fails on a broken precondition rather than a flaky assertion. The
+backlog's REH1 row keeps the rule (no tag while it is open) and its closing condition; this entry keeps the sightings
+(D127 §4.3).
+
+**Sightings** (in place of a root cause until one is found; moved from the backlog on 2026-10-04, as written there).
+Both times it ran straight after canon files were edited and synced. **Every run now writes a transcript to
+`_fixtures/rehearsal-logs/` by construction** (2026-09-18), so the next failure is captured without anyone remembering
+to. Eight runs that day — several straight after canon edits and syncs, the suspected trigger — all passed 52/52, and
+a ninth ran clean 2026-09-20 after the whole DRV5 arc (no canon edits that session, which is the case that has always
+passed). Stays open until a captured failure explains it. **Not this**: on 2026-09-21 the rehearsal failed at
+`npm pack` before any check ran — a deterministic broken publish build, fixed and gated (FIX-LOG). REH1 is 45/52 with
+the canon-upgrade phase's 7 checks failing; a run that never reaches a check is a different animal. Since then the
+rehearsal has grown to 114 checks, so a repeat would not read 45/52; it would read as that phase failing whole.
+
 ## A test's one-minute window read the wall clock (2026-10-04)
 
 **Symptom.** Merging PLUGHOOK1a beside two other branches, `PullRequestStateTests.The_clean_up_removes_a_squash_merged_branch…`
