@@ -36,7 +36,7 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
         return [
           // The agents not installed, a group of their own under the installed (D152 §4.6), named once at its head.
           at === absentFrom && (
-            <li key="absent" role="presentation" className="px-2.5 pb-0.5 pt-2.5 text-meta font-medium uppercase tracking-[0.04em] text-ink-faint">
+            <li key="absent" role="presentation" className="pb-0.5 pl-[calc(0.625rem+3px)] pr-2.5 pt-2.5 text-meta font-medium uppercase tracking-[0.04em] text-ink-faint">
               {t('agents.list.absent')}
             </li>
           ),

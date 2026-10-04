@@ -484,74 +484,77 @@ export function AgentPage({
         </div>
       )}
 
-      {/* The accounts: one list, whatever doors reach the agent (D150 §5.2, TOOL6g), a row each (D152 §4.2). Never folded. */}
-      <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
-        <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <SectionTitle>{t('harness.accounts')}</SectionTitle>
-          <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
-            {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
-            {tool.present && (
-              <Tip content={t('agents.read.againTip', { agent: product })}>
-                <Button variant="ghost" disabled={reading || busy} aria-busy={reading || undefined} onClick={acts.onReadAgain}>
-                  <Icon name="refresh" size={13} />
-                  {reading ? t('agents.read.reading') : t('agents.read.again')}
-                </Button>
-              </Tip>
-            )}
-          </span>
-        </div>
-        <ul className={ACCOUNT_COLUMNS}>
-          {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
-          {tool.accounts.map(accountRow)}
-          {/* Your own sign-in last (D152 §4.3), its explanation on its name's ⓘ: the one sign-in no list holds, which an agent
-              not installed has none of. */}
-          {tool.present && (
-            <AccountRow
-              name={ownLabel}
-              who={tool.ownAccount}
-              why={ownLine(tool.ownAccount, use?.own.cooling)}
-              state={own}
-              runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
-              act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
-              menu={ownMenu}
-              now={now}
-            />
-          )}
-        </ul>
-        {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph. */}
-        {tool.accounts.length > 0 && (
-          <div className="mt-2">
-            <button
-              type="button"
-              aria-expanded={termsOpen}
-              onClick={() => setTermsOpen((was) => !was)}
-              className="flex items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
-            >
-              {t('agents.terms.show')}
-              <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
-            </button>
-            {termsOpen && <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.terms')}</p>}
+      {/* The accounts: one list, whatever doors reach the agent (D150 §5.2, TOOL6g), a row each (D152 §4.2). Never folded;
+          an agent not installed has none until it is (§4.6), and no list head stands over nothing. */}
+      {(tool.present || tool.accounts.length > 0) && (
+        <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
+          <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <SectionTitle>{t('harness.accounts')}</SectionTitle>
+            <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
+              {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
+              {tool.present && (
+                <Tip content={t('agents.read.againTip', { agent: product })}>
+                  <Button variant="ghost" disabled={reading || busy} aria-busy={reading || undefined} onClick={acts.onReadAgain}>
+                    <Icon name="refresh" size={13} />
+                    {reading ? t('agents.read.reading') : t('agents.read.again')}
+                  </Button>
+                </Tip>
+              )}
+            </span>
           </div>
-        )}
-        {keying && (
-          <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
-            <input
-              autoFocus
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              value={keyDraft}
-              onChange={(event) => setKeyDraft(event.target.value)}
-              aria-label={t('harness.profile.keyLabel', { tool: product })}
-              placeholder={t('harness.profile.keyPlaceholder')}
-              className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
-            />
-            <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
-            <Button variant="ghost" onClick={() => { setKeying(false); setKeyDraft(''); }}>{t('common.cancel')}</Button>
-            <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
-          </form>
-        )}
-      </section>
+          <ul className={ACCOUNT_COLUMNS}>
+            {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
+            {tool.accounts.map(accountRow)}
+            {/* Your own sign-in last (D152 §4.3), its explanation on its name's ⓘ: the one sign-in no list holds, which an agent
+                not installed has none of. */}
+            {tool.present && (
+              <AccountRow
+                name={ownLabel}
+                who={tool.ownAccount}
+                why={ownLine(tool.ownAccount, use?.own.cooling)}
+                state={own}
+                runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
+                act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
+                menu={ownMenu}
+                now={now}
+              />
+            )}
+          </ul>
+          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph. */}
+          {tool.accounts.length > 0 && (
+            <div className="mt-2">
+              <button
+                type="button"
+                aria-expanded={termsOpen}
+                onClick={() => setTermsOpen((was) => !was)}
+                className="flex items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
+              >
+                {t('agents.terms.show')}
+                <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
+              </button>
+              {termsOpen && <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.terms')}</p>}
+            </div>
+          )}
+          {keying && (
+            <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
+              <input
+                autoFocus
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                value={keyDraft}
+                onChange={(event) => setKeyDraft(event.target.value)}
+                aria-label={t('harness.profile.keyLabel', { tool: product })}
+                placeholder={t('harness.profile.keyPlaceholder')}
+                className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+              />
+              <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
+              <Button variant="ghost" onClick={() => { setKeying(false); setKeyDraft(''); }}>{t('common.cancel')}</Button>
+              <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+            </form>
+          )}
+        </section>
+      )}
 
       {/* How the accounts are used (TOOL4g; D130 §3.2, §16.6): this machine's list and settings, folded to the scopes. */}
       {use && machine && tool.accounts.length > 0 && (
@@ -717,32 +720,36 @@ export function AgentPage({
         </Fold>
       )}
 
-      {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so. */}
-      <Fold section="usage" title={t('usage.title')} summary={usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
-        <Prose className="text-small">{t('usage.body')}</Prose>
-        {usage.length > 0 && (
-          <ul className="m-0 mt-2 list-none p-0">
-            {usage.map((account) => {
-              const called = account.profile ? labelOf(account.profile) : ownLabel;
-              return (
-                <li key={`${account.harness}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
-                  <span className="font-mono text-small">{account.harness}</span>
-                  <Chip>{called}</Chip>
-                  <span className="text-small text-ink-soft">{t('usage.sessions', { count: account.sessions })}</span>
-                  <Tip content={t('usage.contextTip')}>
-                    <span className="ml-auto font-mono text-small text-ink-faint">{t('usage.context', { used: figure(account.used) })}</span>
-                  </Tip>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
-      </Fold>
+      {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so; an agent not
+          installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). */}
+      {(tool.present || sessions > 0) && (
+        <Fold section="usage" title={t('usage.title')} summary={usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
+          <Prose className="text-small">{t('usage.body')}</Prose>
+          {usage.length > 0 && (
+            <ul className="m-0 mt-2 list-none p-0">
+              {usage.map((account) => {
+                const called = account.profile ? labelOf(account.profile) : ownLabel;
+                return (
+                  <li key={`${account.harness}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
+                    <span className="font-mono text-small">{account.harness}</span>
+                    <Chip>{called}</Chip>
+                    <span className="text-small text-ink-soft">{t('usage.sessions', { count: account.sessions })}</span>
+                    <Tip content={t('usage.contextTip')}>
+                      <span className="ml-auto font-mono text-small text-ink-faint">{t('usage.context', { used: figure(account.used) })}</span>
+                    </Tip>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
+        </Fold>
+      )}
 
-      {/* The two doors stay in sight (D50): the agent's id is said here, where the terminal types it. */}
+      {/* The two doors stay in sight (D50): the agent's id is said here, where the terminal types it; an agent not installed
+          has one door to name, its installer. */}
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
-        <Inline text={t('agents.page.terminal', { agent: tool.name })} />
+        <Inline text={t(tool.present ? 'agents.page.terminal' : 'agents.page.terminalAbsent', { agent: tool.name })} />
       </p>
     </ViewMain>
   );

@@ -1287,7 +1287,7 @@ describe('how accounts are used', () => {
     await userEvent.keyboard('{Escape}');
     // The plans and terms fold to one line at the list's foot, which opens the paragraph (D152 §4.4).
     expect(screen.queryByText(/^Each account's own plan and terms apply\./)).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: "Each account's own plan and terms apply" }));
+    await userEvent.click(screen.getByRole('button', { name: "Each account's own plan and terms" }));
     expect(screen.getByText(/^Each account's own plan and terms apply\./)).toBeTruthy();
     expect(screen.queryByText(/^Sessions run on your own sign-in/)).toBeNull();
   });

@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '../lib/cn';
 import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../ui';
 import { type AccountState, readLine, stateWhen, stateWord } from './agents';
 
@@ -12,7 +11,7 @@ import { type AccountState, readLine, stateWhen, stateWord } from './agents';
  * The accounts' columns (UX7b, D152 §4.2): *Account*, *State*, *Runs for*, *Now*, the act and the ⋯, on the list itself so
  * every row's cells line up, each row a subgrid of it. Below 40rem of main area the list is no grid and each row stacks.
  */
-export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[40rem]/main:grid-cols-[minmax(0,1.35fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,0.6fr)_auto_auto] @min-[40rem]/main:gap-x-3';
+export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[40rem]/main:grid-cols-[minmax(0,1.35fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,0.6fr)_auto_1.75rem] @min-[40rem]/main:gap-x-3';
 
 /**
  * The columns' names over the rows, drawn only where the row is one line: at 680 px a header would name columns that are not
@@ -80,7 +79,8 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
   return (
     <li
       aria-label={name}
-      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-0.5 border-t border-line py-1.5 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid"
+      // A line at 1546 px (D152 §4.2, a row at most 36 px): the act's own padding is the row's air, so the row adds little.
+      className="grid grid-cols-[minmax(0,1fr)_auto_1.75rem] items-center gap-x-3 gap-y-0.5 border-t border-line py-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid @min-[40rem]/main:py-0.5"
     >
       <span className="col-start-1 row-start-1 flex min-w-0 items-baseline gap-x-2">
         {nameTip ? <Tip content={nameTip}>{named}</Tip> : named}
@@ -148,7 +148,10 @@ export function AccountRow({ name, who, id, home, why, state, runs, current, sai
       )}
 
       {said && <span className="col-span-full col-start-1 text-meta text-ink-faint [overflow-wrap:anywhere]">{said}</span>}
-      {children && <div className={cn('col-span-full col-start-1 flex min-w-0 flex-col gap-2 pt-1')}>{children}</div>}
+      {/* Only a panel that is open takes a line: the row's children are its closed panels' `false` as often as not. */}
+      {Children.toArray(children).length > 0 && (
+        <div className="col-span-full col-start-1 flex min-w-0 flex-col gap-2 pb-1 pt-1">{children}</div>
+      )}
     </li>
   );
 }

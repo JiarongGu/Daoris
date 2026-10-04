@@ -34,7 +34,8 @@ export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose
     <section aria-label={t('agents.add.title')} className={PANEL}>
       <p className="m-0 text-body text-ink">{t('agents.add.back')}</p>
       <ul className="m-0 mt-2 list-none p-0">
-        {accounts.map((account) => {
+        {/* The accounts a list holds first, the first of them the one loud press (the platform language §4). */}
+        {[...accounts].sort((a, b) => Number(b.state.holdsWork) - Number(a.state.holdsWork)).map((account, at) => {
           const word = stateWord(account.state);
           return (
             <li key={account.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-1.5 first:border-t-0">
@@ -44,7 +45,7 @@ export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose
                 <span className="text-ink-faint">{stateWhen(account.state, now)}</span>
                 <span className="before:mr-1.5 before:text-ink-faint before:content-['·']">{account.runs}</span>
               </span>
-              <Button variant="primary" disabled={busy} onClick={() => onSignIn(account.id)}>
+              <Button variant={at === 0 ? 'primary' : 'default'} disabled={busy} onClick={() => onSignIn(account.id)}>
                 {t('agents.act.signInTo', { account: account.name })}
               </Button>
             </li>
@@ -59,18 +60,19 @@ export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose
   );
 }
 
-/** What a list's box says beside its name: who it holds, the workspaces this machine's runs, and where ticking moves starts. */
+/**
+ * What a list's box says beside its name: who it holds, the workspaces this machine's runs, and, where ticking it moves where
+ * a workspace's starts begin, that it does (*used by forge; its starts run on account-3 instead of your own sign-in*).
+ */
 function choiceDetail(t: ReturnType<typeof useTranslation>['t'], choice: JoinChoice, account: string): string {
-  const own = t('agents.use.summary.own');
-  const holds = choice.holds.length > 0 ? choice.holds.join(', ') : own;
-  const said = choice.workspace === null
-    ? (choice.usedBy.length > 0 ? t('agents.add.usedBy', { workspaces: list(choice.usedBy), accounts: holds }) : holds)
-    : t(choice.listed ? 'agents.add.ownList' : 'agents.add.ownDefault', { accounts: holds, account: holds });
-  if (!choice.moves) return said;
-  const moves = choice.usedBy.length > 0
-    ? t('agents.add.moves', { workspaces: list(choice.usedBy), account })
-    : t('agents.add.movesMachine', { account });
-  return `${said}; ${moves}`;
+  if (choice.moves) {
+    return choice.usedBy.length > 0
+      ? t('agents.add.usedByMoves', { workspaces: list(choice.usedBy), account })
+      : t('agents.add.movesMachine', { account });
+  }
+  const holds = choice.holds.join(', ');
+  if (choice.workspace !== null) return t(choice.listed ? 'agents.add.ownList' : 'agents.add.ownDefault', { accounts: holds, account: holds });
+  return choice.usedBy.length > 0 ? t('agents.add.usedBy', { workspaces: list(choice.usedBy), accounts: holds }) : holds;
 }
 
 /**
@@ -144,10 +146,11 @@ export function PlaceAccount({
           </label>
         )}
         {choices.length > 0 && (
-          <fieldset className="m-0 grid gap-1.5 border-0 p-0">
+          // Each box's name in one column and what it says in the next, so the sentences line up (the UX7 design §4.7).
+          <fieldset className="m-0 grid grid-cols-1 gap-x-4 gap-y-1.5 border-0 p-0 @min-[36rem]/main:grid-cols-[max-content_minmax(0,1fr)]">
             <legend className="mb-1 p-0 text-body font-medium text-ink">{t('agents.add.lists')}</legend>
             {choices.map((choice) => (
-              <div key={choice.workspace ?? ''} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 pl-1">
+              <div key={choice.workspace ?? ''} className="col-span-full grid grid-cols-subgrid items-baseline gap-y-0.5 pl-1">
                 <CheckField
                   checked={ticked.has(choice.workspace)}
                   onChange={(on) => setTicked((was) => {
@@ -159,7 +162,7 @@ export function PlaceAccount({
                   label={choice.workspace ?? t('agents.add.machine')}
                   className="text-ink"
                 />
-                <span className="min-w-0 flex-1 basis-60 text-small text-ink-soft [overflow-wrap:anywhere]">
+                <span className="min-w-0 pl-6 text-small text-ink-soft [overflow-wrap:anywhere] @min-[36rem]/main:pl-0">
                   {choiceDetail(t, choice, name.trim() || account)}
                 </span>
               </div>
