@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { COOLING_FILE, coolingLine, coolingOf, coolingWhen, coolingWhy, endCooling, readCooling } from '../src/cooling.ts';
 import type { CoolingEntry } from '../src/cooling.ts';
 import {
-  TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew,
+  TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
 } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
@@ -241,20 +241,29 @@ test('a finished sign-in into an account ends its cool-off; one that did not fin
   const script = join(fx.root, 'signed.mjs');
   writeFileSync(script, "console.log(JSON.stringify({ loggedIn: true, email: 'someone@example.invalid' }));\n", 'utf8');
   const toolchain = { ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script] };
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
   cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true }, 'account-2': { until: AHEAD(), stated: true } } });
 
-  assert.equal(signInNew('claude-code', toolchain, fx.root, () => 0, () => {}), 0);
+  assert.equal(signInTo('claude-code', toolchain, fx.root, 'account-2', () => 2, () => {}), 2);
+  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
+  assert.equal(signInTo('claude-code', toolchain, fx.root, 'account-1', () => 0, () => {}), 0);
   assert.equal(coolingOf(fx.root, 'claude-code', 'account-1', new Date()), null);
+  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
+  // A new account takes a fresh id (ACCT2), so it carries no cool-off of another's, and ends none.
+  assert.equal(signInNew('claude-code', toolchain, fx.root, () => 0, () => {}), 0);
   assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-2', new Date()), null);
   fx.cleanup();
 });
 
-test('a key made into an account ends a cool-off its name still carries', () => {
+test('a key made into an account takes an id no cool-off names, and leaves the others\'', () => {
   const fx = makeFixture('cooling-key');
   cooling(fx, { 'claude-code': { 'account-1': { until: AHEAD(), stated: true } } });
 
-  assert.equal(addKeyAccount(fx.root, 'claude-code', 'sk-test-0000-wxyz', () => {}), 'account-1');
-  assert.equal(coolingOf(fx.root, 'claude-code', 'account-1', new Date()), null);
+  const account = addKeyAccount(fx.root, 'claude-code', 'sk-test-0000-wxyz', () => {});
+  assert.notEqual(account, 'account-1');
+  assert.equal(coolingOf(fx.root, 'claude-code', account, new Date()), null);
+  assert.notEqual(coolingOf(fx.root, 'claude-code', 'account-1', new Date()), null);
   fx.cleanup();
 });
 

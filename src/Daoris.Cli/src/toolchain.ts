@@ -20,7 +20,8 @@
 //   2. Resolution is: the person's pick, then the workspace's default, then the machine's, then NONE.
 //   3. None means the harness's OWN configuration home — the environment seam is not set at all.
 //   (4 is the binary — see `resolveVersion`.)
-//   5. An account made by signing in takes the first free `account-N`; who it is, is the tool's answer.
+//   5. An account made by signing in, or by a key, takes a fresh id, never reused (`newAccountId`, ACCT2); who it is, is
+//      the tool's answer, offered as its name at the sign-in's end.
 //   6. An account that is an API key keeps its key in `keys.json` under the home, beside the account.
 //   7. A door's accounts, defaults and keys are its owner's (`accountOf`); its pin is its own.
 //   8. The order rotation may use (`rotation`, `workspaceRotation`), and how each list is used (`rotationUse`,
@@ -28,6 +29,10 @@
 //      sections — for the same wiring both write the same bytes (TOOL4e).
 //   9. An account's cool-off (`cooling.json`) is the driver's to write; here it is read, listed and ended — by
 //      `profile ready`, a sign-in or a key into the account, and the account's removal (`cooling.ts`, TOOL4e).
+//  10. An account's name is the person's, kept in `accounts.json` by its id, which is the folder's name; every verb takes
+//      an account by its id or its name, and writes its id (`accountnames.ts`, ACCT2).
+//  11. A sign-in into an account reaches one that is there, never a new folder; a new account's sign-in, and `profile
+//      join`, put it in the lists the person names, and both say which lists and defaults hold it (`rotation.ts`, ACCT1).
 //
 // It is a MANAGEMENT command and it opens no socket. It does spawn processes — that is the whole
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
@@ -50,7 +55,7 @@ import { flagValue, operands } from './args.ts';
 
 /** The `agent` flags that take a value — so that value is never read as an operand. */
 const AGENT_VALUED: ReadonlySet<string> = new Set([
-  '--profile', '--workspace', '--account', '--for', '--keep', '--early', '--near',
+  '--profile', '--workspace', '--account', '--for', '--keep', '--early', '--near', '--name', '--join',
 ]);
 
 /** `agent profile use`'s flags (TOOL6a, D130 §16.6); any other is refused rather than read as a choice. */
@@ -96,11 +101,15 @@ import { commandRules } from './permissions.ts';
 import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
 import { grantTrust, TRUST_FILE } from './trust.ts';
 import {
-  NEAR_HIGHEST, NEAR_LOWEST, USE_FIELDS, USE_MODES, readOrderCircles, readOrders, readUse, readUseCircles, readUses,
-  resolveRotation, resolveScope, rotationProblem, rotationRefusal, scopeProblem, withRotation, withUse, withoutAccount,
-  writtenOrderCircles, writtenOrders, writtenUseCircles, writtenUses,
+  NEAR_HIGHEST, NEAR_LOWEST, USE_FIELDS, USE_MODES, joinProblem, joinRefusal, placesOf, readOrderCircles, readOrders,
+  readUse, readUseCircles, readUses, resolveRotation, resolveScope, rotationProblem, rotationRefusal, scopeProblem,
+  withJoined, withRotation, withUse, withoutAccount, writtenOrderCircles, writtenOrders, writtenUseCircles, writtenUses,
 } from './rotation.ts';
-import type { Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
+import type { AccountPlace, Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
+import {
+  accountNames, accountsPath, forgetName, nameFor, nameProblem, newAccountId, renameAccount, resolveAccount, shownAs,
+  signInRefusal, signInTarget, AccountNameError,
+} from './accountnames.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { saidLine, saidOf } from './windows.ts';
 import { markSignedIn, probeLockPath, takeProbeLock } from './probelock.ts';
@@ -589,18 +598,17 @@ export function profiles(home: string, harness: string): string[] {
 }
 
 /**
- * The name an account made by signing in gets (D66 §3): the first free `account-N`. Twin rule 5.
+ * The id an account made by signing in, or by a key, gets (D66 §3, ACCT2): a fresh one, never reused
+ * (`newAccountId`), where it was the first free `account-N`. Twin rule 5.
  *
  * @remarks
- * 🔴 **A neutral name, never who signed in.** It is needed before the sign-in starts, when nobody knows
+ * 🔴 **A neutral id, never who signed in.** It is needed before the sign-in starts, when nobody knows
  * whose it is; and renaming the directory afterwards would move a home a harness may have keyed its
- * credential to. Who it is stays the tool's answer, read by `list`.
+ * credential to. What a person reads is the account's name, offered at the sign-in's end as who signed
+ * in and kept only where the person keeps it (`accountnames.ts`).
  */
 export function nextAccount(home: string, harness: string): string {
-  const taken = new Set(profiles(home, harness).map((name) => name.toLowerCase()));
-  let number = 1;
-  while (taken.has(`account-${number}`)) number += 1;
-  return `account-${number}`;
+  return newAccountId(profiles(home, harness));
 }
 
 /**
@@ -615,8 +623,9 @@ export function removeProfile(home: string, harness: string, profile: string): b
   const where = profileHome(home, harness, profile);
   // An account that was a key goes with its key (AGT3), even when its directory went by hand.
   removeKey(home, harness, profile);
-  // And with its cool-off (TOOL4e): the next account made takes the first free name, which may be this one's.
+  // And with its cool-off (TOOL4e): an account made later by `profile add` under its name starts afresh. And its name (ACCT2).
   endCooling(home, harness, profile, new Date());
+  forgetName(home, harness, profile);
   if (!existsSync(where)) return false;
   rmSync(where, { recursive: true, force: true, maxRetries: 3 });
   return true;
@@ -697,7 +706,8 @@ export function addKeyAccount(
 
   write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
   write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
-  write(`  \`daoris agent profile default ${harness} ${account}\` makes sessions run as it.`);
+  write(`  \`daoris agent profile rename ${harness} ${account} <name>\` gives it a name of yours (ACCT2), and`);
+  write(`  \`daoris agent profile join ${harness} ${account} <workspace>…|--machine\` puts it in a list a start runs on.`);
   return account;
 }
 
@@ -860,22 +870,135 @@ function loginAt(
 }
 
 /**
- * Sign in to another account (D66 §3): the tool's own login flow into the next free `account-N`,
- * kept only when the sign-in finished — the tool exited 0 and does not call that home signed out.
+ * What a sign-in does beside signing in (ACCT1, ACCT2): the name the person gave the account before it began, and the
+ * lists it joins at its end — a workspace's name, or null for this machine's. `path` is the wiring file the joins are
+ * written to and the end's report reads; none joins nothing and reports no list.
+ */
+export interface SignInOptions {
+  name?: string | null;
+  joins?: (string | null)[];
+  path?: string | null;
+}
+
+/** One scope an account runs in, as a person reads it: `this machine's list, as its default`, `` `work`'s default ``. */
+export function placeWords(place: AccountPlace): string {
+  const scope = place.workspace === null ? 'this machine\'s' : `\`${place.workspace}\`'s`;
+  if (place.list && place.default) return `${scope} list, as its default`;
+  return `${scope} ${place.list ? 'list' : 'default'}`;
+}
+
+/**
+ * Where an account runs, said at a sign-in's end and by `profile join` (ACCT1): each list and default that holds it, or
+ * that none does and so no start runs on it — with the lists it could join and the command that joins them.
+ */
+export function placeLines(harness: string, account: string, settings: HarnessSettings, names: Record<string, string>): string[] {
+  const places = placesOf(settings, harness, account);
+  const shown = shownAs(names, account);
+  if (places.length > 0) return [`  \`${shown}\` runs work in ${places.map(placeWords).join(', ')}.`];
+
+  const lists = [
+    ...(settings.rotation[harness] ? [`this machine's (${settings.rotation[harness]!.map((id) => shownAs(names, id)).join(', ')})`] : []),
+    ...Object.entries(settings.workspaceRotation)
+      .filter(([, orders]) => orders[harness])
+      .map(([workspace, orders]) => `\`${workspace}\`'s own (${orders[harness]!.map((id) => shownAs(names, id)).join(', ')})`),
+  ];
+  return [
+    `  no list and no default holds \`${shown}\`, so no start runs on it.`,
+    ...(lists.length > 0 ? [`  The lists here: ${lists.join('; ')}.`] : []),
+    `  \`daoris agent profile join ${harness} ${shown} <workspace>…|--machine\` puts it in one.`,
+  ];
+}
+
+/**
+ * The lists a sign-in is asked to join (ACCT1): each `--join <workspace>`, repeated or comma-separated, in the order named,
+ * and `--join-machine` for this machine's list (null). A `--join` with no workspace after it is refused.
+ */
+export function joinsOf(argv: readonly string[]): (string | null)[] {
+  const joins: (string | null)[] = [];
+  for (let at = 0; at < argv.length; at += 1) {
+    if (argv[at] === '--join-machine') joins.push(null);
+    if (argv[at] !== '--join') continue;
+    const value = argv[at + 1];
+    if (!value || value.startsWith('--')) {
+      throw new DaorisError('`--join` needs a workspace — e.g. `--join work`, or `--join-machine` for this machine\'s list.');
+    }
+    joins.push(...value.split(',').map((each) => each.trim()).filter((each) => each.length > 0).map(normalizeWorkspace));
+    at += 1;
+  }
+  return joins.filter((join, index) => joins.indexOf(join) === index);
+}
+
+/**
+ * The lists a sign-in or `profile join` was asked to join, each refused before anything starts where it cannot be joined
+ * (a workspace that takes this machine's list, `joinRefusal`), so a refusal costs nothing.
+ */
+function refuseJoins(settings: HarnessSettings, harness: string, joins: (string | null)[]): void {
+  for (const workspace of joins) {
+    const problem = joinProblem(settings, harness, workspace);
+    if (problem !== null) throw new DaorisError(joinRefusal(harness, problem.workspace));
+  }
+}
+
+/** The lists joined, in the order named, written once; the wiring as it now stands. */
+function joined(path: string, settings: HarnessSettings, harness: string, account: string, joins: (string | null)[]): HarnessSettings {
+  if (joins.length === 0) return settings;
+  const after = joins.reduce((next, workspace) => withJoined(next, harness, account, workspace), settings);
+  writeHarnessSettings(path, after);
+  return after;
+}
+
+/** `joined` at a sign-in's end, where the sign-in stands whatever the write does: a list not written is said. */
+function joinedAfterSignIn(
+  path: string, settings: HarnessSettings, harness: string, account: string, joins: (string | null)[],
+  write: (line: string) => void,
+): HarnessSettings {
+  try {
+    return joined(path, settings, harness, account, joins);
+  } catch (error) {
+    if (!(error instanceof DaorisError)) throw error;
+    write(`daoris: the account was kept, and joined no list — ${error.message}`);
+    return settings;
+  }
+}
+
+/** A wiring file's settings, or none where there is no file to read. */
+function settingsAt(path: string | null | undefined): HarnessSettings {
+  return path ? readHarnessSettings(path) : readHarnessSettings('');
+}
+
+/**
+ * Sign in to a new account (D66 §3): the tool's own login flow into a folder of a fresh id (ACCT2), kept only when the
+ * sign-in finished — the tool exited 0 and does not call that home signed out. At its end it is named, where the person
+ * named it, joins the lists the person named, and says where it runs (ACCT1); where the person named it nothing, who
+ * signed in is offered as its name, written only by the person's rename (D66 §3).
  *
  * @remarks
  * The spawn is a parameter so the judgement around it is testable with no account: `run` is the
- * relay in the verb, and a fixture in the tests. A sign-in that did not finish leaves nothing behind.
+ * relay in the verb, and a fixture in the tests. A sign-in that did not finish leaves nothing behind. A join or a name
+ * that cannot be kept is refused before anything starts.
  */
 export function signInNew(
   harness: string, toolchain: Toolchain, home: string,
-  run: (where: string) => ExitCode, write: (line: string) => void,
+  run: (where: string) => ExitCode, write: (line: string) => void, options: SignInOptions = {},
 ): ExitCode {
-  const name = nextAccount(home, harness);
-  const where = profileHome(home, harness, name);
+  const joins = options.joins ?? [];
+  const before = settingsAt(options.path);
+  refuseJoins(before, harness, joins);
+  const id = nextAccount(home, harness);
+  const wanted = options.name?.trim() || null;
+  if (wanted !== null) {
+    const problem = nameProblem([...profiles(home, harness), id], accountNames(home, harness), id, wanted);
+    if (problem !== null) {
+      throw new DaorisError(problem.kind === 'taken'
+        ? `\`${wanted}\` already names \`${problem.other}\` — each \`${harness}\` account has a name of its own, so nothing was signed in.`
+        : `\`${wanted}\` is not a name a terminal can type — a name is one word, with no space or backtick, not starting with a dash, at most 64 characters; nothing was signed in.`);
+    }
+  }
+
+  const where = profileHome(home, harness, id);
   // Opened for the sign-in, and gone again below unless the sign-in finished.
   mkdirSync(where, { recursive: true });
-  write(`daoris: signing in to another \`${harness}\` account, with its own login flow.`);
+  write(`daoris: signing in to a new \`${harness}\` account, with its own login flow.`);
   write(`  ${where}`);
   write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by the');
   write('  agent, in its own store, under your OS account — Daoris never sees it.');
@@ -886,25 +1009,95 @@ export function signInNew(
   } finally {
     // Asked of the binary the login ran, so the answer is about the sign-in that just happened.
     const said = code === 0
-      ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, name))
+      ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, id))
       : { login: 'out' as const, account: null };
 
     if (code !== 0 || said.login === 'out') {
-      removeProfile(home, harness, name);
+      removeProfile(home, harness, id);
       write('daoris: nothing was signed in, so nothing was kept — the account opened for it is gone again.');
     } else {
       // A sign-in into an account ends its cool-off (D125 §2.3), as the driver's `LoginAsync` ends one: the directory
       // may hold another account now. And it is marked (TOOL6g), as the driver's `LoginAsync` marks one.
-      endCooling(home, harness, name, new Date());
-      markSignedIn(home, harness, name, new Date());
+      endCooling(home, harness, id, new Date());
+      markSignedIn(home, harness, id, new Date());
+      let called: string | null = null;
+      if (wanted !== null) {
+        try {
+          called = renameAccount(home, harness, profiles(home, harness), id, wanted);
+        } catch (error) {
+          // The sign-in stands; the name is the person's to give again.
+          if (!(error instanceof AccountNameError)) throw error;
+          write(`daoris: the account was kept, and not named — ${error.message}`);
+        }
+      }
+      const settings = options.path ? joinedAfterSignIn(options.path, before, harness, id, joins, write) : before;
       write(said.account
-        ? `daoris: signed in as ${said.account} — this machine lists it as \`${name}\`.`
-        : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${name}\`.`);
-      write(`  \`daoris agent profile default ${harness} ${name}\` makes sessions run as it.`);
+        ? `daoris: signed in as ${said.account} — this machine lists it as \`${called ?? id}\`.`
+        : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${called ?? id}\`.`);
+      for (const line of endLines(harness, id, called, said.account, settings, home, Boolean(options.path))) write(line);
     }
   }
 
   return code === 0 ? 0 : 2;
+}
+
+/**
+ * Sign back in to an account that is here (ACCT1): the one named, by its id or its name, else the machine's default —
+ * never a new folder. The install's owner signed in to bring a signed-out account back and got a new account no list
+ * held, so the work kept starting on the empty one. At its end it joins the lists the person named and says where it runs.
+ */
+export function signInTo(
+  harness: string, toolchain: Toolchain, home: string, profile: string | null,
+  run: (where: string) => ExitCode, write: (line: string) => void, options: SignInOptions = {},
+): ExitCode {
+  const accounts = profiles(home, harness);
+  const names = accountNames(home, harness);
+  const before = settingsAt(options.path);
+  const target = signInTarget(accounts, names, before.defaults[harness], profile);
+  if (target.account === null) throw new DaorisError(signInRefusal(harness, target, accounts, names));
+  const account = target.account;
+  const joins = options.joins ?? [];
+  refuseJoins(before, harness, joins);
+
+  const where = profileHome(home, harness, account);
+  write(`daoris: running \`${harness}\`'s own login flow into the account \`${shownAs(names, account)}\`.`);
+  write(`  ${where}`);
+  write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by');
+  write('  the agent, in its own store, under your OS account — Daoris never sees it.');
+  const signed = run(where);
+  // A sign-in that finished ends that account's cool-off (D125 §2.3): the directory may hold another account now. And
+  // it is marked (TOOL6g), so the desktop asks the account again at its next look rather than believing it signed out.
+  if (signed === 0) {
+    endCooling(home, harness, account, new Date());
+    markSignedIn(home, harness, account, new Date());
+    const settings = options.path ? joinedAfterSignIn(options.path, before, harness, account, joins, write) : before;
+    const named = nameFor(names, account);
+    // Who signed in is asked only to offer it as a name, where the account has none yet (D66 §3).
+    const who = named === null
+      ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, account)).account
+      : null;
+    for (const line of endLines(harness, account, named, who, settings, home, Boolean(options.path))) write(line);
+  }
+  return signed;
+}
+
+/**
+ * What a sign-in's end says beside who signed in (ACCT1, ACCT2): where the account runs — each list and default that holds
+ * it, or that none does — and, where it has no name of the person's, who signed in offered as one, as a command the person
+ * runs to keep it. Nothing of who signed in is written here.
+ */
+function endLines(
+  harness: string, account: string, named: string | null, who: string | null, settings: HarnessSettings, home: string,
+  placed: boolean,
+): string[] {
+  const lines: string[] = [];
+  if (named === null && who) {
+    lines.push(`  \`daoris agent profile rename ${harness} ${account} ${who}\` names it ${who}; it reads as \`${account}\` until it has a name.`);
+  } else if (named === null) {
+    lines.push(`  \`daoris agent profile rename ${harness} ${account} <name>\` gives it a name of yours.`);
+  }
+  if (placed) lines.push(...placeLines(harness, account, settings, accountNames(home, harness)));
+  return lines;
 }
 
 /**
@@ -921,12 +1114,14 @@ export function signInNew(
  *
  * @param says Whether the agent's sessions say how much of each window is used (the toolchain's `windows`).
  */
-export function useLines(scope: Scope, product: string, says = false): { rows: [label: string, value: string][]; notes: string[] } {
+export function useLines(
+  scope: Scope, product: string, says = false, shown: (account: string) => string = (account) => account,
+): { rows: [label: string, value: string][]; notes: string[] } {
   const { use } = scope;
   const mode = USE_WORDS[use.use];
   const rows: [string, string][] = [
     ['use accounts', `${mode.name}${mode.cost ? ` — ${mode.cost}` : ''}`],
-    ['kept for conversations', use.keep ?? 'none'],
+    ['kept for conversations', use.keep === null ? 'none' : shown(use.keep)],
     ['switch before the limit', !use.early
       ? `off (near: ${use.near}%)`
       : says
@@ -937,9 +1132,9 @@ export function useLines(scope: Scope, product: string, says = false): { rows: [
   const notes: string[] = [];
   const problem = scopeProblem({ default: scope.default, list: scope.list, keep: use.keep });
   if (problem?.kind === 'default') {
-    notes.push(`its default, \`${problem.account}\`, is not in this list: name it in the list, or make one of the list the default`);
+    notes.push(`its default, \`${shown(problem.account)}\`, is not in this list: name it in the list, or make one of the list the default`);
   } else if (problem?.kind === 'alone') {
-    notes.push(`\`${problem.account}\` is kept for conversations, and this list holds no other account for driven work`);
+    notes.push(`\`${shown(problem.account)}\` is kept for conversations, and this list holds no other account for driven work`);
   }
   for (const name of scope.unknown) {
     notes.push((USE_FIELDS as readonly string[]).includes(name)
@@ -962,13 +1157,16 @@ export function useLines(scope: Scope, product: string, says = false): { rows: [
  * @param says Whether the agent's sessions say how much of each window is used (the toolchain's `windows`).
  * @param anySaid Whether any account of the list has said what it has left (`windows.json`).
  */
-export function nextStartLines(scope: Scope, says = false, anySaid = false): { row: string; note: string | null } {
-  if (scope.list.length === 1) return { row: `\`${scope.list[0]}\`, the one account this list holds`, note: null };
+export function nextStartLines(
+  scope: Scope, says = false, anySaid = false, shown: (account: string) => string = (account) => account,
+): { row: string; note: string | null } {
+  if (scope.list.length === 1) return { row: `\`${shown(scope.list[0]!)}\`, the one account this list holds`, note: null };
 
-  const from = `from \`${scope.begins}\`${scope.default !== null && scope.default === scope.begins ? ', its default' : ''}`;
+  const begins = scope.begins === null ? null : shown(scope.begins);
+  const from = `from \`${begins}\`${scope.default !== null && scope.default === scope.begins ? ', its default' : ''}`;
   const keep = scope.use.keep;
   const passes = keep !== null && scopeProblem({ default: null, list: scope.list, keep }) === null
-    ? `; driven work passes \`${keep}\`, kept for conversations`
+    ? `; driven work passes \`${shown(keep)}\`, kept for conversations`
     : '';
   const near = says && scope.use.early;
   if (scope.use.use !== 'goal') {
@@ -1002,12 +1200,15 @@ export function nextStartLines(scope: Scope, says = false, anySaid = false): { r
  *
  * @param owner The agent whose accounts these are (AGT7).
  */
-export function nextStartBeneath(scope: Scope, owner: string, home: string, now: Date, zone: string): string[] {
+export function nextStartBeneath(
+  scope: Scope, owner: string, home: string, now: Date, zone: string,
+  shown: (account: string) => string = (account) => account,
+): string[] {
   const uses = scope.list.length > 0 ? scope.list : scope.default !== null ? [scope.default] : [];
   const lines: string[] = [];
   if (scope.list.length > 0) {
     const anySaid = scope.list.some((account) => saidOf(home, owner, account, now) !== null);
-    const next = nextStartLines(scope, TOOLCHAINS[owner]?.windows === true, anySaid);
+    const next = nextStartLines(scope, TOOLCHAINS[owner]?.windows === true, anySaid, shown);
     lines.push(`next start: ${next.row}`);
     if (next.note) lines.push(next.note);
   }
@@ -1020,7 +1221,7 @@ export function nextStartBeneath(scope: Scope, owner: string, home: string, now:
   const soonest = (of: { until: Date }[]) =>
     coolingWhen(new Date(Math.min(...of.map((entry) => entry.until.getTime()))), zone);
   if (held.length > 0) {
-    const each = held.map((entry) => `\`${entry.account}\` is cooling until ${coolingWhen(entry.until, zone)}`).join('; ');
+    const each = held.map((entry) => `\`${shown(entry.account)}\` is cooling until ${coolingWhen(entry.until, zone)}`).join('; ');
     // Driven work passes a kept account that leaves it another (§4.6), so it waits once every other account cools.
     const keep = scope.use.keep !== null && scopeProblem({ default: null, list: scope.list, keep: scope.use.keep }) === null
       ? scope.use.keep
@@ -1033,7 +1234,7 @@ export function nextStartBeneath(scope: Scope, owner: string, home: string, now:
       if (held.length === uses.length) {
         lines.push(`every account of this list is cooling, so the next start waits until ${soonest(held)}`);
       } else if (keep !== null && driven.length === uses.length - 1) {
-        lines.push(`every account but \`${keep}\`, kept for conversations, is cooling, so driven work waits until ${soonest(driven)}`);
+        lines.push(`every account but \`${shown(keep)}\`, kept for conversations, is cooling, so driven work waits until ${soonest(driven)}`);
       }
     }
   }
@@ -1062,11 +1263,15 @@ export function accountLines(
   const indent = `  ${''.padEnd(14)} `;
   const owner = toolchain.accountOf ?? name;
   const lines: string[] = [];
+  // Each account by the person's name for it, else its id (ACCT2); the id is said beside a name, as records name it.
+  const names = accountNames(home, owner);
+  const shown = (account: string) => shownAs(names, account);
 
   if (report.profiles.length === 0) lines.push(`${indent}no accounts — sessions run in the agent's own configuration home`);
 
   for (const profile of report.profiles) {
     const marks = [
+      shown(profile.name) !== profile.name ? `id ${profile.name}` : null,
       report.machineDefault === profile.name ? 'machine default' : null,
       ...Object.entries(settings.workspaces)
         .filter(([, map]) => map[owner] === profile.name)
@@ -1075,7 +1280,7 @@ export function accountLines(
 
     // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
     lines.push(
-      `${indent}${profile.name.padEnd(16)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
+      `${indent}${shown(profile.name).padEnd(16)} ${(profile.key ? 'unchecked' : profile.login).padEnd(9)}`
       + `${profile.account ? ` ${profile.account}` : ''}`
       + `${profile.key ? ` API key ${profile.key}` : ''}`
       + `${marks.length ? ` (${marks.join(', ')})` : ''}`);
@@ -1085,6 +1290,12 @@ export function accountLines(
     // What its agent last said about its windows, and how long ago (TOOL6c, D130 §3.2): a reading, never a judgement.
     const said = saidOf(home, owner, profile.name, now);
     if (said) lines.push(`${indent}${''.padEnd(16)} ${saidLine(said, now, zone)}`);
+    // ACCT1: an account no list and no default holds runs nowhere, and says so where it is listed — the install's new
+    // account sat in no list while the work kept starting on an empty one.
+    if (placesOf(settings, owner, profile.name).length === 0) {
+      lines.push(`${indent}${''.padEnd(16)} no workspace: no list and no default holds it, so no start runs on it — `
+        + `\`daoris agent profile join ${owner} ${shown(profile.name)} <workspace>…|--machine\` puts it in one`);
+    }
   }
 
   const ownCooling = coolingOf(home, owner, null, now);
@@ -1094,26 +1305,26 @@ export function accountLines(
   // workspace's own. The machine with no list says its next start where its default names the one account it uses.
   const product = TOOLCHAINS[owner]?.product ?? owner;
   const beneath = (scope: Scope) => {
-    const { rows, notes } = useLines(scope, product, TOOLCHAINS[owner]?.windows === true);
+    const { rows, notes } = useLines(scope, product, TOOLCHAINS[owner]?.windows === true, shown);
     for (const [label, value] of rows) lines.push(`${indent}${''.padEnd(16)} ${label}: ${value}`);
     for (const note of notes) lines.push(`${indent}${''.padEnd(16)} ${note}`);
-    for (const line of nextStartBeneath(scope, owner, home, now, zone)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
+    for (const line of nextStartBeneath(scope, owner, home, now, zone, shown)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
   };
   const order = resolveRotation(settings, owner, null);
   if (order.from === 'machine') {
-    lines.push(`${indent}rotation         ${order.order.join(', then ')}`);
+    lines.push(`${indent}rotation         ${order.order.map(shown).join(', then ')}`);
     beneath(resolveScope(settings, owner, null));
   } else {
     const machine = resolveScope(settings, owner, null);
     if (machine.default !== null) {
-      lines.push(`${indent}next start       \`${machine.default}\`, this machine's default — with no list, the one account its `
+      lines.push(`${indent}next start       \`${shown(machine.default)}\`, this machine's default — with no list, the one account its `
         + 'starts run on');
-      for (const line of nextStartBeneath(machine, owner, home, now, zone)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
+      for (const line of nextStartBeneath(machine, owner, home, now, zone, shown)) lines.push(`${indent}${''.padEnd(16)} ${line}`);
     }
   }
   for (const [circle, orders] of Object.entries(settings.workspaceRotation)) {
     if (!orders[owner]) continue;
-    lines.push(`${indent}rotation in ${circle.padEnd(4)} ${orders[owner].join(', then ')}`);
+    lines.push(`${indent}rotation in ${circle.padEnd(4)} ${orders[owner].map(shown).join(', then ')}`);
     beneath(resolveScope(settings, owner, circle));
   }
 
@@ -1201,32 +1412,30 @@ export function commandHarness(
           + `${toolchain.profileVariable} at the profile directory.`);
       }
 
-      // Another account (D66 §3): made by the sign-in, named by who signed in — the desktop's
-      // "Sign in to another account", from a terminal (D50).
+      // ACCT1: the lists a sign-in joins at its end, `--join <workspace>` (repeated, or comma-separated) and
+      // `--join-machine`, refused before anything starts where one cannot be joined.
+      const joins = joinsOf(argv);
+      const relayed = (where: string) => relay([...toolchain.binary, ...login], where, toolchain, write);
+
+      // A new account (D66 §3): made by the sign-in, offered who signed in as its name (ACCT2) — the desktop's
+      // *Add an account…*, from a terminal (D50).
       if (argv.includes('--new')) {
-        return signInNew(
-          name, toolchain, home,
-          (where) => relay([...toolchain.binary, ...login], where, toolchain, write),
-          write);
+        if (argv.includes('--profile')) {
+          throw new DaorisError(
+            `\`--new\` signs in to a new account and \`--profile\` to one that is here — \`daoris agent login ${name} --new\`, or `
+            + `\`daoris agent login ${name} --profile ${flagValue(argv, '--profile')}\`.`);
+        }
+        return signInNew(name, toolchain, home, relayed, write, { name: flagValue(argv, '--name') ?? null, joins, path });
       }
 
-      const profile = flagValue(argv, '--profile')
-        ?? readHarnessSettings(path).defaults[name]
-        ?? 'default';
-      const where = profileHome(home, name, profile);
-
-      write(`daoris: running \`${name}\`'s own login flow into the account \`${profile}\`.`);
-      write(`  ${where}`);
-      write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by');
-      write('  the agent, in its own store, under your OS account — Daoris never sees it.');
-      const signed = relay([...toolchain.binary, ...login], where, toolchain, write);
-      // A sign-in that finished ends that account's cool-off (D125 §2.3): the directory may hold another account now. And
-      // it is marked (TOOL6g), so the desktop asks the account again at its next look rather than believing it signed out.
-      if (signed === 0) {
-        endCooling(home, name, profile, new Date());
-        markSignedIn(home, name, profile, new Date());
+      if (argv.includes('--name')) {
+        throw new DaorisError(
+          `\`--name\` names a new account as it is made (\`--new\`); an account that is here is named with \`daoris agent `
+          + `profile rename ${name} <account> <name>\`.`);
       }
-      return signed;
+
+      // An account that is here, by its id or its name, else the machine's default: never a new folder (ACCT1).
+      return signInTo(name, toolchain, home, flagValue(argv, '--profile') ?? null, relayed, write, { joins, path });
     }
 
     // The managed toolchain (TOOL2/D57): Daoris owns where this version lives and which one runs.
@@ -1598,7 +1807,7 @@ export function commandHarness(
 
       case 'remove': {
         const name = accountsOf(operand(argv, 2), 'profile remove');
-        const profile = bare(argv, 3, 'profile remove', '<agent> <profile>');
+        const profile = accountNamed(name, bare(argv, 3, 'profile remove', '<agent> <profile>'));
         const where = profileHome(home, name, profile);
 
         // 🔴 The account goes, directory and sign-in both (D66 §3, amending SES3's "deletes
@@ -1622,7 +1831,8 @@ export function commandHarness(
         const name = accountsOf(operand(argv, 2), 'profile order');
         const flagged = flagValue(argv, '--workspace');
         const workspace = flagged ? normalizeWorkspace(flagged) : null;
-        const named = operands(argv, AGENT_VALUED).slice(3);
+        // An account by its id or its name (ACCT2); the list holds ids, so a rename leaves it standing.
+        const named = operands(argv, AGENT_VALUED).slice(3).map((given) => accountNamed(name, given));
         if (argv.includes('--clear')) {
           if (named.length > 0) {
             throw new DaorisError(
@@ -1665,7 +1875,8 @@ export function commandHarness(
       case 'ready': {
         const name = accountsOf(operand(argv, 2), 'profile ready');
         const own = argv.includes('--own');
-        const account = operand(argv, 3) ?? null;
+        const given = operand(argv, 3);
+        const account = given === undefined ? null : accountNamed(name, given);
         if (own && account !== null) {
           throw new DaorisError(
             `\`--own\` names no account — \`daoris agent profile ready ${name} --own\` is the tool's own sign-in, and `
@@ -1702,7 +1913,7 @@ export function commandHarness(
         // account, and so does this.
         if (argv.includes('--clear')) return clearDefault(name, workspace);
 
-        const profile = bare(argv, 3, 'profile default', '<agent> <profile>|--clear [--workspace <name>]');
+        const profile = accountNamed(name, bare(argv, 3, 'profile default', '<agent> <profile>|--clear [--workspace <name>]'));
         // Refused rather than created: naming a default that does not exist is a typo with a silent
         // wrong answer available — every spawn in that circle would refuse, and the message would be
         // about logging in rather than about the name.
@@ -1739,9 +1950,60 @@ export function commandHarness(
       case 'use':
         return useVerb();
 
+      // An account's name (ACCT2): the person's word, in `accounts.json` by the account's id, so every list, default,
+      // reading and record naming the id keeps working. Naming it its own id gives it none. The screen's twin is
+      // `HARNESS_ACTION`'s `profile-rename`.
+      case 'rename': {
+        const name = accountsOf(operand(argv, 2), 'profile rename');
+        const account = accountNamed(name, bare(argv, 3, 'profile rename', '<agent> <account> <name>'));
+        const wanted = operand(argv, 4);
+        if (wanted === undefined) {
+          throw new DaorisError(
+            `\`agent profile rename\` needs <agent> <account> <name> — e.g. \`daoris agent profile rename ${name} ${account} work\`; `
+            + `naming it \`${account}\` gives it none.`);
+        }
+        const now = renameAccount(home, name, profiles(home, name), account, wanted);
+        write(now !== null
+          ? `daoris: \`${name}\`'s account \`${account}\` is called \`${now}\` now.`
+          : `daoris: \`${name}\`'s account \`${account}\` has no name of yours now: it reads as its id.`);
+        write('  Its id stays, so every list, default, reading and record that names it still does.');
+        write(`  Written to ${accountsPath(home)} — machine-local, tracked by nothing.`);
+        return 0;
+      }
+
+      // An account put into lists a start runs on (ACCT1): each workspace's own list named, and with `--machine` this
+      // machine's, at its end; a workspace that takes this machine's list is refused, naming it. The screen's twin is
+      // `HARNESS_ACTION`'s `profile-join`.
+      case 'join': {
+        const name = accountsOf(operand(argv, 2), 'profile join');
+        const account = accountNamed(name, bare(argv, 3, 'profile join', '<agent> <account> <workspace>…|--machine'));
+        const joins: (string | null)[] = [
+          ...(argv.includes('--machine') ? [null] : []),
+          ...operands(argv, AGENT_VALUED).slice(4).map(normalizeWorkspace),
+        ];
+        if (!profiles(home, name).includes(account)) {
+          throw new DaorisError(
+            `\`${name}\` has no account \`${account}\` on this machine — accounts that exist: `
+            + `${profiles(home, name).map((id) => shownAs(accountNames(home, name), id)).join(', ') || '(none)'}`);
+        }
+        if (joins.length === 0) {
+          throw new DaorisError(
+            `\`agent profile join\` needs the lists — a workspace's name, or \`--machine\` for this machine's: e.g. `
+            + `\`daoris agent profile join ${name} ${account} work\`.`);
+        }
+        refuseJoins(settings, name, joins);
+
+        const after = joined(path, settings, name, account, joins);
+        write(`daoris: \`${name}\`'s account \`${shownAs(accountNames(home, name), account)}\` is in `
+          + `${joins.map((workspace) => (workspace === null ? 'this machine\'s list' : `\`${workspace}\`'s list`)).join(', ')}.`);
+        for (const line of placeLines(name, account, after, accountNames(home, name))) write(line);
+        write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+        return 0;
+      }
+
       default:
         throw new DaorisError(
-          `unknown agent profile verb '${action}' — one of: list, add, remove, default, order, ready, use`);
+          `unknown agent profile verb '${action}' — one of: list, add, remove, default, order, ready, use, rename, join`);
     }
 
     /** A scope's own list: the machine's, or the workspace's own — never the machine's standing in for it. */
@@ -1801,7 +2063,7 @@ export function commandHarness(
           + `conversations with \`--keep <account>\`.`);
       }
 
-      const change = useChangeOf();
+      const change = useChangeOf(name);
       if (chosen.length === 1) change.use = chosen[0] as UseMode;
       const clear = argv.includes('--clear');
       if (clear && Object.keys(change).length > 0) {
@@ -1854,7 +2116,7 @@ export function commandHarness(
     }
 
     /** The settings `profile use`'s flags name, each refused unless it is one; none named is an empty change. */
-    function useChangeOf(): UseChange {
+    function useChangeOf(name: string): UseChange {
       const change: UseChange = {};
       const early = onOff('--early', 'switch before the limit, or not');
       if (early !== undefined) change.early = early;
@@ -1873,7 +2135,7 @@ export function commandHarness(
       if (keep !== undefined && argv.includes('--no-keep')) {
         throw new DaorisError('`--keep` and `--no-keep` together say two things — keep one account for conversations, or none.');
       }
-      if (keep !== undefined) change.keep = keep.trim();
+      if (keep !== undefined) change.keep = accountNamed(name, keep);
       if (argv.includes('--no-keep')) change.keep = null;
       return change;
     }
@@ -1915,20 +2177,23 @@ export function commandHarness(
         return 0;
       }
 
+      // Each account by the person's name for it, else its id (ACCT2).
+      const names = accountNames(home, name);
+      const shown = (account: string) => shownAs(names, account);
       write(borrowed
         ? `daoris: \`${workspace}\` names no account of its own for \`${name}\`, so it uses this machine's: `
-          + `${scope.list.join(', then ')}.`
-        : `daoris: ${where(workspace)}, \`${name}\`'s list is ${scope.list.join(', then ')}.`);
+          + `${scope.list.map(shown).join(', then ')}.`
+        : `daoris: ${where(workspace)}, \`${name}\`'s list is ${scope.list.map(shown).join(', then ')}.`);
 
       const says = TOOLCHAINS[name]?.windows === true;
       const now = new Date();
       const zone = machineZone();
       const said = new Map(scope.list.map((account) => [account, saidOf(home, name, account, now)] as const));
 
-      const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name, says);
+      const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name, says, shown);
       for (const [label, value] of rows) write(`  ${label.padEnd(24)} ${value}`);
       for (const note of notes) write(`  ${note}`);
-      const next = nextStartLines(scope, says, [...said.values()].some((windows) => windows !== null));
+      const next = nextStartLines(scope, says, [...said.values()].some((windows) => windows !== null), shown);
       write(`  ${'next start'.padEnd(24)} ${next.row}`);
       if (next.note) write(`  ${next.note}`);
 
@@ -1937,7 +2202,7 @@ export function commandHarness(
       for (const account of scope.list) {
         const cooled = coolingOf(home, name, account, now);
         const reading = said.get(account);
-        write(`    ${account.padEnd(14)} ${cooled
+        write(`    ${shown(account).padEnd(14)} ${cooled
           ? coolingLine(cooled, now, zone)
           : reading
             ? saidLine(reading, now, zone, scope.use.early ? scope.use.near : null)
@@ -2022,7 +2287,8 @@ export function commandHarness(
 
     const owner = ownerOf(name);
     if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
-    const profile = flagValue(argv, '--profile') ?? readHarnessSettings(path).defaults[owner] ?? null;
+    const given = flagValue(argv, '--profile');
+    const profile = (given === undefined ? null : accountNamed(owner, given)) ?? readHarnessSettings(path).defaults[owner] ?? null;
     const file = join(profile ? profileHome(home, owner, profile) : homedir(), toolchain.trustFile);
 
     write(`daoris: trusting \`${folder}\` for \`${owner}\`, `
@@ -2081,8 +2347,8 @@ export function commandHarness(
       return 0;
     }
 
-    const account = flagValue(argv, '--account') ?? flagValue(argv, '--profile')
-      ?? readHarnessSettings(path).defaults[owner] ?? null;
+    const given = flagValue(argv, '--account') ?? flagValue(argv, '--profile');
+    const account = (given === undefined ? null : accountNamed(owner, given)) ?? readHarnessSettings(path).defaults[owner] ?? null;
     if (!account) {
       throw new DaorisError(
         `\`${owner}\` runs as its own sign-in on this machine — the tool's own configuration home, which Daoris `
@@ -2153,6 +2419,11 @@ export function commandHarness(
     const owner = ownerOf(name);
     if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
     return owner;
+  }
+
+  /** An account by its id or its name (ACCT2): its id, or what was given where it names none, for the verb to refuse. */
+  function accountNamed(owner: string, given: string): string {
+    return resolveAccount(profiles(home, owner), accountNames(home, owner), given) ?? given.trim();
   }
 
   /** The agent named after the verb, refused rather than defaulted. */

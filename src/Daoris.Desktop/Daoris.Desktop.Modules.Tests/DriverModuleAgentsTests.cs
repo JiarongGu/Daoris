@@ -369,6 +369,8 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, $$"""
             { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
             """);
+        // A sign-in into an account reaches one that is here, never a new folder (ACCT1).
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
         var module = Module();
 
         var answer = await AnswerAsync(
@@ -415,6 +417,9 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
         File.WriteAllText(DriverConfigPath, $$"""
             { "drivable": [], "holds": [], "commands": { "claude-code": ["node", {{JsonSerializer.Serialize(fake)}}] } }
             """);
+        // A sign-in into an account reaches one that is here, never a new folder (ACCT1).
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "work"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "claude-code", "home"));
         var module = Module();
 
         await AnswerAsync(module, "HARNESS_ACTION", new { harness = "claude-code", action = "login", profile = "work" });
