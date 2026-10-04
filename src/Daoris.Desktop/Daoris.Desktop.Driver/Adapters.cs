@@ -1406,7 +1406,9 @@ public sealed class DshAdapter : ISessionAdapter
     /// its own problem — but the version the toolchain installs is asserted, not assumed (D53).
     /// </summary>
     public HarnessToolchain? Toolchain => new(
-        Product: "dsh",
+        // The name its maker publishes it under (AGENTS2): `dsh` beside DeepSeek still read as no DeepSeek agent. The
+        // binary and the adapter's Daoris name stay `dsh`, which is what a terminal types.
+        Product: "DeepSeek Harness",
         Maker: "DeepSeek",
         Binary: ["dsh"],
         // `-V, --version` — verified against the installed CLI, which printed its exact version.

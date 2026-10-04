@@ -343,7 +343,9 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
   // refuses (SES3), so `unknown` is permissive and a session starts. No model is named (D24) —
   // which model answers is the profile's own `settings.yaml`.
   dsh: {
-    product: 'dsh',
+    // The name its maker publishes it under (AGENTS2): `dsh` beside DeepSeek still read as no DeepSeek agent. The binary
+    // and this entry's name stay `dsh`, which is what a terminal types.
+    product: 'DeepSeek Harness',
     maker: 'DeepSeek',
     binary: ['dsh'],
     version: ['--version'],

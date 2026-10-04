@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHarnessRun, WithHarnessRuns } from '../harnessRuns';
 import { useRegistry } from '../queries';
@@ -10,7 +10,6 @@ import {
 import { SignIn } from '../SignIn';
 import { byTool, type Tool } from '../tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
-import { ListMore } from '../work/ListPane';
 import type { ViewLayout } from '../work/ViewFrame';
 import { workspacesOf } from '../workspaces';
 import { agentOf } from '../settings/accounts';
@@ -36,15 +35,12 @@ const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
  *
  * **Every act has its terminal twin** (D50): `daoris agent …`, named at the page's foot.
  */
-export function useAgentsView({ active, chosen, onChoose, filters, onFilters, notify, part = null, onAnchored }: {
+export function useAgentsView({ active, chosen, onChoose, notify, part = null, onAnchored }: {
   /** The view is in front. */
   active: boolean;
   /** The list's chosen item: an agent's id, which the application remembers (`daoris.list.agents.chosen`). */
   chosen: string | null;
   onChoose: (item: string | null) => void;
-  /** The list's own filters: whether the agents not installed are shown (its ⋯). */
-  filters: Record<string, unknown>;
-  onFilters: (filters: Record<string, unknown>) => void;
   notify: Notify;
   /** The part of an agent's page a door named (D150 §2.4), opened and brought into view. */
   part?: AgentPart | null;
@@ -58,12 +54,17 @@ export function useAgentsView({ active, chosen, onChoose, filters, onFilters, no
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : null;
   const tools = harnesses ? byTool(harnesses) : [];
+  // Every agent this build knows, installed or not (AGENTS2): a fold for the ones not installed hid Codex.
   const rows = agentRows(tools, accounts.data);
-  const showAbsent = filters.absent === true;
-  // The agents not installed are the ⋯'s to show (§5.1); the one chosen stays listed whatever the filter says.
-  const shown = rows.filter((row) => row.installed || showAbsent || row.name === chosen);
   const chosenTool = tools.find((tool) => tool.name === chosen) ?? null;
   const adapter = roster.data?.adapter;
+  // A row's Install (AGENTS2) opens its agent and asks the page to run the installer there, where the application's running
+  // action is held and its console streams under *Ways in*; this view's hook sits outside that holder.
+  const [installing, setInstalling] = useState<string | null>(null);
+  const install = (agent: string) => {
+    onChoose(agent);
+    setInstalling(agent);
+  };
 
   // A door that names a part and no agent opens the agent that has it (D150 §2.4): what agents may do is the agent's that
   // Daoris hands the rules file; usage and accounts the agent driven work starts on, else the first installed.
@@ -85,27 +86,31 @@ export function useAgentsView({ active, chosen, onChoose, filters, onFilters, no
       view: 'agents',
       name: t('nav.agents'),
       labels: { open: t('agents.list.open'), close: t('agents.list.close'), resize: t('agents.list.resize') },
-      more: (
-        <ListMore
-          label={t('agents.list.more')}
-          items={[{ id: 'absent', label: t('agents.list.absent'), checked: showAbsent }]}
-          onChoose={() => onFilters({ ...filters, absent: !showAbsent })}
-        />
-      ),
-      strip: harnesses ? <AgentStrip rows={shown} chosen={chosen} onChoose={onChoose} /> : undefined,
+      strip: harnesses ? <AgentStrip rows={rows} chosen={chosen} onChoose={onChoose} /> : undefined,
       loading,
-      empty: harnesses && shown.length === 0 ? { headline: t('agents.empty.headline'), body: t('agents.empty.body') } : undefined,
+      empty: harnesses && rows.length === 0 ? { headline: t('agents.empty.headline'), body: t('agents.empty.body') } : undefined,
       chosen,
       // A remembered agent reopens only while this machine still knows it (UX6b): one gone opens nothing chosen.
       standing: !chosen ? undefined : !harnesses ? 'unread' : chosenTool ? 'live' : 'gone',
-      body: <AgentList rows={shown} chosen={chosen} onChoose={onChoose} />,
+      body: <AgentList rows={rows} chosen={chosen} onChoose={onChoose} onInstall={install} />,
     },
     main: (
       <WithHarnessRuns notify={notify}>
         {loading
           ? <AgentMainNotice state="loading" />
           : chosenTool
-            ? <AgentsMain key={chosenTool.name} tool={chosenTool} adapter={adapter} notify={notify} part={part} onAnchored={onAnchored} />
+            ? (
+              <AgentsMain
+                key={chosenTool.name}
+                tool={chosenTool}
+                adapter={adapter}
+                notify={notify}
+                part={part}
+                onAnchored={onAnchored}
+                install={installing === chosenTool.name}
+                onInstallTaken={() => setInstalling(null)}
+              />
+            )
             : <AgentMainNotice state={chosen && harnesses ? 'gone' : 'none'} />}
       </WithHarnessRuns>
     ),
@@ -127,12 +132,16 @@ export function useAgentsWaiting(): number {
  * The chosen agent's page and every act on it (UX6e): the organism under the page, inside the application's running
  * action (SIGNIN1), so a sign-in started here outlives leaving the place and its end is said wherever the person is.
  */
-function AgentsMain({ tool, adapter, notify, part, onAnchored }: {
+function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, onInstallTaken }: {
   tool: Tool;
   adapter?: string;
   notify: Notify;
   part?: AgentPart | null;
   onAnchored?: () => void;
+  /** The list's Install was pressed on this agent (AGENTS2): its installer runs here, once. */
+  install?: boolean;
+  /** Told as the install is taken, so the request is spent. */
+  onInstallTaken?: () => void;
 }) {
   const { t } = useTranslation();
   const read = useRefreshHarnesses();
@@ -151,6 +160,20 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored }: {
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || settle.isPending;
+
+  // The list's Install (AGENTS2): the account-owning door's installer, as the first Install under *Ways in* runs it. Taken
+  // once, by a ref, since a development build runs an effect twice and the run's own guard learns of the first only later.
+  const installTaken = useRef(false);
+  useEffect(() => {
+    if (!install) {
+      installTaken.current = false;
+      return;
+    }
+    if (installTaken.current) return;
+    installTaken.current = true;
+    onInstallTaken?.();
+    if (!tool.present) run(door, 'install');
+  }, [install, onInstallTaken, tool.present, run, door]);
 
   const labelOf = (name: string | null) => {
     if (!name) return tool.ownAccount ?? t('agents.account.own');

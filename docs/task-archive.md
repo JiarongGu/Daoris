@@ -11128,3 +11128,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > quest's strikes stay where they were.
 
 **Outcome** 2026-10-05: built. A start the agent refuses for its sign-in (Claude Code's "Authentication required" on the protocol door, the native door's 401) keeps its account signed out in `reads.json` with the time, so the next start walks past it and the held start names it and its sign-in; a refusal is never one of the quest's strikes (`NoteCodes.AccountsOwn`), and the record says why it ended in both languages. Seen on the install the day before: four starts on an empty account parked AR-2203. Detail: D125's ROSTER1b note, FIX-LOG 2026-10-05, `9087adf3`..`485b842f`.
+
+
+## AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins (2026-10-05)
+
+> - [ ] **AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins** (driver, cli, web-shell).
+> Agents shows only installed agents unless its ⋯ says otherwise, so Codex is not seen; DeepSeek has no adapter at all.
+> List each known agent with *Install* where absent; find how a DeepSeek agent is reached (an ACP-speaking client, or
+> a native CLI, D53 and D57: never a registry) and add it as a configuration. Contract: D53, D57, D150 §5. Proof: the
+> roster with an absent agent; the DeepSeek configuration's probe evidence.
+
+**Outcome** 2026-10-05: built. The Agents list shows every agent this build knows, an absent one with *Install* on its row (and in its right-click menu), with no hidden fold. DeepSeek's own agent, DeepSeek Harness, already reaches Daoris: it speaks ACP itself (`dsh --profile acp`), which is ACP3's `dsh` configuration, now named DeepSeek Harness in both twins and proven over a stub of its documented wire. Detail: D57's AGENTS2 note, `93930921`, `36f4d924`, `4fe522a7`.

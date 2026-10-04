@@ -121,11 +121,6 @@ title sections, for quest and session, need their UI/UX improved"*):
   title, a raw id, a chip and a dense row of eight facts; a quest's title wraps two lines over a chip and a raw id.
   Title first, short (SESSUX1j's short title where there is one), state and the one or two facts that matter beside
   it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
-- [ ] **AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins** (driver, cli, web-shell).
-  Agents shows only installed agents unless its ⋯ says otherwise, so Codex is not seen; DeepSeek has no adapter at all.
-  List each known agent with *Install* where absent; find how a DeepSeek agent is reached (an ACP-speaking client, or
-  a native CLI, D53 and D57: never a registry) and add it as a configuration. Contract: D53, D57, D150 §5. Proof: the
-  roster with an absent agent; the DeepSeek configuration's probe evidence.
 - [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
   *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
   says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
