@@ -11021,3 +11021,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
 
 **Outcome** 2026-10-04: built. Agents is a place on the activity bar after Search: each agent once, whatever doors reach it, its accounts in a phrase and its badge the signed-out accounts a list or default holds; an agent's page lists its accounts once, each with its last known state and when it was read, its acts on the row, and How accounts are used, Workspaces, Ways in, What it may do, Model and effort and Usage folded beneath. Opening it asks no account; *Read again* asks one agent's. Settings → Agents retired; TOOL4m's rest built (the picker's groups, *on your own sign-in*). Detail: D150's UX6e note, `8ec5accd`..`e0b6ee35`.
+
+
+## PLUGTOOL1b — the two pull-request plugins declare their CLI (2026-10-04)
+
+> - [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
+
+**Outcome** 2026-10-04: built. The two pull-request plugins declare Node.js, Git and their platform's CLI in `tools` (GitHub 1.2.0: `gh >=1.9.0`, its sign-in a check; Azure DevOps 1.3.0: `az >=2.0.79`, its extension and sign-in as checks), each floor read from the flags `land.mjs` uses and cited in the README; `plugins try` on each answered as the machine stands. Detail: D150's PLUGTOOL1b note, `f11d148e`, `a80f2b51`.

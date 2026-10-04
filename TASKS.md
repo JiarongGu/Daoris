@@ -56,6 +56,18 @@ Measured on the day's three integrations: the driver's real-process half took 30
 everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
 running them again.
 
+- [ ] **ORIENT1f — search splits identifiers** (service; found by ORIENT1c). `ProbeLock` is one token, so "what decided
+  the probe lock" misses the note that decided it. Index and query a camel-case or snake-case name also as its words.
+  Contract: `Text.Tokenize`/`Segment`. Proof: that question answers first with the FIX-LOG entry or D125's TOOL6g note;
+  `SearchTests` green.
+- [ ] **ORIENT1g — a decision's dated notes are entries of their own** (service; found by ORIENT1c). A 60 KB decision
+  is one entry and its length buries it. Index each dated note as its own entry, the digest's note label the twin.
+  Contract: D134 §5 (amended). Proof: the probe-lock question lands on D125's TOOL6g note.
+- [ ] **AGENTREAD1 — the terminal's account listing keeps what it read** (cli; found by ROSTER1). `daoris agent list`
+  asks every account and the own sign-in and writes nothing, so the screen and the loop learn nothing from the
+  terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
+- [ ] **ROSTER1b — a start that fails on an account never read reads it once** (driver; found by ROSTER1). D150 §5.3
+  lists a start's refusal as a reason to read; not built. Proof: a Process test where the next start walks past it.
 - [ ] **MERGEJOIN1 — a union merge never leaves two decision notes touching** (tools; seen three times merging the day's
   UX6 branches). Two branches each appending a dated note to one decision leave the second label straight under the
   first's last line, and `doc-duplicates` fails `verify` at the merge. The merge tool sets a blank line before such a
@@ -91,7 +103,6 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
 - [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).
 - [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings; §2.1, §2.3, §2.4).
-- [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
 - [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
   driver; after PLUGUI1c; §7.5).
 - [ ] **ROSTER1 — the roster asks no account at start, and reads one account on a press** (driver, modules; found by

@@ -67,6 +67,8 @@ export function makeFixture(name: string): Fixture {
       const body = this.region();
       return body === null ? null : tierRuleBody(body, source);
     },
-    cleanup: () => rmSync(root, { recursive: true, force: true }),
+    // A child the test started (a stub agent, a git) may still be letting go of the folder as the test ends; on Windows
+    // that is EPERM, which failed passing tests in three suites on 2026-10-04 (FLAKE1). Waits as the rehearsals' cleans do.
+    cleanup: () => rmSync(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }),
   };
 }

@@ -13,6 +13,11 @@ FLAKE1 row keeps what to do and its proof; this entry keeps the evidence the cau
 
 **Sightings** (in place of a root cause until one is found; moved from the backlog on 2026-10-04, as written there).
 
+*One kind found and fixed (2026-10-04):* the CLI's EPERM on a fixture folder at a test's end (`plugin-sources.test.ts`,
+`plugins.test.ts`, `setup-kit.test.ts:522`, three sightings that day) is a child still letting go of the folder; the
+shared fixture's cleanup (`test/_fixture.ts`) now retries, as the rehearsals' cleans do. Twelve test files still delete
+their own folders once; a sighting from one of them is the same kind.
+
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle
 machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit threw
