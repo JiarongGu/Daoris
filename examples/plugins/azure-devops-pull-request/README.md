@@ -83,11 +83,37 @@ commit the pull request merged. A reading that is wrong keeps the branch.
 
 ## What it needs
 
-- **node** on the PATH (it is a `node` script, as the other example plugins are).
-- **git**, with `origin` pointing at the Azure Repos repository and push access for whoever `git`
-  pushes as.
-- **az**, the Azure CLI, signed in with `az login`, and its devops extension:
-  `az extension add --name azure-devops`.
+- **The tools its `plugin.json` declares under `tools`**, each at the version it names or newer, with Azure
+  CLI's devops extension added, `az extension add --name azure-devops`, and Azure CLI signed in, `az login`.
+  `daoris-driver plugins try azure-devops-pull-request` checks them on this machine.
+- **`origin`** pointing at the Azure Repos repository, with push access for whoever `git` pushes as.
+
+## Why each version
+
+Each floor in `tools` is the oldest release that has everything this plugin runs with that tool: the
+calls above, the checks, and the version question Daoris asks.
+
+- **Azure CLI 2.0.79**: Daoris asks `az version` for the version, and 2.0.79 added it
+  ([azure-cli#11680](https://github.com/Azure/azure-cli/pull/11680); its release note calls it
+  `az version show`, and its code registers `az version`). Both checks pass `--output none`, which 2.0.55
+  added ([azure-cli-core's release notes](https://github.com/Azure/azure-cli/blob/dev/src/azure-cli-core/HISTORY.rst)),
+  and `az account show` and `az extension show` are older. Known from the release notes and that change.
+- **Azure CLI's devops extension**, which `tools` cannot hold a version of: everything it runs there is in
+  the extension's 0.12.0 ([its arguments](https://github.com/Azure/azure-devops-cli-extension/blob/20190805.1/azure-devops/azext_devops/dev/repos/arguments.py)):
+  `repos pr create`'s `--source-branch`, `--target-branch`, `--title` and a many-valued `--description`,
+  `repos pr list`'s `--source-branch` and `--status all`, `repos pr show --id`, and the organization
+  detected from `origin` by default. 0.12.0 is the oldest
+  [the extension index](https://github.com/Azure/azure-cli-extensions/blob/main/src/index.json) offers, and
+  needs Azure CLI 2.0.49. `az extension add` takes the newest one the CLI can run: 0.17.0 on 2.0.79,
+  whose arguments read the same, and 1.0 from 2.30.0. A reading of the extension's source and its index:
+  no Azure CLI that old was run.
+- **Git 1.7.0**: `git push`'s `-u` and `--quiet` are both in 1.7.0's options
+  ([`builtin-push.c` at v1.7.0](https://github.com/git/git/blob/v1.7.0/builtin-push.c)), and its
+  [release notes](https://github.com/git/git/blob/master/Documentation/RelNotes/1.7.0.adoc) name
+  `--set-upstream`. A reading of the source: no Git that old was run.
+- **Node.js 16.6.0**: `land.mjs` takes a command's last line with `Array.prototype.at`, which came with V8
+  9.2 in [Node.js 16.6.0](https://nodejs.org/en/blog/release/v16.6.0). That everything else it uses is
+  older is a reading of the script, not a run on 16.6.0.
 
 ## When something fails
 
