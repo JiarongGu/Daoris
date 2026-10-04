@@ -46,12 +46,12 @@ present it as the tree.
   or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
 - `ask_propose`: something to start, as an ask at a workspace.
-- `agent_propose`: an agent's Update or a pin to one version, as Settings → Agents offers them,
+- `agent_propose`: an agent's Update or a pin to one version, as Agents → the agent's page → Ways in offers them,
   or which of its accounts it runs as by default, for the machine or one workspace (`default`,
   the account one the room lists under that agent).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
-- `agent_settings_propose`: an account's own model and effort, as Settings → Agents → Model &
+- `agent_settings_propose`: an account's own model and effort, as Agents → the agent's page → Model and
   effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own
   sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,
   medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either
@@ -120,14 +120,14 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | To | On the screen | At a terminal |
 |---|---|---|
 | walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (the Daoris menu's *Setup*) | (each step shows its own command there) |
-| drive a repository, or stop | Repositories | `daoris driver drive|undrive <repository>` |
-| hold one, so nothing new starts there, or resume it | Repositories | `daoris driver hold|resume <repository>` |
-| give its sessions their own tree | Repositories | `daoris driver trees <repository> on|off` |
+| drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris driver drive|undrive <repository>` |
+| hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris driver hold|resume <repository>` |
+| give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris driver trees <repository> on|off` |
 | set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing) | (no screen yet) | `daoris-driver setup <repository> [--plan]` |
 | set every repository of a workspace up, one at a time, the ones other work touches first: a plan the loop works, pausing after a pilot of two (`--plan` shows the list and each refusal, and writes nothing); pause, resume or stop it | (no screen yet) | `daoris-driver setup --workspace <name> [--plan] [--at-once <n>] [--pilot <n>] [--first <repo>…] [--skip <repo>…]`, `daoris-driver setup --workspace <name> --pause|--resume|--stop` |
 | register a repository from what its line declares, as `connect` would, without running it: after a set-up's branch is merged and brought up to date, or a declaration changed outside Daoris | (no screen yet) | `daoris-driver register [--repository <name>]` |
-| set the line its work grows from and lands on | Settings → Workspace → Lines | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
-| set how accepted work lands | Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and `--auto-accept`: a quest's done lands it with no press) |
+| set the line its work grows from and lands on | Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → Lines | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
+| set how accepted work lands | Repositories → the repository's page → Setup → Line and landing; a workspace's, Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request, and `--auto-accept`: a quest's done lands it with no press) |
 | bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the repositories holding Daoris's branches, and another where named or included) | Settings → Workspace → Session branches → Updates | `daoris-driver trees sync [--repository <name>] [--all] [--yes]` |
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Settings → Workspace → Session branches | `daoris-driver trees clean` |
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
@@ -143,17 +143,17 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | set how long an account cools when its agent hits a limit and names no time | Settings → Driver → Cool-off when no time is named | `daoris driver cooloff <minutes>` |
 | bound how many sessions run at once | (no screen yet) | `daoris driver cap <n>` |
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
-| allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
-| let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
-| keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Standing answer | `daoris driver standing <repository> "…"|--clear` |
-| set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline reasons and last words (the window's own language is Settings → Appearance, and neither sets the other) | Repositories → the repository's page → Session language; Settings → Workspace → Session language | `daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace) |
-| sign an agent in, or add an account | Settings → Agents | `daoris agent login <agent>` |
-| choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents → Make default, use for a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
-| choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Settings → Agents → How accounts are used → Use, up and down, and a workspace's Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
-| choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and switching before a limit | Settings → Agents → How accounts are used → Use accounts, Keep for conversations, Switch before the limit | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
-| end an account's cool-off now, after its agent hit a limit | Settings → Agents → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
-| update an agent, or pin it to one version | Settings → Agents → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
-| set an account's own model and effort | Settings → Agents → Model & effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
+| allow, ask or deny what an agent may do | Agents → the agent's page → What it may do; a repository's, Repositories → the repository's page → Setup → Reach; a workspace's, Settings → Permissions | `daoris agent rules …` |
+| let agents read a repository's checkout, or not; let one repository's sessions write into another | Repositories → the repository's page → Setup → Reach; a workspace's reading, Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
+| keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Setup → Sessions | `daoris driver standing <repository> "…"|--clear` |
+| set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline reasons and last words (the window's own language is Settings → Appearance, and neither sets the other) | Repositories → the repository's page → Setup → Sessions; a workspace's, Settings → Workspace → Session language | `daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace) |
+| sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent>` |
+| choose which account an agent's sessions use, for the machine or a workspace | Agents → the agent's page → an account's ⋯ → Use by default, Use by default in a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
+| choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Agents → the agent's page → How accounts are used → Use, up and down; and Workspaces → Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
+| choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and switching before a limit | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch before the limit | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
+| end an account's cool-off now, after its agent hit a limit | Agents → the agent's page → the account's Try now | `daoris agent profile ready <agent> <profile>|--own` (`--own` is the tool's own sign-in) |
+| update an agent, or pin it to one version | Agents → the agent's page → Ways in → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
+| set an account's own model and effort | Agents → the agent's page → Model and effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
 | pause an ask's work, or one quest's, on this machine: what of it runs is stopped as your stop, and nothing of it starts until you resume it, which carries it on where it stood | (no screen yet) | `daoris-driver ask --pause|--resume <id>`, `daoris-driver quest pause|resume <id>` |
 | abandon an ask's work, or one quest's, on this machine: listed first, then on your reason each quest is declined, what only Daoris holds of it is discarded and its sessions archived (Ask Daoris never proposes it: the reason is your answer) | (no screen yet) | `daoris-driver ask --abandon <id> [--reason "…" --yes]`, `daoris-driver quest abandon <id> [--reason "…" --yes]` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → Delete… | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
@@ -184,18 +184,21 @@ Settings → Plugins), so never propose a rule naming one until it is installed;
 `go_propose` opens one of these places and changes nothing; the person does the rest there. Name the
 view, for Settings its domain, and a part where the place has one.
 
-- Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `convergence` (Convergence), `search` (Search), `settings` (Settings).
-- Settings domains: `start` (Setup), `appearance` (Appearance), `ai` (AI features), `workspace` (Workspace), `driver` (Driver), `agents` (Agents), `permissions` (Permissions), `plugins` (Plugins), `browser` (Browser), `logs` (Machine log).
-- Parts of `projects`: `add` (Add repository), `import` (Import a folder).
+- Views: `overview` (Overview), `sessions` (Sessions), `quests` (Quests), `projects` (Repositories), `map` (Map), `convergence` (Convergence), `search` (Search), `agents` (Agents), `settings` (Settings).
+- Settings domains: `start` (Setup), `appearance` (Appearance), `ai` (AI features), `workspace` (Workspace), `driver` (Driver), `permissions` (Permissions), `plugins` (Plugins), `browser` (Browser), `logs` (Machine log).
+- Parts of `projects`: `add` (Add repository), `import` (Import a folder), `setup` (a repository's Setup).
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Ask Daoris's agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
 - Parts of `workspace`: `wiring` (Wiring), `lines` (Lines), `landing` (How work lands), `sweep` (Session branches).
-- Parts of `agents`: `usage` (Usage).
-- Parts of `permissions`: `proposals` (Proposals), `across` (Across repositories).
+- Parts of `agents`: `accounts` (Accounts), `rules` (What it may do), `usage` (Usage).
+- Parts of `permissions`: `across` (Across repositories).
+
+A go names no repository and no agent: `setup` opens the Setup of the repository Repositories has chosen,
+where the person picks the one they mean, and a part of `agents` opens the agent that has it.
 
 ## The window
 
 The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,
-Sessions, Quests, Repositories, Map, Convergence and Search, with Settings at its foot; `Ctrl+K` opens
+Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot; `Ctrl+K` opens
 the command palette. Every view sits in one frame: the view in the centre, the panel beneath it,
 and the right side bar beside it; on Sessions the session list is at the left and the centre is the
 attended session. Five views stand in the two regions and move between them:

@@ -60,7 +60,9 @@ public sealed class HelpRoomMayDoTests
 
         Assert.Contains("you read no checkout", agents);
         Assert.Contains("Reading the checkouts here is switched off", agents);
-        Assert.Contains("Settings → Permissions → Across repositories", agents);
+        // HELPSETUP1: a repository's reading is on its Setup since UX6f; a workspace's keeps Settings until UX6g.
+        Assert.Contains("for a repository under\nRepositories → the repository's page → Setup → Reach", agents);
+        Assert.Contains("for a whole workspace under\nSettings → Permissions → Across repositories", agents);
         Assert.Contains("`daoris driver across <repository> read on`", agents);
     }
 
