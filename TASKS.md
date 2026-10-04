@@ -69,13 +69,6 @@ running them again.
   - **c** — the knowledge server for agents from a built binary, indexing this repository's own documents.
   - **d** — `tools/orient-report.mjs`: calls and bytes before the first edit per branch, from its transcript.
   Proof: d's report before and after a and b, with the target of halving both.
-- [ ] **GATE5 — a merge skips the long halves; they run once before the install is staged** (tools; owner, 2026-10-04:
-  *"didn't we discuss that we should make the test gate or review gate smaller for this long-running development"*).
-  GATE3's lane table still sends any driver change through the real-process halves and the deployment rehearsal, 30 to
-  70 minutes a merge. A merge runs the baseline, the fast halves of the suites its lanes reach, the web gate and the
-  release and family rehearsals it reaches; the Process halves and the deployment rehearsal run only in `--full`, which
-  `publish:desktop` already requires (first done by hand, merging integrate-al). Contract: GATE3, D115's note, MOD8.
-  Proof: the plan's gate list for a driver change; `--full` still naming every gate.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the

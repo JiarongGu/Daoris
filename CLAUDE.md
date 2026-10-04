@@ -239,7 +239,7 @@ Run every command from the **workspace root**, not from a package directory.
   that must agree**, and a dogfood test holds them together: a rehearsal is no substitute for the
   tests underneath.
 - **Desktop suites have two halves** (MOD8): a worktree runs `--filter Category!=Process`; the
-  real-process half (`process.runsettings`, serial) runs only at the parent's merge (FLAKE1).
+  real-process half (`process.runsettings`, serial) runs only in the full set (GATE5).
 - **Changing what `sync` does with a file? Read `docs/decisions/D19.md` first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - **`npm run desktop -- <doctor|build|run|shot|eval|click|restart|kill>`** — the shell's dev loop, and
