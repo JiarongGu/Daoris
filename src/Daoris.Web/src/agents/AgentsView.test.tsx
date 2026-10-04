@@ -159,14 +159,45 @@ describe('the Agents place', () => {
     place();
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    // `work` reads signed out, and a workspace's default names it, so it holds work and wears open's hue.
+    // `work` reads signed out, and a workspace's default names it, so it holds work and wears open's hue. Beside the word,
+    // the time alone (D152 §4.2): the column and the list's head say what it is.
     expect(within(work).getByText('signed out')).toBeTruthy();
-    expect(within(work).getByText(/^read \d{2}:\d{2}|^read \w+/)).toBeTruthy();
+    expect(within(work).getByText(/\d{2}:\d{2}$/)).toBeTruthy();
     expect(within(screen.getByRole('listitem', { name: 'spare' })).getByText('never read')).toBeTruthy();
-    // The tool's own sign-in is asked only at a press (TOOL6g): unknown, never read, never signed in.
-    const own = screen.getByRole('listitem', { name: "The tool's own sign-in" });
+    // Your own sign-in is asked only at a press (TOOL6g): unknown, never read, never signed in.
+    const own = screen.getByRole('listitem', { name: 'Your own sign-in' });
     expect(within(own).getByText('unknown')).toBeTruthy();
     expect(within(own).getByText('never read')).toBeTruthy();
+  });
+
+  /**
+   * D152 §4.2: an account reads unknown on the install while a list held it, offered nothing on its row, and the owner pressed
+   * the header's sign-in and made a new account (ACCT1). Unknown gets *Read*, that account alone; signed out gets *Sign in*,
+   * to that account; each is loud where a list holds it.
+   */
+  it('gives each row the one act its state asks for: Read when unknown, Sign in when signed out, to that account', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0],
+          profiles: [...ROSTER.harnesses[0]!.profiles!, { name: 'spare', home: 'C:/somewhere/.daoris/harnesses/claude-code/spare', login: 'unknown', read: null }],
+        }],
+      }
+      : WIRING));
+    place();
+
+    const spare = await screen.findByRole('listitem', { name: 'spare' });
+    await userEvent.click(within(spare).getByRole('button', { name: 'Read spare' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code', profile: 'spare' } }));
+
+    const work = screen.getByRole('listitem', { name: 'work' });
+    expect(within(work).queryByRole('button', { name: 'Read work' })).toBeNull();
+    await userEvent.click(within(work).getByRole('button', { name: 'Sign in to work' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login', profile: 'work' },
+    }));
   });
 
   /**
@@ -241,7 +272,9 @@ describe('the Agents place', () => {
     expect(screen.getByRole('button', { name: 'Hide Ways in' })).toBeTruthy();
     expect(screen.getByText(/is not on this machine's PATH/)).toBeTruthy();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Install' }));
+    // D152 §4.6: its page heads with its own installer, the one *Ways in* runs too.
+    const head = screen.getByRole('heading', { level: 1, name: 'codex' }).closest('header')!;
+    await userEvent.click(within(head).getByRole('button', { name: 'Install' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'codex', action: 'install' },
     });
@@ -260,7 +293,7 @@ describe('the Agents place', () => {
     place(notify);
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    await userEvent.click(within(work).getByRole('button', { name: 'Sign in' }));
+    await userEvent.click(within(work).getByRole('button', { name: 'Sign in to work' }));
 
     expect(await screen.findByText('Signing in to work')).toBeTruthy();
     expect(notify).not.toHaveBeenCalled();
@@ -295,7 +328,7 @@ describe('the Agents place', () => {
     );
     const { rerender } = render(page(true));
 
-    await userEvent.click(within(await screen.findByRole('listitem', { name: 'work' })).getByRole('button', { name: 'Sign in' }));
+    await userEvent.click(within(await screen.findByRole('listitem', { name: 'work' })).getByRole('button', { name: 'Sign in to work' }));
     expect(await screen.findByText('Signing in to work')).toBeTruthy();
 
     rerender(page(false));
@@ -317,7 +350,7 @@ describe('the Agents place', () => {
 
     const personal = await screen.findByRole('listitem', { name: 'personal' });
     expect(within(personal).getByText('signed in')).toBeTruthy();
-    expect(within(personal).queryByRole('button', { name: 'Sign in' })).toBeNull();
+    expect(within(personal).queryByRole('button', { name: /^Sign in/ })).toBeNull();
     const menu = await more('personal');
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'Sign in again' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -326,18 +359,20 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 The account a person actually has — the tool's own configuration home — leads the accounts, with its state, and
-   * Daoris never signs into it: its ⋯ names no sign-in, and *Use by default* clears the machine's default.
+   * 🔴 The account a person actually has — the tool's own configuration home — is the last row (D152 §4.3), named *Your own
+   * sign-in*, its explanation on its ⓘ; Daoris never signs into it: its ⋯ names no sign-in, and *Use by default* clears the
+   * machine's default.
    */
-  it('the tool’s own sign-in leads the accounts, takes no sign-in from here, and Use by default clears the default', async () => {
+  it('your own sign-in is the last row, takes no sign-in from here, and Use by default clears the default', async () => {
     place();
 
-    const own = await screen.findByRole('listitem', { name: "The tool's own sign-in" });
+    const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
+    const rows = within(own.closest('ul')!).getAllByRole('listitem');
+    expect(rows.at(-1)).toBe(own);
     expect(within(own).getByText('signed in')).toBeTruthy();
-    expect(within(own).queryByRole('button', { name: 'Sign in' })).toBeNull();
-    // `personal` is the machine's default, so the own sign-in is not what sessions use — yet.
-    expect(within(own).queryByText('used by sessions')).toBeNull();
-    const menu = await more("The tool's own sign-in");
+    expect(within(own).queryByRole('button', { name: /^Sign in/ })).toBeNull();
+    expect(within(own).getByRole('note', { name: /^Sessions run on your own sign-in/ })).toBeTruthy();
+    const menu = await more('Your own sign-in');
     expect(within(menu).queryByRole('menuitem', { name: /Sign in/ })).toBeNull();
     await userEvent.click(within(menu).getByRole('menuitem', { name: 'Use by default' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -345,18 +380,24 @@ describe('the Agents place', () => {
     });
   });
 
-  it('the tool’s own sign-in is what sessions use when nothing is named', async () => {
+  /** D152 §4.3: *Runs for* says the workspaces that start on your own sign-in because they name no account; no chip. */
+  it('says which workspaces run on your own sign-in when nothing is named', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], machineDefault: null, profiles: [] }] }
       : WIRING));
     place();
 
-    const own = await screen.findByRole('listitem', { name: "The tool's own sign-in" });
-    expect(within(own).getByText('used by sessions')).toBeTruthy();
+    const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
+    expect(within(own).getByText('default')).toBeTruthy();
+    expect(screen.queryByText('used by sessions')).toBeNull();
   });
 
-  /** 🔴 An account is made by SIGNING IN (D66 §3): one press, no name typed first; the end names who signed in. */
-  it('an account is made by signing in, and the end names who signed in', async () => {
+  /**
+   * 🔴 An account is made by SIGNING IN (D66 §3), from *Add an account…* (D152 §4.5): where an account reads signed out, its
+   * own *Sign in* is offered first, so the lists that hold it keep it (ACCT1); *Add a new account* starts the sign-in; its
+   * end names who signed in and asks the account's name, who signed in offered, and the lists it joins.
+   */
+  it('Add an account… offers a signed-out account’s own sign-in first, then makes a new one and asks its name and lists', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
       return type === 'HARNESSES' ? ROSTER : WIRING;
@@ -365,9 +406,13 @@ describe('the Agents place', () => {
     place(notify);
 
     await screen.findByText('claude 9.9.9');
-    expect(screen.queryByPlaceholderText(/a name/)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Add an account…' }));
+    const back = screen.getByRole('region', { name: 'Add an account' });
+    expect(within(back).getByText(/^Signing an account back in\? Use its row/)).toBeTruthy();
+    expect(within(back).getByRole('button', { name: 'Sign in to work' })).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
 
-    await userEvent.click(screen.getAllByRole('button', { name: 'Sign in to another account' })[0]!);
+    await userEvent.click(within(back).getByRole('button', { name: 'Add a new account' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'login-new' },
     });
@@ -375,13 +420,154 @@ describe('the Agents place', () => {
 
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
-        harness: 'claude-code', action: 'login-new', profile: 'account-1', exitCode: 0, problem: null,
-        account: 'someone@example.invalid', kept: true,
+        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        account: 'someone@example.invalid', kept: true, places: [],
       });
     });
 
-    expect(notify).toHaveBeenCalledWith('Signed in as someone@example.invalid — sessions can run as it.');
+    expect(notify).toHaveBeenCalledWith(
+      "Signed in as someone@example.invalid. No list holds it yet, so no start runs on it: its agent's page asks where it runs.");
     await waitFor(() => expect(screen.queryByText('Signing in to another Claude Code account')).toBeNull());
+    const asking = screen.getByRole('region', { name: 'Add an account' });
+    expect(within(asking).getByText('Signed in as someone@example.invalid.')).toBeTruthy();
+    expect((within(asking).getByRole('textbox', { name: /Its name/ }) as HTMLInputElement).value).toBe('someone@example.invalid');
+  });
+
+  /** With no account signed out or unknown there is nobody to bring back: *Add an account…* starts the sign-in at once. */
+  it('Add an account… starts the sign-in at once where no account reads signed out or unknown', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login-new', started: true };
+      return type === 'HARNESSES'
+        ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], profiles: [ROSTER.harnesses[0]!.profiles![0]!] }] }
+        : WIRING;
+    });
+    place();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login-new' },
+    });
+  });
+
+  /**
+   * D152 §4.5's last step: the name in its field is kept (ACCT2's `profile-rename`), then the lists ticked are joined
+   * (ACCT1's `profile-join`, null for this machine's list), each the terminal's twin, and the question goes.
+   */
+  it('keeps the new account’s name and puts it in the lists ticked, at the add flow’s end', async () => {
+    const ACCOUNTS = {
+      agents: [{
+        agent: 'claude-code', speaks: true, own: {},
+        accounts: [{ name: 'personal', running: 0 }, { name: 'work', running: 0 }],
+        scopes: [
+          { workspace: null, default: 'personal', list: [], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
+          { workspace: 'orbit', default: 'work', list: ['work'], begins: 'work', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] },
+        ],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION') {
+        const action = options?.payload?.action;
+        if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', name: 'spare' };
+        if (action === 'profile-join') {
+          return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', places: [{ workspace: 'orbit', list: true, default: false }] };
+        }
+        return { harness: 'claude-code', action, started: true };
+      }
+      if (type === 'ACCOUNTS') return ACCOUNTS;
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        account: 'spare@example.invalid', kept: true, places: [],
+      });
+    });
+
+    const asking = await screen.findByRole('region', { name: 'Add an account' });
+    const name = within(asking).getByRole('textbox', { name: /Its name/ });
+    await userEvent.clear(name);
+    await userEvent.type(name, 'spare');
+    expect(within(asking).getByRole('button', { name: 'Add to the lists' })).toBeDisabled();
+    await userEvent.click(within(asking).getByRole('checkbox', { name: 'orbit' }));
+    // The terminal's twin under the buttons, a word a box (`CodeText`), so read whole from the code span.
+    const twins = [...asking.querySelectorAll('code')].map((code) => code.textContent);
+    expect(twins).toEqual([
+      'daoris agent profile rename claude-code acct-1a2b3c4d spare', 'daoris agent profile join claude-code acct-1a2b3c4d orbit',
+    ]);
+    await userEvent.click(within(asking).getByRole('button', { name: 'Add to the lists' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-join', profile: 'acct-1a2b3c4d', join: ['orbit'] },
+    }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-rename', profile: 'acct-1a2b3c4d', name: 'spare' },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('spare runs work in orbit now.'));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
+  });
+
+  /** *Not now* joins nothing, keeps the name in the field, and the account says *no workspace* with *Use in a workspace…*. */
+  it('Not now leaves the new account in no list, which its row says, with Use in a workspace… as its act', async () => {
+    let roster: unknown = ROSTER;
+    const ACCOUNTS = {
+      agents: [{
+        agent: 'claude-code', speaks: true, own: {}, accounts: [],
+        scopes: [{ workspace: null, default: 'personal', list: ['personal'], begins: 'personal', use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [] }],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION') {
+        const action = options?.payload?.action;
+        if (action === 'profile-rename') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', name: 'spare@example.invalid' };
+        if (action === 'profile-join') return { harness: 'claude-code', action, exitCode: 0, profile: 'acct-1a2b3c4d', places: [{ workspace: null, list: true, default: false }] };
+        return { harness: 'claude-code', action, started: true };
+      }
+      if (type === 'ACCOUNTS') return ACCOUNTS;
+      return type === 'HARNESSES' ? roster : WIRING;
+    });
+    place();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
+    roster = {
+      ...ROSTER,
+      harnesses: [{
+        ...ROSTER.harnesses[0],
+        profiles: [...ROSTER.harnesses[0]!.profiles!, {
+          name: 'acct-1a2b3c4d', home: 'C:/somewhere/.daoris/harnesses/claude-code/acct-1a2b3c4d', login: 'in',
+          account: 'spare@example.invalid', read: READ, places: [], nowhere: true,
+        }],
+      }],
+    };
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        account: 'spare@example.invalid', kept: true, places: [],
+      });
+    });
+
+    const asking = await screen.findByRole('region', { name: 'Add an account' });
+    await userEvent.click(within(asking).getByRole('button', { name: 'Not now' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.objectContaining({
+      payload: expect.objectContaining({ action: 'profile-join' }),
+    }));
+
+    // A fresh id never leads its row: who signed in stands for it until the person names it.
+    const spare = await screen.findByRole('listitem', { name: 'spare@example.invalid' });
+    expect(within(spare).getByText('no workspace')).toBeTruthy();
+    await userEvent.click(within(spare).getByRole('button', { name: 'Use spare@example.invalid in a workspace…' }));
+    const where = within(spare).getByRole('region', { name: 'Where spare@example.invalid runs work' });
+    await userEvent.click(within(where).getByRole('checkbox', { name: "This machine's list" }));
+    await userEvent.click(within(where).getByRole('button', { name: 'Add to the lists' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-join', profile: 'acct-1a2b3c4d', join: [null] },
+    }));
   });
 
   it('a sign-in that kept nothing says so', async () => {
@@ -392,7 +578,8 @@ describe('the Agents place', () => {
     const notify = vi.fn();
     place(notify);
 
-    await userEvent.click((await screen.findAllByRole('button', { name: 'Sign in to another account' }))[0]!);
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
     await act(async () => {
       eventHandlers.get('DAORIS.HARNESS_ENDED')!({
         harness: 'claude-code', action: 'login-new', profile: 'account-1', exitCode: 0, problem: null,
@@ -403,8 +590,11 @@ describe('the Agents place', () => {
     expect(notify).toHaveBeenCalledWith('Nobody was signed in, so nothing was kept.', 'error');
   });
 
-  /** A person knows an account by who is signed in there, not by `account-2`; the directory is beside it. */
-  it('lists each account by who is signed in, where the tool says', async () => {
+  /**
+   * D152 §4.2 and ACCT2: one name leads, the account's, the person's where they gave one, with who signed in beside it where
+   * the two differ, never one as title and the other faint; a fresh id the person never chose never leads.
+   */
+  it('leads each row with the account’s name, who signed in beside it, and never a fresh id', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? {
         ...ROSTER,
@@ -413,15 +603,42 @@ describe('the Agents place', () => {
           ownAccount: 'owner@example.invalid',
           profiles: [
             { name: 'account-1', home: 'C:/somewhere/.daoris/harnesses/claude-code/account-1', login: 'in', account: 'someone@example.invalid' },
+            { name: 'acct-0a1b2c3d', displayName: 'lab', home: 'C:/somewhere/.daoris/harnesses/claude-code/acct-0a1b2c3d', login: 'in', account: 'lab@example.invalid' },
+            { name: 'acct-9f8e7d6c', home: 'C:/somewhere/.daoris/harnesses/claude-code/acct-9f8e7d6c', login: 'in', account: 'new@example.invalid' },
           ],
         }],
       }
       : WIRING));
     place();
 
-    const row = await screen.findByRole('listitem', { name: 'someone@example.invalid' });
-    expect(within(row).getByText('account-1')).toBeTruthy();
-    expect(screen.getByRole('listitem', { name: 'owner@example.invalid' })).toBeTruthy();
+    const old = await screen.findByRole('listitem', { name: 'account-1' });
+    expect(within(old).getByText('someone@example.invalid')).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'lab' })).getByText('lab@example.invalid')).toBeTruthy();
+    expect(screen.getByRole('listitem', { name: 'new@example.invalid' })).toBeTruthy();
+    expect(screen.queryByText('acct-9f8e7d6c')).toBeNull();
+    expect(within(screen.getByRole('listitem', { name: 'Your own sign-in' })).getByText('owner@example.invalid')).toBeTruthy();
+  });
+
+  /** ACCT2's rename, from an account's ⋯: the person's name, sent as `daoris agent profile rename` sends it, and said once. */
+  it('renames an account from its ⋯, and an emptied name gives it none', async () => {
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION') {
+        const name = options?.payload?.name;
+        return { harness: 'claude-code', action: 'profile-rename', exitCode: 0, profile: 'work', name: name === 'work' ? null : name };
+      }
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Rename…' }));
+    const form = within(screen.getByRole('listitem', { name: 'work' })).getByRole('form', { name: 'Rename work' });
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Its name' }), 'office');
+    await userEvent.click(within(form).getByRole('button', { name: 'Save the name' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-rename', profile: 'work', name: 'office' },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('work is called office now.'));
   });
 
   /** 🔴 Remove REMOVES (D66 §3): it deletes the sign-in, so its first press only asks, and says what the second will do. */
@@ -517,10 +734,10 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 A work account for the work circle (D49 §4): the row says which workspaces may run on it, and a workspace's default
-   * is chosen from the ones this machine has, in the account's ⋯.
+   * 🔴 A work account for the work circle (D49 §4): the row's *Runs for* says the workspaces that run on it, and a workspace's
+   * default is chosen from the ones this machine has, in the account's ⋯.
    */
-  it('an account can be made one workspace’s default, and the row says which workspaces may run on it', async () => {
+  it('an account can be made one workspace’s default, and the row says which workspaces run on it', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith('/api/registry')) {
@@ -534,7 +751,8 @@ describe('the Agents place', () => {
     place();
 
     const work = await screen.findByRole('listitem', { name: 'work' });
-    expect(within(work).getByText('orbit may run on it')).toBeTruthy();
+    expect(within(work).getByText('orbit')).toBeTruthy();
+    expect(within(screen.getByRole('listitem', { name: 'personal' })).getByText('this machine')).toBeTruthy();
 
     await userEvent.click(within(await more('personal')).getByRole('menuitem', { name: 'Use by default in lab' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -560,7 +778,7 @@ describe('the Agents place', () => {
     });
     place(notify);
 
-    await userEvent.click(within(await more("The tool's own sign-in")).getByRole('menuitem', { name: 'Clear the default in orbit' }));
+    await userEvent.click(within(await more('Your own sign-in')).getByRole('menuitem', { name: 'Clear the default in orbit' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'profile-default', workspace: 'orbit' },
@@ -810,7 +1028,7 @@ describe('the Agents place', () => {
     await unfold('Usage');
     expect(screen.getByText('60,000 context')).toBeTruthy();
     const usage = screen.getByRole('region', { name: 'Usage' });
-    expect(within(usage).getByText("The tool's own sign-in")).toBeTruthy();
+    expect(within(usage).getByText('Your own sign-in')).toBeTruthy();
     expect(within(usage).getByText(/Measured, not billed/).className).not.toMatch(/\bmax-w-/);
     // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
     expect(screen.queryByText(/[$£€]/)).toBeNull();
@@ -861,7 +1079,7 @@ describe('the Agents place', () => {
   it('offers no pin at all for a door that cannot be pinned', async () => {
     place(() => {}, { first: 'codex' });
 
-    expect(await screen.findByRole('button', { name: 'Install' })).toBeTruthy();
+    expect(await screen.findAllByRole('button', { name: 'Install' })).not.toHaveLength(0);
     expect(screen.queryByRole('button', { name: 'Pin a version' })).toBeNull();
   });
 
@@ -1042,8 +1260,11 @@ describe('how accounts are used', () => {
     place(notify);
 
     const personal = await screen.findByRole('listitem', { name: 'personal' });
-    expect(await within(personal).findByText(/^cooling until /)).toBeTruthy();
-    expect(within(personal).getByText(/1 of Daoris's sessions running · nothing said yet/)).toBeTruthy();
+    expect(await within(personal).findByText('cooling')).toBeTruthy();
+    expect(within(personal).getByText(/^resets /)).toBeTruthy();
+    // *Now* says what runs on it; *nothing said yet* and *0 sessions* are not said (D152 §2 rule 4).
+    expect(within(personal).getByText('1 session')).toBeTruthy();
+    expect(within(screen.getByRole('main')).queryByText(/nothing said yet|0 sessions|sessions running/)).toBeNull();
     await userEvent.click(within(personal).getByRole('button', { name: 'try personal now' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
@@ -1063,8 +1284,30 @@ describe('how accounts are used', () => {
     });
     // `work` is outside the machine's list, so *Use by default* is not offered on it.
     expect(within(await more('work')).queryByRole('menuitem', { name: 'Use by default' })).toBeNull();
+    await userEvent.keyboard('{Escape}');
+    // The plans and terms fold to one line at the list's foot, which opens the paragraph (D152 §4.4).
+    expect(screen.queryByText(/^Each account's own plan and terms apply\./)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: "Each account's own plan and terms apply" }));
     expect(screen.getByText(/^Each account's own plan and terms apply\./)).toBeTruthy();
     expect(screen.queryByText(/^Sessions run on your own sign-in/)).toBeNull();
+  });
+
+  /** D152 §4.2: an account's ⋯ puts it in a list that does not hold it, and takes it out of one that does. */
+  it('adds an account to a list and takes it out of one from its ⋯, each the terminal’s door', async () => {
+    invoke.mockImplementation(async (module: string, type: string, args?: { payload?: { action?: string } }) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: args?.payload?.action, exitCode: 0, profile: 'work', places: [] };
+      return answer(ROSTER, { agents: [{ ...ACCOUNTS.agents[0]!, scopes: [{ ...MACHINE, list: ['personal', 'work'] }, { ...MACHINE, workspace: 'orbit', default: null, list: ['personal'], begins: 'personal' }] }] })(module, type, args);
+    });
+    place();
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: "Add to orbit's list" }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-join', profile: 'work', join: ['orbit'] },
+    });
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: "Remove from this machine's list" }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
+      payload: { harness: 'claude-code', action: 'order', accounts: ['personal'] },
+    });
   });
 
   it('says starts run on the tool\'s own sign-in while the machine names no account, with its cool-off', async () => {
@@ -1079,8 +1322,11 @@ describe('how accounts are used', () => {
     invoke.mockImplementation(answer(shared, cooling));
     place();
 
-    expect(await screen.findByText(/^Sessions run on your own sign-in, someone@example\.invalid: .+ It is cooling until /)).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'try someone@example.invalid now' }));
+    // Its explanation is its row's ⓘ, kept whole, one press away (D152 §4.3), and no longer a callout before the accounts.
+    const own = await screen.findByRole('listitem', { name: 'Your own sign-in' });
+    expect(within(own).getByRole('note', { name: /^Sessions run on your own sign-in, someone@example\.invalid: .+ It is cooling until / })).toBeTruthy();
+    expect(within(own).getByText('cooling')).toBeTruthy();
+    await userEvent.click(within(own).getByRole('button', { name: 'try Your own sign-in now' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
       payload: { harness: 'claude-code', action: 'ready', own: true },
     });
@@ -1102,7 +1348,8 @@ describe('how accounts are used', () => {
     place();
 
     await unfold('How accounts are used');
-    expect(await screen.findByText('The next start takes work@example.invalid: it is the only account here that is ready.')).toBeTruthy();
+    // An account is named by its name everywhere on the page (ACCT2), an old `account-N`-like id where the person gave none.
+    expect(await screen.findByText('The next start takes work: it is the only account here that is ready.')).toBeTruthy();
     expect(screen.getByText(/^personal is cooling until .+\.$/)).toBeTruthy();
     expect(screen.getByText(/^Claude Code's own sign-in, the account it uses at your terminal, carries none of these starts/)).toBeTruthy();
   });

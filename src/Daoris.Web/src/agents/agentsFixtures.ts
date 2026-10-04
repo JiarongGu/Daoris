@@ -82,6 +82,52 @@ export const CODEX_USE: AgentAccounts = {
   agent: 'codex', speaks: false, own: {}, accounts: [{ name: 'account-1', running: 0 }], scopes: [scopeOf()],
 };
 
+/**
+ * The install's shape, as the UX7 design §4.7 draws it (UX7b): account-1 signed in with a session on it, first in work's
+ * list; account-2 a list holds, unknown and never read; *personal*, named by the person (ACCT2), cooling; a new account
+ * (`acct-…`, ACCT2's fresh id) signed in and in no list (ACCT1); your own sign-in never read, which forge starts on since
+ * neither it nor this machine names an account.
+ */
+const INSTALL_DOOR: ToolDoor = {
+  ...CLAUDE, machineDefault: null, workspaceDefaults: [], version: '2.1.288 (Claude Code)',
+  profiles: [
+    { name: 'account-1', home: 'C:/somewhere/data/harnesses/claude-code/account-1', login: 'in', account: 'you@work.example', read: READ,
+      places: [{ workspace: 'work', list: true, default: false }], nowhere: false },
+    { name: 'account-2', home: 'C:/somewhere/data/harnesses/claude-code/account-2', login: 'unknown', read: null,
+      places: [{ workspace: 'work', list: true, default: false }], nowhere: false },
+    { name: 'account-4', displayName: 'personal', home: 'C:/somewhere/data/harnesses/claude-code/account-4', login: 'in',
+      account: 'you@home.example', read: READ, places: [{ workspace: 'work', list: true, default: false }], nowhere: false },
+    { name: 'acct-5e1f0a2b', home: 'C:/somewhere/data/harnesses/claude-code/acct-5e1f0a2b', login: 'in', account: 'spare@example.invalid',
+      read: READ, places: [], nowhere: true },
+  ],
+};
+
+export const INSTALL_TOOL: Tool = byTool([
+  INSTALL_DOOR, { ...CLAUDE_ACP, version: '0.84.0', profiles: INSTALL_DOOR.profiles, machineDefault: null, workspaceDefaults: [] },
+])[0]!;
+
+export const INSTALL_USE: AgentAccounts = {
+  agent: 'claude-code',
+  speaks: true,
+  own: {},
+  accounts: [
+    { name: 'account-1', running: 1 },
+    { name: 'account-2', running: 0 },
+    {
+      name: 'account-4', running: 0,
+      cooling: { until: minutesFrom(60 * 20), stated: true, window: 'weekly', seen: READ, assumedZone: false, notBelieved: false },
+    },
+    { name: 'acct-5e1f0a2b', running: 0 },
+  ],
+  scopes: [
+    scopeOf(),
+    scopeOf({ workspace: 'work', list: ['account-1', 'account-2', 'account-4'], begins: 'account-1', use: USE_DEFAULTS }),
+  ],
+};
+
+/** The install's two workspaces. */
+export const INSTALL_WORKSPACES = ['forge', 'work'];
+
 /** Daoris's four defaults on, one rule of the person's for every session, one proposal waiting. */
 export const RULES: AgentRulesState = {
   path: 'C:/somewhere/data/permissions.json',

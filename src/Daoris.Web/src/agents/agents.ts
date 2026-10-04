@@ -1,9 +1,9 @@
 import i18n from '../i18n';
 import { clockOf, moment } from '../format';
-import type { Account, Tool } from '../tools';
+import type { Account, AccountPlace, Tool } from '../tools';
 import {
-  type AccountCooling, type AccountFacts, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, machineScope,
-  workspaceScope,
+  type AccountCooling, type AccountFacts, type AccountScope, type AccountsAnswer, type AgentAccounts, agentOf, coolingLine,
+  machineScope, workspaceScope,
 } from '../settings/accounts';
 import type { AgentRulesState } from '../settings/AgentRules';
 import { OPEN_STATES } from '../settings/proposals';
@@ -89,7 +89,7 @@ export function signedOutHeld(tool: Tool, use: AgentAccounts | null | undefined)
 export function stateWord(state: AccountState): { label: string; tone: 'open' | 'neutral' } {
   switch (state.state) {
     case 'out': return { label: i18n.t('harness.login.out'), tone: state.holdsWork ? 'open' : 'neutral' };
-    case 'cooling': return { label: i18n.t('agents.state.cooling', { when: moment(state.cooling!.until) }), tone: 'neutral' };
+    case 'cooling': return { label: i18n.t('harness.cooling.pill'), tone: 'neutral' };
     case 'in': return { label: i18n.t('harness.login.in'), tone: 'neutral' };
     case 'keyed': return { label: i18n.t('harness.login.keyed'), tone: 'neutral' };
     default: return { label: i18n.t('harness.login.unknown'), tone: 'neutral' };
@@ -101,15 +101,176 @@ export function stateWord(state: AccountState): { label: string; tone: 'open' | 
  * the last read failed. A cool-off says its own time, the reset its agent named.
  */
 export function readLine(state: AccountState, now: Date = new Date()): string | null {
-  if (state.state === 'cooling') return null;
+  if (state.state === 'cooling') return coolingLine(state.cooling!, now);
   if (!state.read) return i18n.t('agents.read.never');
   const when = clockOf(state.read, now);
   return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : i18n.t('agents.read.at', { when });
 }
 
+/**
+ * When, beside the state's word in its column (D152 §4.2): *signed in · 01:31*, *unknown · never read*, *cooling · resets 6
+ * Oct 22:02*. The time alone, since the column and the list's head say what it is; its tip says the whole (`readLine`).
+ */
+export function stateWhen(state: AccountState, now: Date = new Date()): string {
+  if (state.state === 'cooling') return i18n.t('agents.state.resets', { when: moment(state.cooling!.until) });
+  if (!state.read) return i18n.t('agents.read.never');
+  const when = clockOf(state.read, now);
+  return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : when;
+}
+
 /** The latest moment any of an agent's accounts was read, for its Accounts section's head; null where none was. */
 export function latestRead(states: readonly AccountState[]): string | null {
   return states.map((state) => state.read).filter((read): read is string => Boolean(read)).sort().at(-1) ?? null;
+}
+
+// ---------------------------------------------------------------- an account's row (UX7b, D152 §4)
+
+/** A fresh id (ACCT2): `acct-` and eight hex characters, which the person never chose and which says nothing. */
+const FRESH = /^acct-[0-9a-f]{8}$/i;
+
+type Named = Pick<Account, 'name'> & Partial<Pick<Account, 'displayName' | 'account' | 'key'>>;
+
+/**
+ * An account's name, as its row leads with it (D152 §4.2): the person's own (ACCT2), else a key's handle, else, for a fresh
+ * id the person never chose, who signed in, else its id, an old `account-N` being the word every list and session head says.
+ */
+export function accountName(account: Named): string {
+  const own = account.displayName?.trim();
+  if (own) return own;
+  if (account.key) return i18n.t('harness.profile.keyName', { handle: account.key });
+  if (FRESH.test(account.name) && account.account?.trim()) return account.account.trim();
+  return account.name;
+}
+
+/** Who signed in, said beside the name in the same place on every row where the two differ; null where they are one. */
+export function accountWho(account: Named): string | null {
+  if (account.key) return null;
+  const who = account.account?.trim();
+  return who && who !== accountName(account) ? who : null;
+}
+
+/** A version as its number alone (D152 §4.1): the product name a binary prints after it, in brackets, is dropped. */
+export function versionOnly(version: string): string {
+  return version.match(/^(.+?)\s+\([^)]*\)$/)?.[1] ?? version;
+}
+
+/** One scope an account runs in, as its row says it: a workspace, or null for this machine, and whether it starts there first. */
+export type RunsFor = { workspace: string | null; first: boolean };
+
+/** The workspaces with a default or a list of their own, whose starts take neither this machine's default nor its list. */
+function ownScopes(tool: Tool, use: AgentAccounts | null | undefined): Set<string> {
+  return new Set([
+    ...(use?.scopes ?? []).map((scope) => scope.workspace).filter((name): name is string => Boolean(name)),
+    ...tool.workspaceDefaults.map((circle) => circle.workspace),
+  ]);
+}
+
+const byPlace = (a: RunsFor, b: RunsFor) =>
+  (a.workspace === null ? -1 : b.workspace === null ? 1 : a.workspace.localeCompare(b.workspace));
+
+/**
+ * Where an account runs (D152 §4.2's *Runs for*, ACCT1): each scope whose own list holds it or whose own default names it,
+ * this machine first, the one it starts on first marked. The roster says it where the shell does (`places`); an older shell's
+ * is worked out from the same lists and defaults.
+ */
+export function runsFor(tool: Tool, use: AgentAccounts | null | undefined, name: string): RunsFor[] {
+  const account = tool.accounts.find((each) => each.name === name);
+  const scopeOf = (workspace: string | null) => (use?.scopes ?? []).find((scope) => (scope.workspace ?? null) === workspace);
+  const begins = (workspace: string | null) => scopeOf(workspace)?.begins === name;
+  if (Array.isArray(account?.places)) {
+    return account.places.map((place: AccountPlace) => ({
+      workspace: place.workspace ?? null, first: place.default || begins(place.workspace ?? null),
+    })).sort(byPlace);
+  }
+  const places = new Map<string | null, boolean>();
+  const add = (workspace: string | null, first: boolean) => places.set(workspace, (places.get(workspace) ?? false) || first);
+  const machine = use ? machineScope(use) : null;
+  if (tool.machineDefault === name || machine?.default === name) add(null, true);
+  if (machine?.list.includes(name)) add(null, begins(null));
+  for (const circle of tool.workspaceDefaults) if (circle.profile === name) add(circle.workspace, true);
+  for (const scope of use?.scopes ?? []) {
+    if (!scope.workspace) continue;
+    if (scope.default === name) add(scope.workspace, true);
+    if (scope.list.includes(name)) add(scope.workspace, scope.begins === name);
+  }
+  return [...places].map(([workspace, first]) => ({ workspace, first })).sort(byPlace);
+}
+
+/**
+ * Where your own sign-in runs (D152 §4.3): while this machine names no account, each workspace that names none of its own
+ * starts on it, or this machine where every workspace has its own; once this machine names one, none does.
+ */
+export function ownRunsFor(tool: Tool, use: AgentAccounts | null | undefined, workspaces: readonly string[]): RunsFor[] {
+  if (!sharesOwn(tool, use)) return [];
+  const own = ownScopes(tool, use);
+  const plain = workspaces.filter((workspace) => !own.has(workspace));
+  return plain.length > 0 ? plain.map((workspace) => ({ workspace, first: false })) : [{ workspace: null, first: false }];
+}
+
+/** *Runs for*, in words: *this machine · work (first)*, and *no workspace* where nothing runs on it, said rather than left blank. */
+export function runsForLine(runs: readonly RunsFor[]): string {
+  if (runs.length === 0) return i18n.t('agents.runs.none');
+  return runs.map((place) => {
+    const name = place.workspace ?? i18n.t('agents.runs.machine');
+    return place.first && runs.length > 1 ? i18n.t('agents.runs.first', { scope: name }) : name;
+  }).join(' · ');
+}
+
+/** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */
+export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'place'; loud: boolean };
+
+/**
+ * An account's one act by its state (D152 §4.2): *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
+ * now* when cooling, *Use in a workspace…* when nothing runs on it; none once a workspace runs on it. Unknown gets an act:
+ * on the install the account a list held read unknown, offered nothing, and the person reached for the header instead.
+ */
+export function accountAct(
+  state: AccountState, agent: { signsIn: boolean; present: boolean; runs: number },
+): AccountAct | null {
+  switch (state.state) {
+    case 'out': return agent.signsIn && agent.present ? { act: 'signIn', loud: state.holdsWork } : null;
+    case 'unknown': return agent.present ? { act: 'read', loud: state.holdsWork } : null;
+    case 'cooling': return { act: 'tryNow', loud: false };
+    default: return agent.runs === 0 ? { act: 'place', loud: false } : null;
+  }
+}
+
+/**
+ * One list an account may join (D152 §4.5): a workspace with a list or a default of its own, or this machine's (null); who
+ * it holds now, by name; whether that is a list or a default alone; the workspaces this machine's runs; and whether joining
+ * moves where its starts begin, which is only where it names nobody and so runs on your own sign-in.
+ */
+export type JoinChoice = { workspace: string | null; holds: string[]; listed: boolean; usedBy: string[]; moves: boolean };
+
+/**
+ * The lists an account may join (D152 §4.5, ACCT1's `profile-join`): each workspace with its own list or default, then this
+ * machine's, used by every workspace naming none of its own. A workspace on this machine's list is not offered alone: the
+ * driver refuses that join, naming this machine's list. A list that holds the account already is left out.
+ */
+export function joinChoices(
+  tool: Tool, use: AgentAccounts | null | undefined, workspaces: readonly string[], labelOf: (name: string) => string,
+  account: string,
+): JoinChoice[] {
+  if (!use) return [];
+  const own = ownScopes(tool, use);
+  const choices: JoinChoice[] = [...own].sort().flatMap((workspace) => {
+    const scope = workspaceScope(use, workspace);
+    const list = scope?.list ?? [];
+    const named = scope?.default ?? tool.workspaceDefaults.find((circle) => circle.workspace === workspace)?.profile ?? null;
+    if (list.includes(account) || (list.length === 0 && named === account)) return [];
+    const holds = list.length > 0 ? list : named ? [named] : [];
+    return [{ workspace, holds: holds.map(labelOf), listed: list.length > 0, usedBy: [], moves: holds.length === 0 }];
+  });
+  const machine = machineScope(use);
+  const named = machine.default ?? tool.machineDefault;
+  if (!machine.list.includes(account) && !(machine.list.length === 0 && named === account)) {
+    const holds = machine.list.length > 0 ? machine.list : named ? [named] : [];
+    choices.push({
+      workspace: null, holds: holds.map(labelOf), listed: machine.list.length > 0,
+      usedBy: workspaces.filter((workspace) => !own.has(workspace)), moves: holds.length === 0,
+    });
+  }
+  return choices;
 }
 
 /** One agent as the list shows it (§5.1). */
@@ -155,15 +316,21 @@ export function agentRows(tools: readonly Tool[], answer: AccountsAnswer | null 
 
 // ---------------------------------------------------------------- each folded section's line (D150 §1 rule 4, §5.2)
 
-/** How accounts are used, folded: the list's mode and switching early, or where the starts run with no list. */
-export function useSummary(machine: AccountScope, labelOf: (name: string) => string): string {
-  if (machine.list.length === 0) {
-    return i18n.t('agents.use.summary.runs', {
-      account: machine.default ? labelOf(machine.default) : i18n.t('harness.use.emptyOwn'),
-    });
-  }
-  const mode = i18n.t(machine.use.use === 'order' ? 'harness.use.mode.order' : 'harness.use.mode.goal');
-  return machine.use.early ? `${mode} · ${i18n.t('agents.use.summary.early')}` : mode;
+/**
+ * How accounts are used, folded (D152 §4.4): each scope and what its starts run on, this machine first, *This machine: your
+ * own sign-in · work: its own list of 3*, rather than the machine's alone as if it were every start's.
+ */
+export function useSummary(use: AgentAccounts, labelOf: (name: string) => string): string {
+  const what = (scope: AccountScope, own: boolean) => {
+    if (scope.list.length > 0) return i18n.t(own ? 'agents.use.summary.ownList' : 'agents.use.summary.list', { count: scope.list.length });
+    return scope.default ? labelOf(scope.default) : i18n.t('agents.use.summary.own');
+  };
+  return [
+    i18n.t('agents.use.summary.machine', { what: what(machineScope(use), false) }),
+    ...use.scopes.filter((scope) => scope.workspace).map((scope) => i18n.t('agents.use.summary.workspace', {
+      workspace: scope.workspace, what: what(scope, true),
+    })),
+  ].join(' · ');
 }
 
 /** Each workspace, folded: on its own accounts with its list, or on this machine's. */
@@ -182,7 +349,7 @@ export function doorsSummary(tool: Tool, adapter: string | undefined): string {
   return tool.doors.map((door) => {
     const word = i18n.t(door.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe');
     if (!door.present) return i18n.t('agents.doors.absent', { door: word });
-    const version = door.version ?? '';
+    const version = versionOnly(door.version ?? '');
     return i18n.t(door.harness === adapter ? 'agents.doors.driven' : 'agents.doors.door', { door: word, version });
   }).join(' · ');
 }

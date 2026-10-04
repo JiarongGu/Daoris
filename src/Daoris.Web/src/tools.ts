@@ -131,11 +131,28 @@ export interface AccountSettingsChange {
 }
 
 /**
+ * One scope an account runs in (ACCT1): a workspace, or null for this machine's; whether its own list holds the account,
+ * and whether its own default names it.
+ */
+export interface AccountPlace {
+  workspace: string | null;
+  list: boolean;
+  default: boolean;
+}
+
+/**
  * One account: the directory's name, where it is, its state — and who is signed in there, by the
- * tool's own answer (D66 §3). A person knows an account by who; `name` is what a terminal types.
+ * tool's own answer (D66 §3). A person knows an account by its name (ACCT2); `name` is its id, what a terminal types.
  */
 export interface Account {
+  /** Its stable id (ACCT2): its folder's name, an old `account-N` or a fresh `acct-` and eight hex characters. */
   name: string;
+  /** The person's name for it (ACCT2), null where they gave none; absent from a shell older than that. */
+  displayName?: string | null;
+  /** Where it runs (ACCT1): each scope whose own list holds it or whose own default names it; absent from an older shell. */
+  places?: AccountPlace[] | null;
+  /** No list and no default holds it, so no start runs on it (ACCT1); absent from an older shell. */
+  nowhere?: boolean;
   home: string;
   /** Asked of the tool, and one of three answers (SES3): only a definite `out` refuses. */
   login: 'in' | 'out' | 'unknown';
