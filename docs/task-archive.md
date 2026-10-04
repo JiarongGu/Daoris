@@ -6775,6 +6775,11 @@ default should be the one in front, said in the strip.
 
 Modules 166, deployment 39.
 
+*The owner's ask behind BRW4–BRW13 (2026-09-27): "the browser itself should have similar features as regular browser
+(for example edge, favorite, and etc, which can help to manage the use) and also should be able to start from the
+daoris app … start them after you complete current task (which is more important as the core workflow)". Moved here on
+2026-10-04 from a backlog heading whose work is archived.*
+
 ## BRW5 — favorites (2026-09-28)
 
 The row as filed: A star in the address bar, a favorites bar, and a menu. They are kept in
@@ -8442,6 +8447,9 @@ the files not to touch and the reserved decision number. Its index row grew the 
 bytes.
 **Proven by:** CLI 654 (four end-to-end scenarios in scratch repositories), `verify`, the code map; the
 rehearsals run with the next merge, the tool's first real use.
+
+*The owner's ask behind it (2026-09-30): "let's continue the development … you probably should start with
+subagents". Moved here on 2026-10-04 from a backlog heading that held no rows.*
 
 
 ## READ1 — reading across repositories, configurable (2026-09-30)
@@ -10788,3 +10796,120 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > changelog's entry.
 
 **Outcome** 2026-10-04: built. `autonomous-development` gains one bullet: the checks a change can reach while working, the whole set once where the work leaves the run, a fixed failure re-run alone, the slowest check measured and made faster rather than skipped. Re-synced into Daoris and both examples, with the canon changelog's entry (`8c721a50`).
+
+
+## FG5 — the first run on the named workspace (2026-10-04)
+
+> - [ ] **FG5 — the first run on the named workspace** (the owner present; INT6 as it now stands).
+> The study's §5, in order: republish, import as a workspace, a browser plugin for this machine,
+> the person's one sign-in, the browser allowed for the workspace, the loop (intake, the protocol
+> door's adapter, drivable, own trees), then an ask with a real ticket. What it produces is the
+> report: the room it rendered, whether the intake read the ticket and chose, and what the session
+> did. Every part up to the ask can be run by an agent. The sign-in and the ticket are the owner's.
+> **The loop is met** (2026-09-27): six legs, from the first ask to a chain that ran end to end, are
+> the study's §8. **Still the owner's:** the verify step's camera-GUID defect and the daily view's note
+> chip, both in that repository, and the branches its sessions left (WSR3).
+
+**Outcome** Done 2026-09-27, archived in the backlog clean-up: the first goal's loop was met in six legs (`docs/2026-09-27-first-goal-study.md` §8). The two defects it found are the work repository's, and WSR3 (2026-09-28) cleans the branches it left.
+
+
+## BRW3 — the owner's machine (2026-10-04)
+
+> - [ ] **BRW3 — the owner's machine** (with FG5). The plugin, the one sign-in in the in-app browser,
+> `mcp__browser` allowed, and the first ask whose ticket the intake reads through it.
+> **2026-09-27: set up to the owner's step.** The install is republished at `b287580`. The
+> `in-app-browser` plugin replaces the Edge one, `mcp__browser` stays allowed for the workspace, and
+> the browser window was opened on the install for the sign-in. **Then the owner signed in and
+> asked** (2026-09-27, 19:51 UTC), and the loop ran for real. The intake's `WebFetch` was refused
+> (the protocol door refuses every request, and the room's allow-list is not the handed rules). It
+> found `mcp__browser` itself, read the signed-in ticket in the in-app window, and published one
+> quest to the right repository, with a browser-verify `then` step, tier `intake`. The development
+> session's tree then failed on Windows' path limit and left a branch per tick (FIX-LOG,
+> 2026-09-27). Fixed, republished, and the session opened its tree and took the quest. Its outcome
+> is FG5's report.
+
+**Outcome** Done 2026-09-27, archived in the backlog clean-up: the owner signed in, and the intake read the signed-in ticket through `mcp__browser` and published one quest (`docs/2026-09-27-first-goal-study.md` §8, the first run).
+
+
+## ANSWER1 on the install — the plan (2026-10-04)
+
+> - [ ] **ANSWER1 on the install — the plan** (owner, 2026-10-03: *"you need to fix the ANSWER1 bug too"*). The fix is on
+> main (ANSWER1a–c, 2026-10-02/03): an answer keeps its session and resumes the agent's own conversation. The install
+> still runs the build before it, because a session has been running at every chance to republish. In order:
+> 1. **Republish** at the first moment no session runs (the watcher on the drill-down quest says when), carrying
+>    ANSWER1a–c, DRIFT1, TOOL6c and TOOL4g; or, on the owner's word, stop the running one and republish now.
+> 2. **ANSWER1d**, below: answer the next park on the install and see the same row go on.
+> 3. **ANSWER1e**, below. **UPDATE1** is built (2026-10-03), so the next fix need not wait on a free moment: its first
+>    install is a publish in place, and every one after it is staged (UPDATE1c).
+
+**Outcome** Done 2026-10-03: the install took a staged update carrying ANSWER1a–c (UPDATE1c, `2249a6bc`), and ANSWER1e and ANSWER1f landed. The canary stays open as ANSWER1d, which now carries the owner's words.
+
+
+## TOOL4 — rotation (2026-10-04)
+
+> - [ ] **TOOL4 — rotation** (owner, 2026-10-01/02: *"this is also good to test for account switch"* … *"a chance to check
+> daoris continue"*): **designed as D125** (`docs/2026-10-01-account-rotation-design.md`), which lifts D57 §b's hold:
+> five observed limits (design §0.2) answer its three questions. A limit is read from the door's failure by a table
+> that grows only with recorded sentences; its account cools until the reset the agent names (60 minutes when it names
+> none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
+> accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
+> waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
+
+**Outcome** Done 2026-10-02/03: designed as D125 and built as TOOL4a–g, j and k, each in this archive. The owner's real-rotation test stays open as TOOL4i, the rehearsal as TOOL4h and Ask Daoris's doors as TOOL4l.
+
+
+## WSSETUP12 — the pilot (2026-10-04)
+
+> - [ ] **WSSETUP12 — the pilot** (the owner's run, after a republish carrying WSSETUP2, 3, 5, 6, 9 and LAYOUT7): two
+> repositories; what each wrote, its review, its cost, its registration, and a canary: a neighbour's session finds
+> the answer by search and does not park.
+> **Ran 2026-10-02 on the report repository** (quest `#b466447ce4d3`, one turn: 52.3M cached reads, 464K new, 170K out):
+> done on its own branch, 7 commits, not pushed; its three knowledge documents cite every fact by file and line. Not
+> mergeable as it stands, by three faults of Daoris's own (WSSETUP14): CI and 218 links still read the moved
+> `.claude/` paths, which the quest's bounds forbade it to fix; `AGENTS.md` grew to 61 KB because the index lists all
+> 169 knowledge documents in the always-loaded region (budget raised to 54,000; one agent reads only 32 KB); 166 old
+> documents have no frontmatter. The second repository waits for WSSETUP14.
+
+**Outcome** Ran 2026-10-02 on the report repository: one turn, done on its own branch, not mergeable by three faults of Daoris's own, which became WSSETUP14 (D128; its design's §0 keeps the numbers). The finish and the second repository are WSSETUP14f.
+
+
+## TOOL4m — the rest of TOOL4g's screen (2026-10-04)
+
+> - [ ] **TOOL4m — the rest of TOOL4g's screen** (web-shell; found by TOOL4g). *What needs you*'s row for a start waiting for
+> an account with *Let … run …* (D130 §3.3), the conversation picker's split (§3.2), and a session head's *your own
+> sign-in*. Contract: D130 §3.2–§3.3. Proof: vitest, stories, the look.
+
+**Outcome** Superseded 2026-10-04 by D150: UX6d takes the What-needs-you row for a start waiting for an account (§6.2–§6.3); UX6e takes the conversation picker's split and a session head's own-sign-in line, which its row names.
+
+
+## GIT1e — the place, its list and a branch's page (2026-10-04)
+
+> - [ ] **GIT1e — the place, its list and a branch's page** (web-shell; after GIT1d). *Git* on the activity bar after
+> Projects, desktop only; the list by repository and kind; a branch's graph from a pure `graphLanes.ts`; both
+> languages. Contract: design §2.2–§2.3, §6. Proof: stories, vitest, `names-check`, the look in both themes.
+
+**Outcome** Superseded 2026-10-04 by D150 §3, amending D147 §6–§7: no Git place joins the bar. The list by kind and a branch's graph land in Repositories' Branches tab as UX6h; GIT1f, GIT1g and GIT1i now follow UX6h.
+
+
+## SETUP2 — a set-up runs the repository's own checks and moves what reads the moved files (2026-10-04)
+
+> - [ ] **SETUP2 — a set-up runs the repository's own checks and moves what reads the moved files** (driver, canon; owner,
+> 2026-10-04: *"also found a bug for CI pipeline after the merge of knowledge update … so this is also a good check
+> when building Daoris"*). The work repository's set-up moved its agent documents to `.agents/` and its pipeline's
+> knowledge check then failed: the repository's own checker still reads `.claude/rules/RULES_INDEX.md`. A set-up's
+> done should run the checks the repository declares (its pipeline's steps and package scripts that read the agent
+> documents), search its tooling for every path it moved and repoint or report each, and name each check and its
+> result in its closing note; the adoption playbook the press hands says so. Contract: D124 §2 (the press), LAYOUT7,
+> D144's gate evidence (later). Proof: a press test that the playbook names the step; the family rehearsal's set-up
+> phase with a stub repository whose script reads a moved path.
+
+**Outcome** Folded 2026-10-04 into WSSETUP14d, whose D128 §1.4–§1.6 already runs the repository's checks before the first change and at the close. The owner's words, *repoint or report every reader* and the family-rehearsal proof moved onto that row.
+
+
+## LAYOUT10 — the first real set-ups (2026-10-04)
+
+> - [ ] **LAYOUT10 — the first real set-ups** (the owner's run; since D124 no longer after the first publish, and its
+> unadopted half is WSSETUP12): one unadopted
+> repository, and one with instruction files of its own.
+
+**Outcome** Superseded by D124: WSSETUP12 ran the unadopted half on 2026-10-02, and WSSETUP13 takes the repository with instruction files of its own, which its row now names.
