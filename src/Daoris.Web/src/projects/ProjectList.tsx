@@ -170,7 +170,8 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
         const outsideShown = outsideOpen[group.workspace] ?? outsideStarts(group);
         return (
           <section key={group.workspace} aria-label={group.workspace} className="border-t border-line first:border-t-0">
-            <h3 className="m-0 flex items-center pr-1 font-normal" data-list-row="">
+            {/* The chosen workspace wears the list's choice across its whole head, its chevron included. */}
+            <h3 className={cn('m-0 flex items-center pr-1 font-normal', chosenWorkspace === group.workspace && 'bg-accent-soft')} data-list-row="">
               {onChooseWorkspace
                 ? (
                   <ListRowDoor chosen={chosenWorkspace === group.workspace} onPress={() => onChooseWorkspace(group.workspace)}>
@@ -201,7 +202,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
                     type="button"
                     aria-expanded={outsideShown}
                     onClick={() => setOutsideOpen((was) => ({ ...was, [group.workspace]: !outsideShown }))}
-                    className="flex w-full items-center gap-1 px-2.5 pb-1 pt-2 text-left text-small font-semibold text-ink-soft hover:text-ink"
+                    className="flex w-full items-center gap-1 border-l-[3px] border-l-transparent px-2.5 pb-1 pt-2 text-left text-small font-semibold text-ink-soft hover:text-ink"
                   >
                     <span className="min-w-0 flex-1 truncate">{t('projects.group.outside', { count: group.outside.length })}</span>
                     <Icon name={outsideShown ? 'chevronDown' : 'chevronRight'} size={12} className="shrink-0 text-ink-faint" />

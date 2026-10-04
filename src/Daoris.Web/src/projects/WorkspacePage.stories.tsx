@@ -132,7 +132,8 @@ const meta: Meta<typeof Page> = {
   component: Page,
   args: { tab: 'details' },
   // Repositories' main area beside a list: the page is its own column, as the frame lays it out.
-  decorators: [(Story) => <div className="flex h-[48rem] max-w-full border border-line bg-page"><Story /></div>],
+  // Its height grows with the page, so a shot shows a tab whole.
+  decorators: [(Story) => <div className="flex min-h-[48rem] max-w-full border border-line bg-page"><Story /></div>],
 };
 export default meta;
 
