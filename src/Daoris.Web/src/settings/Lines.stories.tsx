@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LineList } from './Lines';
 
-// Each repository's line (WSR2), in the shape the driver's LINES answer takes: every source a line
-// can come from, and a machine with nothing to set a line for.
+// Each workspace's line (WSR2), in the shape the driver's LINES answer takes, and since UX6f the line naming the
+// repositories that set their own, each a door to its Setup, or that none does; and a machine with nothing to set a line
+// for.
 
 const meta = {
   title: 'Settings/Lines',
   component: LineList,
-  args: { onSet: () => {}, workspaceLines: [], lines: [] },
+  args: { onSet: () => {}, onOpen: () => {}, workspaceLines: [], lines: [] },
 } satisfies Meta<typeof LineList>;
 
 export default meta;

@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Button, Card, CheckField, Chip, Inline, Prose, SectionTitle, Segmented, SelectField, SettingRow } from '../ui';
+import { OnItsPage } from './OnItsPage';
 
 /**
  * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names —
@@ -45,9 +46,12 @@ const same = (a?: LandingRule, b?: LandingRule) =>
  * and open the pull request (WSR4, D100). Only the plugins that land work are offered, and only on a
  * branch. What each row shows is the driver's own choice, read rather than recomputed, and a rule the
  * driver refuses comes back as its own sentence. A row's control is the screen's half of `daoris driver
- * landing` (D50).
+ * landing --workspace` (D50).
+ *
+ * **A repository's own rule has one home, its Setup** (UX6f, D150 §1, §3.1): its row left this list, which keeps a line
+ * naming the repositories that set their own, each a door to its Setup, until UX6g moves the workspace's rule too.
  */
-export function LandingList({ landings, workspaceLandings, landers = [], busy, onSet }: {
+export function LandingList({ landings, workspaceLandings, landers = [], busy, onSet, onOpen }: {
   landings: RepositoryLanding[];
   /** What each workspace sets, by name. */
   workspaceLandings: ({ workspace: string } & LandingRule)[];
@@ -55,18 +59,12 @@ export function LandingList({ landings, workspaceLandings, landers = [], busy, o
   landers?: string[];
   busy?: boolean;
   onSet: (change: LandingChange) => void;
+  /** Open a repository's page at Setup, or with null Repositories at Setup. */
+  onOpen?: (repository: string | null) => void;
 }) {
   const { t } = useTranslation();
   const circles = [...new Set([...landings.map((l) => l.workspace), ...workspaceLandings.map((w) => w.workspace)])]
     .sort((a, b) => a.localeCompare(b));
-
-  const says = (landing: RepositoryLanding) => {
-    if (landing.source === 'default') return t('settings.landing.from.default');
-    const rule = landing.form === 'branch' ? 'branch' : 'merge';
-    const said = t(`settings.landing.from.${landing.source}.${rule}`, { pattern: landing.pattern, workspace: landing.workspace });
-    const pushed = landing.form === 'branch' && landing.plugin ? `${said} ${t('settings.landing.byPlugin', { plugin: landing.plugin })}` : said;
-    return landing.form === 'branch' && landing.autoAccept ? `${pushed} ${t('settings.landing.byAuto')}` : pushed;
-  };
 
   return (
     <Card id="settings-landing" className="mt-3.5 scroll-mt-3">
@@ -89,19 +87,10 @@ export function LandingList({ landings, workspaceLandings, landers = [], busy, o
               busy={busy}
               onSave={(rule) => onSet({ workspace, ...rule })}
             />
-            {landings.filter((landing) => landing.workspace === workspace).map((landing) => (
-              <LandingRow
-                key={landing.repository}
-                label={landing.repository}
-                hint={says(landing)}
-                name={landing.repository}
-                set={landing.source === 'repository' ? landing : undefined}
-                inherited={landing.source === 'repository' ? shared ?? MERGE : landing}
-                landers={landers}
-                busy={busy}
-                onSave={(rule) => onSet({ repository: landing.repository, ...rule })}
-              />
-            ))}
+            <OnItsPage
+              own={landings.filter((landing) => landing.workspace === workspace && landing.source === 'repository').map((landing) => landing.repository)}
+              onOpen={onOpen}
+            />
           </section>
         );
       })}

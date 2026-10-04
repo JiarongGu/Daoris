@@ -14,7 +14,6 @@
   "settings.across.from.workspace": "为工作区 {{workspace}} 设置。",
   "settings.across.from.default": "默认值。",
   "settings.across.noCheckout": "本机没有检出。",
-  "settings.across.writesInto": "它的会话还可以写入",
   "settings.across.writesIntoList": "{{repository}} 可写入",
   "settings.across.writesNone": "它的会话不写入其他仓库。",
   "settings.across.stopWriting": "停止 {{repository}} 写入 {{to}}",

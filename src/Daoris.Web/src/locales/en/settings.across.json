@@ -14,7 +14,6 @@
   "settings.across.from.workspace": "Set for the workspace {{workspace}}.",
   "settings.across.from.default": "The default.",
   "settings.across.noCheckout": "No checkout on this machine.",
-  "settings.across.writesInto": "Its sessions may also write into",
   "settings.across.writesIntoList": "{{repository}} writes into",
   "settings.across.writesNone": "Its sessions write into no other repository.",
   "settings.across.stopWriting": "Stop {{repository}} writing into {{to}}",

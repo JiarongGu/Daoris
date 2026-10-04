@@ -11,27 +11,34 @@ import {
   Button, Card, Chip, failure, Icon, type Notify, PathText, Prose, SectionTitle, SettingRow, Tip, useErrorNotify,
 } from '../ui';
 import { workspacesOf } from '../workspaces';
+import type { SettingsDomainProps } from './domains';
 import { LandingList } from './Landings';
 import { LanguageList } from './Languages';
 import { LineList } from './Lines';
 import { namer } from './namer';
+import { setupDoor } from './OnItsPage';
 import { SweepList } from './Sweep';
 import { SyncSection } from './Sync';
 
 /**
  * The Workspace domain (D75 §3): every workspace and what it holds, which is for everyone, and on a
  * desktop the machine's half beneath it: which deployment serves each workspace, what a start runs on,
- * each repository's line, how work lands, and the clean-up. A browser is given the list alone.
+ * each workspace's line, session language and how work lands, and the clean-up. A browser is given the list alone.
+ * A repository's own line, language and landing are on its page, under Setup (UX6f); each list names the repositories
+ * that set their own, each a door there.
  */
-export function WorkspaceDomain({ attached, notify }: { attached: boolean; notify: Notify }) {
+export function WorkspaceDomain({ attached, notify, onGo }: Pick<SettingsDomainProps, 'attached' | 'notify'> & {
+  onGo?: SettingsDomainProps['onGo'];
+}) {
+  const onOpen = onGo && setupDoor(onGo);
   return (
     <>
       <WorkspaceList />
       {attached && <WiringSettings notify={notify} />}
       {attached && <Starts notify={notify} />}
-      {attached && <LineSettings notify={notify} />}
-      {attached && <LanguageSettings notify={notify} />}
-      {attached && <LandingSettings notify={notify} />}
+      {attached && <LineSettings notify={notify} onOpen={onOpen} />}
+      {attached && <LanguageSettings notify={notify} onOpen={onOpen} />}
+      {attached && <LandingSettings notify={notify} onOpen={onOpen} />}
       {attached && <SweepSettings notify={notify} />}
     </>
   );
@@ -260,11 +267,14 @@ function Starts({ notify }: { notify: Notify }) {
   );
 }
 
+/** Where a list's door to a repository's own value leads (UX6f): its page at Setup. */
+type ToSetup = { notify: Notify; onOpen?: (repository: string | null) => void };
+
 /**
- * Each repository's line and each workspace's default (WSR2): the driver's own resolution, and the
- * screen's half of `daoris driver line` (D50). Shell-only, because the guess is read off a checkout.
+ * Each workspace's default line (WSR2): the driver's own resolution, and the screen's half of `daoris driver line
+ * --workspace` (D50). Shell-only, because the guess is read off a checkout. A repository's own is on its Setup.
  */
-function LineSettings({ notify }: { notify: Notify }) {
+function LineSettings({ notify, onOpen }: ToSetup) {
   const { t } = useTranslation();
   const answer = useLines();
   const driver = useDriver();
@@ -276,6 +286,7 @@ function LineSettings({ notify }: { notify: Notify }) {
       lines={Array.isArray(answer.data?.lines) ? answer.data.lines : []}
       workspaceLines={driver.data?.workspaceLines ?? []}
       busy={setLine.isPending}
+      onOpen={onOpen}
       onSet={(change) => setLine.mutate(change, {
         onSuccess: () => {
           const name = change.repository ?? change.workspace ?? '';
@@ -295,7 +306,7 @@ function LineSettings({ notify }: { notify: Notify }) {
  * window's language stays Appearance's. A shell older than it answers no table, and no card is offered rather than a field
  * whose save would be refused.
  */
-function LanguageSettings({ notify }: { notify: Notify }) {
+function LanguageSettings({ notify, onOpen }: ToSetup) {
   const { t } = useTranslation();
   const answer = useLines();
   const driver = useDriver();
@@ -308,6 +319,7 @@ function LanguageSettings({ notify }: { notify: Notify }) {
       languages={Array.isArray(answer.data?.languages) ? answer.data.languages : []}
       workspaceLanguages={driver.data?.workspaceLanguages ?? []}
       table={table}
+      onOpen={onOpen}
       onSet={(change) => setLanguage.mutate(change, {
         onSuccess: () => {
           const name = change.repository ?? change.workspace ?? '';
@@ -326,7 +338,7 @@ function LanguageSettings({ notify }: { notify: Notify }) {
  * How work lands in each repository and each workspace (WSR1, D87): the driver's own choice, and the
  * screen's half of `daoris driver landing` (D50). Shell-only, beside the lines it lands on.
  */
-function LandingSettings({ notify }: { notify: Notify }) {
+function LandingSettings({ notify, onOpen }: ToSetup) {
   const { t } = useTranslation();
   const answer = useLines();
   const driver = useDriver();
@@ -343,6 +355,7 @@ function LandingSettings({ notify }: { notify: Notify }) {
       workspaceLandings={driver.data?.workspaceLandings ?? []}
       landers={landers}
       busy={setLanding.isPending}
+      onOpen={onOpen}
       onSet={(change) => setLanding.mutate(change, {
         onSuccess: () => {
           const name = change.repository ?? change.workspace ?? '';

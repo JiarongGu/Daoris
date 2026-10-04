@@ -145,8 +145,43 @@ describe("the workspace domain: the machine's wiring", () => {
     });
     show(<SettingsView notify={() => {}} section="workspace" />);
 
-    await screen.findByRole('textbox', { name: 'The line for engine' });
+    await screen.findByRole('textbox', { name: 'The line for aurora' });
     expect(screen.queryByRole('heading', { name: 'Session language' })).toBeNull();
+  });
+
+  /**
+   * UX6f (D150 §3.1): a repository's own line, language and landing are set on its page, under Setup. Each list keeps its
+   * workspace's default and a line naming the repositories that set their own, each a door to its Setup through the
+   * application's one opener.
+   */
+  it("keeps a workspace's defaults, and opens a repository's Setup from the line naming those that set their own", async () => {
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'LINES') {
+        return {
+          lines: [
+            { repository: 'engine', workspace: 'aurora', branch: 'develop', source: 'repository' },
+            { repository: 'game', workspace: 'aurora', branch: 'main', source: 'checkout' },
+          ],
+          landings: [{ repository: 'game', workspace: 'aurora', form: 'merge', source: 'default' }],
+        };
+      }
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="workspace" onGo={onGo} />);
+
+    const lines = within((await screen.findByRole('heading', { name: 'Lines' })).closest('article')!);
+    expect(await lines.findByRole('textbox', { name: 'The line for aurora' })).toBeInTheDocument();
+    expect(lines.queryByRole('textbox', { name: 'The line for engine' })).toBeNull();
+    await userEvent.click(lines.getByRole('button', { name: "Open engine's setup" }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', item: 'engine', tab: 'setup' });
+
+    // No repository sets its own rule, so the landing card's door opens Repositories at Setup.
+    const landing = within(screen.getByRole('heading', { name: 'How work lands' }).closest('article')!);
+    await userEvent.click(landing.getByRole('button', { name: 'Open Repositories' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', tab: 'setup' });
   });
 
   /**
