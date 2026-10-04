@@ -93,6 +93,30 @@ export const ALongNoteFolds: Story = {
   decorators: [(Story) => <div className="w-[400px] p-3"><Story /></div>],
 };
 
+/** The same fold across a note's blocks: Daoris's line worded in the reader's language, then the agent's words set apart. */
+export const ALongNoteOfSeveralBlocksFolds: Story = {
+  args: {
+    session: {
+      ...SESSION,
+      note: 'The quest reached done.',
+      noteParts: [
+        { code: 'ended.done', values: {}, text: 'The quest reached done.' },
+        {
+          words: [
+            'Capped hydration at four chunks a frame and exposed the budget on the chunk API.',
+            'The playtest streamed the whole world with no seams; the slowest frame took 14 ms.',
+            'Two follow-ups for the game: read the budget from the level file, and show it in the debug overlay.',
+            'Nothing else was touched.',
+          ].join('\n'),
+          by: 'agent',
+        },
+      ],
+      evidence: undefined,
+    },
+  },
+  decorators: [(Story) => <div className="w-[400px] p-3"><Story /></div>],
+};
+
 /** Work that produced nothing. The driver's sentence says so and the timeline does not soften it. */
 export const NothingLanded: Story = {
   args: { session: { ...SESSION, evidence: 'no commits landed' }, quest: null },
