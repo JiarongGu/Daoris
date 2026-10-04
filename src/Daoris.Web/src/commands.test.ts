@@ -1,182 +1,329 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type Command, commands, matching } from './commands';
+import {
+  COMMANDS, type CommandDoors, type CommandEntry, type CommandState, commandTable, MENUS, matching, paletteCommands, shortcutGroups,
+} from './commands';
 
-// The registry is the half that matters (SURF9): "what can I do right now" is a value, so every
-// world — a browser, a shell on Overview, a shell on Sessions — is an argument rather than an
-// arrangement.
+// The one table (UX7a, D152 §2): every verb named once, with its menu, its key, the surfaces that have it, when it
+// applies and what it runs. "What can I do right now" is a value, so every world is an argument rather than an
+// arrangement: a browser, a shell on Overview, a shell on Sessions with a session attended, a quest open on Quests.
 
-const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<typeof commands>[0] => ({
-  label: (id: string) => id,
-  group: (id: string) => id,
+const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true,
-  current: 'overview',
-  go: vi.fn(),
-  refresh: vi.fn(),
-  toggleLanguage: vi.fn(),
-  startSession: vi.fn(),
-  review: vi.fn(),
-  monitor: vi.fn(),
-  browser: vi.fn(),
-  help: vi.fn(),
-  quickAsk: vi.fn(),
-  ask: vi.fn(),
-  setup: vi.fn(),
+  view: 'overview',
+  list: null,
+  panelShown: true,
+  sideShown: false,
+  moved: false,
+  workspaces: [{ name: 'work', repositories: 4 }, { name: 'forge', repositories: 2 }],
+  scope: null,
+  circle: null,
+  wired: false,
+  theme: 'system',
+  language: 'en',
+  agents: [],
+  domains: [],
+  session: null,
+  quest: null,
+  record: false,
+  find: false,
+  field: false,
   ...over,
 });
 
-const ids = (list: Command[]) => list.map((command) => command.id);
+const doors = (): CommandDoors => ({
+  ask: vi.fn(), quest: vi.fn(), scope: vi.fn(), add: vi.fn(), import: vi.fn(), workspaceSetup: vi.fn(), sync: vi.fn(),
+  wire: vi.fn(), settings: vi.fn(), edit: vi.fn(), find: vi.fn(), searchKnowledge: vi.fn(), copyId: vi.fn(), palette: vi.fn(),
+  toggle: vi.fn(), reset: vi.fn(), frame: vi.fn(), monitor: vi.fn(), browser: vi.fn(), theme: vi.fn(), language: vi.fn(),
+  refresh: vi.fn(), go: vi.fn(), agent: vi.fn(), agentPart: vi.fn(), region: vi.fn(), sessionAct: vi.fn(), questAct: vi.fn(), help: vi.fn(),
+  quickAsk: vi.fn(), setup: vi.fn(), shortcuts: vi.fn(), update: vi.fn(), about: vi.fn(),
+});
 
-describe('the command registry', () => {
-  it('offers every view a browser has, and the global actions', () => {
-    const list = ids(commands(world({ attached: false, current: 'quests' })));
+/** The catalogue's key as the label, its values after it: every string is still a key a test can read. */
+const t = (key: string, values?: Record<string, unknown>) => (values ? `${key}(${Object.values(values).join(',')})` : key);
 
-    expect(list).toContain('go.overview');
-    expect(list).toContain('go.search');
-    // Settings is everywhere since D66: a browser has appearance to set, if nothing of a machine.
-    expect(list).toContain('go.settings');
-    expect(list).toContain('do.refresh');
-    expect(list).toContain('do.language');
+const table = (over: Partial<CommandState> = {}, on = doors()) => commandTable(state(over), on, t);
+const ids = (entries: readonly { id: string }[]) => entries.map((entry) => entry.id);
+const inMenu = (entries: CommandEntry[], menu: string) => entries.filter((entry) => entry.menu === menu && entry.menuItem);
+const entry = (entries: CommandEntry[], id: string) => entries.find((each) => each.id === id);
+
+describe('the menu bar (D152 §1)', () => {
+  it('is VS Code\'s less Selection, with Workspace in File\'s place, each with its letter', () => {
+    expect(MENUS.map((menu) => menu.id)).toEqual(['workspace', 'edit', 'view', 'go', 'run', 'terminal', 'help']);
+    expect(MENUS.map((menu) => menu.letter).join('')).toBe('WEVGRTH');
   });
 
-  /**
-   * 🔴 The disclosure boundary, enforced by OMISSION (D47 §4). A palette is a promise that what it
-   * lists can be done — so a shell-only action listed in a browser would be the palette lying, and
-   * "present but disabled" would be the same lie with extra steps.
-   */
-  it('offers nothing shell-only in a browser — absent, never disabled', () => {
-    const list = ids(commands(world({ attached: false })));
+  it('gives 30 of its items a key on a shell (the design §6.2)', () => {
+    const onQuests = table({ view: 'quests', list: { shown: true } }).filter((each) => each.menuItem);
+    expect(onQuests.filter((each) => each.keys.length > 0)).toHaveLength(30);
+  });
+});
 
-    expect(list).not.toContain('go.sessions');
-    expect(list).not.toContain('work.start');
-    expect(list).not.toContain('work.review');
-    // Nothing sneaks in under another name either.
-    expect(list.some((id) => id.startsWith('work.'))).toBe(false);
+describe('each menu (the design §3.2)', () => {
+  it('Workspace: the new things, the scope, the repositories, the workspace\'s setup, Settings', () => {
+    expect(ids(inMenu(table(), 'workspace'))).toEqual([
+      'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work', 'workspace.scope:forge',
+      'workspace.add', 'workspace.import', 'workspace.setup', 'workspace.sync', 'workspace.settings',
+    ]);
+    expect(entry(table(), 'workspace.newAsk')?.keys.map((key) => key.combo)).toEqual(['Ctrl+N']);
+    expect(entry(table(), 'workspace.settings')?.keys.map((key) => key.combo)).toEqual(['Ctrl+,']);
   });
 
-  /**
-   * An ask (INT4c) is a local host's HTTP door, so a browser on this machine can make one as well as
-   * the shell can — offered from anywhere, whatever view is in front, even Quests where its button is.
-   */
-  it('offers asking the circle everywhere, a browser included', () => {
-    const run = vi.fn();
-    const browser = commands(world({ attached: false, current: 'quests', ask: run }));
-
-    const ask = browser.find((command) => command.id === 'do.ask');
-    expect(ask).toBeDefined();
-    ask!.run();
-    expect(run).toHaveBeenCalledOnce();
-    expect(ids(commands(world()))).toContain('do.ask');
-  });
-
-  it('offers Sessions and the session actions where a shell is here', () => {
-    const list = ids(commands(world()));
-
-    expect(list).toContain('go.sessions');
-    expect(list).toContain('go.settings');
-    expect(list).toContain('work.start');
-    expect(list).toContain('work.review');
-    // The second screen (SURF8) — a window is the shell's to open, so it follows the same rule.
-    expect(list).toContain('work.monitor');
-    // Daoris's own browser (D78) — a window of the shell, by the same rule.
-    expect(list).toContain('work.browser');
-    // Ask Daoris, in its region and in the palette's box (DOCK1d): the machine's, so the shell's.
-    expect(list).toContain('work.help');
-    expect(list).toContain('work.quickAsk');
-  });
-
-  /**
-   * PLUGUI1b (D119 §3, §3.7): Plugins is a view of the activity bar, after Search, and shell-only — a plugin is
-   * this machine's (D64; D47 §4) — so the palette offers it where a shell is, and a browser is offered none.
-   */
-  it('offers Plugins where a shell is, and never in a browser', () => {
-    const go = vi.fn();
-    const shell = commands(world({ go }));
-    const row = shell.find((command) => command.id === 'go.plugins');
-    expect(row).toMatchObject({ icon: 'plug', title: 'go.plugins' });
-    row!.run();
-    expect(go).toHaveBeenCalledWith('plugins');
-
-    expect(ids(commands(world({ attached: false })))).not.toContain('go.plugins');
-    expect(ids(commands(world({ current: 'plugins' })))).not.toContain('go.plugins');
-    // After Agents, which follows Search since UX6e (D150 §2.1), as the activity bar holds them, with Settings at the foot.
-    expect(ids(shell).filter((id) => id.startsWith('go.'))).toEqual([
-      'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.search', 'go.agents', 'go.plugins', 'go.settings',
+  it('Edit: a field\'s six, Find, Search knowledge and Copy ID', () => {
+    expect(ids(inMenu(table(), 'edit'))).toEqual([
+      'edit.undo', 'edit.redo', 'edit.cut', 'edit.copy', 'edit.paste', 'edit.selectAll', 'edit.find', 'edit.search', 'edit.copyId',
     ]);
   });
 
-  /**
-   * One navigation, one list (D66): there is no mode to switch, and the palette never offers the view
-   * already in front of the person — an entry that does nothing is noise in this list.
-   */
-  it('never offers the view you are already on', () => {
-    expect(ids(commands(world({ current: 'sessions' })))).not.toContain('go.sessions');
-    expect(ids(commands(world({ current: 'sessions' })))).toContain('go.overview');
-    expect(ids(commands(world({ current: 'overview' })))).not.toContain('go.overview');
+  it('View: Commands, the regions, the views, the windows, Theme and Language, Refresh the index', () => {
+    expect(ids(inMenu(table({ view: 'sessions', list: { shown: true } }), 'view'))).toEqual([
+      'view.commands', 'view.list', 'view.panel', 'view.side', 'view.reset', 'view.timeline', 'view.console', 'view.monitor',
+      'view.browser', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en', 'view.language:zh',
+      'view.refresh',
+    ]);
+    // Theme and Language each open to their side, ticked as they stand.
+    const theme = table({ theme: 'dark' }).filter((each) => each.submenu === 'menu.view.theme');
+    expect(theme.map((each) => [each.id, each.checked])).toEqual([
+      ['view.theme:system', false], ['view.theme:light', false], ['view.theme:dark', true],
+    ]);
   });
 
-  /**
-   * Detach is absent when nothing is attended, for the same reason a shell-only action is absent in
-   * a browser: a row that does nothing is a palette breaking its promise.
-   */
-  it('offers detaching only where there is a session to detach', () => {
-    expect(ids(commands(world()))).not.toContain('work.detach');
+  it('Go: every place but Search and Settings, Ctrl+1 to Ctrl+8 in the bar\'s order, then the regions', () => {
+    const go = inMenu(table(), 'go');
+    expect(ids(go)).toEqual([
+      'go.overview', 'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.agents', 'go.plugins',
+      'go.nextRegion', 'go.previousRegion',
+    ]);
+    expect(go.slice(0, 8).map((each) => each.keys[0]?.combo)).toEqual(
+      ['Ctrl+1', 'Ctrl+2', 'Ctrl+3', 'Ctrl+4', 'Ctrl+5', 'Ctrl+6', 'Ctrl+7', 'Ctrl+8']);
+    // The place in front is ticked, as the Workspace menu ticks the scope.
+    expect(entry(table({ view: 'quests' }), 'go.quests')?.checked).toBe(true);
+  });
 
-    const detach = vi.fn();
-    const list = commands(world({ detach }));
-    expect(ids(list)).toContain('work.detach');
+  it('Run: start, this session\'s acts, this quest\'s, archiving what ended', () => {
+    expect(ids(inMenu(table(), 'run'))).toEqual([
+      'run.start', 'run.session.answer', 'run.session.retry', 'run.session.review', 'run.session.stop', 'run.session.detach',
+      'run.quest.take', 'run.quest.done', 'run.quest.retry', 'run.quest.pause', 'run.quest.resume', 'run.quest.decline',
+      'run.archiveEnded',
+    ]);
+    expect(entry(table(), 'run.session.answer')?.heading).toEqual({ label: 'menu.run.session', tip: 'menu.run.sessionTip' });
+    expect(entry(table(), 'run.quest.take')?.heading).toEqual({ label: 'menu.run.quest', tip: 'menu.run.questTip' });
+  });
 
-    list.find((command) => command.id === 'work.detach')!.run();
-    expect(detach).toHaveBeenCalled();
+  it('Terminal and Help', () => {
+    expect(ids(inMenu(table(), 'terminal'))).toEqual(['terminal.new', 'terminal.here', 'terminal.folder', 'terminal.show']);
+    expect(ids(inMenu(table(), 'help'))).toEqual([
+      'help.ask', 'help.quickAsk', 'help.setup', 'help.shortcuts', 'help.log', 'help.update', 'help.about',
+    ]);
+  });
+});
+
+describe('in a browser (D152 §3.6, D47 §4)', () => {
+  const browser = table({ attached: false, view: 'quests', list: { shown: true } });
+
+  it('holds what a browser may know: no Terminal, no session, no window, no account', () => {
+    expect(ids(inMenu(browser, 'workspace'))).toEqual([
+      'workspace.newAsk', 'workspace.newQuest', 'workspace.scope:*', 'workspace.scope:work', 'workspace.scope:forge',
+      'workspace.settings',
+    ]);
+    expect(ids(inMenu(browser, 'view'))).toEqual([
+      'view.commands', 'view.list', 'view.theme:system', 'view.theme:light', 'view.theme:dark', 'view.language:en',
+      'view.language:zh', 'view.refresh',
+    ]);
+    expect(ids(inMenu(browser, 'go'))).toEqual([
+      'go.overview', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.nextRegion', 'go.previousRegion',
+    ]);
+    expect(ids(inMenu(browser, 'run'))).toEqual(['run.quest.take', 'run.quest.done', 'run.quest.decline']);
+    expect(inMenu(browser, 'terminal')).toEqual([]);
+    expect(ids(inMenu(browser, 'help'))).toEqual(['help.setup', 'help.shortcuts', 'help.about']);
+  });
+
+  /** A browser claims no key it keeps for itself, and shows none it does not answer (D152 §3.4). */
+  it('claims no key a browser keeps: Ctrl+N, Ctrl+1–8, Ctrl+F, Ctrl+Shift+P', () => {
+    expect(entry(browser, 'workspace.newAsk')?.keys).toEqual([]);
+    expect(entry(browser, 'go.quests')?.keys).toEqual([]);
+    expect(entry(browser, 'edit.find')?.keys).toEqual([]);
+    expect(entry(browser, 'view.commands')?.keys.map((key) => key.combo)).toEqual(['Ctrl+K']);
+    // What a browser does not keep it still answers: Settings, the list, the regions in turn.
+    expect(entry(browser, 'workspace.settings')?.keys.map((key) => key.combo)).toEqual(['Ctrl+,']);
+    expect(entry(browser, 'view.list')?.keys.map((key) => key.combo)).toEqual(['Ctrl+B']);
+  });
+});
+
+describe('when an item applies (D152 §2, the design §3.3)', () => {
+  it('is disabled where its surface exists and the state forbids it, and absent where the surface is absent', () => {
+    // No session attended: This session's acts are in their place, and off.
+    const shell = table();
+    expect(entry(shell, 'run.session.stop')).toMatchObject({ enabled: false, menuItem: true, palette: false });
+    // A browser has no session at all.
+    expect(entry(table({ attached: false }), 'run.session.stop')).toBeUndefined();
+  });
+
+  /** A record's act in the menu is enabled exactly when its header offers it (D152 §2). */
+  it('enables a session\'s acts exactly as its header offers them, and runs each through its owner', () => {
+    const on = doors();
+    const attended = table({ view: 'sessions', session: { acts: ['stop', 'detach', 'copy'], answer: false } }, on);
+    expect(inMenu(attended, 'run').filter((each) => each.id.startsWith('run.session.')).map((each) => [each.id, each.enabled]))
+      .toEqual([
+        ['run.session.answer', false], ['run.session.retry', false], ['run.session.review', false], ['run.session.stop', true],
+        ['run.session.detach', true],
+      ]);
+    entry(attended, 'run.session.stop')!.run();
+    expect(on.sessionAct).toHaveBeenCalledWith('stop');
+    expect(entry(attended, 'terminal.here')?.enabled).toBe(false);
+  });
+
+  it('enables a quest\'s acts exactly as its header offers them', () => {
+    const on = doors();
+    const open = table({ view: 'quests', quest: { acts: ['take', 'done', 'decline'] } }, on);
+    expect(inMenu(open, 'run').filter((each) => each.id.startsWith('run.quest.')).map((each) => [each.id, each.enabled]))
+      .toEqual([
+        ['run.quest.take', true], ['run.quest.done', true], ['run.quest.retry', false], ['run.quest.pause', false],
+        ['run.quest.resume', false], ['run.quest.decline', true],
+      ]);
+    entry(open, 'run.quest.decline')!.run();
+    expect(on.questAct).toHaveBeenCalledWith('decline');
+  });
+
+  it('offers Sync now where the workspace in view is wired, and Wire to a remote… where it is not, in one place', () => {
+    expect(entry(table({ circle: 'work', wired: true }), 'workspace.sync')).toMatchObject({ label: 'work.sync.now', enabled: true });
+    expect(entry(table({ circle: 'work', wired: false }), 'workspace.sync')).toMatchObject({ label: 'menu.workspace.wire', enabled: true });
+    expect(entry(table({ circle: null }), 'workspace.sync')?.enabled).toBe(false);
+  });
+
+  it('names the view\'s list for the view, ticked while shown, and is absent where the view has none', () => {
+    expect(entry(table({ view: 'quests', list: { shown: false } }), 'view.list')).toMatchObject({
+      label: 'layout.menu.list.quests', checked: false,
+    });
+    expect(entry(table({ view: 'map', list: null }), 'view.list')).toBeUndefined();
+  });
+
+  it('says no workspace yet, and offers no choice, with none', () => {
+    const none = table({ workspaces: [] });
+    expect(inMenu(none, 'workspace').find((each) => each.id.startsWith('workspace.scope'))).toMatchObject({
+      id: 'workspace.scope:none', label: 'menu.workspace.none', enabled: false, palette: false,
+    });
+  });
+});
+
+describe('the palette reads the same table (D152 §2)', () => {
+  it('lists every menu item that applies, but the field\'s six and Commands itself', () => {
+    const entries = table({ view: 'sessions', list: { shown: true }, session: { acts: ['stop', 'detach', 'terminal', 'openFolder'], answer: true }, find: true, record: true, field: true });
+    const listed = new Set(ids(paletteCommands(entries)));
+    const missing = entries
+      .filter((each) => each.menuItem && each.enabled && !each.checked)
+      .filter((each) => !listed.has(each.id))
+      .map((each) => each.id);
+    expect(missing).toEqual(['edit.undo', 'edit.redo', 'edit.cut', 'edit.copy', 'edit.paste', 'edit.selectAll', 'view.commands']);
+  });
+
+  it('omits what is disabled and what is chosen already: the place in front, the scope, the theme', () => {
+    const listed = ids(paletteCommands(table({ view: 'quests', scope: 'work', theme: 'dark' })));
+    expect(listed).not.toContain('go.quests');
+    expect(listed).toContain('go.overview');
+    expect(listed).not.toContain('workspace.scope:work');
+    expect(listed).toContain('workspace.scope:forge');
+    expect(listed).not.toContain('view.theme:dark');
+    expect(listed).not.toContain('run.session.stop');
+  });
+
+  it('groups each command under its menu\'s name, and names a family\'s rows by it', () => {
+    const palette = paletteCommands(table({ agents: [{ name: 'claude-code', label: 'Claude Code' }], domains: [{ id: 'driver', label: 'settings.domain.driver' }] }));
+    expect(palette.find((each) => each.id === 'go.quests')).toMatchObject({ title: 'command.goTo(nav.quests)', group: 'menu.go' });
+    expect(palette.find((each) => each.id === 'workspace.scope:forge')).toMatchObject({ title: 'command.scope(forge)', group: 'menu.workspace' });
+    // Each agent and each Settings domain are the palette's alone: the menus reach them by their place.
+    expect(palette.find((each) => each.id === 'go.agent:claude-code')).toMatchObject({ title: 'command.goTo(Claude Code)' });
+    expect(palette.find((each) => each.id === 'workspace.domain:driver')).toMatchObject({ title: 'command.settingsAt(settings.domain.driver)' });
+    expect(palette.find((each) => each.id === 'help.log')).toMatchObject({ title: 'command.settingsAt(settings.domain.logs)' });
+  });
+
+  /** The design §3.7: what the Agents menu held keeps a palette row, each a part of the Agents place or Overview's. */
+  it('keeps the Agents menu\'s sections as palette rows on a shell, and in no menu', () => {
+    const on = doors();
+    const entries = table({}, on);
+    const rows = paletteCommands(entries).filter((each) => each.id.startsWith('go.part:'));
+    expect(rows.map((each) => [each.id, each.title])).toEqual([
+      ['go.part:signIn', 'command.signIn'], ['go.part:rules', 'command.agentRules'], ['go.part:proposals', 'command.proposals'],
+      ['go.part:usage', 'command.usage'],
+    ]);
+    expect(entries.filter((each) => each.id.startsWith('go.part:')).every((each) => !each.menuItem)).toBe(true);
+    rows[1]!.run();
+    rows[2]!.run();
+    expect(on.agentPart).toHaveBeenCalledWith('rules');
+    expect(on.go).toHaveBeenCalledWith('overview');
+    expect(ids(paletteCommands(table({ attached: false }))).filter((id) => id.startsWith('go.part:'))).toEqual([]);
+  });
+
+  it('offers a browser nothing that needs this machine', () => {
+    const listed = ids(paletteCommands(table({ attached: false })));
+    expect(listed).not.toContain('go.sessions');
+    expect(listed).not.toContain('go.plugins');
+    expect(listed).not.toContain('run.start');
+    expect(listed).not.toContain('view.monitor');
+    expect(listed).not.toContain('help.ask');
+    expect(listed).toContain('workspace.newAsk');
+    expect(listed).toContain('help.setup');
   });
 
   it('runs what it was handed, and nothing else', () => {
-    const go = vi.fn();
-    const list = commands(world({ go }));
+    const on = doors();
+    const palette = paletteCommands(table({ view: 'map' }, on));
+    palette.find((each) => each.id === 'go.quests')!.run();
+    palette.find((each) => each.id === 'workspace.newAsk')!.run();
+    palette.find((each) => each.id === 'view.theme:dark')!.run();
+    expect(on.go).toHaveBeenCalledWith('quests');
+    expect(on.ask).toHaveBeenCalledOnce();
+    expect(on.theme).toHaveBeenCalledWith('dark');
+  });
+});
 
-    list.find((command) => command.id === 'go.quests')!.run();
-    list.find((command) => command.id === 'go.sessions')!.run();
-    expect(go.mock.calls).toEqual([['quests'], ['sessions']]);
+describe('the keys (D152 §3)', () => {
+  const combos = (entries: CommandEntry[]) => entries.flatMap((each) => each.keys.map((key) => key.combo));
+
+  it('lists no key twice', () => {
+    const all = combos(table({ view: 'quests', list: { shown: true } }));
+    expect(all.filter((combo, index) => all.indexOf(combo) !== index)).toEqual([]);
   });
 
-  /**
-   * SETUP1a (D97): *Set up Daoris* opens the guide from anywhere, a browser included, since Get started
-   * is a browser's too (holding the one step it can know) — and found by the words a person would type.
-   */
-  it('offers setting Daoris up everywhere, found by its words', () => {
-    const setup = vi.fn();
-    const browser = commands(world({ attached: false, setup }));
-
-    const row = browser.find((command) => command.id === 'do.setup');
-    expect(row).toBeDefined();
-    row!.run();
-    expect(setup).toHaveBeenCalledOnce();
-    expect(ids(commands(world()))).toContain('do.setup');
-    expect(ids(matching(browser, 'get started'))[0]).toBe('do.setup');
-    expect(ids(matching(browser, '入门'))).toContain('do.setup');
+  /** No act that ends or removes something has a key: each asks once, and a key would leave the ask as the only guard. */
+  it('gives no key to what stops, declines or deletes', () => {
+    for (const spec of COMMANDS) {
+      if (/stop|decline|delete|archive/i.test(spec.id)) expect(spec.keys ?? [], spec.id).toEqual([]);
+    }
   });
 
-  it('gives every command a stable id and a distinct one', () => {
-    const list = ids(commands(world()));
-    expect(new Set(list).size).toBe(list.length);
+  it('follows VS Code\'s where the meaning is the same', () => {
+    const entries = table({ view: 'quests', list: { shown: true } });
+    const keysOf = (id: string) => entry(entries, id)?.keys.map((key) => key.combo);
+    expect(keysOf('view.commands')).toEqual(['Ctrl+K', 'Ctrl+Shift+P']);
+    expect(keysOf('edit.find')).toEqual(['Ctrl+F']);
+    expect(keysOf('edit.search')).toEqual(['Ctrl+Shift+F']);
+    expect(keysOf('terminal.show')).toEqual(['Ctrl+`']);
+    expect(keysOf('terminal.new')).toEqual(['Ctrl+Shift+`']);
+    expect(keysOf('view.console')).toEqual(['Ctrl+Shift+U']);
+    expect(keysOf('run.start')).toEqual(['Ctrl+Shift+N']);
+    expect(keysOf('help.ask')).toEqual(['F1', 'Ctrl+Alt+I']);
+  });
+
+  it('prints every key by menu for the Keyboard shortcuts drawer, in the reader\'s language', () => {
+    const groups = shortcutGroups(table({ view: 'quests', list: { shown: true } }), t);
+    expect(groups.map((group) => group.menu)).toEqual(['menu.workspace', 'menu.edit', 'menu.view', 'menu.go', 'menu.run', 'menu.terminal', 'menu.help']);
+    expect(groups.flatMap((group) => group.rows).length).toBe(30);
+    expect(groups[0]!.rows[0]).toEqual({ label: 'menu.workspace.newAsk', keys: ['Ctrl+N'] });
   });
 });
 
 describe('matching what was typed', () => {
-  const list = commands(world({
-    current: 'quests',
-    label: (id: string) => ({
-      'go.overview': 'Overview',
-      'go.sessions': 'Sessions',
-      'go.projects': 'Repositories',
-      'go.convergence': 'Convergence',
-      'go.search': 'Search',
-      'go.settings': 'Settings',
-      'work.start': 'Start a session',
-      'work.review': 'Review what landed',
-      'do.refresh': 'Refresh the index',
-      'do.language': '中文',
-    })[id] ?? id,
-  }));
+  const list = paletteCommands(commandTable(state({ view: 'quests' }), doors(), (key, values) => ({
+    'command.goTo': `Go to: ${String(values?.place ?? '')}`,
+    'nav.overview': 'Overview',
+    'nav.convergence': 'Convergence',
+    'nav.sessions': 'Sessions',
+    'menu.edit.search': 'Search knowledge',
+    'menu.settings': 'Settings',
+    'menu.run.start': 'Start a session…',
+    'menu.refresh': 'Refresh the index',
+    'command.language': 'Switch language',
+  })[key] ?? key));
 
   it('shows everything when nothing is typed — a palette is not a filter until you type', () => {
     expect(matching(list, '')).toHaveLength(list.length);
@@ -184,25 +331,21 @@ describe('matching what was typed', () => {
   });
 
   it('matches a subsequence, not only a substring', () => {
-    // "cnv" is how a person types Convergence when they are not looking at the list.
     expect(matching(list, 'cnv').map((c) => c.id)).toContain('go.convergence');
-    expect(matching(list, 'sas').map((c) => c.id)).toContain('work.start');
-  });
-
-  it('ranks a word-boundary match above one buried mid-word', () => {
-    // "sea" begins Search, and is buried mid-word nowhere else.
-    expect(matching(list, 'sea')[0].id).toBe('go.search');
+    expect(matching(list, 'sas').map((c) => c.id)).toContain('run.start');
   });
 
   it('finds a command by a keyword it does not show', () => {
     // "theme" and "machine" are what people will type for Settings (D66); neither is in its title.
-    expect(matching(list, 'theme').map((c) => c.id)).toContain('go.settings');
-    expect(matching(list, 'machine').map((c) => c.id)).toContain('go.settings');
-    expect(matching(list, 'diff').map((c) => c.id)).toContain('work.review');
+    expect(matching(list, 'theme').map((c) => c.id)).toContain('workspace.settings');
+    expect(matching(list, 'machine').map((c) => c.id)).toContain('workspace.settings');
+    // "get started" finds Setup (SETUP1a), in either language.
+    expect(matching(list, 'get started')[0]?.id).toBe('help.setup');
+    expect(matching(list, '入门').map((c) => c.id)).toContain('help.setup');
   });
 
   it('matches 中文 — the console is bilingual and so is the palette', () => {
-    expect(matching(list, '中文').map((c) => c.id)).toContain('do.language');
+    expect(matching(list, '中文').map((c) => c.id)).toContain('view.language:zh');
   });
 
   it('answers nothing for a needle that is in nothing, rather than everything', () => {

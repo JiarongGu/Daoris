@@ -329,7 +329,8 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await page.goto('/');
   // A browser on this machine has this door: an ask is this host's HTTP, not the shell's bridge.
   await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
-  await page.getByRole('dialog').getByRole('option', { name: /Ask the workspace/ }).click();
+  // Workspace › New ask… since UX7a (D152), the palette's row for it.
+  await page.getByRole('dialog').getByRole('option', { name: /^New ask/ }).click();
 
   // The composer is a form, so a drawer still (D118 §3d), addressed by its title.
   const composer = page.getByRole('dialog', { name: 'Ask the workspace' });
@@ -365,7 +366,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   // The quest it became is a door into the quest's own page — once the page holds it — asked BY the
   // ask, carrying its link and its file.
   // Named as every list names it (SESSUX1j): the service read a name from its words, whole words, since nobody gave one.
-  await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: /^the rendering of the asset pipeline/ }).click();
+  await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: /^#[0-9a-f]{6} the rendering of the asset pipeline…$/ }).click();
   const quest = record(page);
   await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
   // Asked by the ask, on its head's facts line (UX7c).
@@ -843,7 +844,8 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   // (Overview, on landing) — Settings among them, since a browser has appearance to set (D66).
   await expect(palette.getByRole('option', { name: /Quests/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /Search/ })).toBeVisible();
-  await expect(palette.getByRole('option', { name: /Settings/ })).toBeVisible();
+  // Settings itself, not a domain's row (*Settings: Appearance*), which the palette lists too since UX7a.
+  await expect(palette.getByRole('option', { name: /^Settings(?!:)/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /^Overview/ })).toHaveCount(0);
 
   // Nothing that needs a shell is — not disabled, ABSENT.

@@ -25,7 +25,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // SETUP1b: the page hands the helper a first message asking to be walked through it, naming the
         // steps by these titles, so it is told the guide exists and what each step is done on.
         ("walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, "
-            + "what is driven, how work lands, what agents may do", "Settings → Setup (the Daoris menu's *Setup*)",
+            + "what is driven, how work lands, what agents may do", "Settings → Setup (Help → *Setup*)",
             "(each step shows its own command there)"),
         // HELPSETUP1: a repository's own values are on its Setup since UX6f (D150 §4.2); a workspace's default keeps its
         // Settings home until the workspace's page takes it (UX6g).
