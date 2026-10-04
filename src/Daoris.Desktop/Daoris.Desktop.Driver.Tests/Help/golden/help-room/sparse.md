@@ -101,7 +101,7 @@ session named; never propose adding one that has not landed.
 
 | To | On the screen | At a terminal |
 |---|---|---|
-| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (the Daoris menu's *Setup*) | (each step shows its own command there) |
+| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (Help → *Setup*) | (each step shows its own command there) |
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris driver drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris driver trees <repository> on|off` |
@@ -180,7 +180,9 @@ where the person picks the one they mean, and a part of `agents` opens the agent
 
 The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,
 Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot; `Ctrl+K` opens
-the command palette. Every view sits in one frame: the view in the centre, the panel beneath it,
+the command palette. The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help, as
+VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and
+Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,
 and the right side bar beside it; on Sessions the session list is at the left and the centre is the
 attended session. Five views stand in the two regions and move between them:
 the timeline, the review and the console of the session attended on Sessions, Ask Daoris, and the

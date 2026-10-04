@@ -18,7 +18,10 @@ internal sealed class HelpRoomWindow : IHelpRoomSection
         // UX6e2: Agents joined the bar after Search with UX6e (D150 §2.1).
         text.Append("The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,\n");
         text.Append("Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot; `Ctrl+K` opens\n");
-        text.Append("the command palette. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
+        // UX7a (D152 §1): the menu bar holds the verbs and places, and Help lists every key.
+        text.Append("the command palette. The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help, as\n");
+        text.Append("VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and\n");
+        text.Append("Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
         text.Append("attended session. Five views stand in the two regions and move between them:\n");
         text.Append("the timeline, the review and the console of the session attended on Sessions, Ask Daoris, and the\n");
