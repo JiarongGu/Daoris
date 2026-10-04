@@ -34,6 +34,12 @@
 //
 //   7. A plugin's icon is the manifest's `icon`, a path inside its folder to an SVG or a PNG of at most 32 KiB.
 //      Its problem is said, by the same rules in the same order and words, and never refuses the plugin.
+//
+// And since PLUGTOOL1a (D150 point 7), with the driver's `PluginTools.cs`, `PluginToolsTests` holding the table:
+//
+//   8. A plugin's tools are the manifest's `tools`: each an id, a range, why, and at most four checks. Each tool's
+//      first problem is said, by the same rules in the same order and words, and never refuses the plugin. This side
+//      reads and lists them; finding a tool and running its checks are the driver's, at a trial.
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
@@ -42,7 +48,7 @@ import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
-import { isAddress } from './tools.ts';
+import { TOOLS, isAddress } from './tools.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one. */
@@ -134,7 +140,45 @@ export interface PluginManifest {
   icon: string | null;
   /** Why its declared icon is not drawn, by the manifest's rules; never a reason to refuse the plugin. */
   iconProblem: string | null;
+  /** The tools its process runs (PLUGTOOL1a, D150 point 7), each read or saying its first problem; none for a refused plugin. */
+  tools: PluginTool[];
+  /** Why `tools` as a whole is not read, when it is not an array; never a reason to refuse the plugin. */
+  toolsProblem: string | null;
 }
+
+/**
+ * Whose a declared tool is (the UX6 design §7.2): `own`, one Daoris runs itself, whose way is set in Settings → Tools;
+ * `known`, one Daoris's code names and runs for no one but a plugin; `other`, one Daoris does not know, found and never
+ * downloaded. Twin: `PluginToolKind`.
+ */
+export type PluginToolKind = 'own' | 'known' | 'other';
+
+/** One readiness check (§7.2): a command whose exit 0 means ready, what that means, and what a person runs when it is not. Daoris never runs `fix`. */
+export interface ReadyCheck { run: string[]; says: string; fix: string | null }
+
+/**
+ * A tool a plugin declares (PLUGTOOL1a, D150 point 7), as its manifest writes it: a known id takes its name from Daoris and
+ * its file from its way, so `command` is null for one; any other is found by `command`, the id when absent. A tool whose
+ * entry breaks a rule keeps only its id, where it has one, and says its first problem. Twin: `PluginTool`.
+ */
+export interface PluginTool {
+  id: string | null;
+  kind: PluginToolKind | null;
+  name: string | null;
+  command: string | null;
+  versionArguments: string[] | null;
+  /** The range as written: `>=2.60`, `>=2.60 <3`, or one exact version; null for any. */
+  versions: string | null;
+  for: string | null;
+  ready: ReadyCheck[];
+  problem: string | null;
+}
+
+/** The tools Daoris runs itself (D150 point 7): their way stays Settings → Tools'. Twin: `PluginTools.DaorisOwn`. */
+export const DAORIS_OWN_TOOLS: readonly string[] = Object.freeze(['git', 'node', 'pwsh']);
+
+/** The most checks a tool may carry (§7.2). Twin: `PluginTools.MaxChecks`. */
+export const MAX_TOOL_CHECKS = 4;
 
 /** The knowledge host's server name — Daoris's own, which a plugin may not claim. */
 export const KNOWLEDGE_SERVER = 'daoris-knowledge';
@@ -179,7 +223,7 @@ export function dataFolder(home: string, id: string): string {
 
 const empty = (id: string): PluginManifest => ({
   id, apiVersion: API_VERSION, name: id, version: '', description: '', harnesses: [], hooks: null, servers: [],
-  icon: null, iconProblem: null,
+  icon: null, iconProblem: null, tools: [], toolsProblem: null,
 });
 
 /** `plugins.json`: which plugins are disabled. An unreadable file disables nothing — the safe direction. */
@@ -345,6 +389,10 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
   const declaredIcon = (root as Record<string, unknown>).icon;
   const { icon, problem: iconProblem } = declaredIcon === undefined ? { icon: null, problem: null } : iconDeclared(declaredIcon);
 
+  // Its tools, after: a tool's problem is that tool's sentence and never refuses the plugin (D150 point 7).
+  const declaredTools = (root as Record<string, unknown>).tools;
+  const { tools, problem: toolsProblem } = declaredTools === undefined ? { tools: [], problem: null } : toolsDeclared(declaredTools);
+
   return {
     manifest: {
       id,
@@ -357,9 +405,165 @@ export function readManifest(folderName: string, folder: string, asWritten = fal
       servers,
       icon,
       iconProblem,
+      tools,
+      toolsProblem,
     },
     problem: null,
   };
+}
+
+// ——— A plugin's tools (PLUGTOOL1a, D150 point 7; the UX6 design §7.2). Twin: the driver's `PluginTools.cs`, whose
+// `PluginToolsTests` holds the table `plugin-tools.test.ts` parses and holds this reader to. A tool is something the
+// plugin needs, never something it is, so a problem in `tools` is said beside the tool and never refuses the plugin.
+
+/** One to four numbers, as `tools.json` and a resource list spell an exact version. Twin: `Tools.IsExactVersion`. */
+const EXACT_VERSION = /^[0-9]+(?:\.[0-9]+){0,3}$/;
+
+/** A range, read: a floor (`>=`), a floor and a top (`<`), or one exact version. Twin: `VersionRange`. */
+interface VersionRange { lower: string | null; upper: string | null; exact: string | null }
+
+/**
+ * The range a manifest writes (§7.2), or null where it is not one: words parted by spaces, `>=V`, `>=V <V`, or `V` alone,
+ * each `V` an exact version. Nothing else is a range, so a later reader never guesses at what one meant. Twin:
+ * `VersionRange.Parse`.
+ */
+function parseRange(written: string): VersionRange | null {
+  const words = written.split(' ').filter((word) => word !== '');
+  const floor = (word: string) => word.startsWith('>=') && EXACT_VERSION.test(word.slice(2)) ? word.slice(2) : null;
+  const top = (word: string) => word.startsWith('<') && EXACT_VERSION.test(word.slice(1)) ? word.slice(1) : null;
+  if (words.length === 1) {
+    if (EXACT_VERSION.test(words[0]!)) return { lower: null, upper: null, exact: words[0]! };
+    const lower = floor(words[0]!);
+    return lower === null ? null : { lower, upper: null, exact: null };
+  }
+  if (words.length !== 2) return null;
+  const lower = floor(words[0]!);
+  const upper = top(words[1]!);
+  return lower !== null && upper !== null ? { lower, upper, exact: null } : null;
+}
+
+/** Two exact versions, number by number, a missing number 0: `2.60` and `2.60.0` are the same. Twin: `VersionRange.Compare`. */
+function compareNumbers(a: string, b: string): number {
+  const left = a.split('.');
+  const right = b.split('.');
+  for (let at = 0; at < Math.max(left.length, right.length); at += 1) {
+    const x = (left[at] ?? '0').replace(/^0+/, '') || '0';
+    const y = (right[at] ?? '0').replace(/^0+/, '') || '0';
+    if (x.length !== y.length) return x.length - y.length;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  return 0;
+}
+
+const filled = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
+
+const notRead = (id: string | null, problem: string): PluginTool => ({
+  id, kind: null, name: null, command: null, versionArguments: null, versions: null, for: null, ready: [], problem,
+});
+
+/** The manifest's `tools`, by the table: none for `null`; an array, each entry read on its own. Twin: `PluginTools.Read`. */
+function toolsDeclared(value: unknown): { tools: PluginTool[]; problem: string | null } {
+  if (value === null) return { tools: [], problem: null };
+  if (!Array.isArray(value)) {
+    return { tools: [], problem: '`tools` must be an array of the tools the plugin runs, each an object with an `id`.' };
+  }
+  const seen = new Set<string>();
+  return { tools: value.map((row, at) => toolDeclared(row, at + 1, seen)), problem: null };
+}
+
+/**
+ * One entry, by the rules in order, the first broken said: an object; an `id` of a tool id's shape, once; a known id
+ * declaring none of the three fields that are Daoris's; another id's `name`, `command` (a name on the PATH, no folder)
+ * and `versionArguments`; `versions` a range that holds a version; `for` a sentence; at most four checks, each a `run`
+ * whose first word is not blank, its `says`, and a `fix` that is text where it is given. `null` is no field.
+ */
+function toolDeclared(row: unknown, at: number, seen: Set<string>): PluginTool {
+  if (typeof row !== 'object' || row === null || Array.isArray(row)) return notRead(null, `tool ${at} in \`tools\` is not an object with an \`id\`.`);
+  const fields = row as Record<string, unknown>;
+  const given = (name: string) => fields[name] !== undefined && fields[name] !== null;
+
+  const id = fields.id;
+  if (!filled(id)) return notRead(null, `tool ${at} in \`tools\` needs an \`id\`: a tool's name in lowercase, like \`az\`.`);
+  if (!ID_SHAPE.test(id)) {
+    return notRead(null, `tool ${at} in \`tools\` has the \`id\` \`${id}\`, which is not one: lowercase letters, digits, dots and dashes, like \`az\`.`);
+  }
+  if (seen.has(id)) return notRead(id, `tool \`${id}\` is declared twice in \`tools\`; the first is read.`);
+  seen.add(id);
+  const tool = `tool \`${id}\``;
+
+  const known = TOOLS.find((declared) => declared.id === id);
+  if (known) {
+    const field = ['name', 'command', 'versionArguments'].find(given);
+    if (field !== undefined) {
+      return notRead(id, `${tool} is ${known.name}, which Daoris knows: its name, its file and how its version is asked are `
+        + `Daoris's, so \`${field}\` is not a plugin's to declare.`);
+    }
+  } else {
+    if (given('name') && !filled(fields.name)) return notRead(id, `${tool}'s \`name\` must be text: what a person calls it.`);
+    if (given('command') && (!filled(fields.command) || ['/', '\\', ':'].some((part) => (fields.command as string).includes(part)))) {
+      return notRead(id, `${tool}'s \`command\` must be the name of a program found on the PATH, with no folder in it.`);
+    }
+    if (given('versionArguments')
+      && !(Array.isArray(fields.versionArguments) && fields.versionArguments.every((word) => typeof word === 'string'))) {
+      return notRead(id, `${tool}'s \`versionArguments\` must be an array of text: what prints its version.`);
+    }
+  }
+
+  let versions: string | null = null;
+  if (given('versions')) {
+    const range = typeof fields.versions === 'string' ? parseRange(fields.versions) : null;
+    if (range === null) return notRead(id, `${tool}'s \`versions\` must be a range: \`>=2.60\`, \`>=2.60 <3\`, or one exact version.`);
+    if (range.lower !== null && range.upper !== null && compareNumbers(range.upper, range.lower) <= 0) {
+      return notRead(id, `${tool}'s \`versions\` \`${fields.versions as string}\` holds no version: \`<${range.upper}\` is not above \`>=${range.lower}\`.`);
+    }
+    versions = fields.versions as string;
+  }
+
+  if (given('for') && !filled(fields.for)) return notRead(id, `${tool}'s \`for\` must be one sentence: why the plugin runs it.`);
+
+  const ready: ReadyCheck[] = [];
+  if (given('ready')) {
+    if (!Array.isArray(fields.ready)) return notRead(id, `${tool}'s \`ready\` must be an array of checks.`);
+    if (fields.ready.length > MAX_TOOL_CHECKS) {
+      return notRead(id, `${tool} has ${fields.ready.length} checks in \`ready\`, and a tool has at most four.`);
+    }
+    for (const [index, check] of (fields.ready as unknown[]).entries()) {
+      const said = typeof check === 'object' && check !== null && !Array.isArray(check) ? check as Record<string, unknown> : {};
+      const run = said.run;
+      if (!Array.isArray(run) || run.length === 0 || !run.every((word) => typeof word === 'string') || !filled(run[0])) {
+        return notRead(id, `${tool}'s check ${index + 1} needs a \`run\`: the command whose exit 0 means ready, as an array.`);
+      }
+      if (!filled(said.says)) return notRead(id, `${tool}'s check ${index + 1} needs \`says\`: what it means when it passes.`);
+      if (said.fix !== undefined && said.fix !== null && !filled(said.fix)) {
+        return notRead(id, `${tool}'s check ${index + 1} has a \`fix\` that is not text: the command a person runs when it does not pass.`);
+      }
+      ready.push({ run: [...(run as string[])], says: said.says, fix: (said.fix as string | null | undefined) ?? null });
+    }
+  }
+
+  return {
+    id,
+    kind: known ? (DAORIS_OWN_TOOLS.includes(id) ? 'own' : 'known') : 'other',
+    name: known ? known.name : (fields.name as string | null | undefined) ?? id,
+    command: known ? null : (fields.command as string | null | undefined) ?? id,
+    versionArguments: known || !given('versionArguments') ? null : [...(fields.versionArguments as string[])],
+    versions,
+    for: (fields.for as string | null | undefined) ?? null,
+    ready,
+    problem: null,
+  };
+}
+
+/** What `plugin list` says of a plugin's tools: the ones it runs, then each problem, never a refusal. */
+function toolLines(manifest: PluginManifest): string[] {
+  const lines: string[] = [];
+  const read = manifest.tools.filter((tool) => tool.problem === null);
+  if (read.length > 0) {
+    lines.push(`runs ${read.map((tool) => [tool.name, ...(tool.versions ?? '').split(' ').filter((word) => word !== '')].join(' ')).join(', ')}`);
+  }
+  if (manifest.toolsProblem !== null) lines.push(`tool not read: ${manifest.toolsProblem}`);
+  for (const tool of manifest.tools) if (tool.problem !== null) lines.push(`tool not read: ${tool.problem}`);
+  return lines;
 }
 
 // ——— A plugin's icon (PLUGUI2, D140; the catalogue design §3.1). Twin: the driver's `PluginIcon.cs`, whose
@@ -520,8 +724,8 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
       }
     }
 
-    // Nothing of a refused plugin is taken — not a harness, not a hook, not a server.
-    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null, servers: [] };
+    // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run (PLUGTOOL1a).
+    if (problem !== null) manifest = { ...manifest, harnesses: [], hooks: null, servers: [], tools: [], toolsProblem: null };
 
     plugins.push({ manifest, folder, data: dataFolder(home, manifest.id), enabled, problem });
   }
@@ -913,6 +1117,8 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
           const state = entry.enabled ? '' : '  (off)';
           write(`  ${entry.manifest.id.padEnd(24)} ${entry.manifest.name}${version}${state}`);
           write(`  ${''.padEnd(24)} ${entry.problem ? `⚠ ${entry.problem}` : describe(entry.manifest)}`);
+          // The tools its process runs, and each problem in them, which never refuses it (PLUGTOOL1a).
+          for (const line of toolLines(entry.manifest)) write(`  ${''.padEnd(24)} ${line}`);
           write(`  ${''.padEnd(24)} ${sourceLine(entry.folder)}`);
           // Its author's to fix, and never a reason it is refused (D140 §3.1): the screen draws its monogram.
           const icon = readIcon(entry.folder, entry.manifest);
@@ -926,6 +1132,7 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
           const version = offer.manifest.version ? ` ${offer.manifest.version}` : '';
           write(`  ${offer.id.padEnd(24)} ${offer.manifest.name}${version}`);
           write(`  ${''.padEnd(24)} ${offer.problem ? `⚠ ${offer.problem}` : describe(offer.manifest)}`);
+          for (const line of toolLines(offer.manifest)) write(`  ${''.padEnd(24)} ${line}`);
           if (offer.needs.length > 0) write(`  ${''.padEnd(24)} needs: ${offer.needs.join('; ')}`);
           const icon = readIcon(offer.folder, offer.manifest);
           if (icon.problem !== null) write(`  ${''.padEnd(24)} icon not drawn: ${icon.problem}`);
