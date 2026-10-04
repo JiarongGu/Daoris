@@ -2,57 +2,83 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
-import { DotMark, Pill, StripMark } from '../ui';
+import { Button, DotMark, Pill, StripMark } from '../ui';
 import type { AgentRow } from './agents';
 
 /**
- * **The Agents place's list** (UX6e, D150 §5.1): each agent this machine knows once, whatever doors reach it, in the roster's
- * order. A row is its name and maker, and its accounts in a phrase (*3 accounts · 2 signed out*, *1 account*, *not
- * installed*); a row with an account the person must act on wears the waiting mark.
+ * **The Agents place's list** (UX6e, D150 §5.1): each agent this build knows once, whatever doors reach it, installed or
+ * not, in the roster's order (AGENTS2). A row is its name and maker, and its accounts in a phrase (*3 accounts · 2 signed
+ * out*, *1 account*, *not installed*); a row with an account the person must act on wears the waiting mark, and one not
+ * installed carries its *Install* beside it.
  *
  * @remarks
  * **A molecule**: the rows arrive worded (`agentRows`), and every press goes out. Each row is a row of its list
  * (`data-list-row`), so ↑, ↓, Home and End move along it. The list has no `＋`: an account is made on its agent's page, and
  * an agent arrives by its own installer or a plugin (D64). Adding an agent adds a row, never a screen.
+ *
+ * **No fold for the agents not installed** (AGENTS2): the list's ⋯ hid them, and Codex, which this build drives, went
+ * unseen behind it. An agent's *Install* is its own installer, the one `daoris agent install` runs.
  */
-export function AgentList({ rows, chosen, onChoose }: {
+export function AgentList({ rows, chosen, onChoose, onInstall }: {
   rows: readonly AgentRow[];
   /** The list's chosen item: an agent's id. */
   chosen: string | null;
   onChoose: (agent: string) => void;
+  /** Install an agent not installed, by its id; absent offers no Install. */
+  onInstall?: (agent: string) => void;
 }) {
   const { t } = useTranslation();
   return (
     <ul className="m-0 list-none p-0" aria-label={t('nav.agents')}>
-      {rows.map((row) => (
-        <li key={row.name} data-list-row="" {...contextOffer(rowMenu(t, row, () => onChoose(row.name)))}>
-          <RowDoor chosen={chosen === row.name} onPress={() => onChoose(row.name)}>
-            <span className="flex min-w-0 items-baseline gap-2">
-              <span className={cn('min-w-0 truncate text-body font-medium', row.installed ? 'text-ink' : 'text-ink-soft')}>{row.product}</span>
-              {row.maker && <span className="shrink-0 truncate text-meta text-ink-faint">{row.maker}</span>}
-              {row.waiting > 0 && (
-                <span className="ml-auto shrink-0">
-                  <DotMark tone="parked" />
-                  <span className="sr-only">{t('agents.list.waiting', { count: row.waiting })}</span>
+      {rows.map((row) => {
+        const install = !row.installed && onInstall ? () => onInstall(row.name) : undefined;
+        return (
+          <li key={row.name} data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, row, () => onChoose(row.name), install))}>
+            <div className="min-w-0 flex-1">
+              <RowDoor chosen={chosen === row.name} onPress={() => onChoose(row.name)}>
+                <span className="flex min-w-0 items-baseline gap-2">
+                  <span className={cn('min-w-0 truncate text-body font-medium', row.installed ? 'text-ink' : 'text-ink-soft')}>{row.product}</span>
+                  {row.maker && <span className="shrink-0 truncate text-meta text-ink-faint">{row.maker}</span>}
+                  {row.waiting > 0 && (
+                    <span className="ml-auto shrink-0">
+                      <DotMark tone="parked" />
+                      <span className="sr-only">{t('agents.list.waiting', { count: row.waiting })}</span>
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            <span className="flex min-w-0 items-center gap-1.5 text-small text-ink-soft">
-              {row.installed ? <span className="min-w-0 truncate">{row.phrase}</span> : <Pill tone="neutral">{row.phrase}</Pill>}
-            </span>
-          </RowDoor>
-        </li>
-      ))}
+                <span className="flex min-w-0 items-center gap-1.5 text-small text-ink-soft">
+                  {row.installed ? <span className="min-w-0 truncate">{row.phrase}</span> : <Pill tone="neutral">{row.phrase}</Pill>}
+                </span>
+              </RowDoor>
+            </div>
+            {/* Beside the row and not inside it, as a plugin offer's is: a button inside the row's button is no button. */}
+            {install && (
+              <Button
+                variant="ghost"
+                aria-label={t('agents.list.install', { agent: row.product })}
+                onClick={install}
+                className="mr-1.5 shrink-0 px-2 py-0.5 text-small"
+              >
+                {t('harness.install')}
+              </Button>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
-/** What a row offers a right-click (CTX1, D138 §4): opening it, and its id. What is done to an agent is its page's. */
-function rowMenu(t: (key: string) => string, row: AgentRow, open: () => void): ContextOffer {
+/**
+ * What a row offers a right-click (CTX1, D138 §4): opening it, its Install where its row carries one, and its id. What
+ * else is done to an agent is its page's.
+ */
+function rowMenu(t: (key: string) => string, row: AgentRow, open: () => void, install?: () => void): ContextOffer {
   return {
     label: row.product,
     acts: [
       { id: 'open', label: t('contextMenu.act.open'), onSelect: open },
+      ...(install ? [{ id: 'install', label: t('harness.install'), icon: 'plus' as const, onSelect: install }] : []),
       { id: 'copy', label: t('contextMenu.act.copyAgent'), icon: 'copy', copy: row.name },
     ],
   };
