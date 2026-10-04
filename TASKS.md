@@ -68,11 +68,18 @@ running them again.
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
 - [ ] **ROSTER1b — a start that fails on an account never read reads it once** (driver; found by ROSTER1). D150 §5.3
   lists a start's refusal as a reason to read; not built. Proof: a Process test where the next start walks past it.
+- [ ] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
+  compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
+  and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
+  its gate by the lane table (records already forgiven). Contract: GATE3, GATE5. Proof: a test where a web-only change
+  keeps the driver's verdicts and a driver change does not.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
   flakes' common factor, so parallel workers need their own homes, not shared ones). Proof: three serial-equivalent
-  runs green and the timing.
+  runs green and the timing. *Measured at UX6g's full run (2026-10-04), 37 m 51 s in all: `TreeSyncTests` 7 m 12 s for
+  12 tests, `PullRequestStateTests` 5 m 3 s, then `LandedReviewTests`, `HandOffTests`, `LandedKeepTests` about 2 min
+  each: git fixtures with origins and pushes, built anew per test. A fixture built once and copied is the first lever.*
 - [ ] **GATE1 — the docs gate is blind at the merge** (tools; found 2026-10-02): the devkit's `docs` gate reads committed
   dates, so a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once
   committed (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
