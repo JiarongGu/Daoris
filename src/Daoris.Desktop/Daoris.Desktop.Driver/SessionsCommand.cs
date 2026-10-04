@@ -371,9 +371,9 @@ public static class SessionsCommand
         _ => shown,
     };
 
-    /// <summary>What a session is for: its quest's title, a conversation's opening line, Ask Daoris, an ask's intake.</summary>
+    /// <summary>What a session is for: its quest's name (SESSUX1j), a conversation's opening line, Ask Daoris, an ask's intake.</summary>
     private static string Title(SessionRecord record, IReadOnlyDictionary<string, QuestView> quests, IReadOnlyDictionary<string, string> openings) =>
-        record.Quest is { } quest ? quests.TryGetValue(quest, out var view) ? view.Title : $"#{quest}"
+        record.Quest is { } quest ? quests.TryGetValue(quest, out var view) ? view.Name : $"#{quest}"
         : record.Repository == HelpRoom.Repository ? "Ask Daoris"
         : record.Ask is { } ask ? $"Intake for ask #{ask}"
         : openings.TryGetValue(record.Id, out var opening) ? opening

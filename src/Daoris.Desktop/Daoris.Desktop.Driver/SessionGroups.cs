@@ -280,7 +280,10 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// <summary>A teammate's record (SYNC4): read here, and acted on from its own machine.</summary>
     public bool Teammate { get; init; }
 
-    /// <summary>For a parked session: how many sessions failed since the quest's last *Try again*, as the planner counted to park it.</summary>
+    /// <summary>
+    /// For a parked session: how many sessions failed since the quest's last *Try again*, as the planner counted to park it.
+    /// For a live one of this machine's (UX7c): how many failed before it, the same count, null where none did.
+    /// </summary>
     public int? Strikes { get; init; }
 
     /// <summary>For a session awaiting reply: the quest its quest waits on.</summary>
@@ -618,6 +621,13 @@ public static class SessionGroups
 
             if (record.Live)
             {
+                // UX7c (D152, the UX7 design §5.2): a live session of a quest whose earlier sessions here failed is another try,
+                // and its head says how many failed before it, counted as the planner counts them, from the last *Try again*.
+                if (!record.Teammate && record.Quest is { } quest && _look.Strikes.TryGetValue(quest, out var failed) && failed > 0)
+                {
+                    row = row with { Strikes = failed };
+                }
+
                 // ANSWER1c (D131): an answered park goes on at the driver's next look, so it is working, never waiting on you.
                 if (record.Answered) return row with { Group = SessionGroup.Working, Shown = ShownState.Answered };
 

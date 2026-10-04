@@ -80,7 +80,8 @@ nothing you write in this repository records it as the person's words or decisio
 
 If the work needs something another repository's code cannot tell you, or a change in it — what it
 promises, why it is the way it is — do not guess: ask it. Publish a quest to it saying
-what you need and why, commit what you have so far, then respond to `#abc123` with `wait`
+what you need and why, with a `shortTitle` of the few words that tell it apart in a list (at most 40
+characters), commit what you have so far, then respond to `#abc123` with `wait`
 on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
 in this tree, with its answer.
 

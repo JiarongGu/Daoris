@@ -955,9 +955,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
 
     private DriverConfig Config() => DriverConfig.Load(Path.Combine(home, "driver.json"));
 
-    /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the title's words.</summary>
+    /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the quest's name's words (LANDNAME1).</summary>
     private static LandingNames NamesOf(LandingSubject subject, string repository) =>
-        new(subject.Quest ?? subject.Session, LandingRules.Slug(subject.Title), repository, subject.Session);
+        new(subject.Quest ?? subject.Session, subject.Slug, repository, subject.Session);
 
     /// <summary>
     /// Remove a session tree — <b>and only a session tree</b>: anything outside the trees home is

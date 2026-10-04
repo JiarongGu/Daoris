@@ -95,7 +95,17 @@ public sealed class SessionGroupsTests
         // Working: it is moving, and the person may watch it.
         ["queued is working"] = new(Look([Record("s1", "queued", "q1")], [Open]), "s1", SessionGroup.Working, "queued"),
         ["starting is working"] = new(Look([Record("s1", "starting", "q1")], [Open]), "s1", SessionGroup.Working, "starting"),
-        ["working is working"] = new(Look([Record("s1", "working", "q1")], [Taken]), "s1", SessionGroup.Working, "working"),
+        ["working is working"] = new(Look([Record("s1", "working", "q1")], [Taken]), "s1", SessionGroup.Working, "working")
+        {
+            Also = row => Assert.Null(row.Strikes),
+        },
+        // UX7c (D152, design §5.2): a working session's head says it is another try, and how many before it failed.
+        ["a working session of a quest whose earlier sessions failed says how many"] =
+            new(Look([Record("s1", "failed", "q1"), Record("s2", "failed", "q1", at: 10), Record("s3", "working", "q1", at: 20)], [Taken]),
+                "s3", SessionGroup.Working, "working")
+            {
+                Also = row => Assert.Equal(2, row.Strikes),
+            },
         ["a state this build does not know is live, never archivable"] =
             new(Look([Record("s1", "thinking-hard")]), "s1", SessionGroup.Working, "thinking-hard"),
         ["a teammate's parked session waits on them, not on you"] =

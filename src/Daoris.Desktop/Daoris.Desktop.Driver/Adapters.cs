@@ -351,8 +351,10 @@ public static class TargetPrompt
             + "be stopped by it.\n\n"),
         new(HandedSections.Attributed, Attributed + "\n\n"),
         new(HandedSections.Asking,
+            // SESSUX1j: a question published here gets the asker's short title, the words its list shows.
             $"{Needs(target)} Publish a quest to it saying\n"
-            + $"what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`\n"
+            + "what you need and why, with a `shortTitle` of the few words that tell it apart in a list (at most 40\n"
+            + $"characters), commit what you have so far, then respond to `#{target.QuestId}` with `wait`\n"
             + "on that new quest's id, and end your turn. The quest stays yours, and you are started again here,\n"
             + "in this tree, with its answer.\n\n"
             + "Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act\n"

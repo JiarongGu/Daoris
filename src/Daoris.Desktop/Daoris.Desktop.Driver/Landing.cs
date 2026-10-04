@@ -53,7 +53,21 @@ public sealed record Landing(LandingRule Rule, string Source);
 public sealed record LandingNames(string Quest, string Slug, string Repository, string Session);
 
 /// <summary>The session a press lands: its id, and its quest and that quest's title where it has one.</summary>
-public sealed record LandingSubject(string Session, string? Quest, string? Title);
+public sealed record LandingSubject(string Session, string? Quest, string? Title)
+{
+    /// <summary>
+    /// The quest's name where it is not its title (SESSUX1j, LANDNAME1): its short title, which the branch is named for. Null
+    /// where the name is the title, or there is no quest: the title names the branch.
+    /// </summary>
+    public string? Name { get; init; }
+
+    /// <summary>The branch pattern's <c>{slug}</c>: the quest's name in the words git takes, its title where it has no other.</summary>
+    public string Slug => LandingRules.Slug(Name ?? Title);
+
+    /// <summary>The subject a quest is landed as: its title for the record, and its name for the branch where they differ.</summary>
+    public static LandingSubject Of(string session, QuestView quest) =>
+        new(session, quest.Id, quest.Title) { Name = quest.Name == quest.Title ? null : quest.Name };
+}
 
 /// <summary>What a press would do: the form, where the work would go (the line, or the branch it would make), and what said so.</summary>
 /// <param name="Plugin">The plugin that pushes the branch once it is made (D100), or null for the person.</param>
@@ -445,7 +459,7 @@ public static class LandingRules
             current = above;
         }
 
-        return new LandingSubject(session, current.Id, current.Title);
+        return LandingSubject.Of(session, current);
     }
 
     /// <summary>The repository's rule, else its workspace's (a repository in no workspace is in `default`'s), else merge.</summary>

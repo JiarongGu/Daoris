@@ -1411,7 +1411,7 @@ public sealed partial class Driver(
     internal static async Task<LandingSubject> LandsAsAsync(
         string session, QuestView quest, Func<string, Task<QuestView?>> find, CancellationToken ct)
     {
-        var own = new LandingSubject(session, quest.Id, quest.Title);
+        var own = LandingSubject.Of(session, quest);
         if (quest.Parent is not { Length: > 0 }) return own;
         try
         {
