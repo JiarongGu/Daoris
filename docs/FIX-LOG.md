@@ -135,6 +135,25 @@ passed). Stays open until a captured failure explains it. **Not this**: on 2026-
 the canon-upgrade phase's 7 checks failing; a run that never reaches a check is a different animal. Since then the
 rehearsal has grown to 114 checks, so a repeat would not read 45/52; it would read as that phase failing whole.
 
+## Four starts on a signed-out account parked a quest in two minutes (2026-10-05)
+
+**Symptom.** On the install, after an update, every account read *never read*, and the rotation started one quest on an
+account nobody had signed in to: four starts in two minutes, each failing *the ACP agent refused the call:
+Authentication required*, and the third parked the quest on its strikes.
+
+**Root cause.** Three things, read from the code. ROSTER1 keeps readings in `reads.json`, and a build that starts with
+none reads every account unknown, which a start runs on (SES3). The door's refusal was recognised by no table, so it was a
+failure like any other and told the roster nothing: TOOL6g had refused to read a refusal the agent gave while none was
+recorded, so the next start's walk still found that account ready. And `ReadStrikes` counted every failure that did not say
+`limit`, so the account's fault counted against the quest.
+
+**Fix.** ROSTER1b, D125's note of this date: the door's failure is read by a table on the toolchain, and a refused sign-in
+keeps the account `out` in `reads.json` with its time, which the walk passes; its record's line is one no strike counts.
+
+**Verification.** `SignInRefusedStartTests` and `StrikeTests` failed with the reading or the strike exemption taken out,
+and pass with them; the driver's fast half, 4104/4104. `SignInRefusalTickTests` (`Process`) replays the install's case
+through real ticks and was not run on this branch.
+
 ## A test's one-minute window read the wall clock (2026-10-04)
 
 **Symptom.** Merging PLUGHOOK1a beside two other branches, `PullRequestStateTests.The_clean_up_removes_a_squash_merged_branch…`

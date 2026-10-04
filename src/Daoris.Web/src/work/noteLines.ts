@@ -47,6 +47,8 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'account.cooling': { values: ['until', 'why'], why: 'cooling' },
   'account.refused': { values: ['owner'] },
   'account.refused-own': { values: ['owner'] },
+  'account.signed-out': { values: ['owner'] },
+  'account.signed-out-own': { values: ['owner'] },
   // Why the account a resume asked for could not carry the words (MSG1g), after a line whose reason is `account`.
   'account.resume-signed-out': { values: [] },
   'account.resume-refused': { values: [] },

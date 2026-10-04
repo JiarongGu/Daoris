@@ -317,8 +317,6 @@ export function App() {
     active: view === 'agents',
     chosen: agentsPane.chosen,
     onChoose: (item) => lists.choose('agents', item),
-    filters: agentsPane.filters,
-    onFilters: (filters) => lists.setFilters('agents', filters),
     notify,
     part: agentPart,
     onAnchored: () => setAgentPart(null),

@@ -139,7 +139,14 @@ internal sealed class StandInLedger : HttpMessageHandler
                     var id = path["/api/sessions/".Length..^"/state".Length];
                     var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                     session["state"] = body!["state"]!.GetValue<string>();
-                    if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                    if (body["note"] is { } note)
+                    {
+                        session["note"] = note.GetValue<string>();
+                        // Its parts beside it, as the service keeps them (LANG1a): a note sent without them clears them. The
+                        // strikes read an account's line by its code (ROSTER1b).
+                        session["noteParts"] = body["noteParts"]?.DeepClone();
+                    }
+
                     if (body["interrupted"] is { } interrupted) session["interrupted"] = interrupted.GetValue<bool>();
                     // Kept once said, as the service keeps it (TOOL4c).
                     if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;

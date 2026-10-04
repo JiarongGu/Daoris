@@ -403,6 +403,7 @@ public sealed partial class Driver
                 : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
         conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+        conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
         (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
         var evidence = await WorkingTree.CommitsSinceAsync(workTree, park.BaseCommit ?? before, ct).ConfigureAwait(false);

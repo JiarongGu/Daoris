@@ -26,6 +26,8 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { HarnessRuns } from '../harnessRuns';
+import { ContextMenus } from '../menus/ContextMenu';
+import { menuActs, rightClick } from '../test/contextMenu';
 import { REGISTRY, respond, serviceCalls, show, WIRING } from '../test/shellHarness';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
@@ -41,9 +43,8 @@ function Place({ notify, first = 'claude-code', part = null, onAnchored }: {
 }) {
   const lists = useListPanes();
   const [chosen, setChosen] = useState<string | null>(first);
-  const [filters, setFilters] = useState<Record<string, unknown>>({});
   const [over, setOver] = useState(false);
-  const layout = useAgentsView({ active: true, chosen, onChoose: setChosen, filters, onFilters: setFilters, notify, part, onAnchored });
+  const layout = useAgentsView({ active: true, chosen, onChoose: setChosen, notify, part, onAnchored });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
@@ -168,20 +169,48 @@ describe('the Agents place', () => {
     expect(within(own).getByText('never read')).toBeTruthy();
   });
 
-  it('lists each agent once, with its accounts in a phrase, and hides those not installed until asked', async () => {
+  /**
+   * AGENTS2: every agent this build knows is listed, installed or not. One not installed says so and carries its Install
+   * beside the row, and the list has no ⋯ to unfold it: Codex went unseen behind one.
+   */
+  it('lists every agent this build knows, installed or not, with no fold for those not installed', async () => {
     place();
 
     const list = await screen.findByRole('list', { name: 'Agents' });
     expect(within(list).getByText('2 accounts · 1 signed out')).toBeTruthy();
-    expect(within(list).queryByText('codex')).toBeNull();
-
-    // The list's ⋯ shows the agents not installed (§5.1), the one not installed saying so.
-    const trigger = screen.getByRole('button', { name: 'More actions' });
-    trigger.focus();
-    await userEvent.keyboard('{Enter}');
-    await userEvent.click(await screen.findByRole('menuitemcheckbox', { name: 'Show agents not installed' }));
-    expect(await within(list).findByText('codex')).toBeTruthy();
+    expect(within(list).getByText('codex')).toBeTruthy();
     expect(within(list).getByText('not installed')).toBeTruthy();
+    const install = within(list).getByRole('button', { name: 'Install codex' });
+    expect(install.closest('button[aria-current]')).toBeNull();
+    expect(within(list).queryByRole('button', { name: 'Install Claude Code' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+    expect(screen.queryByRole('menuitemcheckbox', { name: /not installed/ })).toBeNull();
+  });
+
+  /**
+   * AGENTS2: the row's Install opens the agent and runs its own installer there, once, so it streams under its ways in as
+   * the page's own Install does; the row's right-click offers the same press (CTX1).
+   */
+  it('installs an agent from its row: the agent opens and its own installer runs once', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'codex', action: 'install', started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    place();
+    render(<ContextMenus doors={{ copy: vi.fn() }} />);
+
+    const list = await screen.findByRole('list', { name: 'Agents' });
+    rightClick(within(list).getByText('codex'));
+    expect(await menuActs('Actions for codex')).toContain('Install');
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+
+    await userEvent.click(within(list).getByRole('button', { name: 'Install codex' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'codex' })).toBeTruthy();
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'codex', action: 'install' },
+    }));
+    expect(invoke.mock.calls.filter(([, type]) => type === 'HARNESS_ACTION')).toHaveLength(1);
   });
 
   /**

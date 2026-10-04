@@ -463,7 +463,8 @@ controls are in the frame design's §3.
     the window has no side bar to move one to, and no stop, since nothing in it acts.
 - **Agents** (UX6e, D150 §5) — the activity bar's place after Search, shell-only, on the frame. Its list is each agent once,
   whatever doors reach it: its name and maker, its accounts in a phrase (*3 accounts · 2 signed out*, *not installed*), the
-  waiting mark on one with a signed-out account a list or a default holds; its ⋯ shows the agents not installed. An agent's
+  waiting mark on one with a signed-out account a list or a default holds. Every agent the build knows is listed, with no ⋯
+  to fold the ones not installed, each of which carries *Install* beside its row and in its right-click (AGENTS2). An agent's
   page heads with its product, maker, version and *Sign in to another account*, then **its accounts, one list**: each with
   its state as last known (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling until …* with *Try
   now*, *unknown*), when it was read (*read 10:42*, *never read*), the workspaces that may run on it, what runs on it and

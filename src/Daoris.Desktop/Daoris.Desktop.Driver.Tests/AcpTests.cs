@@ -1252,6 +1252,69 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// 🔴 <b>DeepSeek Harness over its own wire</b> (AGENTS2, ACP3): the shape its ACP server's own README states at
+    /// master, and DSH1 observed at 0.1.6-alpha.2. <c>initialize</c> asks no authentication; <c>session/new</c> answers
+    /// its configuration options, the model catalogue among them, and no <c>modes</c>; a permission prompt is one-shot.
+    /// The posture is taken from the real adapter, so this fails if <c>dsh</c> ever names a mode its wire does not carry.
+    /// </summary>
+    /// <remarks>
+    /// What Daoris does there is nothing it was not asked to: no mode is set, the catalogue is never turned (D24; a
+    /// person may for one conversation, D98), and the one-shot prompt is refused (D52). The posture travels in the
+    /// environment, which <c>Acp3AdapterTests</c> holds.
+    /// </remarks>
+    [Fact]
+    public async Task DeepSeek_Harness_is_driven_over_its_wire_with_no_mode_no_model_turned_and_a_prompt_refused()
+    {
+        string? answered = null;
+        var agent = new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method))
+            {
+                answered = frame.GetProperty("result").GetProperty("outcome").GetRawText();
+                return null;
+            }
+
+            switch (method.GetString())
+            {
+                case "initialize":
+                    return Ok(frame, """
+                        {"protocolVersion":1,"agentCapabilities":{"loadSession":false,
+                          "mcpCapabilities":{"http":true,"sse":false},
+                          "promptCapabilities":{"image":false,"audio":false,"embeddedContext":false},
+                          "sessionCapabilities":{"close":{},"list":{},"resume":{}}},"authMethods":[]}
+                        """);
+                case "session/new":
+                    return Ok(frame, """
+                        {"sessionId":"s-1","configOptions":[{"id":"model","name":"Model","category":"model","type":"select",
+                          "currentValue":"deepseek-v4","options":[{"value":"deepseek-v4","name":"DeepSeek V4"},
+                          {"value":"deepseek-v4-flash","name":"DeepSeek V4 Flash"}]}]}
+                        """);
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"usage_update","used":7783,"size":65536}}}""");
+                    self.Push("""
+                        {"jsonrpc":"2.0","id":901,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"t-1","title":"pwsh"},"options":[{"optionId":"allow","name":"Allow once","kind":"allow_once"},{"optionId":"reject","name":"Reject once","kind":"reject_once"}]}}
+                        """.Trim());
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default:
+                    return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var posture = AdapterSet.Built().Resolve("dsh").AcpPosture;
+        var outcome = await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
+            .RunAsync("D:/fam/Game", "take quest #abc123", CancellationToken.None);
+
+        Assert.Null(posture);
+        Assert.Equal("end_turn", outcome.StopReason);
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("session/set_mode"));
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("session/set_config_option"));
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("\"authenticate\""));
+        Assert.NotNull(answered);
+        Assert.Contains("\"reject\"", answered);
+        Assert.DoesNotContain("\"allow\"", answered);
+    }
+
+    /// <summary>
     /// An agent that offers no modes is not asked to set one — and the turn proceeds. The stub, and
     /// any agent whose permissions are its own business, are that shape.
     /// </summary>
