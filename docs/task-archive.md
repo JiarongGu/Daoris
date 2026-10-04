@@ -11066,3 +11066,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > D151 §7. Proof: fixtures from both doors; the before.
 
 **Outcome** 2026-10-04: built. `orient-report --home <dir> [--repository] [--since] [--json]` reads each driven session's typed events (never the rendered log, never an account's home): calls before the first edit by kind, characters read where events carry them (unknown said, never zero), whole versus ranged reads, index reads, shell searches and dumps; per repository, workspace and all, the median editing session, opening the index first, parks and the files read most. A test holds the driver's spellings it depends on. Detail: commit `ebdbb10a`.
+
+
+## ORIENT1c — the knowledge server for agents, from a built binary (2026-10-04)
+
+> - [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
+> starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
+> worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps
+> current, index this repository's documents and `docs/index/`, and measure with `orient-report` whether agents ask it.
+> Contract: D24, D135. Proof: a session that connects; the report's reads of the knowledge search.
+
+**Outcome** 2026-10-04: built. `.mcp.json` starts `tools/knowledge-server.mjs`, which runs a build of the MCP host under `local/knowledge-server/` (`npm run knowledge:build`, rebuilt by the merge tool after a merge's gates) and never builds at a session's start; with no build it answers the handshake saying so. Hand and subagent sessions get the main checkout alone, `docs/` a section each and `docs/index/` a row each, by words only; a worktree reaches the main checkout's build. A route question gets its row first. `orient-report` counts asks of it. Detail: D24's ORIENT1c note, `a3f660f5`..`3f986a82`.

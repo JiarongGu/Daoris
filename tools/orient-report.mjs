@@ -21,7 +21,8 @@
  * A shell command is classed by its words, first match wins, in the scratch script's order so the numbers compare:
  * a search (grep, rg, Select-String), a dump (sed -n, cat, head, tail, Get-Content), a listing (ls, find,
  * Get-ChildItem), a git read, a build or test, or other. Decision files are counted as one row among the files
- * read most, as the measurement counted them.
+ * read most, as the measurement counted them. A call of the workspace's knowledge server (`mcp__daoris-knowledge__*`,
+ * ORIENT1c) is an ask, counted in all and before the first edit, so whether branches ask it is read here too.
  *
  * ## A Daoris home
  *
@@ -69,6 +70,9 @@ const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
 const SHELLS = new Set(['Bash', 'PowerShell']);
 const KINDS = ['search', 'dump', 'list', 'git', 'build', 'other'];
 const INDEX = 'docs/index/';
+/** The workspace's knowledge server's tools, as the harness names them (ORIENT1c). */
+const SERVER = 'mcp__daoris-knowledge__';
+const asksOf = (calls) => calls.filter((call) => call.name.startsWith(SERVER)).length;
 
 /** The tool kinds that change a file (ACP's vocabulary, which both doors speak). */
 const EDIT_KINDS = new Set(['edit', 'delete', 'move']);
@@ -194,6 +198,9 @@ export function summarize({ cwd, calls }, label) {
     shell,
     reads,
     indexReads: reads.filter((read) => read.path.startsWith(INDEX)).length,
+    // Whether it asked the knowledge server, in all and before its first edit (ORIENT1c).
+    asks: asksOf(calls),
+    asksBefore: asksOf(before),
     firstEdit: first < 0 ? null : { name: calls[first].name, path: relative(calls[first].input.file_path ?? calls[first].input.notebook_path, cwd) },
   };
 }
@@ -218,12 +225,15 @@ export function report(summaries, { top = 20 } = {}) {
       `${s.label}: ${s.total} calls, ${s.before} before the first edit (${share}%), ${kb(s.bytes)} KB read before it; ${edit}`,
       `  by tool: ${tools.join(', ') || 'none'}`,
       `  reads ${s.reads.length} (${whole} whole, ${s.reads.length - whole} ranged), ${s.indexReads} of ${INDEX}; shell: ${KINDS.map((kind) => `${kind} ${s.shell[kind]}`).join(', ')}`,
+      `  knowledge server: ${s.asks ?? 0} asks, ${s.asksBefore ?? 0} before the first edit`,
     );
   }
   const sum = (pick) => summaries.reduce((total, s) => total + pick(s), 0);
   out.push('', `all ${summaries.length}: ${sum((s) => s.before)} calls before the first edit (median ${median(summaries.map((s) => s.before))}), `
     + `${kb(sum((s) => s.bytes))} KB read before it (median ${kb(median(summaries.map((s) => s.bytes)))} KB); `
     + `shell search ${sum((s) => s.shell.search)}, dump ${sum((s) => s.shell.dump)}`);
+  out.push(`knowledge server asked by ${summaries.filter((s) => (s.asks ?? 0) > 0).length} of ${summaries.length} branches, `
+    + `${sum((s) => s.asks ?? 0)} asks in all`);
   const files = new Map();
   for (const s of summaries) {
     for (const read of s.reads) {

@@ -1562,6 +1562,42 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     repo.cleanup();
   });
 
+  test('the knowledge server is rebuilt once a merge\'s gates pass, and a build that fails is said and fails nothing', async () => {
+    // A stand-in for the server's tool: `build` notes itself and says what the real one says, failing on request.
+    const server = [
+      "import { appendFileSync, existsSync } from 'node:fs';",
+      "appendFileSync('local/ran.txt', `knowledge-server ${process.argv.slice(2).join(' ')}\\n`);",
+      "if (existsSync('local/fail-build')) { console.error('knowledge-server: the build failed (no build yet); sessions keep the build they had'); process.exit(1); }",
+      "console.log('knowledge-server: built 20261004T100000Z-aaaaaaaa (no build yet) in 9 s; 0 older removed');",
+      '',
+    ].join('\n');
+    const repo = scratch('knowledge-server', [{ name: 'first', run: 'node gate.mjs first' }], { 'tools/knowledge-server.mjs': server });
+
+    branch(repo.root, 'one', { 'one.txt': '1\n' });
+    let result = await repo.run(['one']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran(), ['first', 'knowledge-server build'], 'built after the gates, never before them');
+    assert.match(result.out, /knowledge server: built 20261004T100000Z-aaaaaaaa \(no build yet\)/);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+
+    // A failed gate builds nothing: the merge is not one to serve.
+    branch(repo.root, 'two', { 'two.txt': '2\n' });
+    writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node gate.mjs first 1' }] }, null, 2)}\n`);
+    git(repo.root, 'commit', '--quiet', '-am', `a failing gate${TRAILER}`);
+    result = await repo.run(['two']);
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(repo.ran(), ['first', 'knowledge-server build', 'first']);
+    git(repo.root, 'merge', '--abort');
+
+    writeFileSync(join(repo.root, 'daoris.gates.json'), `${JSON.stringify({ gates: [{ name: 'first', run: 'node gate.mjs first' }] }, null, 2)}\n`);
+    git(repo.root, 'commit', '--quiet', '-am', `the gate passes again${TRAILER}`);
+    writeFileSync(join(repo.root, 'local', 'fail-build'), '');
+    result = await repo.run(['two']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /knowledge server: NOT rebuilt, and the merge stands \(knowledge-server: the build failed/);
+    repo.cleanup();
+  });
+
   test('a batch gates each merge, waits for the parent to commit it, runs the rehearsals once after the last, and names a flake', async () => {
     const repo = scratch('batch', [
       { name: 'cli', run: 'node gate.mjs cli' },

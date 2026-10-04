@@ -24,21 +24,27 @@ public static class RegistryImport
     {
         if (!Directory.Exists(folder)) return [];
 
-        var proposed = new List<Registration>();
-        foreach (var directory in Directory.GetDirectories(folder).OrderBy(d => d, StringComparer.Ordinal))
-        {
-            var name = new DirectoryInfo(directory).Name;
-            var manifest = Path.Combine(directory, "daoris.json");
+        return Directory.GetDirectories(folder)
+            .OrderBy(d => d, StringComparer.Ordinal)
+            .Select(ProposeAt)
+            .ToList();
+    }
 
-            proposed.Add(File.Exists(manifest)
-                ? ReadManifest(name, manifest, directory)
-                // Present in the family, not adopted. Worth proposing rather than hiding: "who could I
-                // ask, and who cannot be asked yet" is the same question, and a silent omission reads
-                // as the repository not existing.
-                : new Registration(name, false, null, [], [], [], Entries: 0, Root: directory));
-        }
+    /// <summary>
+    /// One checkout, read as a registration proposal: what a deployment serving that checkout alone
+    /// registers (ORIENT1c), by the same reading a folder's subdirectories get.
+    /// </summary>
+    public static Registration ProposeAt(string directory)
+    {
+        var name = new DirectoryInfo(directory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)).Name;
+        var manifest = Path.Combine(directory, "daoris.json");
 
-        return proposed;
+        return File.Exists(manifest)
+            ? ReadManifest(name, manifest, directory)
+            // Present in the family, not adopted. Worth proposing rather than hiding: "who could I
+            // ask, and who cannot be asked yet" is the same question, and a silent omission reads
+            // as the repository not existing.
+            : new Registration(name, false, null, [], [], [], Entries: 0, Root: directory);
     }
 
     private static Registration ReadManifest(string name, string manifest, string directory)

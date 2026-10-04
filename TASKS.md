@@ -68,11 +68,6 @@ running them again.
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
 - [ ] **ROSTER1b — a start that fails on an account never read reads it once** (driver; found by ROSTER1). D150 §5.3
   lists a start's refusal as a reason to read; not built. Proof: a Process test where the next start walks past it.
-- [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
-  starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
-  worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps
-  current, index this repository's documents and `docs/index/`, and measure with `orient-report` whether agents ask it.
-  Contract: D24, D135. Proof: a session that connects; the report's reads of the knowledge search.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the

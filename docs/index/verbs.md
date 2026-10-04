@@ -80,8 +80,9 @@ Each a `case` in `tools/desktop.mjs`: `build` 769 · `run` 773 · `restart` 774 
 | `desktop` | 20 | `node tools/desktop.mjs` |
 | `testbed` | 21 | `node tools/testbed.mjs` |
 | `publish:service` | 22 | `node tools/service-publish.mjs` |
-| `publish:desktop` | 23 | `node tools/desktop-publish.mjs` |
-| `release-prep:check` | 24 | `node tools/release-prep.mjs --check` |
+| `knowledge:build` | 23 | `node tools/knowledge-server.mjs build` |
+| `publish:desktop` | 24 | `node tools/desktop-publish.mjs` |
+| `release-prep:check` | 25 | `node tools/release-prep.mjs --check` |
 
 ## npm scripts in `src/Daoris.Web/package.json`
 
