@@ -11115,3 +11115,36 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
 
 **Outcome** 2026-10-04: built. Repositories groups by workspace, a filter past twelve, each workspace's row opening its page: Details (its repositories, what a start runs on, the accounts each agent may use here), Branches (clean-up and bring up to date, this workspace's rows only) and Setup (defaults; remote and reach), read-only in a browser. Settings → Workspace and Permissions retired: Settings keeps Get started, Appearance, AI features, Driver, Tools, Plugins, Browser and Machine log, and every door to the old domains lands on the new pages. Detail: D150's UX6g note, `34dfe14f`..`54f7a1d7`.
+
+
+## ROSTER1b — a start refused for its sign-in marks that account and walks past it (2026-10-05)
+
+> - [ ] **ROSTER1b — a start refused for its sign-in marks that account and walks past it** (driver; found by ROSTER1;
+> **seen on the install 2026-10-04**). After the update every account read *never read*, so the rotation kept starting
+> AR-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
+> third parked the quest. A start refused for its sign-in records the account signed out (as a read would), names it
+> and its sign-in, and the next start walks past it; it never counts toward the quest's strikes. Contract: D150 §5.3,
+> D125's TOOL6g and ROSTER1 notes. Proof: a tick where a refused start's next start picks another account, and the
+> quest's strikes stay where they were.
+
+**Outcome** 2026-10-05: built. A start the agent refuses for its sign-in (Claude Code's "Authentication required" on the protocol door, the native door's 401) keeps its account signed out in `reads.json` with the time, so the next start walks past it and the held start names it and its sign-in; a refusal is never one of the quest's strikes (`NoteCodes.AccountsOwn`), and the record says why it ended in both languages. Seen on the install the day before: four starts on an empty account parked AR-2203. Detail: D125's ROSTER1b note, FIX-LOG 2026-10-05, `9087adf3`..`485b842f`.
+
+
+## AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins (2026-10-05)
+
+> - [ ] **AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins** (driver, cli, web-shell).
+> Agents shows only installed agents unless its ⋯ says otherwise, so Codex is not seen; DeepSeek has no adapter at all.
+> List each known agent with *Install* where absent; find how a DeepSeek agent is reached (an ACP-speaking client, or
+> a native CLI, D53 and D57: never a registry) and add it as a configuration. Contract: D53, D57, D150 §5. Proof: the
+> roster with an absent agent; the DeepSeek configuration's probe evidence.
+
+**Outcome** 2026-10-05: built. The Agents list shows every agent this build knows, an absent one with *Install* on its row (and in its right-click menu), with no hidden fold. DeepSeek's own agent, DeepSeek Harness, already reaches Daoris: it speaks ACP itself (`dsh --profile acp`), which is ACP3's `dsh` configuration, now named DeepSeek Harness in both twins and proven over a stub of its documented wire. Detail: D57's AGENTS2 note, `93930921`, `36f4d924`, `4fe522a7`.
+
+
+## UX7 — a look at the built redesign, then its fixes (2026-10-05)
+
+> - [ ] **UX7 — a look at the built redesign, then its fixes** (design first; web-shell, web-settings). The owner judged
+> the screens UX6 built on the install. Photograph each at 1546 and 680 px, both themes and languages, and set down
+> what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
+
+**Outcome** 2026-10-05: designed (D152). The built redesign looked at on the install and in the stories, line by line (§1): a VS Code-like menu bar of seven menus (Workspace, Edit, View, Go, Run, Terminal, Help) from one command table the menus, palette, keys and a shortcuts drawer read; one row and one act per account, the add flow offering an existing signed-out row first and asking which workspaces it joins; heads of state, title and a facts line chosen by state, ids folded, nothing said twice. Build rows UX7a–d; SESSUX1j ahead of UX7c, UX7c before UX7b. Detail: `docs/2026-10-05-ux7-design.md`, D152.

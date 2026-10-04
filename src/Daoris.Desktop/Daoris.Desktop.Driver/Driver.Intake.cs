@@ -229,6 +229,8 @@ public sealed partial class Driver
                             ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+                    // A refused sign-in reads its account signed out (ROSTER1b), as a driven session's does.
+                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     // An account's limit cools the account the intake ran as (TOOL4d), as a driven session's does.
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 

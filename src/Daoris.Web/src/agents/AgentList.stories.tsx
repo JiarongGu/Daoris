@@ -3,8 +3,9 @@ import { agentRows } from './agents';
 import { AgentList, AgentStrip } from './AgentList';
 import { CLAUDE_USE, CODEX_USE, TOOLS } from './agentsFixtures';
 
-// The Agents place's list (UX6e, D150 §5.1): each agent once, its accounts in a phrase, the waiting mark on one with an
-// account the person must act on, one not installed shown when the list's ⋯ asks; and the list closed to its strip.
+// The Agents place's list (UX6e, D150 §5.1): each agent this build knows once, installed or not (AGENTS2), its accounts in
+// a phrase, the waiting mark on one with an account the person must act on, one not installed saying so with its Install
+// beside it; and the list closed to its strip.
 
 const ROWS = agentRows(TOOLS, { agents: [CLAUDE_USE, CODEX_USE] });
 const nothing = () => {};
@@ -12,18 +13,21 @@ const nothing = () => {};
 const meta: Meta<typeof AgentList> = {
   title: 'Agents/AgentList',
   component: AgentList,
-  args: { rows: ROWS.filter((row) => row.installed), chosen: 'claude-code', onChoose: nothing },
+  args: { rows: ROWS, chosen: 'claude-code', onChoose: nothing, onInstall: nothing },
   decorators: [(Story) => <div className="w-[280px] border border-line bg-page"><Story /></div>],
 };
 export default meta;
 
 type Story = StoryObj<typeof AgentList>;
 
-/** Installed agents: Claude Code with two signed-out accounts that hold work, Codex with one, a plugin's agent. */
-export const Installed: Story = {};
+/**
+ * Every agent: Claude Code with two signed-out accounts that hold work, Codex with one, a plugin's agent, and DeepSeek
+ * Harness not installed, saying so with its Install beside it.
+ */
+export const Known: Story = {};
 
-/** With the agents not installed shown, from the list's ⋯: dsh says so. */
-export const WithNotInstalled: Story = { args: { rows: ROWS } };
+/** Only installed agents, as a machine that has every agent this build knows. */
+export const AllInstalled: Story = { args: { rows: ROWS.filter((row) => row.installed) } };
 
 /** Nothing chosen. */
 export const NothingChosen: Story = { args: { chosen: null } };

@@ -1067,6 +1067,7 @@ public sealed partial class Driver(
                             : SessionConclusion.Of("failed", Observation.TimedOut(config.TimeoutMinutes));
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
+                    conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
                     var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
@@ -1387,7 +1388,11 @@ public sealed partial class Driver(
     /// 🔴 A credential its provider refused is read from the tool's own last words (AGT3b), and the
     /// account is held so no further session sits through the same minutes of retries.
     /// </summary>
-    private SessionConclusion AccountRefused(
+    /// <remarks>
+    /// And it reads signed out (ROSTER1b, D150 §5.3), kept as a reading is, so the hold outlives this process and the page
+    /// says the account's state; its line is one no strike counts (<see cref="NoteCodes.AccountsOwn"/>).
+    /// </remarks>
+    internal SessionConclusion AccountRefused(
         SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string transcript)
     {
         if (conclusion.State != "failed" || adapter.Toolchain is not { Refused: { Length: > 0 } refusedWords } refusing
@@ -1399,7 +1404,59 @@ public sealed partial class Driver(
         var owner = refusing.Owner(adapter.Name);
         var reason = RefusedReason(owner, selection.Profile);
         _harnesses.Refuse(adapter.Name, selection.Profile, $"an earlier session found that {reason}");
+        _harnesses.SignedOut(adapter.Name, selection.Profile);
         return conclusion.Then(" ", RefusedNote(owner, selection.Profile));
+    }
+
+    /// <summary>
+    /// 🔴 A start its agent refused for its sign-in (ROSTER1b, D150 §5.3), read from the door's failure by the adapter's table
+    /// (<see cref="SignInRefusals"/>) and never from the transcript: the account it ran as reads signed out, kept under the home
+    /// with its time as a reading is, so the next start walks past it as it walks past any account read signed out (TOOL6g),
+    /// and a start held on it names it and its sign-in. The note says why it ended, by a line no strike counts
+    /// (<see cref="NoteCodes.AccountsOwn"/>): the fault is the account's, never the quest's.
+    /// </summary>
+    /// <remarks>
+    /// <para>Seen on the install (2026-10-04): every account read <i>never read</i> after an update, so the rotation started a
+    /// quest on an account nobody had signed in to, four times in two minutes, and the third failure parked it.</para>
+    /// <para>The tool's own sign-in is never asked by a walk (TOOL6g), so a reading alone would start it into the same refusal at
+    /// every look: it is held as AGT3b holds a refused one, until a person looks again.</para>
+    /// </remarks>
+    /// <param name="turnFailed">What the protocol door said refusing the call (ACPEND1), or null.</param>
+    internal SessionConclusion AccountSignedOut(
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed)
+    {
+        if (conclusion.State != "failed" || turnFailed is not { Length: > 0 } || adapter.Toolchain is not { } toolchain
+            || !SignInRefusals.Read(_harnesses.SignInOf(adapter.Name), turnFailed))
+        {
+            return conclusion;
+        }
+
+        var owner = toolchain.Owner(adapter.Name);
+        _harnesses.SignedOut(adapter.Name, selection.Profile);
+        if (selection.Profile is null) _harnesses.Refuse(adapter.Name, null, $"an earlier session found that {SignedOutReason(owner, null)}");
+        return conclusion.Then(" ", SignedOutNote(owner, selection.Profile));
+    }
+
+    /// <summary>
+    /// What a refused sign-in says (ROSTER1b): the account by its owner and name with its sign-in, both doors named (TOOL6g's
+    /// words, D50), or the tool's own sign-in, which the person signs in to at their own terminal.
+    /// </summary>
+    private static string SignedOutReason(string owner, string? profile) => profile is { } named
+        ? $"the agent refused the `{owner}` account `{named}` for its sign-in, so it reads signed out and Daoris starts nothing "
+          + $"more on it until it is signed in: `daoris agent login {owner} --profile {named}`, or Agents → the agent's page → Accounts."
+        : $"the agent refused `{owner}`'s own sign-in, so Daoris starts nothing more on it until you sign in again at your "
+          + "terminal and read it again on the agent's page in Agents.";
+
+    /// <summary>
+    /// The refused sign-in's line on a record (ROSTER1b): the English names the account, which the cleaner cuts where the note
+    /// travels; the values carry only its owner, never its name, as AGT3b's line does.
+    /// </summary>
+    internal static Noted SignedOutNote(string owner, string? profile)
+    {
+        var reason = SignedOutReason(owner, profile);
+        return Noted.Of(
+            profile is null ? NoteCodes.AccountSignedOutOwn : NoteCodes.AccountSignedOut,
+            $"{char.ToUpperInvariant(reason[0])}{reason[1..]}", ("owner", owner));
     }
 
     /// <summary>

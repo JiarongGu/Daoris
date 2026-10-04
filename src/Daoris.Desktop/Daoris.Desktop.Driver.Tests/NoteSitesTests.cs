@@ -158,6 +158,25 @@ public sealed class NoteSitesTests
             "account.refused-own");
     }
 
+    /// <summary>ROSTER1b: a refused sign-in's line names its owner as a value and its account, with its sign-in, only in the English.</summary>
+    [Fact]
+    public void A_refused_sign_in_s_line_names_its_owner_as_a_value_and_its_account_only_in_the_English()
+    {
+        var named = Daoris.Driver.Driver.SignedOutNote("claude-code", "work");
+        Line(named,
+            "The agent refused the `claude-code` account `work` for its sign-in, so it reads signed out and Daoris starts nothing "
+            + "more on it until it is signed in: `daoris agent login claude-code --profile work`, or Agents → the agent's page → "
+            + "Accounts.",
+            "account.signed-out");
+        Assert.Equal("claude-code", Assert.Single(named.Parts[0].Values, value => value.Key == "owner").Value);
+        Assert.Single(named.Parts[0].Values);
+
+        Line(Daoris.Driver.Driver.SignedOutNote("claude-code", null),
+            "The agent refused `claude-code`'s own sign-in, so Daoris starts nothing more on it until you sign in again at your "
+            + "terminal and read it again on the agent's page in Agents.",
+            "account.signed-out-own");
+    }
+
     // ——— While it starts and works: rows 25–38.
 
     [Fact]

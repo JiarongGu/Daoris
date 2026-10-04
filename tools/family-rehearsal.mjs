@@ -3161,8 +3161,15 @@ check(
 );
 
 // Put the machine back, and let the held quest through — a held quest that never ran would leave the
-// next phase looking at a queue nobody explained.
+// next phase looking at a queue nobody explained. The refusal read `alpha` signed out under the home
+// (ROSTER1b), which outlives the run, so logging it in is a sign-in Daoris sees: the mark a sign-in
+// through either door leaves (TOOL6g), after which the next start asks `alpha` again.
 setProfile('alpha');
+mkdirSync(join(toolchainHome, 'harnesses', '.probing', 'stub'), { recursive: true });
+writeFileSync(
+  join(toolchainHome, 'harnesses', '.probing', 'stub', 'alpha.signed-in'),
+  `${JSON.stringify({ at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z') })}\n`,
+);
 const releasedRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
 check(
   'logging the account in releases the queue with no restart — the file is the truth',

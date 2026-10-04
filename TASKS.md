@@ -66,13 +66,14 @@ running them again.
 - [ ] **AGENTREAD1 — the terminal's account listing keeps what it read** (cli; found by ROSTER1). `daoris agent list`
   asks every account and the own sign-in and writes nothing, so the screen and the loop learn nothing from the
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
-- [ ] **ROSTER1b — a start refused for its sign-in marks that account and walks past it** (driver; found by ROSTER1;
-  **seen on the install 2026-10-04**). After the update every account read *never read*, so the rotation kept starting
-  AR-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
-  third parked the quest. A start refused for its sign-in records the account signed out (as a read would), names it
-  and its sign-in, and the next start walks past it; it never counts toward the quest's strikes. Contract: D150 §5.3,
-  D125's TOOL6g and ROSTER1 notes. Proof: a tick where a refused start's next start picks another account, and the
-  quest's strikes stay where they were.
+- [ ] **SIGNIN1b — a conversation's refused sign-in reads its account signed out** (driver; found by ROSTER1b). A chat's
+  turn refused *Authentication required* tells the roster nothing, so the next driven start can still choose that
+  account. Contract: D125's ROSTER1b note. Proof: `ChatRunner`'s refused turn writes the reading; the next selection
+  walks past it.
+- [ ] **AGENTS2a — DeepSeek Harness takes an API key** (driver, cli; found by AGENTS2). DeepSeek documents
+  `DEEPSEEK_API_KEY`, but a key variable is declared only where measured (AGT3, D67 §1). Measure, with an invalid key
+  and no real one, whether `dsh --profile acp` reads it, then declare it in both twins so `daoris agent key dsh` works.
+  Contract: D57's AGENTS2 note. Proof: the measurement beside the ACP3 evidence; the twin tables.
 - [ ] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
   compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
   and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
@@ -103,9 +104,6 @@ and also we should be utilizing the top menu, so instead of calling this 'agent'
 like VS Code); also the account page itself needs its UI/UX improved; also Codex and DeepSeek are missing"* · *"both
 title sections, for quest and session, need their UI/UX improved"*):
 
-- [ ] **UX7 — a look at the built redesign, then its fixes** (design first; web-shell, web-settings). The owner judged
-  the screens UX6 built on the install. Photograph each at 1546 and 680 px, both themes and languages, and set down
-  what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
 - [ ] **UX7a — the top menu works as VS Code's does** (web-shell, desktop). The strip's four menus (Daoris, Workspace,
   Agents, View) become a menu bar a person reaches for: every verb Daoris has, grouped as an IDE groups them (a
   File-like menu for workspaces and repositories, Edit, View, Go to each place, Run for sessions and quests,
@@ -120,11 +118,9 @@ title sections, for quest and session, need their UI/UX improved"*):
   title, a raw id, a chip and a dense row of eight facts; a quest's title wraps two lines over a chip and a raw id.
   Title first, short (SESSUX1j's short title where there is one), state and the one or two facts that matter beside
   it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
-- [ ] **AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins** (driver, cli, web-shell).
-  Agents shows only installed agents unless its ⋯ says otherwise, so Codex is not seen; DeepSeek has no adapter at all.
-  List each known agent with *Install* where absent; find how a DeepSeek agent is reached (an ACP-speaking client, or
-  a native CLI, D53 and D57: never a registry) and add it as a configuration. Contract: D53, D57, D150 §5. Proof: the
-  roster with an absent agent; the DeepSeek configuration's probe evidence.
+- [ ] **UX7d — what else the look found** (web-shell, driver). Absent agents listed with *Install* (AGENTS2's screen);
+  two-letter strip marks; a version without its product's name; tight 中文 summaries; the record's *opened on* line worded
+  by code, its backticks as code. Contract: D152, design §1, §4.6. Proof: stories, the note codes' twin, the look.
 - [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
   *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
   says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
@@ -132,6 +128,11 @@ title sections, for quest and session, need their UI/UX improved"*):
   names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
   (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
   D125. Proof: a rename kept by rotation and records; the CLI and page twins.
+- [ ] **LANDNAME1 — a landing's branch is named for the work** (driver; found landing the owner's two quests,
+  2026-10-05). The rule's `{slug}` is cut from the quest's first line, so two landings came out
+  `feature/re-filed-from-ask-39c495-whose-quest-was-…`, useless as a pull request's branch. Name it from the quest's
+  short title (SESSUX1j) or its ticket key where the ask names one (`AR-2203`), and let the review's *Accept* and
+  `trees land --branch` take a name the person types. Contract: D145, D149. Proof: `LandingTests` cases.
 - [ ] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
   2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
   AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
