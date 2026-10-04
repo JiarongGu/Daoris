@@ -193,8 +193,13 @@ public sealed record HarnessToolchain(
 /// When <paramref name="Login"/> was read (ROSTER1, D150 §5.3), or null where it never was: absent is never a reading. An
 /// unknown that was read is a read that failed.
 /// </param>
+/// <param name="DisplayName">
+/// The name the person gave the account (ACCT2, <see cref="AccountNames"/>), or null where they gave none and it reads as
+/// its id, <paramref name="Name"/>, which names its folder, its readings and its place in every list.
+/// </param>
 public sealed record ProfileReport(
-    string Name, string Home, LoginState Login, string? Account = null, string? Key = null, DateTimeOffset? Read = null);
+    string Name, string Home, LoginState Login, string? Account = null, string? Key = null, DateTimeOffset? Read = null,
+    string? DisplayName = null);
 
 /// <summary>
 /// One harness as this machine has it (D49 §4): present or absent, its version, its profiles.
@@ -730,22 +735,16 @@ public sealed partial record HarnessSettings(
     }
 
     /// <summary>
-    /// The name an account made by signing in gets (D66 §3): the first free <c>account-N</c>.
+    /// The id an account made by signing in, or by a key, gets (D66 §3, ACCT2): a fresh one, never reused
+    /// (<see cref="AccountNames.NewId"/>), where it was the first free <c>account-N</c>.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>A neutral name, never who signed in.</b> The name is needed before the sign-in starts,
-    /// when nobody knows whose it is; and renaming the directory afterwards would move a home a
-    /// harness may have keyed its credential to. Who it is stays the TOOL's answer, read by the
-    /// roster (<see cref="ProfileReport.Account"/>). Twin rule 5: the CLI's <c>login --new</c> counts
-    /// the same way.
+    /// 🔴 <b>A neutral id, never who signed in.</b> It is needed before the sign-in starts, when nobody knows whose it is;
+    /// and renaming the directory afterwards would move a home a harness may have keyed its credential to. What a person
+    /// reads is the account's name, offered at the sign-in's end as who signed in and kept only where the person keeps it
+    /// (<see cref="AccountNames"/>). Twin rule 5: the CLI's <c>login --new</c> and <c>key</c> draw the same way.
     /// </remarks>
-    public static string NextAccount(string home, string harness)
-    {
-        var taken = Profiles(home, harness).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var number = 1;
-        while (taken.Contains($"account-{number}")) number++;
-        return $"account-{number}";
-    }
+    public static string NextAccount(string home, string harness) => AccountNames.NewId(home, harness);
 
     /// <summary>
     /// Delete an account: its directory, credentials included (D66 §3). True when there was one.
@@ -765,9 +764,10 @@ public sealed partial record HarnessSettings(
         var directory = ProfileHome(home, harness, profile);
         if (!Directory.Exists(directory))
         {
-            // A key whose directory someone removed by hand still goes: nothing is left behind here.
+            // A key whose directory someone removed by hand still goes: nothing is left behind here. Nor its name (ACCT2).
             HarnessKeys.Remove(home, harness, profile);
             AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
+            AccountNames.Forget(home, harness, profile);
             return false;
         }
 
@@ -788,9 +788,10 @@ public sealed partial record HarnessSettings(
 
         Directory.Delete(directory, recursive: true);
         // An account that was a key goes with its key (AGT3): a removed account keeps nothing here. Nor its cool-off
-        // (TOOL4e): the next account made takes the first free name, which may be this one's.
+        // (TOOL4e): an account made later by `profile add` under its name starts afresh. Nor its name (ACCT2).
         HarnessKeys.Remove(home, harness, profile);
         AccountCooling.End(home, harness, profile, DateTimeOffset.UtcNow);
+        AccountNames.Forget(home, harness, profile);
         return true;
     }
 
@@ -971,7 +972,7 @@ public static class HarnessKeys
     public static string Handle(string key) => key.Length > 4 ? $"…{key[^4..]}" : "…";
 
     /// <summary>
-    /// Make an account that is this key: the next free <c>account-N</c>, its directory, and the key
+    /// Make an account that is this key: a fresh id (ACCT2, <see cref="AccountNames.NewId"/>), its directory, and the key
     /// kept beside it. A blank key is refused before anything is made.
     /// </summary>
     public static string Add(string home, string harness, string key)
@@ -1186,7 +1187,7 @@ public static class HarnessProbe
                     busy is null ? null : () => busy(name), kept).ConfigureAwait(false);
             profiles.Add(new ProfileReport(
                 name, profileHome, answer.Login, answer.Account, held is null ? null : HarnessKeys.Handle(held),
-                Moment(answer, kept, said?.Read, name)));
+                Moment(answer, kept, said?.Read, name), AccountNames.NameOf(home, owner, name)));
         }
 
         // The tool's own home, asked exactly as a profile is — with the seam UNSET, so the tool
@@ -2005,13 +2006,15 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     {
         var owner = toolchain.Owner(name);
         var reads = AccountReads.Of(Home, owner);
+        var names = AccountNames.Of(Home, owner);
         var profiles = HarnessSettings.Profiles(Home, owner).Select(account =>
         {
             var read = reads.Accounts.GetValueOrDefault(account);
             var held = HarnessKeys.Of(Home, owner, account);
             return new ProfileReport(
                 account, HarnessSettings.ProfileHome(Home, owner, account), read?.Login ?? LoginState.Unknown,
-                WhoOf(owner, account, read), held is null ? null : HarnessKeys.Handle(held), read?.At);
+                WhoOf(owner, account, read), held is null ? null : HarnessKeys.Handle(held), read?.At,
+                names.GetValueOrDefault(account));
         }).ToList();
 
         return new HarnessReport(
@@ -3226,18 +3229,30 @@ public static class HarnessActions
     /// lands in it is the harness's.
     /// </summary>
     /// <remarks>
-    /// A sign-in that ends well ends that account's cool-off (TOOL4d, D125 §2.3): the directory may now hold another
-    /// account. Both the screen's sign-ins come through here.
+    /// <para>A sign-in that ends well ends that account's cool-off (TOOL4d, D125 §2.3): the directory may now hold another
+    /// account. Both the screen's sign-ins come through here.</para>
+    /// <para>🔴 <b>Into an account that is there, never a new folder</b> (ACCT1): a sign-in to an account is refused, before
+    /// anything starts and with nothing made, where its folder is not there; only a sign-in to a new account
+    /// (<paramref name="fresh"/>) opens one. The install's owner signed in to bring a signed-out account back and got a new
+    /// account no list held.</para>
     /// </remarks>
+    /// <param name="fresh">Whether this sign-in opens a new account's folder; false signs in to one that must be there.</param>
     public static async Task<int> LoginAsync(
         HarnessToolchain toolchain, IReadOnlyList<string>? command, string profileHome,
-        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null)
+        Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null, bool fresh = false)
     {
         if (toolchain.LoginArguments is not { Count: > 0 } login)
         {
             throw new DriverException(
                 "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
                 + "configuration-home variable at the account's directory.");
+        }
+
+        if (!fresh && !Directory.Exists(profileHome))
+        {
+            throw new DriverException(
+                "that account is not on this machine, so nothing was signed in and no account was made. Sign in to a new "
+                + "account instead, or name one that is here.");
         }
 
         var code = await RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)

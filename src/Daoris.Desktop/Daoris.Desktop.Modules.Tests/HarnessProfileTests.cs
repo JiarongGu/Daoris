@@ -169,20 +169,25 @@ public sealed class HarnessProfileTests : Bridge
             console.log('signed in');
             process.exit(0);
             """);
-        // Someone already has the first number: the new account takes the next free one.
+        // Someone already has an account: the new one takes a fresh id (ACCT2), answered as the sign-in starts.
         Directory.CreateDirectory(ProfileAt("stub", "account-1"));
 
         var answer = await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "login-new" });
         Assert.True(answer.GetProperty("started").GetBoolean());
+        var made = answer.GetProperty("profile").GetString()!;
+        Assert.Matches("^acct-[0-9a-f]{8}$", made);
         await UntilAsync(() => Raised.Any(m => m.Type == "HARNESS_ENDED"));
 
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
         Assert.Equal(0, ended.GetProperty("ExitCode").GetInt32());
         Assert.Equal("login-new", ended.GetProperty("Action").GetString());
-        Assert.Equal("account-2", ended.GetProperty("Profile").GetString());
+        Assert.Equal(made, ended.GetProperty("Profile").GetString());
         Assert.Equal("someone@example.invalid", ended.GetProperty("Account").GetString());
         Assert.True(ended.GetProperty("Kept").GetBoolean());
-        Assert.True(File.Exists(Path.Combine(ProfileAt("stub", "account-2"), "credentials.json")));
+        Assert.True(File.Exists(Path.Combine(ProfileAt("stub", made), "credentials.json")));
+        // ACCT1: no list holds the new account, and the end says so; who signed in is offered, never written (D66 §3).
+        Assert.Empty(ended.GetProperty("Places").EnumerateArray());
+        Assert.Null(AccountNames.NameOf(Home, "stub", made));
     }
 
     /// <summary>
@@ -202,7 +207,7 @@ public sealed class HarnessProfileTests : Bridge
 
         var ended = JsonSerializer.SerializeToElement(Raised.Single(m => m.Type == "HARNESS_ENDED").Payload);
         Assert.False(ended.GetProperty("Kept").GetBoolean());
-        Assert.False(Directory.Exists(ProfileAt("stub", "account-1")));
+        Assert.False(Directory.Exists(ProfileAt("stub", ended.GetProperty("Profile").GetString()!)));
         Assert.Empty(HarnessSettings.Profiles(Home, "stub"));
         Assert.Contains(Raised.Select(Line), line => line.Contains("nothing was kept"));
     }
@@ -221,17 +226,19 @@ public sealed class HarnessProfileTests : Bridge
         var answer = await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code", action = "key-add", key });
 
-        Assert.Equal("account-1", answer.GetProperty("profile").GetString());
+        // A fresh id (ACCT2), never the first free `account-N`.
+        var account = answer.GetProperty("profile").GetString()!;
+        Assert.Matches("^acct-[0-9a-f]{8}$", account);
         Assert.Equal("…wxyz", answer.GetProperty("key").GetString());
-        Assert.True(Directory.Exists(ProfileAt("claude-code", "account-1")));
-        Assert.Equal(key, HarnessKeys.Of(Home, "claude-code", "account-1"));
+        Assert.True(Directory.Exists(ProfileAt("claude-code", account)));
+        Assert.Equal(key, HarnessKeys.Of(Home, "claude-code", account));
 
         var roster = await AnswerAsync(module, "HARNESSES");
         var claude = roster.GetProperty("harnesses").EnumerateArray()
             .Single(h => h.GetProperty("harness").GetString() == "claude-code");
         Assert.True(claude.GetProperty("takesKey").GetBoolean());
         var row = claude.GetProperty("profiles").EnumerateArray()
-            .Single(p => p.GetProperty("name").GetString() == "account-1");
+            .Single(p => p.GetProperty("name").GetString() == account);
         Assert.Equal("…wxyz", row.GetProperty("key").GetString());
 
         Assert.DoesNotContain(key, answer.GetRawText());
@@ -244,14 +251,15 @@ public sealed class HarnessProfileTests : Bridge
     public async Task Removing_a_key_account_removes_its_key()
     {
         var module = Module();
-        await AnswerAsync(module, "HARNESS_ACTION",
+        var added = await AnswerAsync(module, "HARNESS_ACTION",
             new { harness = "claude-code", action = "key-add", key = "sk-ant-api03-remove-1234" });
+        var account = added.GetProperty("profile").GetString()!;
 
         await AnswerAsync(module, "HARNESS_ACTION",
-            new { harness = "claude-code", action = "profile-remove", profile = "account-1" });
+            new { harness = "claude-code", action = "profile-remove", profile = account });
 
-        Assert.Null(HarnessKeys.Of(Home, "claude-code", "account-1"));
-        Assert.False(Directory.Exists(ProfileAt("claude-code", "account-1")));
+        Assert.Null(HarnessKeys.Of(Home, "claude-code", account));
+        Assert.False(Directory.Exists(ProfileAt("claude-code", account)));
     }
 
     /// <summary>

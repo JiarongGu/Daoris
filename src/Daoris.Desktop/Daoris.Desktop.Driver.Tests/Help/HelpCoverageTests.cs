@@ -62,6 +62,22 @@ public sealed partial class HelpCoverageTests
         + "since a rule narrowing is applied with nobody's press (PERM2).";
 
     /// <summary>
+    /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
+    /// person's own word. The agent's page presses it once UX7b builds it, and this is its row then.
+    /// </summary>
+    private static readonly Exempt RenameDoor = new(
+        "an account's name is the person's own word for it, offered at a sign-in's end as who signed in and kept only by "
+        + "their own press (D66 §3), so Ask Daoris never proposes one.");
+
+    /// <summary>
+    /// ACCT1's <c>daoris agent profile join</c> and the route's <c>profile-join</c>: putting an account in a list widens what
+    /// Daoris may spend, as <c>order</c> does, so it is the <c>agent</c> kind's <c>order</c> door, owed with it. The agent's page
+    /// presses it once UX7b builds it, and this is its row then.
+    /// </summary>
+    private static readonly Owed JoinDoor = AccountDoorOwed(
+        "order", "putting an account in a list widens what Daoris may spend", "daoris agent profile join");
+
+    /// <summary>
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
     /// </summary>
     private static readonly Exempt Share = new(
@@ -481,6 +497,8 @@ public sealed partial class HelpCoverageTests
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
             .Append(UpdateDoor)
+            .Append(RenameDoor)
+            .Append(JoinDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -770,6 +788,28 @@ public sealed partial class HelpCoverageTests
             Assert.True(usage.Contains(spelled, StringComparison.Ordinal), $"the CLI no longer spells `{terminal}` ({form}).");
             Assert.True(room.Contains(terminal, StringComparison.Ordinal), $"the room's doors do not name `{terminal}` ({form}).");
         }
+    }
+
+    /// <summary>
+    /// ACCT1, ACCT2: the terminal's new account doors — <c>profile rename</c>, <c>profile join</c>, and a sign-in's
+    /// <c>--join</c> and <c>--name</c> — are answered for while the CLI's usage spells them, and the room names each, so the
+    /// helper points the person at them before any screen presses them. A sign-in stays exempt (D89).
+    /// </summary>
+    [Fact]
+    public void The_account_name_and_join_doors_are_answered_for_and_named_in_the_room()
+    {
+        var usage = File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", "agent.ts"));
+        var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
+
+        Assert.Contains("profile rename <agent> <account> <name>", usage);
+        Assert.Contains("profile join <agent> <account> [<workspace>…] [--machine]", usage);
+        Assert.Contains("login <agent> --new [--name N] [--join W] [--join-machine]", usage);
+        Assert.Contains("`daoris agent profile rename <agent> <account> <name>`", room);
+        Assert.Contains("`daoris agent profile join <agent> <account> <workspace>…|--machine`", room);
+        Assert.Contains("`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`", room);
+        Assert.Contains("D66", RenameDoor.Reason);
+        Assert.Contains("daoris agent profile join", JoinDoor.Reason);
+        Assert.IsType<Exempt>(Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "login-new").Answer);
     }
 
     /// <summary>DRV8's <c>--share</c>, decided (D110): exempt, while the headless loop's usage still names it.</summary>

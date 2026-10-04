@@ -39,7 +39,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2065 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 57 | 967 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 60 | 1007 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 48 | 1000 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PluginKitTests.cs` | 46 | 937 |
@@ -52,7 +52,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 77 | 1471 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 129 | 2246 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 182 | 3421 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 183 | 3436 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 47 | 832 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 78 | 1452 |
@@ -70,7 +70,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 41 | 682 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 43 | 810 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 49 | 927 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 60 | 1125 |
 
 ### Service (`service`)
 
@@ -95,14 +95,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/driverconfig.ts` | 74 | 1391 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
 | `src/Daoris.Cli/src/plugins.ts` | 67 | 1340 |
-| `src/Daoris.Cli/src/toolchain.ts` | 118 | 2372 |
+| `src/Daoris.Cli/src/toolchain.ts` | 133 | 2643 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 46 | 826 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 41 | 743 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 68 | 1327 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 114 | 1858 |
 | `src/Daoris.Cli/test/rotation-use.test.ts` | 43 | 540 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 44 | 820 |
-| `src/Daoris.Cli/test/toolchain.test.ts` | 68 | 1388 |
+| `src/Daoris.Cli/test/toolchain.test.ts` | 83 | 1643 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
 ### Tools (`tools`)

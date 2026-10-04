@@ -61,6 +61,7 @@ public sealed partial class DriverModule
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
                 var settingsFile = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
+                var owner = toolchain?.Owner(report.Adapter) ?? report.Adapter;
                 return new
                 {
                     Harness = report.Adapter,
@@ -113,24 +114,7 @@ public sealed partial class DriverModule
                     // The profile HOME is a machine path, and this bridge is the one surface
                     // allowed to carry one (D47 §4) — the page renders it so a person can find
                     // the directory they were told Daoris owns.
-                    Profiles = report.Profiles.Select(profile => new
-                    {
-                        profile.Name,
-                        profile.Home,
-                        Login = profile.Login.ToString().ToLowerInvariant(),
-                        // Who is signed in there, by the tool's own answer (D66 §3) — the name
-                        // a person knows the account by, where the directory's is `account-2`.
-                        profile.Account,
-                        // An account that is a key, by its handle only (AGT3). Never the key.
-                        profile.Key,
-                        // The account's own model and effort, read fresh from the tool's file
-                        // each time (AGT6): the file is the truth, and the terminal edits it too.
-                        Settings = settingsFile is null
-                            ? null
-                            : AccountSettings(AgentSettings.Read(Path.Combine(profile.Home, settingsFile))),
-                        // When its state was last read (UX6e, ROSTER1), or null where it never was: absent is never a reading.
-                        profile.Read,
-                    }).ToArray(),
+                    Profiles = report.Profiles.Select(profile => ProfileShown(profile, settings.PlacesOf(owner, profile.Name), settingsFile)).ToArray(),
                     // What the tool itself offers for those two keys (AGT6, D98): its aliases and
                     // the efforts its settings keep. Null where Daoris does not know its settings,
                     // and the page then offers nothing and says so.
@@ -162,6 +146,45 @@ public sealed partial class DriverModule
             }).ToArray(),
         };
     }
+
+    /// <summary>
+    /// One account on the roster (<c>HARNESSES</c>): its id and the person's name for it, where it runs, its home, its state
+    /// as last read, who signed in, its key's handle and its own model and effort. Public for the fast half's table, which
+    /// reads it without the roster the route asks.
+    /// </summary>
+    /// <param name="places">Where it runs (ACCT1, <see cref="HarnessSettings.PlacesOf"/>).</param>
+    /// <param name="settingsFile">The tool's own settings file under an account (AGT6), or null where this build knows none.</param>
+    public static object ProfileShown(ProfileReport profile, IReadOnlyList<AccountPlace> places, string? settingsFile) => new
+    {
+        // The account's stable id (ACCT2): its folder's name, and what every list, default, reading and record names.
+        // `DisplayName` is the person's name for it, null where they gave none and it reads as its id.
+        profile.Name,
+        profile.DisplayName,
+        // Where it runs (ACCT1): each scope whose own list holds it or whose own default names it, this machine (a null
+        // workspace) first; `Nowhere` where none does, so no start runs on it, which the page says as *no workspace*.
+        Places = PlacesShown(places),
+        Nowhere = places.Count == 0,
+        // The profile HOME is a machine path, and this bridge is the one surface allowed to carry one (D47 §4) — the page
+        // renders it so a person can find the directory they were told Daoris owns.
+        profile.Home,
+        Login = profile.Login.ToString().ToLowerInvariant(),
+        // Who is signed in there, by the tool's own answer (D66 §3), read fresh and written nowhere: what the page offers as
+        // the account's name at a sign-in's end (ACCT2), never kept without the person.
+        profile.Account,
+        // An account that is a key, by its handle only (AGT3). Never the key.
+        profile.Key,
+        // The account's own model and effort, read fresh from the tool's file each time (AGT6): the file is the truth, and
+        // the terminal edits it too.
+        Settings = settingsFile is null
+            ? null
+            : AccountSettings(AgentSettings.Read(Path.Combine(profile.Home, settingsFile))),
+        // When its state was last read (UX6e, ROSTER1), or null where it never was: absent is never a reading.
+        profile.Read,
+    };
+
+    /// <summary>Where an account runs, as the page reads it: each scope, a null workspace for this machine, its list and default.</summary>
+    private static object[] PlacesShown(IReadOnlyList<AccountPlace> places) =>
+        [.. places.Select(place => (object)new { place.Workspace, place.List, place.Default })];
 
     /// <summary>
     /// The door an agent's accounts are read through (AGT7, UX6e): the one named for it, else the first door onto its
@@ -328,6 +351,35 @@ public sealed partial class DriverModule
             };
         }
 
+        // An account's name (ACCT2), the person's word, kept beside it by its id, so every list, default, reading and
+        // record keeps it; naming it its own id, or none, gives it none. The terminal's twin is `profile rename`.
+        if (action == "profile-rename")
+        {
+            var renamed = Named(request);
+            var name = AccountNames.Rename(
+                _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), renamed, Optional(request, "name"));
+            await ChangedAsync(harness, action, config, cancellationToken);
+            return new { Harness = harness, Action = action, ExitCode = 0, Profile = renamed, Name = name };
+        }
+
+        // An account put into the lists the page names (ACCT1): `join`, each a workspace's name or null for this machine's
+        // list, each refused before anything is written where it cannot be joined. The terminal's twin is `profile join`.
+        if (action == "profile-join")
+        {
+            var account = Named(request);
+            if (!HarnessSettings.Profiles(_loop.Harnesses.Home, owner).Contains(account, StringComparer.Ordinal))
+            {
+                throw new DriverException($"`{owner}` has no account `{account}` on this machine, so it joins no list.");
+            }
+
+            var lists = Joins(request);
+            if (lists.Count == 0) throw new DriverException("name the lists it joins: a workspace's, or this machine's.");
+            var placed = Joined(owner, account, lists);
+            await ChangedAsync(harness, action, config, cancellationToken);
+            _loop.Nudge();
+            return new { Harness = harness, Action = action, ExitCode = 0, Profile = account, Places = PlacesShown(placed) };
+        }
+
         // The file edits answer at once, with the exit code.
         int? edited = action switch
         {
@@ -347,7 +399,7 @@ public sealed partial class DriverModule
             _ => throw Refusals.Because(
                 Refusals.HarnessActionUnknown,
                 $"unknown agent action '{action}' — one of: install, update, login, login-new, "
-                + "key-add, pin, unpin, profile-add, profile-remove, profile-default",
+                + "key-add, pin, unpin, profile-add, profile-remove, profile-default, profile-rename, profile-join",
                 ("action", action)),
         };
         if (edited is { } code)
@@ -368,8 +420,57 @@ public sealed partial class DriverModule
 
         // A pin's version is asked for before anything starts: a pin without one is a malformed call.
         var version = action == "pin" ? PayloadHelper.GetRequiredValue<string>(request.Payload, "version") : null;
-        await StartProcessActionAsync(harness, action, profile, version, toolchain, command, stream, config);
-        return new { Harness = harness, Action = action, Started = true };
+        // A sign-in's `join` and a new account's `name` (ACCT1, ACCT2), the terminal's `--join` and `--name`.
+        var joins = action is "login" or "login-new" ? Joins(request) : [];
+        var named = action == "login-new" ? Optional(request, "name") : null;
+        var reached = await StartProcessActionAsync(harness, action, profile, version, toolchain, command, stream, config, joins: joins, name: named);
+        return new { Harness = harness, Action = action, Started = true, Profile = reached };
+    }
+
+    /// <summary>
+    /// The lists a sign-in or <c>profile-join</c> names (ACCT1): <c>join</c>, each a workspace's name or null for this
+    /// machine's list, in the order named, each once. A value that is neither is a malformed call.
+    /// </summary>
+    private static IReadOnlyList<string?> Joins(IpcRequest request)
+    {
+        if (request.Payload is not { } payload || !payload.TryGetProperty("join", out var join) || join.ValueKind == JsonValueKind.Null) return [];
+        if (join.ValueKind != JsonValueKind.Array) throw new DriverException("`join` is a list of workspaces, null for this machine's list.");
+
+        var lists = new List<string?>();
+        foreach (var each in join.EnumerateArray())
+        {
+            var scope = each.ValueKind switch
+            {
+                JsonValueKind.Null => null,
+                JsonValueKind.String when each.GetString()!.Trim() is { Length: > 0 } workspace => workspace,
+                _ => throw new DriverException("`join` names a workspace by its name, or this machine's list by null."),
+            };
+            if (!lists.Contains(scope, StringComparer.OrdinalIgnoreCase)) lists.Add(scope);
+        }
+
+        return lists;
+    }
+
+    /// <summary>
+    /// Each list a sign-in named, refused before anything starts where it cannot be joined (ACCT1): a workspace that takes
+    /// this machine's list, naming none of its own, is refused naming both, so a refusal costs nothing.
+    /// </summary>
+    private void RefuseJoins(string owner, IReadOnlyList<string?> joins)
+    {
+        var settings = _loop.Harnesses.Settings;
+        foreach (var workspace in joins)
+        {
+            if (settings.JoinProblemOf(owner, workspace) is { } problem) throw new DriverException(problem.Sentence(owner));
+        }
+    }
+
+    /// <summary>The account put into each list named, in order, written once; where it runs now (ACCT1).</summary>
+    private IReadOnlyList<AccountPlace> Joined(string owner, string account, IReadOnlyList<string?> joins)
+    {
+        RefuseJoins(owner, joins);
+        var settings = joins.Aggregate(_loop.Harnesses.Settings, (next, workspace) => next.WithJoined(owner, account, workspace));
+        if (joins.Count > 0) settings.Save(_loop.Harnesses.SettingsPath);
+        return settings.PlacesOf(owner, account);
     }
 
     // The two things a screen may do to a harness action while it runs (2026-09-23): answer
@@ -515,9 +616,13 @@ public sealed partial class DriverModule
     /// 2026-09-23). While it runs the page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
     /// </remarks>
     /// <param name="ended">Told the exit code and any problem once the process ends, after the news goes out.</param>
-    private async Task StartProcessActionAsync(
+    /// <param name="joins">The lists a sign-in puts its account in at its end (ACCT1): a workspace's name, or null for this machine's.</param>
+    /// <param name="name">A new account's name, the person's, given as it is made (ACCT2).</param>
+    /// <returns>The account a sign-in reaches: the one named, or a new account's fresh id; null for any other action.</returns>
+    private async Task<string?> StartProcessActionAsync(
         string harness, string action, string? profile, string? version, HarnessToolchain toolchain,
-        IReadOnlyList<string>? command, Action<string> stream, DriverConfig config, Action<int, string?>? ended = null)
+        IReadOnlyList<string>? command, Action<string> stream, DriverConfig config, Action<int, string?>? ended = null,
+        IReadOnlyList<string?>? joins = null, string? name = null)
     {
         var owner = toolchain.Owner(harness);
         var key = $"{harness}:{action}";
@@ -527,21 +632,42 @@ public sealed partial class DriverModule
             _actions[key] = run;
             started.TrySetResult();
         };
-        // 🔴 Signing in to ANOTHER account (D66 §3): the account is made by the sign-in, not named
-        // before it. It opens under the next free `account-N` — nobody knows whose it is yet — and the
-        // tool's own answer names who, on the roster, once it ends.
-        var fresh = action == "login-new"
-            ? HarnessSettings.NextAccount(_loop.Harnesses.Home, owner)
-            : null;
-        var profileHome = HarnessSettings.ProfileHome(
-            _loop.Harnesses.Home, owner,
-            fresh ?? profile ?? _loop.Harnesses.Settings.Resolve(owner, null, null) ?? "default");
+        var home = _loop.Harnesses.Home;
+        var accounts = HarnessSettings.Profiles(home, owner);
+        var names = AccountNames.Of(home, owner);
+        // 🔴 Signing in to a NEW account (D66 §3): the account is made by the sign-in, not named before it. It opens under
+        // a fresh id (ACCT2) — nobody knows whose it is yet — and the tool's own answer names who once it ends, offered to
+        // the person as its name.
+        var fresh = action == "login-new" ? AccountNames.NewId(home, owner) : null;
+        // 🔴 Signing back in to an account that is here (ACCT1): the one named, by its id or its name, else the machine's
+        // default — never a new folder. The install's owner signed in to bring a signed-out account back and got a new
+        // account no list held.
+        string? target = null;
+        if (action == "login")
+        {
+            var reached = AccountNames.SignInTarget(accounts, names, _loop.Harnesses.Settings, owner, profile);
+            target = reached.Account ?? throw new DriverException(AccountNames.SignInRefusal(owner, reached, accounts, names));
+        }
+
+        // What it joins and is called is refused before anything starts, so a refusal costs nothing.
+        var lists = joins ?? [];
+        if (action is "login" or "login-new") RefuseJoins(owner, lists);
+        if (fresh is not null && name is not null
+            && AccountNames.Problem([.. accounts, fresh], names, fresh, name) is { } problem)
+        {
+            throw new DriverException(problem.Kind == AccountNameProblemKind.Taken
+                ? $"`{name.Trim()}` already names `{problem.Other}`, so nothing was signed in — each `{owner}` account has a name of its own."
+                : $"`{name.Trim()}` is not a name a terminal can type, so nothing was signed in — a name is one word, with no "
+                  + $"space or backtick, not starting with a dash, at most {AccountNames.Longest} characters.");
+        }
+
+        var profileHome = HarnessSettings.ProfileHome(home, owner, fresh ?? target ?? profile ?? "default");
         Func<Task<int>> run = action switch
         {
             "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
             "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
-            "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
-            "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track),
+            "login" => () => SignInToAsync(owner, target!, toolchain, command, profileHome, stream, track, lists),
+            "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track, lists, name),
             // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
             // the same file.
             _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
@@ -560,12 +686,14 @@ public sealed partial class DriverModule
                 ("running", busy));
         }
 
-        var work = RunActionAsync(key, harness, action, fresh ?? profile, run, started.Task, config, ended);
+        var reaching = fresh ?? target ?? profile;
+        var work = RunActionAsync(key, harness, action, reaching, run, started.Task, config, ended);
 
         await Task.WhenAny(started.Task, work);
         // A refusal before the process started — no installer, no login flow, a binary that did not
         // start — travels as a refusal, exactly as it did when the request waited.
         if (work.IsCompleted) await work;
+        return action is "login" or "login-new" ? reaching : null;
     }
 
     /// <summary>
@@ -645,6 +773,11 @@ public sealed partial class DriverModule
                 ? Directory.Exists(HarnessSettings.ProfileHome(
                     _loop.Harnesses.Home, _loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness, profile))
                 : (bool?)null,
+            // Where the account signed in runs now, its joins made (ACCT1): each list and default holding it, this machine a
+            // null workspace; none is an account no start runs on, which the page asks about at the sign-in's end.
+            Places = signingIn
+                ? PlacesShown(_loop.Harnesses.Settings.PlacesOf(_loop.Harnesses.Toolchain(harness)?.Owner(harness) ?? harness, profile!))
+                : null,
         });
     }
 
@@ -662,13 +795,15 @@ public sealed partial class DriverModule
     /// </remarks>
     private async Task<int> SignInAsync(
         string harness, string fresh, HarnessToolchain toolchain, IReadOnlyList<string>? command,
-        string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track)
+        string profileHome, Action<string> stream, DriverConfig config, Action<HarnessRun> track,
+        IReadOnlyList<string?> joins, string? name)
     {
+        var owner = toolchain.Owner(harness);
         var code = -1;
         try
         {
             code = await HarnessActions.LoginAsync(
-                toolchain, command, profileHome, stream, CancellationToken.None, track);
+                toolchain, command, profileHome, stream, CancellationToken.None, track, fresh: true);
             return code;
         }
         finally
@@ -681,8 +816,8 @@ public sealed partial class DriverModule
             {
                 try
                 {
-                    HarnessSettings.RemoveProfile(_loop.Harnesses.Home, toolchain.Owner(harness), fresh);
-                    _loop.Harnesses.Removed(toolchain.Owner(harness), fresh);
+                    HarnessSettings.RemoveProfile(_loop.Harnesses.Home, owner, fresh);
+                    _loop.Harnesses.Removed(owner, fresh);
                     stream("nothing was signed in, so nothing was kept — the account opened for it is gone again.");
                 }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -692,10 +827,73 @@ public sealed partial class DriverModule
             }
             else
             {
+                // Named where the person named it (ACCT2); who signed in is offered on the page, never written here (D66 §3).
+                var called = Kept(() => AccountNames.Rename(
+                    _loop.Harnesses.Home, owner, HarnessSettings.Profiles(_loop.Harnesses.Home, owner), fresh, name), name is not null, stream);
                 stream(account is { Length: > 0 }
-                    ? $"signed in as {account} — this machine lists it as `{fresh}`."
-                    : $"signed in — `{harness}` did not say who, so this machine lists it as `{fresh}`.");
+                    ? $"signed in as {account} — this machine lists it as `{called ?? fresh}`."
+                    : $"signed in — `{harness}` did not say who, so this machine lists it as `{called ?? fresh}`.");
+                Placed(owner, fresh, joins, stream);
             }
+        }
+    }
+
+    /// <summary>
+    /// Sign back in to an account that is here (ACCT1): the tool's own login flow into its folder, never a new one, and at
+    /// its end the lists the person named joined and where it runs said.
+    /// </summary>
+    private async Task<int> SignInToAsync(
+        string owner, string account, HarnessToolchain toolchain, IReadOnlyList<string>? command, string profileHome,
+        Action<string> stream, Action<HarnessRun> track, IReadOnlyList<string?> joins)
+    {
+        var code = await HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track);
+        if (code == 0) Placed(owner, account, joins, stream);
+        return code;
+    }
+
+    /// <summary>
+    /// A sign-in's end beside who signed in (ACCT1): the lists named joined, and where the account runs said — each list and
+    /// default that holds it, or that none does and so no start runs on it. A list that could not be written is said, and
+    /// the sign-in stands.
+    /// </summary>
+    private void Placed(string owner, string account, IReadOnlyList<string?> joins, Action<string> stream)
+    {
+        IReadOnlyList<AccountPlace> places;
+        try
+        {
+            places = Joined(owner, account, joins);
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            stream($"the account was kept, and joined no list — {error.Message}");
+            places = _loop.Harnesses.Settings.PlacesOf(owner, account);
+        }
+
+        var shown = AccountNames.Shown(_loop.Harnesses.Home, owner, account);
+        stream(places.Count > 0
+            ? $"`{shown}` runs work in {string.Join(", ", places.Select(PlaceWords))}."
+            : $"no list and no default holds `{shown}`, so no start runs on it — put it in a workspace's list from its row.");
+    }
+
+    /// <summary>One scope an account runs in, as a person reads it: <c>this machine's list, as its default</c>.</summary>
+    private static string PlaceWords(AccountPlace place)
+    {
+        var scope = place.Workspace is null ? "this machine's" : $"`{place.Workspace}`'s";
+        return place is { List: true, Default: true } ? $"{scope} list, as its default" : $"{scope} {(place.List ? "list" : "default")}";
+    }
+
+    /// <summary>A name given at a sign-in's end, or null where none was asked or it could not be kept, which is said.</summary>
+    private static string? Kept(Func<string?> rename, bool asked, Action<string> stream)
+    {
+        if (!asked) return null;
+        try
+        {
+            return rename();
+        }
+        catch (Exception error) when (error is DriverException or IOException or UnauthorizedAccessException)
+        {
+            stream($"the account was kept, and not named — {error.Message}");
+            return null;
         }
     }
 

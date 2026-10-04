@@ -14,7 +14,7 @@ Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1187 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
+**Counts, and this is their one home:** seventeen commands, **1274 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
 704 desktop modules, 80 devkit, 4017 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
@@ -114,17 +114,18 @@ title sections, for quest and session, need their UI/UX improved"*):
   title is its email with its name secondary; states, reads and counts stack in grey lines. One clear row per
   account (who, state, when read, which workspaces use it, its one act); the explanations folded; adding an account
   asks whether to put it in each workspace's rotation (see ACCT1). Contract: D150 §5. Proof: stories, the look.
+  *Takes ACCT1 and ACCT2's screen halves (their driver and terminal halves are archived): a row's* Sign in *reaches
+  that account, the add flow names it and joins the lists chosen (`login-new`'s `name` and `join`), a row titled by
+  its `displayName`, a rename (`profile-rename`), and "no workspace" with its join (`profile-join`).*
+- [ ] **ACCT2b — the driver's words name an account by the person's name** (driver, modules; found building ACCT2). A
+  held start's, rotation's and *What needs you*'s sentences still name an account by its id (`acct-…` for a new one),
+  while the roster and the terminal say its name. Contract: D125's ACCT2 note. Proof: `RotationWords` and note-code
+  cases with a named account; the page's sentences.
 
 - [ ] **UX7d — what else the look found** (web-shell, driver). Absent agents listed with *Install* (AGENTS2's screen);
   two-letter strip marks; a version without its product's name; tight 中文 summaries; the record's *opened on* line worded
   by code, its backticks as code. Contract: D152, design §1, §4.6. Proof: stories, the note codes' twin, the look.
-- [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
-  *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
-  says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
-  name is what the person calls it, defaulting to the email its sign-in reports; a stable id the person never sees
-  names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
-  (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
-  D125. Proof: a rename kept by rotation and records; the CLI and page twins.
+
 - [ ] **LANDNAME1 — a landing's branch named by the person** (driver, web-shell; found landing the owner's two quests,
   2026-10-05). The `{slug}` now comes from the quest's short title (SESSUX1j), its ticket key leading; what remains is
   letting the review's *Accept* and `trees land --branch` take a name the person types. Contract: D145, D149, D126's
@@ -135,11 +136,7 @@ title sections, for quest and session, need their UI/UX improved"*):
   too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
   records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
   the quest.
-- [ ] **ACCT1 — signing in reaches the account the person meant** (driver, web-shell; found on the install,
-  2026-10-04). The owner signed in to re-enable account-2 and got a new account-3, which no workspace's rotation
-  held, so the work kept starting on the empty account-2. A signed-out account's row signs in to that account; a new
-  account asks whether to join each workspace's rotation; an account that is in no rotation says so where it is
-  listed. Contract: D125 §3, D130. Proof: route and page tests for the row's sign-in and the join.
+
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
