@@ -21,8 +21,9 @@
  * (`docs/2026-10-03-decisions-record-design.md`). A file is checked as it always was, for a number twice. A
  * folder is checked for what union can still leave in one decision's file (§3.4, DOC8b): a file not named
  * `D<n>.md`, a heading that is not exactly one and its own, a conflict marker, a note's label glued to the
- * line above it. And the page the record left at its old path is checked for a decision or a note written
- * into it, which a branch from before the migration would otherwise land there.
+ * line above it, a note held twice (DUPNOTE1: union keeps a note both sides carried, each copy set apart).
+ * And the page the record left at its old path is checked for a decision or a note written into it, which a
+ * branch from before the migration would otherwise land there.
  *
  * ## It fails
  *
@@ -76,6 +77,11 @@ export function duplicates(text, kind) {
       if (/^- \S/.test(line) && line.length > 20) keys.push(line.trimEnd());
     }
   });
+  return duplicateKeys(keys);
+}
+
+/** Each key that appears more than once, once, in the order first seen twice. */
+function duplicateKeys(keys) {
   const seen = new Set();
   const twice = [];
   for (const key of keys) {
@@ -161,6 +167,12 @@ export function gluedLabels(text) {
   return text.flatMap((line, i) => (i > 0 && !inFence[i] && text[i - 1].trim() !== '' && isNoteLabel(line) ? [i] : []));
 }
 
+/** Each note label held more than once outside a fence, once, in the order first seen twice (DUPNOTE1). */
+function twiceLabels(text) {
+  const inFence = fenced(text);
+  return duplicateKeys(text.flatMap((line, i) => (!inFence[i] && isNoteLabel(line) ? [line.trimEnd()] : [])));
+}
+
 /** The `## D<n>` headings outside a fence, as `{ id, line }`. */
 function decisionHeadings(text) {
   const inFence = fenced(text);
@@ -200,6 +212,9 @@ export function folderFacts(root, folder) {
     // Two notes written under one decision at once meet in its file, and union keeps both whole; in 12 of the
     // files replayed one lost the blank line above it, so a renderer reads it as the paragraph before (§2.1).
     for (const i of gluedLabels(text)) found.push({ file, fact: 'a note label after a non-blank line', key: text[i].trimEnd() });
+    // A note both sides carried is kept twice, each copy after its own blank line, so the glued check never sees it:
+    // D150 held PLUGTOOL1a's note twice (DUPNOTE1). A note is named by its label's line, which carries its task and date.
+    for (const key of twiceLabels(text)) found.push({ file, fact: 'a note twice', key });
     // The path is the citation (§3.1): `D7.md` is D7, so a padded or slugged name would need a search to find.
     if (!/^D[1-9]\d*\.md$/.test(name)) {
       found.push({ file, fact: 'not named D<n>.md', key: name });

@@ -167,6 +167,27 @@ test("a note's label straight after a non-blank line is refused in each form the
   fx.cleanup();
 });
 
+// DUPNOTE1: union keeps both copies of a note two sides carried, each after its blank line, so nothing above sees it:
+// D150 held PLUGTOOL1a's note twice, and the check passed.
+test('a note held twice in one decision is refused, by its label; the same note under two decisions is not', () => {
+  const note = '**PLUGTOOL1a, built 2026-10-04: a manifest declares its tools** (point 7). Both twins read it.';
+  const other = '**UX6g, built 2026-10-04: a workspace has a page** (point 3).';
+  const fx = folder('folder-note-twice', {
+    // Each copy stands apart, as union leaves a note it kept from both sides: no label is glued.
+    'D1.md': entry(1, note, other, `${note}\nThe same body again.`),
+    // One note under two decisions is a citation's business, not this record's.
+    'D2.md': entry(2, note),
+    // A note shown in a fence is text, so a fenced copy of a label is not a second note.
+    'D3.md': entry(3, other) + '\n```\n' + other + '\n```\n',
+    // A note in each of the record's forms, held once.
+    'D4.md': entry(4, '**Built 2026-10-02 (ROW1): the build.**', '*Amended by D3 (ROW2, 2026-10-03): the change.*'),
+  });
+  assert.deepEqual(check(fx.root).map(({ file, fact, key }) => `${file}: ${fact}: ${key}`), [
+    `docs/decisions/D1.md: a note twice: ${note}`,
+  ]);
+  fx.cleanup();
+});
+
 test('the page the record leaves behind holds no decision and no note, so a late note is refused there', () => {
   const late = page + '\n## D2 — written into the page by a late branch\n\n**Built 2026-10-03 (LATE1): a note under an old decision.**\n';
   const fx = folder('folder-page', { 'D1.md': entry(1) }, late);
