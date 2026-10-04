@@ -10,7 +10,8 @@ import { type AccountState, readLine, stateWord } from './agents';
  *
  * @remarks
  * **A molecule**: every state arrives as props, and every press goes out. Nothing here asks the agent anything: a state is
- * what was last read, and *Read again* is the section's, on the person's press (§5.3). The panels a press opens on the row
+ * what was last read, and *Read again* is the person's press, the section's for every account and the ⋯'s for this one
+ * (§5.3, ROSTER1). The panels a press opens on the row
  * (a sign-in, *Remove…*'s ask, the model and effort form) arrive as children, so they sit under the row that asked.
  */
 export function AccountRow({ label, name, home, state, chip, lines, act, menu, now, children }: {

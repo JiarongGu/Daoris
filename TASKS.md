@@ -95,11 +95,6 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
 - [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings; §2.1, §2.3, §2.4).
 - [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
   driver; after PLUGUI1c; §7.5).
-- [ ] **ROSTER1 — the roster asks no account at start, and reads one account on a press** (driver, modules; found by
-  UX6e). The first `HARNESSES` ask after a start still probes every named account (a cold cache), one at a time since
-  TOOL6g, and an account edit re-reads them all. The driver's report says when it read each account, reads one into the
-  report on a press (an account's *Read again*), and starts from what it last read; `RosterReads` retires. Contract:
-  D150 §5.3, D125's TOOL6g note. Proof: a tick and a route test showing no probe at a look or at start.
 - [ ] **TRYTOOLS1 — a folder's trial starts its hook with the machine's tools** (driver; found by PLUGTOOL1a).
   `TryFolderAsync` hands the plugin a scratch home and `HookProcess.StartInfo` reads tools from it, so a folder trial
   starts PATH's node where the machine manages one, while its tool steps read the machine's. Contract: D101 (*as the

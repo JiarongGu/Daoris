@@ -8,10 +8,13 @@ namespace Daoris.Desktop.Driver.Tests;
 /// install: the status question three times in 45 seconds while two starts were refused, none once both were paused.
 /// </summary>
 /// <remarks>
-/// Over the real client and planner with the service's doors standing in (<see cref="StandInLedger"/>), as
+/// <para>Over the real client and planner with the service's doors standing in (<see cref="StandInLedger"/>), as
 /// <c>AccountRotationHoldTests</c> is, with the stub's command a script that answers its version and its status question
-/// and writes each to a log. A probe of the agent asks its version once, so the version lines count the probes; a status
-/// line with no account home is the tool's own sign-in. Nothing is spawned beyond those questions: the start is held.
+/// and writes each to a log. A status line with no account home is the tool's own sign-in. Nothing is spawned beyond those
+/// questions: the start is held.</para>
+/// <para>ROSTER1: each case starts as a restart does, from a fresh roster and what the person's last press read, kept under
+/// the home (<see cref="AccountReads"/>): the accounts signed out at the test's moment. A look reads none of them, so a status
+/// line is a question a look asked; the binary is asked its version once a process, which is no question of an account.</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class SignedOutLooksTests : IDisposable
@@ -40,6 +43,11 @@ public sealed class SignedOutLooksTests : IDisposable
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2", "gmail"])
             .Save(Path.Combine(_home, "harnesses.json"));
         AccountCooling.Cool(_home, new CoolingEntry("stub", "gmail", _now.AddDays(2), true, "weekly", _now, "s0"), _now);
+        // What the person's last press read (ROSTER1), at the test's moment, so the hour's backstop is not due.
+        foreach (var account in new[] { "account-1", "account-2", "gmail" })
+        {
+            AccountReads.Keep(_home, "stub", account, LoginState.Out, _now);
+        }
         File.WriteAllText(Script, """
             import fs from 'node:fs';
             import path from 'node:path';
@@ -77,8 +85,12 @@ public sealed class SignedOutLooksTests : IDisposable
 
     private IReadOnlyList<string> Asked => File.Exists(Log) ? File.ReadAllLines(Log) : [];
 
+    /// <summary>
+    /// ROSTER1: five looks from a fresh roster, as after a restart, ask no account, the first included: the start is held from
+    /// what was last read. Before, the first look at a cold cache asked every account, and before TOOL6g every look did.
+    /// </summary>
     [Fact]
-    public async Task A_start_held_on_signed_out_accounts_asks_the_agent_once_not_at_every_look_and_never_the_own_sign_in()
+    public async Task A_start_held_on_signed_out_accounts_asks_no_account_at_any_look_and_never_the_own_sign_in()
     {
         using var service = _ledger.Client();
         var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => _now, Zone = Zone };
@@ -92,10 +104,9 @@ public sealed class SignedOutLooksTests : IDisposable
 
         var sitting = Assert.Single(last!.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
-        // One probe in five looks: its version asked once, and each account's status once.
+        // Five looks: the binary's version asked once, and no account's status, nor the own sign-in's.
         Assert.Equal(1, Asked.Count(line => line == "version"));
-        Assert.Equal(["status account-1", "status account-2", "status gmail"], Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)).Order());
-        Assert.DoesNotContain("status (own)", Asked);
+        Assert.DoesNotContain(Asked, line => line.StartsWith("status ", StringComparison.Ordinal));
 
         // And the hold says which accounts are not signed in, and the sign-in for each, beside the wait on gmail.
         Assert.Equal(
@@ -129,6 +140,7 @@ public sealed class SignedOutLooksTests : IDisposable
 
         var sitting = Assert.Single(last!.Considerations);
         Assert.Equal(StartVerdict.Blocked, sitting.Verdict);
+        Assert.DoesNotContain(Asked, line => line.StartsWith("status ", StringComparison.Ordinal));
         Assert.Equal(
             "no `stub` account this start may use is ready: `account-1` is not signed in, `account-2` is not signed in, `gmail` is "
             + "not signed in. A sign-in starts it: `daoris agent login stub --profile account-1`, `daoris agent login stub "

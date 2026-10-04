@@ -13,7 +13,7 @@ import { CLAUDE_TOOL, CLAUDE_USE, CODEX_USE, RULES, TOOLS, USAGE, WORKSPACES } f
 
 const nothing = () => {};
 const ACTS: AgentActs = {
-  onReadAgain: nothing, onSignInNew: nothing, onAddKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
+  onReadAgain: nothing, onReadOne: nothing, onSignInNew: nothing, onAddKey: nothing, onSignIn: nothing, onTryNow: nothing, onDefault: nothing,
   onRemove: nothing, onSaveSettings: nothing, onDoor: nothing, onPin: nothing,
   scope: { onOrder: nothing, onUse: nothing, onInherit: nothing },
   rules: { onSwitchDefault: nothing, onRemove: nothing, onAdd: nothing, onAnswer: nothing },

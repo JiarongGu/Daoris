@@ -187,8 +187,9 @@ public sealed class ProbeRaceTests : IDisposable
 
     /// <summary>
     /// A start held on a signed-out account is tried at every look, and each try asked every account's status again, and
-    /// the person's own sign-in's. Now a start asks nothing until a sign-in marks the account, then that account alone, and
-    /// the hour's backstop asks it once more; the own sign-in is never the loop's to ask.
+    /// the person's own sign-in's. Now the person's press reads each account once (ROSTER1: a look reads none), a start
+    /// held on one asks nothing until a sign-in marks the account, then that account alone, and the hour's backstop asks it
+    /// once more; the own sign-in is never the loop's to ask.
     /// </summary>
     [Fact]
     public async Task A_signed_out_account_is_asked_again_on_its_own_once_per_sign_out()
@@ -205,6 +206,8 @@ public sealed class ProbeRaceTests : IDisposable
             ["agent"] = new Adapter("agent", Toolchain()),
         }), Settings) { Clock = () => now };
 
+        await roster.ReportAsync("agent", Config, refresh: true);
+        Assert.Equal((1, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
         for (var look = 0; look < 4; look++) Assert.False((await roster.SelectAsync("agent", Config, null, null)).Allowed);
         Assert.Equal((1, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
 
@@ -223,6 +226,40 @@ public sealed class ProbeRaceTests : IDisposable
         // The person's press asks the roster again, the own sign-in with it.
         await roster.RosterAsync(Config, refresh: true);
         Assert.Equal((4, 2, 1), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
+    }
+
+    /// <summary>
+    /// ROSTER1 (D150 §5.3): a look, the page's roster and a cold cache ask no account; an account's own *Read again* asks that
+    /// account alone, under its lock; and a restart starts from what it read, asking nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_press_on_one_account_reads_it_alone_and_a_look_or_a_restart_asks_nothing()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "account-1"));
+        var two = HarnessSettings.ProfileHome(_home, "agent", "account-2");
+        Directory.CreateDirectory(two);
+        File.WriteAllText(Path.Combine(two, ".credentials.json"),
+            JsonSerializer.Serialize(new { claudeAiOauth = new { accessToken = "a1", refreshToken = "r1", expired = false } }));
+        new HarnessSettings().WithDefault("agent", "account-2").Save(Settings);
+        var roster = Roster();
+
+        await roster.ReportAsync("agent", Config);
+        await roster.RosterAsync(Config);
+        Assert.True((await roster.SelectAsync("agent", Config, null, null)).Allowed);
+        Assert.Equal((0, 0, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
+
+        var report = (await Roster().ReportAsync("agent", Config, refresh: true, account: "account-2"))!;
+
+        Assert.Equal((0, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
+        var read = report.Profiles.Single(profile => profile.Name == "account-2");
+        Assert.Equal(LoginState.In, read.Login);
+        Assert.NotNull(read.Read);
+        Assert.Null(report.Profiles.Single(profile => profile.Name == "account-1").Read);
+        Assert.Null(report.OwnRead);
+
+        var restarted = (await Roster().ReportAsync("agent", Config))!;
+        Assert.Equal(LoginState.In, restarted.Profiles.Single(profile => profile.Name == "account-2").Login);
+        Assert.Equal((0, 1, 0), (TimesAsked("account-1"), TimesAsked("account-2"), TimesAsked("(own)")));
     }
 
     [Fact]

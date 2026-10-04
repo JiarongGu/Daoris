@@ -247,8 +247,8 @@ public sealed partial class DriverModule
                 module.Relay(harness, action), config, ended);
         }
 
-        // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and the roster asked
-        // again as the route asks it after every file edit, since its answer is cached with the default in it.
+        // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and a person looking again
+        // as the route's edit is; the report reads the default fresh, so no account is asked (ROSTER1).
         public async Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
         {
             var config = DriverConfig.Load(module._loop.ConfigPath);
@@ -264,7 +264,7 @@ public sealed partial class DriverModule
                 throw new DriverException(refused.Message);
             }
 
-            await module._loop.Harnesses.RosterAsync(config, refresh: true, ct).ConfigureAwait(false);
+            await module.ChangedAsync(harness, "profile-default", config, ct).ConfigureAwait(false);
         }
 
         // ACCOUNT_USE's own `use` (TOOL4g): the same refusals and the same write, then the loop asked to look.

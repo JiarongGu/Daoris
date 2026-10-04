@@ -78,7 +78,8 @@ public sealed class HelpDoorsTests : Bridge
 
     /// <summary>
     /// HELP10: a default is <c>HARNESS_ACTION</c>'s own <c>profile-default</c> — a door's default is its owner's (AGT7),
-    /// for the machine or one workspace — and the roster is asked again, as the route asks it, so the screen shows it.
+    /// for the machine or one workspace — and it is a person looking again, as the route's edit is; the roster reads the
+    /// default fresh, so the screen shows it with no account asked (ROSTER1).
     /// </summary>
     [Fact]
     public async Task A_default_is_written_as_the_agents_screens_route_writes_it_for_the_machine_and_a_workspace()

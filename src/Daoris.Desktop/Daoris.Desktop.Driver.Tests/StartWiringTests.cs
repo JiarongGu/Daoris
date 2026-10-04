@@ -147,13 +147,17 @@ public sealed class StartWiringTests : IDisposable
         }
     }
 
-    /// <summary>A start that would be refused says so in the driver's own words, and still names the account.</summary>
+    /// <summary>
+    /// A start that would be refused says so in the driver's own words, and still names the account: here an account the
+    /// person's press read signed out (ROSTER1), since the panel itself reads no account.
+    /// </summary>
     [Fact]
     public async Task A_refused_start_carries_the_driver_s_sentence_and_the_account()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "agent", "stale"));
         new HarnessSettings().WithDefault("agent", "stale").Save(Settings);
         var roster = Roster();
+        await roster.ReportAsync("agent", Config(), refresh: true, account: "stale");
 
         var wiring = await roster.WiringAsync("agent", Config(), "aurora");
         var selection = await roster.SelectAsync("agent", Config(), "aurora", chosen: null);

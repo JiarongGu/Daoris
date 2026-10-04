@@ -169,6 +169,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored }: {
 
   const acts: AgentActs = {
     onReadAgain: () => read.mutate({ agent: tool.name }, { onError }),
+    onReadOne: (account) => read.mutate({ agent: tool.name, profile: account }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
     onAddKey: (key) => act.mutate({ harness: door, action: 'key-add', key }, {
       onSuccess: (result) => notify(t('harness.profile.keyAdded', { profile: result.profile, handle: result.key })),

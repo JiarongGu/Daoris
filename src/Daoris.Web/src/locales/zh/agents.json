@@ -37,6 +37,7 @@
   "agents.account.useDefaultIn": "在 {{workspace}} 中默认使用",
   "agents.account.clearIn": "清除 {{workspace}} 的默认账户",
   "agents.account.settings": "模型和推理强度…",
+  "agents.account.readAgain": "重新读取",
   "agents.account.remove": "移除…",
   "agents.use.summary.runs": "启动运行在 {{account}} 上",
   "agents.use.summary.early": "提前切换",

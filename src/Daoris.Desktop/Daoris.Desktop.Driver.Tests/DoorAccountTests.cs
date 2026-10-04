@@ -125,15 +125,18 @@ public sealed class DoorAccountTests : IDisposable
 
     /// <summary>
     /// A signed-out owner account refuses the door's spawn by the owner's own login question, naming
-    /// the OWNER's login — the door has no login flow, which is what <c>accountOf</c> declared.
+    /// the OWNER's login — the door has no login flow, which is what <c>accountOf</c> declared. Read by
+    /// a press through the door (ROSTER1: a look reads no account), which asks the way its owner asks.
     /// </summary>
     [Fact]
     public async Task A_signed_out_owner_account_refuses_the_door_naming_the_owner_s_login()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "owner", "stale"));
         new HarnessSettings().WithDefault("owner", "stale").Save(Settings);
+        var roster = Roster();
+        await roster.ReportAsync("owner-acp", Config(), refresh: true, account: "stale");
 
-        var selection = await Roster().SelectAsync("owner-acp", Config(), null, null);
+        var selection = await roster.SelectAsync("owner-acp", Config(), null, null);
 
         Assert.False(selection.Allowed);
         Assert.Contains("daoris agent login owner --profile stale", selection.Refusal);

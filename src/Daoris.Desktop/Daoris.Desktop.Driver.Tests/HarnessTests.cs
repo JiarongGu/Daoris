@@ -974,7 +974,8 @@ public sealed class HarnessSelectionTests : IDisposable
 
     /// <summary>
     /// The logged-out refusal mirrors the missing-harness one deliberately: same shape, same
-    /// before-the-record timing, same naming of the action that fixes it.
+    /// before-the-record timing, same naming of the action that fixes it. Once a reading said so: the person's press here,
+    /// since a look reads no account (ROSTER1).
     /// </summary>
     [Fact]
     public async Task A_logged_out_profile_refuses_naming_the_login_action()
@@ -983,6 +984,7 @@ public sealed class HarnessSelectionTests : IDisposable
         new HarnessSettings().WithDefault("fake", "fresh").Save(Settings);
 
         var roster = new HarnessRoster(Set(Toolchain(Present())), Settings);
+        await roster.ReportAsync("fake", Config(), refresh: true);
         var selection = await roster.SelectAsync("fake", Config(), null, null);
 
         Assert.False(selection.Allowed);
@@ -1007,6 +1009,7 @@ public sealed class HarnessSelectionTests : IDisposable
         var now = DateTimeOffset.UtcNow;
 
         var roster = new HarnessRoster(Set(Toolchain(Present())), Settings) { Clock = () => now };
+        await roster.ReportAsync("fake", Config(), refresh: true);
         Assert.False((await roster.SelectAsync("fake", Config(), null, null)).Allowed);
 
         // The person logs in at their terminal, which marks the sign-in. Nothing restarts.
