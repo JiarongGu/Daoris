@@ -125,6 +125,19 @@ title sections, for quest and session, need their UI/UX improved"*):
   List each known agent with *Install* where absent; find how a DeepSeek agent is reached (an ACP-speaking client, or
   a native CLI, D53 and D57: never a registry) and add it as a configuration. Contract: D53, D57, D150 §5. Proof: the
   roster with an absent agent; the DeepSeek configuration's probe evidence.
+- [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
+  *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
+  says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
+  name is what the person calls it, defaulting to the email its sign-in reports; a stable id the person never sees
+  names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
+  (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
+  D125. Proof: a rename kept by rotation and records; the CLI and page twins.
+- [ ] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
+  2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
+  AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
+  too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
+  records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
+  the quest.
 - [ ] **ACCT1 — signing in reaches the account the person meant** (driver, web-shell; found on the install,
   2026-10-04). The owner signed in to re-enable account-2 and got a new account-3, which no workspace's rotation
   held, so the work kept starting on the empty account-2. A signed-out account's row signs in to that account; a new
