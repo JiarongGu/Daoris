@@ -465,7 +465,8 @@ controls are in the frame design's §3.
   its state as last known (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling until …* with *Try
   now*, *unknown*), when it was read (*read 10:42*, *never read*), the workspaces that may run on it, what runs on it and
   what its agent last said, its one act on its row and the rest in its ⋯. **Opening the page asks no account**: *Read again*
-  at the list's head asks that agent's accounts, one at a time. Then its sections, each folded to a line naming its values
+  at the list's head asks that agent's accounts, one at a time, and an account's ⋯ has *Read again* for that one account
+  (ROSTER1). Then its sections, each folded to a line naming its values
   and opened by its chevron: *How accounts are used*, *Workspaces*, *Ways in* (a door is a property, never a second list),
   *What it may do* (only where Daoris hands the agent the rules file; a proposal waiting opens it), *Model and effort*
   (only where Daoris knows the tool's settings) and *Usage*; its terminal twins at its foot.
