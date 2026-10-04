@@ -66,8 +66,13 @@ running them again.
 - [ ] **AGENTREAD1 — the terminal's account listing keeps what it read** (cli; found by ROSTER1). `daoris agent list`
   asks every account and the own sign-in and writes nothing, so the screen and the loop learn nothing from the
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
-- [ ] **ROSTER1b — a start that fails on an account never read reads it once** (driver; found by ROSTER1). D150 §5.3
-  lists a start's refusal as a reason to read; not built. Proof: a Process test where the next start walks past it.
+- [ ] **ROSTER1b — a start refused for its sign-in marks that account and walks past it** (driver; found by ROSTER1;
+  **seen on the install 2026-10-04**). After the update every account read *never read*, so the rotation kept starting
+  AR-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
+  third parked the quest. A start refused for its sign-in records the account signed out (as a read would), names it
+  and its sign-in, and the next start walks past it; it never counts toward the quest's strikes. Contract: D150 §5.3,
+  D125's TOOL6g and ROSTER1 notes. Proof: a tick where a refused start's next start picks another account, and the
+  quest's strikes stay where they were.
 - [ ] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
   compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
   and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
@@ -92,6 +97,39 @@ running them again.
 
 The contract is `docs/2026-10-04-ux6-redesign.md`; its §12 carries each row's full text and proof. Order: UX6a, b, c;
 d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c.
+
+**After looking at the built screens on the install** (owner, 2026-10-05: *"I think the UI/UX is kind of bad right now,
+and also we should be utilizing the top menu, so instead of calling this 'agent' we might need a better menu (more
+like VS Code); also the account page itself needs its UI/UX improved; also Codex and DeepSeek are missing"* · *"both
+title sections, for quest and session, need their UI/UX improved"*):
+
+- [ ] **UX7 — a look at the built redesign, then its fixes** (design first; web-shell, web-settings). The owner judged
+  the screens UX6 built on the install. Photograph each at 1546 and 680 px, both themes and languages, and set down
+  what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
+- [ ] **UX7a — the top menu works as VS Code's does** (web-shell, desktop). The strip's four menus (Daoris, Workspace,
+  Agents, View) become a menu bar a person reaches for: every verb Daoris has, grouped as an IDE groups them (a
+  File-like menu for workspaces and repositories, Edit, View, Go to each place, Run for sessions and quests,
+  Terminal, Help), each with its shortcut and the palette's name; no menu named after one place. Contract: D56, D75,
+  D150 §2.4. Proof: the menu tables' tests against the palette; the look.
+- [ ] **UX7b — the account page reads at a glance** (web-shell). On the install, the agent's page leads with the tool's
+  own sign-in, a long paragraph about it and a fine-print paragraph, before and between the accounts; an account's
+  title is its email with its name secondary; states, reads and counts stack in grey lines. One clear row per
+  account (who, state, when read, which workspaces use it, its one act); the explanations folded; adding an account
+  asks whether to put it in each workspace's rotation (see ACCT1). Contract: D150 §5. Proof: stories, the look.
+- [ ] **UX7c — the title sections of a quest's page and a session's page** (web-shell). A session's head is a cut-off
+  title, a raw id, a chip and a dense row of eight facts; a quest's title wraps two lines over a chip and a raw id.
+  Title first, short (SESSUX1j's short title where there is one), state and the one or two facts that matter beside
+  it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
+- [ ] **AGENTS2 — every agent Daoris knows is listed, installed or not, and DeepSeek joins** (driver, cli, web-shell).
+  Agents shows only installed agents unless its ⋯ says otherwise, so Codex is not seen; DeepSeek has no adapter at all.
+  List each known agent with *Install* where absent; find how a DeepSeek agent is reached (an ACP-speaking client, or
+  a native CLI, D53 and D57: never a registry) and add it as a configuration. Contract: D53, D57, D150 §5. Proof: the
+  roster with an absent agent; the DeepSeek configuration's probe evidence.
+- [ ] **ACCT1 — signing in reaches the account the person meant** (driver, web-shell; found on the install,
+  2026-10-04). The owner signed in to re-enable account-2 and got a new account-3, which no workspace's rotation
+  held, so the work kept starting on the empty account-2. A signed-out account's row signs in to that account; a new
+  account asks whether to join each workspace's rotation; an account that is in no rotation says so where it is
+  listed. Contract: D125 §3, D130. Proof: route and page tests for the row's sign-in and the join.
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
