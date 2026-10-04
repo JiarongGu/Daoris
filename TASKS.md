@@ -97,10 +97,26 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
 - [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).
 - [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings; §2.1, §2.3, §2.4).
-- [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver; §7.2–§7.3).
 - [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
 - [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
   driver; after PLUGUI1c; §7.5).
+- [ ] **ROSTER1 — the roster asks no account at start, and reads one account on a press** (driver, modules; found by
+  UX6e). The first `HARNESSES` ask after a start still probes every named account (a cold cache), one at a time since
+  TOOL6g, and an account edit re-reads them all. The driver's report says when it read each account, reads one into the
+  report on a press (an account's *Read again*), and starts from what it last read; `RosterReads` retires. Contract:
+  D150 §5.3, D125's TOOL6g note. Proof: a tick and a route test showing no probe at a look or at start.
+- [ ] **UX6e2 — the words and the twins follow the Agents place** (driver, cli; found by UX6e). The driver's sentences
+  (`RotationWords`, `HelpRoomDoors`), the room's places and `HelpPlaces`, and the CLI's `agent list` still say Settings →
+  Agents; the page's `places.ts` maps the old names until they move. Contract: D150 §3.1. Proof: the twins' tables and
+  the room's golden files.
+- [ ] **TRYTOOLS1 — a folder's trial starts its hook with the machine's tools** (driver; found by PLUGTOOL1a).
+  `TryFolderAsync` hands the plugin a scratch home and `HookProcess.StartInfo` reads tools from it, so a folder trial
+  starts PATH's node where the machine manages one, while its tool steps read the machine's. Contract: D101 (*as the
+  driver would*), D121 §3. Proof: a Process test with node set as a named file.
+- [ ] **HELPSETUP1 — Ask Daoris names a repository's Setup** (driver; found by UX6f). The help room's text and places
+  still send a person to Settings → Workspace and Permissions, or the old page, for a repository's line, landing,
+  reading across, standing answer and language (`HelpRoomDoors.cs`, `HelpRoomMayDo.cs:75`, `RegistrationFollow.cs:215`).
+  Contract: D150 §3.1. Proof: `HelpRoomGoldenTests`, `HelpCoverageTests`, the `places.ts` twin table.
 - [ ] ⏸ **COWORK1 — agents that work together** (design; held until the owner shapes it). Today agents cooperate
   only through a quest (a request one way, a done back) and an ask's intake (one ask split into quests). What
   working together should add (seeing each other's progress on related work, asking mid-work, handing off, one
