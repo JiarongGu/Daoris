@@ -17,9 +17,10 @@
 
 ORIENT1 read ten of this repository's branches from 2026-10-04: 60 to 100 tool calls and 370 to 600 KB read before the
 first edit, about a third of each branch; 278 shell greps and 117 shell dumps between them; decision files read whole
-21 times (299 KB); files of 80 to 120 KB read whole for a few lines. The code map named projects and nothing in them,
-nothing pointed to it, and the knowledge server, started by `dotnet run` at each session, did not connect. (It did not
-connect for the session that wrote this document either.)
+21 times (299 KB); files of 80 to 120 KB read whole for a few lines. `orient-report`, run over 26 of that day's
+branches when ORIENT1 merged, put the median at 75 calls and 423 KB before the first edit. The code map named projects
+and nothing in them, nothing pointed to it, and the knowledge server, started by `dotnet run` at each session, did not
+connect. (It did not connect for the session that wrote this document either.)
 
 ### 0.2 What ORIENT1 built, and which half was this repository's alone
 
@@ -401,7 +402,8 @@ waits on the other.
 
 **Before** is every driven quest session on the install since events were kept, because no repository there has an
 index yet. ORIENT1e's first run gives it, per repository and over the workspace. Its numbers are not in this document: the
-install was not read for it. This repository's ten branches (§0.1) are the nearest reference, not a baseline.
+install was not read for it. This repository's own before (§0.1: a median of 75 calls and 423 KB over 26 branches)
+is the nearest reference, not a baseline: driven sessions run other work, in repositories they have not seen.
 
 **After** is the same report once a repository's index has landed. The targets, per repository with an index and over
 the workspace, on the median editing session:
