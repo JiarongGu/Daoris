@@ -1,12 +1,100 @@
 import i18n from '../i18n';
-import type { Ask, Quest, Registration, Session } from '../api';
+import { type Ask, canBeAsked, type GoAhead, type Quest, type Registration, type Session } from '../api';
 import { firstLine } from '../asks/AskRow';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../signals';
 import { answeredPark } from '../ui';
+import { workspaceOf } from '../workspaces';
+import type { SessionGrouping } from './groups';
 import { sessionOrigin, sessionTitle } from './identity';
-import type { Attention } from './AttentionRow';
+import type { Attention, AttentionKind } from './AttentionRow';
+import { placedFact } from './SessionRow';
+
+/**
+ * *What needs you*'s three groups (UX6c, design §6.2), in the order a person acts on them: what holds work up until they
+ * act, what waits for their word, and what is ready for them to look at.
+ */
+export type AttentionGroup = 'holding' | 'word' | 'ready';
+
+/** The groups in the order the band shows them. */
+export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready'];
+
+/**
+ * Each kind's group (design §6.2). **Holding work**: a parked session holds its tree, a parked quest its repository's next
+ * start, a go-ahead its session's act, a folder to trust the start the driver holds. **Waiting for your word**: an ask to
+ * publish, an intake's question, a departure, a widening, a quest nobody can take, none of which holds anything already
+ * running. **Ready for you**: finished work to review.
+ */
+export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = {
+  parked: 'holding',
+  'parked-quest': 'holding',
+  'go-ahead': 'holding',
+  trust: 'holding',
+  proposal: 'word',
+  intake: 'word',
+  departure: 'word',
+  rule: 'word',
+  unanswerable: 'word',
+  review: 'ready',
+};
+
+/**
+ * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `needsAPerson` gave it.
+ * A group with no rows is not shown (design §6.2).
+ */
+export function attentionGroups(items: readonly Attention[]): { group: AttentionGroup; items: Attention[] }[] {
+  return GROUP_ORDER
+    .map((group) => ({ group, items: items.filter((item) => ATTENTION_GROUP[item.kind] === group) }))
+    .filter(({ items: held }) => held.length > 0);
+}
+
+/** An act a row offers (design §6.2–§6.3), named as the row's press. */
+export type AttentionActId =
+  | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule';
+
+/**
+ * The acts that ask once under the row before they do anything (design §6.3, D41 §4): a go-ahead's yes or no, which every
+ * session on its ask is handed; a folder's trust and a widening of the rules, which widen what Daoris may do; and a choice
+ * of receiver, which is a choice before it is a press.
+ */
+export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set(['choose', 'approve', 'refuse', 'trust', 'accept-rule']);
+
+/**
+ * What a row offers, in the order it shows them (design §6.2–§6.3): an act only where one press is safe and the row says
+ * what it does, and nothing where the answer needs reading first (a park's question, an intake's, a review), whose door is
+ * the row's one control. **One rule per kind**, read by every row and the tests, so two rows of a kind cannot differ, and
+ * each mirrors the record's own: a quest's page offers *Try again* on the planner's park and *Accept the departure* on a
+ * held done; an ask's page publishes to what its declarations proposed and to any receiver its workspace can ask.
+ */
+export function attentionActs(item: Attention): AttentionActId[] {
+  switch (item.kind) {
+    case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? ['publish', 'choose'] : ['choose'];
+    case 'parked-quest': return ['retry'];
+    case 'go-ahead': return ['approve', 'refuse'];
+    case 'trust': return item.trust ? ['trust'] : [];
+    case 'departure': return ['accept-departure'];
+    case 'rule': return ['accept-rule', 'decline-rule'];
+    default: return [];
+  }
+}
+
+/** A go-ahead's act, as its ask's page names it: its kind in the reader's language where the page has a word, and the session's words. */
+function goAheadTitle(goAhead: GoAhead): string {
+  const known = `asks.goAhead.kind.${goAhead.kind}`;
+  const kind = i18n.exists(known) ? i18n.t(known) : goAhead.kind;
+  return i18n.t('work.attention.goAheadTitle', { act: i18n.t('asks.goAhead.act', { kind, on: goAhead.on }), words: goAhead.act });
+}
+
+/** Which requirement a held done departed from and why, in its own words; how many where it departed from several. */
+function departureWhy(quest: Quest): string | null {
+  const departed = (quest.answers ?? []).filter((answer) => !answer.met?.trim() && answer.departed?.trim());
+  const [first] = departed;
+  if (!first) return null;
+  return departed.length === 1
+    ? i18n.t('work.attention.departureWhy', { number: first.requirement, reason: first.departed })
+    : i18n.t('work.attention.departureWhyMore', { departed: departed.length, number: first.requirement, reason: first.departed });
+}
 
 /** The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b). */
 const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting', 'working']);
@@ -37,13 +125,18 @@ export function waitingInSessions(
 }
 
 /**
- * What is waiting on a person, oldest first within each kind (design §4).
+ * What is waiting on a person: by group, and the longest waiting first within each (UX6c, design §6.2).
  *
  * @remarks
- * **Parked first, because a parked session is holding a working tree while it waits.** Then the asks
- * waiting on a person (INT4d), because nothing downstream moves until the person settles one and an
- * ask holds nothing while it waits. Then the quests nobody here can take — which sit forever and
- * which nothing else surfaces, since the quest list shows them among every other open one.
+ * **Holding work first, then what waits for the person's word, then what is ready for them** (`ATTENTION_GROUP`).
+ * Within a group what has waited longest comes first, whatever its kind: the groups say what matters most, and inside
+ * one a parked session is not more urgent than a folder held for trust a week longer. Rows that waited exactly as long
+ * keep §6.2's order of kinds.
+ *
+ * **No row starts a process to find out** (design §6.3): every input is a list the page already holds or the tick hands
+ * it. The sessions, quests, asks and registry are the service's; the trust holds and the planner's verdicts the tick's;
+ * the rules the machine's file; and the groups (`SESSION_GROUPS`) the answer Sessions' list reads, which the frame holds
+ * on every view of a shell. A browser has none of the last four, so it lists what it can know: asks and quests.
  *
  * **An ask waits on the person unless its intake is busy with it.** Proposed with nothing serving it
  * (or its intake ended without publishing), only a person publishes, so it is a `proposal`. An intake
@@ -61,28 +154,28 @@ export function waitingInSessions(
  * will pull it, and "who cannot be asked" is the same question as "who can" (the Projects view
  * already argues this for repositories).
  *
- * **A quest parked on its failed sessions here sits right after them** (SESSUX1i, D126 §4.6): only the person's
- * *Try again* starts it again, and on 1 October the owner's work stood there while nothing here said so. It holds no tree
- * while it waits, so it comes after the parked sessions. It is read from the planner's verdicts the tick hands the page
- * (`Exhausted`), so a browser has none: its time is when its last session ended, and its detail the driver's sitting
- * sentence. A person's stop holds its quest too, and is never here: the person caused it.
+ * **A quest parked on its failed sessions here holds work** (SESSUX1i, D126 §4.6): only the person's *Try again* starts
+ * it again, and on 1 October the owner's work stood there while nothing here said so. It is read from the planner's
+ * verdicts the tick hands the page (`Exhausted`), so a browser has none: its time is when its last session ended, and its
+ * detail the driver's sitting sentence. A person's stop holds its quest too, and is never here: the person caused it.
  *
- * **A folder waiting on the person's trust (D73) sits after the parked sessions.** The driver is
- * holding a start there because the agent ignores that folder's own permissions until trusted, and
- * the grant is the person's alone. It holds no tree, but nothing it holds can start until it is
- * granted. One row per folder, since the oldest thing it holds. Only the shell's tick says so, so a
- * browser has none.
+ * **A folder waiting on the person's trust (D73) holds work.** The driver is holding a start there because the agent
+ * ignores that folder's own permissions until trusted, and the grant is the person's alone. One row per folder, since the
+ * oldest thing it holds. Only the shell's tick says so, so a browser has none.
  *
- * **An agent's proposal to widen the rules (PERM2, D74) sits after the asks.** 🔴 A widening never
- * applies without the person, so the driver holds it as `waiting` and only they can settle it. The
- * session that proposed it carries on meanwhile, so it holds nothing up the way an ask does. A narrowing
- * applied itself, and one the driver has not judged yet may be one, so neither is here. Only the shell
- * reads the rules, so a browser has none.
+ * **A go-ahead a session asked holds work** (KNOWUSE1a): the session's act waits for the person's yes or no, which every
+ * session on the ask is handed. One row per go-ahead still asked, read from its ask's `goAheads`.
  *
- * **The design's middle category — finished work nobody has looked at — is deliberately absent.**
- * Nothing records that anybody looked, so any row here would be a guess. SURF6's *viewed* mark is
- * not kept, so it arrives when looking is recorded, and the band says so rather than leaving the gap
- * silent.
+ * **An agent's proposal to widen the rules (PERM2, D74) waits for the person's word.** 🔴 A widening never applies
+ * without the person, so the driver holds it as `waiting` and only they can settle it. The session that proposed it
+ * carries on meanwhile, so it holds nothing up. A narrowing applied itself, and one the driver has not judged yet may be
+ * one, so neither is here. Only the shell reads the rules, so a browser has none.
+ *
+ * **A departure waits for the person's word** (DRIFT1d2, D133 §4): a done held for their yes because it departed from
+ * what they required, which the quests list carries (`held`) until they accept it.
+ *
+ * **Work to review is ready for the person** (D126): each session Sessions' list places *To review*, named from its
+ * record where the page holds it and by its id where it does not, so nothing waiting is dropped.
  */
 export function needsAPerson(
   sessions: readonly Session[],
@@ -92,10 +185,16 @@ export function needsAPerson(
   untrusted: readonly TrustHold[] = [],
   proposals: readonly RuleProposal[] = [],
   considered: readonly Consideration[] = [],
+  groups: readonly SessionGrouping[] = [],
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
     ask.intake ? sessions.find((session) => session.id === ask.intake) : undefined;
+  // Whom an ask in this workspace could be published to: what the host says can be asked, as the ask's page offers (D70).
+  const receiversIn = (workspace: string) => registry
+    .filter((row) => canBeAsked(row) && workspaceOf(row) === workspace)
+    .map((row) => row.repository)
+    .sort();
 
   const waitingAsks = live
     .filter((ask) => !INTAKE_BUSY.has(intakeOf(ask)?.state ?? 'completed'))
@@ -115,6 +214,55 @@ export function needsAPerson(
             repositories: ask.proposal.map((match) => match.repository).join(', '),
           })
           : i18n.t('work.attention.proposalNobody')),
+        publishTo: ask.proposal.map((match) => match.repository),
+        choices: receiversIn(ask.workspace),
+      };
+    });
+
+  // Every go-ahead still asked on an ask that is not closed: one row each, since each is its own act (KNOWUSE1a).
+  const goAheads = asks
+    .filter((ask) => ask.state !== 'Closed')
+    .flatMap((ask) => (ask.goAheads ?? [])
+      .filter((goAhead) => goAhead.state === 'asked')
+      .map((goAhead): Attention => ({
+        id: `${ask.id}#${goAhead.number}`,
+        kind: 'go-ahead',
+        ask: ask.id,
+        number: goAhead.number,
+        title: goAheadTitle(goAhead),
+        where: i18n.t('work.attention.askWhere', { id: ask.id }),
+        since: goAhead.asked[0]?.at ?? ask.updated,
+        // Why the first session needed it, in its words.
+        detail: goAhead.asked[0]?.why ?? null,
+      })));
+
+  // A done its departure holds for the person's yes (DRIFT1d2), until they accept it.
+  const departures = quests
+    .filter((quest) => quest.held === true && !quest.accepted)
+    .map((quest): Attention => ({
+      id: quest.id,
+      kind: 'departure',
+      title: quest.title,
+      where: quest.to,
+      since: quest.updated,
+      detail: departureWhy(quest),
+    }));
+
+  // What Sessions' list places To review (D126), from the one reader the frame holds: never a reader of its own.
+  const reviews = groups
+    .filter((placed) => placed.group === 'review')
+    .map((placed): Attention => {
+      const record = sessions.find((one) => one.id === placed.session);
+      const fact = placedFact(placed, placed.shown);
+      return {
+        id: placed.session,
+        kind: 'review',
+        title: record
+          ? sessionTitle(record, quests.find((quest) => quest.id === record.quest))
+          : `#${placed.session}`,
+        where: record?.repository ?? '',
+        since: record?.updated ?? new Date().toISOString(),
+        detail: fact ? i18n.t(fact.line, fact.values) : null,
       };
     });
 
@@ -184,6 +332,8 @@ export function needsAPerson(
       since,
       detail: i18n.t('work.attention.trustWhy'),
       trust: { folder: hold.folder, trustFile: hold.trustFile },
+      // What its door opens: the quest it holds, or the ask whose intake it holds (D73).
+      ...(hold.quest ? { quest: hold.quest } : hold.ask ? { ask: hold.ask } : {}),
     });
   }
 
@@ -199,13 +349,11 @@ export function needsAPerson(
       detail: proposal.why,
     }));
 
+  // Each group's kinds in §6.2's order, then the longest waiting first: a stable sort keeps §6.2's order for a tie.
   const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
   return [
-    ...parked.sort(oldestFirst),
-    ...parkedQuests.sort(oldestFirst),
-    ...[...folders.values()].sort(oldestFirst),
-    ...waitingAsks.sort(oldestFirst),
-    ...widenings.sort(oldestFirst),
-    ...unanswerable.sort(oldestFirst),
-  ];
+    [...parked, ...parkedQuests, ...goAheads, ...folders.values()],
+    [...waitingAsks, ...departures, ...widenings, ...unanswerable],
+    reviews,
+  ].flatMap((group) => group.sort(oldestFirst));
 }

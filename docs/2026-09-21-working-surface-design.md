@@ -252,7 +252,9 @@ not the mechanism.
   sitting that nobody can take. Every row is a door. *Amended 2026-09-24 (INT4d):* an ask waiting
   on a person comes after the parked sessions and before the quests (intake design §1h). *Amended 2026-10-02 (D126,
   SESSUX1i):* a quest parked on its failed sessions here comes right after the parked sessions, waiting since its last
-  session ended; its door is the quest's page, where *Try again* is.
+  session ended; its door is the quest's page, where *Try again* is. *Amended 2026-10-04 (D150 §6, built as UX6c):* the
+  band leads the page in three groups, the longest waiting first in each; finished-and-unreviewed work is a row at last,
+  read from Sessions' *To review*; and a row acts where one press is safe, so not every row is only a door.
 - **`AwaitingPerson` gets a surface at last.** It has meant "only the person can clear this" since
   D46 and has never been rendered anywhere. In Work it wears the warn treatment in the rail, its
   analysis sits at the top of the head — options, recommendation, reason, as `autonomous-development`
