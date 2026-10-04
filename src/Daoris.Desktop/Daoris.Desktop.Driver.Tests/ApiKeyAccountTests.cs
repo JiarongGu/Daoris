@@ -157,7 +157,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     }
 
     /// <summary>
-    /// The probe asks with the key set, so the roster shows what the tool says — signed in, by key —
+    /// The press asks with the key set, so the roster shows what the tool says — signed in, by key —
     /// and names the account by its handle, never by the key.
     /// </summary>
     [Fact]
@@ -165,7 +165,7 @@ public sealed class ApiKeyAccountTests : IDisposable
     {
         var account = HarnessKeys.Add(_home, "fake", "sk-roster-5555-abcd");
 
-        var report = (await Roster(Toolchain()).ReportAsync("fake", Config()))!;
+        var report = (await Roster(Toolchain()).ReportAsync("fake", Config(), refresh: true))!;
         var row = report.Profiles.Single(p => p.Name == account);
 
         Assert.Equal(LoginState.In, row.Login);

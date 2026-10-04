@@ -259,11 +259,15 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(("account-1", (RotatedStart?)null), (next.Profile, next.Rotated));
     }
 
-    /// <summary>An account the agent says is signed out is walked past as a cooling one is (§3.3), once the probe says so.</summary>
+    /// <summary>
+    /// An account the agent says is signed out is walked past as a cooling one is (§3.3), once a reading says so: the person's
+    /// press here, since a look reads no account (ROSTER1).
+    /// </summary>
     [Fact]
     public async Task A_signed_out_default_the_order_lists_is_walked_past_to_the_next_account()
     {
         var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        await roster.ReportAsync("stub", Config(signedOut: "account-1"), refresh: true);
 
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1"), "default", null);
 
@@ -280,6 +284,7 @@ public sealed class AccountRotationTickTests : IDisposable
     public async Task An_order_all_signed_out_is_refused_naming_each_account_and_its_sign_in()
     {
         var roster = new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        await roster.ReportAsync("stub", Config(signedOut: "account-1,account-2"), refresh: true);
 
         var selection = await roster.SelectAsync("stub", Config(signedOut: "account-1,account-2"), "default", null);
 
@@ -416,8 +421,8 @@ public sealed class AccountRotationTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Its own account signed out, which only the probe a start makes tells: the words are carried on at once on
-    /// <c>account-2</c>, handed them, saying why in a coded line that names no account.
+    /// 🔴 Its own account signed out, as the person's press then read it (ROSTER1: a look reads no account): the words are
+    /// carried on at once on <c>account-2</c>, handed them, saying why in a coded line that names no account.
     /// </summary>
     [Fact]
     public async Task Words_to_a_session_whose_account_is_signed_out_are_carried_on_at_once_on_the_next_account()
@@ -432,10 +437,12 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Equal(("failed", "account-1"), (service.State("s1"), Profile(service, "s1")));
         await service.SayAsync("s1", "Also log the port.");
 
-        // account-1 signs out; a fresh roster asks the agent again, as the next start's probe does.
+        // account-1 signs out, and the person's press reads it so, before the next look.
+        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        await roster.ReportAsync("stub", Resuming("fails", signedOut: "account-1"), refresh: true);
         var signedOut = new Daoris.Driver.Driver(
             client, Resuming("fails", signedOut: "account-1"), adapters, _home, processes: new SessionProcesses(),
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone });
+            harnesses: roster);
         var look = await signedOut.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
         var seen = $"look: {string.Join(" | ", look.Events)}\nafter: {service.Record("s1")}";
