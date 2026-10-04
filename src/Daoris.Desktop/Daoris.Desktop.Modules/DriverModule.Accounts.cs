@@ -58,6 +58,8 @@ public sealed partial class DriverModule
                     var said = new Dictionary<string, AccountSaid?>(StringComparer.OrdinalIgnoreCase);
                     var accounts = Accounts(roster.Home, agent);
                     foreach (var account in accounts) said[account] = Safe(() => AccountWindows.SaidOf(roster.Home, agent, account, now));
+                    // The person's name for each account (ACCT2), by its id; the lists below name ids.
+                    var names = Safe(() => AccountNames.Of(roster.Home, agent)) ?? new Dictionary<string, string>();
                     return new
                     {
                         Agent = agent,
@@ -72,6 +74,7 @@ public sealed partial class DriverModule
                         Accounts = accounts.Select(account => new
                         {
                             Name = account,
+                            DisplayName = names.GetValueOrDefault(account),
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))),
                             Offered = offered.FirstOrDefault(entry => Same(entry.Agent, agent) && Same(entry.Account, account))?.Until,
                             Said = SaidShown(said[account]),

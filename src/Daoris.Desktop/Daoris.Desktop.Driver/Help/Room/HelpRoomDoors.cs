@@ -109,8 +109,17 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             + "reasons and last words (the window's own language is Settings → Appearance, and neither sets the other)",
             Setup + "Sessions; a workspace's, Settings → Workspace → Session language",
             "`daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace)"),
-        // UX6e2: an agent's accounts, ways in and model are on its page in the Agents place since UX6e (D150 §5.2).
-        ("sign an agent in, or add an account", Agent + "Accounts", "`daoris agent login <agent>`"),
+        // UX6e2: an agent's accounts, ways in and model are on its page in the Agents place since UX6e (D150 §5.2). ACCT1: a
+        // sign-in reaches the account named, never a new folder; a new account joins the lists named at its end.
+        ("sign an agent in, or add an account", Agent + "Accounts",
+            "`daoris agent login <agent> --profile <account>` (an account that is here, never a new one), "
+            + "`daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]`"),
+        // ACCT2: an account's name is the person's, its id the folder's; ACCT1: an account in no list is put in one. UX7b
+        // builds the screen's halves.
+        ("name an account: its id stays, so every list, default and record keeps it", "(no screen yet)",
+            "`daoris agent profile rename <agent> <account> <name>`"),
+        ("put an account in a workspace's list, or this machine's, so starts run on it", "(no screen yet)",
+            "`daoris agent profile join <agent> <account> <workspace>…|--machine`"),
         // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
         // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).
         ("choose which account an agent's sessions use, for the machine or a workspace",
