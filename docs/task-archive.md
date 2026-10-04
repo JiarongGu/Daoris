@@ -10700,3 +10700,91 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > commit ids, never a ref. Contract: design §2.3–§2.6, §4. Proof: parser and cache tests; fixtures (the parent's).
 
 **Outcome** 2026-10-04: built. `GitReads` reads a graph page (200 a page, with a since-parted walk), a commit (its fields, then REVIEW3's one-call reader), a file's history (`--follow`, 100 a page), a blame (porcelain, D111's binary test and 256 KiB bound) and a compare, one git call each and two for a commit and a compare; it takes whole commit ids only and refuses a ref before git is asked. `GitReadCache` keeps answers in memory by commit ids and the repository's common git directory, bounded at 64 MiB, never from a shallow repository. Each answer names the git command a person would type. Detail: D147's GIT1b note, `56e36839`.
+
+
+## UX6 — Daoris gets simpler as it grows (2026-10-04)
+
+> - [ ] **UX6 — Daoris gets simpler as it grows** (design first; web-shell, web-settings, modules). A redesign that
+> holds many kinds of agent, not a tidy of today's screens: an agent is a product (Claude Code, Codex, those to come)
+> with its accounts listed once, and the ways Daoris runs it (its own door, the ACP door) are a property of it, never
+> a second roster; adding an agent adds a row, not a screen. **A setting lives on the thing it is about**: a
+> repository's (reading and writing across, its line, its landing rule, its language, whether it is driven) on that
+> repository's page beside its git (GIT1e's place), an agent's on the agent, a plugin's on the plugin with the tools it
+> needs (PLUGTOOL1); Settings keeps only what is the machine's or the person's. Today Permissions is 29 repositories
+> each repeating one control. Measured on the install, not the source: each screen's
+> concepts, controls and words counted; what the person must decide set apart from what Daoris can decide;
+> duplicates merged (Claude Code's accounts are listed twice today, once per door, in two states); what is rarely
+> changed folded behind its section; and one place that says what needs the person now (a sign-in, a go-ahead, a
+> review) before anything else. Found the day it was asked: a start sat behind a cooling account while two
+> signed-out accounts went unsaid (TOOL6g). Contract: D41 (platform-ux), D53, D55, D56, D57, D66, D67, the UX5 ledger.
+> Proof: the design and its decision; per-screen counts before and after; the look in both themes and languages.
+
+**Outcome** 2026-10-04: designed as D150 (`docs/2026-10-04-ux6-redesign.md`). A setting has one home, on its thing; Settings keeps the machine's and the person's (seven domains of eleven). Nine places as today: Repositories holds each repository's and workspace's setup and its git (GIT1e–f land there, no Git place on the bar), Agents is a place with one account list per product and its ways in a property, Search and Convergence become Knowledge, and What needs you leads Overview in three groups, acting where one press is safe and starting no process. Accounts are never probed on a timer, at a look, at start or when a view opens. A move map names every card's new home and terminal twin; counts and their method in §9; build rows UX6a–j.
+
+
+## PLUGTOOL1 — a plugin brings the tools it needs (2026-10-04)
+
+> - [ ] **PLUGTOOL1 — a plugin brings the tools it needs** (design with UX6; driver, cli, examples, web-settings). Azure CLI
+> and GitHub CLI sit in Tools (D121) beside Git, Node.js and PowerShell, though only the Azure DevOps and GitHub
+> pull-request plugins use them. A plugin's manifest declares the tools it runs (name, version range, how to find or
+> fetch one); the plugin's page shows and manages them; Tools keeps what Daoris itself runs. An installed plugin whose
+> tool is missing says so on its page, and D121's managed download serves it. Contract: D64, D101, D120, D121. Proof:
+> the manifest's schema and the kit's check; a plugin page test; the two pull-request plugins declaring their CLI.
+
+**Outcome** 2026-10-04: designed within D150 (§7): `plugin.json` gains `tools`, each an id, a version range, why the plugin runs it, and at most four readiness checks run only on a press or at *Try*; a problem is shown on the plugin's page, never a refusal; Tools keeps Git, Node.js and PowerShell and any known tool no plugin declares; a plugin never carries a download. Build rows PLUGTOOL1a–c.
+
+
+## TOOL6g — a signed-out account is said, never waited behind a cooling one (2026-10-04)
+
+> - [ ] **TOOL6g — a signed-out account is said, never waited behind a cooling one** (driver, modules, web-settings; found
+> on the install, 2026-10-04). All three `claude-code` accounts read signed out (`claude auth status`: `loggedIn: false`;
+> each `.credentials.json` left with no refresh token, account-1 and account-2 rewritten the evening before, Gmail the
+> minute the new build started), and the intake for two new asks sat behind `starts.waiting` on Gmail's cool-off until
+> 10-06, saying nothing of the other two. A start whose ready accounts are signed out says so and names the sign-in
+> (`daoris agent login <harness> --profile <name>`, Settings → Agents); the account line and the page say *signed out*
+> beside *cooling*; Claude Code's accounts are one list, not one per door (owner: *"there should be just one account
+> management for Claude Code"*); and what signed three accounts out is found and stopped. Each was blanked about ten
+> seconds after the app started (account-1 and account-2 two seconds apart on 10-03 at 12:35Z, Gmail at 21:03Z), so
+> the first reading is two account probes at start running `claude auth status` on one profile at once, racing one
+> refresh token (unconfirmed). **Seen live the next morning**: while two quests were refused at every look, the app
+> started `claude auth status` three times in 45 s (a refused start re-runs the whole probe, the tool's own home
+> included, which is the person's default sign-in); pausing both asks stopped it, and in that window the developer's
+> own Claude Code sign-in expired. No probe per look, none of the own home but at the person's press. Contract: D125
+> §2–§5, D130. Proof: a fake `claude` reproducing the race and the fix
+> holding; a rotation case with signed-out and cooling accounts; the machine log's line; the look.
+
+**Outcome** 2026-10-04: built. A stand-in agent whose refresh token can be spent once reproduced the sign-outs: two status questions at once on one account blanked its tokens, and two account reports at once did too. Daoris now asks one question per account at a time (a gate per account and a lock file shared with the CLI), shares a probe in flight, never asks an account a running session uses, asks a held start's signed-out account again only after a sign-in through Daoris marks it or an hour passes (it had re-run the whole probe at every look: 6 probes in 5 looks, now 1), and never asks the person's own sign-in but at their press. A held start names each account not signed in and its sign-in at every door (`starts.waiting` gains `signedOut`), and `daoris agent list` shows one account list per tool. Not proven: that the real `claude auth status` refreshes, or which of two probes or a probe beside a session blanked the install's accounts. Detail: D125's TOOL6g note, FIX-LOG 2026-10-04, `48813b9f`..`3f9336be`.
+
+
+## TESTGIT1 — every test's git helper reads both streams at once (2026-10-04)
+
+> - [ ] **TESTGIT1 — every test's git helper reads both streams at once** (driver tests; found merging REVIEW3). A helper
+> that reads stdout to its end before stderr hangs once git writes more to stderr than the pipe holds, and it hung the
+> merge's real-process half for 1 h 33 m (FIX-LOG 2026-10-04). About eighteen helpers keep that read; one shared
+> `GitFixture.RunAsync` that starts both reads replaces them. Proof: a test that runs `add -A` over two hundred files
+> where line endings convert, and the helpers gone from the classes.
+
+**Outcome** 2026-10-04: built. One shared `GitFixture` starts both reads before it waits, and twelve classes call it instead of their own copies (eight of them read stdout before stderr); `GitTree.Output`, which redirected stderr and never read it, goes through it too. Its proof, `add -A` over 200 files whose line endings convert, timed out at 1 m against the old read and passes in 2 s. The landing fixtures were left to PLUGHOOK1a and are TESTGIT1b. Detail: FIX-LOG 2026-10-04, `441bb15b`, `c833066d`.
+
+
+## PLUGHOOK1a — a squash-merged pull request's branches go on its plugin's word (2026-10-04)
+
+> - [ ] **PLUGHOOK1a — a squash-merged pull request's branches go on its plugin's word** (driver, examples; after LAND3
+> reaches main). After a squash git sees no ancestor, so the branches stay. The query point `work/state`,
+> `pullRequestState` on the landing entry, the Azure DevOps plugin's answer, and LAND3's tidy and the clean-up asking
+> it. Contract: plugin hooks design §2.1–§2.6, §4, D148. Proof: `HookTests`, the kit's table, `LandedRecordTests`, git
+> fixtures per §2.3 code, a fake `az`.
+
+**Outcome** 2026-10-04: built. `work/state` is a fourth kind of point, a query, read by shape; the landing entry keeps `pullRequestState`, a failed ask never overwriting an answer; LAND3's tidy and the clean-up's look ask the entry's plugin (one process per plugin, 30 s a frame, none started after 60 s), and a squash-merged pull request's session branches go where git confirms its merge commit and the branch at or under the merged source; a kept completed or abandoned answer refuses an advance; the Azure DevOps plugin (1.2.0) answers through `az`. Asked only at those two occasions, held by a source scan. Not measured against a real organisation. Detail: D148's PLUGHOOK1a note, `23994185`..`dc87b624`.
+
+
+## CANON10 — the doctrine verifies in proportion (2026-10-04)
+
+> - [ ] **CANON10 — the doctrine verifies in proportion** (canon, examples; owner: *"this also applies to Daoris's
+> doctrine itself"*). `autonomous-development` says done means gates green, and nothing on how often: a driven session
+> that re-runs every suite each round spends time and allowance and learns nothing. One bullet: the checks a change can
+> reach while working, the full set once at the boundary, a fixed failure re-run alone, the slowest check measured and
+> made faster rather than skipped. Project-agnostic. Proof: the canon's tests, `examples/` re-synced, the canon
+> changelog's entry.
+
+**Outcome** 2026-10-04: built. `autonomous-development` gains one bullet: the checks a change can reach while working, the whole set once where the work leaves the run, a fixed failure re-run alone, the slowest check measured and made faster rather than skipped. Re-synced into Daoris and both examples, with the canon changelog's entry (`8c721a50`).

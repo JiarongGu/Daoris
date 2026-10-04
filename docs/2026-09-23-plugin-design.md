@@ -124,6 +124,7 @@ speaks, with the roles reversed: here Daoris is the caller and the plugin answer
 | `hook/quest/consider` | Daoris → plugin | one consideration the planner marked *Start*: quest id, receiver, workspace, root. The answer is a **typed decision**: `{ "kind": "allow" }` or `{ "kind": "hold", "reason": "…" }` |
 | `hook/session/ended` | Daoris → plugin | what a tick concluded — session id, quest, repository, state, adapter, account — and expects `{}` |
 | `hook/work/land` | Daoris → plugin | *(D100)* a branch rule's landing, once Daoris has made the branch: repository, workspace, root, branch, base, title, quest, session, commits. The answer is `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…" }`. *(D102: the same frame for a branch a landing made and recorded, handed on after the landing by the person's press, as it stands then)* |
+| `hook/work/state` | Daoris → plugin | *(D148, PLUGHOOK1a)* a query: a landed branch's pull request, asked of the plugin that pushed it, only at a look that may remove something — repository, workspace, root, branch, line, pullRequest, pushedTip. The answer is `{ "state": "open"\|"completed"\|"abandoned"\|"unknown", "pullRequest", "mergeCommit", "sourceCommit", "target", "how", "at", "message" }`, a completed one naming both commits in full; Daoris acts on it only where git confirms it |
 | `shutdown` | Daoris → plugin | nothing; the process exits, and every registration with it |
 
 Three rules, each taken from a reference and stated once:
@@ -272,6 +273,7 @@ catalogue skips, never the system's temporary folder (D63; the owner's call, ame
 | `quest/consider` | decision, before a planned start | `quest { id, title, from, to }`, `repository`, `workspace`, `root` | `{ "kind": "allow" }`, or `{ "kind": "hold", "reason": "…" }` | 10 s; late or wrong holds the quest |
 | `session/ended` | observation, after a session | `session`, `quest`, `repository`, `state`, `adapter`, `account`, `byPerson`, `note` | anything; `{}` | 10 s; a failure is a console line |
 | `work/land` | act, once a landing made its branch | `repository`, `workspace`, `root`, `branch`, `base`, `title`, `quest { id, title }`, `session`, `commits [{ sha, subject }]` | `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…"\|null }` | 2 min; a failure leaves the branch |
+| `work/state` | query (D148), at a look that may remove a landed branch | `repository`, `workspace`, `root`, `branch`, `line`, `pullRequest`, `pushedTip` | `{ "state": "open"\|"completed"\|"abandoned"\|"unknown", … }`, a completed one naming `mergeCommit` and `sourceCommit` in full | 30 s, the handshake inside the first; a failure removes nothing |
 
 The samples the kit writes are built by the functions the driver sends with, and a test sends them
 through the real waterfall, observation and landing. A frame's `root` in a sample is `{root}`, which the

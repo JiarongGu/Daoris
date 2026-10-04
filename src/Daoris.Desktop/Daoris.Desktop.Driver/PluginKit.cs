@@ -75,6 +75,11 @@ public static partial class PluginKit
         "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main", "Expose a streaming budget",
         "0fda18", "s1a2b3c4", [new LandingCommit("3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", "Expose a streaming budget")]);
 
+    /// <summary>A landed branch asked about, as the kit's samples say it (PLUGHOOK1a): pushed, with the pull request its plugin opened.</summary>
+    public static readonly StateFrame SampleState = new(
+        "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main",
+        "https://example.test/example-org/engine/pull/7", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a");
+
     private static readonly JsonSerializerOptions Pretty = new()
     {
         WriteIndented = true,
@@ -138,6 +143,31 @@ public static partial class PluginKit
                 pushed: false,
                 pullRequest: null,
                 message: `${id} does not push yet; push \`${frame.branch}\` by hand.`,
+              }),
+            """),
+        new(
+            HookPoints.State,
+            "query",
+            "Only where git cannot tell (a pull request completed by squash leaves no ancestor), at a look that may remove "
+            + "something, the plugin that pushed a landed branch is asked about its pull request, in `root`. Find it by "
+            + "`pullRequest`, else by `branch` as its source, preferring one into `line`. Daoris acts on a completed answer only "
+            + "where git confirms it: its merge commit on the line, and the branch at or under the commit it merged.",
+            "`{ \"state\": \"open\" | \"completed\" | \"abandoned\" | \"unknown\", \"pullRequest\": \"https://…\", \"mergeCommit\": \"…\", "
+            + "\"sourceCommit\": \"…\", \"target\": \"main\", \"how\": \"merge\" | \"squash\" | \"rebase\" | \"rebase-merge\", \"at\": \"…\", "
+            + "\"message\": \"…\" }`. `state` is required; a completed one names its `mergeCommit` and `sourceCommit` in full; "
+            + "the rest is null where the platform does not say. `unknown` is the platform answering without a state.",
+            "nothing is removed on its word, and the row says why",
+            LandingPlugins.StatePatience,
+            Sample(HookFrames.State(SampleState)),
+            """
+              // A query, only where git cannot tell: the pull request from frame.branch (or at frame.pullRequest),
+              // asked of your platform in frame.root. Nothing is removed until git confirms a completed answer, so
+              // `unknown` is an honest answer until this asks. A read is
+              //   run('az', ['repos', 'pr', 'show', '--id', id, '--output', 'json'], frame.root)
+              'work/state': (frame) => ({
+                state: 'unknown',
+                pullRequest: null,
+                message: `${id} does not read pull requests yet.`,
               }),
             """),
     ];
@@ -251,9 +281,12 @@ public static partial class PluginKit
 
         """;
 
+    /// <summary>Whether a plugin of these points runs a platform's tool, so it is written <c>run()</c> (a landing, or a query, PLUGHOOK1a).</summary>
+    private static bool RunsATool(IReadOnlyList<KitPoint> points) => points.Any(point => point.Name is HookPoints.Land or HookPoints.State);
+
     private static string WireScript(string id, string name, IReadOnlyList<KitPoint> points)
     {
-        var lands = points.Any(point => point.Name == HookPoints.Land);
+        var lands = RunsATool(points);
         return Template("plugin.mjs")
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
@@ -301,7 +334,7 @@ public static partial class PluginKit
             .Replace("{{name}}", name, StringComparison.Ordinal)
             .Replace("{{id}}", id, StringComparison.Ordinal)
             .Replace("{{points}}", sections.ToString(), StringComparison.Ordinal)
-            .Replace("{{run}}", lands
+            .Replace("{{run}}", RunsATool(points)
                 ? "`run()` in `plugin.mjs` does exactly that, and `safe()` respells text so it can pass."
                 : "`daoris-driver plugins new <id> --point work/land` writes a `run()` helper that does exactly that.",
                 StringComparison.Ordinal)

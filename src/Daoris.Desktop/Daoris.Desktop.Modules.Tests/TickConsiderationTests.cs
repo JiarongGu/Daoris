@@ -152,6 +152,27 @@ public sealed class TickConsiderationTests
         Assert.False(waits.GetProperty("stated").GetBoolean());
     }
 
+    /// <summary>
+    /// TOOL6g: a held start that passed accounts not signed in names them, whose they are, so the page says each and its
+    /// sign-in in the reader's language, beside a wait on a cooling account or with none.
+    /// </summary>
+    [Fact]
+    public void A_held_quest_names_the_accounts_it_passed_not_signed_in()
+    {
+        var held = new Consideration(Quest, StartVerdict.Blocked, "no `claude-code` account this start may use is ready: …")
+        {
+            SignedOut = new SignedOutAccounts("claude-code", ["account-1", "account-2"]),
+        };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held), Wire);
+
+        var signedOut = shape.GetProperty("signedOut");
+        Assert.Equal("claude-code", signedOut.GetProperty("agent").GetString());
+        Assert.Equal(["account-1", "account-2"], signedOut.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(JsonValueKind.Null,
+            JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held with { SignedOut = null }), Wire).GetProperty("signedOut").ValueKind);
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()

@@ -425,6 +425,12 @@ public sealed record Consideration(
     /// ended, which goes on in its own conversation where it can, and else hands them on.
     /// </summary>
     public bool GoesOn { get; init; }
+
+    /// <summary>
+    /// For a start held at spawn (<see cref="StartVerdict.Blocked"/>): the accounts it passed not signed in (TOOL6g), whether
+    /// it then waited on a cooling one or on none, so the page says each and its sign-in from facts. Null for every other.
+    /// </summary>
+    public SignedOutAccounts? SignedOut { get; init; }
 }
 
 public static class Considerations
@@ -450,11 +456,13 @@ public static class Considerations
     /// read <c>Start</c> in every consideration, because the hold lived only in the event line. The
     /// Overview, asked to say why each quest sits, had nothing to say under the one that mattered.
     /// </remarks>
+    /// <param name="signedOut">The accounts each held start passed not signed in (TOOL6g), carried beside its hold.</param>
     public static IReadOnlyList<Consideration> Blocked(
-        IReadOnlyList<Consideration> plan, IReadOnlyDictionary<string, string> heldAt) =>
+        IReadOnlyList<Consideration> plan, IReadOnlyDictionary<string, string> heldAt,
+        IReadOnlyDictionary<string, SignedOutAccounts>? signedOut = null) =>
         plan.Select(c =>
                 c.Verdict == StartVerdict.Start && heldAt.TryGetValue(c.Quest.Id, out var why)
-                    ? c with { Verdict = StartVerdict.Blocked, Reason = why }
+                    ? c with { Verdict = StartVerdict.Blocked, Reason = why, SignedOut = signedOut?.GetValueOrDefault(c.Quest.Id) }
                     : c)
             .ToList();
 }

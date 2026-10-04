@@ -995,7 +995,8 @@ public sealed class HarnessSelectionTests : IDisposable
     /// <summary>
     /// <b>A cached "no" is asked again before it is given.</b> Otherwise the person does exactly what
     /// the refusal told them to and the driver keeps refusing until somebody restarts it — which is
-    /// the worst possible reading of a message that named an action.
+    /// the worst possible reading of a message that named an action. Asked once per sign-out (TOOL6g):
+    /// a sign-in through Daoris's doors marks the account, and a start then asks it again.
     /// </summary>
     [Fact]
     public async Task A_refusal_is_re_checked_so_logging_in_takes_effect_without_a_restart()
@@ -1003,12 +1004,15 @@ public sealed class HarnessSelectionTests : IDisposable
         var home = HarnessSettings.ProfileHome(_home, "fake", "fresh");
         Directory.CreateDirectory(home);
         new HarnessSettings().WithDefault("fake", "fresh").Save(Settings);
+        var now = DateTimeOffset.UtcNow;
 
-        var roster = new HarnessRoster(Set(Toolchain(Present())), Settings);
+        var roster = new HarnessRoster(Set(Toolchain(Present())), Settings) { Clock = () => now };
         Assert.False((await roster.SelectAsync("fake", Config(), null, null)).Allowed);
 
-        // The person logs in. Nothing restarts.
+        // The person logs in at their terminal, which marks the sign-in. Nothing restarts.
         File.WriteAllText(Path.Combine(home, "credentials.json"), "{}");
+        ProbeLock.MarkSignedIn(home, now);
+        File.SetLastWriteTimeUtc(ProbeLock.SignedInPathOf(_home, "fake", "fresh"), now.AddSeconds(1).UtcDateTime);
 
         var second = await roster.SelectAsync("fake", Config(), null, null);
         Assert.True(second.Allowed);

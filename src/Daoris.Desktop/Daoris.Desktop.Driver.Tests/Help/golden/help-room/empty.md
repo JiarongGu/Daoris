@@ -90,7 +90,7 @@ and every other card reads **apply** and **not now** (in 中文 **应用** and *
 A plugin runs on this machine as the person (one that lands work pushes with their sign-in), so making
 one is work, not a setting: never write one yourself. Propose it
 as an ask (`ask_propose`) at the workspace of the repository that holds plugins, naming it as the receiver:
-what the plugin should do, and the point it speaks on (`quest/consider`, to hold a quest before it starts; `session/ended`, to hear how a session ended; `work/land`, to push a branch Daoris made and open its pull request).
+what the plugin should do, and the point it speaks on (`quest/consider`, to hold a quest before it starts; `session/ended`, to hear how a session ended; `work/land`, to push a branch Daoris made and open its pull request; `work/state`, to say whether a landed branch's pull request completed, and with which commit).
 The session there makes it with its tests, and the person reviews and lands it. Find that repository
 in `registry` by what it says it owns. If none says so,
 the person decides where plugins live (a repository of their own, connected like any other), so ask

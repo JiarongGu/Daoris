@@ -38,6 +38,9 @@ public static class PluginEvents
 
     public const string ByHand = "hand";
 
+    /// <summary>An occasion's asks about landed branches' pull requests (PLUGHOOK1a, D148 point 6).</summary>
+    public const string ByState = "state";
+
     /// <summary>Why a process stopped: switched off, removed, updated, its manifest changed, or its owner ended.</summary>
     public const string Off = "off";
 

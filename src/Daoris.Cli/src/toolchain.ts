@@ -103,6 +103,7 @@ import {
 import type { Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { saidLine, saidOf } from './windows.ts';
+import { markSignedIn, probeLockPath, takeProbeLock } from './probelock.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -687,8 +688,10 @@ export function addKeyAccount(
   // The key first: a `keys.json` it cannot read refuses here, before an account directory exists.
   writeKeys(home, keys);
   mkdirSync(profileHome(home, harness, account), { recursive: true });
-  // A key made into an account ends a cool-off its name still carries (D125 §2.3), as the driver's `HarnessKeys.Add` does.
+  // A key made into an account ends a cool-off its name still carries (D125 §2.3), as the driver's `HarnessKeys.Add` does,
+  // and is marked as a sign-in is (TOOL6g), so a name a removed account had carries no word that it is signed out.
   endCooling(home, harness, account, new Date());
+  markSignedIn(home, harness, account, new Date());
 
   write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
   write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
@@ -816,7 +819,7 @@ export function probe(
       return {
         name, home: where,
         ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where, Boolean(pinned),
-          key ? { [toolchain.keyVariable!]: key } : {}),
+          key ? { [toolchain.keyVariable!]: key } : {}, probeLockPath(home, owner, name)),
         key: shown,
       };
     }),
@@ -826,15 +829,27 @@ export function probe(
 /**
  * What the harness says about logging in to one home: the boolean, and — when the toolchain asks and
  * the answer is yes — who (D66 §3). Nothing else it volunteers is kept.
+ *
+ * @remarks
+ * 🔴 Asked under the home's probe lock (TOOL6g, `probelock.ts`) where one is named: the agent may refresh an expired token
+ * to answer, and the desktop asking the same account at the same moment would spend one single-use refresh token twice
+ * and sign the account out. A lock another holds past its patience is not asked about: unknown.
  */
 function loginAt(
   command: string[], toolchain: Toolchain, where: string, managed = false,
-  account: Record<string, string> = {},
+  account: Record<string, string> = {}, lock: string | null = null,
 ): { login: Login; account: string | null } {
   const check = toolchain.loginCheck;
   if (!check) return { login: 'unknown', account: null };
 
-  const answer = ask(command, check.args, where, toolchain, managed, account);
+  const release = lock === null ? null : takeProbeLock(lock);
+  if (lock !== null && release === null) return { login: 'unknown', account: null };
+  let answer: ReturnType<typeof ask>;
+  try {
+    answer = ask(command, check.args, where, toolchain, managed, account);
+  } finally {
+    release?.();
+  }
   if (!answer.ran) return { login: 'unknown', account: null };
   if (check.in.test(answer.output)) {
     return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null };
@@ -869,7 +884,7 @@ export function signInNew(
   } finally {
     // Asked of the binary the login ran, so the answer is about the sign-in that just happened.
     const said = code === 0
-      ? loginAt(toolchain.binary, toolchain, where)
+      ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, name))
       : { login: 'out' as const, account: null };
 
     if (code !== 0 || said.login === 'out') {
@@ -877,8 +892,9 @@ export function signInNew(
       write('daoris: nothing was signed in, so nothing was kept — the account opened for it is gone again.');
     } else {
       // A sign-in into an account ends its cool-off (D125 §2.3), as the driver's `LoginAsync` ends one: the directory
-      // may hold another account now.
+      // may hold another account now. And it is marked (TOOL6g), as the driver's `LoginAsync` marks one.
       endCooling(home, harness, name, new Date());
+      markSignedIn(home, harness, name, new Date());
       write(said.account
         ? `daoris: signed in as ${said.account} — this machine lists it as \`${name}\`.`
         : `daoris: signed in — \`${harness}\` did not say who, so this machine lists it as \`${name}\`.`);
@@ -1201,8 +1217,12 @@ export function commandHarness(
       write('  Daoris chose the directory and nothing else: whatever you sign in with is stored by');
       write('  the agent, in its own store, under your OS account — Daoris never sees it.');
       const signed = relay([...toolchain.binary, ...login], where, toolchain, write);
-      // A sign-in that finished ends that account's cool-off (D125 §2.3): the directory may hold another account now.
-      if (signed === 0) endCooling(home, name, profile, new Date());
+      // A sign-in that finished ends that account's cool-off (D125 §2.3): the directory may hold another account now. And
+      // it is marked (TOOL6g), so the desktop asks the account again at its next look rather than believing it signed out.
+      if (signed === 0) {
+        endCooling(home, name, profile, new Date());
+        markSignedIn(home, name, profile, new Date());
+      }
       return signed;
     }
 
@@ -1503,6 +1523,15 @@ export function commandHarness(
         if (map[name]) write(`  ${''.padEnd(14)} pinned ${map[name]} for the \`${circle}\` workspace`);
       }
 
+      // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its
+      // owner listed them above with what the agent said of each, and naming them twice read as two sets of accounts.
+      const owner = toolchain.accountOf ? TOOLCHAINS[toolchain.accountOf] : undefined;
+      if (toolchain.accountOf && owner) {
+        const product = owner.product ?? toolchain.accountOf;
+        write(`  ${''.padEnd(14)} its accounts are ${product}'s, listed under \`${toolchain.accountOf}\`: this is another way `
+          + `${product} runs on them`);
+        continue;
+      }
       for (const line of accountLines(name, toolchain, report, settings, home, new Date(), machineZone())) write(line);
     }
 

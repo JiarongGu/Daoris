@@ -7,6 +7,8 @@
   "harness.next.own": "下一次启动运行在你自己的登录上：这里没有指定任何账户。",
   "harness.next.waitsUntil": "这里没有就绪的账户，所以下一次启动要等到 {{when}}。",
   "harness.next.waits": "这里没有就绪的账户，也不会自行就绪：下一次启动在等你处理。",
+  "harness.next.signInSooner": "在下方对应的行里登录 {{accounts}}，它就能更早开始。",
+  "harness.next.signIn": "在下方对应的行里登录 {{accounts}}，它就会开始。",
   "harness.next.why.named": "它是这里使用的唯一账户",
   "harness.next.why.onlyReady": "它是这里唯一就绪的账户",
   "harness.next.why.kept": "它留作对话",

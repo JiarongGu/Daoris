@@ -240,6 +240,37 @@ describe('sittingSentence', () => {
   });
 
   /**
+   * TOOL6g: a hold that passed accounts not signed in names each and its sign-in, beside a wait on a cooling account or with
+   * none cooling, so a person reading *waits for account-1* knows a sign-in frees it. 中文 says it from the tick's
+   * `signedOut`; English is the driver's own sentence, which says the same.
+   */
+  it('says the accounts not signed in and the sign-in for each, beside a wait and with none cooling', async () => {
+    const reason = 'no `claude-code` account this start may use is ready: … A sign-in starts it sooner: `daoris agent login claude-code --profile account-2`, or Settings → Agents.';
+    const signedOut = { agent: 'claude-code', accounts: ['account-2', 'account-3'] };
+    const beside: Consideration = {
+      ...sits('Blocked', reason), signedOut,
+      waitsFor: { agent: 'claude-code', account: 'account-1', until: '2026-10-06T09:00:00Z', stated: true },
+    };
+    const alone: Consideration = { ...sits('Blocked', reason), signedOut };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(beside)).toBe(reason);
+    expect(sittingSentence(alone)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    const waits = sittingSentence(beside);
+    expect(waits).toContain('claude-code 的账户 account-1');
+    expect(waits).toContain('account-2、account-3 未登录');
+    expect(waits).toContain('`daoris agent login claude-code --profile account-2`');
+    expect(waits).toContain('`daoris agent login claude-code --profile account-3`');
+    expect(waits).toContain('设置 → 智能体');
+    const none = sittingSentence(alone);
+    expect(none).toContain('account-2、account-3 未登录');
+    expect(none).toContain('`daoris agent login claude-code --profile account-3`');
+    expect(none).not.toContain('冷却至');
+  });
+
+  /**
    * PAUSE1e (D132 §2.3): a paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
    * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (a shell older than the
    * fact), the driver's words stand.

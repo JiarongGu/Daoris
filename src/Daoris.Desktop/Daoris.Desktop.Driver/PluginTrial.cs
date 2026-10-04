@@ -307,6 +307,15 @@ public static partial class PluginKit
                     + $" — {landing.Message}";
             }
 
+            case HookPoints.State:
+            {
+                var state = await peer.StateAsync(frame, ct).ConfigureAwait(false);
+                return state.State
+                    + (state.PullRequest is { } address ? $", pull request {address}" : "")
+                    + (state.State == PullRequestStates.Completed ? $", merged {state.SourceCommit![..8]} as {state.MergeCommit![..8]}" : "")
+                    + (state.Message is { } words ? $" — {words}" : "");
+            }
+
             default:
                 throw new DriverException($"`{point}` is not a point this build can try.");
         }
