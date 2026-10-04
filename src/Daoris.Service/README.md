@@ -231,18 +231,24 @@ it; the **database** is what persists. Every session in every repository on this
 the same file (`knowledge.db` under the Daoris home — `DAORIS_HOME`, which the installed desktop sets
 for the account, D63), which is how a quest published from one repository's session is waiting when
 another repository's session starts. With no home and no `DAORIS_KNOWLEDGE_DB`, the host says so on
-stderr and exits 2 rather than opening a database under the user profile. This repository's own
-`.mcp.json` registers it as `daoris-knowledge`; a sibling adds the same entry to its own `.mcp.json` —
-that file is the sibling's to write — with an absolute `--project` path:
+stderr and exits 2 rather than opening a database under the user profile.
 
-```json
-{ "mcpServers": { "daoris-knowledge": {
-    "command": "dotnet",
-    "args": ["run", "--project", "<path-to-daoris>/src/Daoris.Service/Daoris.Service.Mcp"] } } }
-```
+**This repository's own `.mcp.json` starts a built host, never a build** (ORIENT1c): `node
+tools/knowledge-server.mjs`. It ran `dotnet run` before, which built at every session's start, once per
+worktree, failed when two built at once, and refused to start in a terminal with no home. Now
+`npm run knowledge:build` publishes the host into `local/knowledge-server/builds/` when its sources changed,
+and the merge tool runs it once a merge's gates pass. A session started by hand, or a subagent's in a worktree,
+gets that build over a home of its own under `local/knowledge-server/home/` (never the install's, whose store a
+workspace build must not open), serving the main checkout alone (`DAORIS_KNOWLEDGE_REPOSITORY`), its `docs/`
+a section each and its `docs/index/` a row each (`DAORIS_KNOWLEDGE_DOCUMENTS`, `DAORIS_KNOWLEDGE_INDEX`), by
+words only, and re-read once its reading is a minute old. Its instructions say so before the first search.
+A session a driver started keeps the environment it was handed and runs the machine's host first. With no
+build the launcher answers the protocol itself: the handshake says why and lists no tool, and the session
+works as before. Measured on the first build: the first search of a process, which reads the checkout, 1.2
+to 1.7 s for 7,724 entries; each search after it, about 30 ms. A sibling adds an entry naming a published host
+to its own `.mcp.json`, which is that sibling's file to write, as `--install` prints below.
 
-`dotnet run` re-checks the build on each session start. The production shape is the **published
-executable** (D43):
+The production shape is the **published executable** (D43):
 
 ```sh
 npm run publish:service -- --install    # both hosts → $DAORIS_HOME/bin, self-contained single-file
@@ -342,6 +348,9 @@ Configuration is by environment, and every variable is optional — the defaults
 | `DAORIS_HOME` | The Daoris home (D63) — every default below that names a file derives from it. Unset, and with the file's own variable unset too, a host refuses rather than defaulting under the profile |
 | `DAORIS_KNOWLEDGE_ROOT` | Where the repositories are. Default: the folder containing this workspace |
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
+| `DAORIS_KNOWLEDGE_REPOSITORY` | The one checkout a workspace's own server serves (ORIENT1c): the bootstrap registers it alone, and each process re-reads it at its first use and once its reading is a minute old. Not a folder, and a host refuses to start. Unset: the folder of repositories, read once |
+| `DAORIS_KNOWLEDGE_DOCUMENTS` | A repository-relative folder read in each registered checkout, each markdown file split at its headings (ORIENT1c). Unset reads none. One that leaves the repository is refused |
+| `DAORIS_KNOWLEDGE_INDEX` | A repository-relative folder holding a generated index, each table row and list item one entry (ORIENT1c). Unset reads none |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
 | `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
 | `DAORIS_EMBED_WINDOW` | The most characters one embedded text carries, the title included: the deployment's statement of its embedder's window (D123). A longer entry is embedded in pieces this long, each its own vector. Default: `2000`. Below `200`, or not a whole number, and a host refuses to start. Characters only approximate tokens, so leave margin for code and for 中文 |

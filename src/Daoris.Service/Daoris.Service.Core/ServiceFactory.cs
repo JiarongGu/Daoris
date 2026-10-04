@@ -53,7 +53,8 @@ public sealed record ServiceOptions(
     /// <summary>
     /// How old a reading of the one checkout may be before an answer re-reads it (ORIENT1c). A minute: a
     /// session's server lives as long as the session, the checkout is merged into meanwhile, and one
-    /// repository re-read costs about a second, paid at most once a minute by the search that finds it stale.
+    /// repository re-read costs a second or two (1.2 to 1.7 s for this repository's 7,724 entries, measured),
+    /// paid at most once a minute by the search that finds it stale.
     /// </summary>
     public static readonly TimeSpan CheckoutRereadAfter = TimeSpan.FromMinutes(1);
 
