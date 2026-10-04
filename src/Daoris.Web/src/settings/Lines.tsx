@@ -86,12 +86,14 @@ export function LineList({ lines, workspaceLines, busy, onSet }: {
 /**
  * One line's field: what is set, with what would stand without it as the placeholder, and a clear
  * only where something is set — clearing an inherited line would change nothing and say it had.
+ * A repository's Setup gives each value its own *Clear* beside the field (UX6f), so there it carries none.
  */
-function LineField({ label, set, placeholder, busy, onSave }: {
+export function LineField({ label, set, placeholder, busy, clearable = true, onSave }: {
   label: string;
   set?: string;
   placeholder: string;
   busy?: boolean;
+  clearable?: boolean;
   onSave: (branch?: string) => void;
 }) {
   const { t } = useTranslation();
@@ -121,7 +123,7 @@ function LineField({ label, set, placeholder, busy, onSave }: {
       <Button type="submit" disabled={busy || !typed || typed === set}>{t('settings.lines.set')}</Button>
       {/* Always in the row, and hidden where nothing is set: a row that grew a Clear moved its field
           out of the column every other row's field sits in (seen on the window). */}
-      <Button
+      {clearable && <Button
         variant="ghost"
         disabled={busy || set === undefined}
         aria-hidden={set === undefined}
@@ -130,7 +132,7 @@ function LineField({ label, set, placeholder, busy, onSave }: {
         onClick={() => onSave(undefined)}
       >
         {t('settings.lines.clear')}
-      </Button>
+      </Button>}
     </form>
   );
 }

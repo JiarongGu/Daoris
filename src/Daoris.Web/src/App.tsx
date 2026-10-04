@@ -32,6 +32,7 @@ import { MapView } from './MapView';
 import { useSearchView } from './SearchView';
 import { useQuestsView } from './QuestsView';
 import { useProjectsView } from './ProjectsView';
+import { type ProjectTab, readProjectTab, storeProjectTab } from './projects/tabs';
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
@@ -128,6 +129,13 @@ export function App() {
   const [addRequested, setAddRequested] = useState(false);
   // And its *Import a folder…* (D77): the import drawer, which names the workspace it lands in.
   const [importRequested, setImportRequested] = useState(false);
+  // A repository's page's tab (UX6f, D150 §4.2), remembered for the view: a door into a repository's own value names
+  // Setup, so it is held here, where every door is applied.
+  const [projectTab, setProjectTab] = useState<ProjectTab>(readProjectTab);
+  const chooseProjectTab = useCallback((next: ProjectTab) => {
+    setProjectTab(next);
+    storeProjectTab(next);
+  }, []);
   // The repository whose code map a door opened the Map on (MAP3a; FRAME1e): a repository's page names it. The Map
   // goes one level in on it, and back to the workspace from there by its own door.
   const [mapCode, setMapCode] = useState<string | null>(null);
@@ -387,6 +395,7 @@ export function App() {
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
+    if (plan.tab) chooseProjectTab(plan.tab);
     // A door naming a code map opens the Map on it; any other way onto the Map opens the workspace, as it always has.
     if (plan.code !== undefined) setMapCode(plan.code);
     else if (plan.view !== view) setMapCode(null);
@@ -521,6 +530,8 @@ export function App() {
     active: view === 'projects',
     chosen: lists.pane('projects').chosen,
     onChoose: (item) => lists.choose('projects', item),
+    tab: projectTab,
+    onTab: chooseProjectTab,
     notify,
     onOpenCode: (repository) => open('map', null, { code: repository }),
     addRequested,

@@ -2,14 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StandingAnswer } from './StandingAnswer';
 
 // A repository's standing answer on this machine (KNOWUSE1b, D135 §3): the person's words, handed to every session there,
-// on the repository's page under the driver's other choices.
+// a row of the repository's Setup tab (UX6f), its terminal twin as its hint.
 
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
 
 const meta = {
   title: 'Projects/StandingAnswer',
   component: StandingAnswer,
-  args: { says: null, onSave: () => {} },
+  args: { repository: 'engine', says: null, onSave: () => {} },
   decorators: [(Story) => <div className="w-[40rem] max-w-full bg-page p-4"><Story /></div>],
 } satisfies Meta<typeof StandingAnswer>;
 export default meta;

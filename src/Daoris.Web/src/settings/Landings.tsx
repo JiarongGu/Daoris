@@ -110,7 +110,7 @@ export function LandingList({ landings, workspaceLandings, landers = [], busy, o
 }
 
 /** What a draft that accepts automatically does: the plugin that pushes it, or none. Null where it does not. */
-type Accepting = { plugin?: string } | null;
+export type Accepting = { plugin?: string } | null;
 
 type FieldProps = {
   name: string;
@@ -119,27 +119,35 @@ type FieldProps = {
   inherited: LandingRule;
   landers: string[];
   busy?: boolean;
+  /** Whether the control carries its own *Clear*: a repository's Setup gives each value one beside it (UX6f). */
+  clearable?: boolean;
   onSave: (rule?: LandingRule) => void;
 };
 
 /**
- * One rule's row: its control, and beneath it, while the control accepts automatically, the sentence that says what that
- * gives (LAND2a, D145 point 5): the person's standing say-so for a push with no press is said where it is given, and
- * with no plugin, that nothing leaves this machine.
+ * While a rule's control accepts automatically, the sentence that says what that gives (LAND2a, D145 point 5): the
+ * person's standing say-so for a push with no press is said where it is given, and with no plugin, that nothing leaves
+ * this machine.
  */
-function LandingRow({ label, hint, ...field }: { label: ReactNode; hint: string } & FieldProps) {
+export function AcceptingNote({ accepting }: { accepting: Accepting }) {
   const { t } = useTranslation();
+  if (!accepting) return null;
+  return (
+    <p className={cn('m-0 text-small', accepting.plugin ? 'text-ink-soft' : 'text-warn')}>
+      <Inline text={accepting.plugin
+        ? t('settings.landing.autoAcceptSays', { plugin: accepting.plugin })
+        : t('settings.landing.autoAcceptAlone')}
+      />
+    </p>
+  );
+}
+
+/** One rule's row: its control, and beneath it what accepting automatically gives while the control says so. */
+function LandingRow({ label, hint, ...field }: { label: ReactNode; hint: string } & FieldProps) {
   const [accepting, setAccepting] = useState<Accepting>(null);
   return (
     <SettingRow label={label} hint={hint} control={<LandingField {...field} onAccepting={setAccepting} />}>
-      {accepting && (
-        <p className={cn('m-0 text-small', accepting.plugin ? 'text-ink-soft' : 'text-warn')}>
-          <Inline text={accepting.plugin
-            ? t('settings.landing.autoAcceptSays', { plugin: accepting.plugin })
-            : t('settings.landing.autoAcceptAlone')}
-          />
-        </p>
-      )}
+      <AcceptingNote accepting={accepting} />
     </SettingRow>
   );
 }
@@ -149,7 +157,7 @@ function LandingRow({ label, hint, ...field }: { label: ReactNode; hint: string 
  * branch, and a clear only where a rule is set — the row keeps the clear's room either way, so every row's control sits
  * in one column.
  */
-function LandingField({ name, set, inherited, landers, busy, onSave, onAccepting }: FieldProps & {
+export function LandingField({ name, set, inherited, landers, busy, clearable = true, onSave, onAccepting }: FieldProps & {
   /** What the draft accepts automatically through, said beneath the row by its owner. */
   onAccepting: (accepting: Accepting) => void;
 }) {
@@ -250,16 +258,18 @@ function LandingField({ name, set, inherited, landers, busy, onSave, onAccepting
         className="text-small"
       />
       <Button type="submit" disabled={busy || !changed}>{t('settings.landing.set')}</Button>
-      <Button
-        variant="ghost"
-        disabled={busy || set === undefined}
-        aria-hidden={set === undefined}
-        tabIndex={set === undefined ? -1 : undefined}
-        className={cn(set === undefined && 'invisible @max-[26rem]:hidden')}
-        onClick={() => onSave(undefined)}
-      >
-        {t('settings.landing.clear')}
-      </Button>
+      {clearable && (
+        <Button
+          variant="ghost"
+          disabled={busy || set === undefined}
+          aria-hidden={set === undefined}
+          tabIndex={set === undefined ? -1 : undefined}
+          className={cn(set === undefined && 'invisible @max-[26rem]:hidden')}
+          onClick={() => onSave(undefined)}
+        >
+          {t('settings.landing.clear')}
+        </Button>
+      )}
     </form>
   );
 }

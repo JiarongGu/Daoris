@@ -27,9 +27,10 @@ vi.mock('@shenora/react', () => ({
 
 import { code } from './test/code';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, show } from './test/shellHarness';
-import { chooseRepository, ProjectsView, repositoryList, repositoryMain, repositoryRow } from './test/projectsView';
+import { chooseRepository, openSetup, ProjectsView, repositoryList, repositoryMain, repositoryRow } from './test/projectsView';
 
 const CHOSEN = 'daoris.list.projects.chosen';
+const TAB = 'daoris.list.projects.tab';
 
 afterEach(() => window.localStorage.clear());
 
@@ -47,7 +48,8 @@ describe('the shell-attached platform', () => {
 
   it('projects grow the per-machine driver controls, landing on DAORIS.DRIVER', async () => {
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
+    await chooseRepository('engine');
+    const page = await openSetup('Driving');
 
     await userEvent.click(await within(page).findByLabelText('Drive on this machine'));
 
@@ -143,7 +145,8 @@ describe('the shell-attached platform', () => {
 
   it('hold appears only once a repository is drivable — a hold on nothing is noise', async () => {
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
+    await chooseRepository('engine');
+    const page = await openSetup('Driving');
 
     await within(page).findByLabelText('Drive on this machine');
     expect(within(page).queryByLabelText('Hold')).not.toBeInTheDocument();
@@ -152,7 +155,8 @@ describe('the shell-attached platform', () => {
   it('holding a drivable repository lands on DAORIS.DRIVER with its own payload key', async () => {
     invoke.mockImplementation(async () => ({ ...DRIVER_STATE, drivable: ['engine'] }));
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
+    await chooseRepository('engine');
+    const page = await openSetup('Driving');
 
     await userEvent.click(await within(page).findByLabelText('Hold'));
 
@@ -170,7 +174,8 @@ describe('the shell-attached platform', () => {
       ...DRIVER_STATE, standing: [{ repository: 'Engine', says: 'dev writes allowed; prod only on a yes', at: '2026-10-03T09:00:00Z' }],
     }));
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
+    await chooseRepository('engine');
+    const page = await openSetup('Sessions');
 
     expect(await within(page).findByText('dev writes allowed; prod only on a yes')).toBeInTheDocument();
     await userEvent.click(within(page).getByRole('button', { name: 'Edit' }));
@@ -196,9 +201,12 @@ describe('the shell-attached platform', () => {
       ? { lines: [], languages: [{ repository: 'engine', workspace: 'aurora', language: 'zh', name: 'Simplified Chinese (简体中文)', source: 'workspace' }] }
       : { ...DRIVER_STATE, workspaceLanguages: [{ workspace: 'aurora', language: 'zh' }], languageTable: table }));
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
+    await chooseRepository('engine');
+    const page = await openSetup('Sessions');
 
-    expect(await within(page).findByText('Its sessions write to you in Simplified Chinese (简体中文), from the workspace aurora.')).toBeInTheDocument();
+    expect(await within(page).findByText('Simplified Chinese (简体中文), from this workspace.')).toBeInTheDocument();
+    // Its workspace's, so it offers to be set for this repository, which opens the table.
+    await userEvent.click(within(page).getByRole('button', { name: 'Set for this repository' }));
     const field = within(page).getByRole('combobox', { name: 'The session language for engine' });
     field.focus();
     await userEvent.keyboard('{Enter}');
@@ -209,9 +217,12 @@ describe('the shell-attached platform', () => {
   it('offers no session language on a shell older than it', async () => {
     invoke.mockImplementation(async () => DRIVER_STATE);
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('engine');
+    await chooseRepository('engine');
+    const page = await openSetup('Driving');
 
     await within(page).findByLabelText('Drive on this machine');
+    // Neither a language nor a standing answer is answered, so Sessions has nothing to hold and is absent.
+    expect(within(page).queryByRole('button', { name: 'Sessions' })).not.toBeInTheDocument();
     expect(within(page).queryByRole('combobox', { name: 'The session language for engine' })).not.toBeInTheDocument();
   });
 
@@ -242,6 +253,125 @@ describe('the shell-attached platform', () => {
     const page = await chooseRepository('engine');
     const head = within(page).getByRole('heading', { level: 1, name: 'engine' }).closest('header')!;
     expect(within(head).getByText('held')).toBeInTheDocument();
+  });
+});
+
+/**
+ * UX6f (D150 §4.2, §3.1): a repository's setup on its page. Its page is Details and Setup, the tab remembered for the
+ * view; Setup holds its line, how its work lands, whether agents outside it read it, what its sessions also write into and
+ * Claude Code's rules for it, each set over the same file its terminal twin edits, on DAORIS.DRIVER. What only Setup
+ * reads is asked only while Setup shows.
+ */
+describe("a repository's Setup on its page (UX6f)", () => {
+  const LINES = {
+    lines: [{ repository: 'engine', workspace: 'aurora', branch: 'main', source: 'workspace' }],
+    landings: [{ repository: 'engine', workspace: 'aurora', form: 'merge', source: 'default' }],
+    languages: [],
+  };
+  const ACROSS = {
+    repositories: [
+      { repository: 'engine', workspace: 'aurora', checkout: true, read: true, source: 'default', writesTo: [] },
+      { repository: 'game', workspace: 'aurora', checkout: true, read: true, source: 'default', writesTo: [] },
+      { repository: 'tools', workspace: 'forge', checkout: true, read: true, source: 'default', writesTo: [] },
+    ],
+  };
+  const RULES = {
+    path: 'C:/somewhere/data/permissions.json',
+    defaults: [],
+    scopes: [{ scope: 'repository', name: 'engine', allow: ['Bash(npm run test:*)'], ask: [], deny: [] }],
+  };
+  const PLUGINS = {
+    folder: 'C:/somewhere/data/plugins',
+    plugins: [{ id: 'github-pull-request', enabled: true, points: ['work/land'] }],
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'LINES') return LINES;
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'RULES') return RULES;
+      if (type === 'PLUGINS') return PLUGINS;
+      return { ...DRIVER_STATE, drivable: ['engine'], workspaceLines: [{ workspace: 'aurora', branch: 'main' }] };
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('remembers the tab for the view, and asks reading across only while Setup shows', async () => {
+    show(<ProjectsView notify={() => {}} />);
+    await chooseRepository('engine');
+    expect(within(repositoryMain()).getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'ACROSS', expect.anything());
+
+    await openSetup();
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACROSS', expect.anything()));
+    expect(window.localStorage.getItem(TAB)).toBe('setup');
+
+    cleanup();
+    show(<ProjectsView notify={() => {}} />);
+    await screen.findByRole('heading', { level: 1, name: 'engine' });
+    expect(within(repositoryMain()).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it("shows its line on Details read-only, whose door opens Setup at Line and landing", async () => {
+    show(<ProjectsView notify={() => {}} />);
+    const page = await chooseRepository('engine');
+
+    expect(within(page).queryByRole('textbox')).toBeNull();
+    await userEvent.click(await within(page).findByRole('button', { name: 'Change in Setup' }));
+    expect(within(repositoryMain()).getByRole('button', { name: 'Line and landing' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('sets its line and how its work lands, each on DAORIS.DRIVER, and says what changed', async () => {
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseRepository('engine');
+    await openSetup('Line and landing');
+    const work = within(repositoryMain()).getByRole('region', { name: 'Line and landing' });
+
+    const [line, landing] = within(work).getAllByRole('button', { name: 'Set for this repository' });
+    await userEvent.click(line!);
+    await userEvent.type(within(work).getByRole('textbox', { name: 'The line for engine' }), 'develop{Enter}');
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LINE', { payload: { repository: 'engine', branch: 'develop' } });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('In engine, work grows from `develop`')));
+
+    // Every control waits while a change is on its way.
+    await vi.waitFor(() => expect(landing).toBeEnabled());
+    await userEvent.click(landing!);
+    await userEvent.click(within(work).getByRole('radio', { name: 'Branch' }));
+    // The line's field is still open beside it, since this bridge answers the line as its workspace's still.
+    await userEvent.click(within(work).getAllByRole('button', { name: 'Save' }).at(-1)!);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_LANDING', {
+      payload: { repository: 'engine', form: 'branch', pattern: 'feature/{quest}-{slug}' },
+    });
+  });
+
+  it("sets whether agents outside it read it, what its sessions also write into, and removes one of its rules", async () => {
+    show(<ProjectsView notify={() => {}} />);
+    await chooseRepository('engine');
+    // A rule of its own opens Reach on its own, once reading across has answered.
+    await openSetup();
+    const reach = await within(repositoryMain()).findByRole('region', { name: 'Reach' });
+
+    await userEvent.click(within(reach).getByRole('button', { name: 'Set for this repository' }));
+    await userEvent.click(within(reach).getByRole('radio', { name: 'Off' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { repository: 'engine', read: false } });
+
+    const user = userEvent.setup();
+    within(reach).getByRole('combobox', { name: 'let engine write into…' }).focus();
+    await user.keyboard('{Enter}');
+    // Its own workspace's alone: `tools` is another workspace's.
+    expect((await screen.findAllByRole('option')).map((option) => option.textContent)).toEqual(['game']);
+    await user.click(screen.getByRole('option', { name: 'game' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_WRITE_ACROSS', { payload: { repository: 'engine', to: 'game', allow: true } });
+
+    await userEvent.click(within(reach).getByRole('button', { name: 'remove Bash(npm run test:*)' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_ACTION', {
+      payload: { action: 'remove', rule: 'Bash(npm run test:*)', scope: 'repository', name: 'engine' },
+    });
   });
 });
 
@@ -645,7 +775,8 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   it('offers the driving row to one with a root here, landing on DAORIS.DRIVER', async () => {
     machine('claude-code-acp');
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('newbie');
+    await chooseRepository('newbie');
+    const page = await openSetup('Driving');
 
     await userEvent.click(await within(page).findByLabelText('Drive on this machine'));
 
@@ -661,7 +792,8 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   it('says a quest there will sit, on a machine whose door is direct', async () => {
     machine('claude-code');
     show(<ProjectsView notify={() => {}} />);
-    const page = await chooseRepository('newbie');
+    await chooseRepository('newbie');
+    const page = await openSetup('Driving');
 
     expect(await within(page).findByText(DIRECT_NOTE)).toBeInTheDocument();
     expect(within(page).getByLabelText('Drive on this machine')).toBeInTheDocument();
@@ -688,6 +820,8 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     const page = await chooseRepository('elsewhere');
 
     expect(await within(page).findByText('Adoption steps')).toBeInTheDocument();
-    expect(within(page).queryByLabelText('Drive on this machine')).toBeNull();
+    await openSetup();
+    expect(within(repositoryMain()).queryByRole('button', { name: 'Driving' })).toBeNull();
+    expect(within(repositoryMain()).queryByLabelText('Drive on this machine')).toBeNull();
   });
 });

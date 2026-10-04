@@ -48,8 +48,8 @@
       "budget": { "en": 10, "zh": 4 },
       "case": "sentence",
       "keys": [
-        "help.title", "work.panel.title", "work.preview.tab", "work.review.tab", "work.review.timelineTab",
-        "work.timeline.title", "work.views.console", "work.views.terminal"
+        "help.title", "projects.tab.details", "projects.tab.setup", "work.panel.title", "work.preview.tab", "work.review.tab",
+        "work.review.timelineTab", "work.timeline.title", "work.views.console", "work.views.terminal"
       ]
     },
     "section": {
@@ -71,7 +71,7 @@
         "overview.repositories.title", "palette.group.*", "palette.title", "plugin.group.*",
         "plugin.offers.title", "plugin.section.*", "plugin.tests.trial", "plugin.update.title", "projects.group.*",
         "projects.manage.declaration", "projects.manage.wiring", "projects.page.adopt", "projects.page.declaration",
-        "projects.page.machine", "quests.compose.stepLegend",
+        "projects.page.machine", "projects.setup.section.*", "quests.compose.stepLegend",
         "quests.detail.conflicts", "quests.detail.files", "quests.detail.links", "quests.groups.*",
         "quests.session.title", "settings.across.title", "settings.browser.extensions.title",
         "settings.browser.favorites.title", "settings.browser.which.title", "settings.landing.title",
@@ -111,6 +111,7 @@
         "plugin.source.folder", "plugin.update.what.*", "projects.accepts", "projects.driver.*", "projects.fed",
         "projects.language.field", "projects.language.label",
         "projects.line", "projects.manage.summary", "projects.owns", "projects.packs", "projects.page.index", "projects.standing.label",
+        "projects.setup.landing", "projects.setup.line", "projects.setup.read", "projects.setup.rules", "projects.setup.writes",
         "projects.unlandedLabel",
         "projects.workspace", "quests.addressedTo", "quests.compose.bodyLabel", "quests.compose.from",
         "quests.compose.stepBody", "quests.compose.stepTitle", "quests.compose.stepTo",
@@ -197,7 +198,8 @@
         "projects.manage.retire", "projects.manage.retireConfirm", "projects.manage.rewire",
         "projects.manage.writeDeclaration", "projects.list.close", "projects.list.more", "projects.list.open",
         "projects.page.codeMap", "projects.standing.add", "projects.standing.clear", "projects.standing.edit",
-        "projects.standing.save", "quests.card.resume", "quests.compose.addStep",
+        "projects.standing.save", "projects.lineDoor", "projects.setup.clear", "projects.setup.setHere",
+        "quests.card.resume", "quests.compose.addStep",
         "quests.compose.publish", "quests.compose.removeStep", "quests.detail.decline",
         "quests.detail.declineConfirm", "quests.detail.delete", "quests.detail.deleteMeanIt",
         "quests.detail.dismiss", "quests.detail.done", "quests.detail.retry", "quests.detail.take",
@@ -554,6 +556,7 @@
     "names": [
       { "key": "settings.sessionLanguage.inherit", "en": "Its workspace's: {{name}}", "zh": "沿用工作区：{{name}}", "why": "A select's option, not a segmented one: the trigger is as wide as its row's control column and its list as wide as it needs, and the name is the driver's table's (Simplified Chinese (简体中文)), so the choice says which language it takes, not only that it inherits (LANG1c)." },
       { "key": "projects.standing.placeholder", "en": "dev writes allowed; test locally against dev; prod only on a yes", "zh": "允许写入开发环境；在本地对开发环境测试；生产环境须经你同意", "why": "The example in a standing answer's three-row box on a repository's page, which wraps; it is the answer the evidence shows a person gave once and no later session read (KNOWUSE1b), so the example is the whole sentence." },
+      { "key": "projects.setup.setHere", "en": "Set for this repository", "why": "The one control of a Setup row whose value stands from above, alone in its row's control column, which keeps half the row at the main area's width and stacks under the label below 26rem; it says whose the value becomes, which the redesign names it for (UX6f, D150 §4.2)." },
       { "key": "harness.use.mode.goal", "en": "Make the most of them", "why": "A segmented option in Settings → Agents' scope, a row whose control takes its own line below 26rem; the design names it so (D130 §16.6), and a shorter one lost what it promises." },
       { "key": "harness.use.mode.order", "en": "One by one, in order", "why": "The other segmented option beside it, in the same row; the design names it so (D130 §16.6), and both halves of it are the setting." },
       { "key": "harness.use.scope.machine", "en": "This machine's accounts", "why": "A segmented option under a workspace in Settings → Agents, a row whose control takes its own line below 26rem; the design names it so (D130 §9), and *this machine* is the glossary's name." },

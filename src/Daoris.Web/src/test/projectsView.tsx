@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useProjectsView } from '../ProjectsView';
+import { type ProjectTab, readProjectTab, storeProjectTab } from '../projects/tabs';
 import type { Notify } from '../ui';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
@@ -23,11 +24,15 @@ export function ProjectsView({ notify, onOpenCode, addRequested, onAddOpened, im
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f).
+  const [tab, setTab] = useState<ProjectTab>(readProjectTab);
   useDoor(lists, 'projects', door);
   const layout = useProjectsView({
     active: true,
     chosen: lists.pane('projects').chosen,
     onChoose: (item) => lists.choose('projects', item),
+    tab,
+    onTab: (next) => { setTab(next); storeProjectTab(next); },
     notify, onOpenCode, addRequested, onAddOpened, importRequested, onImportOpened,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
@@ -47,5 +52,15 @@ export async function chooseRepository(name: string) {
   const row = await repositoryRow(name);
   await userEvent.click(within(row).getAllByRole('button')[0]!);
   await screen.findByRole('heading', { level: 1, name });
+  return repositoryMain();
+}
+
+/** The chosen repository's Setup tab (UX6f), and a section of it opened where it is folded. */
+export async function openSetup(section?: string) {
+  await userEvent.click(await within(repositoryMain()).findByRole('tab', { name: 'Setup' }));
+  if (section) {
+    const head = await within(repositoryMain()).findByRole('button', { name: section });
+    if (head.getAttribute('aria-expanded') !== 'true') await userEvent.click(head);
+  }
   return repositoryMain();
 }
