@@ -152,6 +152,29 @@ public sealed class PullRequestAskTests : IDisposable
         Assert.DoesNotContain("the plugin says", raw);
     }
 
+    /// <summary>
+    /// PLUGHOOK1c (design §2.1): <i>Ask again</i> with nobody to ask — no plugin pushed the branch and the rule names none — says
+    /// so, starts nothing, and says nothing of a state it never had.
+    /// </summary>
+    [Fact]
+    public async Task Ask_again_with_no_plugin_to_ask_starts_nothing_and_says_why()
+    {
+        var started = 0;
+        var trees = new SessionTrees(_home, new LandingPlugins(_home, start: (_, _, _) =>
+        {
+            started++;
+            return Task.FromResult<IHookChannel>(new Answering([], _ => new PullRequestState(PullRequestStates.Open)));
+        }, clock: () => Now));
+
+        var asked = await trees.AskAgainAsync(_home, Entry("feature/a", "s1"));
+
+        Assert.Equal(0, started);
+        Assert.Equal((PullRequestCodes.NoPlugin, PullRequestWords.NoPlugin), (asked.Code, asked.Why));
+        Assert.False(asked.Answered || asked.Final);
+        Assert.Null(asked.Verdict);
+        Assert.Equal("nothing is kept of its pull request.", PullRequestWords.AskedAgain(asked)[^1]);
+    }
+
     private void Install(string id, IReadOnlyList<string> points)
     {
         var folder = Path.Combine(_home, "plugins", id);

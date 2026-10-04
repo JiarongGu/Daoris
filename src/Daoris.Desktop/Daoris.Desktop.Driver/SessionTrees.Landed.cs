@@ -60,6 +60,12 @@ public sealed record LandedItem(
 
     /// <summary>The latest ask that failed since that answer, where one did (design §2.4).</summary>
     public PullRequestAskFailed? AskFailed { get; init; }
+
+    /// <summary>
+    /// Why this look did not ask about its pull request, where it would have (PLUGHOOK1c, design §2.1): no plugin to ask, the
+    /// plugin not ready, or the occasion's bound reached first. Null where it was asked, was not due, or its work reads on the line.
+    /// </summary>
+    public PullRequestNotAsked? NotAsked { get; init; }
 }
 
 /// <summary>What the clean-up did with one landed branch, in the driver's words.</summary>
@@ -75,7 +81,14 @@ public sealed record SweepDone(IReadOnlyList<SweepResult> Sessions, IReadOnlyLis
 /// <summary>A landed branch's row in words — the terminal's line, and the sentence the screen's row says in its own catalogue.</summary>
 public static class LandedWords
 {
-    public static string Describe(LandedItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
+    /// <summary>
+    /// The row: what proved it or keeps it, and on a row that is kept what its pull request's answer was and why it does not
+    /// clear the branch, or why nothing was asked (PLUGHOOK1c, design §2.5). A row that goes says what proved it, and no more.
+    /// </summary>
+    public static string Describe(LandedItem item) => Proof(item)
+        + (item.Removable ? "" : PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked));
+
+    private static string Proof(LandedItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
     {
         LandedKind.OnLine => $"its pull request reached `{item.Where}`: every file it changed reads there as it left it",
         LandedKind.Merged => $"merged into `{item.Where}`",
@@ -104,13 +117,14 @@ public sealed partial class SessionTrees
         var known = repositories.ToList();
         // The look may remove, so it asks first where git cannot tell, as one occasion over every repository (PLUGHOOK1a, design
         // §2.1 occasion 2); the press asks nothing.
-        await AskStatesAsync(
+        var asked = await AskStatesAsync(
             known.Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root))
                 .Select(each => (each.Root!, each.Repository, RemoteTarget.Workspace(each.Workspace))),
             landedMayGo: true, ct).ConfigureAwait(false);
 
         var sessions = await SweepPlanAsync(known, inUse, ct).ConfigureAwait(false);
         var record = Recorded.All();
+        var config = Config();
         var landed = new List<LandedItem>();
         foreach (var (repository, workspace, root) in known)
         {
@@ -122,10 +136,28 @@ public sealed partial class SessionTrees
                 .Select(item => item.Branch).ToList();
             var judged = await JudgeLandedAsync(root, repository, RemoteTarget.Workspace(workspace), entries, staying, stale: null, ct)
                 .ConfigureAwait(false);
-            landed.AddRange(judged.Select(each => each.Item));
+            // Each row says why its pull request was not asked about, where it would have been (PLUGHOOK1c, design §2.1).
+            landed.AddRange(judged.Select(each => each.Item with { NotAsked = NotAskedOf(each.Item, asked, config) }));
         }
 
         return new(sessions, landed);
+    }
+
+    /// <summary>
+    /// Why an occasion did not ask about a landed row's pull request, where it would have (PLUGHOOK1c, design §2.1): what the
+    /// occasion said of its entry (the plugin not ready, or its bound reached first); else, on a row kept for want of D102's proof
+    /// with nothing final kept, that no plugin pushed it and the rule names none. A row asked about, or not due, says nothing.
+    /// </summary>
+    private PullRequestNotAsked? NotAskedOf(LandedItem item, IReadOnlyList<StateAnswer> asked, DriverConfig config)
+    {
+        var said = asked.LastOrDefault(answer => answer.Answer is null && answer.Failure is PullRequestCodes.Unready or PullRequestCodes.NotAsked
+            && answer.Ask.Entry.GoneAt is null && string.Equals(answer.Ask.Entry.Branch, item.Branch, StringComparison.Ordinal)
+            && string.Equals(answer.Ask.Entry.Repository, item.Repository, StringComparison.OrdinalIgnoreCase));
+        if (said is not null) return new(said.Failure!, said.Sentence ?? said.Failure!);
+        if (item.Kind is not (LandedKind.Differs or LandedKind.Unknown)) return null;
+        if (Recorded.Of(item.Repository, item.Branch) is not { } entry || entry.PullRequestState?.State == PullRequestStates.Completed) return null;
+        var rule = LandingRules.Choose(config, item.Repository, item.Workspace).Rule;
+        return PullRequestAsking.PluginFor(entry, rule) is null ? new(PullRequestCodes.NoPlugin, PullRequestWords.NoPlugin) : null;
     }
 
     /// <summary>

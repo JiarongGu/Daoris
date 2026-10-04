@@ -74,6 +74,8 @@ public sealed class GitBranchesCommandTests
                         Landed = new GitLandedBranch("s-even", Now.AddDays(-3), GitOrigin.InStep)
                         {
                             Quest = "12", Title = "Even", Plugin = "azure", Pushed = true, PullRequest = "https://example.test/pr/7", OriginCommit = Landed,
+                            PullRequestState = new PullRequestState(PullRequestStates.Open) { PullRequest = "https://example.test/pr/7", Plugin = "azure", AskedAt = Now.AddHours(-1) },
+                            PullRequestAskFailed = new PullRequestAskFailed(PluginEvents.Late, "azure", Now.AddMinutes(-30)),
                         },
                     },
                     new GitBranch("feature/15-gone", GitBranchKind.Landed, Landed)
@@ -116,7 +118,10 @@ public sealed class GitBranchesCommandTests
         Assert.Contains("    daoris/s-1a2b3c4d  22222222  2 ahead  session newest (working), quest #21; grew from `feature/12-even`; its tree D:/data/trees/aurora/engine/s-1a2b3c4d\n", said);
         Assert.Contains("    daoris/s-0f0f0f0f  22222222  1 ahead, 3 behind  no session record names its tree; no tree holds it\n", said);
         Assert.Contains("  landed (2)\n", said);
-        Assert.Contains("    feature/12-even  33333333  1 ahead  landed for session s-even, quest #12 \"Even\"; pushed by azure, in step with origin's copy; pull request https://example.test/pr/7\n", said);
+        // PLUGHOOK1c: its pull request's kept state, with when and who answered, and the failed ask beside it.
+        Assert.Contains("    feature/12-even  33333333  1 ahead  landed for session s-even, quest #12 \"Even\"; pushed by azure, in step with origin's copy; "
+            + "pull request https://example.test/pr/7; its pull request: open, as `azure` answered at 2026-10-04 11:00 UTC; "
+            + "asking `azure` again at 2026-10-04 11:30 UTC failed (`late`)\n", said);
         Assert.Contains("    feature/15-gone  33333333  1 ahead  landed for session s-gone; pushed, and gone from origin since\n", said);
         Assert.Contains("  yours (2)\n", said);
         Assert.Contains("    topic  55555555  1 ahead, 4 behind  checked out in D:/scratch/topic\n", said);
@@ -196,9 +201,20 @@ public sealed class GitBranchesCommandTests
 
         var landed = engine.GetProperty("branches")[3].GetProperty("landed");
         Assert.Equal(
-            ["session", "landedAt", "origin", "quest", "title", "plugin", "pushed", "pullRequest", "pushedTip", "originCommit", "originAhead", "originBehind"],
+            ["session", "landedAt", "origin", "quest", "title", "plugin", "pushed", "pullRequest", "pushedTip", "originCommit", "originAhead", "originBehind",
+                "pullRequestState", "pullRequestAskFailed"],
             landed.EnumerateObject().Select(field => field.Name));
         Assert.Equal(GitOrigin.InStep, landed.GetProperty("origin").GetString());
+        // PLUGHOOK1c (D148 point 6): the kept answer whole, as the landing record keeps it, and the failed ask beside it.
+        var state = landed.GetProperty("pullRequestState");
+        Assert.Equal(
+            ["state", "pullRequest", "mergeCommit", "sourceCommit", "target", "how", "at", "message", "plugin", "askedAt"],
+            state.EnumerateObject().Select(field => field.Name));
+        Assert.Equal((PullRequestStates.Open, "azure"), (state.GetProperty("state").GetString(), state.GetProperty("plugin").GetString()));
+        Assert.Equal(["code", "plugin", "at"], landed.GetProperty("pullRequestAskFailed").EnumerateObject().Select(field => field.Name));
+        var gone = engine.GetProperty("branches")[4].GetProperty("landed");
+        Assert.Equal(JsonValueKind.Null, gone.GetProperty("pullRequestState").ValueKind);
+        Assert.Equal(JsonValueKind.Null, gone.GetProperty("pullRequestAskFailed").ValueKind);
         Assert.Equal("origin", engine.GetProperty("branches")[7].GetProperty("kind").GetString());
 
         var old = root.GetProperty("repositories")[1];

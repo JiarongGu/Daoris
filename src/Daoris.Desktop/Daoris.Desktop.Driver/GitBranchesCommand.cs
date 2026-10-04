@@ -217,6 +217,8 @@ public static class GitBranchesCommand
             details.Add($"landed for session {landed.Session}{(landed.Quest is { } quest ? $", quest #{quest}" : "")}{(landed.Title is { } title ? $" \"{title}\"" : "")}");
             details.Add(OriginWords(landed));
             if (landed.PullRequest is { } request) details.Add($"pull request {request}");
+            // PLUGHOOK1c: what its plugin last answered, with when, as kept; the list never asks.
+            if (PullRequestWords.Row(landed.PullRequestState, null, landed.PullRequestAskFailed, null) is { Length: > 0 } kept) details.Add(kept[2..]);
             if (branch.Worktree is { } tree) details.Add($"checked out in {tree}");
         }
         else if (branch.Worktree is { } tree)
@@ -350,6 +352,40 @@ public static class GitBranchesCommand
             writer.WriteString("originCommit", landed.OriginCommit);
             Number(writer, "originAhead", landed.OriginAhead);
             Number(writer, "originBehind", landed.OriginBehind);
+            // PLUGHOOK1c (D148 point 6): the kept answer whole, as the landing record keeps it, and the failed ask beside it.
+            if (landed.PullRequestState is { } kept)
+            {
+                writer.WriteStartObject("pullRequestState");
+                writer.WriteString("state", kept.State);
+                writer.WriteString("pullRequest", kept.PullRequest);
+                writer.WriteString("mergeCommit", kept.MergeCommit);
+                writer.WriteString("sourceCommit", kept.SourceCommit);
+                writer.WriteString("target", kept.Target);
+                writer.WriteString("how", kept.How);
+                writer.WriteString("at", kept.At?.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteString("message", kept.Message);
+                writer.WriteString("plugin", kept.Plugin);
+                writer.WriteString("askedAt", kept.AskedAt == DateTimeOffset.MinValue ? null : kept.AskedAt.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNull("pullRequestState");
+            }
+
+            if (landed.PullRequestAskFailed is { } failed)
+            {
+                writer.WriteStartObject("pullRequestAskFailed");
+                writer.WriteString("code", failed.Code);
+                writer.WriteString("plugin", failed.Plugin);
+                writer.WriteString("at", failed.At.ToString("O", CultureInfo.InvariantCulture));
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNull("pullRequestAskFailed");
+            }
+
             writer.WriteEndObject();
         }
         else

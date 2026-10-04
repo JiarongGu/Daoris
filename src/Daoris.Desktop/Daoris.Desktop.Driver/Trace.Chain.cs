@@ -584,6 +584,12 @@ public sealed record TraceBranch(string Branch, string Tip, DateTimeOffset At)
 
     public string? PullRequest { get; init; }
 
+    /// <summary>What its plugin last answered about its pull request, with when (PLUGHOOK1c, D148 point 6); null where none is kept.</summary>
+    public PullRequestState? PullRequestState { get; init; }
+
+    /// <summary>The latest ask about it that failed since that answer (design §2.4); null where none did.</summary>
+    public PullRequestAskFailed? PullRequestAskFailed { get; init; }
+
     public DateTimeOffset? Gone { get; init; }
 
     /// <summary>What the clean-up proved when it removed it (<see cref="LandedKind"/>).</summary>
@@ -1084,6 +1090,8 @@ internal static partial class TraceChains
         Plugin = landing.Plugin,
         Pushed = landing.Pushed,
         PullRequest = landing.PullRequest,
+        PullRequestState = landing.PullRequestState,
+        PullRequestAskFailed = landing.PullRequestAskFailed,
         Gone = landing.GoneAt,
         RemovedAs = landing.GoneAt is null ? null : landing.RemovedAs,
         RemovedOn = landing.GoneAt is null || landing.RemovedAs is null ? null : landing.RemovedOn,

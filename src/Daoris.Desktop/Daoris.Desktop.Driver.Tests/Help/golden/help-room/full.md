@@ -132,6 +132,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Settings → Workspace → Session branches | `daoris-driver trees clean` |
 | discard a failed or superseded session's branch, with its tree where it is still here | Sessions → the session's review → Discard, while its tree is here | `daoris-driver trees remove <session|branch> [--repository <name>] --force` |
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → Hand to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
+| ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine (Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was last answered) | (no screen yet) | `daoris-driver trees state <session|branch> [--repository <name>]` |
 | choose the agent that answers asks | Settings → AI features | `daoris driver intake <agent>|off` |
 | choose the agent Ask Daoris runs on | Settings → AI features | `daoris driver helper <agent>|off` |
 | choose the agent driven sessions start on | (no screen yet) | `daoris driver adapter <agent>` |
@@ -227,7 +228,7 @@ message when it changed; for anything else on the screen, ask them rather than g
 - Quests held by the person's stop, at the driver's last look: `#q7c8d9e0` (to `console-ui`, session `s8b9c0d1` stopped).
 - Daoris's browser: your Edge; links on the page open in Daoris's browser; other software's extensions refused; favorites https://site.example/board, https://docs.example/.
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
-- Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3), `feature/q4-fourth` in `game` (session `s4`, pushed).
+- Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3; its pull request: completed by squash into `main` on 2026-10-04 13:50 UTC, as `example.lands` answered at 2026-10-04 14:02 UTC), `feature/q4-fourth` in `game` (session `s4`, pushed; asking `example.lands` at 2026-10-04 14:30 UTC failed (`late`)).
 
 ### Workspace `default`
 

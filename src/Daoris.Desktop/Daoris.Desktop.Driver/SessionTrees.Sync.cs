@@ -108,6 +108,18 @@ public sealed record RebaseItem(
     string? GrewFrom, int Commits, string? Detail)
 {
     public bool Replays => Kind == RebaseKind.Replay;
+
+    /// <summary>A landed branch's latest answer about its pull request, as <see cref="LandedItem.State"/> (PLUGHOOK1c, design §2.5).</summary>
+    public PullRequestState? State { get; init; }
+
+    /// <summary>Why that answer does not clear it, as <see cref="LandedItem.StateCode"/>.</summary>
+    public string? StateCode { get; init; }
+
+    /// <summary>The latest ask that failed since that answer, as <see cref="LandedItem.AskFailed"/>.</summary>
+    public PullRequestAskFailed? AskFailed { get; init; }
+
+    /// <summary>Why the look did not ask about its pull request, where it would have, as <see cref="LandedItem.NotAsked"/>.</summary>
+    public PullRequestNotAsked? NotAsked { get; init; }
 }
 
 /// <summary>A repository with a checkout here, and whether it holds a branch of Daoris's (WSR7, D112).</summary>
@@ -238,7 +250,14 @@ public static class SyncWords
             : Of(minutes / (60 * 24), "day"));
     }
 
-    public static string Describe(RebaseItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
+    /// <summary>
+    /// A branch's row: what the press does with it, and on a landed branch what its pull request's answer was and why it does not
+    /// clear it, or why nothing was asked (PLUGHOOK1c, design §2.5), as the clean-up's rows say it.
+    /// </summary>
+    public static string Describe(RebaseItem item) => Replay(item)
+        + (item.Landed ? PullRequestWords.Row(item.State, item.StateCode, item.AskFailed, item.NotAsked) : "");
+
+    private static string Replay(RebaseItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
     {
         RebaseKind.Replay when item.Commits == 0 => $"moves onto `{item.Onto}`: it holds nothing of its own beyond work that reached the line",
         RebaseKind.Replay => $"replays {item.Commits} commit(s) of its own onto `{item.Onto}`" + item.CutBy switch
@@ -317,6 +336,13 @@ public sealed partial class SessionTrees
         var (looked, apart) = await ScopedAsync(repositories, scope ?? SyncScope.Held, ct).ConfigureAwait(false);
         // The network first, a few repositories at a time (WSR7); then each judged in turn, from what it fetched.
         var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
+        // After its fetch, which is where a merge commit first reaches this machine (D109), the look asks where git cannot tell,
+        // as one occasion over every repository it took (PLUGHOOK1c, design §2.1 occasion 3). The press asks nothing, and a look
+        // that fetched nothing has nothing new to ask about.
+        IReadOnlyList<StateAnswer> asked = fetch
+            ? await AskStatesAsync(looked.Select(each => (each.Root, each.Repository, RemoteTarget.Workspace(each.Space))), landedMayGo: true, ct)
+                .ConfigureAwait(false)
+            : [];
         foreach (var ((repository, space, root, _), fetched) in looked.Zip(fetches))
         {
             var workspace = RemoteTarget.Workspace(space);
@@ -327,7 +353,7 @@ public sealed partial class SessionTrees
 
             // What the line will be after the press: origin's tip where the pull moves it, else where it stands.
             var onto = pull.Moves ? pull.To : await OntoAsync(root, line, ct).ConfigureAwait(false);
-            var (judged, gone) = await JudgeBranchesAsync(root, repository, workspace, line, onto, busy, ct).ConfigureAwait(false);
+            var (judged, gone) = await JudgeBranchesAsync(root, repository, workspace, line, onto, busy, ct, asked).ConfigureAwait(false);
             rebases.AddRange(judged.Select(each => each.Item));
             deletes.AddRange(gone);
         }
@@ -731,8 +757,10 @@ public sealed partial class SessionTrees
     /// Every session branch and every recorded landed branch of one repository, judged for the replay onto
     /// <paramref name="onto"/> — and the landed branches whose work reached the line, which go instead.
     /// </summary>
+    /// <param name="asked">The look's asks (PLUGHOOK1c), for each landed row to say why it was not asked; null at the press, which asks nothing.</param>
     private async Task<(List<RebaseJudged> Branches, List<LandedItem> Deletes)> JudgeBranchesAsync(
-        string root, string repository, string workspace, string? line, string? onto, HashSet<string> busy, CancellationToken ct)
+        string root, string repository, string workspace, string? line, string? onto, HashSet<string> busy, CancellationToken ct,
+        IReadOnlyList<StateAnswer>? asked = null)
     {
         var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
         var judged = new List<RebaseJudged>();
@@ -750,9 +778,11 @@ public sealed partial class SessionTrees
 
         // The session branches that stay as they are after the press: a replayed one shares only the line's commits.
         var staying = judged.Where(each => !each.Item.Replays).Select(each => each.Item.Branch).ToList();
+        var config = asked is null ? null : Config();
         foreach (var landed in await JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct).ConfigureAwait(false))
         {
-            var item = landed.Item;
+            // What its pull request's answer was, and why the look did not ask where it would have (PLUGHOOK1c, design §2.5).
+            var item = asked is null ? landed.Item : landed.Item with { NotAsked = NotAskedOf(landed.Item, asked, config!) };
             if (item.Removable || item.Kind == LandedKind.LeanedOn)
             {
                 deletes.Add(item);
@@ -762,7 +792,7 @@ public sealed partial class SessionTrees
             var entry = entries.First(each => each.Branch == item.Branch);
             RebaseItem Left(string kind, int commits = 0, string? detail = null) =>
                 new(repository, workspace, item.Branch, true, kind, line, null, null, null, commits, detail);
-            judged.Add(item.Kind switch
+            var replay = item.Kind switch
             {
                 LandedKind.Differs => await JudgeReplayAsync(
                     root, repository, workspace, item.Branch, landed: true, worktrees.GetValueOrDefault(item.Branch), entry.From, null,
@@ -770,6 +800,10 @@ public sealed partial class SessionTrees
                 LandedKind.CheckedOut => new RebaseJudged(Left(RebaseKind.CheckedOut)),
                 LandedKind.AheadOfRemote => new RebaseJudged(Left(RebaseKind.Pushed, item.Commits)),
                 _ => new RebaseJudged(Left(RebaseKind.Unknown, detail: item.Detail)),
+            };
+            judged.Add(replay with
+            {
+                Item = replay.Item with { State = item.State, StateCode = item.StateCode, AskFailed = item.AskFailed, NotAsked = item.NotAsked },
             });
         }
 

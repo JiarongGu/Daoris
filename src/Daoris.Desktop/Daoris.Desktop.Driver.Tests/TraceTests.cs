@@ -485,6 +485,29 @@ public sealed class TraceTests : IDisposable
         Assert.DoesNotContain("'s rule, naming", Block(older, "session s2"));
     }
 
+    /// <summary>
+    /// PLUGHOOK1c (D148 point 6, design §2.5): a landing reads back with what its plugin last answered about its pull request, with
+    /// when, and a failed ask beside it. The trace reads the kept answer and asks nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_landing_reads_back_with_its_pull_requests_kept_answer()
+    {
+        Machine();
+        var landings = new LandedBranches(_home);
+        var entry = landings.Landing("s2")!;
+        landings.Answered(entry, new PullRequestState(PullRequestStates.Completed)
+        {
+            PullRequest = "https://example.test/pull/7", MergeCommit = new string('a', 40), SourceCommit = new string('b', 40),
+            Target = "main", How = MergeHow.Squash, At = At(11, 0), Plugin = "github", AskedAt = At(11, 2),
+        });
+        landings.AskFailed(landings.Landing("s2")!, new PullRequestAskFailed(PluginEvents.Late, "github", At(11, 30)));
+
+        var (_, said, _) = await TraceAsync(new TraceAsk("s2"));
+
+        Assert.Contains("pull request https://example.test/pull/7; its pull request: completed by squash into `main` on 2026-10-03 11:00 UTC, "
+            + "as `github` answered at 2026-10-03 11:02 UTC; asking `github` again at 2026-10-03 11:30 UTC failed (`late`)", Block(said, "session s2"));
+    }
+
     /// <summary>A service that cannot be read is said, store by store, and a trace that needed it could not: exit 2.</summary>
     [Fact]
     public async Task A_service_that_does_not_answer_is_said_and_the_trace_could_not()

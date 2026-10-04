@@ -322,6 +322,60 @@ public sealed class LandedRecordTests : IDisposable
         Assert.EndsWith("that branch is gone now. Nothing was landed again: its tree is gone.", gone);
     }
 
+    /// <summary>
+    /// PLUGHOOK1c (D148 point 6, design §2.5): the review's sentence, which `trees land --plan` says, reads what the landing's plugin
+    /// last answered about its pull request, with when, and a failed ask beside it. A branch removed on that answer says it once.
+    /// </summary>
+    [Fact]
+    public void The_reviews_sentence_says_what_its_pull_requests_plugin_last_answered()
+    {
+        var asked = At.AddHours(1);
+        var entry = Entry("feature/q1-fix", "s1a2b3c4") with
+        {
+            Plugin = "acme", Pushed = true, PullRequest = "https://example.test/pr/7",
+            PullRequestState = new PullRequestState(PullRequestStates.Open) { Plugin = "acme", AskedAt = asked },
+        };
+        string Say(LandedReview review) => LandedReviewWords.Describe("s1a2b3c4", review);
+
+        Assert.EndsWith("that branch still stands. Its pull request: https://example.test/pr/7, open, as `acme` answered at 2026-09-30 13:00 UTC.",
+            Say(new LandedReview(entry, LandedState.Standing)));
+        Assert.EndsWith("open, as `acme` answered at 2026-09-30 13:00 UTC. Asking `acme` again at 2026-09-30 13:30 UTC failed (`late`).",
+            Say(new LandedReview(entry with { PullRequestAskFailed = new PullRequestAskFailed(PluginEvents.Late, "acme", asked.AddMinutes(30)) }, LandedState.Standing)));
+
+        var squashed = entry with
+        {
+            GoneAt = At.AddDays(1), RemovedAs = LandedKind.OnLine, RemovedOn = "origin/main",
+            PullRequestState = new PullRequestState(PullRequestStates.Completed)
+            {
+                MergeCommit = new string('a', 40), SourceCommit = new string('b', 40), Target = "main", How = MergeHow.Squash, Plugin = "acme", AskedAt = asked,
+            },
+        };
+        Assert.EndsWith("The clean-up removed it once its work read on `origin/main`. Its pull request: https://example.test/pr/7, completed by squash "
+            + "into `main`, as `acme` answered at 2026-09-30 13:00 UTC.", Say(new LandedReview(squashed, LandedState.Gone)));
+        var byAnswer = Say(new LandedReview(squashed with { RemovedAs = LandedKind.PullRequest }, LandedState.Gone));
+        Assert.EndsWith("once its pull request completed, as `acme` answered, and its merge commit read on `origin/main`.", byAnswer);
+        Assert.DoesNotContain("Its pull request:", byAnswer);
+    }
+
+    /// <summary>
+    /// PLUGHOOK1c: `trees state` names a landing by its session or its branch, standing or a trace, the newest first, since a trace's
+    /// pull request may still carry a session branch that stands.
+    /// </summary>
+    [Fact]
+    public void A_landing_is_found_by_its_session_or_its_branch_standing_or_a_trace()
+    {
+        var landings = new LandedBranches(_home);
+        landings.Record(Entry("feature/q1-fix", "s1a2b3c4"));
+        landings.Removed("engine", "feature/q1-fix", LandedKind.OnLine, "origin/main");
+        landings.Record(Entry("feature/q1-fix", "s5e6f7a8") with { LandedAt = At.AddDays(1) });
+        landings.Record(Entry("feature/q1-fix", "s0000000", repository: "game"));
+
+        Assert.Equal(["s1a2b3c4"], landings.FindAll("s1a2b3c4").Select(entry => entry.Session));
+        Assert.Equal(["s5e6f7a8", "s1a2b3c4"], landings.FindAll("feature/q1-fix", "engine").Select(entry => entry.Session));
+        Assert.Equal(["engine", "engine", "game"], landings.FindAll("feature/q1-fix").Select(entry => entry.Repository).Order());
+        Assert.Empty(landings.FindAll("feature/nothing"));
+    }
+
     /// <summary>A tree is gone where its record names none, its folder is not there, or only an empty folder is left (D109 §5).</summary>
     [Fact]
     public void A_tree_is_gone_where_nothing_or_only_an_empty_folder_is_left()

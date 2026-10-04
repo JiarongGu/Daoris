@@ -30,7 +30,11 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
                     _ => "folder",
                 },
             })],
-        Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest))],
+        Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest)
+        {
+            State = entry.PullRequestState,
+            AskFailed = entry.PullRequestAskFailed,
+        })],
         Parked = sources.Parked,
         Held = sources.Held,
         Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
@@ -81,9 +85,12 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         return text.ToString();
     }
 
+    // PLUGHOOK1c: with what its plugin last answered about its pull request, and when, so the helper reads it rather than guess
+    // or ask; asking again is the person's own `trees state`.
     private static string LandedLine(HelpLanded landed) =>
         $"`{landed.Branch}` in `{landed.Repository}` (session `{landed.Session}`, "
-        + (landed.Pushed ? "pushed" + (landed.PullRequest is { } pr ? $", pull request {pr}" : "") : "not pushed") + ")";
+        + (landed.Pushed ? "pushed" + (landed.PullRequest is { } pr ? $", pull request {pr}" : "") : "not pushed")
+        + PullRequestWords.Row(landed.State, null, landed.AskFailed, null) + ")";
 
     private static string PluginLine(HelpPlugin plugin)
     {
@@ -118,7 +125,14 @@ public sealed record HelpPlugin(string Id, bool Enabled, IReadOnlyList<string> P
 }
 
 /// <summary>A branch a landing made here, as the room lists it (WSR5b): by name and session, so a hand-off names one the record holds.</summary>
-public sealed record HelpLanded(string Repository, string Branch, string Session, bool Pushed, string? PullRequest);
+public sealed record HelpLanded(string Repository, string Branch, string Session, bool Pushed, string? PullRequest)
+{
+    /// <summary>What its plugin last answered about its pull request, with when (PLUGHOOK1c, D148 point 6); null where none is kept.</summary>
+    public PullRequestState? State { get; init; }
+
+    /// <summary>The latest ask about it that failed since that answer; null where none did.</summary>
+    public PullRequestAskFailed? AskFailed { get; init; }
+}
 
 public sealed partial record HelpMachine
 {
