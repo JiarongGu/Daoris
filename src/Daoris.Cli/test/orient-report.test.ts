@@ -115,6 +115,25 @@ test('the report gives each branch its line, the totals, and the files read most
   assert.match(text, /^\s+2\s+1 KB\s+docs\/index\/routes\.md$/m);
 });
 
+// ORIENT1c: whether a branch asked the workspace's knowledge server, before its first edit and after.
+test('the asks of the knowledge server are counted, before the first edit and in all, and said for each branch', () => {
+  const asked = transcript([
+    ['mcp__daoris-knowledge__knowledge_search', { query: 'where is the SESSION_GO_ON_NEW handler' }, 'r'.repeat(400)],
+    ['Read', { file_path: 'D:/work/repo/src/a.ts', offset: 90, limit: 30 }, 'q'.repeat(100)],
+    ['Edit', { file_path: 'D:/work/repo/src/a.ts', old_string: 'a', new_string: 'b' }, 'updated'],
+    ['mcp__daoris-knowledge__knowledge_get', { id: 'repo:docs/decisions/D7.md' }, 'p'.repeat(50)],
+    ['mcp__other__tool', {}, 'o'],
+  ]);
+  const summary = tool.summarize(tool.readTranscript(asked), 'branch-c') as Summary & { asks: number; asksBefore: number };
+  assert.equal(summary.asks, 2);
+  assert.equal(summary.asksBefore, 1);
+
+  const text = tool.report([summary, tool.summarize(tool.readTranscript(SESSION), 'branch-a')]);
+  assert.match(text, /^ {2}knowledge server: 2 asks, 1 before the first edit$/m);
+  assert.match(text, /^ {2}knowledge server: 0 asks, 0 before the first edit$/m);
+  assert.match(text, /^knowledge server asked by 1 of 2 branches, 2 asks in all$/m);
+});
+
 test('it runs on transcript files, says which it could not read, and prints JSON when asked', () => {
   const fx = makeFixture('orient-report-run');
   const file = fx.write('a1b2c3.output', SESSION);

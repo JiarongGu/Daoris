@@ -53,7 +53,10 @@
  *    printed after its line (PROC1), so where its time goes is measured at every merge that runs it.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
  *    `--rerun` and the stage read (below).
- * 9. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
+ * 9. Once the gates pass, the knowledge server agents ask is rebuilt from the merged tree when the service's
+ *    sources changed (`tools/knowledge-server.mjs build`, ORIENT1c); one line says so, and a build that fails
+ *    is said and fails nothing.
+ * 10. Nothing is committed. Committing stays the parent's, after it reads the diff and writes the records.
  *
  * ## A fixed gate re-runs alone (GATE4)
  *
@@ -452,6 +455,27 @@ function writeGenerated(root) {
     git(root, ['add', '-A', '--', folder]);
     console.log(`${folder}/: written from the merged tree (${run.stdout.trim().replace(/^[\w-]+: /, '')})`);
   }
+}
+
+// ---------------------------------------------------------------------------------------------------
+// ORIENT1c: the workspace's knowledge server, rebuilt from the merged tree
+
+/** The tool that builds the knowledge server agents ask; a repository without it builds nothing. */
+export const KNOWLEDGE_SERVER = 'tools/knowledge-server.mjs';
+
+/**
+ * Once a merge's gates pass, the knowledge server is rebuilt from the merged tree when the service's sources
+ * changed, so a session started after the merge, in any worktree, runs what main holds and never builds it at
+ * its start. An instrument, not a gate: a build that fails is said and fails nothing, and sessions keep the
+ * build they had.
+ */
+function refreshKnowledgeServer(root) {
+  if (!existsSync(join(root, KNOWLEDGE_SERVER))) return;
+  const run = spawnSync(process.execPath, [KNOWLEDGE_SERVER, 'build'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const last = (text) => (text ?? '').trim().split('\n').filter(Boolean).at(-1) ?? '';
+  console.log(run.status === 0
+    ? `knowledge server: ${last(run.stdout).replace(/^knowledge-server: /, '')}`
+    : `knowledge server: NOT rebuilt, and the merge stands (${last(run.stderr) || last(run.stdout) || `exit ${run.status}`}); npm run knowledge:build says why`);
 }
 
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
@@ -1637,6 +1661,7 @@ async function gateMerge(root, state, plan) {
   }
   const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
   console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(results.length, 'gate')} passed${flakeNote}.`);
+  refreshKnowledgeServer(root);
   const owed = owedLine(skipped);
   if (owed) console.log(owed);
   if (last) {
@@ -1722,6 +1747,7 @@ async function rerunGates(root, options) {
     return 1;
   }
   console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed; ${count(ran.length, 'gate')} run and passed; ${keptNote}.`);
+  refreshKnowledgeServer(root);
   console.log('  Next: read the diff (git diff --cached), write the records, and commit the merge.');
   return 0;
 }
