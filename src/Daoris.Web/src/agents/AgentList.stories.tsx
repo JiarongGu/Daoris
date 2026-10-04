@@ -21,8 +21,8 @@ export default meta;
 type Story = StoryObj<typeof AgentList>;
 
 /**
- * Every agent: Claude Code with two signed-out accounts that hold work, Codex with one, a plugin's agent, and DeepSeek's,
- * not installed, saying so with its Install beside it.
+ * Every agent: Claude Code with two signed-out accounts that hold work, Codex with one, a plugin's agent, and DeepSeek
+ * Harness not installed, saying so with its Install beside it.
  */
 export const Known: Story = {};
 

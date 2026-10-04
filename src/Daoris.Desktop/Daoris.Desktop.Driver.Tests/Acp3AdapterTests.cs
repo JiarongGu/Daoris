@@ -283,7 +283,8 @@ public sealed class Acp3AdapterTests : IDisposable
         { "claude-code", "claude", "CLAUDE_CONFIG_DIR", "Claude Code", "Anthropic" },
         { "claude-code-acp", "claude-agent-acp", "CLAUDE_CONFIG_DIR", "Claude Code", "Anthropic" },
         { "codex-acp", "codex-acp", "CODEX_HOME", "Codex", "OpenAI" },
-        { "dsh", "dsh", "DSH_HOME", "dsh", "DeepSeek" },
+        // AGENTS2: the name its maker publishes it under, since `dsh` beside DeepSeek still read as no DeepSeek agent.
+        { "dsh", "dsh", "DSH_HOME", "DeepSeek Harness", "DeepSeek" },
     };
 
     [Theory]

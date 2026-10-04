@@ -840,7 +840,8 @@ const TWINS: Record<string, { binary: string[]; profileVariable: string; product
   'claude-code-acp': { binary: ['claude-agent-acp'], profileVariable: 'CLAUDE_CONFIG_DIR', product: 'Claude Code', maker: 'Anthropic' },
   codex: { binary: ['codex'], profileVariable: 'CODEX_HOME', product: 'Codex', maker: 'OpenAI' },
   'codex-acp': { binary: ['codex-acp'], profileVariable: 'CODEX_HOME', product: 'Codex', maker: 'OpenAI' },
-  dsh: { binary: ['dsh'], profileVariable: 'DSH_HOME', product: 'dsh', maker: 'DeepSeek' },
+  // AGENTS2: the name its maker publishes it under, since `dsh` beside DeepSeek still read as no DeepSeek agent.
+  dsh: { binary: ['dsh'], profileVariable: 'DSH_HOME', product: 'DeepSeek Harness', maker: 'DeepSeek' },
 };
 
 test('every declared harness is pinned by name, binary, seam, and what a person calls it', () => {

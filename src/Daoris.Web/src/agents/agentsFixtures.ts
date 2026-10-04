@@ -4,8 +4,8 @@ import type { AgentRulesState } from '../settings/AgentRules';
 import { scopeOf } from '../settings/accountsFixtures';
 
 // The Agents place as its stories and molecules' tests hand it (UX6e, D150 §5): the design's machine, three Claude Code
-// accounts of which two read signed out, one cooling, the tool's own sign-in never read; Codex with one account; DeepSeek's
-// dsh not installed; and an agent a plugin declares. Names are neutral, as every fixture's are.
+// accounts of which two read signed out, one cooling, the tool's own sign-in never read; Codex with one account; DeepSeek
+// Harness (`dsh`) not installed; and an agent a plugin declares. Names are neutral, as every fixture's are.
 
 const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -39,7 +39,7 @@ const CODEX: ToolDoor = {
 };
 
 const DSH: ToolDoor = {
-  harness: 'dsh', product: 'dsh', maker: 'DeepSeek', present: false, version: null, wire: 'acp', pinnable: true,
+  harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, version: null, wire: 'acp', pinnable: true,
   problem: '`dsh` is not on this machine\'s PATH — `daoris agent install dsh` installs it', profiles: [], workspaceDefaults: [],
 };
 

@@ -98,7 +98,7 @@ describe('the list', () => {
       claude(),
       { ...claude(), harness: 'claude-code-acp', wire: 'acp', accountOf: 'claude-code' },
       { harness: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI', present: true, wire: 'acp', profiles: [{ name: 'account-1', home: 'c/1', login: 'in' }] },
-      { harness: 'dsh', product: 'dsh', maker: 'DeepSeek', present: false, profiles: [] },
+      { harness: 'dsh', product: 'DeepSeek Harness', maker: 'DeepSeek', present: false, profiles: [] },
     ];
     const rows = agentRows(byTool(doors), { agents: [THREE] });
     expect(rows.map((row) => row.name)).toEqual(['claude-code', 'codex', 'dsh']);
