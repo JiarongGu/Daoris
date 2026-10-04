@@ -122,13 +122,14 @@ Follow the dispatch-subagent skill's subagent half.
      diff of a branch that crossed lanes or touched the steward's records.
    - **The full set is owed before the install is built**, the long halves with it. `publish:desktop`
      refuses a tree no full set passed (`merge-branch --passed`). Run `node tools/merge-branch.mjs --full`
-     on the checkout, or `--full` on the day's last merge; records written after the gates are forgiven.
-     `--force-ungated` is the person's override.
+     on the checkout, or `--full` on the day's last merge. A verdict stands until a path its gate reaches
+     changes (GATE6), and records written after the gates are forgiven; a refusal names each stale gate and
+     the path that made it so. `--force-ungated` is the person's override.
    - On a conflict the tool stops and names the files. Resolve them, `git add` them, then run
      `--continue`. On a failed gate, read that gate's log, then fix it in the merge and run
-     `--rerun <gate>` (it re-runs that gate and any gate not yet run, keeping the other verdicts; it runs
-     a long half only when named), or `--continue` to gate the merge again whole, or run
-     `git merge --abort`.
+     `--rerun <gate>` (it re-runs that gate, any gate not yet run and any whose verdict the fix's paths
+     reach, keeping the other verdicts; outside `--full` it runs a long half only when named), or
+     `--continue` to gate the merge again whole, or run `git merge --abort`.
    - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites its
      paths reach. Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
    - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that
