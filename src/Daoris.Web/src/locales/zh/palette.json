@@ -5,8 +5,5 @@
   "palette.nothing": "没有匹配“{{typed}}”的命令。",
   "palette.ask": "问道衍：“{{typed}}”",
   "palette.placeholderAsk": "你想做什么？也可以直接问道衍。",
-  "palette.open": "命令（Ctrl+K）",
-  "palette.group.go": "前往",
-  "palette.group.do": "操作",
-  "palette.group.work": "会话"
+  "palette.open": "命令（Ctrl+K）"
 }

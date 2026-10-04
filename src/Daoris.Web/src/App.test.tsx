@@ -267,25 +267,29 @@ describe('the shell in a browser, over two workspaces', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora'));
   });
 
-  /** D75: a menu item opens its own domain of Settings; a browser's Agents menu holds only what it may know. */
-  it('the Agents menu opens Settings at the domain it names', async () => {
+  /**
+   * D152 §1: the bar is VS Code's less *Selection*, with *Workspace* in File's place; a browser has no *Terminal* (§3.6).
+   * Its Settings opens at the domain Settings' list remembers (D75), Appearance on a first look.
+   */
+  it('holds six menus in a browser, and Workspace › Settings opens Settings', async () => {
     shell();
-    const user = await openMenu('Agents');
-    await screen.findByRole('menuitem', { name: "AI features" });
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(["AI features"]);
+    const bar = await screen.findByRole('navigation', { name: 'Menu bar' });
+    expect(within(bar).getAllByRole('button').map((button) => button.textContent)).toEqual(
+      ['Workspace', 'Edit', 'View', 'Go', 'Run', 'Help']);
 
-    await user.click(screen.getByRole('menuitem', { name: "AI features" }));
+    const user = await openMenu('Workspace');
+    await user.click(await screen.findByRole('menuitem', { name: /^Settings/ }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    expect(within(domains).getByRole('button', { name: "AI features" })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
   });
 
   /**
-   * SETUP1a (D97): the Daoris menu's *Set up Daoris* opens Get started — a browser's too, holding the one
-   * step a browser can know, and saying the rest is the desktop's.
+   * SETUP1a (D97): Help › *Setup* opens the guide — a browser's too, holding the one step a browser can know, and saying
+   * the rest is the desktop's. It was the Daoris menu's until D152 (the design §3.7).
    */
-  it('the Daoris menu sets Daoris up, opening Get started', async () => {
+  it('Help › Setup opens the setup guide', async () => {
     shell();
-    const user = await openMenu('Daoris');
+    const user = await openMenu('Help');
 
     await user.click(await screen.findByRole('menuitem', { name: 'Setup' }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
@@ -294,12 +298,43 @@ describe('the shell in a browser, over two workspaces', () => {
     expect(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).toHaveTextContent('done');
   });
 
-  /** REV3 web-rest F14: a window is the shell's to open, so a browser's View menu offers none. */
-  it('the View menu offers a browser the palette and no window', async () => {
+  /** REV3 web-rest F14: a window is the shell's to open, so a browser's View menu offers none; Theme opens to its side. */
+  it('the View menu offers a browser the palette and no window, and sets the theme', async () => {
     shell();
-    await openMenu('View');
-    await screen.findByRole('menuitem', { name: 'Commands' });
+    const user = await openMenu('View');
+    await screen.findByRole('menuitem', { name: /^Commands/ });
     expect(screen.queryByRole('menuitem', { name: 'Monitor window' })).toBeNull();
+
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    screen.getByRole('menuitem', { name: 'Theme' }).focus();
+    await user.keyboard('{ArrowRight}');
+    await user.click(await screen.findByRole('menuitemradio', { name: 'Dark' }));
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
+    act(() => { document.documentElement.removeAttribute('data-theme'); });
+    window.localStorage.removeItem('daoris.theme');
+  });
+
+  /** D152 §3.6: a browser's Go holds its places with no keys, since a browser keeps Ctrl+1–8 for its tabs. */
+  it('Go opens a place, with no key printed in a browser', async () => {
+    shell();
+    const user = await openMenu('Go');
+    const quests = await screen.findByRole('menuitem', { name: 'Quests' });
+    expect(quests).not.toHaveTextContent('Ctrl+3');
+    expect(screen.queryByRole('menuitem', { name: /Sessions/ })).toBeNull();
+
+    await user.click(quests);
+    const places = screen.getByRole('navigation', { name: 'Views' });
+    await waitFor(() => expect(within(places).getByRole('button', { name: /^Quests/ })).toHaveAttribute('aria-current', 'page'));
+  });
+
+  /** D152 §3.4: Ctrl+, opens Settings, a browser included, and Ctrl+N is a browser's own, so it is left alone there. */
+  it('answers Ctrl+, in a browser, and leaves Ctrl+N to the browser', async () => {
+    shell();
+    await screen.findByRole('navigation', { name: 'Menu bar' });
+
+    expect(fireEvent.keyDown(window, { key: 'n', code: 'KeyN', ctrlKey: true })).toBe(true);
+    expect(fireEvent.keyDown(window, { key: ',', code: 'Comma', ctrlKey: true })).toBe(false);
+    expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeInTheDocument();
   });
 
   /**
@@ -333,6 +368,42 @@ describe('the shell in a browser, over two workspaces', () => {
       expect(within(screen.getByRole('main')).getByRole('region', { name: 'Conflicts' })).toBeInTheDocument();
     } finally {
       SYNC = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
+      QUESTS = [];
+    }
+  });
+
+  /**
+   * D152 §2: Run's *This quest* reads the quest open on Quests, enabled exactly as its header offers each act, and runs
+   * the header's own press; with no quest open its acts keep their place, disabled.
+   */
+  it('Run › This quest runs the open quest\'s header acts, and keeps them in place, off, with none open', async () => {
+    QUESTS = [{
+      id: 'q9a8b7', from: 'engine', to: 'studio', title: 'Cap the frame budget', body: 'why', status: 'Open',
+      filed: '2026-09-24T09:00:00Z', updated: '2026-09-24T10:00:00Z', workspace: 'aurora',
+    }];
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input).endsWith('/respond') && init?.method === 'POST'
+        ? Response.json({ quest: { ...(QUESTS[0] as object), status: 'Taken' }, message: 'Taken.' })
+        : respond(String(input))));
+    try {
+      shell();
+      let user = await openMenu('Run');
+      expect(await screen.findByRole('menuitem', { name: 'Take' })).toHaveAttribute('aria-disabled', 'true');
+      await user.keyboard('{Escape}');
+
+      window.localStorage.setItem('daoris.list.quests.chosen', 'q9a8b7');
+      await user.click(within(screen.getByRole('navigation', { name: 'Views' })).getByRole('button', { name: /^Quests/ }));
+      await screen.findByRole('heading', { level: 1, name: 'Cap the frame budget' });
+
+      user = await openMenu('Run');
+      expect(screen.getByText('This quest')).toBeInTheDocument();
+      const take = await screen.findByRole('menuitem', { name: 'Take' });
+      expect(take).not.toHaveAttribute('aria-disabled');
+      expect(screen.getByRole('menuitem', { name: 'Mark done' })).not.toHaveAttribute('aria-disabled');
+      await user.click(take);
+      await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) =>
+        String(url).endsWith('/api/quests/q9a8b7/respond') && (init as RequestInit | undefined)?.method === 'POST')).toBe(true));
+    } finally {
       QUESTS = [];
     }
   });

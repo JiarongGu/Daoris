@@ -69,7 +69,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const { lists: held, listMode: mode } = latest.current;
-      if (frameShortcut(event) !== 'list' || !mode) return;
+      if (frameShortcut(event) !== 'view.list' || !mode) return;
       event.preventDefault();
       const next = listToggled({ mode });
       held.setClosed('monitor', next.closed);

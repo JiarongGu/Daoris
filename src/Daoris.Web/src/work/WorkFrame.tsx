@@ -24,6 +24,7 @@ import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
 import { Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import type { FrameIntent } from '../commands';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
@@ -170,10 +171,11 @@ export function WorkFrame({
    */
   onAnswerAsk?: (ask: string) => void;
   /**
-   * What the command palette asked for (SURF9) — an event, consumed on arrival, because leaving it
-   * set would reopen the drawer every time anything here re-rendered.
+   * What a menu, the palette or a key asked for (SURF9, UX7a) — an event, consumed on arrival, because leaving it
+   * set would reopen the drawer every time anything here re-rendered: a start, a review, the attended session's
+   * answer, a region's view, a new terminal, or *Archive what ended…*.
    */
-  intent?: 'start' | 'review' | null;
+  intent?: FrameIntent | null;
   onIntentTaken?: () => void;
   /**
    * Ask Daoris, as a tab of the right dock: one right region, as VS Code's chat is a view of its secondary side bar, never a
@@ -728,7 +730,7 @@ export function WorkFrame({
   if (intent && intent !== taken) {
     setTaken(intent);
     if (intent === 'start') setStarting(true);
-    else openView('review');
+    else if (intent === 'review') openView('review');
   }
   if (!intent && taken) setTaken(null);
 
@@ -917,6 +919,34 @@ export function WorkFrame({
     } : {}),
   };
   const actions = useSessionActs({ notify, doors });
+
+  // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
+  // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
+  // attending and opening a terminal reach past this render; the parent is told it was taken by the effect below it.
+  useEffect(() => {
+    switch (intent) {
+      case 'answer':
+        if (attended) doors.answer?.(attended.id);
+        return;
+      case 'timeline':
+      case 'console':
+        openView(intent);
+        return;
+      case 'terminal':
+        if (terminal) openView('terminal');
+        return;
+      case 'newTerminal':
+        if (!terminal) return;
+        terminals.open({ cwd: terminalCwd });
+        openView('terminal');
+        return;
+      case 'archiveEnded':
+        setArchivingEnded(true);
+        return;
+      default:
+    }
+    // Only a new ask; what the frame holds is read, not watched.
+  }, [intent]);
 
   // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
   const grouping = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
