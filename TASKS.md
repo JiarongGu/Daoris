@@ -69,13 +69,6 @@ running them again.
   - **c** — the knowledge server for agents from a built binary, indexing this repository's own documents.
   - **d** — `tools/orient-report.mjs`: calls and bytes before the first edit per branch, from its transcript.
   Proof: d's report before and after a and b, with the target of halving both.
-- [ ] **GATE5 — a merge skips the long halves; they run once before the install is staged** (tools; owner, 2026-10-04:
-  *"didn't we discuss that we should make the test gate or review gate smaller for this long-running development"*).
-  GATE3's lane table still sends any driver change through the real-process halves and the deployment rehearsal, 30 to
-  70 minutes a merge. A merge runs the baseline, the fast halves of the suites its lanes reach, the web gate and the
-  release and family rehearsals it reaches; the Process halves and the deployment rehearsal run only in `--full`, which
-  `publish:desktop` already requires (first done by hand, merging integrate-al). Contract: GATE3, D115's note, MOD8.
-  Proof: the plan's gate list for a driver change; `--full` still naming every gate.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
@@ -139,6 +132,17 @@ Order: PLUGUI1c, then f and g; FRAME1i, then PLUGUI1h. Each is looked at on the 
 KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
 3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
 
+- [ ] **ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris** (design first;
+  canon, driver, service; owner, 2026-10-04: *"so this should also apply to the repositories Daoris drives too, and an
+  even better knowledge system since Daoris is there"* · *"and it should not break the general workflow if the system
+  running the code does not have Daoris (this is for sharing repositories)"*). ORIENT1 measured the cost here; a driven
+  session pays it in every repository. The floor is committed files that any agent on any machine reads (D48 §2a): a
+  generated index of where things are and a digest of the repository's decisions and knowledge, kept fresh by the
+  repository's own check; the canon teaches the principle and leaves the mechanism to the repository; the set-up session
+  writes both in the repository's own tooling (D124, D128). Where Daoris is present the knowledge service indexes them
+  too, the deployment may turn on the semantic tier (D24), and driven sessions are handed the search; without Daoris
+  nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
+  after.
 - [ ] **KNOWUSE2b — the 46 through the bench** (the owner's). The 46 go through the floor against the work repository's
   own knowledge and through the model tier on the install's harness, with the account the owner chooses. KNOWUSE3 waits
   until the count answered in the person's place is zero. Contract: D135 §6 and its KNOWUSE2 note, whose command lines

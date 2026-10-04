@@ -11,8 +11,9 @@
  *
  * Every merge ran all of it, and that became the cost (GATE3, 2026-10-04): the driver's real-process half
  * took 30, 48 and 126 minutes on one day's three integrations, and everything else about 25. So a merge
- * now runs the gates its changed paths can reach, by the lane table below (`REACH`), and the lesson of
- * that batch is kept in two places. The table is held by tests to what each suite reads and what each
+ * now runs the gates its changed paths can reach, by the lane table below (`REACH`), and never the long
+ * ones (GATE5: the real-process halves and the deployment rehearsal, which any driver change still
+ * reached), which only the full set runs. The lesson of that batch is kept in two places. The table is held by tests to what each suite reads and what each
  * rehearsal runs, so a skipped gate is one that could not see the change. And the full set still runs
  * before the install is built: `publish:desktop` refuses a tree no full set passed (`--passed` below),
  * the same day, so a table that is wrong is caught before the person runs the build.
@@ -39,10 +40,12 @@
  *    declared ones, so the declaration's last gate, the deployment rehearsal, ends the run. That rehearsal
  *    starts after `dotnet build-server shutdown`: on 2026-09-30 a long-lived build server carried a broken
  *    environment into a publish.
- *    Of the plan, a merge runs the baseline (`BASELINE`: the universal gates, the code map and the CLI's
- *    `verify`, at every merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
- *    places runs every gate, and so does a gate the table never names. The lines before the run say why
- *    each gate runs or is skipped. `--full` runs the whole plan.
+ *    Of the plan, a merge runs the baseline (`BASELINE`: the universal gates, the code map, the orientation
+ *    index's check and the CLI's `verify`, at every merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
+ *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
+ *    never run by a merge, reached or not: it says it is in the full set before staging. The lines before
+ *    the run say why each gate runs or is skipped. `--full` runs the whole plan, and `--rerun` runs a long
+ *    gate when it is named.
  * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
  *    beside and renamed when the gate ends, and one line per gate says its result and that file. The
  *    first failing gate stops the run (`--keep-going` runs the rest), and what did not run is named. A
@@ -152,6 +155,13 @@ export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
  * and one did (a landing plugin's and a protocol chat's flakes read as plain failures).
  */
 export const isProcessGate = (gate) => /process\.runsettings/.test(gate.run);
+
+/**
+ * The long gates (GATE5): the real-process halves and the deployment rehearsal, which took 30 to 70 minutes
+ * of a merge between them. A merge never runs one; the full set does, and a stage requires it. Named by
+ * what they run, as `isProcessGate` is, so a renamed gate or a new Process half is still one.
+ */
+export const isLongGate = (gate) => isProcessGate(gate) || /\brehearse:deploy\b/.test(gate.run);
 
 export const USAGE = [
   'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]',
@@ -456,9 +466,11 @@ function ruleFor(path, rules, lanes) {
 const andMore = (paths) => `${paths[0]}${paths.length > 1 ? ` and ${paths.length - 1} more` : ''}`;
 
 /**
- * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order: the
- * baseline; each gate a changed path's rule names; every gate when a path has no rule, or `full`; and a
- * gate no rule names at all. `unplaced` is the paths no rule placed.
+ * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order. A gate is
+ * `reached` when it is the baseline, a changed path's rule names it, a path has no rule, or no rule names
+ * the gate at all. A merge runs what is reached but the long gates (GATE5), which say they are in the full
+ * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
+ * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
 export function selectGates(plan, changed, { lanes = [], full = false, reach = REACH } = {}) {
   const names = new Set(plan.map((gate) => gate.name));
@@ -477,17 +489,21 @@ export function selectGates(plan, changed, { lanes = [], full = false, reach = R
       reachedBy.get(gate).paths.push(path);
     }
   }
-  const gates = plan.map((gate) => {
-    if (BASELINE.includes(gate.name)) return { gate, run: true, why: 'runs at every merge' };
-    if (full) return { gate, run: true, why: '--full runs every gate' };
-    if (unplaced.length) return { gate, run: true, why: `everything runs: no rule of the lane table places ${andMore(unplaced)}` };
+  const reachOf = (gate) => {
+    if (unplaced.length) return { reached: true, why: `everything runs: no rule of the lane table places ${andMore(unplaced)}` };
     const by = reachedBy.get(gate.name);
-    if (by) {
-      const label = by.rule.lane ? `${by.rule.lane}: ` : '';
-      return { gate, run: true, why: `${andMore(by.paths)} (${label}${by.rule.why})` };
+    if (by) return { reached: true, why: `${andMore(by.paths)} (${by.rule.lane ? `${by.rule.lane}: ` : ''}${by.rule.why})` };
+    if (!named.has(gate.name)) return { reached: true, why: 'the lane table does not name it, so it runs at every merge' };
+    return { reached: false, why: 'no changed path reaches it' };
+  };
+  const gates = plan.map((gate) => {
+    if (BASELINE.includes(gate.name)) return { gate, run: true, reached: true, why: 'runs at every merge' };
+    const { reached, why } = reachOf(gate);
+    if (full) return { gate, run: true, reached, why: '--full runs every gate' };
+    if (isLongGate(gate)) {
+      return { gate, run: false, reached, why: `in the full set before staging${reached ? `; ${why.replace(/^everything runs: /, '')}` : ''}` };
     }
-    if (!named.has(gate.name)) return { gate, run: true, why: 'the lane table does not name it, so it runs at every merge' };
-    return { gate, run: false, why: 'no changed path reaches it' };
+    return { gate, run: reached, reached, why };
   });
   return { gates, unplaced };
 }
@@ -1581,7 +1597,7 @@ function runRecorded(root, gates, dir, { keepGoing = false, branch = null, onRes
 
 /** The line that ends a merge's run with gates skipped: the full set is still owed before a stage. */
 const owedLine = (skipped) => (skipped
-  ? `  ${count(skipped, 'gate')} of the plan skipped by the lane table; the full set runs before the install is staged (${FULL_COMMAND}, or --full on a merge).`
+  ? `  ${count(skipped, 'gate')} of the plan skipped; the full set runs before the install is staged (${FULL_COMMAND}, or --full on a merge).`
   : null);
 
 async function gateMerge(root, state, plan) {

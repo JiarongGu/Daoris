@@ -10967,3 +10967,16 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `DriverCommandTests`, `HelpCoverageTests`, `GitBranchesReadTests`, the sync's git fixtures.
 
 **Outcome** 2026-10-04: built. `daoris-driver trees state` asks a landed branch's plugin again; bringing up to date asks after its fetch; the kept answer reads on the clean-up's and sync's rows, `trees land --plan`, `git branches` (with `pullRequestState` in `--json`), `trace` and Ask Daoris's room, and a row says why nothing was asked. Four occasions, held by `PullRequestOccasionTests`. Detail: D148's PLUGHOOK1c note, `dde2b10e`, `764fdd64`.
+
+
+## GATE5 — a merge skips the long halves; they run once before the install is staged (2026-10-04)
+
+> - [ ] **GATE5 — a merge skips the long halves; they run once before the install is staged** (tools; owner, 2026-10-04:
+> *"didn't we discuss that we should make the test gate or review gate smaller for this long-running development"*).
+> GATE3's lane table still sends any driver change through the real-process halves and the deployment rehearsal, 30 to
+> 70 minutes a merge. A merge runs the baseline, the fast halves of the suites its lanes reach, the web gate and the
+> release and family rehearsals it reaches; the Process halves and the deployment rehearsal run only in `--full`, which
+> `publish:desktop` already requires (first done by hand, merging integrate-al). Contract: GATE3, D115's note, MOD8.
+> Proof: the plan's gate list for a driver change; `--full` still naming every gate.
+
+**Outcome** 2026-10-04: built. A merge runs the baseline, the fast suites and the release, family and web gates its paths reach, never the Process halves or the deployment rehearsal; those run only with `--full`, which a stage still requires (`--passed`). `--rerun` runs a long gate when named. A driver-only change went from 9 gates to 6, none of them long. Detail: D115's GATE5 note, the parallel design §3, `82fa070c`.
