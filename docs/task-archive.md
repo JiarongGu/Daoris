@@ -11056,3 +11056,13 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > after.
 
 **Outcome** 2026-10-04: designed (D151). Every driven repository keeps a generated folder of where things are (a README, up to four lookup tables, outlines of large files, a decisions digest), written and checked by its own tooling so a clone without Daoris works; the canon changes three on-demand files and no always-loaded byte; the set-up publishes an index quest; where Daoris runs the service indexes it and hits name their lines, with the semantic tier per deployment and words-only answering with none. Build rows ORIENT2a–g; ORIENT1e reads the before from driven sessions' typed events. Detail: `docs/2026-10-04-orientation-everywhere-design.md`, D151.
+
+
+## ORIENT1e — the orientation report reads a Daoris home (2026-10-04)
+
+> - [ ] **ORIENT1e — the orientation report reads a Daoris home** (tools). Driven sessions are kept as typed events, not
+> harness transcripts. `--home <dir>` reads each quest session's `.events.jsonl` (named by `session.started`), finds
+> its first edit inside its tree, and splits each repository at the commit that landed its index. Contract: design §5,
+> D151 §7. Proof: fixtures from both doors; the before.
+
+**Outcome** 2026-10-04: built. `orient-report --home <dir> [--repository] [--since] [--json]` reads each driven session's typed events (never the rendered log, never an account's home): calls before the first edit by kind, characters read where events carry them (unknown said, never zero), whole versus ranged reads, index reads, shell searches and dumps; per repository, workspace and all, the median editing session, opening the index first, parks and the files read most. A test holds the driver's spellings it depends on. Detail: commit `ebdbb10a`.
