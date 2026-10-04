@@ -10980,3 +10980,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Proof: the plan's gate list for a driver change; `--full` still naming every gate.
 
 **Outcome** 2026-10-04: built. A merge runs the baseline, the fast suites and the release, family and web gates its paths reach, never the Process halves or the deployment rehearsal; those run only with `--full`, which a stage still requires (`--passed`). `--rerun` runs a long gate when named. A driver-only change went from 9 gates to 6, none of them long. Detail: D115's GATE5 note, the parallel design §3, `82fa070c`.
+
+
+## PLUGTOOL1a — a plugin's manifest declares its tools (2026-10-04)
+
+> - [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver; §7.2–§7.3).
+
+**Outcome** 2026-10-04: built. `tools` in `plugin.json` is read by both twins by one table (`PluginToolsTests` ⇄ `plugin-tools.test.ts`), each entry an id, a range, why and at most four checks; a problem is shown on the plugin, never a refusal; `daoris plugin list` names the tools; `plugins try` finds each tool (a known one by its way in Tools, never PATH), asks its version against the range and runs its checks, each in its own step, before the handshake; `plugins new` writes `tools: []`. Detail: D150's PLUGTOOL1a note, `3a07e5e2`, `4ec26665`.

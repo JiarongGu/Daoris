@@ -110,6 +110,10 @@ repository names one, and a scratch run redirects it with everything else.
   session may call is its permission rules — Daoris's scopes handed at spawn and the repository's own,
   a deny winning (D72, which amended "the repository's allow-list" here).
 
+- *(D150, PLUGTOOL1a)* **`tools`** names the programs the plugin's process runs: each an `id`, a range of
+  `versions`, `for` (why it runs it) and at most four `ready` checks. A problem there never refuses the plugin, and a tool
+  is found and checked only at a trial or on a press. `docs/2026-10-04-ux6-redesign.md` §7.2 is its table.
+
 A plugin with only `harnesses` never runs anything — it is Yaorin's `definitions: true`, and most
 plugins will be that.
 
@@ -242,8 +246,8 @@ driver's, not the canon's: it knows this build's points and frames, which no oth
 **`new`** writes `<folder>/<id>/`, refusing a name that is not an id, a point this build lacks, a
 folder that is not there and a folder that holds anything, and installs nothing. The folder holds:
 
-- `plugin.json`: the id, `apiVersion`, a name from the id, and `hooks` naming `node ${plugin}/plugin.mjs`
-  and the points;
+- `plugin.json`: the id, `apiVersion`, a name from the id, `hooks` naming `node ${plugin}/plugin.mjs`
+  and the points, and `tools: []` *(D150, PLUGTOOL1a: `try` checks each tool declared there)*;
 - `plugin.mjs`: the wire, answering the handshake with the declared points it listens on, one handler
   per point that already answers in the right shape, a refusal (`-32603`) for a handler that throws,
   `-32601` for a request it does not know, and `shutdown`. A landing plugin's also carries `run()`,

@@ -53,6 +53,15 @@ public sealed record PluginManifest(
     string? Icon = null,
     string? IconProblem = null)
 {
+    /// <summary>
+    /// The tools its process runs (PLUGTOOL1a, D150 point 7; the UX6 design §7.2), each read or saying its first problem.
+    /// None for a refused plugin. <see cref="PluginToolChecks"/> finds and checks them, only at a trial or a press.
+    /// </summary>
+    public IReadOnlyList<PluginTool> Tools { get; init; } = [];
+
+    /// <summary>Why <c>tools</c> as a whole is not read, when it is not an array; never a reason to refuse the plugin.</summary>
+    public string? ToolsProblem { get; init; }
+
     /// <summary>The manifest of a plugin nothing can be taken from: an id, and nothing else.</summary>
     public static PluginManifest Empty(string id) => new(id, PluginCatalog.ApiVersion, id, "", "", [], null, []);
 }
@@ -88,7 +97,8 @@ public sealed record PluginEntry(
 /// A plugin adds; it never replaces.</para>
 ///
 /// <para>The CLI's <c>plugins.ts</c> is this class's twin and reads the same folder by the same rules;
-/// they share no code and move together.</para>
+/// they share no code and move together. Two fields have readers of their own, each held by its table: the icon
+/// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin.</para>
 /// </remarks>
 public sealed class PluginCatalog
 {
@@ -215,9 +225,10 @@ public sealed class PluginCatalog
                 }
             }
 
-            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server. Its icon stays: it is how the
-            // person recognises the plugin the sentence is about, never something the plugin contributes (D140 §3.1).
-            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [] };
+            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run
+            // (PLUGTOOL1a). Its icon stays: it is how the person recognises the plugin the sentence is about, never something
+            // the plugin contributes (D140 §3.1).
+            if (problem is not null) manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Tools = [], ToolsProblem = null };
 
             entries.Add(new(manifest, folder, Path.Combine(root, DataFolder, manifest.Id), enabled, problem));
         }
@@ -448,6 +459,11 @@ public sealed class PluginCatalog
                 ? PluginIcon.Declared(declaredIcon)
                 : (null, null);
 
+            // Its tools, after: a tool's problem is that tool's sentence and never refuses the plugin (D150 point 7).
+            var (tools, toolsProblem) = root.TryGetProperty("tools", out var declaredTools)
+                ? PluginTools.Read(declaredTools)
+                : ([], null);
+
             return (new PluginManifest(
                 id,
                 apiVersion,
@@ -458,7 +474,11 @@ public sealed class PluginCatalog
                 hooks,
                 servers,
                 icon,
-                iconProblem), null);
+                iconProblem)
+            {
+                Tools = tools,
+                ToolsProblem = toolsProblem,
+            }, null);
         }
     }
 

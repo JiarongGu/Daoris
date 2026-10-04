@@ -41,9 +41,10 @@ public static class PluginKitCommand
                 default:
                     output.WriteLine(Usage);
                     output.WriteLine("  new writes a plugin's folder — a manifest, a wire script answering each point, its wire");
-                    output.WriteLine("  test and a README — into a new or empty folder, and installs nothing. try starts a plugin");
-                    output.WriteLine("  as the driver would, speaks the handshake, a frame at each point and the shutdown, and");
-                    output.WriteLine($"  checks every answer. Points: {string.Join(", ", PluginKit.Points.Select(point => point.Name))}.");
+                    output.WriteLine("  test and a README — into a new or empty folder, and installs nothing. try checks each tool");
+                    output.WriteLine("  the manifest declares, starts the plugin as the driver would, speaks the handshake, a frame");
+                    output.WriteLine("  at each point and the shutdown, and checks every answer.");
+                    output.WriteLine($"  Points: {string.Join(", ", PluginKit.Points.Select(point => point.Name))}.");
                     return 2;
             }
         }
