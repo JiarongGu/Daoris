@@ -80,6 +80,21 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
 
         Assert.True(rows["claude-code"]);      // stream-json, read by its adapter (CONV3a)
         Assert.True(rows["claude-code-acp"]);  // the protocol door
+    }
+
+    /// <summary>
+    /// UX6e (D150 §5.1): an agent's page has *What it may do* only where Daoris hands its agent the rules file at spawn,
+    /// which is the adapter's to say: Claude Code's two doors take it, and an agent the rules mean nothing to does not.
+    /// </summary>
+    [Fact]
+    public async Task The_roster_says_which_doors_are_handed_the_rules()
+    {
+        var rows = (await AnswerAsync(Module(), "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .ToDictionary(h => h.GetProperty("harness").GetString()!, h => h.GetProperty("takesRules").GetBoolean());
+
+        Assert.True(rows["claude-code"]);
+        Assert.True(rows["claude-code-acp"]);
+        Assert.False(rows["dsh"]);
         // A text door answers false — the stub is one, held where it chats (ProtocolChatTests); the
         // roster leaves the test doubles out, and every harness it lists carries structure today.
     }

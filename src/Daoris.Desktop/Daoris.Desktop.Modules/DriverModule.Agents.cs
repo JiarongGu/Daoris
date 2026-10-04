@@ -114,6 +114,9 @@ public sealed partial class DriverModule
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
                     Structured = _loop.Harnesses.Structured(report.Adapter),
+                    // Whether a session on this door is handed the rules file (PERM1, D72): the agent's
+                    // page has *What it may do* only where Daoris hands its agent one (UX6e, D150 §5.1).
+                    TakesRules = _loop.Harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
                     Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),
