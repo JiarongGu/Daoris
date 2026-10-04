@@ -14,7 +14,7 @@ repository, with its tests, reviewed as a diff. It is installed only when a pers
 
 | File | What it is |
 |---|---|
-| `plugin.json` | the manifest: its id, the plugin API version, and the command and points it speaks on |
+| `plugin.json` | the manifest: its id, the plugin API version, the command and points it speaks on, and the tools it runs |
 | `plugin.mjs` | the wire script: the handshake, a handler for each point, the shutdown |
 | `plugin.test.mjs` | its wire test: `node --test` here, with nothing of Daoris's installed |
 | `README.md` | this: the wire, the rules, and each point's frame and answer |
@@ -55,6 +55,23 @@ JSON-RPC 2.0, one frame per line. Daoris calls and the plugin answers; the plugi
   double quote, a percent sign or a line break rather than pass it. {{run}}
 - **Nothing runs until a person says so.** An installed plugin runs once it is turned on, and a landing
   plugin only once a workspace's landing rule names it.
+
+## The tools it runs
+
+`tools` in `plugin.json` names each program the plugin's process runs, so a person sees them before
+turning it on and Daoris can check them: `[]` until it runs one. Each is `{ "id": "…" }`, with:
+
+| Field | What it says |
+|---|---|
+| `id` | `git`, `node`, `pwsh`, `gh` or `az`, which Daoris knows and finds the way the person set; or any other name, found on the PATH and never downloaded |
+| `versions` | the versions it works with: `>=2.60`, `>=2.60 <3`, or one exact version. Absent is any |
+| `for` | one sentence: why the plugin runs it |
+| `ready` | at most four checks, each `{ "run": ["…"], "says": "…", "fix": "…" }`: a command whose exit 0 means ready, what that means, and the command a person runs when it is not |
+| `name`, `command`, `versionArguments` | only for a tool Daoris does not know: what a person calls it, the program to find (the id when absent), and what prints its version |
+
+A check runs only at a trial (`daoris-driver plugins try`, or *Try* on its page), one at a time, with ten
+seconds each; Daoris never runs `fix`. A problem in `tools` never stops the plugin: it is said beside
+the tool, and a trial says each in its own sentence.
 
 ## Testing it
 

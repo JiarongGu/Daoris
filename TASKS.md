@@ -56,19 +56,11 @@ Measured on the day's three integrations: the driver's real-process half took 30
 everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
 running them again.
 
-- [ ] **ORIENT1 — agents start from an index, not a search** (tools, docs, service; owner, 2026-10-04: *"I think we're
-  missing docs and indexing, so every agent spends a lot searching before anything happens"*). Measured on ten of the
-  day's branches: 60–100 tool calls and 370–600 KB read before the first edit, about a third of each branch; 278 shell
-  greps and 117 shell dumps between them; decision files read whole 21 times (299 KB); files of 80–120 KB read whole.
-  The code map lists projects only, nothing points to it, and the knowledge server, started by `dotnet run` at each
-  session, did not connect. In order:
-  - **a** — a generated index, held fresh by a gate as the code map is: bridge routes to their handler and page caller,
-    terminal verbs to their files, catalogue prefixes to their files, test fixtures and helpers, and an outline of
-    each large file's classes and methods with line ranges.
-  - **b** — a generated decisions digest: each decision's line and its dated notes' headings, with where each starts.
-  - **c** — the knowledge server for agents from a built binary, indexing this repository's own documents.
-  - **d** — `tools/orient-report.mjs`: calls and bytes before the first edit per branch, from its transcript.
-  Proof: d's report before and after a and b, with the target of halving both.
+- [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
+  starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
+  worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps
+  current, index this repository's documents and `docs/index/`, and measure with `orient-report` whether agents ask it.
+  Contract: D24, D135. Proof: a session that connects; the report's reads of the knowledge search.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
@@ -97,10 +89,26 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
 - [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).
 - [ ] **UX6j — the bar's foot and Settings' seven** (web-shell, web-settings; §2.1, §2.3, §2.4).
-- [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver; §7.2–§7.3).
 - [ ] **PLUGTOOL1b — the two pull-request plugins declare their CLI** (cli, examples; §7.4).
 - [ ] **PLUGTOOL1c — a plugin's page manages its tools; Tools keeps Daoris's own** (web-shell, web-settings, modules,
   driver; after PLUGUI1c; §7.5).
+- [ ] **ROSTER1 — the roster asks no account at start, and reads one account on a press** (driver, modules; found by
+  UX6e). The first `HARNESSES` ask after a start still probes every named account (a cold cache), one at a time since
+  TOOL6g, and an account edit re-reads them all. The driver's report says when it read each account, reads one into the
+  report on a press (an account's *Read again*), and starts from what it last read; `RosterReads` retires. Contract:
+  D150 §5.3, D125's TOOL6g note. Proof: a tick and a route test showing no probe at a look or at start.
+- [ ] **UX6e2 — the words and the twins follow the Agents place** (driver, cli; found by UX6e). The driver's sentences
+  (`RotationWords`, `HelpRoomDoors`), the room's places and `HelpPlaces`, and the CLI's `agent list` still say Settings →
+  Agents; the page's `places.ts` maps the old names until they move. Contract: D150 §3.1. Proof: the twins' tables and
+  the room's golden files.
+- [ ] **TRYTOOLS1 — a folder's trial starts its hook with the machine's tools** (driver; found by PLUGTOOL1a).
+  `TryFolderAsync` hands the plugin a scratch home and `HookProcess.StartInfo` reads tools from it, so a folder trial
+  starts PATH's node where the machine manages one, while its tool steps read the machine's. Contract: D101 (*as the
+  driver would*), D121 §3. Proof: a Process test with node set as a named file.
+- [ ] **HELPSETUP1 — Ask Daoris names a repository's Setup** (driver; found by UX6f). The help room's text and places
+  still send a person to Settings → Workspace and Permissions, or the old page, for a repository's line, landing,
+  reading across, standing answer and language (`HelpRoomDoors.cs`, `HelpRoomMayDo.cs:75`, `RegistrationFollow.cs:215`).
+  Contract: D150 §3.1. Proof: `HelpRoomGoldenTests`, `HelpCoverageTests`, the `places.ts` twin table.
 - [ ] ⏸ **COWORK1 — agents that work together** (design; held until the owner shapes it). Today agents cooperate
   only through a quest (a request one way, a done back) and an ask's intake (one ask split into quests). What
   working together should add (seeing each other's progress on related work, asking mid-work, handing off, one

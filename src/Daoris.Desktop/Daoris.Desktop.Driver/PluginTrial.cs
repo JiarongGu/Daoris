@@ -10,7 +10,10 @@ namespace Daoris.Driver;
 /// <param name="Patience">How long each call waits; absent, as long as the driver waits at the points tried.</param>
 public sealed record TrialOptions(string? Point = null, JsonObject? Frame = null, TimeSpan? Patience = null);
 
-/// <summary>One thing a trial checked: the handshake, a point, the shutdown, stdout — or the manifest, when that is as far as it got.</summary>
+/// <summary>
+/// One thing a trial checked: a declared tool or one of its checks (PLUGTOOL1a), the handshake, a point, the shutdown, stdout —
+/// or the manifest, when that is as far as it got.
+/// </summary>
 public sealed record TrialStep(string Name, bool Ok, string Sentence);
 
 /// <summary>What `plugins try` found, step by step, and what the plugin said on stderr meanwhile.</summary>
@@ -67,10 +70,11 @@ public static partial class PluginKit
         {
             var data = Path.Combine(scratch, "data");
             var (manifest, problem) = PluginCatalog.ReadFolder(full, data);
-            // The plugin is told a scratch home of its own: one nobody installed is part of no machine yet.
+            // The plugin is told a scratch home of its own: one nobody installed is part of no machine yet. Its tools are
+            // the machine's, so they are found by the home's own tools (PLUGTOOL1a).
             var told = Path.Combine(scratch, "home");
             Directory.CreateDirectory(told);
-            return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), told, scratch, options ?? new(), ct)
+            return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), told, home, scratch, options ?? new(), ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -93,7 +97,7 @@ public static partial class PluginKit
         var scratch = ScratchIn(TrialsOf(home));
         try
         {
-            return await TryAsync(entry, home, scratch, options ?? new(), ct).ConfigureAwait(false);
+            return await TryAsync(entry, home, home, scratch, options ?? new(), ct).ConfigureAwait(false);
         }
         finally
         {
@@ -114,8 +118,15 @@ public static partial class PluginKit
     /// pointed at a repository that is not there, because git walks UP: a folder with no repository of its
     /// own answers for the one above it, and a landing plugin that pushes first would push that. With the
     /// person's own frame, the frame is theirs, and so is what it names.</para>
+    ///
+    /// <para><b>Its tools first</b> (PLUGTOOL1a): each declared tool, then each of its checks, is a step in its own
+    /// sentence, found by <paramref name="toolsHome"/>'s tools and checked in the scratch `root`. A problem there fails
+    /// that step and never stops the trial.</para>
     /// </remarks>
-    private static async Task<PluginTrial> TryAsync(PluginEntry entry, string home, string scratch, TrialOptions options, CancellationToken ct)
+    /// <param name="home">The home the plugin is told, and its start reads.</param>
+    /// <param name="toolsHome">The machine's home, whose tools the plugin's declared tools are found by.</param>
+    private static async Task<PluginTrial> TryAsync(
+        PluginEntry entry, string home, string toolsHome, string scratch, TrialOptions options, CancellationToken ct)
     {
         var id = entry.Manifest.Id;
         if (options.Frame is not null && options.Point is null)
@@ -158,6 +169,9 @@ public static partial class PluginKit
         var root = Path.Combine(scratch, "root");
         Directory.CreateDirectory(root);
         Directory.CreateDirectory(entry.Data);
+
+        // The tools it declares, each said in its own sentence (PLUGTOOL1a); a problem there never stops the trial.
+        steps.AddRange(await ToolStepsAsync(entry.Manifest, toolsHome, root, path: null, PluginToolChecks.RunAsync, ct).ConfigureAwait(false));
 
         ProcessStartInfo info;
         try
@@ -319,6 +333,32 @@ public static partial class PluginKit
             default:
                 throw new DriverException($"`{point}` is not a point this build can try.");
         }
+    }
+
+    /// <summary>
+    /// A manifest's tools as a trial's steps (PLUGTOOL1a, D150 point 7): `tools` that is not an array is one step; each
+    /// declared tool is `tool &lt;id&gt;` (by its place where it names none), saying where it was found and its version
+    /// against its range or its problem; then each of its checks, `&lt;id&gt; check &lt;n&gt;`. Each fails alone and none
+    /// stops the trial: a problem in `tools` is shown, never a refusal.
+    /// </summary>
+    internal static async Task<List<TrialStep>> ToolStepsAsync(
+        PluginManifest manifest, string home, string root, string? path, CheckRunner run, CancellationToken ct)
+    {
+        var steps = new List<TrialStep>();
+        if (manifest.ToolsProblem is { } problem) steps.Add(new("tools", false, problem));
+
+        var at = 0;
+        foreach (var tool in manifest.Tools)
+        {
+            at++;
+            var name = tool.Id ?? at.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var found = await PluginToolChecks.CheckAsync(home, tool, root, path, run, ct).ConfigureAwait(false);
+            steps.Add(new($"tool {name}", found.Ok, found.Sentence));
+            var check = 0;
+            foreach (var answer in found.Ready) steps.Add(new($"{name} check {++check}", answer.Ready, answer.Sentence));
+        }
+
+        return steps;
     }
 
     private static string Listed(IReadOnlyList<string> points) => points.Count > 0 ? string.Join(", ", points) : "nothing";

@@ -10980,3 +10980,29 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Proof: the plan's gate list for a driver change; `--full` still naming every gate.
 
 **Outcome** 2026-10-04: built. A merge runs the baseline, the fast suites and the release, family and web gates its paths reach, never the Process halves or the deployment rehearsal; those run only with `--full`, which a stage still requires (`--passed`). `--rerun` runs a long gate when named. A driver-only change went from 9 gates to 6, none of them long. Detail: D115's GATE5 note, the parallel design §3, `82fa070c`.
+
+
+## PLUGTOOL1a — a plugin's manifest declares its tools (2026-10-04)
+
+> - [ ] **PLUGTOOL1a — a plugin's manifest declares its tools** (cli, driver; §7.2–§7.3).
+
+**Outcome** 2026-10-04: built. `tools` in `plugin.json` is read by both twins by one table (`PluginToolsTests` ⇄ `plugin-tools.test.ts`), each entry an id, a range, why and at most four checks; a problem is shown on the plugin, never a refusal; `daoris plugin list` names the tools; `plugins try` finds each tool (a known one by its way in Tools, never PATH), asks its version against the range and runs its checks, each in its own step, before the handshake; `plugins new` writes `tools: []`. Detail: D150's PLUGTOOL1a note, `3a07e5e2`, `4ec26665`.
+
+
+## ORIENT1 — agents start from an index, not a search (a, b, d; 2026-10-04)
+
+> - [ ] **ORIENT1 — agents start from an index, not a search** (tools, docs, service; owner, 2026-10-04: *"I think we're
+> missing docs and indexing, so every agent spends a lot searching before anything happens"*). Measured on ten of the
+> day's branches: 60–100 tool calls and 370–600 KB read before the first edit, about a third of each branch; 278 shell
+> greps and 117 shell dumps between them; decision files read whole 21 times (299 KB); files of 80–120 KB read whole.
+> The code map lists projects only, nothing points to it, and the knowledge server, started by `dotnet run` at each
+> session, did not connect. In order:
+> - **a** — a generated index, held fresh by a gate as the code map is: bridge routes to their handler and page caller,
+> terminal verbs to their files, catalogue prefixes to their files, test fixtures and helpers, and an outline of
+> each large file's classes and methods with line ranges.
+> - **b** — a generated decisions digest: each decision's line and its dated notes' headings, with where each starts.
+> - **c** — the knowledge server for agents from a built binary, indexing this repository's own documents.
+> - **d** — `tools/orient-report.mjs`: calls and bytes before the first edit per branch, from its transcript.
+> Proof: d's report before and after a and b, with the target of halving both.
+
+**Outcome** 2026-10-04: a, b and d built; c stays open as ORIENT1c. `tools/orient-index.mjs` writes `docs/index/` from the tree: 124 bridge routes with their handler and sender, the service's HTTP routes, every terminal verb, catalogue areas, test fixtures and kits, the decisions digest with each note's line range, and outlines of the 94 files over 40 KB; `orient-index` checks it at every merge, and the merge tool writes it into each merge. `tools/orient-report.mjs` measures a transcript. The before, over 26 branches of the day: a median of 75 calls and 423 KB read before the first edit. Detail: the map design's ORIENT1a note, D134's ORIENT1b note.
