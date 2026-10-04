@@ -150,6 +150,17 @@ const NOTE_LABEL = [
 
 export const isNoteLabel = (line) => NOTE_LABEL.some((form) => form.test(line));
 
+/**
+ * The lines, by index, that are a note's label straight after a non-blank line, outside a fence: what union leaves
+ * when two notes written under one decision at once lose the blank line between them (§2.1). The one definition, so
+ * the merge tool sets apart exactly what this check refuses (MERGEJOIN1). A line ending in `\r` is blank when the
+ * rest of it is.
+ */
+export function gluedLabels(text) {
+  const inFence = fenced(text);
+  return text.flatMap((line, i) => (i > 0 && !inFence[i] && text[i - 1].trim() !== '' && isNoteLabel(line) ? [i] : []));
+}
+
 /** The `## D<n>` headings outside a fence, as `{ id, line }`. */
 function decisionHeadings(text) {
   const inFence = fenced(text);
@@ -188,12 +199,7 @@ export function folderFacts(root, folder) {
     for (const line of text) if (/^(<<<<<<<|>>>>>>>)( |$)/.test(line)) found.push({ file, fact: 'a conflict marker', key: line.trimEnd() });
     // Two notes written under one decision at once meet in its file, and union keeps both whole; in 12 of the
     // files replayed one lost the blank line above it, so a renderer reads it as the paragraph before (§2.1).
-    const inFence = fenced(text);
-    text.forEach((line, i) => {
-      if (i > 0 && !inFence[i] && text[i - 1].trim() !== '' && isNoteLabel(line)) {
-        found.push({ file, fact: 'a note label after a non-blank line', key: line.trimEnd() });
-      }
-    });
+    for (const i of gluedLabels(text)) found.push({ file, fact: 'a note label after a non-blank line', key: text[i].trimEnd() });
     // The path is the citation (§3.1): `D7.md` is D7, so a padded or slugged name would need a search to find.
     if (!/^D[1-9]\d*\.md$/.test(name)) {
       found.push({ file, fact: 'not named D<n>.md', key: name });
