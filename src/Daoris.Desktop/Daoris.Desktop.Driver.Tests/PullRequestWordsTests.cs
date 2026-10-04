@@ -175,6 +175,12 @@ public sealed class PullRequestWordsTests
         Assert.Equal(
             ["`feature/q1-fix` in `engine` (session s1a2b3c4): " + PullRequestWords.NoPlugin, "nothing is kept of its pull request."],
             none);
+        // Nothing due to ask is said as why, never as a failure.
+        Assert.Equal("`feature/q1-fix` in `engine` (session s1a2b3c4): `feature/q1-fix` is no landing the record holds to ask about.",
+            PullRequestWords.AskedAgain(new PullRequestAskedAgain(Entry())
+            {
+                Code = PullRequestCodes.NotAsked, Why = "`feature/q1-fix` is no landing the record holds to ask about.",
+            })[0]);
 
         var failed = PullRequestWords.AskedAgain(new PullRequestAskedAgain(Entry(new PullRequestState(PullRequestStates.Open) { Plugin = "acme", AskedAt = Asked }))
         {

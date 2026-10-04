@@ -121,8 +121,12 @@ public sealed partial class SessionTrees
             var answers = await AskStatesAsync([(root, entry.Repository, workspace)], landedMayGo: true, ct, again: entry).ConfigureAwait(false);
             asked = answers.FirstOrDefault() is { } said
                 ? asked with { Answered = said.Answer is not null, Code = said.Failure, Why = said.Sentence }
-                // A branch under Daoris's own namespace is D88's to judge, never a landing's to ask about.
-                : asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
+                // Nothing was due: a branch under Daoris's own namespace, which D88 judges, or a landing the record no longer holds.
+                : asked with
+                {
+                    Code = PullRequestCodes.NotAsked,
+                    Why = $"`{entry.Branch}` is no landing the record holds to ask about, so its pull request was not asked about.",
+                };
         }
 
         var now = Recorded.Entries().LastOrDefault(each => SameLanding(each, entry)) ?? entry;

@@ -26,7 +26,10 @@ public sealed record PullRequestAskedAgain(LandedBranch Entry)
     /// <summary>Whether the kept answer is <c>completed</c>, which is final, so nothing was asked.</summary>
     public bool Final { get; init; }
 
-    /// <summary>Why nothing new is known: <see cref="PullRequestCodes.NoPlugin"/>, <see cref="PullRequestCodes.Unready"/>, or a failure's kind.</summary>
+    /// <summary>
+    /// Why nothing new is known: <see cref="PullRequestCodes.NoPlugin"/>, <see cref="PullRequestCodes.Unready"/>,
+    /// <see cref="PullRequestCodes.NotAsked"/> (nothing due to ask), or a failure's kind.
+    /// </summary>
     public string? Code { get; init; }
 
     /// <summary>Daoris's sentence for <see cref="Code"/>.</summary>
@@ -105,7 +108,7 @@ public static class PullRequestWords
         {
             head + (asked.Final ? "its pull request completed, which is final, so it was not asked again."
                 : asked.Answered ? $"asked {(kept?.Plugin is { } plugin ? $"`{plugin}`" : "its plugin")} again."
-                : asked.Code is PullRequestCodes.NoPlugin or PullRequestCodes.Unready or null ? asked.Why ?? NoPlugin
+                : asked.Code is PullRequestCodes.NoPlugin or PullRequestCodes.Unready or PullRequestCodes.NotAsked or null ? asked.Why ?? NoPlugin
                 : $"asking again failed (`{asked.Code}`): {asked.Why?.TrimEnd('.')}. Nothing is removed on its word until it answers, and what was kept stands."),
         };
 
