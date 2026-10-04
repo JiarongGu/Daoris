@@ -139,6 +139,17 @@ Order: PLUGUI1c, then f and g; FRAME1i, then PLUGUI1h. Each is looked at on the 
 KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owner, 25 were truly the owner's (13 asks for
 3 prod acts), 10 answerable from ticket or code, 6 drift, 3 required by the repository's own docs, 2 knowledge-answered.
 
+- [ ] **ORIENT2 — every repository Daoris drives starts from an index too, and works without Daoris** (design first;
+  canon, driver, service; owner, 2026-10-04: *"so this should also apply to the repositories Daoris drives too, and an
+  even better knowledge system since Daoris is there"* · *"and it should not break the general workflow if the system
+  running the code does not have Daoris (this is for sharing repositories)"*). ORIENT1 measured the cost here; a driven
+  session pays it in every repository. The floor is committed files that any agent on any machine reads (D48 §2a): a
+  generated index of where things are and a digest of the repository's decisions and knowledge, kept fresh by the
+  repository's own check; the canon teaches the principle and leaves the mechanism to the repository; the set-up session
+  writes both in the repository's own tooling (D124, D128). Where Daoris is present the knowledge service indexes them
+  too, the deployment may turn on the semantic tier (D24), and driven sessions are handed the search; without Daoris
+  nothing breaks. Proof: the design and its decision; ORIENT1d's report over the install's driven sessions before and
+  after.
 - [ ] **KNOWUSE2b — the 46 through the bench** (the owner's). The 46 go through the floor against the work repository's
   own knowledge and through the model tier on the install's harness, with the account the owner chooses. KNOWUSE3 waits
   until the count answered in the person's place is zero. Contract: D135 §6 and its KNOWUSE2 note, whose command lines
