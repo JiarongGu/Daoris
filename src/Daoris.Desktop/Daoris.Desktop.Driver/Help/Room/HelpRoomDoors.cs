@@ -61,6 +61,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // WSR5b: a landed branch handed to a landing plugin after its landing.
         ("hand a branch a landing made to a landing plugin, to push it and open the pull request",
             "Sessions → the session's review → Hand to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`"),
+        // PLUGHOOK1c (D148 point 2): Ask again from a terminal, exempt from Ask Daoris as a read; the review's press is PLUGHOOK1d's.
+        ("ask a landed branch's plugin again whether its pull request completed, and see what that answer proves on this machine "
+            + "(Ask Daoris never proposes it: it changes nothing of yours or on the platform, and the room already says what was "
+            + "last answered)",
+            "(no screen yet)", "`daoris-driver trees state <session|branch> [--repository <name>]`"),
         ("choose the agent that answers asks", "Settings → AI features", "`daoris driver intake <agent>|off`"),
         ("choose the agent Ask Daoris runs on", "Settings → AI features", "`daoris driver helper <agent>|off`"),
         // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.

@@ -17,17 +17,22 @@ public sealed partial class SessionTrees
     /// removes, nor at a read: the callers are the looks that may remove, which <c>PullRequestOccasionTests</c> holds.
     /// </summary>
     /// <param name="landedMayGo">
-    /// Whether this occasion may remove a landed branch: the clean-up's look, yes; LAND3's tidy, which removes session branches
-    /// only, no. A standing entry D102's proof does not clear is asked about only where it may.
+    /// Whether this occasion may remove a landed branch: the clean-up's look and bringing up to date's, yes; LAND3's tidy, which
+    /// removes session branches only, no. A standing entry D102's proof does not clear is asked about only where it may.
+    /// </param>
+    /// <param name="again">
+    /// <i>Ask again</i> (PLUGHOOK1c, design §2.1 occasion 4): this one entry alone, asked whatever its kept answer's age and
+    /// whether or not its answer could remove something now, since a person asked. Completed is final and still asked no more.
     /// </param>
     internal async Task<IReadOnlyList<StateAnswer>> AskStatesAsync(
-        IEnumerable<(string Root, string Repository, string Workspace)> repositories, bool landedMayGo, CancellationToken ct)
+        IEnumerable<(string Root, string Repository, string Workspace)> repositories, bool landedMayGo, CancellationToken ct,
+        LandedBranch? again = null)
     {
         var now = _plugins.Now;
         var asks = new List<StateAsk>();
         foreach (var (root, repository, workspace) in repositories)
         {
-            asks.AddRange(await DueAsksAsync(root, repository, workspace, now, landedMayGo, ct).ConfigureAwait(false));
+            asks.AddRange(await DueAsksAsync(root, repository, workspace, now, landedMayGo, again, ct).ConfigureAwait(false));
         }
 
         var answers = await _plugins.AskStatesAsync(asks, ct).ConfigureAwait(false);
@@ -53,9 +58,12 @@ public sealed partial class SessionTrees
         return answers;
     }
 
-    /// <summary>One repository's entries due an ask at this occasion, each with its plugin and its frame (design §2.1).</summary>
+    /// <summary>
+    /// One repository's entries due an ask at this occasion, each with its plugin and its frame (design §2.1); with
+    /// <paramref name="again"/>, that entry alone, due whatever its kept answer's age.
+    /// </summary>
     private async Task<IReadOnlyList<StateAsk>> DueAsksAsync(
-        string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, CancellationToken ct)
+        string root, string repository, string workspace, DateTimeOffset now, bool landedMayGo, LandedBranch? again, CancellationToken ct)
     {
         var rule = LandingRules.Choose(Config(), repository, workspace).Rule;
         var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
@@ -63,17 +71,66 @@ public sealed partial class SessionTrees
         IReadOnlyList<string>? unlanded = null;
 
         var asks = new List<StateAsk>();
-        foreach (var entry in Recorded.Entries().Where(entry => Ours(entry, repository)))
+        foreach (var entry in Recorded.Entries().Where(entry => Ours(entry, repository) && (again is null || SameLanding(entry, again))))
         {
-            if (!PullRequestAsking.Due(entry, now)) continue;
+            if (!PullRequestAsking.Due(entry, now, again is not null)) continue;
             if (PullRequestAsking.PluginFor(entry, rule) is not { } plugin) continue;
-            unlanded ??= await UnlandedSessionTipsAsync(root, ct).ConfigureAwait(false);
-            if (!await CouldRemoveAsync(root, entry, line, forms, unlanded, landedMayGo, ct).ConfigureAwait(false)) continue;
+            if (again is null)
+            {
+                unlanded ??= await UnlandedSessionTipsAsync(root, ct).ConfigureAwait(false);
+                if (!await CouldRemoveAsync(root, entry, line, forms, unlanded, landedMayGo, ct).ConfigureAwait(false)) continue;
+            }
+
             asks.Add(new StateAsk(entry, plugin,
                 new StateFrame(repository, workspace, root, entry.Branch, line, entry.PullRequest, entry.PushedTip)));
         }
 
         return asks;
+    }
+
+    /// <summary>The same landing, standing or a trace: its repository, its branch, the session that made it, and when.</summary>
+    private static bool SameLanding(LandedBranch each, LandedBranch entry) =>
+        string.Equals(each.Repository, entry.Repository, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(each.Branch, entry.Branch, StringComparison.Ordinal)
+        && string.Equals(each.Session, entry.Session, StringComparison.OrdinalIgnoreCase)
+        && each.LandedAt == entry.LandedAt;
+
+    /// <summary>
+    /// <i>Ask again</i> (PLUGHOOK1c, D148 point 2, design §2.1 occasion 4): one landed branch's plugin — the one that pushed it, else
+    /// the one its repository's rule names — asked about its pull request whatever the kept answer's age, as an occasion asks;
+    /// the answer or the failure kept as an occasion keeps it; and what the kept answer proves here, by the kept answer alone,
+    /// as a look judges it. Completed is final and asked no more. A person's door alone opens it: `trees state`, and the review's
+    /// press (PLUGHOOK1d), which <c>PullRequestOccasionTests</c> holds.
+    /// </summary>
+    /// <param name="root">The repository's checkout here, where the plugin runs its platform's tool and git judges the answer.</param>
+    /// <param name="entry">The landing, standing or a trace.</param>
+    public async Task<PullRequestAskedAgain> AskAgainAsync(string root, LandedBranch entry, CancellationToken ct = default)
+    {
+        var workspace = RemoteTarget.Workspace(entry.Workspace);
+        var asked = new PullRequestAskedAgain(entry);
+        if (entry.PullRequestState?.State == PullRequestStates.Completed)
+        {
+            asked = asked with { Final = true };
+        }
+        else if (PullRequestAsking.PluginFor(entry, LandingRules.Choose(Config(), entry.Repository, workspace).Rule) is null)
+        {
+            asked = asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
+        }
+        else
+        {
+            var answers = await AskStatesAsync([(root, entry.Repository, workspace)], landedMayGo: true, ct, again: entry).ConfigureAwait(false);
+            asked = answers.FirstOrDefault() is { } said
+                ? asked with { Answered = said.Answer is not null, Code = said.Failure, Why = said.Sentence }
+                // A branch under Daoris's own namespace is D88's to judge, never a landing's to ask about.
+                : asked with { Code = PullRequestCodes.NoPlugin, Why = PullRequestWords.NoPlugin };
+        }
+
+        var now = Recorded.Entries().LastOrDefault(each => SameLanding(each, entry)) ?? entry;
+        if (now.PullRequestState is not { } kept) return asked with { Entry = now };
+        var line = (await LineAsync(root, now.Repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var tip = now.GoneAt is null ? await StandingTipAsync(root, now, ct).ConfigureAwait(false) : null;
+        return asked with { Entry = now, Verdict = await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) };
     }
 
     /// <summary>A landing's own branch in this repository: a session branch's name is D88's to judge.</summary>

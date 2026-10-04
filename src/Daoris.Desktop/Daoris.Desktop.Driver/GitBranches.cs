@@ -107,6 +107,15 @@ public sealed record GitLandedBranch(string Session, DateTimeOffset LandedAt, st
 
     /// <summary>Origin's copy's commits it lacks, where counted.</summary>
     public int? OriginBehind { get; init; }
+
+    /// <summary>
+    /// What its plugin last answered about its pull request, with when (PLUGHOOK1c, D148 point 6, D147 §2.2), read from the
+    /// landing record; null where none is kept. A read never asks.
+    /// </summary>
+    public PullRequestState? PullRequestState { get; init; }
+
+    /// <summary>The latest ask about it that failed since that answer, where one did.</summary>
+    public PullRequestAskFailed? PullRequestAskFailed { get; init; }
 }
 
 /// <summary>One branch in the list (D147 §2.2).</summary>
@@ -546,6 +555,7 @@ public static class GitBranches
             {
                 Quest = entry.Quest, Title = entry.Title, Plugin = entry.Plugin, Pushed = entry.Pushed, PullRequest = entry.PullRequest,
                 PushedTip = entry.PushedTip, OriginCommit = copy?.Commit,
+                PullRequestState = entry.PullRequestState, PullRequestAskFailed = entry.PullRequestAskFailed,
             };
 
             if (copy is null) return said with { Origin = entry.Pushed ? GitOrigin.Gone : GitOrigin.NotPushed };

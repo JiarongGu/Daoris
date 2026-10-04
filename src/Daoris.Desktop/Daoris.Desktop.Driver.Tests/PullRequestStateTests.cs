@@ -211,6 +211,130 @@ public sealed class PullRequestStateTests : LandedFixture
         Assert.Equal(PluginEvents.Errored, entry.PullRequestAskFailed!.Code);
     }
 
+    /// <summary>
+    /// PLUGHOOK1c (design §2.1 occasion 3): bringing up to date's look asks after its fetch, which is where the platform's squash
+    /// first reaches this machine, so the answer confirms there and the landed branch is listed to go as <c>pull-request</c>. A look
+    /// that fetched nothing asks nothing, and the press acts on what was kept without asking again.
+    /// </summary>
+    [Fact]
+    public async Task Bringing_up_to_date_asks_after_its_fetch_and_its_press_removes_on_the_kept_answer()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(tree.Path, "merged.txt", "merged\n", "Merged");
+        var landed = await trees.LandAsync(tree.Path, new LandingSubject("s1", "q1", "Merged"));
+        Assert.True(landed.Landed, landed.Message);
+        // Its session branch is gone, as a tidy leaves it, so no session branch leans on the landed one.
+        await GitAsync(root, "worktree", "remove", "--force", tree.Path);
+        await GitAsync(root, "branch", "-D", tree.Branch);
+        var tip = trees.Recorded.Of("engine", landed.Branch!)!.Tip;
+        // The platform squash-merges it and the line changes its file again; nothing of that is fetched here yet.
+        var merge = await SquashOnPlatformAsync(origin, landed.Branch!, then: ("merged.txt", "changed on the line since\n"));
+        _answers[landed.Branch!] = () => Completed(merge, tip);
+
+        var unfetched = await trees.SyncPlanAsync([("engine", "aurora", root)], new HashSet<string>(), fetch: false);
+        Assert.Equal(0, _asked);
+        Assert.DoesNotContain(unfetched.Deletes, item => item.Branch == landed.Branch && item.Removable);
+
+        var plan = await trees.SyncPlanAsync([("engine", "aurora", root)], new HashSet<string>(), fetch: true);
+
+        Assert.Equal(1, _asked);
+        var item = plan.Deletes.Single(each => each.Branch == landed.Branch);
+        Assert.Equal((LandedKind.PullRequest, "origin/main"), (item.Kind, item.Where));
+        Assert.True(item.Removable);
+        Assert.Equal(PullRequestStates.Completed, trees.Recorded.Landing("s1")!.PullRequestState!.State);
+
+        var done = await trees.SyncAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        Assert.Equal(1, _asked);
+        Assert.True(done.Deletes.Single(result => result.Item.Branch == landed.Branch).Removed);
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", landed.Branch!)).Trim());
+        Assert.Equal(LandedKind.PullRequest, trees.Recorded.Landing("s1")!.RemovedAs);
+    }
+
+    /// <summary>
+    /// PLUGHOOK1c (design §2.1): a row whose pull request was not asked about says why — the plugin that pushed it is not installed
+    /// here, or no plugin pushed it and the rule names none — at the clean-up's look and at bringing up to date's. Nothing goes.
+    /// </summary>
+    [Fact]
+    public async Task The_rows_say_why_a_pull_request_was_not_asked_about()
+    {
+        var (root, _) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var gone = await LandAsync(trees, root, "gone.txt", "gone\n", new LandingSubject("s1", "q1", "Gone"));
+        // The plugin that pushed it is no longer on this machine.
+        trees.Recorded.Pushed("engine", gone.Branch!, new PluginLanding("acme.gone", Pushed: true, null, "pushed"), trees.Recorded.Of("engine", gone.Branch!)!.Tip);
+        DriverConfig.Empty.WithLanding("engine", new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}"))
+            .Save(Path.Combine(Home, "driver.json"));
+        var unpushed = await LandAsync(trees, root, "unpushed.txt", "unpushed\n", new LandingSubject("s2", "q2", "Unpushed"));
+
+        var plan = await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        Assert.Equal(0, _asked);
+        var unready = Landed(plan, gone.Branch!);
+        Assert.Equal(PullRequestCodes.Unready, unready.NotAsked!.Code);
+        Assert.EndsWith("`acme.gone`, which pushed the branch, is not installed on this machine, so its pull request was not asked about",
+            LandedWords.Describe(unready));
+        var nobody = Landed(plan, unpushed.Branch!);
+        Assert.Equal(new PullRequestNotAsked(PullRequestCodes.NoPlugin, PullRequestWords.NoPlugin), nobody.NotAsked);
+        Assert.All(new[] { unready, nobody }, item => Assert.False(item.Removable));
+
+        var sync = await trees.SyncPlanAsync([("engine", "aurora", root)], new HashSet<string>(), fetch: true);
+
+        Assert.Equal(0, _asked);
+        var row = sync.Deletes.Select(item => (item.Branch, item.NotAsked)).Concat(sync.Rebases.Select(item => (item.Branch, item.NotAsked)))
+            .Single(each => each.Branch == gone.Branch);
+        Assert.Equal(PullRequestCodes.Unready, row.NotAsked!.Code);
+    }
+
+    /// <summary>
+    /// PLUGHOOK1c (design §2.1 occasion 4): <i>Ask again</i> asks whatever the kept answer's age, keeps a failure beside the answer
+    /// and never over it, says what a completed answer proves here once its merge commit is fetched, and asks a final answer no more.
+    /// </summary>
+    [Fact]
+    public async Task Ask_again_asks_whatever_the_kept_answers_age_and_a_completed_one_no_more()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = Trees();
+        var landed = await LandAsync(trees, root, "work.txt", "work\n", new LandingSubject("s1", "q1", "Work"));
+        LandedBranch Entry() => trees.Recorded.FindAll(landed.Branch!, "engine")[0];
+        _answers[landed.Branch!] = () => new PullRequestState(PullRequestStates.Open);
+
+        var first = await trees.AskAgainAsync(root, Entry());
+        var second = await trees.AskAgainAsync(root, Entry());
+
+        Assert.Equal(2, _asked);
+        Assert.True(first.Answered && second.Answered);
+        Assert.Equal(PullRequestStates.Open, second.Verdict!.Code);
+        Assert.Equal("nothing goes on its word: its pull request has not completed.", PullRequestWords.AskedAgain(second)[^1]);
+
+        _answers[landed.Branch!] = () => throw PluginFailures.Mark(new DriverException("az: not signed in"), PluginEvents.Errored);
+        var failed = await trees.AskAgainAsync(root, Entry());
+
+        Assert.False(failed.Answered);
+        Assert.Equal(PluginEvents.Errored, failed.Code);
+        Assert.Equal(PullRequestStates.Open, failed.Entry.PullRequestState!.State);
+        Assert.Equal(PluginEvents.Errored, failed.Entry.PullRequestAskFailed!.Code);
+
+        var tip = Entry().Tip;
+        var merge = await SquashOnPlatformAsync(origin, landed.Branch!, deleteBranch: false);
+        await GitAsync(root, "fetch", "--quiet", "origin");
+        _answers[landed.Branch!] = () => Completed(merge, tip);
+        var completed = await trees.AskAgainAsync(root, Entry());
+
+        Assert.True(completed.Answered);
+        Assert.Null(completed.Entry.PullRequestAskFailed);
+        Assert.Equal(new PullRequestVerdict(null, "origin/main", Carries: true, Clears: true), completed.Verdict);
+        var asked = _asked;
+
+        var final = await trees.AskAgainAsync(root, Entry());
+
+        Assert.Equal(asked, _asked);
+        Assert.True(final.Final);
+        Assert.Equal(completed.Verdict, final.Verdict);
+    }
+
     /// <summary>The fake platform: a landing's push is a real one into the bare origin; a state is what the test says for the branch.</summary>
     private sealed class Platform(PullRequestStateTests test) : IHookChannel
     {

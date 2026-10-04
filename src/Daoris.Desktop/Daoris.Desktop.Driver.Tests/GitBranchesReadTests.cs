@@ -211,6 +211,30 @@ public sealed class GitBranchesReadTests
         Assert.Equal(origin, read.Branches.Single(branch => branch.Name == "feature/13-ahead").Landed!.Origin);
     }
 
+    /// <summary>
+    /// PLUGHOOK1c (D148 point 6, D147 §2.2): a landed branch carries its pull request's state where a plugin answered, with when
+    /// and the failed ask beside it, read from the landing record. A read never asks the plugin, and the list asks git nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_landed_branch_carries_its_pull_requests_kept_state_and_asks_nothing_more()
+    {
+        var kept = new PullRequestState(PullRequestStates.Open)
+        {
+            PullRequest = "https://example.test/pr/7", Plugin = "azure", AskedAt = DateTimeOffset.Parse("2026-10-04T14:02:00Z"),
+        };
+        var failed = new PullRequestAskFailed(PluginEvents.Late, "azure", DateTimeOffset.Parse("2026-10-04T14:30:00Z"));
+        var ask = Ask() with { Landings = [Ask().Landings[0] with { PullRequestState = kept, PullRequestAskFailed = failed }, .. Ask().Landings.Skip(1)] };
+        var git = Common();
+
+        var read = await GitBranches.ReadAsync(ask, git.Run);
+
+        var even = read.Branches.Single(branch => branch.Name == "feature/12-even").Landed!;
+        Assert.Equal(kept, even.PullRequestState);
+        Assert.Equal(failed, even.PullRequestAskFailed);
+        Assert.Null(read.Branches.Single(branch => branch.Name == "feature/15-gone").Landed!.PullRequestState);
+        Assert.Equal(4, git.Asked.Count);
+    }
+
     /// <summary>A landing recorded and never pushed has no copy on origin to compare.</summary>
     [Fact]
     public async Task A_landed_branch_never_pushed_says_so()

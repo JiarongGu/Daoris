@@ -384,6 +384,9 @@ internal static class TraceWords
             if (landing.PullRequest is { } pull) said.Append($", pull request {pull}");
         }
 
+        // What its plugin last answered about its pull request, read as kept and never asked (PLUGHOOK1c, D148 point 6).
+        said.Append(PullRequestWords.Row(landing.PullRequestState, null, landing.PullRequestAskFailed, null));
+
         if (landing.Gone is { } gone)
         {
             said.Append($"; gone since {When(gone)}");
