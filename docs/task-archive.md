@@ -10913,3 +10913,57 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > repository, and one with instruction files of its own.
 
 **Outcome** Superseded by D124: WSSETUP12 ran the unadopted half on 2026-10-02, and WSSETUP13 takes the repository with instruction files of its own, which its row now names.
+
+
+## GATE3 — a merge runs the gates its lanes reach; the full set runs before the install is staged (2026-10-04)
+
+> - [ ] **GATE3 — a merge runs the gates its lanes reach; the full set runs before the install is staged** (tools). The
+> merge tool maps each lane to the gates that can see it (docs: universal, code-map, verify; web: those and the web;
+> driver and modules: their suites and halves and the family rehearsal; the desktop and publish scripts: the deployment
+> rehearsal), and `publish:desktop --stage` refuses a commit the full set has not passed. The "web only batch broke main"
+> lesson holds through the staging gate, the same day. Contract: MOD8, MOD9, D60. Proof: the plan's gate list per lane
+> set; the stage refusing an ungated commit.
+
+**Outcome** 2026-10-04: built. A merge runs the baseline (universal, code map, verify) and each gate its changed paths reach, by the tool's lane table (`REACH`), and prints why each gate runs or is skipped; an unplaced path runs every gate, and `--full` runs all 13. Two tests hold the table to what each .NET suite reads and what each rehearsal imports. Verdicts are kept by tree in `local/gate-verdicts.json`; `publish:desktop` refuses a tree no full set passed (`merge-branch --passed`), records written after the gates forgiven, `--force-ungated` the person's override. Detail: D115's note, the parallel design §3, `12f87a63`.
+
+
+## GATE4 — a fixed gate re-runs alone (2026-10-04)
+
+> - [ ] **GATE4 — a fixed gate re-runs alone** (tools). `merge-branch --rerun <gate>…` re-runs only the named gates on the
+> merge in place and keeps the rest's verdicts, where `--continue` runs every gate again. Proof: a plan test; the
+> summary naming which verdicts were kept and from when.
+
+**Outcome** 2026-10-04: built. `merge-branch --rerun <gate>…` re-runs the named gates and any the merge has no verdict for, keeping the others and naming each kept verdict with its time and whether the stage will count it. Detail: the tool's header, `12f87a63`.
+
+
+## WEBFAST1 — the web's unit tests build jsdom once per worker (2026-10-04)
+
+> - [ ] **WEBFAST1 — the web's unit tests build jsdom once per worker** (web-shell). Vitest reports jsdom created 225
+> times, 27% of its time; `pool: 'vmThreads'` keeps per-file isolation and creates it once. Proof: the suite green and
+> its time before and after.
+
+**Outcome** 2026-10-04: built. The web suite runs on vitest's vmThreads pool, so each worker loads jsdom once and every file still gets a fresh window: about 88 s where it took 150–206 s, 3795/3795 green, peak memory about 11 GB where it was 6. Tailwind is left out under vitest, which already empties stylesheets. Detail: `da7b4e02` and the comments in `vite.config.ts`.
+
+
+## UX6b — a remembered choice ends with its item; the side bar follows only live work (2026-10-04)
+
+> - [ ] **UX6b — a remembered choice ends with its item; the side bar follows only live work** (web-shell; §1, §2.5).
+
+**Outcome** 2026-10-04: built. A remembered list choice is dropped once its item has closed or gone, so a view reopened by its place opens with nothing chosen, while an item a door names is kept. Off Sessions the side bar follows only a running or waiting session, else opens on Ask Daoris; a timeline note longer than four lines folds with *Show all*. Detail: D150's UX6b note, `fe6fabbc`.
+
+
+## UX6c — What needs you leads Overview and settles what it can (2026-10-04)
+
+> - [ ] **UX6c — What needs you leads Overview and settles what it can** (web-shell; §6).
+
+**Outcome** 2026-10-04: built. What needs you is Overview's lead in three groups (holding work, waiting for your word, ready for you), the longest waiting first, gaining go-aheads, departures and work to review; its rows settle what one press can (*Publish to …*, *Try again*, *Accept the departure*), asking once where a press widens what Daoris may do, and no row starts a process. Detail: D150's UX6c note, `4352d29f`..`c0294aea`.
+
+
+## PLUGHOOK1c — the terminal reads and asks it (2026-10-04)
+
+> - [ ] **PLUGHOOK1c — the terminal reads and asks it** (driver; after PLUGHOOK1a). `trees state`, the state on
+> `trees land --plan`, the clean-up's codes and `git branches` (GIT1a's list reads `pullRequestState`), and bringing up
+> to date asking after its fetch, where a merge commit first arrives. Contract: design §2.1, §2.5. Proof:
+> `DriverCommandTests`, `HelpCoverageTests`, `GitBranchesReadTests`, the sync's git fixtures.
+
+**Outcome** 2026-10-04: built. `daoris-driver trees state` asks a landed branch's plugin again; bringing up to date asks after its fetch; the kept answer reads on the clean-up's and sync's rows, `trees land --plan`, `git branches` (with `pullRequestState` in `--json`), `trace` and Ask Daoris's room, and a row says why nothing was asked. Four occasions, held by `PullRequestOccasionTests`. Detail: D148's PLUGHOOK1c note, `dde2b10e`, `764fdd64`.
