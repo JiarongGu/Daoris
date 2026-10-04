@@ -11006,3 +11006,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Proof: d's report before and after a and b, with the target of halving both.
 
 **Outcome** 2026-10-04: a, b and d built; c stays open as ORIENT1c. `tools/orient-index.mjs` writes `docs/index/` from the tree: 124 bridge routes with their handler and sender, the service's HTTP routes, every terminal verb, catalogue areas, test fixtures and kits, the decisions digest with each note's line range, and outlines of the 94 files over 40 KB; `orient-index` checks it at every merge, and the merge tool writes it into each merge. `tools/orient-report.mjs` measures a transcript. The before, over 26 branches of the day: a median of 75 calls and 423 KB read before the first edit. Detail: the map design's ORIENT1a note, D134's ORIENT1b note.
+
+
+## UX6f — a repository's setup on its page (2026-10-04)
+
+> - [ ] **UX6f — a repository's setup on its page** (web-shell, web-settings; §4.2, §3.1).
+
+**Outcome** 2026-10-04: built. A repository's page is Details and Setup, its tab remembered for the view; Setup holds driving, line and landing, sessions (language, standing answer) and reach (reading and writing across, its rules), each section folding to what Daoris decides, each row's terminal twin its hint. Settings' four per-repository lists keep each workspace's default and a door to each repository's Setup (Lines 14 → 7 controls, How work lands 26 → 13, Reading across 22 → 9). Detail: D150's UX6f note, `8a9c1f34`..`b86a9bcb`.

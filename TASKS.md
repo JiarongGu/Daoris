@@ -83,7 +83,6 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
 - [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; §5, §2.4), with
   TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
-- [ ] **UX6f — a repository's setup on its page** (web-shell, web-settings; §4.2, §3.1).
 - [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
 - [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; §4.4), taking GIT1e: D147's list by kind and a
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.

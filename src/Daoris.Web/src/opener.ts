@@ -1,5 +1,6 @@
 import type { View } from './commands';
 import type { StarterDoor } from './help/starters';
+import type { ProjectTab } from './projects/tabs';
 import type { SettingsAnchor } from './SettingsView';
 import { LIST_BOUNDS, type ListView } from './work/layout';
 
@@ -18,10 +19,10 @@ export function questsItem(item: string): { ask: string } | { quest: string } {
 }
 
 /**
- * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, or the repository whose
- * code map the Map opens on.
+ * What a door names besides its item: the part of a Settings domain, one of Repositories' forms or a repository page's tab,
+ * or the repository whose code map the Map opens on.
  */
-export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; code?: string };
+export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; tab?: ProjectTab; code?: string };
 
 /** What opening a view does, as a value. */
 export type Opening = {
@@ -35,6 +36,11 @@ export type Opening = {
   anchor?: SettingsAnchor | null;
   /** One of Repositories' forms, which stay drawers (§3d). */
   drawer?: 'add' | 'import';
+  /**
+   * The tab a repository's page opens at (UX6f, D150 §4.2): Settings' doors into a repository's own value open its Setup.
+   * The tab is the view's, remembered for whichever repository it shows.
+   */
+  tab?: ProjectTab;
   /**
    * The repository whose code map the Map opens on (MAP3a), where a repository's page names it (FRAME1e). The Map has no
    * list (§4), so this is no chosen item: it is the page one level in.
@@ -55,6 +61,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}): 
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
   if (view === 'projects' && part.drawer) plan.drawer = part.drawer;
+  if (view === 'projects' && part.tab) plan.tab = part.tab;
   if (view === 'map' && part.code) plan.code = part.code;
   return plan;
 }

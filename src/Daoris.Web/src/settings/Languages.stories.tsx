@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LanguageList } from './Languages';
 
-// Each workspace's and repository's session language (LANG1c), in the shape the driver's LINES and STATE answers take: set for
-// a repository, taken from its workspace, none at all, and a machine with nothing to set one for.
+// Each workspace's session language (LANG1c), in the shape the driver's LINES and STATE answers take, and since UX6f the
+// line naming the repositories that set their own, each a door to its Setup, or that none does; and a machine with
+// nothing to set one for.
 
 const TABLE = [
   { code: 'en', name: 'English' },
@@ -12,7 +13,7 @@ const TABLE = [
 const meta = {
   title: 'Settings/Session language',
   component: LanguageList,
-  args: { onSet: () => {}, workspaceLanguages: [], languages: [], table: TABLE },
+  args: { onSet: () => {}, onOpen: () => {}, workspaceLanguages: [], languages: [], table: TABLE },
 } satisfies Meta<typeof LanguageList>;
 
 export default meta;

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import '../i18n';
+import { code } from '../test/code';
 import { StandingAnswer } from './StandingAnswer';
 
 // A repository's standing answer on this machine (KNOWUSE1b, D135 §3): the person's words, handed to every session there,
@@ -12,7 +13,7 @@ const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toI
 
 const show = (props: Partial<Parameters<typeof StandingAnswer>[0]> = {}) => {
   const onSave = vi.fn();
-  render(<Tooltip.Provider><StandingAnswer says={null} onSave={onSave} {...props} /></Tooltip.Provider>);
+  render(<Tooltip.Provider><StandingAnswer repository="engine" says={null} onSave={onSave} {...props} /></Tooltip.Provider>);
   return onSave;
 };
 
@@ -56,10 +57,12 @@ describe('a standing answer', () => {
     expect(onSave).toHaveBeenCalledWith(null);
   });
 
-  it('says it is handed to every session here and never written into the repository', () => {
+  // UX6f: a row of the repository's Setup, its terminal twin as its hint and why it is safe on its info glyph.
+  it('says its terminal twin, and on its info glyph that it is handed to every session here and never written into the repository', () => {
     show();
-    expect(screen.getByText(/handed to every session in this repository/)).toBeInTheDocument();
-    expect(screen.getByText(/never written into the repository/)).toBeInTheDocument();
+    expect(screen.getByText(code('daoris driver standing engine "…"|--clear'))).toBeInTheDocument();
+    const why = screen.getByRole('note', { name: /handed to every session in this repository/ });
+    expect(why).toHaveAccessibleName(/never written into the repository/);
   });
 
   it('says an answer past the bound is too long, and offers no save', async () => {

@@ -1,5 +1,6 @@
 import type { Registration, Repository } from '../api';
 import type { RepositoryLine } from '../settings/Lines';
+import type { RepositorySetupProps } from './RepositorySetup';
 
 // Repositories as the registry and the index answer them (FRAME1e), for the list's and the page's stories: the
 // example family's two adopters, a teammate's registration with no checkout here, one that declared nothing, two not
@@ -68,3 +69,76 @@ export const COUNTS: Record<string, Repository> = {
 
 /** The engine's line, set for the repository itself (WSR2). */
 export const LINE: RepositoryLine = { repository: 'engine', workspace: 'default', branch: 'develop', source: 'repository' };
+
+const nothing = () => {};
+
+/** The driver's table of session languages (LANG1c), as it answers it. */
+export const LANGUAGES = [{ code: 'en', name: 'English' }, { code: 'zh', name: 'Simplified Chinese (简体中文)' }];
+
+/**
+ * The engine's Setup as Daoris decides it (UX6f): driven here with a tree per session, its line its workspace's, its work
+ * merged into its line, no session language, no standing answer, read by agents outside it, writing into nothing else
+ * and no rule of its own. Every section folds.
+ */
+export const SETUP_DEFAULTS: RepositorySetupProps = {
+  repository: 'engine',
+  driving: { drivable: true, held: false, ownTree: true, onDrive: nothing, onHold: nothing, onTrees: nothing },
+  work: {
+    line: { repository: 'engine', workspace: 'default', branch: 'main', source: 'workspace' },
+    onLine: nothing,
+    landing: { repository: 'engine', workspace: 'default', form: 'merge', source: 'default' },
+    landingAbove: { form: 'merge' },
+    landers: ['github-pull-request'],
+    onLanding: nothing,
+  },
+  sessions: {
+    language: { resolved: null, table: LANGUAGES, onSet: nothing },
+    standing: null,
+    onStanding: nothing,
+  },
+  reach: {
+    across: { repository: 'engine', workspace: 'default', checkout: true, read: true, source: 'default', writesTo: [] },
+    readAbove: { read: true, source: 'default' },
+    candidates: ['game', 'sandbox'],
+    onRead: nothing,
+    onWrite: nothing,
+    rules: { allow: [], ask: [], deny: [] },
+    onAddRule: nothing,
+    onRemoveRule: nothing,
+  },
+};
+
+/**
+ * The engine's Setup with the person's own values (UX6f): its own line, work put on a branch a plugin pushes and accepts
+ * automatically, its own session language, a standing answer, read by nobody outside it, writing into the game, and two
+ * rules of its own. Line and landing, Sessions and Reach open; Driving folds.
+ */
+export const SETUP_OWN: RepositorySetupProps = {
+  ...SETUP_DEFAULTS,
+  work: {
+    ...SETUP_DEFAULTS.work,
+    line: { repository: 'engine', workspace: 'default', branch: 'develop', source: 'repository' },
+    landing: {
+      repository: 'engine', workspace: 'default', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request',
+      autoAccept: true, source: 'repository',
+    },
+  },
+  sessions: {
+    language: {
+      resolved: { repository: 'engine', workspace: 'default', language: 'zh', name: 'Simplified Chinese (简体中文)', source: 'repository' },
+      table: LANGUAGES,
+      onSet: nothing,
+    },
+    standing: {
+      says: 'dev writes allowed; test locally against dev\nprod only on a yes\nnever push to main',
+      at: new Date(Date.now() - 26 * 3_600_000).toISOString(),
+    },
+    onStanding: nothing,
+  },
+  reach: {
+    ...SETUP_DEFAULTS.reach,
+    across: { repository: 'engine', workspace: 'default', checkout: true, read: false, source: 'repository', writesTo: ['game'] },
+    candidates: ['sandbox'],
+    rules: { allow: ['Bash(npm run test:*)'], ask: [], deny: ['Bash(git push:*)'] },
+  },
+};

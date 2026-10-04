@@ -134,10 +134,11 @@ describe('the rules card', () => {
 });
 
 /**
- * READ1 (D107): reading and writing across, the screen's half of `daoris driver across` (D50) — each change
- * lands on the bridge as the verb a terminal has, and what the driver answered is what the card shows.
+ * READ1 (D107): reading across, the screen's half of `daoris driver across --workspace` (D50) — each change lands on the
+ * bridge as the verb a terminal has, and what the driver answered is what the card shows. Since UX6f (D150 §3.1) a
+ * repository's own reading and what its sessions also write into are on its page, under Setup, which the card's doors open.
  */
-describe('the reading and writing across card', () => {
+describe('the reading across card', () => {
   const ACROSS = {
     repositories: [
       { repository: 'engine', workspace: 'default', checkout: true, read: true, source: 'default', writesTo: [] },
@@ -159,27 +160,27 @@ describe('the reading and writing across card', () => {
     invoke.mockReset();
   });
 
-  it('switches a checkout\'s reading off, as `daoris driver across <repository> read off` does, and says what it means', async () => {
+  it('switches a workspace\'s reading off, as `daoris driver across --workspace <name> read off` does, and says what it means', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="permissions" />);
 
-    const engine = await screen.findByRole('radiogroup', { name: "Reading engine's checkout" });
+    const workspace = await screen.findByRole('radiogroup', { name: 'Reading across in default' });
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACROSS', {});
-    await userEvent.click(within(engine).getByRole('radio', { name: 'Off' }));
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { repository: 'engine', read: false } });
+    await userEvent.click(within(workspace).getByRole('radio', { name: 'Off' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { workspace: 'default', read: false } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      'engine: its checkout is read by no agent outside it. A session already running keeps what it began with.'));
+      'default: its checkout is read by no agent outside it. A session already running keeps what it began with.'));
   });
 
-  it('takes a relationship back, as `daoris driver across <repository> write-to <other> --clear` does', async () => {
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="permissions" />);
+  // UX6f: a repository's relationship is taken back on its Setup now; the card's door opens it there.
+  it("opens the Setup of a repository that declared a relationship, by the application's one opener", async () => {
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="permissions" onGo={onGo} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Stop plugins writing into engine' }));
-    expect(invoke).toHaveBeenCalledWith(
-      'DAORIS.DRIVER', 'SET_WRITE_ACROSS', { payload: { repository: 'plugins', to: 'engine', allow: false } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(
-      'Sessions in plugins no longer write into engine; a change needed there is a quest again.'));
+    expect(await screen.findByText('Set for a repository of its own, on its page under Setup:')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop plugins writing into engine' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: "Open plugins's setup" }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'projects', item: 'plugins', tab: 'setup' });
   });
 
   /** HELP10: Ask Daoris's go to *Reading and writing across* opens the domain at this card, once it is drawn. */
@@ -191,7 +192,7 @@ describe('the reading and writing across card', () => {
     try {
       show(<SettingsView notify={() => {}} section="permissions" anchor="across" onAnchored={anchored} />);
 
-      await screen.findByRole('radiogroup', { name: "Reading engine's checkout" });
+      await screen.findByRole('radiogroup', { name: 'Reading across in default' });
       await waitFor(() => expect(scrolled).toHaveBeenCalledWith('settings-across'));
       expect(anchored).toHaveBeenCalled();
     } finally {

@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LandingList } from './Landings';
 
-// How work lands (WSR1, D87), in the shape the driver's LINES answer takes: every source a rule can
-// come from, and a machine with nothing to set one for.
+// How work lands in each workspace (WSR1, D87), in the shape the driver's LINES answer takes, and since UX6f the line
+// naming the repositories that set their own rule, each a door to its Setup, or that none does; and a machine with
+// nothing to set one for.
 
 const meta = {
   title: 'Settings/Landings',
   component: LandingList,
-  args: { onSet: () => {}, workspaceLandings: [], landings: [] },
+  args: { onSet: () => {}, onOpen: () => {}, workspaceLandings: [], landings: [] },
 } satisfies Meta<typeof LandingList>;
 
 export default meta;
@@ -40,7 +41,7 @@ export const HandedToAPlugin: Story = {
 
 /**
  * LAND2a (D145): a workspace that accepts automatically through its plugin, and a repository whose own rule accepts
- * automatically with no plugin, which warns that nothing leaves the machine.
+ * automatically with no plugin, named as a door to its Setup, where that rule is said.
  */
 export const AcceptsAutomatically: Story = {
   args: {

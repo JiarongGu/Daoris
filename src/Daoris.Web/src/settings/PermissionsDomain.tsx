@@ -1,40 +1,42 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry } from '../queries';
 import {
-  useAcross, useDriver, useRuleAction, useRuleProposal, useRules, useSetReadAcross, useSetWriteAcross,
+  useAcross, useDriver, useRuleAction, useRuleProposal, useRules, useSetReadAcross,
 } from '../shell';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { workspacesOf } from '../workspaces';
 import { AcrossList } from './Across';
 import { AgentRules } from './AgentRules';
+import type { SettingsDomainProps } from './domains';
 import { DomainLoading } from './DomainLoading';
+import { setupDoor } from './OnItsPage';
 import { proposalChange } from './proposals';
 
 /**
- * What an agent Daoris starts may do: whether it reads and writes across repositories (READ1, D107), then
- * the machine's `permissions.json` (PERM1, D72), the file the driver composes each spawn's rules from and
- * `daoris agent rules` edits (D50).
+ * What an agent Daoris starts may do: whether it reads across repositories (READ1, D107), then the machine's
+ * `permissions.json` (PERM1, D72), the file the driver composes each spawn's rules from and `daoris agent rules` edits
+ * (D50). A repository's own reading and what its sessions also write into are on its page, under Setup (UX6f).
  */
-export function PermissionsDomain({ notify }: { notify: Notify }) {
+export function PermissionsDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify'> & { onGo?: SettingsDomainProps['onGo'] }) {
   return (
     <>
-      <AcrossSettings notify={notify} />
+      <AcrossSettings notify={notify} onOpen={onGo && setupDoor(onGo)} />
       <RulesSettings notify={notify} />
     </>
   );
 }
 
 /**
- * Reading and writing across (D107): the driver's own resolution for each repository here, and the screen's
- * half of `daoris driver across` (D50). Desktop-only, because the workspaces and the file are this machine's.
- * First on the page, because it answers the question a person brings here first: may an agent look next door.
+ * Reading across (D107): the driver's own resolution for each workspace here, and the screen's half of `daoris driver
+ * across --workspace` (D50). Desktop-only, because the workspaces and the file are this machine's. First on the page,
+ * because it answers the question a person brings here first: may an agent look next door. A repository's own reading
+ * and its relationships are on its Setup, which the card's line names each door to.
  */
-function AcrossSettings({ notify }: { notify: Notify }) {
+function AcrossSettings({ notify, onOpen }: { notify: Notify; onOpen?: (repository: string | null) => void }) {
   const { t } = useTranslation();
   const answer = useAcross();
   const driver = useDriver();
   const setRead = useSetReadAcross();
-  const setWrite = useSetWriteAcross();
   useErrorNotify(answer.error, notify);
 
   // Its place held until the first answer (FRAME1g): a first open drew a blank page under the domain's name.
@@ -48,7 +50,7 @@ function AcrossSettings({ notify }: { notify: Notify }) {
     <AcrossList
       repositories={repositories}
       workspaceReads={driver.data?.workspaceReadAcross ?? []}
-      busy={setRead.isPending || setWrite.isPending}
+      busy={setRead.isPending}
       onRead={(change) => setRead.mutate(change, {
         onSuccess: () => {
           const name = change.repository ?? change.workspace ?? '';
@@ -58,12 +60,7 @@ function AcrossSettings({ notify }: { notify: Notify }) {
         },
         onError: failed,
       })}
-      onWrite={(change) => setWrite.mutate(change, {
-        onSuccess: () => notify(t(change.allow ? 'settings.across.declared' : 'settings.across.withdrawn', {
-          repository: change.repository, to: change.to,
-        })),
-        onError: failed,
-      })}
+      onOpen={onOpen}
     />
   );
 }
