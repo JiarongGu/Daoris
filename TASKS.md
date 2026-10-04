@@ -14,8 +14,8 @@ Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1187 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
-704 desktop modules, 80 devkit, 4017 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1274 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
+704 desktop modules, 80 devkit, 4087 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -104,27 +104,35 @@ and also we should be utilizing the top menu, so instead of calling this 'agent'
 like VS Code); also the account page itself needs its UI/UX improved; also Codex and DeepSeek are missing"* · *"both
 title sections, for quest and session, need their UI/UX improved"*):
 
-- [ ] **UX7a — the top menu works as VS Code's does** (web-shell, desktop). The strip's four menus (Daoris, Workspace,
-  Agents, View) become a menu bar a person reaches for: every verb Daoris has, grouped as an IDE groups them (a
-  File-like menu for workspaces and repositories, Edit, View, Go to each place, Run for sessions and quests,
-  Terminal, Help), each with its shortcut and the palette's name; no menu named after one place. Contract: D56, D75,
-  D150 §2.4. Proof: the menu tables' tests against the palette; the look.
+
 - [ ] **UX7b — the account page reads at a glance** (web-shell). On the install, the agent's page leads with the tool's
   own sign-in, a long paragraph about it and a fine-print paragraph, before and between the accounts; an account's
   title is its email with its name secondary; states, reads and counts stack in grey lines. One clear row per
   account (who, state, when read, which workspaces use it, its one act); the explanations folded; adding an account
   asks whether to put it in each workspace's rotation (see ACCT1). Contract: D150 §5. Proof: stories, the look.
+  *Takes ACCT1 and ACCT2's screen halves (their driver and terminal halves are archived): a row's* Sign in *reaches
+  that account, the add flow names it and joins the lists chosen (`login-new`'s `name` and `join`), a row titled by
+  its `displayName`, a rename (`profile-rename`), and "no workspace" with its join (`profile-join`).*
+- [ ] **ACCT2b — the driver's words name an account by the person's name** (driver, modules; found building ACCT2). A
+  held start's, rotation's and *What needs you*'s sentences still name an account by its id (`acct-…` for a new one),
+  while the roster and the terminal say its name. Contract: D125's ACCT2 note. Proof: `RotationWords` and note-code
+  cases with a named account; the page's sentences.
 
 - [ ] **UX7d — what else the look found** (web-shell, driver). Absent agents listed with *Install* (AGENTS2's screen);
   two-letter strip marks; a version without its product's name; tight 中文 summaries; the record's *opened on* line worded
   by code, its backticks as code. Contract: D152, design §1, §4.6. Proof: stories, the note codes' twin, the look.
-- [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
-  *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
-  says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
-  name is what the person calls it, defaulting to the email its sign-in reports; a stable id the person never sees
-  names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
-  (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
-  D125. Proof: a rename kept by rotation and records; the CLI and page twins.
+- [ ] **UX7a2 — what the menu bar left** (web-settings, web-shell; found building UX7a). *Update* opens Settings →
+  Driver at its top, because `SettingsAnchor` has no `'update'` (the card already has `id="settings-update"`); and
+  below about 590 CSS px the strip has no room for seven menus, so they fold into one ☰. Contract: D152's UX7a note,
+  design §3. Proof: the anchor's vitest; a story at 560 px.
+- [ ] **UX7e — the menu bar and the heads tried on the install** (the parent's, after the republish carrying UX7a–c).
+  Alt alone and F10 on the frameless window, where Windows' own menu mode must not take the focus (the story
+  `Chrome/MenuBar → KeysReachingThePage` in the window's engine); Alt+letter and every key in the table; Ctrl+N in
+  the terminal still the shell's; Edit's Undo, Cut and Paste on a composer; each menu at 1546 and 680 px, both themes
+  and languages. A session's head against §6.2's 200 px (UX7c estimates about 220), a quest's cut title, the
+  composer's *Short title*, the next landing's branch name. Contract: D152 §6, its UX7a and UX7c notes. Proof: the
+  shots and measures in a dated note on D152.
+
 - [ ] **LANDNAME1 — a landing's branch named by the person** (driver, web-shell; found landing the owner's two quests,
   2026-10-05). The `{slug}` now comes from the quest's short title (SESSUX1j), its ticket key leading; what remains is
   letting the review's *Accept* and `trees land --branch` take a name the person types. Contract: D145, D149, D126's
@@ -135,11 +143,7 @@ title sections, for quest and session, need their UI/UX improved"*):
   too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
   records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
   the quest.
-- [ ] **ACCT1 — signing in reaches the account the person meant** (driver, web-shell; found on the install,
-  2026-10-04). The owner signed in to re-enable account-2 and got a new account-3, which no workspace's rotation
-  held, so the work kept starting on the empty account-2. A signed-out account's row signs in to that account; a new
-  account asks whether to join each workspace's rotation; an account that is in no rotation says so where it is
-  listed. Contract: D125 §3, D130. Proof: route and page tests for the row's sign-in and the join.
+
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).

@@ -11165,3 +11165,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
 
 **Outcome** 2026-10-05: built. A session's pinned header leads with its state, then its title on one line, then a facts line chosen by state (*engine · account-1 · 2m · attempt 4: the 3 before it failed*, counting failures as the planner does); the id moved to the ⋯ and a *Details* fold with *Copy*, and the chain opens folded. A quest's head leads with the state pill, the name on at most two lines with *Show all* only where it was cut, and a facts line; *Take* (or *Mark done*), *Decline…* and a ⋯ for the rest; id, from, to, lanes and times fold into *Details*; no title is said twice, and the body drops a first line that repeats it. `PageHead` gained `lead`, `clamp` and `facts`, every other page unchanged. One deviation from the design: *attempt*, not *try*, which the glossary keeps for a plugin trial. Detail: D152's UX7c note, commit ab8c9d2b.
+
+
+## ACCT2 — an account is named by the person, never `account-N` (2026-10-05, D125)
+
+> - [ ] **ACCT2 — an account is named by the person, never `account-N`** (driver, cli, web-shell; owner, 2026-10-05:
+> *"why do we call this account-*, which probably should have a better naming, or use a hash name"*). `account-N`
+> says nothing and shifts as accounts come and go (removing account-2 left account-1 and account-3). An account's
+> name is what the person calls it, defaulting to the email its sign-in reports; a stable id the person never sees
+> names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
+> (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
+> D125. Proof: a rename kept by rotation and records; the CLI and page twins.
+
+**Outcome** 2026-10-05: the driver and terminal halves built; the screen half went to UX7b. An account's id is its folder's name: an existing `account-N` keeps its own, and a new sign-in or API key at either door gets `acct-` plus 8 random hex characters, never reused. The first-free `account-N` handed a removed account's name, readings and usage to the next one made. Its name is the person's, kept in `accounts.json` under the home (`AccountNames.cs` and `accountnames.ts`, twinned row for row), so a rename writes that file alone and every list, default, reading, cooling, record and usage total keeps the account by its id. A name is one word, at most 64 characters, never another account's id or name. The sign-in's end offers who signed in as the name and writes it only when kept. Doors: `daoris agent profile rename`, `login --new --name`, `HARNESS_ACTION` `profile-rename`; the roster and `ACCOUNTS` carry `displayName`. The driver's own sentences still say the id (ACCT2b). Driver fast half 4105 → 4187, modules 592 → 600, CLI 1250 → 1274. Detail: D125's ACCT2 note; commit 1e750b9e.
+
+
+## ACCT1 — signing in reaches the account the person meant (2026-10-05, D125)
+
+> - [ ] **ACCT1 — signing in reaches the account the person meant** (driver, web-shell; found on the install,
+> 2026-10-04). The owner signed in to re-enable account-2 and got a new account-3, which no workspace's rotation
+> held, so the work kept starting on the empty account-2. A signed-out account's row signs in to that account; a new
+> account asks whether to join each workspace's rotation; an account that is in no rotation says so where it is
+> listed. Contract: D125 §3, D130. Proof: route and page tests for the row's sign-in and the join.
+
+**Outcome** 2026-10-05: the driver and terminal halves built; the row's sign-in and the add flow on the page went to UX7b. A sign-in reaches an account that is already here, by its id or its name, else the machine's default. Otherwise it is refused before anything starts, naming the accounts there and `--new`. `login --profile x` no longer creates `x`, and a sign-in with no default no longer makes a `default` folder. The same step joins lists: `--join <workspace>`/`--join-machine`, the route's `join`. A join appends to the scope's list, or starts one at its default. One whose workspace would only borrow this machine's list is refused, naming both fixes, and every join is checked before the sign-in starts. Where an account runs is said at the sign-in's end, under it in `daoris agent list` ("no workspace: …"), in the roster (`places`, `nowhere`) and in `HARNESS_ENDED`. Doors: `daoris agent profile join`, `HARNESS_ACTION` `profile-join`. Detail: D125's ACCT1 note; commit 1e750b9e.
+
+
+## UX7a — the top menu works as VS Code's does (2026-10-05, D152)
+
+> - [ ] **UX7a — the top menu works as VS Code's does** (web-shell, desktop). The strip's four menus (Daoris, Workspace,
+> Agents, View) become a menu bar a person reaches for: every verb Daoris has, grouped as an IDE groups them (a
+> File-like menu for workspaces and repositories, Edit, View, Go to each place, Run for sessions and quests,
+> Terminal, Help), each with its shortcut and the palette's name; no menu named after one place. Contract: D56, D75,
+> D150 §2.4. Proof: the menu tables' tests against the palette; the look.
+
+**Outcome** 2026-10-05: built. The strip's menus are Workspace, Edit, View, Go, Run, Terminal and Help, built from one command table (`commands.ts`) that the palette, the keys, the *Keyboard shortcuts* drawer, `LAYOUT_KEYS` and the activity bar's tips also read. Tests hold the table: no key listed twice, no key on anything that stops, declines, deletes or archives, every applicable row in the palette, every label within the budgets in both languages. With two workspaces that is 65 items, 30 with a key. Run's and Edit's record acts call the page's own offer (`mainOffer.ts`), so a row is enabled exactly when the head offers it. That differs from design §3.5, and D152's note says why. The bar works as an IDE's: one open menu opens the others, ← → move along it, Escape gives the focus back, and Alt alone or F10 focuses it (desktop only). Alt+letter opens a menu, the letters showing while Alt is held. Edit acts on the field last focused, and Find goes to the conversation's find. Ask Daoris's room names Help → *Setup*. Left: Update's scroll to its card and a folded menu below about 590 px (UX7a2). Web vitest 3966 → 4037, help room 48 → 49. Detail: D152's UX7a note; commits f4e46361…327acf01.

@@ -97,22 +97,22 @@ public sealed class HarnessSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// An account made by signing in (D66 §3) is named before anyone knows whose it is, so it takes
-    /// the first free <c>account-N</c> — twin rule 5, and the CLI's <c>login --new</c> counts the
-    /// same way. Who signed in is the TOOL's answer, read by the roster, never the directory's name.
+    /// An account made by signing in (D66 §3) is made before anyone knows whose it is, so it takes a fresh id (ACCT2) —
+    /// twin rule 5, and the CLI's <c>login --new</c> draws the same way. It no longer takes the first free
+    /// <c>account-N</c>: removing <c>account-2</c> left <c>account-1</c> and <c>account-3</c>, and the next account made would
+    /// have taken a removed one's name, its readings and its usage. Who signed in is offered as its name, never its folder's.
     /// </summary>
     [Fact]
-    public void A_new_account_takes_the_first_free_number()
+    public void A_new_account_takes_a_fresh_id_and_never_a_removed_one_s_name()
     {
-        Assert.Equal("account-1", HarnessSettings.NextAccount(_home, "claude-code"));
-
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "account-1"));
-        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "account-2"));
-        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "work"));
-        Assert.Equal("account-3", HarnessSettings.NextAccount(_home, "claude-code"));
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "account-3"));
 
-        // Another tool's accounts are its own count.
-        Assert.Equal("account-1", HarnessSettings.NextAccount(_home, "codex"));
+        var made = HarnessSettings.NextAccount(_home, "claude-code");
+
+        Assert.Matches("^acct-[0-9a-f]{8}$", made);
+        Assert.NotEqual("account-2", made);
+        Assert.DoesNotContain(made, HarnessSettings.Profiles(_home, "claude-code"));
     }
 
     /// <summary>

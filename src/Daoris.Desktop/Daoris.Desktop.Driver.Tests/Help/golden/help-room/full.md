@@ -119,7 +119,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 
 | To | On the screen | At a terminal |
 |---|---|---|
-| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (the Daoris menu's *Setup*) | (each step shows its own command there) |
+| walk through setting this machine up: an agent, Ask Daoris's agent, a workspace and its repositories, what is driven, how work lands, what agents may do | Settings → Setup (Help → *Setup*) | (each step shows its own command there) |
 | drive a repository, or stop | Repositories → the repository's page → Setup → Driving | `daoris driver drive|undrive <repository>` |
 | hold one, so nothing new starts there, or resume it | Repositories → the repository's page → Setup → Driving | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories → the repository's page → Setup → Driving | `daoris driver trees <repository> on|off` |
@@ -147,7 +147,9 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Repositories → the repository's page → Setup → Reach; a workspace's reading, Settings → Permissions → Across repositories | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | keep a standing answer for a repository, handed to every session there: which writes are allowed, where to test | Repositories → the repository's page → Setup → Sessions | `daoris driver standing <repository> "…"|--clear` |
 | set the language a repository's sessions write to you in, or a workspace's: their questions, closing notes, decline reasons and last words (the window's own language is Settings → Appearance, and neither sets the other) | Repositories → the repository's page → Setup → Sessions; a workspace's, Settings → Workspace → Session language | `daoris driver language <repository> en|zh|--clear` (`--workspace <name>` for a whole workspace) |
-| sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent>` |
+| sign an agent in, or add an account | Agents → the agent's page → Accounts | `daoris agent login <agent> --profile <account>` (an account that is here, never a new one), `daoris agent login <agent> --new [--name <name>] [--join <workspace>] [--join-machine]` |
+| name an account: its id stays, so every list, default and record keeps it | (no screen yet) | `daoris agent profile rename <agent> <account> <name>` |
+| put an account in a workspace's list, or this machine's, so starts run on it | (no screen yet) | `daoris agent profile join <agent> <account> <workspace>…|--machine` |
 | choose which account an agent's sessions use, for the machine or a workspace | Agents → the agent's page → an account's ⋯ → Use by default, Use by default in a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
 | choose the accounts rotation may use, in order, for the machine or a workspace (an account not listed never rotates) | Agents → the agent's page → How accounts are used → Use, up and down; and Workspaces → Its own accounts | `daoris agent profile order <agent> <profile>…|--clear [--workspace <name>]` |
 | choose how a list is used, for the machine or a workspace: make the most of its accounts (`goal`) or one by one in order (`order`), one kept for conversations, and switching before a limit | Agents → the agent's page → How accounts are used → Use accounts, Keep for conversations, Switch before the limit | `daoris agent profile use <agent> [goal|order] [--keep <account>|--no-keep] [--early on|off] [--near <percent>] [--workspace <name>]` (no flag prints them; `--clear` returns to today's defaults) |
@@ -199,7 +201,9 @@ where the person picks the one they mean, and a part of `agents` opens the agent
 
 The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,
 Sessions, Quests, Repositories, Map, Convergence, Search and Agents, with Settings at its foot; `Ctrl+K` opens
-the command palette. Every view sits in one frame: the view in the centre, the panel beneath it,
+the command palette. The menu bar across the top holds Workspace, Edit, View, Go, Run, Terminal and Help, as
+VS Code's does: Go opens the places (`Ctrl+1` to `Ctrl+8`), Run acts on the session or the quest in front, and
+Help → Keyboard shortcuts lists every key. Every view sits in one frame: the view in the centre, the panel beneath it,
 and the right side bar beside it; on Sessions the session list is at the left and the centre is the
 attended session. Five views stand in the two regions and move between them:
 the timeline, the review and the console of the session attended on Sessions, Ask Daoris, and the

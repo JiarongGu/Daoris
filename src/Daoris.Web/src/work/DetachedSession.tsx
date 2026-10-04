@@ -72,7 +72,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const now = latest.current;
-      if (frameShortcut(event) !== 'panel' || !now.here) return;
+      if (frameShortcut(event) !== 'view.panel' || !now.here) return;
       event.preventDefault();
       now.panel.setClosed(!now.panel.closed);
     };

@@ -1,0 +1,209 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useLayoutEffect, useMemo, useState } from 'react';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n';
+import { COMMANDS, type CommandState, MENUS, type MenuId, shortcutGroups, type Translate } from '../commands';
+import { isPress } from '../shortcuts';
+import { menuRows } from './appMenus';
+import { AppMenuBar } from './AppMenu';
+import { CommandCenter } from './CommandCenter';
+import { AppStrip } from './frame';
+import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { LayoutToggles } from './LayoutToggles';
+import { ATTENDED, IN_A_BROWSER, menuWorld, OPEN_QUEST } from './menuFixtures';
+
+// The menu bar (UX7a, D152): the strip as the window draws it, with each menu open over the page, built from the one
+// table the palette and the keys read. `theme`, `language` and `world` are args, so one story is photographed in both
+// themes and both languages at 1546 and 680 px.
+
+type World = 'shell' | 'attended' | 'quest' | 'browser';
+
+const WORLDS: Record<World, Partial<CommandState>> = {
+  shell: {},
+  attended: ATTENDED,
+  quest: OPEN_QUEST,
+  browser: IN_A_BROWSER,
+};
+
+/** The theme on the document, as a person chooses it (D66), put back when the story goes. */
+function useTheme(theme: 'light' | 'dark') {
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    const was = root.dataset.theme;
+    root.dataset.theme = theme;
+    return () => {
+      if (was === undefined) delete root.dataset.theme;
+      else root.dataset.theme = was;
+    };
+  }, [theme]);
+}
+
+function Strip({ menu, world, mnemonics, chinese }: { menu: MenuId | null; world: World; mnemonics: boolean; chinese: boolean }) {
+  // A reader of its own in either language: a 中文 one remembers 中文 for the next story, so English is asked for too.
+  const reader = useMemo(() => i18n.cloneInstance({ lng: chinese ? 'zh' : 'en' }), [chinese]);
+  const t = reader.t.bind(reader) as Translate;
+  const [open, setOpen] = useState<string | null>(menu);
+  const attached = world !== 'browser';
+  const entries = menuWorld({ ...WORLDS[world], language: chinese ? 'zh' : 'en' }, t);
+  const menus = MENUS.filter((each) => !each.shell || attached).map((each) => ({
+    id: each.id, label: t(each.label), ...(attached ? { letter: each.letter } : {}), items: menuRows(entries, each.id),
+  }));
+  return (
+    <I18nextProvider i18n={reader}>
+      <div className="flex h-[40rem] flex-col bg-page text-ink">
+        <AppStrip
+          captionRoom={attached}
+          menus={<AppMenuBar label={t('menu.bar')} menus={menus} open={open} onOpen={setOpen} onChoose={() => {}} mnemonics={mnemonics} />}
+          center={<CommandCenter scope={t('scope.every', { count: 2 })} shortcut="Ctrl K" onOpen={() => {}} label={t('palette.open')} />}
+          trailing={(
+            <div className="flex items-center max-[54rem]:hidden">
+              <LayoutToggles
+                regions={attached ? ['list', 'panel', 'right'] : ['list']}
+                list={t('layout.list.quests')}
+                closed={{ list: false, panel: false, right: true }}
+                onToggle={() => {}}
+              />
+            </div>
+          )}
+        />
+      </div>
+    </I18nextProvider>
+  );
+}
+
+function MenuBarStory({ menu, world = 'shell', theme = 'light', language = 'en', mnemonics = false }: {
+  menu: MenuId | 'none';
+  world?: World;
+  theme?: 'light' | 'dark';
+  language?: 'en' | 'zh';
+  mnemonics?: boolean;
+}) {
+  useTheme(theme);
+  // Drawn anew for each set of args, so the menu named opens as the story opens.
+  return (
+    <Strip
+      key={`${menu}-${world}-${language}`}
+      menu={menu === 'none' ? null : menu}
+      world={world}
+      mnemonics={mnemonics}
+      chinese={language === 'zh'}
+    />
+  );
+}
+
+const meta: Meta<typeof MenuBarStory> = {
+  title: 'Chrome/MenuBar',
+  component: MenuBarStory,
+  parameters: { layout: 'fullscreen' },
+  args: { world: 'shell', theme: 'light', language: 'en', mnemonics: false },
+  argTypes: {
+    world: { control: 'inline-radio', options: ['shell', 'attended', 'quest', 'browser'] },
+    theme: { control: 'inline-radio', options: ['light', 'dark'] },
+    language: { control: 'inline-radio', options: ['en', 'zh'] },
+  },
+};
+export default meta;
+
+type Story = StoryObj<typeof MenuBarStory>;
+
+/** The bar closed: seven menus, the command center, the toggles and the caption room. */
+export const Closed: Story = { args: { menu: 'none' } };
+
+/** Alt held: each menu's letter, underlined, and after the name in 中文. */
+export const AltHeld: Story = { args: { menu: 'none', mnemonics: true } };
+
+/** Workspace: the new things, the scope, the repositories, the workspace's setup, Settings. */
+export const Workspace: Story = { args: { menu: 'workspace' } };
+
+/** Edit: a field's six with their keys (off with no field), Find, Search knowledge, Copy ID. */
+export const Edit: Story = { args: { menu: 'edit' } };
+
+/** View: Commands, the regions ticked as shown, the views, the windows, Theme and Language, the index. */
+export const View: Story = { args: { menu: 'view' } };
+
+/** Go: the places with Ctrl+1 to Ctrl+8, the one in front ticked, then the regions. */
+export const Go: Story = { args: { menu: 'go' } };
+
+/** Run with nothing in front: each record group's acts in their place, off, the tip saying what to open. */
+export const Run: Story = { args: { menu: 'run' } };
+
+/** Run with a session attended: its stop and its own window apply, as its header offers them. */
+export const RunOnASession: Story = { args: { menu: 'run', world: 'attended' } };
+
+/** Run with an open quest: *Take*, *Mark done* and *Decline…* apply. */
+export const RunOnAQuest: Story = { args: { menu: 'run', world: 'quest' } };
+
+/** Terminal: a shell's alone. */
+export const Terminal: Story = { args: { menu: 'terminal' } };
+
+/** Help: Ask Daoris and Quick Ask, Setup, Keyboard shortcuts, the machine log, Update, About. */
+export const Help: Story = { args: { menu: 'help' } };
+
+/** A browser: six menus, no machine verb, no key a browser keeps (D152 §3.6). */
+export const BrowserWorkspace: Story = { args: { menu: 'workspace', world: 'browser' } };
+
+/** A browser's Go: its places, no keys. */
+export const BrowserGo: Story = { args: { menu: 'go', world: 'browser' } };
+
+/** Help › Keyboard shortcuts: every key by menu. */
+export const Shortcuts: Story = {
+  args: { menu: 'none' },
+  render: ({ theme = 'light', language = 'en', world = 'shell' }) => <ShortcutsStory theme={theme} language={language} world={world} />,
+};
+
+/**
+ * Which of the table's keys reach the page in the engine the story runs in (D152 §3.4: found, not assumed). Press each:
+ * its row says *reached* when the page heard it, and the page takes it, so the engine's own use of it shows as no row
+ * lit. Opened in the window's engine, it answers for the window; in a browser, for that browser.
+ */
+export const KeysReachingThePage: Story = {
+  args: { menu: 'none' },
+  render: ({ theme = 'light' }) => <KeyProbe theme={theme} />,
+};
+
+function KeyProbe({ theme }: { theme: 'light' | 'dark' }) {
+  useTheme(theme);
+  const keys = useMemo(() => [
+    ...COMMANDS.flatMap((spec) => (spec.keys ?? []).map((key) => (typeof key === 'string' ? key : key.combo))
+      .filter((combo) => !/^Ctrl\+[ZYXCVA]$/.test(combo))
+      .map((combo) => ({ combo, id: spec.id }))),
+    { combo: 'Alt', id: 'the menu bar' }, { combo: 'F10', id: 'the menu bar' }, { combo: 'Alt+W', id: 'menu.workspace' },
+  ], []);
+  const [reached, setReached] = useState<ReadonlySet<string>>(new Set());
+  useLayoutEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const hit = keys.find(({ combo }) => (combo === 'Alt' ? event.key === 'Alt' : isPress(event, combo)));
+      if (!hit) return;
+      event.preventDefault();
+      setReached((was) => new Set([...was, hit.combo]));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [keys]);
+  return (
+    <div className="bg-page p-4 text-ink">
+      <table className="text-small">
+        <tbody>
+          {keys.map(({ combo, id }) => (
+            <tr key={`${combo}-${id}`}>
+              <td className="pr-4 font-mono">{combo}</td>
+              <td className="pr-4 text-ink-soft">{id}</td>
+              <td className={reached.has(combo) ? 'text-accent' : 'text-ink-faint'}>{reached.has(combo) ? 'reached' : '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function ShortcutsStory({ theme, language, world }: { theme: 'light' | 'dark'; language: 'en' | 'zh'; world: World }) {
+  useTheme(theme);
+  const reader = useMemo(() => i18n.cloneInstance({ lng: language }), [language]);
+  const t = reader.t.bind(reader) as Translate;
+  return (
+    <I18nextProvider i18n={reader}>
+      <KeyboardShortcuts groups={shortcutGroups(menuWorld(WORLDS[world], t), t)} browser={world === 'browser'} onClose={() => {}} />
+    </I18nextProvider>
+  );
+}

@@ -237,19 +237,21 @@ public sealed class AccountCoolingTests : IDisposable
     }
 
     [Fact]
-    public void A_key_made_into_an_account_ends_a_cool_off_its_name_still_carried()
+    public void A_key_made_into_an_account_takes_an_id_no_cool_off_names_and_leaves_the_others()
     {
         AccountCooling.Cool(_home, Entry(agent: "fake", account: "account-1", until: DateTimeOffset.UtcNow.AddDays(2)), DateTimeOffset.UtcNow);
 
         var account = HarnessKeys.Add(_home, "fake", "sk-test-0000-wxyz");
 
-        Assert.Equal("account-1", account);
-        Assert.Null(AccountCooling.Of(_home, "fake", "account-1", DateTimeOffset.UtcNow));
+        // ACCT2: a fresh id, never a removed account's name, so it starts with no cool-off of another's.
+        Assert.NotEqual("account-1", account);
+        Assert.Null(AccountCooling.Of(_home, "fake", account, DateTimeOffset.UtcNow));
+        Assert.NotNull(AccountCooling.Of(_home, "fake", "account-1", DateTimeOffset.UtcNow));
     }
 
     /// <summary>
-    /// TOOL4e: an account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — the next account
-    /// made takes the first free name, which may be this one's, and must not start out cooling.
+    /// TOOL4e: an account removed takes its cool-off with it, as the CLI's <c>profile remove</c> does — an account made
+    /// later under its name by <c>profile add</c> must not start out cooling.
     /// </summary>
     [Fact]
     public void Removing_an_account_ends_its_cool_off_and_no_other()

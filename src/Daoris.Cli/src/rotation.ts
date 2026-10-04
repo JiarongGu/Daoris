@@ -183,6 +183,70 @@ export function withoutAccount(settings: HarnessSettings, agent: string, profile
   return next;
 }
 
+// ——— An account put into a scope's list, and where each account runs (ACCT1, D125's ACCT1 note; D130 §3.1). The driver's
+// twin is `Harnesses.Accounts.cs` (`JoinProblemOf`, `WithJoined`, `PlacesOf`), and `account-join.test.ts` holds the tables
+// `AccountJoinTwinTests.cs` holds, cell for cell. Accounts compare exactly, as the wiring compares a name with a folder.
+
+/** One scope an account runs in: a workspace, or null for this machine; whether its own list holds it, and its own default names it. */
+export interface AccountPlace {
+  workspace: string | null;
+  list: boolean;
+  default: boolean;
+}
+
+/**
+ * The workspace an account cannot join, or null where it can: a workspace that names no default and no list of its own for
+ * the agent takes this machine's scope (rule 6), so its list is this machine's, and a list of its own would move its starts
+ * off every account the machine's holds. Null is this machine's list, which any account may join.
+ */
+export function joinProblem(settings: HarnessSettings, agent: string, workspace: string | null): { workspace: string } | null {
+  const circle = workspace?.trim();
+  return circle && resolveScope(settings, agent, circle).from !== 'workspace' ? { workspace: circle } : null;
+}
+
+/** The refusal a person reads for a workspace that takes this machine's list, as the driver's `JoinProblem.Sentence` says it. */
+export function joinRefusal(agent: string, workspace: string): string {
+  return `\`${workspace}\` names no \`${agent}\` account or list of its own, so its starts take this machine's list — join this `
+    + `machine's list, or give \`${workspace}\` a list of its own first (\`daoris agent profile order ${agent} <account>… `
+    + `--workspace ${workspace}\`).`;
+}
+
+/**
+ * The wiring with `account` in the scope's own list: appended where the list lacks it, a list begun at the scope's default
+ * where it has none, or of the account alone where the scope names nobody. The list's settings stay. Whether the scope may
+ * be joined is `joinProblem`'s question, which a door asks first.
+ */
+export function withJoined(settings: HarnessSettings, agent: string, account: string, workspace: string | null): HarnessSettings {
+  const scope = resolveScope(settings, agent, workspace);
+  const list = scope.list.length > 0
+    ? (scope.list.includes(account) ? scope.list : [...scope.list, account])
+    : (scope.default !== null && scope.default !== account ? [scope.default, account] : [account]);
+  return withRotation(settings, agent, list, workspace?.trim() || null);
+}
+
+/**
+ * Where `account` runs: each scope whose own list holds it or whose own default names it, this machine first and then each
+ * workspace by name. None is an account no start runs on, which both doors say.
+ */
+export function placesOf(settings: HarnessSettings, agent: string, account: string): AccountPlace[] {
+  const places: AccountPlace[] = [];
+  const add = (workspace: string | null, list: string[] | undefined, named: string | undefined) => {
+    const listed = list?.includes(account) === true;
+    const defaulted = named?.trim() === account;
+    if (listed || defaulted) places.push({ workspace, list: listed, default: defaulted });
+  };
+
+  add(null, settings.rotation[agent], settings.defaults[agent]);
+  const seen = new Set<string>();
+  const workspaces = [...Object.keys(settings.workspaces), ...Object.keys(settings.workspaceRotation)]
+    .filter((workspace) => !seen.has(workspace.toLowerCase()) && seen.add(workspace.toLowerCase()))
+    .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const workspace of workspaces) {
+    add(workspace, settings.workspaceRotation[workspace]?.[agent], settings.workspaces[workspace]?.[agent]);
+  }
+  return places;
+}
+
 // ——— How a scope's list is used (TOOL6a; D130 §2, §14, §16.6): rules 5 to 8 above.
 
 /**

@@ -318,7 +318,8 @@ describe('the real glossary and catalogues', () => {
       'nav.agents': ['Agents', '智能体'],
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
-      'command.go.convergence': ['Convergence', '同归'],
+      // The palette's row was its own key until UX7a (D152 §2); Go › Convergence and the palette's *Go to:* read the place's.
+      'nav.convergence': ['Convergence', '同归'],
       // The owner's two calls: the view of repositories is named for them, and an ask is 需求.
       'nav.projects': ['Repositories', '仓库'],
       'asks.group': ['Asks ({{count}})', '需求（{{count}}）'],

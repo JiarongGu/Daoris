@@ -20,7 +20,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `retire` | management | `cli/retire.ts:5` | `manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
 | `import` | management | `cli/import.ts:5` | `manage.ts:57` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1145` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1356` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
 | `driver` | management | `cli/driver.ts:5` | `driverconfig.ts:468` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1101` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
