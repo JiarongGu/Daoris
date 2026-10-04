@@ -18,8 +18,9 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// from what was last read and ask nothing.
 /// </summary>
 /// <remarks>
-/// <para><b>Written only by a reading</b>: the person's press, a sign-in's end, and a start asking a signed-out account again
-/// once per sign-out (TOOL6g). A question that was never asked (an account a session of Daoris's runs on, an agent with no
+/// <para><b>Written only by a reading</b>: the person's press, a sign-in's end, a start asking a signed-out account again
+/// once per sign-out (TOOL6g), and a start its agent refused for its sign-in, which reads that account signed out
+/// (ROSTER1b, <see cref="HarnessRoster.SignedOut"/>). A question that was never asked (an account a session of Daoris's runs on, an agent with no
 /// login question) writes nothing, so the last word stands with its own time. An older reading never replaces a newer one.</para>
 /// <para><b>A word and a time, never who</b>: who signed in is read fresh and written nowhere (D66 §3), so after a restart an
 /// account says its state and when, and who once it is read again. Missing or unreadable is nothing known: never read, never

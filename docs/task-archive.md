@@ -11115,3 +11115,16 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
 
 **Outcome** 2026-10-04: built. Repositories groups by workspace, a filter past twelve, each workspace's row opening its page: Details (its repositories, what a start runs on, the accounts each agent may use here), Branches (clean-up and bring up to date, this workspace's rows only) and Setup (defaults; remote and reach), read-only in a browser. Settings → Workspace and Permissions retired: Settings keeps Get started, Appearance, AI features, Driver, Tools, Plugins, Browser and Machine log, and every door to the old domains lands on the new pages. Detail: D150's UX6g note, `34dfe14f`..`54f7a1d7`.
+
+
+## ROSTER1b — a start refused for its sign-in marks that account and walks past it (2026-10-05)
+
+> - [ ] **ROSTER1b — a start refused for its sign-in marks that account and walks past it** (driver; found by ROSTER1;
+> **seen on the install 2026-10-04**). After the update every account read *never read*, so the rotation kept starting
+> AR-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
+> third parked the quest. A start refused for its sign-in records the account signed out (as a read would), names it
+> and its sign-in, and the next start walks past it; it never counts toward the quest's strikes. Contract: D150 §5.3,
+> D125's TOOL6g and ROSTER1 notes. Proof: a tick where a refused start's next start picks another account, and the
+> quest's strikes stay where they were.
+
+**Outcome** 2026-10-05: built. A start the agent refuses for its sign-in (Claude Code's "Authentication required" on the protocol door, the native door's 401) keeps its account signed out in `reads.json` with the time, so the next start walks past it and the held start names it and its sign-in; a refusal is never one of the quest's strikes (`NoteCodes.AccountsOwn`), and the record says why it ended in both languages. Seen on the install the day before: four starts on an empty account parked AR-2203. Detail: D125's ROSTER1b note, FIX-LOG 2026-10-05, `9087adf3`..`485b842f`.

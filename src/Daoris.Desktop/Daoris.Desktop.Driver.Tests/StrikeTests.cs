@@ -87,6 +87,46 @@ public sealed class StrikeTests
         Assert.Equal(["q1"], strikes.Keys);
     }
 
+    /// <summary>
+    /// ROSTER1b: a failure whose note carries an account's line saying the agent or its provider refused the account it ran on
+    /// (its sign-in, or its credential, AGT3b) is the account's, never the quest's, so it is never a strike. Read by the line's
+    /// code, which the driver wrote, never by its words. A failure with other lines, or with none, still is.
+    /// </summary>
+    [Theory]
+    [InlineData("account.signed-out")]
+    [InlineData("account.signed-out-own")]
+    [InlineData("account.refused")]
+    [InlineData("account.refused-own")]
+    public void A_failure_the_account_s_sign_in_made_is_never_a_strike(string code)
+    {
+        var strikes = ServiceClient.ReadStrikes($$"""
+            [{ "id": "s1", "quest": "q1", "repository": "Game", "state": "failed", "note": "refused.",
+               "noteParts": [{ "code": "ended.turn-failed-open", "values": {}, "text": "the agent's turn failed before it took its quest:" },
+                             { "words": "the ACP agent refused the call: Authentication required", "by": "agent" },
+                             { "code": "{{code}}", "values": { "owner": "claude-code" }, "text": "The agent refused it." }] },
+             { "id": "s2", "quest": "q1", "repository": "Game", "state": "failed", "note": "exit 1.",
+               "noteParts": [{ "code": "ended.untouched-exit", "values": { "exit": 1 }, "text": "exit 1 before taking its quest." }] },
+             { "id": "s3", "quest": "q1", "repository": "Game", "state": "failed", "note": "an older record, with no parts." },
+             { "id": "s4", "quest": "q2", "repository": "Game", "state": "failed", "note": "refused.",
+               "noteParts": [{ "code": "{{code}}", "values": { "owner": "claude-code" }, "text": "The agent refused it." }] }]
+            """);
+
+        Assert.Equal(2, strikes["q1"]);
+        Assert.Equal(["q1"], strikes.Keys);
+    }
+
+    /// <summary>The words alone spare nothing: a record whose English says it, with no coded line, is a strike as it was.</summary>
+    [Fact]
+    public void An_account_s_words_with_no_coded_line_are_still_a_strike()
+    {
+        var strikes = ServiceClient.ReadStrikes("""
+            [{ "id": "s1", "quest": "q1", "repository": "Game", "state": "failed",
+               "note": "The agent refused the `claude-code` account `work` for its sign-in." }]
+            """);
+
+        Assert.Equal(1, strikes["q1"]);
+    }
+
     /// <summary>The last run says whether its stop was interrupted — what the planner carries on from.</summary>
     [Fact]
     public void The_last_run_says_whether_its_stop_was_interrupted()

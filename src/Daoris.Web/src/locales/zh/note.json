@@ -23,6 +23,8 @@
   "note.account.cooling": "它运行时用的账户冷却至 {{until}}（{{why}}），在此之前不会在它上面启动任何会话。",
   "note.account.refused": "服务方拒绝了它运行时用的 {{owner}} 账户（401）。请在设置中或用 `daoris agent` 更换密钥或重新登录，Daoris 随后会再在它上面启动会话。",
   "note.account.refused-own": "服务方拒绝了 {{owner}} 自身的登录（401）。请在设置中或用 `daoris agent` 更换密钥或重新登录，Daoris 随后会再在它上面启动会话。",
+  "note.account.signed-out": "智能体以登录为由拒绝了它运行时用的 {{owner}} 账户，所以该账户显示为未登录；在它重新登录之前，不会再在它上面启动任何会话。可在「智能体」中该智能体的页面上或用 `daoris agent` 登录。",
+  "note.account.signed-out-own": "智能体以登录为由拒绝了 {{owner}} 自身的登录；在你于自己的终端重新登录、并在「智能体」中该智能体的页面上重新读取之前，不会再在它上面启动任何会话。",
   "note.account.resume-signed-out": "那个账户现在未登录。",
   "note.account.resume-refused": "服务方拒绝了那个账户。",
   "note.account.resume-gone": "那个账户已不在本机上。",

@@ -159,7 +159,12 @@ public sealed record HarnessToolchain(
     // How this tool says an account's windows (TOOL6c, D130 §5.2): its entry in the readings table, read by
     // `AccountReadings.Read` from the frame its door carries apart from its words. Declared only where a frame was recorded;
     // a door onto another agent reads its owner's (AGT7). Null says nothing, so near and pace stand aside (§5.3).
-    WindowWords? Windows = null)
+    WindowWords? Windows = null,
+    // The words this tool refuses a start for its sign-in in (ROSTER1b, D150 §5.3), read from the door's failure by
+    // `SignInRefusals.Read` and never from the transcript, as `Limits` is. Declared only by a tool seen refusing one, each
+    // pattern standing on a recorded sentence. A door onto another agent reads its owner's (AGT7). Null reads every failure
+    // as a failure. Not a twin: the CLI concludes no session.
+    SignInWords? SignIn = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -1701,6 +1706,38 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
             ? adapters.Resolve(owner).Toolchain?.Limits
             : null;
+    }
+
+    /// <summary>
+    /// The words this adapter's agent refuses a start for its sign-in in (ROSTER1b): its own entry, else its owner's, since a
+    /// door's refusals are its owner's as its accounts are (AGT7). Null reads every failure as a failure.
+    /// </summary>
+    public SignInWords? SignInOf(string adapter)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain?.SignIn is { } own) return own;
+        return CoolingAgent(resolved) is { } owner
+               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
+               && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
+            ? adapters.Resolve(owner).Toolchain?.SignIn
+            : null;
+    }
+
+    /// <summary>
+    /// A start on this adapter as <paramref name="profile"/> was refused for its sign-in (ROSTER1b, D150 §5.3): that account,
+    /// or with <paramref name="profile"/> null the tool's own sign-in, reads signed out from now, kept as a reading is
+    /// (<see cref="AccountReads"/>), so the next start walks past it as it walks past any account read signed out (TOOL6g) and a
+    /// restart starts from it. Its owner's (AGT7), so every door onto the account reads it.
+    /// </summary>
+    /// <remarks>
+    /// Cleared as a reading signed out is: a sign-in or a key through either door marks the account, and the next start asks
+    /// it again (<see cref="AskAgain"/>); a sign-in on the screen reads it as it ends; a press reads it; and the hour's backstop.
+    /// A reading not written costs the next start one more refusal, never this one's record.
+    /// </remarks>
+    public void SignedOut(string adapter, string? profile)
+    {
+        if (CoolingAgent(adapters.Resolve(adapter)) is not { } owner) return;
+        Keep(owner, profile, LoginState.Out, who: null, Clock());
     }
 
     /// <summary>

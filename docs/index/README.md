@@ -48,14 +48,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 46 | 810 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 86 | 1767 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 99 | 1810 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 99 | 1815 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 77 | 1471 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 125 | 2189 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 129 | 2246 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 179 | 3384 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 182 | 3421 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 46 | 823 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 77 | 1438 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 78 | 1450 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 41 | 750 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |
@@ -112,7 +112,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 53 | 965 |
 | `tools/desktop.mjs` | 47 | 974 |
-| `tools/family-rehearsal.mjs` | 275 | 5040 |
+| `tools/family-rehearsal.mjs` | 276 | 5047 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
 | `tools/merge-branch.mjs` | 107 | 2062 |
 | `tools/orient-index.mjs` | 63 | 1379 |

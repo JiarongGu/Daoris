@@ -66,13 +66,14 @@ running them again.
 - [ ] **AGENTREAD1 — the terminal's account listing keeps what it read** (cli; found by ROSTER1). `daoris agent list`
   asks every account and the own sign-in and writes nothing, so the screen and the loop learn nothing from the
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
-- [ ] **ROSTER1b — a start refused for its sign-in marks that account and walks past it** (driver; found by ROSTER1;
-  **seen on the install 2026-10-04**). After the update every account read *never read*, so the rotation kept starting
-  AR-2203's quest on the empty account-2: four starts in two minutes each failed *Authentication required*, and the
-  third parked the quest. A start refused for its sign-in records the account signed out (as a read would), names it
-  and its sign-in, and the next start walks past it; it never counts toward the quest's strikes. Contract: D150 §5.3,
-  D125's TOOL6g and ROSTER1 notes. Proof: a tick where a refused start's next start picks another account, and the
-  quest's strikes stay where they were.
+- [ ] **SIGNIN1b — a conversation's refused sign-in reads its account signed out** (driver; found by ROSTER1b). A chat's
+  turn refused *Authentication required* tells the roster nothing, so the next driven start can still choose that
+  account. Contract: D125's ROSTER1b note. Proof: 's refused turn writes the reading; the next selection
+  walks past it.
+- [ ] **AGENTS2a — DeepSeek Harness takes an API key** (driver, cli; found by AGENTS2). DeepSeek documents
+  , but a key variable is declared only where measured (AGT3, D67 §1). Measure, with an invalid key and
+  no real one, whether  reads it, then declare it in both twins so  works.
+  Contract: D57's AGENTS2 note. Proof: the measurement beside the ACP3 evidence; the twin tables.
 - [ ] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
   compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
   and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
@@ -132,6 +133,11 @@ title sections, for quest and session, need their UI/UX improved"*):
   names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
   (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
   D125. Proof: a rename kept by rotation and records; the CLI and page twins.
+- [ ] **LANDNAME1 — a landing's branch is named for the work** (driver; found landing the owner's two quests,
+  2026-10-05). The rule's `{slug}` is cut from the quest's first line, so two landings came out
+  `feature/re-filed-from-ask-39c495-whose-quest-was-…`, useless as a pull request's branch. Name it from the quest's
+  short title (SESSUX1j) or its ticket key where the ask names one (`AR-2203`), and let the review's *Accept* and
+  `trees land --branch` take a name the person types. Contract: D145, D149. Proof: `LandingTests` cases.
 - [ ] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
   2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
   AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
