@@ -406,15 +406,17 @@ function SetupSection({ title, summary, startsOpen, children }: {
 /**
  * A value that is this repository's own or stands from above (§4.2): what it is and what said so, beneath its name; and
  * at the right, its control with *Clear* where it is its own, or *Set for this repository*, which opens the control in
- * place with *Never mind* beside it.
+ * place with *Never mind* beside it. A `wide` control, the landing rule's several parts, is laid out beneath the row's
+ * words at the row's width, keeping only *Clear* or *Never mind* at the right.
  */
-function Inheritable({ label, twin, why, says, own, busy, onClear, editor, children }: {
+function Inheritable({ label, twin, why, says, own, busy, wide = false, onClear, editor, children }: {
   label: string;
   twin: string;
   why?: string;
   says: string;
   own: boolean;
   busy: boolean;
+  wide?: boolean;
   onClear: () => void;
   editor: () => ReactNode;
   children?: ReactNode;
@@ -423,14 +425,17 @@ function Inheritable({ label, twin, why, says, own, busy, onClear, editor, child
   const [editing, setEditing] = useState(false);
   // Set or cleared by either door, the row starts again from what stands.
   useEffect(() => setEditing(false), [own]);
-  const control = own
-    ? <>{editor()}<Button variant="ghost" disabled={busy} onClick={onClear}>{t('projects.setup.clear')}</Button></>
-    : editing
-      ? <>{editor()}<Button variant="ghost" onClick={() => setEditing(false)}>{t('common.cancel')}</Button></>
-      : <Button disabled={busy} onClick={() => setEditing(true)}>{t('projects.setup.setHere')}</Button>;
+  const open = own || editing;
+  const close = own
+    ? <Button variant="ghost" disabled={busy} onClick={onClear}>{t('projects.setup.clear')}</Button>
+    : <Button variant="ghost" onClick={() => setEditing(false)}>{t('common.cancel')}</Button>;
+  const control = !open
+    ? <Button disabled={busy} onClick={() => setEditing(true)}>{t('projects.setup.setHere')}</Button>
+    : wide ? close : <>{editor()}{close}</>;
   return (
     <SettingRow label={label} hint={twin} why={why} control={<div className="flex min-w-0 flex-wrap items-center justify-end gap-2 @max-[26rem]:justify-start">{control}</div>}>
       <p className="m-0 text-small text-ink-soft"><Inline text={says} /></p>
+      {open && wide && <div className="mt-2">{editor()}</div>}
       {children}
     </SettingRow>
   );
@@ -465,6 +470,7 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding }
       says={says}
       own={own}
       busy={busy}
+      wide
       onClear={() => onLanding(undefined)}
       editor={() => (
         <LandingField
@@ -474,6 +480,7 @@ function LandingSetting({ repository, landing, above, landers, busy, onLanding }
           landers={landers}
           busy={busy}
           clearable={false}
+          alignStart
           onSave={(rule) => onLanding(rule)}
           onAccepting={setAccepting}
         />

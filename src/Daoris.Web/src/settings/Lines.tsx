@@ -96,7 +96,7 @@ export function LineField({ label, set, placeholder, busy, clearable = true, onS
 
   return (
     <form
-      className="flex items-center gap-2"
+      className="flex min-w-0 items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (typed && typed !== set) onSave(typed);
@@ -109,10 +109,11 @@ export function LineField({ label, set, placeholder, busy, clearable = true, onS
         placeholder={placeholder}
         spellCheck={false}
         // What would stand is a placeholder, and it must not read as what is set: in dark the two were
-        // one shade apart (seen on the window).
-        className="w-44 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint"
+        // one shade apart (seen on the window). The field gives way to a narrow column, never its Save,
+        // whose word broke over two lines in a repository's Setup at 544 px (UX6f, seen in its story).
+        className="w-44 min-w-0 max-w-full rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint"
       />
-      <Button type="submit" disabled={busy || !typed || typed === set}>{t('settings.lines.set')}</Button>
+      <Button type="submit" className="shrink-0 whitespace-nowrap" disabled={busy || !typed || typed === set}>{t('settings.lines.set')}</Button>
       {/* Always in the row, and hidden where nothing is set: a row that grew a Clear moved its field
           out of the column every other row's field sits in (seen on the window). */}
       {clearable && <Button

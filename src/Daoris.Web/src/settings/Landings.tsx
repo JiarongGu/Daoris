@@ -110,6 +110,8 @@ type FieldProps = {
   busy?: boolean;
   /** Whether the control carries its own *Clear*: a repository's Setup gives each value one beside it (UX6f). */
   clearable?: boolean;
+  /** Laid out from the row's start, as beneath a Setup row's label, where it has the row's width (UX6f). */
+  alignStart?: boolean;
   onSave: (rule?: LandingRule) => void;
 };
 
@@ -146,7 +148,7 @@ function LandingRow({ label, hint, ...field }: { label: ReactNode; hint: string 
  * branch, and a clear only where a rule is set — the row keeps the clear's room either way, so every row's control sits
  * in one column.
  */
-export function LandingField({ name, set, inherited, landers, busy, clearable = true, onSave, onAccepting }: FieldProps & {
+export function LandingField({ name, set, inherited, landers, busy, clearable = true, alignStart = false, onSave, onAccepting }: FieldProps & {
   /** What the draft accepts automatically through, said beneath the row by its owner. */
   onAccepting: (accepting: Accepting) => void;
 }) {
@@ -191,7 +193,7 @@ export function LandingField({ name, set, inherited, landers, busy, clearable = 
 
   return (
     <form
-      className="flex min-w-0 flex-wrap items-center justify-end gap-2"
+      className={cn('flex min-w-0 flex-wrap items-center gap-2', alignStart ? 'justify-start' : 'justify-end')}
       onSubmit={(event) => {
         event.preventDefault();
         if (changed) onSave(draft);

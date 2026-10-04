@@ -92,6 +92,11 @@ describe("a repository's tabs", () => {
     expect(screen.getByRole('button', { name: 'Line and landing' })).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('keeps the section its holder asked open, where no door on Details asked for another', () => {
+    render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} setup={{ ...SETUP_DEFAULTS, open: 'reach' }} tab="setup" onTab={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Reach' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('is Details alone in a browser, with no tab row and no setting', () => {
     render(<ProjectPage registration={ENGINE} counts={COUNTS.engine} />);
     expect(screen.queryByRole('tablist')).toBeNull();

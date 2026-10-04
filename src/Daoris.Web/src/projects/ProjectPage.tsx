@@ -223,7 +223,7 @@ export function ProjectPage({
             // A tab chosen by its own press opens Setup as it opens itself; only the line's door asks for Work.
             onChoose={(next) => { setAsked(null); onTab(next); }}
           >
-            {tab === 'setup' ? <RepositorySetup {...setup} open={asked ?? undefined} /> : details}
+            {tab === 'setup' ? <RepositorySetup {...setup} open={asked ?? setup.open} /> : details}
           </PageTabs>
         )
         : details}
