@@ -10,7 +10,10 @@ namespace Daoris.Driver;
 /// <param name="Patience">How long each call waits; absent, as long as the driver waits at the points tried.</param>
 public sealed record TrialOptions(string? Point = null, JsonObject? Frame = null, TimeSpan? Patience = null);
 
-/// <summary>One thing a trial checked: the handshake, a point, the shutdown, stdout — or the manifest, when that is as far as it got.</summary>
+/// <summary>
+/// One thing a trial checked: a declared tool or one of its checks (PLUGTOOL1a), the handshake, a point, the shutdown, stdout —
+/// or the manifest, when that is as far as it got.
+/// </summary>
 public sealed record TrialStep(string Name, bool Ok, string Sentence);
 
 /// <summary>What `plugins try` found, step by step, and what the plugin said on stderr meanwhile.</summary>
