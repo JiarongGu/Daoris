@@ -9,15 +9,30 @@ import { Button, Drawer, EmptyState, Icon, Inline, SelectField } from '../ui';
  */
 export type QuestDraft = Carry & {
   from: string; to: string; title: string; body: string;
+  /**
+   * Its short title (SESSUX1j), optional: the person's few words that tell it apart in a list. Empty sends none, and the
+   * service names the quest from its words.
+   */
+  short?: string;
   /** One next step (D65 §4), or none. The service takes a longer chain; the composer offers one. */
   step: QuestStep | null;
 };
 
-export const EMPTY_QUEST: QuestDraft = { from: '', to: '', title: '', body: '', step: null, ...NO_CARRY };
+export const EMPTY_QUEST: QuestDraft = { from: '', to: '', title: '', body: '', short: '', step: null, ...NO_CARRY };
 
-/** Whether a draft is whole enough to publish: a next step started is a next step owed. */
+/** How long a short title may be (SESSUX1j), as the service judges it: characters, a Chinese one counted once. */
+export const SHORT_TITLE_MAX = 40;
+
+/** A short title's length as the service counts it: by character, never by UTF-16 unit. */
+const characters = (text: string) => [...text.trim()].length;
+
+/**
+ * Whether a draft is whole enough to publish: a next step started is a next step owed, and a short title longer than
+ * the service keeps is one it would refuse.
+ */
 export function draftReady(draft: QuestDraft): boolean {
   return Boolean(draft.from && draft.to && draft.title.trim() && draft.body.trim())
+    && characters(draft.short ?? '') <= SHORT_TITLE_MAX
     && (draft.step === null || Boolean(draft.step.to && draft.step.title.trim() && draft.step.body.trim()));
 }
 
@@ -118,6 +133,21 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
             onChange={(e) => onChange({ ...draft, title: e.target.value })}
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
+        </label>
+        {/* Its short title (SESSUX1j), optional and the person's own: what a list shows for it. Past the service's limit it
+            says so here and holds the publish back, rather than sending a quest the service would refuse. */}
+        <label className="grid gap-1 text-small text-ink-soft">
+          {t('quests.field.short')}
+          <input
+            value={draft.short ?? ''}
+            placeholder={t('quests.field.shortPlaceholder')}
+            aria-invalid={characters(draft.short ?? '') > SHORT_TITLE_MAX || undefined}
+            onChange={(e) => onChange({ ...draft, short: e.target.value })}
+            className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink aria-[invalid=true]:border-st-declined"
+          />
+          {characters(draft.short ?? '') > SHORT_TITLE_MAX && (
+            <span className="text-small text-st-declined">{t('quests.field.shortTooLong', { count: SHORT_TITLE_MAX })}</span>
+          )}
         </label>
         {caution && (
           /* The same caution the service gives an agent, before the person relies on it. */

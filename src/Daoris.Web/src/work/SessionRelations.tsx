@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { Pill, QUEST_TONE, SectionTitle } from '../ui';
+import { questName } from './identity';
 import type { Relations } from './relations';
 
 /** How much of an answer the head carries: enough to know what was said, and the quest holds the rest. */
@@ -29,9 +30,10 @@ export function SessionRelations({ relations, onQuest, onSession }: {
   const { askedBy, resumedAfter, asked } = relations;
   if (!askedBy && !resumedAfter && asked.length === 0) return null;
 
+  // Each quest by its name (SESSUX1j), whole title on its tip.
   const title = (quest: Quest) => (onQuest
-    ? <button type="button" onClick={() => onQuest(quest)} className={`${DOOR} text-small text-ink`}>{quest.title}</button>
-    : <span className="min-w-0 truncate text-small text-ink">{quest.title}</span>);
+    ? <button type="button" title={quest.title} onClick={() => onQuest(quest)} className={`${DOOR} text-small text-ink`}>{questName(quest)}</button>
+    : <span title={quest.title} className="min-w-0 truncate text-small text-ink">{questName(quest)}</span>);
 
   return (
     <section aria-label={t('work.relations.title')}>

@@ -11,7 +11,8 @@ import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFi
 import { FAILED, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// A quest's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header, beside *Decline…*;
+// A quest's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header's ⋯ (UX7c, D152 §7),
+// with *Decline…* beside it;
 // under *Sitting*, *Resume* for its own pause where *Try again* stands, and for another's pause the sentence and a door to
 // whose it is; *What went* and *What stayed* after an abandon.
 
@@ -31,21 +32,38 @@ const page = (over: Partial<Parameters<typeof QuestPage>[0]> = {}) => {
   return props;
 };
 
-const headerActs = () => within(screen.getByRole('main').querySelector('header')!).getAllByRole('button').map((button) => button.textContent);
+const headerActs = () => within(screen.getByRole('main').querySelector('header')!).getAllByRole('button')
+  .map((button) => button.textContent || button.getAttribute('aria-label'));
+
+/** The acts the head keeps in its ⋯ (UX7c), opened from the keyboard as every menu is in jsdom. */
+async function foldedActs(): Promise<string[]> {
+  const user = userEvent.setup();
+  within(screen.getByRole('main').querySelector('header')!).getByRole('button', { name: /More actions|更多操作/ }).focus();
+  await user.keyboard('{Enter}');
+  await screen.findAllByRole('menuitem');
+  return screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+}
+
+/** One act from the head's ⋯. */
+async function folded(name: string) {
+  await foldedActs();
+  await userEvent.setup().click(screen.getByRole('menuitem', { name }));
+}
 
 describe('pausing and abandoning a quest', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('offers Pause… and Abandon… beside Decline…, where the plan says they apply', () => {
+  it('offers Pause… and Abandon… in its ⋯ beside Decline…, where the plan says they apply', async () => {
     page({ work: door() });
-    expect(headerActs()).toEqual(['Take', 'Mark done', 'Pause…', 'Decline…', 'Abandon…']);
+    expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
+    expect(await foldedActs()).toEqual(['Mark done', 'Pause…', 'Abandon…', 'Copy quest ID']);
   });
 
   it('asks once before a pause that stops its running session, then pauses', async () => {
     const work = door();
     page({ quest: TAKEN, work: { ...work, plan: { ...PLAN, id: TAKEN.id } } });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Pause…' }));
+    await folded('Pause…');
     const ask = screen.getByRole('group', { name: 'pause this work' });
     expect(ask).toHaveTextContent('starts nothing of quest #def456 on this machine');
     await userEvent.click(within(ask).getByRole('button', { name: 'Pause quest' }));
@@ -98,8 +116,8 @@ describe('pausing and abandoning a quest', () => {
     page({ work });
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole('button', { name: 'Abandon…' }));
-    expect(screen.queryByRole('button', { name: 'Abandon…' })).toBeNull();
+    await folded('Abandon…');
+    expect(screen.queryByRole('menuitem', { name: 'Abandon…' })).toBeNull();
     await user.type(screen.getByRole('textbox', { name: 'why — kept with each decline' }), 'Not needed now.');
     await user.click(screen.getByRole('button', { name: 'Abandon quest' }));
     expect(work.onAbandon).toHaveBeenCalledWith('Not needed now.', PLAN.abandon.pieces, expect.any(Function));
@@ -117,14 +135,15 @@ describe('pausing and abandoning a quest', () => {
 
   it('offers none of the three in a browser, and names the terminal’s commands instead', () => {
     page({});
-    expect(headerActs()).toEqual(['Take', 'Mark done', 'Decline…']);
+    expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
     expect(screen.getByText(/a browser offers neither/)).toHaveTextContent('daoris-driver quest abandon abc123');
   });
 
   it('names its acts in 中文', async () => {
     await i18n.changeLanguage('zh');
     page({ work: door() });
-    expect(headerActs()).toEqual(['接下', '标为完成', '暂缓…', '谢绝…', '放弃…']);
+    expect(headerActs()).toEqual(['接下', '谢绝…', '更多操作']);
+    expect(await foldedActs()).toEqual(['标为完成', '暂缓…', '放弃…', '复制委托 ID']);
   });
 });
 

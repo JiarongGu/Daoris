@@ -19,16 +19,16 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Web/e2e/platform.spec.ts` | 54 | 925 |
-| `src/Daoris.Web/src/App.test.tsx` | 41 | 803 |
+| `src/Daoris.Web/e2e/platform.spec.ts` | 54 | 940 |
+| `src/Daoris.Web/src/App.test.tsx` | 41 | 804 |
 | `src/Daoris.Web/src/App.tsx` | 60 | 1107 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 60 | 1124 |
-| `src/Daoris.Web/src/QuestsView.test.tsx` | 53 | 1053 |
+| `src/Daoris.Web/src/QuestsView.test.tsx` | 56 | 1100 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 54 | 1145 |
 | `src/Daoris.Web/src/ui.tsx` | 70 | 1522 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 41 | 782 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 182 | 3622 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 70 | 1325 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 183 | 3630 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 71 | 1335 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 43 | 841 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 876 |
 
@@ -48,15 +48,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/ToolResourcesTests.cs` | 40 | 559 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 46 | 810 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 86 | 1767 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 99 | 1817 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 99 | 1819 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 77 | 1471 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 129 | 2246 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 182 | 3421 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 46 | 823 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 78 | 1450 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 41 | 750 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 47 | 832 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 78 | 1452 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 41 | 760 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionsCommand.cs` | 49 | 1004 |
@@ -76,17 +76,17 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 920 |
+| `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 49 | 986 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 71 | 1380 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 105 | 1994 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 72 | 1402 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 107 | 2020 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 59 | 1150 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 60 | 1093 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 50 | 898 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 88 | 1607 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 51 | 929 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 88 | 1613 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 52 | 1113 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 60 | 1235 |
-| `src/Daoris.Service/README.md` | 44 | 491 |
+| `src/Daoris.Service/README.md` | 45 | 500 |
 
 ### CLI (`cli`)
 
@@ -122,7 +122,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `docs/2026-09-19-platform-ux.md` | 49 | 540 |
+| `docs/2026-09-19-platform-ux.md` | 50 | 545 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 47 | 341 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |

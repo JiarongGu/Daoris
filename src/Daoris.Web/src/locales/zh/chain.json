@@ -8,6 +8,7 @@
   "chain.unseen": "本页未载入的上一步",
   "chain.current": "当前委托",
   "chain.thisSession": "本会话",
+  "chain.attempt": "第 {{n}} 次",
   "chain.ran": "运行了 {{span}}",
   "chain.route": "{{from}} → {{to}}",
   "chain.noSession": "尚无会话",

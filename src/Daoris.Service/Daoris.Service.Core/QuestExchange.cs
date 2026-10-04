@@ -51,6 +51,9 @@ public enum QuestPublishRefusal
 
     /// <summary>A requirement quotes words the person never said on the ask (DRIFT1c) — the answer names them.</summary>
     NotQuoted,
+
+    /// <summary>A short title past <see cref="QuestTitles.MaxShort"/> characters, or over a line break (SESSUX1j).</summary>
+    BadShortTitle,
 }
 
 /// <summary>
@@ -89,6 +92,12 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     /// judged here against that ask's words, so every door refuses the same quote.
     /// </summary>
     public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
+
+    /// <summary>
+    /// Its short title (SESSUX1j): the few words that tell it apart in a list, the publisher's own — judged here, so every
+    /// door refuses the same one. Null or blank is none, and the quest is then named from its words.
+    /// </summary>
+    public string? Short { get; init; }
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -333,6 +342,13 @@ public sealed class QuestExchange(
             return new(unfit, carried.Message, Quest: null, addressable);
         }
 
+        // The short title is the publisher's words (SESSUX1j), judged here so every door refuses the same one.
+        var (shortTitle, unfitShort) = QuestTitles.Judge(ask.Short);
+        if (unfitShort is not null)
+        {
+            return new(QuestPublishRefusal.BadShortTitle, unfitShort, Quest: null, addressable);
+        }
+
         // A chain is judged now, while the person or the intake composing it can still act on the
         // answer — not at a close nobody is watching (D65 §4). Whether this circle shares with a team
         // is this machine's wiring; whether a receiver is shared is its registration (design §8).
@@ -357,7 +373,7 @@ public sealed class QuestExchange(
 
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
-            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required).ConfigureAwait(false);
+            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle).ConfigureAwait(false);
 
         var caution = !target.Adopted
             // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is
@@ -676,6 +692,12 @@ public sealed class QuestExchange(
         if (JudgeRequirementShape(asked.Requirements).Refusal is { } unfitRequirement)
         {
             return $"Quest `#{asked.Id}`: {unfitRequirement}";
+        }
+
+        // A short title a publish here would refuse is one no record should carry (SESSUX1j).
+        if (QuestTitles.Judge(asked.Short).Refusal is { } unfitShort)
+        {
+            return $"Quest `#{asked.Id}`: {unfitShort}";
         }
 
         var carried = Judge(new QuestAsk(asked.From, asked.To, asked.Title, asked.Body)

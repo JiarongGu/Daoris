@@ -52,6 +52,15 @@ async function make(page: Page, kind: 'Ask' | 'New quest') {
   await page.getByRole('menuitem', { name: kind, exact: true }).click();
 }
 
+/**
+ * *Mark done* on a quest nobody has taken: its head keeps it in its ⋯ (UX7c, D152 §7), since taking is the open quest's
+ * next step; a taken quest's *Mark done* is its loud button.
+ */
+async function markDoneOpen(page: Page) {
+  await record(page).getByRole('button', { name: 'More actions' }).click();
+  await page.getByRole('menuitem', { name: 'Mark done', exact: true }).click();
+}
+
 /** Quests' ⋯ holds its filters: *Include closed* is a toggle there (D118 §2). */
 async function includeClosed(page: Page) {
   await questList(page).getByRole('button', { name: 'Filter the list' }).click();
@@ -151,7 +160,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   expect(served.headers()['content-disposition']).toContain('attachment');
 
   // Leave the family as it was found: the suite is serial, and the next test expects nothing open.
-  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
+  await markDoneOpen(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -174,7 +183,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await questList(page).getByText('Develop the streaming cap').click();
   const quest = record(page);
   await expect(quest.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
-  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
+  await markDoneOpen(page);
   await expect(page.getByText(/Then: published #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // The step is an ordinary open quest in the list, named with the id of the one it follows.
@@ -193,7 +202,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await expect(record(page).getByRole('heading', { level: 1, name: `Verify #${parent} in a playtest` })).toBeVisible();
 
   // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
-  await record(page).getByRole('button', { name: 'Mark done', exact: true }).click();
+  await markDoneOpen(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -248,6 +257,8 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await page.getByLabel('To', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('what is wanted, in one line').fill('Expose a streaming budget on the chunk API');
+  // Its short title (SESSUX1j): the few words a list and its head name it by, kept by the real host.
+  await page.getByLabel('Short title').fill('Streaming budget');
   await page.getByLabel('why, and the evidence').fill(
     'World streaming needs a per-frame cap; today hydration is unbounded. Evidence: seams whenever more than three chunks hydrate in one frame.',
   );
@@ -259,8 +270,10 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // It sits in Open, and the quest just published opens on its page in the main area, where the acting
   // happens; its row in the list is a door to the same page (D118 §3d). No drawer is left over it.
-  const title = 'Expose a streaming budget on the chunk API';
+  // Its head and its row say its short title; the whole title is said once, opening its body (UX7c, D152 §7).
+  const title = 'Streaming budget';
   await expect(record(page).getByRole('heading', { level: 1, name: title })).toBeVisible();
+  await expect(record(page).getByText(/^Expose a streaming budget on the chunk API/)).toHaveCount(1);
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await questList(page).getByText(title).click();
   await record(page).getByRole('button', { name: 'Take', exact: true }).click();
@@ -351,16 +364,18 @@ test('an ask is proposed by declarations, published by a person, and closed with
 
   // The quest it became is a door into the quest's own page — once the page holds it — asked BY the
   // ask, carrying its link and its file.
-  await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: new RegExp(sentence) }).click();
+  // Named as every list names it (SESSUX1j): the service read a name from its words, whole words, since nobody gave one.
+  await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: /^#[0-9a-f]{6} the rendering of the asset pipeline…$/ }).click();
   const quest = record(page);
   await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
-  await expect(quest.getByText(/^ask #[0-9a-f]{6}$/).first()).toBeVisible();
+  // Asked by the ask, on its head's facts line (UX7c).
+  await expect(quest.getByText(/from ask #[0-9a-f]{6}/).first()).toBeVisible();
   await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
   await expect(quest.getByRole('link', { name: /trace\.log/ })).toBeVisible();
 
   // Its only quest done, the ask's work is finished (USE1c): it is DONE, and leaves the list by itself,
   // as a closed ask and a closed quest do. Nobody has to close it, and the family is left as found.
-  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
+  await markDoneOpen(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
   await expect(questList(page).getByText(/^Asks \(/)).toHaveCount(0);
 

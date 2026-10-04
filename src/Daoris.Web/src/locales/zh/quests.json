@@ -120,5 +120,22 @@
   "quests.requirements.accept": "采纳偏离",
   "quests.requirements.accepted": "你在 {{ago}}采纳了这项偏离。",
   "quests.requirements.toAnswer": "它的完成会逐条回答：已满足，或偏离并附上理由和所依据的你的原话。",
-  "quests.requirements.unanswered": "它的完成没有逐条回答：它关闭时，完成还不必逐条回答。"
+  "quests.requirements.unanswered": "它的完成没有逐条回答：它关闭时，完成还不必逐条回答。",
+  "quests.field.short": "短标题",
+  "quests.field.shortPlaceholder": "在列表里区分这条委托的几个字",
+  "quests.field.shortTooLong": "短标题最多 {{count}} 个字符，中文约 20 个字。",
+  "quests.facts.to": "致 {{repository}}",
+  "quests.facts.from": "来自 {{from}}",
+  "quests.facts.filed": "{{ago}}发起",
+  "quests.facts.filedAt": "{{at}} 发起",
+  "quests.facts.movedAt": "{{at}} 变更",
+  "quests.facts.starting": "一个会话正在这里启动",
+  "quests.facts.working": "它的会话已工作 {{time}}",
+  "quests.facts.waiting": "它的会话在等你",
+  "quests.facts.parked": "{{count}} 个会话失败后挂起",
+  "quests.facts.parked_other": "{{count}} 个会话失败后挂起",
+  "quests.facts.parkedSome": "会话多次失败后挂起",
+  "quests.facts.taken": "{{ago}}接下",
+  "quests.facts.done": "{{ago}}完成",
+  "quests.facts.declined": "{{ago}}谢绝"
 }

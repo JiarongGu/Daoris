@@ -1,5 +1,5 @@
 {
-  "chars": 7186,
+  "chars": 7277,
   "sections": [
     {
       "name": "quest",
@@ -92,8 +92,8 @@
     {
       "name": "asking",
       "source": "driver",
-      "said": "asking another repository, and stopping for the person, a go-ahead asked once on the ask: 1,081 characters, the driver's own words",
-      "chars": 1081
+      "said": "asking another repository, and stopping for the person, a go-ahead asked once on the ask: 1,172 characters, the driver's own words",
+      "chars": 1172
     },
     {
       "name": "closing",

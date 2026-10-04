@@ -517,6 +517,12 @@ public sealed record AskDraft(string? Title, string? Body)
     /// judged by the exchange against the ask's words.
     /// </summary>
     public IReadOnlyList<QuestRequirement> Requirements { get; init; } = [];
+
+    /// <summary>
+    /// The quest's short title (SESSUX1j), in the intake's words: the few that tell it apart in a list. Blank leaves the
+    /// quest to be named from its own words.
+    /// </summary>
+    public string? Short { get; init; }
 }
 
 /// <summary>Why an ask did not do what was asked of it — or <see cref="None"/> when it did.</summary>
@@ -869,6 +875,8 @@ public sealed partial class AskDesk(KnowledgeService service, AskStore asks, Que
                 Then = draft?.Then ?? [],
                 // The person's words, each with its check (DRIFT1c): the exchange judges them against this ask's.
                 Requirements = draft?.Requirements ?? [],
+                // The intake's short title (SESSUX1j); a publish with none is named from the ask's words.
+                Short = draft?.Short,
                 Workspace = ask.Workspace,
                 // The session publishing, as its connector names it (SESS1): the intake that read the ask.
                 PublishedBy = session,

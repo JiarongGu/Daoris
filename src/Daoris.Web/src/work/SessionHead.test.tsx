@@ -47,6 +47,9 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
   ...over,
 });
 
+/** Open the head's folded *Details* (UX7c, D152 §7), where its reference facts are. */
+const details = () => fireEvent.click(screen.getByRole('button', { name: /^Details|^详情/ }));
+
 describe('the attended session\'s head', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -85,15 +88,28 @@ describe('the attended session\'s head', () => {
     expect(screen.queryByText('Its work')).toBeNull();
   });
 
-  it('is the record: identity, state, and what the session ran on and as', () => {
+  /**
+   * UX7c (D152 §7): its reference facts are a folded *Details*, its line naming the quest, the agent and the start; open,
+   * each fact named, the account its own row, and the id with *Copy*.
+   */
+  it('is the record: identity, state, and what the session ran on and as, its reference folded', () => {
     render(<SessionHead session={session()} quest={quest()} />);
 
     expect(screen.getByRole('heading', { name: 'Expose a streaming budget on the chunk API' }))
       .toBeInTheDocument();
     expect(screen.getByText('working')).toBeInTheDocument();
+    const fold = screen.getByRole('button', { name: /^Details/ });
+    expect(fold).toHaveAttribute('aria-expanded', 'false');
+    expect(fold).toHaveTextContent('quest #7a82cc · claude-code · 2.1.4 · started 2h ago');
+    expect(screen.queryByText('engine')).toBeNull();
+
+    details();
     expect(screen.getByText('engine')).toBeInTheDocument();
-    expect(screen.getByText('claude-code · 2.1.4 · as owner')).toBeInTheDocument();
+    expect(screen.getByText('claude-code · 2.1.4')).toBeInTheDocument();
+    expect(screen.getByText('owner')).toBeInTheDocument();
     expect(screen.getByText('#7a82cc')).toBeInTheDocument();
+    expect(screen.getByText('s1a2b3c4')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
   });
 
   /**
@@ -102,11 +118,13 @@ describe('the attended session\'s head', () => {
    */
   it('says a session ran on your own sign-in where its record names no account', () => {
     const { rerender } = render(<SessionHead session={session({ profile: null })} ownSignIn />);
-    expect(screen.getByText('claude-code · 2.1.4 · on your own sign-in')).toBeInTheDocument();
+    details();
+    expect(screen.getByText('on your own sign-in')).toBeInTheDocument();
 
     // An agent with no accounts to speak of says nothing of one.
     rerender(<SessionHead session={session({ profile: null })} />);
-    expect(screen.getByText('claude-code · 2.1.4')).toBeInTheDocument();
+    expect(screen.queryByText('on your own sign-in')).toBeNull();
+    expect(screen.queryByText('Account')).toBeNull();
   });
 
   /**
@@ -114,6 +132,24 @@ describe('the attended session\'s head', () => {
    * status leads). The head follows the centre's width now (UX5 U16), and pushed to the far edge the
    * pill sat a thousand pixels from its title on a wide window, which is what U10 had capped around.
    */
+  /**
+   * UX7c (D152 §7): under a page header that says the title, the record does not say it again; where the header showed the
+   * quest's short title (SESSUX1j), the record says the whole title once, at body size. The id is in *Details* alone.
+   */
+  it('under a header says the whole title once, only where the header showed a short title', () => {
+    const { rerender } = render(<SessionHead session={session()} quest={quest()} headed />);
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull();
+    expect(screen.queryByText('Expose a streaming budget on the chunk API')).toBeNull();
+    expect(screen.queryByText('working')).toBeNull();
+
+    rerender(<SessionHead session={session()} quest={quest({ short: 'Streaming budget' })} headed />);
+    const whole = screen.getByText('Expose a streaming budget on the chunk API');
+    expect(whole.tagName).toBe('P');
+    expect(whole.className).toContain('line-clamp-2');
+    expect(screen.queryByText('Streaming budget')).toBeNull();
+    expect(screen.queryByText('s1a2b3c4')).toBeNull();
+  });
+
   /** UX5 U17: the head says a live chat between turns is idle, as the rail does. */
   it('says a live chat between turns is idle', () => {
     const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} taking={false} />);
@@ -133,11 +169,13 @@ describe('the attended session\'s head', () => {
 
   it('measures a running session to now and a finished one to where it ended', () => {
     const { unmount } = render(<SessionHead session={session()} />);
+    details();
     expect(screen.getByText('Running for')).toBeInTheDocument();
     expect(screen.getByText('2h 14m')).toBeInTheDocument();
     unmount();
 
     render(<SessionHead session={session({ state: 'completed' })} />);
+    details();
     expect(screen.getByText('Ran for')).toBeInTheDocument();
   });
 
@@ -149,6 +187,7 @@ describe('the attended session\'s head', () => {
   it('keeps the whole tree path on the repository\'s hover rather than as a line of its own', () => {
     const tree = 'C:/somewhere/.daoris/trees/default/engine/streaming-budget';
     render(<SessionHead session={session({ tree })} />);
+    details();
 
     expect(screen.queryByText('tree')).not.toBeInTheDocument();
     expect(screen.queryByText(tree)).not.toBeInTheDocument();
@@ -162,14 +201,17 @@ describe('the attended session\'s head', () => {
    */
   it('omits what it was not told rather than rendering a blank', () => {
     render(<SessionHead session={session({ tree: null, profile: null, quest: null })} />);
+    details();
 
     expect(screen.queryByText('tree')).not.toBeInTheDocument();
     expect(screen.queryByText('Quest')).not.toBeInTheDocument();
+    expect(screen.queryByText('Account')).not.toBeInTheDocument();
     expect(screen.getByText('claude-code · 2.1.4')).toBeInTheDocument();
   });
 
   it('names the machine when the record came from another one', () => {
     render(<SessionHead session={session({ id: 'person@machine-a/s1a2b3c4' })} />);
+    details();
 
     expect(screen.getByText('Machine')).toBeInTheDocument();
     expect(screen.getByText('person@machine-a')).toBeInTheDocument();
@@ -186,8 +228,8 @@ describe('the attended session\'s head', () => {
 
     const waiting = screen.getByText('This one is waiting on you');
     expect(screen.getByText(/I recommend the second/)).toBeInTheDocument();
-    // Above the record: the analysis precedes the repository in document order.
-    expect(waiting.compareDocumentPosition(screen.getByText('engine')))
+    // Above the record: the analysis precedes its Details in document order.
+    expect(waiting.compareDocumentPosition(screen.getByRole('button', { name: /^Details/ })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
@@ -270,9 +312,10 @@ describe('the attended session\'s head', () => {
     render(<SessionHead session={session({ ...INTAKE, state: 'working' })} />);
 
     expect(screen.getByRole('heading', { name: 'Intake for ask #0fda18' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Details/ })).toHaveTextContent('ask #0fda18');
+    details();
     expect(screen.getByText('Ask')).toBeInTheDocument();
-    // Its room's path is the ask's on hover (SESS2 H3), never a repository's tree.
-    expect(screen.getByText('#0fda18')).toHaveAttribute('title', INTAKE.tree);
+    expect(screen.getByText('#0fda18')).toBeInTheDocument();
     expect(screen.queryByText('Repository')).toBeNull();
     expect(screen.queryByText('tree')).toBeNull();
   });
@@ -301,8 +344,10 @@ describe('the attended session\'s head', () => {
   it('speaks the active catalog', async () => {
     await i18n.changeLanguage('zh');
     render(<SessionHead session={session()} quest={quest()} />);
+    details();
 
     expect(screen.getByText('仓库')).toBeInTheDocument();
+    expect(screen.getByText('详情')).toBeInTheDocument();
     expect(screen.getByText('工作中')).toBeInTheDocument();
     await i18n.changeLanguage('en');
   });

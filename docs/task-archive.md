@@ -11148,3 +11148,20 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > what reads badly, with the fixes UX7a–d carry. Contract: D41, D56, D150. Proof: the shots and a dated note on D150.
 
 **Outcome** 2026-10-05: designed (D152). The built redesign looked at on the install and in the stories, line by line (§1): a VS Code-like menu bar of seven menus (Workspace, Edit, View, Go, Run, Terminal, Help) from one command table the menus, palette, keys and a shortcuts drawer read; one row and one act per account, the add flow offering an existing signed-out row first and asking which workspaces it joins; heads of state, title and a facts line chosen by state, ids folded, nothing said twice. Build rows UX7a–d; SESSUX1j ahead of UX7c, UX7c before UX7b. Detail: `docs/2026-10-05-ux7-design.md`, D152.
+
+
+## SESSUX1j — a quest's short title (2026-10-05, D126)
+
+> - [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
+
+**Outcome** 2026-10-05: built. A quest carries its publisher's short title at every door (the intake's draft, `quest_publish`'s `shortTitle`, the HTTP publish and ask-publish's `short`, the composer's optional *Short title*): at most 40 characters and one line, refused otherwise, a remote's push included. Where none was given the service names it from its own words when it is read (`QuestTitles.Derive`: the first line that says what is wanted, a bracketed note skipped, cut at whole words, a ticket key such as `AR-2203` leading) and never writes that into the record. Lists, chains, heads, session titles, `daoris-driver sessions` and a landing's `{slug}` use it; the whole title stays on the landing's record. It amends D126's rejection of a cut title, and D126's SESSUX1j note says why. The branch name the person types stays with LANDNAME1. Service 1145 → 1170, HTTP 67 → 68, web vitest 3966 → 4017. Detail: D126's SESSUX1j note, commits 239223b4, 3e8b73b3, fe037686.
+
+
+## UX7c — the title sections of a quest's page and a session's page (2026-10-05, D152)
+
+> - [ ] **UX7c — the title sections of a quest's page and a session's page** (web-shell). A session's head is a cut-off
+> title, a raw id, a chip and a dense row of eight facts; a quest's title wraps two lines over a chip and a raw id.
+> Title first, short (SESSUX1j's short title where there is one), state and the one or two facts that matter beside
+> it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
+
+**Outcome** 2026-10-05: built. A session's pinned header leads with its state, then its title on one line, then a facts line chosen by state (*engine · account-1 · 2m · attempt 4: the 3 before it failed*, counting failures as the planner does); the id moved to the ⋯ and a *Details* fold with *Copy*, and the chain opens folded. A quest's head leads with the state pill, the name on at most two lines with *Show all* only where it was cut, and a facts line; *Take* (or *Mark done*), *Decline…* and a ⋯ for the rest; id, from, to, lanes and times fold into *Details*; no title is said twice, and the body drops a first line that repeats it. `PageHead` gained `lead`, `clamp` and `facts`, every other page unchanged. One deviation from the design: *attempt*, not *try*, which the glossary keeps for a plugin trial. Detail: D152's UX7c note, commit ab8c9d2b.

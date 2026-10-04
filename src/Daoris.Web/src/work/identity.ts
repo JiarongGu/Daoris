@@ -6,7 +6,25 @@ import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 // it is a function and not two pieces of JSX.
 
 /**
- * What a session is FOR, in one line: the quest's title where there is one, and otherwise the
+ * What a list calls a quest (SESSUX1j, D126 §9, the session management design §6.2): its short title, as the service
+ * answers it (the publisher's, or the name the service read from the quest's own words), else its title, from a host
+ * older than the field. One helper, so no two places name one quest differently; the page never shortens a title itself,
+ * since content is shown as it is (platform language §4).
+ */
+export function questName(quest: Pick<Quest, 'title' | 'short'>): string {
+  return quest.short?.trim() ? quest.short.trim() : quest.title;
+}
+
+/**
+ * Whether a quest's name leaves part of its title unsaid (UX7c, D152 §7): then a page that heads with the name shows the
+ * whole title once, under its head, and otherwise it says the title once, in its head.
+ */
+export function shortened(quest: Pick<Quest, 'title' | 'short'> | null | undefined): boolean {
+  return Boolean(quest && questName(quest) !== quest.title);
+}
+
+/**
+ * What a session is FOR, in one line: the quest's name (`questName`) where there is one, and otherwise the
  * honest fallback.
  *
  * @remarks
@@ -27,7 +45,7 @@ import { HELP_REPOSITORY, type Quest, type Session } from '../api';
  * and it is not a conversation: it serves an ask, and says so by the ask's reference (INT4g).
  */
 export function sessionTitle(session: Session, quest?: Quest | null, opening?: string | null): string {
-  if (quest?.title) return quest.title;
+  if (quest?.title) return questName(quest);
   if (session.quest) return `#${session.quest}`;
   if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
   if (isHelp(session) && !opening) return i18n.t('help.title');

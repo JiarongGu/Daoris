@@ -117,6 +117,24 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// SESSUX1j: an agent gives its quest a short title through this door, and the listing says it; one past 40
+    /// characters is refused in the exchange's words, and nothing is published.
+    /// </summary>
+    [Fact]
+    public async Task Publishing_carries_a_short_title_and_the_listing_says_it()
+    {
+        Assert.Contains("Published quest", await _tools.PublishQuestAsync(
+            "Asker", "Owner", "Cap the frame's work so the editor stays responsive", "It stalls.", shortTitle: "Frame cap"));
+        Assert.Equal("Frame cap", (await _quests.ListAsync(receiver: "Owner")).Single().Short);
+        Assert.Contains("short title: Frame cap", await _tools.ListQuestsAsync("Owner"));
+
+        var refused = await _tools.PublishQuestAsync(
+            "Asker", "Owner", "Another quest", "b", shortTitle: "A short title that runs well past the forty characters a list gives it");
+        Assert.Contains("40 characters", refused);
+        Assert.Single(await _quests.ListAsync(receiver: "Owner"));
+    }
+
+    /// <summary>
     /// D115 §2.2 (DEV4): the registry's answer lists each repository's lanes, so an asker can see what it
     /// may address and how; a quest to one is published through this door and listed with its lanes.
     /// </summary>

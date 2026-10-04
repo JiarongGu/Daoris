@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
-import { inTree, isHelp, ownTree, sessionOrigin, sessionTitle, treeName } from './identity';
+import { inTree, isHelp, ownTree, questName, sessionOrigin, sessionTitle, shortened, treeName } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -24,6 +24,32 @@ const quest = (over: Partial<Quest> = {}): Quest => ({
   updated: '2026-09-21T09:00:00Z',
   ...over,
 } as Quest);
+
+/**
+ * SESSUX1j (D126 §9, the session management design §6.2): a quest's name is its short title, the service's answer, else
+ * its title, from a host older than the field. One helper, so no two places name one quest differently.
+ */
+describe("a quest's name", () => {
+  it('is its short title where the service answers one', () => {
+    expect(questName(quest({ short: 'Streaming budget' }))).toBe('Streaming budget');
+  });
+
+  it('is its title from a host older than the short title, or where the short title is blank', () => {
+    expect(questName(quest())).toBe('Expose a streaming budget on the chunk API');
+    expect(questName(quest({ short: '  ' }))).toBe('Expose a streaming budget on the chunk API');
+  });
+
+  it("names a session by it, so a session's row and its quest's row say the same words", () => {
+    expect(sessionTitle(session({ quest: '7a82cc' }), quest({ short: 'Streaming budget' }))).toBe('Streaming budget');
+  });
+
+  it('says whether the name is all of the title, so a page shows the whole title once where it is not', () => {
+    expect(shortened(quest({ short: 'Streaming budget' }))).toBe(true);
+    expect(shortened(quest({ short: 'Expose a streaming budget on the chunk API' }))).toBe(false);
+    expect(shortened(quest())).toBe(false);
+    expect(shortened(null)).toBe(false);
+  });
+});
 
 describe('a session title', () => {
   it('is the quest it serves, when the quest is in hand', () => {

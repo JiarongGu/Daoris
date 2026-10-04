@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Quest } from '../api';
 import { Button } from '../ui';
 import { cn } from '../lib/cn';
+import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
 
 /** A quest's status, in the words and the hue its pill wears (D41: never hue alone). */
@@ -67,10 +68,10 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
             title={quest.title}
             className="max-w-64 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
           >
-            {quest.title}
+            {questName(quest)}
           </button>
         )
-        : <span className="max-w-64 truncate text-ink" title={quest.title}>{quest.title}</span>}
+        : <span className="max-w-64 truncate text-ink" title={quest.title}>{questName(quest)}</span>}
       {status}
     </span>
   );

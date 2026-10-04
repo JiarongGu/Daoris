@@ -33,6 +33,7 @@ const meta: Meta<typeof SessionPageHead> = {
   component: SessionPageHead,
   args: {
     session: SESSION, title: TITLE, shown: 'working',
+    facts: ['engine', 'account-1', '2m'],
     acts: ['stop', 'review', 'openFolder', 'terminal', 'detach', 'copy'],
     onAct: () => {},
   },
@@ -153,6 +154,38 @@ export const Narrow: Story = {
 /** A 中文 title, one line, whole on its tip. */
 export const ChineseTitle: Story = {
   args: { title: '为区块接口提供流式预算，让世界流式加载能按帧限制水合工作量，避免卡顿和掉帧' },
+};
+
+// ——— Titles first (UX7c, D152 §7; the UX7 design §5.2): its word, then its title on one line, then its facts by state.
+// The install's fourth attempt at a re-filed quest, with and without a short title.
+
+const REFILED_TITLE = '(Re-filed from ask #0181ea, whose quest was taken outside the driver with no session.)';
+
+/** Its quest's short title (SESSUX1j): the head says the work, and the fourth attempt is a fact on its line. */
+export const FourthAttemptWithAShortTitle: Story = {
+  args: { title: 'Continue the production half', facts: ['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed'] },
+};
+
+/** No short title: the title as written, one line, whole in its tip; the word stays where it was. */
+export const FourthAttemptWithNoShortTitle: Story = {
+  args: { title: REFILED_TITLE, facts: ['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed'] },
+};
+
+/** Parked after its failed sessions: its line says so, in the row's words, beside *Try again*. */
+export const ParkedFacts: Story = {
+  args: {
+    session: { ...SESSION, state: 'failed' }, shown: 'parked', title: 'Continue the production half',
+    facts: ['engine', 'after 3 failed sessions', 'ran 14m'],
+    acts: ['retry', 'review', 'openFolder', 'terminal', 'detach', 'copy'], primary: 'retry',
+  },
+};
+
+/** The same at 680 px of window (a main area of about 596 px): the acts beside the title still, the facts cut on their line. */
+export const FourthAttemptNarrow: Story = {
+  args: { ...FourthAttemptWithNoShortTitle.args },
+  decorators: [(Story) => (
+    <div className="flex h-[30rem] w-[37.25rem] max-w-full border border-line bg-page"><Story /></div>
+  )],
 };
 
 /** A running driven session whose quest an ask asked (PAUSE1e): *Pause quest…* and *Pause ask…* in its ⋯. */

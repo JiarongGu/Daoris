@@ -22,5 +22,10 @@
   "work.head.landed.dirty": "工作树中有未提交的工作",
   "work.head.landed.inUse": "仍在使用中",
   "work.head.moved": "变动于",
-  "work.head.waiting": "这个会话在等你"
+  "work.head.waiting": "这个会话在等你",
+  "work.head.details": "详情",
+  "work.head.account": "账户",
+  "work.head.id": "ID",
+  "work.head.copyId": "复制",
+  "work.head.copied": "已复制"
 }

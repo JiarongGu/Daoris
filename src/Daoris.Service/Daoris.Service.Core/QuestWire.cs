@@ -177,6 +177,9 @@ public static class QuestWire
                 QuestStore.WriteRequirements(writer, asked.Requirements);
             }
 
+            // Only when its publisher gave one (SESSUX1j): an older build reads the quest as it always did, named by its title.
+            if (asked.Short is not null) writer.WriteString("short", asked.Short);
+
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
             writer.WriteEndArray();
@@ -315,6 +318,7 @@ public static class QuestWire
                 PublishedBy = Text(asked, "publishedBy"),
                 Lanes = lanes.Select(lane => lane.GetString()!).ToList(),
                 Requirements = requirements,
+                Short = Text(asked, "short"),
             };
         }
 

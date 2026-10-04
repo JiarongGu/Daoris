@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
 import { GoAheadList } from '../asks/GoAheadList';
-import { ago, elapsed, sessionTool } from '../format';
+import { ago, elapsed, sessionTool, stamp } from '../format';
 import {
-  answeredPark, Button, MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
+  answeredPark, Button, Pill, SESSION_ACTIVE, SESSION_TONE, shownKey, shownState, WaitingCard,
 } from '../ui';
+import { cn } from '../lib/cn';
 import { AnsweredPark } from './AnsweredPark';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
-import { isIntake, sessionOrigin, sessionTitle } from './identity';
+import { DetailsFold } from './DetailsFold';
+import { useCut } from './ViewMain';
+import { isIntake, sessionOrigin, sessionTitle, shortened } from './identity';
 import { Note } from './Note';
 import { hasNote, noteBlocks, noteLines } from './noteLines';
 import { movedAt } from './rail';
@@ -70,8 +73,9 @@ export function SessionHead({
    */
   onGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /**
-   * A page header above carries its state and its id (SESSUX1d, D126 §3.2): the head opens on the quest's whole title
-   * and says neither again. Absent, a window with no header (a detached session), the head keeps both beside the title.
+   * A page header above carries its state, its title and its facts (SESSUX1d, D126 §3.2; UX7c, D152 §7): the head says
+   * none again, and the quest's whole title only where the header showed its short title. Absent, a window with no header
+   * (a detached session), the head keeps the title, its word and its id.
    */
   headed?: boolean;
   /** When its last turn ended here, as the driver says (RAIL2): *moved* reads the later of it and the record. */
@@ -157,20 +161,21 @@ export function SessionHead({
         </section>
       )}
 
-      {/* The state follows the title rather than the far edge (§4: status leads): the head is as wide
-          as the centre (UX5 U16), and at the edge the pill sat a thousand pixels from what it names.
-          Two lines at most, whole on hover: a quest's title can run to a paragraph (SESS2). */}
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
-          {sessionTitle(session, quest, opening)}
-        </h2>
-        {!headed && (
-          <span className="flex shrink-0 items-baseline gap-2">
-            <Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill>
-            <span className="font-mono text-meta text-ink-faint">{session.id}</span>
-          </span>
-        )}
-      </div>
+      {headed ? (
+        /* Under a page header (UX7c, D152 §7): the header says the title, so the record says it again only where the
+           header's was not all of it, the quest's short title (SESSUX1j): then the whole title, once, at body size. */
+        shortened(quest) && <WholeTitle title={quest!.title} />
+      ) : (
+        /* A window with no header (a detached session): the title and its word are said here; its id is its *Details*'
+           (UX7c), as on the page. The state follows the title rather than the far edge (§4: status leads), two lines at
+           most, whole on hover (SESS2). */
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
+          <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
+            {sessionTitle(session, quest, opening)}
+          </h2>
+          <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
+        </div>
+      )}
 
       {/* How it stands, in the record's note (SESS2 H5, H6): why a failed session failed, how a finished
           one ended, Daoris's lines in the reader's language and the agent's words as written (LANG1b).
@@ -182,28 +187,35 @@ export function SessionHead({
           theirs to review, in the waiting hue; landed work is a quiet fact. */}
       {branch && <Left branch={branch} onReview={onReview} />}
 
-      {/* The reference, quiet and on one line where it fits (SESS2 H2, H3): the tree's machine path is
-          the repository's on hover, and the branch is on the line above, where it means something. */}
-      <MetaLine
-        className="text-meta"
-        items={[
-          // An intake serves an ask and runs in Daoris's own room, never a repository's tree
-          // (INT4b) — its record says so rather than `repository: ask #…` (INT4g).
+      {/* The reference (UX7c, D152 §7): the meta line's eight pairs became a folded *Details*, its line naming the quest,
+          the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine
+          path is the repository's on hover; an intake names its ask, never `repository: ask #…` (INT4g). */}
+      <DetailsFold
+        summary={[
+          intake ? t('work.scope.ask', { id: session.ask }) : session.quest ? t('work.scope.quest', { id: session.quest }) : null,
+          sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }),
+          t('work.facts.started', { ago: ago(session.created) }),
+        ].filter(Boolean).join(' · ')}
+        rows={[
           intake
-            ? { label: t('work.intake.ask'), value: <span title={session.tree ?? undefined}>#{session.ask}</span>, mono: true }
+            ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
-          { label: t('work.head.tool'), value: sessionTool(session, ownSignIn) },
+          { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
+          {
+            label: t('work.head.account'),
+            value: session.profile ?? (ownSignIn ? t('quests.session.ownSignIn') : null),
+          },
           { label: t('work.head.machine'), value: sessionOrigin(session) },
-          { label: t('work.head.started'), value: ago(session.created) },
-          // A running session has an age and a finished one has a lifetime. Same number, different
-          // question, so the label says which rather than leaving the reader to guess.
+          { label: t('work.head.started'), value: `${stamp(session.created)} · ${ago(session.created)}` },
+          // A running session has an age and a finished one has a lifetime: the label says which (SESS2).
           {
             label: running ? t('work.head.elapsed') : t('work.head.ran'),
             value: elapsed(session.created, running ? null : session.updated),
           },
           // Only while it runs: an ended session's last move is its end, which *ran* already says.
           { label: t('work.head.moved'), value: running ? ago(movedAt(session, lastTurn)) : null },
+          { label: t('work.head.id'), value: session.id, mono: true, copy: session.id },
         ]}
       />
 
@@ -213,6 +225,33 @@ export function SessionHead({
 
 /** How much of the record's note the head shows before the rest is a press away. */
 const NOTE_LINES = 3;
+
+/**
+ * The quest's whole title, once, under a head that showed its short title (UX7c, D152 §7): body size, two lines, the rest
+ * a press away. Content, shown as it is (platform language §4).
+ */
+export function WholeTitle({ title }: { title: string }) {
+  const { t } = useTranslation();
+  const own = useRef<HTMLParagraphElement>(null);
+  const [whole, setWhole] = useState(false);
+  const cut = useCut(own, title);
+  return (
+    <div className="grid justify-items-start gap-1">
+      <p
+        ref={own}
+        className={cn('m-0 w-full text-body leading-relaxed text-ink [overflow-wrap:anywhere]', !whole && 'line-clamp-2')}
+        title={title}
+      >
+        {title}
+      </p>
+      {(cut || whole) && (
+        <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
+          {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}
+        </Button>
+      )}
+    </div>
+  );
+}
 
 /**
  * The record's note about how the session stands (LANG1b): Daoris's lines worded in the reader's language, someone's

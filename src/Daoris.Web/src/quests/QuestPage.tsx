@@ -7,9 +7,12 @@ import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
-import { Button, Icon, type IconName, Inline, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
+import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
+import { DetailsFold } from '../work/DetailsFold';
+import { questFacts } from '../work/headFacts';
 import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
+import { questName } from '../work/identity';
 import { Note } from '../work/Note';
 import { QuestRequirements } from './Requirements';
 import { TrustAsk } from '../work/TrustAsk';
@@ -43,6 +46,19 @@ function buttonOf(act: QuestAct, status: Quest['status']): 'primary' | 'default'
   if (act === 'done') return status === 'Taken' ? 'primary' : 'default';
   if (act === 'pause') return 'default';
   return 'ghost';
+}
+
+/**
+ * A quest's body as its page shows it under the head (UX7c, D152 §7): its first line left out where it is the title the
+ * head said, as the ask page leaves its first line out (POLISH4); where the head said a short title instead, the body as
+ * written, opening on the whole title, which is prepended where the body does not already open on it. Content is never
+ * rewritten otherwise. Empty where nothing is left to say.
+ */
+export function bodyUnderHead(title: string, body: string, shortTitled: boolean): string {
+  const [first = '', ...rest] = body.split('\n');
+  const opensOnTitle = first.trim() === title.trim();
+  if (shortTitled) return opensOnTitle ? body : `${title}\n\n${body}`;
+  return opensOnTitle ? rest.join('\n').replace(/^\s*\n/, '') : body;
 }
 
 /** A record's row of facts: its name, and what it holds. */
@@ -218,19 +234,43 @@ export function QuestPage({
     }
   };
 
-  const acts = headActs.length > 0 && (
+  // The head's acts as the UX7 design §5.3 draws them (UX7c, D152 §7): its next step loud (*Take* while open, *Mark done*
+  // once taken) and *Decline…* beside it; the rest of the same list, and its id, in its ⋯. One list still, so the buttons,
+  // the ⋯ and the right-click never disagree (CTX1).
+  const lead: QuestAct | null = headActs.includes('take') ? 'take' : quest.status === 'Taken' && headActs.includes('done') ? 'done' : null;
+  const drawn = headActs.filter((act) => act === lead || act === 'decline');
+  const folded = headActs.filter((act) => !drawn.includes(act));
+  const copyId = { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id };
+  const acts = (
     <>
-      {headActs.map((act) => (
+      {drawn.map((act) => (
         <Button key={act} variant={buttonOf(act, quest.status)} disabled={waiting} onClick={() => press(act)}>
-          {act === 'delete' && <Icon name="remove" size={13} />}
           {t(QUEST_ACT[act].label)}
         </Button>
       ))}
+      <Menu.Root>
+        <Menu.Trigger asChild>
+          <Button variant="ghost" aria-label={t('work.head.more')} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
+            <Icon name="more" size={15} />
+          </Button>
+        </Menu.Trigger>
+        <Menu.Content side="bottom" align="end" className="min-w-48">
+          <Menu.Acts
+            acts={[
+              ...folded.map((act) => ({
+                id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
+              })),
+              copyId,
+            ]}
+            onCopy={(text) => { void navigator.clipboard?.writeText(text).catch(() => {}); }}
+          />
+        </Menu.Content>
+      </Menu.Root>
     </>
   );
 
   const menu = {
-    label: quest.title,
+    label: questName(quest),
     acts: [
       ...[...headActs, ...bodyActs].map((act) => ({
         id: act, label: t(QUEST_ACT[act].label), icon: QUEST_ACT[act].icon,
@@ -238,25 +278,33 @@ export function QuestPage({
         disabled: act === 'retry' ? retrying : act === 'accept' ? accepting : act === 'session' || act === 'trust' ? false : waiting,
         onSelect: () => press(act),
       })),
-      { id: 'copy', label: t('contextMenu.act.copyQuest'), icon: 'copy' as const, copy: quest.id },
+      copyId,
     ],
   };
 
+  // Titles first (UX7c, D152 §7; the UX7 design §5.3): its state leads, its name follows on two lines at most, and one line
+  // of facts says whom it asks, who asked, when, and the one live fact. The state line, the id and the fact rows went: the
+  // state's sentence is its pill's tip, and the id, the full times and the lanes are its *Details*.
+  const named = questName(quest);
   const head = (
     <PageHead
-      title={quest.title}
-      pills={(
+      title={named}
+      lead={(
         <>
-          <Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>
+          <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
           {/* Open's hue is the person's (D126 §2.3): a departure waits on their yes (DRIFT1d2). */}
           {held && <Pill tone="open" title={t('quests.card.heldHint')}>{t('quests.card.held')}</Pill>}
         </>
       )}
-      id={`#${quest.id}`}
-      line={t(`statusHint.${quest.status}`)}
-      acts={acts || undefined}
+      clamp={2}
+      facts={questFacts(t, { quest, session, sitting })}
+      acts={acts}
     />
   );
+
+  // The body, its first line dropped where it is the title the head already said (POLISH4's rule, as the ask page drops
+  // it); where the head said a short title, the body opens on the whole title, once.
+  const body = bodyUnderHead(quest.title, quest.body, named !== quest.title);
 
   return (
     <ViewMain header={head} menu={menu}>
@@ -320,15 +368,29 @@ export function QuestPage({
         </div>
       )}
 
-      <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-body">
-        <Fact name={t('quests.detail.from')}>{quest.from}</Fact>
-        <Fact name={t('quests.detail.to')}>{quest.to}</Fact>
-        {/* Each lane as the repository declares it, named where its registration says (D115 §2.2). */}
-        {lanes && <Fact name={t('quests.detail.lanes')}>{lanes}</Fact>}
-        <Fact name={t('quests.detail.filed')}>{stamp(quest.filed)} · {ago(quest.filed)}</Fact>
-        {quest.updated !== quest.filed && (
-          <Fact name={t('quests.detail.moved')}>{stamp(quest.updated)} · {ago(quest.updated)}</Fact>
-        )}
+      {/* What its head leaves out (UX7c, D152 §7): its id with *Copy*, whom it asks and who asked, its lanes, and the full
+          times. Folded, since these are looked up rather than read. */}
+      <DetailsFold
+        className="mb-4"
+        summary={[
+          `#${quest.id}`,
+          t('quests.facts.filedAt', { at: stamp(quest.filed) }),
+          ...(quest.updated !== quest.filed ? [t('quests.facts.movedAt', { at: stamp(quest.updated) })] : []),
+        ].join(' · ')}
+        rows={[
+          { label: t('work.head.id'), value: `#${quest.id}`, mono: true, copy: quest.id },
+          { label: t('quests.detail.from'), value: quest.from },
+          { label: t('quests.detail.to'), value: quest.to },
+          // Each lane as the repository declares it, named where its registration says (D115 §2.2).
+          { label: t('quests.detail.lanes'), value: lanes || null },
+          { label: t('quests.detail.filed'), value: `${stamp(quest.filed)} · ${ago(quest.filed)}` },
+          { label: t('quests.detail.moved'), value: quest.updated !== quest.filed ? `${stamp(quest.updated)} · ${ago(quest.updated)}` : null },
+          // The short title its publisher gave (SESSUX1j), where the head says it and the whole title stands below.
+          { label: t('quests.field.short'), value: quest.short && quest.short !== quest.title ? quest.short : null },
+        ]}
+      />
+
+      <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-body empty:hidden">
         {question && (
           // What its taker asked and waits on (D79), opened in place: the answer is read there.
           <Fact name={t(answered ? 'quests.detail.asked' : 'quests.detail.waitsOn')}>
@@ -470,8 +532,9 @@ export function QuestPage({
       )}
 
       {/* The ask itself, as the asker wrote it: content, wrapping at the column's edge with the title above it (D141: a
-          65ch body beside a title that ran the pane left 750 px empty on the install). */}
-      <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{quest.body}</p>
+          65ch body beside a title that ran the pane left 750 px empty on the install). Its first line is left out where
+          the head already said it (UX7c). */}
+      {body && <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{body}</p>}
 
       {!held && requirements.length > 0 && (
         /* What the person required (DRIFT1c, D133 §3), in their words: the measure, where the body above is the intake's

@@ -3,6 +3,15 @@ namespace Daoris.Driver;
 /// <summary>A quest as the service answered it — enough to decide on, and enough to compose a target from.</summary>
 public sealed record QuestView(string Id, string From, string To, string Title, string Body, string Status)
 {
+    /// <summary>
+    /// What a list calls it, as the service answered (SESSUX1j): its publisher's short title, or the name the service read
+    /// from its words. Null from a host before the field, which names it by its title.
+    /// </summary>
+    public string? Short { get; init; }
+
+    /// <summary>The quest's name where one is shown (SESSUX1j): its short title, else its title.</summary>
+    public string Name => Short is { Length: > 0 } named ? named : Title;
+
     /// <summary>Addresses the quest carries — a ticket, a page — handed to the session as given.</summary>
     public IReadOnlyList<string> Links { get; init; } = [];
 

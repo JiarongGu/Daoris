@@ -206,5 +206,10 @@
   "work.sitting.Paused_quest": "{{why}}",
   "work.sitting.forUpdate": "{{why}}",
   "work.scope.ask": "ask #{{id}}",
-  "work.scope.quest": "quest #{{id}}"
+  "work.scope.quest": "quest #{{id}}",
+  "work.facts.ran": "ran {{time}}",
+  "work.facts.waiting": "waiting {{time}}",
+  "work.facts.started": "started {{ago}}",
+  "work.facts.attempt": "attempt {{attempt}}: the one before it failed",
+  "work.facts.attempt_other": "attempt {{attempt}}: the {{count}} before it failed"
 }

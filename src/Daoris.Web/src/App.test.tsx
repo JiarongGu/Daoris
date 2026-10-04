@@ -734,7 +734,8 @@ describe('the attention band', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Read the media field names from config/ }));
 
     await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' });
-    expect(within(screen.getByRole('main')).getByText('#5e7a11')).toBeInTheDocument();
+    // Its id is its Details' now (UX7c, D152 §7), named on the fold's line.
+    expect(within(screen.getByRole('main')).getByRole('button', { name: /^Details/ })).toHaveTextContent('#5e7a11');
   });
 
   /**
@@ -761,7 +762,7 @@ describe('the attention band', () => {
     const nobody = screen.getByRole('listitem', { name: 'Expose a streaming budget' });
     await userEvent.click(within(nobody).getByRole('button', { name: 'Open' }));
     await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
-    expect(within(screen.getByRole('main')).getByText('#7a82cc')).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByRole('button', { name: /^Details/ })).toHaveTextContent('#7a82cc');
   });
 
   /**

@@ -308,9 +308,11 @@ controls are in the frame design's §3.
   only where none is set (U34). The two composers are **drawers**, since they are forms (D118 §3d);
   the list stays scannable (pill and its marks, title, route, age) grouped Open / Taken / Closed;
   **choosing a row opens its page in the main area**, beside Ask Daoris rather than under a scrim:
-  the title with its pill and its state's line, the acts in its header — *Take*, *Mark done*,
-  *Decline…*, which asks its reason under the header — and the loud one is the quest's next step:
-  *Take* while it is open, *Mark done* once it is taken (U31); then the meta, the ask, the note. The
+  **its head leads with its state** (UX7c, D152 §7): the pill, then its name (the short title, else the title, two lines at
+  most, whole on *Show all*), then one line of facts, whom it asks, who asked, when, and the one live fact; the loud act is
+  the quest's next step, *Take* while it is open, *Mark done* once it is taken (U31), then *Decline…*, which asks its reason
+  under the header, and ⋯ with the rest and its id. Its id, lanes and full times fold into *Details*; then the ask, its first
+  line left out where it is the title the head said, and the note. The
   page stays on the quest as each act leaves it, and with nothing chosen the main area says how to
   choose and offers the `＋`'s two kinds. A row is for reading. What a quest carries (D65 §2) is **counted on its
   row** (a link glyph and a paperclip, each with its number) and **listed on its page**: links as
@@ -402,9 +404,12 @@ controls are in the frame design's §3.
     *Stop…*, *Try again*, *Review*, *Open folder*, *Open a terminal here*, its own window, *Archive* on an ended row or
     *Unarchive* on an archived one (SESSUX1e), *Delete…* on a conversation that served no quest (SESSUX1f), and its id. The ⋯ shows archived sessions as *Archived*, last, and
     *Archive what ended…* lists what it would take and what stays before its second press archives.
-  - **The attended session has a page header, pinned** (SESSUX1d, D126 §3.2): its title on one line, whole in its tip,
-    its word on its pill and its id; then its loud act where its state has one (*Try again*, *Review*), *Stop…* while
-    it is live, and ⋯ with the rest. The conversation scrolls under it, and the long run's way through pins beneath it.
+  - **The attended session has a page header, pinned** (SESSUX1d, D126 §3.2; UX7c, D152 §7): its word on its pill, then
+    its title on one line, whole in its tip, then a facts line its state chooses (its repository, account, how long, and
+    *attempt 4: the 3 before it failed* where its quest's earlier sessions failed); then its loud act where its state has
+    one (*Try again*, *Review*), *Stop…* while it is live, and ⋯ with the rest and its id. The record under it says the
+    whole title once only where the header said a short one, and folds its reference into *Details*; the chain opens
+    folded on every session. The conversation scrolls under it, and the long run's way through pins beneath it.
     Below 560 px of main area its acts take their own line. **A session's stop has one owner, this header**: *Stop…*
     asks once under it, saying what follows by what the session is, then *Stop session* or *Never mind*. *Delete…*, in
     its ⋯ only where the driver says the delete would be taken, asks the same way: what goes, and that nothing brings it

@@ -206,5 +206,10 @@
   "work.sitting.Paused_quest": "随委托 `#{{pause}}` 暂缓；恢复后会继续——`daoris-driver quest resume {{pause}}`。",
   "work.sitting.forUpdate": "有一个更新在等本机的会话结束：安装完成并重新启动之前，不会开始新的工作。「暂不更新」或 `daoris-driver update --cancel` 可让工作先继续。",
   "work.scope.ask": "需求 #{{id}}",
-  "work.scope.quest": "委托 #{{id}}"
+  "work.scope.quest": "委托 #{{id}}",
+  "work.facts.ran": "运行了 {{time}}",
+  "work.facts.waiting": "已等待 {{time}}",
+  "work.facts.started": "{{ago}}开始",
+  "work.facts.attempt": "第 {{attempt}} 次尝试：之前 {{count}} 次失败",
+  "work.facts.attempt_other": "第 {{attempt}} 次尝试：之前 {{count}} 次失败"
 }

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  chooseRow, makeFromList, openFilters, QuestsView, questList, questMain, questPage,
+  chooseRow, makeFromList, moreAct, openFilters, QuestsView, questList, questMain, questPage,
 } from './test/questsView';
 
 // The view over a stubbed service, on the frame (FRAME1d, D118): its list pane holds the asks and the quests, its
@@ -88,6 +88,7 @@ const nothingChosen = () => waitFor(() => expect(questMain()).toHaveTextContent(
 let published: {
   links?: string[]; attachments?: { name: string; content: string }[];
   then?: { to: string; title: string; body: string }[];
+  short?: string;
 } | null = null;
 
 describe('QuestsView', () => {
@@ -139,7 +140,7 @@ describe('QuestsView', () => {
     view();
     const page = await chooseRow('Expose a streaming budget');
 
-    expect(within(page).getByText('#abc123')).toBeInTheDocument();
+    expect(within(page).getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
     // The list is still there beside it, its row chosen.
     expect(within(questList()).getByRole('button', { name: /Expose a streaming budget/ })).toHaveAttribute('aria-current', 'true');
@@ -277,7 +278,8 @@ describe('QuestsView', () => {
 
     expect(await within(questList()).findByText('lanes assets + core')).toBeInTheDocument();
     const page = await chooseRow('Expose a streaming budget');
-    // A field's name is sentence case (the glossary's `field` kind, NAME1a).
+    // In its Details (UX7c, D152 §7). A field's name is sentence case (the glossary's `field` kind, NAME1a).
+    await userEvent.click(within(page).getByRole('button', { name: /^Details/ }));
     expect(within(page).getByText('Lanes')).toBeInTheDocument();
     // Named as the repository declares them, where its registration says.
     expect(within(page).getByText('assets (Assets), core (Core)')).toBeInTheDocument();
@@ -299,6 +301,7 @@ describe('QuestsView', () => {
       view();
       expect(await within(questList()).findByText('泳道 assets + core')).toBeInTheDocument();
       const page = await chooseRow('Expose a streaming budget');
+      await userEvent.click(within(page).getByRole('button', { name: /^详情/ }));
       expect(within(page).getByText('泳道')).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
@@ -379,6 +382,10 @@ describe('QuestsView', () => {
       const page = await chooseRow('Expose a streaming budget');
 
       expect(within(page).queryByRole('button', { name: 'Delete…' })).toBeNull();
+      within(page).getByRole('button', { name: 'More actions' }).focus();
+      await userEvent.setup().keyboard('{Enter}');
+      expect(await screen.findByRole('menuitem', { name: 'Copy quest ID' })).toBeInTheDocument();
+      expect(screen.queryByRole('menuitem', { name: 'Delete…' })).toBeNull();
     });
 
     it('asks once under the header, then deletes, and says what the service answered, verbatim', async () => {
@@ -386,7 +393,7 @@ describe('QuestsView', () => {
       const notify = view();
       const page = await chooseRow('Expose a streaming budget');
 
-      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      await moreAct(page, 'Delete…');
       const confirm = within(page).getByRole('group', { name: 'delete this quest' });
       expect(within(confirm).getByText(/cannot be undone/)).toBeInTheDocument();
       expect(deleted).toEqual([]);
@@ -407,7 +414,7 @@ describe('QuestsView', () => {
       const notify = view();
       const page = await chooseRow('Expose a streaming budget');
 
-      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      await moreAct(page, 'Delete…');
       await userEvent.click(within(page).getByRole('button', { name: 'Delete quest' }));
 
       await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
@@ -419,11 +426,12 @@ describe('QuestsView', () => {
       view();
       const page = await chooseRow('Expose a streaming budget');
 
-      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      await moreAct(page, 'Delete…');
       await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
 
       expect(within(page).queryByRole('group', { name: 'delete this quest' })).toBeNull();
-      expect(within(page).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
+      await moreAct(page, 'Delete…');
+      expect(within(page).getByRole('group', { name: 'delete this quest' })).toBeInTheDocument();
       expect(deleted).toEqual([]);
     });
   });
@@ -486,7 +494,7 @@ describe('QuestsView', () => {
     openedOn('abc123');
 
     const page = await questPage('Expose a streaming budget');
-    expect(within(page).getByText('#abc123')).toBeInTheDocument();
+    expect(within(page).getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
   });
 
   /** A record the list leaves out is still a record: a closed quest a door names opens on its page all the same. */
@@ -701,7 +709,10 @@ describe('QuestsView', () => {
     view();
     const chain = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'How this work ran' });
 
-    expect(within(chain).getAllByText('stub')).toHaveLength(2);
+    // UX7c (D152 §7): every attempt ran on the one agent, said once above its rows, each row its attempt.
+    expect(within(chain).getAllByText('stub')).toHaveLength(1);
+    expect(within(chain).getByText('attempt 1')).toBeInTheDocument();
+    expect(within(chain).getByText('attempt 2')).toBeInTheDocument();
     expect(within(chain).getByText('failed')).toBeInTheDocument();
   });
 
@@ -763,6 +774,39 @@ describe('QuestsView', () => {
 
     await vi.waitFor(() => expect(published).not.toBeNull());
     expect(published!.then).toEqual([{ to: 'engine', title: 'Verify {parent}', body: 'Open the app.' }]);
+  });
+
+  /**
+   * SESSUX1j (the session management design §6.1): the composer offers an optional short title, the person's own few
+   * words, sent with the publish; one past 40 characters holds the publish back, as the service would refuse it, and an
+   * empty one is not sent at all.
+   */
+  it('a short title written travels with the publish, and one past forty characters holds it back', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Expose a streaming budget on the chunk API' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Because.' } });
+
+    const short = within(dialog).getByLabelText('Short title');
+    fireEvent.change(short, { target: { value: 'A short title that runs well past the forty characters' } });
+    expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeDisabled();
+
+    fireEvent.change(short, { target: { value: '  Streaming budget ' } });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Publish quest' }));
+
+    await vi.waitFor(() => expect(published).not.toBeNull());
+    expect(published!.short).toBe('Streaming budget');
+  });
+
+  it('a quest published with no short title sends none', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Develop it' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Because.' } });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Publish quest' }));
+
+    await vi.waitFor(() => expect(published).not.toBeNull());
+    expect(published).not.toHaveProperty('short');
   });
 
   /** A quest just published opens on its page, as an ask's record opens on its answer. */
@@ -923,7 +967,10 @@ describe('QuestsView', () => {
     const header = within(page).getByRole('heading', { level: 1 }).closest('header')!;
 
     expect(within(header).getByRole('button', { name: 'Take' }).className).toContain('bg-accent');
-    expect(within(header).getByRole('button', { name: 'Mark done' }).className).not.toContain('bg-accent');
+    // UX7c (D152 §7): marking done a quest nobody has taken is rarely the next step, so it is in the head's ⋯.
+    expect(within(header).queryByRole('button', { name: 'Mark done' })).toBeNull();
+    expect(within(header).getAllByRole('button').map((button) => button.textContent || button.getAttribute('aria-label')))
+      .toEqual(['Take', 'Decline…', 'More actions']);
     // U35: taking wore a check mark, the sign of done, beside a done that wore none.
     expect(within(header).getByRole('button', { name: 'Take' }).querySelector('svg')).toBeNull();
   });
@@ -978,7 +1025,7 @@ describe('QuestsView', () => {
     await waitFor(() => expect(asked.length).toBeGreaterThan(0));
     const before = asked.length;
 
-    await userEvent.click(within(page).getByRole('button', { name: 'Mark done' }));
+    await moreAct(page, 'Mark done');
 
     await waitFor(() => expect(asked.length).toBeGreaterThan(before));
   });

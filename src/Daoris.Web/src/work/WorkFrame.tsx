@@ -38,6 +38,7 @@ import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
 import { keptSessionFilters, sessionFilters, shownOf } from './groups';
+import { sessionFacts } from './headFacts';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 import { ListMore } from './ListPane';
@@ -949,11 +950,20 @@ export function WorkFrame({
       acts: actMenu(headerActs(headActs, headPrimary).all, t, (act) => actions.run(act, attendedFacts), actions.busy),
     }
     : null;
-  const pageHead = attended && attendedFacts && (
+  const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
+  const pageHead = attended && attendedFacts && attendedShown && (
     <SessionPageHead
       session={attended}
       title={attendedTitle}
-      shown={shownOf(attended, grouping, taking[attended.id])}
+      shown={attendedShown}
+      // Its facts line by its state (UX7c, D152 §7): the row's facts and the record's, so the head and the row agree.
+      facts={sessionFacts(t, {
+        session: attended,
+        shown: attendedShown,
+        grouping,
+        ownSignIn: roster.some((row) => row.harness === attended.adapter),
+        branch,
+      })}
       acts={headActs}
       primary={headPrimary}
       busy={actions.busy}

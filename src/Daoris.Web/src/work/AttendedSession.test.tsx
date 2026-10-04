@@ -48,6 +48,31 @@ describe('the attended session', () => {
     eventHandlers.clear();
   });
 
+  /**
+   * UX7c (D152 §7, amending SESS2 H7's remembered choice): the chain opens folded to its one line on every session, whatever
+   * was opened on the last one, so the conversation is not pushed down by a strip the person once opened elsewhere.
+   */
+  it('opens the chain folded on every session, whatever the last one showed', async () => {
+    vi.useRealTimers();
+    window.localStorage.setItem('daoris.chainWhole', '1');
+    const { buildChain } = await import('../map/chain');
+    const quests = [
+      { id: 'q1', from: 'ask #a1', to: 'engine', title: 'Develop it', body: '', status: 'Done' as const, filed: NOW.toISOString(), updated: NOW.toISOString() },
+      { id: 'q2', from: 'ask #a1', to: 'engine', title: 'Verify it', body: '', status: 'Open' as const, filed: NOW.toISOString(), updated: NOW.toISOString(), parent: 'q1' },
+    ];
+    const driven = session({ kind: 'driven', quest: 'q2' });
+    const { rerender } = render(<AttendedSession session={driven} chain={buildChain('q2', quests, [driven])} />);
+    expect(screen.queryByRole('region', { name: 'How this work ran' })).toBeNull();
+
+    screen.getByRole('button', { name: /Show how it ran/ }).click();
+    expect(await screen.findByRole('region', { name: 'How this work ran' })).toBeInTheDocument();
+
+    const next = session({ id: 's9f8e7d6', kind: 'driven', quest: 'q2' });
+    rerender(<AttendedSession session={next} chain={buildChain('q2', quests, [next])} />);
+    expect(screen.queryByRole('region', { name: 'How this work ran' })).toBeNull();
+    window.localStorage.removeItem('daoris.chainWhole');
+  });
+
   it('offers a designed nothing when the person has not chosen a session', () => {
     render(<AttendedSession session={null} />);
     expect(screen.getByText('Nothing attended')).toBeInTheDocument();

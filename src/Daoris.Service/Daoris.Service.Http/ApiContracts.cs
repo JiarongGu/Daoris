@@ -65,7 +65,10 @@ public sealed record QuestResponse(
     IReadOnlyList<QuestRequirementWire>? Requirements = null,
     // How its done answered each (DRIFT1d); `Held` whether a departure holds it for the person's yes, and
     // `Accepted` when they gave it. Empty, false and null for a quest no departure ever held.
-    IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null);
+    IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null,
+    // What a list calls it (SESSUX1j): its publisher's short title, else a name read from its own words. A host from
+    // before the field answers none, and a reader names it by its title.
+    string? Short = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -73,7 +76,8 @@ public sealed record QuestAttachmentRequest(string? Name, byte[]? Content, strin
 public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
-    IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null);
+    IReadOnlyList<QuestStepWire>? Then = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null,
+    string? Short = null);
 // `On` is the question a `wait` waits on (D79); `Answers` how a done answers each requirement (DRIFT1d);
 // `WhileOpen` a decline that applies only while the quest is open (PAUSE1c), an abandon's.
 public sealed record RespondQuestRequest(
@@ -92,7 +96,7 @@ public sealed record AskRequestBody(
 public sealed record AskPublishRequest(
     string? To, string? Title = null, string? Body = null, IReadOnlyList<string>? Links = null,
     IReadOnlyList<QuestAttachmentRequest>? Attachments = null, IReadOnlyList<QuestStepWire>? Then = null,
-    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null);
+    string? Session = null, IReadOnlyList<QuestRequirementWire?>? Requirements = null, string? Short = null);
 public sealed record AskCloseRequest(string? Reason);
 public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
 // `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is

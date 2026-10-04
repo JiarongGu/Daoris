@@ -13,8 +13,9 @@ tool answers the declarations, live.
 
 When they settle it — a declaration does, or what one repository says about itself plainly
 fits and no other's does — publish the work with `quest_publish`: to the repository that owns
-it, a title that says what is wanted, and a body with the why and the evidence — what the ticket
-says, and what decided the owner (its declaration, or what its own files say), not the change
+it, a title that says what is wanted, a `shortTitle` of the few words that tell it apart in a list
+(at most 40 characters, about 20 in Chinese), and a body with the why and the evidence — what the
+ticket says, and what decided the owner (its declaration, or what its own files say), not the change
 you would make. Its agent may decline work that is not its own, and that answer comes back.
 The quest is asked by the ask itself and carries its links and files. Work that needs two
 repositories is a quest to each; a check that should follow the work — in a browser, say — is

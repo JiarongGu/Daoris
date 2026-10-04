@@ -14,8 +14,8 @@ Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1187 CLI tests, 1124 service and 67 HTTP host, 4626 driver,
-704 desktop modules, 80 devkit, 3901 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1187 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
+704 desktop modules, 80 devkit, 4017 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -114,10 +114,7 @@ title sections, for quest and session, need their UI/UX improved"*):
   title is its email with its name secondary; states, reads and counts stack in grey lines. One clear row per
   account (who, state, when read, which workspaces use it, its one act); the explanations folded; adding an account
   asks whether to put it in each workspace's rotation (see ACCT1). Contract: D150 §5. Proof: stories, the look.
-- [ ] **UX7c — the title sections of a quest's page and a session's page** (web-shell). A session's head is a cut-off
-  title, a raw id, a chip and a dense row of eight facts; a quest's title wraps two lines over a chip and a raw id.
-  Title first, short (SESSUX1j's short title where there is one), state and the one or two facts that matter beside
-  it, the rest folded. Contract: D150, SESSUX1j. Proof: stories at both widths, the look.
+
 - [ ] **UX7d — what else the look found** (web-shell, driver). Absent agents listed with *Install* (AGENTS2's screen);
   two-letter strip marks; a version without its product's name; tight 中文 summaries; the record's *opened on* line worded
   by code, its backticks as code. Contract: D152, design §1, §4.6. Proof: stories, the note codes' twin, the look.
@@ -128,11 +125,10 @@ title sections, for quest and session, need their UI/UX improved"*):
   names its folder and its readings; rotation, defaults and records keep working across a rename. Contract: D66 §3
   (who is signed in is written nowhere: the default is offered at the sign-in's end, as a name the person may keep),
   D125. Proof: a rename kept by rotation and records; the CLI and page twins.
-- [ ] **LANDNAME1 — a landing's branch is named for the work** (driver; found landing the owner's two quests,
-  2026-10-05). The rule's `{slug}` is cut from the quest's first line, so two landings came out
-  `feature/re-filed-from-ask-39c495-whose-quest-was-…`, useless as a pull request's branch. Name it from the quest's
-  short title (SESSUX1j) or its ticket key where the ask names one (`AR-2203`), and let the review's *Accept* and
-  `trees land --branch` take a name the person types. Contract: D145, D149. Proof: `LandingTests` cases.
+- [ ] **LANDNAME1 — a landing's branch named by the person** (driver, web-shell; found landing the owner's two quests,
+  2026-10-05). The `{slug}` now comes from the quest's short title (SESSUX1j), its ticket key leading; what remains is
+  letting the review's *Accept* and `trees land --branch` take a name the person types. Contract: D145, D149, D126's
+  SESSUX1j note. Proof: `LandingTests` cases, and the review's field over a mocked bridge.
 - [ ] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
   2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
   AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
@@ -390,7 +386,7 @@ rows are on the install.
   stays the person's. Contract: D132 §7.4. Proof: proposal and coverage tests; the room's golden files.
 - [ ] **PAUSE1g — looked at on the install** (the parent's, after a–f). An ask paused mid-session and resumed in its tree;
   one abandoned with a landed session kept. Contract: D132 §12. Proof: a ledger at every width, both themes and languages.
-- [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
+
 - [ ] **SESSUX1k — a session ended on a limit, in the list** (§2.2; driver, web-shell; after UX6e). MSG1f2 and TOOL4g
   built *Resumes later* with a cooling account's reset for held words; what is left is a limit-ended session whose
   carry-on waits, and its ⋯ door to the account on the agent's page.

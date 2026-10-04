@@ -1,5 +1,6 @@
-import { type ReactNode, type Ref, useId } from 'react';
-import { EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
+import { type ReactNode, type Ref, type RefObject, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button, EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
 
@@ -17,9 +18,20 @@ import { type ContextOffer, contextOffer } from '../menus/press';
  *
  * **An icon leads it where the record has one** (PLUGUI2, D140 §2): a plugin's, beside its title, decoration the title
  * names.
+ *
+ * **A record whose state moves leads with its state** (UX7c, D152 §7; the UX7 design §5.1): `lead` is drawn before the
+ * title, so the pill stays in one place whatever the title's length; `clamp` gives the title that many lines at most,
+ * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
+ * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
-export function PageHead({ title, version, pills, id, line, acts, icon }: {
+export function PageHead({ title, version, pills, id, line, acts, icon, lead, clamp, facts }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode; icon?: ReactNode;
+  /** What leads the title: a record's state, on its pill. */
+  lead?: ReactNode;
+  /** The title's lines at most; absent, it wraps whole. */
+  clamp?: 1 | 2;
+  /** The facts line under the title, in order; none draws no line. */
+  facts?: readonly string[];
 }) {
   return (
     <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
@@ -27,16 +39,65 @@ export function PageHead({ title, version, pills, id, line, acts, icon }: {
         {icon && <span className="shrink-0">{icon}</span>}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>
+            {lead && <span className="flex shrink-0 items-baseline gap-1.5 self-start pt-1.5">{lead}</span>}
+            {clamp
+              ? <ClampedTitle title={title} lines={clamp} />
+              : <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>}
             {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
             {pills}
           </div>
+          {facts && facts.length > 0 && <p className="m-0 mt-0.5 text-small text-ink-faint wrap-anywhere">{facts.join(' · ')}</p>}
           {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
           {line && <Prose className="mt-1 wrap-anywhere">{line}</Prose>}
         </div>
       </div>
       {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
     </header>
+  );
+}
+
+/** Whether an element's text runs past the lines it is clamped to, read again whenever its box changes. */
+export function useCut(element: RefObject<HTMLElement | null>, when: unknown): boolean {
+  const [cut, setCut] = useState(false);
+  useLayoutEffect(() => {
+    const node = element.current;
+    if (!node) return undefined;
+    const read = () => setCut(node.scrollHeight > node.clientHeight + 1);
+    read();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read);
+    observer?.observe(node);
+    return () => observer?.disconnect();
+  }, [element, when]);
+  return cut;
+}
+
+/**
+ * A title clamped to its lines (UX7c, the UX7 design §5.3): whole in its tip, and whole on *Show all* where the clamp cut
+ * it. Content is shown as it is (platform language §4): nothing is rewritten to fit.
+ */
+function ClampedTitle({ title, lines }: { title: string; lines: 1 | 2 }) {
+  const { t } = useTranslation();
+  const own = useRef<HTMLHeadingElement>(null);
+  const [whole, setWhole] = useState(false);
+  const cut = useCut(own, title);
+  return (
+    <span className="grid min-w-0 flex-1 basis-48 justify-items-start">
+      <h1
+        ref={own}
+        title={title}
+        className={cn(
+          'm-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere',
+          !whole && (lines === 1 ? 'line-clamp-1' : 'line-clamp-2'),
+        )}
+      >
+        {title}
+      </h1>
+      {(cut || whole) && (
+        <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
+          {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}
+        </Button>
+      )}
+    </span>
   );
 }
 
