@@ -273,10 +273,13 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await includeClosed(page);
   await expect(questList(page).getByText(title)).toBeVisible();
 
-  // The filter is the list's own, remembered for the next visit (D118 §3f).
+  // The filter is the list's own, remembered for the next visit (D118 §3f). The quest it chose has closed, so the view
+  // opens with nothing chosen rather than on yesterday's done quest (UX6b, D150 §8).
   await page.reload();
   await nav(page, 'Quests').click();
   await expect(questList(page).getByText(title)).toBeVisible();
+  await expect(record(page).getByText('Choose a quest or an ask')).toBeVisible();
+  await expect(record(page).getByRole('heading', { level: 1, name: title })).toHaveCount(0);
 });
 
 test('a refusal reaches the person verbatim', async ({ page }) => {

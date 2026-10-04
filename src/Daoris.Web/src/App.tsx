@@ -76,8 +76,9 @@ const VIEW = 'daoris.view';
 // What each view's list has chosen is its list's memory since FRAME1c (`work/listPanes.ts`, D118 §3f),
 // in the keys that predate it: the session attended (D56), since relaunching into Sessions landed on
 // *Nothing attended* while a session sat parked, and Settings' domain (D75), so the gear returns to it.
-// An id that no longer names a record is cleared by the view's own effect, and a domain this window
-// cannot show opens on Appearance, so a stale one costs nothing.
+// A session whose record is gone is let go by the Work frame, a remembered record that closed or went
+// once its view reads it (UX6b), and a domain this window cannot show opens on Appearance, so a stale
+// one costs nothing.
 
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
@@ -380,6 +381,9 @@ export function App() {
    */
   const apply = (plan: Opening) => {
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
+    // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
+    // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
+    else if (plan.view !== view && isListed(plan.view)) lists.reopen(plan.view);
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { findingId } from './knowledge/records';
 import { code } from './test/code';
@@ -121,14 +121,25 @@ describe('Convergence', () => {
   });
 
   /** D118 §3b: a finding chosen that the answer no longer holds has gone, at the similarity it was asked at. */
-  it('says a chosen finding has gone once the findings no longer hold it', async () => {
+  it('says a finding chosen now has gone once the findings no longer hold it', async () => {
     vi.stubGlobal('fetch', service([]));
-    window.localStorage.setItem(CHOSEN, findingId(GROUP));
-    showConvergence();
+    showConvergence({ door: findingId(GROUP) });
 
     await screen.findByText('This finding is no longer listed');
     expect(within(mainArea()).getByText('This finding is no longer listed')).toBeInTheDocument();
     expect(within(mainArea()).getByText(/no longer converge at 0.75 or above/)).toBeInTheDocument();
+  });
+
+  // UX6b (design §1 rule 6): Convergence opened on *this finding is no longer in the list* on the owner's install. A
+  // remembered finding the index no longer holds opens nothing chosen; one still listed reopens.
+  it('opens with nothing chosen on a remembered finding that has gone, never on its gone state', async () => {
+    vi.stubGlobal('fetch', service([]));
+    window.localStorage.setItem(CHOSEN, findingId(GROUP));
+    showConvergence();
+
+    await waitFor(() => expect(mainArea()).toHaveTextContent('Choose a finding'));
+    expect(screen.queryByText('This finding is no longer listed')).toBeNull();
+    expect(window.localStorage.getItem(CHOSEN)).toBeNull();
   });
 
   it('says how to choose with nothing chosen', async () => {

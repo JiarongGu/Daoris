@@ -7,13 +7,15 @@ import { useConvergenceView } from '../ConvergenceView';
 import { useSearchView } from '../SearchView';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
+import { useDoor } from './door';
 
 // Search and Convergence alone, as their suites hold them (FRAME1f): each view's list and its main area on a browser's
 // frame, with the application's list memory, so what a test chooses and filters is what a relaunch would remember.
 
-function SearchAlone({ semantic, onConverge }: { semantic: boolean; onConverge: () => void }) {
+function SearchAlone({ semantic, onConverge, door }: { semantic: boolean; onConverge: () => void; door?: string }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  useDoor(lists, 'search', door);
   const pane = lists.pane('search');
   const layout = useSearchView({
     active: true,
@@ -28,9 +30,10 @@ function SearchAlone({ semantic, onConverge }: { semantic: boolean; onConverge: 
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
-function ConvergenceAlone({ semantic }: { semantic: boolean }) {
+function ConvergenceAlone({ semantic, door }: { semantic: boolean; door?: string }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  useDoor(lists, 'convergence', door);
   const pane = lists.pane('convergence');
   const layout = useConvergenceView({
     active: true,
@@ -49,13 +52,13 @@ const wrapped = (node: ReactNode) => {
   return render(<QueryClientProvider client={client}><Tooltip.Provider>{node}</Tooltip.Provider></QueryClientProvider>);
 };
 
-/** Search on a browser's frame, over whatever `fetch` the test stubbed. */
-export const showSearch = ({ semantic = false, onConverge = () => {} }: { semantic?: boolean; onConverge?: () => void } = {}) =>
-  wrapped(<SearchAlone semantic={semantic} onConverge={onConverge} />);
+/** Search on a browser's frame, over whatever `fetch` the test stubbed; `door` names the entry a door opens it on. */
+export const showSearch = ({ semantic = false, onConverge = () => {}, door }: { semantic?: boolean; onConverge?: () => void; door?: string } = {}) =>
+  wrapped(<SearchAlone semantic={semantic} onConverge={onConverge} door={door} />);
 
-/** Convergence on a browser's frame, over whatever `fetch` the test stubbed. */
-export const showConvergence = ({ semantic = false }: { semantic?: boolean } = {}) =>
-  wrapped(<ConvergenceAlone semantic={semantic} />);
+/** Convergence on a browser's frame, over whatever `fetch` the test stubbed; `door` names the finding a door opens it on. */
+export const showConvergence = ({ semantic = false, door }: { semantic?: boolean; door?: string } = {}) =>
+  wrapped(<ConvergenceAlone semantic={semantic} door={door} />);
 
 /** A view's list pane, by the view's name: the one region of a browser's frame beside the main area. */
 export const listOf = (name: 'Search' | 'Convergence') => screen.getByRole('complementary', { name });

@@ -5,7 +5,7 @@ import { cn } from '../lib/cn';
 import { Inline } from '../ui';
 import { noteBlocks, noteLines } from './noteLines';
 
-const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3' } as const;
+const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as const;
 
 /**
  * A session's note, in the reader's language where it is Daoris's and as written where it is someone's (LANG1b, D142
@@ -30,8 +30,8 @@ export function Note({ note, parts, className, clamp, compact = false }: {
   parts?: readonly NotePart[] | null;
   /** The type step and ink its words are set in, which the place showing it chooses. */
   className?: string;
-  /** How many lines show before the rest is cut: the head's three, a row's two. Absent, the whole note. */
-  clamp?: 2 | 3;
+  /** How many lines show before the rest is cut: the timeline's four (UX6b), the head's three, a row's two. Absent, the whole note. */
+  clamp?: 2 | 3 | 4;
   /** One run of words, for a row too narrow for blocks: someone's words inline rather than set apart. */
   compact?: boolean;
 }) {

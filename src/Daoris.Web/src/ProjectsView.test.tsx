@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, screen, within } from '@testing-library/react';
+import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Repositories in SHELL mode — the bridge mocked as present, so the controls that only a desktop with a
@@ -113,11 +113,20 @@ describe('the shell-attached platform', () => {
   });
 
   /** §3b: a repository the list chose and the registry no longer holds says so, rather than a blank page. */
-  it('says a chosen repository has gone, once the registry has answered without it', async () => {
+  it('says a repository chosen now has gone, once the registry has answered without it', async () => {
+    show(<ProjectsView notify={() => {}} door="retired-one" />);
+
+    expect(await within(repositoryMain()).findByText('This repository is no longer here')).toBeInTheDocument();
+  });
+
+  // UX6b (design §1 rule 6): a remembered repository the registry no longer holds opens nothing chosen.
+  it('opens with nothing chosen on a remembered repository that has gone, and forgets it', async () => {
     window.localStorage.setItem(CHOSEN, 'retired-one');
     show(<ProjectsView notify={() => {}} />);
 
-    expect(await within(repositoryMain()).findByText('This repository is no longer here')).toBeInTheDocument();
+    await waitFor(() => expect(repositoryMain()).toHaveTextContent('Choose a repository'));
+    expect(repositoryMain()).not.toHaveTextContent('This repository is no longer here');
+    expect(window.localStorage.getItem(CHOSEN)).toBeNull();
   });
 
   /** The page's header holds its acts (D118 §3b): *Manage* on a shell, and the door to its code map. */

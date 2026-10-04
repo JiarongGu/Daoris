@@ -92,6 +92,8 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
       // Search makes nothing, so its list has no ＋, and its one filter is beside its box, where it changes what the
       // box finds (D118 §2); its strip holds its controls alone.
       chosen,
+      // A remembered entry reopens only while the index still holds it (UX6b); a refusal is not a gone entry.
+      standing: !reading ? undefined : reading.state === 'read' ? 'live' : reading.state === 'gone' ? 'gone' : 'unread',
       body: (
         <HitList
           query={query}

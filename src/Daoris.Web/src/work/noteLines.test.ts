@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { NotePart } from '../api';
-import { NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
+import { linesTaken, NOTE_CODES, noteBlocks, noteLines, noteText } from './noteLines';
 
 // A session's note as the page words it (LANG1b, D142 points 1, 4, 5; the language design §2, §5, §6): a coded part from
 // the catalogue in the reader's language with its values, someone's words as written, and what the page cannot word as
@@ -151,6 +151,34 @@ describe('noteText', () => {
     const parts = [coded('ended.done', 'the quest reached done.'), coded('started.same-tree', 'In the tree it worked in.')];
     expect(noteText(t, { parts }, 'en')).toBe('The quest reached done. In the tree it worked in.');
     expect(noteText(zh, { parts }, 'zh')).toBe('委托已完成。在它原来的工作树中。');
+  });
+});
+
+// UX6b (design §2.5): a note longer than four lines folds to them in the timeline. The page lays nothing out before it
+// draws, so how many lines a note takes is estimated from its texts, near enough to fold a verify report and leave a
+// sentence whole.
+describe('linesTaken', () => {
+  it('counts each of a text’s own lines once, however short', () => {
+    expect(linesTaken(['one'], 50)).toBe(1);
+    expect(linesTaken(['one\ntwo\nthree'], 50)).toBe(3);
+    expect(linesTaken(['one', 'two'], 50)).toBe(2);
+    expect(linesTaken(['a\n\nb'], 50)).toBe(3);
+  });
+
+  it('counts a line once more for each measure it runs past', () => {
+    expect(linesTaken(['x'.repeat(50)], 50)).toBe(1);
+    expect(linesTaken(['x'.repeat(51)], 50)).toBe(2);
+    expect(linesTaken(['x'.repeat(120), 'short'], 50)).toBe(4);
+  });
+
+  it('counts an ideograph as two, since it sets about twice as wide as a letter', () => {
+    expect(linesTaken(['验'.repeat(25)], 50)).toBe(1);
+    expect(linesTaken(['验'.repeat(26)], 50)).toBe(2);
+    expect(linesTaken(['验证通过，'.repeat(20)], 50)).toBe(4);
+  });
+
+  it('takes no lines for nothing', () => {
+    expect(linesTaken([], 50)).toBe(0);
   });
 });
 

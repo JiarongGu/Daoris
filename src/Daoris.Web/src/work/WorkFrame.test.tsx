@@ -411,6 +411,56 @@ describe('the Work frame', () => {
   });
 
   /**
+   * UX6b (design §2.5, D150 §8): off Sessions the side bar kept an ended session from the day before, its whole done note
+   * in italics running past the window's foot. Its views follow the attended session there only while it runs or waits on
+   * the person: ended, they say so, its note is not drawn, and the side bar opens on Ask Daoris.
+   */
+  it('follows off Sessions no session that has ended, and opens the side bar on Ask Daoris', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    SESSIONS = [{ ...DRIVEN, state: 'completed', note: 'verify passed: 3798 tests, every gate green' }];
+    const onOpenSessions = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame
+            selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} ask={<p>the ask panel</p>}
+            layout={{ main: <main><h1>Overview</h1></main> }} onOpenSessions={onOpenSessions}
+          />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const side = await screen.findByRole('complementary', { name: 'right side bar' });
+    expect(await within(side).findByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
+    expect(within(side).getByText('the ask panel')).toBeInTheDocument();
+
+    await userEvent.click(within(side).getByRole('tab', { name: 'Timeline' }));
+    expect(within(side).getByText(/The session attended in Sessions has ended/)).toBeInTheDocument();
+    expect(side).not.toHaveTextContent('every gate green');
+    expect(side).not.toHaveTextContent('Attending Expose a streaming budget');
+    await userEvent.click(within(side).getByRole('button', { name: 'Open Sessions' }));
+    expect(onOpenSessions).toHaveBeenCalled();
+  });
+
+  it('keeps following on Sessions the attended session that has ended, its timeline first', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    SESSIONS = [{ ...DRIVEN, state: 'completed', note: 'verify passed: every gate green' }];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} ask={<p>the ask panel</p>} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const side = await screen.findByRole('complementary', { name: 'right side bar' });
+    expect(await within(side).findByRole('tab', { name: 'Timeline', selected: true })).toBeInTheDocument();
+    expect(within(side).queryByText(/has ended, so nothing follows it here/)).toBeNull();
+  });
+
+  /**
    * D118 §3b, audit SE11: a relaunch into Sessions with a session attended said *Nothing attended* while
    * the list that holds it was still on its way, since the frame finds the attended session in that list.
    * A first load is skeleton rows.

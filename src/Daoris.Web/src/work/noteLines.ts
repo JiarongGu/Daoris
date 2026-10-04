@@ -244,3 +244,23 @@ export function noteText(t: Translate, record: NoteRecord, language: string): st
 export function hasNote({ note, parts }: NoteRecord): boolean {
   return Boolean(note) || (parts?.length ?? 0) > 0;
 }
+
+/** An ideograph, a kana or a full-width form, which sets about twice as wide as a letter of the same size. */
+const WIDE = /[⺀-鿿가-힯豈-﫿︰-﹏＀-｠￠-￦]/u;
+
+/**
+ * How many lines texts take at about `measure` letters a line (UX6b, design §2.5): each of their own lines one at least,
+ * and one more for each measure it runs past, an ideograph counted as two letters. An estimate, since the page lays
+ * nothing out before it draws: near enough to fold a verify report in the timeline and leave a sentence whole.
+ */
+export function linesTaken(texts: readonly string[], measure: number): number {
+  let lines = 0;
+  for (const text of texts) {
+    for (const line of text.split('\n')) {
+      let width = 0;
+      for (const glyph of line) width += WIDE.test(glyph) ? 2 : 1;
+      lines += Math.max(1, Math.ceil(width / measure));
+    }
+  }
+  return lines;
+}

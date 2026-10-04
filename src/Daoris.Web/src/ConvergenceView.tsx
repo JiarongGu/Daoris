@@ -82,6 +82,8 @@ export function useConvergenceView({ active, chosen, onChoose, filters: kept, on
       // Convergence makes nothing, so its list has no ＋; its similarity heads the list, where it changes what the list
       // holds (D118 §2), and its strip holds its controls alone.
       chosen,
+      // A remembered finding reopens only while the findings still hold it (UX6b): one gone opens nothing chosen.
+      standing: !chosen ? undefined : finding ? 'live' : groups.data && !groups.isPlaceholderData ? 'gone' : 'unread',
       body: (
         <FindingList
           threshold={threshold}
