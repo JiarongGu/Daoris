@@ -117,14 +117,19 @@ public sealed class StartWiringRouteTests : Bridge
         Assert.StartsWith("unknown adapter 'nobody-knows'", starts[1].GetProperty("refusal").GetString());
     }
 
-    /// <summary>A start that would be held says so in the driver's own words.</summary>
+    /// <summary>
+    /// A start that would be held says so in the driver's own words: here on an account the person's *Read again* read
+    /// signed out, since the panel itself reads no account (ROSTER1).
+    /// </summary>
     [Fact]
     public async Task A_start_that_would_be_held_carries_the_driver_s_sentence()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "stale"));
         new HarnessSettings().WithDefault("stub", "stale").Save(HarnessSettingsPath);
+        var module = Module();
+        await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub", profile = "stale" });
 
-        var answer = await AnswerAsync(Module(), "STARTS", new { workspaces = new[] { "default" } });
+        var answer = await AnswerAsync(module, "STARTS", new { workspaces = new[] { "default" } });
 
         var start = answer.GetProperty("starts")[0];
         Assert.Contains("--profile stale", start.GetProperty("refusal").GetString());

@@ -37,6 +37,7 @@
   "agents.account.useDefaultIn": "Use by default in {{workspace}}",
   "agents.account.clearIn": "Clear the default in {{workspace}}",
   "agents.account.settings": "Model and effort…",
+  "agents.account.readAgain": "Read again",
   "agents.account.remove": "Remove…",
   "agents.use.summary.runs": "Starts run on {{account}}",
   "agents.use.summary.early": "switch before the limit",

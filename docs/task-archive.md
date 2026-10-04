@@ -11097,3 +11097,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Contract: D150 §3.1. Proof: `HelpRoomGoldenTests`, `HelpCoverageTests`, the `places.ts` twin table.
 
 **Outcome** 2026-10-04: built. Ask Daoris's places twin (`HelpPlaces` and `help/places.ts`) gains the Agents place with its accounts, rules and usage parts and `projects/setup`, `MOVED` retired; the room's doors name a repository's Setup sections for its own values and the agent's page for every former Settings → Agents row; the rotation's sign-in, the cool-off's *Read again*, the set-up press's refusals and the CLI's `agent list` name the new homes; the coverage test reads Repositories as a place. Detail: D150's note, `41290ab9`..`8176b4c4`.
+
+
+## ROSTER1 — the roster asks no account at start, and reads one account on a press (2026-10-04)
+
+> - [ ] **ROSTER1 — the roster asks no account at start, and reads one account on a press** (driver, modules; found by
+> UX6e). The first `HARNESSES` ask after a start still probes every named account (a cold cache), one at a time since
+> TOOL6g, and an account edit re-reads them all. The driver's report says when it read each account, reads one into the
+> report on a press (an account's *Read again*), and starts from what it last read; `RosterReads` retires. Contract:
+> D150 §5.3, D125's TOOL6g note. Proof: a tick and a route test showing no probe at a look or at start.
+
+**Outcome** 2026-10-04: built. The driver reports each account's last reading and when (`reads.json` under the home, `AccountReads`), so a look, a cold cache and a restart ask no account; a press reads one agent's accounts, or one account from its own ⋯ *Read again*; an edit reads none; who is signed in stays in memory, never written (D66 §3); `RosterReads` retired. The family rehearsal's logged-out check holds on a kept reading. Detail: D125's ROSTER1 note, `b080f77e`..`aa7a7607`.

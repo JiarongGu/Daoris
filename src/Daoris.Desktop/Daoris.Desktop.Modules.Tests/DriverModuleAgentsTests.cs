@@ -190,6 +190,109 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// The stub's command as a script that logs each status question it is asked by the account's directory, answering
+    /// signed out for <c>out</c> and signed in, by name, for any other.
+    /// </summary>
+    private string Asking()
+    {
+        var script = Path.Combine(Home, "asking.mjs");
+        File.WriteAllText(script, """
+            import fs from 'node:fs';
+            import path from 'node:path';
+            const home = process.env.DAORIS_STUB_CONFIG_DIR;
+            const account = home ? path.basename(home) : '(own)';
+            if (process.argv.includes('--version')) { console.log('stub-harness 1.0.0'); process.exit(0); }
+            if (process.argv.includes('--login-state')) {
+              fs.appendFileSync(new URL('./asked.log', import.meta.url), account + '\n');
+              console.log(account === 'out' ? 'logged-out' : 'logged-in as ' + account + '@example.invalid');
+              process.exit(0);
+            }
+            process.exit(1);
+            """);
+        foreach (var account in new[] { "out", "work" })
+        {
+            Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", account));
+        }
+
+        File.WriteAllText(DriverConfigPath, $$"""
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
+              "commands": { "stub": ["node", {{JsonSerializer.Serialize(script)}}] } }
+            """);
+        return Path.Combine(Home, "asked.log");
+    }
+
+    private static JsonElement Stub(JsonElement roster) =>
+        roster.GetProperty("harnesses").EnumerateArray().Single(h => h.GetProperty("harness").GetString() == "stub");
+
+    private static JsonElement Account(JsonElement stub, string name) =>
+        stub.GetProperty("profiles").EnumerateArray().Single(p => p.GetProperty("name").GetString() == name);
+
+    /// <summary>
+    /// 🔴 ROSTER1 (D150 §5.3): the roster asks no account when it is read, the first read after a start included (a cold
+    /// cache), where it asked every named account; an account's own *Read again* asks that account alone and says when; and a
+    /// module started afresh, as after a restart, starts from what was read, asking nothing.
+    /// </summary>
+    [Fact]
+    public async Task Reading_the_roster_asks_no_account_and_an_accounts_read_again_asks_that_one_alone()
+    {
+        var asked = Asking();
+        var module = Module();
+
+        await AnswerAsync(module, "HARNESSES");
+        await AnswerAsync(module, "HARNESSES");
+        Assert.False(File.Exists(asked), "a read of the roster asked an account");
+
+        var stub = Stub(await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub", profile = "out" }));
+
+        Assert.Equal(["out"], File.ReadAllLines(asked));
+        Assert.Equal("out", Account(stub, "out").GetProperty("login").GetString());
+        Assert.Equal(JsonValueKind.String, Account(stub, "out").GetProperty("read").ValueKind);
+        Assert.Equal(JsonValueKind.Null, Account(stub, "work").GetProperty("read").ValueKind);
+        Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
+
+        var restarted = Stub(await AnswerAsync(Module(), "HARNESSES"));
+        Assert.Equal(("out", JsonValueKind.String),
+            (Account(restarted, "out").GetProperty("login").GetString(), Account(restarted, "out").GetProperty("read").ValueKind));
+        Assert.Equal(["out"], File.ReadAllLines(asked));
+    }
+
+    /// <summary>An account's *Read again* names an account the agent has; another is refused in a sentence naming the rest.</summary>
+    [Fact]
+    public async Task Reading_an_account_the_agent_does_not_have_is_refused_naming_the_ones_it_has()
+    {
+        var asked = Asking();
+
+        var refusal = await RefusalAsync(Module(), "HARNESSES", new { refresh = true, agent = "stub", profile = "typo" });
+
+        Assert.Contains("`typo`", refusal);
+        Assert.Contains("out, work", refusal);
+        Assert.False(File.Exists(asked));
+    }
+
+    /// <summary>
+    /// ROSTER1: an account's edit asks no account — a default set or cleared, an account made — where each asked every
+    /// account again; a removed account's reading goes with it, so one made later under its name starts never read.
+    /// </summary>
+    [Fact]
+    public async Task An_accounts_edit_asks_no_account_and_a_removal_forgets_its_reading()
+    {
+        var asked = Asking();
+        var module = Module();
+        await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub", profile = "work" });
+
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-default", profile = "work", workspace = "aurora" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "spare" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-remove", profile = "work" });
+        await AnswerAsync(module, "HARNESS_ACTION", new { harness = "stub", action = "profile-add", profile = "work" });
+
+        Assert.Equal(["work"], File.ReadAllLines(asked));
+        var stub = Stub(await AnswerAsync(module, "HARNESSES"));
+        Assert.Equal(("unknown", JsonValueKind.Null),
+            (Account(stub, "work").GetProperty("login").GetString(), Account(stub, "work").GetProperty("read").ValueKind));
+    }
+
+    /// <summary>
     /// 🔴 A work account for the work circle (D49 §4) could be set from a terminal
     /// (`daoris agent profile default … --workspace`) and not from the screen — D50 in the
     /// direction nothing tests. The bridge carries the workspace, the roster answers which circles

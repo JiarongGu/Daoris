@@ -36,6 +36,8 @@ export type RuleActs = {
 export type AgentActs = {
   /** *Read again*: this agent's accounts, one at a time, and the tool's own sign-in (§5.3). */
   onReadAgain: () => void;
+  /** An account's own *Read again*, from its ⋯: that account alone (ROSTER1). */
+  onReadOne: (account: string) => void;
   onSignInNew: () => void;
   onAddKey: (key: string) => void;
   onSignIn: (account: string) => void;
@@ -251,6 +253,10 @@ export function AgentPage({
         : []),
       ...(signsIn && !account.key && state.state !== 'out'
         ? [{ id: 'signIn', label: t('harness.login.again'), disabled: busy || !tool.present, onSelect: () => acts.onSignIn(name) }]
+        : []),
+      // That one account asked again, on the press (§5.3): an agent not installed has nobody to ask.
+      ...(tool.present
+        ? [{ id: 'read', label: t('agents.account.readAgain'), disabled: reading || busy, onSelect: () => acts.onReadOne(name) }]
         : []),
       { id: 'remove', label: t('agents.account.remove'), icon: 'remove' as const, disabled: busy, onSelect: () => setRemoving(name) },
     ];

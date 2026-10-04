@@ -23,7 +23,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/src/App.tsx` | 58 | 1083 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 43 | 827 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 53 | 1053 |
-| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 52 | 1103 |
+| `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 53 | 1116 |
 | `src/Daoris.Web/src/ui.tsx` | 70 | 1522 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 41 | 782 |
 | `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 182 | 3622 |
@@ -37,7 +37,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 107 | 2002 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1086 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 57 | 968 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 48 | 1000 |
@@ -51,7 +51,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 77 | 1471 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 125 | 2189 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 167 | 3199 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 179 | 3384 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 46 | 823 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 77 | 1438 |
@@ -69,7 +69,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 41 | 682 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 43 | 810 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 49 | 940 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 49 | 927 |
 
 ### Service (`service`)
 
@@ -111,7 +111,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 53 | 965 |
 | `tools/desktop.mjs` | 47 | 974 |
-| `tools/family-rehearsal.mjs` | 275 | 5035 |
+| `tools/family-rehearsal.mjs` | 275 | 5040 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
 | `tools/merge-branch.mjs` | 107 | 2062 |
 | `tools/orient-index.mjs` | 63 | 1379 |
@@ -121,7 +121,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `docs/2026-09-19-platform-ux.md` | 49 | 538 |
+| `docs/2026-09-19-platform-ux.md` | 49 | 539 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 47 | 341 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
