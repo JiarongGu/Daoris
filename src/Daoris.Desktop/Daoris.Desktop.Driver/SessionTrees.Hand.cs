@@ -118,11 +118,22 @@ public sealed partial class SessionTrees
         if (commits.Count == 0) return Refused($"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to hand on.");
 
         // A pull request that was merged by a squash leaves the branch's commits off the line and its files on it.
-        var proof = await ProveAsync(root, tip, line, await LineFormsAsync(root, line, ct).ConfigureAwait(false), ct).ConfigureAwait(false);
+        var forms = await LineFormsAsync(root, line, ct).ConfigureAwait(false);
+        var proof = await ProveAsync(root, tip, line, forms, ct).ConfigureAwait(false);
         if (proof.Kind is LandedKind.OnLine or LandedKind.Merged)
         {
             return Refused($"`{branch}`'s work already reads on the line — its pull request was merged. Nothing to hand on: the "
                 + "clean-up removes it (Settings → Workspace → Session branches, or `daoris-driver trees clean`).", commits.Count);
+        }
+
+        // PLUGHOOK1a (D148, amending D102): the same refusal where the platform's kept word clears it and git confirms it.
+        if (entry.PullRequestState is { State: PullRequestStates.Completed } kept
+            && await VerdictAsync(root, line, forms, kept, tip, ct).ConfigureAwait(false) is { Clears: true } verdict)
+        {
+            return Refused($"`{branch}`'s work already reads on the line — its pull request completed"
+                + (kept.Plugin is { } answered ? $", as `{answered}` answered," : "") + $" and its merge commit is on `{verdict.Form}`. "
+                + "Nothing to hand on: the clean-up removes it (Settings → Workspace → Session branches, or `daoris-driver trees clean`).",
+                commits.Count);
         }
 
         // Nothing new to push: the remote holds this very commit, and a pull request was answered for it.

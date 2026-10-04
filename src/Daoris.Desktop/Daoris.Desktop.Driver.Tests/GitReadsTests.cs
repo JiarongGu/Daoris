@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -319,43 +318,12 @@ public sealed class GitReadsTests : IDisposable
 
     private static Task<string> GitAsync(string cwd, params string[] arguments) => GitWithAsync(cwd, null, null, arguments);
 
-    /// <summary>
-    /// git, its output as the UTF-8 it is. Both streams are read at once and before the wait: a sequential read of stdout
-    /// then stderr waits on git forever once git writes more to stderr than its pipe holds (FIX-LOG 2026-10-04).
-    /// </summary>
+    /// <summary>git through the fixture's one runner (TESTGIT1), its stdout once it has exited cleanly.</summary>
     private static async Task<string> GitWithAsync(string cwd, Dictionary<string, string>? environment, string? input, params string[] arguments)
     {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = cwd,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            RedirectStandardInput = input is not null,
-            StandardOutputEncoding = System.Text.Encoding.UTF8,
-            StandardErrorEncoding = System.Text.Encoding.UTF8,
-        };
-        if (input is not null) info.StandardInputEncoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-        if (environment is not null)
-        {
-            foreach (var (name, value) in environment) info.Environment[name] = value;
-        }
-
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-
-        using var process = Process.Start(info)!;
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
-        if (input is not null)
-        {
-            await process.StandardInput.WriteAsync(input);
-            process.StandardInput.Close();
-        }
-
-        await process.WaitForExitAsync();
-        var said = await stderr;
-        Assert.True(process.ExitCode == 0, $"git {string.Join(' ', arguments)} failed: {said}");
-        return await stdout;
+        var run = await GitFixture.RunWithAsync(cwd, environment, input, arguments);
+        Assert.True(run.ExitCode == 0, $"git {string.Join(' ', arguments)} failed: {run.Stderr}");
+        return run.Stdout;
     }
 
     private static string RepoRoot()

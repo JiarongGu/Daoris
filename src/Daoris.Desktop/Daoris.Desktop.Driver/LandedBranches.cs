@@ -60,6 +60,18 @@ public sealed record LandedBranch(
     /// </summary>
     public IReadOnlyList<LandedAdvance> Advances { get; init; } = [];
 
+    /// <summary>
+    /// The latest answer about its pull request (PLUGHOOK1a, D148 point 6), with the plugin and when it was asked: what a
+    /// removal on the platform's word chose by. <c>completed</c> is final. Null where it was never answered.
+    /// </summary>
+    public PullRequestState? PullRequestState { get; init; }
+
+    /// <summary>The latest ask that failed, kept while no answer is newer (design §2.4); null where none failed since the last answer.</summary>
+    public PullRequestAskFailed? PullRequestAskFailed { get; init; }
+
+    /// <summary>Each session branch removed on its pull request's answer, oldest first (design §2.5).</summary>
+    public IReadOnlyList<CarriedBranch> Carried { get; init; } = [];
+
     /// <summary>Whether this landing names <paramref name="session"/>: the session that made it, or one whose done moved it on (LAND2c).</summary>
     public bool Names(string session) =>
         string.Equals(Session, session, StringComparison.OrdinalIgnoreCase)
@@ -220,6 +232,30 @@ public sealed class LandedBranches(string home)
             ? each with { GoneAt = DateTimeOffset.UtcNow, RemovedAs = kind, RemovedOn = where }
             : each)]);
 
+    /// <summary>
+    /// A plugin's answer about the entry's pull request (PLUGHOOK1a, D148 point 6), standing or a trace: it replaces the kept
+    /// answer, and a failure older than it is no longer the latest word.
+    /// </summary>
+    public void Answered(LandedBranch entry, PullRequestState answer) => Edit(all =>
+        [.. all.Select(each => SameEntry(each, entry) ? each with { PullRequestState = answer, PullRequestAskFailed = null } : each)]);
+
+    /// <summary>An ask that failed (design §2.4): kept beside the answer, which it never overwrites. Absent is never zero.</summary>
+    public void AskFailed(LandedBranch entry, PullRequestAskFailed failed) => Edit(all =>
+        [.. all.Select(each => SameEntry(each, entry) ? each with { PullRequestAskFailed = failed } : each)]);
+
+    /// <summary>A session branch removed on the entry's pull request's answer (design §2.5): kept with the rest.</summary>
+    public void Carried(LandedBranch entry, CarriedBranch carried) => Edit(all =>
+        [.. all.Select(each => SameEntry(each, entry) ? each with { Carried = [.. each.Carried, carried] } : each)]);
+
+    /// <summary>
+    /// The same landing, standing or a trace: its repository, its branch, the session that made it, and when. A later landing of
+    /// the same name is another entry, and so is a trace of an earlier one.
+    /// </summary>
+    private static bool SameEntry(LandedBranch each, LandedBranch entry) =>
+        Same(each, entry.Repository, entry.Branch)
+        && string.Equals(each.Session, entry.Session, StringComparison.OrdinalIgnoreCase)
+        && each.LandedAt == entry.LandedAt;
+
     private void Edit(Func<IReadOnlyList<LandedBranch>, IReadOnlyList<LandedBranch>> change)
     {
         lock (Gate)
@@ -307,6 +343,32 @@ public sealed class LandedBranches(string home)
                     writer.WriteEndArray();
                 }
 
+                if (entry.PullRequestState is { } state) WriteState(writer, state);
+                if (entry.PullRequestAskFailed is { } failed)
+                {
+                    writer.WriteStartObject("pullRequestAskFailed");
+                    writer.WriteString("code", failed.Code);
+                    writer.WriteString("plugin", failed.Plugin);
+                    writer.WriteString("at", failed.At.ToString("O", CultureInfo.InvariantCulture));
+                    writer.WriteEndObject();
+                }
+
+                if (entry.Carried.Count > 0)
+                {
+                    writer.WriteStartArray("carried");
+                    foreach (var carried in entry.Carried)
+                    {
+                        writer.WriteStartObject();
+                        writer.WriteString("branch", carried.Branch);
+                        writer.WriteString("tip", carried.Tip);
+                        writer.WriteString("at", carried.At.ToString("O", CultureInfo.InvariantCulture));
+                        writer.WriteString("by", carried.By);
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndArray();
+                }
+
                 writer.WriteEndObject();
             }
 
@@ -315,6 +377,72 @@ public sealed class LandedBranches(string home)
         }
 
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()).Replace("\r\n", "\n") + "\n";
+    }
+
+    /// <summary>The kept answer, in the answer's own field names, with who answered and when it was asked (PLUGHOOK1a).</summary>
+    private static void WriteState(Utf8JsonWriter writer, PullRequestState state)
+    {
+        writer.WriteStartObject("pullRequestState");
+        writer.WriteString("state", state.State);
+        if (state.PullRequest is not null) writer.WriteString("pullRequest", state.PullRequest);
+        if (state.MergeCommit is not null) writer.WriteString("mergeCommit", state.MergeCommit);
+        if (state.SourceCommit is not null) writer.WriteString("sourceCommit", state.SourceCommit);
+        if (state.Target is not null) writer.WriteString("target", state.Target);
+        if (state.How is not null) writer.WriteString("how", state.How);
+        if (state.At is { } at) writer.WriteString("at", at.ToString("O", CultureInfo.InvariantCulture));
+        if (state.Message is not null) writer.WriteString("message", state.Message);
+        if (state.Plugin is not null) writer.WriteString("plugin", state.Plugin);
+        writer.WriteString("askedAt", state.AskedAt.ToString("O", CultureInfo.InvariantCulture));
+        writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// The kept answer, read by the wire's own rules (<see cref="PullRequestAnswers.Read"/>), or null: one that would not have
+    /// been an answer is none, since a removal chooses by it.
+    /// </summary>
+    private static PullRequestState? StateOf(JsonElement element)
+    {
+        if (!element.TryGetProperty("pullRequestState", out var kept) || kept.ValueKind != JsonValueKind.Object) return null;
+        var plugin = Text(kept, "plugin");
+        return PullRequestAnswers.Read(kept, plugin ?? "") is { } state
+            ? state with
+            {
+                Plugin = plugin,
+                AskedAt = DateTimeOffset.TryParse(Text(kept, "askedAt"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var asked)
+                    ? asked
+                    : DateTimeOffset.MinValue,
+            }
+            : null;
+    }
+
+    /// <summary>The latest failed ask, whole or none.</summary>
+    private static PullRequestAskFailed? AskFailedOf(JsonElement element) =>
+        element.TryGetProperty("pullRequestAskFailed", out var failed) && failed.ValueKind == JsonValueKind.Object
+        && Text(failed, "code") is { } code && Text(failed, "plugin") is { } plugin
+        && DateTimeOffset.TryParse(Text(failed, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at)
+            ? new PullRequestAskFailed(code, plugin, at)
+            : null;
+
+    /// <summary>The session branches removed on its answer, each whole or left out. Absent is none.</summary>
+    private static IReadOnlyList<CarriedBranch> CarriedOf(JsonElement element)
+    {
+        if (!element.TryGetProperty("carried", out var list) || list.ValueKind != JsonValueKind.Array) return [];
+        var carried = new List<CarriedBranch>();
+        foreach (var each in list.EnumerateArray())
+        {
+            if (each.ValueKind != JsonValueKind.Object || Text(each, "branch") is not { } branch || Text(each, "tip") is not { } tip
+                || Text(each, "by") is not { } by
+                || !DateTimeOffset.TryParse(Text(each, "at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at))
+            {
+                continue;
+            }
+
+            carried.Add(new CarriedBranch(branch, tip, at, by));
+        }
+
+        // The empty case is the property's own default, so an entry from before PLUGHOOK1a still equals itself read twice.
+        if (carried.Count == 0) return [];
+        return carried;
     }
 
     /// <summary>One entry, or null where it lacks what makes it one: a repository, a branch, the commit it was made at, a session.</summary>
@@ -350,6 +478,9 @@ public sealed class LandedBranches(string home)
                     Text(rule, "source") ?? LandingSource.Default)
                 : null,
             Advances = AdvancesOf(element),
+            PullRequestState = StateOf(element),
+            PullRequestAskFailed = AskFailedOf(element),
+            Carried = CarriedOf(element),
         };
     }
 

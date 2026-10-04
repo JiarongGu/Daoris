@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using Daoris.Driver;
+using static Daoris.Desktop.Driver.Tests.GitFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
@@ -238,7 +238,7 @@ public sealed class TreeDiffTests : IDisposable
             diff.Files.Select(changed => changed.Path).Order(StringComparer.Ordinal));
         foreach (var changed in diff.Files.Where(changed => changed.Status != "renamed"))
         {
-            var alone = await GitTextAsync(root, "-c", "core.quotePath=false", "diff", "--no-color", "-M", $"{before}..HEAD", "--", changed.Path);
+            var alone = await GitAsync(root, "-c", "core.quotePath=false", "diff", "--no-color", "-M", $"{before}..HEAD", "--", changed.Path);
             Assert.Equal(alone, changed.Patch);
         }
 
@@ -319,46 +319,6 @@ public sealed class TreeDiffTests : IDisposable
         await GitAsync(root, "add", ".");
         await GitAsync(root, "commit", "-m", "first");
         return root;
-    }
-
-    private static async Task<string> GitAsync(string cwd, params string[] arguments)
-    {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = cwd,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
-        // Both streams are read at once: `add -A` over sixty files writes a line-ending warning per file to stderr, which
-        // fills the pipe before stdout ends, and a sequential read then waits on git forever (FIX-LOG 2026-10-04).
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        await stderr;
-        return await stdout;
-    }
-
-    /// <summary>git's answer read as the UTF-8 it is, for a patch that names a path outside ASCII.</summary>
-    private static async Task<string> GitTextAsync(string cwd, params string[] arguments)
-    {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = cwd,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = System.Text.Encoding.UTF8,
-        };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info)!;
-        var stdout = process.StandardOutput.ReadToEndAsync();
-        var stderr = process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        await stderr;
-        return await stdout;
     }
 
     private static string RepoRoot()

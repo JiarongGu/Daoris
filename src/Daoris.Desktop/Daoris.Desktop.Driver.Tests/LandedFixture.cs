@@ -70,15 +70,23 @@ public abstract class LandedFixture : IDisposable
         await GitAsync(root, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", $"{branch} (squashed)");
     }
 
-    /// <summary>The platform's side: a clone of the bare origin squash-merges the branch onto `main`, pushes, and deletes the branch there.</summary>
-    protected async Task SquashOnPlatformAsync(string origin, string branch, bool deleteBranch = true)
+    /// <summary>
+    /// The platform's side: a clone of the bare origin squash-merges the branch onto `main`, pushes, and deletes the branch there.
+    /// <paramref name="then"/> is a later change on `main` after it (the line moving on, PLUGHOOK1a), pushed with it.
+    /// </summary>
+    /// <returns>The squash commit: what a platform answers as the pull request's merge commit.</returns>
+    protected async Task<string> SquashOnPlatformAsync(
+        string origin, string branch, bool deleteBranch = true, (string File, string Content)? then = null)
     {
         var platform = Path.Combine(Scratch, $"platform-{Guid.NewGuid():N}"[..20]);
         await GitAsync(Scratch, "clone", "--quiet", origin, platform);
         await GitAsync(platform, "merge", "--squash", $"origin/{branch}");
         await GitAsync(platform, "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "Squashed (#7)");
+        var squash = (await GitAsync(platform, "rev-parse", "HEAD")).Trim();
+        if (then is { } change) await CommitAsync(platform, change.File, change.Content, "the line moves on");
         await GitAsync(platform, "push", "--quiet", "origin", "main");
         if (deleteBranch) await GitAsync(platform, "push", "--quiet", "origin", "--delete", branch);
+        return squash;
     }
 
     /// <summary>A commit on a branch nobody has checked out, through a worktree made and removed for it.</summary>
@@ -132,10 +140,12 @@ public abstract class LandedFixture : IDisposable
         };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(info)!;
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        await process.StandardError.ReadToEndAsync();
+        // Both reads start before the wait: a child that fills the pipe nobody reads waits on it forever (TESTGIT1).
+        var stdout = process.StandardOutput.ReadToEndAsync();
+        var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();
-        return stdout;
+        await stderr;
+        return await stdout;
     }
 
     private static string RepoRoot()

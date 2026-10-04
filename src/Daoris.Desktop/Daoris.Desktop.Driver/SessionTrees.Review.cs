@@ -102,6 +102,9 @@ public static class LandedReviewWords
     {
         null => "",
         LandedKind.Inside => $" The clean-up removed it inside `{entry.RemovedOn}`, whose work read on the line.",
+        // PLUGHOOK1a: removed on the platform's word, confirmed by git.
+        LandedKind.PullRequest => $" The clean-up removed it once its pull request completed"
+            + (entry.PullRequestState?.Plugin is { } plugin ? $", as `{plugin}` answered," : "") + $" and its merge commit read on `{entry.RemovedOn}`.",
         _ => $" The clean-up removed it once its work read on `{entry.RemovedOn}`.",
     };
 

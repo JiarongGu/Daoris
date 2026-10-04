@@ -286,9 +286,9 @@ public sealed class AccountLimitHoldTests : IDisposable
         for (var look = 0; look < 3; look++) await Driver(service, roster).TickAsync().WaitAsync(Bound);
 
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");
-        Assert.Equal(["adapter", "account", "workspace", "until", "quests"], line.Data.Select(field => field.Key));
+        Assert.Equal(["adapter", "account", "workspace", "until", "quests", "signedOut"], line.Data.Select(field => field.Key));
         Assert.Equal(
-            ["acp-stub", null, "default", "2026-10-03T10:17:00Z", 1],
+            ["acp-stub", null, "default", "2026-10-03T10:17:00Z", 1, null],
             line.Data.Select(field => field.Value));
 
         // A new cool-off on the same account is a new wait.
@@ -408,6 +408,9 @@ public sealed class AccountLimitHoldTests : IDisposable
 
         service.AccountSaid(AccountLine.Limited("s1", "claude-code-acp", "account-1", seen, turn: 2, used: 370_104));
         service.AccountSaid(AccountLine.Waiting("claude-code-acp", null, "work", Until, quests: 3));
+        // TOOL6g: the accounts a wait passed not signed in, by name, and a wait on none cooling with no time.
+        service.AccountSaid(AccountLine.Waiting("claude-code", "gmail", null, Until, quests: 2, signedOut: ["account-1", "not a name", "account-2"]));
+        service.AccountSaid(AccountLine.Waiting("claude-code", null, null, until: null, quests: 1, signedOut: ["account-1"]));
 
         var lines = Directory.GetFiles(Path.Combine(_home, MachineLog.Folder)).SelectMany(StubFile.Lines)
             .Select(line => JsonDocument.Parse(line).RootElement.Clone()).ToList();
@@ -415,8 +418,12 @@ public sealed class AccountLimitHoldTests : IDisposable
             """{"session":"s1","adapter":"claude-code-acp","account":"account-1","hit":"weekly","window":"weekly","until":"2026-10-03T10:17:00Z","stated":true,"assumedZone":false,"turn":2,"used":370104}""",
             lines.Single(l => l.GetProperty("event").GetString() == "account.limited").GetProperty("data").GetRawText());
         Assert.Equal(
-            """{"adapter":"claude-code-acp","account":null,"workspace":"work","until":"2026-10-03T10:17:00Z","quests":3}""",
-            lines.Single(l => l.GetProperty("event").GetString() == "starts.waiting").GetProperty("data").GetRawText());
+            [
+                """{"adapter":"claude-code-acp","account":null,"workspace":"work","until":"2026-10-03T10:17:00Z","quests":3,"signedOut":null}""",
+                """{"adapter":"claude-code","account":"gmail","workspace":null,"until":"2026-10-03T10:17:00Z","quests":2,"signedOut":"account-1,account-2"}""",
+                """{"adapter":"claude-code","account":null,"workspace":null,"until":null,"quests":1,"signedOut":"account-1"}""",
+            ],
+            lines.Where(l => l.GetProperty("event").GetString() == "starts.waiting").Select(l => l.GetProperty("data").GetRawText()));
     }
 
     [Fact]

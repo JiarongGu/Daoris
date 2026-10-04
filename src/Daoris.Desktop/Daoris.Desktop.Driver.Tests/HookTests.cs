@@ -118,8 +118,12 @@ public sealed class HookTests : IDisposable
         Assert.Equal(["quest/consider"], peer.Points);
     }
 
+    /// <summary>
+    /// Listening beyond the manifest is refused. A point this build lacks is no longer refused (PLUGHOOK1a, D148 point 8): it is
+    /// said once and never asked, which <see cref="HookStateTests"/> holds.
+    /// </summary>
     [Fact]
-    public async Task A_plugin_listening_beyond_its_manifest_or_on_a_point_this_build_lacks_is_refused_naming_it()
+    public async Task A_plugin_listening_beyond_its_manifest_is_refused_naming_it()
     {
         var beyond = new FakePlugin((frame, _) => Ok(frame, """{"protocolVersion":1,"points":["session/ended"]}"""));
         var error = await Assert.ThrowsAsync<DriverException>(() =>
@@ -128,10 +132,9 @@ public sealed class HookTests : IDisposable
         Assert.Contains("manifest does not declare", error.Message);
 
         var unknown = new FakePlugin((frame, _) => Ok(frame, """{"protocolVersion":1,"points":["quest/teleport"]}"""));
-        var refused = await Assert.ThrowsAsync<DriverException>(() =>
-            Peer(unknown).InitializeAsync("h", "d", ["quest/teleport"], CancellationToken.None));
-        Assert.Contains("quest/teleport", refused.Message);
-        Assert.Contains("not a point this build has", refused.Message);
+        var peer = Peer(unknown);
+        await peer.InitializeAsync("h", "d", ["quest/teleport"], CancellationToken.None);
+        Assert.Empty(peer.Points);
     }
 
     [Fact]

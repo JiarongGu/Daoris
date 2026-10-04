@@ -7,6 +7,8 @@
   "harness.next.own": "The next start runs on your own sign-in: nothing here names an account.",
   "harness.next.waitsUntil": "No account here is ready, so the next start waits until {{when}}.",
   "harness.next.waits": "No account here is ready, and none comes ready by itself: the next start waits for you.",
+  "harness.next.signInSooner": "Signing in to {{accounts}} starts it sooner, from its row below.",
+  "harness.next.signIn": "Signing in to {{accounts}} starts it, from its row below.",
   "harness.next.why.named": "it is the one account used here",
   "harness.next.why.onlyReady": "it is the only account here that is ready",
   "harness.next.why.kept": "it is kept for conversations",

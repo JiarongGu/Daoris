@@ -67,7 +67,8 @@ function fakes(fx: Fixture): string {
     "const web = 'https://example.test/example-org/project/_git/engine';",
     "if (tool === 'gh' && args[1] === 'view') console.log(JSON.stringify({ state: process.env.FAKE_STATE ?? 'OPEN' }));",
     "else if (tool === 'gh') console.log('https://example.test/example-org/engine/pull/7');",
-    "if (tool === 'az' && args[2] === 'show') console.log(JSON.stringify({ pullRequestId: 7, status: process.env.FAKE_STATE ?? 'active', repository: { webUrl: web } }));",
+    "if (tool === 'az' && args[2] === 'show') console.log(process.env.FAKE_PR ?? JSON.stringify({ pullRequestId: 7, status: process.env.FAKE_STATE ?? 'active', repository: { webUrl: web } }));",
+    "else if (tool === 'az' && args[2] === 'list') console.log(process.env.FAKE_PRS ?? '[]');",
     "else if (tool === 'az') console.log(JSON.stringify({ pullRequestId: 7, repository: { webUrl: web } }));",
     '',
   ].join('\n'));
@@ -82,10 +83,21 @@ function fakes(fx: Fixture): string {
   return bin;
 }
 
-interface Spoken { initialized: Record<string, unknown>; answer: Record<string, unknown>; stderr: string }
+interface Spoken { initialized: Record<string, unknown>; answer: Record<string, unknown>; error: { message: string } | undefined; stderr: string }
 
 /** Start the plugin as a landing does, speak its three frames, and hand back what it answered. */
-async function land(plugin: string, fx: Fixture, bin: string, params: Record<string, unknown>, extra: Record<string, string> = {}): Promise<Spoken> {
+function land(plugin: string, fx: Fixture, bin: string, params: Record<string, unknown>, extra: Record<string, string> = {}): Promise<Spoken> {
+  return speak(plugin, fx, bin, 'work/land', ['work/land'], params, extra);
+}
+
+/** Start the plugin as an occasion's ask does (PLUGHOOK1a): the handshake naming both points, one `hook/work/state`, the shutdown. */
+function ask(plugin: string, fx: Fixture, bin: string, params: Record<string, unknown>, extra: Record<string, string> = {}): Promise<Spoken> {
+  return speak(plugin, fx, bin, 'work/state', ['work/land', 'work/state'], params, extra);
+}
+
+async function speak(
+  plugin: string, fx: Fixture, bin: string, point: string, points: string[], params: Record<string, unknown>, extra: Record<string, string>,
+): Promise<Spoken> {
   const pathKey = Object.keys(process.env).find((key) => key.toUpperCase() === 'PATH') ?? 'PATH';
   const env: Record<string, string | undefined> = {
     ...process.env,
@@ -101,25 +113,25 @@ async function land(plugin: string, fx: Fixture, bin: string, params: Record<str
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += String(chunk); });
 
-  const answers = new Map<number, Record<string, unknown>>();
+  const answers = new Map<number, { result: Record<string, unknown>; error?: { message: string } }>();
   const waiting = new Map<number, () => void>();
   createInterface({ input: child.stdout }).on('line', (line) => {
-    const frame = JSON.parse(line) as { id: number; result: Record<string, unknown> };
-    answers.set(frame.id, frame.result);
+    const frame = JSON.parse(line) as { id: number; result: Record<string, unknown>; error?: { message: string } };
+    answers.set(frame.id, frame);
     waiting.get(frame.id)?.();
   });
-  const ask = (id: number, method: string, frameParams: unknown) => new Promise<Record<string, unknown>>((resolve, reject) => {
+  const call = (id: number, method: string, frameParams: unknown) => new Promise<{ result: Record<string, unknown>; error?: { message: string } }>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(`no answer to ${method} — stderr: ${stderr}`)), 30_000);
     waiting.set(id, () => { clearTimeout(timer); resolve(answers.get(id)!); });
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params: frameParams })}\n`);
   });
 
   const exited = new Promise<void>((resolve) => child.on('exit', () => resolve()));
-  const initialized = await ask(1, 'initialize', { protocolVersion: 1, plugin, points: ['work/land'] });
-  const answer = await ask(2, 'hook/work/land', params);
+  const initialized = (await call(1, 'initialize', { protocolVersion: 1, plugin, points })).result;
+  const answered = await call(2, `hook/${point}`, params);
   child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'shutdown' })}\n`);
   await exited;
-  return { initialized, answer, stderr };
+  return { initialized, answer: answered.result, error: answered.error, stderr };
 }
 
 function frame(root: string, title = 'Fix the API gap'): Record<string, unknown> {
@@ -292,11 +304,123 @@ test('the description each plugin writes says who accepted the work', async () =
   fx.cleanup();
 });
 
-test('each example plugin declares the landing point alone, so installing one runs nothing until a rule names it', () => {
-  for (const plugin of ['github-pull-request', 'azure-devops-pull-request']) {
+test('each example plugin declares only points the loop never asks, so installing one runs nothing until a rule names it or a look asks', () => {
+  // PLUGHOOK1a: the Azure DevOps plugin also answers the query; the GitHub one learns it in PLUGHOOK1b.
+  const points = { 'github-pull-request': ['work/land'], 'azure-devops-pull-request': ['work/land', 'work/state'] };
+  for (const [plugin, declared] of Object.entries(points)) {
     const manifest = JSON.parse(readFileSync(join(examples, plugin, 'plugin.json'), 'utf8'));
     assert.equal(manifest.id, plugin);
-    assert.deepEqual(manifest.hooks.points, ['work/land']);
+    assert.deepEqual(manifest.hooks.points, declared);
     assert.ok(existsSync(join(examples, plugin, 'README.md')), `${plugin} has a README`);
   }
+});
+
+// ——— PLUGHOOK1a (D148 point 7, the plugin hooks design §2.6): the Azure DevOps plugin answers `work/state`
+
+const AZ_WEB = 'https://example.test/example-org/project/_git/engine';
+const MERGE = 'a'.repeat(40);
+const SOURCE = 'b'.repeat(40);
+
+/** A pull request as `az repos pr show --output json` prints one: the fields the plugin reads, and a few it does not. */
+function pr(id: number, status: string, more: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    pullRequestId: id, status, sourceRefName: `refs/heads/${BRANCH}`, targetRefName: 'refs/heads/main',
+    creationDate: `2026-10-0${id % 9}T09:00:00Z`, repository: { webUrl: AZ_WEB, name: 'engine' }, ...more,
+  };
+}
+
+function stateFrame(root: string, pullRequest: string | null = `${AZ_WEB}/pullrequest/7`): Record<string, unknown> {
+  return { repository: 'engine', workspace: 'aurora', root, branch: BRANCH, line: 'main', pullRequest, pushedTip: SOURCE };
+}
+
+test('the Azure DevOps plugin answers a pull request completed by squash with both commits, its target, how and when', async () => {
+  const fx = makeFixture('state-azure-squash');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+  const completed = pr(7, 'completed', {
+    lastMergeCommit: { commitId: MERGE }, lastMergeSourceCommit: { commitId: SOURCE }, closedDate: '2026-10-04T14:02:11.513Z',
+    completionOptions: { mergeStrategy: 'squash', deleteSourceBranch: true },
+  });
+
+  const spoken = await ask('azure-devops-pull-request', fx, bin, stateFrame(root), { FAKE_PR: JSON.stringify(completed) });
+
+  assert.deepEqual(spoken.initialized, { protocolVersion: 1, points: ['work/land', 'work/state'] });
+  assert.equal(spoken.error, undefined, spoken.stderr);
+  assert.deepEqual({ ...spoken.answer, message: undefined }, {
+    state: 'completed', pullRequest: `${AZ_WEB}/pullrequest/7`, mergeCommit: MERGE, sourceCommit: SOURCE, target: 'main',
+    how: 'squash', at: '2026-10-04T14:02:11.513Z', message: undefined,
+  });
+  assert.match(String(spoken.answer.message), /completed by squash into `main`/);
+  // It read the one pull request the address names, in the checkout, and nothing else.
+  const asked = calls(fx);
+  assert.equal(asked.length, 1, JSON.stringify(asked));
+  assert.deepEqual(asked[0]!.args, ['repos', 'pr', 'show', '--id', '7', '--output', 'json']);
+  assert.ok(same(asked[0]!.cwd, root), `az ran in ${asked[0]!.cwd}`);
+  fx.cleanup();
+});
+
+test('the Azure DevOps plugin maps each status and merge strategy, and answers a completed one with no merge commit as unknown', async () => {
+  const fx = makeFixture('state-azure-statuses');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+  const asked = async (shown: Record<string, unknown>) =>
+    (await ask('azure-devops-pull-request', fx, bin, stateFrame(root), { FAKE_PR: JSON.stringify(shown) })).answer;
+
+  assert.equal((await asked(pr(7, 'active'))).state, 'open');
+  const abandoned = await asked(pr(7, 'abandoned', { closedDate: '2026-10-03T10:00:00Z' }));
+  assert.deepEqual([abandoned.state, abandoned.at, abandoned.mergeCommit], ['abandoned', '2026-10-03T10:00:00Z', null]);
+  assert.equal((await asked(pr(7, 'notSet'))).state, 'unknown');
+  for (const [strategy, how] of [['noFastForward', 'merge'], ['rebase', 'rebase'], ['rebaseMerge', 'rebase-merge'], [undefined, null]] as const) {
+    const answer = await asked(pr(7, 'completed', {
+      lastMergeCommit: { commitId: MERGE }, lastMergeSourceCommit: { commitId: SOURCE },
+      ...(strategy ? { completionOptions: { mergeStrategy: strategy } } : {}),
+    }));
+    assert.equal(answer.how, how, `${strategy}`);
+  }
+  const noMerge = await asked(pr(7, 'completed', { lastMergeSourceCommit: { commitId: SOURCE } }));
+  assert.equal(noMerge.state, 'unknown');
+  assert.match(String(noMerge.message), /completed, and az names no merge commit/);
+  fx.cleanup();
+});
+
+test('with no address the Azure DevOps plugin finds the pull request by its source branch, preferring a completed one into the line', async () => {
+  const fx = makeFixture('state-azure-by-branch');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+  const found = [
+    pr(3, 'abandoned', { closedDate: '2026-10-01T09:00:00Z' }),
+    pr(4, 'completed', { targetRefName: 'refs/heads/release' }),
+    pr(5, 'active'),
+    pr(6, 'completed'),
+  ];
+  const completed = pr(6, 'completed', { lastMergeCommit: { commitId: MERGE }, lastMergeSourceCommit: { commitId: SOURCE } });
+
+  const spoken = await ask('azure-devops-pull-request', fx, bin, stateFrame(root, null),
+    { FAKE_PRS: JSON.stringify(found), FAKE_PR: JSON.stringify(completed) });
+
+  assert.equal(spoken.answer.state, 'completed', String(spoken.answer.message));
+  assert.equal(spoken.answer.pullRequest, `${AZ_WEB}/pullrequest/6`);
+  assert.deepEqual(calls(fx).map((each) => each.args), [
+    ['repos', 'pr', 'list', '--source-branch', BRANCH, '--status', 'all', '--output', 'json'],
+    ['repos', 'pr', 'show', '--id', '6', '--output', 'json'],
+  ]);
+  fx.cleanup();
+});
+
+test('the Azure DevOps plugin answers unknown where no pull request is from the branch, and az failing is the call\'s error', async () => {
+  const fx = makeFixture('state-azure-none');
+  const { root } = repository(fx);
+  const bin = fakes(fx);
+
+  const none = await ask('azure-devops-pull-request', fx, bin, stateFrame(root, null), { FAKE_PRS: '[]' });
+  assert.equal(none.answer.state, 'unknown');
+  assert.equal(none.answer.pullRequest, null);
+  assert.match(String(none.answer.message), /no pull request from `feature\/0fda18-fix-the-api-gap`/);
+  // Nothing was read once nothing was found.
+  assert.equal(calls(fx).filter((call) => call.args.includes('show')).length, 0);
+
+  const failed = await ask('azure-devops-pull-request', fx, bin, stateFrame(root), { FAKE_FAIL: 'az' });
+  assert.equal(failed.answer, undefined);
+  assert.match(String(failed.error?.message), /az: not signed in, the fake says/);
+  fx.cleanup();
 });

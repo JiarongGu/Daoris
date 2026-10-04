@@ -71,6 +71,20 @@ describe('byTool', () => {
     expect(tools[0]!.accounts[0]!.name).toBe('owner');
   });
 
+  /**
+   * TOOL6g: the protocol door asks no sign-in question of its own, so it reports every account unknown. One list per tool
+   * takes the account's state from the tool that owns it, wherever the roster put the door, never the door's unknown.
+   */
+  it('takes an account\'s sign-in from the tool that owns it, never a door\'s unknown', () => {
+    const tools = byTool([
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', profiles: [{ name: 'account-1', home: '/p/one', login: 'unknown' }] }),
+      door({ harness: 'claude-code', profiles: [{ name: 'account-1', home: '/p/one', login: 'out' }] }),
+    ]);
+
+    expect(tools).toHaveLength(1);
+    expect(tools[0]!.accounts.map((a) => [a.name, a.login])).toEqual([['account-1', 'out']]);
+  });
+
   it('deduplicates on the directory, because that is what an account IS', () => {
     const tools = byTool([
       door({ harness: 'claude-code', profiles: [{ name: 'work', home: '/p/one', login: 'in' }] }),

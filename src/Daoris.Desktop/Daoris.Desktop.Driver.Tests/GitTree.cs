@@ -30,21 +30,7 @@ internal sealed class GitTree : IDisposable
     public void Git(string arguments) => Output(arguments);
 
     /// <summary>Run git and answer what it printed, trimmed — a SHA, a branch name.</summary>
-    public string Output(string arguments)
-    {
-        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "git",
-            Arguments = arguments,
-            WorkingDirectory = Root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        })!;
-        var stdout = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        return stdout.Trim();
-    }
+    public string Output(string arguments) => GitFixture.RunLine(Root, arguments).Stdout.Trim();
 
     /// <summary>Add a file and commit it, so the history moves on by one.</summary>
     public void Commit(string file)
