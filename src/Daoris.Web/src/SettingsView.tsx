@@ -29,11 +29,11 @@ export type { SettingsSection } from './settings/domains';
 
 /**
  * A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>` — and since
- * HELP6 each place Ask Daoris's go may name: Session branches, and each step of the setup guide; since
- * HELP10 Permissions → Reading and writing across.
+ * HELP6 each place Ask Daoris's go may name: each step of the setup guide. Session branches, the lines, the landing,
+ * the wiring and reading across left with Settings → Workspace and Permissions for a workspace's page (UX6g), whose
+ * doors name its tab and section instead.
  */
-export type SettingsAnchor =
-  'usage' | 'proposals' | 'wiring' | 'lines' | 'landing' | 'sweep' | 'across' | `step-${SetupStepId}`;
+export type SettingsAnchor = 'usage' | 'proposals' | `step-${SetupStepId}`;
 
 /** Settings' domains in the order its list shows them — what Ask Daoris's places are held to (HELP6). */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = SETTINGS_DOMAINS.map(({ id }) => id);

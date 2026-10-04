@@ -1,10 +1,8 @@
 {
   "settings.domain.appearance": "Appearance",
   "settings.domain.ai": "AI features",
-  "settings.domain.workspace": "Workspace",
   "settings.domain.driver": "Driver",
   "settings.domain.tools": "Tools",
-  "settings.domain.permissions": "Permissions",
   "settings.domain.plugins": "Plugins",
   "settings.domain.browser": "Browser",
   "settings.domain.start": "Setup",

@@ -173,7 +173,8 @@ describe('each step: its state, its doors and its commands', () => {
     });
     expect(steps.driven).toMatchObject({ doors: [{ view: 'projects' }], commands: ['daoris driver drive <repository>'] });
     expect(steps.landing).toMatchObject({
-      doors: [{ view: 'settings', section: 'workspace', anchor: 'landing' }],
+      // The workspace's defaults (UX6g, D150 §4.3), where how work lands is set for every repository there.
+      doors: [{ view: 'projects', workspaceSection: 'defaults' }],
       commands: ['daoris driver line <repository> <branch>', 'daoris driver landing <repository> merge|branch <pattern>'],
     });
     // UX6e: what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
@@ -198,11 +199,11 @@ describe('each step: its state, its doors and its commands', () => {
   it('leaves how work lands to do while a driven repository lands by the default, or has no line', () => {
     const done = MACHINES.everythingDone;
     const defaulted = byId({ ...done, landings: [{ ...done.landings[0]!, source: 'default' as const }, done.landings[1]!] });
-    expect(defaulted.landing).toMatchObject({ state: 'todo', doors: [{ view: 'settings', section: 'workspace', anchor: 'landing' }] });
+    expect(defaulted.landing).toMatchObject({ state: 'todo', doors: [{ view: 'projects', workspaceSection: 'defaults' }] });
 
-    // A missing line comes first, so the door opens on the lines, above the landing.
+    // A missing line comes first, so the door opens the first such repository's Setup, where its line is set.
     const lineless = byId({ ...done, lines: [{ repository: 'engine', workspace: 'aurora', source: 'none' as const }, done.lines[1]!] });
-    expect(lineless.landing).toMatchObject({ state: 'todo', doors: [{ view: 'settings', section: 'workspace', anchor: 'lines' }] });
+    expect(lineless.landing).toMatchObject({ state: 'todo', doors: [{ view: 'projects', item: 'engine', tab: 'setup' }] });
   });
 
   it('offers a browser no door to a screen it does not have, and still says the commands', () => {

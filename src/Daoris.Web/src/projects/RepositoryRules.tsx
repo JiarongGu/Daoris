@@ -7,20 +7,23 @@ import { Button, Icon, Pill, SelectField } from '../ui';
 export type RuleLists = { allow: string[]; ask: string[]; deny: string[] };
 
 /**
- * **Claude Code's rules for one repository** (UX6f, D150 §3.1): the rules this machine hands every session there beside
- * its own and its workspace's, each with its remove, and *Add a rule* one press away. The same file `daoris agent rules …
- * --repository <name>` edits (D50), so a refusal is the driver's sentence, said by whoever holds the page.
+ * **Claude Code's rules for one repository, or one workspace** (UX6f, UX6g; D150 §3.1): the rules this machine hands
+ * every session there beside its own and those above it, each with its remove, and *Add a rule* one press away. The same
+ * file `daoris agent rules … --repository <name>` or `--workspace <name>` edits (D50), so a refusal is the driver's
+ * sentence, said by whoever holds the page.
  *
  * @remarks
- * **Only this repository's scope**: the machine's rules, Daoris's defaults and the workspace's are said where they are
+ * **Only this one scope**: the machine's rules, Daoris's defaults and a workspace's are said where they are
  * set, and nothing here ranks one scope over another, since precedence is the harness's (PERM1). The words stay in the
  * box until the driver has taken them, so a rule it refused can be corrected rather than typed again (REV3).
  *
  * Props only, no hook from the query layer or the shell (components §2).
  */
-export function RepositoryRules({ rules, busy = false, onAdd, onRemove }: {
+export function RepositoryRules({ rules, busy = false, none, onAdd, onRemove }: {
   rules: RuleLists;
   busy?: boolean;
+  /** What holds where this scope adds none: a repository's workspace's and the machine's, or a workspace's machine's (UX6g). */
+  none?: string;
   /** Add a rule to a list; call `added` once the driver has taken it. Absent, nothing can be added. */
   onAdd?: (list: RuleListName, rule: string, added: () => void) => void;
   /** Remove one of its rules. Absent, nothing can be removed. */
@@ -35,7 +38,7 @@ export function RepositoryRules({ rules, busy = false, onAdd, onRemove }: {
   return (
     <div className="grid gap-2">
       {held.length === 0
-        ? <p className="m-0 text-small text-ink-soft">{t('projects.setup.rulesNone')}</p>
+        ? <p className="m-0 text-small text-ink-soft">{none ?? t('projects.setup.rulesNone')}</p>
         : (
           <ul aria-label={t('projects.setup.rules')} className="m-0 list-none p-0">
             {held.map(({ name, one }) => (

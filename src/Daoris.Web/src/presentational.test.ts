@@ -67,6 +67,9 @@ const ORGANISMS = new Set<string>([
   // The Agents place's organism (UX6e, D150 §5): it holds the roster, the accounts and every act on an agent, so the
   // list, the strip, the page and an account's row below it hold none.
   './agents/AgentsView.tsx',
+  // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
+  // page, its Details and its Setup below it hold none.
+  './projects/WorkspaceView.tsx',
 ]);
 
 /**

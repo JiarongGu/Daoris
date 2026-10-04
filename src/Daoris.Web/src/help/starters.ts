@@ -1,6 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
-import type { ProjectTab } from '../projects/tabs';
+import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { Machine } from './machine';
 
@@ -9,13 +9,19 @@ import type { Machine } from './machine';
  * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
  * folder (SETUP1a). Since FRAME1c it may name the item it opens in its view — a session, a quest, a
  * repository, a plugin — which the application's one opener chooses there (D118 §3i); since UX6e an agent
- * and the part of its page.
+ * and the part of its page; since UX6g a workspace's page, its tab and the section of its Setup.
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
   /** A repository page's tab (UX6f): a door into a repository's own value opens its Setup. */
   tab?: ProjectTab;
   agentPart?: AgentPart;
+  /**
+   * A workspace page's tab and the Setup section to open (UX6g, D150 §4.3): a door into a workspace's defaults, its remote
+   * or its clean-up. One that names no workspace in `item` opens the workspace in view.
+   */
+  workspaceTab?: WorkspaceTab;
+  workspaceSection?: WorkspaceSection;
 };
 
 /**
@@ -66,7 +72,8 @@ export function starters(
   if (machine.unnamedLines.length > 0) {
     found.push({
       id: 'no-line', values: { count: machine.unnamedLines.length, first: machine.unnamedLines[0]! },
-      door: { view: 'settings', section: 'workspace', anchor: 'lines' },
+      // The first one's Setup, where its line is set (UX6f), since Settings → Workspace left for the pages (UX6g).
+      door: { view: 'projects', item: machine.unnamedLines[0]!, tab: 'setup' },
       command: `daoris driver line ${machine.unnamedLines[0]} <branch>`,
     });
   }

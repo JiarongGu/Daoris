@@ -24,7 +24,7 @@
   "setup.door.add": "添加仓库…",
   "setup.door.import": "导入文件夹…",
   "setup.door.projects": "打开仓库",
-  "setup.door.workspace": "打开工作区",
+  "setup.door.workspace": "打开工作区的配置",
   "setup.door.agentRules": "打开智能体可以做什么",
   "setup.copy": "复制 {{command}}",
   "setup.copied": "已复制",

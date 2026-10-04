@@ -45,6 +45,20 @@ describe('the Settings registry', () => {
   });
 
   /**
+   * A setting lives on the thing it is about (D150 §1): Agents left for its place (UX6e), and Workspace and Permissions
+   * for a workspace's page and a repository's (UX6g, §3.1). What stays is the machine's or the person's.
+   */
+  it('holds what is the machine\'s or the person\'s: no agent, no workspace and no permissions domain', () => {
+    expect(SETTINGS_DOMAINS.map((domain) => domain.id)).toEqual([
+      'start', 'appearance', 'ai', 'driver', 'tools', 'plugins', 'browser', 'logs',
+    ]);
+    expect(Object.keys(files)).not.toContain('./WorkspaceDomain.tsx');
+    expect(Object.keys(files)).not.toContain('./PermissionsDomain.tsx');
+    expect(en['settings.domain.workspace']).toBeUndefined();
+    expect(en['settings.domain.permissions']).toBeUndefined();
+  });
+
+  /**
    * FRAME1g: the frame is Settings as the window's frame takes it — its list pane, which `DomainList` draws,
    * and its main area, which shows whichever domain the list chose — and Settings drawn alone. It names no
    * domain itself.

@@ -88,7 +88,21 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
-- [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
+- [ ] **QUESTBACK1 — a quest taken with no session can be handed back** (service, driver, web-shell; found on the
+  install, 2026-10-04). Both of the owner's report-ui quests went to Taken at 07:42 with no session anywhere; the
+  driver's plan reads them `taken-outside` and leaves them, and the service has only take, done and decline, so a
+  quest taken by a stray press sits forever. A taken quest that no live session holds offers *Hand back* (to Open,
+  with its note kept) at both doors, and the quest page says who took it and when. Contract: D32, D46 §3, D132.
+  Proof: a quest-store test of the move, a route test, the page's press over a mocked bridge.
+- [ ] **UX6g2 — the driver's words follow a workspace's page** (driver, cli; found by UX6g). The help room, its
+  sentences and the CLI still send a person to Settings → Workspace and Permissions for a workspace's line, landing,
+  language, reading across, rules and session branches (`HelpRoomDoors`, `HelpRoomMayDo`, `HelpRoomMayPropose`,
+  `HelpGoProposals`, `HelpSyncProposals`, `RegistrationFollow`, `PluginKit`, `SessionTrees.Hand`, `SetupCommand`,
+  `WorkspaceSetupCommand`), and the driver's places table still lists both domains. Contract: D150 §3.1. Proof: the
+  twins' tables and the room's golden files.
+- [ ] **DUPNOTE1 — the records check finds a dated note held twice in one decision** (tools; found merging UX6g). D150
+  held PLUGTOOL1a's note twice after a union merge and `doc-duplicates` passed: it checks the other records for a line
+  twice, never a decision for a note twice. Contract: D106, D134 §3.4. Proof: a fixture decision with one note twice.
 - [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; §4.4), taking GIT1e: D147's list by kind and a
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
 - [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).

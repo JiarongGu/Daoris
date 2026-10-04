@@ -15,7 +15,9 @@ const TONE: Record<Exclude<SetupState, 'desktop'>, 'done' | 'open' | 'neutral'> 
  * A door's name: the drawer it opens, else the Settings domain, else what agents may do (an agent's page at that part,
  * UX6e), else the view.
  */
-const doorKey = (door: StarterDoor) => door.drawer ?? door.section ?? (door.agentPart === 'rules' ? 'agentRules' : door.view);
+const doorKey = (door: StarterDoor) => door.drawer ?? door.section ?? (door.agentPart === 'rules' ? 'agentRules'
+  // A workspace's page at its defaults (UX6g) says it opens the workspace's setup.
+  : door.workspaceSection || door.workspaceTab ? 'workspace' : door.view);
 
 /**
  * Get started (SETUP1a, D97): the steps a machine needs, in the order a setup goes, each with its state,

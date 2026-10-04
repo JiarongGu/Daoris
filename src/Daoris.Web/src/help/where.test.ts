@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../api';
+import type { SettingsSection } from '../SettingsView';
 import { en } from '../locales';
 import { PLACE_DOMAINS, PLACE_VIEWS } from './places';
 import { attendedOf, prefaceOf } from './where';
@@ -15,8 +16,8 @@ describe('where the person is', () => {
   });
 
   it('names the settings domain on Settings', () => {
-    expect(prefaceOf({ view: 'settings', workspace: null, settings: 'workspace' }))
-      .toBe('Where the person is now: Settings → Workspace, every workspace.');
+    expect(prefaceOf({ view: 'settings', workspace: null, settings: 'driver' }))
+      .toBe('Where the person is now: Settings → Driver, every workspace.');
   });
 
   /**
@@ -28,8 +29,9 @@ describe('where the person is', () => {
       expect(prefaceOf({ view, workspace: null }), view)
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
-    // Agents left Settings for a place of its own (UX6e), which the views above name since the twins moved it (UX6e2).
-    for (const domain of PLACE_DOMAINS) {
+    // Agents left Settings for a place of its own (UX6e), which the views above name since the twins moved it (UX6e2);
+    // Workspace and Permissions left for a workspace's page (UX6g), and the twins still name them until they move together.
+    for (const domain of PLACE_DOMAINS.filter((name): name is SettingsSection => name !== 'workspace' && name !== 'permissions')) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
     }

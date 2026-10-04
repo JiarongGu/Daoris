@@ -1,8 +1,7 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Card, CheckField, Chip, Inline, Prose, SectionTitle, Segmented, SelectField, SettingRow } from '../ui';
-import { OnItsPage } from './OnItsPage';
+import { Button, CheckField, Inline, Segmented, SelectField } from '../ui';
 
 /**
  * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names —
@@ -34,69 +33,6 @@ const same = (a?: LandingRule, b?: LandingRule) =>
   a?.form === b?.form
   && (a?.form !== 'branch' || (a?.pattern === b?.pattern && a?.plugin === b?.plugin && Boolean(a?.autoAccept) === Boolean(b?.autoAccept)))
   && Boolean(a?.tidy) === Boolean(b?.tidy);
-
-/**
- * How work lands (WSR1, D87): what accepting a session does, per workspace, with a repository's
- * override.
- *
- * @remarks
- * Written from the owner's first real workspace, where a session's work was merged on one machine into
- * a branch the team takes through review. **Daoris itself never pushes** (D87): the branch form stops at
- * a branch for the person to push — or, where the rule names one, for a plugin installed here to push
- * and open the pull request (WSR4, D100). Only the plugins that land work are offered, and only on a
- * branch. What each row shows is the driver's own choice, read rather than recomputed, and a rule the
- * driver refuses comes back as its own sentence. A row's control is the screen's half of `daoris driver
- * landing --workspace` (D50).
- *
- * **A repository's own rule has one home, its Setup** (UX6f, D150 §1, §3.1): its row left this list, which keeps a line
- * naming the repositories that set their own, each a door to its Setup, until UX6g moves the workspace's rule too.
- */
-export function LandingList({ landings, workspaceLandings, landers = [], busy, onSet, onOpen }: {
-  landings: RepositoryLanding[];
-  /** What each workspace sets, by name. */
-  workspaceLandings: ({ workspace: string } & LandingRule)[];
-  /** The plugins here that land work: installed, switched on, sound, and speaking on `work/land`. */
-  landers?: string[];
-  busy?: boolean;
-  onSet: (change: LandingChange) => void;
-  /** Open a repository's page at Setup, or with null Repositories at Setup. */
-  onOpen?: (repository: string | null) => void;
-}) {
-  const { t } = useTranslation();
-  const circles = [...new Set([...landings.map((l) => l.workspace), ...workspaceLandings.map((w) => w.workspace)])]
-    .sort((a, b) => a.localeCompare(b));
-
-  return (
-    <Card id="settings-landing" className="mt-3.5 scroll-mt-3">
-      <SectionTitle>{t('settings.landing.title')}</SectionTitle>
-      <Prose className="mt-1 text-small text-ink-soft"><Inline text={t('settings.landing.body')} /></Prose>
-
-      {circles.length === 0 && <Prose className="mt-3">{t('settings.lines.none')}</Prose>}
-
-      {circles.map((workspace) => {
-        const shared = workspaceLandings.find((w) => w.workspace === workspace);
-        return (
-          <section key={workspace} aria-label={workspace} className="mt-3 border-t border-line pt-3">
-            <LandingRow
-              label={<Chip accent>{workspace}</Chip>}
-              hint={t('settings.landing.workspaceHint')}
-              name={workspace}
-              set={shared}
-              inherited={MERGE}
-              landers={landers}
-              busy={busy}
-              onSave={(rule) => onSet({ workspace, ...rule })}
-            />
-            <OnItsPage
-              own={landings.filter((landing) => landing.workspace === workspace && landing.source === 'repository').map((landing) => landing.repository)}
-              onOpen={onOpen}
-            />
-          </section>
-        );
-      })}
-    </Card>
-  );
-}
 
 /** What a draft that accepts automatically does: the plugin that pushes it, or none. Null where it does not. */
 export type Accepting = { plugin?: string } | null;
@@ -130,16 +66,6 @@ export function AcceptingNote({ accepting }: { accepting: Accepting }) {
         : t('settings.landing.autoAcceptAlone')}
       />
     </p>
-  );
-}
-
-/** One rule's row: its control, and beneath it what accepting automatically gives while the control says so. */
-function LandingRow({ label, hint, ...field }: { label: ReactNode; hint: string } & FieldProps) {
-  const [accepting, setAccepting] = useState<Accepting>(null);
-  return (
-    <SettingRow label={label} hint={hint} control={<LandingField {...field} onAccepting={setAccepting} />}>
-      <AcceptingNote accepting={accepting} />
-    </SettingRow>
   );
 }
 

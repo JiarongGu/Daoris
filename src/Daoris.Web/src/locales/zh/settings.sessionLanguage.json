@@ -1,8 +1,5 @@
 {
-  "settings.sessionLanguage.title": "会话语言",
   "settings.sessionLanguage.body": "会话写给你时用的语言：提问、关闭说明、谢绝理由和最后的话。代码、命令和引用的内容保持原样。仓库自己的设定优先于工作区的；未设定时，不要求会话使用任何语言。窗口自身的语言在“外观”中设置，两者互不影响。",
-  "settings.sessionLanguage.none": "本机还没有可以设定会话语言的仓库。",
-  "settings.sessionLanguage.workspaceHint": "这个工作区中未自行设定的每个仓库，以及它的受理，都用这个语言。",
   "settings.sessionLanguage.field": "{{name}} 的会话语言",
   "settings.sessionLanguage.notSet": "未设定",
   "settings.sessionLanguage.inherit": "沿用工作区：{{name}}",

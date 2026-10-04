@@ -20,8 +20,24 @@ export const PLACE_VIEWS: readonly View[] = [
   'overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'agents', 'settings',
 ];
 
-export const PLACE_DOMAINS: readonly SettingsSection[] = [
+export const PLACE_DOMAINS: readonly (SettingsSection | 'workspace' | 'permissions')[] = [
   'start', 'appearance', 'ai', 'workspace', 'driver', 'permissions', 'plugins', 'browser', 'logs',
+];
+
+/**
+ * The places the twin still names in Settings that retired into a workspace's page with UX6g (D150 §3.1): Settings →
+ * Workspace, its wiring, lines, landing and clean-up, and Permissions with its reading across. A go naming one opens the
+ * workspace in view's page where its part went, and Permissions alone what agents may do, so the room's places hold
+ * while the driver's twin still spells them the old way; the twins change together when it does.
+ */
+const MOVED: readonly { domain: string; part: string | null; door: StarterDoor }[] = [
+  { domain: 'workspace', part: null, door: { view: 'projects', workspaceTab: 'details' } },
+  { domain: 'workspace', part: 'wiring', door: { view: 'projects', workspaceSection: 'remote' } },
+  { domain: 'workspace', part: 'lines', door: { view: 'projects', workspaceSection: 'defaults' } },
+  { domain: 'workspace', part: 'landing', door: { view: 'projects', workspaceSection: 'defaults' } },
+  { domain: 'workspace', part: 'sweep', door: { view: 'projects', workspaceTab: 'branches' } },
+  { domain: 'permissions', part: null, door: { view: 'agents', agentPart: 'rules' } },
+  { domain: 'permissions', part: 'across', door: { view: 'projects', workspaceSection: 'defaults' } },
 ];
 
 /** The parts, each within a view (Repositories, Agents) or a Settings domain. */
@@ -44,8 +60,8 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * or null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
- * A go names no item: Repositories' Setup opens on the repository its list has chosen, and an agent's part on the agent
- * that has it (UX6e), as the room tells the helper.
+ * A go names no item: Repositories' Setup opens on the repository its list has chosen, an agent's part on the agent
+ * that has it (UX6e), and a retired domain's part on the workspace in view's page (UX6g), as the room tells the helper.
  */
 export function placeDoor(place: HelpPlace): StarterDoor | null {
   const view = PLACE_VIEWS.find((known) => known === place.view);
@@ -56,6 +72,9 @@ export function placeDoor(place: HelpPlace): StarterDoor | null {
   if (domain !== null) {
     const section = view === 'settings' ? PLACE_DOMAINS.find((known) => known === domain) : undefined;
     if (!section) return null;
+    const moved = MOVED.find((each) => each.domain === section && each.part === part);
+    if (moved) return moved.door;
+    if (section === 'workspace' || section === 'permissions') return null;
     if (part === null) return { view, section };
     if (!PLACE_PARTS.some((known) => known.within === section && known.part === part)) return null;
     // A setup step is found by its own id in the guide (SETUP1a), a card by its domain's.

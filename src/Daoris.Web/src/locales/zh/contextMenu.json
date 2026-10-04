@@ -12,6 +12,7 @@
   "contextMenu.act.copyPlugin": "复制插件 ID",
   "contextMenu.act.copyAgent": "复制智能体 ID",
   "contextMenu.act.copyRepository": "复制仓库名称",
+  "contextMenu.act.copyWorkspace": "复制工作区名称",
   "contextMenu.act.copyPath": "复制路径",
   "contextMenu.copied": "已复制 {{what}}。"
 }

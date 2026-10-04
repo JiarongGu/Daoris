@@ -42,12 +42,12 @@ describe('the menus by domain', () => {
       .toEqual(['settings:ai']);
   });
 
+  /** D150 §2.4: the workspaces, the two drawers, and *This workspace's setup*, its page at Setup since UX6g. */
   it('lists every workspace with what it holds, marks the scope, and holds the workspace acts', () => {
     const menus = appMenus({ attached: true, workspaces: TWO, scope: 'tools', waiting: 0 });
 
-    expect(ids(menus.workspace)).toEqual([
-      'scope:*', 'scope:aurora', 'scope:tools', 'add', 'import', 'wire', 'settings:workspace',
-    ]);
+    expect(ids(menus.workspace)).toEqual(['scope:*', 'scope:aurora', 'scope:tools', 'add', 'import', 'workspace:setup']);
+    expect(menus.workspace.find((item) => item.id === 'workspace:setup')).toMatchObject({ label: "This workspace's setup", separated: true });
     expect(menus.workspace.find((item) => item.id === 'scope:tools')?.checked).toBe(true);
     expect(menus.workspace.find((item) => item.id === 'scope:*')?.checked).toBe(false);
     expect(menus.workspace.find((item) => item.id === 'scope:aurora')?.badge).toBe(4);
@@ -73,14 +73,15 @@ describe('the menus by domain', () => {
   });
 
   it('reads an item as the act it names', () => {
-    expect(menuAction('settings:permissions')).toEqual({ kind: 'settings', section: 'permissions' });
+    expect(menuAction('settings:driver')).toEqual({ kind: 'settings', section: 'driver' });
     // An item named for a part opens at that part (UX5 U72). Since UX6e (D150 §2.4) the proposals are Overview's rule
     // rows, and signing in, what agents may do and usage are on the page of the agent that has each.
     expect(menuAction('proposals')).toEqual({ kind: 'view', view: 'overview' });
     expect(menuAction('usage')).toEqual({ kind: 'agents', part: 'usage' });
     expect(menuAction('agents:rules')).toEqual({ kind: 'agents', part: 'rules' });
     expect(menuAction('agents:signIn')).toEqual({ kind: 'agents', part: 'accounts' });
-    expect(menuAction('wire')).toEqual({ kind: 'settings', section: 'workspace', anchor: 'wiring' });
+    // The workspace in view's page at Setup (UX6g), where its defaults, its remote and its rules are.
+    expect(menuAction('workspace:setup')).toEqual({ kind: 'workspace', tab: 'setup' });
     expect(menuAction('scope:*')).toEqual({ kind: 'scope', workspace: null });
     expect(menuAction('scope:aurora')).toEqual({ kind: 'scope', workspace: 'aurora' });
     expect(menuAction('import')).toEqual({ kind: 'import' });

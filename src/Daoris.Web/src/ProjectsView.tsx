@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from './api';
 import { sentence } from './format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
-import { ProjectList, type RepositoryRowFacts } from './projects/ProjectList';
+import { projectsItem, workspaceItem } from './opener';
+import { ProjectList, type RepositoryRowFacts, type WorkspaceGroup } from './projects/ProjectList';
 import { ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
 import type { Driving, RepositorySetupProps } from './projects/RepositorySetup';
-import type { ProjectTab } from './projects/tabs';
+import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
+import { WorkspaceView } from './projects/WorkspaceView';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import type { LandingRule } from './settings/Landings';
@@ -18,14 +20,16 @@ import { doorOf } from './tools';
 import { failure, type Notify, useErrorNotify } from './ui';
 import { ListMore } from './work/ListPane';
 import type { ViewLayout } from './work/ViewFrame';
+import { workspaceOf, workspacesOf } from './workspaces';
 
 const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 
 /**
  * **The Repositories view** (D38; FRAME1e, D118 §2): what it hands the frame (D118 §5), its list pane and its main
- * area. The list holds the adopted repositories, then *Registered, not adopted*; its `＋` adds a repository and its ⋯
- * imports a folder. The main area holds the chosen repository's page, with *Manage* and the door to its code map in its
- * header. A record is the main area and a form a drawer (§3d): adding, importing and managing stay drawers.
+ * area. The list holds a group per workspace, its row a door to the workspace's page, then its adopted repositories and
+ * *Registered, not adopted* (UX6g, D150 §4.1); its `＋` adds a repository and its ⋯ imports a folder. The main area holds
+ * the chosen workspace's page (`WorkspaceView`, §4.3), or the chosen repository's, with *Manage* and the door to its code
+ * map in its header. A record is the main area and a form a drawer (§3d): adding, importing and managing stay drawers.
  *
  * @remarks
  * **A hook, because a view hands the frame a value** (`ViewLayout`), as Quests' and Plugins' are: the list and the main
@@ -46,19 +50,32 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * does (D48 §7): managing repositories means touching machine paths, and a browser has none.
  */
 export function useProjectsView({
-  active, chosen, onChoose, tab = 'details', onTab, notify, onOpenCode, addRequested = false, onAddOpened, importRequested = false,
-  onImportOpened,
+  active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
+  onOpenCode, onOpenAgent, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
 }: {
   /** The view is in front: only then are its errors said. */
   active: boolean;
-  /** The list's chosen item, a repository's name, which the application remembers (`daoris.list.projects.chosen`). */
+  /**
+   * The list's chosen item, which the application remembers (`daoris.list.projects.chosen`): a repository's name, or a
+   * workspace's item (`workspaceItem`, UX6g).
+   */
   chosen: string | null;
   onChoose: (item: string | null) => void;
   /** The page's tab, which the application remembers for the view (`daoris.list.projects.tab`). */
   tab?: ProjectTab;
   /** Choose a tab; absent, the page is Details alone. */
   onTab?: (tab: ProjectTab) => void;
+  /** A workspace's page's tab, remembered apart (`daoris.list.projects.workspaceTab`, UX6g). */
+  workspaceTab?: WorkspaceTab;
+  onWorkspaceTab?: (tab: WorkspaceTab) => void;
+  /** The section of a workspace's Setup a door asked to see open (UX6g). */
+  workspaceSection?: WorkspaceSection | null;
   notify: Notify;
+  /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
+  onOpenAgent?: (agent: string) => void;
+  /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
+  onSyncNow?: (workspace: string) => void;
+  syncing?: boolean;
   /** Its code map, one level into the Map (MAP3a): the door a repository's page offers. */
   onOpenCode?: (repository: string) => void;
   /**
@@ -72,6 +89,10 @@ export function useProjectsView({
   onImportOpened?: () => void;
 }): ViewLayout {
   const { t } = useTranslation();
+  // A chosen item names a workspace or a repository (UX6g, §4.1).
+  const item = chosen ? projectsItem(chosen) : null;
+  const chosenWorkspace = item && 'workspace' in item ? item.workspace : null;
+  const chosenRepository = item && 'repository' in item ? item.repository : null;
   const registry = useRegistry();
   const { workspace } = useScope();
   const repositories = useRepositories();
@@ -103,7 +124,7 @@ export function useProjectsView({
     .find((one) => one.repository === repository);
   // What only Setup reads is asked only while it shows (UX6f): reading across, and the plugins that land work. The rules
   // are the application's on every view already.
-  const setupShown = active && driver.data !== undefined && tab === 'setup' && chosen !== null;
+  const setupShown = active && driver.data !== undefined && tab === 'setup' && chosenRepository !== null;
   const across = useAcross({ enabled: setupShown });
   const rules = useRules();
   const catalog = usePlugins({ enabled: setupShown });
@@ -111,10 +132,16 @@ export function useProjectsView({
     .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
     .map((plugin) => plugin.id);
   // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
-  // so work is not lost in a pile nobody reads. Settings → Workspace lists them one by one.
+  // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
   const sweep = useSweepPlan();
   const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
     .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
+  // And every branch of Daoris's it holds, sessions' and landings' (§4.1): its row says how many. Absent where the driver
+  // has not answered, so a browser's row says nothing of it.
+  const branchesIn = (repository: string) => (sweep.data
+    ? [...(Array.isArray(sweep.data.branches) ? sweep.data.branches : []), ...(Array.isArray(sweep.data.landed) ? sweep.data.landed : [])]
+      .filter((branch) => branch.repository === repository).length
+    : undefined);
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver. Said once, while the
   // view is in front (D118 §3h).
   useErrorNotify(active ? registry.error ?? repositories.error ?? driver.error : null, notify);
@@ -156,6 +183,12 @@ export function useProjectsView({
     registration,
     ...standing(registration),
     entries: indexed(registration.repository)?.total ?? null,
+    branches: branchesIn(registration.repository),
+  });
+  /** The list's groups (UX6g, §4.1): a workspace each, by name, its adopted repositories then those not adopted. */
+  const groups: WorkspaceGroup[] = workspacesOf(rows).map((name) => {
+    const held = rows.filter((row) => workspaceOf(row) === name);
+    return { workspace: name, adopted: held.filter((row) => row.adopted).map(facts), outside: held.filter((row) => !row.adopted).map(facts) };
   });
 
   /**
@@ -307,9 +340,32 @@ export function useProjectsView({
     };
   };
 
-  const shown = chosen ? rows.find((row) => row.repository === chosen) : undefined;
+  const shown = chosenRepository ? rows.find((row) => row.repository === chosenRepository) : undefined;
+  const workspaceHeld = chosenWorkspace !== null && groups.some((group) => group.workspace === chosenWorkspace);
   const add = { label: t('projects.manage.add'), onAct: () => setAdding(true) };
-  const main = chosen
+  const goneOrLoading = (of: 'repository' | 'workspace') => (registry.data === undefined && registry.error
+    ? <ProjectsMainNotice state="unanswered" sentence={sentence(registry.error)} />
+    : <ProjectsMainNotice state={registry.data === undefined ? 'loading' : 'gone'} of={of} />);
+  const main = chosenWorkspace !== null
+    ? workspaceHeld
+      ? (
+        <WorkspaceView
+          key={chosenWorkspace}
+          workspace={chosenWorkspace}
+          repositories={rows.filter((row) => workspaceOf(row) === chosenWorkspace).map((row) => row.repository).sort()}
+          attached={attached}
+          tab={workspaceTab}
+          onTab={(next) => onWorkspaceTab?.(next)}
+          asked={workspaceSection}
+          notify={notify}
+          onOpenRepository={onChoose}
+          onOpenAgent={onOpenAgent}
+          onSyncNow={onSyncNow}
+          syncing={syncing}
+        />
+      )
+      : goneOrLoading('workspace')
+    : chosen
     ? shown
       ? (
         <ProjectPage
@@ -329,9 +385,7 @@ export function useProjectsView({
           onOpenCode={onOpenCode ? () => onOpenCode(shown.repository) : undefined}
         />
       )
-      : registry.data === undefined && registry.error
-        ? <ProjectsMainNotice state="unanswered" sentence={sentence(registry.error)} />
-        : <ProjectsMainNotice state={registry.data === undefined ? 'loading' : 'gone'} />
+      : goneOrLoading('repository')
     : <ProjectsMainNotice state="none" action={attached ? add : undefined} />;
 
   return {
@@ -355,15 +409,17 @@ export function useProjectsView({
           }
         : undefined,
       chosen,
-      // A remembered repository reopens only while the registry still holds it (UX6b): one retired opens nothing chosen.
-      standing: !chosen ? undefined : shown ? 'live' : registry.data !== undefined ? 'gone' : 'unread',
+      // A remembered repository reopens only while the registry still holds it (UX6b): one retired opens nothing chosen. A
+      // workspace, while a repository registered here is still in it (UX6g).
+      standing: !chosen ? undefined : shown || workspaceHeld ? 'live' : registry.data !== undefined ? 'gone' : 'unread',
       body: (
         <ProjectList
-          adopted={rows.filter((row) => row.adopted).map(facts)}
-          outside={rows.filter((row) => !row.adopted).map(facts)}
-          chosen={chosen}
+          groups={groups}
+          chosen={chosenRepository}
+          chosenWorkspace={chosenWorkspace}
           unanswered={registry.data === undefined && registry.error ? sentence(registry.error) : null}
           onChoose={onChoose}
+          onChooseWorkspace={(workspace) => onChoose(workspaceItem(workspace))}
         />
       ),
     },

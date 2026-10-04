@@ -1,10 +1,8 @@
 {
   "settings.domain.appearance": "外观",
   "settings.domain.ai": "AI 功能",
-  "settings.domain.workspace": "工作区",
   "settings.domain.driver": "驱动",
   "settings.domain.tools": "工具",
-  "settings.domain.permissions": "权限",
   "settings.domain.plugins": "插件",
   "settings.domain.browser": "浏览器",
   "settings.domain.start": "配置",

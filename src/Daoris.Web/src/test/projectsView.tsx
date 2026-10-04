@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useProjectsView } from '../ProjectsView';
-import { type ProjectTab, readProjectTab, storeProjectTab } from '../projects/tabs';
+import {
+  type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
+} from '../projects/tabs';
 import type { Notify } from '../ui';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
@@ -12,20 +14,27 @@ import { useDoor } from './door';
 // the application's list memory, so what a test chooses is what a relaunch would remember. The doors' events are
 // props, held the way `App` holds them.
 
-export function ProjectsView({ notify, onOpenCode, addRequested, onAddOpened, importRequested, onImportOpened, door }: {
+export function ProjectsView({
+  notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, door, section = null,
+}: {
   notify: Notify;
   onOpenCode?: (repository: string) => void;
+  onOpenAgent?: (agent: string) => void;
+  onSyncNow?: (workspace: string) => void;
   addRequested?: boolean;
   onAddOpened?: () => void;
   importRequested?: boolean;
   onImportOpened?: () => void;
-  /** The repository a door names as it opens the view (`useDoor`). */
+  /** The item a door names as it opens the view (`useDoor`): a repository, or a workspace's item. */
   door?: string;
+  /** The section of a workspace's Setup the door asked to see open (UX6g). */
+  section?: WorkspaceSection | null;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
-  // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f).
+  // The page's tab, held as `App` holds it, so a relaunch reopens the tab a test chose (UX6f); a workspace's apart (UX6g).
   const [tab, setTab] = useState<ProjectTab>(readProjectTab);
+  const [workspaceTab, setWorkspaceTab] = useState<WorkspaceTab>(() => (section ? 'setup' : readWorkspaceTab()));
   useDoor(lists, 'projects', door);
   const layout = useProjectsView({
     active: true,
@@ -33,7 +42,10 @@ export function ProjectsView({ notify, onOpenCode, addRequested, onAddOpened, im
     onChoose: (item) => lists.choose('projects', item),
     tab,
     onTab: (next) => { setTab(next); storeProjectTab(next); },
-    notify, onOpenCode, addRequested, onAddOpened, importRequested, onImportOpened,
+    workspaceTab,
+    onWorkspaceTab: (next) => { setWorkspaceTab(next); storeWorkspaceTab(next); },
+    workspaceSection: section,
+    notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
@@ -51,6 +63,14 @@ export const repositoryRow = (name: string) => within(repositoryList()).findByRo
 export async function chooseRepository(name: string) {
   const row = await repositoryRow(name);
   await userEvent.click(within(row).getAllByRole('button')[0]!);
+  await screen.findByRole('heading', { level: 1, name });
+  return repositoryMain();
+}
+
+/** A workspace's head in the list chosen (UX6g, D150 §4.1), and the page it opens, found by its title. */
+export async function chooseWorkspace(name: string) {
+  const group = await within(repositoryList()).findByRole('region', { name });
+  await userEvent.click(within(within(group).getByRole('heading', { level: 3 })).getAllByRole('button')[0]!);
   await screen.findByRole('heading', { level: 1, name });
   return repositoryMain();
 }

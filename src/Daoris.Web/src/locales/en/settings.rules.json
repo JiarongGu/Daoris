@@ -55,7 +55,5 @@
   "settings.rules.proposals.state.refused": "refused",
   "settings.rules.proposals.state.unchanged": "unchanged",
   "settings.rules.proposals.accepted": "Accepted: {{change}}. Sessions started from now on are handed it.",
-  "settings.rules.proposals.declined": "Declined: {{change}}. The rules are as they were.",
-  "settings.rules.elsewhere": "Daoris's defaults, the rules for every session on this machine, and what agents proposed are on the page of the agent they are handed to, under What it may do. Here are the rules a workspace or a repository adds.",
-  "settings.rules.elsewhereOpen": "Open what it may do"
+  "settings.rules.proposals.declined": "Declined: {{change}}. The rules are as they were."
 }

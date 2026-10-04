@@ -56,18 +56,14 @@ describe('SettingsView in a browser', () => {
   ];
 
   /**
-   * D75 §3: the workspace is always named, and its domain says what each one holds. That is what a
-   * browser may know too, so the domain is offered there, holding the list and none of the wiring.
+   * UX6g (D150 §3.1): Workspace left Settings for Repositories, whose list is a group per workspace and whose workspace's
+   * page a browser is given too (`ProjectsView.test.tsx`). A window that remembered the domain opens on Appearance.
    */
-  it('lists every workspace with the repositories it holds, in a browser too', async () => {
-    view('workspace');
+  it('opens a remembered Workspace domain on Appearance, since it left for Repositories', async () => {
+    view('workspace' as SettingsSection);
 
-    const aurora = await screen.findByRole('listitem', { name: 'aurora' });
-    expect(within(aurora).getByText('2 repositories')).toBeTruthy();
-    expect(within(aurora).getByText('engine · game')).toBeTruthy();
-    expect(within(screen.getByRole('listitem', { name: 'forge' })).getByText('1 repository')).toBeTruthy();
-    // None of the machine's wiring reaches a browser.
-    expect(screen.queryByRole('button', { name: 'Wire a workspace' })).toBeNull();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Appearance' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Workspace' })).toBeNull();
   });
 
   /**
@@ -79,7 +75,7 @@ describe('SettingsView in a browser', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Setup', 'Appearance', "AI features", 'Workspace']);
+      .toEqual(['Setup', 'Appearance', 'AI features']);
     expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByText('Theme')).toBeTruthy();
   });
@@ -130,7 +126,7 @@ describe("Settings' list pane and main area", () => {
     // Its header names the list, and Settings makes nothing, so there is no ＋.
     expect(within(list).getByText('Settings')).toBeInTheDocument();
     expect(within(list).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent))
-      .toEqual(['Hide the settings list', 'Setup', 'Appearance', 'AI features', 'Workspace']);
+      .toEqual(['Hide the settings list', 'Setup', 'Appearance', 'AI features']);
 
     // The domain is the main area, and its header names it: a card alone in it need not.
     const main = screen.getByRole('main');
@@ -182,10 +178,10 @@ describe("Settings' list pane and main area", () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Show the settings list' }));
     const over = screen.getByRole('region', { name: 'Settings' });
-    await userEvent.click(within(over).getByRole('button', { name: 'Workspace' }));
+    await userEvent.click(within(over).getByRole('button', { name: 'AI features' }));
 
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Settings' })).toBeNull());
-    expect(screen.getByRole('heading', { level: 1, name: 'Workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'AI features' })).toBeInTheDocument();
     expect(listPane()).toHaveAttribute('data-list-mode', 'strip');
   });
 

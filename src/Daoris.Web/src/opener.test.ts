@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { askItem, doorOpening, opening, questsItem } from './opener';
+import { askItem, doorOpening, opening, projectsItem, questsItem, workspaceItem } from './opener';
 
 // One opener (D118 §3i): every door into a view says what it opens, and the view's chosen item takes it.
 // Pure, so what each door does is an assertion, and `App` only applies it.
@@ -30,11 +30,11 @@ describe('the opener', () => {
   });
 
   it('opens Settings at the domain a door names, and at the part where it names one', () => {
-    expect(opening('settings', 'permissions')).toEqual({
-      view: 'settings', chosen: { view: 'settings', item: 'permissions' }, anchor: null,
+    expect(opening('settings', 'driver')).toEqual({
+      view: 'settings', chosen: { view: 'settings', item: 'driver' }, anchor: null,
     });
-    expect(opening('settings', 'workspace', { anchor: 'wiring' })).toEqual({
-      view: 'settings', chosen: { view: 'settings', item: 'workspace' }, anchor: 'wiring',
+    expect(opening('settings', 'start', { anchor: 'step-landing' })).toEqual({
+      view: 'settings', chosen: { view: 'settings', item: 'start' }, anchor: 'step-landing',
     });
     // The gear names no domain: Settings opens on the one it had, at its top as it was.
     expect(opening('settings')).toEqual({ view: 'settings' });
@@ -69,6 +69,38 @@ describe('the opener', () => {
     expect(opening('projects', null, { tab: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
     expect(opening('quests', 'abc123', { tab: 'setup' })).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
     expect(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' })).toEqual(opening('projects', 'engine', { tab: 'setup' }));
+  });
+
+  /** UX6g (D150 §4.1): Repositories' list holds workspaces and repositories, so an item there names which. */
+  it('names a workspace as a workspace, since Repositories\' list holds both', () => {
+    expect(workspaceItem('aurora')).toBe('workspace:aurora');
+    expect(projectsItem('workspace:aurora')).toEqual({ workspace: 'aurora' });
+    expect(projectsItem('engine')).toEqual({ repository: 'engine' });
+    expect(opening('projects', workspaceItem('aurora'))).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'workspace:aurora' },
+    });
+  });
+
+  /**
+   * UX6g (D150 §4.3, §2.4): a door into a workspace's page names its tab and the Setup section to open; one that names no
+   * workspace opens the workspace in view, and with none in view, Repositories with nothing chosen.
+   */
+  it('opens a workspace at the tab and section a door names, the workspace in view where it names none', () => {
+    expect(opening('projects', workspaceItem('aurora'), { workspaceTab: 'branches' })).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'workspace:aurora' }, workspaceTab: 'branches',
+    });
+    // A section is a part of Setup, so naming one opens Setup.
+    expect(opening('projects', null, { workspaceSection: 'remote' }, 'forge')).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'workspace:forge' }, workspaceTab: 'setup', workspaceSection: 'remote',
+    });
+    expect(opening('projects', null, { workspaceTab: 'setup' }, null)).toEqual({ view: 'projects', workspaceTab: 'setup' });
+    // A repository a door names is never traded for the workspace in view.
+    expect(opening('projects', 'engine', { tab: 'setup' }, 'forge')).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'setup',
+    });
+    expect(opening('quests', null, { workspaceTab: 'setup' }, 'forge')).toEqual({ view: 'quests' });
+    expect(doorOpening({ view: 'projects', workspaceTab: 'setup', workspaceSection: 'defaults' }, 'forge')).toEqual(
+      opening('projects', null, { workspaceSection: 'defaults' }, 'forge'));
   });
 
   /** FRAME1f: an entry by its id in Search's list, and a finding by its entries in Convergence's. */

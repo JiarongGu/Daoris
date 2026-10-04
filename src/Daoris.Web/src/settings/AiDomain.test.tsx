@@ -116,7 +116,7 @@ describe('AI features on Settings', () => {
 
     expect(await screen.findByText('lexical only')).toBeTruthy();
     // The machine's domains appear once the shell has answered: the shell is here, and old.
-    await screen.findByRole('button', { name: 'Permissions' });
+    await screen.findByRole('button', { name: 'Driver' });
     expect(screen.queryByRole('combobox', { name: 'the intake agent' })).toBeNull();
   });
 
@@ -141,20 +141,14 @@ describe('AI features on Settings', () => {
 
   /**
    * As whom: the driver's own answer for the intake, per circle — the same rows *What a start runs
-   * on* draws, so the two cards cannot disagree about one account.
+   * on* draws, on a workspace's Details since UX6g (`ProjectsView.test.tsx`), so the two cannot disagree about one account.
    */
-  it('says which account an intake runs as, from the driver\'s answer, in both places it is drawn', async () => {
+  it('says which account an intake runs as, from the driver\'s answer', async () => {
     intakeAdapter = 'claude-code-acp';
-    // Two domains since D75, Daoris's own AI and Workspace: one answer read in each.
-    const ai = show(<SettingsView notify={() => {}} section="ai" />);
+    show(<SettingsView notify={() => {}} section="ai" />);
     expect(await screen.findByText(/opens a session on claude-code-acp/)).toBeTruthy();
     const here = await screen.findByRole('listitem', { name: 'an intake in default' });
     expect(within(here).getByText('personal')).toBeTruthy();
-    ai.unmount();
-
-    show(<SettingsView notify={() => {}} section="workspace" />);
-    const there = await screen.findByRole('listitem', { name: 'an intake in default' });
-    expect(within(there).getByText('personal')).toBeTruthy();
   });
 
   it('turns the intake off as the terminal does — no agent named', async () => {

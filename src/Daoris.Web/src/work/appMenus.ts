@@ -1,6 +1,7 @@
 import i18n from '../i18n';
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
+import type { WorkspaceTab } from '../projects/tabs';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { MenuItem } from './AppMenu';
 
@@ -21,6 +22,8 @@ export type MenuAction =
    * the item names none.
    */
   | { kind: 'agents'; agent?: string; part?: AgentPart }
+  /** A workspace's page at its tab (UX6g, D150 §2.4): the workspace in view's, which the application knows. */
+  | { kind: 'workspace'; tab: WorkspaceTab }
   | { kind: 'scope'; workspace: string | null }
   | { kind: 'add' }
   | { kind: 'import' }
@@ -91,8 +94,9 @@ export function appMenus({ attached, workspaces, scope, waiting, agents = [] }: 
     ...machine([
       { id: 'add', label: t('menu.workspace.add'), icon: 'plus', separated: true },
       { id: 'import', label: t('menu.workspace.import'), icon: 'projects' },
-      { id: 'wire', label: t('menu.workspace.wire'), icon: 'cloud' },
-      { id: 'settings:workspace', label: t('menu.workspace.settings'), icon: 'settings', separated: true },
+      // D150 §2.4: the workspace in view's page at Setup (UX6g), where its defaults, its remote and its rules are; its
+      // *Wire…* is there, as Settings → Workspace's was.
+      { id: 'workspace:setup', label: t('menu.workspace.settings'), icon: 'settings', separated: true },
     ]),
   ];
 
@@ -128,7 +132,7 @@ export function menuAction(id: string): MenuAction {
     case 'agents:signIn': return { kind: 'agents', part: 'accounts' };
     case 'agents:rules': return { kind: 'agents', part: 'rules' };
     case 'usage': return { kind: 'agents', part: 'usage' };
-    case 'wire': return { kind: 'settings', section: 'workspace', anchor: 'wiring' };
+    case 'workspace:setup': return { kind: 'workspace', tab: 'setup' };
     case 'add': return { kind: 'add' };
     case 'import': return { kind: 'import' };
     case 'refresh': return { kind: 'refresh' };

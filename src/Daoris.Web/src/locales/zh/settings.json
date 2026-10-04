@@ -1,12 +1,6 @@
 {
   "settings.title": "设置",
   "settings.domains": "设置分类",
-  "settings.workspaces.title": "{{count}} 个工作区",
-  "settings.workspaces.title_other": "{{count}} 个工作区",
-  "settings.workspaces.none": "有仓库注册进来，工作区才存在。「仓库」里写着仓库怎样加入。",
-  "settings.workspaces.repositories": "{{count}} 个仓库",
-  "settings.workspaces.repositories_other": "{{count}} 个仓库",
-  "settings.workspaces.inView": "当前",
   "settings.list.open": "展开设置列表",
   "settings.list.close": "收起设置列表",
   "settings.list.resize": "设置列表宽度",
@@ -39,10 +33,5 @@
   "settings.strikes.set_other": "委托在 {{count}} 次会话失败后挂起，等你处理。",
   "settings.strikes.never": "本机从不挂起委托。",
   "settings.strikes.zero": "填 0 表示一直重试。若失败的原因重试无法解决，该委托每一轮都会被重新启动，而每次启动都会真实消耗一份账户额度。",
-  "settings.strikes.terminal": "也可用 `daoris driver strikes <n>`；`daoris driver retry <quest>` 可让已挂起的委托重新开始。让位、谢绝、人为停止以及被暂停的仓库从不计入。",
-  "settings.onItsPage.some": "单独设定的仓库，在它页面的配置中设定：",
-  "settings.onItsPage.none": "这里没有仓库单独设定；仓库自己的设定在它页面的配置中。",
-  "settings.onItsPage.open": "打开仓库",
-  "settings.onItsPage.door": "打开 {{repository}} 的配置",
-  "settings.onItsPage.listJoin": "、"
+  "settings.strikes.terminal": "也可用 `daoris driver strikes <n>`；`daoris driver retry <quest>` 可让已挂起的委托重新开始。让位、谢绝、人为停止以及被暂停的仓库从不计入。"
 }

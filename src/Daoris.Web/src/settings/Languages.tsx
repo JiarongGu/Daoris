@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Card, Chip, Prose, SectionTitle, SelectField, SettingRow } from '../ui';
-import { OnItsPage } from './OnItsPage';
+import { SelectField } from '../ui';
 
 /**
  * One row of the driver's closed table of session languages (LANG1c): its code, and the name a session's line gives it. The
@@ -56,65 +55,5 @@ export function LanguageChoice({ label, set, inherited, table, onChoose }: {
         ...table.map((row) => ({ value: row.code, label: row.name })),
       ]}
     />
-  );
-}
-
-/**
- * The language each workspace's sessions write to the person in (LANG1c, D142 point 7), and each repository's, beside the
- * lines: their questions, closing notes, decline reasons and last words.
- *
- * @remarks
- * **The work's, never the window's** (D142 point 8): the window's language is Appearance's, its viewer's, and neither sets the
- * other. **What each row shows is the driver's own resolution**, read rather than recomputed, so the page cannot name a
- * language a session would not be handed. Each field is the screen's half of `daoris driver language --workspace` (D50),
- * and a refusal comes back as the driver's sentence.
- *
- * **A repository's own language has one home, its Setup** (UX6f, D150 §1, §3.1): set in two places before, its row left
- * this list, which keeps a line naming the repositories that set their own, each a door to its Setup.
- */
-export function LanguageList({ languages, workspaceLanguages, table, onSet, onOpen }: {
-  languages: RepositoryLanguage[];
-  /** What each workspace sets, by name. A workspace with no repository here still shows its own. */
-  workspaceLanguages: { workspace: string; language: string }[];
-  table: LanguageOption[];
-  onSet: (change: LanguageChange) => void;
-  /** Open a repository's page at Setup, or with null Repositories at Setup. */
-  onOpen?: (repository: string | null) => void;
-}) {
-  const { t } = useTranslation();
-  const circles = [...new Set([...languages.map((one) => one.workspace), ...workspaceLanguages.map((w) => w.workspace)])]
-    .sort((a, b) => a.localeCompare(b));
-
-  return (
-    <Card id="settings-session-language" className="mt-3.5 scroll-mt-3">
-      <SectionTitle>{t('settings.sessionLanguage.title')}</SectionTitle>
-      <Prose className="mt-1 text-small text-ink-soft">{t('settings.sessionLanguage.body')}</Prose>
-
-      {circles.length === 0 && <Prose className="mt-3">{t('settings.sessionLanguage.none')}</Prose>}
-
-      {circles.map((workspace) => {
-        const shared = workspaceLanguages.find((w) => w.workspace === workspace)?.language;
-        return (
-          <section key={workspace} aria-label={workspace} className="mt-3 border-t border-line pt-3">
-            <SettingRow
-              label={<Chip accent>{workspace}</Chip>}
-              hint={t('settings.sessionLanguage.workspaceHint')}
-              control={(
-                <LanguageChoice
-                  label={t('settings.sessionLanguage.field', { name: workspace })}
-                  set={shared}
-                  table={table}
-                  onChoose={(language) => onSet({ workspace, ...(language ? { language } : {}) })}
-                />
-              )}
-            />
-            <OnItsPage
-              own={languages.filter((one) => one.workspace === workspace && one.source === 'repository').map((one) => one.repository)}
-              onOpen={onOpen}
-            />
-          </section>
-        );
-      })}
-    </Card>
   );
 }

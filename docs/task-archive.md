@@ -11108,3 +11108,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > D150 §5.3, D125's TOOL6g note. Proof: a tick and a route test showing no probe at a look or at start.
 
 **Outcome** 2026-10-04: built. The driver reports each account's last reading and when (`reads.json` under the home, `AccountReads`), so a look, a cold cache and a restart ask no account; a press reads one agent's accounts, or one account from its own ⋯ *Read again*; an edit reads none; who is signed in stays in memory, never written (D66 §3); `RosterReads` retired. The family rehearsal's logged-out check holds on a kept reading. Detail: D125's ROSTER1 note, `b080f77e`..`aa7a7607`.
+
+
+## UX6g — a workspace's page; Settings → Workspace and Permissions retire (2026-10-04)
+
+> - [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
+
+**Outcome** 2026-10-04: built. Repositories groups by workspace, a filter past twelve, each workspace's row opening its page: Details (its repositories, what a start runs on, the accounts each agent may use here), Branches (clean-up and bring up to date, this workspace's rows only) and Setup (defaults; remote and reach), read-only in a browser. Settings → Workspace and Permissions retired: Settings keeps Get started, Appearance, AI features, Driver, Tools, Plugins, Browser and Machine log, and every door to the old domains lands on the new pages. Detail: D150's UX6g note, `34dfe14f`..`54f7a1d7`.
