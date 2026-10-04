@@ -140,6 +140,41 @@ public sealed class DriverModuleAgentsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// UX6e (D150 §5.3): each account and the tool's own sign-in say when they were last read. Nothing has answered for the
+    /// stub's account, so it was never read, and the tool's own sign-in is asked only at a press; one agent's *Read again*
+    /// asks its accounts and its own sign-in, and each then says when.
+    /// </summary>
+    [Fact]
+    public async Task An_account_says_when_it_was_read_and_one_agents_read_again_dates_its_accounts()
+    {
+        Directory.CreateDirectory(HarnessSettings.ProfileHome(Home, "stub", "work"));
+        File.WriteAllText(DriverConfigPath, """
+            { "drivable": [], "holds": [], "cap": 1, "adapter": "stub",
+              "commands": { "stub": ["node", "agent.mjs"] } }
+            """);
+        var module = Module();
+
+        var stub = (await AnswerAsync(module, "HARNESSES")).GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "stub");
+        Assert.Equal(JsonValueKind.Null, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
+        Assert.Equal(JsonValueKind.Null, stub.GetProperty("ownRead").ValueKind);
+
+        stub = (await AnswerAsync(module, "HARNESSES", new { refresh = true, agent = "stub" })).GetProperty("harnesses").EnumerateArray()
+            .Single(h => h.GetProperty("harness").GetString() == "stub");
+        Assert.Equal(JsonValueKind.String, stub.GetProperty("profiles")[0].GetProperty("read").ValueKind);
+        Assert.Equal(JsonValueKind.String, stub.GetProperty("ownRead").ValueKind);
+    }
+
+    /// <summary>One agent's *Read again* names an agent this machine has accounts for; another is refused in a sentence.</summary>
+    [Fact]
+    public async Task Reading_an_agent_this_machine_has_no_door_onto_is_refused()
+    {
+        var refusal = await RefusalAsync(Module(), "HARNESSES", new { refresh = true, agent = "not-an-agent" });
+
+        Assert.Contains("not-an-agent", refusal);
+    }
+
+    /// <summary>
     /// 🔴 A work account for the work circle (D49 §4) could be set from a terminal
     /// (`daoris agent profile default … --workspace`) and not from the screen — D50 in the
     /// direction nothing tests. The bridge carries the workspace, the roster answers which circles
