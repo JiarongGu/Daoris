@@ -59,8 +59,14 @@ function WorkRow({ item, ...shared }: Shared & { item: WorkItem }) {
         <span className="shrink-0 font-mono text-meta text-ink-faint">#{quest.quest.slice(0, 6)}</span>
         {/* A door only onto a quest the page holds: a question to a repository in another workspace is named, not opened. */}
         {questTitles[quest.quest] ? (
-          <button type="button" onClick={() => onOpenQuest(quest.quest)} className={`${DOOR} min-w-0 wrap-anywhere text-body`}>
-            {quest.title}
+          // Named as every list names it (SESSUX1j), whole on its tip.
+          <button
+            type="button"
+            title={quest.title}
+            onClick={() => onOpenQuest(quest.quest)}
+            className={`${DOOR} min-w-0 wrap-anywhere text-body`}
+          >
+            {questTitles[quest.quest]}
           </button>
         ) : (
           <span className="min-w-0 wrap-anywhere text-body text-ink">{quest.title}</span>

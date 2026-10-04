@@ -7,7 +7,7 @@ import { type Consideration, type TrustHold, sittingSentence } from '../signals'
 import { answeredPark } from '../ui';
 import { workspaceOf } from '../workspaces';
 import type { SessionGrouping } from './groups';
-import { sessionOrigin, sessionTitle } from './identity';
+import { questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
 import { placedFact } from './SessionRow';
 
@@ -242,7 +242,7 @@ export function needsAPerson(
     .map((quest): Attention => ({
       id: quest.id,
       kind: 'departure',
-      title: quest.title,
+      title: questName(quest),
       where: quest.to,
       since: quest.updated,
       detail: departureWhy(quest),
@@ -302,7 +302,7 @@ export function needsAPerson(
     .map((quest): Attention => ({
       id: quest.id,
       kind: 'unanswerable',
-      title: quest.title,
+      title: questName(quest),
       where: quest.to,
       since: quest.filed,
       detail: i18n.t('work.attention.unanswerableWhy', { repository: quest.to }),

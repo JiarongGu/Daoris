@@ -8,6 +8,7 @@ import { type Consideration, sittingSentence } from '../signals';
 import { Button, Inline, Pill, QUEST_TONE, SESSION_ACTIVE, SESSION_TONE } from '../ui';
 import { cn } from '../lib/cn';
 import { contextOffer } from '../menus/press';
+import { questName } from '../work/identity';
 import { ListGroup, ListRowDoor } from '../work/ListPane';
 import { questGroups } from './records';
 
@@ -122,7 +123,7 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
   // A row offers what it does on a right-click (CTX1, D138 §4): opening it, its hold's resume, and its id; what is done to
   // the quest is its page's.
   const menu = {
-    label: quest.title,
+    label: questName(quest),
     acts: [
       { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onChoose(quest.id) },
       ...(resume
@@ -152,7 +153,8 @@ function QuestRow({ facts, chosen, resuming, onChoose, onResume }: {
             )}
           </span>
         </span>
-        <span title={quest.title} className={cn('mt-0.5 block truncate text-body', ended ? 'text-ink-soft' : 'text-ink')}>{quest.title}</span>
+        {/* Its name (SESSUX1j), the short title where there is one, whole title on its tip. */}
+        <span title={quest.title} className={cn('mt-0.5 block truncate text-body', ended ? 'text-ink-soft' : 'text-ink')}>{questName(quest)}</span>
         <span className="block truncate font-mono text-meta text-ink-faint">
           <span className="text-accent">{quest.from} → {quest.to}</span>
           {/* The lanes of the repository it asks (D115 §2.2), beside the repository: `to` stays one. */}

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest } from '../api';
 import { Button, Chip, Pill, QUEST_TONE } from '../ui';
+import { questName } from '../work/identity';
 import type { MapSelection } from './MapCanvas';
 import type { Topology } from './topology';
 
@@ -18,7 +19,7 @@ function QuestList({ quests, onOpenQuest }: { quests: Quest[]; onOpenQuest?: (id
         const row = (
           <>
             <Pill tone={QUEST_TONE[quest.status]}>{t(`status.${quest.status}`)}</Pill>
-            <span className="min-w-0 text-small text-ink">{quest.title}</span>
+            <span title={quest.title} className="min-w-0 text-small text-ink">{questName(quest)}</span>
           </>
         );
         return (

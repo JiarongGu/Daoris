@@ -194,7 +194,9 @@ export function useQuestsView({
 
     const { from, to, title, body } = draft;
     const then = draft.step ? [draft.step] : [];
-    publish.mutate({ from, to, title, body, links: linksOf(draft.links), attachments, then }, {
+    // The person's short title (SESSUX1j), sent only when written: none leaves the service to name it from its words.
+    const short = draft.short?.trim();
+    publish.mutate({ from, to, title, body, links: linksOf(draft.links), attachments, then, ...(short ? { short } : {}) }, {
       onSuccess: (result) => {
         notify(result.message);
         setDraft(EMPTY_QUEST);

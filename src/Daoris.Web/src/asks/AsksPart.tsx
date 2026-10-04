@@ -15,6 +15,7 @@ import type { AskRowFacts } from '../quests/QuestList';
 import { QuestsMainNotice } from '../quests/QuestPage';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
 import { useWorkActs } from '../work/workActs';
+import { questName } from '../work/identity';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskPage } from './AskPage';
 import { asksInOrder } from './AskRow';
@@ -117,7 +118,8 @@ export function useAsksPart({
     .filter((row) => canBeAsked(row) && workspaceOf(row) === circle)
     .map((row) => row.repository)
     .sort();
-  const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, quest.title]));
+  // Each quest the page holds by its name (SESSUX1j): the short title, else the title.
+  const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, questName(quest)]));
   const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending || reading;
   const intakeOf = (item: Ask) => (item.intake ? sessions.data?.find((session) => session.id === item.intake) ?? null : null);
 

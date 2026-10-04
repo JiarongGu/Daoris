@@ -9,6 +9,7 @@ import {
   SkeletonRows, Tile, Tip, useErrorNotify,
 } from './ui';
 import { AttentionBand, type AttentionDoors } from './work/AttentionBand';
+import { questName } from './work/identity';
 
 /**
  * The management landing (D40). A person overseeing several projects' agents opens this window to
@@ -129,7 +130,7 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify, onSession
                     <Pill tone={QUEST_TONE[quest.status]}>
                       {t(`status.${quest.status}`)}
                     </Pill>
-                    <span className="font-medium">{quest.title}</span>
+                    <span title={quest.title} className="font-medium">{questName(quest)}</span>
                     <span className="ml-auto font-mono text-meta text-ink-faint">
                       {quest.from} → {quest.to} · {quest.status === 'Open'
                         ? t('overview.outstanding.filed', { ago: ago(quest.filed) })

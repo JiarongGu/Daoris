@@ -102,6 +102,11 @@ export type Quest = {
    */
   held?: boolean;
   accepted?: string | null;
+  /**
+   * What a list calls it (SESSUX1j, D126 §9): its publisher's short title, or the name the service read from its own
+   * words. Absent from a host older than the field, and then its title names it (`questName`).
+   */
+  short?: string | null;
 };
 /** One thing the person requires (DRIFT1c): their words, quoted as they said them, and the check that proves them. */
 export type QuestRequirement = { quote: string; check: string };
@@ -484,6 +489,8 @@ export const api = {
   publishQuest: (quest: {
     from: string; to: string; title: string; body: string;
     links?: string[]; attachments?: { name: string; content: string }[]; then?: QuestStep[];
+    /** The person's short title (SESSUX1j), at most 40 characters; the service refuses a longer one in its words. */
+    short?: string;
   }) => post<QuestAction>('/api/quests', quest),
   /** Where a kept file is opened — the local host's own route, which answers this machine only. */
   attachmentUrl: (quest: string, sha256: string) =>
