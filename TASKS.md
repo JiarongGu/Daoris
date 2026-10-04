@@ -68,11 +68,11 @@ running them again.
   terminal's press (D50). Contract: D150 §5.3, D125's ROSTER1 note, `reads.json` a twin. Proof: a twin table both read.
 - [ ] **SIGNIN1b — a conversation's refused sign-in reads its account signed out** (driver; found by ROSTER1b). A chat's
   turn refused *Authentication required* tells the roster nothing, so the next driven start can still choose that
-  account. Contract: D125's ROSTER1b note. Proof: 's refused turn writes the reading; the next selection
+  account. Contract: D125's ROSTER1b note. Proof: `ChatRunner`'s refused turn writes the reading; the next selection
   walks past it.
 - [ ] **AGENTS2a — DeepSeek Harness takes an API key** (driver, cli; found by AGENTS2). DeepSeek documents
-  , but a key variable is declared only where measured (AGT3, D67 §1). Measure, with an invalid key and
-  no real one, whether  reads it, then declare it in both twins so  works.
+  `DEEPSEEK_API_KEY`, but a key variable is declared only where measured (AGT3, D67 §1). Measure, with an invalid key
+  and no real one, whether `dsh --profile acp` reads it, then declare it in both twins so `daoris agent key dsh` works.
   Contract: D57's AGENTS2 note. Proof: the measurement beside the ACP3 evidence; the twin tables.
 - [ ] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
   compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
