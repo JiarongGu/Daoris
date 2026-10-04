@@ -468,13 +468,18 @@ controls are in the frame design's §3.
     the window has no side bar to move one to, and no stop, since nothing in it acts.
 - **Agents** (UX6e, D150 §5) — the activity bar's place after Search, shell-only, on the frame. Its list is each agent once,
   whatever doors reach it: its name and maker, its accounts in a phrase (*3 accounts · 2 signed out*, *not installed*), the
-  waiting mark on one with a signed-out account a list or a default holds. Every agent the build knows is listed, with no ⋯
-  to fold the ones not installed, each of which carries *Install* beside its row and in its right-click (AGENTS2). An agent's
-  page heads with its product, maker, version and *Sign in to another account*, then **its accounts, one list**: each with
-  its state as last known (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling until …* with *Try
-  now*, *unknown*), when it was read (*read 10:42*, *never read*), the workspaces that may run on it, what runs on it and
-  what its agent last said, its one act on its row and the rest in its ⋯. **Opening the page asks no account**: *Read again*
-  at the list's head asks that agent's accounts, one at a time, and an account's ⋯ has *Read again* for that one account
+  waiting mark on one with a signed-out account a list or a default holds. Every agent the build knows is listed, the ones
+  not installed under a *Not installed* head of their own, each carrying *Install* beside its row and in its right-click
+  (AGENTS2, UX7b). An agent's page heads in **one line** (D152 §4): its product, maker, the version alone and whether
+  installed, *Add an account…* and a ⋯; one not installed heads with *Install*. Then **its accounts, a row each, in columns
+  that line up** while the main area holds them (*Account*, *State*, *Runs for*, *Now*), stacking to three lines below 40rem:
+  the account's name leading (the person's, ACCT2), who signed in beside it where the two differ; its state as last known
+  (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling* with its reset, *unknown*) and when; the
+  workspaces it runs for, *no workspace* said; what runs on it now; and **one act by state**, *Sign in* to that account,
+  *Read* that account, *Try now*, *Use in a workspace…*, the rest in its ⋯. *Your own sign-in* is the last row, its
+  explanation on its ⓘ. *Add an account…* offers a signed-out or unknown account's own *Sign in* first, then the tool's
+  sign-in, then the new account's name and the lists it joins. **Opening the page asks no account**: *Read again* at the
+  list's head asks that agent's accounts, one at a time, and a row's *Read* or its ⋯'s *Read again* asks that one account
   (ROSTER1). Then its sections, each folded to a line naming its values
   and opened by its chevron: *How accounts are used*, *Workspaces*, *Ways in* (a door is a property, never a second list),
   *What it may do* (only where Daoris hands the agent the rules file; a proposal waiting opens it), *Model and effort*
