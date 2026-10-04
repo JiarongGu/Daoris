@@ -39,5 +39,10 @@
   "settings.strikes.set_other": "A quest is parked after {{count}} failed sessions, and waits for you.",
   "settings.strikes.never": "This machine never parks a quest.",
   "settings.strikes.zero": "Zero means it keeps trying. A quest that fails for a reason no retry can fix will be started again on every look the driver takes, and every start spends a real account.",
-  "settings.strikes.terminal": "Also `daoris driver strikes <n>`; `daoris driver retry <quest>` starts a parked one again. Stand-downs, declines, stops and held repositories never count."
+  "settings.strikes.terminal": "Also `daoris driver strikes <n>`; `daoris driver retry <quest>` starts a parked one again. Stand-downs, declines, stops and held repositories never count.",
+  "settings.onItsPage.some": "Set for a repository of its own, on its page under Setup:",
+  "settings.onItsPage.none": "No repository here sets its own; a repository's own is set on its page, under Setup.",
+  "settings.onItsPage.open": "Open Repositories",
+  "settings.onItsPage.door": "Open {{repository}}'s setup",
+  "settings.onItsPage.listJoin": ", "
 }

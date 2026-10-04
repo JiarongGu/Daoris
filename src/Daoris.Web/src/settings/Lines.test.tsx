@@ -4,8 +4,9 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { LineList, type RepositoryLine } from './Lines';
 
-// WSR2: the line each repository's work grows from and lands on — shown as the driver resolved it,
-// with what said so, and set from here as `daoris driver line` sets it from a terminal (D50).
+// WSR2: the line each workspace gives the repositories in it that set none of their own, set from here as
+// `daoris driver line --workspace` sets it from a terminal (D50). Since UX6f (D150 §3.1) a repository's own line is on
+// its page, under Setup: the card names the repositories that set their own, each a door there.
 
 const LINES: RepositoryLine[] = [
   { repository: 'engine', workspace: 'aurora', branch: 'release', source: 'repository' },
@@ -14,60 +15,60 @@ const LINES: RepositoryLine[] = [
   { repository: 'remote-only', workspace: 'forge', source: 'none' },
 ];
 
-const draw = (onSet = vi.fn(), lines = LINES) => {
+const draw = (onSet = vi.fn(), onOpen = vi.fn(), lines = LINES) => {
   render(
     <Tooltip.Provider>
-      <LineList lines={lines} workspaceLines={[{ workspace: 'aurora', branch: 'develop' }]} onSet={onSet} />
+      <LineList lines={lines} workspaceLines={[{ workspace: 'aurora', branch: 'develop' }]} onSet={onSet} onOpen={onOpen} />
     </Tooltip.Provider>,
   );
-  return onSet;
+  return { onSet, onOpen };
 };
 
 describe('the lines card', () => {
-  it('says each repository\'s line and what said so, grouped by its workspace', () => {
+  it("fills a workspace's field only with what is SET there, and offers a clear only where something is", () => {
     draw();
 
-    const aurora = screen.getByRole('region', { name: 'aurora' });
-    expect(within(aurora).getByText(/set for this repository/)).toBeInTheDocument();
-    expect(within(aurora).getByText(/set for the workspace aurora/)).toBeInTheDocument();
-    expect(within(aurora).getByText('release', { selector: 'code' })).toBeInTheDocument();
-    const forge = screen.getByRole('region', { name: 'forge' });
-    expect(within(forge).getByText(/the checkout's own/)).toBeInTheDocument();
-    expect(within(forge).getByText(/none is set/)).toBeInTheDocument();
-  });
-
-  it('fills a field only with what is SET there, and offers a clear only where something is', () => {
-    draw();
-
-    expect(screen.getByRole('textbox', { name: /engine/ })).toHaveValue('release');
-    // Inherited, so the field is empty and the inherited line is the placeholder.
-    expect(screen.getByRole('textbox', { name: /game/ })).toHaveValue('');
-    expect(screen.getByRole('textbox', { name: /game/ })).toHaveAttribute('placeholder', 'develop');
     expect(screen.getByRole('textbox', { name: /aurora/ })).toHaveValue('develop');
-    expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(2);
+    expect(screen.getByRole('textbox', { name: /forge/ })).toHaveValue('');
+    expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(1);
   });
 
-  it('sets a repository\'s line, a workspace\'s, and clears one', async () => {
-    const onSet = draw();
+  it("sets a workspace's line, and clears one", async () => {
+    const { onSet } = draw();
     const user = userEvent.setup();
-
-    await user.type(screen.getByRole('textbox', { name: /game/ }), 'feature/x{Enter}');
-    expect(onSet).toHaveBeenLastCalledWith({ repository: 'game', branch: 'feature/x' });
 
     const aurora = screen.getByRole('textbox', { name: /aurora/ });
     await user.clear(aurora);
     await user.type(aurora, 'trunk{Enter}');
     expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', branch: 'trunk' });
 
-    await user.click(within(screen.getByRole('region', { name: 'aurora' })).getAllByRole('button', { name: 'Clear' })[0]!);
+    await user.click(within(screen.getByRole('region', { name: 'aurora' })).getByRole('button', { name: 'Clear' }));
     expect(onSet).toHaveBeenLastCalledWith({ workspace: 'aurora', branch: undefined });
   });
 
   it('does not send what is already set, or nothing at all', async () => {
-    const onSet = draw();
+    const { onSet } = draw();
 
-    await userEvent.setup().type(screen.getByRole('textbox', { name: /engine/ }), '{Enter}');
+    await userEvent.setup().type(screen.getByRole('textbox', { name: /aurora/ }), '{Enter}');
     expect(onSet).not.toHaveBeenCalled();
+  });
+
+  // UX6f: a repository's own line has one home, its Setup.
+  it('keeps no row per repository, and names those that set their own, each a door to its Setup', async () => {
+    const { onOpen } = draw();
+
+    expect(screen.queryByRole('textbox', { name: /engine/ })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: /game/ })).toBeNull();
+    const aurora = screen.getByRole('region', { name: 'aurora' });
+    expect(within(aurora).getAllByRole('button', { name: /'s setup$/ }).map((door) => door.textContent)).toEqual(['engine']);
+    await userEvent.click(within(aurora).getByRole('button', { name: "Open engine's setup" }));
+    expect(onOpen).toHaveBeenLastCalledWith('engine');
+
+    // forge's repositories take git's guess or nothing: none sets its own.
+    const forge = screen.getByRole('region', { name: 'forge' });
+    expect(within(forge).getByText(/No repository here sets its own/)).toBeInTheDocument();
+    await userEvent.click(within(forge).getByRole('button', { name: 'Open Repositories' }));
+    expect(onOpen).toHaveBeenLastCalledWith(null);
   });
 
   it('names a machine with no repository to set a line for', () => {

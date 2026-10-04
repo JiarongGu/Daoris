@@ -61,6 +61,16 @@ describe('the opener', () => {
     expect(opening('projects', 'engine', { code: 'engine' })).toEqual({ view: 'projects', chosen: { view: 'projects', item: 'engine' } });
   });
 
+  /** UX6f (D150 §4.2): a door into a repository's setup opens its page at Setup; a tab is Repositories' alone. */
+  it('opens a repository at the tab a door names, and names no tab for another view', () => {
+    expect(opening('projects', 'engine', { tab: 'setup' })).toEqual({
+      view: 'projects', chosen: { view: 'projects', item: 'engine' }, tab: 'setup',
+    });
+    expect(opening('projects', null, { tab: 'setup' })).toEqual({ view: 'projects', tab: 'setup' });
+    expect(opening('quests', 'abc123', { tab: 'setup' })).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
+    expect(doorOpening({ view: 'projects', item: 'engine', tab: 'setup' })).toEqual(opening('projects', 'engine', { tab: 'setup' }));
+  });
+
   /** FRAME1f: an entry by its id in Search's list, and a finding by its entries in Convergence's. */
   it('chooses the entry or the finding a door names', () => {
     expect(opening('search', 'game:.claude/knowledge/world-streaming.md')).toEqual({

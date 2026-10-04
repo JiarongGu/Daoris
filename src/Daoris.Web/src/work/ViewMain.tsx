@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react';
+import { type ReactNode, type Ref, useId } from 'react';
 import { EmptyState, type IconName, Prose, SectionTitle, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
 import { type ContextOffer, contextOffer } from '../menus/press';
@@ -37,6 +37,79 @@ export function PageHead({ title, version, pills, id, line, acts, icon }: {
       </div>
       {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
     </header>
+  );
+}
+
+/**
+ * **A page's tabs** (UX6f, D150 §4.2): several pages of one record under one header, each a tab, and the chosen one's
+ * panel beneath, named by its tab. A repository's page has Details and Setup.
+ *
+ * @remarks
+ * **The chosen tab is its holder's**, remembered per view (§4.2), so a door can open the page at a tab.
+ *
+ * **One stop for the keys**: the chosen tab is where Tab lands, and ←, →, Home and End choose along the row, as every
+ * tab list's do. **A tab is its whole name** (TABS1): the names are short words in both languages, and a row too narrow
+ * for them scrolls rather than cutting one.
+ *
+ * A molecule: every state is reached by its props, and every press goes out.
+ */
+export function PageTabs<T extends string>({ label, tabs, chosen, onChoose, children }: {
+  /** The list's accessible name: the record whose pages these are. */
+  label: string;
+  tabs: readonly { id: T; label: string }[];
+  chosen: T;
+  onChoose: (id: T) => void;
+  /** The chosen tab's panel. */
+  children: ReactNode;
+}) {
+  const base = useId();
+  const tabId = (id: T) => `${base}-tab-${id}`;
+  const choose = (id: T) => {
+    onChoose(id);
+    document.getElementById(tabId(id))?.focus();
+  };
+  const step = (by: number) => {
+    const at = Math.max(0, tabs.findIndex((tab) => tab.id === chosen));
+    choose(tabs[(at + by + tabs.length) % tabs.length]!.id);
+  };
+  return (
+    <>
+      <div
+        role="tablist"
+        aria-label={label}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowRight') step(1);
+          else if (event.key === 'ArrowLeft') step(-1);
+          else if (event.key === 'Home') choose(tabs[0]!.id);
+          else if (event.key === 'End') choose(tabs[tabs.length - 1]!.id);
+          else return;
+          event.preventDefault();
+        }}
+        className="-mt-1 mb-4 flex min-w-0 overflow-x-auto border-b border-line [scrollbar-width:none]"
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            id={tabId(tab.id)}
+            type="button"
+            role="tab"
+            aria-selected={tab.id === chosen}
+            aria-controls={`${base}-panel`}
+            tabIndex={tab.id === chosen ? 0 : -1}
+            onClick={() => onChoose(tab.id)}
+            className={cn(
+              '-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-1.5 text-body transition-colors duration-(--speed) first:pl-0',
+              tab.id === chosen ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${base}-panel`} aria-labelledby={tabId(chosen)} className="min-w-0">
+        {children}
+      </div>
+    </>
   );
 }
 

@@ -110,8 +110,8 @@ Follow the dispatch-subagent skill's subagent half.
 3. **Run at most three at once.** More load makes real-process tests flake.
 4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check, the prune and the gate order, and merges nothing.
-   - `<branch>` merges with `--no-ff --no-commit`. It then runs the baseline (the universal gates, the code
-     map, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
+   - `<branch>` merges with `--no-ff --no-commit`, writes `docs/index/` from the merged tree (ORIENT1), then runs
+     the baseline (the universal gates, the code map, the orientation index's check, `verify`), the fast halves of the suites the merge's changed paths can reach, and the web gate
      and the release and family rehearsals they reach, by the tool's lane table (GATE3). **It skips the
      long halves** (GATE5): the driver's and the modules' `Process` halves and the deployment rehearsal
      never run at a merge, and every run and `--plan` says each is in the full set before staging. It

@@ -1,4 +1,5 @@
 import type { View } from '../commands';
+import type { ProjectTab } from '../projects/tabs';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { Machine } from './machine';
 
@@ -10,6 +11,8 @@ import type { Machine } from './machine';
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
+  /** A repository page's tab (UX6f): a door into a repository's own value opens its Setup. */
+  tab?: ProjectTab;
 };
 
 /**

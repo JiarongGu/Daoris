@@ -54,8 +54,10 @@ export type AgentRulesState = {
 
 export type RuleAddition = { list: RuleListName; rule: string; scope: RuleScopeName; name: string | undefined };
 
-const LISTS: readonly RuleListName[] = ['allow', 'ask', 'deny'];
-const LIST_TONE = { allow: 'done', ask: 'open', deny: 'declined' } as const;
+/** The three lists in the order every surface draws them, and each one's word's hue: an outcome's (PERM1). */
+export const RULE_LISTS: readonly RuleListName[] = ['allow', 'ask', 'deny'];
+const LISTS = RULE_LISTS;
+export const LIST_TONE = { allow: 'done', ask: 'open', deny: 'declined' } as const;
 /** A settled proposal's tone: what changed the rules is done, what did not is neither. */
 const SETTLED_TONE: Record<RuleProposal['state'], 'open' | 'done' | 'declined' | 'neutral'> = {
   proposed: 'open', waiting: 'open', applied: 'done', accepted: 'done', declined: 'declined', refused: 'declined', unchanged: 'neutral',

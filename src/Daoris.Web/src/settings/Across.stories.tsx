@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AcrossList } from './Across';
 
-// Reading and writing across (D107), in the shape the driver's ACROSS answer takes: every source a reading
-// can come from, a declared relationship, a repository with no checkout here, and a machine with nothing.
+// Reading across (D107), in the shape the driver's ACROSS answer takes: a workspace's own reading and one inherited, and
+// since UX6f the line naming the repositories that set their own reading or a relationship, each a door to its Setup,
+// or that none does; and a machine with nothing.
 
 const meta = {
   title: 'Settings/Across',
   component: AcrossList,
-  args: { onRead: () => {}, onWrite: () => {}, workspaceReads: [], repositories: [] },
+  args: { onRead: () => {}, onOpen: () => {}, workspaceReads: [], repositories: [] },
 } satisfies Meta<typeof AcrossList>;
 
 export default meta;

@@ -1,9 +1,10 @@
 import { createRef } from 'react';
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { cappedBlocks } from '../test/measure';
 import { Prose } from '../ui';
-import { PageHead, ViewMain } from './ViewMain';
+import { PageHead, PageTabs, ViewMain } from './ViewMain';
 
 // The main area (D118 §3b): props only, since a molecule imports no hook. jsdom lays nothing out, so what
 // it holds is the property each state rests on — the container a view's split is measured by, the region
@@ -108,5 +109,47 @@ describe("a page's header", () => {
     expect(line).toHaveClass('wrap-anywhere');
     expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
+  });
+});
+
+describe("a page's tabs", () => {
+  const TABS = [{ id: 'details', label: 'Details' }, { id: 'setup', label: 'Setup' }] as const;
+
+  // UX6f (D150 §4.2): a repository's page is several pages under one header, each a tab, the chosen one its holder's to
+  // remember. One tab panel at a time, named by its tab, and the tabs one stop the arrow keys move along.
+  it('shows the chosen tab\'s panel, named by its tab, and says which tab is chosen', () => {
+    render(<PageTabs label="engine" tabs={TABS} chosen="setup" onChoose={vi.fn()}>the setup</PageTabs>);
+    const list = screen.getByRole('tablist', { name: 'engine' });
+    expect(within(list).getByRole('tab', { name: 'Setup' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(list).getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tabpanel', { name: 'Setup' })).toHaveTextContent('the setup');
+    // One stop: the chosen tab is where the Tab key lands.
+    expect(within(list).getByRole('tab', { name: 'Setup' })).toHaveAttribute('tabindex', '0');
+    expect(within(list).getByRole('tab', { name: 'Details' })).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('chooses a tab on a press, and with the arrow keys, Home and End', async () => {
+    const onChoose = vi.fn();
+    render(<PageTabs label="engine" tabs={TABS} chosen="details" onChoose={onChoose}>the details</PageTabs>);
+    await userEvent.click(screen.getByRole('tab', { name: 'Setup' }));
+    expect(onChoose).toHaveBeenLastCalledWith('setup');
+    screen.getByRole('tab', { name: 'Details' }).focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(onChoose).toHaveBeenLastCalledWith('setup');
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(onChoose).toHaveBeenLastCalledWith('setup');
+    await userEvent.keyboard('{End}');
+    expect(onChoose).toHaveBeenLastCalledWith('setup');
+    await userEvent.keyboard('{Home}');
+    expect(onChoose).toHaveBeenLastCalledWith('details');
+  });
+
+  // TABS1: a tab is its whole name, never a name cut; a row too narrow for them scrolls rather than cutting one.
+  it('keeps each tab\'s whole name on one line', () => {
+    render(<PageTabs label="engine" tabs={TABS} chosen="details" onChoose={vi.fn()}>the details</PageTabs>);
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab).toHaveClass('whitespace-nowrap', 'shrink-0');
+      expect(tab).not.toHaveClass('truncate');
+    }
   });
 });

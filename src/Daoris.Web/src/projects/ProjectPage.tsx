@@ -1,15 +1,15 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration, Repository } from '../api';
 import { ago, figure } from '../format';
-import type { LanguageOption, RepositoryLanguage } from '../settings/Languages';
 import type { RepositoryLine } from '../settings/Lines';
 import { Button, Chip, Icon, Inline, Prose, Tip, WhyGlyph } from '../ui';
-import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMain';
-import { DriverChoices } from './DriverChoices';
+import { type MainNotice, PageHead, PageSection, PageTabs, ViewMain } from '../work/ViewMain';
 import { RepositoryMarks } from './ProjectList';
-import { SessionLanguage } from './SessionLanguage';
-import { StandingAnswer } from './StandingAnswer';
+import { RepositorySetup, type RepositorySetupProps, type SetupSectionId } from './RepositorySetup';
+import type { ProjectTab } from './tabs';
+
+export type { Driving } from './RepositorySetup';
 
 /** One fact of a repository: its label in the page's label column, its content wrapping beside it (POLISH4). */
 function Fact({ label, children }: { label: string; children: ReactNode }) {
@@ -21,44 +21,28 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** This machine's driver's standing choices for one repository (D46 §6), and the presses that change them. */
-export type Driving = {
-  drivable: boolean;
-  held: boolean;
-  ownTree: boolean;
-  onDrive: (drivable: boolean) => void;
-  onHold: (held: boolean) => void;
-  onTrees: (ownTree: boolean) => void;
-  /** What driving here does that the choice alone does not say: a direct door leaves a quest here sitting (INT3c). */
-  note?: string;
-  /** Its standing answer on this machine (KNOWUSE1b), the person's words and when they set them; null for none. */
-  standing?: { says: string; at?: string | null } | null;
-  /** Keep a standing answer, or with null clear it — absent on a shell older than it, and nothing is offered. */
-  onStanding?: (says: string | null) => void;
-  /**
-   * Its session language (LANG1c, D142 point 7): what its sessions write to the person in, as the driver resolved it, with
-   * its workspace's by the table's name and the driver's table; absent on a shell older than it, and nothing is offered.
-   */
-  language?: { resolved: RepositoryLanguage | null; inherited?: string; table: LanguageOption[]; onSet: (language: string | null) => void };
-};
-
 /**
- * **A repository's page** (FRAME1e, D118 §2): what its card said, in Repositories' main area beside the list. Its
- * header holds its name, its standing, its summary as its one line, and its acts: the door to its code map (MAP3a) and
- * *Manage*. Then its facts (what the index holds, the commit it was fed from, its workspace, its line, its unlanded
- * branches), its declaration, this machine's driving row, and for one not adopted the steps to adopt.
+ * **A repository's page** (FRAME1e, D118 §2): in Repositories' main area beside the list. Its header holds its name, its
+ * standing, its summary as its one line, and its acts: the door to its code map (MAP3a) and *Manage*. Beneath, its tabs
+ * (UX6f, D150 §4.2): **Details**, its facts (what the index holds, the commit it was fed from, its workspace, its line, its
+ * unlanded branches), its declaration and for one not adopted the steps to adopt; and **Setup**, every setting it holds
+ * on this machine (`RepositorySetup`).
  *
  * @remarks
- * **A molecule**: every state is reached by its props, and every press goes out.
+ * **A molecule**: every state is reached by its props, and every press goes out. The tab shown is its holder's,
+ * remembered per view, so a door can open the page at Setup.
  *
+ * - **A setting has one home, its Setup** (§1 rule 1): Details shows its line read-only, with a door to Setup at *Line
+ *   and landing*.
+ * - **A browser gets Details alone** (D47 §4): setup is this machine's, and one tab is no tabs, so it has no tab row.
  * - **Adoption is the repository's own act** (D31, D32): one not adopted is offered the steps as text, never a button,
  *   and none of adoption's own acts, like *Manage*, which writes its declaration into it.
- * - **An absent act is absent, never disabled**: *Manage* and the driving row only where a shell answers (D48 §7), the
- *   driving row only where there is somewhere to start (INT3c).
+ * - **An absent act is absent, never disabled**: *Manage* and Setup only where a shell answers (D48 §7), Setup's
+ *   driving only where there is somewhere to start (INT3c).
  * - **A page never prints a machine path it was answered** (D47 §4): a checkout here is a mark, never its folder.
  */
 export function ProjectPage({
-  registration, counts, line, unlanded = 0, here, driving, onManage, onOpenCode,
+  registration, counts, line, unlanded = 0, here, drivable, held, setup, tab = 'details', onTab, onManage, onOpenCode,
 }: {
   registration: Registration;
   /** What the index holds of it: absent where it holds nothing. */
@@ -69,14 +53,23 @@ export function ProjectPage({
   unlanded?: number;
   /** Whether it has a checkout on this machine: absent where nothing can tell, a browser. */
   here?: boolean;
-  /** This machine's driving row, where a shell answers and it can be driven. */
-  driving?: Driving | null;
+  /** This machine's driver may start work here, which its header marks: absent where no shell answers. */
+  drivable?: boolean;
+  /** The person has stopped the driver starting anything new here, which its header marks. */
+  held?: boolean;
+  /** Its Setup on this machine: a shell's. Absent, the page is Details alone, with no tab row. */
+  setup?: RepositorySetupProps | null;
+  /** The tab shown, its holder's to remember; Details where it is not handed. */
+  tab?: ProjectTab;
+  onTab?: (tab: ProjectTab) => void;
   /** Manage its declaration, its wiring and its retirement (D48 §7): a shell's, and an adopter's. */
   onManage?: () => void;
   /** Open its code map, one level into the Map (MAP3a). */
   onOpenCode?: () => void;
 }) {
   const { t } = useTranslation();
+  // The section a door on Details asked Setup to open: the line's opens Line and landing.
+  const [asked, setAsked] = useState<SetupSectionId | null>(null);
   const { repository, adopted, summary } = registration;
   const indexed = counts && counts.total > 0 ? counts : null;
   // One sentence for "the index holds nothing of this", whether absent from the index or present with none.
@@ -114,21 +107,17 @@ export function ProjectPage({
   const head = (
     <PageHead
       title={repository}
-      pills={(
-        <RepositoryMarks
-          drivable={driving?.drivable}
-          held={driving?.held}
-          adopted={adopted}
-          here={here}
-        />
-      )}
+      pills={<RepositoryMarks drivable={drivable} held={held} adopted={adopted} here={here} />}
       line={adopted && summary ? summary : undefined}
       acts={acts || undefined}
     />
   );
 
-  return (
-    <ViewMain header={head} menu={menu}>
+  // The line's door opens Setup at Line and landing, where the line is set.
+  const toSetup = setup?.work?.onLine && onTab ? () => { setAsked('work'); onTab('setup'); } : undefined;
+
+  const details = (
+    <>
       {adopted && !summary && (
         /* Addressable regardless — adoption gates addressing, declaration does not (D34) — but an asker deserves to
            know they would be guessing. */
@@ -166,12 +155,17 @@ export function ProjectPage({
           </Fact>
         )}
         {line?.branch && (
-          /* The branch this machine grows its work here from and lands it on (WSR2), and what said so — Settings →
-             Workspace is where it is set. */
+          /* The branch this machine grows its work here from and lands it on (WSR2), and what said so: read-only here,
+             since a setting has one home (UX6f, D150 §1), and its door opens Setup at Line and landing, where it is set. */
           <Fact label={t('projects.line')}>
             <span className="text-small text-ink-soft">
               <Inline text={t(`settings.lines.from.${line.source}`, { branch: line.branch, workspace: line.workspace })} />
             </span>
+            {toSetup && (
+              <Button variant="ghost" className="text-small" onClick={toSetup}>
+                {t('projects.lineDoor')}
+              </Button>
+            )}
           </Fact>
         )}
         {unlanded > 0 && (
@@ -199,37 +193,6 @@ export function ProjectPage({
         </PageSection>
       )}
 
-      {driving && (
-        /* The person's standing choices for THIS machine's driver (D46 §6): only where a shell answers. */
-        <PageSection title={t('projects.page.machine')}>
-          <DriverChoices
-            drivable={driving.drivable}
-            held={driving.held}
-            ownTree={driving.ownTree}
-            onDrive={driving.onDrive}
-            onHold={driving.onHold}
-            onTrees={driving.onTrees}
-            note={driving.note}
-          />
-          {driving.onStanding && (
-            /* What the person says holds for every session here (KNOWUSE1b), beside the other choices a session's
-               instruction is composed from. */
-            <StandingAnswer says={driving.standing?.says ?? null} at={driving.standing?.at ?? null} onSave={driving.onStanding} />
-          )}
-          {driving.language && (
-            /* The language its sessions write to the person in (LANG1c), beside the standing answer: both are what a
-               session's instruction is composed from, set for the work. */
-            <SessionLanguage
-              repository={registration.repository}
-              language={driving.language.resolved}
-              inherited={driving.language.inherited}
-              table={driving.language.table}
-              onSet={driving.language.onSet}
-            />
-          )}
-        </PageSection>
-      )}
-
       {!adopted && (
         <PageSection title={t('projects.page.adopt')}>
           {/* The reasoning is one press away, not eight lines read before the steps on every visit (UX5 U36). */}
@@ -243,6 +206,27 @@ export function ProjectPage({
           </p>
         </PageSection>
       )}
+    </>
+  );
+
+  return (
+    <ViewMain header={head} menu={menu}>
+      {setup && onTab
+        ? (
+          <PageTabs<ProjectTab>
+            label={t('projects.tab.list', { repository })}
+            tabs={[
+              { id: 'details', label: t('projects.tab.details') },
+              { id: 'setup', label: t('projects.tab.setup') },
+            ]}
+            chosen={tab}
+            // A tab chosen by its own press opens Setup as it opens itself; only the line's door asks for Work.
+            onChoose={(next) => { setAsked(null); onTab(next); }}
+          >
+            {tab === 'setup' ? <RepositorySetup {...setup} open={asked ?? setup.open} /> : details}
+          </PageTabs>
+        )
+        : details}
     </ViewMain>
   );
 }

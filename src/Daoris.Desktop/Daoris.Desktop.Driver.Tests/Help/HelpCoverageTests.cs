@@ -333,7 +333,6 @@ public sealed partial class HelpCoverageTests
             "accepting or declining a rule another agent proposed is the person's review of it (PERM2, D74); a helper "
             + "answering it would be one agent approving another.")),
         ("permissions", "useSetReadAcross", null, new Door("setting", "across")),
-        ("permissions", "useSetWriteAcross", null, new Door("setting", "across")),
 
         ("plugins", "usePluginAction", "enable", new Door("plugin", "enable")),
         ("plugins", "usePluginAction", "disable", new Door("plugin", "disable")),

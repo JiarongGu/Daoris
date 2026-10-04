@@ -11,13 +11,14 @@ import type { DriverState } from './driver';
 /**
  * Every repository here, whether agents outside it read its checkout and what said so, and what its sessions
  * may also write into. Desktop-only: the workspaces are this machine's registry, and the file is its own.
+ * `enabled` holds it back until a surface shows it: a repository's Setup asks only while it is open (UX6f).
  */
-export const useAcross = () => {
+export const useAcross = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.across,
     queryFn: () => call<{ repositories: RepositoryAcross[] }>('ACROSS'),
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 
