@@ -142,8 +142,19 @@ public sealed class KnowledgeService(
     bool readsRegisteredRoots = false,
     // The embedder's window (SEM3, D123): the most characters one embedded text carries. The deployment
     // states it, because only the deployment knows which model answers; a longer entry becomes pieces.
-    int embedWindow = EntryPieces.DefaultWindow)
+    int embedWindow = EntryPieces.DefaultWindow,
+    // How old a reading may be before an answer re-reads the source (ORIENT1c): set by a deployment over
+    // one checkout, which is merged into while the index persists. Null reads once, at first use, and
+    // only into an empty index, as before; set, the first use re-reads whatever the store already held.
+    TimeSpan? rereadAfter = null,
+    // The clock the window is measured on; the system's unless a test moves one by hand.
+    TimeProvider? time = null)
 {
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
+    /// <summary>When the last refresh finished, on <see cref="_time"/>; what the reread window is measured from.</summary>
+    private DateTimeOffset _refreshedAt;
+
     private readonly KnowledgeIndex _index = new(store, disclosure);
 
     /// <summary>
@@ -749,11 +760,20 @@ public sealed class KnowledgeService(
     private static string Short(string commit) => commit.Length <= 8 ? commit : commit[..8];
 
     /// <summary>Re-read every repository and rebuild the index.</summary>
-    public async Task<IndexReport> RefreshAsync(CancellationToken ct = default)
+    public async Task<IndexReport> RefreshAsync(CancellationToken ct = default) =>
+        (await RefreshUnlessFreshAsync(freshFor: null, ct).ConfigureAwait(false))!;
+
+    /// <summary>
+    /// A refresh, or nothing when <paramref name="freshFor"/> names a window the last reading is still inside:
+    /// judged under the refresh's own lock, so two answers that find the index stale at once read it once.
+    /// </summary>
+    private async Task<IndexReport?> RefreshUnlessFreshAsync(TimeSpan? freshFor, CancellationToken ct)
     {
         await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            if (freshFor is { } window && _everRefreshed && _time.GetUtcNow() - _refreshedAt < window) return null;
+
             await ReloadRegistryAsync(ct).ConfigureAwait(false);
 
             // The wiring, read once per refresh rather than once per entry: it is a small table and the
@@ -799,6 +819,7 @@ public sealed class KnowledgeService(
             }
 
             _everRefreshed = true;
+            _refreshedAt = _time.GetUtcNow();
             return report with { SemanticError = semanticError, Embedded = embedded };
         }
         finally
@@ -899,6 +920,14 @@ public sealed class KnowledgeService(
     /// </summary>
     private async Task EnsureIndexedAsync(CancellationToken ct)
     {
+        // A source that moves under the store is re-read at first use and once its reading is older than
+        // the window (ORIENT1c): what the store held from an earlier process is that process's reading.
+        if (rereadAfter is { } window)
+        {
+            await RefreshUnlessFreshAsync(window, ct).ConfigureAwait(false);
+            return;
+        }
+
         if (_everRefreshed) return;
 
         var existing = await store.CountByRepositoryAsync(ct).ConfigureAwait(false);

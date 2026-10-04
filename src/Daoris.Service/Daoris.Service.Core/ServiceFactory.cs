@@ -16,32 +16,98 @@ namespace Daoris.Knowledge;
 /// statement of its embedder's window, since only the deployment knows which model answers. A longer
 /// entry is embedded in pieces this long, so no part of it is cut.
 /// </param>
+/// <param name="Repository">
+/// The one checkout this deployment serves, when it serves one (ORIENT1c): a workspace's own knowledge
+/// server, asked by the agents working in it. The bootstrap registers that checkout alone, never the
+/// folder around it, and each process re-reads it at its first use and once its reading is older than
+/// <see cref="CheckoutRereadAfter"/>, since the checkout is merged into while the index persists.
+/// </param>
+/// <param name="Documents">
+/// A folder of documents to read in every registered repository, repository-relative (ORIENT1c): each
+/// markdown file under it split at its headings, as a log is. Unset reads none, as before.
+/// </param>
+/// <param name="Index">
+/// A generated index to read in every registered repository, repository-relative (ORIENT1c): each table
+/// row and list item of a markdown file under it one entry, so a search for where something is lands on
+/// the row that says so. Unset reads none.
+/// </param>
 public sealed record ServiceOptions(
     string RepositoryRoot,
     string DatabasePath,
     string? EmbedModel = null,
     string? EmbedUrl = null,
-    int EmbedWindow = EntryPieces.DefaultWindow)
+    int EmbedWindow = EntryPieces.DefaultWindow,
+    string? Repository = null,
+    string? Documents = null,
+    string? Index = null)
 {
     public const string RootVariable = "DAORIS_KNOWLEDGE_ROOT";
     public const string DatabaseVariable = "DAORIS_KNOWLEDGE_DB";
     public const string ModelVariable = "DAORIS_EMBED_MODEL";
     public const string UrlVariable = "DAORIS_EMBED_URL";
     public const string WindowVariable = "DAORIS_EMBED_WINDOW";
+    public const string RepositoryVariable = "DAORIS_KNOWLEDGE_REPOSITORY";
+    public const string DocumentsVariable = "DAORIS_KNOWLEDGE_DOCUMENTS";
+    public const string IndexVariable = "DAORIS_KNOWLEDGE_INDEX";
+
+    /// <summary>
+    /// How old a reading of the one checkout may be before an answer re-reads it (ORIENT1c). A minute: a
+    /// session's server lives as long as the session, the checkout is merged into meanwhile, and one
+    /// repository re-read costs about a second, paid at most once a minute by the search that finds it stale.
+    /// </summary>
+    public static readonly TimeSpan CheckoutRereadAfter = TimeSpan.FromMinutes(1);
 
     /// <summary>
     /// Read from the environment, with the defaults every host shares — or why a host must not start: a
     /// setting that cannot mean what it says is refused, never quietly replaced by a default.
     /// </summary>
-    public static (ServiceOptions Options, string? Error) FromEnvironment(string defaultRoot, string defaultDatabase)
+    public static (ServiceOptions Options, string? Error) FromEnvironment(string defaultRoot, string defaultDatabase) =>
+        FromEnvironment(defaultRoot, defaultDatabase, Environment.GetEnvironmentVariable);
+
+    /// <summary>The same, read from the environment a caller hands it.</summary>
+    public static (ServiceOptions Options, string? Error) FromEnvironment(
+        string defaultRoot, string defaultDatabase, Func<string, string?> environment)
     {
-        var (window, error) = ParseEmbedWindow(Environment.GetEnvironmentVariable(WindowVariable));
-        return (new(Environment.GetEnvironmentVariable(RootVariable) ?? defaultRoot,
-                Environment.GetEnvironmentVariable(DatabaseVariable) ?? defaultDatabase,
-                Environment.GetEnvironmentVariable(ModelVariable),
-                Environment.GetEnvironmentVariable(UrlVariable) ?? "http://localhost:11434",
-                window),
-            error);
+        var (window, error) = ParseEmbedWindow(environment(WindowVariable));
+        var (repository, repositoryError) = ParseCheckout(environment(RepositoryVariable));
+        var (documents, documentsError) = ParseFolder(DocumentsVariable, environment(DocumentsVariable));
+        var (index, indexError) = ParseFolder(IndexVariable, environment(IndexVariable));
+        return (new(environment(RootVariable) ?? defaultRoot,
+                environment(DatabaseVariable) ?? defaultDatabase,
+                environment(ModelVariable),
+                environment(UrlVariable) ?? "http://localhost:11434",
+                window,
+                repository,
+                documents,
+                index),
+            error ?? repositoryError ?? documentsError ?? indexError);
+    }
+
+    /// <summary>The one checkout served (ORIENT1c): an existing folder, or an error naming what was set.</summary>
+    private static (string? Checkout, string? Error) ParseCheckout(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return (null, null);
+
+        var stated = value.Trim();
+        return Directory.Exists(stated)
+            ? (stated, null)
+            : (null, $"{RepositoryVariable} '{stated}' is not a folder: it names the one checkout this server reads.");
+    }
+
+    /// <summary>
+    /// A repository-relative folder (ORIENT1c), spelled with forward slashes and no trailing one, as the
+    /// scanner names every path; or an error, for a folder that would be read outside the repository.
+    /// </summary>
+    private static (string? Folder, string? Error) ParseFolder(string variable, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return (null, null);
+
+        var stated = value.Trim();
+        var folder = RepositoryLayout.Declared(stated);
+        return folder.Length == 0 || RepositoryLayout.Escapes(folder)
+            ? (null, $"{variable} '{stated}' is not a folder inside the repository: it is read in each registered "
+                + "checkout, so it is relative and never climbs out of one.")
+            : (folder, null);
     }
 
     /// <summary>
@@ -208,8 +274,10 @@ public static class ServiceFactory
         // supplies its own source is saying "I am fed"; that is the same sentence, so it decides both.
         var readsLocalCheckouts = source is null;
         // The index reads the REGISTERED paths (D48 §3) — resolved per read, so a repository added or
-        // retired a moment ago is in or out of the very next refresh without a restart.
-        source ??= new FileSystemKnowledgeSource(() => RegisteredRoots(registry));
+        // retired a moment ago is in or out of the very next refresh without a restart. Its documents and
+        // its index are read where the deployment names them (ORIENT1c), and nowhere else.
+        source ??= new FileSystemKnowledgeSource(
+            () => RegisteredRoots(registry), new RepositoryScanner(options.Documents, options.Index));
 
         IKnowledgeSearch search = new SqliteKnowledgeSearch(store);
 
@@ -228,23 +296,29 @@ public static class ServiceFactory
 
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
-            registry, registrations, readsRegisteredRoots: readsLocalCheckouts, embedWindow: options.EmbedWindow);
+            registry, registrations, readsRegisteredRoots: readsLocalCheckouts, embedWindow: options.EmbedWindow,
+            // One checkout moves under a persisted index (ORIENT1c): re-read it as it goes stale.
+            rereadAfter: options.Repository is null ? null : ServiceOptions.CheckoutRereadAfter);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come
         // up to an empty family after the upgrade — and an empty family is indistinguishable from a
-        // broken one. Once, because a second run would resurrect everything the person retired.
+        // broken one. Once, because a second run would resurrect everything the person retired. A
+        // deployment over one checkout registers that checkout alone (ORIENT1c): the folder around it holds
+        // repositories its agents never asked to search.
         if (readsLocalCheckouts && !await registrations.WasImportedAsync(ct).ConfigureAwait(false))
         {
-            var imported = await service.ImportAsync(options.RepositoryRoot, DateTimeOffset.UtcNow, ct: ct)
-                .ConfigureAwait(false);
-            await registrations.MarkImportedAsync(options.RepositoryRoot, ct).ConfigureAwait(false);
+            IReadOnlyList<Registration> imported = options.Repository is { } checkout
+                ? [await service.RegisterAsync(RegistryImport.ProposeAt(checkout), DateTimeOffset.UtcNow, ct).ConfigureAwait(false)]
+                : await service.ImportAsync(options.RepositoryRoot, DateTimeOffset.UtcNow, ct: ct).ConfigureAwait(false);
+            var from = options.Repository ?? options.RepositoryRoot;
+            await registrations.MarkImportedAsync(from, ct).ConfigureAwait(false);
             if (imported.Count > 0)
             {
                 // stderr, not stdout: the MCP host's stdout IS the protocol channel.
                 Console.Error.WriteLine(
                     $"daoris: first run over this index — imported {imported.Count} repositories from "
-                    + $"'{options.RepositoryRoot}' into the registry, which is the authority from now on. "
+                    + $"'{from}' into the registry, which is the authority from now on. "
                     + "Add with `daoris connect`, remove with `daoris retire`, re-scan with `daoris import`.");
             }
         }

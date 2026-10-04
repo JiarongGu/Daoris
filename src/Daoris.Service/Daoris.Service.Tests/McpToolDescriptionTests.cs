@@ -47,6 +47,36 @@ public sealed partial class McpToolDescriptionTests
         Assert.Contains("quest_publish", tool == "quest_publish" ? "quest_publish " + text : text);
     }
 
+    /// <summary>
+    /// A server over one checkout says what it reads and that it matches words (ORIENT1c), in the words a
+    /// session reads before it searches the files: the checkout's name, the folders it was given, the tier.
+    /// </summary>
+    [Fact]
+    public void A_server_over_one_checkout_says_what_it_reads_and_which_tier_answers()
+    {
+        var checkout = Path.Combine(Path.GetTempPath(), "atlas");
+        var options = new Daoris.Knowledge.ServiceOptions("root", "db", Repository: checkout, Documents: "docs", Index: "docs/index");
+
+        var lexical = KnowledgeTools.Instructions(options, semantic: false);
+        var semantic = KnowledgeTools.Instructions(options, semantic: true);
+
+        Assert.NotNull(lexical);
+        Assert.Contains("`atlas`", lexical);
+        Assert.Contains("`docs/`", lexical);
+        Assert.Contains("`docs/index/`", lexical);
+        Assert.Contains("knowledge_search", lexical);
+        Assert.Contains("words only", lexical);
+        Assert.DoesNotContain("words only", semantic!);
+        Assert.DoesNotMatch(DecisionNumber(), lexical);
+    }
+
+    /// <summary>A server over a family of repositories says nothing more than its tools do, as before.</summary>
+    [Fact]
+    public void A_server_over_a_family_gives_no_instructions()
+    {
+        Assert.Null(KnowledgeTools.Instructions(new Daoris.Knowledge.ServiceOptions("root", "db"), semantic: false));
+    }
+
     // Not after `#`: an entry id's example (`…/DECISIONS.md#D12`) is an anchor in the reader's own
     // repository, not a citation of this one's.
     [GeneratedRegex(@"(?<![#\w])D\d{1,3}\b")]

@@ -34,8 +34,16 @@ namespace Daoris.Knowledge;
 /// Until a repository adopts, its root <c>README.md</c> is read too, split at its headings as a log is,
 /// as local knowledge labelled by its path (WSSETUP8; D124 §5). It assigns no role. Once a lock exists
 /// the repository has declared its documents, and the README is its front page again.
+///
+/// A deployment may name two more folders (ORIENT1c), read in every repository it registers and in none
+/// by default: a folder of documents, each markdown file under it split at its headings with its opening
+/// titled by its first heading; and a generated index, each table row and list item of a markdown file
+/// under it one entry (<see cref="IndexRows"/>). Both are read after the roles, so a file a role read is
+/// not read again, and the index is never read as documents.
 /// </remarks>
-public sealed class RepositoryScanner
+/// <param name="documents">The documents folder, repository-relative with forward slashes; null reads none.</param>
+/// <param name="index">The generated index's folder, the same; null reads none.</param>
+public sealed class RepositoryScanner(string? documents = null, string? index = null)
 {
     /// <summary>A room's instructions, the file every agent reads in that folder (D117 §2.2).</summary>
     private const string RoomInstructions = "AGENTS.md";
@@ -142,6 +150,17 @@ public sealed class RepositoryScanner
             Add(Directory.Exists(Absolute(repositoryRoot, found))
                 ? ScanFolder(repositoryRoot, name, found, kind, indexed, byHeading: true)
                 : ScanLog(repositoryRoot, name, found, kind));
+        }
+
+        // What the deployment named (ORIENT1c), after every role: the index a row at a time, then the
+        // documents a section at a time, each file read once and the index never as a document.
+        if (index is not null && Directory.Exists(Absolute(repositoryRoot, index)))
+        {
+            Add(ScanIndex(repositoryRoot, name, index, indexed));
+        }
+        if (documents is not null && Directory.Exists(Absolute(repositoryRoot, documents)))
+        {
+            Add(ScanDocumentFolder(repositoryRoot, name, documents, indexed));
         }
 
         // The README, as the repository's own word until it adopts (WSSETUP8; D124 §5): what its authors
@@ -363,6 +382,52 @@ public sealed class RepositoryScanner
 
             var title = (byHeading ? MarkdownSections.FirstHeading(body) : null) ?? Path.GetFileNameWithoutExtension(relative);
             yield return new KnowledgeEntry(repository, kind, Provenance.Local, title, body, relative);
+        }
+    }
+
+    /// <summary>
+    /// A generated index (ORIENT1c): each table row and list item of each markdown file one entry, and the
+    /// file's prose one more, so a search for where something is lands on the row that says so.
+    /// </summary>
+    private static IEnumerable<KnowledgeEntry> ScanIndex(
+        string root, string repository, string folder, ISet<string> indexed)
+    {
+        foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
+        {
+            if (indexed.Contains(relative)) continue;
+            if (ReadDocument(root, relative) is not { } text) continue;
+
+            foreach (var row in IndexRows.Read(text, Path.GetFileNameWithoutExtension(relative)))
+            {
+                yield return new KnowledgeEntry(
+                    repository, EntryKind.Knowledge, Provenance.Local, row.Title, row.Body, relative, row.Anchor);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A folder of documents (ORIENT1c): each markdown file under it split at its level-two headings, as a log
+    /// is, with the part before the first one titled by the document's first heading. A design's sections are
+    /// what a question about it is answered by; the whole file buries the answer as a whole log would.
+    /// </summary>
+    private IEnumerable<KnowledgeEntry> ScanDocumentFolder(
+        string root, string repository, string folder, ISet<string> indexed)
+    {
+        foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
+        {
+            if (indexed.Contains(relative)) continue;
+            if (index is not null && RepositoryLayout.Within(relative.ToLowerInvariant(), index.ToLowerInvariant())) continue;
+            if (ReadDocument(root, relative) is not { } text) continue;
+
+            // An opening that is only the title says nothing a section does not.
+            var opening = MarkdownSections.Preamble(text);
+            if (opening.Split('\n').Any(line => line.Trim().Length > 0 && !line.TrimStart().StartsWith('#')))
+            {
+                yield return new KnowledgeEntry(
+                    repository, EntryKind.Knowledge, Provenance.Local,
+                    MarkdownSections.FirstHeading(text) ?? Path.GetFileNameWithoutExtension(relative), opening, relative);
+            }
+            foreach (var entry in Sections(repository, EntryKind.Knowledge, relative, text)) yield return entry;
         }
     }
 
