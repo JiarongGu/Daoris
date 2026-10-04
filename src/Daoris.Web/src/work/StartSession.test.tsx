@@ -160,4 +160,35 @@ describe('starting a session', () => {
     // Its code marks drawn as code, as the toast drew them, never as backticks.
     expect(screen.getByText('669b2930').tagName).toBe('CODE');
   });
+
+  /**
+   * D130 §3.2 (TOOL4m's rest, built with UX6e): the picker lists the accounts the repository's workspace's list holds first,
+   * in the list's order, and every other account under *not in its list*, so a pick outside it is never made by accident.
+   */
+  it('lists the workspace’s accounts first, and every other under not in its list', async () => {
+    render(
+      <Tooltip.Provider>
+        <StartSession
+          repositories={['engine']}
+          harnesses={['claude-code']}
+          defaultHarness="claude-code"
+          accounts={{
+            'claude-code': [
+              { name: 'account-1', login: 'in', account: 'you@work.example' },
+              { name: 'account-2', login: 'in', account: 'you@home.example' },
+              { name: 'account-3', login: 'out', account: 'spare@example.invalid' },
+            ],
+          }}
+          scopeOf={(repository, harness) => (repository === 'engine' && harness === 'claude-code'
+            ? { workspace: 'work', list: ['account-2', 'account-1'] }
+            : null)}
+          onStart={vi.fn()}
+        />
+      </Tooltip.Provider>,
+    );
+
+    const names = (await open('Account')).map((option) => option.textContent);
+    expect(names).toEqual(['As already set', 'you@home.example', 'you@work.example', 'spare@example.invalid (signed out)']);
+    expect(screen.getByRole('group', { name: "Not in work's list" })).toHaveTextContent('spare@example.invalid');
+  });
 });

@@ -8,6 +8,8 @@
   "work.start.busy": "{{repository}} has an active session in its checkout. A working tree of its own lets this one start beside it.",
   "work.start.profile": "Account",
   "work.start.profileDefault": "As already set",
+  "work.start.outside": "Not in {{workspace}}'s list",
+  "work.start.outsideMachine": "Not in this machine's list",
   "work.start.ownTree": "In a tree of its own",
   "work.start.ownTreeTip": "a fresh tree holds nothing git does not track — no installed dependencies, no build outputs, no untracked local configuration. That cost is paid once per tree, by whatever this repository's own setup costs.",
   "work.start.go": "Start",

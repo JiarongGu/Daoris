@@ -860,10 +860,25 @@ export function QuickPanel({ open, onClose, title, header, wide = false, fill = 
 
 /* ---------------------------------------------------------------- form controls */
 
+/** A select's options as runs of one group each, in order: a run with no group draws no heading. */
+function selectRuns<T extends { group?: string }>(options: readonly T[]): { group?: string; options: T[] }[] {
+  const runs: { group?: string; options: T[] }[] = [];
+  for (const option of options) {
+    const last = runs.at(-1);
+    if (last && last.group === option.group) last.options.push(option);
+    else runs.push({ group: option.group, options: [option] });
+  }
+  return runs;
+}
+
 export function SelectField({ value, onChange, options, placeholder, ariaLabel, required, disabled, bar }: {
   value: string;
   onChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  /**
+   * The choices in order. An option's `group` names the heading it falls under, said once above the first option of it,
+   * as the conversation picker sets apart the accounts a workspace's list does not hold (D130 §3.2).
+   */
+  options: { value: string; label: string; group?: string }[];
   placeholder?: string;
   ariaLabel?: string;
   required?: boolean;
@@ -900,16 +915,27 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
             <ChevronUp size={14} aria-hidden />
           </RadixSelect.ScrollUpButton>
           <RadixSelect.Viewport className="p-1">
-            {options.map((option) => (
-              <RadixSelect.Item
-                key={option.value}
-                value={option.value}
-                className="flex cursor-pointer items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-body outline-none data-[highlighted]:bg-accent-soft data-[highlighted]:text-ink"
-              >
-                <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
-                <RadixSelect.ItemIndicator><Check size={14} aria-hidden /></RadixSelect.ItemIndicator>
-              </RadixSelect.Item>
-            ))}
+            {selectRuns(options).map((run, at) => {
+              const items = run.options.map((option) => (
+                <RadixSelect.Item
+                  key={option.value}
+                  value={option.value}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-[4px] px-2 py-1.5 text-body outline-none data-[highlighted]:bg-accent-soft data-[highlighted]:text-ink"
+                >
+                  <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
+                  <RadixSelect.ItemIndicator><Check size={14} aria-hidden /></RadixSelect.ItemIndicator>
+                </RadixSelect.Item>
+              ));
+              return run.group ? (
+                <Fragment key={`${run.group}:${at}`}>
+                  {at > 0 && <RadixSelect.Separator className="my-1 h-px bg-line" />}
+                  <RadixSelect.Group>
+                    <RadixSelect.Label className="px-2 pb-1 pt-1 text-meta text-ink-faint">{run.group}</RadixSelect.Label>
+                    {items}
+                  </RadixSelect.Group>
+                </Fragment>
+              ) : <Fragment key={`:${at}`}>{items}</Fragment>;
+            })}
           </RadixSelect.Viewport>
           <RadixSelect.ScrollDownButton className="flex h-5 shrink-0 cursor-default items-center justify-center text-ink-soft">
             <ChevronDown size={14} aria-hidden />

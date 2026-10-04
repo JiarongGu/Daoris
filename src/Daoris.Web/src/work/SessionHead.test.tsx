@@ -97,6 +97,19 @@ describe('the attended session\'s head', () => {
   });
 
   /**
+   * D125 §3.7 (TOOL4m's rest, built with UX6e): a session that ran on the tool's own sign-in names no account in its record,
+   * so the head says *your own sign-in* where it shows an account, for an agent that has accounts at all.
+   */
+  it('says a session ran on your own sign-in where its record names no account', () => {
+    const { rerender } = render(<SessionHead session={session({ profile: null })} ownSignIn />);
+    expect(screen.getByText('claude-code · 2.1.4 · on your own sign-in')).toBeInTheDocument();
+
+    // An agent with no accounts to speak of says nothing of one.
+    rerender(<SessionHead session={session({ profile: null })} />);
+    expect(screen.getByText('claude-code · 2.1.4')).toBeInTheDocument();
+  });
+
+  /**
    * The state stays beside the title it names, however wide the head is (platform language §4:
    * status leads). The head follows the centre's width now (UX5 U16), and pushed to the far edge the
    * pill sat a thousand pixels from its title on a wide window, which is what U10 had capped around.

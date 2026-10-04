@@ -11,7 +11,8 @@ import {
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
   useParkGoAhead, useAccounts, useGoOnNew, useTrace,
 } from '../shell';
-import { doorOf } from '../tools';
+import { doorOf, toolOf } from '../tools';
+import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';
@@ -1083,6 +1084,16 @@ export function WorkFrame({
             labels={Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)]))}
             defaultHarness={spawning?.harness}
             accounts={Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []]))}
+            // The list a start in that repository may run on (D130 §3.2): its workspace's own, else this machine's, by the
+            // accounts' owner (AGT7), from the files the frame already reads; the picker sets the rest apart.
+            scopeOf={(repository, harness) => {
+              const door = roster.find((row) => row.harness === harness);
+              const use = door ? agentOf(accounts.data, toolOf(door)) : null;
+              if (!use) return null;
+              const workspace = (registry.data ?? []).find((row) => row.repository === repository)?.workspace || 'default';
+              const own = workspaceScope(use, workspace);
+              return own ? { workspace, list: own.list } : { workspace: null, list: machineScope(use).list };
+            }}
             pending={startChat.isPending}
             refusal={startRefusal}
             onStart={onStart}
@@ -1115,6 +1126,8 @@ export function WorkFrame({
             lastTurn={attended ? lastTurns[attended.id] : undefined}
             // The page header above carries its state, its id and its stop (D126 §3.2): said once.
             headed
+            // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
+            ownSignIn={Boolean(attended && roster.some((row) => row.harness === attended.adapter))}
             resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}
