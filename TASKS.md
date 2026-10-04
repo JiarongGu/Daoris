@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1152 CLI tests, 1124 service and 67 HTTP host, 4438 driver,
-703 desktop modules, 80 devkit, 3763 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
+**Counts, and this is their one home:** seventeen commands, **1158 CLI tests, 1124 service and 67 HTTP host, 4528 driver,
+703 desktop modules, 80 devkit, 3795 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -127,6 +127,71 @@ rather than designed.
 Every closed row is in `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle`
 rule it also ships. A heading below holds open rows only.
 
+### Faster development (owner, 2026-10-04: *"I think we do need to speed up the development of Daoris, currently we have too many rounds of tests?"*)
+
+Measured on the day's three integrations: the driver's real-process half took 30, 48 and 126 minutes (a hang);
+everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
+running them again.
+
+- [ ] **GATE3 — a merge runs the gates its lanes reach; the full set runs before the install is staged** (tools). The
+  merge tool maps each lane to the gates that can see it (docs: universal, code-map, verify; web: those and the web;
+  driver and modules: their suites and halves and the family rehearsal; the desktop and publish scripts: the deployment
+  rehearsal), and `publish:desktop --stage` refuses a commit the full set has not passed. The "web only batch broke main"
+  lesson holds through the staging gate, the same day. Contract: MOD8, MOD9, D60. Proof: the plan's gate list per lane
+  set; the stage refusing an ungated commit.
+- [ ] **GATE4 — a fixed gate re-runs alone** (tools). `merge-branch --rerun <gate>…` re-runs only the named gates on the
+  merge in place and keeps the rest's verdicts, where `--continue` runs every gate again. Proof: a plan test; the
+  summary naming which verdicts were kept and from when.
+- [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
+  merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
+  scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
+  flakes' common factor, so parallel workers need their own homes, not shared ones). Proof: three serial-equivalent
+  runs green and the timing.
+- [ ] **CANON10 — the doctrine verifies in proportion** (canon, examples; owner: *"this also applies to Daoris's
+  doctrine itself"*). `autonomous-development` says done means gates green, and nothing on how often: a driven session
+  that re-runs every suite each round spends time and allowance and learns nothing. One bullet: the checks a change can
+  reach while working, the full set once at the boundary, a fixed failure re-run alone, the slowest check measured and
+  made faster rather than skipped. Project-agnostic. Proof: the canon's tests, `examples/` re-synced, the canon
+  changelog's entry.
+- [ ] **WEBFAST1 — the web's unit tests build jsdom once per worker** (web-shell). Vitest reports jsdom created 225
+  times, 27% of its time; `pool: 'vmThreads'` keeps per-file isolation and creates it once. Proof: the suite green and
+  its time before and after.
+
+### Simpler to use, and agents that work together (owner, 2026-10-04)
+
+> *"this is confusing right now since I have logged 3 accounts in before and also there should be just one account
+> management for Claude Code"* · *"you kind of need to improve the UI/UX since this is getting more and more complex, and
+> we do need to add features later for coworking between agents"* · *"and there probably will be more types of agents
+> later too so the UI/UX redesign is needed"* · *"and I saw the Azure CLI is in Tools, which should be in a plugin"* ·
+> *"also the current permissions in Settings are mostly about repositories, and we probably should have a repository
+> setup in the repository screen, since repository management (with git) is also planned"*
+
+- [ ] **UX6 — Daoris gets simpler as it grows** (design first; web-shell, web-settings, modules). A redesign that
+  holds many kinds of agent, not a tidy of today's screens: an agent is a product (Claude Code, Codex, those to come)
+  with its accounts listed once, and the ways Daoris runs it (its own door, the ACP door) are a property of it, never
+  a second roster; adding an agent adds a row, not a screen. **A setting lives on the thing it is about**: a
+  repository's (reading and writing across, its line, its landing rule, its language, whether it is driven) on that
+  repository's page beside its git (GIT1e's place), an agent's on the agent, a plugin's on the plugin with the tools it
+  needs (PLUGTOOL1); Settings keeps only what is the machine's or the person's. Today Permissions is 29 repositories
+  each repeating one control. Measured on the install, not the source: each screen's
+  concepts, controls and words counted; what the person must decide set apart from what Daoris can decide;
+  duplicates merged (Claude Code's accounts are listed twice today, once per door, in two states); what is rarely
+  changed folded behind its section; and one place that says what needs the person now (a sign-in, a go-ahead, a
+  review) before anything else. Found the day it was asked: a start sat behind a cooling account while two
+  signed-out accounts went unsaid (TOOL6g). Contract: D41 (platform-ux), D53, D55, D56, D57, D66, D67, the UX5 ledger.
+  Proof: the design and its decision; per-screen counts before and after; the look in both themes and languages.
+- [ ] **PLUGTOOL1 — a plugin brings the tools it needs** (design with UX6; driver, cli, examples, web-settings). Azure CLI
+  and GitHub CLI sit in Tools (D121) beside Git, Node.js and PowerShell, though only the Azure DevOps and GitHub
+  pull-request plugins use them. A plugin's manifest declares the tools it runs (name, version range, how to find or
+  fetch one); the plugin's page shows and manages them; Tools keeps what Daoris itself runs. An installed plugin whose
+  tool is missing says so on its page, and D121's managed download serves it. Contract: D64, D101, D120, D121. Proof:
+  the manifest's schema and the kit's check; a plugin page test; the two pull-request plugins declaring their CLI.
+- [ ] ⏸ **COWORK1 — agents that work together** (design; held until the owner shapes it). Today agents cooperate
+  only through a quest (a request one way, a done back) and an ask's intake (one ask split into quests). What
+  working together should add (seeing each other's progress on related work, asking mid-work, handing off, one
+  branch shared by related work as LAND2c began) is the owner's to shape. Start from D32, D65, D145 and D149, and
+  the quest's life as built. Proof: the design and its decision.
+
 
 ### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
 
@@ -208,17 +273,15 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
 
 - [ ] **TRACE1c — the links the trace still cannot read** (driver, service, web-shell; found by TRACE1b). The rules
   handed kept past a run's end; a local door to one quest's operations; a merge landing naming its merge commit; a
-  carry-on's link kept on the record. And two doors TRACE1b left: the section in a detached session window, and the
-  commit kind from the page (the route accepts it; nothing sends it). Contract: D143 and its TRACE1b note. Proof:
-  `TraceChainTests`, route and service tests, vitest and stories, the look.
+  carry-on's link kept on the record; an advance (LAND2c) listed under the session that made it. And two doors
+  TRACE1b left: the section in a detached session window, and the commit kind from the page (the route accepts it;
+  nothing sends it). Contract: D143 and its TRACE1b note. Proof: `TraceChainTests`, route and service tests, vitest
+  and stories, the look.
 - [ ] **STORY2 — a 中文 story leaves the next story load in 中文** (web-shell; found by TRACE1b). A module-scope
   `i18n.cloneInstance({ lng: 'zh' })` in the 中文 stories writes `zh` under `daoris.language` in localStorage, so the
   next page load in the same browser profile shows the English stories in 中文 (HandedAccount, Note and the trace
   among them). A clone for a story keeps its language off the store. Proof: a vitest that a 中文 story's module leaves
   `daoris.language` as it found it; the story shots in both languages from one profile.
-- [ ] **GIT1b — the reads behind a page** (driver; after GIT1a and REVIEW3). A graph page, a commit through REVIEW3's
-  one-call reader, a file's history, a blame and a compare, each one call in a machine format; a memory cache keyed by
-  commit ids, never a ref. Contract: design §2.3–§2.6, §4. Proof: parser and cache tests; fixtures (the parent's).
 - [ ] **GIT1d — the routes** (modules, web-shell; after GIT1b). `GIT_BRANCHES`, `GIT_LOG`, `GIT_COMMIT`, `GIT_HISTORY`,
   `GIT_BLAME`, `GIT_COMPARE`, on the shell's bridge only; each refusal a code in both catalogues. Contract: design §4,
   §6. Proof: `DriverModuleGitTests`, catalogue parity.
@@ -245,15 +308,12 @@ to it. Order: TRACE1, EVID1, CONTEXT1, OUTCOME1; AFTER1 waits for its trigger.
 - [ ] **GIT1k — Ask Daoris's `git` kind** (service, driver, web-shell; after GIT1h). Fetch, branch, push and delete as
   proposals the person confirms. Contract: design §3.3, D110. Proof: the kinds tables on both sides; coverage with no
   owed row.
-- [ ] **LAND2c — one branch and one pull request for one piece of work** (driver, cli, examples; after LAND2b; owner,
-  2026-10-04: *"the PR should be generated one for all those related Daoris work, currently by approve one by one this
-  creates multiple PR branch for the same work"*). The design lands a chain (a quest and its steps) on one branch; the
-  owner's AR-2203 was a quest, its verify step, and a follow-up ask's drill-down, accepted one by one into two
-  `feature/` branches, the second containing the first. Land related work on one branch per repository: a chain, and a
-  follow-up ask's quests (`follows #…`) with it; a later done advances it by fast-forward only; the frame gains
-  `pullRequest` and `acceptedBy`, and a plugin pushes without opening a second pull request. Contract: design §3, §7,
-  D145 (amended by the owner's words). Proof: advance and refusal cases in `LandingTests`, a lineage case across two
-  asks, `landing-plugins.test.ts`.
+- [ ] **LAND2e — work after a landing, and the advance on the page** (driver, modules, web-shell; found by LAND2c). A
+  session that kept working after its landing (its tree here, its branch standing) reads as landed at the review and
+  `trees land`, so with *Accept automatically* off its new commits cannot land at either door; accept it again as an
+  advance. Once its tree is gone a chain session's review shows the whole branch, later steps included; show its own
+  part. The review's note and Ask Daoris do not read an advance yet. Contract: D149 point 2, D113 §3 (`ReadsAsLanded`).
+  Proof: the review answer and `trees land` advancing it; vitest over a mocked bridge; the proposals' tables.
 - [ ] **SETUP2 — a set-up runs the repository's own checks and moves what reads the moved files** (driver, canon; owner,
   2026-10-04: *"also found a bug for CI pipeline after the merge of knowledge update … so this is also a good check
   when building Daoris"*). The work repository's set-up moved its agent documents to `.agents/` and its pipeline's
@@ -400,9 +460,6 @@ owner on 1 October.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
-- [ ] **PAUSE1h — the ask's page shows its work** (web-shell; found by PAUSE1e). Each quest of `WORK_PLAN` with its state
-  and sitting reason, the questions its sessions asked, and their sessions as doors into Sessions, so the person sees
-  what a pause or abandon reaches before pressing. Contract: D132 §7.1. Proof: stories, `AskPage` vitest, the look.
 - [ ] **PAUSE1f — Ask Daoris reaches pause** (driver, service, web-shell; after b and SESSUX1h). The `pause` kind; abandon
   stays the person's. Contract: D132 §7.4. Proof: proposal and coverage tests; the room's golden files.
 - [ ] **PAUSE1g — looked at on the install** (the parent's, after a–f). An ask paused mid-session and resumed in its tree;
@@ -622,6 +679,22 @@ the ACP door, not a registry**.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
+- [ ] **TOOL6g — a signed-out account is said, never waited behind a cooling one** (driver, modules, web-settings; found
+  on the install, 2026-10-04). All three `claude-code` accounts read signed out (`claude auth status`: `loggedIn: false`;
+  each `.credentials.json` left with no refresh token, account-1 and account-2 rewritten the evening before, Gmail the
+  minute the new build started), and the intake for two new asks sat behind `starts.waiting` on Gmail's cool-off until
+  10-06, saying nothing of the other two. A start whose ready accounts are signed out says so and names the sign-in
+  (`daoris agent login <harness> --profile <name>`, Settings → Agents); the account line and the page say *signed out*
+  beside *cooling*; Claude Code's accounts are one list, not one per door (owner: *"there should be just one account
+  management for Claude Code"*); and what signed three accounts out is found and stopped. Each was blanked about ten
+  seconds after the app started (account-1 and account-2 two seconds apart on 10-03 at 12:35Z, Gmail at 21:03Z), so
+  the first reading is two account probes at start running `claude auth status` on one profile at once, racing one
+  refresh token (unconfirmed). **Seen live the next morning**: while two quests were refused at every look, the app
+  started `claude auth status` three times in 45 s (a refused start re-runs the whole probe, the tool's own home
+  included, which is the person's default sign-in); pausing both asks stopped it, and in that window the developer's
+  own Claude Code sign-in expired. No probe per look, none of the own home but at the person's press. Contract: D125
+  §2–§5, D130. Proof: a fake `claude` reproducing the race and the fix
+  holding; a rotation case with signed-out and cooling accounts; the machine log's line; the look.
 - [ ] **TOOL4l — Ask Daoris's account doors, the service's half** (service, driver; found by TOOL4g). `agent_propose`
   writes `use` (with `use`, `keep`, `early`, `near`), `order` and `ready`, and the setting writer lists `cooloff`, so the
   cards the screen's controls owe can be offered. Contract: D125 §6, D130 §9, §16.6. Proof: the proposal-kind tests with

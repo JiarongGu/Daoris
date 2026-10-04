@@ -10667,3 +10667,36 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > D145. Proof: the design and its decision.
 
 **Outcome** 2026-10-04: designed. A query point, `work/state`, asks a landed branch's plugin for its pull request's state, so a squash-merged pull request's branches go where git confirms its merge commit on the line; asked only where Daoris's own proofs cannot tell and the answer could remove something, never at a removing press, a read or a timer, bounded at 30 s a frame. Other processes were weighed (review threads, a pipeline's verdict, work items, capabilities, a quest's close), and none gains a point now. D148 lifts D102's rejection of asking the platform for plugins only. Detail in D148 and `docs/2026-10-04-plugin-hooks-design.md`; rows PLUGHOOK1a–d, with PLUGHOOK2 held (`08681e59`).
+
+
+## LAND2c — one branch and one pull request for one piece of work (2026-10-04)
+
+> - [ ] **LAND2c — one branch and one pull request for one piece of work** (driver, cli, examples; after LAND2b; owner,
+> 2026-10-04: *"the PR should be generated one for all those related Daoris work, currently by approve one by one this
+> creates multiple PR branch for the same work"*). The design lands a chain (a quest and its steps) on one branch; the
+> owner's AR-2203 was a quest, its verify step, and a follow-up ask's drill-down, accepted one by one into two
+> `feature/` branches, the second containing the first. Land related work on one branch per repository: a chain, and a
+> follow-up ask's quests (`follows #…`) with it; a later done advances it by fast-forward only; the frame gains
+> `pullRequest` and `acceptedBy`, and a plugin pushes without opening a second pull request. Contract: design §3, §7,
+> D145 (amended by the owner's words). Proof: advance and refusal cases in `LandingTests`, a lineage case across two
+> asks, `landing-plugins.test.ts`.
+
+**Outcome** 2026-10-04: built. A chain's later done moves the chain's one branch on, fast-forward only (`git update-ref` with the old tip, never forced), where it was a second branch; a follow-up ask's quest joins it where it carries *follows #…*. A refusal moves nothing and says why (`exists`, `nothing`, and `completed` for a branch whose work is already on the line). The record keeps each advance; the frame gains `pullRequest` and `acceptedBy`, and both example plugins (1.1.0) push only to a pull request still open, never opening a second. A chain's next step grows from its landed branch when the step before's branch is gone. D149 settles related work (`follows`) and a merged pull request (refused). Detail: D149, D145's LAND2c note, `4eb76834`..`3c9e70a5`; LAND2e carries what it left.
+
+
+## PAUSE1h — the ask's page shows its work (2026-10-04)
+
+> - [ ] **PAUSE1h — the ask's page shows its work** (web-shell; found by PAUSE1e). Each quest of `WORK_PLAN` with its state
+> and sitting reason, the questions its sessions asked, and their sessions as doors into Sessions, so the person sees
+> what a pause or abandon reaches before pressing. Contract: D132 §7.1. Proof: stories, `AskPage` vitest, the look.
+
+**Outcome** 2026-10-04: built. The ask's page lists its work from `WORK_PLAN` and the tick: each quest with its state, route and why it sits (taken on another machine, paused by this ask or on its own, or the driver's sentence by code), the questions its sessions asked other repositories beneath it, and those sessions as doors into Sessions; its first line says this is what a pause or an abandon reaches. A pure `workTree.ts` builds the tree; `AskWork` is a molecule. A browser and a loading plan keep the plain list. Detail: D132's PAUSE1h note, `09e87323`, `b7bca488`.
+
+
+## GIT1b — the reads behind a page (2026-10-04)
+
+> - [ ] **GIT1b — the reads behind a page** (driver; after GIT1a and REVIEW3). A graph page, a commit through REVIEW3's
+> one-call reader, a file's history, a blame and a compare, each one call in a machine format; a memory cache keyed by
+> commit ids, never a ref. Contract: design §2.3–§2.6, §4. Proof: parser and cache tests; fixtures (the parent's).
+
+**Outcome** 2026-10-04: built. `GitReads` reads a graph page (200 a page, with a since-parted walk), a commit (its fields, then REVIEW3's one-call reader), a file's history (`--follow`, 100 a page), a blame (porcelain, D111's binary test and 256 KiB bound) and a compare, one git call each and two for a commit and a compare; it takes whole commit ids only and refuses a ref before git is asked. `GitReadCache` keeps answers in memory by commit ids and the repository's common git directory, bounded at 64 MiB, never from a shallow repository. Each answer names the git command a person would type. Detail: D147's GIT1b note, `56e36839`.

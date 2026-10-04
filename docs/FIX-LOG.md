@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## An install started by the dev loop answered bad requests with source paths (2026-10-04)
+
+**Symptom.** A malformed body posted to the install's host (`/api/asks`, an attachment that was not base64) came back
+as ASP.NET's developer exception page in plain text: thirty frames, the build machine's source path among them, and
+the request's headers.
+
+**Root cause.** `npm run desktop -- run --install` opens the debug port through the window kit's development switch,
+`DOTNET_ENVIRONMENT=Development`, and the host the shell starts inherits the environment. The host then ran in
+development, and every relaunch since (an update's swap included) inherited it again. The deployment rehearsal had met
+the same inheritance and held its host in production with `ASPNETCORE_ENVIRONMENT`; the dev loop's install run did not.
+A host the person starts, or a shared one, runs in production and never served the page.
+
+**Fix.** `installEnvironment` gives an install run the port's two halves and `ASPNETCORE_ENVIRONMENT=Production`.
+
+**Verification.** `desktop-tool.test.ts`: the new case failed (no such export), then passed, 41/41. The running install
+keeps the old environment until it is next started.
+
 ## The deployment rehearsal failed after all 110 checks passed (2026-10-04)
 
 **Symptom.** At the merge of REVIEW3, the deployment rehearsal printed *110/110 checks passed* and its whole result, then

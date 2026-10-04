@@ -13,7 +13,7 @@ import { readText, listFiles } from '../src/fsx.ts';
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
   CLEARED, PAGE_THEME, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, awaitDebugPort, closedPortReport, engineLogOf,
-  installedExe, isShell, prune, scratchEnvironment, startedHere, withPageTheme,
+  installEnvironment, installedExe, isShell, prune, scratchEnvironment, startedHere, withPageTheme,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
@@ -710,4 +710,16 @@ test('the tool and the page spell the theme’s key the same, and the page hears
     `the tool writes ${THEME_KEY} and the page remembers its choice under another key`);
   assert.ok(theme.includes("window.addEventListener('storage', followStoredTheme)"),
     'the page no longer hears a storage event, so a choice set for a capture would not take');
+});
+
+/**
+ * An install run opens the debug port through the kit's development switch, and the host the shell starts inherits the
+ * environment: in development ASP.NET answers a bad request with its exception page, source paths and all. The installed
+ * host stays in production, as the deployment rehearsal keeps it (FIX-LOG 2026-10-04).
+ */
+test('a run of the install keeps the port’s development switch and its host in production', () => {
+  const environment = installEnvironment(9444);
+  assert.equal(environment.DOTNET_ENVIRONMENT, 'Development', 'the port opens only in development');
+  assert.equal(environment.DAORIS_DEVTOOLS_PORT, '9444');
+  assert.equal(environment.ASPNETCORE_ENVIRONMENT, 'Production', 'the installed host would serve its exception page');
 });

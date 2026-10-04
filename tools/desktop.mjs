@@ -116,6 +116,16 @@ export function debugEnvironment(cdpPort) {
   };
 }
 
+/**
+ * A run of a deployed install: the debug port's two halves, and the host held in production. The port needs the kit's
+ * development switch, and the host the shell starts inherits it; in development ASP.NET answers a bad request with its
+ * exception page, a build machine's source paths in it. An installed host runs in production, as the deployment rehearsal
+ * keeps it (FIX-LOG 2026-10-04).
+ */
+export function installEnvironment(cdpPort) {
+  return { ...debugEnvironment(cdpPort), ASPNETCORE_ENVIRONMENT: 'Production' };
+}
+
 export function scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort }) {
   return {
     DAORIS_SERVICE_URL: serviceUrl,
@@ -627,6 +637,7 @@ async function start(command, args) {
       // Said plainly, because it is the one way this differs from double-clicking the launcher.
       console.log('  Started with a debug port so `shot`, `eval` and `click` can reach it. Nothing');
       console.log('  in the published application opens one — this run does, and only this run.');
+      environment = installEnvironment(cdpPort);
     }
   } else {
     const home = join(scratchRoot, 'home');
