@@ -65,8 +65,9 @@ describe('Get started', () => {
   it('opens the screen each step is done on', async () => {
     const { onGo } = draw();
 
+    // UX6e: an agent's install and its accounts are on its page in the Agents place.
     await userEvent.click(within(step(/An agent/)).getByRole('button', { name: 'Open Agents' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'agents' });
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'accounts' });
     await userEvent.click(within(step(/Ask Daoris's agent/)).getByRole('button', { name: "Open AI features" }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'ai' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Add repository…' }));
@@ -77,8 +78,9 @@ describe('Get started', () => {
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects' });
     await userEvent.click(within(step(/work lands/)).getByRole('button', { name: 'Open Workspace' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'workspace', anchor: 'landing' });
-    await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'Open Permissions' }));
-    expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'permissions' });
+    // And what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
+    await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'Open what agents may do' }));
+    expect(onGo).toHaveBeenLastCalledWith({ view: 'agents', agentPart: 'rules' });
   });
 
   it('shows the command that does each step at a terminal, and copies it', async () => {

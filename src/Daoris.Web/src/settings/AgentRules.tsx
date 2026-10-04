@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button, Card, CheckField, Icon, Inline, PathText, Pill, Prose, SectionTitle, SelectField, SettingRow,
@@ -83,8 +83,19 @@ const MACHINE = 'machine';
  * this card that is waiting on the person: a narrowing applied itself at the driver's tick, and 🔴 a
  * widening never applies without them. What was settled is history, one press away.
  */
-export function AgentRules({ rules, circles, repositories, busy = false, onSwitchDefault, onRemove, onAdd, onAnswer }: {
+export function AgentRules({
+  rules, part = 'all', circles, repositories, busy = false, onSwitchDefault, onRemove, onAdd, onAnswer, elsewhere,
+}: {
   rules: AgentRulesState;
+  /**
+   * Which of the rules this card holds (UX6e, D150 §3.1): `agent`, what the agent's page says under *What it may do* (the
+   * proposals, Daoris's defaults and the rules for every session on this machine); `scoped`, what is left in Settings →
+   * Permissions until the workspace's and the repository's pages take it (a workspace's rules and a repository's); `all`
+   * both, as the card was.
+   */
+  part?: 'all' | 'agent' | 'scoped';
+  /** On a `scoped` card, where the rest is: a line and its door to the agent's page. */
+  elsewhere?: ReactNode;
   /** The circles a rule can reach — the machine's own, from the registry. */
   circles: string[];
   /** The repositories a rule can reach, by the names the registry holds. */
@@ -105,23 +116,27 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
   const [history, setHistory] = useState(false);
   const [list, setList] = useState<RuleListName>('allow');
   const [rule, setRule] = useState('');
-  const [where, setWhere] = useState(MACHINE);
+  // The agent's page holds this machine's scope (UX6e); what is left in Permissions holds a workspace's and a repository's.
+  const machineHere = part !== 'scoped';
+  const scopedHere = part !== 'agent';
 
   const scopeTitle = (row: RuleScopeRow) => row.scope === 'machine'
     ? t('settings.rules.scopeMachine')
     : t(row.scope === 'workspace' ? 'settings.rules.scopeWorkspace' : 'settings.rules.scopeRepository', { name: row.name ?? '' });
 
-  const held = rules.scopes.filter((row) => LISTS.some((name) => row[name].length > 0));
-  const proposals = rules.proposals ?? [];
+  const held = rules.scopes.filter((row) => LISTS.some((name) => row[name].length > 0)
+    && (row.scope === 'machine' ? machineHere : scopedHere));
+  const proposals = machineHere ? rules.proposals ?? [] : [];
   const open = proposals.filter((proposal) => OPEN_STATES.has(proposal.state));
   const settled = proposals.filter((proposal) => !OPEN_STATES.has(proposal.state));
 
   // The scope choice as one value: `machine`, `workspace:<circle>` or `repository:<name>`.
   const places = [
-    { value: MACHINE, label: t('settings.rules.scopeMachine') },
-    ...circles.map((name) => ({ value: `workspace:${name}`, label: t('settings.rules.scopeWorkspace', { name }) })),
-    ...repositories.map((name) => ({ value: `repository:${name}`, label: t('settings.rules.scopeRepository', { name }) })),
+    ...(machineHere ? [{ value: MACHINE, label: t('settings.rules.scopeMachine') }] : []),
+    ...(scopedHere ? circles.map((name) => ({ value: `workspace:${name}`, label: t('settings.rules.scopeWorkspace', { name }) })) : []),
+    ...(scopedHere ? repositories.map((name) => ({ value: `repository:${name}`, label: t('settings.rules.scopeRepository', { name }) })) : []),
   ];
+  const [where, setWhere] = useState(places[0]?.value ?? MACHINE);
 
   const add = () => {
     const [scope, ...named] = where.split(':');
@@ -142,6 +157,8 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         why={t('settings.rules.why')}
         control={<PathText path={rules.path} className="text-small text-ink-faint" />}
       />
+
+      {elsewhere}
 
       {/* The driver's own sentence, verbatim: the defaults still hold when the file does not. */}
       {rules.problem && (
@@ -219,8 +236,8 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         </div>
       )}
 
-      <SectionTitle>{t('settings.rules.defaults')}</SectionTitle>
-      <ul className="m-0 list-none p-0">
+      {machineHere && <SectionTitle>{t('settings.rules.defaults')}</SectionTitle>}
+      {machineHere && <ul className="m-0 list-none p-0">
         {rules.defaults.map((shipped) => (
           // 🔴 The rule and the padding are the ITEM's. A row alone in its item is both `first:` and
           // `last:`, which took both away, and four defaults ran together as one block on the window.
@@ -258,7 +275,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
             />
           </li>
         ))}
-      </ul>
+      </ul>}
 
       {held.map((row) => (
         <div key={`${row.scope}:${row.name ?? ''}`} className="mt-3">
@@ -282,7 +299,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         </div>
       ))}
 
-      {!adding ? (
+      {places.length === 0 ? null : !adding ? (
         <Button variant="ghost" className="mt-3" onClick={() => setAdding(true)}>
           <Icon name="plus" size={13} />
           {t('settings.rules.addTitle')}

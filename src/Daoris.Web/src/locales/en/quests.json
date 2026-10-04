@@ -87,6 +87,7 @@
   "quests.session.title": "Session",
   "quests.session.moved": "moved {{ago}}",
   "quests.session.asProfile": "as {{profile}}",
+  "quests.session.ownSignIn": "on your own sign-in",
   "quests.session.hint": "started by the driver, and observed rather than self-reported — the process runs on the driving machine; this is its record.",
   "quests.session.stopped": "session {{id}} is being stopped — the record will say the person ended it.",
   "quests.session.orphanEnded": "session {{id}} had nothing running it on this machine — its record now says so.",

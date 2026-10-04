@@ -111,7 +111,7 @@ describe('a scope\'s list', () => {
     expect(screen.getByRole('button', { name: 'Move up · work@example.invalid' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'Move down · home@example.invalid' }).hasAttribute('disabled')).toBe(true);
     // A signed-out account says so where it would be passed.
-    expect(within(list).getAllByRole('listitem')[2]!.textContent).toContain('not signed in');
+    expect(within(list).getAllByRole('listitem')[2]!.textContent).toContain('signed out');
   });
 
   /** What the terminal refuses, the screen does not offer: the default's Use off is disabled, and its tip says why. */

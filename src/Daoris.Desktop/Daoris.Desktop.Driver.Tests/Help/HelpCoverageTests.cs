@@ -325,13 +325,17 @@ public sealed partial class HelpCoverageTests
         ("tools", "useToolPick", null, new Exempt("it is the system's file picker, for the person's own choice.")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
+        // UX6e (D150 §3.1): what the agent may do moved to its page, the rules for every session and the proposals with it.
+        ("agents", "useRuleAction", "add", new Exempt(Rules)),
+        ("agents", "useRuleAction", "remove", new Exempt(Rules)),
+        ("agents", "useRuleAction", "default", new Exempt(Rules)),
+        ("agents", "useRuleProposal", null, new Exempt(
+            "accepting or declining a rule another agent proposed is the person's review of it (PERM2, D74); a helper "
+            + "answering it would be one agent approving another.")),
 
         ("permissions", "useRuleAction", "add", new Exempt(Rules)),
         ("permissions", "useRuleAction", "remove", new Exempt(Rules)),
         ("permissions", "useRuleAction", "default", new Exempt(Rules)),
-        ("permissions", "useRuleProposal", null, new Exempt(
-            "accepting or declining a rule another agent proposed is the person's review of it (PERM2, D74); a helper "
-            + "answering it would be one agent approving another.")),
         ("permissions", "useSetReadAcross", null, new Door("setting", "across")),
 
         ("plugins", "usePluginAction", "enable", new Door("plugin", "enable")),
@@ -840,8 +844,16 @@ public sealed partial class HelpCoverageTests
     }
 
     /// <summary>
+    /// The places whose controls left a Settings domain for a place of their own, read as that domain was, under its id
+    /// (UX6e, D150 §5): the Agents place, from its view's file and everything it imports, so Settings → Agents' controls
+    /// stay answered for where they are pressed now.
+    /// </summary>
+    private static readonly (string Id, string File)[] Places = [("agents", Path.Combine("agents", "AgentsView"))];
+
+    /// <summary>
     /// Each Settings domain, by its id, with its component's file and every file that file imports, and so on: not
-    /// the bridge, whose hooks are read by name, and not a type-only import, which presses nothing.
+    /// the bridge, whose hooks are read by name, and not a type-only import, which presses nothing. A place that took a
+    /// domain's controls (<see cref="Places"/>) is read the same way.
     /// </summary>
     private static Dictionary<string, IReadOnlyList<string>> Domains()
     {
@@ -851,8 +863,21 @@ public sealed partial class HelpCoverageTests
         var domains = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
         foreach (Match row in DomainRow().Matches(registry))
         {
+            domains[row.Groups[1].Value] = Closure(Path.GetFullPath(Path.Combine(settings, imported[row.Groups[2].Value])));
+        }
+
+        foreach (var (id, file) in Places)
+        {
+            domains[id] = Closure(Path.GetFullPath(Path.Combine(Page, file)));
+        }
+
+        Assert.Contains("permissions", domains.Keys);
+        return domains;
+
+        static IReadOnlyList<string> Closure(string start)
+        {
             var seen = new List<string>();
-            var next = new Stack<string>([Path.GetFullPath(Path.Combine(settings, imported[row.Groups[2].Value]))]);
+            var next = new Stack<string>([start]);
             while (next.TryPop(out var named))
             {
                 var file = new[] { named + ".tsx", named + ".ts", named }.FirstOrDefault(File.Exists);
@@ -871,11 +896,8 @@ public sealed partial class HelpCoverageTests
                 }
             }
 
-            domains[row.Groups[1].Value] = seen;
+            return seen;
         }
-
-        Assert.Contains("permissions", domains.Keys);
-        return domains;
     }
 
     // A usage line at the verbs' column: 25 spaces, then the verb's spelling up to the gap before its help.

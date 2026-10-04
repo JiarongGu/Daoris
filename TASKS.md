@@ -56,6 +56,11 @@ Measured on the day's three integrations: the driver's real-process half took 30
 everything else together took about 25. Each merge ran all 13 gates whatever it touched, and a fixed failure meant
 running them again.
 
+- [ ] **MERGEJOIN1 — a union merge never leaves two decision notes touching** (tools; seen three times merging the day's
+  UX6 branches). Two branches each appending a dated note to one decision leave the second label straight under the
+  first's last line, and `doc-duplicates` fails `verify` at the merge. The merge tool sets a blank line before such a
+  label in the merged decision files, as it writes `docs/index/`, and says so. Contract: D106. Proof: a merge-tool test
+  over two branches that each append a note.
 - [ ] **ORIENT1c — the knowledge server for agents, from a built binary** (service, tools; ORIENT1's fourth part). `.mcp.json`
   starts it with `dotnet run` at each session, which builds it every time, fails under concurrent builds and once per
   worktree; it did not connect in the session that measured ORIENT1. Run it from a built binary the workspace keeps
@@ -81,8 +86,6 @@ d and e; f, g; h after GIT1d; i, j; PLUGTOOL1a–c beside them, c after PLUGUI1c
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).
 - [ ] **UX6d — accounts on What needs you, from what is known** (web-shell, modules; takes TOOL4m's row; §6.2–§6.3).
-- [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; §5, §2.4), with
-  TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
 - [ ] **UX6g — a workspace's page; Settings → Workspace and Permissions retire** (web-shell, web-settings; §4.1, §4.3).
 - [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; §4.4), taking GIT1e: D147's list by kind and a
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.

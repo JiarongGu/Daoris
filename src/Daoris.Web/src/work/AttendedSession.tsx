@@ -49,7 +49,10 @@ const CHAIN_WHOLE = 'daoris.chainWhole';
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, headed = false, goAheads, onGoAhead, trace,
+  ownSignIn = false,
 }: {
+  /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7), said in its head. */
+  ownSignIn?: boolean;
   /**
    * How it came to be (TRACE1b, D143, D50), folded at the foot of its record, and the doors its chain opens by id: the page
    * holds the fold and the read. Absent where nothing can read the trace: a browser, which has no driver.
@@ -138,6 +141,7 @@ export function AttendedSession({
         headed={headed}
         goAheads={goAheads}
         onGoAhead={onGoAhead}
+        ownSignIn={ownSignIn}
       />
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and

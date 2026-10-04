@@ -36,8 +36,14 @@ export type StartChoice = {
  * "one harness, no accounts" and "a logged-out profile" reachable without a machine in that state.
  */
 export function StartSession({
-  repositories, busy = [], harnesses, labels = {}, defaultHarness = '', accounts, pending = false, refusal, onStart,
+  repositories, busy = [], harnesses, labels = {}, defaultHarness = '', accounts, scopeOf, pending = false, refusal, onStart,
 }: {
+  /**
+   * The list of accounts a start in this repository may run on, for this harness (D130 §3.2): its workspace's own list, or
+   * else this machine's, with the workspace it is, or null for this machine's. Null where neither names a list; then every
+   * account is offered alike.
+   */
+  scopeOf?: (repository: string, harness: string) => { workspace: string | null; list: string[] } | null;
   /** Repositories with a checkout on this machine — there is nowhere else to talk (D48 §7). */
   repositories: string[];
   /**
@@ -82,6 +88,19 @@ export function StartSession({
   const chosen = repository || repositories.find((name) => !busy.includes(name)) || repositories[0]!;
   const held = busy.includes(chosen) && !ownTree;
   const named = (id: string) => labels[id] ?? id;
+  // The scope's accounts first, in its list's order, then every other under *not in its list* (D130 §3.2): a pick outside
+  // the list is the person's own choice, never one made by accident.
+  const scope = scopeOf?.(chosen, adapter || defaultHarness) ?? null;
+  const listed = scope && scope.list.length > 0 ? scope.list : null;
+  const outside = scope?.workspace
+    ? t('work.start.outside', { workspace: scope.workspace })
+    : t('work.start.outsideMachine');
+  const ordered = listed
+    ? [
+      ...listed.map((name) => profiles.find((choice) => choice.name === name)).filter((choice) => choice !== undefined),
+      ...profiles.filter((choice) => !listed.includes(choice.name)),
+    ]
+    : profiles;
 
   return (
     <form
@@ -152,11 +171,12 @@ export function StartSession({
               // with the sentence that names the login action, which teaches more than a missing row.
               // Named by who is signed in, where the tool says (D66 §3) — the same name the
               // settings page gives it; the value is still the directory's, which the spawn takes.
-              ...profiles.map((choice) => ({
+              ...ordered.map((choice) => ({
                 value: choice.name,
                 label: choice.login === 'out'
                   ? t('harness.profileOut', { name: choice.account ?? choice.name })
                   : choice.account ?? choice.name,
+                ...(listed && !listed.includes(choice.name) ? { group: outside } : {}),
               })),
             ]}
           />

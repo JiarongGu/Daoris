@@ -21,6 +21,7 @@ export const LIST_BOUNDS = {
   projects: LIST_WIDE,
   convergence: LIST_WIDE,
   search: LIST_WIDE,
+  agents: LIST_WIDE,
   plugins: LIST_WIDE,
   settings: { min: 176, max: 320, initial: 176 },
   monitor: LIST_WIDE,

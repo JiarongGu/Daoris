@@ -54,7 +54,8 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'agent',
       state: machineState(signedIn(machine)),
-      doors: doors({ view: 'settings', section: 'agents' }),
+      // The Agents place (UX6e, D150 §5): an agent's install and its accounts are on its page.
+      doors: doors({ view: 'agents', agentPart: 'accounts' }),
       commands: ['daoris agent install <agent>', 'daoris agent login <agent>'],
     },
     {
@@ -87,7 +88,8 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'rules',
       state: known ? 'optional' : 'desktop',
-      doors: doors({ view: 'settings', section: 'permissions' }),
+      // What it may do is on the page of the agent Daoris hands the rules file (UX6e, D150 §3.1).
+      doors: doors({ view: 'agents', agentPart: 'rules' }),
       commands: ['daoris agent rules'],
     },
   ];

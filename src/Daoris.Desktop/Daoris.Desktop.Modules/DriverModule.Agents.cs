@@ -19,16 +19,42 @@ public sealed partial class DriverModule
     // Which `harness:action` holds the one slot, from its start until `RunActionAsync` ends it (REV3).
     private string? _acting;
 
-    // This machine's harnesses, and the accounts they run as (D49 §4). Detection is free and
-    // read-only — it asks each tool its own version and each profile's own login state — so
-    // the page may ask whenever it likes; `refresh` is the person pressing "look again".
+    // When each account's sign-in state was last read (UX6e, D150 §5.3), kept as the application asks and is answered,
+    // never by asking: what the Agents place says beside each state.
+    private readonly RosterReads _reads = new();
+
+    // This machine's harnesses, and the accounts they run as (D49 §4). The roster's report is cached
+    // after its first look, so a page asking again starts nothing; `refresh` is the person pressing
+    // *Read again*: every agent's, or with `agent` one agent's accounts only (UX6e). Each account and
+    // the tool's own sign-in say when they were last read.
     [DriverRoute("HARNESSES")]
     private async Task<object?> HarnessesAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var refresh = Flag(request, "refresh");
+        var agent = refresh ? Optional(request, "agent") : null;
 
         var config = DriverConfig.Load(_loop.ConfigPath);
-        var roster = await _loop.Harnesses.RosterAsync(config, refresh, cancellationToken);
+        IReadOnlyList<HarnessReport> roster;
+        HashSet<string> asked;
+        if (agent is not null)
+        {
+            // One agent's accounts read again, one at a time, and its own sign-in (UX6e, D150 §5.3): through its
+            // account-owning door, which every door onto it shares (AGT7), so each account is asked once, not once a door.
+            var door = AccountDoor(agent)
+                ?? throw new DriverException($"no agent `{agent}` on this machine has accounts to read.");
+            await _loop.Harnesses.ReportAsync(door, config, refresh: true, cancellationToken, own: true);
+            roster = await _loop.Harnesses.RosterAsync(config, refresh: false, cancellationToken);
+            asked = new HashSet<string>([door], StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            roster = await _loop.Harnesses.RosterAsync(config, refresh, cancellationToken);
+            asked = refresh ? roster.Select(report => report.Adapter).ToHashSet(StringComparer.OrdinalIgnoreCase) : [];
+        }
+
+        // Whom a session of Daoris's runs on, asked only where a door was just read: the probe keeps those accounts' words.
+        var running = asked.Count > 0 ? await RunningAsync(cancellationToken) : null;
+        var now = _loop.Harnesses.Clock();
         var settings = _loop.Harnesses.Settings;
 
         return new
@@ -39,6 +65,8 @@ public sealed partial class DriverModule
             {
                 // Asked once per harness: every field below reads the same two answers.
                 var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
+                var stamps = _reads.Observe(
+                    report, now, asked.Contains(report.Adapter), BusyOn(running, toolchain?.Owner(report.Adapter) ?? report.Adapter));
                 var pinned = settings.ResolveVersion(report.Adapter, null, null);
                 // The tool's own settings file under an account (AGT6, D98), where this build
                 // knows it: a door's is its owner's (AGT7), and null offers nothing.
@@ -86,6 +114,9 @@ public sealed partial class DriverModule
                     // Whether a session on this door keeps a conversation (D76 §1) — what the page
                     // reads an empty record by, rather than guessing from the emptiness (CONV3b).
                     Structured = _loop.Harnesses.Structured(report.Adapter),
+                    // Whether a session on this door is handed the rules file (PERM1, D72): the agent's
+                    // page has *What it may do* only where Daoris hands its agent one (UX6e, D150 §5.1).
+                    TakesRules = _loop.Harnesses.Adapters.Resolve(report.Adapter).TakesSettings,
                     // The plugin this harness came from (D64), or null for one this build carries
                     // — shown beside it, so a person knows which folder to look in.
                     Plugin = _loop.Harnesses.Adapters.DeclaredBy(report.Adapter),
@@ -107,6 +138,8 @@ public sealed partial class DriverModule
                         Settings = settingsFile is null
                             ? null
                             : AccountSettings(AgentSettings.Read(Path.Combine(profile.Home, settingsFile))),
+                        // When its state was last read (UX6e), or null where it never was: absent is never a reading.
+                        Read = stamps.Accounts.GetValueOrDefault(profile.Name),
                     }).ToArray(),
                     // What the tool itself offers for those two keys (AGT6, D98): its aliases and
                     // the efforts its settings keep. Null where Daoris does not know its settings,
@@ -122,6 +155,8 @@ public sealed partial class DriverModule
                     // accounts" to an owner who was logged in.
                     OwnLogin = report.OwnLogin.ToString().ToLowerInvariant(),
                     report.OwnAccount,
+                    // When the tool's own sign-in was last read: only at a person's press (TOOL6g), so null before one.
+                    OwnRead = stamps.Own,
                     // Which circles run this harness as which account (D49 §4): the terminal
                     // could set it and the page could not even see it. A door's are its
                     // owner's (AGT7).
@@ -136,6 +171,57 @@ public sealed partial class DriverModule
                 };
             }).ToArray(),
         };
+    }
+
+    /// <summary>
+    /// The door an agent's accounts are read through (AGT7, UX6e): the one named for it, else the first door onto its
+    /// accounts, as the page lists an agent's doors. Null where no door this build knows runs as that agent's accounts.
+    /// </summary>
+    private string? AccountDoor(string agent)
+    {
+        string? first = null;
+        foreach (var name in _loop.Harnesses.Known)
+        {
+            HarnessToolchain? toolchain;
+            try
+            {
+                toolchain = _loop.Harnesses.Toolchain(name);
+            }
+            catch (DriverException)
+            {
+                continue;
+            }
+
+            if (toolchain is null || !string.Equals(toolchain.Owner(name), agent, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(name, agent, StringComparison.OrdinalIgnoreCase)) return name;
+            first ??= name;
+        }
+
+        return first;
+    }
+
+    /// <summary>
+    /// Whether a session of Daoris's runs on one of <paramref name="owner"/>'s accounts now, by the live records
+    /// (<see cref="RunningAsync"/>); null where they were not read, and then none is taken for busy.
+    /// </summary>
+    private static Func<string, bool>? BusyOn(IReadOnlyDictionary<string, int>? running, string owner) =>
+        running is null ? null : account => running.GetValueOrDefault(Key(owner, account)) > 0;
+
+    /// <summary>
+    /// The roster asked again because something the person pressed ran (a sign-in's end, a key, an account's edit), each
+    /// door's accounts dated as read then (UX6e): what this machine has has probably changed.
+    /// </summary>
+    private async Task<IReadOnlyList<HarnessReport>> LookAgainAsync(DriverConfig config, CancellationToken cancellationToken)
+    {
+        var roster = await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
+        var running = await RunningAsync(cancellationToken);
+        var now = _loop.Harnesses.Clock();
+        foreach (var report in roster)
+        {
+            _reads.Observe(report, now, asked: true, BusyOn(running, _loop.Harnesses.Toolchain(report.Adapter)?.Owner(report.Adapter) ?? report.Adapter));
+        }
+
+        return roster;
     }
 
     // What a driven start in each workspace would run on, and where each part came from
@@ -252,7 +338,7 @@ public sealed partial class DriverModule
 
             var account = HarnessKeys.Add(
                 _loop.Harnesses.Home, owner, PayloadHelper.GetRequiredValue<string>(request.Payload, "key"));
-            await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
+            await LookAgainAsync(config, cancellationToken);
             return new
             {
                 Harness = harness, Action = action, ExitCode = 0, Profile = account,
@@ -286,7 +372,7 @@ public sealed partial class DriverModule
         {
             // Whatever it did, what this machine HAS has probably changed — so the next question
             // asks the tool again rather than answering from before.
-            await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
+            await LookAgainAsync(config, cancellationToken);
             // A default's edit says what sessions there run as now (LOOK2c), the fact the terminal's verb prints: a
             // workspace cleared on the tool's own row runs as the machine's default where one is set.
             return action == "profile-default"
@@ -553,7 +639,7 @@ public sealed partial class DriverModule
         IReadOnlyList<HarnessReport> roster = [];
         try
         {
-            roster = await _loop.Harnesses.RosterAsync(config, refresh: true, CancellationToken.None);
+            roster = await LookAgainAsync(config, CancellationToken.None);
         }
         catch (Exception)
         {

@@ -3,7 +3,6 @@ import type { StarterDoor } from '../help/starters';
 import { GetStartedDomain } from '../setupGuide';
 import type { Notify } from '../ui';
 import type { BrowserDriver } from '../work/browserDrivers';
-import { AgentsDomain } from './AgentsDomain';
 import { AiDomain } from './AiDomain';
 import { AppearanceDomain } from './AppearanceDomain';
 import { BrowserDomain } from './BrowserDomain';
@@ -53,7 +52,7 @@ export const SETTINGS_DOMAINS = [
   // Its list of workspaces is for everyone; its wiring is the machine's, and only a shell sees that.
   { id: 'workspace', label: 'settings.domain.workspace', machine: false, component: WorkspaceDomain },
   { id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain },
-  { id: 'agents', label: 'settings.domain.agents', machine: true, component: AgentsDomain },
+  // Agents left for a place of its own (UX6e, D150 §5): an agent is a product with accounts, and its page holds them.
   // The programs Daoris runs beside its agents (TOOLS7, D121 §4.1): each a file of this machine's, so a browser is
   // offered no such domain.
   { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },

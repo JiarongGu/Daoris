@@ -29,7 +29,8 @@ D75), where its own rules live; this is what a view may assume of it.
   Agents · View*, D75), the command center naming the scope, and the window's controls. **The
   activity bar** (48px) is the one navigation, a place per icon, and a badge counts what its place
   holds: Overview the whole of *What needs you*, Sessions its own sessions waiting on the person
-  (UX5 U20), its list's *Waiting on you*: a parked quest counts there too (D126 §2.5). **The status bar** states the machine's standing facts: the driver, the active sessions,
+  (UX5 U20), its list's *Waiting on you*: a parked quest counts there too (D126 §2.5), and Agents the signed-out accounts a
+  list or a default holds (UX6e, D150 §2.1). **The status bar** states the machine's standing facts: the driver, the active sessions,
   the workspace, the remote, the index and the recall tier (D24, stated on every screen). Global state
   lives in exactly one place; views never restate it.
 - **The content column is the window's whole width** (UX5 U59, the owner: under a 72rem cap a
@@ -460,7 +461,18 @@ controls are in the frame design's §3.
   - **A detached session's console is the output panel** (FRAME1h, D118 §4): grown, hidden, and Ctrl+J,
     kept for every detached window apart from the main window's panel. It offers no views menu, since
     the window has no side bar to move one to, and no stop, since nothing in it acts.
-- **Plugins** (D119; a catalogue since D140) — the activity bar's place after Search, shell-only, on the frame. Its
+- **Agents** (UX6e, D150 §5) — the activity bar's place after Search, shell-only, on the frame. Its list is each agent once,
+  whatever doors reach it: its name and maker, its accounts in a phrase (*3 accounts · 2 signed out*, *not installed*), the
+  waiting mark on one with a signed-out account a list or a default holds; its ⋯ shows the agents not installed. An agent's
+  page heads with its product, maker, version and *Sign in to another account*, then **its accounts, one list**: each with
+  its state as last known (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling until …* with *Try
+  now*, *unknown*), when it was read (*read 10:42*, *never read*), the workspaces that may run on it, what runs on it and
+  what its agent last said, its one act on its row and the rest in its ⋯. **Opening the page asks no account**: *Read again*
+  at the list's head asks that agent's accounts, one at a time. Then its sections, each folded to a line naming its values
+  and opened by its chevron: *How accounts are used*, *Workspaces*, *Ways in* (a door is a property, never a second list),
+  *What it may do* (only where Daoris hands the agent the rules file; a proposal waiting opens it), *Model and effort*
+  (only where Daoris knows the tool's settings) and *Usage*; its terminal twins at its foot.
+- **Plugins** (D119; a catalogue since D140) — the activity bar's place after Agents, shell-only, on the frame. Its
   list is a catalogue: *Installed*, those waiting on the person first, then on, then off; then *Daoris's own plugins*
   not installed, each with *Install* on its row; then, with packages, *Available*. A row is the plugin's icon, its
   name, version and state's word, its description cut to the row, and a meta line: where it came from, what it adds,
@@ -475,8 +487,9 @@ controls are in the frame design's §3.
   then *Make a plugin…*, the kit in a drawer; the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
-  *Driver*, *Agents*, *Tools*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
-  驱动, 智能体, 工具, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116, and *Tools* by TOOLS7, D121). Every way in opens the domain its
+  *Driver*, *Tools*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
+  驱动, 工具, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116, and *Tools* by TOOLS7, D121; *Agents* left for a place of
+  its own, UX6e). Every way in opens the domain its
   fact is set in, at the part it names, and a browser is offered only the first four, its list saying
   beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
   frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
@@ -508,13 +521,10 @@ controls are in the frame design's §3.
     UPDATE1b); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose
     it, a job named once a circle has two, a blocked start's sentence whole, at the card's width);
-    *Agents* (one card per agent, its accounts leading, each row saying its cool-off with *Try now*, the
-    sessions of Daoris's on it and what its agent last said; then *How accounts are used*, this machine's
-    list and each workspace's, a press the terminal would refuse not offered (TOOL4g, D130 §9); its ways in
-    beneath — a declared door wearing the plugin it came from — and *Usage*, what each account has carried); *Permissions* (the rules
-    file, Daoris's defaults each with a switch and no remove, a person's rules with a remove, and
-    nothing on the card ranking one scope over another, since precedence is the harness's; the
-    machine's scope reads *every session on this machine*); *Plugins* (a row per folder: what it
+    *Permissions* (the rules file and the rules a workspace or a repository adds, a person's rules with a remove, and
+    nothing on the card ranking one scope over another, since precedence is the harness's; Daoris's defaults, the rules for
+    every session on this machine and the proposals are what an agent may do, on its page since UX6e, and the card says so
+    with a door); *Plugins* (a row per folder: what it
     declares and speaks on, running or off, the driver's sentence under a refused one, the switch and
     Remove).
 

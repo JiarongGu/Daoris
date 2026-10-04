@@ -160,7 +160,7 @@ describe('each step: its state, its doors and its commands', () => {
     const steps = byId(MACHINES.fresh);
 
     expect(steps.agent).toMatchObject({
-      doors: [{ view: 'settings', section: 'agents' }],
+      doors: [{ view: 'agents', agentPart: 'accounts' }],
       commands: ['daoris agent install <agent>', 'daoris agent login <agent>'],
     });
     expect(steps.helper).toMatchObject({
@@ -176,7 +176,8 @@ describe('each step: its state, its doors and its commands', () => {
       doors: [{ view: 'settings', section: 'workspace', anchor: 'landing' }],
       commands: ['daoris driver line <repository> <branch>', 'daoris driver landing <repository> merge|branch <pattern>'],
     });
-    expect(steps.rules).toMatchObject({ doors: [{ view: 'settings', section: 'permissions' }], commands: ['daoris agent rules'] });
+    // UX6e: what agents may do is on the page of the agent Daoris hands the rules file (D150 §3.1).
+    expect(steps.rules).toMatchObject({ doors: [{ view: 'agents', agentPart: 'rules' }], commands: ['daoris agent rules'] });
   });
 
   it('lists the steps in the order a setup goes', () => {

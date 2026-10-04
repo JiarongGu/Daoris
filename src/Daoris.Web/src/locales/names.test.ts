@@ -313,8 +313,9 @@ describe('the real glossary and catalogues', () => {
     const found = check(glossary, en, zh);
     const approved: Record<string, [string, string]> = {
       'settings.domain.ai': ['AI features', 'AI 功能'],
-      'settings.domain.agents': ['Agents', '智能体'],
-      'menu.agents.tools': ['Agent settings', '智能体设置'],
+      // Agents left Settings for a place of its own (UX6e, D150 §5), keeping the name the owner approved; *Agent settings*
+      // went with the domain it opened.
+      'nav.agents': ['Agents', '智能体'],
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
       'command.go.convergence': ['Convergence', '同归'],

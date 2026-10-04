@@ -5,7 +5,8 @@ import type { IconName } from './ui';
 // can assert rather than a screen somebody has to arrange.
 
 /** The application's views (D66): one list, the activity bar's. */
-export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'plugins' | 'settings';
+export type View =
+  | 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'agents' | 'plugins' | 'settings';
 
 /**
  * Every view, in the activity bar's order, with the glyph both the bar and the palette show. The
@@ -23,6 +24,9 @@ export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; sh
   { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
   { view: 'convergence', icon: 'convergence' },
   { view: 'search', icon: 'search' },
+  // A place of its own since UX6e (D150 §5), before Plugins: an agent is a product with accounts, and its accounts are this
+  // machine's (D47 §4), so a browser is shown no Agents, as it is shown no Sessions.
+  { view: 'agents', icon: 'account', keywords: 'agents agent account accounts sign in claude codex harness 智能体 账户', shellOnly: true },
   // A view of its own since PLUGUI1b (D119 §3), after Search: a plugin is this machine's (D64; D47 §4), so a browser
   // is shown no Plugins, as it is shown no Sessions.
   { view: 'plugins', icon: 'plug', keywords: 'plugins plugin extension kit hook server 插件', shellOnly: true },

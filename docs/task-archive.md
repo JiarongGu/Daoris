@@ -11013,3 +11013,11 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6f — a repository's setup on its page** (web-shell, web-settings; §4.2, §3.1).
 
 **Outcome** 2026-10-04: built. A repository's page is Details and Setup, its tab remembered for the view; Setup holds driving, line and landing, sessions (language, standing answer) and reach (reading and writing across, its rules), each section folding to what Daoris decides, each row's terminal twin its hint. Settings' four per-repository lists keep each workspace's default and a door to each repository's Setup (Lines 14 → 7 controls, How work lands 26 → 13, Reading across 22 → 9). Detail: D150's UX6f note, `8a9c1f34`..`b86a9bcb`.
+
+
+## UX6e — Agents is a place: one account list per product (2026-10-04)
+
+> - [ ] **UX6e — Agents is a place: one account list per product** (web-shell, web-settings, modules; §5, §2.4), with
+> TOOL4m's rest: the conversation picker's split (D130 §3.2) and a session head's *your own sign-in*.
+
+**Outcome** 2026-10-04: built. Agents is a place on the activity bar after Search: each agent once, whatever doors reach it, its accounts in a phrase and its badge the signed-out accounts a list or default holds; an agent's page lists its accounts once, each with its last known state and when it was read, its acts on the row, and How accounts are used, Workspaces, Ways in, What it may do, Model and effort and Usage folded beneath. Opening it asks no account; *Read again* asks one agent's. Settings → Agents retired; TOOL4m's rest built (the picker's groups, *on your own sign-in*). Detail: D150's UX6e note, `8ec5accd`..`e0b6ee35`.

@@ -87,6 +87,7 @@
   "quests.session.title": "会话",
   "quests.session.moved": "更新于 {{ago}}",
   "quests.session.asProfile": "以 {{profile}} 身份",
+  "quests.session.ownSignIn": "在你自己的登录上",
   "quests.session.hint": "由驱动程序启动，状态靠观察而非自报——进程在驱动机上运行，这里是它的记录。",
   "quests.session.stopped": "会话 {{id}} 正在停止——记录会注明这是本人终止的。",
   "quests.session.orphanEnded": "会话 {{id}} 在本机已没有任何进程在运行——记录现已如实注明。",

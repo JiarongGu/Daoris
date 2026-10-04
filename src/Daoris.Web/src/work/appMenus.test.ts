@@ -19,11 +19,27 @@ describe('the menus by domain', () => {
     ]);
     expect(menus.daoris.find((item) => item.id === 'view:plugins')).toMatchObject({ label: 'Plugins', icon: 'plug' });
     expect(menus.daoris[0]).toMatchObject({ label: 'Setup' });
+    // D150 §2.4 (UX6e): signing in, what agents may do and usage are on an agent's page; no Settings → Agents.
     expect(ids(menus.agents)).toEqual([
-      'settings:agents', 'settings:permissions', 'proposals', 'usage', 'settings:ai',
+      'agents:signIn', 'agents:rules', 'proposals', 'usage', 'settings:ai',
     ]);
     // The proposals waiting on the person are counted where they are answered.
     expect(menus.agents.find((item) => item.id === 'proposals')?.badge).toBe(1);
+  });
+
+  /** D150 §2.4: each agent the place lists opens its page, ahead of the acts. */
+  it('lists each agent, which opens its page', () => {
+    const menus = appMenus({
+      attached: true, workspaces: TWO, scope: null, waiting: 0,
+      agents: [{ name: 'claude-code', label: 'Claude Code' }, { name: 'codex', label: 'Codex' }],
+    });
+
+    expect(ids(menus.agents).slice(0, 3)).toEqual(['agent:claude-code', 'agent:codex', 'agents:signIn']);
+    expect(menus.agents[0]).toMatchObject({ label: 'Claude Code', icon: 'account' });
+    expect(menuAction('agent:codex')).toEqual({ kind: 'agents', agent: 'codex' });
+    // A browser has no agents to list (D47 §4).
+    expect(ids(appMenus({ attached: false, workspaces: TWO, scope: null, waiting: 0, agents: [{ name: 'codex', label: 'Codex' }] }).agents))
+      .toEqual(['settings:ai']);
   });
 
   it('lists every workspace with what it holds, marks the scope, and holds the workspace acts', () => {
@@ -58,10 +74,12 @@ describe('the menus by domain', () => {
 
   it('reads an item as the act it names', () => {
     expect(menuAction('settings:permissions')).toEqual({ kind: 'settings', section: 'permissions' });
-    // An item named for a part of a domain opens at that part (UX5 U72): *Usage* opened Agents &
-    // accounts at its top, a screen above what it named.
-    expect(menuAction('proposals')).toEqual({ kind: 'settings', section: 'permissions', anchor: 'proposals' });
-    expect(menuAction('usage')).toEqual({ kind: 'settings', section: 'agents', anchor: 'usage' });
+    // An item named for a part opens at that part (UX5 U72). Since UX6e (D150 §2.4) the proposals are Overview's rule
+    // rows, and signing in, what agents may do and usage are on the page of the agent that has each.
+    expect(menuAction('proposals')).toEqual({ kind: 'view', view: 'overview' });
+    expect(menuAction('usage')).toEqual({ kind: 'agents', part: 'usage' });
+    expect(menuAction('agents:rules')).toEqual({ kind: 'agents', part: 'rules' });
+    expect(menuAction('agents:signIn')).toEqual({ kind: 'agents', part: 'accounts' });
     expect(menuAction('wire')).toEqual({ kind: 'settings', section: 'workspace', anchor: 'wiring' });
     expect(menuAction('scope:*')).toEqual({ kind: 'scope', workspace: null });
     expect(menuAction('scope:aurora')).toEqual({ kind: 'scope', workspace: 'aurora' });

@@ -5,6 +5,7 @@
   "command.go.convergence": "同归",
   "command.go.map": "地图",
   "command.go.search": "搜索",
+  "command.go.agents": "智能体",
   "command.go.settings": "设置",
   "command.go.sessions": "会话",
   "command.go.plugins": "插件",

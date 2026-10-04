@@ -48,6 +48,18 @@ export function moment(iso: string, language?: string): string {
 }
 
 /**
+ * When something was read, as a person scans a list of them (UX6e, D150 §5.3): its clock today, its day and clock before,
+ * in this machine's zone and the reader's language: `10:42`, `Oct 3, 10:42`, `10月3日 10:42`.
+ */
+export function clockOf(iso: string, now: Date = new Date(), language?: string): string {
+  const at = new Date(iso);
+  const today = at.toDateString() === now.toDateString();
+  return at.toLocaleString(locale(language), today
+    ? { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
+    : { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+}
+
+/**
  * Items joined the way the reader's language joins a list (LANG1b, the language design §4): `#a1, #b2, and #c3`,
  * `#a1、#b2和#c3`. `language` is the page's unless a caller words in another (a story's or a test's fixed language).
  */
@@ -183,10 +195,17 @@ export function sentence(error: unknown, language?: string): string {
  */
 export function sessionTool(
   session: { adapter: string; harnessVersion?: string | null; profile?: string | null },
+  /**
+   * The session's agent has accounts, so a record naming none ran on the tool's own sign-in, said so (D125 §3.7, TOOL4m's
+   * rest with UX6e). Left out, nothing is said of an account the record does not name.
+   */
+  ownSignIn = false,
 ): string {
   return [
     session.adapter,
     session.harnessVersion || null,
-    session.profile ? i18n.t('quests.session.asProfile', { profile: session.profile }) : null,
+    session.profile
+      ? i18n.t('quests.session.asProfile', { profile: session.profile })
+      : ownSignIn ? i18n.t('quests.session.ownSignIn') : null,
   ].filter(Boolean).join(' · ');
 }

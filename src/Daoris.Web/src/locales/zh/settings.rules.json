@@ -55,5 +55,7 @@
   "settings.rules.proposals.state.refused": "被拒收",
   "settings.rules.proposals.state.unchanged": "无变化",
   "settings.rules.proposals.accepted": "已采纳：{{change}}。此后启动的会话都会拿到它。",
-  "settings.rules.proposals.declined": "已谢绝：{{change}}。规则保持原样。"
+  "settings.rules.proposals.declined": "已谢绝：{{change}}。规则保持原样。",
+  "settings.rules.elsewhere": "Daoris 的默认规则、本机每个会话的规则以及智能体提出的提议，在接收这些规则的智能体页面的「它可以做什么」里。这里是工作区或仓库额外添加的规则。",
+  "settings.rules.elsewhereOpen": "打开它可以做什么"
 }

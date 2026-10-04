@@ -10,6 +10,7 @@
   "contextMenu.act.copyQuest": "Copy quest ID",
   "contextMenu.act.copyAsk": "Copy ask ID",
   "contextMenu.act.copyPlugin": "Copy plugin ID",
+  "contextMenu.act.copyAgent": "Copy agent ID",
   "contextMenu.act.copyRepository": "Copy repository name",
   "contextMenu.act.copyPath": "Copy path",
   "contextMenu.copied": "Copied {{what}}."

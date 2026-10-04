@@ -55,8 +55,13 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, onReview, headed = false, goAheads = [], onGoAhead,
+  onAnswerSession, branch, onReview, headed = false, goAheads = [], onGoAhead, ownSignIn = false,
 }: {
+  /**
+   * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
+   * account (D125 §3.7, TOOL4m's rest with UX6e).
+   */
+  ownSignIn?: boolean;
   /** The go-aheads this session asked on its quest's ask (KNOWUSE1a2), as the frame read them; shown while it is parked. */
   goAheads?: GoAhead[];
   /**
@@ -188,7 +193,7 @@ export function SessionHead({
             ? { label: t('work.intake.ask'), value: <span title={session.tree ?? undefined}>#{session.ask}</span>, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
-          { label: t('work.head.tool'), value: sessionTool(session) },
+          { label: t('work.head.tool'), value: sessionTool(session, ownSignIn) },
           { label: t('work.head.machine'), value: sessionOrigin(session) },
           { label: t('work.head.started'), value: ago(session.created) },
           // A running session has an age and a finished one has a lifetime. Same number, different
