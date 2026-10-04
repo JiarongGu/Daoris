@@ -131,6 +131,19 @@ describe('the Agents place', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
+  /** ROSTER1 (§5.3): an account's ⋯ reads that one account again, on the press, and nothing else. */
+  it('reads one account again from its own ⋯, naming that account alone', async () => {
+    place();
+    await screen.findByText('claude 9.9.9');
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Read again' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code', profile: 'work' } }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', { payload: { refresh: true, agent: 'claude-code' } });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
+  });
+
   /** Each account says its last known state with when it was read, and one nothing answered was never read (§5.3). */
   it('says each account’s state as last known and when it was read', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
