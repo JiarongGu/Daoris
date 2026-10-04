@@ -1,9 +1,19 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago } from '../format';
-import { SectionTitle } from '../ui';
+import { cn } from '../lib/cn';
+import { Button, SectionTitle } from '../ui';
 import { Note } from './Note';
+import { linesTaken, noteBlocks, noteLines } from './noteLines';
 import { type TimelineEvent, sessionTimeline } from './timeline';
+
+/**
+ * How many lines a note shows before it folds (UX6b, design §2.5), and about how many letters the side bar's line holds
+ * at its usual width: the install's side bar showed an ended session's whole verify report past the window's foot.
+ */
+const NOTE_LINES = 4;
+const MEASURE = 56;
 
 /** The mark's hue per kind — an arrangement of existing tokens (D41), never a new colour. */
 const MARK: Record<TimelineEvent['kind'], string> = {
@@ -23,9 +33,13 @@ const MARK: Record<TimelineEvent['kind'], string> = {
  * **A session's note is `Note`'s** (LANG1b, D142): Daoris's lines worded by their codes in the reader's language,
  * someone's words as written, a record from before as it was kept, marked. An evidence bundle is a sentence the
  * driving machine wrote and renders verbatim, and a quest's note is its closer's words.
+ *
+ * **A note longer than four lines folds to them** (UX6b, design §2.5), with *Show all*: a long note is someone's words or
+ * the driver's account of a run, and the conversation and the record hold it whole.
  */
 export function TimelineEntry({ event }: { event: TimelineEvent }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [whole, setWhole] = useState(false);
 
   const label = event.kind === 'opened' ? t('work.timeline.opened')
     : event.kind === 'state' ? t('work.timeline.state', { state: t(`sessionState.${event.state}`) })
@@ -34,6 +48,12 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
 
   // A quest's note is its closer's words, shown as written; a session's is its record's, Daoris's lines worded (LANG1b).
   const note = event.kind === 'quest' ? event.note : null;
+  // Long is judged on what is shown: the note's blocks as `Note` draws them, or the closer's words.
+  const shown = event.kind === 'state'
+    ? noteBlocks(t, noteLines(t, { note: event.note, parts: event.noteParts }, i18n.language)).map((block) => block.text)
+    : note ? [note] : [];
+  const long = linesTaken(shown, MEASURE) > NOTE_LINES;
+  const folded = long && !whole;
 
   return (
     <li className="relative pb-3 pl-5 last:pb-0">
@@ -47,10 +67,25 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
       </p>
 
       {note && (
-        <p className="m-0 mt-0.5 whitespace-pre-wrap text-small italic text-ink-soft">{note}</p>
+        <p className={cn('m-0 mt-0.5 whitespace-pre-wrap text-small italic text-ink-soft', folded && 'line-clamp-4')}>{note}</p>
       )}
       {event.kind === 'state' && (
-        <Note note={event.note} parts={event.noteParts} className="mt-0.5 text-small italic text-ink-soft" />
+        <Note
+          note={event.note}
+          parts={event.noteParts}
+          clamp={folded ? NOTE_LINES : undefined}
+          className="mt-0.5 text-small italic text-ink-soft"
+        />
+      )}
+      {long && (
+        <Button
+          variant="ghost"
+          aria-expanded={whole}
+          className="mt-0.5 px-0 py-0 text-small"
+          onClick={() => setWhole((was) => !was)}
+        >
+          {t(whole ? 'work.timeline.noteLess' : 'work.timeline.noteMore')}
+        </Button>
       )}
 
       {event.kind === 'evidence' && (

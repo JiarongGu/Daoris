@@ -32,7 +32,7 @@ import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
 import { useDraft } from './drafts';
-import { type DockTab, RightDock } from './RightDock';
+import { dockOpensOn, type DockTab, followed, NothingFollowed, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { type ActFacts, actMenu, headerActs, offeredActs, primaryAct, stopAsk } from './acts';
@@ -625,8 +625,12 @@ export function WorkFrame({
   // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
   // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
-  // The attended session's dock surface: the one it had, or the timeline it opens on (FRAME6).
-  const dockKey = attended?.id ?? '';
+  // The session a session's views follow (UX6b, D150 §8): on Sessions the attended one; off Sessions only while it runs or
+  // waits on the person, so an ended one's note no longer runs down every other view's side bar.
+  const following = followed(attended, elsewhere);
+  // The followed session's dock surface: the one it had, or the tab it opens on — the timeline (FRAME6), or Ask Daoris
+  // off Sessions with none followed.
+  const dockKey = following?.id ?? '';
   // What stands where (DOCK1b): Ask Daoris only where a shell handed it in, and the terminal likewise.
   const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal : true);
   const rightViews = viewsIn(placed.places, 'right', present);
@@ -636,8 +640,8 @@ export function WorkFrame({
   // A file's preview per session (PREVIEW1, D111): what a tool card or the review opened, and the tab it
   // covered, which its × goes back to. Kept while the window is open, like the dock's tab.
   const [previews, setPreviews] = useState<Record<string, FileOpen & { back: DockTab }>>({});
-  const previewing = attended && here ? previews[attended.id] ?? null : null;
-  const sessionTab = docked[dockKey] ?? 'timeline';
+  const previewing = following && here ? previews[following.id] ?? null : null;
+  const sessionTab = docked[dockKey] ?? dockOpensOn(elsewhere, following !== null);
   const dock: DockTab | undefined = asking && rightViews.includes('ask')
     ? 'ask'
     : sessionTab === 'preview'
@@ -664,22 +668,22 @@ export function WorkFrame({
   // the conversation's cards through a context, so one stable function is handed and the latest state read.
   const previewNow = useRef<(file: FileOpen) => void>(() => {});
   previewNow.current = (file: FileOpen) => {
-    if (!attended) return;
-    const covered = dock && dock !== 'preview' ? dock : previews[attended.id]?.back ?? 'timeline';
-    setPreviews((was) => ({ ...was, [attended.id]: { path: file.path, lines: file.lines ?? null, back: covered } }));
+    if (!following) return;
+    const covered = dock && dock !== 'preview' ? dock : previews[following.id]?.back ?? 'timeline';
+    setPreviews((was) => ({ ...was, [following.id]: { path: file.path, lines: file.lines ?? null, back: covered } }));
     openDock('preview');
   };
   const openPreview = useCallback((file: FileOpen) => previewNow.current(file), []);
   const closePreview = () => {
-    if (!attended) return;
-    const back = previews[attended.id]?.back ?? 'timeline';
-    setPreviews(({ [attended.id]: _closed, ...rest }) => rest);
+    if (!following) return;
+    const back = previews[following.id]?.back ?? 'timeline';
+    setPreviews(({ [following.id]: _closed, ...rest }) => rest);
     if (dock === 'preview') setDock(back);
     // A side bar the preview leaves with nothing in it closes, as one a moved view leaves does (DOCK1b).
     if (rightViews.length === 0) closeDock(true);
   };
-  const previewFile = useTreeFile(previewing ? attended!.id : null, previewing?.path ?? null);
-  const previewPatch = useReviewedPatch(previewing ? attended!.id : null, previewing?.path ?? null);
+  const previewFile = useTreeFile(previewing ? following!.id : null, previewing?.path ?? null);
+  const previewPatch = useReviewedPatch(previewing ? following!.id : null, previewing?.path ?? null);
   // The person asking for a view by a door that does not know where it stands — the palette's review,
   // Ask Daoris's `F1` — opens whichever region holds it, on it.
   const openView = (view: ViewId) => {
@@ -730,10 +734,10 @@ export function WorkFrame({
   // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
   // held here says so as a sentence, not as an empty bordered well, which read as a field on the
   // installed window.
-  const consoleView = attended && shown
-    ? <SessionConsole id={shown} fill quiet={t(shown === attended.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
+  const consoleView = following && shown
+    ? <SessionConsole id={shown} fill quiet={t(shown === following.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
     : null;
-  const streamTabs = attended ? panelTabs(attended.id, streams) : undefined;
+  const streamTabs = following ? panelTabs(following.id, streams) : undefined;
   const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
   // A task stopped from its tab (CONSOLE3a): asked of the session that runs it; its tab changes when the
   // wire says how it ended. What it was called is the tab's, for the notice.
@@ -750,11 +754,11 @@ export function WorkFrame({
 
   // Off Sessions (DOCK1a) the session views speak for the session attended there, which nothing else on
   // the screen names — so each says whose it is, with the way back to it (found looking at Overview).
-  const whose = (flush: boolean) => (elsewhere && attended ? (
+  const whose = (flush: boolean) => (elsewhere && following ? (
     // Flush in the panel, whose body carries its own gutter; inset in the side bar, as its views are.
     <p className={cn('m-0 flex min-w-0 shrink-0 items-center gap-2 border-b border-line py-1.5 text-meta text-ink-faint', flush ? 'mb-2' : 'px-3')}>
       <span className="min-w-0 truncate">
-        {t('work.frame.attending', { title: sessionTitle(attended, quest, openings[attended.id]) })}
+        {t('work.frame.attending', { title: sessionTitle(following, quest, openings[following.id]) })}
       </span>
       {onOpenSessions && (
         <button
@@ -767,7 +771,7 @@ export function WorkFrame({
       )}
     </p>
   ) : null);
-  const withWhose = (surface: ReactNode, flush = false) => (elsewhere && attended ? <>{whose(flush)}{surface}</> : surface);
+  const withWhose = (surface: ReactNode, flush = false) => (elsewhere && following ? <>{whose(flush)}{surface}</> : surface);
 
   // Where a terminal opened here starts (D96): the attended session's tree (a record with none works in
   // its repository's root), else the first repository of the workspace in scope that has a checkout here.
@@ -798,14 +802,15 @@ export function WorkFrame({
     if (view === 'review') {
       return withWhose(
         <DiffPane
-          session={attended?.id ?? null}
+          // The followed session's (UX6b): off Sessions an ended one is reviewed on Sessions, where it is attended.
+          session={following?.id ?? null}
           // What its frame says while git reads (REVIEW4); off Sessions the line above already names the session.
-          record={attended}
-          title={attended && !elsewhere ? sessionTitle(attended, quest, openings[attended.id]) : null}
+          record={following}
+          title={following && !elsewhere ? sessionTitle(following, quest, openings[following.id]) : null}
           // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
-          hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
-          onSendBack={attended && (takesWords(box) || onSendBack) ? sendBack : undefined}
-          onPreview={attended && here ? (path) => openPreview({ path }) : undefined}
+          hasTree={Boolean(following && ownTree(following, (registry.data ?? []).find((row) => row.repository === following.repository)?.root))}
+          onSendBack={following && (takesWords(box) || onSendBack) ? sendBack : undefined}
+          onPreview={following && here ? (path) => openPreview({ path }) : undefined}
         />,
       );
     }
@@ -820,35 +825,30 @@ export function WorkFrame({
         </div>,
       );
     }
-    return attended
+    return following
       ? withWhose(
         <div className="p-3">
           <SessionTimeline
-            session={attended}
+            session={following}
             quest={quest}
             // Off Sessions there is no head to carry the parked note, so the timeline keeps it.
-            hideCurrentNote={!elsewhere && noteIsInTheHead(attended, here)}
+            hideCurrentNote={!elsewhere && noteIsInTheHead(following, here)}
             titled={false}
           />
         </div>,
       )
       : elsewhere
         // Off Sessions there is no session list beside it to point at (audit SE11): it says nothing is
-        // attended, and offers the view where one is chosen.
-        ? (
-          <div className="grid justify-items-start gap-2 p-3">
-            <p className="m-0 text-small text-ink-faint">{t('work.frame.none')}</p>
-            {onOpenSessions && <Button onClick={onOpenSessions}>{t('work.frame.goSessions')}</Button>}
-          </div>
-        )
+        // attended, or that the one attended has ended and is read on Sessions (UX6b), and offers the view.
+        ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
         : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
   };
-  // The file previewed for the attended session (PREVIEW1): the host's answer, or its sentence, and the
+  // The file previewed for the followed session (PREVIEW1): the host's answer, or its sentence, and the
   // review's patch for that path where the review already holds one.
-  const previewSurface = previewing && attended
+  const previewSurface = previewing && following
     ? withWhose(
       <FilePreview
-        key={`${attended.id}:${previewing.path}`}
+        key={`${following.id}:${previewing.path}`}
         path={previewing.path}
         file={previewFile.data ?? null}
         pending={previewFile.isPending && !previewFile.error}

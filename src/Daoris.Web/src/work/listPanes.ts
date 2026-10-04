@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { store, stored } from '../lib/stored';
-import type { ListView } from './layout';
+import { LIST_BOUNDS, type ListView } from './layout';
 
 /**
  * What a view's list remembers (D118 §3f), per view, beside `closings.ts`, which holds what the frame
@@ -62,6 +62,16 @@ export function readList(view: ListView): ListMemory {
   };
 }
 
+/**
+ * What a list's chosen item is now, as its view reads it (UX6b, D150 §8): still there and waiting on something (an open
+ * quest, a finding still listed, a repository still registered), closed (a done or declined quest, a closed ask), gone
+ * (deleted, retired, no longer listed), or not read yet.
+ */
+export type ChoiceStanding = 'live' | 'closed' | 'gone' | 'unread';
+
+/** Whether a remembered choice ends with its item: closed or gone, never on a guess while the view is still asking. */
+export const endsChoice = (standing: ChoiceStanding): boolean => standing === 'closed' || standing === 'gone';
+
 /** Every view's list memory, and its setters, which are the same from one render to the next. */
 export type ListPanes = {
   pane: (view: ListView) => ListMemory;
@@ -70,14 +80,30 @@ export type ListPanes = {
   choose: (view: ListView, item: string | null) => void;
   /** Null forgets them. */
   setFilters: (view: ListView, filters: Record<string, unknown> | null) => void;
+  /**
+   * The view opened by a door that names no item (its place, a menu, the palette): what it chose is a remembered choice
+   * again, read once more before it is shown. A door that names an item chooses it instead.
+   */
+  reopen: (view: ListView) => void;
+  /** What the view read of its chosen item: a remembered choice whose item closed or went is let go, once. */
+  settle: (view: ListView, standing: ChoiceStanding) => void;
 };
 
 /**
  * Each view's list memory, held by the application so its doors reach every view's list (the strip's
  * toggle, the View menu, Ctrl+B, a press on the current place), and by a frame drawn alone for itself.
+ *
+ * @remarks
+ * **A remembered choice ends with what it chose** (UX6b, design §1 rule 6): a view reopens its chosen item only while
+ * that item still waits on something. What a launch read from the keys, and what a view held when a door that names
+ * nothing opened it again, is remembered; it is read once by the view, and let go if its item closed or went, so the view
+ * opens with nothing chosen and never on the *gone* state. An item chosen now, by the person in the list or by a door that
+ * names it, is never let go here: one that closes stays as its act left it, and one that goes while open says so.
  */
 export function useListPanes(): ListPanes {
   const [held, setHeld] = useState<Partial<Record<ListView, ListMemory>>>({});
+  // The views whose choice is remembered rather than made now: every view at a launch, since each read its keys.
+  const remembered = useRef(new Set<ListView>(Object.keys(LIST_BOUNDS) as ListView[]));
 
   const change = useCallback(<P extends Part>(view: ListView, part: P, value: ListMemory[P], kept: string | null) => {
     setHeld((was) => ({ ...was, [view]: { ...(was[view] ?? readList(view)), [part]: value } }));
@@ -87,12 +113,22 @@ export function useListPanes(): ListPanes {
   const setClosed = useCallback((view: ListView, closed: boolean) => change(view, 'closed', closed, closed ? '1' : null), [change]);
   const setWidth = useCallback((view: ListView, width: number | null) =>
     change(view, 'width', width, width === null ? null : String(width)), [change]);
-  const choose = useCallback((view: ListView, item: string | null) => change(view, 'chosen', item, item), [change]);
+  const choose = useCallback((view: ListView, item: string | null) => {
+    remembered.current.delete(view);
+    change(view, 'chosen', item, item);
+  }, [change]);
   const setFilters = useCallback((view: ListView, filters: Record<string, unknown> | null) =>
     change(view, 'filters', filters ?? {}, filters === null ? null : JSON.stringify(filters)), [change]);
+  const reopen = useCallback((view: ListView) => { remembered.current.add(view); }, []);
+  const settle = useCallback((view: ListView, standing: ChoiceStanding) => {
+    if (standing === 'unread' || !remembered.current.has(view)) return;
+    // Read once: from here the item is what the person is looking at, whatever becomes of it.
+    remembered.current.delete(view);
+    if (endsChoice(standing)) change(view, 'chosen', null, null);
+  }, [change]);
 
   return useMemo(() => ({
     pane: (view: ListView) => held[view] ?? readList(view),
-    setClosed, setWidth, choose, setFilters,
-  }), [held, setClosed, setWidth, choose, setFilters]);
+    setClosed, setWidth, choose, setFilters, reopen, settle,
+  }), [held, setClosed, setWidth, choose, setFilters, reopen, settle]);
 }

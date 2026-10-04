@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -61,22 +61,28 @@ function respond(url: string): Response {
  * The view as the app holds it: a draft handed in is an EVENT, consumed through `onOpened` — so the
  * holder clears it, exactly as `App` does, or the composer would reopen on every render.
  */
-function Held({ opening, notify }: { opening: { from?: string; to?: string } | null; notify: () => void }) {
+function Held({ opening, notify, door }: { opening: { from?: string; to?: string } | null; notify: () => void; door?: string }) {
   const [pending, setPending] = useState(opening);
-  return <QuestsView notify={notify} opening={pending} onOpened={() => setPending(null)} />;
+  return <QuestsView notify={notify} opening={pending} onOpened={() => setPending(null)} door={door} />;
 }
 
-function view(opening: { from?: string; to?: string } | null = null, notify = vi.fn()) {
+function view(opening: { from?: string; to?: string } | null = null, notify = vi.fn(), door?: string) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <Held opening={opening} notify={notify} />
+        <Held opening={opening} notify={notify} door={door} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
   return notify;
 }
+
+/** Quests opened by a door that names `item` (D118 §3i), which the list chooses now. */
+const openedOn = (item: string) => view(null, vi.fn(), item);
+
+/** The main area with nothing chosen, found afresh as it settles: it is a new element from loading to its notice. */
+const nothingChosen = () => waitFor(() => expect(questMain()).toHaveTextContent('Choose a quest or an ask'));
 
 /** The body the last publish sent — what the local host would have been asked to keep. */
 let published: {
@@ -153,11 +159,44 @@ describe('QuestsView', () => {
     expect(await screen.findByRole('dialog', { name: 'New quest' })).toBeInTheDocument();
   });
 
-  it('says a chosen quest that is no longer here has gone, rather than showing nothing', async () => {
+  it('says a quest chosen now that is no longer here has gone, rather than showing nothing', async () => {
+    openedOn('f1f1f1');
+
+    expect(await within(questMain()).findByText('This quest is no longer here')).toBeInTheDocument();
+  });
+
+  // UX6b (design §1 rule 6): a remembered choice ends with what it chose. The install reopened yesterday's done quest.
+  it('opens with nothing chosen on a remembered quest that has gone, never on its gone state, and forgets it', async () => {
     window.localStorage.setItem('daoris.list.quests.chosen', 'f1f1f1');
     view();
 
-    expect(await within(questMain()).findByText('This quest is no longer here')).toBeInTheDocument();
+    await nothingChosen();
+    expect(within(questMain()).queryByText('This quest is no longer here')).toBeNull();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
+  });
+
+  it('opens with nothing chosen on a remembered quest that closed', async () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'd0d0d0');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/quests')) {
+        return Response.json(url.includes('includeClosed=true') ? [...QUESTS, { ...QUESTS[0], id: 'd0d0d0', title: 'An old one', status: 'Done' }] : QUESTS);
+      }
+      return respond(url);
+    }));
+    view();
+
+    await nothingChosen();
+    expect(screen.queryByRole('heading', { level: 1, name: 'An old one' })).toBeNull();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
+  });
+
+  it('reopens a remembered quest that still waits', async () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'abc123');
+    view();
+
+    expect(await questPage('Expose a streaming budget')).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('abc123');
   });
 
   // ——— The list's filters (D118 §2, §3f): in its ⋯, and remembered.
@@ -444,8 +483,7 @@ describe('QuestsView', () => {
 
   /** The sync item's conflict list names a quest through the opener; Quests' list has it chosen, and its page opens. */
   it('a quest a door names opens on the page', async () => {
-    window.localStorage.setItem('daoris.list.quests.chosen', 'abc123');
-    view();
+    openedOn('abc123');
 
     const page = await questPage('Expose a streaming budget');
     expect(within(page).getByText('#abc123')).toBeInTheDocument();
@@ -453,7 +491,6 @@ describe('QuestsView', () => {
 
   /** A record the list leaves out is still a record: a closed quest a door names opens on its page all the same. */
   it('opens a closed quest a door names, though the list leaves closed quests out', async () => {
-    window.localStorage.setItem('daoris.list.quests.chosen', 'd0d0d0');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith('/api/quests')) {
@@ -461,7 +498,7 @@ describe('QuestsView', () => {
       }
       return respond(url);
     }));
-    view();
+    openedOn('d0d0d0');
 
     const page = await questPage('An old one');
     const header = within(page).getByRole('heading', { level: 1 }).closest('header')!;
@@ -582,19 +619,41 @@ describe('QuestsView', () => {
     /** Overview's band names an ask waiting on a person (INT4d) through the opener; Quests opens its page. */
     it('an ask a door names opens its page', async () => {
       ASKS = [PROPOSED];
-      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:7c1e9a04b2d5');
-      view();
+      openedOn('ask:7c1e9a04b2d5');
 
       const page = await questPage('Cap the hydration per frame.');
       expect(within(page).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
       expect(within(questList()).getByRole('button', { name: /Cap the hydration per frame\./ })).toHaveAttribute('aria-current', 'true');
     });
 
-    it('says a chosen ask that is no longer here has gone', async () => {
-      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:0b9f3c21aa77');
-      view();
+    it('says an ask chosen now that is no longer here has gone', async () => {
+      openedOn('ask:0b9f3c21aa77');
 
       expect(await within(questMain()).findByText('This ask is no longer here')).toBeInTheDocument();
+    });
+
+    // UX6b (design §1 rule 6): an ask waiting to be published reopens; one closed or gone opens nothing chosen.
+    it('reopens a remembered ask that still waits to be published', async () => {
+      ASKS = [PROPOSED];
+      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:7c1e9a04b2d5');
+      view();
+
+      expect(await questPage('Cap the hydration per frame.')).toBeInTheDocument();
+    });
+
+    it('opens with nothing chosen on a remembered ask that closed or went', async () => {
+      ASKS = [{ ...PROPOSED, state: 'Closed', note: 'not needed' }];
+      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:7c1e9a04b2d5');
+      view();
+
+      await nothingChosen();
+      expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
+      cleanup();
+
+      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:0b9f3c21aa77');
+      view();
+      await nothingChosen();
+      expect(within(questMain()).queryByText('This ask is no longer here')).toBeNull();
     });
 
     /** The page's intake line is a door into Sessions only where the view is handed one (INT4d). */

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../i18n';
 import type { Quest, Session } from '../api';
 import { SessionTimeline, TimelineEntry } from './SessionTimeline';
@@ -95,6 +95,48 @@ describe('one timeline entry', () => {
     expect(screen.getByText('commits landed:')).toBeInTheDocument();
     expect(screen.getByText('c0ffee1')).toBeInTheDocument();
     expect(screen.getByText('让区块 API 暴露流式预算')).toBeInTheDocument();
+  });
+
+  /**
+   * UX6b (design §2.5): the install's side bar showed an ended session's whole done note, a full verify report, running
+   * past the window's foot. A note longer than four lines folds to them, with *Show all*; the record holds it whole.
+   */
+  it('folds a note longer than four lines to them, and shows it all on the press', () => {
+    const report = ['verify passed:', 'typecheck clean', 'cli 1200 tests', 'web 3798 tests', 'doc-budgets reported', 'devkit gates green'].join('\n');
+    render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'completed', note: report }} />);
+
+    const more = screen.getByRole('button', { name: 'Show all' });
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText(/devkit gates green/).closest('.line-clamp-4')).not.toBeNull();
+
+    fireEvent.click(more);
+    expect(screen.getByRole('button', { name: 'Show less' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(/devkit gates green/).closest('.line-clamp-4')).toBeNull();
+  });
+
+  it('leaves a note of four lines or fewer whole, with nothing to press', () => {
+    render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'failed', note: 'the process exited 1' }} />);
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.getByText('the process exited 1').closest('.line-clamp-4')).toBeNull();
+  });
+
+  it("folds a quest's long note, its closer's words, the same way", () => {
+    const note = 'Done. '.repeat(60).trim();
+    render(<TimelineEntry event={{ kind: 'quest', at: '2026-09-21T10:30:00Z', status: 'Done', note }} />);
+    expect(screen.getByText(note)).toHaveClass('line-clamp-4');
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByText(note)).not.toHaveClass('line-clamp-4');
+  });
+
+  it('folds a long note in 中文 by how wide its words set, and says so in 中文', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      const note = '验证通过，每一道检查都已通过。'.repeat(12);
+      render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'completed', note }} />);
+      expect(screen.getByRole('button', { name: '展开全部' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('shows an evidence bundle that carried no commits as its sentence alone', () => {

@@ -5,21 +5,25 @@ import { useQuestsView } from '../QuestsView';
 import type { Notify } from '../ui';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
+import { useDoor } from './door';
 
 // Quests alone, as its suites hold it (FRAME1d): the view's list and its main area on a browser's frame, with the
 // application's list memory, so what a test chooses is what a relaunch would remember. The doors' events are props,
 // held the way `App` holds them.
 
-export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAsked }: {
+export function QuestsView({ notify, onAttend, opening, onOpened, asking, onAsked, door }: {
   notify: Notify;
   onAttend?: (session: string) => void;
   opening?: { from?: string; to?: string } | null;
   onOpened?: () => void;
   asking?: boolean;
   onAsked?: () => void;
+  /** The item a door names as it opens the view (`useDoor`). */
+  door?: string;
 }) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  useDoor(lists, 'quests', door);
   const pane = lists.pane('quests');
   const layout = useQuestsView({
     active: true,

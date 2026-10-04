@@ -9,7 +9,8 @@ import { useScope } from '../scope';
 import { useConsidered, useDriver, useNudge, useRemotes, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
-import { freshest } from '../quests/records';
+import { askStanding, freshest } from '../quests/records';
+import type { ChoiceStanding } from '../work/listPanes';
 import type { AskRowFacts } from '../quests/QuestList';
 import { QuestsMainNotice } from '../quests/QuestPage';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
@@ -27,6 +28,8 @@ export type AsksPart = {
   loading: boolean;
   /** The chosen ask's page, or the main area's notice for one loading or gone; null where no ask is chosen. */
   page: ReactNode | null;
+  /** Whether the chosen ask still waits on something (UX6b), so a remembered one reopens; absent where none is chosen. */
+  standing?: ChoiceStanding;
   composer: ReactNode | null;
 };
 
@@ -229,6 +232,7 @@ export function useAsksPart({
     rows: asksInOrder(asks.data ?? []).map((item) => ({ ask: item, intake: intakeOf(item)?.state ?? null })),
     loading: asks.isPending,
     page,
+    standing: chosen ? askStanding(shown, every.data !== undefined) : undefined,
     composer: composing && (
       <AskComposer
         draft={draft}

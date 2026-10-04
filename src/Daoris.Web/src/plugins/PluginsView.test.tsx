@@ -32,6 +32,7 @@ import { AT_START } from '../setupGuide';
 import { WorkspaceScopeProvider } from '../scope';
 import { useListPanes } from '../work/listPanes';
 import { ViewFrame } from '../work/ViewFrame';
+import { useDoor } from '../test/door';
 import { usePluginsView } from './PluginsView';
 
 const GATE = {
@@ -81,16 +82,22 @@ function wire() {
 const calls = (type: string) => invoke.mock.calls.filter((call) => call[1] === type).map((call) => (call[2] as { payload?: unknown })?.payload);
 
 /** The view alone, on the browser's frame of list and main area, with the application's list memory. */
-function Plugins({ notify, onAsk }: { notify: (text: string, kind?: 'ok' | 'error') => void; onAsk?: (message: string) => void }) {
+function Plugins({ notify, onAsk, door }: {
+  notify: (text: string, kind?: 'ok' | 'error') => void;
+  onAsk?: (message: string) => void;
+  /** The plugin a door names as it opens the view (`useDoor`). */
+  door?: string;
+}) {
   const lists = useListPanes();
   const [over, setOver] = useState(false);
+  useDoor(lists, 'plugins', door);
   const layout = usePluginsView({
     active: true, chosen: lists.pane('plugins').chosen, onChoose: (item) => lists.choose('plugins', item), notify, onAsk,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }
 
-function show(over: { onAsk?: (message: string) => void } = {}) {
+function show(over: { onAsk?: (message: string) => void; door?: string } = {}) {
   const notify = vi.fn();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -243,10 +250,18 @@ describe('the Plugins view', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringMatching(/no plugin called/), 'error');
   });
 
-  it('says a remembered plugin that has gone is no longer here', async () => {
+  it('says a plugin a door names that has gone is no longer here', async () => {
+    show({ door: 'nobody' });
+    expect(await within(main()).findByText('This plugin is no longer here')).toBeInTheDocument();
+  });
+
+  // UX6b (design §1 rule 6): a remembered choice ends with what it chose, so a removed plugin opens nothing chosen.
+  it('opens with nothing chosen on a remembered plugin that has gone, and forgets it', async () => {
     window.localStorage.setItem('daoris.list.plugins.chosen', 'nobody');
     show();
-    expect(await within(main()).findByText('This plugin is no longer here')).toBeInTheDocument();
+    await waitFor(() => expect(main()).toHaveTextContent('Choose a plugin'));
+    expect(main()).not.toHaveTextContent('This plugin is no longer here');
+    expect(window.localStorage.getItem('daoris.list.plugins.chosen')).toBeNull();
   });
 
   it('tries a plugin where it stands, and keeps the report on its page', async () => {

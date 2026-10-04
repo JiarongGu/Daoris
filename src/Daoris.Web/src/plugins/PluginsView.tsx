@@ -201,6 +201,8 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
         ? { headline: t('plugin.empty.headline'), body: t('plugin.empty.body') }
         : undefined,
       chosen,
+      // A remembered plugin reopens only while this machine still holds it (UX6b): one removed opens nothing chosen.
+      standing: !chosen ? undefined : !answered ? 'unread' : shown.kind === 'gone' ? 'gone' : 'live',
       body: <PluginList groups={groups} chosen={chosen} installing={installing.isPending} unanswered={unanswered} onChoose={onChoose} onInstall={install} />,
     },
     main: (
