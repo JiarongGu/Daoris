@@ -353,7 +353,7 @@ describe('the Work frame', () => {
     // No rail, and not the session's own centre either.
     expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Hide the session list' })).toBeNull();
-    expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeNull();
     // The attended session's timeline is still a tab away, as VS Code's panel is whatever the editor shows.
     expect(screen.getByRole('tab', { name: 'Timeline' })).toBeInTheDocument();
   });
@@ -671,8 +671,9 @@ describe('the Work frame', () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');
 
-    // The conversation's own width is ConversationView's, held beside its other tests.
-    const head = (await screen.findByRole('heading', { level: 2 })).closest('article')!;
+    // The conversation's own width is ConversationView's, held beside its other tests. The record under the page header
+    // says no title of its own (UX7c, D152 §7), so it is found by its Details.
+    const head = (await screen.findByRole('button', { name: /^Details/ })).closest('article')!;
     const composer = screen.getByRole('textbox', { name: 'Message' }).closest('form')!;
     expect(head.className).not.toMatch(/max-w-/);
     expect(composer.className).not.toMatch(/max-w-/);
@@ -681,12 +682,12 @@ describe('the Work frame', () => {
   it('is the rail and the attended session, bound by one selection', async () => {
     show('s1a2b3c4');
 
-    // The rail's row, the page header's title and the head's are the same derived identity, from one implementation:
-    // the header on one line, the head whole (D126 §3.2).
-    await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
+    // The rail's row and the page header's title are the same derived identity, from one implementation (D126 §3.2); the
+    // record under the header does not say it a third time (UX7c, D152 §7).
+    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     await vi.waitFor(() =>
-      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(3));
-    expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
+      expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(2));
+    expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
   });
 
   /**
@@ -701,8 +702,8 @@ describe('the Work frame', () => {
       (type === 'SESSION_OPENINGS' ? { openings: { c0ffee11: 'Cap the hydration per frame' } } : DRIVER_STATE));
     const { onSelect } = show('c0ffee11');
 
-    await screen.findByRole('heading', { level: 2, name: 'Cap the hydration per frame' });
-    await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(3));
+    await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame' });
+    await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(2));
 
     const user = userEvent.setup();
     screen.getByRole('button', { name: 'more for Cap the hydration per frame' }).focus();
@@ -948,8 +949,9 @@ describe('the Work frame', () => {
 
     show('s1a2b3c4');
 
-    expect(await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' }))
       .toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^Details/ })).toBeInTheDocument();
   });
 
   /** The panel is a region a person owns: it grows, it shrinks, and only they close it (D55). */
@@ -1637,7 +1639,7 @@ describe('starting and holding a conversation', () => {
   it('offers no composer for a driven session', async () => {
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
+    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
@@ -1684,7 +1686,7 @@ describe('starting and holding a conversation', () => {
       : DRIVER_STATE));
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
+    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1a2b3c4' } }));
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
@@ -2274,7 +2276,7 @@ describe('clearing a parked session', () => {
     SESSIONS = [DRIVEN];
     show('s1a2b3c4');
 
-    await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
+    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
   });
 });
@@ -2445,16 +2447,22 @@ describe('a session’s page header and its acts', () => {
     expect(screen.queryByRole('menuitem', { name: 'Delete…' })).toBeNull();
   });
 
-  /** The record head below opens on the quest's whole title and says neither its word nor its id again (§3.2). */
-  it('names the session in its header, and says its word and its id there alone', async () => {
+  /**
+   * UX7c (D152 §7, amending D126 §3.2): the header says its word, its title and its facts; its id is its ⋯'s and its
+   * record's *Details*, and the record under it says neither its word nor its title again.
+   */
+  it('names the session in its header with its word and its facts, its id in Details alone', async () => {
     show('s1a2b3c4');
 
     const header = (await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).closest('header')!;
     expect(within(header).getByText('working')).toBeInTheDocument();
-    expect(within(header).getByText('s1a2b3c4')).toBeInTheDocument();
-    const head = screen.getByRole('heading', { level: 2, name: 'Expose a streaming budget' }).closest('header')!;
-    expect(within(head).queryByText('s1a2b3c4')).toBeNull();
+    expect(within(header).getByText(/^engine · /)).toBeInTheDocument();
+    expect(within(header).queryByText('s1a2b3c4')).toBeNull();
+    const head = screen.getByRole('button', { name: /^Details/ }).closest('header')!;
     expect(within(head).queryByText('working')).toBeNull();
+    expect(within(head).queryByRole('heading', { level: 2 })).toBeNull();
+    fireEvent.click(within(head).getByRole('button', { name: /^Details/ }));
+    expect(within(head).getByText('s1a2b3c4')).toBeInTheDocument();
   });
 
   /** M2: a quest parked on its failed sessions is tried again where its session is, the loud act in its header. */
@@ -3203,7 +3211,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveFocus();
 
     await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
-    fireEvent.pointerDown(await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' }));
+    fireEvent.pointerDown(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' }));
     expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
     expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
   });

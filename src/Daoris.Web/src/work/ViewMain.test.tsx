@@ -110,6 +110,39 @@ describe("a page's header", () => {
     expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
   });
+
+  /**
+   * UX7c (D152 §7, the UX7 design §5.1, §5.3): a record whose state moves leads with its state, then its title, at most the
+   * lines it is given, whole in its tip; and under them its facts, once, faint. No id line where it is handed none.
+   */
+  it('leads with its state, clamps its title to the lines given, and says its facts on one line', () => {
+    const title = '(Re-filed from ask #39c495, whose quest was taken outside the driver with no session.)';
+    render(<PageHead title={title} lead={<span>open</span>} clamp={2} facts={['to engine', 'from ask #f6d947', 'filed 4h ago']} />);
+
+    const heading = screen.getByRole('heading', { level: 1, name: title });
+    expect(heading).toHaveClass('line-clamp-2');
+    expect(heading).toHaveAttribute('title', title);
+    expect(screen.getByText('open').compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('to engine · from ask #f6d947 · filed 4h ago')).toBeInTheDocument();
+    expect(screen.getByRole('banner').querySelector('.font-mono')).toBeNull();
+  });
+
+  /** A title cut at its lines is whole on a press (the UX7 design §5.3), and only where it was cut. */
+  it('offers the whole title on a press where it was cut, and nothing where it fits', async () => {
+    const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);
+    const fits = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
+    const { unmount } = render(<PageHead title="A long title" clamp={2} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Show all' }));
+    expect(screen.getByRole('heading', { level: 1 })).not.toHaveClass('line-clamp-2');
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument();
+    unmount();
+
+    tall.mockReturnValue(60);
+    render(<PageHead title="A short one" clamp={2} />);
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
+    tall.mockRestore();
+    fits.mockRestore();
+  });
 });
 
 describe("a page's tabs", () => {

@@ -24,14 +24,25 @@ const head = (props: Partial<Parameters<typeof SessionPageHead>[0]> = {}) => ren
 describe('a session’s page header', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  it('names the session on one line, whole in its tip, with its word and its id', () => {
-    head();
+  /**
+   * UX7c (D152 §7, the UX7 design §5.2): its word leads, so it stays in one place whatever the title's length; then the
+   * title on one line, whole in its tip; then its facts, once. Its id is in its ⋯ and its Details, never a line of the head.
+   */
+  it('leads with its word, then its title on one line whole in its tip, then its facts, and no id', () => {
+    head({ facts: ['engine', 'account-1', '2m', 'attempt 4: the 3 before it failed'] });
     const header = screen.getByRole('banner');
     const title = within(header).getByRole('heading', { level: 1, name: 'Expose a streaming budget on the chunk API' });
     expect(title.getAttribute('title')).toBe('Expose a streaming budget on the chunk API');
     expect(title.className).toContain('truncate');
-    expect(within(header).getByText('working')).toBeInTheDocument();
-    expect(within(header).getByText('s1a2b3c4')).toBeInTheDocument();
+    const word = within(header).getByText('working');
+    expect(word.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(header).getByText('engine · account-1 · 2m · attempt 4: the 3 before it failed')).toBeInTheDocument();
+    expect(within(header).queryByText('s1a2b3c4')).toBeNull();
+  });
+
+  it('draws no facts line where it is handed none', () => {
+    head();
+    expect(screen.getByRole('banner').querySelectorAll('p')).toHaveLength(0);
   });
 
   /** §3.2: the primary act where the state has one, then *Stop…* while live, then ⋯ with the rest in §3.1's order. */

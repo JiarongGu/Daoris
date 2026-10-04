@@ -88,15 +88,32 @@ describe('the chain strip', () => {
     />);
 
     const rows = within(screen.getByRole('region', { name: 'How this work ran' })).getAllByRole('listitem')
-      .filter((item) => /claude-code/.test(item.textContent ?? '') && item.tagName === 'LI' && !item.querySelector('li'));
+      .filter((item) => /attempt/.test(item.textContent ?? '') && item.tagName === 'LI' && !item.querySelector('li'));
     expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringMatching(/failed.*claude-code.*ran 30m/),
-      expect.stringMatching(/completed.*claude-code.*ran 12m.*this session/),
+      expect.stringMatching(/failed.*attempt 1.*ran 30m/),
+      expect.stringMatching(/completed.*attempt 2.*ran 12m.*this session/),
     ]);
     // The one being read is not a door to itself; the other is.
-    expect(screen.getAllByRole('button', { name: 'claude-code' })).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'claude-code' }));
+    expect(screen.getAllByRole('button', { name: /^attempt/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'attempt 1' }));
     expect(onSession).toHaveBeenCalledWith(expect.objectContaining({ id: 's1' }));
+  });
+
+  /**
+   * UX7c (D152 §7): a quest whose sessions all ran on one agent says it once, above its rows; each row says its attempt,
+   * its account and how long, so *three failed before this one* reads at a glance.
+   */
+  it('says the agent once where every attempt ran on it, and each row its attempt and account', () => {
+    render(<ChainStrip chain={buildChain('a', QUESTS, [
+      run('s1', 'a', { state: 'failed', harnessVersion: '0.84.0', profile: 'account-1', adapter: 'claude-code-acp' }),
+      run('s2', 'a', { state: 'failed', harnessVersion: '0.84.0', profile: 'account-1', adapter: 'claude-code-acp', created: '2026-09-23T02:00:00Z' }),
+      run('s3', 'a', { state: 'working', harnessVersion: '0.84.0', profile: 'account-2', adapter: 'claude-code-acp', created: '2026-09-23T03:00:00Z' }),
+    ])} />);
+
+    expect(screen.getAllByText('claude-code-acp · 0.84.0')).toHaveLength(1);
+    expect(screen.getByText('attempt 3')).toBeInTheDocument();
+    expect(screen.getAllByText('account-1')).toHaveLength(2);
+    expect(screen.getByText('account-2')).toBeInTheDocument();
   });
 
   it('offers no door where the surface gave none', () => {

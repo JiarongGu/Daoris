@@ -112,6 +112,33 @@ export const CJK: Quest = {
   body: '世界流式加载需要每帧上限；目前水合量没有限制。', links: [], attachments: [],
 };
 
+/**
+ * The install's re-filed quest (UX7c, D152 §0): its title is the note its ask put on its first line, and its body opens on
+ * the same line. Nobody gave it a short title, so the service named it from its words (SESSUX1j).
+ */
+export const REFILED: Quest = {
+  ...OPEN, id: 'e67690366b56', from: 'ask #f6d947', links: [], attachments: [],
+  title: '(Re-filed from ask #39c495, whose quest was taken outside the driver with no session.)',
+  body: '(Re-filed from ask #39c495, whose quest was taken outside the driver with no session.)\n'
+    + 'continue the prod half of the ticket (the owner, 2026-10-04: the dev half is done, carry on in production)\n'
+    + 'Where it stands: the dev half is done and landed on feature/report-dev.\n\n— asked at workspace `work` (ask `#f6d947`).',
+  filed: hoursAgo(4), updated: hoursAgo(4),
+  // The service's own name for it, read from its words past the note line (SESSUX1j).
+  short: 'continue the prod half of the ticket…',
+};
+
+/** The same quest as an older host answers it, with no short title: its title names it. */
+export const REFILED_UNNAMED: Quest = { ...REFILED, short: undefined };
+
+/** The same quest named by its intake's short title, its whole title said once under the head. */
+export const REFILED_NAMED: Quest = { ...REFILED, short: 'AR-2203 continue the production half' };
+
+/** A session starting for the re-filed quest, as the install's list said while its page said nothing of it. */
+export const STARTING: Session = {
+  id: 'c2b8d293', quest: REFILED.id, repository: 'engine', adapter: 'claude-code-acp', harnessVersion: '0.84.0',
+  profile: 'account-1', state: 'starting', created: hoursAgo(0), updated: hoursAgo(0),
+};
+
 /** The driven session working the open quest, and a failed attempt before it. */
 export const WORKING: Session = {
   id: 's1a2b3c4', quest: OPEN.id, repository: 'engine', adapter: 'claude-code', harnessVersion: '2.1.4', state: 'working',

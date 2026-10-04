@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GoAhead, Quest, Session } from '../api';
 import { answeredPark, Button, EmptyState } from '../ui';
-import { store, stored } from '../lib/stored';
 import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
@@ -42,9 +41,6 @@ import { SessionTimeline } from './SessionTimeline';
  */
 export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && !answeredPark(session) && answerableHere;
-
-/** Whether the chain is shown whole above a session (SESS2 H7) — this viewer's. */
-const CHAIN_WHOLE = 'daoris.chainWhole';
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
@@ -105,12 +101,10 @@ export function AttendedSession({
   timeline?: 'dock' | 'always';
 }) {
   const { t } = useTranslation();
-  // The chain as one line, or whole (SESS2 H7): this viewer's, remembered like the other layout choices.
-  const [chainWhole, setChainWhole] = useState(() => stored(CHAIN_WHOLE) === '1');
-  const showChain = (whole: boolean) => {
-    setChainWhole(whole);
-    store(CHAIN_WHOLE, whole ? '1' : null);
-  };
+  // The chain as one line, or whole: folded on every session it opens on (UX7c, D152 §7, amending SESS2 H7's remembered
+  // choice), since a strip opened on one session stood between the next one's head and its conversation.
+  const [chainWhole, setChainWhole] = useState<string | null>(null);
+  const showChain = (whole: boolean) => setChainWhole(whole && session ? session.id : null);
 
   if (!session) {
     return (
@@ -146,7 +140,7 @@ export function AttendedSession({
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
           the conversation, saying the head's title again (SESS2 H7); whole on a press. */}
-      {chain.length > 1 && (chainWhole
+      {chain.length > 1 && (chainWhole === session.id
         ? (
           <div className="grid justify-items-start gap-1">
             <ChainStrip chain={chain} level={3} attended={session.id} onQuest={onQuest} onSession={onSession} />

@@ -3,6 +3,7 @@ import type { Quest, Session } from '../api';
 import { elapsed, sessionTool } from '../format';
 import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { cn } from '../lib/cn';
+import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
 
 /** The mark per step — an arrangement of existing tokens (D41), and never the only signal. */
@@ -108,18 +109,23 @@ function Step({ step, attended, onQuest, onSession }: {
   }
 
   const { quest, sessions, current } = step;
+  // The agent every session of this quest ran on, where it is one, with its version: said once, never on every row.
+  const agents = new Set(sessions.map((session) => sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion })));
+  const agentOnce = agents.size === 1 ? [...agents][0]! : null;
   const title = onQuest && !current
     ? (
       <button
         type="button"
         onClick={() => onQuest(quest)}
         // Underlined at rest, faintly: an ink title among ink titles gave no sign it was a door.
+        title={quest.title}
         className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
       >
-        {quest.title}
+        {questName(quest)}
       </button>
     )
-    : <span className={cn('min-w-0 truncate text-small text-ink', current && 'font-semibold')}>{quest.title}</span>;
+    // Each step by its name (SESSUX1j), as every list names a quest, whole on its tip.
+    : <span title={quest.title} className={cn('min-w-0 truncate text-small text-ink', current && 'font-semibold')}>{questName(quest)}</span>;
 
   return (
     <div className="grid min-w-0 gap-1">
@@ -139,32 +145,43 @@ function Step({ step, attended, onQuest, onSession }: {
           </p>
         )
         : (
-          <ul className="m-0 grid list-none gap-1 p-0">
-            {sessions.map((session) => {
-              // A quest carried on several times drew identical rows: when and how long tell them
-              // apart, and the one being read says so and is no door to itself (SESS1 S7).
-              const here = session.id === attended;
-              return (
-                <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
-                  {onSession && !here
-                    ? (
-                      <button
-                        type="button"
-                        onClick={() => onSession(session)}
-                        // Underlined at rest, faintly, as a quest title that is a door is.
-                        className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
-                      >
-                        {sessionTool(session)}
-                      </button>
-                    )
-                    : <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(session)}</span>}
-                  <span className="text-meta text-ink-faint">{t('chain.ran', { span: elapsed(session.created, session.updated) })}</span>
-                  {here && <span className="text-meta font-medium text-ink">{t('chain.thisSession')}</span>}
-                </li>
-              );
-            })}
-          </ul>
+          <>
+            {/* The agent said once where every session of the quest ran on the same one (UX7c, D152 §7): the install's
+                four rows each repeated it, and the fact that mattered, three failed before this one, was lost among them. */}
+            {agentOnce && sessions.length > 1 && <p className="m-0 font-mono text-meta text-ink-faint">{agentOnce}</p>}
+            <ul className="m-0 grid list-none gap-1 p-0">
+              {sessions.map((session, index) => {
+                // A quest carried on several times drew identical rows: which attempt, its account and how long tell them
+                // apart, and the one being read says so and is no door to itself (SESS1 S7).
+                const here = session.id === attended;
+                const name = agentOnce && sessions.length > 1
+                  ? t('chain.attempt', { n: index + 1 })
+                  : sessionTool(session);
+                const account = agentOnce && sessions.length > 1 ? session.profile : null;
+                return (
+                  <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
+                    {onSession && !here
+                      ? (
+                        <button
+                          type="button"
+                          onClick={() => onSession(session)}
+                          title={sessionTool(session)}
+                          // Underlined at rest, faintly, as a quest title that is a door is.
+                          className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+                        >
+                          {name}
+                        </button>
+                      )
+                      : <span title={sessionTool(session)} className="min-w-0 truncate font-mono text-meta text-ink-soft">{name}</span>}
+                    {account && <span className="font-mono text-meta text-ink-faint">{account}</span>}
+                    <span className="text-meta text-ink-faint">{t('chain.ran', { span: elapsed(session.created, session.updated) })}</span>
+                    {here && <span className="text-meta font-medium text-ink">{t('chain.thisSession')}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
     </div>
   );

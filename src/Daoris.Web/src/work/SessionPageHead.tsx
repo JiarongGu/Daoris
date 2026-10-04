@@ -13,7 +13,10 @@ import { ACT_LOOK, actMenu, headerActs, type SessionActId } from './acts';
  * **A molecule: every state is reached by its props** (components plan §2). Which acts it offers is the one rule's
  * (`offeredActs`), handed in; a press is reported, and the one owner (`sessionActs.ts`) carries it out.
  *
- * - **On the left**: its title on one line, whole in its tip, its shown word on its pill, and its id in the meta face.
+ * - **On the left** (UX7c, D152 §7, the UX7 design §5.2): its shown word on its pill first, so the word stays in one place
+ *   whatever the title's length; its title on one line, whole in its tip; and under them the facts its state makes matter,
+ *   handed in (`sessionFacts`), faint. Its id is not a line here: it is the ⋯'s *Copy session ID* and the record's
+ *   *Details*.
  * - **On the right**: the primary act where the state has one (*Try again*, *Review*), then *Stop…* while it is live,
  *   then ⋯ with the rest in §3.1's order. *Answer…* is not here: the card under the header keeps the answer.
  * - **What asks under it** (the stop's ask, §3.3; the delete's, §5.4) is pinned with it, since the ask is about the acts
@@ -24,10 +27,16 @@ import { ACT_LOOK, actMenu, headerActs, type SessionActId } from './acts';
  * **It says how tall it is** to the main area it is pinned in (`--session-head`), so the long run's toolbar (SESS1 S9)
  * pins beneath it rather than under it.
  */
-export function SessionPageHead({ session, title, shown, acts, primary = null, busy = false, onAct, asking }: {
+export function SessionPageHead({ title, shown, facts = [], acts, primary = null, busy = false, onAct, asking }: {
+  /** The session it heads, as the frame holds it; its acts and its facts are worked out from it by the frame. */
   session: Session;
-  /** What the session is for, as `sessionTitle` names it: one line here, whole in the record head below. */
+  /**
+   * What the session is for, as `sessionTitle` names it (its quest's short title where there is one): one line here,
+   * whole in its tip, and the whole title once under the head where this is not all of it.
+   */
   title: string;
+  /** Its facts line (`sessionFacts`), said in this order; none draws no line. */
+  facts?: readonly string[];
   /** Its shown word (D126 §2.2): the record's state, *idle*, or the reader's *parked* or *awaiting reply*. */
   shown: ShownState;
   /** The acts the one rule offers it in this header, in §3.1's order. */
@@ -72,10 +81,12 @@ export function SessionPageHead({ session, title, shown, acts, primary = null, b
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-64">
           <div className="flex min-w-0 items-baseline gap-2">
-            <h1 title={title} className="m-0 min-w-0 truncate text-title font-[650] leading-[1.35]">{title}</h1>
             <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
+            <h1 title={title} className="m-0 min-w-0 truncate text-title font-[650] leading-[1.35]">{title}</h1>
           </div>
-          <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{session.id}</p>
+          {facts.length > 0 && (
+            <p className="m-0 mt-0.5 truncate text-small text-ink-faint" title={facts.join(' · ')}>{facts.join(' · ')}</p>
+          )}
         </div>
 
         {offered.length > 0 && (

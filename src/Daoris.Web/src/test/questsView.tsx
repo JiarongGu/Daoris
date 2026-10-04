@@ -63,6 +63,17 @@ export async function makeFromList(kind: 'Ask' | 'New quest') {
   await user.click(await screen.findByRole('menuitem', { name: kind }));
 }
 
+/**
+ * One of a quest page's acts its head keeps in its ⋯ (UX7c, D152 §7): *Mark done* while open, *Pause…*, *Abandon…*,
+ * *Delete…*, *Copy quest ID*. Opened from the keyboard, as every menu here is in jsdom.
+ */
+export async function moreAct(page: HTMLElement, act: string) {
+  const user = userEvent.setup();
+  within(page).getByRole('button', { name: 'More actions' }).focus();
+  await user.keyboard('{Enter}');
+  await user.click(await screen.findByRole('menuitem', { name: act }));
+}
+
 /** The list's ⋯, open on its filters. */
 export async function openFilters() {
   const user = userEvent.setup();

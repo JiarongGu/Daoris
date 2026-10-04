@@ -8,8 +8,8 @@ import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFi
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
 import {
   ACCEPTED, CHAINED, CJK, CONFLICTED, DECLINED, DELETABLE, DONE, EXHAUSTED, FAILED, HELD, HELD_BY_PERSON, HELD_CJK, LANED, MET,
-  OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REQUIRING, STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT,
-  WORKING,
+  OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, QUESTION, REFILED, REFILED_NAMED, REFILED_UNNAMED, REQUIRING, STARTING,
+  STOPPED, TAKEN, TRUST, WAITING, WAITS_FOR_ACCOUNT, WORKING,
 } from './fixtures';
 import { QuestPage, QuestsMainNotice } from './QuestPage';
 
@@ -47,7 +47,7 @@ export default meta;
 
 type Story = StoryObj<typeof QuestPage>;
 
-/** Open: *Take* is the loud act in its header, then *Mark done* and *Decline…*; it carries a link and two files. */
+/** Open: *Take* is the loud act in its header, then *Decline…*, and *Mark done* in its ⋯ (UX7c); it carries a link and two files. */
 export const Open: Story = {};
 
 /** Taken: *Mark done* is the loud act now (UX5 U31). */
@@ -119,11 +119,26 @@ export const Declined: Story = { args: { quest: DECLINED } };
 /** Done: nothing left to do here. */
 export const Done: Story = { args: { quest: DONE } };
 
-/** Nobody has started on it, so the service says it may go (D95): *Delete…* beside the acts. */
+/** Nobody has started on it, so the service says it may go (D95): *Delete…* in its ⋯ (UX7c). */
 export const Deletable: Story = { args: { quest: DELETABLE } };
 
 /** A title in 中文, which the header wraps. */
 export const ChineseTitle: Story = { args: { quest: CJK } };
+
+// ——— Titles first (UX7c, D152 §7; the UX7 design §5.3): its state, its name on two lines at most, one facts line, and a
+// body that does not open on the title again. The install's re-filed quest, with and without a short title.
+
+/** Named by the service from its words (SESSUX1j): the head says the name, and the body opens on the whole title. */
+export const LongTitleNamedFromItsWords: Story = { args: { quest: REFILED, session: STARTING } };
+
+/** Named by its intake's short title, with a ticket key leading it. */
+export const LongTitleWithAShortTitle: Story = { args: { quest: REFILED_NAMED, session: STARTING } };
+
+/** From a host before short titles: the title, two lines at most and whole on *Show all*; the body drops its first line. */
+export const LongTitleWithNoShortTitle: Story = { args: { quest: REFILED_UNNAMED, session: STARTING } };
+
+/** The same in 中文, in dark. */
+export const LongTitleChineseDark: Story = { args: { quest: REFILED_UNNAMED, session: STARTING }, decorators: [chinese, dark] };
 
 // ——— What the person required, and how its done answered (DRIFT1d2, D133 §3–§4). *Open* above names none, and draws no
 // section.
@@ -157,7 +172,7 @@ const work = (over: Partial<WorkDoor> = {}): WorkDoor => ({
   plan: PLAN, wired: false, busy: false, onPause: nothing, onResume: nothing, onAbandon: nothing, ...over,
 });
 
-/** In flight on this machine: *Pause…* and *Abandon…* beside *Decline…*. */
+/** In flight on this machine: *Pause…* and *Abandon…* in its ⋯ (UX7c), *Decline…* beside it. */
 export const WorkInFlight: Story = { args: { work: work() } };
 /** Paused on its own: the sentence under *Sitting*, and *Resume* where *Try again* stands for a stop. */
 export const PausedOnItsOwn: Story = { args: { sitting: PAUSED_ITSELF, work: work({ plan: { ...PAUSED_QUEST, id: OPEN.id } }) } };

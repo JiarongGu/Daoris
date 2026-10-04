@@ -22,5 +22,10 @@
   "work.head.landed.dirty": "uncommitted work in its tree",
   "work.head.landed.inUse": "still in use",
   "work.head.moved": "Moved",
-  "work.head.waiting": "This one is waiting on you"
+  "work.head.waiting": "This one is waiting on you",
+  "work.head.details": "Details",
+  "work.head.account": "Account",
+  "work.head.id": "ID",
+  "work.head.copyId": "Copy",
+  "work.head.copied": "copied"
 }

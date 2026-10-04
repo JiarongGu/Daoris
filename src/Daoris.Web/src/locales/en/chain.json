@@ -8,6 +8,7 @@
   "chain.unseen": "an earlier step this page does not hold",
   "chain.current": "this quest",
   "chain.thisSession": "this session",
+  "chain.attempt": "attempt {{n}}",
   "chain.ran": "ran {{span}}",
   "chain.route": "{{from}} → {{to}}",
   "chain.noSession": "no session yet",

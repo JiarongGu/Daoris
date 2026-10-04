@@ -120,5 +120,22 @@
   "quests.requirements.accept": "Accept the departure",
   "quests.requirements.accepted": "You accepted the departure {{ago}}.",
   "quests.requirements.toAnswer": "Its done answers each: met, or departed with the reason and your words it relied on.",
-  "quests.requirements.unanswered": "Its done answered none of these: it closed before a done had to answer each."
+  "quests.requirements.unanswered": "Its done answered none of these: it closed before a done had to answer each.",
+  "quests.field.short": "Short title",
+  "quests.field.shortPlaceholder": "a few words that tell it apart",
+  "quests.field.shortTooLong": "A short title is at most {{count}} characters, about 20 in Chinese.",
+  "quests.facts.to": "to {{repository}}",
+  "quests.facts.from": "from {{from}}",
+  "quests.facts.filed": "filed {{ago}}",
+  "quests.facts.filedAt": "filed {{at}}",
+  "quests.facts.movedAt": "moved {{at}}",
+  "quests.facts.starting": "a session is starting here",
+  "quests.facts.working": "its session working {{time}}",
+  "quests.facts.waiting": "its session waits on you",
+  "quests.facts.parked": "parked after {{count}} failed session",
+  "quests.facts.parked_other": "parked after {{count}} failed sessions",
+  "quests.facts.parkedSome": "parked after its failed sessions",
+  "quests.facts.taken": "taken {{ago}}",
+  "quests.facts.done": "done {{ago}}",
+  "quests.facts.declined": "declined {{ago}}"
 }
