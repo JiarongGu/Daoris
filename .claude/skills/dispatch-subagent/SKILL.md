@@ -27,6 +27,7 @@ Follow the dispatch-subagent skill's subagent half.
    commit the prompt names.
 2. Read `CLAUDE.md` and `AGENTS.md`, run `doc-loader`, and read what it routes you to, starting with the
    design document the prompt names. Say which documents you read.
+   Read `docs/index/README.md` for where things are before searching the code: open the outline, then the lines.
 3. Count the tests in the suites your lane touches before changing anything. The hand-back reports the
    count before and after.
 

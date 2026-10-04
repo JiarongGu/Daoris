@@ -119,7 +119,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/family-rehearsal.mjs` | 275 | 5035 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
 | `tools/merge-branch.mjs` | 101 | 1956 |
-| `tools/orient-index.mjs` | 63 | 1376 |
+| `tools/orient-index.mjs` | 63 | 1379 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane

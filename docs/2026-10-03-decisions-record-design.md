@@ -215,6 +215,9 @@ it, and every citation that names `docs/DECISIONS.md` with a number reaches its 
 its file's heading. A generated one needs a generator, a staleness check, and its own merge story. Neither tells a
 reader anything the folder and a search do not.
 
+*Amended 2026-10-04 by D134's ORIENT1b note: a generated digest now exists, `docs/index/decisions.md`, since a
+search names a decision's file and not the note inside it. A hand-kept index stays rejected.*
+
 ### 3.3 What union still does, per file
 
 `.gitattributes` marks `docs/decisions/*.md merge=union`, and no longer `docs/DECISIONS.md`. A plain merge would

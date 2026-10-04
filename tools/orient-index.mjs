@@ -1007,7 +1007,7 @@ function verbsPage(ctx) {
   const driver = driverVerbs(ctx);
   if (driver.length) {
     out.push('', '## `daoris-driver` (the driver\'s headless host)', '',
-      `Routed in \`${DRIVER_HOST}\`, its usage \`DriverCommand.Usage\` in \`${DRIVER_COMMAND}\`; handlers below are under \`${DESKTOP}\`. A sub-verb's number is its first line in the handler's file.`, '',
+      `Routed in \`${DRIVER_HOST}\`, its usage \`DriverCommand.Usage\` in \`${DRIVER_COMMAND}\`; handlers below are under \`${DESKTOP}\`. A sub-verb names where its word first appears: the handler, the library's command it hands to, or \`Program.cs\`.`, '',
       '| Verb | Routed at | Handled in | Sub-verbs |', '|---|---|---|---|');
     for (const verb of driver) out.push(`| \`${verb.verb}\` | \`Program.cs:${verb.routed}\` | ${verb.handlers.join('; ')} | ${verb.subs.join(' · ') || '—'} |`);
   }
@@ -1180,10 +1180,13 @@ function readDecision(id, lines) {
   const inFence = fenced(lines);
   const heading = lines.findIndex((line, i) => !inFence[i] && line.startsWith(`## ${id}`));
   const title = heading >= 0 ? lines[heading].slice(`## ${id}`.length).replace(/^\s*[—–-]\s*/, '') : '';
-  const date = /\((\d{4}-\d{2}-\d{2})\)\s*$/.exec(title)?.[1] ?? null;
   const notes = [];
+  // The entry's own first paragraph is never a note, even dated (`*Decided 2026-08-05.*`, `**Decision (DOC8, …)**`);
+  // an entry whose title carries no date is dated there.
+  const opening = lines.findIndex((line, i) => i > heading && line.trim() !== '');
+  const date = /\((\d{4}-\d{2}-\d{2})\)\s*$/.exec(title)?.[1] ?? (opening >= 0 ? /\d{4}-\d{2}-\d{2}/.exec(lines[opening])?.[0] : null) ?? null;
   lines.forEach((line, i) => {
-    if (i <= heading || inFence[i] || (i > 0 && lines[i - 1].trim() !== '')) return;
+    if (i <= opening || inFence[i] || (i > 0 && lines[i - 1].trim() !== '')) return;
     const dated = /^###\s+(.+)$/.exec(line);
     const label = dated && /\d{4}-\d{2}-\d{2}/.test(dated[1]) ? truncate(dated[1], 80) : noteLabel(line);
     if (label) notes.push({ start: i, label });
@@ -1202,7 +1205,7 @@ function readDecision(id, lines) {
     start: heading + 1,
     end: until(Math.max(heading, 0), notes.length ? notes[0].start : lines.length),
     date,
-    title: date ? title.replace(/\s*\(\d{4}-\d{2}-\d{2}\)\s*$/, '') : title,
+    title: title.replace(/\s*\(\d{4}-\d{2}-\d{2}\)\s*$/, ''),
     notes,
   };
 }

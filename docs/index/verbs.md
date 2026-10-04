@@ -28,7 +28,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 
 ## `daoris-driver` (the driver's headless host)
 
-Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage `DriverCommand.Usage` in `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverCommand.cs`; handlers below are under `src/Daoris.Desktop/`. A sub-verb's number is its first line in the handler's file.
+Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage `DriverCommand.Usage` in `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverCommand.cs`; handlers below are under `src/Daoris.Desktop/`. A sub-verb names where its word first appears: the handler, the library's command it hands to, or `Program.cs`.
 
 | Verb | Routed at | Handled in | Sub-verbs |
 |---|---|---|---|
