@@ -23,7 +23,10 @@ const questList = (page: Page) => page.getByRole('complementary', { name: 'Quest
  */
 const record = (page: Page) => page.getByRole('main');
 
-/** Repositories' list pane (FRAME1e): the adopted, then the registered not adopted, each row named by its repository. */
+/**
+ * Repositories' list pane (FRAME1e): a group per workspace, headed by its row (UX6g), then its adopted and its registered
+ * not adopted, each row named by its repository.
+ */
 const repositoryList = (page: Page) => page.getByRole('complementary', { name: 'Repositories' });
 
 /** A repository's row in that list, by its name exactly: `engine` is not `newcomer`'s substring, but say so anyway. */
@@ -70,7 +73,8 @@ test('the overview shows the example family', async ({ page }) => {
 test('repositories lists both members, and each opens its page with its declaration', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Repositories').click();
-  await expect(repositoryList(page).getByRole('heading', { name: 'Adopted (2)' })).toBeVisible();
+  // A group per workspace (UX6g, D150 §4.1): the family's one, headed by its row.
+  await expect(repositoryList(page).getByRole('heading', { level: 3, name: 'default 2 repositories' })).toBeVisible();
 
   await chooseRepository(page, 'engine');
   await expect(record(page).getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
@@ -627,12 +631,16 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
   // Setup leads (SETUP1a, D97; named so by NAME1b), holding in a browser only the registry's step.
-  await expect(domains).toHaveText([/Setup/, /Appearance/, /AI features/, /Workspace/]);
+  await expect(domains).toHaveText([/Setup/, /Appearance/, /AI features/]);
 
-  // Workspace is the one domain with a machine half (its wiring), so it is opened and that half's
-  // absence asserted where it would render, after its browser half is seen.
-  await domains.filter({ hasText: 'Workspace' }).click();
-  await expect(page.getByText('default').first()).toBeVisible();
+  // A workspace's page (UX6g, D150 §4.3) has a machine half, its branches, setup and accounts, so it is opened and that
+  // half's absence asserted where it would render, after its browser half is seen.
+  await nav(page, 'Repositories').click();
+  // However many it holds by now: a newcomer joins the family earlier in this file.
+  await repositoryList(page).getByRole('button', { name: /^default \d+ repositor/ }).click();
+  await expect(record(page).getByRole('heading', { level: 1, name: 'default', exact: true })).toBeVisible();
+  await expect(record(page).getByRole('button', { name: 'Open engine' })).toBeVisible();
+  await expect(record(page).getByRole('tablist')).toHaveCount(0);
   await expect(page.getByText(/remotes\.json|harnesses\.json|driver\.json/)).toHaveCount(0);
 
   // A repository's page, where its facts render (FRAME1e): the absence is asserted where a path would be.

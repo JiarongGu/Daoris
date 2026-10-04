@@ -255,17 +255,6 @@ public sealed partial class HelpCoverageTests
         ("ai", "useSetIntake", null, new Door("setting", "intake")),
         ("ai", "useSetHelper", null, new Door("setting", "helper")),
 
-        ("workspace", "useSetLine", null, new Door("setting", "line")),
-        ("workspace", "useSetLanding", null, new Door("setting", "landing")),
-        ("workspace", "useSetLanguage", null, new Door("setting", "language")),
-        ("workspace", "useTreesSync", null, new Door("sync", "sync")),
-        ("workspace", "useSweep", null, new Exempt(
-            "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
-            + "(D89); the room names Settings → Workspace → Session branches.")),
-        ("workspace", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
-        ("workspace", "useUnwireRemote", null, new Exempt(
-            "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
-
         ("driver", "useSetNotify", null, new Door("setting", "notify")),
         ("driver", "useSetStrikes", null, new Door("setting", "strikes")),
         ("driver", "useSetCoolOff", null, new Owed(CoolOffOwed)),
@@ -333,13 +322,9 @@ public sealed partial class HelpCoverageTests
             "accepting or declining a rule another agent proposed is the person's review of it (PERM2, D74); a helper "
             + "answering it would be one agent approving another.")),
 
-        ("permissions", "useRuleAction", "add", new Exempt(Rules)),
-        ("permissions", "useRuleAction", "remove", new Exempt(Rules)),
-        ("permissions", "useRuleAction", "default", new Exempt(Rules)),
-        ("permissions", "useSetReadAcross", null, new Door("setting", "across")),
-
         // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), each value the `setting` kind's door that `daoris driver`
-        // spells; the Settings domains above keep a workspace's defaults until its page takes them (UX6g).
+        // spells. Since UX6g a workspace's page (§4.3) presses the same hooks for its defaults, reading across and its
+        // rules, where Settings → Workspace and Permissions did, so their rows are these.
         ("projects", "useSetDrivable", null, new Door("setting", "drive")),
         ("projects", "useSetHold", null, new Door("setting", "hold")),
         ("projects", "useSetTrees", null, new Door("setting", "trees")),
@@ -358,6 +343,15 @@ public sealed partial class HelpCoverageTests
             + "repository's own work: Ask Daoris routes such a change there with `ask_propose`, as it routes every change "
             + "to a repository's tree.")),
         ("projects", "usePickFolder", null, new Exempt("it is the system's folder picker, for the person's own choice.")),
+        // UX6g (D150 §4.3, §3.1): a workspace's page, its Branches' clean-up and bringing up to date, and its remote, moved
+        // here from Settings → Workspace.
+        ("projects", "useTreesSync", null, new Door("sync", "sync")),
+        ("projects", "useSweep", null, new Exempt(
+            "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
+            + "(D89); its screen is a workspace's page → Branches → *Clean up…* since UX6g.")),
+        ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
+        ("projects", "useUnwireRemote", null, new Exempt(
+            "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),
 
         ("plugins", "usePluginAction", "enable", new Door("plugin", "enable")),
         ("plugins", "usePluginAction", "disable", new Door("plugin", "disable")),
@@ -869,7 +863,9 @@ public sealed partial class HelpCoverageTests
     /// (UX6e, D150 §5): the Agents place, from its view's file and everything it imports, so Settings → Agents' controls
     /// stay answered for where they are pressed now. And Repositories (HELPSETUP1), whose view presses a repository's Setup
     /// (UX6f, D150 §4.2): its line, landing, language and reach left Settings → Workspace and Permissions for it, beside its
-    /// driving and standing answer, and its drawers' controls come with the view.
+    /// driving and standing answer, and its drawers' controls come with the view. Since UX6g it holds a workspace's page
+    /// too (`projects/WorkspaceView`, §4.3), imported by the view, so the rest of those two domains' controls, a
+    /// workspace's defaults, remote, rules and Branches, are read with it, and neither domain is in Settings any more.
     /// </summary>
     private static readonly (string Id, string File)[] Places =
     [
@@ -898,7 +894,10 @@ public sealed partial class HelpCoverageTests
             domains[id] = Closure(Path.GetFullPath(Path.Combine(Page, file)));
         }
 
-        Assert.Contains("permissions", domains.Keys);
+        // The registry was read: a domain it still lists (UX6g took Workspace and Permissions out of it).
+        Assert.Contains("driver", domains.Keys);
+        Assert.DoesNotContain("workspace", domains.Keys);
+        Assert.DoesNotContain("permissions", domains.Keys);
         return domains;
 
         static IReadOnlyList<string> Closure(string start)
