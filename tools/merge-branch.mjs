@@ -29,7 +29,9 @@
  * 4. The prune (below), unless `--no-prune`: one line per branch removed or kept.
  * 5. `git merge --no-ff --no-commit`. A conflict stops here: the files are named and the merge is left
  *    for the parent. Code is never resolved for anyone; the append-only records resolve themselves by
- *    their `merge=union` attribute (D106).
+ *    their `merge=union` attribute (D106). The orientation index is written from the merged tree and
+ *    staged before the gates choose (`GENERATED`, ORIENT1a), so a conflict in it alone does not stop the
+ *    merge, and one beside others is written once they are resolved.
  * 6. The gates, one at a time, in a fixed order, fast first. The plan is every gate `daoris.gates.json`
  *    declares, plus every `npm run` step the release workflow runs that the declaration does not (the
  *    release and family rehearsals). The order is by kind (a devkit check, then the suites, then the
@@ -248,12 +250,13 @@ export function parseArgs(argv) {
 export const slug = (name) => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'gate';
 
 /**
- * What kind of gate a command is, which orders it and never drops it: a devkit `dotnet run` is a
- * check, `npm run rehearse*` and `npm run test:*` are rehearsals, and anything else is a suite.
+ * What kind of gate a command is, which orders it and never drops it: a devkit `dotnet run` and a tool's
+ * `--check` (the orientation index, ORIENT1a) are checks, `npm run rehearse*` and `npm run test:*` are
+ * rehearsals, and anything else is a suite.
  */
 export function gateKind(run) {
   const command = run.trim();
-  if (/^dotnet run\b/.test(command)) return 'check';
+  if (/^dotnet run\b/.test(command) || /^node tools\/\S+\.mjs --check$/.test(command)) return 'check';
   const script = /^npm run (\S+)$/.exec(command)?.[1];
   if (script && /^(rehearse|test:)/.test(script)) return 'rehearsal';
   return 'suite';
@@ -325,9 +328,10 @@ export function readPlan(root) {
 
 /**
  * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
- * maps all the code, and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
+ * maps all the code, the orientation index reads every lane (ORIENT1a), and the CLI's `verify` holds the
+ * records, the lanes, the canon and the tools' tests.
  */
-export const BASELINE = Object.freeze(['universal', 'code-map', 'cli']);
+export const BASELINE = Object.freeze(['universal', 'code-map', 'orient-index', 'cli']);
 
 // The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
 const PAGE_READERS = ['service', 'driver', 'modules'];
@@ -402,12 +406,43 @@ export const REACH = Object.freeze([
   { paths: ['examples/**'], gates: ['service', 'rehearse-family', 'web'], why: 'the example family the family rehearsal and the end-to-end suite run on' },
   { paths: ['README.md', 'LICENSE'], gates: ['service', 'rehearse'], why: 'staged into the package the release rehearsal packs' },
   {
+    paths: ['docs/index/**'],
+    gates: [],
+    why: 'written into every merge by tools/orient-index.mjs and held by its check, which every merge runs; no suite reads it',
+  },
+  {
     paths: ['docs/**', 'CHANGELOG.md', 'CLAUDE.md', 'ROADMAP.md', 'AGENTS.md', 'daoris.json', 'daoris.lock', '.claude/**'],
     gates: ['service'],
     why: "the service's suite scans this repository's own doctrine and decisions",
   },
   { paths: ['.mcp.json'], gates: [], why: "the harness's settings" },
 ]);
+
+// ---------------------------------------------------------------------------------------------------
+// ORIENT1a: what a merge writes rather than merges
+
+/**
+ * Folders a tool writes from the tree, never merged: the orientation index's line numbers move with nearly
+ * every change, so two branches' copies disagree wherever both touched a large file, and neither copy speaks
+ * for the merge. So each merge writes them again from the merged tree before its gates, a conflict in one is
+ * resolved by that writing, and the parent reads the result in the merge's diff. A repository without the
+ * tool writes nothing.
+ */
+export const GENERATED = Object.freeze([{ folder: 'docs/index', tool: 'tools/orient-index.mjs' }]);
+
+/** Whether a path is one a merge writes rather than merges. */
+export const isGenerated = (path) => GENERATED.some(({ folder }) => path.startsWith(`${folder}/`));
+
+/** Each generated folder written from the tree as it stands, and staged; one line each. A tool that fails refuses the merge's gates. */
+function writeGenerated(root) {
+  for (const { folder, tool } of GENERATED) {
+    if (!existsSync(join(root, tool))) continue;
+    const run = spawnSync(process.execPath, [tool], { cwd: root, encoding: 'utf8' });
+    if (run.status !== 0) throw new Refusal(`${tool} could not write ${folder}/ into the merge:\n${(run.stderr || run.stdout).trim()}`, 1);
+    git(root, ['add', '-A', '--', folder]);
+    console.log(`${folder}/: written from the merged tree (${run.stdout.trim().replace(/^[\w-]+: /, '')})`);
+  }
+}
 
 /** The first rule that places a path, or null: by glob, or by a lane whose paths own it. */
 function ruleFor(path, rules, lanes) {
@@ -1552,6 +1587,8 @@ const owedLine = (skipped) => (skipped
 async function gateMerge(root, state, plan) {
   const branch = state.branches[state.at];
   const last = state.at === state.branches.length - 1;
+  // Before the gates choose, so the merge's changed paths include what the writing changed (ORIENT1a).
+  writeGenerated(root);
   const { gates: selection, chosen: gates, skipped } = chooseGates(root, state, plan);
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
   clearLogs(dir);
@@ -1610,8 +1647,10 @@ async function rerunGates(root, options) {
   if (git(root, ['rev-parse', 'MERGE_HEAD']).out.trim() !== state.tips[branch]) {
     throw new Refusal(`the merge in progress is not ${branch}'s, which is the one recorded`);
   }
-  const unmerged = unmergedPaths(root);
-  if (unmerged.length) return reportConflict(branch, unmerged);
+  const { blocking, generated } = conflicts(root);
+  if (blocking.length) return reportConflict(branch, blocking, generated);
+  // A fix made in the merge may have moved what the index points to: it is written again before any gate.
+  writeGenerated(root);
   const plan = readPlan(root);
   const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));
   if (unknown.length) {
@@ -1739,12 +1778,19 @@ function passedOnly(root) {
   return judged.passed ? 0 : 1;
 }
 
-function reportConflict(branch, unmerged) {
+function reportConflict(branch, unmerged, generated = []) {
   console.log(`merge-branch: merging ${branch} stopped on a conflict in ${count(unmerged.length, 'file')}:`);
   for (const file of unmerged) console.log(`  ${file}`);
+  if (generated.length) console.log(`  (and ${count(generated.length, 'generated file')}, written again from the merged tree once these are resolved)`);
   console.log('  Resolve them (code is never resolved for you; the union records resolve themselves), git add them,');
   console.log('  then node tools/merge-branch.mjs --continue to run the gates. Or git merge --abort.');
   return 1;
+}
+
+/** The unmerged paths a person resolves, and the generated ones a merge writes again (ORIENT1a). */
+function conflicts(root) {
+  const unmerged = unmergedPaths(root);
+  return { blocking: unmerged.filter((path) => !isGenerated(path)), generated: unmerged.filter(isGenerated) };
 }
 
 async function mergeNext(root, state) {
@@ -1772,9 +1818,10 @@ async function mergeNext(root, state) {
   writeState(root, state);
   const merged = git(root, ['merge', '--no-ff', '--no-commit', branch], { allowFail: true });
   if (merged.status !== 0) {
-    const unmerged = mergeInProgress(root) ? unmergedPaths(root) : [];
-    if (unmerged.length) return reportConflict(branch, unmerged);
-    throw new Refusal(`git merge ${branch} failed:\n${merged.err || merged.out}`);
+    const { blocking, generated } = mergeInProgress(root) ? conflicts(root) : { blocking: [], generated: [] };
+    if (blocking.length) return reportConflict(branch, blocking, generated);
+    // A conflict only in what the merge writes anyway goes on to that writing (ORIENT1a).
+    if (!generated.length) throw new Refusal(`git merge ${branch} failed:\n${merged.err || merged.out}`);
   }
   console.log(`merged ${branch} --no-ff --no-commit${state.branches.length > 1 ? ` (${state.at + 1} of ${state.branches.length})` : ''}`);
   return gateMerge(root, state, plan);
@@ -1809,8 +1856,8 @@ async function resume(root, options) {
     requireMain(root);
     const open = git(root, ['rev-parse', 'MERGE_HEAD']).out.trim();
     if (open !== state.tips[branch]) throw new Refusal(`the merge in progress is not ${branch}'s, which is the one recorded`);
-    const unmerged = unmergedPaths(root);
-    if (unmerged.length) return reportConflict(branch, unmerged);
+    const { blocking, generated } = conflicts(root);
+    if (blocking.length) return reportConflict(branch, blocking, generated);
     writeState(root, state);
     return gateMerge(root, state, readPlan(root));
   }

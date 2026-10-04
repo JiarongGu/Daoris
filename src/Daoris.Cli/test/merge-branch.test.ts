@@ -70,6 +70,8 @@ const tool = await import(
   pruneCandidates: (facts: { merged: string[]; worktrees: Worktree[]; current: string; hold?: string[] }) => Candidate[];
   pruneVerdict: (candidate: Candidate, facts: Facts | null) => { remove: boolean; why: string; gone?: boolean };
   BASELINE: readonly string[];
+  GENERATED: readonly { folder: string; tool: string }[];
+  isGenerated: (path: string) => boolean;
   REACH: readonly Rule[];
   selectGates: (plan: Gate[], changed: string[], options?: { lanes?: Lane[]; full?: boolean; reach?: readonly Rule[] }) => { gates: Selected[]; unplaced: string[] };
   rerunPlan: (plan: string[], chosen: string[], results: Record<string, { verdict: string; at: string }>, named: string[]) => {
@@ -303,6 +305,9 @@ test('a merged branch goes with its worktree only when that is unlocked, has no 
 
 test('a gate is a check, a suite or a rehearsal by what it runs', () => {
   assert.equal(tool.gateKind('dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- map --check'), 'check');
+  // A tool's own --check is a check too, run with the fast ones (ORIENT1a); a tool run otherwise is not.
+  assert.equal(tool.gateKind('node tools/orient-index.mjs --check'), 'check');
+  assert.equal(tool.gateKind('node tools/orient-index.mjs'), 'suite');
   assert.equal(tool.gateKind('npm run verify'), 'suite');
   assert.equal(tool.gateKind('dotnet test src/Daoris.Service'), 'suite');
   assert.equal(tool.gateKind('npm run test:web'), 'rehearsal');
@@ -367,7 +372,7 @@ const repoPlan = tool.readPlan(repoRoot);
 const repoLanes = tool.readLanes(repoRoot)!.lanes;
 const reached = (paths: string[], full = false): string[] =>
   tool.selectGates(repoPlan, paths, { lanes: repoLanes, full }).gates.filter((entry) => entry.run).map((entry) => entry.gate.name);
-const BASE = ['universal', 'code-map', 'cli'];
+const BASE = ['universal', 'code-map', 'orient-index', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
 
 test('a merge runs the baseline, and the gates each changed path can reach, in the plan\'s order', () => {
@@ -398,12 +403,26 @@ test('a merge runs the baseline, and the gates each changed path can reach, in t
     ['the devkit', ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'], [...BASE, 'devkit']],
     ["the Process halves' settings", ['src/Daoris.Desktop/process.runsettings'], [...BASE, 'driver-process', 'modules-process']],
     ['the declared gates', ['daoris.gates.json'], ALL],
+    // Written into every merge and held by its own check, which is in the baseline (ORIENT1a).
+    ['the orientation index', ['docs/index/routes.md', 'docs/index/outlines/tools/merge-branch.mjs.md'], BASE],
     ['nothing at all', [], BASE],
   ];
   for (const [what, paths, expected] of cases) assert.deepEqual(reached(paths), expected, what);
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(reached(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
     [...BASE, 'service', 'modules', 'modules-process', 'rehearse', 'deployment']);
+});
+
+test('what a merge writes rather than merges is the orientation index, by its folder, and its tool is this repository\'s', () => {
+  assert.equal(tool.isGenerated('docs/index/routes.md'), true);
+  assert.equal(tool.isGenerated('docs/index/outlines/src/Daoris.Web/src/App.tsx.md'), true);
+  assert.equal(tool.isGenerated('docs/index.md'), false);
+  assert.equal(tool.isGenerated('docs/decisions/D1.md'), false);
+  for (const { folder, tool: writer } of tool.GENERATED) {
+    assert.ok(existsSync(join(repoRoot, writer)), `${writer} writes ${folder}/ and is not here`);
+    // A hand merge meets no textual merge of it either: the attribute keeps one side whole, and the tool writes it again.
+    assert.match(readFileSync(join(repoRoot, '.gitattributes'), 'utf8'), new RegExp(`^${folder.replace(/\//g, '\\/')}/\\*\\* -merge$`, 'm'));
+  }
 });
 
 test('a path no rule places runs every gate, and says which path; --full runs every gate and says so', () => {
@@ -1350,6 +1369,60 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--continue']);
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(repo.ran(), ['first']);
+    repo.cleanup();
+  });
+
+  test('the orientation index is written into each merge from the merged tree, and a conflict in it is resolved by that writing', async () => {
+    // A stand-in for the index's tool: it lists the tree's .txt files, so two branches that each add one disagree on it.
+    const generator = [
+      "import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';",
+      "const files = readdirSync('.').filter((name) => name.endsWith('.txt')).sort();",
+      "mkdirSync('docs/index', { recursive: true });",
+      "writeFileSync('docs/index/README.md', files.join('\\n') + '\\n');",
+      "console.log('orient-index: docs/index/ written, 1 of 1 files changed');",
+      '',
+    ].join('\n');
+    const repo = scratch('generated', [{ name: 'first', run: 'node gate.mjs first' }], {
+      '.gitattributes': 'CHANGELOG.md merge=union\ndocs/index/** -merge\n',
+      'tools/orient-index.mjs': generator,
+      'docs/index/README.md': 'base.txt\n',
+      'base.txt': 'base\n',
+      'shared.md': 'base\n',
+    });
+    const index = () => readFileSync(join(repo.root, 'docs', 'index', 'README.md'), 'utf8');
+    const unmerged = () => git(repo.root, 'diff', '--name-only', '--diff-filter=U');
+
+    // Both sides wrote the index for their own tree: the merge stops on it alone, and writes it for the merged one.
+    branch(repo.root, 'left', { 'left.txt': 'l\n', 'docs/index/README.md': 'base.txt\nleft.txt\n' });
+    writeFileSync(join(repo.root, 'main.txt'), 'm\n');
+    writeFileSync(join(repo.root, 'docs', 'index', 'README.md'), 'base.txt\nmain.txt\n');
+    git(repo.root, 'add', '-A');
+    git(repo.root, 'commit', '--quiet', '-m', `main moved${TRAILER}`);
+    let result = await repo.run(['left']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /docs\/index\/: written from the merged tree \(docs\/index\/ written, 1 of 1 files changed\)/);
+    assert.equal(index(), 'base.txt\nleft.txt\nmain.txt\n');
+    assert.equal(unmerged(), '');
+    assert.match(git(repo.root, 'diff', '--cached', '--name-only'), /docs\/index\/README\.md/);
+    assert.deepEqual(repo.ran(), ['first']);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+
+    // Beside a conflict a person resolves, the index waits: it is written once that one is resolved.
+    branch(repo.root, 'right', { 'right.txt': 'r\n', 'shared.md': 'right\n', 'docs/index/README.md': 'right only\n' });
+    writeFileSync(join(repo.root, 'shared.md'), 'main\n');
+    writeFileSync(join(repo.root, 'docs', 'index', 'README.md'), 'main only\n');
+    git(repo.root, 'commit', '--quiet', '-am', `main moved again${TRAILER}`);
+    result = await repo.run(['right']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /conflict in 1 file:\n\s+shared\.md\n\s+\(and 1 generated file, written again from the merged tree once these are resolved\)/);
+    assert.deepEqual(repo.ran(), ['first']);
+    writeFileSync(join(repo.root, 'shared.md'), 'resolved\n');
+    git(repo.root, 'add', 'shared.md');
+    result = await repo.run(['--continue']);
+    assert.equal(result.status, 0, result.out);
+    assert.equal(index(), 'base.txt\nleft.txt\nmain.txt\nright.txt\n');
+    assert.equal(unmerged(), '');
+    assert.deepEqual(repo.ran(), ['first', 'first']);
     repo.cleanup();
   });
 
