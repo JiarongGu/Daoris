@@ -5,9 +5,9 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import {
-  TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, keyOf, managedBinary, managedHome,
+  TOOLCHAINS, accountLines, addKeyAccount, commandHarness, harnessesPath, joinsOf, keyOf, managedBinary, managedHome,
   nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
-  resolveVersion, signInNew, versionFromNpm, withDefault, writeHarnessSettings,
+  resolveVersion, signInNew, signInTo, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
@@ -383,12 +383,14 @@ test('an API key makes an account whose key is kept beside it, in the file both 
 
   const account = addKeyAccount(fx.root, 'claude-code', 'sk-ant-api03-cli-test-wxyz\n', (l) => lines.push(l));
 
-  assert.equal(account, 'account-1');
-  assert.deepEqual(readdirSync(profileHome(fx.root, 'claude-code', 'account-1')), []);
+  assert.match(account, /^acct-[0-9a-f]{8}$/);
+  assert.deepEqual(readdirSync(profileHome(fx.root, 'claude-code', account)), []);
   // The file's shape is the twin contract: the driver's HarnessKeys reads exactly this.
   assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'keys.json'), 'utf8')),
-    { 'claude-code': { 'account-1': 'sk-ant-api03-cli-test-wxyz' } });
-  assert.equal(keyOf(fx.root, 'claude-code', 'account-1'), 'sk-ant-api03-cli-test-wxyz');
+    { 'claude-code': { [account]: 'sk-ant-api03-cli-test-wxyz' } });
+  assert.equal(keyOf(fx.root, 'claude-code', account), 'sk-ant-api03-cli-test-wxyz');
+  // ACCT2: its id is never what a person has to read; the end offers a name of theirs.
+  assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename claude-code ${account} <name>`));
   // Said back by its handle only.
   assert.match(lines.join('\n'), /…wxyz/);
   assert.doesNotMatch(lines.join('\n'), /sk-ant-api03-cli-test/);
@@ -419,13 +421,13 @@ test('a blank key is refused and makes nothing; an agent with no key variable ta
 
 test('removing a key account removes its key, and another account keeps its own', () => {
   const fx = makeFixture('harness-key-remove');
-  addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
-  addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
+  const first = addKeyAccount(fx.root, 'claude-code', 'sk-first-1111', () => {});
+  const second = addKeyAccount(fx.root, 'claude-code', 'sk-second-2222', () => {});
 
-  run(['profile', 'remove', 'claude-code', 'account-1'], at(fx));
+  run(['profile', 'remove', 'claude-code', first], at(fx));
 
-  assert.equal(keyOf(fx.root, 'claude-code', 'account-1'), null);
-  assert.equal(keyOf(fx.root, 'claude-code', 'account-2'), 'sk-second-2222');
+  assert.equal(keyOf(fx.root, 'claude-code', first), null);
+  assert.equal(keyOf(fx.root, 'claude-code', second), 'sk-second-2222');
   fx.cleanup();
 });
 
@@ -436,13 +438,13 @@ test('a key account is asked with its key, and listed by its handle', () => {
     "if (process.argv[2] === '--version') { console.log('keyed 1.0'); process.exit(0); }",
     "console.log(JSON.stringify({ loggedIn: Boolean(process.env.ANTHROPIC_API_KEY), authMethod: 'api_key' }));",
   ].join('\n'), 'utf8');
-  addKeyAccount(fx.root, 'claude-code', 'sk-probe-abcd', () => {});
+  const account = addKeyAccount(fx.root, 'claude-code', 'sk-probe-abcd', () => {});
 
   const report = probe('claude-code', {
     ...TOOLCHAINS['claude-code']!, binary: [process.execPath, script],
   }, fx.root, readHarnessSettings(at(fx)));
 
-  assert.deepEqual(report.profiles.map((p) => [p.name, p.login, p.key]), [['account-1', 'in', '…abcd']]);
+  assert.deepEqual(report.profiles.map((p) => [p.name, p.login, p.key]), [[account, 'in', '…abcd']]);
   fx.cleanup();
 });
 
@@ -476,17 +478,20 @@ test('a door lists its owner’s accounts, and a key given for it is the owner�
   fx.cleanup();
 });
 
-// ——— Twin rule 5: an account made by signing in takes the first free `account-N` (D66 §3).
+// ——— Twin rule 5: an account made by signing in, or by a key, takes a fresh id, never reused (D66 §3, ACCT2). It no
+// longer takes the first free `account-N`: removing `account-2` left `account-1` and `account-3`, and the next account made
+// would have taken a removed one's name, its readings and its usage.
 
-test('a new account takes the first free number, per tool', () => {
+test('a new account takes a fresh id and never a removed one\'s name', () => {
   const fx = makeFixture('harness-next');
-
-  assert.equal(nextAccount(fx.root, 'claude-code'), 'account-1');
   mkdirSync(profileHome(fx.root, 'claude-code', 'account-1'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'claude-code', 'account-2'), { recursive: true });
-  mkdirSync(profileHome(fx.root, 'claude-code', 'work'), { recursive: true });
-  assert.equal(nextAccount(fx.root, 'claude-code'), 'account-3');
-  assert.equal(nextAccount(fx.root, 'codex'), 'account-1');
+  mkdirSync(profileHome(fx.root, 'claude-code', 'account-3'), { recursive: true });
+
+  const made = nextAccount(fx.root, 'claude-code');
+
+  assert.match(made, /^acct-[0-9a-f]{8}$/);
+  assert.notEqual(made, 'account-2');
+  assert.ok(!profiles(fx.root, 'claude-code').includes(made));
   fx.cleanup();
 });
 
@@ -515,11 +520,11 @@ function fakeHarness(fx: { root: string }): Toolchain {
 }
 
 /**
- * 🔴 An account is made by signing in (D66 §3) — the terminal's half of the desktop's "Sign in to
- * another account" (D50). The sign-in runs into the next free `account-N`, and the end names who
- * signed in by the tool's own answer, keeping neither the organisation nor anything else it said.
+ * 🔴 An account is made by signing in (D66 §3) — the terminal's half of the desktop's *Add an account…* (D50). The
+ * sign-in runs into a fresh id (ACCT2), and the end names who signed in by the tool's own answer, keeping neither the
+ * organisation nor anything else it said — and offers it as the account's name, written only by the person's rename.
  */
-test('`login --new` keeps a finished sign-in and names who signed in', () => {
+test('`login --new` keeps a finished sign-in, names who signed in, and offers it as the name, writing none', () => {
   const fx = makeFixture('harness-sign-in');
   const toolchain = fakeHarness(fx);
   const lines: string[] = [];
@@ -530,13 +535,263 @@ test('`login --new` keeps a finished sign-in and names who signed in', () => {
   }, (line) => lines.push(line));
 
   assert.equal(code, 0);
-  assert.ok(existsSync(join(profileHome(fx.root, 'fake', 'account-1'), 'credentials.json')));
+  const [made] = profiles(fx.root, 'fake');
+  assert.match(made!, /^acct-[0-9a-f]{8}$/);
+  assert.ok(existsSync(join(profileHome(fx.root, 'fake', made!), 'credentials.json')));
   assert.match(lines.join('\n'), /signed in as someone@example\.invalid/);
-  assert.match(lines.join('\n'), /account-1/);
+  assert.match(lines.join('\n'), new RegExp(`daoris agent profile rename fake ${made} someone@example\\.invalid`));
   assert.doesNotMatch(lines.join('\n'), /Secretive/);
+  // D66 §3: who signed in is offered, never written without the person.
+  assert.ok(!existsSync(join(fx.root, 'accounts.json')));
 
   const listed = probe('fake', toolchain, fx.root, readHarnessSettings(at(fx)));
   assert.equal(listed.profiles[0]!.account, 'someone@example.invalid');
+  fx.cleanup();
+});
+
+/**
+ * ACCT1, ACCT2: a new account named as it is made, and put into the lists the person named in the same step; the end says
+ * where it runs. A list that cannot be joined is refused before anything starts, so it costs nothing.
+ */
+test('`login --new --name --join` names the new account, joins the lists named, and says where it runs', () => {
+  const fx = makeFixture('harness-sign-in-join');
+  const toolchain = fakeHarness(fx);
+  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
+  writeFileSync(at(fx), JSON.stringify({ rotation: { fake: ['account-1'] }, workspaceRotation: { work: { fake: ['account-1'] } } }), 'utf8');
+  const lines: string[] = [];
+
+  const code = signInNew('fake', toolchain, fx.root, (where) => {
+    writeFileSync(join(where, 'credentials.json'), 'spare@example.invalid', 'utf8');
+    return 0;
+  }, (line) => lines.push(line), { name: 'spare', joins: ['work', null], path: at(fx) });
+
+  assert.equal(code, 0);
+  const made = profiles(fx.root, 'fake').find((name) => name !== 'account-1')!;
+  const settings = readHarnessSettings(at(fx));
+  assert.deepEqual(settings.workspaceRotation.work!.fake, ['account-1', made]);
+  assert.deepEqual(settings.rotation.fake, ['account-1', made]);
+  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), { fake: { [made]: { name: 'spare' } } });
+  assert.match(lines.join('\n'), /this machine lists it as `spare`/);
+  assert.match(lines.join('\n'), /`spare` runs work in this machine's list, `work`'s list/);
+  assert.doesNotMatch(lines.join('\n'), /profile rename/);
+
+  // A workspace that takes this machine's list cannot be joined: refused before anything starts, nothing made.
+  const before = profiles(fx.root, 'fake');
+  const refused = captureError(() => signInNew('fake', toolchain, fx.root, () => 0, () => {}, { joins: ['forge'], path: at(fx) }));
+  assert.match(refused.message, /`forge` names no `fake` account or list of its own/);
+  assert.deepEqual(profiles(fx.root, 'fake'), before);
+  // So is a name another account has.
+  const taken = captureError(() => signInNew('fake', toolchain, fx.root, () => 0, () => {}, { name: 'SPARE', path: at(fx) }));
+  assert.match(taken.message, /already names/);
+  assert.deepEqual(profiles(fx.root, 'fake'), before);
+  fx.cleanup();
+});
+
+/** ACCT1: a new account that joins nothing says it runs nowhere, the lists there are, and the command that joins one. */
+test('a new account in no list says no start runs on it, and names the lists and the join', () => {
+  const fx = makeFixture('harness-sign-in-nowhere');
+  const toolchain = fakeHarness(fx);
+  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
+  writeFileSync(at(fx), JSON.stringify({ workspaceRotation: { work: { fake: ['account-1'] } } }), 'utf8');
+  const lines: string[] = [];
+
+  signInNew('fake', toolchain, fx.root, (where) => {
+    writeFileSync(join(where, 'credentials.json'), 'spare@example.invalid', 'utf8');
+    return 0;
+  }, (line) => lines.push(line), { path: at(fx) });
+
+  const said = lines.join('\n');
+  assert.match(said, /no list and no default holds `acct-[0-9a-f]{8}`, so no start runs on it/);
+  assert.match(said, /The lists here: `work`'s own \(account-1\)/);
+  assert.match(said, /daoris agent profile join fake acct-[0-9a-f]{8} <workspace>…\|--machine/);
+  fx.cleanup();
+});
+
+/**
+ * 🔴 ACCT1: signing back in to an account that is here signs in there — by its id or its name, else the machine's default
+ * — never a new folder. The install's owner signed in to bring a signed-out account back and got a new account no list
+ * held.
+ */
+test('`login --profile` signs in to the account that is here, by its id or its name, never a new folder', () => {
+  const fx = makeFixture('harness-sign-in-existing');
+  const toolchain = fakeHarness(fx);
+  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
+  mkdirSync(profileHome(fx.root, 'fake', 'account-2'), { recursive: true });
+  writeFileSync(join(fx.root, 'accounts.json'), JSON.stringify({ fake: { 'account-2': { name: 'seat' } } }), 'utf8');
+  writeFileSync(at(fx), JSON.stringify({ defaults: { fake: 'account-1' }, rotation: { fake: ['account-1', 'account-2'] } }), 'utf8');
+  const reached: string[] = [];
+  const signIn = (where: string) => {
+    reached.push(where);
+    writeFileSync(join(where, 'credentials.json'), 'back@example.invalid', 'utf8');
+    return 0 as const;
+  };
+
+  const lines: string[] = [];
+  assert.equal(signInTo('fake', toolchain, fx.root, 'seat', signIn, (line) => lines.push(line), { path: at(fx) }), 0);
+  assert.equal(signInTo('fake', toolchain, fx.root, 'account-2', signIn, () => {}, { path: at(fx) }), 0);
+  assert.equal(signInTo('fake', toolchain, fx.root, null, signIn, () => {}, { path: at(fx) }), 0);
+
+  assert.deepEqual(reached, [
+    profileHome(fx.root, 'fake', 'account-2'), profileHome(fx.root, 'fake', 'account-2'), profileHome(fx.root, 'fake', 'account-1'),
+  ]);
+  assert.deepEqual(profiles(fx.root, 'fake'), ['account-1', 'account-2']);
+  assert.match(lines.join('\n'), /into the account `seat`/);
+  assert.match(lines.join('\n'), /`seat` runs work in this machine's list/);
+
+  // An account that is not here is refused before the sign-in runs, and no folder is made.
+  const refused = captureError(() => signInTo('fake', toolchain, fx.root, 'account-3', signIn, () => {}, { path: at(fx) }));
+  assert.match(refused.message, /no account `account-3` on this machine, so nothing was signed in and no account was made/);
+  assert.match(refused.message, /account-1, seat \(account-2\)/);
+  assert.equal(reached.length, 3);
+  assert.ok(!existsSync(profileHome(fx.root, 'fake', 'account-3')));
+
+  // None named and no default is refused too, naming the new account's door.
+  writeFileSync(at(fx), '{}', 'utf8');
+  const none = captureError(() => signInTo('fake', toolchain, fx.root, null, signIn, () => {}, { path: at(fx) }));
+  assert.match(none.message, /name the `fake` account to sign in to/);
+  assert.match(none.message, /daoris agent login fake --new/);
+  fx.cleanup();
+});
+
+/** ACCT1, ACCT2: an account with no name signed back in is offered who signed in as one; one with a name is not. */
+test('signing back in to an account with no name offers who signed in as its name, writing none', () => {
+  const fx = makeFixture('harness-sign-in-offer');
+  const toolchain = fakeHarness(fx);
+  mkdirSync(profileHome(fx.root, 'fake', 'account-1'), { recursive: true });
+  const lines: string[] = [];
+
+  signInTo('fake', toolchain, fx.root, 'account-1', (where) => {
+    writeFileSync(join(where, 'credentials.json'), 'back@example.invalid', 'utf8');
+    return 0;
+  }, (line) => lines.push(line), { path: at(fx) });
+
+  assert.match(lines.join('\n'), /daoris agent profile rename fake account-1 back@example\.invalid/);
+  assert.match(lines.join('\n'), /no list and no default holds `account-1`/);
+  assert.ok(!existsSync(join(fx.root, 'accounts.json')));
+  fx.cleanup();
+});
+
+test('`--join` names workspaces, repeated or comma-separated, and `--join-machine` this machine\'s list', () => {
+  assert.deepEqual(joinsOf(['login', 'claude-code', '--new', '--join', 'work,lab', '--join', ' tools ', '--join-machine']),
+    ['work', 'lab', 'tools', null]);
+  assert.deepEqual(joinsOf(['login', 'claude-code', '--join', 'work', '--join', 'work']), ['work']);
+  assert.deepEqual(joinsOf(['login', 'claude-code']), []);
+  assert.match(captureError(() => joinsOf(['login', 'claude-code', '--join'])).message, /`--join` needs a workspace/);
+  assert.match(captureError(() => joinsOf(['login', 'claude-code', '--join', '--new'])).message, /`--join` needs a workspace/);
+});
+
+test('`login` refuses `--new` beside `--profile`, and `--name` without `--new`', () => {
+  const fx = makeFixture('harness-login-args');
+
+  assert.match(captureError(() => run(['login', 'claude-code', '--new', '--profile', 'work'], at(fx))).message,
+    /`--new` signs in to a new account and `--profile` to one that is here/);
+  assert.match(captureError(() => run(['login', 'claude-code', '--name', 'work'], at(fx))).message,
+    /`--name` names a new account as it is made/);
+  // An account that is not here is refused before any login flow runs.
+  assert.match(captureError(() => run(['login', 'claude-code', '--profile', 'nobody'], at(fx))).message,
+    /no account `nobody` on this machine/);
+  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
+  fx.cleanup();
+});
+
+// ——— ACCT2: an account's name, from the terminal. Its id stays, so every list, default, reading and record keeps it.
+
+test('`profile rename` names an account, and its lists, defaults, readings and records keep it by its id', () => {
+  const fx = makeFixture('harness-rename');
+  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
+  run(['profile', 'add', 'claude-code', 'account-2'], at(fx));
+  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
+  run(['profile', 'default', 'claude-code', 'account-1'], at(fx));
+  run(['profile', 'order', 'claude-code', 'account-2', '--workspace', 'work'], at(fx));
+  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({ 'claude-code': { 'account-1': { until: '2999-01-01T00:00:00Z' } } }), 'utf8');
+  const wiring = readFileSync(at(fx), 'utf8');
+
+  const renamed = run(['profile', 'rename', 'claude-code', 'account-1', 'you@work.example'], at(fx));
+
+  assert.equal(renamed.code, 0);
+  assert.match(renamed.out, /`claude-code`'s account `account-1` is called `you@work.example` now/);
+  // The wiring names the id, and is not touched: the rotation, the default and the workspace's list keep working.
+  assert.equal(readFileSync(at(fx), 'utf8'), wiring);
+  // A verb takes the account by its new name, and writes its id.
+  run(['profile', 'order', 'claude-code', 'account-2', 'YOU@work.example', '--workspace', 'work'], at(fx));
+  assert.deepEqual(readHarnessSettings(at(fx)).workspaceRotation.work!['claude-code'], ['account-2', 'account-1']);
+  const ready = run(['profile', 'ready', 'claude-code', 'you@work.example'], at(fx));
+  assert.match(ready.out, /is offered again/);
+  // `agent list` says the name, the id beside it, and the list by names.
+  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
+    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: 'account-1',
+    profiles: [
+      { name: 'account-1', home: '', login: 'in', account: null, key: null },
+      { name: 'account-2', home: '', login: 'out', account: null, key: null },
+    ],
+  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC').join('\n');
+  assert.match(lines, /you@work\.example +in +\(id account-1, machine default\)/);
+  assert.match(lines, /rotation +you@work\.example, then account-2/);
+
+  // Its own id gives it none again; another account's id or name is refused.
+  assert.match(captureError(() => run(['profile', 'rename', 'claude-code', 'account-2', 'Account-1'], at(fx))).message,
+    /already names `account-1`/);
+  const cleared = run(['profile', 'rename', 'claude-code', 'you@work.example', 'account-1'], at(fx));
+  assert.match(cleared.out, /has no name of yours now/);
+  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), {});
+  fx.cleanup();
+});
+
+test('`profile remove` by an account\'s name removes it and forgets its name', () => {
+  const fx = makeFixture('harness-rename-remove');
+  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
+  run(['profile', 'rename', 'claude-code', 'account-1', 'seat'], at(fx));
+
+  const removed = run(['profile', 'remove', 'claude-code', 'seat'], at(fx));
+
+  assert.match(removed.out, /the sign-in in it are gone/);
+  assert.deepEqual(profiles(fx.root, 'claude-code'), []);
+  assert.deepEqual(JSON.parse(readFileSync(join(fx.root, 'accounts.json'), 'utf8')), {});
+  fx.cleanup();
+});
+
+// ——— ACCT1: an account put into lists from the terminal, and one in none said where it is listed.
+
+test('`profile join` puts an account into the lists named and says where it runs; a borrowed workspace is refused', () => {
+  const fx = makeFixture('harness-join');
+  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
+  run(['profile', 'add', 'claude-code', 'account-2'], at(fx));
+  run(['profile', 'default', 'claude-code', 'account-1', '--workspace', 'work'], at(fx));
+
+  const joined = run(['profile', 'join', 'claude-code', 'account-2', 'work', '--machine'], at(fx));
+
+  assert.equal(joined.code, 0);
+  const settings = readHarnessSettings(at(fx));
+  assert.deepEqual(settings.rotation['claude-code'], ['account-2']);
+  assert.deepEqual(settings.workspaceRotation.work!['claude-code'], ['account-1', 'account-2']);
+  assert.match(joined.out, /runs work in this machine's list, `work`'s list/);
+
+  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'account-2', 'forge'], at(fx))).message,
+    /`forge` names no `claude-code` account or list of its own/);
+  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'account-9', 'work'], at(fx))).message,
+    /no account `account-9`/);
+  assert.match(captureError(() => run(['profile', 'join', 'claude-code', 'account-2'], at(fx))).message,
+    /needs the lists/);
+  fx.cleanup();
+});
+
+test('`agent list` says an account no list and no default holds runs nowhere, and how to put it in one', () => {
+  const fx = makeFixture('harness-list-nowhere');
+  run(['profile', 'add', 'claude-code', 'account-1'], at(fx));
+  run(['profile', 'add', 'claude-code', 'account-2'], at(fx));
+  run(['profile', 'order', 'claude-code', 'account-1'], at(fx));
+
+  const lines = accountLines('claude-code', TOOLCHAINS['claude-code']!, {
+    harness: 'claude-code', present: true, version: '1', problem: null, machineDefault: null,
+    profiles: [
+      { name: 'account-1', home: '', login: 'in', account: null, key: null },
+      { name: 'account-2', home: '', login: 'in', account: null, key: null },
+    ],
+  }, readHarnessSettings(at(fx)), fx.root, new Date(), 'UTC');
+
+  const nowhere = lines.filter((line) => /no workspace: no list and no default holds it/.test(line));
+  assert.equal(nowhere.length, 1);
+  assert.match(nowhere[0]!, /daoris agent profile join claude-code account-2 <workspace>…\|--machine/);
   fx.cleanup();
 });
 

@@ -68,7 +68,8 @@ public sealed class ApiKeyAccountTests : IDisposable
     {
         var account = HarnessKeys.Add(_home, "fake", "sk-test-0000-wxyz");
 
-        Assert.Equal("account-1", account);
+        // A fresh id (ACCT2), never the first free `account-N`.
+        Assert.Matches("^acct-[0-9a-f]{8}$", account);
         var directory = HarnessSettings.ProfileHome(_home, "fake", account);
         Assert.True(Directory.Exists(directory));
         // The directory is the TOOL's (D49 §4): Daoris made it and put nothing in it.
