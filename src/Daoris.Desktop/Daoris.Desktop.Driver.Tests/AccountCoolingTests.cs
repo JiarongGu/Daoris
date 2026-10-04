@@ -285,7 +285,11 @@ public sealed class AccountCoolingTests : IDisposable
         var said = CoolingWords.Hold(Entry(account: null), Zone);
 
         Assert.StartsWith($"`claude-code`'s own sign-in is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said.", said);
-        Assert.Contains("refresh Settings → Agents", said);
+        // UX6e2: opening the Agents place asks nothing, so the refresh that ends the cool-off is its Read again.
+        Assert.EndsWith(
+            "If you have signed in to another account at your own terminal since, press Read again under Agents → the agent's "
+            + "page → Accounts.",
+            said);
     }
 
     /// <summary>The CLI's <c>cooling.test.ts</c> parses this theory: <c>daoris agent list</c> says why in the same words (TOOL4e).</summary>
