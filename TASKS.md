@@ -31,6 +31,10 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
+- [ ] **INTEGRATE1 — consolidate branches and review the product** (2026-10-05, in progress).
+  Preserve unfinished work, integrate it into `main`, review UI/UX and code, simplify documentation,
+  and remove integrated branches. Working state and proof: `docs/2026-10-05-integration-review.md`.
+
 The owner's direction: *Daoris is the master development tool, doctrine and knowledge sharing*. Each row is
 built by a subagent through the `dispatch-subagent` skill and merged with `tools/merge-branch.mjs`; Daoris.Plugins'
 work is asked of it through the platform and taken by its own sessions.
