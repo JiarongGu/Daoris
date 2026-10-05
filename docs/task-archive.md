@@ -5,6 +5,20 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## Integration review (2026-10-06)
+
+- [x] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
+  compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
+  and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
+  its gate by the lane table (records already forgiven). Contract: GATE3, GATE5. Proof: a test where a web-only change
+  keeps the driver's verdicts and a driver change does not.
+  Completed 2026-10-06: integrated GATE6 and GATE6b, including checkout reruns and stale-gate remedies.
+  CLI and service gates passed; changes and tests are in `8ba56b64` and `2ba0a510`.
+- [x] **DUPNOTE1 — the records check finds a dated note held twice in one decision** (tools; found merging UX6g). D150
+  held PLUGTOOL1a's note twice after a union merge and `doc-duplicates` passed: it checks the other records for a line
+  twice, never a decision for a note twice. Contract: D106, D134 §3.4. Proof: a fixture decision with one note twice.
+  Completed 2026-10-06: integrated `7690583f`; duplicate-note fixtures and the repository records check pass.
+
 ## Part 1 — v0.1: the CLI (2026-08-04)
 
 Executed from `docs/archive/2026-08-04-daoris-v0.1-plan.md`, one task per commit, each a failing test first.

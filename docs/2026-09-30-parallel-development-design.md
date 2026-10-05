@@ -110,6 +110,13 @@ it (`--full` alone runs the plan on the checkout), so a wrong table is caught be
 Process half leaves a trx, and the ten slowest classes are printed after it (PROC1). D115's note says what this
 amends. **GATE5** then took the long gates out of every merge, reached or not: the two `Process` halves and the
 deployment rehearsal run only with `--full`, so rule 5's process suites run in the full set before staging.
+**GATE6** then let a verdict stand until a path its gate reaches changes: `--passed` and `--rerun` read the paths
+changed since a verdict against the same lane table, not the whole tree, so a fix re-gated by the gates it reaches
+leaves the others' verdicts standing, and a verdict that no longer stands is named with the path that made it so.
+**GATE6b** then opened `--rerun` on the checkout with no merge open: it runs the named gates and every stale one, and
+`--stale` runs the stale ones alone, each verdict recorded where the stage reads it, on a clean tree only. A refused
+stage names the smallest of `--stale`, `--rerun <gate>…` and `--full` that would pass the tree, so one flaked gate or
+one fix committed after the full set no longer costs a second full run.
 
 ## 4. The splits (the code half)
 

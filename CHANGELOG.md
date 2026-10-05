@@ -5,6 +5,9 @@ with the version and date at release.
 
 ## Unreleased
 
+- Development checks reuse verdicts when only unrelated paths changed; `--stale` and checkout
+  `--rerun` report the remaining checks needed before staging. Decision checks now reject duplicate notes.
+
 The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool

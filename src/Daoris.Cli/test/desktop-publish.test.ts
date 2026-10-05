@@ -170,6 +170,16 @@ test('a publish refuses a commit the full set has not passed, naming what is mis
   assert.equal(GATE_COMMAND, mergeTool.FULL_COMMAND);
   assert.equal(GATE_COMMAND, 'node tools/merge-branch.mjs --full');
   assert.match(refused.refusal!, /--force-ungated/);
+  assert.match(refused.refusal!, /run every gate on this checkout: node tools\/merge-branch\.mjs --full\n/);
+
+  // GATE6b: when a smaller command would pass it, the tool names that one, and so does the refusal, in place of the full set.
+  const stale = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run the 2 stale gates on it: node tools/merge-branch.mjs --stale\n`) });
+  assert.match(stale.refusal!, /run the 2 stale gates on this checkout: node tools\/merge-branch\.mjs --stale\n/);
+  assert.equal(stale.refusal!.split('merge-branch.mjs --stale').length, 2, 'it names the command once');
+  assert.doesNotMatch(stale.refusal!, /--full/);
+  assert.match(stale.refusal!, /driver-process\s+none/);
+  const lacks = ungatedRefusal(to, fx.root, { ask: ask(1, `${missing}  Run the gate it lacks on it: node tools/merge-branch.mjs --rerun cli\n`) });
+  assert.match(lacks.refusal!, /run the gate it lacks on this checkout: node tools\/merge-branch\.mjs --rerun cli\n/);
 
   // The person's explicit override publishes, and says it is ungated.
   const forced = ungatedRefusal(to, fx.root, { force: true, ask: ask(1, missing) });
@@ -223,10 +233,15 @@ test('the stage refuses an ungated commit, as the merge tool\'s gates record rea
   assert.match(gated.refusal!, /first\s+none/);
   assert.match(gated.refusal!, /second\s+none/);
 
+  assert.match(gated.refusal!, /run every gate on this checkout: node tools\/merge-branch\.mjs --full/);
+
   record(['first']);
   gated = ungatedRefusal(to, repo);
   assert.match(gated.refusal!, /second\s+none/);
   assert.match(gated.refusal!, /first\s+PASS/);
+  // GATE6b: one gate lacking is one gate to run, which the refusal names in place of the full set.
+  assert.match(gated.refusal!, /run the gate it lacks on this checkout: node tools\/merge-branch\.mjs --rerun second\n/);
+  assert.doesNotMatch(gated.refusal!, /--full/);
 
   record(['first', 'second']);
   gated = ungatedRefusal(to, repo);

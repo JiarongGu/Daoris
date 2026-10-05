@@ -14,7 +14,7 @@ Every closed arc is in the archive, and [`docs/README.md`](docs/README.md) names
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1274 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
+**Counts, and this is their one home:** seventeen commands, **1283 CLI tests, 1170 service and 68 HTTP host, 4626 driver,
 704 desktop modules, 80 devkit, 4087 web unit, 24 Playwright**, 114/114 release rehearsal, **373/373
 family rehearsal** (it names its own phases when you run it), **110/110 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
@@ -78,11 +78,6 @@ running them again.
   `DEEPSEEK_API_KEY`, but a key variable is declared only where measured (AGT3, D67 §1). Measure, with an invalid key
   and no real one, whether `dsh --profile acp` reads it, then declare it in both twins so `daoris agent key dsh` works.
   Contract: D57's AGENTS2 note. Proof: the measurement beside the ACP3 evidence; the twin tables.
-- [ ] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
-  compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
-  and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
-  its gate by the lane table (records already forgiven). Contract: GATE3, GATE5. Proof: a test where a web-only change
-  keeps the driver's verdicts and a driver change does not.
 - [ ] **PROC1 — the driver's real-process half under ten minutes** (driver tests, tools). Measure per class first (the
   merge tool keeps a trx with durations), then run independent Process classes in parallel workers, each with its own
   scratch home and ports, and move cases that need no real process onto fakes. Contract: MOD8, FLAKE1 (load is the
@@ -163,9 +158,6 @@ title sections, for quest and session, need their UI/UX improved"*):
   `HelpGoProposals`, `HelpSyncProposals`, `RegistrationFollow`, `PluginKit`, `SessionTrees.Hand`, `SetupCommand`,
   `WorkspaceSetupCommand`), and the driver's places table still lists both domains. Contract: D150 §3.1. Proof: the
   twins' tables and the room's golden files.
-- [ ] **DUPNOTE1 — the records check finds a dated note held twice in one decision** (tools; found merging UX6g). D150
-  held PLUGTOOL1a's note twice after a union merge and `doc-duplicates` passed: it checks the other records for a line
-  twice, never a decision for a note twice. Contract: D106, D134 §3.4. Proof: a fixture decision with one note twice.
 - [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; §4.4), taking GIT1e: D147's list by kind and a
   branch's graph (a pure `graphLanes.ts`) in the Branches tab; no Git place on the bar.
 - [ ] **UX6i — Knowledge: Search and Convergence as one place** (web-shell; §2.2).

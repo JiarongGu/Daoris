@@ -20,10 +20,11 @@
  *
  * 🔴 **It publishes only a tree the full set of gates passed** (GATE3). A merge runs only the gates its
  * lanes reach (`tools/merge-branch.mjs`), so this is where the rest is owed: before anything is built it
- * asks `merge-branch --passed`, and refuses, naming each gate that has not passed and the command that
- * runs them all (`node tools/merge-branch.mjs --full`). `--force-ungated` is the person's explicit
- * override, and the publish says it is ungated. A folder under the workspace's `_fixtures` is never
- * asked: the deployment rehearsal publishes there, and it is one of the gates being run.
+ * asks `merge-branch --passed`, and refuses, naming each gate that has not passed and the smallest command
+ * that would pass it: `--stale`, `--rerun <gate>…`, or `--full`, which runs them all (GATE6b).
+ * `--force-ungated` is the person's explicit override, and the publish says it is ungated. A folder under
+ * the workspace's `_fixtures` is never asked: the deployment rehearsal publishes there, and it is one of the
+ * gates being run.
  *
  * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
  * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
@@ -603,6 +604,12 @@ Re-publishing over this folder with the application closed still works; nothing 
 export const GATE_COMMAND = 'node tools/merge-branch.mjs --full';
 
 /**
+ * The line `merge-branch --passed` ends a refusal with (GATE6b): what to run and the smallest command that runs it,
+ * `--stale`, `--rerun <gate>…` or `--full`. Read from its output, as the rest is: the publish never imports the tool.
+ */
+const REMEDY = /^\s*Run (.+?) on it: (node tools\/merge-branch\.mjs .+?)\s*$/;
+
+/**
  * Whether `to` is the workspace's scratch, `_fixtures` or a folder inside it: where the deployment rehearsal
  * publishes. Compared by path, so a sibling whose name starts the same is not inside; case-blind on Windows.
  */
@@ -627,8 +634,9 @@ const indented = (text) => text.split(/\r?\n/).filter((line) => line.trim()).map
 /**
  * What stops a publish into `to` for want of gates (GATE3), as the sentence to print, and what to say when it
  * goes ahead: nothing is asked for a folder under `_fixtures`; a tree the full set passed publishes; any other
- * is refused, naming what has not passed and the command that runs it all, unless `force` (`--force-ungated`,
- * the person's explicit override), when it publishes and says it is ungated.
+ * is refused, naming what has not passed and the smallest command the tool names that would pass it (GATE6b), or
+ * the one that runs it all, unless `force` (`--force-ungated`, the person's explicit override), when it publishes
+ * and says it is ungated.
  */
 export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates } = {}) {
   if (insideFixtures(to, repoRoot)) return { refusal: null, note: null };
@@ -640,11 +648,14 @@ export function ungatedRefusal(to, repoRoot, { force = false, ask = askGates } =
   if (force) {
     return { refusal: null, note: `desktop-publish: publishing ungated (--force-ungated): ${why}.\n${indented(out)}` };
   }
-  // The tool's own last line names the command too; it is said once, below.
-  const said = out.split(/\r?\n/).filter((line) => !line.includes(GATE_COMMAND)).join('\n');
+  // The tool's own last line names the command too; it is said once, below. A tool that names none, or cannot tell, gets the full set.
+  const lines = out.split(/\r?\n/);
+  const named = lines.map((line) => REMEDY.exec(line)).find(Boolean);
+  const [what, command] = named ? [named[1], named[2]] : ['every gate', GATE_COMMAND];
+  const said = lines.filter((line) => !REMEDY.test(line) && !line.includes(GATE_COMMAND)).join('\n');
   return {
     refusal: `desktop-publish: ${why}, so it is not published to \`${to}\`.\n${indented(said)}\n`
-      + `  A merge runs only the gates its lanes reach (GATE3); run every gate on this checkout: ${GATE_COMMAND}\n`
+      + `  A merge runs only the gates its lanes reach (GATE3); run ${what} on this checkout: ${command}\n`
       + '  Or, as your explicit call, publish it ungated with --force-ungated.',
     note: null,
   };

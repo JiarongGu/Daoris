@@ -24,7 +24,7 @@ interface Lane { id: string; title: string; summary: string; steward: boolean; p
 interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options {
   branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean; prune: boolean; autoPrune: boolean;
-  full: boolean; rerun: string[]; passed: boolean;
+  full: boolean; rerun: string[]; passed: boolean; stale: boolean;
 }
 interface Worktree { path: string; branch: string; locked: boolean; lockReason: string; prunable: boolean; bare: boolean }
 interface Candidate { branch: string; worktree: Worktree | null; held: string | null }
@@ -35,6 +35,12 @@ type Step = (command: string, cwd: string, fd: number) => Promise<number>;
 interface Rule { paths?: string[]; lane?: string; gates: string[] | '*'; why: string }
 interface Selected { gate: Gate; run: boolean; reached: boolean; why: string }
 interface Verdict { gate: string; verdict: string; tree: string | null; at: string; commit?: string | null; branch?: string | null }
+/** GATE6: how a verdict given on one tree stands for another, for its gate, and the paths that say so. */
+interface Standing { standing: 'exact' | 'records' | 'unreached' | 'stale'; paths: string[]; records: string[] }
+/** What a stage judges by: this tree, the paths another differs by (null when git cannot say), which are records, which reach a gate. */
+interface Judging { tree: string; drift: (from: string) => string[] | null; isRecord: (path: string) => boolean; reaching: (gate: string, paths: string[]) => string[] }
+/** One gate as the stage judges it: the verdict that counts and how it stands, or a newer one that no longer does. */
+interface Judged { name: string; verdict: Verdict | null; exact: boolean; standing: Standing | null; stale: (Standing & { verdict: Verdict }) | null }
 
 const tool = await import(
   // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
@@ -77,17 +83,28 @@ const tool = await import(
   REACH: readonly Rule[];
   isLongGate: (gate: { name: string; run: string }) => boolean;
   selectGates: (plan: Gate[], changed: string[], options?: { lanes?: Lane[]; full?: boolean; reach?: readonly Rule[] }) => { gates: Selected[]; unplaced: string[] };
-  rerunPlan: (plan: string[], chosen: string[], results: Record<string, { verdict: string; at: string }>, named: string[]) => {
-    run: string[]; kept: { name: string; verdict: string; at: string }[]; fresh: string[];
+  pathsReaching: (gate: string, paths: string[], options?: { lanes?: Lane[]; reach?: readonly Rule[] }) => string[];
+  rerunPlan: (plan: string[], chosen: string[], results: Record<string, { verdict: string; at: string }>, named: string[], stale?: Record<string, string[]>) => {
+    run: string[]; kept: { name: string; verdict: string; at: string }[]; fresh: string[]; stale: { name: string; verdict: string; at: string; paths: string[] }[];
   };
   VERDICTS_FILE: string;
-  stageJudgement: (facts: { plan: string[]; verdicts: Verdict[]; tree: string; recordsOnly: (tree: string) => boolean }) => {
-    passed: boolean; missing: string[]; gates: { name: string; verdict: Verdict | null; exact: boolean }[];
+  verdictStanding: (facts: Judging & { from: string | null; gate: string }) => Standing;
+  stageJudgement: (facts: Judging & { plan: string[]; verdicts: Verdict[] }) => { passed: boolean; missing: string[]; gates: Judged[] };
+  stageRemedy: (gates: Judged[]) => { command: string; what: string; runs: string[] } | null;
+  checkoutRerun: (gates: Judged[], named: string[]) => {
+    run: string[]; kept: { name: string; verdict: string; at: string }[]; stale: { name: string; verdict: string; at: string; paths: string[] }[]; none: string[];
   };
+  FULL_COMMAND: string;
+  STALE_COMMAND: string;
   recordMatcher: (map: { lanes?: Lane[]; union?: string[] }) => (path: string) => boolean;
   trxCommand: (run: string, file: string) => string;
   slowestClasses: (trx: string, count?: number) => Slow[];
 };
+
+// The stage's own question (GATE6b's proof): the publish asks the merge tool's `--passed` before it builds.
+const publish = await import(
+  // @ts-expect-error — untyped workspace tooling; the same seam as the merge tool above
+  '../../../tools/desktop-publish.mjs') as { ungatedRefusal: (to: string, repoRoot: string) => { refusal: string | null; note: string | null } };
 
 const TOOL = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'merge-branch.mjs');
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -107,8 +124,11 @@ function refusal(fn: () => unknown): { exitCode: number; message: string } {
 test('the arguments name one branch, or several after --batch, and the flags', () => {
   assert.deepEqual(tool.parseArgs(['mod9']), {
     branches: ['mod9'], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false,
+    full: false, rerun: [], passed: false, stale: false,
   });
+  // GATE6b: each stale gate run again on the checkout as it stands.
+  assert.equal(tool.parseArgs(['--stale']).stale, true);
+  assert.equal(tool.parseArgs(['--stale', '--keep-going']).keepGoing, true);
   // GATE3: every gate for one merge, or for the checkout as it stands; and whether the full set passed it.
   assert.equal(tool.parseArgs(['a', '--full']).full, true);
   assert.equal(tool.parseArgs(['--plan', 'a', '--full']).full, true);
@@ -158,6 +178,11 @@ test('the arguments refuse what would merge the wrong thing, with exit 2', () =>
     [['--passed', 'a'], /--passed takes no branch/],
     [['--passed', '--full'], /one of/],
     [['--prune', '--full'], /--full is for a merge or the checkout/],
+    [['--stale', 'a'], /--stale takes no branch/],
+    [['--stale', '--rerun', 'web'], /one of/],
+    [['--stale', '--passed'], /one of/],
+    [['--stale', '--full'], /--stale takes only --keep-going/],
+    [['--stale', '--no-prune'], /--stale takes only --keep-going/],
   ];
   for (const [argv, message] of cases) {
     const error = refusal(() => tool.parseArgs(argv));
@@ -378,6 +403,8 @@ const selected = (paths: string[], full = false) => tool.selectGates(repoPlan, p
 const runs = (paths: string[], full = false): string[] => selected(paths, full).filter((entry) => entry.run).map((entry) => entry.gate.name);
 /** What the lane table says can see the change, run or not: what holds the table to the code. */
 const reaches = (paths: string[]): string[] => selected(paths).filter((entry) => entry.reached).map((entry) => entry.gate.name);
+/** The gates whose verdicts a change to these paths makes stale (GATE6), in the plan's order. */
+const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsReaching(gate, paths, { lanes: repoLanes }).length > 0);
 const BASE = ['universal', 'code-map', 'orient-index', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
 // GATE5: the real-process halves and the deployment rehearsal, 30 to 70 minutes a merge, run only in the full set.
@@ -405,6 +432,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
     ['ServiceHostLocator', ['src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceHostLocator.cs'],
       [...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']],
     ["the driver's tests", ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs'], [...BASE, 'driver', 'driver-process']],
+    // GATE6: a browser test is the web gate's alone; no .NET suite reads it (the test below holds that).
+    ['a browser test', ['src/Daoris.Web/e2e/platform.spec.ts'], [...BASE, 'web']],
     ['the modules', ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ['the desktop app', ['src/Daoris.Desktop/Daoris.Desktop.App/Program.cs'], [...BASE, 'modules', 'modules-process', 'deployment']],
     ['the publish script', ['tools/desktop-publish.mjs'], [...BASE, 'rehearse-family', 'deployment']],
@@ -427,6 +456,8 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
   for (const [what, paths, expected] of cases) {
     assert.deepEqual(reaches(paths), expected, `${what}: what the table says can see it`);
     assert.deepEqual(runs(paths), expected.filter((gate) => !LONG.includes(gate)), `${what}: what a merge runs`);
+    // GATE6: the stage reads the same table, so the gates a changed path makes stale are the ones it reaches.
+    if (paths.length) assert.deepEqual(stalens(paths), expected, `${what}: the verdicts it makes stale`);
   }
   // Lanes add up: a branch crossing two runs what either reaches.
   assert.deepEqual(runs(['docs/x.md', 'tools/release-rehearsal.mjs', 'src/Daoris.Desktop/Daoris.Desktop.App/Program.cs']),
@@ -1081,12 +1112,21 @@ test('a re-run runs the named gates and any the merge has not run yet, and keeps
     run: ['driver', 'driver-process', 'web'],
     kept: [{ name: 'universal', verdict: 'PASS', at: '2026-10-04T10:00:00Z' }, { name: 'cli', verdict: 'PASS', at: '2026-10-04T10:03:00Z' }],
     fresh: ['driver-process', 'web'],
+    stale: [],
   });
   // A gate the lanes did not reach runs when named, in the plan's order; a kept FAIL stays a FAIL.
   const named = tool.rerunPlan(plan, chosen, { ...results, 'driver-process': { verdict: 'PASS', at: 'x' }, web: { verdict: 'PASS', at: 'y' } }, ['deployment', 'cli']);
   assert.deepEqual(named.run, ['cli', 'deployment']);
   assert.deepEqual(named.kept.map((kept) => `${kept.name} ${kept.verdict}`), ['universal PASS', 'driver FAIL', 'driver-process PASS', 'web PASS']);
   assert.deepEqual(named.fresh, []);
+
+  // GATE6: a verdict a fixed path reaches is not kept: that gate runs again, saying which path, and a named one is just named.
+  const passed = { ...results, driver: { verdict: 'PASS', at: '2026-10-04T10:09:00Z' }, 'driver-process': { verdict: 'PASS', at: 'x' }, web: { verdict: 'FAIL', at: 'y' } };
+  const fixed = tool.rerunPlan(plan, chosen, passed, ['web'], { universal: ['src/Daoris.Web/e2e/platform.spec.ts'], web: ['src/Daoris.Web/e2e/platform.spec.ts'] });
+  assert.deepEqual(fixed.run, ['universal', 'web']);
+  assert.deepEqual(fixed.kept.map((kept) => kept.name), ['cli', 'driver', 'driver-process']);
+  assert.deepEqual(fixed.stale, [{ name: 'universal', verdict: 'PASS', at: '2026-10-04T10:00:00Z', paths: ['src/Daoris.Web/e2e/platform.spec.ts'] }]);
+  assert.deepEqual(fixed.fresh, []);
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -1107,20 +1147,104 @@ test('the stage counts a gate passed on this tree, or on one that differs from i
     { gate: 'driver-process', verdict: 'FLAKE', tree: 'T', at: at(10) },
     { gate: 'deployment', verdict: 'PASS', tree: null, at: at(10) },
   ];
-  const judged = tool.stageJudgement({
-    plan: ['universal', 'cli', 'driver', 'driver-process', 'web', 'deployment', 'rehearse'], verdicts, tree: 'T', recordsOnly: (tree) => tree === 'R',
-  });
+  // Every path reaches every gate here, as it did before GATE6: what a stage forgives without the lane table.
+  const judging = {
+    tree: 'T', drift: (from: string) => ({ R: ['TASKS.md'], C: ['src/x.cs', 'TASKS.md'] } as Record<string, string[]>)[from] ?? null,
+    isRecord: (path: string) => path === 'TASKS.md', reaching: (_gate: string, paths: string[]) => paths,
+  };
+  const judged = tool.stageJudgement({ ...judging, plan: ['universal', 'cli', 'driver', 'driver-process', 'web', 'deployment', 'rehearse'], verdicts });
   assert.equal(judged.passed, false);
   assert.deepEqual(judged.missing, ['driver', 'web', 'deployment', 'rehearse']);
   const byName = Object.fromEntries(judged.gates.map((gate) => [gate.name, gate]));
   assert.equal(byName['universal']!.exact, true);
   assert.equal(byName['cli']!.exact, false);
   assert.equal(byName['cli']!.verdict!.tree, 'R');
+  assert.deepEqual(byName['cli']!.standing, { standing: 'records', paths: [], records: ['TASKS.md'] });
   assert.equal(byName['web']!.verdict!.verdict, 'FAIL');
   assert.equal(byName['rehearse']!.verdict, null);
+  assert.equal(byName['rehearse']!.stale, null, 'no verdict anywhere is not a stale one');
+  // A stale verdict is said with the paths that made it so, the records left out; one with no tree, with none.
+  assert.equal(byName['driver']!.verdict, null);
+  assert.deepEqual([byName['driver']!.stale!.standing, byName['driver']!.stale!.paths, byName['driver']!.stale!.verdict.tree], ['stale', ['src/x.cs'], 'C']);
+  assert.deepEqual([byName['deployment']!.stale!.standing, byName['deployment']!.stale!.paths], ['stale', []]);
 
-  const all = tool.stageJudgement({ plan: ['universal', 'cli'], verdicts, tree: 'T', recordsOnly: (tree) => tree === 'R' });
+  const all = tool.stageJudgement({ ...judging, plan: ['universal', 'cli'], verdicts });
   assert.deepEqual([all.passed, all.missing], [true, []]);
+
+  // A newer verdict that no longer stands is said only where it explains a gate that does not count.
+  const later = tool.stageJudgement({ ...judging, plan: ['service', 'devkit'], verdicts: [
+    { gate: 'service', verdict: 'PASS', tree: 'T', at: at(9) },
+    { gate: 'service', verdict: 'FAIL', tree: 'C', at: at(11) },
+    { gate: 'devkit', verdict: 'FAIL', tree: 'T', at: at(9) },
+    { gate: 'devkit', verdict: 'PASS', tree: 'C', at: at(11) },
+  ] });
+  assert.deepEqual(later.missing, ['devkit']);
+  assert.deepEqual(later.gates.map((gate) => [gate.name, gate.verdict!.verdict, gate.stale?.verdict.verdict ?? null]), [
+    ['service', 'PASS', null],
+    ['devkit', 'FAIL', 'PASS'],
+  ]);
+});
+
+// ---------------------------------------------------------------------------------------------------
+// GATE6: a verdict stays good until a path its gate reaches changes
+
+test('a path reaches a gate as a merge reads the table: the baseline and an unnamed gate by every path, any gate by an unplaced one', () => {
+  const reach: Rule[] = [
+    { paths: ['web/**'], gates: ['web'], why: 'the page' },
+    { paths: ['driver/**'], gates: ['driver', 'driver-process'], why: 'the driver' },
+    { paths: ['gates.json'], gates: '*', why: 'how every gate runs' },
+    { lane: 'service', gates: ['service'], why: 'a lane this map does not declare places nothing' },
+  ];
+  const paths = ['web/a.ts', 'driver/b.cs'];
+  assert.deepEqual(tool.pathsReaching('web', paths, { reach }), ['web/a.ts']);
+  assert.deepEqual(tool.pathsReaching('driver-process', paths, { reach }), ['driver/b.cs']);
+  assert.deepEqual(tool.pathsReaching('cli', paths, { reach }), paths, 'the baseline runs at every merge, so every path reaches it');
+  assert.deepEqual(tool.pathsReaching('mystery', paths, { reach }), paths, 'a gate no rule names runs at every merge');
+  assert.deepEqual(tool.pathsReaching('web', ['gates.json', 'driver/b.cs'], { reach }), ['gates.json']);
+  assert.deepEqual(tool.pathsReaching('web', ['elsewhere/c.cs', 'driver/b.cs', 'service/d.cs'], { reach }), ['elsewhere/c.cs', 'service/d.cs'],
+    'a path no rule places reaches every gate');
+  assert.deepEqual(tool.pathsReaching('web', [], { reach }), []);
+});
+
+test("a verdict stands until a path that reaches its gate changes: a browser test keeps the driver's verdicts, a driver change does not", () => {
+  const at = (hour: number) => `2026-10-04T${String(hour).padStart(2, '0')}:00:00Z`;
+  const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
+  const driverCs = 'src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs';
+  // The full set passed tree F. W is F with a browser test fixed and the records written; D is F with the driver changed.
+  const between: Record<string, string[]> = { 'F>W': [spec, 'TASKS.md', 'docs/decisions/D150.md'], 'F>D': [driverCs] };
+  const judging = (tree: string) => ({
+    tree,
+    drift: (from: string) => between[`${from}>${tree}`] ?? null,
+    isRecord: tool.recordMatcher({ lanes: repoLanes, union: tool.unionRecords(repoRoot) }),
+    reaching: (gate: string, paths: string[]) => tool.pathsReaching(gate, paths, { lanes: repoLanes }),
+  });
+  const full: Verdict[] = ALL.map((gate) => ({ gate, verdict: 'PASS', tree: 'F', at: at(9) }));
+  const inPlan = (gates: string[]) => ALL.filter((gate) => gates.includes(gate));
+
+  // The browser test reaches the web gate and the baseline; every other verdict stands, the driver's among them.
+  const web = tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: full });
+  assert.deepEqual(web.missing, inPlan([...BASE, 'web']));
+  const w = Object.fromEntries(web.gates.map((gate) => [gate.name, gate]));
+  assert.deepEqual(w['web']!.stale!.paths, [spec], 'which path made it stale, the records forgiven');
+  assert.equal(w['web']!.stale!.verdict.at, at(9));
+  for (const gate of ['driver', 'driver-process', 'modules', 'modules-process', 'deployment', 'rehearse-family']) {
+    assert.equal(w[gate]!.verdict!.tree, 'F', gate);
+    assert.deepEqual(w[gate]!.standing, { standing: 'unreached', paths: [spec], records: ['TASKS.md', 'docs/decisions/D150.md'] }, gate);
+  }
+  // Once those pass again on W, the stage accepts it: no second full run.
+  const again = [...full, ...inPlan([...BASE, 'web']).map((gate) => ({ gate, verdict: 'PASS', tree: 'W', at: at(11) }))];
+  assert.deepEqual(tool.stageJudgement({ ...judging('W'), plan: ALL, verdicts: again }).missing, []);
+
+  // A driver change voids the driver's verdicts, and every gate it reaches; the page's and the service's stand.
+  const driver = tool.stageJudgement({ ...judging('D'), plan: ALL, verdicts: full });
+  assert.deepEqual(driver.missing, inPlan([...BASE, 'driver', 'modules', 'driver-process', 'modules-process', 'rehearse-family', 'deployment']));
+  const d = Object.fromEntries(driver.gates.map((gate) => [gate.name, gate]));
+  assert.deepEqual(d['driver-process']!.stale!.paths, [driverCs]);
+  for (const gate of ['service', 'devkit', 'rehearse', 'web']) assert.equal(d[gate]!.standing!.standing, 'unreached', gate);
+
+  // A tree git can no longer compare stands for nothing, and says so with no path.
+  assert.deepEqual(tool.verdictStanding({ ...judging('X'), from: 'F', gate: 'web' }), { standing: 'stale', paths: [], records: [] });
+  assert.deepEqual(tool.verdictStanding({ ...judging('F'), from: 'F', gate: 'web' }), { standing: 'exact', paths: [], records: [] });
 });
 
 test("the records a stage forgives are the steward's lane and the records that merge by union, and nothing else", () => {
@@ -1134,6 +1258,66 @@ test("the records a stage forgives are the steward's lane and the records that m
     assert.ok(!isRecord(path), path);
   }
   assert.equal(tool.VERDICTS_FILE, 'local/gate-verdicts.json', 'gitignored, under local/');
+});
+
+// ---------------------------------------------------------------------------------------------------
+// GATE6b: a gate re-run on the checkout as it stands, and the smallest command a refusal names
+
+const hourOf = (hour: number) => `2026-10-05T${String(hour).padStart(2, '0')}:00:00Z`;
+// T is the checkout; S is a tree before a fix that reaches every gate here.
+const fixJudging: Judging = {
+  tree: 'T', drift: (from: string) => ({ S: ['src/fix.ts'] } as Record<string, string[]>)[from] ?? null,
+  isRecord: () => false, reaching: (_gate: string, paths: string[]) => paths,
+};
+
+test('a refusal names the smallest command that would pass the stage: --stale, --rerun naming what failed or never ran, or --full', () => {
+  const plan = ['universal', 'cli', 'web', 'deployment'];
+  const judge = (verdicts: Verdict[]) => tool.stageJudgement({ ...fixJudging, plan, verdicts }).gates;
+  const onT: Verdict[] = plan.map((gate) => ({ gate, verdict: 'PASS', tree: 'T', at: hourOf(9) }));
+  const beforeFix = (gate: string): Verdict => ({ gate, verdict: 'PASS', tree: 'S', at: hourOf(9) });
+
+  assert.equal(tool.stageRemedy(judge(onT)), null, 'nothing to name when the stage passes');
+  // A fix committed past the full set: the gates it reaches are stale, and --stale runs exactly those.
+  const fixed = [...onT.filter((v) => v.gate !== 'cli' && v.gate !== 'web'), beforeFix('cli'), beforeFix('web')];
+  assert.deepEqual(tool.stageRemedy(judge(fixed)), { command: tool.STALE_COMMAND, what: 'the 2 stale gates', runs: ['cli', 'web'] });
+  assert.deepEqual(tool.stageRemedy(judge([...onT.filter((v) => v.gate !== 'web'), beforeFix('web')]))!.what, 'the stale gate');
+  assert.equal(tool.STALE_COMMAND, 'node tools/merge-branch.mjs --stale');
+  // One gate flaked on this tree: --rerun names it alone.
+  const flaked = onT.map((v) => (v.gate === 'cli' ? { ...v, verdict: 'FAIL' } : v));
+  assert.deepEqual(tool.stageRemedy(judge(flaked)), { command: 'node tools/merge-branch.mjs --rerun cli', what: 'the gate it lacks', runs: ['cli'] });
+  // A failure, a gate never run and a stale one: --rerun names the first two, and runs the stale one with them.
+  const mixed = [...flaked.filter((v) => v.gate !== 'web' && v.gate !== 'deployment'), beforeFix('web')];
+  assert.deepEqual(tool.stageRemedy(judge(mixed)), {
+    command: 'node tools/merge-branch.mjs --rerun cli deployment', what: 'the 3 gates it lacks', runs: ['cli', 'web', 'deployment'],
+  });
+  // When that would run every gate anyway, the full set is named.
+  assert.deepEqual(tool.stageRemedy(judge([])), { command: tool.FULL_COMMAND, what: 'every gate', runs: plan });
+  assert.deepEqual(tool.stageRemedy(judge(onT.map((v) => ({ ...v, verdict: 'FAIL' }))))!.command, tool.FULL_COMMAND);
+});
+
+test("a re-run on the checkout runs the named gates and each the stage calls stale, in the plan's order, and keeps every other verdict", () => {
+  const plan = ['universal', 'cli', 'devkit', 'web', 'deployment'];
+  const gates = tool.stageJudgement({
+    ...fixJudging, plan, verdicts: [
+      { gate: 'universal', verdict: 'PASS', tree: 'T', at: hourOf(9) },
+      { gate: 'cli', verdict: 'FAIL', tree: 'T', at: hourOf(9) },
+      // Passed before the fix, then failed on this tree: the newest that stands says FAIL, and it is not stale.
+      { gate: 'devkit', verdict: 'PASS', tree: 'S', at: hourOf(9) },
+      { gate: 'devkit', verdict: 'FAIL', tree: 'T', at: hourOf(11) },
+      { gate: 'web', verdict: 'PASS', tree: 'S', at: hourOf(9) },
+    ],
+  }).gates;
+  const named = tool.checkoutRerun(gates, ['cli']);
+  assert.deepEqual(named.run, ['cli', 'web']);
+  assert.deepEqual(named.stale, [{ name: 'web', verdict: 'PASS', at: hourOf(9), paths: ['src/fix.ts'] }]);
+  assert.deepEqual(named.kept.map((kept) => `${kept.name} ${kept.verdict}`), ['universal PASS', 'devkit FAIL']);
+  assert.deepEqual(named.none, ['deployment'], 'a gate with no verdict at all runs only when named');
+  // --stale names nothing: the stale gates alone.
+  const stale = tool.checkoutRerun(gates, []);
+  assert.deepEqual(stale.run, ['web']);
+  assert.deepEqual(stale.kept.map((kept) => kept.name), ['universal', 'cli', 'devkit']);
+  assert.deepEqual(tool.checkoutRerun(gates, ['deployment']).run, ['web', 'deployment']);
+  assert.deepEqual(tool.checkoutRerun(gates, ['deployment']).none, []);
 });
 
 // ---------------------------------------------------------------------------------------------------
@@ -1708,9 +1892,13 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       { name: 'third', run: 'node gate.mjs third' },
     ]);
     branch(repo.root, 'fix', { 'fix.txt': 'x\n' });
+    // A merge this tool did not leave is not one it re-gates; with none open, --rerun gates the checkout (GATE6b).
+    git(repo.root, 'merge', '--quiet', '--no-ff', '--no-commit', 'fix');
     let result = await repo.run(['--rerun', 'first']);
     assert.equal(result.status, 2, result.out);
-    assert.match(result.out, /nothing to re-run/);
+    assert.match(result.out, /a merge is open here that this tool did not leave/);
+    assert.deepEqual(repo.ran(), []);
+    git(repo.root, 'merge', '--abort');
 
     result = await repo.run(['fix']);
     assert.equal(result.status, 1, result.out);
@@ -1734,6 +1922,44 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(repo.ran().slice(4), ['first', 'second', 'third']);
     assert.doesNotMatch(result.out, /kept/);
+    repo.cleanup();
+  });
+
+  // GATE6's proof at --rerun: the gates are named as this repository names them, so the tool's own lane table places
+  // the paths (a scratch repository has no lanes file, and the table's path rules need none).
+  test('--rerun keeps a verdict no fixed path reaches, and runs again each one a fixed path reaches, saying which path', async () => {
+    const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
+    const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
+    const repo = scratch('rerun-reach', [
+      { name: 'cli', run: 'node gate.mjs cli' },
+      { name: 'driver', run: 'node gate.mjs driver' },
+      { name: 'driver-process', run: 'node gate.mjs driver-process' },
+      // Fails the first time only: the browser test the parent fixes.
+      { name: 'web', run: 'node gate.mjs web 3 once' },
+    ]);
+    branch(repo.root, 'both', { [spec]: 'one\n', [driverTest]: 'one\n' });
+    let result = await repo.run(['both']);
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(repo.ran(), ['cli', 'driver', 'driver-process', 'web']);
+
+    // The browser test fixed in the merge: the web gate, and the baseline every path reaches; the driver's verdicts are kept.
+    writeFileSync(join(repo.root, spec), 'two\n');
+    result = await repo.run(['--rerun', 'web']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(4), ['cli', 'web']);
+    assert.match(result.out, /re-run on the merge of both: web, then cli, whose verdict a changed path reaches; 2 verdicts kept/);
+    assert.match(result.out, /stale\s+cli\s+PASS\s+from \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC: src\/Daoris\.Web\/e2e\/platform\.spec\.ts changed since, which reaches it/);
+    assert.match(result.out, /kept\s+driver\s+PASS\s+from .*no path changed since reaches it/);
+    assert.match(result.out, /kept\s+driver-process\s+PASS/);
+    assert.doesNotMatch(result.out, /a stage does not count it/, 'every verdict kept is one a stage counts');
+
+    // The driver's tests fixed too: the driver's gates run again, and the web gate's verdict stands.
+    writeFileSync(join(repo.root, driverTest), 'two\n');
+    result = await repo.run(['--rerun', 'cli']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(6), ['cli', 'driver', 'driver-process']);
+    assert.match(result.out, /stale\s+driver\s+PASS\s+from .*: src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/LandingTests\.cs changed since, which reaches it/);
+    assert.match(result.out, /kept\s+web\s+PASS/);
     repo.cleanup();
   });
 
@@ -1769,11 +1995,143 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     result = await repo.run(['--passed']);
     assert.equal(result.status, 0, result.out);
     assert.match(result.out, /on a tree that differs from this one only by the records \(CHANGELOG\.md\)/);
-    // Code is not.
+    // Code is not: no rule of the lane table places it, so it reaches every gate, and each says it made its verdict stale.
     writeFileSync(join(repo.root, 'code.txt'), 'changed\n');
     result = await repo.run(['--passed']);
     assert.equal(result.status, 1, result.out);
-    assert.match(result.out, /second\s+none/);
+    assert.match(result.out, /second\s+stale\s+PASS \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC, on a tree before code\.txt changed, which reaches it/);
+    repo.cleanup();
+  });
+
+  // GATE6's proof at the stage: a browser test fixed after the full set, and re-gated by the web gate alone.
+  test('--passed counts a verdict no path changed since reaches: a browser test re-gated alone stages, a driver change does not', async () => {
+    const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
+    const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
+    const repo = scratch('passed-reach', [
+      { name: 'driver', run: 'node gate.mjs driver' },
+      { name: 'driver-process', run: 'node gate.mjs driver-process' },
+      { name: 'web', run: 'node gate.mjs web' },
+    ], { [spec]: 'one\n', [driverTest]: 'one\n' });
+    let result = await repo.run(['--full']);
+    assert.equal(result.status, 0, result.out);
+
+    // Changed since the full set: the web gate's verdict is stale, and the refusal names the path; the driver's stand.
+    writeFileSync(join(repo.root, spec), 'two\n');
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /2 of 3 gates/);
+    assert.match(result.out, /web\s+stale\s+PASS .* UTC, on a tree before src\/Daoris\.Web\/e2e\/platform\.spec\.ts changed, which reaches it/);
+    assert.match(result.out, /driver\s+PASS .* UTC\s+on a tree that differs from this one only by paths it does not reach \(src\/Daoris\.Web\/e2e\/platform\.spec\.ts\)/);
+    assert.match(result.out, /driver-process\s+PASS/);
+
+    // The fix landed by a merge, which runs the web gate alone: the tree stages, with no second full run.
+    git(repo.root, 'checkout', '--', spec);
+    branch(repo.root, 'spec-fix', { [spec]: 'two\n' });
+    result = await repo.run(['spec-fix']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(3), ['web']);
+    git(repo.root, 'commit', '--quiet', '--no-edit');
+    writeFileSync(join(repo.root, 'CHANGELOG.md'), '# Changelog\n\n## Unreleased\n\n- **A** browser test, fixed.\n');
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /the full set has passed this checkout/);
+    assert.match(result.out, /web\s+PASS .* UTC\s+on a tree that differs from this one only by the records \(CHANGELOG\.md\)/);
+    assert.match(result.out, /driver\s+PASS .* UTC\s+on a tree that differs from this one only by paths it does not reach \(src\/Daoris\.Web\/e2e\/platform\.spec\.ts\) and the records \(CHANGELOG\.md\)/);
+
+    // A driver change reaches the driver's gates: those are stale, naming it, and the web gate's verdict stands.
+    writeFileSync(join(repo.root, driverTest), 'two\n');
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /driver\s+stale\s+PASS .*, on a tree before src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/LandingTests\.cs changed, which reaches it/);
+    assert.match(result.out, /driver-process\s+stale/);
+    assert.match(result.out, /web\s+PASS .*only by paths it does not reach \(src\/Daoris\.Desktop\/Daoris\.Desktop\.Driver\.Tests\/LandingTests\.cs\)/);
+    repo.cleanup();
+  });
+
+  // GATE6b's proof: a fix committed on the checkout after the full set stages once the gates it reaches run again.
+  test('--stale runs exactly the gates a fix committed past the full set reaches, and the stage then accepts the tree', async () => {
+    const spec = 'src/Daoris.Web/e2e/platform.spec.ts';
+    const driverTest = 'src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/LandingTests.cs';
+    const repo = scratch('stale', [
+      { name: 'cli', run: 'node gate.mjs cli' },
+      { name: 'driver', run: 'node gate.mjs driver' },
+      { name: 'driver-process', run: 'node gate.mjs driver-process' },
+      { name: 'web', run: 'node gate.mjs web' },
+    ], { [spec]: 'one\n', [driverTest]: 'one\n' });
+    let result = await repo.run(['--full']);
+    assert.equal(result.status, 0, result.out);
+
+    // The refusal names --stale, which runs two gates, not a second full run.
+    writeFileSync(join(repo.root, spec), 'two\n');
+    git(repo.root, 'commit', '--quiet', '-am', `fix the spec${TRAILER}`);
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /\n {2}Run the 2 stale gates on it: node tools\/merge-branch\.mjs --stale\n/);
+    assert.doesNotMatch(result.out, /--full/);
+
+    // Work left uncommitted is refused, by name, and nothing runs.
+    writeFileSync(join(repo.root, 'stray.txt'), 'left here\n');
+    result = await repo.run(['--stale']);
+    assert.equal(result.status, 2, result.out);
+    assert.match(result.out, /not clean:\s+\?\? stray\.txt/);
+    rmSync(join(repo.root, 'stray.txt'));
+    assert.deepEqual(repo.ran().slice(4), [], 'a refusal ran a gate');
+
+    result = await repo.run(['--stale']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(4), ['cli', 'web'], "the baseline and the web gate; the driver's verdicts stand");
+    assert.match(result.out, /stale\s+web\s+PASS\s+from .* UTC: src\/Daoris\.Web\/e2e\/platform\.spec\.ts changed since, which reaches it/);
+    assert.match(result.out, /driver-process\s+PASS .* UTC\s+on a tree that differs from this one only by paths it does not reach/);
+    assert.match(result.out, /2 gates run and passed on [0-9a-f]{7}; the full set has passed this checkout: 4 of 4 gates\. A stage of this tree is allowed\./);
+    assert.equal(merging(repo.root), false, 'nothing is merged');
+    // What publish:desktop asks before it builds.
+    assert.equal(publish.ungatedRefusal(join(dirname(repo.root), 'install'), repo.root).refusal, null);
+
+    // Nothing is stale now: --stale runs nothing, and says the stage passes.
+    result = await repo.run(['--stale']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /nothing is stale on the checkout/);
+    assert.deepEqual(repo.ran().slice(6), []);
+    repo.cleanup();
+  });
+
+  test('a flaked gate re-run alone on the checkout makes the stage accept it, and a dirty tree is refused, naming the files', async () => {
+    const repo = scratch('flake-rerun', [
+      { name: 'first', run: 'node gate.mjs first' },
+      // Fails the first time only: a test that timed out under load.
+      { name: 'second', run: 'node gate.mjs second 3 once' },
+      { name: 'third', run: 'node gate.mjs third' },
+    ], { 'code.txt': 'base\n' });
+    let result = await repo.run(['--full', '--keep-going']);
+    assert.equal(result.status, 1, result.out);
+    assert.deepEqual(repo.ran(), ['first', 'second', 'third']);
+    assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/, 'the failed full set names the smaller command');
+
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 1, result.out);
+    assert.match(result.out, /second\s+FAIL\s+.* UTC\s+on this tree/);
+    assert.match(result.out, /\n {2}Run the gate it lacks on it: node tools\/merge-branch\.mjs --rerun second\n/);
+
+    writeFileSync(join(repo.root, 'code.txt'), 'changed\n');
+    result = await repo.run(['--rerun', 'second']);
+    assert.equal(result.status, 2, result.out);
+    assert.match(result.out, /not clean:\s+\.M code\.txt/);
+    git(repo.root, 'checkout', '--', 'code.txt');
+    result = await repo.run(['--rerun', 'nope']);
+    assert.equal(result.status, 2, result.out);
+    assert.match(result.out, /no gate 'nope' in the plan: first, second, third/);
+    assert.deepEqual(repo.ran().slice(3), [], 'a refusal ran a gate');
+
+    result = await repo.run(['--rerun', 'second']);
+    assert.equal(result.status, 0, result.out);
+    assert.deepEqual(repo.ran().slice(3), ['second'], 'the flaked gate alone: nothing changed, so no other verdict is stale');
+    assert.match(result.out, /re-run on the checkout \(HEAD [0-9a-f]{7}\): second; 2 verdicts kept/);
+    assert.match(result.out, /PASS\s+second\s.*local\/scratch\/full-[0-9a-f]{7}\/second\.log/);
+    assert.match(result.out, /A stage of this tree is allowed\./);
+    assert.equal(merging(repo.root), false, 'nothing is merged');
+    result = await repo.run(['--passed']);
+    assert.equal(result.status, 0, result.out);
+    assert.match(result.out, /second\s+PASS .* UTC\s+on this tree/);
     repo.cleanup();
   });
 

@@ -54,7 +54,7 @@
  *    Process gate also writes `<gate>.trx` there, each test's duration, and the ten slowest classes are
  *    printed after its line (PROC1), so where its time goes is measured at every merge that runs it.
  * 8. Each verdict is recorded with the tree it ran on, in `local/gate-verdicts.json` (gitignored), which
- *    `--rerun` and the stage read (below).
+ *    `--rerun`, `--stale` and the stage read (below).
  * 9. Once the gates pass, the knowledge server agents ask is rebuilt from the merged tree when the service's
  *    sources changed (`tools/knowledge-server.mjs build`, ORIENT1c); one line says so, and a build that fails
  *    is said and fails nothing.
@@ -63,19 +63,42 @@
  * ## A fixed gate re-runs alone (GATE4)
  *
  * `--rerun <gate>…` runs the named gates again on the merge in place, then any gate of its selection that
- * has no verdict yet (the ones a failure stopped, or one a fix's paths now reach), and keeps every other
- * verdict. The summary names each kept verdict and when it was given. `--continue` runs every selected
- * gate again, as it always did.
+ * has no verdict yet (the ones a failure stopped, or one a fix's paths now reach), and any whose verdict a
+ * path changed since reaches (GATE6, below); it keeps every other verdict. The summary names each kept
+ * verdict and when it was given, and each run again with the path that made it stale. `--continue` runs
+ * every selected gate again, as it always did. With no merge open it acts on the checkout (GATE6b, below).
  *
  * ## The full set before the install (GATE3)
  *
  * `--full` with no branch runs the whole plan on the checkout as it stands, merging nothing. `--passed`
- * answers whether the full set passed the checkout's tree: every gate's newest verdict there is a pass,
- * on this tree or on one that differs from it only by the records the parent writes after the gates (the
- * steward's lane and the records that merge by union), since the install carries none of them.
- * `tools/desktop-publish.mjs` asks it before it publishes anywhere but a scratch folder under `_fixtures`.
- * A tree is the checkout's content as `git add -A` would stage it, written with an index of its own in
- * the git folder, so an uncommitted fix and an untracked file count, and the person's index is untouched.
+ * answers whether the full set passed the checkout's tree: every gate's newest verdict that still stands
+ * there is a pass. `tools/desktop-publish.mjs` asks it before it publishes anywhere but a scratch folder
+ * under `_fixtures`, and a refusal prints its lines. A tree is the checkout's content as `git add -A` would
+ * stage it, written with an index of its own in the git folder, so an uncommitted fix and an untracked
+ * file count, and the person's index is untouched.
+ *
+ * ## A verdict stands until a path its gate reaches changes (GATE6)
+ *
+ * A verdict given on another tree still stands for this one when every path the two differ by is a record
+ * the parent writes after the gates (the steward's lane and the records that merge by union, which the
+ * install carries none of), or a path that cannot reach its gate by the lane table (`pathsReaching`, which
+ * reads `REACH` as a merge's selection does: every path reaches the baseline). Whole trees were compared
+ * before, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
+ * and cost a second full run before a stage. A gate whose verdict no longer stands is said as stale, with
+ * the paths that made it so, at `--passed` and at `--rerun`, which runs it again rather than keep it.
+ *
+ * ## A gate re-run on the checkout as it stands (GATE6b)
+ *
+ * `--rerun <gate>…` with no merge open runs the named gates on the checkout, merging nothing, and every gate the stage
+ * calls stale with them; `--stale` runs the stale ones alone. Each verdict is recorded where `--passed` reads it, every
+ * other verdict is kept as the stage counts it, and the run ends with the stage's answer. A gate with no verdict at
+ * all runs only when named. Outside a merge `--rerun` used to refuse, so one gate that flaked in the full set, or a fix
+ * committed after it, left `--full` again, about an hour and a half, as the only way to a stage. Both refuse a tree that
+ * is not clean, naming each path: a re-run gates a commit, and `--full` is the verb for the tree as it stands.
+ *
+ * A refused stage, `--passed` and a failed `--full` end with the smallest command that would pass the checkout
+ * (`stageRemedy`): `--stale` when every gate it lacks is stale, `--rerun` naming each that failed or has no verdict
+ * when that runs fewer than the plan, else `--full`. `publish:desktop` names the same command in its refusal.
  *
  * ## The prune (GATE2)
  *
@@ -119,6 +142,7 @@
  *   node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]
  *   node tools/merge-branch.mjs --continue [--full] [--keep-going] [--no-prune]
  *   node tools/merge-branch.mjs --rerun <gate>… [--keep-going]
+ *   node tools/merge-branch.mjs --stale [--keep-going]
  *   node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  *   node tools/merge-branch.mjs --full [--keep-going]
  *   node tools/merge-branch.mjs --passed
@@ -126,9 +150,9 @@
  *   node tools/merge-branch.mjs --drop-batch
  *
  * Exit codes: 0 merged and every gate passed (flakes named), or pruned (a branch kept is the rule working),
- * or the full set passed the checkout · 1 a conflict, a failed gate, a failed commit check, or a checkout
- * the full set has not passed · 2 refused (usage, not on main, a dirty tree, an unknown branch) or a tool
- * error.
+ * or the full set passed the checkout, after a re-run on it or not · 1 a conflict, a failed gate, a failed
+ * commit check, or a checkout the full set has not passed · 2 refused (usage, not on main, a dirty tree, an
+ * unknown branch or gate) or a tool error.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
@@ -151,8 +175,11 @@ const KINDS = ['check', 'suite', 'rehearsal'];
  */
 export const VERDICTS_FILE = 'local/gate-verdicts.json';
 
-/** The command that runs the full set on the checkout as it stands: what a refused stage names. */
+/** The command that runs the full set on the checkout as it stands: what a refused stage names when nothing smaller would do. */
 export const FULL_COMMAND = 'node tools/merge-branch.mjs --full';
+
+/** The command that runs each stale gate again on the checkout as it stands (GATE6b): what a refused stage names when it would do. */
+export const STALE_COMMAND = 'node tools/merge-branch.mjs --stale';
 
 /**
  * The gates that run the `Process` test category (MOD8): every test in one starts a real process or runs a
@@ -173,6 +200,7 @@ export const USAGE = [
   'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--full] [--keep-going] [--no-commit-check] [--no-prune]',
   '       node tools/merge-branch.mjs --continue [--full] [--keep-going] [--no-prune]',
   '       node tools/merge-branch.mjs --rerun <gate>… [--keep-going]',
+  '       node tools/merge-branch.mjs --stale [--keep-going]',
   '       node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]',
   '       node tools/merge-branch.mjs --full [--keep-going]',
   '       node tools/merge-branch.mjs --passed',
@@ -197,7 +225,7 @@ const usageError = (message) => new Refusal(message, 2, true);
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
-    full: false, rerun: [], passed: false,
+    full: false, rerun: [], passed: false, stale: false,
   };
   let batch = false;
   let rerun = false;
@@ -219,6 +247,7 @@ export function parseArgs(argv) {
     else if (arg === '--no-prune') options.autoPrune = false;
     else if (arg === '--full') options.full = true;
     else if (arg === '--passed') options.passed = true;
+    else if (arg === '--stale') options.stale = true;
     else if (arg === '--rerun') rerun = true;
     else if (arg.startsWith('-')) throw usageError(`unknown option '${arg}'`);
     else if (rerun) {
@@ -233,15 +262,19 @@ export function parseArgs(argv) {
     }
   }
   // `--plan` is a verb of its own, or the prune's plan; `--full` is one when it names no branch and modifies nothing else.
-  const fullAlone = options.full && options.branches.length === 0 && !options.plan && !options.resume && !options.prune && !rerun;
-  if ([options.resume, options.dropBatch, options.plan && !options.prune, options.prune, rerun, options.passed, fullAlone].filter(Boolean).length > 1) {
-    throw usageError('give one of --continue, --rerun, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
+  const fullAlone = options.full && options.branches.length === 0 && !options.plan && !options.resume && !options.prune && !rerun && !options.stale;
+  const verbs = [options.resume, options.dropBatch, options.plan && !options.prune, options.prune, rerun, options.passed, options.stale, fullAlone];
+  if (verbs.filter(Boolean).length > 1) {
+    throw usageError('give one of --continue, --rerun, --stale, --drop-batch, --plan, --passed, --prune (which takes --plan) and --full on its own');
   }
   if (batch && batched === 0) throw usageError('--batch names at least one branch after it');
   if (rerun) {
     if (options.rerun.length === 0) throw usageError('--rerun names the gates to run again: --rerun <gate>…');
     if (flags.some((flag) => flag !== '--rerun' && flag !== '--keep-going')) throw usageError('--rerun takes gate names and --keep-going');
-    if (options.branches.length) throw usageError('--rerun takes no branch: it acts on the merge in place');
+    if (options.branches.length) throw usageError('--rerun takes no branch: it acts on the merge in place, or on the checkout when none is open');
+  } else if (options.stale) {
+    if (options.branches.length) throw usageError('--stale takes no branch: it acts on the checkout as it stands');
+    if (flags.some((flag) => flag !== '--stale' && flag !== '--keep-going')) throw usageError('--stale takes only --keep-going');
   } else if (options.passed) {
     if (options.branches.length) throw usageError('--passed takes no branch: it asks about the checkout as it stands');
   } else if (options.prune) {
@@ -393,6 +426,8 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/vendor/**'], gates: ['driver', 'driver-process'], why: "the driver's release-channel tests read the vendor's files" },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
+  // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
+  { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
   { lane: 'web-shell', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   { lane: 'web-settings', gates: ['web', ...PAGE_READERS], why: "the page's own suites, and the .NET suites that read its catalogues and sources (MOD9's incident)" },
   {
@@ -549,6 +584,9 @@ function ruleFor(path, rules, lanes) {
 
 const andMore = (paths) => `${paths[0]}${paths.length > 1 ? ` and ${paths.length - 1} more` : ''}`;
 
+/** Every gate some rule of the table names: a gate none names is reached by every path. */
+const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*' ? [] : rule.gates)));
+
 /**
  * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order. A gate is
  * `reached` when it is the baseline, a changed path's rule names it, a path has no rule, or no rule names
@@ -558,7 +596,7 @@ const andMore = (paths) => `${paths[0]}${paths.length > 1 ? ` and ${paths.length
  */
 export function selectGates(plan, changed, { lanes = [], full = false, reach = REACH } = {}) {
   const names = new Set(plan.map((gate) => gate.name));
-  const named = new Set(reach.flatMap((rule) => (rule.gates === '*' ? [] : rule.gates)));
+  const named = namedGates(reach);
   const reachedBy = new Map();
   const unplaced = [];
   for (const path of changed) {
@@ -592,6 +630,20 @@ export function selectGates(plan, changed, { lanes = [], full = false, reach = R
   return { gates, unplaced };
 }
 
+/**
+ * Of `paths`, the ones that reach `gate` by the lane table, read as `selectGates` reads it (GATE6): every path reaches
+ * a baseline gate and a gate no rule names, a path no rule places reaches every gate, and any other reaches the gates
+ * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
+ * changed since it was given. The test of the table checks that it and `selectGates` agree on every case.
+ */
+export function pathsReaching(gate, paths, { lanes = [], reach = REACH } = {}) {
+  if (BASELINE.includes(gate) || !namedGates(reach).has(gate)) return [...paths];
+  return paths.filter((path) => {
+    const rule = ruleFor(path, reach, lanes);
+    return !rule || rule.gates === '*' || rule.gates.includes(gate);
+  });
+}
+
 /** The selection as lines: each gate run, numbered, with why; then each skipped, with why. */
 export function selectionLines(gates) {
   const run = gates.filter((entry) => entry.run);
@@ -608,16 +660,21 @@ export function selectionLines(gates) {
 // GATE4: a fixed gate re-runs alone
 
 /**
- * What `--rerun` runs and keeps, in the plan's order: each named gate, and each chosen gate with no
- * verdict yet (one a failure stopped, or one a fix's paths now reach); every other chosen gate's verdict
- * is kept. `fresh` is the gates run that were not named.
+ * What `--rerun` runs and keeps, in the plan's order: each named gate, each chosen gate with no verdict yet
+ * (one a failure stopped, or one a fix's paths now reach), and each chosen gate whose verdict a path changed
+ * since reaches (GATE6: `stale` maps it to those paths, none when its tree cannot be compared); every other
+ * chosen gate's verdict is kept. `fresh` is the gates run for want of a verdict, and `stale` the ones run
+ * again for a changed path, each with the verdict it no longer keeps.
  */
-export function rerunPlan(plan, chosen, results, named) {
-  const run = plan.filter((name) => named.includes(name) || (chosen.includes(name) && !results[name]));
-  const kept = plan.filter((name) => chosen.includes(name) && !named.includes(name) && results[name])
+export function rerunPlan(plan, chosen, results, named, stale = {}) {
+  const isStale = (name) => Object.hasOwn(stale, name);
+  const run = plan.filter((name) => named.includes(name) || (chosen.includes(name) && (!results[name] || isStale(name))));
+  const kept = plan.filter((name) => chosen.includes(name) && !named.includes(name) && results[name] && !isStale(name))
     .map((name) => ({ name, verdict: results[name].verdict, at: results[name].at }));
-  const fresh = run.filter((name) => !named.includes(name));
-  return { run, kept, fresh };
+  const fresh = run.filter((name) => !named.includes(name) && !results[name]);
+  const again = run.filter((name) => !named.includes(name) && results[name])
+    .map((name) => ({ name, verdict: results[name].verdict, at: results[name].at, paths: stale[name] }));
+  return { run, kept, fresh, stale: again };
 }
 
 /** A moment as people read it in a summary: minutes, in UTC, which is how the record keeps it. */
@@ -699,37 +756,123 @@ export function recordMatcher({ lanes = [], union = [] } = {}) {
   return (path) => stewardOwns(path) || unionPatterns.some((pattern) => pattern.test(path));
 }
 
+/**
+ * What a verdict is judged by against the checkout's `tree` (GATE6): the paths another tree differs from it by, asked
+ * of git once per tree; which of them are the records; which reach a gate, by the lane table and this repository's
+ * lanes. `--passed` and `--rerun` judge by the same.
+ */
+function standingFor(root, tree) {
+  const lanes = readLanes(root)?.lanes ?? [];
+  const drifts = new Map();
+  return {
+    tree,
+    drift: (from) => {
+      if (!drifts.has(from)) drifts.set(from, treeDrift(root, from, tree));
+      return drifts.get(from);
+    },
+    isRecord: recordMatcher({ lanes, union: unionRecords(root) }),
+    reaching: (gate, paths) => pathsReaching(gate, paths, { lanes }),
+  };
+}
+
 /** A verdict that passed: PASS, or FLAKE, a pass that was said. */
 const passing = (verdict) => verdict === 'PASS' || verdict === 'FLAKE';
 
 /**
- * Whether the full set passed `tree`: for each gate of the plan, its newest verdict on this tree or on one
- * that differs from it only by the records (`recordsOnly`) must pass. A verdict with no tree counts for
- * none. `missing` names each gate that has no such passing verdict.
+ * How a verdict given on tree `from` stands for `tree`, for its gate (GATE6), as `{ standing, paths, records }`:
+ * `exact` on this tree; `records` when the two differ only by the records (`isRecord`, forgiven since GATE3);
+ * `unreached` when every other path they differ by is one the gate cannot see (`reaching`, the lane table), those
+ * paths in `paths`; else `stale`, `paths` naming the ones that reach it, or none when the trees cannot be compared
+ * (a verdict with no tree, or one git no longer has: `drift` says null). `records` is the records they differ by.
  */
-export function stageJudgement({ plan, verdicts, tree, recordsOnly }) {
-  const forgiven = new Map();
-  const acceptable = (entry) => {
-    if (!entry.tree) return null;
-    if (entry.tree === tree) return 'exact';
-    if (!forgiven.has(entry.tree)) forgiven.set(entry.tree, recordsOnly(entry.tree));
-    return forgiven.get(entry.tree) ? 'records' : null;
+export function verdictStanding({ from, tree, gate, drift, isRecord, reaching }) {
+  if (!from || !tree) return { standing: 'stale', paths: [], records: [] };
+  if (from === tree) return { standing: 'exact', paths: [], records: [] };
+  const changed = drift(from);
+  if (!changed) return { standing: 'stale', paths: [], records: [] };
+  const records = changed.filter(isRecord);
+  const rest = changed.filter((path) => !isRecord(path));
+  if (!rest.length) return { standing: 'records', paths: [], records };
+  const reached = reaching(gate, rest);
+  return reached.length ? { standing: 'stale', paths: reached, records } : { standing: 'unreached', paths: rest, records };
+}
+
+/**
+ * Whether the full set passed `tree`: for each gate of the plan, its newest verdict that still stands for this tree
+ * (`verdictStanding`: on it, or on one that differs from it only by the records and by paths that gate cannot reach)
+ * must pass. `missing` names each gate that has no such passing verdict. Each gate carries the verdict that counts
+ * and how it stands; a gate that does not pass, when a newer verdict no longer stands, carries that one as `stale`,
+ * with the paths that made it so.
+ */
+export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching }) {
+  const drifts = new Map();
+  const driftOf = (from) => {
+    if (!drifts.has(from)) drifts.set(from, drift(from));
+    return drifts.get(from);
   };
   const gates = plan.map((name) => {
     let newest = null;
-    let exact = false;
+    let standing = null;
+    let stale = null;
     for (const entry of verdicts) {
       if (entry.gate !== name) continue;
-      const how = acceptable(entry);
-      if (how && (!newest || String(entry.at) >= String(newest.at))) {
-        newest = entry;
-        exact = how === 'exact';
+      const how = verdictStanding({ from: entry.tree, tree, gate: name, drift: driftOf, isRecord, reaching });
+      if (how.standing !== 'stale') {
+        if (!newest || String(entry.at) >= String(newest.at)) [newest, standing] = [entry, how];
+      } else if (!stale || String(entry.at) >= String(stale.verdict.at)) {
+        stale = { ...how, verdict: entry };
       }
     }
-    return { name, verdict: newest, exact };
+    // A newer verdict that no longer stands explains a gate that does not count; one that counts needs no excuse.
+    const said = stale && (!newest || (String(stale.verdict.at) > String(newest.at) && !passing(newest.verdict)));
+    return { name, verdict: newest, exact: standing?.standing === 'exact', standing, stale: said ? stale : null };
   });
   const missing = gates.filter((gate) => !gate.verdict || !passing(gate.verdict.verdict)).map((gate) => gate.name);
   return { passed: missing.length === 0, missing, gates };
+}
+
+// ---------------------------------------------------------------------------------------------------
+// GATE6b: a gate re-run on the checkout as it stands
+
+/**
+ * The smallest command that would make the stage pass the checkout, from its judgement's `gates` (in the plan's order),
+ * or null when it passes: `--stale` when every gate it lacks is stale; `--rerun` naming each that failed or has no
+ * verdict, when that runs fewer gates than the plan (it runs each stale one too, `checkoutRerun`); else `--full`. `runs`
+ * is what the command would run. A refusal named `--full` whatever was missing, which cost a whole run, about an hour
+ * and a half, for one gate that flaked or one fix committed after the full set.
+ */
+export function stageRemedy(gates) {
+  const stale = gates.filter((gate) => gate.stale).map((gate) => gate.name);
+  const lacking = gates.filter((gate) => !gate.stale && !(gate.verdict && passing(gate.verdict.verdict))).map((gate) => gate.name);
+  if (!stale.length && !lacking.length) return null;
+  if (!lacking.length) return { command: STALE_COMMAND, what: stale.length === 1 ? 'the stale gate' : `the ${stale.length} stale gates`, runs: stale };
+  const runs = gates.map((gate) => gate.name).filter((name) => stale.includes(name) || lacking.includes(name));
+  if (runs.length === gates.length) return { command: FULL_COMMAND, what: 'every gate', runs };
+  return { command: `node tools/merge-branch.mjs --rerun ${lacking.join(' ')}`, what: runs.length === 1 ? 'the gate it lacks' : `the ${runs.length} gates it lacks`, runs };
+}
+
+/** The line a refused stage ends with, which `publish:desktop` reads for the command to name. */
+const remedyLine = (remedy) => `  Run ${remedy.what} on it: ${remedy.command}`;
+
+/**
+ * What `--rerun <gate>…` and `--stale` run on the checkout, from the stage's judgement of its `gates`, as `rerunPlan`
+ * reads a merge's, in the plan's order: each named gate, then each the stage calls stale (its newest verdict no longer
+ * stands for this tree, and no newer one that does passed); every other gate's verdict is kept as the stage counts it,
+ * a failure a failure. A gate with no verdict at all runs only when named, and `none` lists the rest of those: the
+ * full set never ran them on anything this tree can be judged by.
+ */
+export function checkoutRerun(gates, named) {
+  const results = {};
+  const stale = {};
+  for (const gate of gates) {
+    if (gate.stale) {
+      results[gate.name] = gate.stale.verdict;
+      stale[gate.name] = gate.stale.paths;
+    } else if (gate.verdict) results[gate.name] = gate.verdict;
+  }
+  const names = gates.map((gate) => gate.name);
+  const { run, kept, stale: again } = rerunPlan(names, names.filter((name) => results[name]), results, named, stale);
+  return { run, kept, stale: again, none: names.filter((name) => !results[name] && !named.includes(name)) };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -1090,16 +1233,19 @@ export function parseStatus(text) {
   return { branch, changed };
 }
 
+/** A tree that is not clean, each changed or untracked path with its code, the first twelve. */
+const notClean = (changed) => {
+  const shown = changed.slice(0, 12).map(({ code, path }) => `  ${code} ${path}`).join('\n');
+  return `the tree is not clean:\n${shown}${changed.length > 12 ? `\n  … ${changed.length - 12} more` : ''}`;
+};
+
 /** Why a merge cannot start from what git reported, or null. */
 export function startRefusal({ branch, merging, changed, ignored }) {
   if (branch !== MAIN) {
     return `the current branch is '${branch || 'a detached HEAD'}', not ${MAIN}: merges land on ${MAIN}, from its own checkout`;
   }
   if (merging) return 'a merge is already in progress: resolve it and run --continue, or git merge --abort';
-  if (changed.length) {
-    const shown = changed.slice(0, 12).map(({ code, path }) => `  ${code} ${path}`).join('\n');
-    return `the tree is not clean:\n${shown}${changed.length > 12 ? `\n  … ${changed.length - 12} more` : ''}`;
-  }
+  if (changed.length) return notClean(changed);
   if (!ignored) return `${SCRATCH}/ is not ignored here, so the gate logs would dirty the tree`;
   return null;
 }
@@ -1717,7 +1863,7 @@ async function gateMerge(root, state, plan) {
     const names = failed.map((result) => result.gate.name).join(' ');
     console.log(`merge-branch: ${branch} is merged into ${MAIN}, NOT committed, and ${count(failed.length, 'gate')} failed: ${failed.map((result) => result.gate.name).join(', ')}${notRun ? `; ${notRun} not run` : ''}.`);
     console.log('  The merge is left in place. Read the failing log and fix it in the merge; then');
-    console.log(`  node tools/merge-branch.mjs --rerun ${names} runs it again alone, keeping the other verdicts (and runs what did not run),`);
+    console.log(`  node tools/merge-branch.mjs --rerun ${names} runs it again, keeping each other verdict no path your fix changes reaches (and runs what did not run),`);
     console.log('  or --continue gates the merge again whole. Or git merge --abort.');
     return 1;
   }
@@ -1736,14 +1882,14 @@ async function gateMerge(root, state, plan) {
 
 /**
  * `--rerun <gate>…` (GATE4): the named gates again on the merge in place, then any gate of its selection with
- * no verdict yet, keeping every other verdict and saying when each was given. A kept verdict from a tree that
- * differs from this one by more than the records still stands for the merge, and the summary says a stage
- * will not count it.
+ * no verdict yet, and any whose verdict a path changed since reaches (GATE6), keeping every other verdict and
+ * saying when each was given. Every verdict kept is one a stage counts. With no merge open, `rerunCheckout`.
  */
 async function rerunGates(root, options) {
   const state = readState(root);
-  if (!state || !mergeInProgress(root)) {
-    throw new Refusal('nothing to re-run: --rerun runs gates again on a merge this tool left in place, and none is open here');
+  if (!state) {
+    throw new Refusal('a merge is open here that this tool did not leave, so it has no verdicts to keep: '
+      + 'commit it or git merge --abort; with no merge open, --rerun gates the checkout');
   }
   requireMain(root);
   const branch = state.branches[state.at];
@@ -1764,7 +1910,14 @@ async function rerunGates(root, options) {
 
   const { chosen } = chooseGates(root, state, plan);
   const results = state.results?.[branch] ?? {};
-  const planned = rerunPlan(plan.map((gate) => gate.name), chosen.map((gate) => gate.name), results, options.rerun);
+  // GATE6: a verdict is kept only while no path changed since it was given reaches its gate; one a fix's path reaches
+  // runs again, so every verdict kept is one the stage counts. A tree git cannot write judges none stale.
+  const tree = contentTree(root);
+  const judging = standingFor(root, tree);
+  const standings = Object.fromEntries(chosen.filter((gate) => results[gate.name] && tree)
+    .map((gate) => [gate.name, verdictStanding({ ...judging, from: results[gate.name].tree, gate: gate.name })]));
+  const stale = Object.fromEntries(Object.entries(standings).filter(([, how]) => how.standing === 'stale').map(([name, how]) => [name, how.paths]));
+  const planned = rerunPlan(plan.map((gate) => gate.name), chosen.map((gate) => gate.name), results, options.rerun, stale);
   const gates = plan.filter((gate) => planned.run.includes(gate.name));
   const dir = join(root, SCRATCH, `merge-${slug(branch)}`);
   mkdirSync(dir, { recursive: true });
@@ -1772,20 +1925,18 @@ async function rerunGates(root, options) {
     for (const suffix of ['.log', '.rerun.log', '.trx']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
   }
 
-  // A kept verdict the stage would not count: given on a tree that differs from this one by more than the records.
-  const tree = contentTree(root);
-  const isRecord = recordMatcher({ lanes: readLanes(root)?.lanes ?? [], union: unionRecords(root) });
-  const earlier = (kept) => {
-    const from = results[kept.name]?.tree;
-    if (!tree || !from || from === tree) return false;
-    const drift = treeDrift(root, from, tree);
-    return drift === null || !drift.every(isRecord);
-  };
-
+  const again = planned.stale.length
+    ? `, then ${planned.stale.map((entry) => entry.name).join(', ')}, whose ${planned.stale.length === 1 ? 'verdict' : 'verdicts'} a changed path reaches`
+    : '';
   const fresh = planned.fresh.length ? `, then ${planned.fresh.join(', ')}, which ${planned.fresh.length === 1 ? 'has' : 'have'} no verdict yet` : '';
-  console.log(`re-run on the merge of ${branch}: ${options.rerun.join(', ')}${fresh}; ${count(planned.kept.length, 'verdict')} kept`);
+  console.log(`re-run on the merge of ${branch}: ${options.rerun.join(', ')}${again}${fresh}; ${count(planned.kept.length, 'verdict')} kept`);
+  for (const entry of planned.stale) {
+    const why = entry.paths.length ? `${listed(entry.paths, 4)} changed since, which reaches it` : 'its tree cannot be compared with this one';
+    console.log(`  ${pad('stale', 8)} ${pad(entry.name, 16)} ${pad(entry.verdict, 8)} from ${when(entry.at)}: ${why}`);
+  }
   for (const kept of planned.kept) {
-    const note = earlier(kept) ? '  (on an earlier tree: a stage does not count it)' : '';
+    const how = standings[kept.name];
+    const note = how && how.standing !== 'exact' ? `  (an earlier tree: ${how.standing === 'records' ? 'only the records changed since' : 'no path changed since reaches it'})` : '';
     console.log(`  ${pad('kept', 8)} ${pad(kept.name, 16)} ${pad(kept.verdict, 8)} from ${when(kept.at)}  ${results[kept.name]?.log ?? ''}${note}`);
   }
   state.results = { [branch]: results };
@@ -1838,6 +1989,9 @@ async function gateCheckout(root, options) {
   console.log('');
   if (failed.length || results.length < plan.length) {
     console.log(`merge-branch: the full set did NOT pass ${head.slice(0, 7)}: ${failed.map((result) => result.gate.name).join(', ')} failed${results.length < plan.length ? `; ${plan.length - results.length} not run` : ''}.`);
+    // GATE6b: once the failure is fixed and committed, or at once when it flaked, the smaller command does the rest.
+    const remedy = stageRemedy(judgeCheckout(root, plan)?.gates ?? []);
+    if (remedy) console.log(remedyLine(remedy));
     return 1;
   }
   const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.map((result) => result.gate.name).join(', ')}): record it under FLAKE1` : '';
@@ -1846,42 +2000,131 @@ async function gateCheckout(root, options) {
 }
 
 /**
+ * The stage's judgement as lines, a gate each (GATE6): the verdict that counts and why it still stands, or, when a
+ * newer one no longer does, that one as stale with the paths that made it so, which is what a refused stage says.
+ */
+function stageLines(gates) {
+  return gates.map((gate) => {
+    const head = (label) => `  ${pad(gate.name, 16)} ${pad(label, 6)}`;
+    if (gate.stale) {
+      const { verdict, paths } = gate.stale;
+      const why = paths.length ? `on a tree before ${listed(paths, 4)} changed, which reaches it` : 'on a tree that cannot be compared with this one';
+      return `${head('stale')} ${verdict.verdict} ${when(verdict.at)}, ${why}`;
+    }
+    if (!gate.verdict) return `${head('none')} no verdict on this tree`;
+    const { standing, paths, records } = gate.standing;
+    const others = standing === 'unreached' ? `paths it does not reach (${listed(paths, 4)})` : '';
+    const recorded = records.length ? `the records (${listed(records, 4)})` : '';
+    const where = standing === 'exact' ? 'on this tree' : `on a tree that differs from this one only by ${[others, recorded].filter(Boolean).join(' and ')}`;
+    return `${head(gate.verdict.verdict)} ${when(gate.verdict.at)}  ${where}`;
+  });
+}
+
+/**
  * `--passed` (GATE3): whether the full set passed the checkout as it stands, gate by gate, read from the
- * verdicts record. What `publish:desktop` asks before it builds. Exit 0 when it did, 1 when it did not.
+ * verdicts record: each gate's newest verdict that still stands (GATE6), or the stale one and the paths that
+ * made it so. What `publish:desktop` asks before it builds. Exit 0 when it did, 1 when it did not.
  */
 function passedOnly(root) {
   const plan = readPlan(root);
-  const tree = contentTree(root);
-  if (!tree) throw new Refusal("git could not write the checkout's tree, so whether the full set passed it cannot be told");
+  const judged = judgeCheckout(root, plan);
+  if (!judged) throw new Refusal("git could not write the checkout's tree, so whether the full set passed it cannot be told");
   const head = git(root, ['rev-parse', '--short', 'HEAD'], { allowFail: true }).out.trim() || 'no commit';
-  const isRecord = recordMatcher({ lanes: readLanes(root)?.lanes ?? [], union: unionRecords(root) });
-  const drifts = new Map();
-  const drift = (from) => {
-    if (!drifts.has(from)) drifts.set(from, treeDrift(root, from, tree));
-    return drifts.get(from);
-  };
-  const judged = stageJudgement({
-    plan: plan.map((gate) => gate.name),
-    verdicts: readVerdicts(root).verdicts,
-    tree,
-    recordsOnly: (from) => {
-      const paths = drift(from);
-      return paths !== null && paths.every(isRecord);
-    },
-  });
-  console.log(`merge-branch: the full set has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${tree.slice(0, 7)}, HEAD ${head}): `
+  console.log(`merge-branch: the full set has ${judged.passed ? '' : 'NOT '}passed this checkout (tree ${judged.tree.slice(0, 7)}, HEAD ${head}): `
     + `${plan.length - judged.missing.length} of ${plan.length} gates.`);
-  for (const gate of judged.gates) {
-    const verdict = gate.verdict;
-    if (!verdict) {
-      console.log(`  ${pad(gate.name, 16)} ${pad('none', 6)} no verdict on this tree`);
-      continue;
-    }
-    const where = gate.exact ? 'on this tree' : `on a tree that differs from this one only by the records (${listed(drift(verdict.tree), 4)})`;
-    console.log(`  ${pad(gate.name, 16)} ${pad(verdict.verdict, 6)} ${when(verdict.at)}  ${where}`);
-  }
-  if (!judged.passed) console.log(`  Run every gate on it: ${FULL_COMMAND}`);
+  for (const line of stageLines(judged.gates)) console.log(line);
+  // GATE6b: the smallest command that would pass it, which the publish's refusal names in turn.
+  const remedy = stageRemedy(judged.gates);
+  if (remedy) console.log(remedyLine(remedy));
   return judged.passed ? 0 : 1;
+}
+
+/** The stage's judgement of the checkout as it stands, with its tree; null when git cannot write the tree. */
+function judgeCheckout(root, plan) {
+  const tree = contentTree(root);
+  if (!tree) return null;
+  return { tree, ...stageJudgement({ ...standingFor(root, tree), plan: plan.map((gate) => gate.name), verdicts: readVerdicts(root).verdicts }) };
+}
+
+/** Whether the full set passed the checkout, as a clause: what `--passed` and a re-run on the checkout say. */
+const stageVerdict = (judged, plan) => `the full set has ${judged.passed ? '' : 'NOT '}passed this checkout: ${plan.length - judged.missing.length} of ${plan.length} gates`;
+
+/**
+ * `--rerun <gate>…` with no merge open, and `--stale` (GATE6b): on the checkout as it stands, merging nothing, the named
+ * gates and each the stage calls stale (`checkoutRerun`), every verdict recorded where `--passed` reads it; then the
+ * stage's answer, and the smallest command for what it still lacks. Outside a merge, `--rerun` used to refuse, so a gate
+ * that flaked in the full set, or a fix committed after it, left `--full` again, about an hour and a half, as the only
+ * way to a stage.
+ *
+ * A clean tree only, naming what is not: the verdicts are recorded with HEAD's commit, and a re-run is for a commit (one
+ * whose gate flaked, or a fix committed past the full set), so an uncommitted change would be gated as part of a tree
+ * no commit holds. `--full` is the verb that gates the working tree as it stands.
+ */
+async function rerunCheckout(root, options) {
+  const verb = options.rerun.length ? '--rerun' : '--stale';
+  const head = headCommit(root);
+  if (!head) throw new Refusal('this checkout has no commit to gate');
+  const { changed } = treeState(root);
+  if (changed.length) {
+    throw new Refusal(`${notClean(changed)}\n  ${verb} on the checkout gates a commit: commit the change first, or ${FULL_COMMAND} gates the tree as it stands`);
+  }
+  if (git(root, ['check-ignore', '-q', `${SCRATCH}/full-probe.log`], { allowFail: true }).status !== 0) {
+    throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
+  }
+  requireVerdictsIgnored(root);
+  const plan = readPlan(root);
+  const unknown = options.rerun.filter((name) => !plan.some((gate) => gate.name === name));
+  if (unknown.length) {
+    throw new Refusal(`--rerun: no gate ${unknown.map((name) => `'${name}'`).join(', ')} in the plan: ${plan.map((gate) => gate.name).join(', ')}`);
+  }
+  const judged = judgeCheckout(root, plan);
+  if (!judged) throw new Refusal("git could not write the checkout's tree, so which verdicts still stand on it cannot be told");
+  const planned = checkoutRerun(judged.gates, options.rerun);
+  const gates = plan.filter((gate) => planned.run.includes(gate.name));
+  const sha = head.slice(0, 7);
+  // Beside the full set's logs for this commit, which it keeps but for the gates it runs again.
+  const dir = join(root, SCRATCH, `full-${sha}`);
+  mkdirSync(dir, { recursive: true });
+  for (const gate of gates) {
+    for (const suffix of ['.log', '.rerun.log', '.trx']) rmSync(join(dir, `${gate.name}${suffix}`), { force: true });
+  }
+
+  const staleNames = planned.stale.map((entry) => entry.name);
+  const whose = `whose ${staleNames.length === 1 ? 'verdict' : 'verdicts'} a changed path reaches`;
+  const kept = `${count(planned.kept.length, 'verdict')} kept; nothing is merged`;
+  if (options.rerun.length) {
+    console.log(`re-run on the checkout (HEAD ${sha}): ${options.rerun.join(', ')}${staleNames.length ? `, then ${staleNames.join(', ')}, ${whose}` : ''}; ${kept}`);
+  } else if (staleNames.length) {
+    console.log(`the stale gates on the checkout (HEAD ${sha}): ${staleNames.join(', ')}, ${whose}; ${kept}`);
+  } else {
+    console.log(`nothing is stale on the checkout (HEAD ${sha}): no verdict a changed path reaches; ${kept}`);
+  }
+  for (const entry of planned.stale) {
+    const why = entry.paths.length ? `${listed(entry.paths, 4)} changed since, which reaches it` : 'its tree cannot be compared with this one';
+    console.log(`  ${pad('stale', 8)} ${pad(entry.name, 16)} ${pad(entry.verdict, 8)} from ${when(entry.at)}: ${why}`);
+  }
+  // The rest as the stage reads them: each verdict that stands, a failure kept, and a gate with none.
+  for (const line of stageLines(judged.gates.filter((gate) => !planned.run.includes(gate.name)))) console.log(line);
+  const ran = await runRecorded(root, gates, dir, { keepGoing: options.keepGoing });
+
+  const failed = ran.filter((result) => result.verdict === 'FAIL').map((result) => result.gate.name);
+  const notRun = gates.length - ran.length;
+  const flakes = ran.filter((result) => result.verdict === 'FLAKE').map((result) => result.gate.name);
+  // The stage's answer, read again from the record the run just wrote, on the tree as it is now.
+  const after = judgeCheckout(root, plan);
+  const remedy = after ? stageRemedy(after.gates) : null;
+  const stage = after ? stageVerdict(after, plan) : "git could not write the checkout's tree, so whether the full set passed it cannot be told";
+  console.log('');
+  if (failed.length || notRun) {
+    console.log(`merge-branch: the re-run on ${sha} did NOT pass: ${failed.join(', ')} failed${notRun ? `; ${notRun} not run` : ''}; ${stage}.`);
+  } else {
+    const flakeNote = flakes.length ? `, with ${count(flakes.length, 'flake')} (${flakes.join(', ')}): record it under FLAKE1` : '';
+    const ranNote = ran.length ? `${count(ran.length, 'gate')} run and passed on ${sha}${flakeNote}` : `no gate run on ${sha}`;
+    const passed = after?.passed === true;
+    console.log(`merge-branch: ${ranNote}; ${stage}.${passed ? ' A stage of this tree is allowed.' : ''}`);
+  }
+  if (remedy) console.log(remedyLine(remedy));
+  return !failed.length && !notRun && after?.passed === true ? 0 : 1;
 }
 
 function reportConflict(branch, unmerged, generated = []) {
@@ -2039,7 +2282,12 @@ export async function main(argv) {
   if (options.prune) return pruneOnly(root, options);
   if (options.plan) return planOnly(root, options);
   if (options.passed) return passedOnly(root);
-  if (options.rerun.length) return rerunGates(root, options);
+  // GATE6b: with no merge open, --rerun and --stale act on the checkout as it stands.
+  if (options.stale) {
+    if (mergeInProgress(root)) throw new Refusal('a merge is open here: --rerun <gate>… re-gates it, and runs each gate a fixed path reaches; or git merge --abort');
+    return rerunCheckout(root, options);
+  }
+  if (options.rerun.length) return mergeInProgress(root) ? rerunGates(root, options) : rerunCheckout(root, options);
   if (options.resume) return resume(root, options);
   if (options.full && options.branches.length === 0) return gateCheckout(root, options);
   return start(root, options);

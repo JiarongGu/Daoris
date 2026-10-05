@@ -25,4 +25,12 @@ improve documentation, and leave open work ready for the next agent.
 
 ## Verification
 
-Pending. No merge, code fix, branch deletion, or claim of UI validation yet.
+- 2026-10-06: preserved the unfinished UI changes as `f6572c88` on their existing branch.
+  The account branch includes UX7b; the latest gate branch includes GATE6 and DUPNOTE1, so four
+  merges cover all six outstanding tips.
+- First integration: universal, code-map and orientation checks passed. CLI run: 1,281/1,283
+  tests passed; two Windows directory renames failed with `EPERM` in `layCli` and
+  `installFromChannel`. Both tests passed immediately when run together in isolation (2/2).
+  Full CLI rerun passed all 1,283 tests; service passed 1,170 and HTTP host 68. These transient
+  failures remain recorded. GATE6/GATE6b and DUPNOTE1 are integrated after five selected gates passed.
+- UI validation, remaining merges and cleanup pending.
