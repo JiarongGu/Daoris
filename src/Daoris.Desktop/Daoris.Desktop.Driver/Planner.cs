@@ -440,6 +440,14 @@ public sealed record Consideration(
     /// it then waited on a cooling one or on none, so the page says each and its sign-in from facts. Null for every other.
     /// </summary>
     public SignedOutAccounts? SignedOut { get; init; }
+
+    /// <summary>
+    /// For a quest its failed sessions park (<see cref="StartVerdict.Exhausted"/>): how many have failed on it here in all, as
+    /// the records count them (<see cref="Snapshot.Strikes"/>), before any mark (RETRY1b). *Try again* marks the quest at this
+    /// count, so it starts and the limit's count parks it again; a mark at the limit left a quest parked a second time
+    /// parked. Null for every other verdict.
+    /// </summary>
+    public int? Failures { get; init; }
 }
 
 public static class Considerations
@@ -767,7 +775,11 @@ public static class Planner
                 return new(quest, StartVerdict.Exhausted,
                     $"{strikes} session(s) have failed on `#{quest.Id}` without landing anything — "
                     + $"parked, because trying again spends an account rather than making progress. "
-                    + $"`daoris driver retry {quest.Id}` starts it again once you know why.");
+                    + $"`daoris driver retry {quest.Id}` starts it again once you know why.")
+                {
+                    // What *Try again* marks (RETRY1b): the records' count, not the count past the mark this sentence says.
+                    Failures = failures,
+                };
             }
 
             // 🔴 A session outlives the look that started it (DEV3), so its quest can still be open while it

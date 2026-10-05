@@ -473,6 +473,31 @@ public sealed class PlannerTests
     }
 
     /// <summary>
+    /// RETRY1b: a park carries the quest's failures as the records count them, before any mark, which is where *Try again*
+    /// marks it. Parked a second time (six failures, retried once at three), a mark at the limit left it parked, as both
+    /// doors did on the install; a mark at its failures starts it, and the limit's count parks it again. No other verdict
+    /// carries a count.
+    /// </summary>
+    [Fact]
+    public void A_second_park_carries_the_quests_failures_and_a_mark_at_them_starts_it()
+    {
+        var snapshot = With([Quest()], new Dictionary<string, int> { ["q1"] = 6 });
+        var config = (Config() with { Strikes = 3 }).WithForgiven("q1", 3);
+
+        var parked = Assert.Single(Planner.Plan(snapshot, config));
+        Assert.Equal(StartVerdict.Exhausted, parked.Verdict);
+        Assert.Equal(6, parked.Failures);
+
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, config.WithForgiven("q1", config.Strikes))).Verdict);
+        var started = Assert.Single(Planner.Plan(snapshot, config.WithForgiven("q1", parked.Failures!.Value)));
+        Assert.Equal(StartVerdict.Start, started.Verdict);
+        Assert.Null(started.Failures);
+        Assert.Equal(
+            StartVerdict.Exhausted,
+            Assert.Single(Planner.Plan(With([Quest()], new Dictionary<string, int> { ["q1"] = 9 }), config.WithForgiven("q1", 6))).Verdict);
+    }
+
+    /// <summary>
     /// A repository held by the person creates no session at all, so a hold can never accumulate
     /// strikes. Asserted rather than assumed: "a held tick must not count" is the question this
     /// design answers structurally, and structure is what a later refactor breaks silently.

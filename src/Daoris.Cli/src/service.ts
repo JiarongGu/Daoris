@@ -90,6 +90,46 @@ export function refusal(status: number, json: Record<string, unknown> | null): s
   return typeof json?.error === 'string' ? json.error : `the service answered ${status}`;
 }
 
+/** The records door the driver reads its strikes from, closed records included (DRV6). */
+const RECORDS_PATH = '/api/sessions?includeClosed=true';
+
+/**
+ * This machine's session records, for `daoris driver retry` to count a quest's failures from as the driver does (RETRY1b):
+ * the list the host answered, or why it could not be read, in words the retry's refusal carries. It never throws, so a
+ * terminal that cannot read them says so and how to go on without them, rather than guessing a mark.
+ *
+ * @remarks
+ * Only a host on this machine is asked: the strikes are this machine's decision about spending (D58), counted from the
+ * records its own host keeps, and a shared deployment's records are the team's. The type is `strikes.ts`'s
+ * `SessionRecords`, spelled here so this module imports nothing a management verb's pure half holds.
+ */
+export async function sessionRecords(
+  env: NodeJS.ProcessEnv = process.env, get: Get = fetch,
+): Promise<{ records: unknown[] } | { unread: string }> {
+  const url = env.DAORIS_SERVICE_URL?.trim().replace(/\/+$/, '');
+  if (!url) return { unread: 'no DAORIS_SERVICE_URL is set, so this terminal knows no host to ask (the desktop\'s own is usually http://localhost:5177)' };
+  if (!isLocalService(url)) {
+    return { unread: `DAORIS_SERVICE_URL names ${url}, which is not this machine, and the strikes are counted from this machine's own host` };
+  }
+
+  const key = env.DAORIS_SERVICE_KEY;
+  let response: Response;
+  try {
+    response = await get(`${url}${RECORDS_PATH}`, { method: 'GET', headers: key ? { authorization: `Bearer ${key}` } : {} });
+  } catch (error) {
+    return { unread: `the service at ${url} did not answer: ${error instanceof Error ? error.message : String(error)}` };
+  }
+
+  const json: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const said = typeof json === 'object' && json !== null && typeof (json as Record<string, unknown>).error === 'string'
+      ? `: ${(json as Record<string, unknown>).error as string}` : '';
+    return { unread: `the service at ${url} answered ${response.status}${said}` };
+  }
+
+  return Array.isArray(json) ? { records: json } : { unread: `the service at ${url} answered no list of records` };
+}
+
 /**
  * How a fetcher may follow a host (TOOLS4, D121 §3.6). Absent, it follows redirects as `fetch` does, as a maker's
  * release channel always has been.

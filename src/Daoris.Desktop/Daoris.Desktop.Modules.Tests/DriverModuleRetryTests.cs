@@ -4,9 +4,10 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// *Try again* over the bridge (`RETRY_QUEST`, RETRY1 as SESSUX1b extends it, D126 §3.4): one act that does whichever applies
-/// to the quest the loop's last look considered, and says which. A quest parked on its failed sessions is marked at the strike
-/// limit, as `daoris driver retry` marks it; a quest the person's stop holds is released from the session that look named,
-/// with no mark, since a stop is not a strike; any other is refused, and nothing is written.
+/// to the quest the loop's last look considered, and says which. A quest parked on its failed sessions is marked at its
+/// failures as the records count them (RETRY1b), as `daoris driver retry` marks it; a quest the person's stop holds is
+/// released from the session that look named, with no mark, since a stop is not a strike; any other is refused, and nothing
+/// is written.
 /// </summary>
 /// <remarks>The loop's last look is recorded by hand, as <c>DriverModuleSessionsTests</c> records it: no service, no tick.</remarks>
 public sealed class DriverModuleRetryTests : DriverModuleBridge
@@ -22,10 +23,11 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         return new DriverModule(Bus, loop);
     }
 
+    /// <summary>On a first park its failures are the limit, so the mark is what RETRY1 always wrote.</summary>
     [Fact]
-    public async Task A_parked_quest_is_marked_at_the_strike_limit_and_the_answer_says_so()
+    public async Task A_parked_quest_is_marked_at_its_failures_and_the_answer_says_so()
     {
-        var module = Looked(new Consideration(Taken, StartVerdict.Exhausted, "3 session(s) have failed on `#q1`"));
+        var module = Looked(new Consideration(Taken, StartVerdict.Exhausted, "3 session(s) have failed on `#q1`") { Failures = 3 });
 
         var answer = await AnswerAsync(module, "RETRY_QUEST", new { quest = "q1" });
 
@@ -36,6 +38,41 @@ public sealed class DriverModuleRetryTests : DriverModuleBridge
         // Still the driver's state, which the page's toast reads the strikes from (RETRY1).
         Assert.Equal(3, answer.GetProperty("strikes").GetInt32());
         Assert.Equal(3, answer.GetProperty("forgiven").GetProperty("q1").GetInt32());
+    }
+
+    /// <summary>
+    /// RETRY1b: a quest retried once and parked again is marked at its failures as the records count them, so the planner
+    /// starts it. Marked at the limit, as the route did, six failures less a mark of three still parked it (the install,
+    /// 2026-10-04). The look is the real planner's, over records holding six failures.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_parked_a_second_time_is_marked_at_its_failures_and_the_planner_starts_it()
+    {
+        var open = Taken with { Status = "Open" };
+        var snapshot = new Snapshot([open], [new RepoView("engine", true, "X:/engine")], [], new Dictionary<string, int> { ["q1"] = 6 });
+        DriverConfig.Empty.WithDrivable("engine", true).WithStrikes(3).WithForgiven("q1", 3).Save(DriverConfigPath);
+        var parked = Planner.Plan(snapshot, DriverConfig.Load(DriverConfigPath));
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(parked).Verdict);
+
+        var answer = await AnswerAsync(Looked([.. parked]), "RETRY_QUEST", new { quest = "q1" });
+
+        Assert.Equal(6, DriverConfig.Load(DriverConfigPath).ForgivenAt("q1"));
+        Assert.Equal(6, answer.GetProperty("forgiven").GetProperty("q1").GetInt32());
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot, DriverConfig.Load(DriverConfigPath))).Verdict);
+    }
+
+    /// <summary>
+    /// A verdict carrying no count (one built by hand: the planner's always carries it) is marked at the least count the
+    /// planner parks at, the mark past the limit, never back at the limit.
+    /// </summary>
+    [Fact]
+    public async Task A_park_carrying_no_count_is_marked_at_the_least_count_that_parks_it()
+    {
+        DriverConfig.Empty.WithStrikes(3).WithForgiven("q1", 3).Save(DriverConfigPath);
+
+        await AnswerAsync(Looked(new Consideration(Taken, StartVerdict.Exhausted, "parked")), "RETRY_QUEST", new { quest = "q1" });
+
+        Assert.Equal(6, DriverConfig.Load(DriverConfigPath).ForgivenAt("q1"));
     }
 
     [Fact]

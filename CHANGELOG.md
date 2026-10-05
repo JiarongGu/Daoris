@@ -7,6 +7,8 @@ with the version and date at release.
 
 - Development checks reuse verdicts when only unrelated paths changed; `--stale` and checkout
   `--rerun` report the remaining checks needed before staging. Decision checks now reject duplicate notes.
+- Trying a parked quest again counts from its recorded failures, including after an earlier retry,
+  through the page, terminal and Ask Daoris.
 
 The first version: doctrine that installs, is checked, and flows back.
 

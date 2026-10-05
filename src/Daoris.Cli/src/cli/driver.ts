@@ -1,5 +1,6 @@
 import type { CliCommand } from '../types.ts';
 import { commandDriver } from '../driverconfig.ts';
+import { sessionRecords } from '../service.ts';
 
 export const command: CliCommand = {
   name: 'driver',
@@ -53,7 +54,9 @@ export const command: CliCommand = {
     '                                                   it proposes, and you apply',
     '                         strikes <n>               park a quest after n failed',
     '                                                   sessions; 0 never parks',
-    '                         retry <quest> [--at <n>]  start a parked quest again',
+    '                         retry <quest> [--at <n>]  start a parked quest again,',
+    "                                                   counted from this machine's",
+    '                                                   records, or from n failures',
     '                         retry <quest> --session <id>',
     '                                                   release a quest your stop',
     '                                                   of that session holds',
@@ -63,5 +66,7 @@ export const command: CliCommand = {
     '                                                   its limit; 60 by default',
     '                         cap <n> · adapter <name>',
   ],
-  run: commandDriver,
+  // `retry` without `--at` counts the quest's failures from this machine's records (RETRY1b) through the one module that may
+  // reach a network, handed in here so `driverconfig.ts` never holds a socket of its own.
+  run: (args) => commandDriver(args, () => sessionRecords()),
 };

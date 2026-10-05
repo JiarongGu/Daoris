@@ -151,7 +151,9 @@ daoris <command> [options]
                                                    it proposes, and you apply
                          strikes <n>               park a quest after n failed
                                                    sessions; 0 never parks
-                         retry <quest> [--at <n>]  start a parked quest again
+                         retry <quest> [--at <n>]  start a parked quest again,
+                                                   counted from this machine's
+                                                   records, or from n failures
                          retry <quest> --session <id>
                                                    release a quest your stop
                                                    of that session holds
@@ -215,7 +217,8 @@ daoris <command> [options]
   and agent spawns each agent's own tooling. Of them only agent pin and agent
   update open a connection themselves, to a maker's release channel for Claude
   Code and Codex, and tool download, use … managed, update and look, to a tool's
-  maker and a resource location.
+  maker and a resource location; driver retry without --at asks this machine's
+  service for the quest's session records.
   Every doctrine command is offline.
 
 Options:

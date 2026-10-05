@@ -7,6 +7,15 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ## Integration review (2026-10-06)
 
+- [x] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
+  2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
+  AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
+  too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
+  records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
+  the quest.
+  Completed 2026-10-06: integrated `b6c46ab2` and `3d3ec471`; seven selected gates passed.
+  CLI/driver strike-count twins, the page retry, and Ask Daoris retry use the recorded failure count.
+
 - [x] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
   compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
   and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches

@@ -139,8 +139,9 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// *Try again* (RETRY1, as SESSUX1b extends it, D126 §3.4): one act that does whichever applies to the quest, read from
-    /// the planner's verdict, and says which. A quest parked on its failed sessions is marked at the strike limit; one the
-    /// person's stop holds is released from the session the verdict names. Anything else is refused, and nothing written.
+    /// the planner's verdict, and says which. A quest parked on its failed sessions is marked at its failures as the records
+    /// count them, which the verdict carries (RETRY1b); one the person's stop holds is released from the session the verdict
+    /// names. Anything else is refused, and nothing written.
     /// </summary>
     /// <remarks>
     /// The verdict is the loop's last look where it has looked, and a fresh plan where it has not (another loop holds the
@@ -159,10 +160,12 @@ public sealed partial class DriverModule
 
         switch (verdict)
         {
-            case { Verdict: StartVerdict.Exhausted }:
-                // Marked at the limit rather than erased, so the records still read true and the next
-                // `strikes` failures park it again.
-                Change(config => config.WithForgiven(quest, config.Strikes));
+            case { Verdict: StartVerdict.Exhausted } exhausted:
+                // Marked where it stands rather than erased, so the records still read true and the next `strikes`
+                // failures park it again. At its failures, not the limit (RETRY1b): a quest parked a second time has
+                // more failures than the limit, and a mark at the limit left it parked. A verdict carrying no count is
+                // marked at the least count the planner parks at.
+                Change(config => config.WithForgiven(quest, exhausted.Failures ?? config.ForgivenAt(quest) + config.Strikes));
                 return State(new { Quest = quest, Did = "marked", Session = (string?)null });
             case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
                 // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.

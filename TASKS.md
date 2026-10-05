@@ -136,12 +136,6 @@ title sections, for quest and session, need their UI/UX improved"*):
   2026-10-05). The `{slug}` now comes from the quest's short title (SESSUX1j), its ticket key leading; what remains is
   letting the review's *Accept* and `trees land --branch` take a name the person types. Contract: D145, D149, D126's
   SESSUX1j note. Proof: `LandingTests` cases, and the review's field over a mocked bridge.
-- [ ] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
-  2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
-  AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
-  too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
-  records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
-  the quest.
 
 
 - [ ] **UX6a — the counter, and the baseline on the install** (tools; §9.1–§9.3).

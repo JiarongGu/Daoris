@@ -172,6 +172,23 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// RETRY1b: a quest parked a second time is marked at its failures as the last look counted them, as <c>RETRY_QUEST</c>
+    /// marks it, and said from that count: marked at the limit, six failures less a mark of three left it parked.
+    /// </summary>
+    [Fact]
+    public void Applying_a_retry_of_a_quest_parked_a_second_time_marks_it_at_its_failures()
+    {
+        var facts = Facts with { Parked = [new ParkedQuest("q1a2b3c4", "engine", 6)] };
+        var config = DriverConfig.Empty.WithStrikes(3).WithForgiven("q1a2b3c4", 3);
+
+        var plan = HelpProposals.Plan(Setting("retry", "q1a2b3c4"), config, facts);
+
+        Assert.Equal(6, plan.Apply!(config).ForgivenAt("q1a2b3c4"));
+        Assert.Contains("Counting from 6 failure(s)", plan.Describe);
+        Assert.Contains("3 more failure(s) will park it again", plan.Describe);
+    }
+
+    /// <summary>
     /// SESSUX1b: a retry of a quest the person's stop holds is the release <c>RETRY_QUEST</c> writes, against the session the
     /// last look named, and never a mark: a stop is not a strike (D58), so nothing about the strikes moves.
     /// </summary>

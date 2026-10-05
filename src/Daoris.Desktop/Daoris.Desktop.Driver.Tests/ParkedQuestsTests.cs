@@ -28,6 +28,20 @@ public sealed class ParkedQuestsTests
         Assert.Equal([new ParkedQuest("q1", "engine"), new ParkedQuest("q4", "game")], parked.Latest);
     }
 
+    /// <summary>
+    /// RETRY1b: each keeps the failures its verdict carries, as the records count them, which Ask Daoris's <c>retry</c> marks
+    /// the quest at, as <c>RETRY_QUEST</c> does.
+    /// </summary>
+    [Fact]
+    public void A_parked_quest_keeps_its_failures_as_the_records_count_them()
+    {
+        var parked = new ParkedQuests();
+
+        parked.Record([Considered("q1", "engine", StartVerdict.Exhausted) with { Failures = 6 }]);
+
+        Assert.Equal([new ParkedQuest("q1", "engine", 6)], parked.Latest);
+    }
+
     /// <summary>Replaced whole each tick, as the drawer's list is: a quest retried, or gone, is no longer parked.</summary>
     [Fact]
     public void Each_tick_replaces_what_the_last_one_parked()

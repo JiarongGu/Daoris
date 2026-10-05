@@ -257,14 +257,14 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
     /// <summary>
     /// <c>retry</c> (HELP10, D110), as <c>daoris driver retry</c> reads it: a quest by id, <c>#</c> or not, which the
-    /// loop's last look parked by its strikes, marked forgiven at the strike limit as <c>RETRY_QUEST</c> marks it; or one
-    /// the person's stop holds (SESSUX1b, D126 §3.4), released from the session the look named, as <c>RETRY_QUEST</c>
-    /// releases it. Either is said in the terminal's words.
+    /// loop's last look parked by its strikes, marked forgiven at its failures as that look counted them, as
+    /// <c>RETRY_QUEST</c> marks it (RETRY1b); or one the person's stop holds (SESSUX1b, D126 §3.4), released from the
+    /// session the look named, as <c>RETRY_QUEST</c> releases it. Either is said in the terminal's words.
     /// </summary>
     /// <remarks>
     /// The quest must be on one of the look's two lists, since a helper can invent an id, and forgiving a quest that is not
-    /// parked lets it run past its strikes (D110). The limit is the one standing when the person applies, as the route
-    /// reads it.
+    /// parked lets it run past its strikes (D110). The mark is the look's count; the limit said is the one standing when
+    /// the person applies, as the route reads it.
     /// </remarks>
     private static HelpPlan Retry(string? target, DriverConfig config, HelpMachineFacts facts)
     {
@@ -287,7 +287,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         }
 
         var terminal = $"daoris driver retry {quest}";
-        if (!facts.Parked.Any(parked => string.Equals(parked.Quest, quest, StringComparison.OrdinalIgnoreCase)))
+        if (facts.Parked.FirstOrDefault(parked => string.Equals(parked.Quest, quest, StringComparison.OrdinalIgnoreCase))
+            is not { } parkedQuest)
         {
             static string Listed(IEnumerable<string> ids) => ids.Any() ? Names(ids.Select(id => $"#{id}")) : "none";
             return new HelpPlan(
@@ -297,13 +298,17 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 "", terminal, null);
         }
 
+        // RETRY_QUEST's own mark (RETRY1b): the quest's failures as the last look counted them, not the limit, which left a
+        // quest parked a second time parked. A park carrying no count is marked at the least count the planner parks at.
+        int Mark(DriverConfig at) => parkedQuest.Failures ?? at.ForgivenAt(quest) + at.Strikes;
         var strikes = config.Strikes;
         return new HelpPlan(null,
-            $"Quest `#{quest}` may be started again. Counting from {strikes} failure(s) — what already happened is still in the "
-            + $"records, and {(strikes > 0 ? strikes.ToString(CultureInfo.InvariantCulture) : "no")} more failure(s) will park it again.",
+            $"Quest `#{quest}` may be started again. Counting from {Mark(config)} failure(s) — what already happened is still in "
+            + $"the records, and {(strikes > 0 ? strikes.ToString(CultureInfo.InvariantCulture) : "no")} more failure(s) will park "
+            + "it again.",
             terminal,
-            // RETRY_QUEST's own edit: marked at the limit rather than erased, so the records still read true.
-            c => c.WithForgiven(quest, c.Strikes));
+            // Marked where it stands rather than erased, so the records still read true.
+            c => c.WithForgiven(quest, Mark(c)));
     }
 
     /// <summary>

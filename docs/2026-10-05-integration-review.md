@@ -38,3 +38,9 @@ improve documentation, and leave open work ready for the next agent.
   removal of one stray D137 note fragment; its other historical merge tips are now reachable.
   Parallel review agents stopped on a workspace credit error; their incomplete passes are not
   counted as completed reviews. Documentation findings returned before that error are retained.
+- RETRY1b integrated after seven selected gates passed. The page and helper now use the planner's
+  total failures; the terminal reads records with the driver's twin count rather than assuming the
+  strike limit. Full process/deployment gates have not run in this review.
+- Review finding: gate reuse trusts the current steward lane to classify forgiven records, including
+  `daoris.lanes.json`. A lane edit can forgive itself and untested source paths. Add a regression and
+  restrict forgiven records to stable record paths; lane configuration must invalidate every gate.

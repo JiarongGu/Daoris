@@ -135,6 +135,24 @@ passed). Stays open until a captured failure explains it. **Not this**: on 2026-
 the canon-upgrade phase's 7 checks failing; a run that never reaches a check is a different animal. Since then the
 rehearsal has grown to 114 checks, so a repeat would not read 45/52; it would read as that phase failing whole.
 
+## A retry left a quest parked a second time parked (2026-10-05)
+
+**Symptom.** On the install (2026-10-04), a quest retried once and parked again stayed parked after
+`daoris driver retry <quest>` and after the page's *Try again*; only `driver retry --at 6` started it.
+
+**Root cause.** The planner parks a quest when its failures less its mark (`forgiven`) reach the strike limit. Every door
+marked at the limit: the CLI's `retry` without `--at`, `RETRY_QUEST` and Ask Daoris's `retry`. That equals the failures only
+on a first park. Retried once at three and failed three more times, the quest had six failures, so a new mark of three
+still left three past it, and it parked again on the same look.
+
+**Fix.** RETRY1b, D126's note of this date: the `Exhausted` verdict carries the records' count (`Consideration.Failures`),
+which the route and Ask Daoris mark at; the terminal counts the records itself (`strikes.ts`, a twin of `ReadStrikes`),
+read through the service client, and refuses with the way to give `--at` when it cannot read them.
+
+**Verification.** A quest parked a second time starts after the retry at both doors: `PlannerTests`,
+`DriverModuleRetryTests` (the real planner before and after the press) and the CLI's `driverconfig.test.ts`, each failing
+before the fix. The family rehearsal now retries a second time and wants nine failures; not run on this branch.
+
 ## Four starts on a signed-out account parked a quest in two minutes (2026-10-05)
 
 **Symptom.** On the install, after an update, every account read *never read*, and the rotation started one quest on an
