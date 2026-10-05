@@ -112,6 +112,18 @@ describe('the attended session\'s head', () => {
     expect(screen.getByRole('button', { name: 'Copy' })).toBeInTheDocument();
   });
 
+  /** ACCTNAME1 (D152 §4.2): *Details* names its account by the person's name where the frame hands the roster's namer. */
+  it('names its account in Details by the person’s name, and by its id with no namer', () => {
+    const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'acct-3f9c1a2b' ? 'work' : profile ?? '');
+    const { rerender } = render(<SessionHead session={session({ profile: 'acct-3f9c1a2b' })} nameOf={nameOf} />);
+    details();
+    expect(screen.getByText('work')).toBeInTheDocument();
+    expect(screen.queryByText('acct-3f9c1a2b')).toBeNull();
+
+    rerender(<SessionHead session={session({ profile: 'acct-3f9c1a2b' })} />);
+    expect(screen.getByText('acct-3f9c1a2b')).toBeInTheDocument();
+  });
+
   /**
    * D125 §3.7 (TOOL4m's rest, built with UX6e): a session that ran on the tool's own sign-in names no account in its record,
    * so the head says *your own sign-in* where it shows an account, for an agent that has accounts at all.

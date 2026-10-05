@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { accountName, accountWho } from '../agents/agents';
+import type { Account } from '../tools';
 import { Button, CheckField, Inline, SelectField, Tip } from '../ui';
 
 /**
@@ -64,7 +66,7 @@ export function StartSession({
    * Each harness's accounts, with their login state (D49 §4). By harness, because the accounts follow
    * the harness CHOSEN (REV3): the default's alone offered names another harness does not have.
    */
-  accounts: Record<string, { name: string; login: 'in' | 'out' | 'unknown'; account?: string | null }[]>;
+  accounts: Record<string, Pick<Account, 'name' | 'login' | 'account' | 'displayName' | 'key'>[]>;
   pending?: boolean;
   /**
    * Why the last start was refused, in the driver's own words (UX5 U68): said here, whole, under the
@@ -169,15 +171,17 @@ export function StartSession({
               { value: DEFAULT, label: t('work.start.profileDefault') },
               // A logged-out profile is offered and labelled rather than hidden: the spawn refuses
               // with the sentence that names the login action, which teaches more than a missing row.
-              // Named by who is signed in, where the tool says (D66 §3) — the same name the
-              // settings page gives it; the value is still the directory's, which the spawn takes.
-              ...ordered.map((choice) => ({
-                value: choice.name,
-                label: choice.login === 'out'
-                  ? t('harness.profileOut', { name: choice.account ?? choice.name })
-                  : choice.account ?? choice.name,
-                ...(listed && !listed.includes(choice.name) ? { group: outside } : {}),
-              })),
+              // Named as its row on the agent's page leads with it (ACCTNAME1, D152 §4.2): the person's name, with who
+              // signed in beside it where the two differ; the value is still the id, which the spawn takes.
+              ...ordered.map((choice) => {
+                const who = accountWho(choice);
+                const name = who ? `${accountName(choice)} · ${who}` : accountName(choice);
+                return {
+                  value: choice.name,
+                  label: choice.login === 'out' ? t('harness.profileOut', { name }) : name,
+                  ...(listed && !listed.includes(choice.name) ? { group: outside } : {}),
+                };
+              }),
             ]}
           />
         </label>

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../queries';
-import { useChatTurns, useSessionOpenings, useSessionStreams } from '../shell';
+import { namer } from '../settings/namer';
+import { useChatTurns, useHarnesses, useSessionOpenings, useSessionStreams } from '../shell';
 import { frameShortcut } from '../shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from '../SessionConsole';
@@ -45,6 +46,9 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const { t } = useTranslation();
   const sessions = useSessions(null, true);
   const quests = useQuests(null, true);
+  // The roster, so a detached session names its account by the person's name as the frame does (ACCTNAME1).
+  const harnesses = useHarnesses();
+  const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
   const scroller = useRef<HTMLDivElement>(null);
   // What the session runs beside itself (CONSOLE3b), and the one picked; one it no longer lists falls
   // back to the session's own console, as the main window's panel does.
@@ -109,6 +113,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
           taking={turns[session.id]?.taking}
           lastTurn={turns[session.id]?.lastTurn}
           timeline="always"
+          nameOf={nameOf}
         />
         {here && (
           <div className="mt-4 min-w-0">

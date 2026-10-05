@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { elapsed, sessionTool } from '../format';
+import type { AccountNamer } from '../tools';
 import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
@@ -29,8 +30,10 @@ const MARK: Record<ChainStep['kind'], string> = {
  * quest being read is named as such, and a step not yet published says so. A mark's hue only
  * repeats what the words already say.
  */
-export function ChainStrip({ chain, level = 2, attended, onQuest, onSession }: {
+export function ChainStrip({ chain, level = 2, attended, onQuest, onSession, nameOf }: {
   chain: ChainStep[];
+  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, each record's id is said. */
+  nameOf?: AccountNamer;
   /** The session being read, where the strip sits beside one: marked, and no door to itself (SESS1 S7). */
   attended?: string;
   /** The heading level where it sits: its own section on a quest's page, under a session's head in Work. */
@@ -53,7 +56,7 @@ export function ChainStrip({ chain, level = 2, attended, onQuest, onSession }: {
               className={cn('absolute left-0 top-1.5 size-[7px] rounded-full border', MARK[step.kind],
                 step.kind === 'quest' && step.current && 'size-[9px] -left-px top-[5px] bg-accent')}
             />
-            <Step step={step} attended={attended} onQuest={onQuest} onSession={onSession} />
+            <Step step={step} attended={attended} onQuest={onQuest} onSession={onSession} nameOf={nameOf} />
           </li>
         ))}
       </ol>
@@ -70,9 +73,10 @@ function key(step: ChainStep, index: number): string {
   return `${step.kind}-${step.id}`;
 }
 
-function Step({ step, attended, onQuest, onSession }: {
+function Step({ step, attended, onQuest, onSession, nameOf }: {
   step: ChainStep;
   attended?: string;
+  nameOf?: AccountNamer;
   onQuest?: (quest: Quest) => void;
   onSession?: (session: Session) => void;
 }) {
@@ -156,8 +160,11 @@ function Step({ step, attended, onQuest, onSession }: {
                 const here = session.id === attended;
                 const name = agentOnce && sessions.length > 1
                   ? t('chain.attempt', { n: index + 1 })
-                  : sessionTool(session);
-                const account = agentOnce && sessions.length > 1 ? session.profile : null;
+                  : sessionTool(session, false, nameOf);
+                // By the person's name for it (ACCTNAME1): a name, not an id, so it is set in the row's words, not as code.
+                const account = agentOnce && sessions.length > 1 && session.profile
+                  ? nameOf ? nameOf(session.adapter, session.profile) : session.profile
+                  : null;
                 return (
                   <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                     <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
@@ -166,15 +173,15 @@ function Step({ step, attended, onQuest, onSession }: {
                         <button
                           type="button"
                           onClick={() => onSession(session)}
-                          title={sessionTool(session)}
+                          title={sessionTool(session, false, nameOf)}
                           // Underlined at rest, faintly, as a quest title that is a door is.
                           className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
                         >
                           {name}
                         </button>
                       )
-                      : <span title={sessionTool(session)} className="min-w-0 truncate font-mono text-meta text-ink-soft">{name}</span>}
-                    {account && <span className="font-mono text-meta text-ink-faint">{account}</span>}
+                      : <span title={sessionTool(session, false, nameOf)} className="min-w-0 truncate font-mono text-meta text-ink-soft">{name}</span>}
+                    {account && <span className="text-meta text-ink-faint">{account}</span>}
                     <span className="text-meta text-ink-faint">{t('chain.ran', { span: elapsed(session.created, session.updated) })}</span>
                     {here && <span className="text-meta font-medium text-ink">{t('chain.thisSession')}</span>}
                   </li>

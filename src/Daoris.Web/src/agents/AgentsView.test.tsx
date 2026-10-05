@@ -788,6 +788,45 @@ describe('the Agents place', () => {
   });
 
   /**
+   * ACCTNAME1 (D152 §4.2, D125's ACCT2 note): a sign-in's end and a default's edit say the account by the person's name,
+   * looked up on the roster as it is said, never who signed in or its id.
+   */
+  it('says a sign-in’s end and a default’s edit by the account’s name', async () => {
+    const notify = vi.fn();
+    const named = {
+      ...ROSTER,
+      harnesses: [{
+        ...ROSTER.harnesses[0],
+        profiles: [
+          ...ROSTER.harnesses[0]!.profiles!,
+          { name: 'acct-3f9c1a2b', displayName: 'lab', home: 'C:/somewhere/.daoris/harnesses/claude-code/acct-3f9c1a2b', login: 'out', account: 'you@lab.example', read: READ },
+        ],
+      }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESSES') return named;
+      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
+      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'profile-default') {
+        return { harness: 'claude-code', action: 'profile-default', exitCode: 0, default: { workspace: null, account: 'acct-3f9c1a2b', from: 'machine' } };
+      }
+      return WIRING;
+    });
+    place(notify);
+
+    const lab = await screen.findByRole('listitem', { name: /^lab/ });
+    await userEvent.click(within(lab).getByRole('button', { name: 'Sign in to lab' }));
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login', profile: 'acct-3f9c1a2b', account: 'you@lab.example', exitCode: 0, problem: null,
+      });
+    });
+    expect(notify).toHaveBeenCalledWith('lab is signed in — sessions can run as it.');
+
+    await userEvent.click(within(await more('lab')).getByRole('menuitem', { name: 'Use by default' }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('This machine runs claude-code as lab by default.'));
+  });
+
+  /**
    * A sign-in is the tool's to keep (D49 §4): there is no field for a token or a password. An API key is the one exception
    * (D67 §1), behind a press, on an agent that takes a key.
    */

@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type Ask, canBeAsked, type Quest } from '../api';
 import { linksOf, toUpload } from '../attachments';
 import { NO_CARRY } from '../compose/carry';
@@ -6,7 +7,8 @@ import { sentence } from '../format';
 import { askItem } from '../opener';
 import { useAnswerGoAhead, useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
-import { useConsidered, useDriver, useNudge, useRemotes, useWorkPlan } from '../shell';
+import { namer } from '../settings/namer';
+import { useConsidered, useDriver, useHarnesses, useNudge, useRemotes, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { askStanding, freshest } from '../quests/records';
@@ -91,6 +93,10 @@ export function useAsksPart({
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
   const family = useRegistry();
   const sessions = useSessions(null, true);
+  // What a person calls an account (ACCTNAME1, D152 §4.2): an intake's line names its account as the agent's page does.
+  const { t } = useTranslation();
+  const harnesses = useHarnesses();
+  const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
   const ask = useAsk();
   const nudge = useNudge();
   const publish = usePublishAsk();
@@ -226,6 +232,7 @@ export function useAsksPart({
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
           work={workDoor(shown)}
           considered={considered}
+          nameOf={nameOf}
         />
       )
       : <QuestsMainNotice state={every.data === undefined && !every.error ? 'loading' : 'gone'} gone="ask" />;

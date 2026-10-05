@@ -15,9 +15,10 @@ import {
   answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf, questStanding,
 } from './quests/records';
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
+import { namer } from './settings/namer';
 import {
-  retryNotice, useConsidered, useDriver, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace, useTrustFolder, useUntrusted,
-  useWorkPlan,
+  retryNotice, useConsidered, useDriver, useHarnesses, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace, useTrustFolder,
+  useUntrusted, useWorkPlan,
 } from './shell';
 import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
@@ -120,6 +121,10 @@ export function useQuestsView({
   const registry = useRegistry();
   const sessions = useSessions(null, true);
   const driver = useDriver();
+  // What a person calls an account (ACCTNAME1, D152 §4.2): the roster's one namer, for a quest's session line, its chain and
+  // its trace. In a browser there is no roster, and each record's id is said.
+  const harnesses = useHarnesses();
+  const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
   // A quest just published is looked at now, not at the driver's next poll.
   const nudge = useNudge();
   const considered = useConsidered().data ?? [];
@@ -295,6 +300,7 @@ export function useQuestsView({
         hold={hold}
         chain={buildChain(quest.id, everything.data ?? quests.data ?? [quest], sessions.data ?? [])}
         session={session}
+        nameOf={nameOf}
         busy={busy}
         retrying={retry.isPending}
         trusting={trustingFor === quest.id}

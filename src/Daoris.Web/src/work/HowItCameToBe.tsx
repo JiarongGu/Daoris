@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { figure, list, moment } from '../format';
 import { cn } from '../lib/cn';
 import { ExternalLink } from '../links';
+import type { AccountNamer } from '../tools';
 import { Icon, type IconName, Inline, Pill, QUEST_TONE, SESSION_TONE } from '../ui';
 import { HandedAccount } from './HandedAccount';
 import {
@@ -42,8 +43,10 @@ export type TraceDoor = {
  * A molecule: handed the answer and the fold, it reads the catalogue and nothing else.
  */
 export function HowItCameToBe({
-  kind, id, open, onToggle, answer, reading = false, refusal, onSession, onQuest, onAsk, className,
+  kind, id, open, onToggle, answer, reading = false, refusal, onSession, onQuest, onAsk, className, nameOf,
 }: TraceDoor & {
+  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, each record's id is said. */
+  nameOf?: AccountNamer;
   /** What the page is: a session's or a quest's, and its id, which is not a door to itself. */
   kind: TraceKind;
   id: string;
@@ -93,7 +96,7 @@ export function HowItCameToBe({
                 <li key={index} className="min-w-0">
                   {link.ask && <AskStep ask={link.ask} doors={doors} />}
                   {link.quest && <QuestStep quest={link.quest} doors={doors} />}
-                  {link.session && <SessionStep session={link.session} doors={doors} />}
+                  {link.session && <SessionStep session={link.session} doors={doors} nameOf={nameOf} />}
                   {link.unrecorded && (
                     <Step icon="frameWork" head={<span>{t('work.trace.session.head', { id: link.unrecorded.session })}</span>}>
                       <Gap text={t('work.trace.unrecorded', { id: link.unrecorded.session })} />
@@ -376,7 +379,7 @@ function Records({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
 }
 
 /** One session: what ran it, what it was handed, its rules, where its work landed, and what stood when it started. */
-function SessionStep({ session, doors }: { session: TraceSessionLink; doors: Doors }) {
+function SessionStep({ session, doors, nameOf }: { session: TraceSessionLink; doors: Doors; nameOf?: AccountNamer }) {
   const { t, i18n } = useTranslation();
   const at = (iso: string) => moment(iso, i18n.language);
   const state = session.state.state as keyof typeof SESSION_TONE;
@@ -398,7 +401,12 @@ function SessionStep({ session, doors }: { session: TraceSessionLink; doors: Doo
       <Facts parts={[
         session.agent.adapter ? t('work.trace.session.agent', { agent: session.agent.adapter }) : t('work.trace.session.agentUnknown'),
         session.agent.harness ? t('work.trace.session.version', { version: session.agent.harness }) : t('work.trace.session.versionUnknown'),
-        !session.teammate && (session.agent.account ? t('work.trace.session.account', { account: session.agent.account }) : t('work.trace.session.ownSignIn')),
+        // The account by the person's name for it (ACCTNAME1), looked up as the trace is drawn; the record keeps the id.
+        !session.teammate && (session.agent.account
+          ? t('work.trace.session.account', {
+            account: nameOf && session.agent.adapter ? nameOf(session.agent.adapter, session.agent.account) : session.agent.account,
+          })
+          : t('work.trace.session.ownSignIn')),
       ]} />
       {session.teammate ? (
         <p className="m-0 text-small text-ink-soft">{t('work.trace.session.teammate')}</p>

@@ -214,6 +214,12 @@ export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]):
   return wire === 'acp' || wire === 'pipe' ? wire : null;
 }
 
+/**
+ * What a person calls an account (ACCTNAME1, D152 §4.2): by its owner, or a door onto it, and its id, or none for the tool's
+ * own home. `settings/namer.ts` makes one from the roster; a molecule is handed it, since it holds no roster of its own.
+ */
+export type AccountNamer = (owner: string, profile?: string | null) => string;
+
 /** Which tool this door belongs to: the account it borrows, or itself. */
 export function toolOf(door: ToolDoor): string {
   return door.accountOf?.trim() || door.harness;

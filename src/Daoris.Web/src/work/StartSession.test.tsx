@@ -57,7 +57,8 @@ describe('starting a session', () => {
     expect(await accountNames()).toEqual(['As already set', 'personal']);
 
     await choose('Agent', 'codex');
-    expect(await accountNames()).toEqual(['As already set', 'team@example.com']);
+    // The account's name leads, and who signed in sits beside it where the two differ (D152 §4.2).
+    expect(await accountNames()).toEqual(['As already set', 'team · team@example.com']);
   });
 
   it('forgets an account chosen for another harness when the harness changes', async () => {
@@ -188,7 +189,43 @@ describe('starting a session', () => {
     );
 
     const names = (await open('Account')).map((option) => option.textContent);
-    expect(names).toEqual(['As already set', 'you@home.example', 'you@work.example', 'spare@example.invalid (signed out)']);
+    expect(names).toEqual([
+      'As already set', 'account-2 · you@home.example', 'account-1 · you@work.example', 'account-3 · spare@example.invalid (signed out)',
+    ]);
     expect(screen.getByRole('group', { name: "Not in work's list" })).toHaveTextContent('spare@example.invalid');
+  });
+
+  /**
+   * ACCTNAME1 (D152 §4.2, D125's ACCT2 note): the picker names each account as its row on the agent's page leads with it: the
+   * person's name, a key's handle, who signed in for a fresh id nobody named, else the id; and who signed in beside it where
+   * the two differ. The value is still the id, which the spawn takes.
+   */
+  it('names each account by the person’s name, who signed in beside it, and starts on its id', async () => {
+    const onStart = vi.fn();
+    render(
+      <Tooltip.Provider>
+        <StartSession
+          repositories={['engine']}
+          harnesses={['claude-code']}
+          defaultHarness="claude-code"
+          accounts={{
+            'claude-code': [
+              { name: 'acct-3f9c1a2b', displayName: 'work', login: 'in', account: 'you@work.example' },
+              { name: 'acct-77aa00ff', displayName: null, login: 'out', account: 'spare@example.invalid' },
+              { name: 'acct-0badc0de', login: 'in', key: 'sk-…a1b2' },
+            ],
+          }}
+          onStart={onStart}
+        />
+      </Tooltip.Provider>,
+    );
+
+    expect((await open('Account')).map((option) => option.textContent)).toEqual([
+      'As already set', 'work · you@work.example', 'spare@example.invalid (signed out)', 'API key sk-…a1b2',
+    ]);
+    await userEvent.click(screen.getByRole('option', { name: 'work · you@work.example' }));
+    await userEvent.click(screen.getByRole('button', { name: /start/i }));
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ profile: 'acct-3f9c1a2b' }));
+    expect(screen.queryByText(/acct-3f9c1a2b/)).toBeNull();
   });
 });
