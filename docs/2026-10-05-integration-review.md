@@ -34,3 +34,7 @@ improve documentation, and leave open work ready for the next agent.
   Full CLI rerun passed all 1,283 tests; service passed 1,170 and HTTP host 68. These transient
   failures remain recorded. GATE6/GATE6b and DUPNOTE1 are integrated after five selected gates passed.
 - UI validation, remaining merges and cleanup pending.
+- 2026-10-06: `integrate-ab` merged with five selected gates passing. Its effective change is
+  removal of one stray D137 note fragment; its other historical merge tips are now reachable.
+  Parallel review agents stopped on a workspace credit error; their incomplete passes are not
+  counted as completed reviews. Documentation findings returned before that error are retained.
