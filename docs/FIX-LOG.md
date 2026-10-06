@@ -5,6 +5,15 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — GATE1, the docs gate blind at a merge
+
+### Gates: a merge passed the docs gate, then failed it once committed (TOOL4e)
+- **Symptom:** the 2026-10-02 merge of TOOL4e and SESSUX1a (`435cfef3`) passed every gate the merge tool ran, then `verify` failed on main: the devkit's docs gate found the root README, last committed 2026-10-01 (`f60afc69`), a day behind `src/Daoris.Cli/src`, which TOOL4e changed on 2026-10-02 (`0a861ef0`). Main stayed red until the next merge (`cf76bc7f`) edited the README; its message says every gate passed but the docs-date check.
+- **Root cause:** the merge tool merges `--no-ff --no-commit` and gates before the commit exists, and `DocsGate.cs` dates each side by `git log -1 --format=%aI -- <path>` from HEAD. During the merge HEAD was still main, where the README and the CLI's source had both last changed on 2026-10-01; the branch's commits were reachable only from MERGE_HEAD. The other docs checks (budgets, shapes, duplicates, the orientation index, the devkit's other gates) read files or the index, and saw the merge. No one change introduced it: the merge tool has gated before committing since MOD9.
+- **Fix:** `tools/as-merged.mjs` runs a command with git's HEAD as the commit an open merge would make: the tree `git add -A` would stage, on HEAD and MERGE_HEAD, behind a git folder holding only HEAD, an index copy and `commondir`. Outside a merge it runs the command unchanged. The `universal` gate and `verify`'s devkit step run through it, and `gateKind` orders a wrapped command as what it wraps. The devkit is unchanged.
+- **Verify:** `node --test tools/as-merged.test.mjs` (8), in scratch repositories of TOOL4e's shape: the gate's rule alone, the devkit's own docs gate and the merge tool's run each fail the open merge through it and pass it bare, all seen passing with the old pass-through first; a README fixed in the merge passes; outside a merge the command's output and exit are its own. `npm run verify` passes.
+- **Commit:** `bc373b74`.
+
 ## 2026-10-07 — account edits and hints
 
 ### Agents: a refused account edit lost what the person entered (ACCTEDIT1)

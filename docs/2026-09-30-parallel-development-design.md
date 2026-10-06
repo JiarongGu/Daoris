@@ -117,6 +117,10 @@ leaves the others' verdicts standing, and a verdict that no longer stands is nam
 `--stale` runs the stale ones alone, each verdict recorded where the stage reads it, on a clean tree only. A refused
 stage names the smallest of `--stale`, `--rerun <gate>…` and `--full` that would pass the tree, so one flaked gate or
 one fix committed after the full set no longer costs a second full run.
+**GATE1 (2026-10-07)** made rule 6's gates judge the commit the merge would make. They run before it is committed,
+and the devkit's docs gate dates paths from HEAD's history, so TOOL4e's merge passed and failed `verify` once
+committed. The universal gates, in their gate and in `verify`, now run through `tools/as-merged.mjs`, where HEAD is
+that commit; outside a merge it changes nothing. `docs/FIX-LOG.md` keeps the incident.
 
 ## 4. The splits (the code half)
 
