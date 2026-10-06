@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — the driver's commands and a timeout read as a close
+
+### Driver host: a look that timed out printed *driver: stopped.* and exited 0 (DEV3b)
+- **Symptom:** read from the code and DEV3a's note: a `--once` or `--until-idle` run whose own request met the client's timeout ended as a person's close, so a stalled service read as a clean run.
+- **Root cause:** the host's one catch took every `OperationCanceledException` for Ctrl+C, and its close token lived inside the try, so the catch could not ask whether the close was asked for.
+- **Fix:** the close is made before the try, and `DriverCommand.Cancelled` reads a cancellation by it: the close is still exit 0; the client's timeout is a failure naming it, exit 2.
+- **Verify:** `SessionsOutliveTheirLookTests`' DEV3b cases over a quest list that never answers, for both runs and a close; `DriverCommandTests` on the reading and the host's catch. Not run: the host as a process. Note under D115.
+
 ## 2026-10-07 — a single run left before what it caused had landed
 
 ### Driver: `--once` could end with its session working and its stop unsaid (DEV3a)
