@@ -259,6 +259,25 @@ public sealed class LandedBranches(string home)
         [.. all.Select(each => SameEntry(each, entry) ? each with { Carried = [.. each.Carried, carried] } : each)]);
 
     /// <summary>
+    /// The traces <paramref name="forget"/> names, dropped (HIST1c, the history-clearing design §2.2): a trace is kept so a
+    /// session's review can say where its work went, and a cleared session has no review. Never a standing entry, which a clear
+    /// refuses instead. How many went comes back; nothing is written when none did.
+    /// </summary>
+    public int ForgetTraces(Func<LandedBranch, bool> forget)
+    {
+        lock (Gate)
+        {
+            var all = Everything();
+            bool Forgotten(LandedBranch entry) => entry.GoneAt is not null && forget(entry);
+            var count = all.Count(Forgotten);
+            if (count == 0) return 0;
+            Directory.CreateDirectory(home);
+            AtomicFile.WriteText(FilePath, ToJson([.. all.Where(entry => !Forgotten(entry))]));
+            return count;
+        }
+    }
+
+    /// <summary>
     /// The same landing, standing or a trace: its repository, its branch, the session that made it, and when. A later landing of
     /// the same name is another entry, and so is a trace of an earlier one.
     /// </summary>

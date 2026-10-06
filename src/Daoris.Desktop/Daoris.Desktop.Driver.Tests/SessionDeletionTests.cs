@@ -72,6 +72,69 @@ public sealed class SessionDeletionTests : IDisposable
         Assert.DoesNotContain("secret", line);
     }
 
+    /// <summary>
+    /// HIST1c (D153 point 6, the history-clearing design §2.2): the delete and the clear take a session's files through one
+    /// helper, so the four a delete left behind go too: its go-on mark, its choice of a new session, its held words and its
+    /// closed automatic landing, with the spawn files a crash left. Another session's are untouched.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_takes_the_marks_the_held_words_the_closed_landing_and_the_spawn_files_too()
+    {
+        foreach (var id in new[] { "c1", "c2" })
+        {
+            Kept(id);
+            File.WriteAllText(Path.Combine(Sessions, id + GoOnMarks.Suffix), "{\"said\":[\"w1\"],\"why\":\"closed\",\"at\":\"2026-10-03T09:00:00Z\"}\n");
+            File.WriteAllText(Path.Combine(Sessions, id + NewSessionChoices.Suffix), "{\"said\":[\"w1\"],\"at\":\"2026-10-03T09:00:00Z\"}\n");
+            Directory.CreateDirectory(Path.Combine(_home, SpawnServers.Folder));
+            File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.mcp.json"), "{}");
+            File.WriteAllText(Path.Combine(_home, SpawnServers.Folder, $"{id}.settings.json"), "{}");
+            var landings = new AutoLandings(_home);
+            landings.Due(new AutoLanding(id, "q1", "engine", "default", "a tree", DateTimeOffset.UtcNow));
+            landings.Tried(id, new AutoTry(DateTimeOffset.UtcNow, AutoLandingCode.Landed), close: true);
+        }
+
+        File.WriteAllText(HeldWordsFile.PathOf(_home), """
+            {
+              "held": [
+                { "session": "c1", "text": "a word said as it wound up", "files": [], "door": "screen" },
+                { "session": "c2", "text": "another", "files": [], "door": "terminal" }
+              ]
+            }
+            """);
+        var ledger = new Ledger(Record("c1"), Record("c2"));
+        using var service = ledger.Client();
+
+        var outcome = await new SessionDeletion(_home).DeleteAsync(service, "c1", PluginEvents.Screen, log: null);
+
+        Assert.Equal(DeleteVerdict.Deleted, outcome.Verdict);
+        Assert.Equal(["record", "conversation", "transcript", "files", "harness", "mark", "choice", "spawn", "held", "landing", "archived"], outcome.Removed);
+        Assert.False(File.Exists(Path.Combine(Sessions, "c1" + GoOnMarks.Suffix)));
+        Assert.False(File.Exists(Path.Combine(Sessions, "c1" + NewSessionChoices.Suffix)));
+        Assert.False(File.Exists(Path.Combine(_home, SpawnServers.Folder, "c1.mcp.json")));
+        Assert.False(File.Exists(Path.Combine(_home, SpawnServers.Folder, "c1.settings.json")));
+        Assert.Null(new AutoLandings(_home).Of("c1"));
+        Assert.DoesNotContain("c1", File.ReadAllText(HeldWordsFile.PathOf(_home)));
+
+        Assert.True(AnyKept("c2"));
+        Assert.True(File.Exists(Path.Combine(Sessions, "c2" + GoOnMarks.Suffix)));
+        Assert.True(File.Exists(Path.Combine(Sessions, "c2" + NewSessionChoices.Suffix)));
+        Assert.True(File.Exists(Path.Combine(_home, SpawnServers.Folder, "c2.settings.json")));
+        Assert.NotNull(new AutoLandings(_home).Of("c2"));
+        Assert.Contains("\"c2\"", File.ReadAllText(HeldWordsFile.PathOf(_home)));
+    }
+
+    /// <summary>An automatic landing still trying is no leftover: the helper leaves an open entry, which a clear refuses before it.</summary>
+    [Fact]
+    public void The_helper_leaves_an_automatic_landing_still_open()
+    {
+        new AutoLandings(_home).Due(new AutoLanding("c1", "q1", "engine", "default", "a tree", DateTimeOffset.UtcNow));
+
+        var removed = new SessionHomeFiles(_home).Remove(["c1"], events: null);
+
+        Assert.DoesNotContain("landing", removed["c1"]);
+        Assert.NotNull(new AutoLandings(_home).Of("c1"));
+    }
+
     /// <summary>Ask Daoris's conversation is said as its own kind in the log, as its open is (LOG1b).</summary>
     [Fact]
     public async Task Ask_daoris_is_logged_as_help()

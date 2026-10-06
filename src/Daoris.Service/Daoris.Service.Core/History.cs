@@ -615,7 +615,8 @@ public sealed class HistoryDesk(
             {
                 Refusal = new HistoryKept(
                     HistoryRefusal.Open,
-                    $"Quest `#{quest.Id}` is still open or taken, and its strikes are counted from these sessions; archive them instead.")
+                    // A person reads this; strike is the code's word, never on the window (the glossary's).
+                    $"Quest `#{quest.Id}` is still open or taken, and these failed sessions count against it; archive them instead.")
                 {
                     Quest = quest.Id,
                 },

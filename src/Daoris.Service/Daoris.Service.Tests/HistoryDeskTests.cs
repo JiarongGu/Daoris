@@ -440,7 +440,7 @@ public sealed class HistoryDeskTests : IAsyncLifetime
 
         Assert.Equal((HistoryRefusal.Open, quest.Id), (plan.Refusal!.Refusal, plan.Refusal.Quest));
         Assert.Equal(
-            $"Quest `#{quest.Id}` is still open or taken, and its strikes are counted from these sessions; archive them instead.",
+            $"Quest `#{quest.Id}` is still open or taken, and these failed sessions count against it; archive them instead.",
             plan.Refusal.Message);
         Assert.False(pressed.Cleared);
         Assert.NotNull(await _sessions.FindAsync(failed.Id));

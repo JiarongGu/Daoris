@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a deleted conversation's files left behind
+
+### Driver: *Delete…* of a conversation left four of its files under the home (HIST1c)
+- **Symptom:** read from the code by the history-clearing design's inventory (§0, §2.2), not seen on an install: after SESSUX1f's delete, a conversation's go-on mark (`.cannot.json`), its choice of a new session (`.new-session.json`), its entry in `sessions/held-words.json` and its closed entry in `sessions/auto-landings.json` stayed, naming a record that was gone. The hand purge of 2026-10-07 missed the `spawn/<id>.*` files the same way.
+- **Root cause:** `SessionDeletion.RemoveFiles` listed the files the home kept of a session when D126 §5.1 was written; MSG1b, MSG1g, MSG1d4 and LAND2b each added one later, and nothing tied a new per-session file to the delete.
+- **Fix:** `SessionHomeFiles`, one helper holding every per-session file the design's §2.2 names, which the delete and HIST1c's clear both call; `HeldWordsFile.Forget` and `AutoLandings.Forget` take a session's entries out of the shared files. An automatic landing still trying stays.
+- **Verify:** `SessionDeletionTests`' case for the four files and the spawn files failed first (what went lacked their names), then passed; `HistoryClearingTests` hold the same files for a clear. Not covered: a per-session file added later is caught only if its author names it in the helper.
+
 ## 2026-10-07 — a story's language remembered for the page
 
 ### Web: after a 中文 story, every later story came up in 中文 (STORY2)
@@ -129,7 +137,8 @@ the holder had not ended within the wait plus the cleanup's five seconds of retr
 failed`): git's own files held for a moment, most likely by the scanner, the same shape as the publishing renames.
 `setup-kit.test.ts:668` (ANSWER1b's stub resumes) met EPERM in `_fixture` cleanup once in INIT1's verify, although
 `speak` waits for the stub's `close` on every path; what still held the folder (a git the stub started, or the
-scanner) was not captured.
+scanner) was not captured. The same test failed once more in HIST1c's verify another way, "turn failed: fetch failed"
+(the stub's request to its stand-in quest door), passing alone and rerun: the test, not the folder, is the repeat.
 
 *Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
 twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
