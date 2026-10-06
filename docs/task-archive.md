@@ -11323,3 +11323,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTQUOTE1c — Settings' twins spell their arguments** (web-settings). `settings/AccountUse.tsx:132/186/412` and `settings/AccountSettings.tsx:142` print `--workspace`/`--account` values bare. Contract: D125's ACCTQUOTE1 note. Proof: vitest with a spaced and an `R&D` workspace and account.
 
 **Outcome** 2026-10-07: Settings' account-use hints and the account settings form spell their workspace and account through `shellWord` (quoted, or `<workspace>`/`<account>`); prose naming a workspace stays as named. No other Settings command takes an account or workspace. Web vitest 4177 → 4185. Detail: D125's ACCTQUOTE1c note; commit 80f100a9.
+
+
+## AGENTREAD1 — persist terminal account readings (2026-10-07, D125)
+
+> - [ ] **AGENTREAD1 — persist terminal account readings** (cli). Make `daoris agent list` inform the screen and loop. Contract: D50, D150 §5.3, D125 ROSTER1, `reads.json` twin. Proof: both twins read the same table.
+
+**Outcome** 2026-10-07: built (CLI half). `daoris agent list`, a terminal sign-in's end and `profile remove` keep or forget account readings in the home's `reads.json` as the driver's `AccountReads` does (`accountreads.ts`, its new twin); only a status actually asked is kept, so a door or a held probe lock keeps nothing. A sign-in to a named account now always reads its status at the end (ROSTER1's rule; one more status call). Both twins share one table, `src/Daoris.Cli/test/fixtures/account-reads.json`; the driver's test of it is AGENTREAD1b. CLI 1304 → 1313. Detail: D125's AGENTREAD1 note; commits da489af7…aa2b6f9f.
