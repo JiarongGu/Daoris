@@ -698,6 +698,23 @@ public sealed class SessionStore
     }
 
     /// <summary>
+    /// The newest teammate's record for a quest that did not stand down, or null: what names another machine's take
+    /// (CARRY2), since the quest's log names a machine by an id no person reads. A stand-down says its machine has no take.
+    /// </summary>
+    public async Task<Session?> LastTeammateForQuestAsync(string quest, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            SELECT * FROM sessions WHERE quest = $quest AND origin IS NOT NULL AND state <> $stoodDown
+            ORDER BY created DESC, rowid DESC LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$quest", quest);
+        command.Parameters.AddWithValue("$stoodDown", nameof(SessionState.StoodDown));
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>
     /// A record of a session started for <paramref name="quest"/> — this machine's or a teammate's, in
     /// any state — or null (D95). A quest a record names is not deleted: the record would name nothing.
     /// </summary>
