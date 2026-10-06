@@ -148,13 +148,13 @@ describe('the presentational boundary', () => {
     expect(offenders([['./work/Row.tsx', "import type { AttentionDoors } from './AttentionBand';\n"]]))
       .toEqual([]);
     // A Settings domain is an organism by its name, and so is the list of them.
-    expect(offenders([['./settings/Lines.tsx', "import { PluginsDomain } from './PluginsDomain';\n"]]))
+    expect(offenders([['./settings/Lines.tsx', "import { DriverDomain } from './DriverDomain';\n"]]))
       .toEqual(['./settings/Lines.tsx imports a Settings domain']);
     expect(offenders([['./settings/Lines.tsx', "import { SETTINGS_DOMAINS } from './domains';\n"]]))
       .toEqual(["./settings/Lines.tsx imports the Settings domains' list"]);
     expect(offenders([['./settings/Lines.tsx', "import type { SettingsDomainProps } from './domains';\n"]]))
       .toEqual([]);
-    expect(SETTINGS_ORGANISM.test('./settings/PluginsDomain.tsx')).toBe(true);
+    expect(SETTINGS_ORGANISM.test('./settings/DriverDomain.tsx')).toBe(true);
     expect(SETTINGS_ORGANISM.test('./settings/Lines.tsx')).toBe(false);
   });
 

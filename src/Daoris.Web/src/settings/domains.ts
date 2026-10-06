@@ -8,7 +8,6 @@ import { AppearanceDomain } from './AppearanceDomain';
 import { BrowserDomain } from './BrowserDomain';
 import { DriverDomain } from './DriverDomain';
 import { LogsDomain } from './LogsDomain';
-import { PluginsDomain } from './PluginsDomain';
 import { ToolsDomain } from './ToolsDomain';
 
 /**
@@ -41,9 +40,12 @@ type SettingsDomain = {
  * Settings' domains, in the order its list shows them (D75 §2) — **the one place a domain is added**
  * (MOD4). A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
  * chosen and names none itself, and `domains.test.ts` holds both.
+ *
+ * Seven since UX6j (D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
  */
 export const SETTINGS_DOMAINS = [
-  // The setup guide leads (SETUP1a, D97). A browser's holds the one step it can know, the registry.
+  // The setup guide leads (SETUP1a, D97), named Get started again since Setup names a repository's and a workspace's tab
+  // (UX6j). A browser's holds the one step it can know, the registry.
   { id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain },
   { id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain },
   { id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain },
@@ -55,8 +57,8 @@ export const SETTINGS_DOMAINS = [
   // offered no such domain.
   { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
   // Permissions left as Workspace did (UX6g): reading across and a workspace's rules are its page's, a repository's its
-  // Setup's, and the rules for every session and the proposals the agent's page's (UX6e).
-  { id: 'plugins', label: 'settings.domain.plugins', machine: true, component: PluginsDomain },
+  // Setup's, and the rules for every session and the proposals the agent's page's (UX6e). Plugins left for its place
+  // (UX6j, D119 §5): nothing about a plugin is set here, and where plugins are looked for is Driver's row.
   { id: 'browser', label: 'settings.domain.browser', machine: true, component: BrowserDomain },
   // The machine log (LOG1c, D94): the machine's alone, so a browser is offered no such domain.
   { id: 'logs', label: 'settings.domain.logs', machine: true, component: LogsDomain },
@@ -64,3 +66,19 @@ export const SETTINGS_DOMAINS = [
 
 /** Settings' domains, by the id each is opened at. */
 export type SettingsSection = (typeof SETTINGS_DOMAINS)[number]['id'];
+
+/**
+ * A domain that left Settings and kept a row in it, by the domain that holds the row: Plugins' folder is Driver's (UX6j,
+ * the plugins design §5), with its door to the Plugins place.
+ */
+const KEPT_IN: Readonly<Record<string, SettingsSection>> = { plugins: 'driver' };
+
+/**
+ * Where a domain remembered under `daoris.settings` opens now (UX6j): itself while Settings has it; one that left, at
+ * the domain holding what stayed of it; and one that left for a page Settings holds no row of (Agents, UX6e; Workspace
+ * and Permissions, UX6g), on Appearance, as any domain this window lacks does. A remembered id never opens nothing.
+ */
+export function rememberedDomain(id: string | null): SettingsSection {
+  const kept = id !== null && Object.hasOwn(KEPT_IN, id) ? KEPT_IN[id] : undefined;
+  return SETTINGS_DOMAINS.find((domain) => domain.id === id)?.id ?? kept ?? 'appearance';
+}

@@ -255,6 +255,22 @@ describe('the form rules', () => {
     expect(found.map(({ key }) => key).sort()).toEqual(['area.state.open', 'area.take', 'area.title']);
   });
 
+  /**
+   * UX6j (D150 §2.3): a tab is a place a door names as a view is (*Change in Setup*), so its own name keeps its capitals
+   * mid-label. While the guide was named Setup that name was a domain's and passed by accident; Get started took it back.
+   */
+  it("keeps a tab's own name capitalised inside a label, as a view's", () => {
+    const glossary = fixture();
+    glossary.kinds.tab!.keys.push('page.tab.*');
+    const { en, zh } = catalogues({
+      'page.tab.setup': ['Setup', '配置'],
+      'area.door': ['Change in Setup', '在配置中更改'],
+      'area.loose': ['Change in Details', '在详情中更改'],
+    });
+    const found = check(glossary, en, zh).filter(({ rule }) => rule === 'form');
+    expect(found.map(({ key }) => key)).toEqual(['area.loose']);
+  });
+
   it('holds the marks: no closing stop, one ellipsis, no pronoun on a Chinese button, Latin set apart', () => {
     const { en, zh } = catalogues({
       'area.stop': ['Stop it.', '停止会话'],

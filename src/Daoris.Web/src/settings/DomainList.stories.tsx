@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DomainList } from './DomainList';
 
-// Settings' list (FRAME1g, D118 §5) at its 176 px start: a shell's eight domains since Workspace and Permissions left for
-// a workspace's page (UX6g), a browser's three with what it is not offered, the 中文 names, and the chosen domain last.
+// Settings' list (FRAME1g, D118 §5) at its 176 px start: a shell's seven domains since Workspace and Permissions left for
+// a workspace's page (UX6g) and Plugins for its place (UX6j, D150 §2.3), a browser's three with what it is not offered,
+// the 中文 names, and the chosen domain last.
 
 const SHELL = [
-  { id: 'start', label: 'Setup' },
+  { id: 'start', label: 'Get started' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'ai', label: 'AI features' },
   { id: 'driver', label: 'Driver' },
   { id: 'tools', label: 'Tools' },
-  { id: 'plugins', label: 'Plugins' },
   { id: 'browser', label: 'Browser' },
   { id: 'logs', label: 'Machine log' },
 ];
@@ -38,8 +38,8 @@ export const Chinese: Story = {
   args: {
     label: '设置分类',
     domains: [
-      { id: 'start', label: '配置' }, { id: 'appearance', label: '外观' }, { id: 'ai', label: 'AI 功能' },
-      { id: 'driver', label: '驱动' }, { id: 'tools', label: '工具' }, { id: 'plugins', label: '插件' },
+      { id: 'start', label: '开始使用' }, { id: 'appearance', label: '外观' }, { id: 'ai', label: 'AI 功能' },
+      { id: 'driver', label: '驱动' }, { id: 'tools', label: '工具' },
       { id: 'browser', label: '浏览器' }, { id: 'logs', label: '本机日志' },
     ],
     chosen: 'tools',

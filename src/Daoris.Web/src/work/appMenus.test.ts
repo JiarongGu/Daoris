@@ -65,7 +65,7 @@ describe('the menus, row by row', () => {
     const browser = entries({ attached: false });
     expect(labels(menuRows(browser, 'workspace'))).toEqual(['New ask…', 'New quest…', 'Every workspace · 2', 'work', 'forge', 'Settings']);
     expect(menuRows(browser, 'terminal')).toEqual([]);
-    expect(labels(menuRows(browser, 'help'))).toEqual(['Setup', 'Keyboard shortcuts', 'About Daoris']);
+    expect(labels(menuRows(browser, 'help'))).toEqual(['Get started', 'Keyboard shortcuts', 'About Daoris']);
     // A key a browser keeps is not printed where it is not answered.
     expect(menuRows(browser, 'go').find((row) => row.label === 'Quests')?.shortcut).toBeUndefined();
   });

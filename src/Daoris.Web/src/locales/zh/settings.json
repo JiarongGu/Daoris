@@ -12,6 +12,8 @@
   "settings.theme.dark": "深色",
   "settings.language.label": "语言",
   "settings.language.hint": "窗口自身的文字，以及会话记录上 Daoris 写的话。智能体、人和服务写的内容按原文显示。",
+  "settings.pluginsFolder.hint": "`daoris plugin list`",
+  "settings.pluginsFolder.open": "打开插件",
   "settings.home.label": "Daoris 主目录",
   "settings.home.hint": "Daoris 主目录。本页的每个文件都在其中，终端里的 daoris 读的也是同一目录；你的个人目录下不存放 Daoris 的任何东西。",
   "settings.home.hintOverridden": "Daoris 主目录。本页的每个文件都在其中；你的个人目录下不存放 Daoris 的任何东西。终端里的 daoris 读哪个目录，见下面那一行。",

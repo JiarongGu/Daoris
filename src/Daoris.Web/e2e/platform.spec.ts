@@ -649,8 +649,9 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
-  // Setup leads (SETUP1a, D97; named so by NAME1b), holding in a browser only the registry's step.
-  await expect(domains).toHaveText([/Setup/, /Appearance/, /AI features/]);
+  // Get started leads (SETUP1a, D97; Setup from NAME1b until UX6j gave that name to a repository's tab), holding in a
+  // browser only the registry's step.
+  await expect(domains).toHaveText([/Get started/, /Appearance/, /AI features/]);
 
   // A workspace's page (UX6g, D150 §4.3) has a machine half, its branches, setup and accounts, so it is opened and that
   // half's absence asserted where it would render, after its browser half is seen.

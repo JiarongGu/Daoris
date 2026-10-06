@@ -36,7 +36,7 @@ import { useProjectsView } from './ProjectsView';
 import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
 } from './projects/tabs';
-import { SETTINGS_SECTIONS, type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
+import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
@@ -68,7 +68,7 @@ import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppMenu';
 import { useThemeChoice } from './theme';
-import { SETTINGS_DOMAINS } from './settings/domains';
+import { rememberedDomain, SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
 import { HarnessRuns } from './harnessRuns';
@@ -149,10 +149,9 @@ export function App() {
   // Knowledge's mode (UX6i, D150 §2.2): Search or Convergence, remembered for the place. Held here, where every door is
   // applied, since a door into either names it.
   const [knowledgeMode, chooseKnowledgeMode] = useKnowledgeMode(lists);
-  // A domain remembered from before it left Settings (Agents, UX6e; Workspace and Permissions, UX6g) reads as Appearance,
-  // which Settings opens on, so Ask Daoris is told the domain shown.
-  const rememberedSection = lists.pane('settings').chosen;
-  const settingsSection: SettingsSection = SETTINGS_SECTIONS.find((id) => id === rememberedSection) ?? 'appearance';
+  // A domain remembered from before it left Settings reads as the one Settings opens on, so Ask Daoris is told the domain
+  // shown: Plugins as Driver, which keeps its folder's row (UX6j); Agents, Workspace and Permissions as Appearance.
+  const settingsSection: SettingsSection = rememberedDomain(lists.pane('settings').chosen);
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   // And the part of an agent's page a door named (UX6e, D150 §2.4): its accounts, what it may do, its usage.

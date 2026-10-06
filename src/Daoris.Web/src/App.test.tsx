@@ -223,16 +223,17 @@ describe('the shell in a browser, over two workspaces', () => {
   });
 
   /**
-   * SETUP1a (D97): Help › *Setup* opens the guide — a browser's too, holding the one step a browser can know, and saying
-   * the rest is the desktop's. It was the Daoris menu's until D152 (the design §3.7).
+   * SETUP1a (D97): Help › *Get started* opens the guide — a browser's too, holding the one step a browser can know, and
+   * saying the rest is the desktop's. It was the Daoris menu's until D152 (the design §3.7), and named Setup until UX6j
+   * gave that name to a repository's and a workspace's tab (D150 §2.3).
    */
-  it('Help › Setup opens the setup guide', async () => {
+  it('Help › Get started opens the setup guide', async () => {
     shell();
     const user = await openMenu('Help');
 
-    await user.click(await screen.findByRole('menuitem', { name: 'Setup' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Get started' }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    expect(within(domains).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
     const steps = await screen.findByRole('list', { name: 'setup steps' });
     expect(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).toHaveTextContent('done');
   });

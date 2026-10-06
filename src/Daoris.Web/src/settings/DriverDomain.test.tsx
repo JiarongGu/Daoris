@@ -60,6 +60,27 @@ describe('the driver domain', () => {
   });
 
   /**
+   * UX6j (D150 §2.3; the plugins design §5): Settings holds no Plugins domain, and where plugins are looked for is a fact
+   * of the Daoris home, so it is a row under the home, read-only, with the door to the Plugins place beside its path.
+   */
+  it('names the plugins folder under the home, with its door to the Plugins place', async () => {
+    invoke.mockImplementation(async (module: string, type: string) => (module !== 'DAORIS.DRIVER' ? WIRING
+      : type === 'PLUGINS' ? { folder: 'D:/somewhere/Daoris/data/plugins', plugins: [] }
+        : { ...DRIVER_STATE, home: 'D:/somewhere/Daoris/data' }));
+    const onGo = vi.fn();
+    show(<SettingsView notify={() => {}} section="driver" onGo={onGo} />);
+
+    expect(await screen.findByText('D:/somewhere/Daoris/data/plugins')).toBeTruthy();
+    // Under the home, whose fact it is.
+    const labels = screen.getAllByText(/^(Daoris home|Plugins folder)$/).map((label) => label.textContent);
+    expect(labels).toEqual(['Daoris home', 'Plugins folder']);
+    expect(screen.getByText(code('daoris plugin list'))).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Plugins' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'plugins' });
+  });
+
+  /**
    * LEFT1 then LEFT2 (D105): a terminal's daoris reads the folder the account's DAORIS_HOME names. The hint says
    * that is this folder only when the state's `homeAccount` says the account names it. An install that overrode
    * an inherited home says which folder a terminal still reads in its notice, and the hint points there; a home

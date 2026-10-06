@@ -45,9 +45,10 @@ const VIEWS: Record<View, string> = {
 // Knowledge's two modes, as its list's choice names them (UX6i).
 const MODES: Record<KnowledgeMode, string> = { search: 'Search', convergence: 'Convergence' };
 
+// Seven since UX6j (D150 §2.3): the guide is Get started again, and Plugins is a place, named among the views.
 const DOMAINS: Record<SettingsSection, string> = {
-  start: 'Setup', appearance: 'Appearance', ai: 'AI features', driver: 'Driver', tools: 'Tools', plugins: 'Plugins',
-  browser: 'Browser', logs: 'Machine log',
+  start: 'Get started', appearance: 'Appearance', ai: 'AI features', driver: 'Driver', tools: 'Tools', browser: 'Browser',
+  logs: 'Machine log',
 };
 
 /** The attended session as the preface names it — or null when none is attended, or it is not in the list. */

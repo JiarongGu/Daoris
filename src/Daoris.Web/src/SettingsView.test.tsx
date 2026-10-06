@@ -75,7 +75,7 @@ describe('SettingsView in a browser', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Setup', 'Appearance', 'AI features']);
+      .toEqual(['Get started', 'Appearance', 'AI features']);
     expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByText('Theme')).toBeTruthy();
   });
@@ -91,7 +91,7 @@ describe('SettingsView in a browser', () => {
     expect(within(steps).getAllByRole('listitem').map((item) => item.getAttribute('aria-label')))
       .toEqual(['3. A workspace and its repositories']);
     expect(within(steps).getByText('done')).toBeTruthy();
-    expect(screen.getByText(/the desktop's Setup shows them/)).toBeTruthy();
+    expect(screen.getByText(/the desktop's Get started shows them/)).toBeTruthy();
     expect(screen.queryByRole('checkbox', { name: "Don't open at start" })).toBeNull();
   });
 });
@@ -126,7 +126,7 @@ describe("Settings' list pane and main area", () => {
     // Its header names the list, and Settings makes nothing, so there is no ＋.
     expect(within(list).getByText('Settings')).toBeInTheDocument();
     expect(within(list).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent))
-      .toEqual(['Hide the settings list', 'Setup', 'Appearance', 'AI features']);
+      .toEqual(['Hide the settings list', 'Get started', 'Appearance', 'AI features']);
 
     // The domain is the main area, and its header names it: a card alone in it need not.
     const main = screen.getByRole('main');

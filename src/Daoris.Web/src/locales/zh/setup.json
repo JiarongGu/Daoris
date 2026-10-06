@@ -28,7 +28,7 @@
   "setup.door.agentRules": "打开智能体可以做什么",
   "setup.copy": "复制 {{command}}",
   "setup.copied": "已复制",
-  "setup.desktop": "智能体、问道衍的智能体、驱动范围、落地方式与智能体权限，都属于本机：桌面应用的「配置」会显示它们。",
+  "setup.desktop": "智能体、问道衍的智能体、驱动范围、落地方式与智能体权限，都属于本机：桌面应用的「开始使用」会显示它们。",
   "setup.askNeedsAgent": "问道衍有了可运行的智能体后，就能带你一步步完成这些：见第 2 步。",
   "setup.ask.button": "和问道衍一起配置",
   "setup.ask.message": "请带我一步一步在本机配置 Daoris。尚未完成：{{steps}}。",
