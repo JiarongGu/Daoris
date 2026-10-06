@@ -1,9 +1,8 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
-import { I18nextProvider } from 'react-i18next';
 import { clockOf, list, moment } from '../format';
-import i18n from '../i18n';
 import { InTheme } from '../plugins/storyIcons';
+import { chinese, readerIn } from '../storyLanguage';
 import { AnsweredPark } from './AnsweredPark';
 import { type Attention, type AttentionActs, AttentionRow } from './AttentionRow';
 import { AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
@@ -19,9 +18,8 @@ import { TrustAsk } from './TrustAsk';
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
+/** A reader of 中文, whatever the window's language: what the 中文 rows below are worded by. */
+const zh = readerIn('zh');
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /** Every act handed, as a shell's band hands them; a story reports nothing. */

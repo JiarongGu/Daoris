@@ -1,18 +1,11 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { NotePart } from '../api';
+import { chinese } from '../storyLanguage';
 import { Note } from './Note';
 
 // A session's note in every shape a record brings it (LANG1b, D142; the language design §2, §5, §6): Daoris's lines worded
 // in the reader's language, in English and in 中文; a split note, the lead-in worded and the agent's question beneath it
 // as written; a code this page does not know; a record from before parts; a program's words; and one run for a row.
-
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-
-/** The story in 中文. */
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 
 /** A driven session that went on with its answer and ended with its quest still taken, on an account now cooling. */
 const ENDED: NotePart[] = [

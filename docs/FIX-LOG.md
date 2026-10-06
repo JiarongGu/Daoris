@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a story's language remembered for the page
+
+### Web: after a 中文 story, every later story came up in 中文 (STORY2)
+- **Symptom:** found by TRACE1b on its stories: once a 中文 story had been shown, the next story loaded in that browser profile, an English one too, came up in 中文.
+- **Root cause:** nine story modules made their 中文 reader at module scope with `i18n.cloneInstance({ lng: 'zh' })`, a habit since LANG1b (`d18c7619`). An i18next clone shares the page's services, its language detector among them, and the clone's own start runs `changeLanguage`, which hands the language to the detector's cache: `zh` under `daoris.language`, the key the page reads at its next load. Storybook imports a story's module to show any story in it, so opening an English story in such a file was enough. The menu bar's stories cloned at render in either language, so they also overwrote a 中文 choice with English.
+- **Fix:** `src/Daoris.Web/src/storyLanguage.tsx`: `readerIn(language)` builds a reader with `i18n.createInstance` from the page's options. It has no detector, so it has nothing to remember with. `chinese` is the one 中文 decorator the stories share. The page's own switch still remembers.
+- **Verify:** `storyLanguage.test.tsx`: a 中文 story's module, imported and rendered with `daoris.language` set, leaves it as found (failed first: `zh`); every story module imported leaves it absent (failed: `zh`); no story calls `cloneInstance` (failed: ten files); the page's switch still remembers. `stories.test.tsx` clears the key before each story and fails one that writes it (the menu bar's nineteen failed first). Commit `8d537188`. Not run: the stories in a browser, which the parent shoots.
+
 ## 2026-10-07 — the driver's commands and a timeout read as a close
 
 ### Driver: a command the driver named broke when pasted, and its join refusal left the CLI's (ACCTQUOTE1b)

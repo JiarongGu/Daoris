@@ -1,7 +1,6 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
+import { chinese } from '../storyLanguage';
 import { CJK, COUNTS, ELSEWHERE, ENGINE, GAME, LINE, MIRRORED, NEWBIE, SETUP_DEFAULTS, SETUP_OWN, UNDECLARED } from './fixtures';
 import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import type { RepositorySetupProps } from './RepositorySetup';
@@ -14,10 +13,6 @@ import type { ProjectTab } from './tabs';
 // in 中文; and the main area with no page: nothing chosen, gone, loading, an error with no answer ever.
 
 const nothing = () => {};
-
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 
 /** The page with its tab held, as Repositories holds it, so a story's tabs press as the window's do. */
 function Tabbed({ start = 'details', ...props }: Parameters<typeof ProjectPage>[0] & { start?: ProjectTab }) {

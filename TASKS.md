@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,334 CLI, 1,281 service, 73 HTTP host, 5,094 driver (4,381 fast; four new Process cases await the full set), 730 modules (612 fast), 80 devkit, 4,265 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,334 CLI, 1,281 service, 73 HTTP host, 5,094 driver (4,381 fast; four new Process cases await the full set), 730 modules (612 fast), 80 devkit, 4,270 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -93,7 +93,6 @@ Contracts: `docs/2026-10-04-orientation-everywhere-design.md` (D151) and D135. O
 Contracts: `docs/2026-10-03-future-directions-review.md`, `docs/2026-10-04-built-in-git-design.md` (D147 amended by D150).
 
 - [ ] **TRACE1c — missing trace links and doors** (driver, service, web-shell). Capture late rules, local quest operations, merge commits, carry-on links and LAND2c advances; finish detached-window section and page commit kind. Contract: D143 TRACE1b note. Proof: chain/route/service/vitest tests, stories and look.
-- [ ] **STORY2 — story language does not persist** (web-shell). A Chinese clone must leave `daoris.language` unchanged. Proof: module-import vitest and English/Chinese shots from one browser profile.
 - [ ] **GIT1d — bridge routes** (modules, web-shell; after b). Branches, log, commit, history, blame and compare stay shell-only; refusals have bilingual codes. Contract: §4, §6. Proof: `DriverModuleGitTests`, parity.
 - [ ] **GIT1f — commit/history/blame/compare tabs** (web-shell; after UX6h). Reuse diff/patch views, trace chain, blame gutter and two compare sides. Contract: §2.4–§2.6. Proof: stories, vitest and look.
 - [ ] **GIT1g — fetch/create/delete** (driver, modules, web-shell; after UX6h). Both doors share plan/apply judge at the judged commit, console and machine log. Contract: §3.1, §3.3–§3.4. Proof: parent-run bare-origin `GitActsTests`, vitest.

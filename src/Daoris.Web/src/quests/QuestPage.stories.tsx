@@ -1,8 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
@@ -20,9 +19,6 @@ import { QuestPage, QuestsMainNotice } from './QuestPage';
 
 const nothing = () => {};
 
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 /** Dark, as a person chooses it (D66): the main area's own box inside the theme's, which is no flex row the page can fill. */
 const dark: Decorator = (Story) => (
   <InTheme theme="dark"><div className="flex h-[43rem] w-[51rem] max-w-full"><Story /></div></InTheme>

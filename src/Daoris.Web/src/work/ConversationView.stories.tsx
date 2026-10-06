@@ -1,6 +1,5 @@
-import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { chinese } from '../storyLanguage';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
@@ -10,9 +9,6 @@ import { CLAIMED } from './handedFixtures';
 // driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
 // can be, a plan, the driver's own note and one worded from its parts (CONVNOTE1), an update this version does not know, a door that carries only
 // text, words a cooling account holds with *Go on in a new session* and what it came to (MSG1g2), and 中文.
-
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 
 let seq = 0;
 // A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).

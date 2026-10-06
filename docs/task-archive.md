@@ -11442,3 +11442,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LAND3b — remove failed session branches from UI** (modules, web-shell, web-settings). Expose forced removal when the tree is gone on session and unlanded-branch rows. Contract: D102 LAND3 note. Proof: modules and mocked-bridge tests.
 
 **Outcome** 2026-10-07: a failed or superseded attempt's branch can be discarded from a workspace's Branches tab (rows where `trees clean` prints its `--force` line, now `discardable` on `SWEEP_PLAN`) and from the page of a session whose tree is gone. One ask (`DiscardBranchAsk`) names the branch, repository, tree and that the commits go; the second press sends `DISCARD_SESSION_BRANCH`, the screen's `trees remove … --force`, which keeps a branch a running or waiting session's tree belongs to. The terminal lacks that guard (LAND3c). Modules fast 607 → 612, web vitest 4246 → 4265. Detail: D102's LAND3b note; commits 652a05df…0b5be735.
+
+
+## STORY2 — story language does not persist (2026-10-07)
+
+> - [ ] **STORY2 — story language does not persist** (web-shell). A Chinese clone must leave `daoris.language` unchanged. Proof: module-import vitest and English/Chinese shots from one browser profile.
+
+**Outcome** 2026-10-07: a story's language no longer persists. Nine story files built their Chinese reader with `i18n.cloneInstance` at module load, and a clone shares the page's detector, which saved `daoris.language`: merely opening an English story in one of those files saved 中文 (the menu bar's stories cloned on every render). `storyLanguage.tsx`'s `readerIn` makes a reader with no detector, shared by every story in another language; the page's own switch still saves. `stories.test.tsx` fails any story that writes the key. Web vitest +5. Shots from one profile: the story ids in sequence are in the hand-back, for UX7e's look. Detail: FIX-LOG 2026-10-07 (STORY2); commit 8d537188.
