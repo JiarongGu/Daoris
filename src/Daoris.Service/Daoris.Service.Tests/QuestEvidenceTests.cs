@@ -139,7 +139,7 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
     /// </summary>
     [Theory]
     [InlineData("/etc/passwd", "starts with `/`")]
-    [InlineData("C:/Users/someone/report.md", "names a drive")]
+    [InlineData("D:/checkouts/reports/report.md", "names a drive")]
     [InlineData("docs/../../secrets", "`..`")]
     [InlineData("docs\\report.md", "backslash")]
     [InlineData("docs/\u0007bell", "control character")]
@@ -414,8 +414,8 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
             "no-requirement" => new QuestEvidenceVerdict(Commit, "session-end", [found, new QuestEvidenceRead(3, "docs/x.md", null, "found")]),
             "result" => new QuestEvidenceVerdict(Commit, "session-end", [found with { Result = "gone" }]),
             "gate-result" => new QuestEvidenceVerdict(Commit, "session-end", [found with { Result = "no-queue" }]),
-            "object" => new QuestEvidenceVerdict(Commit, "session-end", [found with { Object = "C:/Users/someone/blob" }]),
-            _ => new QuestEvidenceVerdict(Commit, "session-end", [found with { Path = "/home/someone/repo/docs/report-bridge.md" }]),
+            "object" => new QuestEvidenceVerdict(Commit, "session-end", [found with { Object = "D:/checkouts/reports/blob" }]),
+            _ => new QuestEvidenceVerdict(Commit, "session-end", [found with { Path = "/srv/checkouts/reports/docs/report-bridge.md" }]),
         };
 
         var refused = await _exchange.EvidenceAsync(quest.Id, verdict, Now);
@@ -516,11 +516,11 @@ public sealed class QuestEvidenceTests : IAsyncLifetime
     [Theory]
     [InlineData("""{ "path": "docs/a.md", "gate": "web" }""", null)]
     [InlineData("""{ }""", null)]
-    [InlineData("""{ "path": "C:/Users/someone/a.md" }""", null)]
+    [InlineData("""{ "path": "D:/checkouts/reports/a.md" }""", null)]
     [InlineData(null, """{ "commit": "a1b2c3d", "how": "session-end", "items": [] }""")]
     [InlineData(null, """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "guessed", "items": [] }""")]
     [InlineData(null, """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "sweep", "items": [{ "requirement": 1, "path": "a.md", "result": "gone" }] }""")]
-    [InlineData(null, """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "sweep", "items": [{ "requirement": 1, "path": "/home/someone/a.md", "result": "found" }] }""")]
+    [InlineData(null, """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "sweep", "items": [{ "requirement": 1, "path": "/srv/checkouts/reports/a.md", "result": "found" }] }""")]
     [InlineData(null, """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "sweep" }""")]
     public void Half_of_a_fact_on_the_wire_makes_the_operation_not_whole(string? item, string? verdict)
     {
