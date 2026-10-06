@@ -1,5 +1,6 @@
 import { moment } from './format';
 import i18n from './i18n';
+import { shellWord } from './shellWord';
 
 /**
  * Which of a driver tick's lines are NEWS, and which the person has already been told.
@@ -160,7 +161,9 @@ export function sittingSentence(sitting: Consideration): string {
   const signedOut = sitting.verdict === 'Blocked' && sitting.signedOut?.accounts?.length ? sitting.signedOut : null;
   const signIn = signedOut ? {
     accounts: signedOut.accounts.map((id, at) => signedOut.names?.[at]?.trim() || id).join(i18n.t('work.sitting.signedOutJoin')),
-    logins: signedOut.accounts.map((name) => `\`daoris agent login ${signedOut.agent} --profile ${name}\``).join(i18n.t('work.sitting.signedOutJoin')),
+    // Each a command a person pastes, so the id is spelled for a shell (ACCTQUOTE1).
+    logins: signedOut.accounts.map((name) => `\`daoris agent login ${signedOut.agent} --profile ${shellWord(name, '<account>')}\``)
+      .join(i18n.t('work.sitting.signedOutJoin')),
   } : null;
   if (sitting.verdict === 'Blocked' && sitting.waitsFor) {
     const { agent, account, name, until, stated } = sitting.waitsFor;

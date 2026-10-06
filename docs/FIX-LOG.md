@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — account edits and hints
+
+### Agents: a refused account edit lost what the person entered (ACCTEDIT1)
+- **Symptom:** an account row's Rename… or Use in a workspace…, refused by the driver, closed at once and showed the refusal as a toast; the typed name and ticked workspaces were gone.
+- **Root cause:** `AgentPage.tsx` closed each inline question when it was pressed, before its asynchronous bridge mutation answered, so a refusal arrived after the form that could show it had gone.
+- **Fix:** each question is handed an answer (`done` or `refused(sentence)`) that closes it only once the mutation lands; a refusal keeps the draft and shows the driver's sentence inside the form, and *Never mind* waits while an answer is pending.
+- **Verify:** mocked-bridge vitest cases where rejected mutations keep each draft and a successful retry closes it; stories `RenameRefused`, `UseInAWorkspaceRefused`. Commit `50a5b692`.
+
+### Hints: an account name pasted into a shell could run something else (ACCTQUOTE1)
+- **Symptom:** a valid account name such as `R&D` appeared bare in rename and join hints; pasted into Command Prompt it ran `D`.
+- **Root cause:** every producer interpolated the value as it was. Quoting alone does not fix it: Windows PowerShell 5.1 drops the quotes of a space-free argument handed to a batch file, and the install's `daoris` is `daoris.cmd`.
+- **Fix:** one spelling, twinned in the CLI and the page: bare, double-quoted, or a placeholder where no spelling holds in all three shells.
+- **Verify:** `shellword.test.ts` passes each table row through the install's real cmd, PowerShell 5.1 and sh launchers. Commit `30461847`; D125's ACCTQUOTE1 note.
+
 ## 2026-10-07 — a downloaded tool's folder held by Windows
 
 ### Tools: a managed download could not move into place while the scanner held it

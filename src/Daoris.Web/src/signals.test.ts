@@ -296,6 +296,22 @@ describe('sittingSentence', () => {
     expect(sittingSentence({ ...named, waitsFor: undefined })).toContain('personal、acct-77aa00ff 未登录');
   });
 
+  /** ACCTQUOTE1 (D125's ACCTQUOTE1 note): each sign-in is a command a person pastes, so its id is spelled for a shell. */
+  it('spells each sign-in\'s account for a shell, and names one no shell can take by a placeholder', async () => {
+    const reason = 'no `claude-code` account this start may use is ready.';
+    const signedOut: Consideration = {
+      ...sits('Blocked', reason), signedOut: { agent: 'claude-code', accounts: ['R&D', 'my lab', 'account-2'] },
+    };
+
+    await i18n.changeLanguage('zh');
+    const said = sittingSentence(signedOut);
+    expect(said).toContain('`daoris agent login claude-code --profile <account>`');
+    expect(said).toContain('`daoris agent login claude-code --profile "my lab"`');
+    expect(said).toContain('`daoris agent login claude-code --profile account-2`');
+    // The accounts are said as they are; only the command is spelled.
+    expect(said).toContain('R&D、my lab、account-2 未登录');
+  });
+
   /**
    * PAUSE1e (D132 §2.3): a paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
    * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (a shell older than the
