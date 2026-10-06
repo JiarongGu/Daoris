@@ -16,11 +16,15 @@ import { useDoor } from './door';
 
 export function ProjectsView({
   notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened, door, section = null,
+  onOpenQuest, onOpenAsk, onAttend,
 }: {
   notify: Notify;
   onOpenCode?: (repository: string) => void;
   onOpenAgent?: (agent: string) => void;
   onSyncNow?: (workspace: string) => void;
+  onOpenQuest?: (id: string) => void;
+  onOpenAsk?: (id: string) => void;
+  onAttend?: (session: string) => void;
   addRequested?: boolean;
   onAddOpened?: () => void;
   importRequested?: boolean;
@@ -46,6 +50,7 @@ export function ProjectsView({
     onWorkspaceTab: (next) => { setWorkspaceTab(next); storeWorkspaceTab(next); },
     workspaceSection: section,
     notify, onOpenCode, onOpenAgent, onSyncNow, addRequested, onAddOpened, importRequested, onImportOpened,
+    onOpenQuest, onOpenAsk, onAttend,
   });
   return <ViewFrame layout={layout} lists={lists} over={over} onOver={setOver} />;
 }

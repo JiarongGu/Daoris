@@ -17,11 +17,13 @@ import {
 import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import { namer } from './settings/namer';
 import {
-  retryNotice, useConsidered, useDriver, useHarnesses, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace, useTrustFolder,
-  useUntrusted, useWorkPlan,
+  retryNotice, useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useRetryQuest, useSetHold, useTrace,
+  useTrustFolder, useUntrusted, useWorkPlan,
 } from './shell';
 import { sittingBecause } from './signals';
 import { failure, type Notify, useErrorNotify } from './ui';
+import type { HistoryDoor } from './work/history';
+import { useHistoryActs } from './work/historyActs';
 import { ListMore } from './work/ListPane';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from './work/pausing';
 import type { TraceDoor } from './work/HowItCameToBe';
@@ -150,6 +152,16 @@ export function useQuestsView({
   const trace = useTrace('quest', tracing);
   // The last abandon's answer, for the quest it was of, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
+  // The chosen quest as its page shows it: the list's copy, or the door's last answer while the list catches up.
+  const shownQuest = item && 'quest' in item
+    ? freshest(everything.data?.find((quest) => quest.id === item.quest), held?.id === item.quest ? held : null)
+    : undefined;
+  // Its clears (HIST1e, D153 §6.1): the plans of its work and its failed sessions, asked only while Quests is in front and the
+  // quest is closed, since a clear never takes work in progress; and the second press.
+  const closedQuest = shownQuest?.status === 'Done' || shownQuest?.status === 'Declined';
+  const historyOf = useHistoryPlan(shownQuest ? { scope: 'quest', id: shownQuest.id } : null, { enabled: active && closedQuest });
+  const failedOf = useHistoryPlan(shownQuest ? { scope: 'failed', id: shownQuest.id } : null, { enabled: active && closedQuest });
+  const historyActs = useHistoryActs({ notify });
   // Every query this view renders from — a session surface or driver bridge that fails silently is
   // indistinguishable from a family with no driver attached. Said once, while the view is in front (D118 §3h).
   useErrorNotify(active ? quests.error ?? registry.error ?? sessions.error ?? driver.error : null, notify);
@@ -285,6 +297,24 @@ export function useQuestsView({
     };
   };
 
+  // What the page is handed of its clears: nothing in a browser, which has no driver and no home (D47 §4). A quest's clear
+  // takes its record, so the page closes and the list it came from is shown (§6.1); its failed sessions' leaves it.
+  const historyDoor = (quest: Quest): HistoryDoor | undefined => {
+    if (!historyOf.available) return undefined;
+    return {
+      plan: historyOf.plan?.id === quest.id ? historyOf.plan : null,
+      failed: failedOf.plan?.id === quest.id ? failedOf.plan : null,
+      busy: historyActs.busy,
+      onClear: (target, units, done) => historyActs.clear(target, units, () => {
+        done();
+        if (target.scope === 'quest') {
+          setHeld(null);
+          onChoose(null);
+        }
+      }),
+    };
+  };
+
   const pageOf = (quest: Quest): ReactNode => {
     const session = latest.get(quest.id) ?? null;
     const hold = untrusted.find((candidate) => candidate.quest === quest.id) ?? null;
@@ -330,6 +360,7 @@ export function useQuestsView({
         onAttend={attend}
         onOpenAsk={(id) => onChoose(askItem(id))}
         work={workDoor(quest)}
+        history={historyDoor(quest)}
         trace={traceDoor(quest)}
       />
     );
@@ -348,9 +379,6 @@ export function useQuestsView({
     };
   };
 
-  const shownQuest = item && 'quest' in item
-    ? freshest(everything.data?.find((quest) => quest.id === item.quest), held?.id === item.quest ? held : null)
-    : undefined;
   const main = item && 'ask' in item
     ? asks.page
     : item

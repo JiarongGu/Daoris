@@ -8,13 +8,15 @@ import { askItem } from '../opener';
 import { useAnswerGoAhead, useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
 import { namer } from '../settings/namer';
-import { useConsidered, useDriver, useHarnesses, useNudge, useRemotes, useWorkPlan } from '../shell';
+import { useConsidered, useDriver, useHarnesses, useHistoryPlan, useNudge, useRemotes, useWorkPlan } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { askStanding, freshest } from '../quests/records';
 import type { ChoiceStanding } from '../work/listPanes';
 import type { AskRowFacts } from '../quests/QuestList';
 import { QuestsMainNotice } from '../quests/QuestPage';
+import type { HistoryDoor } from '../work/history';
+import { useHistoryActs } from '../work/historyActs';
 import { type AbandonAnswer, wiredFor, type WorkDoor, type WorkTarget } from '../work/pausing';
 import { useWorkActs } from '../work/workActs';
 import { questName } from '../work/identity';
@@ -117,6 +119,16 @@ export function useAsksPart({
   const considered = useConsidered().data ?? [];
   // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
+  const shown = chosen
+    ? freshest(every.data?.find((candidate) => candidate.id === chosen), held?.id === chosen ? held : null)
+    : undefined;
+  // Its clear (HIST1e, D153 §6.1): the plan of its work, asked only while Quests is in front and the ask is done or closed,
+  // since a clear never takes work in progress; and the second press.
+  const historyOf = useHistoryPlan(
+    shown ? { scope: 'ask', id: shown.id } : null,
+    { enabled: active && (shown?.state === 'Done' || shown?.state === 'Closed') },
+  );
+  const historyActs = useHistoryActs({ notify });
 
   const circles = workspacesOf(family.data ?? []);
   const fixed = scope.workspace ?? (circles.length === 1 ? circles[0] : null);
@@ -190,9 +202,19 @@ export function useAsksPart({
     onError: failure(notify),
   });
 
-  const shown = chosen
-    ? freshest(every.data?.find((candidate) => candidate.id === chosen), held?.id === chosen ? held : null)
-    : undefined;
+  // What the page is handed of its clear: nothing in a browser, which has no driver and no home (D47 §4). The clear takes
+  // the ask's record, so the page closes and the list it came from is shown (§6.1).
+  const historyDoor = (item: Ask): HistoryDoor | undefined => (historyOf.available
+    ? {
+        plan: historyOf.plan?.id === item.id ? historyOf.plan : null,
+        busy: historyActs.busy,
+        onClear: (target, units, done) => historyActs.clear(target, units, () => {
+          done();
+          setHeld(null);
+          onChoose(null);
+        }),
+      }
+    : undefined);
 
   // What the page is handed of this machine's driver for the ask: nothing in a browser, which has none (D47 §4).
   const workDoor = (item: Ask): WorkDoor | undefined => {
@@ -231,6 +253,7 @@ export function useAsksPart({
           onOpenQuest={(id) => onChoose(id)}
           onAnswerGoAhead={(number, approved, words) => onAnswerGoAhead(shown.id, number, approved, words)}
           work={workDoor(shown)}
+          history={historyDoor(shown)}
           considered={considered}
           nameOf={nameOf}
         />

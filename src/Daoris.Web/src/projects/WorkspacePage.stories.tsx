@@ -4,7 +4,11 @@ import type { StartWiring } from '../map/wiring';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
 import { SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
+import { chinese } from '../storyLanguage';
+import type { HistoryPlan } from '../work/history';
+import { WORKSPACE_EMPTY, WORKSPACE_PLAN } from '../work/historyFixtures';
 import { LANGUAGES } from './fixtures';
+import { KeptHistory } from './KeptHistory';
 import type { WorkspaceTab } from './tabs';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
@@ -69,25 +73,38 @@ type Args = {
   browser?: boolean;
   /** Wired to a deployment, or local only. */
   wired?: boolean;
+  /** What this machine keeps of its finished work (HIST1e), as `HISTORY_PLAN` answers it. */
+  kept?: HistoryPlan;
 };
 
 /** The page as `WorkspaceView` draws it, its tab chosen here so a story can move between them. */
-function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true }: Args) {
+function Page({ tab: first, setup = DEFAULTS_DAORIS, browser = false, wired = true, kept = WORKSPACE_PLAN }: Args) {
   const [tab, setTab] = useState<WorkspaceTab>(first);
   const details = (
-    <WorkspaceDetails
-      repositories={REPOSITORIES}
-      onOpen={nothing}
-      starts={browser ? null : {
-        list: [START('work'), START('intake', { profile: null, profileFrom: 'unset', refusal: null })],
-        nameOf: (_owner, profile) => (profile ? `${profile === 'account-2' ? 'home' : 'work'}@example.invalid` : 'own@example.invalid'),
-      }}
-      accounts={browser ? null : [
-        { agent: 'claude-code', product: 'Claude Code', own: true, accounts: ['home@example.invalid', 'work@example.invalid'] },
-        { agent: 'codex', product: 'Codex', own: false, accounts: ['me@example.invalid'] },
-      ]}
-      onOpenAgent={nothing}
-    />
+    <>
+      <WorkspaceDetails
+        repositories={REPOSITORIES}
+        onOpen={nothing}
+        starts={browser ? null : {
+          list: [START('work'), START('intake', { profile: null, profileFrom: 'unset', refusal: null })],
+          nameOf: (_owner, profile) => (profile ? `${profile === 'account-2' ? 'home' : 'work'}@example.invalid` : 'own@example.invalid'),
+        }}
+        accounts={browser ? null : [
+          { agent: 'claude-code', product: 'Claude Code', own: true, accounts: ['home@example.invalid', 'work@example.invalid'] },
+          { agent: 'codex', product: 'Codex', own: false, accounts: ['me@example.invalid'] },
+        ]}
+        onOpenAgent={nothing}
+      />
+      {/* What this machine keeps of its finished work, and its clear (HIST1e): a shell's, so a browser's page has none. */}
+      {!browser && (
+        <KeptHistory
+          workspace="work"
+          plan={{ ...kept, id: 'work', reading: kept.reading && { ...kept.reading, workspace: 'work' } }}
+          doors={{ branches: () => setTab('branches'), sync: wired ? nothing : undefined, quest: nothing, ask: nothing, session: nothing }}
+          onClear={nothing}
+        />
+      )}
+    </>
   );
   const body = browser || tab === 'details'
     ? details
@@ -139,8 +156,17 @@ export default meta;
 
 type Story = StoryObj<typeof Page>;
 
-/** Details: its seven repositories as doors, what a start and an intake run on, and the accounts each agent may run here. */
+/**
+ * Details: its seven repositories as doors, what a start and an intake run on, the accounts each agent may run here, and
+ * *Kept on this machine* with *Clear history…* (HIST1e).
+ */
 export const Details: Story = {};
+
+/** Details in 中文: *本机保留的记录* and *清除记录…*. */
+export const DetailsChinese: Story = { decorators: [chinese] };
+
+/** Details on a workspace with nothing finished: the reading says so, and no press is offered. */
+export const DetailsNothingKept: Story = { args: { kept: WORKSPACE_EMPTY } };
 
 /** Branches: the clean-up across its repositories, and bringing them up to date before anyone has looked. */
 export const Branches: Story = { args: { tab: 'branches' } };

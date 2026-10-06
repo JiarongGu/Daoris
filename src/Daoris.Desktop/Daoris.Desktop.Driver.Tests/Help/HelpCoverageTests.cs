@@ -389,6 +389,8 @@ public sealed partial class HelpCoverageTests
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); its screen is a workspace's page → Branches → *Clean up…* since UX6g.")),
         // LAND3b (D102): a failed attempt's branch, discarded from a Branches row or a session whose tree is gone.
+        // HIST1e (D153): a workspace's *Clear history…*, and a quest's and an ask's clears pressed through the same owner.
+        ("projects", "useClearHistory", null, ClearDoor),
         ("projects", "useDiscardSessionBranch", null, new Exempt(
             "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
             + "(D89), as the clean-up beside it does.")),

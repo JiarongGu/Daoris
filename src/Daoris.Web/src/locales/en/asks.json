@@ -54,6 +54,8 @@
   "asks.record.deleteTitle": "delete this ask",
   "asks.record.deleteConfirm": "This removes the ask from this machine, and every quest it became goes with it. It cannot be undone.",
   "asks.record.deleteMeanIt": "Delete ask",
+  "asks.record.clear": "Clear from this machine…",
+  "asks.record.clearMeanIt": "Clear ask",
   "asks.tier.intake": "an intake session read it and published it",
   "asks.tierShort.intake": "by intake",
   "asks.record.intake": "Intake session",

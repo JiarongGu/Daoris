@@ -1,0 +1,95 @@
+import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n';
+import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN } from '../work/historyFixtures';
+import { KeptHistory } from './KeptHistory';
+
+// A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1): always the reading of what the
+// home keeps of its finished work, then *Clear history…* while anything may go, listing first and sending on its second
+// press exactly the units it listed. A molecule: every state is reached by passing it, and every press goes out.
+
+describe('a workspace’s Kept on this machine (design §2.4)', () => {
+  it('reads what the home keeps, what a clear would take, and what keeps the rest, each with its door', async () => {
+    const doors = { branches: vi.fn(), sync: vi.fn() };
+    render(<KeptHistory workspace="aurora" plan={WORKSPACE_PLAN} doors={doors} onClear={() => {}} />);
+
+    const section = screen.getByRole('region', { name: 'Kept on this machine' });
+    expect(section).toHaveTextContent('11 closed quests, 2 asks, 14 sessions, 1 copy of a teammate’s record: 23.6 MB.');
+    expect(section).toHaveTextContent('A clear would take 4 closed quests, 1 ask, 6 sessions, 1 copy of a teammate’s record: 20.6 MB.');
+    expect(section).toHaveTextContent('3 conversations that served no quest, 1.2 MB: only Delete… in Sessions takes them, one at a time.');
+    expect(section).toHaveTextContent('3.1 MB on this machine is left over from records already gone');
+    expect(section).toHaveTextContent('The machine log holds 2.4 MB and keeps its own 30 days; a clear never touches it.');
+
+    const kept = within(section).getByRole('list', { name: 'What stays' });
+    expect(within(kept).getAllByRole('listitem').map((row) => row.firstChild?.textContent)).toEqual([
+      '1 kept: a session is still running', '2 kept: waiting on you', '1 kept: a landing’s branch still stands',
+      '1 kept: its last moves have not reached the remote',
+    ]);
+    await userEvent.click(within(kept).getByRole('button', { name: 'Open branches' }));
+    expect(doors.branches).toHaveBeenCalledOnce();
+    await userEvent.click(within(kept).getByRole('button', { name: 'Sync now' }));
+    expect(doors.sync).toHaveBeenCalledOnce();
+  });
+
+  it('offers Clear history… while anything may go, lists first, and sends exactly the units it listed', async () => {
+    const clear = vi.fn();
+    const { rerender } = render(<KeptHistory workspace="aurora" plan={WORKSPACE_PLAN} onClear={clear} />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
+    const ask = screen.getByRole('group', { name: 'clear from this machine' });
+    expect(screen.queryByRole('button', { name: 'Clear history…' })).toBeNull();
+    // The reading is asked again while the list is open: the press still sends what was listed.
+    rerender(<KeptHistory workspace="aurora" plan={WORKSPACE_KEPT} onClear={clear} />);
+    await userEvent.click(within(ask).getByRole('button', { name: 'Clear 3' }));
+    expect(clear).toHaveBeenCalledWith(
+      [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }], expect.any(Function),
+    );
+    // Once the driver answers, the list is put down.
+    act(() => clear.mock.calls[0]![1]());
+    expect(await screen.findByRole('region', { name: 'Kept on this machine' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'clear from this machine' })).toBeNull();
+  });
+
+  it('sends no unit where only left-over files and the intake’s room go', async () => {
+    const clear = vi.fn();
+    render(<KeptHistory workspace="aurora" plan={WORKSPACE_LEFT_OVER} onClear={clear} />);
+    expect(screen.getByRole('region')).toHaveTextContent('A clear would take 3.1 MB: files no record here holds any more.');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Clear 5' }));
+    expect(clear).toHaveBeenCalledWith([], expect.any(Function));
+  });
+
+  it('offers nothing where the plan lists nothing that may go, and says so', () => {
+    const { unmount } = render(<KeptHistory workspace="aurora" plan={WORKSPACE_KEPT} onClear={() => {}} />);
+    expect(screen.getByRole('region')).toHaveTextContent('A clear would take nothing now.');
+    expect(screen.queryByRole('button', { name: 'Clear history…' })).toBeNull();
+    unmount();
+
+    render(<KeptHistory workspace="aurora" plan={WORKSPACE_EMPTY} onClear={() => {}} />);
+    expect(screen.getByRole('region')).toHaveTextContent('Nothing finished is kept here.');
+    expect(screen.queryByRole('button', { name: 'Clear history…' })).toBeNull();
+  });
+
+  it('says it is reading, says a refusal in place, and is absent where the host answers no plan', () => {
+    const { rerender, container } = render(<KeptHistory workspace="aurora" plan={null} reading onClear={() => {}} />);
+    expect(screen.getByRole('region')).toHaveTextContent('Reading what this machine keeps…');
+    rerender(<KeptHistory workspace="aurora" plan={null} refusal="The service has no history door." onClear={() => {}} />);
+    expect(screen.getByRole('region')).toHaveTextContent('The service has no history door.');
+    rerender(<KeptHistory workspace="aurora" plan={null} onClear={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('names itself and its press in 中文', () => {
+    render(
+      <I18nextProvider i18n={i18n.cloneInstance({ lng: 'zh' })}>
+        <KeptHistory workspace="aurora" plan={WORKSPACE_PLAN} onClear={() => {}} />
+      </I18nextProvider>,
+    );
+    const section = screen.getByRole('region', { name: '本机保留的记录' });
+    expect(section).toHaveTextContent('2 项保留：正在等你');
+    expect(within(section).getByRole('button', { name: '清除记录…' })).toBeInTheDocument();
+  });
+});
