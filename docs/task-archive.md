@@ -11372,3 +11372,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6a — counter and installed baseline** (tools). Contract/proof: UX6 §9.1–§9.3.
 
 **Outcome** 2026-10-07: built (the counter); the install's baseline is UX6a2. `tools/ux-count.mjs` counts a screen's regions (list, main, the frame apart) in §9.1's concepts, controls, words and screens, from one page function sent unchanged to Playwright over stories (`--stories`, en light and 中文 dark at 1546 and 680 px) and to the window through `npm run desktop -- eval --file` (`--window`, then `--window --read`). Presses are a declared, unmeasured table. It reproduces UX6f's scratch counts exactly. `tools/ux-count.test.mjs` (18) runs in the web's own chromium. Detail: D150's UX6a note; commits 29d8c8bf, 32d00de8.
+
+
+## INIT1 — stable initial line endings (2026-10-07, D25)
+
+> - [ ] **INIT1 — stable initial line endings**. If absent, init creates `.gitattributes` with `* text=auto eol=lf` to prevent bytewise drift under autocrlf. Contract: original setup finding.
+
+**Outcome** 2026-10-07: `init` writes `.gitattributes` (`* text=auto eol=lf`) where a repository has nothing at that path, applied before the manifest so a failed run leaves a file a re-run keeps; an existing one is kept byte for byte, and named when its last `*` eol rule does not pin LF. It is deliberately never recorded in `daoris.lock`: a locked path the canon does not hold reads as a retirement (D19), so the file is the repository's own from then on, as `daoris.json` is. A driven set-up's brief (`SetupBrief`) does not yet say init may write it. CLI 1313 → 1333. Detail: D25's 2026-10-07 note; commit c6f21162.

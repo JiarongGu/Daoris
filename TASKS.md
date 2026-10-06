@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,313 CLI, 1,215 service, 73 HTTP host, 5,009 driver (4,297 fast; three new Process cases await the full set), 721 modules, 80 devkit, 4,205 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,333 CLI, 1,215 service, 73 HTTP host, 5,009 driver (4,297 fast; three new Process cases await the full set), 721 modules, 80 devkit, 4,205 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -165,6 +165,7 @@ Contracts: `docs/2026-10-01-workspace-setup-design.md` §8 (D124), `docs/2026-10
 - [ ] **WSSETUP14b — knowledge stays in place** (after a). Declare `documents.knowledge`; index/service read it and sync never writes it. Contract: pilot §1.2–§1.3. Proof: twin tables.
 - [ ] **WSSETUP14c — heading without frontmatter** (after a). Contract: pilot §3.1–§3.2. Proof: `node --test`.
 - [ ] **WSSETUP14d — setup keeps checks green** (after b; absorbs SETUP2). Check before/after; preserve knowledge, repoint moved paths/readers, never finish red; list hand indexes without deletion and use subject names. Contract: pilot §1.1, §1.4–§1.6, §3.3; D129 §4.5. Proof: brief/playbook twins and moved-path family phase.
+- [ ] **INIT1b — the set-up brief names `.gitattributes`** (driver). `SetupBrief` says a set-up changes no source, build or CI file, yet its `daoris init` step now writes `.gitattributes` where a repository has none (INIT1). Say so in the brief, and that an existing one is never touched. Contract: D25's INIT1 note. Proof: `SetupBriefTests` golden.
 - [ ] **WSSETUP14e — finish setup branch** (after d). Exact merge rule in follow-up quest. Contract: pilot §4.2. Proof: composer/press tests and family setup phase.
 - [ ] **WSSETUP14f — finish pilot** (owner; after republish). Both repositories: checks green, knowledge declared, root under 32,768 bytes, default budget restored. Contract: pilot §4. Proof: real pilot.
 - [ ] **KNOW3a — 169-document opaque-name bench**. Measure index whole-reading and skill truncation at scale. Contract: bench results §5/§6.1. Proof: `knowledge-bench.mjs` rerun, tests in verify.
@@ -190,7 +191,6 @@ Contract: `docs/2026-10-01-plugin-distribution-design.md` (D120); §7 carries fu
 - [ ] **PLUGDIST1f — first publish** (owner). Account, trusted publishing and prefix. Contract/proof: §7.
 - [ ] **PLUGDIST1g — offers from packages** (after f). Contract/proof: §7.
 - [ ] **PLUGDIST1h — verify repository signature** (held). Contract/proof: §7; retain its trigger.
-- [ ] **INIT1 — stable initial line endings**. If absent, init creates `.gitattributes` with `* text=auto eol=lf` to prevent bytewise drift under autocrlf. Contract: original setup finding.
 
 ## Safe-work declarations
 
