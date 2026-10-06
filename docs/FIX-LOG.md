@@ -95,6 +95,12 @@ FLAKE1 row keeps what to do and its proof; this entry keeps the evidence the cau
 shared fixture's cleanup (`test/_fixture.ts`) now retries, as the rehearsals' cleans do. Twelve test files still delete
 their own folders once; a sighting from one of them is the same kind.
 
+*A second kind found and fixed (2026-10-07):* `plugin-sources.test.ts:317` and `plugins.test.ts:409` still met EPERM in
+that retrying cleanup, three sightings under parallel load (a subagent's verify twice, UX7a2's merge gate once). Each test
+starts a holder process in the plugin's folder, kills it, then waited a fixed 300 ms: a kill only asks, and under load
+the holder had not ended within the wait plus the cleanup's five seconds of retries. Each now waits for the holder's
+`exit`, as `setup-kit.test.ts`'s stub runs already wait for `close`.
+
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle
 machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit threw
