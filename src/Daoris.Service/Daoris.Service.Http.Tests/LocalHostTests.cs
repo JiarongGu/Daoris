@@ -568,6 +568,33 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// CARRY2: a carry-on over a take that is not this machine's is a state conflict, 409, as a taken quest is, and its
+    /// sentence names the session it will not carry on. Here that session failed before its take, and the quest was taken
+    /// through the door after it ended.
+    /// </summary>
+    [Fact]
+    public async Task A_carry_on_over_a_take_made_after_its_session_ended_is_refused_409()
+    {
+        var quest = await PublishAsync("A quest whose session failed before it took it");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        Assert.Equal(200, (await host.PostAsync(
+            $"/api/sessions/{id}/state", new { state = "failed", note = "the harness exited before its first turn." })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+
+        var refused = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+
+        Assert.Equal(409, refused.Status);
+        Assert.Contains($"taken here after session `{id}` ended", refused.Error);
+    }
+
+    /// <summary>
     /// LANG1a (D142 point 2): the state door takes a note's parts beside it, and the record's route and the list answer
     /// them back, the note unchanged beside them. A note sent without parts clears them, so an older driver's note never
     /// sits beside stale ones; a move that sends no note keeps both; an answer adds its own lines after them.
