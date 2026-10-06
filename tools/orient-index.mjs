@@ -1175,7 +1175,11 @@ export function noteLabel(line) {
   return truncate(span, 80);
 }
 
-/** One decision file read for the digest: its title and date, its entry's lines before the first note, and each note's. */
+/**
+ * One decision file read for the digest: its title and date, its entry's lines before the first note, and each note's.
+ * The service's `DecisionNotes` finds and labels the notes by the same rules with code of its own (ORIENT1g); both are
+ * held to `orient-index-fixtures/decision-notes.json`, row for row, here by `orient-index.test.mjs` (ORIENT1h).
+ */
 function readDecision(id, lines) {
   const inFence = fenced(lines);
   const heading = lines.findIndex((line, i) => !inFence[i] && line.startsWith(`## ${id}`));

@@ -144,7 +144,8 @@ export function fenced(text) {
  * (§1.3), each a bold or italic word naming a build, a fix, an amendment or a reading, with its date on the line;
  * and its per-file replay found the commonest left glued to the paragraph above (§2.1), which count with or
  * without a date. A rarer word counts only with a date, so an emphasised sentence that opens with one
- * (`**Proven without the rehearsal**`) is not taken for a note.
+ * (`**Proven without the rehearsal**`) is not taken for a note. The service's `DecisionNotes` copies these forms; the
+ * digest that reads them and it are held to `orient-index-fixtures/decision-notes.json` (ORIENT1h).
  */
 const NOTE_LABEL = [
   /^\*\*(As built|Built|Fixed|Read|Amended)\b/,
