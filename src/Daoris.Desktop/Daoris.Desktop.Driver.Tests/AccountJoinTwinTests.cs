@@ -64,6 +64,7 @@ public sealed class AccountJoinTwinTests : IDisposable
     [InlineData("a workspace naming only another agent's account takes this machine's list", """{"workspaces":{"work":{"codex":"account-1"}}}""", "claude-code", "account-2", "work", "refused borrows")]
     [InlineData("another agent's list is not this one's", """{"rotation":{"codex":["account-1"]}}""", "claude-code", "account-2", null, """{"defaults":{},"workspaces":{},"rotation":{"codex":["account-1"],"claude-code":["account-2"]}}""")]
     [InlineData("a list's settings stay with it", """{"workspaceRotation":{"work":{"claude-code":["account-1"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}""", "claude-code", "account-2", "work", """{"defaults":{},"workspaces":{},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}""")]
+    [InlineData("a workspace named in another case joins its own list, as first written", """{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}""", "claude-code", "account-2", "WORK", """{"defaults":{},"workspaces":{},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}""")]
     public void An_account_joins_a_list_as_the_cli_joins_it(string why, string before, string agent, string account, string? workspace, string after)
     {
         var settings = Read(before);
@@ -93,6 +94,7 @@ public sealed class AccountJoinTwinTests : IDisposable
     [InlineData("an account compares exactly, as the wiring compares it", """{"rotation":{"claude-code":["account-1"]}}""", "claude-code", "Account-1", "[]")]
     [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"workspaces":{"straße":{"claude-code":"account-1"}},"workspaceRotation":{"STRASSE":{"claude-code":["account-1"]}}}""", "claude-code", "account-1", """[{"workspace":"STRASSE","list":true,"default":false},{"workspace":"straße","list":false,"default":true}]""")]
     [InlineData("a dotted capital I is not an i with a dot above", """{"workspaces":{"İzmir":{"claude-code":"account-1"}},"workspaceRotation":{"i\u0307zmir":{"claude-code":["account-1"]}}}""", "claude-code", "account-1", """[{"workspace":"i\u0307zmir","list":true,"default":false},{"workspace":"İzmir","list":false,"default":true}]""")]
+    [InlineData("a workspace is one in any case: its default and its list are one place, as first written", """{"workspaces":{"Work":{"claude-code":"account-1"}},"workspaceRotation":{"work":{"claude-code":["account-1"]}}}""", "claude-code", "account-1", """[{"workspace":"Work","list":true,"default":true}]""")]
     public void An_account_s_places_read_as_the_cli_reads_them(string why, string wiring, string agent, string account, string places)
     {
         var read = Read(wiring).PlacesOf(agent, account);

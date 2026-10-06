@@ -134,6 +134,7 @@ public sealed class RotationUseTwinTests : IDisposable
     [InlineData("a workspace's list for another agent is not this one's", """{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"codex":["account-9"]}},"workspaceRotationUse":{"work":{"codex":{"early":false}}}}""", "claude-code", "work", "machine", """["account-1"]""", "account-1", "none")]
     [InlineData("one account in a list: every setting as written, nothing counted", """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"order","early":false}}}""", "claude-code", null, "machine", """["account-1"]""", "account-1", "order early=off")]
     [InlineData("a file that does not read is none", "not json", "claude-code", null, "machine", null, null, "none")]
+    [InlineData("a workspace is read in any case: its default, its list and its settings", """{"workspaces":{"Work":{"claude-code":"account-3"}},"workspaceRotation":{"work":{"claude-code":["account-2","account-3"]}},"workspaceRotationUse":{"WORK":{"claude-code":{"early":false}}}}""", "claude-code", "wORK", "workspace", """["account-2","account-3"]""", "account-3", "early=off")]
     public void A_scope_is_read_as_the_cli_reads_it(string name, string file, string agent, string? workspace, string from, string? list, string? begins, string use)
     {
         var scope = Read(file).ResolveScope(agent, workspace);
@@ -165,6 +166,7 @@ public sealed class RotationUseTwinTests : IDisposable
     [InlineData("a value this build does not know is replaced when that setting is set", """{"rotationUse":{"claude-code":{"use":"pace"}}}""", "claude-code", """{"use":"order"}""", null, """{"rotationUse":{"claude-code":{"use":"order"}}}""")]
     [InlineData("the retired prefer and parallel go with any edit", """{"rotationUse":{"claude-code":{"prefer":"left","parallel":true,"near":85}}}""", "claude-code", """{"use":"order"}""", null, """{"rotationUse":{"claude-code":{"use":"order","near":85}}}""")]
     [InlineData("no change changes nothing", """{"rotationUse":{"claude-code":{"near":85}}}""", "claude-code", "{}", null, """{"rotationUse":{"claude-code":{"near":85}}}""")]
+    [InlineData("a workspace's settings set in another case change the ones there, as first written", """{"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}""", "claude-code", """{"early":false}""", "WORK", """{"workspaceRotationUse":{"work":{"claude-code":{"use":"order","early":false}}}}""")]
     public void Settings_are_set_and_cleared_as_the_cli_writes_them(string why, string before, string agent, string change, string? workspace, string after)
     {
         Read(before).WithUse(agent, Change(change), workspace).Save(Wiring);
@@ -180,6 +182,7 @@ public sealed class RotationUseTwinTests : IDisposable
     [InlineData("a workspace's list cleared takes its settings with it, the machine's kept", """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"order"}},"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"early":false}}}}""", "claude-code", null, "work", """{"rotationUse":{"claude-code":{"use":"order"}}}""")]
     [InlineData("a list replaced keeps its settings", """{"rotation":{"claude-code":["account-1","account-2"]},"rotationUse":{"claude-code":{"use":"order","keep":"account-2"}}}""", "claude-code", """["account-2","account-1"]""", null, """{"rotationUse":{"claude-code":{"use":"order","keep":"account-2"}}}""")]
     [InlineData("a list of nobody is a clear, and its settings go", """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"early":false}}}""", "claude-code", "[]", null, "{}")]
+    [InlineData("a workspace's list cleared in another case takes its settings with it", """{"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"early":false}}}}""", "claude-code", null, "WORK", "{}")]
     public void A_lists_settings_go_with_it_as_the_cli_writes_them(string why, string before, string agent, string? order, string? workspace, string after)
     {
         Read(before).WithRotation(agent, order is null ? null : Names(order), workspace).Save(Wiring);

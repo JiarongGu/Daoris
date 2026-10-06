@@ -55,6 +55,10 @@ public sealed class ProfileDefaultTwinTests
         { "a workspace left with none is dropped, the machine's default kept", ["claude-code=play", "aurora/claude-code=work", "lab/codex=play"],
             "claude-code", null, "aurora", ["claude-code=play", "lab/codex=play"] },
         { "clearing what is not set changes nothing", ["codex=play"], "claude-code", null, "aurora", ["codex=play"] },
+        { "a workspace default set in another case replaces the one there, as first written", ["aurora/claude-code=work"], "claude-code", "play", "AURORA",
+            ["aurora/claude-code=play"] },
+        { "a workspace default cleared in another case", ["aurora/claude-code=work", "lab/codex=play"], "claude-code", null, "Aurora",
+            ["lab/codex=play"] },
     };
 
     [Theory]
