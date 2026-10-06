@@ -11526,3 +11526,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CARRY2 — carry-on verifies ownership** (service). A pre-take failure must not continue over someone else's take. Contract: D80, D126 SESSUX1b2 note. Proof: failing-first ledger refusal.
 
 **Outcome** 2026-10-07: every carry-on asks whose the take is (`SessionLedger.TakenElsewhereAsync`, after the existing not-open refusal), and one over another machine's take (the log's machine, whatever the clocks say) or a take made here after the session ended is refused as `TakenElsewhere` (409 at the HTTP door), naming the teammate's newest record or "another machine". An unmarked take made while the session ran is still carried on, since the HTTP door marks no take. Closes the two gaps D126's SESSUX1b2 note named. The planner still asks at every look (CARRY2b). Service +7 (1307 with main), HTTP 73 → 74. Detail: D80's CARRY2 note; commit 260a43f1.
+
+
+## HIST1g — the family rehearsal clears (2026-10-07, D153)
+
+> - [ ] **HIST1g — family rehearsal clears** (tools; after d; the parent runs it). On the two-machine circle, a closed quest cleared on one machine stays on the other and the remote, does not return after a pass, and its words asked again are refused. Contract: §3, §12. Proof: the phase, run at the merge.
+
+**Outcome** 2026-10-07: phase 11a of the family rehearsal clears on the two-machine circle: a closed quest is forgotten on machine a while machine b and the remote keep it, its words are refused (409), a teammate's later take and dismissal on it are passed over by a's fetch (scanned in a's store bytes, since an orphan replays to no quest), and a no-remote workspace's quest simply goes and its words make it again; the machine log holds three `history.cleared` lines, door terminal, counts only. Family rehearsal 374 → 390 checks. A workspace renamed and fetched from zero, and a third machine's first fetch, are left to `HistorySyncTests`. Detail: D153's HIST1g note; commit 4144ff91.

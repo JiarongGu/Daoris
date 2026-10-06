@@ -2388,6 +2388,268 @@ check('…and none of a quest file’s bytes, relayed or sent straight at it',
   !remoteBytes.includes('crossing marker bytes') && !remoteBytes.includes('bytes that must not land'),
   'a quest attachment’s content reached the remote store');
 
+// -------------------------------------------------- 11a. finished history cleared from one machine
+
+section('11a. Finished history cleared from one machine: forgotten there, kept by the other and the remote, never fetched back; and what never left simply goes (D153/HIST1g)');
+
+// The clear (D153), from a terminal, on the two machines above. Machine a clears what it keeps of the crossing, a closed quest it
+// published with a file it keeps and machine b drove to done: the quest, its log, the kept file and its copy of b's record. A quest
+// a remote numbered is FORGOTTEN here (`quest_forgotten`, design §3.2): nothing is pushed and nothing travels, so b and the remote
+// keep theirs, and its words asked again are refused. Then a teammate moves on a quest a forgot, and a's next pass passes over the
+// moves (§12); and a quest in a workspace with no remote simply goes (§3.1). Section 11 ended with the remote stopped for its scan
+// and b's key revoked, so the remote comes back over the same store and b is keyed again under its own name, which is the origin
+// its records carry.
+const mintBAgain = mint('person@machine-b');
+const keyBAgain = (mintBAgain.out.split('\n')[0] ?? '').trim();
+remoteHost = await startServer(remoteEnv, REMOTE_BASE);
+if (hostB && !hostB.killed) hostB.kill();
+await sleep(700);
+hostB = await startServer({ ...hostBEnv, DAORIS_REMOTE_KEY: keyBAgain }, HOST_B_BASE);
+check(
+  'the remote is back over its store, and machine b’s host carries a key minted again under its own name',
+  mintBAgain.code === 0 && keyBAgain.startsWith('dk_') && keyBAgain !== keyB && remoteHost !== null && hostB !== null,
+  mintBAgain.out,
+);
+
+// The terminal's history verbs on machine a, driven as `quest delete` is: its host, and its driver.json, whose folder is its home.
+const clearVerb = (words) => driver({ serviceUrl: BASE, config: driverConfig, mode: words });
+// A workspace's reading as `HISTORY_PLAN` answers it (HIST1d): `reading` counts, `units[]` each with the quests it would forget.
+const readingOf = (workspace) => {
+  const read = clearVerb(`history --workspace ${workspace} --json`);
+  try {
+    return { ...read, plan: JSON.parse(read.out) };
+  } catch {
+    return { ...read, plan: null };
+  }
+};
+const syncBAgain = (args) => run(`dotnet "${driverDll}" sync ${args}`, scratch, {
+  DAORIS_SERVICE_URL: HOST_B_BASE, ...NO_REMOTE, DAORIS_REMOTE_URL: REMOTE_BASE, DAORIS_REMOTE_KEY: keyBAgain,
+}, DRIVE_TIMEOUT);
+const questOn = async (id, base = BASE, key) =>
+  ((await api('GET', '/api/quests?includeClosed=true', { base, key })).json ?? []).find((q) => q.id === id);
+const recordsOn = async (base = BASE, key) => (await api('GET', '/api/sessions?includeClosed=true', { base, key })).json ?? [];
+// Where a quest stands on each side, printed beside the checks below so a failure shows what it met.
+const clearedWhere = async (id) => {
+  const said = (q) => (q ? `${q.status}${q.conflicts?.length ? ` with ${q.conflicts.length} conflict(s)` : ''}` : 'none');
+  return `quest #${id}: machine a ${said(await questOn(id))} · machine b ${said(await questOn(id, HOST_B_BASE))}`
+    + ` · the remote ${said(await questOn(id, REMOTE_BASE, keyA))}`;
+};
+
+const crossingHere = await questOn(crossingId);
+const crossingKept = crossingHere?.attachments?.[0]?.path ?? '';
+const crossingCopy = (await recordsOn()).find((s) => s.quest === crossingId && s.id.startsWith('person@machine-b/'));
+const crossingBefore = readingOf('default');
+const crossingUnit = (crossingBefore.plan?.units ?? []).find((unit) => unit.id === crossingId);
+check(
+  'machine a’s reading lists the crossing as a unit a clear would forget: the quest and its copy of machine b’s record, no session of its own',
+  crossingBefore.code === 0 && crossingHere?.status === 'Done' && existsSync(crossingKept) && crossingCopy !== undefined
+    && crossingUnit?.kind === 'quest' && crossingUnit.clearable === true && crossingUnit.keep === null
+    && JSON.stringify(crossingUnit.forgotten) === JSON.stringify([crossingId])
+    && crossingUnit.sessions.length === 0 && JSON.stringify(crossingUnit.teammates) === JSON.stringify([crossingCopy.id]),
+  `${JSON.stringify(crossingUnit)}\n${JSON.stringify(crossingBefore.plan?.reading)}\n${crossingBefore.code === 0 ? '' : crossingBefore.out}`,
+);
+
+// The first press lists, and changes nothing.
+const crossingListed = clearVerb(`quest clear ${crossingId}`);
+check(
+  '`daoris-driver quest clear` lists what it would take on machine a, says the remote keeps the team’s copy, and changes nothing',
+  crossingListed.code === 0
+    && crossingListed.out.includes(`clearing #${crossingId} would take 1 quest and 1 teammate's copy, with what this machine kept of them`)
+    && crossingListed.out.includes("  the remote for default keeps the team's copy; this machine will not fetch it again.")
+    && (await questOn(crossingId))?.status === 'Done' && existsSync(crossingKept),
+  `${crossingListed.out}\n${await clearedWhere(crossingId)}`,
+);
+
+// The second press: records first, then the kept file the service keeps for them.
+const crossingCleared = clearVerb(`quest clear ${crossingId} --yes`);
+const crossingAfter = readingOf('default');
+check(
+  '…and with `--yes` it clears the crossing from machine a: no quest, no copy of b’s record, no kept file, and a reading one quest and one copy lighter',
+  crossingCleared.code === 0
+    && crossingCleared.out.includes(`daoris-driver: cleared #${crossingId} from this machine: 1 quest and 1 teammate's copy, `)
+    && crossingCleared.out.includes("  the remote for default keeps the team's copy; this machine will not fetch it again.")
+    && (await questOn(crossingId)) === undefined
+    && !(await recordsOn()).some((s) => s.quest === crossingId)
+    && !existsSync(crossingKept)
+    && crossingAfter.plan?.reading?.quests === crossingBefore.plan?.reading?.quests - 1
+    && crossingAfter.plan?.reading?.teammates === crossingBefore.plan?.reading?.teammates - 1
+    && !(crossingAfter.plan?.units ?? []).some((unit) => unit.id === crossingId),
+  `${crossingCleared.out}\n${await clearedWhere(crossingId)}\nreading before ${JSON.stringify(crossingBefore.plan?.reading)}`
+    + `\nreading after ${JSON.stringify(crossingAfter.plan?.reading)}`,
+);
+
+// The two machines share one driver folder in this rehearsal, so b's transcript sits beside the files a's clear removed: a
+// teammate's copy has no file on a, and b's own stays.
+const crossingOwnOnB = (await recordsOn(HOST_B_BASE)).find((s) => s.quest === crossingId);
+check(
+  '…while machine b keeps the quest, its own record of the session and the transcript beside it',
+  (await questOn(crossingId, HOST_B_BASE))?.status === 'Done'
+    && crossingOwnOnB?.state === 'completed' && !crossingOwnOnB.id.includes('/') && existsSync(crossingOwnOnB.transcript ?? ''),
+  `${await clearedWhere(crossingId)}\n${JSON.stringify(crossingOwnOnB)}`,
+);
+check(
+  '…and the remote keeps the quest and machine b’s record: nothing of the clear travelled',
+  (await questOn(crossingId, REMOTE_BASE, keyA))?.status === 'Done'
+    && (await recordsOn(REMOTE_BASE, keyA)).some((s) => s.quest === crossingId && s.id.startsWith('person@machine-b/')),
+  await clearedWhere(crossingId),
+);
+
+// The same words make the same id (H5): asked again here, they are refused as a closed quest is, since the remote holds it closed
+// and would refuse a fresh copy on every pass.
+const crossingAgain = await api('POST', '/api/quests', {
+  body: { from: 'newcomer', to: 'borealis', title: 'Cross the machines', body: 'The same words, asked again on machine a.' },
+});
+check(
+  'the same words published again on machine a are refused: cleared here, and held closed by the remote',
+  crossingAgain.status === 409
+    && (crossingAgain.json?.error ?? '').includes(
+      `Quest \`#${crossingId}\` was cleared from this machine; the remote for \`default\` holds it closed.`)
+    && (await questOn(crossingId)) === undefined,
+  crossingAgain.text,
+);
+
+// A teammate moves on a quest after this machine forgot it. Published on a and pushed, fetched by b, declined on a and pushed, then
+// cleared on a; b, which never fetched the decline, takes it, and its take reaches the remote as a conflict behind the decline,
+// which b then dismisses. A closed quest still takes both (`QuestLog.Applies`). Kept by a's fetch, they would replay to no quest,
+// so no list shows the difference: the take's reason is the mark, read in each machine's store as the remote's scan reads its own.
+const LATE_TAKE = 'machine b, after machine a forgot it';
+const forgottenAsk = await api('POST', '/api/quests', {
+  body: { from: 'newcomer', to: 'borealis', title: 'Forgotten on machine a, moved on machine b', body: 'Cleared on one machine while a teammate still acts on it.' },
+});
+const forgottenId = forgottenAsk.json?.quest?.id ?? '';
+const forgottenPushed = syncA('--workspace default');
+const forgottenFetched = syncBAgain('--workspace default');
+const forgottenDeclined = await api('POST', `/api/quests/${forgottenId}/respond`, {
+  body: { action: 'decline', reason: 'Machine a closes it before clearing it.' },
+});
+const forgottenDeclinePushed = syncA('--workspace default');
+check(
+  'a second quest is published on machine a and fetched by machine b, then declined on a: closed at the remote, still open on b',
+  forgottenAsk.status === 200 && forgottenPushed.code === 0 && forgottenFetched.code === 0
+    && forgottenDeclined.status === 200 && forgottenDeclinePushed.code === 0
+    && (await questOn(forgottenId))?.status === 'Declined'
+    && (await questOn(forgottenId, REMOTE_BASE, keyA))?.status === 'Declined'
+    && (await questOn(forgottenId, HOST_B_BASE))?.status === 'Open',
+  `${await clearedWhere(forgottenId)}\n${forgottenAsk.text}\n${forgottenFetched.out}\n${forgottenDeclinePushed.out}`,
+);
+
+const forgottenCleared = clearVerb(`quest clear ${forgottenId} --yes`);
+check(
+  'machine a clears it with `--yes`, forgotten here since the remote numbered it',
+  forgottenCleared.code === 0
+    && forgottenCleared.out.includes(`daoris-driver: cleared #${forgottenId} from this machine: 1 quest, `)
+    && forgottenCleared.out.includes("  the remote for default keeps the team's copy; this machine will not fetch it again.")
+    && (await questOn(forgottenId)) === undefined,
+  `${forgottenCleared.out}\n${await clearedWhere(forgottenId)}`,
+);
+
+const lateTake = await api('POST', `/api/quests/${forgottenId}/respond`, {
+  base: HOST_B_BASE, body: { action: 'take', reason: LATE_TAKE },
+});
+const lateTakePushed = syncBAgain('--workspace default');
+const lateConflict = await questOn(forgottenId, REMOTE_BASE, keyA);
+const lateDismissed = syncBAgain(`dismiss ${forgottenId}`);
+const lateDismissPushed = syncBAgain('--workspace default');
+const lateDismissal = await questOn(forgottenId, REMOTE_BASE, keyA);
+check(
+  'a teammate’s later moves on it reach the remote: machine b’s take, kept there as a conflict behind the decline, then b’s dismissal of it',
+  lateTakePushed.code === 0 && lateConflict?.status === 'Declined'
+    && lateConflict.conflicts?.length === 1 && lateConflict.conflicts[0].note === LATE_TAKE
+    && lateDismissed.code === 0 && /Dismissed one conflict/.test(lateDismissed.out) && lateDismissPushed.code === 0
+    && lateDismissal?.status === 'Declined' && (lateDismissal.conflicts ?? []).length === 0,
+  `${lateTake.text}\n${JSON.stringify(lateConflict)}\n${lateDismissed.out}\n${lateDismissPushed.out}\n${await clearedWhere(forgottenId)}`,
+);
+
+const passedOver = syncA('--workspace default');
+// Each host still holds its store open; a read it refuses is said, and fails the positive half rather than the gate.
+const storeBytes = (file) => {
+  try {
+    return readFileSync(join(scratch, file), 'latin1');
+  } catch (error) {
+    return `unreadable: ${error.message}`;
+  }
+};
+const storeA = storeBytes('knowledge.db');
+const storeB = storeBytes('knowledge-b.db');
+check(
+  '…and machine a’s next pass passes over both: the take’s reason lands in its store nowhere (b’s holds it), the quest stays gone, and the circle stands level',
+  passedOver.code === 0 && /^default {2}0 ahead · 0 behind · /m.test(passedOver.out)
+    && (await questOn(forgottenId)) === undefined
+    && !storeA.includes(LATE_TAKE) && storeB.includes(LATE_TAKE),
+  `${passedOver.out}\n${await clearedWhere(forgottenId)}\nin a's store: ${storeA.includes(LATE_TAKE)} · in b's store: ${storeB.includes(LATE_TAKE)}`,
+);
+
+// A workspace with no remote: aurora, which machine a's host carries no remote for until section 12 wires one, asking engine,
+// which joins nothing. A quest declined there never left the machine, so clearing the workspace's history removes it outright,
+// row and log together, and keeps nothing of it: its words make it again, as after a delete (D95).
+const NEVER_LEFT = {
+  from: 'atelier', to: 'engine', title: 'A quest that never left machine a', body: 'Declined, then cleared with its workspace’s history.',
+};
+const neverLeft = await api('POST', '/api/quests', { body: NEVER_LEFT });
+const neverLeftId = neverLeft.json?.quest?.id ?? '';
+const neverLeftDeclined = await api('POST', `/api/quests/${neverLeftId}/respond`, {
+  body: { action: 'decline', reason: 'Closed so its workspace’s history can be cleared.' },
+});
+const auroraBefore = readingOf('aurora');
+const neverLeftUnit = (auroraBefore.plan?.units ?? []).find((unit) => unit.id === neverLeftId);
+check(
+  'a quest declined in aurora, a workspace with no remote on machine a, is the one closed quest its reading lists, with nothing to forget',
+  neverLeft.status === 200 && neverLeft.json?.quest?.workspace === 'aurora' && neverLeftDeclined.status === 200
+    && auroraBefore.code === 0 && auroraBefore.plan?.reading?.quests === 1
+    && neverLeftUnit?.clearable === true && (neverLeftUnit.forgotten ?? ['?']).length === 0,
+  `${neverLeft.text}\n${JSON.stringify(auroraBefore.plan)}\n${auroraBefore.code === 0 ? '' : auroraBefore.out}`,
+);
+
+const auroraListed = clearVerb('history clear --workspace aurora');
+check(
+  '`daoris-driver history clear --workspace aurora` lists that quest to take, names no remote, and changes nothing',
+  auroraListed.code === 0
+    && auroraListed.out.includes("daoris-driver: clearing aurora's finished history would take 1 quest, ")
+    && auroraListed.out.includes(`  takes #${neverLeftId}: 1 quest, `)
+    && !auroraListed.out.includes('the remote for aurora')
+    && (await questOn(neverLeftId))?.status === 'Declined',
+  auroraListed.out,
+);
+
+const auroraCleared = clearVerb('history clear --workspace aurora --yes');
+const auroraAfter = readingOf('aurora');
+check(
+  '…and with `--yes` it simply goes: the quest gone, nothing forgotten, and the reading keeps no closed quest',
+  auroraCleared.code === 0
+    && auroraCleared.out.includes("daoris-driver: cleared aurora's finished history from this machine: 1 of 1 listed, 1 quest, ")
+    && !auroraCleared.out.includes('forgotten here')
+    && (await questOn(neverLeftId)) === undefined
+    && auroraAfter.plan?.reading?.quests === 0 && (auroraAfter.plan?.units ?? ['?']).length === 0,
+  `${auroraCleared.out}\n${JSON.stringify(auroraAfter.plan?.reading)}`,
+);
+
+const neverLeftAgain = await api('POST', '/api/quests', { body: NEVER_LEFT });
+check(
+  '…and its words make it again, open under the same id: nothing here remembers it, as after a delete',
+  neverLeftAgain.status === 200 && neverLeftAgain.json?.quest?.id === neverLeftId && neverLeftAgain.json?.quest?.status === 'Open',
+  neverLeftAgain.text,
+);
+
+// One line per press that took something (design §6.5), counts and words only: the crossing's carries machine b's copy among
+// its sessions.
+const clearedLines = readEvents(clearVerb('logs --event history.cleared --json').out, 'history.cleared');
+check(
+  'the machine log has `history.cleared` three times, counts only, each at the terminal’s door: two quests forgotten, then a workspace’s quest gone',
+  clearedLines.length === 3 && clearedLines.every((line) => line.door === 'terminal' && line.asks === 0 && line.kept === 0)
+    && clearedLines[0].scope === 'quest' && clearedLines[0].quests === 1 && clearedLines[0].sessions === 1 && clearedLines[0].forgotten === 1
+    && clearedLines[1].scope === 'quest' && clearedLines[1].quests === 1 && clearedLines[1].sessions === 0 && clearedLines[1].forgotten === 1
+    && clearedLines[2].scope === 'workspace' && clearedLines[2].quests === 1 && clearedLines[2].sessions === 0
+    && clearedLines[2].forgotten === 0
+    && ![crossingId, forgottenId, neverLeftId].some((id) => JSON.stringify(clearedLines).includes(id)),
+  JSON.stringify(clearedLines),
+);
+
+// Leave the circle as section 11 left it: the remote stopped, and nothing of this phase open for a later drive to start.
+await api('POST', `/api/quests/${neverLeftId}/respond`, {
+  body: { action: 'decline', reason: 'The rehearsal leaves nothing of phase 11a open.' },
+});
+if (remoteHost && !remoteHost.killed) remoteHost.kill();
+
 // -------------------------------------------------- 12. the remotes are a map
 
 section('12. One deployment per workspace — the remotes map (D48 §5)');
