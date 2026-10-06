@@ -80,12 +80,12 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 49 | 986 |
 | `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 72 | 1402 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 107 | 2020 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 110 | 2060 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 59 | 1150 |
-| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 60 | 1093 |
+| `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 62 | 1129 |
 | `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 51 | 929 |
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 88 | 1613 |
-| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 52 | 1113 |
+| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 54 | 1148 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 60 | 1235 |
 | `src/Daoris.Service/README.md` | 45 | 500 |
 

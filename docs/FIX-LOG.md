@@ -18,6 +18,13 @@ repository.
 - **Root cause:** every producer interpolated the value as it was. Quoting alone does not fix it: Windows PowerShell 5.1 drops the quotes of a space-free argument handed to a batch file, and the install's `daoris` is `daoris.cmd`.
 - **Fix:** one spelling, twinned in the CLI and the page: bare, double-quoted, or a placeholder where no spelling holds in all three shells.
 - **Verify:** `shellword.test.ts` passes each table row through the install's real cmd, PowerShell 5.1 and sh launchers. Commit `30461847`; D125's ACCTQUOTE1 note.
+## 2026-10-07 — store numbers taken back by a removal
+
+### Service: a removal could hand out again a number a remote or a push cursor had passed
+- **Symptom:** read from the code, not seen on an install (D153's design §0.3, H1 and H2): after D126's delete took the newest session record, the next record was written at a revision the push cursor had passed, so it never went up. After a quest's numbered operations were removed, as the hand purge removed them, the next move took a sequence the remote held: the next fetch took the remote's operation for it, or the remote answered its push as a retry, and the move was lost without an error.
+- **Root cause:** an operation's sequence was `MAX(sequence) + 1` over this machine's rows in `quest_log`, and a revision `MAX(revision) + 1` over `sessions` (SYNC1, SYNC4). A maximum over rows goes back when the newest rows go, and another party keys by both numbers: a remote and a fetch name an operation by machine and sequence, and a push sends what was written past its cursor. Latent until a record could be removed: SESSUX1f's delete (`96b932c4`) reached H2 directly; D95's outright removal reaches H1 only narrowly.
+- **Fix:** HIST1a: high-water marks in the store, `quest_machine.sequence` and a one-row `session_revision`, each moved by a trigger in the statement that writes the number; the next number is one past the larger of the rows' maximum and the mark, and a store from before seeds each at what it holds. D153's HIST1a note says what building it settled.
+- **Verify:** eight tests in `QuestLogTests`, `SessionStoreTests`, `QuestSyncTests` and `SessionSyncTests`, the last two over the wire. Six failed before the build; each seed and trigger, broken in turn, fails the tests that hold it, the two written after the build among them. `dotnet test src/Daoris.Service` passes 1178 and 68.
 
 ## 2026-10-07 — a downloaded tool's folder held by Windows
 

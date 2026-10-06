@@ -11288,3 +11288,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTQUOTE1 — account terminal hints preserve arguments** (web-shell, cli). Valid names such as `R&D` appear unquoted in rename hints and change meaning when pasted into a shell. Contract: D125 ACCT2 and `src/Daoris.Web/src/agents/AddAccount.tsx:112`. Choose quoting for supported shells or explicit placeholders; prove metacharacter names and workspace arguments remain single arguments without tightening the naming contract.
 
 **Outcome** 2026-10-07: every CLI command and page twin built from an account or workspace value goes through one spelling (`shellword.ts`, `shellWord.ts`, one table `shell-words.json`): bare, double-quoted, or a placeholder where no spelling holds in cmd, PowerShell 5.1 (through `daoris.cmd`) and sh alike. The CLI test passes each row through the install's real launchers. The naming rule is unchanged. The driver's and Settings' sentences remain (ACCTQUOTE1b, c). CLI 1294 → 1302. Detail: D125's ACCTQUOTE1 note; commit 30461847.
+
+
+## HIST1a — store numbers never go back (2026-10-07, D153)
+
+> - [ ] **HIST1a — store numbers never go back** (service; first). Keep high-water marks for operation sequences and session revisions, so no removal reissues a number the remote or push cursor passed. This closes H1–H2, which D95's and D126's deletes already reach. Contract: history-clearing §0.3, §3.3. Proof: store tests removing the newest rows; sync tests over the real wire.
+
+**Outcome** 2026-10-07: removing a store's newest rows no longer hands out a sequence or revision a remote or push cursor passed. The marks are `quest_machine.sequence` and a one-row `session_revision`, moved by triggers in the statement that writes the number and seeded at migration from what the store holds, so a store that never removed anything behaves as before. Building it found H1's second route: a fetch brings the remote's operation back under the reused number and marks the new move accepted. Service 1170 → 1178. Detail: D153's HIST1a note, FIX-LOG 2026-10-07; commits 08b135ec, 8d60d08b.
