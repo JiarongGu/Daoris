@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "npm test -w daoris",
-    "verify": "npm run typecheck -w daoris && npm test -w daoris && node src/Daoris.Cli/bin/daoris.mjs check && node tools/doc-budgets.mjs && node tools/doc-shapes.mjs && node tools/doc-duplicates.mjs && node tools/release-prep.mjs --check && dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only --allow-builtins-only",
+    "verify": "npm run typecheck -w daoris && npm test -w daoris && node src/Daoris.Cli/bin/daoris.mjs check && node tools/doc-budgets.mjs && node tools/doc-shapes.mjs && node tools/doc-duplicates.mjs && node tools/release-prep.mjs --check && node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only --allow-builtins-only",
     "rehearse": "node tools/release-rehearsal.mjs",
     "rehearse:family": "node tools/family-rehearsal.mjs",
     "rehearse:deploy": "node tools/deployment-rehearsal.mjs",
