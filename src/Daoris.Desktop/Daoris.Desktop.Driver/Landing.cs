@@ -292,8 +292,11 @@ public static class LandingRules
 
     private static readonly Regex Placeholder = new(@"\{([^{}]*)\}", RegexOptions.CultureInvariant);
 
-    /// <summary>What a plugin's id may be — the catalogue's own shape, so a rule never names a path.</summary>
-    private static readonly Regex PluginId = new("^[a-z0-9][a-z0-9.-]*$", RegexOptions.CultureInvariant);
+    /// <summary>
+    /// What a plugin's id may be — the catalogue's own shape, so a rule never names a path. <c>\z</c>, as the catalogue's,
+    /// since .NET's <c>$</c> also passes a final line break the CLI's <c>PLUGIN_ID</c> refuses (CASEFOLD1e).
+    /// </summary>
+    private static readonly Regex PluginId = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// What is wrong with a rule's shape, in a sentence, or null when it can land work. Whether its plugin
