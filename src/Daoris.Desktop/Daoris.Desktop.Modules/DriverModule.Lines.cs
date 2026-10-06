@@ -164,6 +164,64 @@ public sealed partial class DriverModule
         };
     }
 
+    // Discarding a failed or superseded attempt's branch (LAND3b, D102's LAND3 note), beside the clean-up whose list offers
+    // it: its commits are on no branch of the person's, so no landing's tidy and no clean-up takes it, and once its tree is
+    // gone the review has nothing to discard. `daoris-driver trees remove <branch> --repository <name> --force` is the
+    // terminal's door (D50): the same driver call, by the branch the clean-up's list named.
+    /// <summary>
+    /// Discard a session branch by its name and its repository (LAND3b): with its tree where it still has one.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an ANSWER, as discarding a tree's is: `{ done: false, message }` with the driver's sentence. Unforced it
+    /// is D88's proof, refusing a branch whose commits no branch of the person's holds; the page asks once, naming the
+    /// branch and its commits, and sends `force`.
+    /// </remarks>
+    [DriverRoute("DISCARD_SESSION_BRANCH")]
+    private async Task<object?> DiscardBranchAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var repository = PayloadHelper.GetRequiredValue<string>(request.Payload, "repository");
+        var branch = PayloadHelper.GetRequiredValue<string>(request.Payload, "branch");
+        var force = Flag(request, "force");
+        var service = _loop.Service ?? throw NotReady();
+
+        var removal = await DiscardBranchAsync(
+            new SessionTrees(_loop.Home), repository, branch, force,
+            checkout: token => CheckoutOfAsync(service, repository, token),
+            inUse: async token => await InUseAsync(service, token),
+            cancellationToken);
+        _loop.Nudge();
+        return new { Repository = repository, Branch = branch, Done = removal.Removed, removal.Message };
+    }
+
+    /// <summary>
+    /// The discard's body (LAND3b), its two asks of the service handed in: the sessions in use, then the repository's
+    /// checkout, where the driver removes the branch (<see cref="SessionTrees.RemoveBranchAsync"/>). Public, as
+    /// <see cref="PreviewAsync"/> is, so its tests reach it without a service.
+    /// </summary>
+    /// <remarks>
+    /// A branch whose tree a session still running or waiting names is kept, whatever the press says, as the clean-up keeps
+    /// it (D88): forced, the driver's removal would take that tree with its branch. The tree's branch is the one the layout
+    /// names (<see cref="SessionTrees.BranchOfTree"/>), so this asks git nothing.
+    /// </remarks>
+    public static async Task<TreeRemoval> DiscardBranchAsync(
+        SessionTrees trees, string repository, string branch, bool force,
+        Func<CancellationToken, Task<string?>> checkout, Func<CancellationToken, Task<IReadOnlySet<string>>> inUse,
+        CancellationToken cancellationToken)
+    {
+        var held = (await inUse(cancellationToken)).Any(tree => trees.BranchOfTree(tree) is { } of
+            && string.Equals(of.Repository, repository, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(of.Branch, branch, StringComparison.Ordinal));
+        if (held)
+        {
+            return new(false, $"a session still running or waiting holds the tree of `{branch}` in `{repository}`, so it is kept.");
+        }
+
+        var root = await checkout(cancellationToken);
+        return root is null
+            ? new(false, $"`{repository}` has no checkout here, so its branch `{branch}` cannot be removed from this machine.")
+            : await trees.RemoveBranchAsync(root, repository, branch, force, cancellationToken);
+    }
+
     // Bringing repositories up to date after a pull request merged (WSR6, D109): the list, which fetches each line —
     // moving only origin's refs — and the press, which does not fetch again: it acts on what the list fetched, and
     // only on the rows the page listed (`only`). `daoris-driver trees sync` is the terminal's door (D50).
