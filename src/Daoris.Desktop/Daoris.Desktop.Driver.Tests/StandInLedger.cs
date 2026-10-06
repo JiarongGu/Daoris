@@ -32,8 +32,19 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
     public bool Down { get; set; }
 
-    /// <summary>A client over this ledger, as a driver is handed one.</summary>
-    public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
+    /// <summary>
+    /// While true the claim door never answers (DEV3a): it is counted, then holds until the client gives up, as a host that took
+    /// the question and stalled does, so the driver meets the client's own timeout.
+    /// </summary>
+    public bool ClaimHangs { get; set; }
+
+    /// <summary>A client over this ledger, as a driver is handed one; <paramref name="timeout"/> is the client's own.</summary>
+    public ServiceClient Client(TimeSpan? timeout = null)
+    {
+        var http = new HttpClient(this, disposeHandler: false);
+        if (timeout is { } within) http.Timeout = within;
+        return new(Url, null, http);
+    }
 
     /// <summary>A repository registered and adopted here, at <paramref name="root"/>.</summary>
     public StandInLedger Register(string repository, string root)
@@ -94,6 +105,15 @@ internal sealed class StandInLedger : HttpMessageHandler
         var path = request.RequestUri!.AbsolutePath;
         var all = request.RequestUri.Query.Contains("includeClosed=true", StringComparison.Ordinal);
         var body = request.Content is null ? null : JsonNode.Parse(await request.Content.ReadAsStringAsync(ct))?.AsObject();
+
+        if (ClaimHangs && request.Method == HttpMethod.Get && path.StartsWith("/api/quests/", StringComparison.Ordinal)
+            && path.EndsWith("/claim", StringComparison.Ordinal))
+        {
+            var quest = path["/api/quests/".Length..^"/claim".Length];
+            lock (_gate) _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
+            // Held outside the gate, until the client's token ends it: its timeout, or its caller's close.
+            await Task.Delay(Timeout.Infinite, ct);
+        }
 
         lock (_gate)
         {
