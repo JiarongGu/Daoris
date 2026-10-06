@@ -7,6 +7,12 @@ repository.
 
 ## 2026-10-07 — the driver's commands and a timeout read as a close
 
+### Driver: a command the driver named broke when pasted, and its join refusal left the CLI's (ACCTQUOTE1b)
+- **Symptom:** read from the code, not seen on an install: the driver's holds, refusals and Ask Daoris's terminal twins printed an account's id or a workspace's name bare, so `--workspace my team` handed two words and `--profile R&D` ran `D` in Command Prompt; `JoinProblem.Sentence` differed from the CLI's `joinRefusal` for a workspace that needs quotes.
+- **Root cause:** ACCTQUOTE1 spelled the CLI's hints and the page's twins only; every driver producer still interpolated the value as it was.
+- **Fix:** `ShellWord`, the driver's twin of `shellword.ts`, reading the same table; every producer goes through it. D125's ACCTQUOTE1b note lists them.
+- **Verify:** `ShellWordTests` holds every row of `shell-words.json`; `AccountJoinTwinTests` holds the join refusal to the CLI's words for a spaced and an `R&D` workspace; each producer's case failed first. Commit `b885c8df`. Not run: the shells themselves, which the CLI's suite holds the table against.
+
 ### Driver host: a look that timed out printed *driver: stopped.* and exited 0 (DEV3b)
 - **Symptom:** read from the code and DEV3a's note: a `--once` or `--until-idle` run whose own request met the client's timeout ended as a person's close, so a stalled service read as a clean run.
 - **Root cause:** the host's one catch took every `OperationCanceledException` for Ctrl+C, and its close token lived inside the try, so the catch could not ask whether the close was asked for.
