@@ -373,6 +373,34 @@ public sealed class SessionStore
             await cursor.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
+        // HIST1a: the highest revision issued, one row beside the cursor it keeps honest. The table's own maximum goes back
+        // when its newest record is deleted, and the push cursor has already passed that number (H2). A store from before
+        // starts the mark at the newest revision it holds, so nothing changes for one that never deleted a record. The
+        // triggers move it in the statement that writes the revision, as one statement is what keeps a revision exact
+        // under SQLite's write lock (see NextRevision): where no transaction is open, a second statement is a second
+        // transaction, and another host could write between the two.
+        await using (var mark = _connection.CreateCommand())
+        {
+            mark.CommandText = """
+                CREATE TABLE IF NOT EXISTS session_revision (
+                  one      INTEGER PRIMARY KEY CHECK (one = 1),
+                  revision INTEGER NOT NULL
+                );
+                INSERT OR IGNORE INTO session_revision (one, revision) SELECT 1, COALESCE(MAX(revision), 0) FROM sessions;
+
+                CREATE TRIGGER IF NOT EXISTS session_revision_written AFTER INSERT ON sessions
+                BEGIN
+                  UPDATE session_revision SET revision = NEW.revision WHERE one = 1 AND revision < NEW.revision;
+                END;
+
+                CREATE TRIGGER IF NOT EXISTS session_revision_moved AFTER UPDATE OF revision ON sessions
+                BEGIN
+                  UPDATE session_revision SET revision = NEW.revision WHERE one = 1 AND revision < NEW.revision;
+                END;
+                """;
+            await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
         // SESSUX1f (D126 §5.4): whether a record went up to a remote, after the cursor it is derived from. For rows that
         // already exist it is read once from that cursor: a record of this machine's at or before what its workspace
         // pushed was examined by a push, so it is marked, which errs toward refusing a delete (a record of a repository
@@ -394,7 +422,15 @@ public sealed class SessionStore
     /// The next revision, as one statement's subquery — so under SQLite's write lock no two writes can
     /// take the same number and none can land behind one already read (SYNC4's cursor rests on it).
     /// </summary>
-    private const string NextRevision = "(SELECT COALESCE(MAX(revision), 0) + 1 FROM sessions)";
+    /// <remarks>
+    /// One past the larger of the table's newest and the mark (HIST1a), which the statement's own trigger then moves: the
+    /// table alone goes back when its newest record is deleted, and the push cursor would pass the next write by (H2).
+    /// </remarks>
+    private const string NextRevision = """
+        (SELECT MAX(
+           COALESCE((SELECT MAX(revision) FROM sessions), 0),
+           COALESCE((SELECT revision FROM session_revision WHERE one = 1), 0)) + 1)
+        """;
 
     /// <summary>
     /// Let `quest` be null on a table created before chats existed (D49 §3).

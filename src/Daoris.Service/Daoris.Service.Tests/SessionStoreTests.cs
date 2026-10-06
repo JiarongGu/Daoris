@@ -279,6 +279,65 @@ public sealed class SessionStoreTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 HIST1a (D153 point 4, H2): the revision never goes back. Deleting the newest record, as D126's delete does an
+    /// ended conversation whose close was the newest write, leaves every later write numbered past what a push already
+    /// examined: a new record, a move and a teammate's copy, even from a store opened again. Taken back, the push cursor
+    /// would pass them by and they would never go up. Whether the newest revision was written by the record's making or
+    /// by its move, each is kept.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Deleting_the_newest_record_never_hands_its_revision_out_again(bool movedLast)
+    {
+        var older = await Create();
+        var newest = await Create();
+        if (movedLast) await _sessions.SetStateAsync(newest.Id, SessionState.Completed, "talked it through.", null, null, Now);
+        var through = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Max(change => change.Revision);
+        Assert.True(await _sessions.DeleteAsync(newest.Id));
+
+        var next = await Create();
+        await _sessions.SetStateAsync(older.Id, SessionState.Working, null, null, null, Now.AddMinutes(1));
+        await _sessions.MirrorAsync(new Session(
+            "alice-laptop/ab12cd34", "abc123", "Owner", "claude-code", SessionState.Working, null, null, null, Now, Now));
+        var reopened = await SessionStore.OpenAsync(_connection);
+        var after = await reopened.CreateAsync("abc123", "Owner", "stub", Now.AddMinutes(2));
+
+        var written = await reopened.OwnChangedSinceAsync(through, Workspaces.Default);
+        Assert.Equal([next.Id, older.Id, after.Id], written.Select(change => change.Session.Id));
+        Assert.Equal([through + 1, through + 2, through + 4], written.Select(change => change.Revision));
+    }
+
+    /// <summary>
+    /// HIST1a: a store from before the mark starts it at the newest revision it holds, so a delete made after the upgrade
+    /// cannot take the revision back either.
+    /// </summary>
+    [Fact]
+    public async Task A_store_from_before_the_mark_starts_it_at_the_newest_revision()
+    {
+        await Create();
+        var newest = await Create();
+        var through = (await _sessions.OwnChangedSinceAsync(0, Workspaces.Default)).Max(change => change.Revision);
+        await using (var older = _connection.CreateCommand())
+        {
+            // The build before HIST1a: no mark, and nothing that moves one.
+            older.CommandText = """
+                DROP TRIGGER IF EXISTS session_revision_written;
+                DROP TRIGGER IF EXISTS session_revision_moved;
+                DROP TABLE IF EXISTS session_revision;
+                """;
+            await older.ExecuteNonQueryAsync();
+        }
+
+        var upgraded = await SessionStore.OpenAsync(_connection);
+        Assert.True(await upgraded.DeleteAsync(newest.Id));
+        var next = await upgraded.CreateAsync("abc123", "Owner", "stub", Now.AddMinutes(1));
+
+        var written = Assert.Single(await upgraded.OwnChangedSinceAsync(through, Workspaces.Default));
+        Assert.Equal((next.Id, through + 1), (written.Session.Id, written.Revision));
+    }
+
+    /// <summary>
     /// SESSUX1f: the store deletes a record whole when asked, and says whether there was one. It judges nothing: whether a
     /// record may go is the ledger's.
     /// </summary>
