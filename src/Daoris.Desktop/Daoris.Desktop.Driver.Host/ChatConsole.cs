@@ -16,8 +16,14 @@ namespace Daoris.Driver.Host;
 /// <para>It is also what lets the family rehearsal gate a whole conversation with no model in it:
 /// pipe a scripted exchange in, read the record out.</para>
 ///
+/// <para><b>And the terminal's *Start a conversation with these words*</b> (MSG1f3, D137 §2.2, D50):
+/// `daoris-driver sessions start-from <id>` opens the same conversation here, its first message the
+/// words a session could not go on with, through <see cref="ChatRunner.StartFromAsync"/>, the act the
+/// screen's `SESSION_START_FROM` calls. From its first message on it is this door's conversation.</para>
+///
 /// <para>Exit codes keep the family contract: 0 the conversation ran, 1 it was refused (busy,
-/// unknown repository, a non-interactive adapter), 2 the driver could not run at all.</para>
+/// unknown repository, a non-interactive adapter; for a start-from, its codes), 2 the driver could not
+/// run at all.</para>
 /// </remarks>
 internal static class ChatConsole
 {
@@ -26,22 +32,47 @@ internal static class ChatConsole
     /// no service, a service that did not answer, a file it could not read — says so in one line and
     /// exits 2. It sat outside the host's catch, so each of those was a stack trace.
     /// </summary>
-    public static async Task<int> RunAsync(string[] args)
+    public static Task<int> RunAsync(string[] args) => DoorAsync("chat", () => ConverseAsync(args));
+
+    /// <summary>
+    /// `daoris-driver sessions start-from <id>` (MSG1f3): a conversation here with the words a session
+    /// could not go on with, on the machine's adapter, as the screen's press starts one; with the same
+    /// contract as `chat`.
+    /// </summary>
+    public static Task<int> StartFromAsync(string session) => DoorAsync("sessions", () => FromAsync(session));
+
+    private static async Task<int> DoorAsync(string door, Func<Task<int>> run)
     {
         try
         {
-            return await ConverseAsync(args).ConfigureAwait(false);
+            return await run().ConfigureAwait(false);
         }
         catch (DriverException error)
         {
-            Console.Error.WriteLine($"chat: {error.Message}");
+            Console.Error.WriteLine($"{door}: {error.Message}");
             return 2;
         }
         catch (HttpRequestException error)
         {
-            Console.Error.WriteLine($"chat: could not reach the service — {error.Message}");
+            Console.Error.WriteLine($"{door}: could not reach the service — {error.Message}");
             return 2;
         }
+    }
+
+    /// <summary>
+    /// The start-from's conversation: judged, opened and handed the words by the chat runner's one act,
+    /// which takes them off the session they were said to; what it came to is one line, and where a
+    /// conversation opened it runs on here as `chat`'s does.
+    /// </summary>
+    private static async Task<int> FromAsync(string session)
+    {
+        var configPath = DriverConfig.ResolvePath();
+        var config = DriverConfig.Load(configPath);
+        return await ConverseAsync(configPath, async (runner, onEnded) =>
+        {
+            var started = await runner.StartFromAsync(session, config.Adapter, config, onEnded).ConfigureAwait(false);
+            return (started.SessionId, SessionsCommand.Started(started, Console.Error));
+        }).ConfigureAwait(false);
     }
 
     private static async Task<int> ConverseAsync(string[] args)
@@ -68,6 +99,29 @@ internal static class ChatConsole
         var configPath = DriverConfig.ResolvePath();
         var config = DriverConfig.Load(configPath);
         var adapter = Flag(args, "--adapter") ?? config.Adapter;
+        return await ConverseAsync(configPath, async (runner, onEnded) =>
+        {
+            var start = await runner.StartAsync(
+                repository, adapter, config, onEnded,
+                // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
+                profile: Flag(args, "--profile"),
+                // The per-conversation tree choice (D51) — beside the repository's standing opt-in.
+                ownTree: args.Contains("--own-tree")).ConfigureAwait(false);
+
+            // A refusal is an answer the person acts on — the ledger's own sentence, verbatim.
+            Console.Error.WriteLine($"chat: {start.Message}");
+            return (start.SessionId, start.SessionId is null ? 1 : null);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A conversation in this terminal, once <paramref name="open"/> has opened it: its lines to stdout,
+    /// the person's from stdin, until either ends it. <paramref name="open"/> answers the conversation it
+    /// opened, or none and the exit, having said why.
+    /// </summary>
+    private static async Task<int> ConverseAsync(
+        string configPath, Func<ChatRunner, Func<string, string, Task>, Task<(string? SessionId, int? Exit)>> open)
+    {
         var home = DriverConfig.HomeOf(configPath);
 
         using var service = ServiceClient.FromEnvironment();
@@ -88,30 +142,15 @@ internal static class ChatConsole
         // an exception, say — is ended and recorded through a client that is still there.
         using var runner = new ChatRunner(service, adapters, home, processes, output);
 
-        var start = await runner.StartAsync(
-            repository, adapter, config,
-            onEnded: (_, state) =>
-            {
-                ended.TrySetResult(state);
-                return Task.CompletedTask;
-            },
-            // The per-session picker, on the surface a machine with no screen has (D49 §4, D50).
-            profile: Flag(args, "--profile"),
-            // The per-conversation tree choice (D51) — beside the repository's standing opt-in.
-            ownTree: args.Contains("--own-tree")).ConfigureAwait(false);
-
-        if (start.SessionId is null)
+        var (opened, exit) = await open(runner, (_, state) =>
         {
-            // A refusal is an answer the person acts on — the ledger's own sentence, verbatim.
-            Console.Error.WriteLine($"chat: {start.Message}");
-            return 1;
-        }
-
-        Console.Error.WriteLine($"chat: {start.Message}");
+            ended.TrySetResult(state);
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
+        if (opened is not { } id) return exit ?? 1;
 
         // Stopping the turn is the terminal's third verb (CONV4a, D50): Ctrl+C while a turn runs, as a
         // person at a prompt expects of any program that is busy.
-        var id = start.SessionId;
         ConsoleCancelEventHandler interrupt = (_, pressed) =>
         {
             pressed.Cancel = true;
@@ -215,10 +254,10 @@ internal static class ChatConsole
         }
 
         // Finished through the conversation, which knows its door (CONV3b).
-        runner.Finish(start.SessionId);
+        runner.Finish(id);
 
         var state = await ended.Task.ConfigureAwait(false);
-        Console.Error.WriteLine($"chat: session {start.SessionId} is {state}.");
+        Console.Error.WriteLine($"chat: session {id} is {state}.");
         return 0;
     }
 

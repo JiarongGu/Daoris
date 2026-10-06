@@ -178,6 +178,15 @@ public sealed partial class HelpCoverageTests
         + "`daoris-driver sessions go-on-new` and the screen's press once the page has it (D137 §2.2).");
 
     /// <summary>
+    /// MSG1f3's <c>daoris-driver sessions start-from</c> (D137 §2.2, D50), a verb of the headless host: exempt, since it moves
+    /// the person's words into a conversation of their own, the person's press as the screen's is (D133 §1).
+    /// </summary>
+    private static readonly Exempt StartFromDoor = new(
+        "starting a conversation with words a session could not go on with moves the person's own words (D133 §1) into a "
+        + "conversation with none of that session's context, a press that stays the person's (D137 §2.2), so Ask Daoris "
+        + "proposes none; it can name `daoris-driver sessions start-from` and the screen's press.");
+
+    /// <summary>
     /// TRACE1's <c>daoris-driver trace</c> (D143), a verb of the headless host: exempt, since it reads the records back to an ask
     /// and changes nothing, as <c>driver list</c> is (D110 §4). A screen's door to the same read is a row of its own.
     /// </summary>
@@ -496,6 +505,8 @@ public sealed partial class HelpCoverageTests
             .Append(SessionsVerbDoor)
             .Append(AbandonDoor)
             .Append(SayDoor)
+            .Append(GoOnNewDoor)
+            .Append(StartFromDoor)
             .Append(TraceDoor)
             .Append(GitBranchesDoor)
             .Append(TreesStateDoor)
@@ -632,6 +643,20 @@ public sealed partial class HelpCoverageTests
         Assert.Null(HelpProposalKinds.Find("go-on-new"));
         Assert.Contains("D133", GoOnNewDoor.Reason);
         Assert.Contains("D143", GoOnNewDoor.Reason);
+    }
+
+    /// <summary>
+    /// MSG1f3: the headless host's <c>sessions start-from</c> is exempt from Ask Daoris while its usage spells it, as the
+    /// screen's *Start a conversation with these words* is: the person's words, moved by the person's press, with no kind of
+    /// that name to take it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_start_from_is_exempt_as_the_person_s_press()
+    {
+        Assert.Contains("sessions start-from <id>", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("start-from"));
+        Assert.Contains("D133", StartFromDoor.Reason);
+        Assert.Contains("D137", StartFromDoor.Reason);
     }
 
     /// <summary>

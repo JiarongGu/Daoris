@@ -383,6 +383,20 @@ public sealed record SessionLook(
     public IReadOnlyList<AccountWait> Waits { get; init; } = [];
 
     /// <summary>
+    /// The ended chats of this machine's the person's words wait on, not every word one its runner could not go on with
+    /// (MSG1f3, <see cref="SessionGroups.Waiting"/>): the planner never considers a chat, and its runner takes the words up at
+    /// once, so each goes on, bar what <see cref="Held"/> says holds it.
+    /// </summary>
+    public IReadOnlySet<string> ChatsWaiting { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// What holds the words on a record where the planner cannot say it (MSG1f3), by session: a chat whose runner said it
+    /// does not go on yet, and, where no loop has looked, a driven record whose words resume on its own account while that
+    /// account cools, since a fresh plan cannot see a cool-off.
+    /// </summary>
+    public IReadOnlyDictionary<string, WordsHold> Held { get; init; } = new Dictionary<string, WordsHold>(StringComparer.Ordinal);
+
+    /// <summary>
     /// A look from the records as the service answered them: parsed, and each quest's last run and strikes read by the
     /// planner's own readers, never a second copy of either rule.
     /// </summary>
@@ -530,9 +544,13 @@ public static class SessionGroups
     /// <c>SESSION_GROUPS</c> and the terminal's <c>sessions</c> both gather here, so they cannot disagree.
     /// </summary>
     /// <param name="lastLook">The loop's last look, where a loop has looked; null plans over a fresh snapshot.</param>
+    /// <param name="coolingOf">
+    /// The cool-off a start on an adapter would read for an account (MSG1f3): the home's, by <see cref="CoolingOn"/>, where
+    /// none is handed.
+    /// </param>
     public static async Task<SessionLook> LookAsync(
         ServiceClient service, DriverConfig config, SessionWire door, IReadOnlyList<Consideration>? lastLook, string home,
-        IReadOnlyCollection<string>? only = null, CancellationToken ct = default)
+        IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null)
     {
         var records = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var quests = await service.EveryQuestAsync(ct).ConfigureAwait(false);
@@ -545,7 +563,135 @@ public static class SessionGroups
         // What each quest's last session here could not go on with (MSG1f2), read as the planner's snapshot reads it.
         look = look with { Unable = new GoOnMarks(home).For(look.LastRun.Values) };
         look = look with { Kept = new SessionDeletion(home).Kept(look.Records) };
+        // MSG1f3: what holds words the planner cannot see, a chat's runner and a cool-off a fresh plan missed. The home's roster
+        // is built only where a record asks it, since most looks hold no words waiting.
+        var roster = new Lazy<Func<string?, string?, CoolingEntry?>>(() => CoolingOn(home));
+        look = Waiting(
+            look, records, home, config.Adapter, fresh: lastLook is null,
+            coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local);
         return await JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What the listing reads from this home where the planner cannot say what holds the person's words (MSG1f3, D137 §3.2):
+    /// the ended chats they wait on (<see cref="SessionLook.ChatsWaiting"/>), and what holds each word that waits
+    /// (<see cref="SessionLook.Held"/>).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A chat</b> is its runner's, which takes words up at once (MSG1c) and, where something holds them, says so as its
+    /// conversation's last line, *it does not go on yet* (<see cref="ResumeWords.NotYet"/>), leaving them for the next word.
+    /// That line, still the last, is what holds them, in its words, with the reset where the account it ran on cools, since the
+    /// runner asks that account first. Words every one of which it could not go on with (its marks) wait for nothing.</para>
+    ///
+    /// <para><b>A driven record</b> resumed on its own account waits for that account's reset (MSG1g), which the loop's look
+    /// holds the start on and a fresh plan cannot see. Where no loop has looked (<paramref name="fresh"/>), the cool-off is read
+    /// as the resume would read it: the planner goes on with the record in its own conversation on this machine's adapter, the
+    /// person chose no new session, and its account cools. The line is the one the loop's look would hold it with.</para>
+    /// </remarks>
+    /// <param name="adapter">The machine's adapter, which a resume runs on (<see cref="DriverConfig.Adapter"/>).</param>
+    /// <param name="fresh">Whether the verdicts are a fresh plan's, which saw no cool-off; a loop's look holds its own.</param>
+    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account, or null where it is ready.</param>
+    public static SessionLook Waiting(
+        SessionLook look, string recordsJson, string home, string adapter, bool fresh, Func<string?, string?, CoolingEntry?> coolingOf,
+        TimeZoneInfo zone)
+    {
+        var chats = new HashSet<string>(StringComparer.Ordinal);
+        var held = new Dictionary<string, WordsHold>(StringComparer.Ordinal);
+        var marks = new GoOnMarks(home);
+        var events = new SessionEvents(Path.Combine(home, "sessions"));
+        foreach (var record in look.Records)
+        {
+            if (record.Kind != "chat" || record.Live || record.Teammate || record.State == "stood-down"
+                || string.Equals(record.Repository, HelpRoom.Repository, StringComparison.OrdinalIgnoreCase)
+                || ServiceClient.ReadRecord(recordsJson, record.Id) is not { WordsWaiting: true } prior
+                || GoOnMarks.Judged(prior, marks.Read(record.Id)))
+            {
+                continue;
+            }
+
+            chats.Add(record.Id);
+            if (NotYet(events, record.Id) is not { } reason) continue;
+            held[record.Id] = Cooling(coolingOf, prior) is { } cooling
+                ? new WordsHold(WordsHold.Cooling, reason) { Until = cooling.Until }
+                : new WordsHold(WordsHold.Waits, reason);
+        }
+
+        if (fresh)
+        {
+            var choices = new NewSessionChoices(home);
+            var conversations = new HarnessConversations(home);
+            foreach (var verdict in look.Considered)
+            {
+                // The resume's own account, as the loop's start asks for it (MSG1g): words going on in the record they were said
+                // to, in its own conversation, on the adapter this machine starts on.
+                if (verdict is not { Verdict: StartVerdict.Start, GoesOn: true, Resumes: { WordsWaiting: true } words }
+                    || verdict.Quest.Awaits is { Length: > 0 }
+                    || (words.Adapter ?? conversations.Read(words.Session)?.Adapter) is { Length: > 0 } ranOn
+                       && !string.Equals(ranOn, adapter, StringComparison.OrdinalIgnoreCase)
+                    || choices.Covers(words)
+                    || Cooling(coolingOf, words) is not { } cooling)
+                {
+                    continue;
+                }
+
+                var door = verdict.Quest.Status is "Open" or "Taken"
+                    ? ResumeWords.NewSessionDoor(words.Session)
+                    : ResumeWords.ChatDoor(words.Session);
+                held[words.Session] = new WordsHold(
+                    WordsHold.Cooling, $"{ResumeWords.Waits(cooling, zone, AccountNames.Of(home, cooling.Agent))} {door}")
+                {
+                    Until = cooling.Until,
+                };
+            }
+        }
+
+        return look with { ChatsWaiting = chats, Held = held };
+    }
+
+    /// <summary>
+    /// The home's cool-offs as a start reads them (MSG1g's <c>go-on-new</c>, MSG1f3's listing): by the account's owner, over the
+    /// build's harnesses and the plugins' (D64).
+    /// </summary>
+    public static Func<string?, string?, CoolingEntry?> CoolingOn(string home)
+    {
+        var built = AdapterSet.Built();
+        var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
+        var roster = new HarnessRoster(adapters, Path.Combine(home, "harnesses.json"));
+        return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
+    }
+
+    /// <summary>The cool-off on the account a record ran on, or null: none, or an adapter this build no longer has.</summary>
+    private static CoolingEntry? Cooling(Func<string?, string?, CoolingEntry?> coolingOf, PriorSession record)
+    {
+        try
+        {
+            return coolingOf(record.Adapter, record.Profile);
+        }
+        catch (DriverException)
+        {
+            // An adapter this build no longer has: nothing cools on it, and its runner says why it cannot go on.
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// What the chat runner said holds a conversation's words, where its line is still the conversation's last: the words after
+    /// <see cref="ResumeWords.NotYet"/>. Null where a word said since, or anything else, came after it.
+    /// </summary>
+    private static string? NotYet(SessionEvents events, string session)
+    {
+        try
+        {
+            return events.Page(session, limit: 1).Events is [{ Kind: SessionEventKind.Note, Text: { } line }]
+                   && line.StartsWith(ResumeWords.NotYet, StringComparison.Ordinal)
+                ? line[ResumeWords.NotYet.Length..].Trim()
+                : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // A conversation that does not read says nothing holds it: it is listed going on, which the runner then says.
+            return null;
+        }
     }
 
     /// <summary>A tree path as one tree: separators and a trailing one aside, compared without case, as Windows sees it.</summary>
@@ -637,6 +783,15 @@ public static class SessionGroups
 
             if (record.Teammate) return Rest(row);
 
+            // MSG1f3 (D137 §3.2): a chat the person's words wait on goes on with them, since its runner takes them up at once,
+            // unless the runner said what holds them; before to review, as a driven record's words go on in its tree.
+            if (_look.ChatsWaiting.Contains(record.Id))
+            {
+                return _look.Held.TryGetValue(record.Id, out var chat)
+                    ? Rest(row with { Group = SessionGroup.Later, Holds = chat })
+                    : row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
+            }
+
             var verdict = VerdictOnLast(record);
             // SESSUX1b (D126 §2.2): its line says the stop holds its quest, in whichever group it rests; and PAUSE1b (D132
             // §6.1), that a pause does, since a pause is the reason before a stop.
@@ -647,7 +802,9 @@ public static class SessionGroups
             // review: words written to it are the person's Try again, and its tree is what it goes on in.
             if (verdict is not null && WordsWait(record))
             {
-                if (WordsHold.Of(verdict, WaitOn(verdict.Quest.Id)) is not { } holds)
+                // MSG1f3: the planner's own hold first; where it starts them, the cool-off a fresh plan cannot see, read from
+                // the home for the account the words resume on.
+                if ((WordsHold.Of(verdict, WaitOn(verdict.Quest.Id)) ?? _look.Held.GetValueOrDefault(record.Id)) is not { } holds)
                 {
                     return row with { Group = SessionGroup.Working, Shown = ShownState.GoingOn };
                 }

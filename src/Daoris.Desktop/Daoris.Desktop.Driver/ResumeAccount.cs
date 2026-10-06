@@ -99,13 +99,23 @@ public static class ResumeWords
             : said;
     }
 
+    /// <summary>
+    /// How a conversation's line begins where something holds the person's words rather than refusing them (MSG1c, MSG1g):
+    /// the chat runner's and the driver's. The sessions listing reads a chat's last line by it for what holds its words
+    /// (MSG1f3), so the writers and the reader share this one spelling.
+    /// </summary>
+    public const string NotYet = "— it does not go on yet: ";
+
     /// <summary>The door out of the wait where a new session carries the words on: a taken or open quest's session (D137 §2.2).</summary>
     public static string NewSessionDoor(string session) =>
         $"To go on now in a new session instead, without that conversation: `daoris-driver sessions go-on-new {session}`.";
 
-    /// <summary>The door out of the wait where nothing carries the words on by itself: a conversation, or a closed quest's session.</summary>
-    public static string ChatDoor(string repository) =>
-        $"To start a conversation with these words now instead, without that one: `daoris-driver chat --repository {repository}`.";
+    /// <summary>
+    /// The door out of the wait where nothing carries the words on by itself: a conversation, or a closed quest's session. The
+    /// terminal's *Start a conversation with these words* (MSG1f3), which takes them off the session they were said to.
+    /// </summary>
+    public static string ChatDoor(string session) =>
+        $"To start a conversation with these words now instead, without that one: `daoris-driver sessions start-from {session}`.";
 
     /// <summary>
     /// The line a note adds after the reason <c>account</c>: why the record's own account could not carry the words, coded
