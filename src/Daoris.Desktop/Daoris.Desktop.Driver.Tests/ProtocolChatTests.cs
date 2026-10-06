@@ -194,6 +194,42 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// SIGNIN1b (D125 ROSTER1b): a turn the agent refused for its sign-in reads the account it runs as signed out, from the
+    /// door's refusal as a driven start's conclusion reads it, so the next start walks past it. The record says so by the
+    /// line's code, the turn ends, and the conversation goes on.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_refused_for_its_sign_in_reads_its_account_signed_out_and_the_conversation_goes_on()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        string Seen() => $"record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}:{e.Text}"))}]";
+        await Until(() => service.State(id) == "working", Seen);
+
+        Assert.True(runner.Say(id, "signed-out"));
+        Assert.True(runner.Say(id, "after"));
+        await Until(() => events.Page(id).Events.Count(e => e.Kind == SessionEventKind.Turn) == 2, Seen);
+
+        var turns = events.Page(id).Events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason).ToList();
+        Assert.Equal(["error", "end_turn"], turns);
+        var said = Assert.Single(events.Page(id).Events, e => e.Parts is { Count: > 0 } parts && parts[^1].Code == "account.signed-out-own");
+        Assert.StartsWith("The agent refused `stub`'s own sign-in", said.Text);
+        Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
     /// 🔴 REV3 chat F9: a person stopping the session mid-turn ended the agent, and the turn's prompt then
     /// failed with "the stream ended" — which was recorded as the turn "could not be taken", a failure
     /// of the agent's. The person stopped it. The turn ends as cancelled, and no failure is written.
@@ -462,6 +498,11 @@ public sealed class ProtocolChatTests : IDisposable
                 if (said === 'hold') continue;   // a turn that runs until someone stops it
                 if (said === 'refuse') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'overloaded' } });
+                  continue;
+                }
+                // SIGNIN1b: the install's refusal of a sign-in, as Claude Code's adapter answers it (D125 ROSTER1b).
+                if (said === 'signed-out') {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32000, message: 'Authentication required' } });
                   continue;
                 }
                 await new Promise((resolve) => setTimeout(resolve, 150));
