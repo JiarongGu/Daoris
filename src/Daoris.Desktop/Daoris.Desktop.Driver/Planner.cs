@@ -77,6 +77,13 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// shows the person before their yes (DRIFT1d2). Empty for a quest no done answered, and from a host before answers.
     /// </summary>
     public IReadOnlyList<QuestAnswerView> Answers { get; init; } = [];
+
+    /// <summary>
+    /// When its status last moved, as the service answered it (<c>updated</c>). For a taken quest that waits on nothing it is
+    /// when it was taken (CARRY2b): a wait is the one other move a taken quest makes, and it leaves the quest waiting. Null
+    /// from a host that answers none.
+    /// </summary>
+    public DateTimeOffset? Updated { get; init; }
 }
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
@@ -169,6 +176,12 @@ public sealed record PriorSession(
     public bool Teammate => Session.Contains('/');
 
     /// <summary>
+    /// When its record last moved, as the service answered it (<c>updated</c>): for an ended record, when it ended. What a
+    /// take made here is compared with, to say whether it came after (CARRY2b). Null where unsaid.
+    /// </summary>
+    public DateTimeOffset? Updated { get; init; }
+
+    /// <summary>
     /// Whether the person's words wait for it to go on with (MSG1b, D137 §2.2): its <c>said</c> holds any, parked or ended;
     /// from a host before <c>said</c>, an answered park is the one case that waits.
     /// </summary>
@@ -179,6 +192,22 @@ public sealed record PriorSession(
         Said is { } said ? said
         : Answer is { } answer ? [new SaidWordView(null, answer, DateTimeOffset.MinValue, [], false)]
         : [];
+}
+
+/// <summary>
+/// Whose a taken quest's take is, as this machine reads it (CARRY2b): what the ledger asks before it carries a quest on
+/// (CARRY2), read so a look says it before asking. Read as an abandon reads a take (<c>WorkAbandoning.QuestAct</c>).
+/// </summary>
+/// <param name="Claim">This machine's claim on it, as its host answers (D68 §4): <c>none</c>, <c>held</c>, <c>unconfirmed</c> or <c>lost</c>.</param>
+/// <param name="Took">Whether a session record of this machine's, in any state, marks that it took the quest (STANDDOWN2).</param>
+/// <param name="Teammate">
+/// The newest teammate's record on it that did not stand down, as <c>origin/id</c>, or null: what names another machine's take,
+/// since the quest's log names a machine by an id no person reads.
+/// </param>
+public sealed record QuestTake(string Claim, bool Took = false, string? Teammate = null)
+{
+    /// <summary>The take is this machine's by its claim: one a remote numbered, or one only here (D68 §4).</summary>
+    public bool Here => Claim is "held" or "unconfirmed";
 }
 
 /// <summary>
@@ -331,6 +360,14 @@ public sealed record Snapshot(
     /// </summary>
     public IReadOnlyDictionary<string, GoOnMark> Unable { get; init; } =
         new Dictionary<string, GoOnMark>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Whose the take is on each taken quest a look would carry on (CARRY2b), by quest id: read only for those, since the
+    /// ledger refuses a carry-on over a take that is not this machine's (CARRY2). Absent is unread, and the quest is carried
+    /// on as before, for the ledger to judge.
+    /// </summary>
+    public IReadOnlyDictionary<string, QuestTake> Takes { get; init; } =
+        new Dictionary<string, QuestTake>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -394,6 +431,13 @@ public enum StartVerdict
     /// machine may still take an open one, and a taken one stays taken here, its take, tree and strikes kept.
     /// </summary>
     Paused,
+
+    /// <summary>
+    /// Taken, and the take is not this machine's (CARRY2b): another machine's, by the quest's log, or one made here after this
+    /// machine's last session on it ended, by a chat or by work outside Daoris. The ledger refuses a carry-on over it (CARRY2),
+    /// so the quest sits with the ledger's own sentence and nothing is asked. No strike: nothing ran.
+    /// </summary>
+    TakenElsewhere,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -575,15 +619,11 @@ public static class Planner
             }
             else if (quest is { Status: "Taken", Awaits: null or "" }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
-                     && (string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase)
-                         // A stop that was not the person's — the sweep's or a shutdown's (D104).
-                         || cutOff is { State: "stopped", Interrupted: true }
-                         // The person's own stop, once they released it (SESSUX1b): a held one never reaches here.
-                         || cutOff.PersonStopped
-                         // The person answered a session that parked to ask them (STANDDOWN2).
-                         || cutOff is { State: "completed", Answer: not null }))
+                     && CarriesOn(cutOff))
             {
-                considerations.Add(CarryOn(quest, cutOff));
+                // Whose the take is, before anything a carry-on would sit for (CARRY2b): the ledger refuses one over a take
+                // that is not this machine's (CARRY2), whatever is opted in or held here.
+                considerations.Add(TakenElsewhere(quest, cutOff) ?? CarryOn(quest, cutOff));
             }
         }
 
@@ -677,6 +717,28 @@ public static class Planner
                     Resumes = cutOff,
                 }
                 : considered;
+        }
+
+        // A take that is not this machine's (CARRY2b), as the ledger judges it (CARRY2) and in its words: another machine's by
+        // the claim, named by a teammate's record where one came, or one made here after the session ended that no record
+        // here marks, a chat's or work outside Daoris. An unmarked take made while the session ran is still its own, as the
+        // ledger reads it: the HTTP door marks none. Null where the take is this machine's, or was not read.
+        Consideration? TakenElsewhere(QuestView quest, PriorSession cutOff)
+        {
+            if (!snapshot.Takes.TryGetValue(quest.Id, out var take)) return null;
+
+            var over = $"the take is theirs, so session `{cutOff.Session}` is not carried on over it.";
+            if (!take.Here)
+            {
+                return new(quest, StartVerdict.TakenElsewhere, take.Teammate is { } teammate
+                    ? $"Quest `#{quest.Id}` is taken on `{teammate.Split('/')[0]}`, by session `{teammate}`: {over}"
+                    : $"Quest `#{quest.Id}` is taken on another machine: {over}");
+            }
+
+            return !take.Took && quest.Updated is { } taken && cutOff.Updated is { } ended && taken > ended
+                ? new(quest, StartVerdict.TakenElsewhere,
+                    $"Quest `#{quest.Id}` was taken here after session `{cutOff.Session}` ended, by a chat or by work outside Daoris: {over}")
+                : null;
         }
 
         // A waiting quest (D79): the open list holds open and taken quests only, so a question still in
@@ -835,6 +897,19 @@ public static class Planner
             return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root, repo.Workspace);
         }
     }
+
+    /// <summary>
+    /// Whether a taken quest whose last session here ended so is carried on from it (D80): what the planner plans a carry-on
+    /// for, and what a look reads whose the take is for (CARRY2b), one rule for both.
+    /// </summary>
+    internal static bool CarriesOn(PriorSession last) =>
+        string.Equals(last.State, "failed", StringComparison.OrdinalIgnoreCase)
+        // A stop that was not the person's — the sweep's or a shutdown's (D104).
+        || last is { State: "stopped", Interrupted: true }
+        // The person's own stop, once they released it (SESSUX1b): a held one never reaches the planner's carry-on.
+        || last.PersonStopped
+        // The person answered a session that parked to ask them (STANDDOWN2).
+        || last is { State: "completed", Answer: not null };
 
     /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
     private static bool SameTree(string? a, string? b) =>

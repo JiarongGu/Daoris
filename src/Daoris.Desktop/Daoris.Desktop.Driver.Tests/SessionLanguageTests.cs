@@ -47,6 +47,8 @@ public sealed class SessionLanguageTests
     [InlineData("a repository written twice in any case is read where first written", """{"languages":{"app":"zh","APP":"en"}}""", "app", "work", "zh", "repository")]
     [InlineData("a list is not a map", """{"languages":["app"]}""", "app", "work", null, null)]
     [InlineData("null is absent", """{"languages":null,"workspaceLanguages":null}""", "app", "work", null, null)]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"languages":{"straße":"zh"}}""", "STRASSE", "work", null, null)]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"languages":{"İzmir":"zh"}}""", "i\u0307zmir", "work", null, null)]
     public void Languages_read_as_the_cli_reads_them(string name, string file, string repository, string? workspace, string? code, string? source)
     {
         var read = SessionLanguages.Resolve(DriverConfig.Parse(file), repository, workspace);

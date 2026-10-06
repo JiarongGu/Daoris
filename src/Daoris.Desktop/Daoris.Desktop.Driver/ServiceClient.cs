@@ -118,7 +118,41 @@ public sealed partial class ServiceClient : IDisposable
             LastRun = lastRun,
             Started = ReadStarted(records, active),
             Closed = closed,
+            // Whose the take is on each taken quest a look would carry on (CARRY2b), the claim asked of the host for those alone.
+            Takes = ReadTakes(records, await CarryOnClaimsAsync(quests, lastRun, ct).ConfigureAwait(false)),
         };
+    }
+
+    /// <summary>
+    /// This machine's claim on each taken quest a look would carry on (CARRY2b): one that waits on nothing, whose last session
+    /// here ended as a carry-on goes on from (<see cref="Planner.CarriesOn"/>), a stop the person still holds included, which
+    /// the planner holds by the stop first. A claim the host does not answer is unread, and the carry-on is planned as before.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<string, string>> CarryOnClaimsAsync(
+        IReadOnlyList<QuestView> quests, IReadOnlyDictionary<string, PriorSession> lastRun, CancellationToken ct)
+    {
+        var claims = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var quest in quests)
+        {
+            if (quest is not { Status: "Taken", Awaits: null or "" }
+                || !lastRun.TryGetValue(quest.Id, out var last) || !Planner.CarriesOn(last))
+            {
+                continue;
+            }
+
+            try
+            {
+                claims[quest.Id] = await ClaimAsync(quest.Id, ct).ConfigureAwait(false);
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or JsonException
+                                              // The client's own timeout (DEV3a): a host that took the question and stalled.
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
+            {
+                // Unread: the ledger judges the carry-on, as it did before the planner asked.
+            }
+        }
+
+        return claims;
     }
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
@@ -954,7 +988,7 @@ public sealed partial class ServiceClient : IDisposable
     private Task<string> GetAsync(string path, CancellationToken ct) =>
         DriverHttp.GetAsync(_http, $"{_base}{path}", ct);
 
-    private static IReadOnlyList<QuestView> ReadQuests(string json)
+    internal static IReadOnlyList<QuestView> ReadQuests(string json)
     {
         using var document = JsonDocument.Parse(json);
         var quests = new List<QuestView>();
@@ -1015,6 +1049,8 @@ public sealed partial class ServiceClient : IDisposable
                             Text(a, "met"), Text(a, "departed"), Text(a, "quote")))
                         .ToList()
                     : [],
+                // When its status last moved: a taken quest's take, compared with its last session's end (CARRY2b).
+                Updated = Moment(quest, "updated"),
             });
         }
 
@@ -1184,6 +1220,39 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Whose each take is (CARRY2b), for the quests whose claim was read, from the records as the ledger reads them (CARRY2):
+    /// whether a record of this machine's, in any state, marks that it took the quest, and the newest teammate's record on it
+    /// that did not stand down, which names another machine's take. A teammate's mark is never this machine's.
+    /// </summary>
+    /// <param name="claims">This machine's claim on each quest read, by quest id (<see cref="ClaimAsync"/>).</param>
+    internal static IReadOnlyDictionary<string, QuestTake> ReadTakes(string json, IReadOnlyDictionary<string, string> claims)
+    {
+        var took = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var teammates = new Dictionary<string, (string Id, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
+        using var document = JsonDocument.Parse(json);
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (session.ValueKind != JsonValueKind.Object || Text(session, "quest") is not { Length: > 0 } quest) continue;
+            if (!IsTeams(session))
+            {
+                if (Flag(session, "took")) took.Add(quest);
+                continue;
+            }
+
+            if (string.Equals(Text(session, "state"), "stood-down", StringComparison.OrdinalIgnoreCase)) continue;
+            // The newest by when it was made, a later one in the answer on a tie, as the ledger orders them.
+            var at = Moment(session, "created") ?? DateTimeOffset.MinValue;
+            if (teammates.TryGetValue(quest, out var seen) && seen.At > at) continue;
+            teammates[quest] = (Text(session, "id")!, at);
+        }
+
+        return claims.ToDictionary(
+            pair => pair.Key,
+            pair => new QuestTake(pair.Value, took.Contains(pair.Key), teammates.TryGetValue(pair.Key, out var teammate) ? teammate.Id : null),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// One record as a run that goes on reads it (MSG1c): its state, its words waiting, the adapter, account, tree and
     /// version it ran on, its note and its flags, and its kind. Null when no record of this machine has that id.
     /// </summary>
@@ -1224,6 +1293,8 @@ public sealed partial class ServiceClient : IDisposable
             Kind = Text(session, "kind") ?? "driven",
             // Its note's lines by code (LANG1a), which a note added to it carries on; null for a record from before parts.
             NoteParts = NotePart.Read(session),
+            // When it last moved, which a take here is compared with (CARRY2b).
+            Updated = Moment(session, "updated"),
         };
 
     /// <summary>

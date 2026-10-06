@@ -173,6 +173,24 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
+    /// CASEFOLD1d: a disabled row is a plugin's only as <c>OrdinalIgnoreCase</c> finds it, as the CLI's <c>plugins.ts</c> finds
+    /// it through <c>casefold.ts</c> (<c>plugins.test.ts</c> names this behaviour). An id is lowercase letters, digits, dots and
+    /// dashes, so the one letter the two folds part in a row naming one is the Kelvin sign, which lowers to a <c>k</c> and whose
+    /// capital is itself: a row naming it switches no plugin off, and is no row of another's.
+    /// </summary>
+    [Fact]
+    public void A_disabled_row_is_a_plugin_s_only_as_OrdinalIgnoreCase_finds_it()
+    {
+        var kelvin = $"acme.{(char)0x212A}eep";
+        Plugin("acme.keep", """{ "id": "acme.keep", "harnesses": [ { "name": "acme-keep", "command": ["acme"] } ] }""");
+        File.WriteAllText(Path.Combine(_home, PluginState.FileName), JsonSerializer.Serialize(new { disabled = new[] { kelvin } }));
+
+        Assert.True(PluginCatalog.Load(_home).Plugins[0].Enabled);
+        PluginState.Disable(_home, "acme.keep");
+        Assert.Equal(["acme.keep", kelvin], PluginState.Load(_home).Disabled);
+    }
+
+    /// <summary>
     /// 🔴 REV3 CLEAN1: a state file that could not be read disables nothing, which keeps every plugin
     /// running — right for a read. An edit over it rewrote the file whole, switching back on every
     /// plugin the person had switched off. It is refused, and the file is kept (the CLI twin agrees).

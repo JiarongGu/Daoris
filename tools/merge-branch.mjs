@@ -158,11 +158,11 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain } from './fsx.mjs';
+import { isMain, renameHeld } from './fsx.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -430,6 +430,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Cli/test/fixtures/vendor/**'], gates: ['driver', 'driver-process'], why: "the driver's release-channel tests read the vendor's files" },
   { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },
   { paths: ['src/Daoris.Cli/test/fixtures/account-reads.json'], gates: ['driver'], why: "the driver's AccountReads twin reads the shared reads table (AGENTREAD1b)" },
+  { paths: ['src/Daoris.Cli/test/fixtures/name-case.json'], gates: ['driver'], why: "the driver's NameCaseTests reads the shared name-case table (CASEFOLD1d)" },
   { paths: ['tools/orient-index-fixtures/**'], gates: ['service'], why: "the service's DecisionNotes twin reads the digest's note table (ORIENT1h)" },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
   // GATE6: a fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
@@ -553,7 +554,7 @@ function setApartNotes(root) {
     const { text, set } = setApart(readFileSync(file, 'utf8'));
     if (set.length === 0) continue;
     writeFileSync(`${file}.partial`, text);
-    renameSync(`${file}.partial`, file);
+    renameHeld(`${file}.partial`, file);
     git(root, ['add', '--', path]);
     for (const note of set) console.log(`set apart: ${basename(path, '.md')}'s ${noteName(note.label)} (${path}:${note.line})`);
   }
@@ -714,7 +715,7 @@ export function addVerdicts(root, entries, { keep = 400 } = {}) {
     verdicts,
   };
   writeFileSync(`${file}.partial`, `${JSON.stringify(record, null, 2)}\n`);
-  renameSync(`${file}.partial`, file);
+  renameHeld(`${file}.partial`, file);
 }
 
 /**
@@ -1562,7 +1563,7 @@ function writeState(root, state) {
   const file = statePath(root);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(`${file}.partial`, `${JSON.stringify(state, null, 2)}\n`);
-  renameSync(`${file}.partial`, file);
+  renameHeld(`${file}.partial`, file);
 }
 
 const dropState = (root) => rmSync(statePath(root), { force: true });
@@ -1611,7 +1612,7 @@ async function withLog(file, work) {
     return await work(fd, partial);
   } finally {
     closeSync(fd);
-    renameSync(partial, file);
+    renameHeld(partial, file);
   }
 }
 

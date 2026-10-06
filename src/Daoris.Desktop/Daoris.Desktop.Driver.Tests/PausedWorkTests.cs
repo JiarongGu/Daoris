@@ -37,6 +37,8 @@ public sealed class PausedWorkTests
     [InlineData("an entry that is not an object is no pause", """{"pausedAsks":{"a1":true}}""", "ask", "a1", false, null, "")]
     [InlineData("a list is not a map", """{"pausedAsks":["a1"]}""", "ask", "a1", false, null, "")]
     [InlineData("null is absent", """{"pausedQuests":null}""", "quest", "q9", false, null, "")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"pausedAsks":{"straße":{}}}""", "ask", "STRASSE", false, null, "")]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"pausedAsks":{"İzmir":{}}}""", "ask", "i\u0307zmir", false, null, "")]
     public void Pauses_read_as_the_cli_reads_them(string name, string file, string scope, string id, bool paused, string? at, string stopped)
     {
         var config = DriverConfig.Parse(file);

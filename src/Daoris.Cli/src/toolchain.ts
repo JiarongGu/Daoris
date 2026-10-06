@@ -120,7 +120,7 @@ import {
 } from './accountnames.ts';
 import { forgetRead, keepRead } from './accountreads.ts';
 import type { Login } from './accountreads.ts';
-import { sameName } from './casefold.ts';
+import { atName, byName, findName, sameName } from './casefold.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { shellWord, shellWords } from './shellword.ts';
 import { saidLine, saidOf } from './windows.ts';
@@ -430,11 +430,9 @@ export function readHarnessSettings(path = harnessesPath()): HarnessSettings {
   } = parsed;
   return {
     defaults: stringMap(defaults),
-    workspaces: Object.fromEntries(
-      Object.entries(asObject(workspaces)).map(([circle, map]) => [circle, stringMap(map)])),
+    workspaces: circlesOf(workspaces),
     versions: stringMap(versions),
-    workspaceVersions: Object.fromEntries(
-      Object.entries(asObject(workspaceVersions)).map(([circle, map]) => [circle, stringMap(map)])),
+    workspaceVersions: circlesOf(workspaceVersions),
     rotation: readOrders(rotation),
     workspaceRotation: readOrderCircles(workspaceRotation),
     rotationUse: readUses(rotationUse),
@@ -488,7 +486,7 @@ export function resolveProfile(
 ): string | null {
   if (chosen?.trim()) return chosen.trim();
 
-  const circle = workspace?.trim() ? settings.workspaces[workspace.trim()] : undefined;
+  const circle = workspace?.trim() ? atName(settings.workspaces, workspace.trim()) : undefined;
   if (circle?.[harness]?.trim()) return circle[harness]!.trim();
 
   return settings.defaults[harness]?.trim() || null;
@@ -514,11 +512,13 @@ export function withDefault(
     return { ...settings, defaults };
   }
 
-  const circle = { ...settings.workspaces[workspace] };
+  // CASEFOLD1c: under the spelling the workspace was first written in, as the driver's `WithWorkspaceDefault` keeps it.
+  const key = findName(Object.keys(settings.workspaces), workspace) ?? workspace;
+  const circle = { ...settings.workspaces[key] };
   if (profile) circle[owner] = profile;
   else delete circle[owner];
-  const workspaces = { ...settings.workspaces, [workspace]: circle };
-  if (Object.keys(circle).length === 0) delete workspaces[workspace];
+  const workspaces = { ...settings.workspaces, [key]: circle };
+  if (Object.keys(circle).length === 0) delete workspaces[key];
   return { ...settings, workspaces };
 }
 
@@ -543,7 +543,7 @@ export function resolveVersion(
 ): string | null {
   if (chosen?.trim()) return chosen.trim();
 
-  const circle = workspace?.trim() ? settings.workspaceVersions[workspace.trim()] : undefined;
+  const circle = workspace?.trim() ? atName(settings.workspaceVersions, workspace.trim()) : undefined;
   if (circle?.[harness]?.trim()) return circle[harness]!.trim();
 
   return settings.versions[harness]?.trim() || null;
@@ -1419,7 +1419,7 @@ export function commandHarness(
       const workspace = flagValue(argv, '--workspace');
       const circle = workspace?.trim() ? normalizeWorkspace(workspace) : null;
       const settings = readHarnessSettings(path);
-      const pin = (circle ? settings.workspaceVersions[circle]?.[name] : settings.versions[name])?.trim() || null;
+      const pin = (circle ? atName(settings.workspaceVersions, circle)?.[name] : settings.versions[name])?.trim() || null;
 
       if (pin && (toolchain.package || toolchain.channel)) return updatePin(name, toolchain, pin, circle);
       if (circle) {
@@ -1718,12 +1718,14 @@ export function commandHarness(
     const circle = workspace?.trim() ? normalizeWorkspace(workspace) : null;
 
     if (circle) {
-      const held = { ...settings.workspaceVersions[circle] };
+      // CASEFOLD1c: under the spelling the workspace was first written in, as the driver's `WithWorkspaceVersion` keeps it.
+      const key = findName(Object.keys(settings.workspaceVersions), circle) ?? circle;
+      const held = { ...settings.workspaceVersions[key] };
       if (version) held[name] = version;
       else delete held[name];
       writeHarnessSettings(path, {
         ...settings,
-        workspaceVersions: { ...settings.workspaceVersions, [circle]: held },
+        workspaceVersions: { ...settings.workspaceVersions, [key]: held },
       });
       return;
     }
@@ -2042,17 +2044,17 @@ export function commandHarness(
 
     /** A scope's own list: the machine's, or the workspace's own — never the machine's standing in for it. */
     function ownList(name: string, workspace: string | null): string[] {
-      return (workspace ? settings.workspaceRotation[workspace]?.[name] : settings.rotation[name]) ?? [];
+      return (workspace ? atName(settings.workspaceRotation, workspace)?.[name] : settings.rotation[name]) ?? [];
     }
 
     /** A scope's own default: the machine's, or the workspace's own. */
     function ownDefault(name: string, workspace: string | null): string | null {
-      return (workspace ? settings.workspaces[workspace]?.[name] : settings.defaults[name])?.trim() || null;
+      return (workspace ? atName(settings.workspaces, workspace)?.[name] : settings.defaults[name])?.trim() || null;
     }
 
     /** A scope's kept account, as its settings name it, whether or not its list holds it. */
     function ownKeep(name: string, workspace: string | null): string | null {
-      return readUse(workspace ? settings.workspaceRotationUse[workspace]?.[name] : settings.rotationUse[name]).use.keep;
+      return readUse(workspace ? atName(settings.workspaceRotationUse, workspace)?.[name] : settings.rotationUse[name]).use.keep;
     }
 
     /** `profile order`'s refusal for a list that leaves out its scope's default or kept account (§3.1, §4.6). */
@@ -2665,6 +2667,16 @@ function asObject(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
+}
+
+/**
+ * One workspace → agent → value map, as the driver's `ReadCircles` reads one (CASEFOLD1c): a workspace that is not an object
+ * skipped, and one written twice in any case read once, as first written, holding the later's, a later naming none included.
+ */
+function circlesOf(value: unknown): Record<string, Record<string, string>> {
+  return byName(Object.entries(asObject(value))
+    .filter(([, map]) => map !== null && typeof map === 'object' && !Array.isArray(map))
+    .map(([circle, map]) => [circle, stringMap(map)] as const));
 }
 
 function stringMap(value: unknown): Record<string, string> {

@@ -100,6 +100,25 @@ public sealed class AcrossTests
         Assert.Equal("a relationship names the repository it may write into.", nothing.Message);
     }
 
+    /// <summary>
+    /// CASEFOLD1d: a relationship's names compare by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
+    /// <c>writeAcrossProblem</c> and its reader compare them through <c>casefold.ts</c> (<c>driverconfig.test.ts</c> names this
+    /// behaviour): a name full case mapping would lower to the same letters is another repository, so it is neither refused
+    /// as the repository's own, nor read as a repeat, nor cleared with the other.
+    /// </summary>
+    [Fact]
+    public void A_relationship_names_another_repository_only_as_OrdinalIgnoreCase_parts_them()
+    {
+        var dotted = $"i{(char)0x0307}zmir";
+        Assert.Null(AcrossRules.Problem("İzmir", dotted));
+        Assert.Null(AcrossRules.Problem("straße", "STRASSE"));
+
+        var config = DriverConfig.Parse($$"""{ "writeAcross": { "plugins": ["İzmir", "{{dotted}}", "straße", "STRASSE"] } }""");
+        Assert.Equal(["İzmir", dotted, "straße", "STRASSE"], config.WriteAcross["plugins"]);
+
+        Assert.Equal(["İzmir", "straße", "STRASSE"], config.WithWriteAcross("plugins", dotted, allow: false).WriteAcross["plugins"]);
+    }
+
     [Fact]
     public void The_setting_survives_every_other_edit_of_the_file()
     {

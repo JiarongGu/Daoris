@@ -9,8 +9,10 @@
 // The rules both keep:
 //
 //   1. Read: each name trimmed; a blank, or a name that is not text, skipped; a name written twice, in any case, read
-//      once where first written. A list that is not one, or names nobody, is none; so is a workspace naming none. "In any
-//      case" here and below is the driver's `OrdinalIgnoreCase` (`casefold.ts`, CASEFOLD1): `straße` is not `STRASSE`.
+//      once where first written. A list that is not one, or names nobody, is none; so is a workspace naming none. A
+//      workspace is found, edited and read in any case, as the driver's dictionaries hold one: written twice, it is one,
+//      spelled as first written and holding the later's (CASEFOLD1c). "In any case" here and below is the driver's
+//      `OrdinalIgnoreCase` (`casefold.ts`, CASEFOLD1): `straße` is not `STRASSE`.
 //   2. Resolved as a default is: the workspace's order for the agent, else the machine's, else none — and none is no
 //      rotation at all, a cooling account holding its starts as it did before (D48 §2a).
 //   3. Written only when set: an order replaced whole, cleared by naming nobody, and a workspace left with none dropped.
@@ -49,7 +51,7 @@
 // The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; `early` and `near` pass an
 // account its agent said is near, where the agent's door carries that word (`windows.json`, the toolchain's `windows`).
 
-import { findName, foldName } from './casefold.ts';
+import { atName, byName, findName, foldName } from './casefold.ts';
 import { shellWord } from './shellword.ts';
 import type { HarnessSettings } from './toolchain.ts';
 
@@ -72,15 +74,15 @@ export function readOrders(value: unknown): Orders {
   return orders;
 }
 
-/** One workspace → agent → order map, each read by rule 1; a workspace naming none is none. */
+/**
+ * One workspace → agent → order map, each read by rule 1; a workspace naming none is none, and so replaces nothing where its
+ * name was written before in another case (the driver's `ReadOrderCircles` sets only a workspace that names one).
+ */
 export function readOrderCircles(value: unknown): Record<string, Orders> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  const circles: Record<string, Orders> = {};
-  for (const [workspace, orders] of Object.entries(value as Record<string, unknown>)) {
-    const read = readOrders(orders);
-    if (Object.keys(read).length > 0) circles[workspace] = read;
-  }
-  return circles;
+  return byName(Object.entries(value as Record<string, unknown>)
+    .map(([workspace, orders]) => [workspace, readOrders(orders)] as const)
+    .filter(([, read]) => Object.keys(read).length > 0));
 }
 
 /** An agent → order map as rule 3 writes it: agents in order of name, a list naming nobody left out. */
@@ -102,7 +104,7 @@ export function writtenOrderCircles(circles: Record<string, Orders>): Record<str
 export function resolveRotation(
   settings: HarnessSettings, agent: string, workspace?: string | null,
 ): { order: string[]; from: 'workspace' | 'machine' | 'unset' } {
-  const own = workspace?.trim() ? settings.workspaceRotation[workspace.trim()]?.[agent] : undefined;
+  const own = workspace?.trim() ? atName(settings.workspaceRotation, workspace.trim())?.[agent] : undefined;
   if (own && own.length > 0) return { order: own, from: 'workspace' };
   const machine = settings.rotation[agent];
   return machine && machine.length > 0 ? { order: machine, from: 'machine' } : { order: [], from: 'unset' };
@@ -127,9 +129,11 @@ export function withRotation(
 
   if (!workspace?.trim()) return cleared({ ...settings, rotation: set(settings.rotation) });
 
-  const circle = set(settings.workspaceRotation[workspace.trim()] ?? {});
-  const workspaceRotation = { ...settings.workspaceRotation, [workspace.trim()]: circle };
-  if (Object.keys(circle).length === 0) delete workspaceRotation[workspace.trim()];
+  // CASEFOLD1c: under the spelling the workspace was first written in, as the driver's dictionary keeps it.
+  const key = findName(Object.keys(settings.workspaceRotation), workspace.trim()) ?? workspace.trim();
+  const circle = set(settings.workspaceRotation[key] ?? {});
+  const workspaceRotation = { ...settings.workspaceRotation, [key]: circle };
+  if (Object.keys(circle).length === 0) delete workspaceRotation[key];
   return cleared({ ...settings, workspaceRotation });
 }
 
@@ -245,7 +249,7 @@ export function placesOf(settings: HarnessSettings, agent: string, account: stri
     .filter((workspace) => !seen.has(foldName(workspace)) && seen.add(foldName(workspace)))
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   for (const workspace of workspaces) {
-    add(workspace, settings.workspaceRotation[workspace]?.[agent], settings.workspaces[workspace]?.[agent]);
+    add(workspace, atName(settings.workspaceRotation, workspace)?.[agent], atName(settings.workspaces, workspace)?.[agent]);
   }
   return places;
 }
@@ -328,10 +332,10 @@ export function readUses(value: unknown): Uses {
     .filter(([, entry]) => Object.keys(entry).length > 0));
 }
 
-/** One workspace → agent → settings map; a workspace naming none is none. */
+/** One workspace → agent → settings map; a workspace naming none is none, and replaces nothing, as with the orders. */
 export function readUseCircles(value: unknown): Record<string, Uses> {
   if (!isObject(value)) return {};
-  return Object.fromEntries(Object.entries(value)
+  return byName(Object.entries(value)
     .map(([workspace, uses]) => [workspace, readUses(uses)] as const)
     .filter(([, uses]) => Object.keys(uses).length > 0));
 }
@@ -402,9 +406,10 @@ export function withUse(
 
   if (!workspace?.trim()) return { ...settings, rotationUse: place(settings.rotationUse) };
 
-  const circle = place(settings.workspaceRotationUse[workspace.trim()] ?? {});
-  const workspaceRotationUse = { ...settings.workspaceRotationUse, [workspace.trim()]: circle };
-  if (Object.keys(circle).length === 0) delete workspaceRotationUse[workspace.trim()];
+  const key = findName(Object.keys(settings.workspaceRotationUse), workspace.trim()) ?? workspace.trim();
+  const circle = place(settings.workspaceRotationUse[key] ?? {});
+  const workspaceRotationUse = { ...settings.workspaceRotationUse, [key]: circle };
+  if (Object.keys(circle).length === 0) delete workspaceRotationUse[key];
   return { ...settings, workspaceRotationUse };
 }
 
@@ -425,10 +430,10 @@ export interface Scope {
 export function resolveScope(settings: HarnessSettings, agent: string, workspace?: string | null): Scope {
   const circle = workspace?.trim();
   if (circle) {
-    const own = settings.workspaces[circle]?.[agent]?.trim() || null;
-    const list = settings.workspaceRotation[circle]?.[agent] ?? [];
+    const own = atName(settings.workspaces, circle)?.[agent]?.trim() || null;
+    const list = atName(settings.workspaceRotation, circle)?.[agent] ?? [];
     if (own !== null || list.length > 0) {
-      return scopeOf('workspace', own, list, settings.workspaceRotationUse[circle]?.[agent]);
+      return scopeOf('workspace', own, list, atName(settings.workspaceRotationUse, circle)?.[agent]);
     }
   }
   return scopeOf('machine', settings.defaults[agent]?.trim() || null, settings.rotation[agent] ?? [], settings.rotationUse[agent]);

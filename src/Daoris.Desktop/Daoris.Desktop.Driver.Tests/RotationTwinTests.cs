@@ -74,6 +74,8 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("a rotation that is not an object is none", """{"rotation":["account-1"]}""", "claude-code", null, null, "unset")]
     [InlineData("a workspace's orders that are not an object are none", """{"workspaceRotation":{"work":["account-1"]}}""", "claude-code", "work", null, "unset")]
     [InlineData("a file that does not read is none", "not json", "claude-code", null, null, "unset")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"rotation":{"claude-code":["straße","STRASSE"]}}""", "claude-code", null, """["straße","STRASSE"]""", "machine")]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"rotation":{"claude-code":["İzmir","i\u0307zmir"]}}""", "claude-code", null, """["İzmir","i\u0307zmir"]""", "machine")]
     public void An_order_resolves_as_the_cli_resolves_it(string name, string file, string agent, string? workspace, string? order, string from)
     {
         var (resolved, rung) = Read(file).ResolveRotationFrom(agent, workspace);
@@ -113,6 +115,8 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("a name in another case than its directory's names no account", """["account-1"]""", """["Account-1"]""", "missing Account-1")]
     [InlineData("one account twice in another case, where both directories are there", """["account-1","ACCOUNT-1"]""", """["account-1","ACCOUNT-1"]""", "twice ACCOUNT-1")]
     [InlineData("the first problem in the order is the one said", """["account-1"]""", """["account-8","account-1","account-1"]""", "missing account-8")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """["straße","STRASSE"]""", """["straße","STRASSE"]""", null)]
+    [InlineData("a dotted capital I is not an i with a dot above", """["İzmir","i\u0307zmir"]""", """["İzmir","i\u0307zmir"]""", null)]
     public void An_order_is_refused_as_the_cli_refuses_it(string why, string accounts, string order, string? refused)
     {
         var problem = HarnessSettings.OrderProblem(Names(accounts), Names(order));

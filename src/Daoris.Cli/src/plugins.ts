@@ -86,6 +86,10 @@ export const OFFERS_DIR: readonly string[] = Object.freeze(['app', 'plugin-offer
 /** The heading in an offer's README whose bullets say what it needs on the machine. Twin: `PluginOffers.NeedsHeading`. */
 export const NEEDS_HEADING = '## What it needs';
 
+// A plugin id's shape; the driver's `PluginCatalog.IsId` is its twin. A door that lowers an id first lowers it by
+// `toLowerCase` where the driver's uses `ToLowerInvariant`, and the two agree on every code point for this check (CASEFOLD1b,
+// measured on .NET 10 under ICU and in invariant mode): `İ` lowers to two letters here and keeps itself there, and is no
+// letter of an id either way. They part only at the end: .NET's `$` passes a final line break, which this refuses.
 const ID_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
 
 /**
