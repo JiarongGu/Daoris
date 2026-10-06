@@ -263,6 +263,43 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// HIST1d (D153 point 7, the history-clearing design §6.2, D50): the history verbs are doors the usage names, routed by the
+    /// host to its console inside the one catch, with this host's log, where a clear's line says the terminal's door. <c>quest
+    /// clear</c> and <c>ask --clear</c> are asked for before the quest's other words and an ask's words, which would take them as
+    /// a usage mistake and as the words of a new ask. The words are the library's, which <c>HistoryCommandTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_history_verbs_and_the_host_routes_them_to_the_librarys_words()
+    {
+        var usage = DriverCommand.Usage.ReplaceLineEndings("\n");
+        Assert.Contains("\n  history [--workspace <name>] [--json]\n", usage);
+        Assert.Contains("\n  history clear --workspace <name> [--yes]\n", usage);
+        Assert.Contains("\n  quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]\n", usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var history = program.IndexOf("if (args is [\"history\", .. var historyArgs])", StringComparison.Ordinal);
+        var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
+        Assert.True(history > log, $"the history verbs routed at {history}, inside the catch after the machine log opened at {log}");
+        Assert.Contains("HistoryConsole.RunAsync(historyArgs, log)", program);
+        var askClear = program.IndexOf("HistoryCommand.Asks(WorkScope.Ask, clearArgs)", StringComparison.Ordinal);
+        var askWords = program.IndexOf("AskConsole.RunAsync(askArgs)", StringComparison.Ordinal);
+        Assert.True(askClear > 0 && askWords > askClear, $"`ask --clear` asked for at {askClear}, an ask's words at {askWords}");
+        Assert.Contains("HistoryConsole.RunAsync(WorkScope.Ask, clearArgs, log)", program);
+        var questClear = program.IndexOf("HistoryCommand.Asks(WorkScope.Quest, questArgs)", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
+        Assert.True(questClear > 0 && questUsage > questClear, $"`quest clear` asked for at {questClear}, the quest's usage at {questUsage}");
+        Assert.Contains("HistoryConsole.RunAsync(WorkScope.Quest, questArgs, log)", program);
+        Assert.Contains("quest clear <id> [--failed] [--yes]", program[questUsage..]);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "HistoryConsole.cs"));
+        Assert.Contains("HistoryCommand.Read(args, out var problem)", console);
+        Assert.Contains("HistoryCommand.Read(scope, args, out var problem)", console);
+        Assert.Contains("Console.Error.WriteLine(HistoryCommand.Usage);", console);
+        Assert.Contains("new HistoryWorld(service, home, configPath, new SessionProcesses(Path.Combine(home, \"sessions\"))) { Log = log }", console);
+        Assert.Contains("HistoryCommand.RunAsync(ask, world, Console.Out)", console);
+    }
+
+    /// <summary>
     /// TRACE1 (D143, D50): one read back to the ask is a door the usage names, routed by the host to its console before the
     /// machine log opens, since that open prunes old files and the trace writes nothing anywhere. The words are the library's,
     /// which <c>TraceTests</c> holds.

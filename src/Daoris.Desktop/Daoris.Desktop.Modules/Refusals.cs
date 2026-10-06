@@ -174,50 +174,52 @@ public static class Refusals
 
     // HIST1c (D153 point 2; the history-clearing design §1.2): why a clear of finished history keeps a unit, or a piece of one.
     // Each is a unit's code in HISTORY_PLAN's and HISTORY_CLEAR's answers, and the refusal of a clear of one quest, one ask or
-    // one quest's failed sessions; which of a code's sentences is meant travels as the catalogue's `context`.
+    // one quest's failed sessions; which of a code's sentences is meant travels as the catalogue's `context`. Declared as the
+    // driver library's codes (HIST1d), which `daoris-driver history --json` prints from the same projection, so the two doors
+    // cannot spell one differently.
 
     /// <summary>No such quest or ask on this machine. Its <c>quest</c> or <c>ask</c> names it; a quest's travels as <c>context</c> <c>quest</c>.</summary>
-    public const string HistoryUnknown = "HISTORY_UNKNOWN";
+    public const string HistoryUnknown = Daoris.Driver.HistoryCodes.Unknown;
 
     /// <summary>
     /// A quest of the work is open, or taken (<c>context</c> <c>taken</c>): its record is work in progress. A failed-sessions clear
     /// of a quest still open or taken (<c>context</c> <c>failed</c>): its strikes are counted from them (D58).
     /// </summary>
-    public const string HistoryOpen = "HISTORY_OPEN";
+    public const string HistoryOpen = Daoris.Driver.HistoryCodes.Open;
 
     /// <summary>A quest an ask here asked, cleared on its own: its <c>ask</c> clears it, with every quest it became.</summary>
-    public const string HistoryAsked = "HISTORY_ASKED";
+    public const string HistoryAsked = Daoris.Driver.HistoryCodes.Asked;
 
     /// <summary>
     /// A session of the work still runs here, still reads as running on a teammate's <c>machine</c> (<c>context</c>
     /// <c>teammate</c>), or its automatic landing still runs (<c>context</c> <c>landing</c>).
     /// </summary>
-    public const string HistoryLive = "HISTORY_LIVE";
+    public const string HistoryLive = Daoris.Driver.HistoryCodes.Live;
 
     /// <summary>
     /// Something of the work waits on the person: a parked <c>session</c>; a done held for acceptance (<c>held</c>); a conflict
     /// (<c>conflict</c>); an ask proposed or open (<c>ask</c>); a rule proposal from a session (<c>proposal</c>) or for the ask
     /// (<c>proposalAsk</c>).
     /// </summary>
-    public const string HistoryNeedsYou = "HISTORY_NEEDS_YOU";
+    public const string HistoryNeedsYou = Daoris.Driver.HistoryCodes.NeedsYou;
 
     /// <summary>
     /// Open work names it: a taken <c>quest</c> waits on its answer; an open quest its <c>session</c> published
     /// (<c>published</c>); a chain's next step still open (<c>chain</c>).
     /// </summary>
-    public const string HistoryAwaited = "HISTORY_AWAITED";
+    public const string HistoryAwaited = Daoris.Driver.HistoryCodes.Awaited;
 
     /// <summary>A session's tree is still on this machine: the clean-up or *Discard tree* frees it. Its <c>session</c> names it.</summary>
-    public const string HistoryTreeHere = "HISTORY_TREE_HERE";
+    public const string HistoryTreeHere = Daoris.Driver.HistoryCodes.TreeHere;
 
     /// <summary>A landing's <c>branch</c> for one of its sessions still stands in its <c>repository</c>: the clean-up frees it once it has merged.</summary>
-    public const string HistoryLandingStands = "HISTORY_LANDING_STANDS";
+    public const string HistoryLandingStands = Daoris.Driver.HistoryCodes.LandingStands;
 
     /// <summary>On a wired <c>workspace</c>, a move or a record of it has not reached the remote: sync, then clear it.</summary>
-    public const string HistoryUnpushed = "HISTORY_UNPUSHED";
+    public const string HistoryUnpushed = Daoris.Driver.HistoryCodes.Unpushed;
 
     /// <summary>A teammate's failed <c>session</c>, which ran on their <c>machine</c>: listed and kept, since its record is theirs.</summary>
-    public const string HistoryNotOurs = "HISTORY_NOT_OURS";
+    public const string HistoryNotOurs = Daoris.Driver.HistoryCodes.NotOurs;
 
     /// <summary>
     /// *Open folder* or *Open a terminal here* asked of a session whose folder this machine no longer holds (SESSUX1d, D126
