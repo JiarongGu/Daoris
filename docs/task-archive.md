@@ -11568,3 +11568,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CARRY2b — the planner reads whose a take is** (driver). Since CARRY2 the ledger refuses a carry-on over another machine's take, but `Planner.cs:576` still plans one for any failed last run, so every look asks and is refused (no strike, a repeated line). Read the claim and `took` as `WorkAbandoning.QuestAct` does (`WorkAbandoning.cs:705`) and give such a quest a sitting verdict with the ledger's sentence. Contract: D80's CARRY2 note. Proof: a `PlannerTests` row.
 
 **Outcome** 2026-10-07: a look asks `/api/quests/{id}/claim` only for taken quests whose last run here would be carried on (`Planner.CarriesOn`, one rule for the asking and the branch), reads `took` and the newest teammate record from the records the strikes come from, and gives a take that is not this machine's the new `StartVerdict.TakenElsewhere` with the ledger's sentence, before holds or strikes and taking no slot. An unmarked take made while the session ran is still carried on. The page shows the driver's English for it in both languages (CARRY2c). Driver fast +10. Detail: D80's CARRY2b note; commit 3b68ae36.
+
+
+## UX6j — the bar's footer and seven Settings domains (2026-10-07, D150)
+
+> - [ ] **UX6j — bar footer and seven Settings domains** (web-shell, web-settings). Contract/proof: UX6 §2.1, §2.3–§2.4.
+
+**Outcome** 2026-10-07: the activity bar's foot holds Settings alone: the index refresh and the language switch live in View (*Refresh the index*, disabled with *Refreshing the index…* while one runs; *Language ▸*), the palette and Settings → Appearance, every language door writing `daoris.language`. Settings keeps the seven domains §2.3 names: Plugins retires into its place (its folder row moves to Driver with *Open Plugins*; an old `plugins` id lands on the place, a remembered one on Driver), and Setup is renamed Get started (开始使用). Stories count the bar at 9 controls and Settings' list at 7 rows, both on budget. The merge moves the Plugins place into `HelpCoverageTests`' places. Stale "Settings → Setup/Plugins" words in the driver, service, CLI and tools are UX6i2's. Web vitest 4383 → 4363 with retired suites. Detail: D150's UX6j note; commits 79048ea7, f9928b13, 274c8a61.
+
+
+## PLUGUI1c — Settings keeps settings (2026-10-07, D119; core by UX6j)
+
+> - [ ] **PLUGUI1c — Settings keeps settings** (after b; five lanes). Retire its plugin domain, repoint anchors and move the folder row into Driver. Contract/proof: plugin-screen design.
+
+**Outcome** 2026-10-07: the core was built by UX6j: Settings' plugin domain retired, its anchors repointed (an Ask Daoris go to it lands on the Plugins place), and the folder row moved into Driver. The remainder is PLUGUI1c2. Detail: D150's UX6j note.

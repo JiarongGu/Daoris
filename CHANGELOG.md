@@ -37,6 +37,9 @@ with the version and date at release.
   `--until-idle` print each report as it is made and wait for their sessions before exiting.
 - `daoris init` writes a `.gitattributes` holding `* text=auto eol=lf` where a repository has none, so
   the files `sync` writes keep their line endings on Windows; an existing one is never touched.
+- The activity bar holds its places and Settings alone: refreshing the index and switching language
+  are in View, the palette and Settings → Appearance. Settings keeps seven domains: Plugins is its own
+  place (its folder is under Driver), and Setup is called Get started.
 - Search and Convergence are one place, Knowledge, whose list switches between them; each keeps what
   it showed, and every way that reached either still lands there.
 - Knowledge search finds an identifier from its words (`ProbeLock` from "probe lock") and lists each

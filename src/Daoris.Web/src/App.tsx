@@ -27,9 +27,7 @@ import {
   askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening, questsItem, workspaceItem,
 } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
-import {
-  Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts, useToasts,
-} from './ui';
+import { Drawer, failure, Prose, SESSION_ACTIVE, Toasts, useToasts } from './ui';
 import { OverviewView } from './OverviewView';
 import { useKnowledgeMode, useKnowledgeView } from './KnowledgeView';
 import { MapView } from './MapView';
@@ -38,7 +36,7 @@ import { useProjectsView } from './ProjectsView';
 import {
   type ProjectTab, readProjectTab, readWorkspaceTab, storeProjectTab, storeWorkspaceTab, type WorkspaceSection, type WorkspaceTab,
 } from './projects/tabs';
-import { SETTINGS_SECTIONS, type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
+import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useConsidered, useDismissUpdate, useDriver, useHarnesses, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes,
@@ -70,7 +68,7 @@ import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppMenu';
 import { useThemeChoice } from './theme';
-import { SETTINGS_DOMAINS } from './settings/domains';
+import { rememberedDomain, SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
 import { HarnessRuns } from './harnessRuns';
@@ -151,10 +149,9 @@ export function App() {
   // Knowledge's mode (UX6i, D150 §2.2): Search or Convergence, remembered for the place. Held here, where every door is
   // applied, since a door into either names it.
   const [knowledgeMode, chooseKnowledgeMode] = useKnowledgeMode(lists);
-  // A domain remembered from before it left Settings (Agents, UX6e; Workspace and Permissions, UX6g) reads as Appearance,
-  // which Settings opens on, so Ask Daoris is told the domain shown.
-  const rememberedSection = lists.pane('settings').chosen;
-  const settingsSection: SettingsSection = SETTINGS_SECTIONS.find((id) => id === rememberedSection) ?? 'appearance';
+  // A domain remembered from before it left Settings reads as the one Settings opens on, so Ask Daoris is told the domain
+  // shown: Plugins as Driver, which keeps its folder's row (UX6j); Agents, Workspace and Permissions as Appearance.
+  const settingsSection: SettingsSection = rememberedDomain(lists.pane('settings').chosen);
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   // And the part of an agent's page a door named (UX6e, D150 §2.4): its accounts, what it may do, its usage.
@@ -564,6 +561,7 @@ export function App() {
       record: live.includes('copy'),
       find: findTarget(document, view) !== null,
       field: fields.current?.field() != null,
+      refreshing: refresh.isPending,
     };
   };
 
@@ -1003,8 +1001,9 @@ export function App() {
           a page" true on a narrow screen instead of only on a wide one. */}
       <div className="flex min-h-0 flex-1">
         {/* The application's one navigation (D66): every view is one click from every other, and
-            nothing is gated behind a mode. Its foot holds ACTIONS, then Settings — the state it used
-            to carry went to the status bar, where ambient state belongs. */}
+            nothing is gated behind a mode. Its foot holds Settings alone (UX6j, D150 §2.1): the state
+            it once carried went to the status bar, and its two actions, refreshing the index and the
+            language, to View, the palette and Settings → Appearance. */}
         <ActivityBar
           label={t('nav.label')}
           items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ view: target, icon }) => ({
@@ -1031,22 +1030,6 @@ export function App() {
           onSelect={(target) => open(target)}
           // The list's fourth door (D118 §3a): the place you are on, pressed again, toggles its list.
           onToggleCurrent={listed ? () => { toggleRegion('list'); } : undefined}
-          footer={(
-            <>
-              <Tip content={refresh.isPending ? t('sidebar.refreshing') : t('sidebar.refresh')}>
-                <Button
-                  variant="ghost"
-                  aria-label={t('sidebar.refresh')}
-                  disabled={refresh.isPending}
-                  onClick={onRefresh}
-                  className="h-9 w-9 justify-center px-0"
-                >
-                  <Icon name="refresh" size={15} />
-                </Button>
-              </Tip>
-              <LanguageSwitcher compact />
-            </>
-          )}
         />
 
         {/* 🔴 ONE frame on every view (DOCK1a): the right side bar and the panel stay whatever the

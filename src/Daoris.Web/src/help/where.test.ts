@@ -19,6 +19,9 @@ describe('where the person is', () => {
   it('names the settings domain on Settings', () => {
     expect(prefaceOf({ view: 'settings', workspace: null, settings: 'driver' }))
       .toBe('Where the person is now: Settings → Driver, every workspace.');
+    // UX6j (D150 §2.3): the guide is Get started again, since Setup names a repository's and a workspace's tab.
+    expect(prefaceOf({ view: 'settings', workspace: null, settings: 'start' }))
+      .toBe('Where the person is now: Settings → Get started, every workspace.');
   });
 
   /**
@@ -32,8 +35,10 @@ describe('where the person is', () => {
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
     // Agents left Settings for a place of its own (UX6e), which the views above name since the twins moved it (UX6e2);
-    // Workspace and Permissions left for a workspace's page (UX6g), and the twins still name them until they move together.
-    for (const domain of PLACE_DOMAINS.filter((name): name is SettingsSection => name !== 'workspace' && name !== 'permissions')) {
+    // Workspace and Permissions left for a workspace's page (UX6g), and Plugins for its place (UX6j), and the twins still
+    // name them until they move together.
+    const retired = new Set(['workspace', 'permissions', 'plugins']);
+    for (const domain of PLACE_DOMAINS.filter((name): name is SettingsSection => !retired.has(name))) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
     }

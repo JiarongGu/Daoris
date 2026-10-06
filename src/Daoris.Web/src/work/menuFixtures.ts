@@ -22,7 +22,7 @@ export const MENU_STATE: CommandState = {
   domains: [
     { id: 'start', label: 'settings.domain.start' }, { id: 'appearance', label: 'settings.domain.appearance' },
     { id: 'ai', label: 'settings.domain.ai' }, { id: 'driver', label: 'settings.domain.driver' },
-    { id: 'tools', label: 'settings.domain.tools' }, { id: 'plugins', label: 'settings.domain.plugins' },
+    { id: 'tools', label: 'settings.domain.tools' },
     { id: 'browser', label: 'settings.domain.browser' }, { id: 'logs', label: 'settings.domain.logs' },
   ],
   knowledge: 'search',
@@ -31,6 +31,7 @@ export const MENU_STATE: CommandState = {
   record: false,
   find: true,
   field: false,
+  refreshing: false,
 };
 
 /** A session attended on Sessions, working: its header offers its stop and its own window; its card takes no answer. */

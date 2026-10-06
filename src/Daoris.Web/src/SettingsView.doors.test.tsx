@@ -154,4 +154,21 @@ describe("Settings' list, on the window", () => {
     await waitFor(() => expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.getByRole('heading', { level: 1, name: 'Driver' })).toBeInTheDocument();
   });
+
+  /**
+   * UX6j (D150 §2.3): Plugins left Settings for its place, and the one row of it Settings keeps, the plugins folder with
+   * its door to the place, is Driver's. Its domain, remembered from before, opens there rather than on a domain it never
+   * was; the seven domains hold no Plugins.
+   */
+  it('opens a Plugins domain remembered from before it left at Driver, where its folder and its door are', async () => {
+    window.localStorage.setItem('daoris.settings', 'plugins');
+    await settings();
+    await listed();
+
+    const domains = screen.getByRole('navigation', { name: 'Settings domains' });
+    await waitFor(() => expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page'));
+    expect(within(domains).getAllByRole('button').map((domain) => domain.textContent)).toEqual([
+      'Get started', 'Appearance', 'AI features', 'Driver', 'Tools', 'Browser', 'Machine log',
+    ]);
+  });
 });

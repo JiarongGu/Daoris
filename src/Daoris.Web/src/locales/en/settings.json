@@ -12,6 +12,8 @@
   "settings.theme.dark": "Dark",
   "settings.language.label": "Language",
   "settings.language.hint": "The window's own words, and Daoris's lines on a session's record. What agents, people and the service write is shown as written.",
+  "settings.pluginsFolder.hint": "`daoris plugin list`",
+  "settings.pluginsFolder.open": "Open Plugins",
   "settings.home.label": "Daoris home",
   "settings.home.hint": "The Daoris home. Every file on this page lives under it, and a terminal's daoris reads the same folder; nothing of Daoris's lives under your profile.",
   "settings.home.hintOverridden": "The Daoris home. Every file on this page lives under it; nothing of Daoris's lives under your profile. The line below says which folder a terminal's daoris reads.",

@@ -3,8 +3,7 @@
   "settings.domain.ai": "AI features",
   "settings.domain.driver": "Driver",
   "settings.domain.tools": "Tools",
-  "settings.domain.plugins": "Plugins",
   "settings.domain.browser": "Browser",
-  "settings.domain.start": "Setup",
+  "settings.domain.start": "Get started",
   "settings.domain.logs": "Machine log"
 }

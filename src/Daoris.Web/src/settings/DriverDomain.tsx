@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDriver, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState } from '../shell';
-import { Card, CheckField, failure, type Notify, PathText, SettingRow } from '../ui';
+import {
+  useDriver, usePlugins, useSayUpdate, useSetCoolOff, useSetNotify, useSetStrikes, useUpdateState,
+} from '../shell';
+import { Button, Card, CheckField, failure, Icon, PathText, SettingRow } from '../ui';
+import type { SettingsDomainProps } from './domains';
 import { UpdateSection } from './Update';
 
 /**
@@ -31,12 +34,19 @@ const HOME_HINT: Record<string, string> = {
  * machine lives or syncs, and never re-point it, so the state lives behind the shell's bridge and the
  * service has no route onto it at all. For the wiring, the key goes in and never comes out: what is
  * rendered is the audit prefix a deployment's own `keys list` prints (`WiringSettings`).
+ *
+ * **Where plugins are looked for** is a fact of the home, so it is a row under it since UX6j (D150 §2.3; the plugins
+ * design §5), read-only, with the door to the Plugins place: Settings → Plugins retired there, since nothing about a
+ * plugin is set here.
  */
-export function DriverDomain({ notify }: { notify: Notify }) {
+export function DriverDomain({ notify, onGo }: Pick<SettingsDomainProps, 'notify' | 'onGo'>) {
   const { t } = useTranslation();
   // Whether this machine interrupts the person (SURF5b) — the same `driver.json` field
   // `daoris driver notify on|off` edits, which is what makes this a door rather than the door.
   const driver = useDriver();
+  // The catalogue the Plugins place reads, asked for its folder alone. An older shell names none, and the row is absent.
+  const plugins = usePlugins();
+  const pluginsFolder = typeof plugins.data?.folder === 'string' ? plugins.data.folder : null;
   const setNotify = useSetNotify();
   const setStrikesMutation = useSetStrikes();
 
@@ -89,6 +99,22 @@ export function DriverDomain({ notify }: { notify: Notify }) {
               </p>
             )}
           </SettingRow>
+        )}
+        {pluginsFolder && (
+          <SettingRow
+            label={t('plugin.folder')}
+            hint={t('settings.pluginsFolder.hint')}
+            why={t('plugin.body')}
+            control={(
+              <>
+                <PathText path={pluginsFolder} className="text-small text-ink-faint" />
+                <Button onClick={() => onGo({ view: 'plugins' })}>
+                  <Icon name="plug" size={14} />
+                  {t('settings.pluginsFolder.open')}
+                </Button>
+              </>
+            )}
+          />
         )}
         <SettingRow
           label={t('settings.notify.label')}

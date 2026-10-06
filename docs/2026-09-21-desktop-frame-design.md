@@ -145,6 +145,9 @@ actions and sit at the bar's foot as icons.
 The cost is discoverability, paid by tooltips, the view's own page header, and SURF9's palette —
 which the study already argued is cheaper before the domain count grows.
 
+> Amended by D150 §2.1 (UX6j, 2026-10-07): the foot holds Settings alone. Refresh and the language
+> left for View's *Refresh the index* and *Language ▸*, the palette, and Settings → Appearance.
+
 **How the bar is laid out.** The views sit at the top and the foot holds the actions (refresh,
 language), then Settings, where every workbench keeps its gear. The two groups are separated by
 POSITION, with no rule between them, as VS Code separates its own. A view that does not exist on this

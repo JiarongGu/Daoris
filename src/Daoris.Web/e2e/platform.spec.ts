@@ -649,8 +649,9 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
-  // Setup leads (SETUP1a, D97; named so by NAME1b), holding in a browser only the registry's step.
-  await expect(domains).toHaveText([/Setup/, /Appearance/, /AI features/]);
+  // Get started leads (SETUP1a, D97; Setup from NAME1b until UX6j gave that name to a repository's tab), holding in a
+  // browser only the registry's step.
+  await expect(domains).toHaveText([/Get started/, /Appearance/, /AI features/]);
 
   // A workspace's page (UX6g, D150 §4.3) has a machine half, its branches, setup and accounts, so it is opened and that
   // half's absence asserted where it would render, after its browser half is seen.
@@ -948,7 +949,9 @@ test("a browser's main area lays its columns out by its own width, beside no sid
 
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '中文' }).click();
+  // The activity bar's foot holds Settings alone (UX6j, D150 §2.1): the language is the palette's, View's and Appearance's.
+  await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
+  await page.getByRole('dialog').getByRole('option', { name: /Switch language/ }).click();
   await expect(page.getByRole('heading', { name: '总览' })).toBeVisible();
   await expect(nav(page, '委托')).toBeVisible();
 });

@@ -57,7 +57,8 @@ export type PluginCatalog = {
 
 /**
  * The catalogue. `enabled: false` asks nothing (PLUGUI1b): the application holds the Plugins view on every view, and the
- * view asks only while it is in front; Settings → Plugins asks whenever it is drawn.
+ * view asks only while it is in front; Settings → Driver asks whenever it is drawn, for the plugins folder its row names
+ * (UX6j: Settings → Plugins retired into the view).
  */
 export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
