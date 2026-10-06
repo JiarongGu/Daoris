@@ -8,7 +8,7 @@ import { DomainList } from './DomainList';
 // and the one chosen arrive as props, and a choice goes out.
 
 const DOMAINS = [
-  { id: 'start', label: 'Setup' },
+  { id: 'start', label: 'Get started' },
   { id: 'appearance', label: 'Appearance' },
   { id: 'ai', label: 'AI features' },
   { id: 'driver', label: 'Driver' },
@@ -32,9 +32,9 @@ describe("Settings' domain list", () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Setup', 'Appearance', 'AI features', 'Driver']);
+      .toEqual(['Get started', 'Appearance', 'AI features', 'Driver']);
     expect(within(domains).getByRole('button', { name: 'AI features' })).toHaveAttribute('aria-current', 'page');
-    expect(within(domains).getByRole('button', { name: 'Setup' })).not.toHaveAttribute('aria-current');
+    expect(within(domains).getByRole('button', { name: 'Get started' })).not.toHaveAttribute('aria-current');
   });
 
   it('is a list pane\'s rows: each row carries the mark the keys move between', () => {
@@ -42,7 +42,7 @@ describe("Settings' domain list", () => {
 
     const rows = document.querySelectorAll(`[${LIST_ROW}]`);
     expect(rows).toHaveLength(4);
-    expect(within(rows[0] as HTMLElement).getByRole('button', { name: 'Setup' })).toBeInTheDocument();
+    expect(within(rows[0] as HTMLElement).getByRole('button', { name: 'Get started' })).toBeInTheDocument();
   });
 
   it('asks for a domain by its id, by a press and by the keys', async () => {
@@ -56,7 +56,7 @@ describe("Settings' domain list", () => {
     await user.keyboard('{ArrowUp}');
     expect(screen.getByRole('button', { name: 'AI features' })).toHaveFocus();
     await user.keyboard('{Home}');
-    expect(screen.getByRole('button', { name: 'Setup' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Get started' })).toHaveFocus();
     await user.keyboard('{Enter}');
     expect(onChoose).toHaveBeenLastCalledWith('start');
   });

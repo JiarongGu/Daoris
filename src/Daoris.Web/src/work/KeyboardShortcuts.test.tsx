@@ -10,7 +10,7 @@ import { KeyboardShortcuts } from './KeyboardShortcuts';
 const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false, workspaces: [],
   scope: null, circle: null, wired: false, theme: 'system', language: 'en', agents: [], domains: [], knowledge: 'search',
-  session: null, quest: null, record: false, find: false, field: false, ...over,
+  session: null, quest: null, record: false, find: false, field: false, refreshing: false, ...over,
 });
 const doors = new Proxy({}, { get: () => vi.fn() }) as never;
 const groups = (over: Partial<CommandState> = {}) => {

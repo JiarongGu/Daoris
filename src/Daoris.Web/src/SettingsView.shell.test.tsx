@@ -46,17 +46,19 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(8));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(7));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
     // The programs Daoris runs beside its agents follow the driver, and Agents is a place of its own (UX6e, D150 §5).
     const names = within(domains).getAllByRole('button').map((button) => button.textContent);
     expect(names.slice(names.indexOf('Driver'), names.indexOf('Driver') + 2)).toEqual(['Driver', 'Tools']);
     expect(names).not.toContain('Agents');
-    // Workspace and Permissions left for a workspace's page and a repository's (UX6g, D150 §3.1).
+    // Workspace and Permissions left for a workspace's page and a repository's (UX6g, D150 §3.1), and Plugins for its
+    // place (UX6j, §2.3).
     expect(names).not.toContain('Workspace');
     expect(names).not.toContain('Permissions');
-    // The setup guide leads (SETUP1a, D97).
-    expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Setup');
+    expect(names).not.toContain('Plugins');
+    // The setup guide leads (SETUP1a, D97), named Get started again since Setup names a repository's tab (UX6j).
+    expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Get started');
     // Daoris's browser (CHR5, CHR7) and the machine log (LOG1c) are a machine's domains, last in the list.
     expect(within(domains).getAllByRole('button').slice(-2).map((button) => button.textContent)).toEqual(['Browser', 'Machine log']);
     expect(await screen.findByLabelText('Failures before a quest parks')).toBeTruthy();
@@ -68,8 +70,8 @@ describe('the domain list, in a shell', () => {
     expect(screen.queryByRole('button', { name: 'Wire a workspace' })).toBeNull();
     expect(screen.queryByText('Theme')).toBeNull();
 
-    await userEvent.click(within(domains).getByRole('button', { name: 'Plugins' }));
-    expect(onSection).toHaveBeenCalledWith('plugins');
+    await userEvent.click(within(domains).getByRole('button', { name: 'Browser' }));
+    expect(onSection).toHaveBeenCalledWith('browser');
   });
 
   /** A shell says nothing of what it is not offered: every domain is its own. */
@@ -79,7 +81,7 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(8));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(7));
     expect(screen.queryByText(/on the desktop, where the machine is/)).toBeNull();
   });
 });

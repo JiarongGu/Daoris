@@ -12,7 +12,7 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false,
   workspaces: [{ name: 'work', repositories: 4 }, { name: 'forge', repositories: 2 }], scope: null, circle: 'work', wired: true,
   theme: 'dark', language: 'en', agents: [], domains: [], knowledge: 'search', session: null, quest: null, record: false, find: false,
-  field: false, ...over,
+  field: false, refreshing: false, ...over,
 });
 const doors = new Proxy({}, { get: () => vi.fn() }) as never;
 const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), doors, i18n.t.bind(i18n));
@@ -65,7 +65,7 @@ describe('the menus, row by row', () => {
     const browser = entries({ attached: false });
     expect(labels(menuRows(browser, 'workspace'))).toEqual(['New ask…', 'New quest…', 'Every workspace · 2', 'work', 'forge', 'Settings']);
     expect(menuRows(browser, 'terminal')).toEqual([]);
-    expect(labels(menuRows(browser, 'help'))).toEqual(['Setup', 'Keyboard shortcuts', 'About Daoris']);
+    expect(labels(menuRows(browser, 'help'))).toEqual(['Get started', 'Keyboard shortcuts', 'About Daoris']);
     // A key a browser keeps is not printed where it is not answered.
     expect(menuRows(browser, 'go').find((row) => row.label === 'Quests')?.shortcut).toBeUndefined();
   });

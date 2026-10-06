@@ -2,7 +2,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { ActivityBar, AppStrip } from './frame';
 import { CommandCenter } from './CommandCenter';
-import { Button, Icon, LanguageSwitcher } from '../ui';
 
 // The application's own chrome (D56, D66): the strip across the top and the bar down the side. Both
 // are molecules — every state below is reached by passing props, with no shell and no service behind
@@ -79,20 +78,14 @@ export const CaptionRoomReserved: Story = { args: { captionRoom: true } };
 /* ------------------------------------------------------------------ activity bar */
 
 /**
- * The one navigation (D66): every view in one list, Settings at the foot, and two counts — sessions
- * waiting on a person in the status hue, outstanding quests in the accent, each a true circle.
+ * The one navigation (D66): every view in one list, Settings alone at the foot (UX6j, D150 §2.1), and two counts —
+ * sessions waiting on a person in the status hue, outstanding quests in the accent, each a true circle. Nine controls: the
+ * eight places and the gear.
  */
 export const Bar: StoryObj<typeof ActivityBar> = {
   render: () => (
     <Tooltip.Provider><div className="flex h-[30rem] border border-line">
-      <ActivityBar
-        label="Views"
-        items={VIEWS}
-        end={SETTINGS}
-        active="quests"
-        onSelect={() => {}}
-        footer={<><Button variant="ghost"><Icon name="refresh" size={14} /></Button><LanguageSwitcher compact /></>}
-      />
+      <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="quests" onSelect={() => {}} />
       <div className="flex-1 bg-page" />
     </div></Tooltip.Provider>
   ),

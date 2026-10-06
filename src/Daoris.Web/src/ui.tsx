@@ -1550,29 +1550,3 @@ export function useErrorNotify(error: unknown, notify: Notify) {
  * architecture §4a); it was written out at some thirty doors (REV3 CLEAN1).
  */
 export const failure = (notify: Notify) => (error: unknown): void => notify(sentence(error), 'error');
-
-/* ---------------------------------------------------------------- language */
-
-export function LanguageSwitcher({ compact }: { compact?: boolean } = {}) {
-  const { i18n, t } = useTranslation();
-  const current = i18n.language.startsWith('zh') ? 'zh' : 'en';
-  const next = current === 'zh' ? 'en' : 'zh';
-  const label = t(`language.${next}`);
-  return (
-    // The visible label IS the accessible name — the language it switches to, in that language.
-    // In the activity bar there is no room for it, so it becomes the accessible name instead: the
-    // glyph alone would be a control with no name at all (D41 §6 — icons are decorative BESIDE a
-    // real label, so an icon-only control has to carry one).
-    <Tip content={compact ? label : ''}>
-      <Button
-        variant="ghost"
-        aria-label={compact ? label : undefined}
-        className={compact ? 'h-9 w-9 justify-center px-0' : 'w-full justify-center'}
-        onClick={() => void i18n.changeLanguage(next)}
-      >
-        <Icon name="languages" size={14} />
-        {!compact && label}
-      </Button>
-    </Tip>
-  );
-}

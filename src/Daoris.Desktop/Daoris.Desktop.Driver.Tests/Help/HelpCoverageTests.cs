@@ -974,6 +974,8 @@ public sealed partial class HelpCoverageTests
     [
         ("agents", Path.Combine("agents", "AgentsView")),
         ("projects", "ProjectsView"),
+        // UX6j (D150 §2.3): Settings → Plugins retired into the Plugins place, whose view presses the same eight hooks.
+        ("plugins", Path.Combine("plugins", "PluginsView")),
     ];
 
     /// <summary>

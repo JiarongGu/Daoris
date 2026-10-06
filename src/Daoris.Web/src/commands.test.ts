@@ -28,6 +28,7 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
   record: false,
   find: false,
   field: false,
+  refreshing: false,
   ...over,
 });
 
@@ -211,6 +212,42 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
     expect(inMenu(none, 'workspace').find((each) => each.id.startsWith('workspace.scope'))).toMatchObject({
       id: 'workspace.scope:none', label: 'menu.workspace.none', enabled: false, palette: false,
     });
+  });
+});
+
+/**
+ * UX6j (D150 §2.1): the activity bar's foot holds Settings alone. Refreshing the index and switching the language left it,
+ * and each keeps the doors it had beside it: View's row and the palette's, and for the language Settings → Appearance too.
+ */
+describe("what left the activity bar's foot (UX6j)", () => {
+  it('refreshes the index from View and the palette, a browser too', () => {
+    const on = doors();
+    for (const attached of [true, false]) {
+      expect(entry(table({ attached }, on), 'view.refresh')).toMatchObject({
+        label: 'menu.refresh', enabled: true, menuItem: true, palette: true,
+      });
+    }
+    entry(table({}, on), 'view.refresh')!.run();
+    expect(on.refresh).toHaveBeenCalledOnce();
+  });
+
+  /** The bar's button said *Refreshing…* and took no second press while one ran; its row does the same. */
+  it('says a refresh is running, and takes no second press while it runs', () => {
+    expect(entry(table({ refreshing: true }), 'view.refresh')).toMatchObject({
+      label: 'menu.refreshing', enabled: false, palette: false,
+    });
+  });
+
+  it('switches the language from View › Language and the palette, which offers the one not in force', () => {
+    const on = doors();
+    const languages = table({ language: 'en' }, on).filter((each) => each.submenu === 'menu.language');
+    expect(languages.map((each) => [each.id, each.checked, each.palette])).toEqual([
+      ['view.language:en', true, false], ['view.language:zh', false, true],
+    ]);
+    languages[1]!.run();
+    expect(on.language).toHaveBeenCalledWith('zh');
+    // The language is the viewer's own (D66), so a browser has it too.
+    expect(entry(table({ attached: false }), 'view.language:zh')?.menuItem).toBe(true);
   });
 });
 

@@ -119,6 +119,11 @@ export type CommandState = {
   find: boolean;
   /** Whether a field is there to undo, cut, paste in and select. */
   field: boolean;
+  /**
+   * Whether a refresh of the index is running: View's *Refresh the index* says so and takes no second press, as the
+   * activity bar's button did before UX6j moved it here (D150 §2.1).
+   */
+  refreshing: boolean;
 };
 
 /** What each verb runs: the application's doors, handed in, so this module reaches no hook and no bridge. */
@@ -385,7 +390,10 @@ export const COMMANDS: readonly CommandSpec[] = [
     keywords: 'browser web page sign in login ticket chrome jira', run: (doors) => doors.browser(),
   },
   {
-    id: 'view.refresh', menu: 'view', group: 'index', label: 'menu.refresh', icon: 'refresh', keywords: 'reindex rescan',
+    // The index's refresh, with the language above it, left the activity bar's foot for here and the palette (UX6j, D150
+    // §2.1): rarely pressed, and each already had two other doors. A browser has it too.
+    id: 'view.refresh', menu: 'view', group: 'index', label: (state) => (state.refreshing ? 'menu.refreshing' : 'menu.refresh'),
+    icon: 'refresh', keywords: 'reindex rescan refresh index 刷新 索引', applies: (state) => !state.refreshing,
     run: (doors) => doors.refresh(),
   },
 
@@ -537,7 +545,8 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     })),
   },
   {
-    // View's *Language ▸*. With two languages the palette's row is the switch it always was.
+    // View's *Language ▸*. With two languages the palette's row is the switch it always was. The activity bar's own switch
+    // left for these and Settings → Appearance (UX6j, D150 §2.1); each remembers the choice as i18n's `daoris.language`.
     family: 'view.language', menu: 'view', group: 'look', after: 'view.browser',
     rows: (state, t) => (['en', 'zh'] as const).map((language) => ({
       id: `view.language:${language}`, label: t(`language.${language}`), title: t('command.language'), submenu: 'menu.language',

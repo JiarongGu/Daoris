@@ -1,7 +1,5 @@
 {
   "sidebar.count": "{{entries}} 个条目 · {{repositories}} 个仓库",
-  "sidebar.refresh": "刷新索引",
-  "sidebar.refreshing": "刷新中…",
   "sidebar.refreshed": "已从 {{repositories}} 个仓库索引 {{entries}} 个条目。",
   "sidebar.embedded_zero": "已将 {{entries}} 个条目嵌入为 {{pieces}} 个向量，每个至多 {{window}} 个字符；没有条目超出此长度，无需分段。",
   "sidebar.embedded": "已将 {{entries}} 个条目嵌入为 {{pieces}} 个向量，每个至多 {{window}} 个字符；其中 {{split}} 个超出此长度，已分段嵌入。",

@@ -156,8 +156,10 @@ export function check(glossary, en, zh, { all = false } = {}) {
   const byTerm = new Map(glossary.terms.map((term) => [term.term, term]));
   const named = glossary.terms.filter((term) => !term.use);
   const matchers = named.map((term) => ({ term, pattern: new RegExp(term.match, 'i') }));
-  // A proper noun keeps its capitals mid-name, and so does a place's own name (*Open Sessions*).
-  const proper = [...glossary.properNouns, ...Object.keys(en).filter((key) => kindFor(key) === 'nav').map((key) => en[key])]
+  // A proper noun keeps its capitals mid-name, and so does a place's own name (*Open Sessions*), a tab's too (*Change in
+  // Setup*, UX6j): a door names either.
+  const place = (key) => kindFor(key) === 'nav' || kindFor(key) === 'tab';
+  const proper = [...glossary.properNouns, ...Object.keys(en).filter(place).map((key) => en[key])]
     .filter((name) => /^[A-Z]/.test(name))
     .sort((a, b) => b.length - a.length);
   const accepted = acceptances(glossary);

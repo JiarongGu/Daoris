@@ -3,8 +3,7 @@
   "settings.domain.ai": "AI 功能",
   "settings.domain.driver": "驱动",
   "settings.domain.tools": "工具",
-  "settings.domain.plugins": "插件",
   "settings.domain.browser": "浏览器",
-  "settings.domain.start": "配置",
+  "settings.domain.start": "开始使用",
   "settings.domain.logs": "本机日志"
 }
