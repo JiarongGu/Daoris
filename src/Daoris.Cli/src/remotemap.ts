@@ -13,6 +13,7 @@
 //   2. A half-set pair is no remote at all — never an env url with the file's key.
 //   3. Absence is the default, and it is silent (D21).
 
+import { findName } from './casefold.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { homeFile, requireHomeFile } from './home.ts';
 
@@ -129,10 +130,10 @@ export function writeRemotes(path: string, remotes: Map<string, Remote>): void {
 
 /**
  * The key a workspace is held under in `remotes`, compared as a person compares names — trimmed and
- * case-insensitive, the rule both C# twins read the file by (`OrdinalIgnoreCase`). Without it `remote
- * remove aurora` said "not wired" over an `Aurora` the driver kept syncing to (REV3).
+ * case-insensitive, the rule both C# twins read the file by (`OrdinalIgnoreCase`, which `casefold.ts`
+ * compares by, CASEFOLD1). Without it `remote remove aurora` said "not wired" over an `Aurora` the
+ * driver kept syncing to (REV3).
  */
 export function heldAs(remotes: Map<string, Remote>, workspace: string): string | undefined {
-  const wanted = normalizeWorkspace(workspace).toLowerCase();
-  return [...remotes.keys()].find((held) => held.toLowerCase() === wanted);
+  return findName(remotes.keys(), normalizeWorkspace(workspace)) ?? undefined;
 }

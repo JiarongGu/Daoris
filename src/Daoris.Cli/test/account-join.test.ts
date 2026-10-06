@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readHarnessSettings, writeHarnessSettings } from '../src/toolchain.ts';
 import { joinProblem, joinRefusal, placesOf, withJoined } from '../src/rotation.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -66,7 +66,18 @@ const PLACE_ROWS: [why: string, wiring: string, agent: string, account: string, 
   ['this machine first, then each workspace by name', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"zeta":{"claude-code":["account-1"]},"alpha":{"claude-code":["account-2","account-1"]}}}', 'claude-code', 'account-1', '[{"workspace":null,"list":true,"default":false},{"workspace":"alpha","list":true,"default":false},{"workspace":"zeta","list":true,"default":false}]'],
   ['another agent\'s places are not this one\'s', '{"defaults":{"codex":"account-1"},"rotation":{"codex":["account-1"]}}', 'claude-code', 'account-1', '[]'],
   ['an account compares exactly, as the wiring compares it', '{"rotation":{"claude-code":["account-1"]}}', 'claude-code', 'Account-1', '[]'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"workspaces":{"straße":{"claude-code":"account-1"}},"workspaceRotation":{"STRASSE":{"claude-code":["account-1"]}}}', 'claude-code', 'account-1', '[{"workspace":"STRASSE","list":true,"default":false},{"workspace":"straße","list":false,"default":true}]'],
+  ['a dotted capital I is not an i with a dot above', '{"workspaces":{"İzmir":{"claude-code":"account-1"}},"workspaceRotation":{"i\\u0307zmir":{"claude-code":["account-1"]}}}', 'claude-code', 'account-1', '[{"workspace":"i\\u0307zmir","list":true,"default":false},{"workspace":"İzmir","list":false,"default":true}]'],
 ];
+
+/**
+ * CASEFOLD1's rows, which `AccountJoinTwinTests` does not hold yet: two workspaces are one only as the driver's
+ * `OrdinalIgnoreCase` finds them (`casefold.ts`). The twin check below holds each the driver holds, cell for cell.
+ */
+const DRIVER_OWES = new Set([
+  'a letter whose capital is two letters is not those two: straße is not STRASSE',
+  'a dotted capital I is not an i with a dot above',
+]);
 
 test('an account\'s places read as the driver reads them (the twin\'s table)', () => {
   for (const [index, [why, wiring, agent, account, places]] of PLACE_ROWS.entries()) {
@@ -118,6 +129,7 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const rows = (method: string) => csharpRows(source, method, {}, 'AccountJoinTwinTests');
 
   assert.deepEqual(rows('An_account_joins_a_list_as_the_cli_joins_it'), JOIN_ROWS);
-  assert.deepEqual(rows('An_account_s_places_read_as_the_cli_reads_them'), PLACE_ROWS);
+  const places = rows('An_account_s_places_read_as_the_cli_reads_them');
+  assert.deepEqual(places, heldSoFar(places, PLACE_ROWS, DRIVER_OWES));
   assert.deepEqual(rows('A_refused_join_is_said_as_the_cli_says_it'), REFUSAL_ROWS);
 });

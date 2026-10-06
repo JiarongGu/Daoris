@@ -120,6 +120,7 @@ import {
 } from './accountnames.ts';
 import { forgetRead, keepRead } from './accountreads.ts';
 import type { Login } from './accountreads.ts';
+import { sameName } from './casefold.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { shellWord, shellWords } from './shellword.ts';
 import { saidLine, saidOf } from './windows.ts';
@@ -1929,7 +1930,7 @@ export function commandHarness(
           return 0;
         }
 
-        const others = readCooling(home, now).filter((entry) => entry.agent.toLowerCase() === name.toLowerCase());
+        const others = readCooling(home, now).filter((entry) => sameName(entry.agent, name));
         write(`daoris: ${who} is not cooling, so nothing changed — `
           + (others.length > 0
             ? `cooling now: ${others.map((entry) => entry.account ?? 'its own sign-in').join(', ')}.`

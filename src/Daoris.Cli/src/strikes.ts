@@ -9,6 +9,8 @@
 // Pure: the records arrive from the service client (`service.ts`'s `sessionRecords`), which the dispatcher's row hands in,
 // so nothing here or in `driverconfig.ts` reaches a network.
 
+import { sameName } from './casefold.ts';
+
 /**
  * The note codes that say a failure was its account's (ROSTER1b): the agent or its provider refused the account's sign-in
  * or its credential, which is no strike. A deliberate copy of the driver's `NoteCodes.AccountsOwn`, in its order, held to it
@@ -26,15 +28,15 @@ export type RecordsReader = () => Promise<SessionRecords>;
  * How many sessions have failed on a quest here, from the records `/api/sessions?includeClosed=true` answers, as the
  * planner counts them: each `failed` record, bar one an account's limit made (`limit`, D125) and one whose note carries an
  * account's own line (ROSTER1b), and each stop that was not the person's (`interrupted`, D104). A teammate's record, keyed
- * `origin/id`, says nothing of this machine's attempts. Ids and states compare in any case, codes exactly, and a flag is
- * only JSON `true`. Null where the records are not a list.
+ * `origin/id`, says nothing of this machine's attempts. Ids and states compare in any case (a quest's id as the driver's
+ * `OrdinalIgnoreCase` does, through `casefold.ts`, CASEFOLD1), codes exactly, and a flag is only JSON `true`. Null where
+ * the records are not a list.
  */
 export function failuresOf(records: unknown, quest: string): number | null {
   if (!Array.isArray(records)) return null;
-  const wanted = quest.toLowerCase();
   return records.filter((record) => isObject(record)
     && !(typeof record.id === 'string' && record.id.includes('/'))
-    && typeof record.quest === 'string' && record.quest.length > 0 && record.quest.toLowerCase() === wanted
+    && typeof record.quest === 'string' && record.quest.length > 0 && sameName(record.quest, quest)
     && isStrike(record)).length;
 }
 

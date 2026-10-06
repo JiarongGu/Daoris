@@ -14,12 +14,14 @@
 //   2. A window is an object whose `reset` and `seen` are ISO 8601 and nothing lenient; it says something only where `used`
 //      is a number from nothing up, `standing` is text, or `credits` is JSON `true`. A week a limit told says no use.
 //   3. A window whose `reset` is not after now is gone: a reading is a floor as of when it was said, and lasts to its reset.
-//   4. Names compare without case and are said as written; windows keep the file's order.
+//   4. Names compare without case as the driver's `OrdinalIgnoreCase` does (`casefold.ts`, CASEFOLD1), so `straße` is not
+//      `STRASSE`, and are said as written; windows keep the file's order.
 //
 // It holds no words of the agent's, no key and nobody's name. No HTTP route reaches it (D47 §4), and this module opens no
 // socket and spawns nothing.
 
 import { join } from 'node:path';
+import { findName } from './casefold.ts';
 import { coolingWhen, isoMoment } from './cooling.ts';
 import { readJsonObject } from './fsx.ts';
 
@@ -118,10 +120,10 @@ function asEntry(value: unknown): Node | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Node : null;
 }
 
-/** The value under the first key equal to `name` without case, where it is an object, as the driver finds one. */
+/** The value under the first key equal to `name` without case, where it is an object, as the driver finds one (rule 4). */
 function child(held: Node, name: string): Node | null {
-  const found = Object.keys(held).find((each) => each.toUpperCase() === name.toUpperCase());
-  return found === undefined ? null : asEntry(held[found]);
+  const found = findName(Object.keys(held), name);
+  return found === null ? null : asEntry(held[found]);
 }
 
 function text(value: unknown): string | null {

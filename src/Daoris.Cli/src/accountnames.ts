@@ -16,12 +16,14 @@
 //   4. The account a person means is the one whose id they named, exactly, as the wiring compares an id; else the one here
 //      whose name they named, in any case.
 //   5. Each writer keeps what it has no field for; agents and ids compare without case and are written as found, a name
-//      first in its entry, LF with a final newline — the same bytes for the same names.
+//      first in its entry, LF with a final newline — the same bytes for the same names. "In any case" and "without case"
+//      are the driver's `OrdinalIgnoreCase` (`casefold.ts`, CASEFOLD1): `straße` is not `STRASSE`.
 //
 // It spawns nothing and opens no socket.
 
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
+import { findName, foldName, sameName } from './casefold.ts';
 import { DaorisError } from './errors.ts';
 import { readJsonObject, writeTextAtomic } from './fsx.ts';
 
@@ -63,10 +65,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** A key in an object, compared without case, as the readings compare names. */
+/** A key in an object, compared without case, as the readings compare names (rule 5; `casefold.ts`). */
 function keyOf(held: Record<string, unknown>, name: string): string | undefined {
-  const wanted = name.toLowerCase();
-  return Object.keys(held).find((key) => key.toLowerCase() === wanted);
+  return findName(Object.keys(held), name) ?? undefined;
 }
 
 function child(parent: Record<string, unknown> | undefined, name: string): Record<string, unknown> | undefined {
@@ -92,7 +93,7 @@ function namesIn(root: Root, agent: string): Record<string, string> {
   if (!held) return names;
   for (const [id, entry] of Object.entries(held)) {
     const name = isObject(entry) ? nameIn(entry) : null;
-    if (name !== null && !Object.keys(names).some((key) => key.toLowerCase() === id.toLowerCase())) names[id] = name;
+    if (name !== null && keyOf(names, id) === undefined) names[id] = name;
   }
   return names;
 }
@@ -125,8 +126,10 @@ export function shownAs(names: Record<string, string>, account: string): string 
 export function resolveAccount(accounts: string[], names: Record<string, string>, given: string): string | null {
   const wanted = given.trim();
   if (accounts.includes(wanted)) return wanted;
-  const lower = wanted.toLowerCase();
-  return accounts.find((account) => nameFor(names, account)?.toLowerCase() === lower) ?? null;
+  return accounts.find((account) => {
+    const name = nameFor(names, account);
+    return name !== null && sameName(name, wanted);
+  }) ?? null;
 }
 
 /**
@@ -176,9 +179,9 @@ export function nameProblem(
   if (wanted.startsWith('-') || /[\s\p{Cc}`]/u.test(wanted)) return { kind: 'characters', other: null };
   if (wanted.length > NAME_LONGEST) return { kind: 'long', other: null };
 
-  const lower = wanted.toLowerCase();
   for (const other of accounts.filter((each) => each !== account)) {
-    if (other.toLowerCase() === lower || nameFor(names, other)?.toLowerCase() === lower) return { kind: 'taken', other };
+    const called = nameFor(names, other);
+    if (sameName(other, wanted) || (called !== null && sameName(called, wanted))) return { kind: 'taken', other };
   }
   return null;
 }
@@ -262,9 +265,9 @@ export function forgetName(home: string, agent: string, account: string): void {
  * @param draw Eight hex characters; the system's random source unless a test holds its own.
  */
 export function newAccountId(taken: string[], draw: () => string = () => randomBytes(4).toString('hex')): string {
-  const held = new Set(taken.map((name) => name.toLowerCase()));
+  const held = new Set(taken.map(foldName));
   for (;;) {
     const id = `${ID_PREFIX}${draw()}`;
-    if (!held.has(id.toLowerCase())) return id;
+    if (!held.has(foldName(id))) return id;
   }
 }
