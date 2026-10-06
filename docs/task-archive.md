@@ -11267,3 +11267,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CHATTAKE1b — chat pipe gets session id** (driver). Set `DAORIS_SESSION_ID` in `Spawning.ChatInRoot` so takes/publications identify the session. Contract: D126 CHATTAKE1 note. Proof: spawn environment case.
 
 **Outcome** 2026-10-07: a chat's spawn carries `DAORIS_SESSION_ID` on every door (`ChatTarget.Session`, absent rather than blank when none), so a take through its pipe-door connector marks its record. A chat's take from before this build is still unmarked. Detail: D126's CHATTAKE1b note; commit 3235346b.
+
+
+## HIST1 — design clearing finished history (2026-10-07, D153)
+
+> - [ ] **HIST1 — design clearing finished history** (design; D153 reserved). Decide what a person may clear on this machine (closed quests with their asks, sessions and files; failed sessions), what stays, how a wired workspace's remote copy and the strike count (D58, D80) are respected, the doors (D50) and the refusals. Contract: D95, D126 §5, D132, D68. Proof: design document and D153; its build rows replace HIST1a–d.
+
+**Outcome** 2026-10-07: designed. *Clear* takes a closed quest's or an ask's work, a closed quest's failed sessions, or a workspace's finished history, listed then pressed; a remote's copy is forgotten here and never deleted, and the store's numbers never go back. It found two latent hazards in today's deletes (H1, an operation sequence that can go back; H2, a session revision that can) and four files D126's delete leaves behind; HIST1a closes the first two. Build rows HIST1a–h replaced the provisional ones. Detail: D153, the design's §0–§9; commit c28484a7.
