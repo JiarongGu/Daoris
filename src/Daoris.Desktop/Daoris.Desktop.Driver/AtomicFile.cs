@@ -29,6 +29,31 @@ public static class AtomicFile
     public static void WriteBytes(string path, byte[] bytes) =>
         Write(path, beside => File.WriteAllBytes(beside, bytes));
 
+    /// <summary>
+    /// A folder moved into place, tried again while something holds a file in it (FIX-LOG 2026-10-07): on Windows a folder
+    /// holding an executable written a moment ago cannot move while the virus scanner has it open, and that gives way within
+    /// seconds. A missing folder is not held, and throws at once; the last refusal throws after the tries.
+    /// </summary>
+    /// <param name="move">The move itself; a test hands in one that refuses.</param>
+    public static void MoveFolder(string from, string to, int tries = 50, int waitMs = 200, Action<string, string>? move = null)
+    {
+        move ??= Directory.Move;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                move(from, to);
+                return;
+            }
+            catch (Exception held) when (attempt < tries
+                                         && (held is UnauthorizedAccessException
+                                             || held is IOException and not FileNotFoundException and not DirectoryNotFoundException))
+            {
+                Thread.Sleep(waitMs);
+            }
+        }
+    }
+
     private static void Write(string path, Action<string> write)
     {
         var beside = $"{path}.{Guid.NewGuid():N}.writing";

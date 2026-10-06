@@ -86,6 +86,30 @@ export function writeBytesAtomic(file: string, bytes: Buffer): void {
   renameSync(tmp, file);
 }
 
+/** The refusals that mean something still holds a file in the way, and give way once it lets go. */
+const HELD = new Set(['EPERM', 'EACCES', 'EBUSY']);
+
+/**
+ * A rename tried again while a held file refuses it, as `tools/fsx.mjs`'s is (UPDATE1, FIX-LOG 2026-10-07). On
+ * Windows a folder holding an executable written a moment ago cannot be renamed while something holds a file in it,
+ * the virus scanner most often, and the refusal is EPERM; it gives way within seconds. Any other failure throws at
+ * once, and the last refusal throws after the tries.
+ */
+export function renameHeld(
+  from: string, to: string,
+  { tries = 50, waitMs = 200, rename = renameSync }: { tries?: number; waitMs?: number; rename?: (from: string, to: string) => void } = {},
+): void {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      rename(from, to);
+      return;
+    } catch (error) {
+      if (attempt >= tries || !HELD.has((error as NodeJS.ErrnoException)?.code ?? '')) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, waitMs);
+    }
+  }
+}
+
 /** Sorted, '/'-separated, recursive. An absent directory yields []. */
 export function listFiles(dir: string, keep: (name: string) => boolean = () => true): string[] {
   if (!existsSync(dir)) return [];
