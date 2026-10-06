@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { shellWord } from '../shellWord';
 import { Button, CodeText, SelectField } from '../ui';
 import type { AccountSettings, AccountSettingsChange, SettingsChoices } from '../tools';
 
@@ -42,7 +43,8 @@ export function AccountSettingsSummary({ settings }: { settings: AccountSettings
  * never a value Daoris invents — so a save never rewrites a key the person did not touch. The choices are
  * the tool's own, handed in: Daoris names no model of its own (D24).
  *
- * **The terminal door is named on the form** (D50): the same file, `daoris agent settings`.
+ * **The terminal door is named on the form** (D50): the same file, `daoris agent settings`, its account spelled for
+ * whichever shell it is pasted into (`shellWord`, ACCTQUOTE1c).
  */
 export function AccountSettingsForm({
   harness, account, accountLabel, settings, choices, busy = false, onSave, onCancel,
@@ -139,7 +141,7 @@ export function AccountSettingsForm({
       <p className="m-0 text-meta text-ink-faint">{t('harness.settings.hint')}</p>
       <p className="m-0 flex flex-wrap items-baseline gap-1.5 text-meta text-ink-faint">
         <span>{t('harness.settings.terminal')}</span>
-        <CodeText text={`daoris agent settings ${harness} --account ${account} model <model> effort <effort>`} />
+        <CodeText text={`daoris agent settings ${harness} --account ${shellWord(account, '<account>')} model <model> effort <effort>`} />
       </p>
 
       <div className="flex flex-wrap items-center gap-2">

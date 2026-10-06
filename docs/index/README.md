@@ -115,7 +115,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 47 | 974 |
 | `tools/family-rehearsal.mjs` | 277 | 5060 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
-| `tools/merge-branch.mjs` | 125 | 2312 |
+| `tools/merge-branch.mjs` | 126 | 2315 |
 | `tools/orient-index.mjs` | 63 | 1379 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 

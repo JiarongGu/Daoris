@@ -144,6 +144,19 @@ describe("an account's own settings", () => {
     for (const word of command.children) expect(word).toHaveClass('inline-block', 'max-w-full');
   });
 
+  /**
+   * ACCTQUOTE1c (D125's ACCTQUOTE1 note): the command is pasted into whichever shell a person has, so an account a shell
+   * would split is in double quotes, and one no spelling holds in every shell (`R&D`) is the placeholder `<account>`.
+   */
+  it('spells the account in the terminal command for a shell', () => {
+    const { unmount } = form({ account: 'my team' });
+    expect(screen.getByText(code('daoris agent settings claude-code --account "my team" model <model> effort <effort>'))).toBeInTheDocument();
+    unmount();
+
+    form({ account: 'R&D' });
+    expect(screen.getByText(code('daoris agent settings claude-code --account <account> model <model> effort <effort>'))).toBeInTheDocument();
+  });
+
   it('is taken back with cancel, and holds nothing while it saves', async () => {
     const onCancel = vi.fn();
     const { rerender } = form({ onCancel });
