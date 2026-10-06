@@ -84,7 +84,8 @@ export function indexInput(
 
 /**
  * `<target>/INDEX.md` as this repository's DISK says it should be (D128 §2.4): what `check` compares the
- * file with. What catches the case that actually happens — a document added and never synced.
+ * file with. What catches the case that actually happens — a document added and never synced. `check`
+ * renders it from `indexInput` itself, since it also counts the documents without frontmatter there.
  */
 export function indexFromDisk(
   args: { root: string; target: string; lock: LockLike | null; harness?: Harness },

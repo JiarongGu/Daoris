@@ -10,6 +10,7 @@ import type { Harness, Lock, Manifest, RoomPlan } from './types.ts';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readText } from './fsx.ts';
+import { firstHeading } from './document.ts';
 import { ensureImport, findRegion, IMPORT, removeRegion } from './region.ts';
 import { contained, isFile } from './layout.ts';
 import { DaorisError } from './errors.ts';
@@ -72,22 +73,13 @@ export function planRooms(
 
 /**
  * A room's first heading, for its row in the roster (D117 §2.2): telling rather than loading, so the
- * row says what the room is about and the agent reads it when it works there. Fenced code is skipped;
- * null when the file or a heading is missing.
+ * row says what the room is about and the agent reads it when it works there. Read as `firstHeading`
+ * reads one, with its pipes escaped for the table; null when the file or a heading is missing.
  */
 export function roomHeading(root: string, room: string, harness: Harness): string | null {
   const abs = join(root, room, instructionsOf(harness));
   if (!isFile(abs)) return null;
-  let fenced = false;
-  for (const line of readText(abs).split('\n')) {
-    if (/^\s*(```|~~~)/.test(line)) {
-      fenced = !fenced;
-      continue;
-    }
-    const heading = fenced ? null : /^#{1,6}\s+(.+?)\s*#*\s*$/.exec(line);
-    if (heading) return heading[1]!.replace(/\|/g, '\\|');
-  }
-  return null;
+  return firstHeading(readText(abs))?.replace(/\|/g, '\\|') ?? null;
 }
 
 /** Each declared room with its heading, as the roster renders it. */
