@@ -55,6 +55,8 @@ with the version and date at release.
   Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would; Settings'
   account hints spell them the same way, and so do the driver's own sentences and Ask Daoris's
   terminal lines.
+- A failed session's work is no longer carried on over a quest another machine has since taken; the
+  refusal names who holds it.
 - `daoris-driver sessions start-from <id>` carries a conversation's words into a new one at a terminal,
   as the window's *Start from* does. The sessions list shows a chat whose words wait as going on, or
   as resuming later with its reset time.

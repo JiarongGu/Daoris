@@ -45,7 +45,26 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         _ledger = new SessionLedger(_quests, _sessions, service);
     }
 
-    public async Task DisposeAsync() => await _connection.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        await _connection.DisposeAsync();
+        foreach (var machine in _machines) await machine.DisposeAsync();
+    }
+
+    /// <summary>Another machine's store, or a remote's: each its own connection, so each is a machine of its own (D68 §2).</summary>
+    private readonly List<SqliteConnection> _machines = [];
+
+    private async Task<QuestStore> MachineAsync()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        _machines.Add(connection);
+        return await QuestStore.OpenAsync(connection);
+    }
+
+    /// <summary>One machine's pass against the remote, the real one the driver runs (D68 §3).</summary>
+    private static Task<QuestSyncReport> SyncAsync(QuestStore machine, QuestStore remote) =>
+        QuestSync.RunAsync(machine, _ => true, new StoreRemote(remote), Workspaces.Default);
 
     private Task<Quest> Publish(string to = "Owner", string title = "Do the thing") =>
         _quests.PublishAsync("Asker", to, title, "Here is why.", Now);
@@ -261,6 +280,137 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         }
 
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(8))).Refusal);
+    }
+
+    // ——— CARRY2 (D80, D126's SESSUX1b2 note): a carry-on goes on with this machine's take, so it asks whose the take is.
+
+    /// <summary>
+    /// 🔴 A session here that failed before its take (an account's limit at its first turn) leaves no take here. Taken
+    /// since on another machine, the quest is theirs, and nothing here carries the session on over their take. The
+    /// refusal names whose it is: by the teammate's record on the quest where one came, else as another machine.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_cut_off_before_its_take_is_not_carried_on_over_another_machines_take(bool teammatesRecord)
+    {
+        var remote = await MachineAsync();
+        var other = await MachineAsync();
+        var quest = await Publish();
+        await SyncAsync(_quests, remote);
+        await SyncAsync(other, remote);
+        var failed = await Working(quest, Now);
+        Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(
+            failed.Id, "failed", "the ACP agent refused the call: You've hit your weekly limit", null, null,
+            Now.AddMinutes(1), limit: true)).Refusal);
+
+        Assert.True((await other.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(2))).Moved);
+        if (teammatesRecord)
+        {
+            await _sessions.MirrorAsync(new Session(
+                "alice-laptop/ab12cd34", quest.Id, "Owner", "claude-code", SessionState.Working, null, null, null,
+                Now.AddMinutes(2), Now.AddMinutes(3)));
+        }
+
+        await SyncAsync(other, remote);
+        await SyncAsync(_quests, remote);
+        Assert.Equal(QuestStatus.Taken, (await _quests.FindAsync(quest.Id))!.Status);
+
+        var refused = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(4));
+
+        Assert.Equal(SessionOpenRefusal.TakenElsewhere, refused.Refusal);
+        Assert.Null(refused.Session);
+        Assert.Equal(
+            teammatesRecord
+                ? $"Quest `#{quest.Id}` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, "
+                  + $"so session `{failed.Id}` is not carried on over it."
+                : $"Quest `#{quest.Id}` is taken on another machine: the take is theirs, so session `{failed.Id}` is not carried on over it.",
+            refused.Message);
+        Assert.Single(await _sessions.ListAsync("Owner", includeClosed: true), session => session.Origin is null);
+    }
+
+    /// <summary>
+    /// 🔴 Taken on this machine after its last session on the quest ended, the take is not that session's: a chat took
+    /// it through its own connector (CHATTAKE1), whose record names no quest, or work outside Daoris did, which leaves no
+    /// record. Either has the quest, and nothing carries the session on over it.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_cut_off_before_its_take_is_not_carried_on_over_a_take_made_here_since(bool byAChat)
+    {
+        var quest = await Publish();
+        var failed = await Working(quest, Now);
+        await _ledger.AdvanceAsync(failed.Id, "failed", "the harness exited before its first turn.", null, null, Now.AddMinutes(1));
+        var chat = byAChat ? (await _ledger.OpenChatAsync("Owner", "stub", Now.AddMinutes(2), tree: "/trees/owner-chat")).Session! : null;
+
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(3));
+        if (chat is not null) Assert.True(await _ledger.MarkTookAsync(chat.Id, quest.Id));
+
+        var refused = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(4));
+
+        Assert.Equal(SessionOpenRefusal.TakenElsewhere, refused.Refusal);
+        Assert.Equal(
+            $"Quest `#{quest.Id}` was taken here after session `{failed.Id}` ended, by a chat or by work outside Daoris: "
+            + $"the take is theirs, so session `{failed.Id}` is not carried on over it.",
+            refused.Message);
+    }
+
+    /// <summary>
+    /// CARRY2 asks whose the take is, and this machine's is still carried on: taken by its session and confirmed by the
+    /// remote, beside a teammate's record on the quest that stood down because of it. A teammate's record is no take.
+    /// </summary>
+    [Fact]
+    public async Task A_take_this_machine_holds_through_its_remote_is_carried_on_beside_a_teammates_stand_down()
+    {
+        var remote = await MachineAsync();
+        var quest = await Publish();
+        var took = await Working(quest, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        Assert.True(await _ledger.MarkTookAsync(took.Id, quest.Id));
+        await SyncAsync(_quests, remote);
+        Assert.Equal(QuestClaim.Held, await _quests.ClaimAsync(quest.Id));
+        await _sessions.MirrorAsync(new Session(
+            "alice-laptop/ab12cd34", quest.Id, "Owner", "claude-code", SessionState.StoodDown, "someone else has it.", null, null,
+            Now.AddMinutes(2), Now.AddMinutes(3)));
+        await _ledger.AdvanceAsync(took.Id, "failed", "timed out after 30 minutes and was killed.", null, null, Now.AddMinutes(30));
+
+        var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(31));
+
+        Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
+    }
+
+    /// <summary>
+    /// CARRY2 reads whose take stands, so a take this machine made offline and lost to another machine's (D68 §5) is theirs
+    /// too: neither a cut-off of the session that took it nor the person's stop of it, released, is carried on over the
+    /// winner's. The stop's case is the one D126's SESSUX1b2 note left open.
+    /// </summary>
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("stopped")]
+    public async Task A_take_this_machine_lost_to_another_machines_is_not_carried_on(string ending)
+    {
+        var remote = await MachineAsync();
+        var other = await MachineAsync();
+        var quest = await Publish();
+        await SyncAsync(_quests, remote);
+        await SyncAsync(other, remote);
+        var took = await Working(quest, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        Assert.True(await _ledger.MarkTookAsync(took.Id, quest.Id));
+
+        await other.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(2));
+        await SyncAsync(other, remote);
+        await SyncAsync(_quests, remote);
+        Assert.Equal(QuestClaim.Lost, await _quests.ClaimAsync(quest.Id));
+        await _ledger.AdvanceAsync(took.Id, ending, "it ended so.", null, null, Now.AddMinutes(5));
+
+        var refused = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6));
+
+        Assert.Equal(SessionOpenRefusal.TakenElsewhere, refused.Refusal);
+        Assert.Equal(
+            $"Quest `#{quest.Id}` is taken on another machine: the take is theirs, so session `{took.Id}` is not carried on over it.",
+            refused.Message);
     }
 
     /// <summary>

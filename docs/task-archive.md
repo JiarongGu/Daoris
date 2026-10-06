@@ -11519,3 +11519,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CASEFOLD1 — the CLI's other twins fold names as the driver does** (cli). `cooling.ts`, `windows.ts`, `rotation.ts`, `permissions.ts` and `driverconfig.ts` fold with `toUpperCase`/`toLowerCase`, so `straße` meets `STRASSE` where the driver's `OrdinalIgnoreCase` does not. One helper holding `accountreads.ts`'s fold makes them agree. Contract: D125's AGENTREAD1c note, twins.md. Proof: a `straße` row in each twin's shared table or parsed theory.
 
 **Outcome** 2026-10-07: every CLI twin of a driver file compares names through `casefold.ts` (AGENTREAD1c's fold moved out unchanged: `foldName`, `sameName`, `findName`, `compareNames`), held to `test/fixtures/name-case.json`, nineteen pairs .NET 10 answered under ICU and invariant mode alike; `connect.ts`'s `usesOf` no longer uses the locale's collation. Each parsed twin table gained straße and I rows that failed first; the rows the driver's theories do not hold yet are owed (`DRIVER_OWES`, `heldSoFar`), listed for the driver as CASEFOLD1d. Two gaps found: CASEFOLD1b, CASEFOLD1c. CLI 1334 → 1345. Detail: D125's CASEFOLD1 note, twins.md's name-case row; commit f6ccc63f.
+
+
+## CARRY2 — a carry-on verifies ownership (2026-10-07, D80)
+
+> - [ ] **CARRY2 — carry-on verifies ownership** (service). A pre-take failure must not continue over someone else's take. Contract: D80, D126 SESSUX1b2 note. Proof: failing-first ledger refusal.
+
+**Outcome** 2026-10-07: every carry-on asks whose the take is (`SessionLedger.TakenElsewhereAsync`, after the existing not-open refusal), and one over another machine's take (the log's machine, whatever the clocks say) or a take made here after the session ended is refused as `TakenElsewhere` (409 at the HTTP door), naming the teammate's newest record or "another machine". An unmarked take made while the session ran is still carried on, since the HTTP door marks no take. Closes the two gaps D126's SESSUX1b2 note named. The planner still asks at every look (CARRY2b). Service +7 (1307 with main), HTTP 73 → 74. Detail: D80's CARRY2 note; commit 260a43f1.
