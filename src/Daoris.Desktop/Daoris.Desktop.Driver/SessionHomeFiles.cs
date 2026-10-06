@@ -45,7 +45,7 @@ public sealed record HistoryBytes(long Conversations, long Transcripts, long Fil
 ///
 /// <para><b>Never</b> a tree, a branch, the usage, the machine log, the harness's own conversation in an account's home
 /// (§1.3), or an automatic landing still trying, which a clear refuses before it (<c>HISTORY_LIVE</c>). An id that is not a
-/// session's (a teammate's, <c>origin/id</c>) removes nothing: this machine keeps no file of it.</para>
+/// session's (a teammate's, <c>origin/id</c>) removes no file, since this machine keeps none of it; only its archive mark.</para>
 ///
 /// <para><b>A file the disk will not let go of is left</b>, named in <c>failed</c>: it is left over (§2.3), and the next
 /// clear of a workspace takes it.</para>
@@ -70,6 +70,9 @@ public sealed class SessionHomeFiles(string home)
 
     /// <summary>The suffixes a session's spawn files carry after its id under <c>spawn/</c>.</summary>
     internal static readonly string[] SpawnSuffixes = [".mcp.json", ".settings.json"];
+
+    /// <summary>The home whose files these are.</summary>
+    public string Home => home;
 
     private string Sessions => Path.Combine(home, "sessions");
 
@@ -144,10 +147,16 @@ public sealed class SessionHomeFiles(string home)
         {
             Each(HeldWordsFile.PathOf(home), () => HeldWordsFile.Forget(home, sessions), Held);
             Each(new AutoLandings(home).FilePath, () => new AutoLandings(home).Forget(sessions), Landing);
+        }
+
+        // Every id, a teammate's included: this machine marks their records archived too (D126 §5.2), by the record's id.
+        var all = removed.Keys.ToList();
+        if (all.Count > 0)
+        {
             Each(new SessionArchive(home).FilePath, () =>
             {
-                var answer = new SessionArchive(home).Unarchive(sessions);
-                return sessions.Where(id => !answer.NotArchived.Contains(id, StringComparer.Ordinal)).ToList();
+                var answer = new SessionArchive(home).Unarchive(all);
+                return all.Where(id => !answer.NotArchived.Contains(id, StringComparer.Ordinal)).ToList();
             }, Archived);
         }
 
