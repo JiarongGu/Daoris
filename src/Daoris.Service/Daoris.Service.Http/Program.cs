@@ -960,7 +960,7 @@ app.MapPost("/api/sessions", async (
         SessionOpenRefusal.QuestNotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // State conflicts wear 409, the same shape the quest door teaches (D47 §5): a driver racing
         // another machine for a repository slot got beaten, not malformed.
-        SessionOpenRefusal.QuestNotOpen or SessionOpenRefusal.RepositoryBusy =>
+        SessionOpenRefusal.QuestNotOpen or SessionOpenRefusal.TakenElsewhere or SessionOpenRefusal.RepositoryBusy =>
             Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };

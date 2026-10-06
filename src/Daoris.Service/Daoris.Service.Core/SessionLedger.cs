@@ -13,6 +13,13 @@ public enum SessionOpenRefusal
     /// <summary>The quest is not open. Taken is the mutex between the driver and outside work (D46).</summary>
     QuestNotOpen,
 
+    /// <summary>
+    /// A carry-on (D80) over a take that is not this machine's (CARRY2): another machine's by the quest's log, or one made
+    /// here after this machine's last session on the quest ended. A carry-on goes on with this machine's take, and there
+    /// is none to go on with.
+    /// </summary>
+    TakenElsewhere,
+
     /// <summary>The repository already has an active session — the working tree is the unit of exclusion.</summary>
     RepositoryBusy,
 
@@ -761,10 +768,11 @@ public sealed partial class SessionLedger(
         var last = quest is { Status: QuestStatus.Taken } && question is null
             ? await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
             : null;
+        var tookHere = last is not null && await sessions.TookHereAsync(quest.Id, ct).ConfigureAwait(false);
         var carriesOn = last is { State: SessionState.Failed }
                 or { State: SessionState.Completed, Answer: not null }
                 or { State: SessionState.Stopped, Interrupted: true }
-            || (last is { State: SessionState.Stopped } && await sessions.TookHereAsync(quest.Id, ct).ConfigureAwait(false));
+            || (last is { State: SessionState.Stopped } && tookHere);
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)
         {
@@ -776,6 +784,13 @@ public sealed partial class SessionLedger(
                     ? $"Quest `#{quest.Id}` waits on `#{question.Id}`, which is still {question.Status} — it resumes once that is answered."
                     : $"Quest `#{quest.Id}` is {quest.Status} — a session starts only on an open quest.",
                 Session: null);
+        }
+
+        // A carry-on goes on with this machine's take, so it asks whose the take is (CARRY2). D80 asked none, so a
+        // session that failed before its take carried on over whoever took the quest since.
+        if (carriesOn && await TakenElsewhereAsync(quest, last!, tookHere, ct).ConfigureAwait(false) is { } elsewhere)
+        {
+            return new(SessionOpenRefusal.TakenElsewhere, elsewhere, Session: null);
         }
 
         // The same resolution as a chat's, through the same registry, for the same reason: two doors
@@ -1087,6 +1102,39 @@ public sealed partial class SessionLedger(
         }
 
         return new(SessionDeleteRefusal.None, $"Session `{id}` may be deleted.", session);
+    }
+
+    /// <summary>
+    /// Whose a carry-on's take is (CARRY2): the refusal's sentence when it is not this machine's, else null.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The quest's log names the machine that took it</b> (D68 §2): a take another machine made is theirs,
+    /// whichever session here failed or stopped, and so is one that beat this machine's own take to the remote (D68 §5).
+    /// Never by the clock, which is another machine's there. Named by a teammate's record on the quest where one came,
+    /// since the log's machine is an id no person reads, else as another machine (D132's words).</para>
+    ///
+    /// <para><b>A take made here after this machine's last session on the quest ended</b> is not that session's, and no
+    /// session here marked it (STANDDOWN2): a chat's connector took it, whose mark names no quest (CHATTAKE1), or work
+    /// outside Daoris did. Both times are this machine's own clock. A take with no mark made before the session ended
+    /// is still carried on, as D80 did: the HTTP door marks none, and a take from before STANDDOWN2 has none.</para>
+    /// </remarks>
+    private async Task<string?> TakenElsewhereAsync(Quest quest, Session last, bool tookHere, CancellationToken ct)
+    {
+        var take = (await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false))
+            .LastOrDefault(operation => operation.Kind == QuestOperationKind.Taken);
+        if (take is null) return null;
+
+        var over = $"the take is theirs, so session `{last.Id}` is not carried on over it.";
+        if (!string.Equals(take.Machine, quests.Machine, StringComparison.Ordinal))
+        {
+            return await sessions.LastTeammateForQuestAsync(quest.Id, ct).ConfigureAwait(false) is { } teammate
+                ? $"Quest `#{quest.Id}` is taken on `{teammate.Origin}`, by session `{teammate.Id}`: {over}"
+                : $"Quest `#{quest.Id}` is taken on another machine: {over}";
+        }
+
+        return !tookHere && take.At > last.Updated
+            ? $"Quest `#{quest.Id}` was taken here after session `{last.Id}` ended, by a chat or by work outside Daoris: {over}"
+            : null;
     }
 
     /// <summary>
