@@ -1515,11 +1515,13 @@ public sealed partial class Driver(
 
     /// <summary>
     /// What a refused sign-in says (ROSTER1b): the account by its owner and name with its sign-in, both doors named (TOOL6g's
-    /// words, D50), or the tool's own sign-in, which the person signs in to at their own terminal.
+    /// words, D50), or the tool's own sign-in, which the person signs in to at their own terminal. The command's id is spelled for
+    /// any shell (ACCTQUOTE1b).
     /// </summary>
     private static string SignedOutReason(string owner, string? profile) => profile is { } named
         ? $"the agent refused the `{owner}` account `{named}` for its sign-in, so it reads signed out and Daoris starts nothing "
-          + $"more on it until it is signed in: `daoris agent login {owner} --profile {named}`, or Agents → the agent's page → Accounts."
+          + $"more on it until it is signed in: `daoris agent login {owner} --profile {ShellWord.Of(named, ShellWord.Account)}`, "
+          + "or Agents → the agent's page → Accounts."
         : $"the agent refused `{owner}`'s own sign-in, so Daoris starts nothing more on it until you sign in again at your "
           + "terminal and read it again on the agent's page in Agents.";
 

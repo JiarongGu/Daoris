@@ -11344,3 +11344,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE1 — conversation notes read their parts** (web-shell). A driver note on a conversation (a refused sign-in since SIGNIN1b, a chat's cooling) carries `parts`, but `src/Daoris.Web/src/work/conversation.ts:451-475` keeps only `text` and `code`, so 中文 shows the driver's English. Contract: LANG1a/LAND2b note parts, D125's SIGNIN1b note. Proof: vitest rendering `account.signed-out` from both catalogues.
 
 **Outcome** 2026-10-07: a conversation's driver note with parts is worded through the catalogues as session record notes are (`Note`, `noteText`), so `account.signed-out` reads in 中文; an unknown code shows its English marked as recorded. A chat's cooling note still has no parts (CONVNOTE1b). Web vitest 4177 → 4205 with UX7a2 and main. Detail: commit 81e07cb2.
+
+
+## ACCTQUOTE1b — the driver's commands spell their arguments (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1b — the driver's commands spell their arguments** (driver). The driver's sentences print account and workspace names bare (`Harnesses.Accounts.cs` `JoinProblem.Sentence`, `AccountRotation.cs:629/:823`, `Driver.cs:1451`, `Harnesses.cs:2521`, `HelpAgentProposals.cs:158/185/236`), so they break when pasted, and `JoinProblem.Sentence` now differs from the CLI's `joinRefusal`. Contract: D125's ACCTQUOTE1 note, `shell-words.json`. Proof: a C# twin reading the same table; twinned sentence tests.
+
+**Outcome** 2026-10-07: every command the driver prints from an account id or a workspace name goes through `ShellWord`, the twin of `shellword.ts` held to `shell-words.json` (read by code point, as the JS `u` regexes): rotation and sign-in sentences, the signed-out holds, `ClaudeTrust`'s `--profile`, Ask Daoris's terminal lines and the workspace plan's commands; `JoinProblem.Sentence` matches `joinRefusal` again. The lane table sends the fixture to the driver and web gates (separate commit). Repository names, agent ids and free text stay unspelled. Driver fast half +32. Detail: D125's ACCTQUOTE1b note, twins.md, FIX-LOG; commit b885c8df.
+
+
+## DEV3b — a client timeout is not a close (2026-10-07, D115)
+
+> - [ ] **DEV3b — a client timeout is not a close** (driver). The headless host reads any `OperationCanceledException` as Ctrl+C, so a look whose own request times out prints *driver: stopped.* and exits 0. Contract: D115's DEV3a note. Proof: a host test that a timeout exits 2, naming it.
+
+**Outcome** 2026-10-07: the headless host's close is only the person's Ctrl+C ("driver: stopped.", exit 0); a client timeout is "driver: the service did not answer in time — …" on stderr, exit 2, and any other cancellation is a failure (`DriverCommand.Cancelled`). Other `daoris-driver` verbs meeting a client timeout now exit 2 too. Driver fast half +5. Detail: D115's DEV3b note, FIX-LOG; commit 800812d7.

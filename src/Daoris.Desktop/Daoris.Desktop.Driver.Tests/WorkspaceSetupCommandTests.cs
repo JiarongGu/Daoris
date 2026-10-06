@@ -175,6 +175,45 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.Contains("there is no plan for workspace `work`", output.ToString(), StringComparison.Ordinal);
     }
 
+    // ——— ACCTQUOTE1b (D125's ACCTQUOTE1 note): a command the plan's words name spells its workspace for any shell, in double
+    // quotes where a space needs them and by its placeholder where no spelling holds; the words around it name it as it is.
+
+    [Fact]
+    public async Task A_plan_s_commands_spell_a_workspace_with_a_space_for_any_shell()
+    {
+        var world = new WorkspaceSetupStandIn().With(
+            WorkspaceSetupStandIn.Row("atlas", "my team"), WorkspaceSetupStandIn.Row("billing", "my team"));
+        var pressed = new StringWriter();
+        var again = new StringWriter();
+        var paused = new StringWriter();
+
+        Assert.Equal(0, await RunAsync(["--workspace", "my team"], pressed, world));
+        Assert.Equal(1, await RunAsync(["--workspace", "my team"], again, world));
+        Assert.Equal(0, await RunAsync(["--workspace", "my team", "--pause"], paused, world));
+
+        Assert.Contains("taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace \"my team\"`.",
+            pressed.ToString(), StringComparison.Ordinal);
+        Assert.Contains("a plan for workspace `my team` is already working, made 2026-10-02. `daoris-driver setup --workspace \"my team\" "
+            + "--pause`, `--resume` or `--stop` steers it", again.ToString(), StringComparison.Ordinal);
+        Assert.Contains("the plan for workspace `my team` is paused: nothing more is asked until `daoris-driver setup --workspace "
+            + "\"my team\" --resume`", paused.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_workspace_no_shell_can_be_handed_whole_is_named_in_a_command_by_its_placeholder()
+    {
+        var steered = new StringWriter();
+        var pressed = new StringWriter();
+
+        Assert.Equal(1, await RunAsync(["--workspace", "R&D", "--pause"], steered));
+        Assert.Equal(1, await RunAsync(["--workspace", "R&D"], pressed));
+
+        Assert.Contains("there is no plan for workspace `R&D`: `daoris-driver setup --workspace <workspace>` makes one.",
+            steered.ToString(), StringComparison.Ordinal);
+        Assert.Contains("no repository on this machine's registry is in workspace `R&D`. Add them on Repositories, or with "
+            + "`daoris import <folder> --workspace <workspace>`, then press again.", pressed.ToString(), StringComparison.Ordinal);
+    }
+
     private Task<int> RunAsync(string[] args, TextWriter output, WorkspaceSetupStandIn? world = null, DriverConfig? config = null) =>
         WorkspaceSetupCommand.RunAsync(args, output, world ?? World(), config ?? Config, SessionWire.Acp, _home, Day, Now);
 }

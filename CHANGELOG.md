@@ -32,7 +32,10 @@ with the version and date at release.
 - A refused account rename, workspace choice or add-flow answer stays open with what was entered and
   says why inside it. Terminal hints spell account and workspace names so they paste as one argument in
   Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would; Settings'
-  account hints spell them the same way.
+  account hints spell them the same way, and so do the driver's own sentences and Ask Daoris's
+  terminal lines.
+- `daoris-driver` exits 2 naming the timeout when the service does not answer in time; only Ctrl+C
+  reads as a stop.
 
 The first version: doctrine that installs, is checked, and flows back.
 

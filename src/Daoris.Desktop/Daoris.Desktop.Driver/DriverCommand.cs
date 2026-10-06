@@ -160,4 +160,26 @@ public static class DriverCommand
 
         return new LoopRequest(once ? LoopMode.Once : untilIdle ? LoopMode.UntilIdle : LoopMode.Watch, share);
     }
+
+    /// <summary>
+    /// How the host ends a run a cancellation ended (DEV3b, D115's DEV3a note): a close only where the person's own Ctrl+C
+    /// asked for one, <i>driver: stopped.</i>, exit 0. A request the service never answered within the client's own timeout
+    /// is a failure that says so, exit 2, as a service it could not reach is; and a cancellation nothing asked for is one too.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 The host read every cancellation as Ctrl+C, so a look whose own request timed out printed <i>driver: stopped.</i>
+    /// and exited 0, and a script or a gate read a stalled service as a person's close.
+    /// </remarks>
+    /// <param name="closed">Whether the host's own close was asked for: its Ctrl+C, and nothing else.</param>
+    public static LoopEnded Cancelled(OperationCanceledException error, bool closed) =>
+        closed ? new LoopEnded(0, "driver: stopped.", Failed: false)
+        // The client's own timeout: HttpClient cancels with a TimeoutException inside, and its message names the timeout.
+        : error.InnerException is TimeoutException ? new LoopEnded(2, $"driver: the service did not answer in time — {error.Message}", Failed: true)
+        : new LoopEnded(2, $"driver: a request was cancelled though nothing closed the run — {error.Message}", Failed: true);
 }
+
+/// <summary>How the host ends a run (DEV3b): its exit code, and the line it prints, to the error stream where it failed.</summary>
+/// <param name="Exit"><c>0</c> for the person's close, <c>2</c> for a failure.</param>
+/// <param name="Said">The line the host prints.</param>
+/// <param name="Failed">Whether the run failed rather than closed: its line goes to the error stream and its log as a failure.</param>
+public sealed record LoopEnded(int Exit, string Said, bool Failed);

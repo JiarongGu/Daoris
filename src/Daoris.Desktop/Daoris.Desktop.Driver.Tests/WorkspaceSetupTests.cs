@@ -325,6 +325,24 @@ public sealed class WorkspaceSetupTests : IDisposable
         Assert.Contains(world.Logged, line => line.Event == "setup.resumed");
     }
 
+    /// <summary>ACCTQUOTE1b: the pilot's pause names the resume in a command a person can paste, its workspace spelled for any shell.</summary>
+    [Fact]
+    public async Task The_pilot_s_pause_spells_its_workspace_in_the_resume_for_any_shell()
+    {
+        var world = new WorkspaceSetupStandIn().With(
+            WorkspaceSetupStandIn.Row("atlas", "my team"), WorkspaceSetupStandIn.Row("billing", "my team"));
+        var config = Driven(3);
+        var preview = await WorkspaceSetup.PreviewAsync(world, config, SessionWire.Acp, _home, "my team", new(Pilot: 1), Day);
+        Assert.True((await WorkspaceSetup.PressAsync(preview, world, _home, Now)).Written);
+
+        await TickAsync(world, config);
+        world.Close(world.SetupOf("atlas").Id, "Done");
+        var said = (await TickAsync(world, config)).Concat(await TickAsync(world, config)).ToList();
+
+        Assert.Contains(said, line => line.StartsWith("setup  my team: paused after the pilot", StringComparison.Ordinal)
+            && line.EndsWith("then `daoris-driver setup --workspace \"my team\" --resume` carries on.", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task A_plan_the_person_paused_publishes_nothing_until_they_resume_it()
     {

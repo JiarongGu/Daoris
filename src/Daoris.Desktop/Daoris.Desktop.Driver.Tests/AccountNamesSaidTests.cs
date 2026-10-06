@@ -319,4 +319,83 @@ public sealed class AccountNamesSaidTests : IDisposable
         var line = Assert.Single(lines, l => l.Event == "starts.waiting");
         Assert.Equal("account-1", line.Data.Single(field => field.Key == "account").Value);
     }
+
+    // ——— A command spells its ids for any shell (ACCTQUOTE1b, D125's ACCTQUOTE1 note): an id `profile add` was given may hold a
+    // space, kept whole in double quotes, or a character no spelling keeps, named by its placeholder. The sentence around it
+    // names the account as it is.
+
+    /// <summary>An id a person gave, with a space, and one no shell can be handed whole.</summary>
+    private const string Spaced = "my acct";
+    private const string Ampersand = "R&D";
+
+    [Fact]
+    public void A_wait_s_and_a_hold_s_sign_ins_spell_each_id_for_any_shell()
+    {
+        var cooling = new CoolingEntry("fake", Personal, Until, false, null, Seen, "s1");
+
+        var wait = RotationWords.Wait("fake", [
+            new(Spaced, AccountReadiness.SignedOut), new(Personal, AccountReadiness.Cooling, cooling), new(Ampersand, AccountReadiness.SignedOut),
+        ], Zone);
+        var hold = RotationWords.NoneReady("claude-code", [new(Spaced, AccountReadiness.SignedOut), new(Ampersand, AccountReadiness.SignedOut)]);
+
+        Assert.EndsWith(
+            "A sign-in starts it sooner: `daoris agent login fake --profile \"my acct\"`, `daoris agent login fake --profile <account>`, "
+            + "or Agents → the agent's page → Accounts.",
+            wait);
+        Assert.Equal(
+            "no `claude-code` account this start may use is ready: `my acct` is not signed in, `R&D` is not signed in. A sign-in starts it: "
+            + "`daoris agent login claude-code --profile \"my acct\"`, `daoris agent login claude-code --profile <account>`, or Agents → "
+            + "the agent's page → Accounts.",
+            hold);
+    }
+
+    [Fact]
+    public void What_a_wait_adds_spells_its_door_s_ids_and_workspace_for_any_shell()
+    {
+        Assert.Equal(
+            "Not cooling, and not among the accounts `my team` may use: `R&D`, `work` — Daoris starts nothing on them unless a list "
+            + "names them; `daoris agent profile order fake \"my acct\" <account> --workspace \"my team\"` adds `R&D`.",
+            RotationWords.Outside("fake", "my team", [Spaced], [Ampersand, Work], Names));
+        Assert.EndsWith(
+            "`daoris agent profile order fake work <account> --workspace <workspace>` adds `R&D`.",
+            RotationWords.Outside("fake", "R&D", ["work"], [Ampersand]));
+    }
+
+    [Fact]
+    public async Task A_signed_out_account_s_hold_spells_its_sign_in_s_id_for_any_shell()
+    {
+        Accounts("fake", Spaced);
+        Wire(s => s.WithDefault("fake", Spaced));
+        var roster = Fake();
+        roster.SignedOut("fake", Spaced);
+
+        var held = await roster.SelectAsync("fake", FakeConfig, null, null);
+
+        Assert.Equal(
+            "the `fake` account `my acct` is not signed in, so a session would have nothing to run as — `daoris agent login fake "
+            + "--profile \"my acct\"` runs the agent's own sign-in into it. Daoris manages the directory and the name; the credential "
+            + "stays in the agent's own store.",
+            held.Refusal);
+    }
+
+    [Theory]
+    [InlineData(Spaced, "`daoris agent login fake --profile \"my acct\"`")]
+    [InlineData(Ampersand, "`daoris agent login fake --profile <account>`")]
+    public void A_refused_sign_in_s_line_spells_its_id_for_any_shell(string account, string command)
+    {
+        var said = Daoris.Driver.Driver.SignedOutNote("fake", account);
+
+        Assert.Equal(
+            $"The agent refused the `fake` account `{account}` for its sign-in, so it reads signed out and Daoris starts nothing more on "
+            + $"it until it is signed in: {command}, or Agents → the agent's page → Accounts.",
+            said.Note);
+    }
+
+    [Theory]
+    [InlineData(Spaced, "--profile \"my acct\" --yes")]
+    [InlineData(Ampersand, "--profile <account> --yes")]
+    public void A_trust_hold_s_command_spells_its_account_for_any_shell(string account, string command)
+    {
+        Assert.Contains(command, ClaudeTrust.Refusal(@"D:\fam\engine", account));
+    }
 }

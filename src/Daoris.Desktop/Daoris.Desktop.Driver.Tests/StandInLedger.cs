@@ -38,6 +38,17 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// </summary>
     public bool ClaimHangs { get; set; }
 
+    /// <summary>
+    /// While true the quest list never answers (DEV3b): it is counted, then holds until the client gives up or its caller
+    /// closes, as a host that took a look's own question and stalled does.
+    /// </summary>
+    public bool QuestsHang { get; set; }
+
+    /// <summary>How often a look asked for the quest list while it hung.</summary>
+    public int QuestsAsked => Volatile.Read(ref _questsAsked);
+
+    private int _questsAsked;
+
     /// <summary>A client over this ledger, as a driver is handed one; <paramref name="timeout"/> is the client's own.</summary>
     public ServiceClient Client(TimeSpan? timeout = null)
     {
@@ -112,6 +123,12 @@ internal sealed class StandInLedger : HttpMessageHandler
             var quest = path["/api/quests/".Length..^"/claim".Length];
             lock (_gate) _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
             // Held outside the gate, until the client's token ends it: its timeout, or its caller's close.
+            await Task.Delay(Timeout.Infinite, ct);
+        }
+
+        if (QuestsHang && request.Method == HttpMethod.Get && path == "/api/quests")
+        {
+            Interlocked.Increment(ref _questsAsked);
             await Task.Delay(Timeout.Infinite, ct);
         }
 
