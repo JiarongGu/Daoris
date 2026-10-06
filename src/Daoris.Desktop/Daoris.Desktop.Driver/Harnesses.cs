@@ -2559,7 +2559,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 {
                     Readiness = AccountReadiness.SignedOut,
                     Refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
-                        + $"nothing to run as — `daoris agent login {owner} --profile {account}` runs "
+                        + $"nothing to run as — `daoris agent login {owner} --profile {ShellWord.Of(account, ShellWord.Account)}` runs "
                         + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
                         + "credential stays in the agent's own store.",
                 };

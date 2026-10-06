@@ -56,7 +56,8 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
             return Refused($"there is no workspace `{workspace}` on this machine — one of {Names(facts.Workspaces)}.", "", "");
         }
 
-        var scope = workspace is { Length: > 0 } ? $"--workspace {workspace}" : target ?? "";
+        // ACCTQUOTE1b: a workspace in a command is spelled for any shell; a repository's name is not (D125's ACCTQUOTE1 note).
+        var scope = workspace is { Length: > 0 } ? $"--workspace {ShellWord.Of(workspace, ShellWord.Workspace)}" : target ?? "";
         var whose = workspace is { Length: > 0 } ? $"workspace `{workspace}`" : $"`{target}`";
         (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) planned;
         switch (proposal.Door)
@@ -338,7 +339,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     return ("`across … read` is `read on|off|--clear` — e.g. `daoris driver across engine read off`.", default);
                 }
 
-                var scope = circle ? $"--workspace {workspace}" : target;
+                var scope = circle ? $"--workspace {ShellWord.Of(workspace!, ShellWord.Workspace)}" : target;
                 var subject = circle ? $"Each checkout in workspace `{workspace}` that sets none of its own" : $"`{target}`'s checkout";
                 var describe = read switch
                 {

@@ -19,7 +19,9 @@ internal sealed class HelpAskProposals : IHelpProposalKind
     {
         var workspace = proposal.Workspace?.Trim() ?? "";
         var sentence = proposal.Sentence?.Trim() ?? "";
-        var terminal = $"daoris-driver ask --workspace {workspace} \"{sentence.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
+        // ACCTQUOTE1b: the workspace spelled for any shell, as every command the driver names spells it.
+        var terminal = $"daoris-driver ask --workspace {ShellWord.Of(workspace, ShellWord.Workspace)} "
+            + $"\"{sentence.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
         var describe = $"Ask at workspace `{workspace}`: “{sentence}”";
         if (sentence.Length == 0) return new HelpPlan("an ask needs its words.", describe, terminal, null);
         if (!facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))

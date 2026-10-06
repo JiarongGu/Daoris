@@ -92,7 +92,7 @@ public static class WorkspaceSetupCommand
         {
             output.WriteLine($"added to workspace `{preview.Workspace}`'s rules, so each set-up's session may run the doctrine tool:");
             foreach (var rule in outcome.Added) output.WriteLine($"  {rule}");
-            output.WriteLine($"  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace {preview.Workspace}`.");
+            output.WriteLine($"  taken back in Settings → Permissions, or `daoris agent rules remove <rule> --workspace {WorkspaceSetup.Spelled(preview.Workspace)}`.");
         }
 
         return 0;
