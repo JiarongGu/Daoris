@@ -12,6 +12,19 @@ repository.
 - **Root cause:** since DEV3, `RunOnceAsync` waits for its sessions in `SettleAsync`, whose passes beside them caught only the close. Anything else a pass threw left the run with its sessions working and the lines it had gathered, a lost-claim stop's included. The claim question's client timeout was such a throw (the stop caught only an unreachable host), and the host's catch read it as a close: *driver: stopped.*, exit 0. `--until-idle` printed nothing until the whole run returned, so a later failed look dropped every earlier look's lines.
 - **Fix:** the stop reads the client's timeout as no answer; a failed pass beside the sessions is a line and the next pass runs; both runs hand each report to `said` as it is made, and what ended before a failure or close lets go; the headless host prints from it.
 - **Verify:** four failing-first cases in `SessionsOutliveTheirLookTests` over the stand-in ledger, its claim door stalled past a 200 ms client timeout (the timeout escaped with the session working). Not run: the rehearsal, which never kept the failed run's transcript, so this is the cause the code admits. Note under D115.
+## 2026-10-07 — account edits and hints
+
+### Agents: a refused account edit lost what the person entered (ACCTEDIT1)
+- **Symptom:** an account row's Rename… or Use in a workspace…, refused by the driver, closed at once and showed the refusal as a toast; the typed name and ticked workspaces were gone.
+- **Root cause:** `AgentPage.tsx` closed each inline question when it was pressed, before its asynchronous bridge mutation answered, so a refusal arrived after the form that could show it had gone.
+- **Fix:** each question is handed an answer (`done` or `refused(sentence)`) that closes it only once the mutation lands; a refusal keeps the draft and shows the driver's sentence inside the form, and *Never mind* waits while an answer is pending.
+- **Verify:** mocked-bridge vitest cases where rejected mutations keep each draft and a successful retry closes it; stories `RenameRefused`, `UseInAWorkspaceRefused`. Commit `50a5b692`.
+
+### Hints: an account name pasted into a shell could run something else (ACCTQUOTE1)
+- **Symptom:** a valid account name such as `R&D` appeared bare in rename and join hints; pasted into Command Prompt it ran `D`.
+- **Root cause:** every producer interpolated the value as it was. Quoting alone does not fix it: Windows PowerShell 5.1 drops the quotes of a space-free argument handed to a batch file, and the install's `daoris` is `daoris.cmd`.
+- **Fix:** one spelling, twinned in the CLI and the page: bare, double-quoted, or a placeholder where no spelling holds in all three shells.
+- **Verify:** `shellword.test.ts` passes each table row through the install's real cmd, PowerShell 5.1 and sh launchers. Commit `30461847`; D125's ACCTQUOTE1 note.
 
 ## 2026-10-07 — a downloaded tool's folder held by Windows
 

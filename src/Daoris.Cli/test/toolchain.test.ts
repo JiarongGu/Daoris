@@ -550,6 +550,27 @@ test('`login --new` keeps a finished sign-in, names who signed in, and offers it
 });
 
 /**
+ * ACCTQUOTE1: who signed in is offered as a command the person pastes, so it is spelled for a shell — and where no spelling
+ * holds in every shell, the command names a placeholder and the sentence says who.
+ */
+test('`login --new` offers who signed in as a command every shell reads as written', () => {
+  const fx = makeFixture('harness-sign-in-spelled');
+  const toolchain = fakeHarness(fx);
+  const said = (who: string): string => {
+    const lines: string[] = [];
+    signInNew('fake', toolchain, fx.root, (where) => {
+      writeFileSync(join(where, 'credentials.json'), who, 'utf8');
+      return 0;
+    }, (line) => lines.push(line));
+    return lines.join('\n');
+  };
+
+  assert.match(said("o'brien@example.invalid"), /`daoris agent profile rename fake acct-[0-9a-f]{8} "o'brien@example\.invalid"` names it o'brien@/);
+  assert.match(said('r&d@example.invalid'), /`daoris agent profile rename fake acct-[0-9a-f]{8} <name>` names it r&d@example\.invalid;/);
+  fx.cleanup();
+});
+
+/**
  * ACCT1, ACCT2: a new account named as it is made, and put into the lists the person named in the same step; the end says
  * where it runs. A list that cannot be joined is refused before anything starts, so it costs nothing.
  */

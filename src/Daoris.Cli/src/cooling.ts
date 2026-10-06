@@ -22,6 +22,7 @@
 
 import { join } from 'node:path';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
+import { shellWord } from './shellword.ts';
 
 export const COOLING_FILE = 'cooling.json';
 
@@ -108,7 +109,7 @@ export function coolingWhy(entry: Pick<CoolingEntry, 'stated' | 'assumedZone' | 
 
 /** The line `agent list` gives a cooling account (D125 §2.4): until when, how long that is, why, and how to try it now. */
 export function coolingLine(entry: CoolingEntry, now: Date, zone: string): string {
-  const ready = `\`daoris agent profile ready ${entry.agent} ${entry.account ?? '--own'}\``;
+  const ready = `\`daoris agent profile ready ${entry.agent} ${entry.account === null ? '--own' : shellWord(entry.account, '<account>')}\``;
   return `cooling until ${coolingWhen(entry.until, zone)}, in ${span(entry.until.getTime() - now.getTime())} — `
     + `${coolingWhy(entry)}; ${ready} tries it now`;
 }

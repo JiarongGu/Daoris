@@ -79,9 +79,14 @@ function where(workspace: string | null): string {
   return workspace ? `in \`${workspace}\`` : 'on this machine';
 }
 
-/** A scope named in a command: nothing for the machine, `--workspace` for one workspace. */
+/** A scope named in a command: nothing for the machine, `--workspace` for one workspace, spelled for a shell (ACCTQUOTE1). */
 function scoped(workspace: string | null): string {
-  return workspace ? ` --workspace ${workspace}` : '';
+  return workspace ? ` --workspace ${shellWord(workspace, '<workspace>')}` : '';
+}
+
+/** An account in a command (ACCTQUOTE1): by its name where a shell can take it, else by its id, else a placeholder. */
+function accountWord(shown: string, id: string): string {
+  return shellWord(shown, shellWord(id, '<account>'));
 }
 
 /** Choices said as a person says them: `a, b or c`. */
@@ -111,6 +116,7 @@ import {
   signInRefusal, signInTarget, AccountNameError,
 } from './accountnames.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
+import { shellWord, shellWords } from './shellword.ts';
 import { saidLine, saidOf } from './windows.ts';
 import { markSignedIn, probeLockPath, takeProbeLock } from './probelock.ts';
 import type { Channel, Fetcher } from './channels.ts';
@@ -706,8 +712,9 @@ export function addKeyAccount(
 
   write(`daoris: \`${harness}\` account \`${account}\` is the API key ${keyHandle(key)}.`);
   write(`  Kept in ${keysPath(home)} — machine-local, tracked by nothing, shown back only as its last four.`);
-  write(`  \`daoris agent profile rename ${harness} ${account} <name>\` gives it a name of yours (ACCT2), and`);
-  write(`  \`daoris agent profile join ${harness} ${account} <workspace>…|--machine\` puts it in a list a start runs on.`);
+  const id = shellWord(account, '<account>');
+  write(`  \`daoris agent profile rename ${harness} ${id} <name>\` gives it a name of yours (ACCT2), and`);
+  write(`  \`daoris agent profile join ${harness} ${id} <workspace>…|--machine\` puts it in a list a start runs on.`);
   return account;
 }
 
@@ -905,7 +912,7 @@ export function placeLines(harness: string, account: string, settings: HarnessSe
   return [
     `  no list and no default holds \`${shown}\`, so no start runs on it.`,
     ...(lists.length > 0 ? [`  The lists here: ${lists.join('; ')}.`] : []),
-    `  \`daoris agent profile join ${harness} ${shown} <workspace>…|--machine\` puts it in one.`,
+    `  \`daoris agent profile join ${harness} ${accountWord(shown, account)} <workspace>…|--machine\` puts it in one.`,
   ];
 }
 
@@ -1092,9 +1099,10 @@ function endLines(
 ): string[] {
   const lines: string[] = [];
   if (named === null && who) {
-    lines.push(`  \`daoris agent profile rename ${harness} ${account} ${who}\` names it ${who}; it reads as \`${account}\` until it has a name.`);
+    lines.push(`  \`daoris agent profile rename ${harness} ${shellWord(account, '<account>')} ${shellWord(who, '<name>')}\` names it `
+      + `${who}; it reads as \`${account}\` until it has a name.`);
   } else if (named === null) {
-    lines.push(`  \`daoris agent profile rename ${harness} ${account} <name>\` gives it a name of yours.`);
+    lines.push(`  \`daoris agent profile rename ${harness} ${shellWord(account, '<account>')} <name>\` gives it a name of yours.`);
   }
   if (placed) lines.push(...placeLines(harness, account, settings, accountNames(home, harness)));
   return lines;
@@ -1294,7 +1302,7 @@ export function accountLines(
     // account sat in no list while the work kept starting on an empty one.
     if (placesOf(settings, owner, profile.name).length === 0) {
       lines.push(`${indent}${''.padEnd(16)} no workspace: no list and no default holds it, so no start runs on it — `
-        + `\`daoris agent profile join ${owner} ${shown(profile.name)} <workspace>…|--machine\` puts it in one`);
+        + `\`daoris agent profile join ${owner} ${accountWord(shown(profile.name), profile.name)} <workspace>…|--machine\` puts it in one`);
     }
   }
 
@@ -1392,7 +1400,7 @@ export function commandHarness(
       if (circle) {
         throw new DaorisError(
           `the \`${circle}\` workspace pins no version of \`${name}\`, so there is no pin to move — `
-          + `\`daoris agent pin ${name} <version> --workspace ${circle}\` sets one.`);
+          + `\`daoris agent pin ${name} <version>${scoped(circle)}\` sets one.`);
       }
       if (!toolchain.update) {
         throw new DaorisError(`\`${name}\` declares no updater — it updates itself, or its package manager does.`);
@@ -1423,7 +1431,7 @@ export function commandHarness(
         if (argv.includes('--profile')) {
           throw new DaorisError(
             `\`--new\` signs in to a new account and \`--profile\` to one that is here — \`daoris agent login ${name} --new\`, or `
-            + `\`daoris agent login ${name} --profile ${flagValue(argv, '--profile')}\`.`);
+            + `\`daoris agent login ${name} --profile ${shellWord(flagValue(argv, '--profile') ?? '', '<account>')}\`.`);
         }
         return signInNew(name, toolchain, home, relayed, write, { name: flagValue(argv, '--name') ?? null, joins, path });
       }
@@ -1801,7 +1809,7 @@ export function commandHarness(
         write(existed
           ? `daoris: \`${name}\` profile \`${profile}\` already exists — ${where}`
           : `daoris: \`${name}\` profile \`${profile}\` — ${where}`);
-        write(`  It is empty until you log into it: \`daoris agent login ${name} --profile ${profile}\`.`);
+        write(`  It is empty until you log into it: \`daoris agent login ${name} --profile ${shellWord(profile, '<account>')}\`.`);
         return 0;
       }
 
@@ -1837,7 +1845,7 @@ export function commandHarness(
           if (named.length > 0) {
             throw new DaorisError(
               `\`--clear\` names no account — \`daoris agent profile order ${name} --clear\` clears the order, and `
-              + `\`daoris agent profile order ${name} ${named.join(' ')}\` sets it.`);
+              + `\`daoris agent profile order ${name} ${shellWords(named, '<account>')}\` sets it.`);
           }
           return clearOrder(name, workspace);
         }
@@ -1880,7 +1888,7 @@ export function commandHarness(
         if (own && account !== null) {
           throw new DaorisError(
             `\`--own\` names no account — \`daoris agent profile ready ${name} --own\` is the tool's own sign-in, and `
-            + `\`daoris agent profile ready ${name} ${account}\` is that account.`);
+            + `\`daoris agent profile ready ${name} ${shellWord(account, '<account>')}\` is that account.`);
         }
         if (!own && account === null) {
           throw new DaorisError(
@@ -1920,7 +1928,7 @@ export function commandHarness(
         if (!profiles(home, name).includes(profile)) {
           throw new DaorisError(
             `\`${name}\` has no profile \`${profile}\` on this machine — \`daoris agent profile add `
-            + `${name} ${profile}\` creates it. Profiles that exist: `
+            + `${name} ${shellWord(profile, '<account>')}\` creates it. Profiles that exist: `
             + `${profiles(home, name).join(', ') || '(none)'}`);
         }
 
@@ -1931,7 +1939,7 @@ export function commandHarness(
           throw new DaorisError(
             `\`${name}\`'s list ${where(workspace)} is ${list.join(', then ')}, and \`${profile}\` is not in it — the list is `
             + 'every account its starts may run on, and the default is where they begin within it. '
-            + `\`daoris agent profile order ${name} ${[...list, profile].join(' ')}${scoped(workspace)}\` adds it, or make one `
+            + `\`daoris agent profile order ${name} ${shellWords([...list, profile], '<account>')}${scoped(workspace)}\` adds it, or make one `
             + 'of the list the default.');
         }
 
@@ -1959,7 +1967,8 @@ export function commandHarness(
         const wanted = operand(argv, 4);
         if (wanted === undefined) {
           throw new DaorisError(
-            `\`agent profile rename\` needs <agent> <account> <name> — e.g. \`daoris agent profile rename ${name} ${account} work\`; `
+            `\`agent profile rename\` needs <agent> <account> <name> — e.g. \`daoris agent profile rename ${name} `
+            + `${shellWord(account, '<account>')} work\`; `
             + `naming it \`${account}\` gives it none.`);
         }
         const now = renameAccount(home, name, profiles(home, name), account, wanted);
@@ -1989,7 +1998,7 @@ export function commandHarness(
         if (joins.length === 0) {
           throw new DaorisError(
             `\`agent profile join\` needs the lists — a workspace's name, or \`--machine\` for this machine's: e.g. `
-            + `\`daoris agent profile join ${name} ${account} work\`.`);
+            + `\`daoris agent profile join ${name} ${shellWord(account, '<account>')} work\`.`);
         }
         refuseJoins(settings, name, joins);
 
@@ -2023,14 +2032,14 @@ export function commandHarness(
 
     /** `profile order`'s refusal for a list that leaves out its scope's default or kept account (§3.1, §4.6). */
     function orderRefusal(name: string, workspace: string | null, problem: ScopeProblem, list: string[]): string {
-      const named = `\`daoris agent profile order ${name} ${[...list, problem.account].join(' ')}${scoped(workspace)}\``;
+      const named = `\`daoris agent profile order ${name} ${shellWords([...list, problem.account], '<account>')}${scoped(workspace)}\``;
       const noKeep = `\`daoris agent profile use ${name} --no-keep${scoped(workspace)}\``;
       switch (problem.kind) {
         case 'default':
           return `${workspace ? `\`${workspace}\`'s` : 'this machine\'s'} default for \`${name}\` is \`${problem.account}\`, and `
             + 'this list does not hold it — the list is every account its starts may run on, and the default is where they '
             + `begin within it. Name it in the list (${named}), or first make one of the list the default `
-            + `(\`daoris agent profile default ${name} ${list[0]}${scoped(workspace)}\`).`;
+            + `(\`daoris agent profile default ${name} ${shellWord(list[0]!, '<account>')}${scoped(workspace)}\`).`;
         case 'keep':
           return `\`${problem.account}\` is kept for conversations ${where(workspace)}, and this list does not hold it — the `
             + `kept account is one of the list. Name it in the list (${named}), or first keep none (${noKeep}).`;
@@ -2086,7 +2095,7 @@ export function commandHarness(
         const borrowed = workspace !== null && resolveScope(settings, name, workspace).from === 'machine';
         throw new DaorisError(workspace
           ? `\`${workspace}\` has no list of its own for \`${name}\`, so there is nothing to use there — \`daoris agent profile `
-            + `order ${name} <account>… --workspace ${workspace}\` gives it one`
+            + `order ${name} <account>…${scoped(workspace)}\` gives it one`
             + (borrowed ? ', and until then it uses this machine\'s, which is set without --workspace.' : '.')
           : `\`${name}\` has no list on this machine, so there is nothing to use yet — \`daoris agent profile order ${name} `
             + '<account>…` sets one, and how it is used is set beside it.');
@@ -2098,12 +2107,12 @@ export function commandHarness(
           throw new DaorisError(
             `\`${problem.account}\` is not in \`${name}\`'s list ${where(workspace)} (${list.join(', then ')}) — the kept account `
             + `is one of the list. Name it in the list first (\`daoris agent profile order ${name} `
-            + `${[...list, problem.account].join(' ')}${scoped(workspace)}\`), or keep one of it.`);
+            + `${shellWords([...list, problem.account], '<account>')}${scoped(workspace)}\`), or keep one of it.`);
         }
         if (problem?.kind === 'alone') {
           throw new DaorisError(
             `\`${name}\`'s list ${where(workspace)} holds no account but \`${problem.account}\`, so keeping it for conversations `
-            + `would leave driven work none — \`daoris agent profile order ${name} ${list.join(' ')} <account>…`
+            + `would leave driven work none — \`daoris agent profile order ${name} ${shellWords(list, '<account>')} <account>…`
             + `${scoped(workspace)}\` adds one.`);
         }
       }
@@ -2172,7 +2181,8 @@ export function commandHarness(
             ? `daoris: \`${workspace}\` names no account of its own for \`${name}\`, and this machine has no list, so there are `
               + `no settings — \`daoris agent profile order ${name} <account>…\` sets the machine's.`
             : `daoris: \`${workspace}\` names its own account for \`${name}\`, \`${scope.default}\`, and no list of its own, so it `
-              + `has no settings — \`daoris agent profile order ${name} ${scope.default} <account>… --workspace ${workspace}\` `
+              + `has no settings — \`daoris agent profile order ${name} ${shellWord(scope.default ?? '', '<account>')} <account>…`
+              + `${scoped(workspace)}\` `
               + 'gives it a list.');
         return 0;
       }
@@ -2243,7 +2253,7 @@ export function commandHarness(
       if (operand(argv, 3) !== undefined) {
         throw new DaorisError(
           `\`--clear\` names no account — \`daoris agent profile default ${name} --clear\` clears the default, `
-          + `and \`daoris agent profile default ${name} ${operand(argv, 3)}\` sets it.`);
+          + `and \`daoris agent profile default ${name} ${shellWord(operand(argv, 3)!, '<account>')}\` sets it.`);
       }
 
       const after = withDefault(settings, name, null, workspace);

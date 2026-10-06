@@ -77,7 +77,48 @@ export const UseInAWorkspace: StoryObj<typeof PlaceAccount> = {
   ),
 };
 
+/** A row's *Use in a workspace…* refused (ACCTEDIT1): still open, its boxes as they were, the refusal said under them. */
+export const UseInAWorkspaceRefused: StoryObj<typeof PlaceAccount> = {
+  render: () => (
+    <PlaceAccount
+      agent="claude-code"
+      account="acct-5e1f0a2b"
+      title={i18n.t('agents.place.title', { account: 'spare@example.invalid' })}
+      choices={CHOICES}
+      refusal={'`work` names no `claude-code` account or list of its own, so its starts take this machine\'s list — join this '
+        + 'machine\'s list, or give `work` a list of its own first (`daoris agent profile order claude-code <account>… '
+        + '--workspace work`).'}
+      cancelLabel={i18n.t('common.cancel')}
+      onDone={nothing}
+      onCancel={nothing}
+    />
+  ),
+};
+
 /** A rename under its row (ACCT2): the name in its field, and the terminal's twin. */
 export const Rename: StoryObj<typeof RenameAccount> = {
   render: () => <RenameAccount agent="claude-code" account="acct-5e1f0a2b" current={null} onSave={nothing} onCancel={nothing} />,
+};
+
+/**
+ * A name no one spelling holds in every shell (ACCTQUOTE1): `R&D` is a name, and its twin names `<name>` rather than a
+ * command that runs `D` in Command Prompt.
+ */
+export const RenameUnspellable: StoryObj<typeof RenameAccount> = {
+  render: () => <RenameAccount agent="claude-code" account="acct-5e1f0a2b" current="R&D" onSave={nothing} onCancel={nothing} />,
+};
+
+/** A rename refused (ACCTEDIT1): the name typed kept in its field, and the driver's sentence under it, whole. */
+export const RenameRefused: StoryObj<typeof RenameAccount> = {
+  render: () => (
+    <RenameAccount
+      agent="claude-code"
+      account="acct-5e1f0a2b"
+      current="spare"
+      refusal={'accounts.json could not be read, so `acct-5e1f0a2b` was not renamed — writing it would lose every other '
+        + 'account\'s name. Fix the file or remove it, then rename again.'}
+      onSave={nothing}
+      onCancel={nothing}
+    />
+  ),
 };
