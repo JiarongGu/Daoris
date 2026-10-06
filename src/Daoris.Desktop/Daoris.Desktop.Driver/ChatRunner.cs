@@ -414,6 +414,8 @@ public sealed partial class ChatRunner : IDisposable
                 new ChatTarget(place.Name, workTree, _service.BaseUrl)
                 {
                     Resume = resolved.Wire == SessionWire.Pipe ? goOn?.Ask.Conversation : null,
+                    // Its own record, so a take through the connector its harness starts marks it (CHATTAKE1b).
+                    Session = sessionId,
                 },
                 config.Commands.GetValueOrDefault(resolved.Name));
             if (resolved.Toolchain is { } toolchain)
@@ -506,6 +508,7 @@ public sealed partial class ChatRunner : IDisposable
                 place.Posture ?? resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
                 stopped: () => _processes.WasStopRequested(sessionId),
                 limited: failure => Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff),
+                signedOut: failure => SignedOut(resolved, selection.Profile, failure),
                 goOn: goOn?.Ask,
                 // On this door the words went once their prompt is on the wire.
                 wentOn: goOn is null ? null : () =>
@@ -821,6 +824,26 @@ public sealed partial class ChatRunner : IDisposable
         return CoolingWords.Conversation(read.Entry, _harnesses.Zone);
     }
 
+    /// <summary>
+    /// A conversation's call the door refused, read for the account's sign-in (SIGNIN1b, D125 ROSTER1b) by the reader a driven
+    /// start's conclusion uses (<see cref="Driver.SignInRefused"/>): where the adapter's table recognises it, the account the
+    /// conversation runs as reads signed out, kept as a reading is, so the next start walks past it, and the line for its record
+    /// comes back. Null is a refusal as today. Read from the door's failure, never from the transcript (AGT3c).
+    /// </summary>
+    internal Noted? SignedOut(ISessionAdapter adapter, string? profile, string failure)
+    {
+        try
+        {
+            return Driver.SignInRefused(_harnesses, adapter, profile, failure);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)
+        {
+            // A reading not written, or an adapter a plugin no longer declares, costs the next start one more refusal, never
+            // this conversation: this runs inside the refused turn's own handling.
+            return null;
+        }
+    }
+
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
     private void Record(string sessionId, SessionEvent e) => _events.Keep(sessionId, e, say: null);
 
@@ -1076,6 +1099,9 @@ public sealed partial class ChatRunner : IDisposable
             chat.Opened(null, Line, Record);
             Line($"— the ACP session could not open: {error.Message}");
             Record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the ACP session could not open: {error.Message}" });
+            // A refused sign-in may come at `session/new` as well as at a prompt: which one Claude Code's adapter answers with
+            // was not seen (D125 ROSTER1b), so both are read (SIGNIN1b).
+            chat.ReadSignIn(error);
             try
             {
                 process.Kill(entireProcessTree: true);
@@ -1126,6 +1152,7 @@ public sealed partial class ChatRunner : IDisposable
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
         private readonly Func<string, string?>? _limited;
+        private readonly Func<string, Noted?>? _signedOut;
         private readonly Action? _wentOn;
         private Action<string> _line = _ => { };
         private Action<SessionEvent> _record = _ => { };
@@ -1138,15 +1165,19 @@ public sealed partial class ChatRunner : IDisposable
         /// <param name="limited">
         /// A refused turn's failure, read for an account's limit (TOOL4d): the sentence its record takes, or null.
         /// </param>
+        /// <param name="signedOut">
+        /// A refused call's failure, read for the account's sign-in (SIGNIN1b): the line its record takes, or null.
+        /// </param>
         /// <param name="goOn">The ended chat's conversation this one goes on in, resumed rather than opened (MSG1c); null for a new one.</param>
         /// <param name="wentOn">Told once the words it goes on with are on the wire (MSG1c).</param>
         public ProtocolChat(
             string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
             Action<ChatQueue> changed, Func<bool> stopped, Func<string, string?>? limited = null,
-            ResumeAsk? goOn = null, Action? wentOn = null)
+            Func<string, Noted?>? signedOut = null, ResumeAsk? goOn = null, Action? wentOn = null)
         {
             _stopped = stopped;
             _limited = limited;
+            _signedOut = signedOut;
             _wentOn = wentOn;
             Posture = posture;
             Meta = meta;
@@ -1183,6 +1214,18 @@ public sealed partial class ChatRunner : IDisposable
             _line = line;
             _record = record;
             _open.TrySetResult(session);
+        }
+
+        /// <summary>
+        /// A call the door refused, opening the session or taking a turn, read for the account's sign-in (SIGNIN1b, D125
+        /// ROSTER1b): where it was, the account reads signed out and the record says so, its English beside the line's parts as
+        /// a session record's note carries them. Only the door's failure is read (AGT3c), as a driven start's conclusion reads it.
+        /// </summary>
+        public void ReadSignIn(Exception error)
+        {
+            if (error is not DriverException || _signedOut?.Invoke(error.Message) is not { } signedOut) return;
+            _line($"— {signedOut.Note}");
+            _record(new SessionEvent { Kind = SessionEventKind.Note, Text = signedOut.Note, Parts = signedOut.Parts });
         }
 
         /// <summary>
@@ -1299,6 +1342,9 @@ public sealed partial class ChatRunner : IDisposable
                     _line($"— {cooling}");
                     _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling });
                 }
+
+                // And for the account's sign-in (SIGNIN1b), so the next start walks past an account its agent refused here.
+                ReadSignIn(error);
 
                 // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
                 // one drew *working…* under this very note until the next message — while the composer,

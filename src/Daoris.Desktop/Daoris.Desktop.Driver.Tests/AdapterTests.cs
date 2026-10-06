@@ -302,6 +302,41 @@ public sealed class AdapterTests
     }
 
     /// <summary>
+    /// CHATTAKE1b (D126's CHATTAKE1 note): a chat's spawn names its own record, as a driven session's and an intake's do
+    /// (SESS1), on every door. A connector its harness starts from the repository's own server list inherits it, so a take
+    /// or a publication through it says which conversation made it, and the take marks that record.
+    /// </summary>
+    [Fact]
+    public void A_chat_s_spawn_names_its_session_on_every_door()
+    {
+        var chat = Chat() with { Session = "c1a2b3c4" };
+        var adapters = AdapterSet.Built();
+        var talking = adapters.Names.Where(name => adapters.Resolve(name).Interactive).ToList();
+        Assert.Contains("acp-stub", talking);
+        Assert.Contains("claude-code", talking);
+
+        foreach (var name in talking)
+        {
+            var info = adapters.Resolve(name).PrepareChat(chat, ["agent"]);
+
+            Assert.True(info.Environment.TryGetValue(IntakeRoom.SessionVariable, out var session), name);
+            Assert.Equal("c1a2b3c4", session);
+            // Still a chat: its session is all it gains, never an ask or a quest.
+            Assert.False(info.Environment.ContainsKey(IntakeRoom.AskVariable), name);
+            Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"), name);
+        }
+    }
+
+    /// <summary>A chat with no record named carries no session, absent rather than blank, as a quest's absent variables are.</summary>
+    [Fact]
+    public void A_chat_with_no_session_named_carries_none()
+    {
+        var info = AdapterSet.Built().Resolve("acp-stub").PrepareChat(Chat(), ["agent"]);
+
+        Assert.False(info.Environment.ContainsKey(IntakeRoom.SessionVariable));
+    }
+
+    /// <summary>
     /// A driven session speaks the harness's structured output too (CONV3), and keeps its composed
     /// target as the one prompt — checked against the binary (docs/2026-09-25-stream-json-evidence.md).
     /// </summary>

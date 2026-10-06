@@ -343,6 +343,96 @@ public sealed class SignInRefusedStartTests : IDisposable
         Assert.Equal(AccountReadiness.Refused, held.NotReady);
     }
 
+    // ——— A conversation (SIGNIN1b): its turn refused for its sign-in reads the account signed out, as a driven start's does.
+
+    /// <summary>The fake agent with Claude Code's sign-in words declared, so a conversation's refused turn can be read on it.</summary>
+    private HarnessRoster FakeSigningIn() =>
+        new(new AdapterSet(new Dictionary<string, ISessionAdapter>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["fake"] = new Adapter("fake", new HarnessToolchain(
+                Binary: [Command], VersionArguments: ["--version"], ProfileVariable: "FAKE_HOME", ProbeByPresence: true,
+                SignIn: ClaudeSignIn.Words)),
+        }), Settings)
+        {
+            Clock = () => _now,
+            Zone = Zone,
+        };
+
+    private ChatRunner Runner(ServiceClient service, HarnessRoster roster) =>
+        new(service, roster.Adapters, _home, new SessionProcesses(), harnesses: roster);
+
+    [Fact]
+    public void A_conversation_s_turn_refused_for_its_sign_in_reads_its_account_signed_out_and_says_why()
+    {
+        using var service = _ledger.Client();
+        Accounts("fake", "account-1");
+        var roster = FakeSigningIn();
+        using var runner = Runner(service, roster);
+
+        var said = runner.SignedOut(roster.Adapters.Resolve("fake"), "account-1", Refusal);
+
+        Assert.Equal(new AccountRead(LoginState.Out, Seen), ReadOf("fake", "account-1"));
+        Assert.Equal(
+            "The agent refused the `fake` account `account-1` for its sign-in, so it reads signed out and Daoris starts nothing "
+            + "more on it until it is signed in: `daoris agent login fake --profile account-1`, or Agents → the agent's page → "
+            + "Accounts.",
+            said!.Note);
+        NoteAssert.Holds(said.Note, said.Parts);
+        Assert.Equal(("account.signed-out", "fake"), (said.Parts![^1].Code, (string?)said.Parts[^1].Value("owner")));
+    }
+
+    [Fact]
+    public async Task The_next_start_walks_past_the_account_a_conversation_s_refused_turn_read_signed_out()
+    {
+        using var service = _ledger.Client();
+        Accounts("fake", "account-1", "account-2");
+        Wire(s => s.WithDefault("fake", "account-1").WithRotation("fake", ["account-1", "account-2"]));
+        var roster = FakeSigningIn();
+        using var runner = Runner(service, roster);
+
+        runner.SignedOut(roster.Adapters.Resolve("fake"), "account-1", Refusal);
+        var selection = await roster.SelectAsync("fake", FakeConfig, null, null);
+
+        Assert.True(selection.Allowed);
+        Assert.Equal("account-2", selection.Profile);
+        Assert.Equal(("account-1", "the `fake` account `account-1` is not signed in"), (selection.Rotated!.From, selection.Rotated.Why));
+    }
+
+    /// <summary>
+    /// AGT3c: only the door's failure, read by the adapter's table, says a sign-in was refused. A failure the table does not
+    /// recognise, and the same words on an agent that declares none, read nothing.
+    /// </summary>
+    [Fact]
+    public void A_conversation_s_refusal_the_table_does_not_recognise_reads_nothing()
+    {
+        using var service = _ledger.Client();
+        Accounts("fake", "account-1");
+        var signing = FakeSigningIn();
+        using var runner = Runner(service, signing);
+        var silent = Fake();
+        using var unsigned = Runner(service, silent);
+
+        Assert.Null(runner.SignedOut(signing.Adapters.Resolve("fake"), "account-1", "the ACP agent refused the call: Internal error: Overloaded"));
+        Assert.Null(unsigned.SignedOut(silent.Adapters.Resolve("fake"), "account-1", Refusal));
+        Assert.False(File.Exists(AccountReads.PathOf(_home)));
+    }
+
+    /// <summary>The tool's own sign-in a conversation's turn was refused for is held until a person looks again, as a start's is.</summary>
+    [Fact]
+    public async Task A_conversation_refused_on_the_tool_s_own_sign_in_holds_the_next_start_until_a_person_looks_again()
+    {
+        using var service = _ledger.Client();
+        var roster = Built();
+        using var runner = Runner(service, roster);
+
+        var said = runner.SignedOut(AdapterSet.Built().Resolve("acp-stub"), profile: null, Refusal);
+
+        Assert.Equal("account.signed-out-own", said!.Parts![^1].Code);
+        Assert.Equal(LoginState.Out, AccountReads.Of(_home, "stub").Own!.Login);
+        var held = await roster.SelectAsync("acp-stub", DriverConfig.Empty with { Adapter = "acp-stub" }, null, null);
+        Assert.Equal(AccountReadiness.Refused, held.NotReady);
+    }
+
     // ——— Never a strike (D58 as D125 amends it, and now for an account's sign-in): the fault is the account's.
 
     /// <summary>The refused start's record, as the driver writes it: failed, its note saying the account's sign-in.</summary>

@@ -11253,3 +11253,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > D150 §2.4. Proof: the menu tables' tests against the palette; the look.
 
 **Outcome** 2026-10-05: built. The strip's menus are Workspace, Edit, View, Go, Run, Terminal and Help, built from one command table (`commands.ts`) that the palette, the keys, the *Keyboard shortcuts* drawer, `LAYOUT_KEYS` and the activity bar's tips also read. Tests hold the table: no key listed twice, no key on anything that stops, declines, deletes or archives, every applicable row in the palette, every label within the budgets in both languages. With two workspaces that is 65 items, 30 with a key. Run's and Edit's record acts call the page's own offer (`mainOffer.ts`), so a row is enabled exactly when the head offers it. That differs from design §3.5, and D152's note says why. The bar works as an IDE's: one open menu opens the others, ← → move along it, Escape gives the focus back, and Alt alone or F10 focuses it (desktop only). Alt+letter opens a menu, the letters showing while Alt is held. Edit acts on the field last focused, and Find goes to the conversation's find. Ask Daoris's room names Help → *Setup*. Left: Update's scroll to its card and a folded menu below about 590 px (UX7a2). Web vitest 3966 → 4037, help room 48 → 49. Detail: D152's UX7a note; commits f4e46361…327acf01.
+
+
+## SIGNIN1b — a refused chat sign-in updates the roster (2026-10-07, D125)
+
+> - [ ] **SIGNIN1b — refused chat sign-in updates roster** (driver). Authentication-required turns mark the account signed out so the next start skips it. Contract: D125 ROSTER1b. Proof: `ChatRunner` writes the reading; next selection bypasses it.
+
+**Outcome** 2026-10-07: a protocol-door conversation whose turn or `session/new` was refused for its sign-in now reads the account signed out through the reader driven starts use (`Driver.SignInRefused`, from the door's failure and never the transcript, AGT3c), so the next start walks past it. Native-door chats still read none, and the note shows in English in both languages until CONVNOTE1. Driver fast half 4240 → 4246; two Process cases added. Detail: D125's "Built 2026-10-07 (SIGNIN1b)" note; commits f82162f1, 41dfd1a5.
+
+
+## CHATTAKE1b — the chat pipe gets its session id (2026-10-07, D126)
+
+> - [ ] **CHATTAKE1b — chat pipe gets session id** (driver). Set `DAORIS_SESSION_ID` in `Spawning.ChatInRoot` so takes/publications identify the session. Contract: D126 CHATTAKE1 note. Proof: spawn environment case.
+
+**Outcome** 2026-10-07: a chat's spawn carries `DAORIS_SESSION_ID` on every door (`ChatTarget.Session`, absent rather than blank when none), so a take through its pipe-door connector marks its record. A chat's take from before this build is still unmarked. Detail: D126's CHATTAKE1b note; commit 3235346b.
