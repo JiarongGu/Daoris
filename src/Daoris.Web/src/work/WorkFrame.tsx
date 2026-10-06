@@ -9,8 +9,9 @@ import {
   NO_TURNS, useChatTurns, useSessionGroups, useSessionOpenings, useSessionOptions, useSessionStreams, useSessionWhere,
   useSetSessionOption, useStartChat, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals, useRemotes, useWorkPlan, useSay, useSessionReach, useStartFrom, type WordsAnswer,
-  useParkGoAhead, useAccounts, useGoOnNew, useTrace,
+  useParkGoAhead, useAccounts, useGoOnNew, useTrace, useDiscardSessionBranch,
 } from '../shell';
+import { sayDiscard } from '../settings/Sweep';
 import { doorOf, toolOf } from '../tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
 import { namer } from '../settings/namer';
@@ -300,6 +301,8 @@ export function WorkFrame({
     ? sweep.data.branches.find((row) => row.repository === attended.repository
       && row.branch === `daoris/${attended.tree!.split(/[\\/]/).filter(Boolean).pop()}`) ?? null
     : null;
+  // That branch discarded once its tree is gone, a failed attempt's (LAND3b): `daoris-driver trees remove … --force`.
+  const discardBranch = useDiscardSessionBranch();
 
   // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the
   // session's own console unless the person picked a stream of it, and one it no longer lists falls
@@ -1188,6 +1191,11 @@ export function WorkFrame({
             // Its review, wherever the review stands (SESS2 H4): the head's move beside unlanded work.
             onReview={() => openView('review')}
             branch={branch}
+            // Only this machine's own record: the clean-up's list is this machine's, and so is the branch it names.
+            onDiscardBranch={branch && here
+              ? () => discardBranch.mutate(branch, { onSuccess: sayDiscard(notify, t), onError: failure(notify) })
+              : undefined}
+            discardingBranch={discardBranch.isPending}
             trace={attended && trace.available ? {
               open: tracing === attended.id,
               onToggle: () => setTracing(tracing === attended.id ? null : attended.id),

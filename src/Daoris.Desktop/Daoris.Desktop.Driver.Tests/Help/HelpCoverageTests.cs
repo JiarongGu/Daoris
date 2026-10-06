@@ -377,6 +377,10 @@ public sealed partial class HelpCoverageTests
         ("projects", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); its screen is a workspace's page → Branches → *Clean up…* since UX6g.")),
+        // LAND3b (D102): a failed attempt's branch, discarded from a Branches row or a session whose tree is gone.
+        ("projects", "useDiscardSessionBranch", null, new Exempt(
+            "it discards a failed attempt's branch and its commits for good, a discard, which stays the person's own press "
+            + "(D89), as the clean-up beside it does.")),
         ("projects", "useWireRemote", null, new Exempt("wiring a workspace to a remote takes that remote's key; " + Key)),
         ("projects", "useUnwireRemote", null, new Exempt(
             "unwiring drops the remote's key from this machine, which only the person can give back (D89).")),

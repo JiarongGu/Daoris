@@ -2905,6 +2905,47 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('daoris/s-abc12345')).toBeTruthy();
   });
 
+  /**
+   * LAND3b (D102's LAND3 note): a failed session whose tree is gone left a branch only the terminal's
+   * `trees remove … --force` reached. Its head offers the discard, asks once, and presses the driver's forced removal of
+   * that branch by its name and repository; the driver's sentence for a branch it kept is said whole, as a refusal is.
+   */
+  it("discards the branch a failed session left once its tree is gone, after asking once", async () => {
+    SESSIONS = [{ ...IN_A_TREE, state: 'failed', tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];
+    let answer = { repository: 'engine', branch: 'daoris/s-abc12345', done: true, message: 'removed the session branch `daoris/s-abc12345` from `engine`.' };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'SWEEP_PLAN') {
+        return { branches: [{ repository: 'engine', workspace: 'default', branch: 'daoris/s-abc12345', hasTree: false,
+          kind: 'unlanded', commits: 2, removable: false, discardable: true }] };
+      }
+      if (type === 'DISCARD_SESSION_BRANCH') return answer;
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+
+    show('s1a2b3c4', notify);
+    await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', expect.anything());
+    const ask = screen.getByRole('group', { name: 'discard daoris/s-abc12345' });
+    expect(ask).toHaveTextContent('2 commits no branch of yours holds. Nothing brings them back.');
+    const asked = invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', {
+      payload: { repository: 'engine', branch: 'daoris/s-abc12345', force: true },
+    });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Discarded `daoris/s-abc12345` in engine.'));
+    // The clean-up's list is read again, so the head says what is left.
+    await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
+
+    answer = { repository: 'engine', branch: 'daoris/s-abc12345', done: false, message: 'there is no branch `daoris/s-abc12345` in `engine` — it is gone already.' };
+    await userEvent.click(await screen.findByRole('button', { name: 'Discard branch…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard branch' }));
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'there is no branch `daoris/s-abc12345` in `engine` — it is gone already.', 'error'));
+  });
+
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;

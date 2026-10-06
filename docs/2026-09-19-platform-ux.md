@@ -431,7 +431,8 @@ controls are in the frame design's §3.
     and its open calls read *stopped*. **A long run has a way through**, kept at the top of the
     conversation: *First failure*, *Last words*, and *find in this session*; a jump opens the fold it
     lands in and outlines the block. The head says the branch its own tree left and whether its work
-    landed, and *how this work ran* marks *this session*. The driver's composed
+    landed, and a failed or superseded attempt's branch whose tree is gone offers *Discard branch…* there, asking once,
+    as each such row of a workspace's Branches does (LAND3b); *how this work ran* marks *this session*. The driver's composed
     target is folded to two lines and named as the driver's. A tool call is a row that says what it
     did (its kind's glyph, title, file, an edit's `+n −m`, its status), closed by default and open when
     it failed, its text without the fence an adapter wrapped it in (U63). **Code is the paper's

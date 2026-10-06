@@ -11435,3 +11435,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT1g — index dated decision notes separately** (service). Prevent long decisions burying individual notes; match digest labels. Contract: amended D134 §5. Proof: probe-lock question lands on D125 TOOL6g.
 
 **Outcome** 2026-10-07: each dated note of a decision in the declared folder is its own entry (`…/D<n>.md#<label>`, titled `D125 › <label>`), labelled exactly as `orient-index.mjs` labels the digest (296 of 296 rows matched); the decision's own entry keeps its id and holds only the text before its first note, so `knowledge_get` on a decision returns its opening. The probe-lock question lands on D125's TOOL6g note first (19.81, FIX-LOG 19.63). Service 1215 → 1281. Detail: D134's ORIENT1g note, twins.md; commit 5d2370a6.
+
+
+## LAND3b — remove failed session branches from the UI (2026-10-07, D102)
+
+> - [ ] **LAND3b — remove failed session branches from UI** (modules, web-shell, web-settings). Expose forced removal when the tree is gone on session and unlanded-branch rows. Contract: D102 LAND3 note. Proof: modules and mocked-bridge tests.
+
+**Outcome** 2026-10-07: a failed or superseded attempt's branch can be discarded from a workspace's Branches tab (rows where `trees clean` prints its `--force` line, now `discardable` on `SWEEP_PLAN`) and from the page of a session whose tree is gone. One ask (`DiscardBranchAsk`) names the branch, repository, tree and that the commits go; the second press sends `DISCARD_SESSION_BRANCH`, the screen's `trees remove … --force`, which keeps a branch a running or waiting session's tree belongs to. The terminal lacks that guard (LAND3c). Modules fast 607 → 612, web vitest 4246 → 4265. Detail: D102's LAND3b note; commits 652a05df…0b5be735.

@@ -4,7 +4,7 @@ import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
 import type { LanguageChange, RepositoryLanguage } from '../settings/Languages';
-import type { LandedBranch, SweepBranch } from '../settings/Sweep';
+import type { BranchDiscard, LandedBranch, SweepBranch } from '../settings/Sweep';
 import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
 import { call, lookBound, pressBound } from './call';
 import type { DriverState } from './driver';
@@ -74,6 +74,29 @@ export const useSweep = () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
       // A tree removed: an ended session's review is kept until something moves its tree (REVIEW4), and this did.
+      void client.invalidateQueries({ queryKey: keys.allDiffs });
+      // A session branch gone may leave its repository holding nothing of Daoris's (D112).
+      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
+    },
+  });
+};
+
+/**
+ * Discard a failed or superseded attempt's session branch, its commits with it and its tree where it is still here (LAND3b,
+ * D102's LAND3 note): the screen's half of `daoris-driver trees remove <branch> --repository <name> --force`. Always
+ * forced, since the page asks once, naming the branch and its commits, before it sends; a branch the driver kept is an
+ * answer with its sentence. The list is asked again either way, since a branch gone already is a list out of date.
+ */
+export const useDiscardSessionBranch = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ repository, branch }: { repository: string; branch: string }) =>
+      call<BranchDiscard>('DISCARD_SESSION_BRANCH', { repository, branch, force: true }),
+    onSuccess: (result) => {
+      void client.invalidateQueries({ queryKey: keys.sweep });
+      if (!result.done) return;
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+      // A tree removed with its branch: a kept review is read again (REVIEW4), as after the clean-up.
       void client.invalidateQueries({ queryKey: keys.allDiffs });
       // A session branch gone may leave its repository holding nothing of Daoris's (D112).
       void client.invalidateQueries({ queryKey: treesSyncScopeKey });

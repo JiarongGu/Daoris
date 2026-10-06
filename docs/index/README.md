@@ -22,14 +22,14 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Web/e2e/platform.spec.ts` | 55 | 942 |
 | `src/Daoris.Web/src/App.test.tsx` | 45 | 875 |
 | `src/Daoris.Web/src/App.tsx` | 66 | 1237 |
-| `src/Daoris.Web/src/ProjectsView.test.tsx` | 60 | 1124 |
+| `src/Daoris.Web/src/ProjectsView.test.tsx` | 63 | 1161 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 56 | 1100 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 832 |
 | `src/Daoris.Web/src/agents/AgentsView.test.tsx` | 81 | 1603 |
 | `src/Daoris.Web/src/ui.tsx` | 72 | 1572 |
 | `src/Daoris.Web/src/work/ConversationView.test.tsx` | 43 | 817 |
-| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 183 | 3630 |
-| `src/Daoris.Web/src/work/WorkFrame.tsx` | 72 | 1371 |
+| `src/Daoris.Web/src/work/WorkFrame.test.tsx` | 185 | 3671 |
+| `src/Daoris.Web/src/work/WorkFrame.tsx` | 73 | 1379 |
 | `src/Daoris.Web/src/work/conversation.test.ts` | 44 | 857 |
 | `src/Daoris.Web/src/work/frame.tsx` | 40 | 879 |
 
@@ -40,7 +40,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2065 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 62 | 1038 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 62 | 1042 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 49 | 1025 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PluginKitTests.cs` | 46 | 937 |
@@ -125,7 +125,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 43 | 112 |
-| `docs/2026-09-19-platform-ux.md` | 50 | 551 |
+| `docs/2026-09-19-platform-ux.md` | 51 | 552 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 48 | 342 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
@@ -148,4 +148,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-05-ux7-design.md` | 66 | 784 |
 | `docs/2026-10-07-history-clearing-design.md` | 51 | 615 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 43 | 287 |
+| `src/Daoris.Desktop/README.md` | 44 | 287 |

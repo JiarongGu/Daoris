@@ -18,6 +18,8 @@ with the version and date at release.
   start walks past it. A conversation's agent is told which session it is, so a quest it takes is
   marked on its record.
 - Downloading a managed tool waits briefly when Windows holds the folder just unpacked, at both doors.
+- A failed attempt's branch can be discarded from a workspace's Branches tab, and from a session's
+  page once its tree is gone, after one confirmation; a branch a live session uses is kept.
 - What needs you lists work waiting on its accounts and signed-out accounts that hold work, with
   *Sign in*, *Read* and *Let … run* beside each, from what Daoris already knows and without asking an
   agent anything.

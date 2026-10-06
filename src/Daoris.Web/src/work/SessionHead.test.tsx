@@ -317,6 +317,56 @@ describe('the attended session\'s head', () => {
   });
 
   /**
+   * LAND3b (D102's LAND3 note): a failed session's tree is gone and its branch stands, holding commits no branch of the
+   * person's holds, so no clean-up takes it and the review has no tree to discard. Its head offers the discard beside
+   * what it left, asking once, naming the branch and its commits; while the tree is here, the review's Discard serves.
+   */
+  it('offers to discard the branch a failed session left once its tree is gone, asking once', () => {
+    const gone: SweepBranch = {
+      repository: 'engine', workspace: 'default', branch: 'daoris/s-43c14a70', hasTree: false,
+      kind: 'unlanded', commits: 2, removable: false, discardable: true,
+    };
+    const onDiscardBranch = vi.fn();
+    const { rerender } = render(
+      <SessionHead session={session({ state: 'failed' })} branch={gone} onReview={vi.fn()} onDiscardBranch={onDiscardBranch} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discard branch…' }));
+    expect(onDiscardBranch).not.toHaveBeenCalled();
+    const ask = screen.getByRole('group', { name: 'discard daoris/s-43c14a70' });
+    expect(ask).toHaveTextContent('Discards daoris/s-43c14a70 in engine, and with it 2 commits no branch of yours holds. Nothing brings them back.');
+    fireEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    expect(onDiscardBranch).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('group', { name: 'discard daoris/s-43c14a70' })).toBeNull();
+
+    // The tree still here: the review's Discard is the door, so the head offers none.
+    rerender(<SessionHead session={session({ state: 'failed' })} branch={{ ...gone, hasTree: true }} onDiscardBranch={onDiscardBranch} />);
+    expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+    // Commits git could not judge are not offered, nor is anything where nothing can press it.
+    rerender(<SessionHead session={session({ state: 'failed' })} branch={{ ...gone, discardable: false }} onDiscardBranch={onDiscardBranch} />);
+    expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+    rerender(<SessionHead session={session({ state: 'failed' })} branch={gone} />);
+    expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+  });
+
+  /** REV3's lesson: an ask belongs to the branch it was asked about, so it never carries to another session's. */
+  it('never carries an ask to discard one session\'s branch to another\'s', () => {
+    const gone = (name: string): SweepBranch => ({
+      repository: 'engine', workspace: 'default', branch: name, hasTree: false,
+      kind: 'unlanded', commits: 1, removable: false, discardable: true,
+    });
+    const { rerender } = render(
+      <SessionHead session={session({ state: 'failed' })} branch={gone('daoris/s-1')} onDiscardBranch={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Discard branch…' }));
+    expect(screen.getByRole('group', { name: 'discard daoris/s-1' })).toBeInTheDocument();
+
+    rerender(<SessionHead session={session({ id: 's9f8e7d6', state: 'failed' })} branch={gone('daoris/s-2')} onDiscardBranch={vi.fn()} />);
+    expect(screen.queryByRole('group', { name: /^discard/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Discard branch…' })).toBeInTheDocument();
+  });
+
+  /**
    * INT4g: an intake serves an ask and runs in Daoris's own room, which is not a repository's tree
    * (INT4b). Its record says so rather than reading `repository: ask #…`.
    */

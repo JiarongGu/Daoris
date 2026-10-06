@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
+import i18n from '../i18n';
 import { SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 
 // WSR3 (D88): every session branch with what it holds, listed first — then one press removes those
@@ -59,6 +60,99 @@ describe('the session branches card', () => {
   it('names a machine with no session branch', () => {
     draw({ branches: [] });
     expect(screen.getByText(/No session branches/)).toBeInTheDocument();
+  });
+});
+
+// LAND3b (D102's LAND3 note): a failed or superseded attempt's commits are on no branch of the person's, so no clean-up
+// takes its branch. Beside each row the driver says `discardable`, the discard is offered, as the terminal's list prints
+// `trees remove … --force` beside it; it asks once, naming the branch and that its commits go, and only then presses.
+
+describe('discarding a failed attempt\'s branch from the session branches card', () => {
+  const FAILED: SweepBranch[] = [
+    branch({ branch: 'daoris/s-gone', hasTree: false, kind: 'unlanded', commits: 2, detail: 'a1b2c3d the work', discardable: true }),
+    branch({ branch: 'daoris/s-here', kind: 'unlanded', commits: 1, discardable: true }),
+    branch({ branch: 'daoris/s-unsure', hasTree: false, kind: 'unlanded', commits: 0 }),
+    branch({ branch: 'daoris/s-empty', kind: 'empty', where: 'main', removable: true }),
+  ];
+
+  const drawDiscard = (props: Partial<Parameters<typeof SweepList>[0]> = {}) => {
+    const onDiscard = vi.fn();
+    const onClean = draw({ branches: FAILED, onDiscard, ...props });
+    return { onDiscard, onClean };
+  };
+  const row = (name: string) => screen.getByRole('listitem', { name });
+
+  it('offers the discard beside each row the driver offers it on, and beside no other', () => {
+    drawDiscard();
+
+    expect(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' })).toBeInTheDocument();
+    expect(within(row('daoris/s-here')).getByRole('button', { name: 'Discard branch…' })).toBeInTheDocument();
+    expect(within(row('daoris/s-unsure')).queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+    expect(within(row('daoris/s-empty')).queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+  });
+
+  it('asks once, naming the branch, its repository and that its commits go, before it discards', async () => {
+    const { onDiscard, onClean } = drawDiscard();
+
+    await userEvent.click(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' }));
+    expect(onDiscard).not.toHaveBeenCalled();
+    const ask = screen.getByRole('group', { name: 'discard daoris/s-gone' });
+    expect(ask).toHaveTextContent('Discards daoris/s-gone in engine, and with it 2 commits no branch of yours holds. Nothing brings them back.');
+    expect(within(ask).getByText('daoris/s-gone', { selector: 'code' })).toBeInTheDocument();
+    // While it asks, the first press is not offered twice.
+    expect(within(row('daoris/s-gone')).queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    expect(onDiscard).toHaveBeenCalledOnce();
+    expect(onDiscard).toHaveBeenCalledWith(expect.objectContaining({ repository: 'engine', branch: 'daoris/s-gone' }));
+    expect(onClean).not.toHaveBeenCalled();
+    expect(screen.queryByRole('group', { name: 'discard daoris/s-gone' })).toBeNull();
+  });
+
+  it('says the tree goes too where the branch still has one', async () => {
+    drawDiscard();
+
+    await userEvent.click(within(row('daoris/s-here')).getByRole('button', { name: 'Discard branch…' }));
+    expect(screen.getByRole('group', { name: 'discard daoris/s-here' }))
+      .toHaveTextContent('Discards daoris/s-here in engine and its tree, and with them 1 commit no branch of yours holds. Nothing brings it back.');
+  });
+
+  it('lets the person back out, with nothing pressed', async () => {
+    const { onDiscard } = drawDiscard();
+
+    await userEvent.click(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
+
+    expect(onDiscard).not.toHaveBeenCalled();
+    expect(screen.queryByRole('group', { name: 'discard daoris/s-gone' })).toBeNull();
+    expect(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' })).toBeInTheDocument();
+  });
+
+  it('waits on a discard on its way, and offers none where nothing can press it', async () => {
+    const { unmount } = render(
+      <Tooltip.Provider>
+        <SweepList branches={FAILED} onLook={vi.fn()} onClean={vi.fn()} onDiscard={vi.fn()} discarding="engine:daoris/s-gone" />
+      </Tooltip.Provider>,
+    );
+    expect(within(row('daoris/s-gone')).getByRole('button', { name: 'Discard branch…' })).toBeDisabled();
+    expect(within(row('daoris/s-here')).getByRole('button', { name: 'Discard branch…' })).toBeEnabled();
+    unmount();
+
+    draw({ branches: FAILED });
+    expect(screen.queryByRole('button', { name: 'Discard branch…' })).toBeNull();
+  });
+
+  it('asks in 中文 too', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      drawDiscard();
+      await userEvent.click(within(row('daoris/s-gone')).getByRole('button', { name: '丢弃分支…' }));
+      const ask = screen.getByRole('group', { name: '丢弃 daoris/s-gone' });
+      expect(ask).toHaveTextContent('丢弃 engine 中的 daoris/s-gone，连同你的任何分支都没有的 2 个提交。丢弃后无法找回。');
+      expect(within(ask).getByRole('button', { name: '确认丢弃分支' })).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
 

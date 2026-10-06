@@ -614,6 +614,43 @@ describe("a workspace's page (UX6g)", () => {
   });
 
   /**
+   * LAND3b (D102's LAND3 note): a failed or superseded attempt's branch, which no clean-up takes, is discarded from
+   * Branches as `daoris-driver trees remove <branch> --repository <name> --force` discards it: offered beside the row the
+   * driver says it may be, asked once, pressed forced, and the list read again.
+   */
+  it("discards a failed attempt's branch from Branches after asking once, as the terminal's forced removal", async () => {
+    const failed = {
+      repository: 'engine', workspace: 'aurora', branch: 'daoris/s-failed', hasTree: false, kind: 'unlanded', commits: 2,
+      detail: 'a1b2c3d the work\ne4f5a6b more work', removable: false, discardable: true,
+    };
+    machine({
+      SWEEP_PLAN: { branches: [...SWEEP.branches, failed], landed: [] },
+      DISCARD_SESSION_BRANCH: { repository: 'engine', branch: 'daoris/s-failed', done: true, message: 'removed the session branch `daoris/s-failed` from `engine`.' },
+    });
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    await chooseWorkspace('aurora');
+    await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
+
+    const row = await within(repositoryMain()).findByRole('listitem', { name: 'daoris/s-failed' });
+    expect(within(repositoryMain()).getByRole('listitem', { name: 'daoris/s-one' })).not.toHaveTextContent('Discard branch…');
+    await userEvent.click(within(row).getByRole('button', { name: 'Discard branch…' }));
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', expect.anything());
+    const ask = within(repositoryMain()).getByRole('group', { name: 'discard daoris/s-failed' });
+    expect(ask).toHaveTextContent('Discards daoris/s-failed in engine, and with it 2 commits no branch of yours holds. Nothing brings them back.');
+    const asked = invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Discard branch' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'DISCARD_SESSION_BRANCH', {
+      payload: { repository: 'engine', branch: 'daoris/s-failed', force: true },
+    });
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Discarded `daoris/s-failed` in engine.'));
+    await vi.waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length).toBeGreaterThan(asked));
+    // Discarding one branch is not the clean-up's press.
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SWEEP', expect.anything());
+  });
+
+  /**
    * WSR6, WSR7: a look takes what the driver takes, every repository holding Daoris's branches here; this workspace's page
    * lists and brings up to date its own rows alone, each waiting as long as the host may work.
    */

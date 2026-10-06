@@ -205,6 +205,24 @@ export const Failed: Story = {
 };
 
 /**
+ * Failed, its tree gone and its branch standing with commits no branch of the person's holds (LAND3b): *Discard branch…*
+ * beside what it left, asking once under the line on its press.
+ */
+export const FailedItsBranchLeft: Story = {
+  args: {
+    session: {
+      ...SESSION, state: 'failed', created: at(40), updated: at(31), note: 'the process exited 1 with the quest unexplained.',
+    },
+    branch: {
+      repository: 'engine', workspace: 'default', branch: 'daoris/streaming-budget', hasTree: false,
+      kind: 'unlanded', commits: 2, removable: false, discardable: true,
+    },
+    onReview: () => {},
+    onDiscardBranch: () => {},
+  },
+};
+
+/**
  * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
  * lead-in as written. The two stories above are records from before parts, shown as kept and marked.
  */
