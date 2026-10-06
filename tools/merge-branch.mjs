@@ -158,11 +158,11 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import {
-  closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, writeSync,
+  closeSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, writeSync,
 } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { gluedLabels, records } from './doc-duplicates.mjs';
-import { isMain } from './fsx.mjs';
+import { isMain, renameHeld } from './fsx.mjs';
 
 export const MAIN = 'main';
 const SCRATCH = 'local/scratch';
@@ -554,7 +554,7 @@ function setApartNotes(root) {
     const { text, set } = setApart(readFileSync(file, 'utf8'));
     if (set.length === 0) continue;
     writeFileSync(`${file}.partial`, text);
-    renameSync(`${file}.partial`, file);
+    renameHeld(`${file}.partial`, file);
     git(root, ['add', '--', path]);
     for (const note of set) console.log(`set apart: ${basename(path, '.md')}'s ${noteName(note.label)} (${path}:${note.line})`);
   }
@@ -715,7 +715,7 @@ export function addVerdicts(root, entries, { keep = 400 } = {}) {
     verdicts,
   };
   writeFileSync(`${file}.partial`, `${JSON.stringify(record, null, 2)}\n`);
-  renameSync(`${file}.partial`, file);
+  renameHeld(`${file}.partial`, file);
 }
 
 /**
@@ -1563,7 +1563,7 @@ function writeState(root, state) {
   const file = statePath(root);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(`${file}.partial`, `${JSON.stringify(state, null, 2)}\n`);
-  renameSync(`${file}.partial`, file);
+  renameHeld(`${file}.partial`, file);
 }
 
 const dropState = (root) => rmSync(statePath(root), { force: true });
@@ -1612,7 +1612,7 @@ async function withLog(file, work) {
     return await work(fd, partial);
   } finally {
     closeSync(fd);
-    renameSync(partial, file);
+    renameHeld(partial, file);
   }
 }
 
