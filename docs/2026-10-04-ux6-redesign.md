@@ -721,6 +721,31 @@ The per-row costs behind *×31*: *Lines* 2.8 controls and 12 words a row, *Sessi
 5.2 and 18, *Reading and writing across* 4 a repository and 3 a workspace (counted on the install) and 22 words. Each
 repository's 18 controls are 13 in Settings' four lists and 5 on its page.
 
+**Measured on the install, 2026-10-07 (UX6a2).** `tools/ux-count.mjs --window` over each place as it opens, on the
+owner's install at its real state: 1314 × 828, dark, 中文 and then English (the language toggled and put back). Build
+`0a00cdb`. The install's quest and session history had been cleared by hand that morning, so Overview, Sessions and
+Quests count empty lists; their *before* is not a working day's. The frame, every place: 13 concepts, 43 controls, 60
+words in English (14, 44, 72 in 中文), of which the activity bar is 12 controls.
+
+| Place (main area) | Concepts | Controls | Words (en · 中文) | Screens | List: rows, controls |
+|---|---|---|---|---|---|
+| Overview | 12 | 2 | 97 · 184 | 1 | — |
+| Sessions | 4 | 1 | 27 · 28 | 1 | 0 rows, 3 |
+| Quests | 6 | 2 | 49 · 56 | 1 | 0 rows, 5 |
+| Repositories (first row's page) | 14 | 5 | 352 · 360 | 1.35 | 2 rows, 8 |
+| Map | 13 | 26 | 177 · 197 | 1.15 | — |
+| Convergence | 3 | 0 | 33 · 40 | 1 | 0 rows, 3 |
+| Search | 5 | 0 | 35 · 37 | 1 | 0 rows, 3 |
+| Agents (first agent's page) | 16 | 16 | 175 · 200 | 1.17 | 3 rows, 6 |
+| Plugins (first plugin's page) | 18 | 1 | 176 · 183 | 1 | 3 rows, 8 |
+| Settings (first domain) | 4 | 5 | 39 · 42 | 1 | 8 rows, 9 |
+
+Against the budgets above: the activity bar's 12 controls (its places, the index refresh, the language and Settings)
+are over its 9; Settings' list holds 8 domains, over 7; Knowledge is still two places; an agent's page names 16
+concepts, over 14; a repository's page reads 352 words, over the Details budget of 120, because it opens on more than
+Details. Not yet measured on the install: 680 px, light, the drill-ins (a workspace's page, a repository's Setup), and
+§9.4's presses. The answer files are under `local/scratch/ux-count/` on the machine that took them.
+
 ### 9.4 Tasks
 
 | Task | Before | After |
