@@ -8,7 +8,7 @@ import { USE_DEFAULTS, USE_MODES, resolveScope, scopeProblem, withRotation, with
 import type { RotationUse, UseChange } from '../src/rotation.ts';
 import { COOLING_FILE } from '../src/cooling.ts';
 import { WINDOWS_FILE } from '../src/windows.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -159,15 +159,6 @@ const ORDER_ROWS: [why: string, before: string, agent: string, order: Cell, work
   ['a list of nobody is a clear, and its settings go', '{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"early":false}}}', 'claude-code', '[]', null, '{}'],
   ['a workspace\'s list cleared in another case takes its settings with it', '{"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"early":false}}}}', 'claude-code', null, 'WORK', '{}'],
 ];
-
-/**
- * CASEFOLD1c's rows, which `RotationUseTwinTests` does not hold yet: a workspace is found and edited in any case, as the
- * driver's dictionaries (`OrdinalIgnoreCase`) find one, under the spelling first written. The twin check below holds each
- * the driver adds, cell for cell and in place.
- */
-const SCOPES_OWED = new Set(['a workspace is read in any case: its default, its list and its settings']);
-const EDITS_OWED = new Set(['a workspace\'s settings set in another case change the ones there, as first written']);
-const ORDERS_OWED = new Set(['a workspace\'s list cleared in another case takes its settings with it']);
 
 test('a list\'s settings go with it, as the driver writes them', () => {
   const fx = makeFixture('rotation-use-order');
@@ -545,11 +536,8 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'RotationUseTwinTests');
 
-  const scopes = rows('A_scope_is_read_as_the_cli_reads_it');
-  const edits = rows('Settings_are_set_and_cleared_as_the_cli_writes_them');
-  const orders = rows('A_lists_settings_go_with_it_as_the_cli_writes_them');
-  assert.deepEqual(scopes, heldSoFar(scopes, SCOPE_ROWS, SCOPES_OWED));
-  assert.deepEqual(edits, heldSoFar(edits, EDIT_ROWS, EDITS_OWED));
-  assert.deepEqual(orders, heldSoFar(orders, ORDER_ROWS, ORDERS_OWED));
+  assert.deepEqual(rows('A_scope_is_read_as_the_cli_reads_it'), SCOPE_ROWS);
+  assert.deepEqual(rows('Settings_are_set_and_cleared_as_the_cli_writes_them'), EDIT_ROWS);
+  assert.deepEqual(rows('A_lists_settings_go_with_it_as_the_cli_writes_them'), ORDER_ROWS);
   assert.deepEqual(rows('A_scope_is_refused_as_the_cli_refuses_it'), PROBLEM_ROWS);
 });

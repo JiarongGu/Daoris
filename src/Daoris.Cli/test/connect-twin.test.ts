@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readManifest } from '../src/config.ts';
 import { isDeclared, registration } from '../src/connect.ts';
 import { readLanes } from '../src/lanes.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -55,16 +55,6 @@ const ROWS: [string, string, string | null, string, string][] = [
   ['a dotted capital I is not an i with a dot above', '{"source":"daoris@0.0.1","domain":{"summary":"The game","owns":[],"accepts":[],"uses":["İzmir","i\\u0307zmir"]}}', null, 'remote', '{"repository":"game","packs":[],"domain":{"summary":"The game","owns":[],"accepts":[],"uses":["İzmir","i\\u0307zmir"]},"join":false,"shareKnowledge":false,"lanes":[]}'],
 ];
 
-/**
- * CASEFOLD1's rows, which `LineRegistrationTests` does not hold yet: a repeat in `uses` is one only as the driver's
- * `OrdinalIgnoreCase` finds it (`casefold.ts`), never as this machine's locale collates it. The twin check below holds each
- * row the driver holds, cell for cell.
- */
-const DRIVER_OWES = new Set([
-  'a letter whose capital is two letters is not those two: straße is not STRASSE',
-  'a dotted capital I is not an i with a dot above',
-]);
-
 /** What `connect` does with a checkout holding these files, up to what it would send. */
 function connectWould(root: string, service: string): unknown {
   let manifest;
@@ -106,6 +96,5 @@ const DRIVER_TABLE = join(
 test('the driver’s table is this table, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
 
-  const rows = csharpRows(source, 'A_manifest_on_a_line_registers_as_connect_would_send_it', {}, 'LineRegistrationTests');
-  assert.deepEqual(rows, heldSoFar(rows, ROWS, DRIVER_OWES));
+  assert.deepEqual(csharpRows(source, 'A_manifest_on_a_line_registers_as_connect_would_send_it', {}, 'LineRegistrationTests'), ROWS);
 });

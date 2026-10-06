@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readHarnessSettings, writeHarnessSettings } from '../src/toolchain.ts';
 import { joinProblem, joinRefusal, placesOf, withJoined } from '../src/rotation.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -37,9 +37,6 @@ const JOIN_ROWS: [why: string, before: string, agent: string, account: string, w
   ['a list\'s settings stay with it', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}', 'claude-code', 'account-2', 'work', '{"defaults":{},"workspaces":{},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}'],
   ['a workspace named in another case joins its own list, as first written', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', 'account-2', 'WORK', '{"defaults":{},"workspaces":{},"workspaceRotation":{"work":{"claude-code":["account-1","account-2"]}}}'],
 ];
-
-/** CASEFOLD1c's row, which `AccountJoinTwinTests` does not hold yet: a workspace is found in any case, as the driver finds one. */
-const JOINS_OWED = new Set(['a workspace named in another case joins its own list, as first written']);
 
 test('an account joins a list as the driver joins it (the twin\'s table)', () => {
   for (const [index, [why, before, agent, account, workspace, after]] of JOIN_ROWS.entries()) {
@@ -74,17 +71,6 @@ const PLACE_ROWS: [why: string, wiring: string, agent: string, account: string, 
   ['a dotted capital I is not an i with a dot above', '{"workspaces":{"İzmir":{"claude-code":"account-1"}},"workspaceRotation":{"i\\u0307zmir":{"claude-code":["account-1"]}}}', 'claude-code', 'account-1', '[{"workspace":"i\\u0307zmir","list":true,"default":false},{"workspace":"İzmir","list":false,"default":true}]'],
   ['a workspace is one in any case: its default and its list are one place, as first written', '{"workspaces":{"Work":{"claude-code":"account-1"}},"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', 'account-1', '[{"workspace":"Work","list":true,"default":true}]'],
 ];
-
-/**
- * CASEFOLD1's rows, which `AccountJoinTwinTests` does not hold yet: two workspaces are one only as the driver's
- * `OrdinalIgnoreCase` finds them (`casefold.ts`), and then one place (CASEFOLD1c). The twin check below holds each the
- * driver holds, cell for cell.
- */
-const DRIVER_OWES = new Set([
-  'a letter whose capital is two letters is not those two: straße is not STRASSE',
-  'a dotted capital I is not an i with a dot above',
-  'a workspace is one in any case: its default and its list are one place, as first written',
-]);
 
 test('an account\'s places read as the driver reads them (the twin\'s table)', () => {
   for (const [index, [why, wiring, agent, account, places]] of PLACE_ROWS.entries()) {
@@ -135,9 +121,7 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'AccountJoinTwinTests');
 
-  const joins = rows('An_account_joins_a_list_as_the_cli_joins_it');
-  assert.deepEqual(joins, heldSoFar(joins, JOIN_ROWS, JOINS_OWED));
-  const places = rows('An_account_s_places_read_as_the_cli_reads_them');
-  assert.deepEqual(places, heldSoFar(places, PLACE_ROWS, DRIVER_OWES));
+  assert.deepEqual(rows('An_account_joins_a_list_as_the_cli_joins_it'), JOIN_ROWS);
+  assert.deepEqual(rows('An_account_s_places_read_as_the_cli_reads_them'), PLACE_ROWS);
   assert.deepEqual(rows('A_refused_join_is_said_as_the_cli_says_it'), REFUSAL_ROWS);
 });

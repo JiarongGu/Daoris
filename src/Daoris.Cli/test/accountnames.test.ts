@@ -8,7 +8,7 @@ import {
   signInTarget,
 } from '../src/accountnames.ts';
 import { readHarnessSettings } from '../src/toolchain.ts';
-import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -49,16 +49,6 @@ const READ_ROWS: [why: string, file: Cell, agent: string, account: string, name:
   ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"name":"work"}}}', 'claude-code', 'STRASSE', null],
   ['a dotted capital I is not an i with a dot above', '{"claude-code":{"İzmir":{"name":"work"}}}', 'claude-code', 'i\u{307}zmir', null],
 ];
-
-/**
- * CASEFOLD1's rows, named alike in each of this file's twinned tables, which `AccountNamesTwinTests` does not hold yet: an
- * agent, an id and a name compare as the driver's `OrdinalIgnoreCase` does (`casefold.ts`). The twin check below holds each
- * row the driver holds, cell for cell.
- */
-const DRIVER_OWES = new Set([
-  'a letter whose capital is two letters is not those two: straße is not STRASSE',
-  'a dotted capital I is not an i with a dot above',
-]);
 
 test('a name reads as the driver reads it (the twin\'s table)', () => {
   for (const [index, [why, file, agent, account, name]] of READ_ROWS.entries()) {
@@ -255,13 +245,9 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'AccountNamesTwinTests');
 
-  const held = (method: string, table: readonly (readonly (string | null)[])[]) => {
-    const driver = rows(method);
-    assert.deepEqual(driver, heldSoFar(driver, table, DRIVER_OWES), method);
-  };
-  held('A_name_reads_as_the_cli_reads_it', READ_ROWS);
-  held('An_account_resolves_as_the_cli_resolves_it', RESOLVE_ROWS);
-  held('A_name_is_given_as_the_cli_gives_it', RENAME_ROWS);
+  assert.deepEqual(rows('A_name_reads_as_the_cli_reads_it'), READ_ROWS);
+  assert.deepEqual(rows('An_account_resolves_as_the_cli_resolves_it'), RESOLVE_ROWS);
+  assert.deepEqual(rows('A_name_is_given_as_the_cli_gives_it'), RENAME_ROWS);
   assert.deepEqual(rows('Both_twins_write_the_same_file'), FILE_ROWS);
   assert.deepEqual(rows('A_sign_in_reaches_the_account_the_cli_reaches'), TARGET_ROWS);
 });
