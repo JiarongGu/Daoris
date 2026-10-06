@@ -16,13 +16,13 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:147` commandIndex | say where the roster is: the rules in AGENTS.md, the |
 | `status` | doctrine | `cli/status.ts:5` | `commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
 | `doctor` | doctrine | `cli/doctor.ts:5` | `twins.ts:142` commandDoctor | report local documents that look like canonical ones |
-| `connect` | management | `cli/connect.ts:5` | `connect.ts:150` commandConnect | register this repo with a knowledge service: what it owns |
+| `connect` | management | `cli/connect.ts:5` | `connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
 | `retire` | management | `cli/retire.ts:5` | `manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
 | `import` | management | `cli/import.ts:5` | `manage.ts:57` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1388` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
-| `driver` | management | `cli/driver.ts:6` | `driverconfig.ts:476` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
-| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1101` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
+| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1389` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `driver` | management | `cli/driver.ts:6` | `driverconfig.ts:481` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
+| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1103` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
 | `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
 

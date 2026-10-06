@@ -8,7 +8,7 @@ import {
   signInTarget,
 } from '../src/accountnames.ts';
 import { readHarnessSettings } from '../src/toolchain.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
 import { makeFixture } from './_fixture.ts';
 
 /**
@@ -46,7 +46,19 @@ const READ_ROWS: [why: string, file: Cell, agent: string, account: string, name:
   ['an agent that is not an object is none', '{"claude-code":[1]}', 'claude-code', 'account-1', null],
   ['agents and accounts compare without case', '{"claude-code":{"account-1":{"name":"work"}}}', 'Claude-Code', 'ACCOUNT-1', 'work'],
   ['a name in Chinese is read as written', '{"claude-code":{"acct-3f9c2a71":{"name":"工作"}}}', 'claude-code', 'acct-3f9c2a71', '工作'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"name":"work"}}}', 'claude-code', 'STRASSE', null],
+  ['a dotted capital I is not an i with a dot above', '{"claude-code":{"İzmir":{"name":"work"}}}', 'claude-code', 'i\u{307}zmir', null],
 ];
+
+/**
+ * CASEFOLD1's rows, named alike in each of this file's twinned tables, which `AccountNamesTwinTests` does not hold yet: an
+ * agent, an id and a name compare as the driver's `OrdinalIgnoreCase` does (`casefold.ts`). The twin check below holds each
+ * row the driver holds, cell for cell.
+ */
+const DRIVER_OWES = new Set([
+  'a letter whose capital is two letters is not those two: straße is not STRASSE',
+  'a dotted capital I is not an i with a dot above',
+]);
 
 test('a name reads as the driver reads it (the twin\'s table)', () => {
   for (const [index, [why, file, agent, account, name]] of READ_ROWS.entries()) {
@@ -70,6 +82,8 @@ const RESOLVE_ROWS: [why: string, accounts: string, file: Cell, agent: string, g
   ['a name whose account is gone names nothing', '["account-1"]', '{"claude-code":{"account-9":{"name":"work"}}}', 'claude-code', 'work', null],
   ['another agent\'s name names nothing here', '["account-1"]', '{"codex":{"account-1":{"name":"work"}}}', 'claude-code', 'work', null],
   ['nothing named is nothing', '["account-1"]', null, 'claude-code', 'seat', null],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '["account-1"]', '{"claude-code":{"account-1":{"name":"straße"}}}', 'claude-code', 'STRASSE', null],
+  ['a dotted capital I is not an i with a dot above', '["account-1"]', '{"claude-code":{"account-1":{"name":"İzmir"}}}', 'claude-code', 'i\u{307}zmir', null],
 ];
 
 test('an account resolves as the driver resolves it (the twin\'s table)', () => {
@@ -107,6 +121,8 @@ const RENAME_ROWS: [why: string, accounts: string, file: Cell, agent: string, ac
   ['another account\'s id is refused, in any case', '["account-1","work"]', null, 'claude-code', 'account-1', 'Work', 'refused taken work'],
   ['a name a gone account kept is free', '["account-1"]', '{"claude-code":{"account-9":{"name":"work"}}}', 'claude-code', 'account-1', 'work', '{"claude-code":{"account-9":{"name":"work"},"account-1":{"name":"work"}}}'],
   ['a file that does not read is refused and kept', '["account-1"]', 'not json', 'claude-code', 'account-1', 'work', 'refused unreadable'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '["account-1","account-2"]', '{"claude-code":{"account-2":{"name":"straße"}}}', 'claude-code', 'account-1', 'STRASSE', '{"claude-code":{"account-2":{"name":"straße"},"account-1":{"name":"STRASSE"}}}'],
+  ['a dotted capital I is not an i with a dot above', '["account-1","account-2"]', '{"claude-code":{"account-2":{"name":"İzmir"}}}', 'claude-code', 'account-1', 'i\u{307}zmir', '{"claude-code":{"account-2":{"name":"İzmir"},"account-1":{"name":"i\\u0307zmir"}}}'],
 ];
 
 test('a name is given as the driver gives it (the twin\'s table)', () => {
@@ -239,9 +255,13 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'AccountNamesTwinTests');
 
-  assert.deepEqual(rows('A_name_reads_as_the_cli_reads_it'), READ_ROWS);
-  assert.deepEqual(rows('An_account_resolves_as_the_cli_resolves_it'), RESOLVE_ROWS);
-  assert.deepEqual(rows('A_name_is_given_as_the_cli_gives_it'), RENAME_ROWS);
+  const held = (method: string, table: readonly (readonly (string | null)[])[]) => {
+    const driver = rows(method);
+    assert.deepEqual(driver, heldSoFar(driver, table, DRIVER_OWES), method);
+  };
+  held('A_name_reads_as_the_cli_reads_it', READ_ROWS);
+  held('An_account_resolves_as_the_cli_resolves_it', RESOLVE_ROWS);
+  held('A_name_is_given_as_the_cli_gives_it', RENAME_ROWS);
   assert.deepEqual(rows('Both_twins_write_the_same_file'), FILE_ROWS);
   assert.deepEqual(rows('A_sign_in_reaches_the_account_the_cli_reaches'), TARGET_ROWS);
 });

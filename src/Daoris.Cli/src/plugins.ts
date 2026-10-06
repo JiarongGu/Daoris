@@ -43,8 +43,9 @@
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
+import { foldName, sameName } from './casefold.ts';
 import { DaorisError } from './errors.ts';
-import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
+import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
@@ -242,7 +243,8 @@ export function writePluginState(home: string, state: { disabled: string[] }): v
   writeJsonAtomic(join(home, STATE_FILE), { disabled });
 }
 
-const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+// An id or a name compares as the driver's `PluginCatalog.Same` compares it, by `OrdinalIgnoreCase` (CASEFOLD1).
+const same = sameName;
 
 export function disablePlugin(home: string, id: string): void {
   writePluginState(home, { disabled: [...readPluginState(home).disabled.filter((d) => !same(d, id)), id] });
@@ -659,13 +661,13 @@ export function readIcon(folder: string, manifest: PluginManifest): { type: 'svg
  * `add` compared harness names case-sensitively, and copied in a plugin the catalogue then refused).
  */
 function refusedByThisBuild(manifest: PluginManifest, reserved: Iterable<string>): string | null {
-  const taken = new Set([...reserved].map((name) => name.toLowerCase()));
-  const harness = manifest.harnesses.find((declared) => taken.has(declared.name.toLowerCase()));
+  const taken = new Set([...reserved].map(foldName));
+  const harness = manifest.harnesses.find((declared) => taken.has(foldName(declared.name)));
   if (harness) {
     return `declares harness \`${harness.name}\`, which this build already carries — `
       + 'a plugin adds a harness and never replaces one.';
   }
-  const server = manifest.servers.find((declared) => declared.name.toLowerCase() === KNOWLEDGE_SERVER);
+  const server = manifest.servers.find((declared) => same(declared.name, KNOWLEDGE_SERVER));
   if (server) {
     return `declares server \`${server.name}\`, which is Daoris's own knowledge host — `
       + 'a plugin hands a session servers beside it, never in its place.';
@@ -683,7 +685,7 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
   const plugins: PluginEntry[] = [];
   if (!existsSync(root)) return { plugins, contributing: [] };
 
-  const disabled = new Set(readPluginState(home).disabled.map((d) => d.toLowerCase()));
+  const disabled = new Set(readPluginState(home).disabled.map(foldName));
   const declaredBy = new Map<string, string>();
   const servedBy = new Map<string, string>();
 
@@ -694,12 +696,12 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
     if (!statSync(folder).isDirectory() || !existsSync(join(folder, MANIFEST))) continue;
 
     let { manifest, problem } = readManifest(folderName, folder);
-    const enabled = !disabled.has(manifest.id.toLowerCase());
+    const enabled = !disabled.has(foldName(manifest.id));
 
     if (problem === null && enabled) {
       problem = refusedByThisBuild(manifest, reserved);
       for (const harness of problem === null ? manifest.harnesses : []) {
-        const key = harness.name.toLowerCase();
+        const key = foldName(harness.name);
         const other = declaredBy.get(key);
         if (other) {
           problem = `declares harness \`${harness.name}\`, which plugin \`${other}\` already declares — `
@@ -710,7 +712,7 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
       // A server's name is what the agent calls it; two plugins claiming one would give a session
       // two tools under one name. The knowledge host's name is Daoris's own.
       for (const server of problem === null ? manifest.servers : []) {
-        const key = server.name.toLowerCase();
+        const key = foldName(server.name);
         const other = servedBy.get(key);
         if (other) {
           problem = `declares server \`${server.name}\`, which plugin \`${other}\` already declares — `
@@ -719,8 +721,8 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
         }
       }
       if (problem === null) {
-        for (const harness of manifest.harnesses) declaredBy.set(harness.name.toLowerCase(), manifest.id);
-        for (const server of manifest.servers) servedBy.set(server.name.toLowerCase(), manifest.id);
+        for (const harness of manifest.harnesses) declaredBy.set(foldName(harness.name), manifest.id);
+        for (const server of manifest.servers) servedBy.set(foldName(server.name), manifest.id);
       }
     }
 
@@ -1032,7 +1034,7 @@ export function applyUpdate(home: string, id: string, reserved: Iterable<string>
       + 'update it again. The installed version is untouched.');
   }
   try {
-    renameSync(staging, target);
+    renameHeld(staging, target);
   } catch (error) {
     renameSync(aside, target);
     rmSync(staging, { recursive: true, force: true });
@@ -1218,14 +1220,14 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
             + `running desktop's hook process, most likely. \`daoris plugin disable ${manifest.id}\`, give the `
             + 'desktop a moment to stop it, then add it again. The installed version is untouched.');
         }
-        renameSync(staging, target);
+        renameHeld(staging, target);
         try {
           rmSync(aside, { recursive: true, force: true });
         } catch {
           // A dot-folder is never read as a plugin; one that cannot be deleted now is nobody's.
         }
       } else {
-        renameSync(staging, target);
+        renameHeld(staging, target);
       }
 
       write(`daoris: ${replacing ? 'replaced' : 'added'} plugin \`${manifest.id}\` at ${target}`);

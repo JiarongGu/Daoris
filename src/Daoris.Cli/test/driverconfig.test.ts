@@ -5,10 +5,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_COOLOFF_MINUTES, SESSION_LANGUAGES, commandDriver, driverConfigPath, isBranchName, landingProblem, languageFor,
-  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor,
+  pausedAsk, pausedQuest, readDriverChoices, releasedFor, standingFor, writeAcrossProblem,
 } from '../src/driverconfig.ts';
 import type { RecordsReader } from '../src/strikes.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**
@@ -76,6 +76,32 @@ test('opting a repository in twice leaves one entry, not two', () => {
   run(['drive', 'engine'], at(fx));
 
   assert.deepEqual(readDriverChoices(at(fx)).drivable, ['engine']);
+  fx.cleanup();
+});
+
+/**
+ * A repository named twice is one only as the driver's `OrdinalIgnoreCase` finds it (CASEFOLD1, `casefold.ts`), which
+ * `DriverConfig`'s lists compare by: a name full case mapping would lower to the same letters is another repository.
+ */
+test('a repository opted in, held or given trees is another only as the driver parts it: İzmir is not i̇zmir', () => {
+  const fx = makeFixture('driver-case');
+  for (const verb of ['drive', 'hold']) {
+    run([verb, 'İzmir'], at(fx));
+    run([verb, 'i\u{307}zmir'], at(fx));
+    run([verb, 'straße'], at(fx));
+    run([verb, 'STRASSE'], at(fx));
+  }
+  run(['trees', 'İzmir', 'on'], at(fx));
+  run(['trees', 'i\u{307}zmir', 'on'], at(fx));
+  run(['trees', 'i\u{307}zmir', 'off'], at(fx));
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.drivable, ['İzmir', 'i\u{307}zmir', 'straße', 'STRASSE']);
+  assert.deepEqual(choices.holds, ['İzmir', 'i\u{307}zmir', 'straße', 'STRASSE']);
+  assert.deepEqual(choices.trees, ['İzmir']);
+  const listed = run(['list'], at(fx)).out;
+  assert.match(listed, /drivable {3}i\u{307}zmir {2}\(held by you/u);
+  assert.doesNotMatch(listed, /drivable {3}i\u{307}zmir[^\n]*own tree/u);
   fx.cleanup();
 });
 
@@ -803,7 +829,19 @@ const RELEASED_ROWS: [name: string, file: string, quest: string, session: string
   ['another quest\'s release is not this one\'s', '{"released":{"q2":"s1"}}', 'q1', null],
   ['a list is not a map', '{"released":["q1"]}', 'q1', null],
   ['null is absent', '{"released":null}', 'q1', null],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"released":{"straße":"s1"}}', 'STRASSE', null],
+  ['a dotted capital I is not an i with a dot above', '{"released":{"İzmir":"s1"}}', 'i\u{307}zmir', null],
 ];
+
+/**
+ * CASEFOLD1's rows, named alike in each of this file's twinned tables, which the driver's theories do not hold yet: a name
+ * or an id compares as the driver's `OrdinalIgnoreCase` does (`casefold.ts`). Each twin check holds each row the driver
+ * holds, cell for cell.
+ */
+const DRIVER_OWES = new Set([
+  'a letter whose capital is two letters is not those two: straße is not STRASSE',
+  'a dotted capital I is not an i with a dot above',
+]);
 
 test('a release reads as the driver reads it (the twin\'s table)', () => {
   const fx = makeFixture('driver-released-read');
@@ -818,7 +856,8 @@ test('the driver’s release table is this table, row for row and in this order'
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'ReleasedTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  assert.deepEqual(csharpRows(source, 'Released_reads_as_the_cli_reads_it', {}, 'ReleasedTests'), RELEASED_ROWS);
+  const rows = csharpRows(source, 'Released_reads_as_the_cli_reads_it', {}, 'ReleasedTests');
+  assert.deepEqual(rows, heldSoFar(rows, RELEASED_ROWS, DRIVER_OWES));
 });
 
 /**
@@ -874,6 +913,8 @@ const STANDING_ROWS: [name: string, file: string, repository: string, says: stri
   ['another repository\'s answer is not this one\'s', '{"standing":{"api":{"says":"dev only"}}}', 'app', null, null],
   ['a list is not a map', '{"standing":["app"]}', 'app', null, null],
   ['null is absent', '{"standing":null}', 'app', null, null],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"standing":{"straße":{"says":"dev only"}}}', 'STRASSE', null, null],
+  ['a dotted capital I is not an i with a dot above', '{"standing":{"İzmir":{"says":"dev only"}}}', 'i\u{307}zmir', null, null],
 ];
 
 test('a standing answer reads as the driver reads it (the twin\'s table)', () => {
@@ -891,7 +932,8 @@ test('the driver’s standing table is this table, row for row and in this order
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'StandingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  assert.deepEqual(csharpRows(source, 'Standing_reads_as_the_cli_reads_it', {}, 'StandingTests'), STANDING_ROWS);
+  const rows = csharpRows(source, 'Standing_reads_as_the_cli_reads_it', {}, 'StandingTests');
+  assert.deepEqual(rows, heldSoFar(rows, STANDING_ROWS, DRIVER_OWES));
 });
 
 /**
@@ -983,6 +1025,8 @@ const LANGUAGE_ROWS: [name: string, file: string, repository: string, workspace:
   ['a repository written twice in any case is read where first written', '{"languages":{"app":"zh","APP":"en"}}', 'app', 'work', 'zh', 'repository'],
   ['a list is not a map', '{"languages":["app"]}', 'app', 'work', null, null],
   ['null is absent', '{"languages":null,"workspaceLanguages":null}', 'app', 'work', null, null],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"languages":{"straße":"zh"}}', 'STRASSE', 'work', null, null],
+  ['a dotted capital I is not an i with a dot above', '{"languages":{"İzmir":"zh"}}', 'i\u{307}zmir', 'work', null, null],
 ];
 
 test('a session language resolves as the driver resolves it (the twin\'s table)', () => {
@@ -1001,7 +1045,8 @@ test('the driver’s language reading is this table, row for row and in this ord
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'SessionLanguageTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  assert.deepEqual(csharpRows(source, 'Languages_read_as_the_cli_reads_them', {}, 'SessionLanguageTests'), LANGUAGE_ROWS);
+  const rows = csharpRows(source, 'Languages_read_as_the_cli_reads_them', {}, 'SessionLanguageTests');
+  assert.deepEqual(rows, heldSoFar(rows, LANGUAGE_ROWS, DRIVER_OWES));
 });
 
 /**
@@ -1106,6 +1151,8 @@ const PAUSE_ROWS: [name: string, file: string, scope: string, id: string, paused
   ['an entry that is not an object is no pause', '{"pausedAsks":{"a1":true}}', 'ask', 'a1', false, null, ''],
   ['a list is not a map', '{"pausedAsks":["a1"]}', 'ask', 'a1', false, null, ''],
   ['null is absent', '{"pausedQuests":null}', 'quest', 'q9', false, null, ''],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"pausedAsks":{"straße":{}}}', 'ask', 'STRASSE', false, null, ''],
+  ['a dotted capital I is not an i with a dot above', '{"pausedAsks":{"İzmir":{}}}', 'ask', 'i\u{307}zmir', false, null, ''],
 ];
 
 /** A moment in UTC to the second, as both tables spell it. */
@@ -1134,7 +1181,8 @@ test('the driver’s pause table is this table, row for row and in this order', 
   const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
     'Daoris.Desktop.Driver.Tests', 'PausedWorkTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  assert.deepEqual(csharpRows(source, 'Pauses_read_as_the_cli_reads_them', {}, 'PausedWorkTests'), PAUSE_ROWS);
+  const rows = csharpRows(source, 'Pauses_read_as_the_cli_reads_them', {}, 'PausedWorkTests');
+  assert.deepEqual(rows, heldSoFar(rows, PAUSE_ROWS, DRIVER_OWES));
 });
 
 /**
@@ -1388,6 +1436,24 @@ test('a repository writing into itself or into no name is refused in the driver\
   assert.match(captureError(() => run(['across'], at(fx))).message, /<repository>\|--workspace <name>/);
   assert.match(captureError(() => run(['across', 'plugins', 'wander'], at(fx))).message, /read .*write-to/);
   assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+/**
+ * A relationship's names compare as the driver's `AcrossRules` and `DriverConfig` compare them, by `OrdinalIgnoreCase`
+ * (CASEFOLD1, `casefold.ts`): a name full case mapping would lower to the same letters is another repository, so it is
+ * neither refused as the repository's own, nor read as a repeat, nor cleared with the other.
+ */
+test('a relationship names another repository only as the driver parts them: İzmir is not i̇zmir', () => {
+  assert.equal(writeAcrossProblem('İzmir', 'i\u{307}zmir'), null);
+  assert.equal(writeAcrossProblem('straße', 'STRASSE'), null);
+
+  const fx = makeFixture('driver-across-case');
+  writeFileSync(at(fx), JSON.stringify({ writeAcross: { plugins: ['İzmir', 'i\u{307}zmir', 'straße', 'STRASSE'] } }));
+  assert.deepEqual(readDriverChoices(at(fx)).writeAcross, { plugins: ['İzmir', 'i\u{307}zmir', 'straße', 'STRASSE'] });
+
+  run(['across', 'plugins', 'write-to', 'i\u{307}zmir', '--clear'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).writeAcross, { plugins: ['İzmir', 'straße', 'STRASSE'] });
   fx.cleanup();
 });
 

@@ -9,7 +9,7 @@ import {
   TOOLCHAINS, accountLines, addKeyAccount, commandHarness, profileHome, removeProfile, signInNew, signInTo,
 } from '../src/toolchain.ts';
 import type { HarnessReport, HarnessSettings } from '../src/toolchain.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -55,7 +55,18 @@ const READ_ROWS: [name: string, file: Cell, now: string, agent: string, account:
   ['a flag that is not true is false, and a word that is not text is none', '{"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z","stated":"yes","window":7,"seen":"2026-10-01T08:15:00Z","session":"","assumedZone":1}}}', '2026-10-01T08:15:00Z', 'claude-code', 'account-1', '{"agent":"claude-code","account":"account-1","until":"2026-10-03T10:17:00Z","stated":false,"window":null,"seen":"2026-10-01T08:15:00Z","session":null,"assumedZone":false,"notBelieved":false}'],
   ['a moment with an offset or a fraction is read in UTC, to the second', '{"claude-code":{"account-1":{"until":"2026-10-03T16:02:00+05:45","stated":true,"seen":"2026-10-01T08:15:00.5Z"}}}', '2026-10-01T08:15:00Z', 'claude-code', 'account-1', '{"agent":"claude-code","account":"account-1","until":"2026-10-03T10:17:00Z","stated":true,"window":null,"seen":"2026-10-01T08:15:00Z","session":null,"assumedZone":false,"notBelieved":false}'],
   ['the zone assumed and the date not believed are read where true', '{"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z","stated":false,"seen":"2026-10-01T08:15:00Z","assumedZone":true,"notBelieved":true}}}', '2026-10-01T08:15:00Z', 'claude-code', 'account-1', '{"agent":"claude-code","account":"account-1","until":"2026-10-03T10:17:00Z","stated":false,"window":null,"seen":"2026-10-01T08:15:00Z","session":null,"assumedZone":true,"notBelieved":true}'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"}}}', '2026-10-01T08:15:00Z', 'claude-code', 'STRASSE', null],
+  ['a dotless i is not an I', '{"claude-code":{"ışık":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"}}}', '2026-10-01T08:15:00Z', 'claude-code', 'IŞIK', null],
 ];
+
+/**
+ * CASEFOLD1's rows, named as both tables name them, which `CoolingTwinTests` does not hold yet: names compare as the driver's
+ * `OrdinalIgnoreCase` does (`casefold.ts`). The twin check below holds each the driver holds, cell for cell.
+ */
+const DRIVER_OWES = new Set([
+  'a letter whose capital is two letters is not those two: straße is not STRASSE',
+  'a dotless i is not an I',
+]);
 
 test('an entry reads as the driver reads it (the twin\'s table)', () => {
   for (const [index, [name, file, now, agent, account, entry]] of READ_ROWS.entries()) {
@@ -82,6 +93,18 @@ test('every account cooling, by agent and then account, and none that has passed
   fx.cleanup();
 });
 
+test('accounts order as the driver\'s OrdinalIgnoreCase orders them: STRASSE before straße, which a wider capital would tie', () => {
+  const fx = makeFixture('cooling-order');
+  writeFileSync(join(fx.root, COOLING_FILE), JSON.stringify({
+    'claude-code': { 'straße': { until: '2026-10-03T10:17:00Z' }, STRASSE: { until: '2026-10-03T10:17:00Z' } },
+  }), 'utf8');
+
+  const all = readCooling(fx.root, moment('2026-10-01T08:15:00Z'));
+
+  assert.deepEqual(all.map((entry) => entry.account), ['STRASSE', 'straße']);
+  fx.cleanup();
+});
+
 // ——— Ending one early (§2.3, §6): that account and no other; a passed or unreadable entry goes with the write; what
 // has no field is kept; nothing is written where nothing was cooling under that name.
 
@@ -98,6 +121,8 @@ const END_ROWS: [name: string, file: Cell, now: string, agent: string, account: 
   ['an agent that is not an object is kept as written', '{"codex":[1],"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z"}}}', '2026-10-01T08:15:00Z', 'claude-code', 'account-1', true, '{"codex":[1]}'],
   ['a missing file ends nothing and makes none', null, '2026-10-01T08:15:00Z', 'claude-code', 'account-1', false, 'unchanged'],
   ['a file that does not read ends nothing and is kept', 'not json', '2026-10-01T08:15:00Z', 'claude-code', 'account-1', false, 'unchanged'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"claude-code":{"straße":{"until":"2026-10-03T10:17:00Z"}}}', '2026-10-01T08:15:00Z', 'claude-code', 'STRASSE', false, 'unchanged'],
+  ['a dotless i is not an I', '{"claude-code":{"ışık":{"until":"2026-10-03T10:17:00Z"}}}', '2026-10-01T08:15:00Z', 'claude-code', 'IŞIK', false, 'unchanged'],
 ];
 
 test('an entry ends as the driver ends it (the twin\'s table)', () => {
@@ -334,8 +359,10 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const twin = readFileSync(join(DRIVER_TESTS, 'CoolingTwinTests.cs'), 'utf8').replace(/\r\n/g, '\n');
   const words = readFileSync(join(DRIVER_TESTS, 'AccountCoolingTests.cs'), 'utf8').replace(/\r\n/g, '\n');
 
-  assert.deepEqual(csharpRows(twin, 'An_entry_reads_as_the_cli_reads_it', {}, 'CoolingTwinTests'), READ_ROWS);
-  assert.deepEqual(csharpRows(twin, 'An_entry_ends_as_the_cli_ends_it', {}, 'CoolingTwinTests'), END_ROWS);
+  const reads = csharpRows(twin, 'An_entry_reads_as_the_cli_reads_it', {}, 'CoolingTwinTests');
+  const ends = csharpRows(twin, 'An_entry_ends_as_the_cli_ends_it', {}, 'CoolingTwinTests');
+  assert.deepEqual(reads, heldSoFar(reads, READ_ROWS, DRIVER_OWES));
+  assert.deepEqual(ends, heldSoFar(ends, END_ROWS, DRIVER_OWES));
   assert.deepEqual(csharpRows(twin, 'A_moment_is_said_in_the_machine_s_zone_with_the_zone_named', {}, 'CoolingTwinTests'), WHEN_ROWS);
   assert.deepEqual(csharpRows(words, 'Why_says_whether_the_agent_named_the_time', {}, 'AccountCoolingTests'), WHY_ROWS);
 });

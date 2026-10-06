@@ -14,6 +14,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { flagValue } from './args.ts';
+import { sameName } from './casefold.ts';
 import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';
 import { readLanes } from './lanes.ts';
@@ -83,14 +84,17 @@ export function registration(
 /**
  * What a repository says it uses (D91), read by the rule the service's `Declared.Uses` holds too, by
  * its own test table (twins): each name trimmed, a blank dropped, a repeat in any case dropped with
- * the first spelling kept, and the repository's own name dropped. Absent is empty.
+ * the first spelling kept, and the repository's own name dropped. Absent is empty. "In any case" is
+ * the driver's and the service's `OrdinalIgnoreCase` (`casefold.ts`, CASEFOLD1), never this machine's
+ * locale collation, which also found `İzmir` in an `i` with a dot above and a full-width name in its
+ * plain letters.
  */
 export function usesOf(domain: Domain | undefined | null, repository: string): string[] {
   const kept: string[] = [];
   for (const raw of Array.isArray(domain?.uses) ? domain.uses : []) {
     if (typeof raw !== 'string') continue;
     const name = raw.trim();
-    const same = (other: string) => other.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0;
+    const same = (other: string) => sameName(other, name);
     if (!name || same(repository) || kept.some(same)) continue;
     kept.push(name);
   }

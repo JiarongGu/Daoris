@@ -243,6 +243,29 @@ test('a rule held in two scopes is handed once, and a rule has one place per sco
   }
 });
 
+/**
+ * A scope is a person's name, matched as the driver's `Compose` and `Edit` match it, by `OrdinalIgnoreCase` (CASEFOLD1,
+ * `casefold.ts`): a name full case mapping would widen or lower to the same letters is another scope, neither handed with
+ * it nor written into it, and a final sigma is the sigma it is.
+ */
+test('a scope in any case is one only as the driver finds it: İzmir is not i̇zmir, straße not STRASSE', () => {
+  const fx = makeFixture('permissions-case');
+  try {
+    let file = readPermissions(at(fx.root));
+    file = addRule(file, 'repository', 'İzmir', 'deny', 'WebFetch');
+    file = addRule(file, 'repository', 'straße', 'deny', 'WebSearch');
+    file = addRule(file, 'repository', 'i\u{307}zmir', 'ask', 'Edit(/docs/**)');
+    file = addRule(file, 'repository', 'Νίκος', 'allow', 'Bash(npm test)');
+
+    assert.deepEqual(Object.keys(file.repositories), ['İzmir', 'straße', 'i\u{307}zmir', 'Νίκος']);
+    assert.equal(composeRules(file, null, 'i\u{307}zmir').deny.includes('WebFetch'), false);
+    assert.equal(composeRules(file, null, 'STRASSE').deny.includes('WebSearch'), false);
+    assert.equal(composeRules(file, null, 'νίκοσ').allow.includes('Bash(npm test)'), true);
+  } finally {
+    fx.cleanup();
+  }
+});
+
 // ——— A rule is the harness's own shape.
 
 test('a tool name with an optional specifier is a rule, and anything else is refused naming the shape', () => {

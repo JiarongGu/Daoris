@@ -281,6 +281,22 @@ test('disabled is a row in plugins.json that stays one row per id', () => {
   fx.cleanup();
 });
 
+/**
+ * An id compares as the driver's `PluginCatalog` compares it, by `OrdinalIgnoreCase` (CASEFOLD1, `casefold.ts`). An id is
+ * lowercase letters, digits, dots and dashes, so the one letter the two folds part in a row naming one is the Kelvin sign,
+ * which lowers to a `k` and whose capital is itself: a row naming it switches no plugin off, and is no row of another's.
+ */
+test('a disabled row is a plugin\'s only as the driver finds it: the Kelvin sign is not a k', () => {
+  const fx = makeFixture('plugins-state-fold');
+  plugin(fx.root, 'acme.keep', '{ "id": "acme.keep", "harnesses": [ { "name": "acme-keep", "command": ["acme"] } ] }');
+  writeFileSync(join(fx.root, STATE_FILE), JSON.stringify({ disabled: ['acme.\u{212A}eep'] }), 'utf8');
+
+  assert.equal(readPlugins(fx.root).plugins[0]!.enabled, true);
+  disablePlugin(fx.root, 'acme.keep');
+  assert.deepEqual(readPluginState(fx.root).disabled, ['acme.keep', 'acme.\u{212A}eep']);
+  fx.cleanup();
+});
+
 // ——— The command.
 
 test('without a home every verb refuses naming DAORIS_HOME (D63)', () => {

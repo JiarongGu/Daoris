@@ -595,7 +595,8 @@ public static class ClaudeReleases
                 Directory.Delete(where, recursive: true);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(where)!);
-            Directory.Move(Path.Combine(staging, "package"), where);
+            // The scanner opens the executables just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+            AtomicFile.MoveFolder(Path.Combine(staging, "package"), where);
             return Path.Combine(where, "bin", binary);
         }
         finally
