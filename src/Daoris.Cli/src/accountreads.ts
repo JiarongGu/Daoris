@@ -11,12 +11,14 @@
 //
 // It is the CLI's twin of the driver's `AccountReads` (`Of`, `Keep`, `Forget`). The table both keep is one file,
 // `test/fixtures/account-reads.json`: `accountreads.test.ts` holds this module to it row for row, and the driver's own rows
-// of what does not read to it cell for cell; the driver's test reading it whole is AGENTREAD1's driver half. The rules:
+// of what does not read to it cell for cell, and the driver's `AccountReadsTests` holds `AccountReads` to it row for row
+// (AGENTREAD1b). The rules:
 //
 //   1. Missing or unreadable is nothing known: never read, and never a guess of signed in or out (D57). An entry is an
 //      object whose `login` is exactly `in`, `out` or `unknown` and whose `read` is ISO 8601 and nothing lenient; anything
-//      else is no reading. Agents, accounts and the file's own keys compare without case; an account written twice in any
-//      case is the last that reads.
+//      else is no reading. Agents, accounts and the file's own keys compare without case as the driver's ordinal
+//      comparison does, code point by code point (AGENTREAD1c): each to its one capital and never a wider one, so `straße`
+//      is not `STRASSE`, and a dotless i is not an I. An account written twice in any case is the last that reads.
 //   2. Written only by a reading: a question that was never asked (an agent with no login question, a lock another holder
 //      kept, a pin with nothing installed) writes nothing, so the last word stands with its own time.
 //   3. An older reading never replaces a newer one; one at the same moment does, and an entry that does not read is
@@ -24,8 +26,9 @@
 //      UTC to the second.
 //   4. A word and a time, never who: who signed in is read fresh and written nowhere (D66 §3).
 //   5. Each writer keeps what it has no field for, LF with a final newline: for the same readings both write the same
-//      JSON, and the same bytes where every name is plain ASCII. An unreadable file is nothing known, so a reading
-//      replaces it, as the driver's does.
+//      bytes, a name in any script and HTML's marks as they are, since the driver writes with the relaxed encoder
+//      (AGENTREAD1b); the few characters that encoder still escapes are listed in D125's AGENTREAD1b note. An unreadable
+//      file is nothing known, so a reading replaces it, as the driver's does.
 //   6. An account removed from this machine is forgotten, so one made later under its name starts never read; nothing to
 //      forget writes nothing.
 //
@@ -162,6 +165,35 @@ function child(parent: Node | null, name: string): Node | null {
 
 /** The first key equal to `name` without case, as the driver finds one. */
 function key(held: object, name: string): string | null {
-  const wanted = name.toUpperCase();
-  return Object.keys(held).find((each) => each.toUpperCase() === wanted) ?? null;
+  const wanted = folded(name);
+  return Object.keys(held).find((each) => folded(each) === wanted) ?? null;
+}
+
+/**
+ * A name as the driver's `OrdinalIgnoreCase` compares it (rule 1; AGENTREAD1c, D125's note): each code point to its one
+ * capital, never a wider one, so `straße` is not `STRASSE` and two names of different lengths never meet. `toUpperCase`
+ * alone maps the whole string in full, `ß` to `SS`, and found an account the driver does not.
+ */
+function folded(name: string): string {
+  return Array.from(name, (letter) => {
+    const point = letter.codePointAt(0)!;
+    const iota = iotaCapital(point);
+    if (iota !== null) return String.fromCodePoint(iota);
+    const upper = letter.toUpperCase();
+    // A capital of two or more letters (ß, ŉ, ﬁ) is none: the letter keeps itself.
+    if (Array.from(upper).length !== 1) return letter;
+    // .NET keeps the two letters beyond ASCII whose capital is ASCII, ı and ſ, as themselves, as a JavaScript pattern's
+    // `i` flag without `u` does, so a dotless i is not an I.
+    return point > 0x7f && upper.codePointAt(0)! <= 0x7f ? letter : upper;
+  }).join('');
+}
+
+/**
+ * A Greek small letter with a subscript iota, whose capital is two letters in full (`ᾳ` is `ΑΙ`) and one in the simple
+ * mapping .NET compares by (`ᾳ` is `ᾼ`, the capital with the iota beside it): that one; null for any other.
+ */
+function iotaCapital(point: number): number | null {
+  const row = point & ~0x7;
+  if (row === 0x1f80 || row === 0x1f90 || row === 0x1fa0) return point + 8;
+  return point === 0x1fb3 || point === 0x1fc3 || point === 0x1ff3 ? point + 9 : null;
 }
