@@ -326,6 +326,40 @@ public sealed class SessionSyncTests : IAsyncLifetime
         Assert.Empty(there.Said);
     }
 
+    /// <summary>
+    /// 🔴 HIST1a (D153 point 4, H2): a push sends what was written past its cursor, so a revision handed out twice is one
+    /// the cursor already passed. Here D126's delete takes the newest record, a conversation that stayed home but that a
+    /// pass examined, its close the newest write, and the conversation opened after it still goes up, though it has
+    /// written less than the one deleted had.
+    /// </summary>
+    [Fact]
+    public async Task A_record_written_after_the_newest_was_deleted_still_goes_up()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var quests = await QuestStore.OpenAsync(connection);
+        var machine = await OpenAsync(connection);
+        var ledger = new SessionLedger(quests, machine, _service);
+        var home = (await ledger.OpenChatAsync("Homebody", "stub", Now)).Session!;
+        foreach (var state in new[] { "starting", "working", "completed" })
+        {
+            Assert.Equal(SessionAdvanceRefusal.None, (await ledger.AdvanceAsync(home.Id, state, "stayed home.", null, null, Now)).Refusal);
+        }
+
+        Assert.Equal(0, (await SyncAsync(machine, "a@one")).Pushed);
+        Assert.Equal(SessionDeleteRefusal.None, (await ledger.DeleteAsync(home.Id)).Refusal);
+
+        var next = (await ledger.OpenChatAsync("Shared", "stub", Now.AddMinutes(1))).Session!;
+        Assert.Equal(SessionAdvanceRefusal.None, (await ledger.AdvanceAsync(next.Id, "starting", null, null, null, Now.AddMinutes(1))).Refusal);
+
+        var pass = await SyncAsync(machine, "a@one");
+        await SyncAsync(_b, "b@two");
+
+        Assert.Equal((1, (string?)null), (pass.Pushed, pass.Problem));
+        Assert.Equal(SessionState.Starting, (await _remote.FindAsync($"a@one/{next.Id}"))!.State);
+        Assert.Equal(SessionState.Starting, (await _b.FindAsync($"a@one/{next.Id}"))!.State);
+    }
+
     /// <summary>The remote down: the wall is named, and neither cursor moves — nothing is lost, the next pass sends it.</summary>
     [Fact]
     public async Task An_unreachable_remote_is_named_and_moves_no_cursor()

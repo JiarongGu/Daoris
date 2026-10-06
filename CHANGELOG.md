@@ -18,6 +18,11 @@ with the version and date at release.
   start walks past it. A conversation's agent is told which session it is, so a quest it takes is
   marked on its record.
 - Downloading a managed tool waits briefly when Windows holds the folder just unpacked, at both doors.
+- An account refused for its sign-in after Daoris last read it signed in is asked once more before it
+  is passed over, so signing in again is noticed at the next start. `daoris-driver --once` and
+  `--until-idle` print each report as it is made and wait for their sessions before exiting.
+- Deleting a quest or a conversation no longer lets the next change reuse a number a remote already
+  holds, which could lose that change silently on a workspace with a remote.
 - A refused account rename, workspace choice or add-flow answer stays open with what was entered and
   says why inside it. Terminal hints spell account and workspace names so they paste as one argument in
   Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would.

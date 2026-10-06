@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,304 CLI, 1,170 service, 68 HTTP host, 4,960 driver (4,249 fast; the two new Process cases await the full set), 721 modules, 80 devkit, 4,177 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,304 CLI, 1,178 service, 68 HTTP host, 4,972 driver (4,260 fast; three new Process cases await the full set), 721 modules, 80 devkit, 4,177 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -48,7 +48,6 @@ Today only an untaken open quest (D95) and a chat that served no quest (D126 §5
 
 Contract: `docs/2026-10-07-history-clearing-design.md` (D153), §9 rows/proofs. Order: a → b (service); c (driver, modules) after b; d and e after c; f after e and SESSUX1h; g after d; h last. HIST1a alone closes H1–H2, which D95's and D126's deletes reach today, so it goes first.
 
-- [ ] **HIST1a — store numbers never go back** (service; first). Keep high-water marks for operation sequences and session revisions, so no removal reissues a number the remote or push cursor passed. This closes H1–H2, which D95's and D126's deletes already reach. Contract: history-clearing §0.3, §3.3. Proof: store tests removing the newest rows; sync tests over the real wire.
 - [ ] **HIST1b — service clears closed records** (service; after a). `HistoryDesk` judges and clears quest, ask and failed-session units behind local-only `GET /api/history` and `POST /api/history/clear`; numbered quests are forgotten (`quest_forgotten`) and fetches skip them. Contract: §1, §2.1, §3, §6.3. Proof: desk tests; sync tests (skipped, never refetched or pushed, fetched by a second store); no shared door.
 - [ ] **HIST1c — driver clears the home** (driver, modules, web-shell catalogues; after b). `HistoryClearing` judges trees, landings and processes, calls the service, removes §2.2's files through a helper `SessionDeletion` shares, tidies what names them, reads sizes, adds `HISTORY_PLAN`, `HISTORY_CLEAR`, `history.cleared`. Contract: §2, §4–§5, §6.3, §6.5. Proof: scratch-home clearing tests; deletion's missed files; route and refusal tests.
 - [ ] **HIST1d — terminal history verbs** (driver; after c). `daoris-driver history`, `history clear --workspace`, `quest clear [--failed]` and `ask --clear`, each listing until `--yes`, so a machine with no screen clears as the window does (D50). Contract: §6.2. Proof: in-process command tests with exits, usage golden, and a `--json` field twin against `HISTORY_PLAN`.
@@ -247,7 +246,6 @@ Contract: `docs/2026-10-01-agent-layout-design.md` (D117), §7 rows/proofs. Entr
 Contracts: toolchain design (D57, §3 resolution), account-rotation (D125), account-use (D130), in-app-browser (D78/D84).
 
 - [ ] **TOOL6d — continue chat on another account** (driver, modules, web-shell; after b). Refused turn offers last plan/words to selected account. Contract: D130 §8–§9. Proof: driver/route/vitest and bilingual look.
-- [ ] **TOOL6h — recheck account after refused start** (driver). Previously signed-in account gets one fresh reading after refusal. Contract: D125 TOOL6g note. Proof: refused-start tick case.
 - [ ] **TOOL4l — account proposal service doors** (service, driver). Support use/keep/early/near, order, ready and cooloff. Contract: D125 §6, D130 §9/§16.6. Proof: proposal kinds and no owed coverage rows.
 - [ ] **TOOL4h — account rehearsal/report** (tools; after j). Two stub accounts, per-account/window limits labelled Daoris-only, parallel N-account run. Contract/proof: rotation §8/§2.2, D130 §5.4.
 - [ ] **TOOL4i — installed rotation** (owner). Parallel every-account run and what one limit interrupts remain; sequential run recorded already. Contract: D130 §11. Proof: run; preserve earlier evidence in FIX-LOG.
@@ -258,7 +256,7 @@ Contracts: toolchain design (D57, §3 resolution), account-rotation (D125), acco
 ## Flakes and held work
 
 - [ ] **FLAKE1 — bounded diagnostic waits** (driver/modules tests). Instrument repeating plugin-kit, input and ProcessJob failures instead of rerunning blindly. Contract: MOD8, PROC1; sightings in FIX-LOG FLAKE1. Proof: named slow step and three loaded serial green runs.
-- [ ] **DEV3a — stop report before run exits** (driver). `--once`/`--until-idle` wait for reports they caused. Contract: DEV3. Proof: driver test; retain failed lost-claim rehearsal evidence.
+- [ ] **DEV3b — a client timeout is not a close** (driver). The headless host reads any `OperationCanceledException` as Ctrl+C, so a look whose own request times out prints *driver: stopped.* and exits 0. Contract: D115's DEV3a note. Proof: a host test that a timeout exits 2, naming it.
 - [ ] **TEST1 — capture Windows Node abort** (web e2e, tools). Preserve JSON reporter/rehearsal exit for `0xC0000409`; no timeout tuning from three sightings. Contract: FIX-LOG TEST1. Proof: next failure captured.
 - [ ] **REH1 — canon-upgrade rehearsal failure** (held). Keep transcripts; no tag until captured failure resolved or owner closes after clean post-canon runs. Contract/evidence: FIX-LOG REH1, `_fixtures/rehearsal-logs/`.
 - [ ] **CANON9 — desktop-winforms pack** (held). Keep local until a second repository needs it; two-repository bar remains. Contract: original pack candidate.

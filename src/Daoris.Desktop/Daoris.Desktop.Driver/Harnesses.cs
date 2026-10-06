@@ -1628,7 +1628,7 @@ public sealed record StartWiring(
 /// are the directories on disk now. Its binary is asked once a process, never against an account's home: whether it is
 /// there and its version. A yes is trusted and a no is asked again: an absent agent's binary at once, and a signed-out
 /// account on its own once its word is <see cref="SignedOutAskedAgain"/> old or a sign-in marked it (TOOL6g), since a start
-/// held on it is tried at every look.</para>
+/// held on it is tried at every look, or once after a refusal of a reading that said signed in (TOOL6h).</para>
 ///
 /// <para><b>The wiring file is re-read, never held.</b> Same rule as `driver.json`: the file is the
 /// truth and the surfaces are editors over it (D50), so a profile default changed from a terminal
@@ -1683,6 +1683,13 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
 
     /// <summary>
+    /// How one account's status is asked on its own (TOOL6h): by owner and account, the agent's own status question under the
+    /// account's lock, unless a test hands in an in-process stand-in, since every real question spawns the agent, which the
+    /// suite's fast half may not. A stand-in's answer is a reading, kept as the agent's would be.
+    /// </summary>
+    internal Func<string, string, CancellationToken, Task<LoginState>>? Asking { get; init; }
+
+    /// <summary>
     /// This machine's zone (D125 §2.1): it stands in for a zone a limit's sentence names that is not an IANA name, and
     /// every cool-off is said in it, with the zone named.
     /// </summary>
@@ -1731,15 +1738,36 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// restart starts from it. Its owner's (AGT7), so every door onto the account reads it.
     /// </summary>
     /// <remarks>
-    /// Cleared as a reading signed out is: a sign-in or a key through either door marks the account, and the next start asks
-    /// it again (<see cref="AskAgain"/>); a sign-in on the screen reads it as it ends; a press reads it; and the hour's backstop.
-    /// A reading not written costs the next start one more refusal, never this one's record.
+    /// <para>Cleared as a reading signed out is: a sign-in or a key through either door marks the account, and the next start
+    /// asks it again (<see cref="AskAgain"/>); a sign-in on the screen reads it as it ends; a press reads it; and the hour's
+    /// backstop. A reading not written costs the next start one more refusal, never this one's record.</para>
+    /// <para>🔴 <b>A refusal of an account last read signed in owes it one fresh reading</b> (TOOL6h): the refusal contradicts
+    /// the agent's own last word, so the next start that walks to the account asks it once, whatever the mark and the hour say,
+    /// and its answer is kept and honoured; a sign-in the person made since, at a door of Daoris's or not, runs it again. One:
+    /// the refusal of a signed-in reading that fresh reading itself made owes none, so an agent that says signed in while it
+    /// refuses every start costs one more start, never one per look. Never the tool's own sign-in, which only a person's press
+    /// asks (TOOL6g). Held in memory, as <see cref="Refuse"/> is: after a restart the reading waits for the mark or the hour.</para>
     /// </remarks>
     public void SignedOut(string adapter, string? profile)
     {
         if (CoolingAgent(adapters.Resolve(adapter)) is not { } owner) return;
+        var before = profile is null ? null : AccountReads.Of(Home, owner).Accounts.GetValueOrDefault(profile);
         Keep(owner, profile, LoginState.Out, who: null, Clock());
+        if (profile is not null && before is { Login: LoginState.In }
+            && !(_fresh.TryGetValue(AccountKey(owner, profile), out var made) && made == before.At))
+        {
+            _owed[AccountKey(owner, profile)] = true;
+        }
     }
+
+    // The accounts a refusal of a signed-in reading owes one fresh reading (TOOL6h), by owner and account: taken by the next walk
+    // that reaches the account, then spent. Any other reading of the account settles it (`Keep`).
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _owed = new(StringComparer.OrdinalIgnoreCase);
+
+    // The signed-in readings a fresh reading made (TOOL6h), by owner and account, with the time each was kept: a refusal of one
+    // owes none.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _fresh =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// How this adapter says an account's windows (TOOL6c, D130 §5.2): its own entry, else its owner's, since a door's readings
@@ -2044,6 +2072,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     private void Keep(string owner, string? account, LoginState login, string? who, DateTimeOffset at)
     {
         _who[AccountKey(owner, account)] = (at, login == LoginState.In ? who : null);
+        // A newer word on the account settles a fresh reading a refusal owed it (TOOL6h).
+        _owed.TryRemove(AccountKey(owner, account), out _);
         try
         {
             AccountReads.Keep(Home, owner, account, login, at);
@@ -2062,6 +2092,8 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     public void Removed(string agent, string account)
     {
         _who.TryRemove(AccountKey(agent, account), out _);
+        _owed.TryRemove(AccountKey(agent, account), out _);
+        _fresh.TryRemove(AccountKey(agent, account), out _);
         try
         {
             AccountReads.Forget(Home, agent, account);
@@ -2161,10 +2193,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             ? new Dictionary<string, string> { [variable] = held }
             : null;
         var before = AccountReads.Of(Home, owner).Accounts.GetValueOrDefault(account);
-        var answer = await HarnessProbe.AskAccountAsync(
-            adapter, toolchain, config.Commands.GetValueOrDefault(adapter), Settings, Home,
-            HarnessSettings.ProfileHome(Home, owner, account), ct, ProbeLock.PathOf(Home, owner, account), key,
-            busy: () => Busy(owner, account), kept: (before?.Login ?? LoginState.Unknown, null)).ConfigureAwait(false);
+        var answer = Asking is { } standIn
+            ? new HarnessProbe.LoginAnswer(await standIn(owner, account, ct).ConfigureAwait(false), null, true)
+            : await HarnessProbe.AskAccountAsync(
+                adapter, toolchain, config.Commands.GetValueOrDefault(adapter), Settings, Home,
+                HarnessSettings.ProfileHome(Home, owner, account), ct, ProbeLock.PathOf(Home, owner, account), key,
+                busy: () => Busy(owner, account), kept: (before?.Login ?? LoginState.Unknown, null)).ConfigureAwait(false);
         // A mark this question answered is spent, whatever the file's clock says against the roster's.
         var asked = Clock();
         if (ProbeLock.SignedIn(Home, owner, account) is { } marked && marked > asked) asked = marked;
@@ -2503,13 +2537,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             var account = states[i].Account!;
             var said = ProfileOf(accounts, account);
             var login = said?.Login ?? LoginState.Unknown;
-            if (login == LoginState.Out && AskAgain(owner, account, said?.Read))
+            // The one fresh reading a refusal of a signed-in reading owes it (TOOL6h), spent here whatever it answers.
+            var owed = login == LoginState.Out && _owed.TryRemove(AccountKey(owner, account), out _);
+            if (login == LoginState.Out && (owed || AskAgain(owner, account, said?.Read)))
             {
                 // Asked again, as the install above is, since the person may have signed in since (TOOL6g): that account
-                // alone, and only once a sign-in marked it or the word is `SignedOutAskedAgain` old. Before, a start held on
-                // a signed-out account asked every account's status at every look. An account never read is unknown, and a
-                // start runs on it as on any unknown (SES3): a look asks nothing (ROSTER1).
+                // alone, and only once a sign-in marked it or the word is `SignedOutAskedAgain` old, or once after a refusal
+                // its last reading said signed in (TOOL6h). Before, a start held on a signed-out account asked every account's
+                // status at every look. An account never read is unknown, and a start runs on it as on any unknown (SES3): a
+                // look asks nothing (ROSTER1).
                 login = await AskOneAsync(asker.Name, asker.Toolchain, owner, account, config, ct).ConfigureAwait(false);
+                if (owed && AccountReads.Of(Home, owner).Accounts.GetValueOrDefault(account) is { Login: LoginState.In } fresh)
+                {
+                    _fresh[AccountKey(owner, account)] = fresh.At;
+                }
             }
 
             if (login == LoginState.Out)

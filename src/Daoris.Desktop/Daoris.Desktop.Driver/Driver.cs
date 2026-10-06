@@ -579,7 +579,9 @@ public sealed partial class Driver(
             {
                 claim = await service.ClaimAsync(quest, ct).ConfigureAwait(false);
             }
-            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException
+                                              // The client's own timeout (DEV3a): a host that took the question and stalled.
+                                              || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
                 continue; // The host did not answer; the next pass asks again.
             }
@@ -600,9 +602,13 @@ public sealed partial class Driver(
     /// A look no longer waits for its sessions, so between looks this waits for the next ending or the
     /// watch's pace, whichever is first — the sync beside the sessions and the lost-claim stop ride every
     /// look, as they ride the watch's (D68 §5, §6). A failure or a close lets go only once every session has
-    /// written how it ended, as a look that waited for its sessions did (REV3).
+    /// written how it ended, as a look that waited for its sessions did (REV3), and has said what ended (DEV3a).
     /// </remarks>
-    public async Task<IReadOnlyList<TickReport>> RunUntilIdleAsync(CancellationToken ct = default)
+    /// <param name="said">
+    /// Handed each look's report as the look ends (DEV3a), and before a failure or a close lets go, what ended while it
+    /// waited: what the headless host prints, so a look's lines reach the person whatever ends the run after it.
+    /// </param>
+    public async Task<IReadOnlyList<TickReport>> RunUntilIdleAsync(CancellationToken ct = default, Action<TickReport>? said = null)
     {
         var reports = new List<TickReport>();
         try
@@ -611,6 +617,7 @@ public sealed partial class Driver(
             {
                 var report = await TickAsync(ct).ConfigureAwait(false);
                 reports.Add(report);
+                said?.Invoke(report);
                 if (!report.Progressed && _runs.Idle) return reports;
 
                 await _runs.NextAsync(_syncBeside, ct).ConfigureAwait(false);
@@ -619,7 +626,7 @@ public sealed partial class Driver(
         }
         catch
         {
-            await _runs.SettledAsync().ConfigureAwait(false);
+            await LetGoAsync(said).ConfigureAwait(false);
             throw;
         }
     }
@@ -629,7 +636,16 @@ public sealed partial class Driver(
     /// reads one start whole. The endings join the look's own report, as they did when a look waited for its
     /// sessions.
     /// </summary>
-    public async Task<TickReport> RunOnceAsync(CancellationToken ct = default)
+    /// <remarks>
+    /// 🔴 It never lets go before what its look started has ended (DEV3a): each session's ending written to the service and
+    /// to the machine log, and said. A pass beside the sessions that fails is a line, and the next pass tries again; a run that
+    /// left there let the process end with its sessions still working, and a lost-claim stop already made went unsaid.
+    /// </remarks>
+    /// <param name="said">
+    /// Handed the look's report as the look ends, then what ended (DEV3a), which together are the report returned: what the
+    /// headless host prints, so the look's lines reach the person whatever ends the run after it.
+    /// </param>
+    public async Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null)
     {
         TickReport look;
         try
@@ -640,11 +656,13 @@ public sealed partial class Driver(
         {
             // A look that failed after opening a session still waits for it, as a look always did: its record
             // is written before the failure is said.
-            await _runs.SettledAsync().ConfigureAwait(false);
+            await LetGoAsync(said).ConfigureAwait(false);
             throw;
         }
 
-        var settled = await SettleAsync(ct).ConfigureAwait(false);
+        said?.Invoke(look);
+        var settled = await SettleAsync(ct, said).ConfigureAwait(false);
+        said?.Invoke(settled);
         return look with
         {
             Events = [.. look.Events, .. settled.Events],
@@ -653,37 +671,78 @@ public sealed partial class Driver(
     }
 
     /// <summary>
+    /// What a run that failed or was closed does before it lets go (REV3, DEV3a): it waits until every session it started has
+    /// written how it ended, then hands <paramref name="said"/> what ended, so the endings are said rather than lost with the
+    /// process. Nothing is asked of the service: it may be what failed.
+    /// </summary>
+    private async Task LetGoAsync(Action<TickReport>? said)
+    {
+        await _runs.SettledAsync().ConfigureAwait(false);
+        if (said is null) return;
+
+        var ended = _runs.Drain();
+        if (ended.Count == 0) return;
+        said(new TickReport([], [.. ended.Select(run => run.Line)], Progressed: false, Concluded: [.. ended.Select(run => run.Ended).OfType<SessionEnded>()]));
+    }
+
+    /// <summary>
     /// Wait until nothing this driver started runs, then report what ended. While they work, the sync runs
     /// beside them at the watch's pace, each pass followed by the lost-claim stop (D68 §5, §6).
     /// </summary>
-    private async Task<TickReport> SettleAsync(CancellationToken ct)
+    /// <remarks>
+    /// A pass that fails is said and the next tries again (DEV3a), as a look's sync is, since leaving here would leave the
+    /// sessions with nothing watching. Only the close leaves, and what was said and what ended is handed to
+    /// <paramref name="said"/> before it does.
+    /// </remarks>
+    private async Task<TickReport> SettleAsync(CancellationToken ct, Action<TickReport>? said = null)
     {
         var events = new List<string>();
+        var concluded = new List<SessionEnded>();
         var settled = _runs.SettledAsync();
-        while (sync is not null && !settled.IsCompleted && !ct.IsCancellationRequested)
+        try
         {
-            using var pace = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            var first = await Task.WhenAny(settled, Task.Delay(_syncBeside, pace.Token)).ConfigureAwait(false);
-            await pace.CancelAsync().ConfigureAwait(false);
-            if (first == settled || ct.IsCancellationRequested) break;
+            while (sync is not null && !settled.IsCompleted && !ct.IsCancellationRequested)
+            {
+                using var pace = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                var first = await Task.WhenAny(settled, Task.Delay(_syncBeside, pace.Token)).ConfigureAwait(false);
+                await pace.CancelAsync().ConfigureAwait(false);
+                if (first == settled || ct.IsCancellationRequested) break;
+
+                try
+                {
+                    await SyncAsync(events, ct).ConfigureAwait(false);
+                    await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    // 🔴 Closing (REV3): the sessions are ending on this same token, and each writes how it ended.
+                    // Leaving before them left them unrecorded when the process exited.
+                    break;
+                }
+                catch (Exception error)
+                {
+                    lock (events) events.Add($"sync  a pass beside the running sessions failed, and the next tries again: {error.Message}");
+                }
+            }
+
+            await settled.ConfigureAwait(false);
 
             try
             {
-                await SyncAsync(events, ct).ConfigureAwait(false);
-                await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+                await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            catch (Exception error) when (!ct.IsCancellationRequested)
             {
-                // 🔴 Closing (REV3): the sessions are ending on this same token, and each writes how it ended.
-                // Leaving before them left them unrecorded when the process exited.
-                break;
+                // What ended is drained into the report before the pass after it runs, so a failed pass loses none of it.
+                lock (events) events.Add($"sync  the pass after the sessions ended failed, and the next look tries again: {error.Message}");
             }
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            said?.Invoke(new TickReport([], events, Progressed: false, Concluded: concluded));
+            throw;
+        }
 
-        await settled.ConfigureAwait(false);
-
-        var concluded = new List<SessionEnded>();
-        await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
         return new TickReport([], events, Progressed: false, Concluded: concluded);
     }
 
