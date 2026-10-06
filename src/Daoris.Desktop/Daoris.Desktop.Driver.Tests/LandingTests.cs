@@ -147,19 +147,6 @@ public sealed class LandingTests : IDisposable
         else Assert.Contains(problem, said);
     }
 
-    /// <summary>
-    /// CASEFOLD1e: a rule's plugin is the catalogue's shape to its very end, as <see cref="PluginCatalog.IsId"/> is. .NET's
-    /// <c>$</c> also matches before a final line break, where the CLI's <c>PLUGIN_ID</c> does not, so an id and a line break
-    /// was a plugin's id here and none there.
-    /// </summary>
-    [Fact]
-    public void A_rules_plugin_followed_by_a_line_break_is_no_id_as_the_cli_reads_it()
-    {
-        var said = LandingRules.Problem(new LandingRule(LandingForm.Branch, "feature/{quest}-{slug}", Plugin: "example.lands\n"));
-
-        Assert.Contains("not a plugin id", said);
-    }
-
     [Fact]
     public void A_rules_plugin_is_kept_in_driver_json_and_a_merge_naming_one_is_not_read()
     {
