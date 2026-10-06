@@ -134,4 +134,22 @@ public sealed class ProbeLockQuestionTests : IDisposable
             first.RelativePath is "docs/FIX-LOG.md" or "docs/decisions/D125.md",
             $"answered first by {first.RelativePath}#{first.Anchor}");
     }
+
+    /// <summary>
+    /// ORIENT1g's proof: the answer is the TOOL6g note itself, an entry of its own, labelled as the digest labels
+    /// it; D125 whole buried it under its opening and every other note, and the fix outranked it.
+    /// </summary>
+    [Fact]
+    public async Task The_probe_lock_question_lands_on_the_TOOL6g_note_as_its_own_entry()
+    {
+        var hits = await AskAsync();
+
+        var first = hits[0].Entry;
+        const string label = "Built 2026-10-04 (TOOL6g): a signed-out account is said, and asked about once…";
+        Assert.Equal(("docs/decisions/D125.md", label), (first.RelativePath, first.Anchor));
+        Assert.Equal($"D125 › {label}", first.Title);
+        Assert.Contains("`ProbeLock`", first.Body);
+        Assert.DoesNotContain("ROSTER1", first.Body);
+        Assert.Equal("docs/FIX-LOG.md", hits[1].Entry.RelativePath);
+    }
 }
