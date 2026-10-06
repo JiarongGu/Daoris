@@ -47,7 +47,11 @@ public sealed record DeleteOutcome(string Session, DeleteVerdict Verdict, string
     /// <summary>For <see cref="DeleteVerdict.Named"/>: <see cref="SessionDeletion.ByAsk"/>, <see cref="SessionDeletion.ByQuest"/> or <see cref="SessionDeletion.ByLanding"/>.</summary>
     public string? NamedBy { get; init; }
 
-    /// <summary>What went, by name (<c>record</c>, <c>conversation</c>, <c>transcript</c>, <c>files</c>, <c>harness</c>, <c>marker</c>, <c>archived</c>), in that order.</summary>
+    /// <summary>
+    /// What went, by name: <c>record</c>, then what <see cref="SessionHomeFiles"/> took (<c>conversation</c>, <c>transcript</c>,
+    /// <c>files</c>, <c>harness</c>, <c>marker</c>, <c>mark</c>, <c>choice</c>, <c>spawn</c>, <c>held</c>, <c>landing</c>,
+    /// <c>archived</c>), in that order.
+    /// </summary>
     public IReadOnlyList<string> Removed { get; init; } = [];
 }
 
@@ -66,8 +70,10 @@ public sealed record DeleteOutcome(string Session, DeleteVerdict Verdict, string
 /// since D88's proof is the clean-up's and *Discard tree*'s; a landing that names it, standing or a trace (D113), keeps it.
 /// Then the ledger deletes, judging the record again as it stands; and only after its yes are the files removed.</para>
 ///
-/// <para><b>What goes</b>: its conversation, its transcript, its files, its conversation id and a leftover process marker,
-/// and its archive mark (§5.1). <b>Never</b> a tree, a branch, its usage or the machine log, which gains
+/// <para><b>What goes</b> is what <see cref="SessionHomeFiles"/> takes, the helper a clear of finished history calls too
+/// (HIST1c): its conversation, its transcript, its files, its conversation id, a leftover process marker, its go-on mark, its
+/// choice of a new session, its spawn files, its held words, its closed automatic landing and its archive mark (§5.1; the
+/// history-clearing design §2.2). <b>Never</b> a tree, a branch, its usage or the machine log, which gains
 /// <c>session.deleted</c> with no word of it (§7.4).</para>
 /// </remarks>
 public sealed class SessionDeletion(string home)
@@ -75,8 +81,6 @@ public sealed class SessionDeletion(string home)
     public const string ByAsk = "ask";
     public const string ByQuest = "quest";
     public const string ByLanding = "landing";
-
-    private string Sessions => Path.Combine(home, "sessions");
 
     /// <summary>
     /// The sessions among <paramref name="records"/> the ledger would delete whose tree or landing this machine still holds:
@@ -118,9 +122,9 @@ public sealed class SessionDeletion(string home)
         var deleted = await service.DeleteSessionAsync(id, ct).ConfigureAwait(false);
         if (!deleted.Taken) return Refused(id, deleted);
 
+        // HIST1c: the one helper a clear also calls, so a delete takes every file §2.2 lists, the four it once left included.
         var removed = new List<string> { "record" };
-        removed.AddRange(RemoveFiles(id, events));
-        if (new SessionArchive(home).Unarchive([id]).NotArchived.Count == 0) removed.Add("archived");
+        removed.AddRange(new SessionHomeFiles(home).Remove([id], events)[id]);
 
         log?.Info("session.deleted", ("session", id), ("kind", KindOf(record)), ("door", door));
         return new(id, DeleteVerdict.Deleted, $"Deleted session `{id}`: its record, and its words, transcript and files on this machine.")
@@ -168,37 +172,6 @@ public sealed class SessionDeletion(string home)
         Workspace = answer.Workspace,
         NamedBy = answer.Refusal == "named" ? answer.Ask is not null ? ByAsk : ByQuest : null,
     };
-
-    /// <summary>
-    /// The files this machine kept of a session (§5.1), removed once the ledger said yes: each name that went, in order. An
-    /// id that could name a path removes nothing.
-    /// </summary>
-    private IReadOnlyList<string> RemoveFiles(string id, SessionEvents? events)
-    {
-        var removed = new List<string>();
-        if (!SessionEvents.IsId(id)) return removed;
-
-        var conversation = events?.Forget(id) ?? Gone(Path.Combine(Sessions, $"{id}.events.jsonl"));
-        if (conversation) removed.Add("conversation");
-        if (Gone(Path.Combine(Sessions, $"{id}.log"))) removed.Add("transcript");
-        var files = Path.Combine(Sessions, id);
-        if (Directory.Exists(files))
-        {
-            Directory.Delete(files, recursive: true);
-            removed.Add("files");
-        }
-
-        if (Gone(Path.Combine(Sessions, id + HarnessConversations.Suffix))) removed.Add("harness");
-        if (Gone(Path.Combine(Sessions, id + ".pid"))) removed.Add("marker");
-        return removed;
-    }
-
-    private static bool Gone(string path)
-    {
-        if (!File.Exists(path)) return false;
-        File.Delete(path);
-        return true;
-    }
 
     /// <summary>The kind its open is logged by (LOG1b): Ask Daoris and an intake by their door, else the record's.</summary>
     private static string KindOf(SessionRecord record) =>

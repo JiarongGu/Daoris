@@ -59,6 +59,9 @@ public sealed record SessionRecord(string Id, string Repository, string State)
     /// </summary>
     public bool Took { get; init; }
 
+    /// <summary>The workspace its record is filed under (D48), the default one where a host from before answers none (HIST1c's reading).</summary>
+    public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
+
     /// <summary>A record that came down from the team (SYNC4): its process is on another machine, and nothing here reaches it.</summary>
     public bool Teammate => Id.Contains('/');
 
@@ -104,6 +107,7 @@ public static class SessionRecords
                 BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Absent is no take of its own: a host older than STANDDOWN2, or a teammate's record (PAUSE1d).
                 Took = session.TryGetProperty("took", out var took) && took.ValueKind == JsonValueKind.True,
+                Workspace = RemoteTarget.Workspace(Text(session, "workspace")),
             });
         }
 

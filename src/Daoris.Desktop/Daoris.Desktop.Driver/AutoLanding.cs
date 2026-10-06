@@ -260,6 +260,23 @@ public sealed class AutoLandings(string home)
     public void Tried(string session, AutoTry tried, bool close) => Edit(all =>
         [.. all.Select(each => Same(each, session) ? each with { Tries = [.. each.Tries, tried], Closed = close ? tried.At : each.Closed } : each)]);
 
+    /// <summary>
+    /// The closed entries of sessions whose records are gone (HIST1c, the history-clearing design §2.2), dropped: what each try
+    /// came to is read only beside its record. An open entry stays, since a clear refuses a landing still trying. The sessions
+    /// whose entry went come back; nothing is written when none did.
+    /// </summary>
+    public IReadOnlyCollection<string> Forget(IReadOnlyCollection<string> sessions)
+    {
+        lock (Gate)
+        {
+            var all = All();
+            var gone = all.Where(entry => entry.Closed is not null && sessions.Any(session => Same(entry, session))).ToList();
+            if (gone.Count == 0) return [];
+            AtomicFile.WriteText(FilePath, ToJson([.. all.Where(entry => !gone.Any(each => ReferenceEquals(each, entry)))]));
+            return [.. sessions.Where(session => gone.Any(entry => Same(entry, session)))];
+        }
+    }
+
     private static bool Same(AutoLanding entry, string session) => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase);
 
     private void Edit(Func<IReadOnlyList<AutoLanding>, IReadOnlyList<AutoLanding>> change)
