@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,313 CLI, 1,178 service, 68 HTTP host, 4,972 driver (4,260 fast; three new Process cases await the full set), 721 modules, 80 devkit, 4,205 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,333 CLI, 1,215 service, 73 HTTP host, 5,009 driver (4,297 fast; three new Process cases await the full set), 721 modules, 80 devkit, 4,205 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -21,12 +21,12 @@ Read `AGENTS.md`, `CLAUDE.md`, `.claude/INDEX.md`, `docs/README.md`, then the ro
 Contracts: `docs/2026-10-05-ux7-design.md` (D152) and `docs/2026-10-04-ux6-redesign.md` (D150, §12 has full rows and proofs). UI changes require stories and installed-window evidence in both themes and languages. Remaining UX6 order: baseline; attention; Git after GIT1d; Knowledge and Settings. Plugin tools follow PLUGUI1c.
 
 - [ ] **UX7b — verify recovered account UI on the install** (web-shell). Account rows, add/name/join flow and shared naming are integrated; unit tests and English stories at 1546/680 px pass. Remaining proof: installed look in both themes/languages, including the add flow. Contract: D150 §5, D152 §4; review evidence: `docs/2026-10-05-integration-review.md`.
-- [ ] **ACCTQUOTE1b — the driver's commands spell their arguments** (driver). The driver's sentences print account and workspace names bare (`Harnesses.Accounts.cs` `JoinProblem.Sentence`, `AccountRotation.cs:629/:823`, `Driver.cs:1451`, `Harnesses.cs:2521`, `HelpAgentProposals.cs:158/185/236`), so they break when pasted, and `JoinProblem.Sentence` now differs from the CLI's `joinRefusal`. Contract: D125's ACCTQUOTE1 note, `shell-words.json`. Proof: a C# twin reading the same table; twinned sentence tests.
+- [ ] **ACCTQUOTE1d — the CLI holds the driver's join sentences** (cli). `account-join.test.ts` should parse the driver's `A_refused_join_is_said_as_the_cli_says_it` rows and hold `joinRefusal` to each, cell for cell, as it holds the join and places tables; today the driver copies the CLI's sentences and nothing on the CLI side checks them. Contract: D125's ACCTQUOTE1b note, twins.md. Proof: a CLI test reading that theory.
 - [ ] **ACCTEDIT1b — verify refused account edits on the install** (parent; after republish). Rename…, Use in a workspace… and the add flow's last step, each refused: the draft kept and the sentence inside it, at 1546/680 px, both themes and languages; the refusal line's warn border in dark is the likeliest flaw. Contract: D152 §4. Proof: dated shots.
 - [ ] **CONVNOTE1b — a chat's cooling note carries its parts** (driver). `ChatRunner.cs` records the cooling note as text only, so 中文 shows the driver's English though the page already words `account.cooling` from parts (CONVNOTE1). Contract: D125's TOOL4d and SIGNIN1b notes, LANG1a. Proof: a driver test that the note carries `account.cooling` parts.
 - [ ] **UX7d — remaining visual findings** (web-shell, driver). List absent agents with Install; two-letter strip marks; version without repeated product name; compact Chinese summaries; coded, properly formatted record-opening notes. Contract: D152, UX7 §1, §4.6. Proof: stories, note-code twins and installed look.
 - [ ] **UX7e — verify menus and heads on the install** (parent; after republish carrying UX7a–c). Exercise Alt/F10, Alt+letter, table shortcuts, terminal Ctrl+N and composer editing; inspect 1546/680 px, themes/languages, 200 px head target, clipped quest title, Short title and landing branch. Contract: D152 §6 and UX7a/UX7c notes. Proof: dated shots and measurements under D152.
-- [ ] **UX6a — counter and installed baseline** (tools). Contract/proof: UX6 §9.1–§9.3.
+- [ ] **UX6a2 — the baseline on the install** (parent; after a republish). Take §9.3's *before* with `node tools/ux-count.mjs --window` on the install, both languages, at 1546 and 680 px, and record it beside §9.3, so every later UX6 row is judged against real counts rather than scaled stories. Contract: UX6 §9.2–§9.3. Proof: the answer files and printed tables, cited in D150.
 - [ ] **UX6d — account attention from known facts** (web-shell, modules; absorbs TOOL4m). Contract/proof: UX6 §6.2–§6.3.
 - [ ] **UX6g2 — guidance follows workspace pages** (driver, cli). Repoint help, registration, plugin, tree and setup wording and the driver's places table from old Workspace/Permissions settings. Contract: D150 §3.1. Proof: twin tables and room goldens; original row lists every producer.
 - [ ] **UX6h — Git inside Repositories** (web-shell; after GIT1d; absorbs GIT1e). Branches tab gets kinds and a pure `graphLanes.ts` graph; remove the Git place. Contract/proof: UX6 §4.4 and D147.
@@ -46,7 +46,6 @@ Today only an untaken open quest (D95) and a chat that served no quest (D126 §5
 
 Contract: `docs/2026-10-07-history-clearing-design.md` (D153), §9 rows/proofs. Order: a → b (service); c (driver, modules) after b; d and e after c; f after e and SESSUX1h; g after d; h last. HIST1a alone closes H1–H2, which D95's and D126's deletes reach today, so it goes first.
 
-- [ ] **HIST1b — service clears closed records** (service; after a). `HistoryDesk` judges and clears quest, ask and failed-session units behind local-only `GET /api/history` and `POST /api/history/clear`; numbered quests are forgotten (`quest_forgotten`) and fetches skip them. Contract: §1, §2.1, §3, §6.3. Proof: desk tests; sync tests (skipped, never refetched or pushed, fetched by a second store); no shared door.
 - [ ] **HIST1c — driver clears the home** (driver, modules, web-shell catalogues; after b). `HistoryClearing` judges trees, landings and processes, calls the service, removes §2.2's files through a helper `SessionDeletion` shares, tidies what names them, reads sizes, adds `HISTORY_PLAN`, `HISTORY_CLEAR`, `history.cleared`. Contract: §2, §4–§5, §6.3, §6.5. Proof: scratch-home clearing tests; deletion's missed files; route and refusal tests.
 - [ ] **HIST1d — terminal history verbs** (driver; after c). `daoris-driver history`, `history clear --workspace`, `quest clear [--failed]` and `ask --clear`, each listing until `--yes`, so a machine with no screen clears as the window does (D50). Contract: §6.2. Proof: in-process command tests with exits, usage golden, and a `--json` field twin against `HISTORY_PLAN`.
 - [ ] **HIST1e — clear on the screen** (web-shell; after c). The quest page's two clears, the ask page's, and the workspace page's *Kept on this machine* reading with *Clear history…*, each listed then pressed; names and the glossary's *clear*. Contract: §6.1, §8. Proof: stories, mocked-bridge vitest (the second press sends the list), parity, `names:check --strict`, bilingual look.
@@ -166,6 +165,7 @@ Contracts: `docs/2026-10-01-workspace-setup-design.md` §8 (D124), `docs/2026-10
 - [ ] **WSSETUP14b — knowledge stays in place** (after a). Declare `documents.knowledge`; index/service read it and sync never writes it. Contract: pilot §1.2–§1.3. Proof: twin tables.
 - [ ] **WSSETUP14c — heading without frontmatter** (after a). Contract: pilot §3.1–§3.2. Proof: `node --test`.
 - [ ] **WSSETUP14d — setup keeps checks green** (after b; absorbs SETUP2). Check before/after; preserve knowledge, repoint moved paths/readers, never finish red; list hand indexes without deletion and use subject names. Contract: pilot §1.1, §1.4–§1.6, §3.3; D129 §4.5. Proof: brief/playbook twins and moved-path family phase.
+- [ ] **INIT1b — the set-up brief names `.gitattributes`** (driver). `SetupBrief` says a set-up changes no source, build or CI file, yet its `daoris init` step now writes `.gitattributes` where a repository has none (INIT1). Say so in the brief, and that an existing one is never touched. Contract: D25's INIT1 note. Proof: `SetupBriefTests` golden.
 - [ ] **WSSETUP14e — finish setup branch** (after d). Exact merge rule in follow-up quest. Contract: pilot §4.2. Proof: composer/press tests and family setup phase.
 - [ ] **WSSETUP14f — finish pilot** (owner; after republish). Both repositories: checks green, knowledge declared, root under 32,768 bytes, default budget restored. Contract: pilot §4. Proof: real pilot.
 - [ ] **KNOW3a — 169-document opaque-name bench**. Measure index whole-reading and skill truncation at scale. Contract: bench results §5/§6.1. Proof: `knowledge-bench.mjs` rerun, tests in verify.
@@ -191,7 +191,6 @@ Contract: `docs/2026-10-01-plugin-distribution-design.md` (D120); §7 carries fu
 - [ ] **PLUGDIST1f — first publish** (owner). Account, trusted publishing and prefix. Contract/proof: §7.
 - [ ] **PLUGDIST1g — offers from packages** (after f). Contract/proof: §7.
 - [ ] **PLUGDIST1h — verify repository signature** (held). Contract/proof: §7; retain its trigger.
-- [ ] **INIT1 — stable initial line endings**. If absent, init creates `.gitattributes` with `* text=auto eol=lf` to prevent bytewise drift under autocrlf. Contract: original setup finding.
 
 ## Safe-work declarations
 
@@ -254,7 +253,6 @@ Contracts: toolchain design (D57, §3 resolution), account-rotation (D125), acco
 ## Flakes and held work
 
 - [ ] **FLAKE1 — bounded diagnostic waits** (driver/modules tests). Instrument repeating plugin-kit, input and ProcessJob failures instead of rerunning blindly. Contract: MOD8, PROC1; sightings in FIX-LOG FLAKE1. Proof: named slow step and three loaded serial green runs.
-- [ ] **DEV3b — a client timeout is not a close** (driver). The headless host reads any `OperationCanceledException` as Ctrl+C, so a look whose own request times out prints *driver: stopped.* and exits 0. Contract: D115's DEV3a note. Proof: a host test that a timeout exits 2, naming it.
 - [ ] **TEST1 — capture Windows Node abort** (web e2e, tools). Preserve JSON reporter/rehearsal exit for `0xC0000409`; no timeout tuning from three sightings. Contract: FIX-LOG TEST1. Proof: next failure captured.
 - [ ] **REH1 — canon-upgrade rehearsal failure** (held). Keep transcripts; no tag until captured failure resolved or owner closes after clean post-canon runs. Contract/evidence: FIX-LOG REH1, `_fixtures/rehearsal-logs/`.
 - [ ] **CANON9 — desktop-winforms pack** (held). Keep local until a second repository needs it; two-repository bar remains. Contract: original pack candidate.

@@ -11344,3 +11344,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CONVNOTE1 — conversation notes read their parts** (web-shell). A driver note on a conversation (a refused sign-in since SIGNIN1b, a chat's cooling) carries `parts`, but `src/Daoris.Web/src/work/conversation.ts:451-475` keeps only `text` and `code`, so 中文 shows the driver's English. Contract: LANG1a/LAND2b note parts, D125's SIGNIN1b note. Proof: vitest rendering `account.signed-out` from both catalogues.
 
 **Outcome** 2026-10-07: a conversation's driver note with parts is worded through the catalogues as session record notes are (`Note`, `noteText`), so `account.signed-out` reads in 中文; an unknown code shows its English marked as recorded. A chat's cooling note still has no parts (CONVNOTE1b). Web vitest 4177 → 4205 with UX7a2 and main. Detail: commit 81e07cb2.
+
+
+## ACCTQUOTE1b — the driver's commands spell their arguments (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1b — the driver's commands spell their arguments** (driver). The driver's sentences print account and workspace names bare (`Harnesses.Accounts.cs` `JoinProblem.Sentence`, `AccountRotation.cs:629/:823`, `Driver.cs:1451`, `Harnesses.cs:2521`, `HelpAgentProposals.cs:158/185/236`), so they break when pasted, and `JoinProblem.Sentence` now differs from the CLI's `joinRefusal`. Contract: D125's ACCTQUOTE1 note, `shell-words.json`. Proof: a C# twin reading the same table; twinned sentence tests.
+
+**Outcome** 2026-10-07: every command the driver prints from an account id or a workspace name goes through `ShellWord`, the twin of `shellword.ts` held to `shell-words.json` (read by code point, as the JS `u` regexes): rotation and sign-in sentences, the signed-out holds, `ClaudeTrust`'s `--profile`, Ask Daoris's terminal lines and the workspace plan's commands; `JoinProblem.Sentence` matches `joinRefusal` again. The lane table sends the fixture to the driver and web gates (separate commit). Repository names, agent ids and free text stay unspelled. Driver fast half +32. Detail: D125's ACCTQUOTE1b note, twins.md, FIX-LOG; commit b885c8df.
+
+
+## DEV3b — a client timeout is not a close (2026-10-07, D115)
+
+> - [ ] **DEV3b — a client timeout is not a close** (driver). The headless host reads any `OperationCanceledException` as Ctrl+C, so a look whose own request times out prints *driver: stopped.* and exits 0. Contract: D115's DEV3a note. Proof: a host test that a timeout exits 2, naming it.
+
+**Outcome** 2026-10-07: the headless host's close is only the person's Ctrl+C ("driver: stopped.", exit 0); a client timeout is "driver: the service did not answer in time — …" on stderr, exit 2, and any other cancellation is a failure (`DriverCommand.Cancelled`). Other `daoris-driver` verbs meeting a client timeout now exit 2 too. Driver fast half +5. Detail: D115's DEV3b note, FIX-LOG; commit 800812d7.
+
+
+## HIST1b — the service clears closed records (2026-10-07, D153)
+
+> - [ ] **HIST1b — service clears closed records** (service; after a). `HistoryDesk` judges and clears quest, ask and failed-session units behind local-only `GET /api/history` and `POST /api/history/clear`; numbered quests are forgotten (`quest_forgotten`) and fetches skip them. Contract: §1, §2.1, §3, §6.3. Proof: desk tests; sync tests (skipped, never refetched or pushed, fetched by a second store); no shared door.
+
+**Outcome** 2026-10-07: `HistoryDesk` lists (`GET /api/history`, one scope: workspace, quest, a quest's failed sessions, or ask) and clears (`POST /api/history/clear`, exactly the units named, each judged again in one transaction) a closed quest's work, an ask's work whole or not at all, and a closed quest's failed sessions; a refused unit stays whole with its word. A record that never left goes, row and log; a numbered quest is forgotten (`quest_forgotten`), both fetches skip it while their cursors move past, nothing is pushed, and its words published again are refused (409). Local host only, no MCP door. Gaps: a clear between the publish check and the publish; the listing untimed on a large store. Service 1178 → 1215, HTTP 68 → 73. Detail: D153's HIST1b note, the service README; commits 96958b65, 9ee3a8f2.
+
+
+## UX6a — the counter (2026-10-07, D150)
+
+> - [ ] **UX6a — counter and installed baseline** (tools). Contract/proof: UX6 §9.1–§9.3.
+
+**Outcome** 2026-10-07: built (the counter); the install's baseline is UX6a2. `tools/ux-count.mjs` counts a screen's regions (list, main, the frame apart) in §9.1's concepts, controls, words and screens, from one page function sent unchanged to Playwright over stories (`--stories`, en light and 中文 dark at 1546 and 680 px) and to the window through `npm run desktop -- eval --file` (`--window`, then `--window --read`). Presses are a declared, unmeasured table. It reproduces UX6f's scratch counts exactly. `tools/ux-count.test.mjs` (18) runs in the web's own chromium. Detail: D150's UX6a note; commits 29d8c8bf, 32d00de8.
+
+
+## INIT1 — stable initial line endings (2026-10-07, D25)
+
+> - [ ] **INIT1 — stable initial line endings**. If absent, init creates `.gitattributes` with `* text=auto eol=lf` to prevent bytewise drift under autocrlf. Contract: original setup finding.
+
+**Outcome** 2026-10-07: `init` writes `.gitattributes` (`* text=auto eol=lf`) where a repository has nothing at that path, applied before the manifest so a failed run leaves a file a re-run keeps; an existing one is kept byte for byte, and named when its last `*` eol rule does not pin LF. It is deliberately never recorded in `daoris.lock`: a locked path the canon does not hold reads as a retirement (D19), so the file is the repository's own from then on, as `daoris.json` is. A driven set-up's brief (`SetupBrief`) does not yet say init may write it. CLI 1313 → 1333. Detail: D25's 2026-10-07 note; commit c6f21162.

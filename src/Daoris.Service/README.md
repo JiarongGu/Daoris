@@ -177,6 +177,27 @@ answered the push as a retry, a fetch brought its own operation back under that 
 move was lost with no error. A store from before the marks seeds them from what it holds, so numbers
 may now have gaps, and nothing reads them as contiguous.
 
+**Finished history is cleared from this machine, listed first and then pressed** (HIST1b, D153).
+`HistoryDesk` judges the records' half of a unit for both of a local host's history doors. A unit is a
+closed quest's work: the quest, each question its sessions published, applied again to what each adds,
+and every session record that served them, a teammate's copies included. Or an ask's work: the ask, its
+intake and every quest it asked, whole or not at all. Or a closed quest's failed sessions of this
+machine's. A unit stays whole, its refusal naming the piece: `open` work in progress (or an open quest's
+failed sessions, its strikes), `asked` (a quest an ask here asked, named alone), `live` (a session still
+running, or a teammate's still reading as running), `needs-you` (a parked session, a done held for the
+person's yes, an undismissed conflict, an ask proposed or open, an unsettled rule proposal one of its
+sessions made), `awaited` (a taken quest waiting on its answer, an open question its session published, a chain's
+open next step), `unpushed` (on a wired workspace, a move or a record of it the remote has not taken),
+`unknown`; a teammate's failed session is listed and kept as `not-ours`. Each unit is judged again inside
+the one transaction that clears it. A record that never left the machine simply goes, its row and its log
+together. **A quest a remote numbered is forgotten**: it goes the same way and `quest_forgotten` keeps its
+id, so the quest fetch and the session fetch pass over it while their cursors move past; no later move and
+no cursor at zero brings it back, and a new store, being a new machine, fetches it whole. Nothing is
+pushed and nothing travels: no tombstone and no operation. The same words published again are refused,
+409 at the HTTP door, in a closed quest's words. After the records, the service removes the quest's and
+the ask's kept files and each settled rule proposal naming a cleared session or the ask; a session's own
+files under the home are the driver's to remove. No MCP tool clears anything.
+
 **A decline may apply only while the quest is open** (PAUSE1c, D132 point 10): `whileOpen: true` on
 `POST /api/quests/{id}/respond`, which an abandon sends, and no MCP tool does. It is refused, 409, on a
 quest taken here. It travels with the flag, and one that reaches the remote after another machine's
@@ -318,6 +339,8 @@ dotnet run --project src/Daoris.Service/Daoris.Service.Http     # http://localho
 | `POST /api/sessions/{id}/say` · `/api/sessions/{id}/taken` | local mode only (MSG1a, D137 §5.3): the person's words to a parked or ended session of this machine's, kept on its record (`text`, `files` kept by name) and answered with the word's id; a park takes them as its answer, kept on its ask at once. A refusal names its word (`refusal`: `no-words`, `not-found`, `not-ours`, `intake`, `stood-down`, `running`). And the words a session took, by their ids (`said`, `by` for a fallback's session): each said after the record ended is kept on the ask as `reopened` |
 | `POST /api/sessions/chat` · `/api/sessions/intake` · `/api/sessions/help` | the record a conversation opens: a chat in a repository (D49 §3); and, local mode only, an intake for an ask (D65 §1b) and Ask Daoris's conversation in its room (HELP1a, D89), recorded in `daoris:help`, one running per room |
 | `DELETE /api/sessions/{id}` · `GET /api/sessions/{id}/deletable` | local mode only: delete a conversation's record that served no quest (SESSUX1f, D126 §5.4), or judge it and delete nothing. A chat that took a quest through its own connector served it (CHATTAKE1), and its `served-quest` names no quest. Only an ended record of this machine's goes, named by no ask's intake and no quest's publisher, and never pushed to a remote; a refusal is a 409 with the ledger's sentence as `error` beside its word (`refusal`: `not-ours`, `live`, `served-quest`, `named`, `on-remote`) and the quest, ask, machine or workspace it names. `GET /api/sessions` answers `deletable` per record, false at a shared deployment |
+| `GET /api/history?workspace=` · `?quest=` · `?quest=&failed=true` · `?ask=` | local mode only: what a clear of finished history would take, deleting nothing (HIST1b, D153). Exactly one scope, `failed` only beside a quest, or 400. A workspace lists each ask that was closed or whose work closed, then each closed quest no ask here asked, a question riding with the work that asked it. Each unit answers `kind` (`quest`, `ask`, `failed`), `id`, `workspace`, `clearable`, the ids it takes (`quests`, `asks`, `sessions`, `teammates`), `forgotten` (its quests a remote numbered, forgotten here rather than removed), `refusal` when it stays, and `kept`, pieces listed and kept; each refusal is its word (`refusal`) beside the desk's sentence (`error`) and the quest, ask, session, machine or workspace it names |
+| `POST /api/history/clear` | local mode only: `{ units: [{ kind, id }] }`, exactly the units the listing gave, each judged again and cleared in one transaction, or kept with its word. 400 for no unit, an unknown kind or a blank id; otherwise 200 with `units`, each `{ unit, cleared, message }` |
 | `POST /api/refresh` | local mode only: re-scan whatever repositories the host can see |
 | `POST /api/feed/sessions` · `/api/feed/entries` · `/api/feed/code-map` | shared mode only: what a desktop's sync feeds up (D47, MAP3b) |
 | `GET /api/feed/held?repository=` | shared mode only: the commits a repository's knowledge, code map and declaration stand on here — what a feeding machine asks git about (SYNC5a, SYNC5b) |

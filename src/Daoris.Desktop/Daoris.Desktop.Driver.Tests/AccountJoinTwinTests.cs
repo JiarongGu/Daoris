@@ -112,4 +112,20 @@ public sealed class AccountJoinTwinTests : IDisposable
         Assert.Contains("this machine's list", sentence);
         Assert.Contains("daoris agent profile order claude-code <account>… --workspace forge", sentence);
     }
+
+    /// <summary>
+    /// The refusal word for word as the CLI's <c>joinRefusal</c> says it (ACCTQUOTE1b): the workspace in its command spelled for
+    /// any shell, in double quotes where a space needs them and a placeholder where no spelling holds, and as itself in the
+    /// sentence around it. Each sentence is the CLI's own output for that workspace.
+    /// </summary>
+    [Theory]
+    [InlineData("a plain workspace is itself", "forge", "`forge` names no `claude-code` account or list of its own, so its starts take this machine's list — join this machine's list, or give `forge` a list of its own first (`daoris agent profile order claude-code <account>… --workspace forge`).")]
+    [InlineData("a space is kept whole in double quotes", "my team", "`my team` names no `claude-code` account or list of its own, so its starts take this machine's list — join this machine's list, or give `my team` a list of its own first (`daoris agent profile order claude-code <account>… --workspace \"my team\"`).")]
+    [InlineData("an ampersand has no spelling, so its placeholder", "R&D", "`R&D` names no `claude-code` account or list of its own, so its starts take this machine's list — join this machine's list, or give `R&D` a list of its own first (`daoris agent profile order claude-code <account>… --workspace <workspace>`).")]
+    public void A_refused_join_is_said_as_the_cli_says_it(string why, string workspace, string sentence)
+    {
+        var problem = Read("{}").JoinProblemOf("claude-code", workspace);
+
+        Assert.True(problem!.Sentence("claude-code") == sentence, $"{why}: {problem.Sentence("claude-code")}");
+    }
 }

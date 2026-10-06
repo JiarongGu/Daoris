@@ -33,7 +33,7 @@ Nothing is published until the first release (D105). Then every command runs as 
 pinned version:
 
 ```sh
-npx daoris@0.0.1 init     # write daoris.json, report available packs
+npx daoris@0.0.1 init     # write daoris.json (and a .gitattributes if none), report available packs
 npx daoris@0.0.1 sync     # materialize the doctrine, write daoris.lock
 npx daoris@0.0.1 check    # the gate — offline, exit 1 on drift
 ```
@@ -46,7 +46,7 @@ no command fetches anything, and `check` works offline.
 | Command | What it does |
 |---|---|
 | `analyze` | **What adopting would do here** — collisions, duplicates, projected budget. Writes nothing |
-| `init` | Detects what the repository already has, writes `daoris.json`, reports available packs |
+| `init` | Detects what the repository already has, writes `daoris.json`, reports available packs. With no `.gitattributes`, writes one pinning LF (`* text=auto eol=lf`), the repository's own from then on; one already there is never touched, only named when it pins nothing |
 | `sync` | Materializes the manifest's packs — the rules region into `AGENTS.md`, knowledge and skills into `.claude/` — writes `daoris.lock`, regenerates the index of knowledge and skills (`.claude/INDEX.md`) that the region points to |
 | `check` | Drift, staleness, index freshness. **Offline.** Exit 1 on any failure; the core budget is reported, never enforced |
 | `upstream <file>` | Promotes a locally-improved canonical file back into the canon |

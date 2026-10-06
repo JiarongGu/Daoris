@@ -260,6 +260,6 @@ public static class ClaudeTrust
         $"`{tree}` has never been trusted by this agent on this machine, so it ignores the "
         + "repository's own `permissions.allow` — a session here can do the work but cannot take or "
         + "close its quest. Run `claude` in that directory once and accept the trust prompt, or "
-        + $"`daoris agent trust claude-code \"{tree}\"{(profile is null ? "" : $" --profile {profile}")} --yes`. "
+        + $"`daoris agent trust claude-code \"{tree}\"{(profile is null ? "" : $" --profile {ShellWord.Of(profile, ShellWord.Account)}")} --yes`. "
         + "Daoris sets that flag only when you tell it to: it is your grant to give.";
 }

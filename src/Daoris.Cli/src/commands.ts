@@ -13,6 +13,7 @@ import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.ts';
 import { formerDocuments, lockLayout } from './layout.ts';
 import { describeLink, linkProblems } from './links.ts';
 import { candidateDocuments, sayCandidates } from './documents.ts';
+import { applyLineEndings, LINE_ENDINGS_RULE, planLineEndings } from './lineendings.ts';
 import { flagValue } from './args.ts';
 import { readRemotes, redactKey } from './remotemap.ts';
 import { DaorisError } from './errors.ts';
@@ -65,6 +66,10 @@ export function commandInit(
   const harness = resolveHarness(flagValue(argv, '--harness') ?? DEFAULT_HARNESS);
   const older = harness.id === DEFAULT_HARNESS;
   const canon = readCanon(resolveCanonRoot(packageRoot));
+  // Planned before anything is written and applied before the manifest (INIT1): a run that fails between the two
+  // leaves the file a re-run keeps, rather than a manifest that refuses the re-run before it is written.
+  const lineEndings = planLineEndings(root);
+  applyLineEndings(root, lineEndings);
 
   writeManifest(root, {
     // The npm package the canon shipped in, at the canon's version (DIST1, D105): provenance, and the
@@ -84,6 +89,9 @@ export function commandInit(
   });
 
   write(`daoris: wrote ${MANIFEST_FILE} (core only — add packs deliberately)`);
+  if (lineEndings.state === 'create') {
+    write(`daoris: wrote ${lineEndings.path} (${LINE_ENDINGS_RULE} — every checkout keeps the LF sync writes)`);
+  }
   write('');
   write('  fill in `domain` — what this repo is, what it owns, what it accepts. It is how');
   write('  siblings know what is worth asking of you.');
@@ -117,6 +125,12 @@ export function commandInit(
   if (links.length) {
     write('');
     for (const problem of links) write(`  ${describeLink(problem)}`);
+  }
+  // The repository's own file, kept as it is (INIT1): said, because a checkout with core.autocrlf holds CRLF.
+  if (lineEndings.state === 'kept' && lineEndings.pinned === false) {
+    write('');
+    write(`  ${lineEndings.path} is this repo's own, left as it is: it pins no line endings for every file, so a`);
+    write(`  machine with core.autocrlf checks out CRLF where sync wrote LF. \`${LINE_ENDINGS_RULE}\` pins them.`);
   }
   // Named and never written (D122 §2.7): declaring is the repository's act, done by its own session.
   sayCandidates(candidateDocuments(root), write);

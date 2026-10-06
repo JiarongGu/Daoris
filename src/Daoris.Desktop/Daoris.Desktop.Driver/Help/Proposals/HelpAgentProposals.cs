@@ -155,7 +155,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         }
 
         var owner = door.AccountsOf;
-        var terminal = $"daoris agent profile default {owner} {account}" + (workspace is null ? "" : $" --workspace {workspace}");
+        var terminal = $"daoris agent profile default {owner} {ShellWord.Of(account, ShellWord.Account)}" + Scoped(workspace);
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 
         if (account.Length == 0)
@@ -182,7 +182,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         {
             return Refused($"`{owner}`'s list {Where(workspace)} is {string.Join(", then ", list)}, and `{account}` is not in it — the list "
                 + "is every account its starts may run on, and the default is where they begin within it. "
-                + $"`daoris agent profile order {owner} {string.Join(' ', list.Append(account))}{Scoped(workspace)}` adds it, or make "
+                + $"`daoris agent profile order {owner} {ShellWord.Words(list.Append(account), ShellWord.Account)}{Scoped(workspace)}` adds it, or make "
                 + "one of the list the default.");
         }
 
@@ -212,7 +212,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
         var change = proposal.AccountUse ?? new UseChange();
         var terminal = $"daoris agent profile use {owner}"
             + (change.Use is { Length: > 0 } mode ? $" {mode}" : "")
-            + (change.Keep?.Trim() is { Length: > 0 } kept ? $" --keep {kept}" : change.NoKeep ? " --no-keep" : "")
+            + (change.Keep?.Trim() is { Length: > 0 } kept ? $" --keep {ShellWord.Of(kept, ShellWord.Account)}" : change.NoKeep ? " --no-keep" : "")
             + (change.Early is { } early ? $" --early {(early ? "on" : "off")}" : "")
             + (change.Near is { } near ? $" --near {near}" : "")
             + Scoped(workspace);
@@ -279,7 +279,8 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
 
     private static string Where(string? workspace) => workspace is null ? "on this machine" : $"in `{workspace}`";
 
-    private static string Scoped(string? workspace) => workspace is null ? "" : $" --workspace {workspace}";
+    /// <summary>A scope in a command: nothing for the machine, <c>--workspace</c> for one workspace, spelled for any shell (ACCTQUOTE1b).</summary>
+    private static string Scoped(string? workspace) => workspace is null ? "" : $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}";
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
     {

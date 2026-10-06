@@ -37,7 +37,8 @@ internal sealed class HelpAccountProposals : IHelpProposalKind
         }
 
         var owner = door.AccountsOf;
-        var terminal = $"daoris agent settings {owner} --account {account}"
+        // ACCTQUOTE1b: the account spelled for any shell, as every command the driver names spells it.
+        var terminal = $"daoris agent settings {owner} --account {ShellWord.Of(account, ShellWord.Account)}"
             + (model is null ? "" : $" model {model}") + (effort is null ? "" : $" effort {effort}");
         HelpPlan Refused(string why) => new(why, "", terminal, null);
 

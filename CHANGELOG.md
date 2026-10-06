@@ -27,12 +27,20 @@ with the version and date at release.
 - An account refused for its sign-in after Daoris last read it signed in is asked once more before it
   is passed over, so signing in again is noticed at the next start. `daoris-driver --once` and
   `--until-idle` print each report as it is made and wait for their sessions before exiting.
+- `daoris init` writes a `.gitattributes` holding `* text=auto eol=lf` where a repository has none, so
+  the files `sync` writes keep their line endings on Windows; an existing one is never touched.
+- The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
+  quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
+  machine only. The driver, terminal and screen doors follow (HIST1c–e).
 - Deleting a quest or a conversation no longer lets the next change reuse a number a remote already
   holds, which could lose that change silently on a workspace with a remote.
 - A refused account rename, workspace choice or add-flow answer stays open with what was entered and
   says why inside it. Terminal hints spell account and workspace names so they paste as one argument in
   Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would; Settings'
-  account hints spell them the same way.
+  account hints spell them the same way, and so do the driver's own sentences and Ask Daoris's
+  terminal lines.
+- `daoris-driver` exits 2 naming the timeout when the service does not answer in time; only Ctrl+C
+  reads as a stop.
 
 The first version: doctrine that installs, is checked, and flows back.
 
