@@ -1,6 +1,7 @@
 import type { AgentPart } from './agents/agents';
 import type { View } from './commands';
 import type { StarterDoor } from './help/starters';
+import type { KnowledgeMode } from './knowledge/modes';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from './projects/tabs';
 import type { SettingsAnchor } from './SettingsView';
 import { LIST_BOUNDS, type ListView } from './work/layout';
@@ -31,11 +32,11 @@ export function projectsItem(item: string): { workspace: string } | { repository
 
 /**
  * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, a repository page's tab
- * or a workspace page's tab and Setup section, or the repository whose code map the Map opens on.
+ * or a workspace page's tab and Setup section, the repository whose code map the Map opens on, or Knowledge's mode.
  */
 export type OpenPart = {
   anchor?: SettingsAnchor; drawer?: 'add' | 'import'; tab?: ProjectTab; code?: string; agentPart?: AgentPart;
-  workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection;
+  workspaceTab?: WorkspaceTab; workspaceSection?: WorkspaceSection; knowledge?: KnowledgeMode;
 };
 
 /** What opening a view does, as a value. */
@@ -71,6 +72,11 @@ export type Opening = {
    */
   workspaceTab?: WorkspaceTab;
   workspaceSection?: WorkspaceSection;
+  /**
+   * The mode Knowledge opens in (UX6i, D150 §2.2): a door into Search or Convergence names it, and its item is chosen in
+   * that mode's list. A door into the place names none, and it opens in the mode it was left in.
+   */
+  knowledge?: KnowledgeMode;
 };
 
 const listed =(view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -88,7 +94,12 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}, h
   // A section is a part of Setup, so a door naming one opens Setup.
   const workspaceTab = part.workspaceTab ?? (part.workspaceSection ? 'setup' : undefined);
   const named = item || (view === 'projects' && workspaceTab && here ? workspaceItem(here) : null);
-  if (named && listed(view)) plan.chosen = { view, item: named };
+  if (view === 'knowledge') {
+    // Each mode's list keeps its own chosen item, so an item is chosen only in the mode the door names: with none it
+    // could be either list's, and is never guessed at.
+    if (part.knowledge) plan.knowledge = part.knowledge;
+    if (named && part.knowledge) plan.chosen = { view: part.knowledge, item: named };
+  } else if (named && listed(view)) plan.chosen = { view, item: named };
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
   if (view === 'projects' && part.drawer) plan.drawer = part.drawer;

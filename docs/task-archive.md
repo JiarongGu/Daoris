@@ -11484,3 +11484,24 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AGENTREAD1c — the reads twins agree on names** (cli). Add the driver's seven non-ASCII rows (Chinese, accented, HTML marks, kept escapes) to `account-reads.json`, refresh `accountreads.ts`'s stale header, and decide case-folding: the CLI's `toUpperCase` finds `straße` for `STRASSE`, the driver's `OrdinalIgnoreCase` does not. Contract: D125's AGENTREAD1b note, twins.md. Proof: both suites over the widened table.
 
 **Outcome** 2026-10-07: the shared reads table holds the driver's seven rows beyond plain ASCII and five case rows (30 read, 24 keep, 9 forget), and `accountreads.ts` compares a name as .NET's `OrdinalIgnoreCase` does, measured against it code point by code point: simple per-letter capitals, except `ı` and `ſ` keep themselves and the Greek letters with a subscript iota take their one-letter capital. So `straße` is not `STRASSE` and a dotless i is not an I. Letters given case in Unicode 16–17 depend on each runtime's data, and the driver differs from itself there (ICU on the desktop, invariant in the headless host). The CLI's other twins are CASEFOLD1. Driver's AccountReads filter 68 → 80. Detail: D125's AGENTREAD1c note; commits 0764d442, a0582a1f, bef4c7d8.
+
+
+## ORIENT1h — the digest and the scanner read one note fixture (2026-10-07, D134)
+
+> - [ ] **ORIENT1h — the digest and the scanner read one note fixture** (tools, service). `DecisionNotesTests` checks the service against rows `orient-index.mjs` wrote once for an inline fixture, so a note format changed only on the tools side (`orient-index.mjs`, `doc-duplicates.mjs`) passes every gate. Move the fixture to a shared file both suites read. Contract: D134's ORIENT1g note, twins.md. Proof: changing one row fails both suites.
+
+**Outcome** 2026-10-07: the decisions digest and the service's scanner are held to one note table, `tools/orient-index-fixtures/decision-notes.json` (four decisions, 24 label lines), row for row; a changed row failed both suites. The digest's half (`tools/orient-index.test.mjs`) runs in `verify`, a step CLAUDE.md now names; the lane table sends the table to the service gate (separate commit). The CLI suite's own digest cases keep their copies. Service 1281 → 1296. Detail: D134's ORIENT1h note, twins.md; commit 9ac3f4c3.
+
+
+## UX6i — Knowledge unites Search and Convergence (2026-10-07, D150)
+
+> - [ ] **UX6i — Knowledge unites Search and Convergence** (web-shell). Contract/proof: UX6 §2.2.
+
+**Outcome** 2026-10-07: Knowledge is one place on the bar (Ctrl+6, eight places now), its list's head switching between Search and Convergence, each mode keeping its list, page and memory under its old keys; the mode is remembered. Every old door lands on its mode (Ctrl+Shift+F, "Search Daoris for it", a palette-only "Go to: Convergence" keeping `go.convergence`, the Map's finding), and an old place id Ask Daoris stored maps to Knowledge. Stories count the bar at 11 controls (the install measured 12; UX6j's footer reaches 9). The pane's old per-view width is not read once. Ask Daoris's driver and service words are UX6i2. Web vitest 4270 → 4299. Detail: D150's UX6i note; commits a43e4c54, b68a962e.
+
+
+## LANDSVC1 — proposals advertise auto-accept (2026-10-07, D145)
+
+> - [ ] **LANDSVC1 — proposals advertise auto-accept** (service). Add the flag to setting description and landing refusal so discovery matches the room. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
+
+**Outcome** 2026-10-07: `setting_propose`'s description and `value`, and the service box's landing refusal, name `--auto-accept` in the room's words (`HelpRoomLanding.cs`): on a branch rule, a quest's done lands its work and the rule's plugin pushes and opens a pull request with no press; the person's standing say-so, proposed only when asked and never on a merge. The box's shape check is unchanged. Service 1296 → 1300. Detail: D145's LANDSVC1 note; commit 7bae0068.

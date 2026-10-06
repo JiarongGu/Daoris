@@ -1,5 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
+import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { StarterDoor } from './starters';
 
@@ -16,9 +17,19 @@ export type HelpPlace = { view: string; domain?: string | null; part?: string | 
  * sees its card and lists these places in Ask Daoris's room. They share no code; each side's test holds
  * the same table, and they change together.
  */
-export const PLACE_VIEWS: readonly View[] = [
+export const PLACE_VIEWS: readonly (Exclude<View, 'knowledge'> | KnowledgeMode)[] = [
   'overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'agents', 'settings',
 ];
+
+/**
+ * The views the twin still names that became Knowledge's two modes with UX6i (D150 §2.2): a go naming one opens Knowledge
+ * in that mode, so the room's places hold while the driver's twin still spells them apart, and a go kept in an earlier
+ * conversation lands on the place rather than nowhere; the twins change together when it moves.
+ */
+const MODES: Readonly<Record<KnowledgeMode, StarterDoor>> = {
+  search: { view: 'knowledge', knowledge: 'search' },
+  convergence: { view: 'knowledge', knowledge: 'convergence' },
+};
 
 export const PLACE_DOMAINS: readonly (SettingsSection | 'workspace' | 'permissions')[] = [
   'start', 'appearance', 'ai', 'workspace', 'driver', 'permissions', 'plugins', 'browser', 'logs',
@@ -62,12 +73,15 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
  * @remarks
  * A go names no item: Repositories' Setup opens on the repository its list has chosen, an agent's part on the agent
  * that has it (UX6e), and a retired domain's part on the workspace in view's page (UX6g), as the room tells the helper.
+ * Search and Convergence open Knowledge in that mode (UX6i), and have no parts.
  */
 export function placeDoor(place: HelpPlace): StarterDoor | null {
-  const view = PLACE_VIEWS.find((known) => known === place.view);
-  if (!view) return null;
+  const named = PLACE_VIEWS.find((known) => known === place.view);
+  if (!named) return null;
   const domain = place.domain ?? null;
   const part = place.part ?? null;
+  if (named === 'search' || named === 'convergence') return domain === null && part === null ? MODES[named] : null;
+  const view: View = named;
 
   if (domain !== null) {
     const section = view === 'settings' ? PLACE_DOMAINS.find((known) => known === domain) : undefined;

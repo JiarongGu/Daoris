@@ -31,9 +31,8 @@ import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts, useToasts,
 } from './ui';
 import { OverviewView } from './OverviewView';
-import { useConvergenceView } from './ConvergenceView';
+import { useKnowledgeMode, useKnowledgeView } from './KnowledgeView';
 import { MapView } from './MapView';
-import { useSearchView } from './SearchView';
 import { useQuestsView } from './QuestsView';
 import { useProjectsView } from './ProjectsView';
 import {
@@ -64,7 +63,7 @@ import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
 import {
-  type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, MENUS, paletteCommands, shortcutGroups,
+  type Command, type CommandDoors, type CommandState, commandTable, type FrameIntent, listOf, MENUS, paletteCommands, shortcutGroups,
   type View, VIEWS,
 } from './commands';
 import { CommandPalette } from './work/CommandPalette';
@@ -109,11 +108,11 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 /**
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
  * `layout.menu.list.<view>`. Sessions' first (FRAME1b), then Plugins, built on the frame (PLUGUI1b), then Quests
- * (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g), and Convergence and Search (FRAME1f): every view but
- * Overview and Map, which have none (§4).
+ * (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g), and Convergence and Search (FRAME1f), one place since UX6i:
+ * every view but Overview and Map, which have none (§4). Knowledge names its list by its mode's (`listOf`).
  */
 const LISTED: ReadonlySet<ListView> = new Set<ListView>([
-  'sessions', 'plugins', 'quests', 'projects', 'convergence', 'search', 'agents', 'settings',
+  'sessions', 'plugins', 'quests', 'projects', 'knowledge', 'agents', 'settings',
 ]);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
@@ -149,6 +148,9 @@ export function App() {
   // What each view's list remembers (D118 §3f): its closing, its width, its chosen item, its filters.
   const lists = useListPanes();
   const attending = lists.pane('sessions').chosen;
+  // Knowledge's mode (UX6i, D150 §2.2): Search or Convergence, remembered for the place. Held here, where every door is
+  // applied, since a door into either names it.
+  const [knowledgeMode, chooseKnowledgeMode] = useKnowledgeMode(lists);
   // A domain remembered from before it left Settings (Agents, UX6e; Workspace and Permissions, UX6g) reads as Appearance,
   // which Settings opens on, so Ask Daoris is told the domain shown.
   const rememberedSection = lists.pane('settings').chosen;
@@ -298,9 +300,11 @@ export function App() {
   // What is used, and what never is (LOG1b): each view the person lands on, into the machine log — once
   // the shell has answered, so a relaunch into Sessions is not first logged as the Overview it stands in for.
   const settling = driver.isLoading;
+  // Knowledge says its mode too (UX6i), so the log still tells Search's use from Convergence's, as their views did.
+  const loggedMode = view === 'knowledge' ? knowledgeMode : null;
   useEffect(() => {
-    if (!settling) logEvent('view.opened', { view });
-  }, [view, settling]);
+    if (!settling) logEvent('view.opened', loggedMode ? { view, mode: loggedMode } : { view });
+  }, [view, loggedMode, settling]);
 
   // The Plugins view (PLUGUI1b, D119): held on every view, so what its pages hold — a trial's report, an update's
   // plan — stays while Daoris is open; it asks the driver for nothing until it is in front.
@@ -457,10 +461,16 @@ export function App() {
    * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
    */
   const apply = (plan: Opening) => {
+    // Knowledge's mode first (UX6i): a switch reads that mode's remembered choice again, and an item a door names in it
+    // is then chosen now, never a remembered choice.
+    if (plan.knowledge) chooseKnowledgeMode(plan.knowledge);
     if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
     // A view opened by a door that names nothing reopens what its list chose only while it still waits (UX6b, D150 §8):
     // the list reads it again, and lets go of one that closed or went. A door that names an item has it chosen above.
-    else if (plan.view !== view && isListed(plan.view)) lists.reopen(plan.view);
+    // Knowledge's chosen item is its mode's list's.
+    else if (plan.view !== view && isListed(plan.view)) {
+      lists.reopen(plan.view === 'knowledge' ? plan.knowledge ?? knowledgeMode : plan.view);
+    }
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
     setAgentPart(plan.agentPart ?? null);
     if (plan.drawer === 'add') setAddRequested(true);
@@ -544,6 +554,7 @@ export function App() {
         .filter((tool) => tool.present)
         .map((tool) => ({ name: tool.name, label: tool.product ?? tool.name })),
       domains: SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine).map(({ id, label }) => ({ id, label })),
+      knowledge: knowledgeMode,
       // The session attended on Sessions, with what its header offers; *Answer…* is its card's, offered where its row's is.
       session: view === 'sessions' && offered
         ? { acts: live, answer: attached && attendedSession !== null && offeredActs({ session: attendedSession }, 'row').includes('answer') }
@@ -584,9 +595,10 @@ export function App() {
     },
     find: () => findTarget(document, view)?.focus(),
     searchKnowledge: () => {
-      open('search');
+      // Knowledge's Search (UX6i), whatever mode the place was left in.
+      open('knowledge', null, { knowledge: 'search' });
       // A beat after the view is drawn, as Quick Ask's box is opened (DOCK1d): its box is in its list.
-      window.setTimeout(() => findTarget(document, 'search')?.focus(), 0);
+      window.setTimeout(() => findTarget(document, 'knowledge')?.focus(), 0);
     },
     copyId: () => { offers.run('copy'); },
     palette: () => setPalette(true),
@@ -600,6 +612,7 @@ export function App() {
     language: (language) => void i18n.changeLanguage(language),
     refresh: onRefresh,
     go: (target) => open(target),
+    knowledge: (mode) => open('knowledge', null, { knowledge: mode }),
     agent: (name) => open('agents', name),
     agentPart: (part) => open('agents', null, { agentPart: part }),
     region: (previous) => focusRegion(document, previous),
@@ -752,36 +765,24 @@ export function App() {
     importRequested,
     onImportOpened: () => setImportRequested(false),
   });
-  // Search and Convergence (FRAME1f, D118 §2): held on every view, as Quests is, and asking the service nothing until
-  // in front; each list's memory is its chosen item and its one filter, *local only* and the similarity (§3f).
-  const searchPane = lists.pane('search');
-  const search = useSearchView({
-    active: view === 'search',
-    chosen: searchPane.chosen,
-    onChoose: (item) => lists.choose('search', item),
-    filters: searchPane.filters,
-    onFilters: (filters) => lists.setFilters('search', filters),
+  // Knowledge (UX6i, D150 §2.2): Search and Convergence (FRAME1f, D118 §2) as one place, held on every view as Quests is
+  // and asking the service nothing until in front. Each mode's list memory is its chosen item and its one filter, *local
+  // only* and the similarity (§3f), as it was; a mode chosen at the list's head is a door into the place in that mode.
+  const knowledge = useKnowledgeView({
+    active: view === 'knowledge',
+    mode: knowledgeMode,
+    onMode: (mode) => open('knowledge', null, { knowledge: mode }),
+    lists,
     notify,
     semantic: status.data?.semantic ?? false,
-    onConverge: () => open('convergence'),
     handed: searchAsked,
     onHanded: () => setSearchAsked(null),
-  });
-  const convergencePane = lists.pane('convergence');
-  const convergence = useConvergenceView({
-    active: view === 'convergence',
-    chosen: convergencePane.chosen,
-    onChoose: (item) => lists.choose('convergence', item),
-    filters: convergencePane.filters,
-    onFilters: (filters) => lists.setFilters('convergence', filters),
-    notify,
-    semantic: status.data?.semantic ?? false,
   });
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
     where: {
-      view, workspace: scope.workspace ?? null, settings: settingsSection,
+      view, workspace: scope.workspace ?? null, settings: settingsSection, knowledge: knowledgeMode,
       // Where Sessions' views stand (HELP2): the helper cannot see the window, and guessed without it.
       layout: {
         right: viewsIn(placements.places, 'right'),
@@ -847,10 +848,10 @@ export function App() {
    * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
    * Plugins was built on the frame (PLUGUI1b), and Quests (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g),
-   * Convergence and Search (FRAME1f) moved onto it: each hands its list and its pages whole. Overview and Map have
-   * no list (§4), and their page is their main area.
+   * Convergence and Search (FRAME1f, Knowledge since UX6i) moved onto it: each hands its list and its pages whole.
+   * Overview and Map have no list (§4), and their page is their main area.
    */
-  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, convergence, search, agents, settings };
+  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, knowledge, agents, settings };
 
   // The right-click menu's doors (CTX1, D138 §3): a copy, said once copied, since nothing on the screen shows it; Search
   // with the words in its box; and, a shell's, Quick Ask with them quoted and Daoris's browser at the address.
@@ -861,7 +862,7 @@ export function App() {
     search: (text) => {
       openings.current += 1;
       setSearchAsked({ text, id: openings.current });
-      open('search');
+      open('knowledge', null, { knowledge: 'search' });
     },
     ...(attached ? {
       ask: (text: string) => askQuickly(text, true),
@@ -892,7 +893,7 @@ export function App() {
             key={mapCode ?? ''}
             code={mapCode}
             notify={notify}
-            onOpenConvergence={() => open('convergence')}
+            onOpenConvergence={() => open('knowledge', null, { knowledge: 'convergence' })}
             onOpenQuest={openQuest}
           />
         )}
@@ -961,7 +962,7 @@ export function App() {
             <div className={TOGGLES_ROOM}>
               <LayoutToggles
                 regions={['list', 'panel', 'right']}
-                list={listed ? t(`layout.list.${view}`) : undefined}
+                list={listed ? t(`layout.list.${listOf(view, knowledgeMode)}`) : undefined}
                 closed={{ list: !listShown, panel: closings.panel, right: closings.dock }}
                 onToggle={toggleRegion}
               />
@@ -972,7 +973,7 @@ export function App() {
           <div className={TOGGLES_ROOM}>
             <LayoutToggles
               regions={['list']}
-              list={t(`layout.list.${view}`)}
+              list={t(`layout.list.${listOf(view, knowledgeMode)}`)}
               closed={{ list: !listShown, panel: true, right: true }}
               onToggle={toggleRegion}
             />

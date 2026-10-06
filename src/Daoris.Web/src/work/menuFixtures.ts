@@ -25,6 +25,7 @@ export const MENU_STATE: CommandState = {
     { id: 'tools', label: 'settings.domain.tools' }, { id: 'plugins', label: 'settings.domain.plugins' },
     { id: 'browser', label: 'settings.domain.browser' }, { id: 'logs', label: 'settings.domain.logs' },
   ],
+  knowledge: 'search',
   session: null,
   quest: null,
   record: false,

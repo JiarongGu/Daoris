@@ -38,13 +38,16 @@ async function chooseRepository(page: Page, name: string) {
   await expect(record(page).getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
 }
 
-/** Search's list pane (FRAME1f): the box, *local only* and the hits. Its place is named exactly: the command center says *Search* too. */
-const searchList = (page: Page) => page.getByRole('complementary', { name: 'Search', exact: true });
-const toSearch = (page: Page) =>
-  page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: 'Search', exact: true }).click();
+/**
+ * Knowledge's list pane (UX6i, D150 §2.2): the two-way choice at its head, then Search's box, *local only* and the hits,
+ * or Convergence's similarity and findings (FRAME1f), by the mode chosen there.
+ */
+const knowledgeList = (page: Page) => page.getByRole('complementary', { name: 'Knowledge', exact: true });
+const mode = (page: Page, name: 'Search' | 'Convergence') => knowledgeList(page).getByRole('radio', { name, exact: true });
 
-/** Convergence's list pane (FRAME1f): the similarity, then the findings. */
-const convergenceList = (page: Page) => page.getByRole('complementary', { name: 'Convergence' });
+/** Knowledge from the bar: on Search in a fresh browser, and on the mode it was left in after. */
+const toKnowledge = (page: Page) =>
+  page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: 'Knowledge', exact: true }).click();
 
 /** Quests' ＋, one control with two kinds, Ask first, then New quest (D118 §2). */
 async function make(page: Page, kind: 'Ask' | 'New quest') {
@@ -701,15 +704,17 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
 /**
  * Search on the frame (FRAME1f, D118 §2): the box, *local only* and the hits are its list, and the entry a hit names is
  * read in the main area, as it is written, where it was the reader drawer over the side bar and the panel (audit SR4).
- * The game's own knowledge answers a search made from outside it, as the family rehearsal's search does over HTTP.
+ * The game's own knowledge answers a search made from outside it, as the family rehearsal's search does over HTTP. Since
+ * UX6i it is Knowledge's Search, which a fresh browser's Knowledge opens on.
  */
 test('search finds what the game knows, and its entry reads whole in the main area (FRAME1f)', async ({ page }) => {
   await page.goto('/');
-  await toSearch(page);
-  const box = searchList(page).getByRole('searchbox', { name: 'search knowledge' });
+  await toKnowledge(page);
+  await expect(mode(page, 'Search')).toHaveAttribute('aria-checked', 'true');
+  const box = knowledgeList(page).getByRole('searchbox', { name: 'search knowledge' });
   await expect(box).toBeFocused();
   await box.fill('chunk hydration');
-  const hit = searchList(page).getByRole('listitem', { name: 'world-streaming', exact: true });
+  const hit = knowledgeList(page).getByRole('listitem', { name: 'world-streaming', exact: true });
   await expect(hit).toBeVisible();
   await expect(hit.locator('mark').first()).toBeVisible();
 
@@ -722,36 +727,38 @@ test('search finds what the game knows, and its entry reads whole in the main ar
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // The list remembers *local only* and the entry chosen across a reload (§3f), and not what was typed.
-  const localOnly = () => searchList(page).getByRole('checkbox', { name: "Each repository's own only" });
+  const localOnly = () => knowledgeList(page).getByRole('checkbox', { name: "Each repository's own only" });
   await localOnly().click();
   await expect(localOnly()).not.toBeChecked();
   await page.reload();
-  await toSearch(page);
+  await toKnowledge(page);
   await expect(localOnly()).not.toBeChecked();
-  await expect(searchList(page).getByRole('searchbox', { name: 'search knowledge' })).toHaveValue('');
+  await expect(knowledgeList(page).getByRole('searchbox', { name: 'search knowledge' })).toHaveValue('');
   await expect(record(page).getByRole('heading', { level: 1, name: 'world-streaming', exact: true })).toBeVisible();
 });
 
 /**
  * Convergence on the frame (FRAME1f, D118 §2): the similarity and the findings are its list, and a finding is read in
  * the main area, the service's sentence and then each entry whole (audit CO4). Whatever this host answers at the list's
- * start is asked first, and the page must say THAT: the example family's own entries may share nothing.
+ * start is asked first, and the page must say THAT: the example family's own entries may share nothing. Since UX6i it
+ * is Knowledge's Convergence, chosen at the list's head and remembered for the place.
  */
 test("convergence keeps its similarity, and a finding reads under the service's sentence (FRAME1f)", async ({ page, request }) => {
   const findings = await (await request.get('/api/convergence?minimumSimilarity=0.75')).json() as
     { suggestion: string; entries: { title: string }[] }[];
   await page.goto('/');
-  await nav(page, 'Convergence').click();
-  const slider = () => convergenceList(page).getByRole('slider');
+  await toKnowledge(page);
+  await mode(page, 'Convergence').click();
+  const slider = () => knowledgeList(page).getByRole('slider');
   await expect(slider()).toHaveValue('0.75');
 
   if (findings.length === 0) {
-    await expect(convergenceList(page).getByText('Nothing converges at 0.75 or above')).toBeVisible();
+    await expect(knowledgeList(page).getByText('Nothing converges at 0.75 or above')).toBeVisible();
     await expect(record(page).getByText('Choose a finding')).toBeVisible();
   } else {
     const first = findings[0]!;
     const title = [...new Set(first.entries.map((entry) => entry.title))].join(' · ');
-    await convergenceList(page).getByRole('listitem', { name: title, exact: true }).first().getByRole('button').click();
+    await knowledgeList(page).getByRole('listitem', { name: title, exact: true }).first().getByRole('button').click();
     await expect(record(page).getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible();
     // Verbatim, its backticked command set as code (`Inline`): the words are the service's.
     await expect(record(page).getByText(first.suggestion.replace(/`/g, ''))).toBeVisible();
@@ -762,12 +769,14 @@ test("convergence keeps its similarity, and a finding reads under the service's 
   // The similarity is the list's memory (§3f): moved by its keys, and kept across a reload.
   await slider().focus();
   for (let step = 0; step < 5; step += 1) await page.keyboard.press('ArrowLeft');
-  await expect(convergenceList(page).getByText('0.70', { exact: true })).toBeVisible();
+  await expect(knowledgeList(page).getByText('0.70', { exact: true })).toBeVisible();
   // Kept once it has held still, not at every step: a reload before then would reopen the last value kept.
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem('daoris.list.convergence.filters')))
     .toBe('{"threshold":0.7}');
   await page.reload();
-  await nav(page, 'Convergence').click();
+  // The place opens on the mode it was left in (UX6i).
+  await toKnowledge(page);
+  await expect(mode(page, 'Convergence')).toHaveAttribute('aria-checked', 'true');
   await expect(slider()).toHaveValue('0.7');
 });
 
@@ -844,6 +853,9 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   // (Overview, on landing) — Settings among them, since a browser has appearance to set (D66).
   await expect(palette.getByRole('option', { name: /Quests/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /Search/ })).toBeVisible();
+  // Knowledge, and its Convergence by the door it had as a place (UX6i); its Search is *Search knowledge*, above.
+  await expect(palette.getByRole('option', { name: /Go to: Knowledge/ })).toBeVisible();
+  await expect(palette.getByRole('option', { name: /Go to: Convergence/ })).toBeVisible();
   // Settings itself, not a domain's row (*Settings: Appearance*), which the palette lists too since UX7a.
   await expect(palette.getByRole('option', { name: /^Settings(?!:)/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /^Overview/ })).toHaveCount(0);

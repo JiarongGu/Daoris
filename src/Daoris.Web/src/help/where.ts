@@ -1,5 +1,6 @@
 import type { Session } from '../api';
 import type { View } from '../commands';
+import type { KnowledgeMode } from '../knowledge/modes';
 import type { SettingsSection } from '../SettingsView';
 import { answeredPark } from '../ui';
 import type { ViewId } from '../work/placements';
@@ -13,6 +14,8 @@ export type HelpWhere = {
   /** The workspace in scope, or null for every workspace. */
   workspace: string | null;
   settings?: SettingsSection | null;
+  /** Knowledge's mode on Knowledge (UX6i): which of its two lists the person is looking at. */
+  knowledge?: KnowledgeMode | null;
   /**
    * `answered` is a park the person answered (ANSWER1f), read by `answeredPark`: the same session goes on with the answer
    * at the driver's next look, so nothing about it waits on the person.
@@ -36,8 +39,11 @@ function listed(views: readonly ViewId[]): string {
 // The window's own names (NAME1b), so the agent names a place the person can find.
 const VIEWS: Record<View, string> = {
   overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Repositories',
-  map: 'Map', convergence: 'Convergence', search: 'Search', agents: 'Agents', plugins: 'Plugins', settings: 'Settings',
+  map: 'Map', knowledge: 'Knowledge', agents: 'Agents', plugins: 'Plugins', settings: 'Settings',
 };
+
+// Knowledge's two modes, as its list's choice names them (UX6i).
+const MODES: Record<KnowledgeMode, string> = { search: 'Search', convergence: 'Convergence' };
 
 const DOMAINS: Record<SettingsSection, string> = {
   start: 'Setup', appearance: 'Appearance', ai: 'AI features', driver: 'Driver', tools: 'Tools', plugins: 'Plugins',
@@ -66,7 +72,9 @@ const SAYS = 280;
 export function prefaceOf(where: HelpWhere): string {
   const place = where.view === 'settings' && where.settings
     ? `Settings → ${DOMAINS[where.settings]}`
-    : `the ${VIEWS[where.view]} view`;
+    : where.view === 'knowledge' && where.knowledge
+      ? `the ${VIEWS.knowledge} view, showing ${MODES[where.knowledge]}`
+      : `the ${VIEWS[where.view]} view`;
   const parts = [place, where.workspace ? `workspace \`${where.workspace}\`` : 'every workspace'];
 
   const session = where.view === 'sessions' ? where.session : null;

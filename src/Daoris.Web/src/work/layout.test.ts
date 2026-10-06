@@ -18,7 +18,8 @@ const WIDTHS = [560, 640, 680, 720, 760, 768, 800, 900, 980, 1000, 1024, 1028, 1
 
 describe('the bounds', () => {
   it('are FRAME6\'s for every list but Settings\', whose rows are single names', () => {
-    for (const view of ['sessions', 'quests', 'projects', 'convergence', 'search', 'plugins'] as const) {
+    // Knowledge's pane is its two modes' too (UX6i), so all three are one list's bounds.
+    for (const view of ['sessions', 'quests', 'projects', 'knowledge', 'convergence', 'search', 'plugins'] as const) {
       expect(LIST_BOUNDS[view]).toEqual({ min: 264, max: 420, initial: 280 });
     }
     expect(LIST_BOUNDS.settings).toEqual({ min: 176, max: 320, initial: 176 });
