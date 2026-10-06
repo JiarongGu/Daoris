@@ -1,0 +1,41 @@
+{
+  "_why": "UX6's tasks (docs/2026-10-04-ux6-redesign.md §9.4), the fifth measure of §9.1: the presses from the screen a person starts on to the act done, and the rows they scan to find it. Declared here and not measured (UX6a): a task crosses screens, so its presses are counted on the window by following its route, which no story renders whole. `node tools/ux-count.mjs --tasks` prints them. `before` and `after` are the design's words. `measured` is null until a person counts one on the install, then `{ \"presses\": n, \"scanned\": n, \"on\": \"<date> <what was counted on>\" }`.",
+  "tasks": [
+    {
+      "task": "Publish an ask its declarations proposed",
+      "before": "2 presses (the row's door, then the ask's Publish)",
+      "after": "1 (the row's Publish to …)",
+      "measured": null
+    },
+    {
+      "task": "Sign in an account a waiting start needs",
+      "before": "not said anywhere; then Settings, Agents, find it, Sign in: 3 presses and a scroll",
+      "after": "1 (the row's Sign in), and said",
+      "measured": null
+    },
+    {
+      "task": "See everything set for one repository",
+      "before": "3 screens and 4 lists of 31 rows",
+      "after": "1 tab",
+      "measured": null
+    },
+    {
+      "task": "Change one repository's landing rule",
+      "before": "Settings → Workspace, scan 31 rows, 3 controls and Save",
+      "after": "Repositories → it (filtered) → Setup → Work, 3 controls and Save; no row scanned",
+      "measured": null
+    },
+    {
+      "task": "See which accounts a workspace may run on, and their state",
+      "before": "Settings → Agents, under each workspace, per agent",
+      "after": "Agents → the agent → Workspaces, or the workspace's Details",
+      "measured": null
+    },
+    {
+      "task": "Install the tool a plugin needs",
+      "before": "the plugin's prose, then Settings → Tools, find it, Managed",
+      "after": "the plugin's page → its tool → Managed",
+      "measured": null
+    }
+  ]
+}

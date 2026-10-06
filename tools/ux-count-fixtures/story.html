@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>A stand-in story</title>
+<!--
+  UX6a's stand-in for a Storybook story (tools/ux-count.test.mjs serves it as iframe.html). As the stories do, it
+  takes its language from the page's store and else the browser's (the web's i18n.ts), says it on <html lang>,
+  and marks the body as Storybook's preview does once a story has drawn, or failed to.
+  Drawn: a main area of 2 words, 1 control and 2 concepts (session, settings), in either language.
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; border: 0; }
+  body { font: 16px/20px sans-serif; }
+  .sb-errordisplay, .sb-show-main .sb-errordisplay { display: none; }
+  .sb-show-errordisplay .sb-errordisplay { display: block; }
+</style>
+</head>
+<body>
+  <div id="storybook-root"></div>
+  <div class="sb-errordisplay"><h1 id="error-message"></h1></div>
+  <script>
+    const id = new URLSearchParams(location.search).get('id');
+    let stored = null;
+    try { stored = localStorage.getItem('daoris.language'); } catch { stored = null; }
+    const zh = (stored || navigator.language || '').startsWith('zh');
+    document.documentElement.lang = zh ? 'zh' : 'en';
+    setTimeout(() => {
+      if (id === 'fixture--broken') {
+        document.getElementById('error-message').textContent = 'The story threw.';
+        document.body.classList.add('sb-show-errordisplay');
+        return;
+      }
+      document.getElementById('storybook-root').innerHTML = zh
+        ? '<main data-region="main"><h1>会话</h1><button>设置</button></main>'
+        : '<main data-region="main"><h1>Sessions</h1><button>Settings</button></main>';
+      document.body.classList.add('sb-show-main');
+    }, 50);
+  </script>
+</body>
+</html>

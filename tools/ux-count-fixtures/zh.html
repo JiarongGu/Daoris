@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>The counter's fixed page, in Chinese</title>
+<!--
+  UX6a's second fixed page (tools/ux-count.test.mjs): Chinese, and no regions, so the whole page is the main area
+  and its screens are the page's: 2026 px over a 1013 px viewport, 2 screens. 4 words (会话; 打开, 会话; 设置),
+  1 control, 2 concepts (session, settings). The quest's name is not drawn.
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; border: 0; }
+  body { font: 16px/20px sans-serif; }
+  .block { height: 40px; }
+  .rest { height: 1906px; }
+</style>
+</head>
+<body>
+  <h1 class="block">会话</h1>
+  <p class="block">打开会话</p>
+  <div class="block"><button>设置</button></div>
+  <p style="display: none">委托</p>
+  <div class="rest"></div>
+</body>
+</html>

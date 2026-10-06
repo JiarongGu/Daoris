@@ -15,7 +15,7 @@
  *   node tools/desktop.mjs run                 start it on a scratch machine, debug port attached
  *   node tools/desktop.mjs run --install <dir> start the DEPLOYED one there, on your real machine
  *   node tools/desktop.mjs shot overview       capture the window
- *   node tools/desktop.mjs eval "document.title"
+ *   node tools/desktop.mjs eval "document.title"   (or --file <script.js>)
  *   node tools/desktop.mjs click "[data-nav=quests]"
  *   node tools/desktop.mjs kill | restart
  *
@@ -748,6 +748,25 @@ function doctor() {
   }
 }
 
+/**
+ * What `eval` evaluates: its words joined, or with `--file <script>` that file's text, whole (UX6a). The screen
+ * counter's script (`ux-count.mjs --window`) is longer than the line `npm run` hands cmd.exe holds, and its quotes
+ * do not survive the shells between, so a script travels as a file. A byte-order mark is dropped. Null when there
+ * is nothing to evaluate, or `--file` is not the only thing said; a file that cannot be read throws, naming it.
+ */
+export function evalExpression(args) {
+  const at = args.indexOf('--file');
+  if (at === -1) return args.join(' ') || null;
+  if (args.length !== 2 || at !== 0) return null;
+  let text;
+  try {
+    text = readFileSync(args[1], 'utf8');
+  } catch (error) {
+    throw new Error(`cannot read ${args[1]}: ${error.message}`);
+  }
+  return text.replace(/^﻿/, '') || null;
+}
+
 function usage() {
   console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8')
     .split('\n')
@@ -913,8 +932,13 @@ async function main(command, args) {
 
     case 'eval': {
       const window = takeWindow(args);
-      const expression = args.join(' ');
-      if (!expression) fail('usage: node tools/desktop.mjs eval [--window <name>] "<js expression>"');
+      let expression;
+      try {
+        expression = evalExpression(args);
+      } catch (error) {
+        fail(error.message);
+      }
+      if (!expression) fail('usage: node tools/desktop.mjs eval [--window <name>] ("<js expression>" | --file <script.js>)');
 
       const cdp = await attach(window);
       try {
