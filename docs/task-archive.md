@@ -11386,3 +11386,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTQUOTE1d — the CLI holds the driver's join sentences** (cli). `account-join.test.ts` should parse the driver's `A_refused_join_is_said_as_the_cli_says_it` rows and hold `joinRefusal` to each, cell for cell, as it holds the join and places tables; today the driver copies the CLI's sentences and nothing on the CLI side checks them. Contract: D125's ACCTQUOTE1b note, twins.md. Proof: a CLI test reading that theory.
 
 **Outcome** 2026-10-07: `account-join.test.ts` parses the driver's `A_refused_join_is_said_as_the_cli_says_it` theory with the same reader the join and places tables use, and holds `joinRefusal` to each row cell for cell (`forge` bare, `my team` quoted, `R&D` as `<workspace>`); a sentence changed on either side alone now fails verify. No lane-table row is needed: every merge runs the CLI suite. CLI +1. Detail: D125's ACCTQUOTE1d note; commit facdb579.
+
+
+## CONVNOTE1b — a chat's cooling note carries its parts (2026-10-07, D125)
+
+> - [ ] **CONVNOTE1b — a chat's cooling note carries its parts** (driver). `ChatRunner.cs` records the cooling note as text only, so 中文 shows the driver's English though the page already words `account.cooling` from parts (CONVNOTE1). Contract: D125's TOOL4d and SIGNIN1b notes, LANG1a. Proof: a driver test that the note carries `account.cooling` parts.
+
+**Outcome** 2026-10-07: a conversation's cooling note carries an `account.cooling` part (`until` in UTC, `why` a `CoolingWhy` code) beside its unchanged English (`CoolingWords.ConversationOf`), so the page words it in 中文 too; the page uses the record's catalogue sentence rather than a conversation-specific one. Driver fast half +1; one Process case written, run in the full set. Detail: D125's CONVNOTE1b note; commit 411a1d5e.
+
+
+## AGENTREAD1b — the driver reads the shared reads table (2026-10-07, D125)
+
+> - [ ] **AGENTREAD1b — the driver reads the shared reads table** (driver, tools). `AccountReadsTests` reads `src/Daoris.Cli/test/fixtures/account-reads.json` row for row, and the merge tool's lane table sends that fixture to the driver gate, so a rule changed on one side of `reads.json` fails both suites; consider `UnsafeRelaxedJsonEscaping` so bytes match for non-ASCII names. Contract: D125's AGENTREAD1 note, `.claude/knowledge/twins.md`. Proof: a changed fixture row fails the driver's fast half.
+
+**Outcome** 2026-10-07: `AccountReadsTests` holds `AccountReads` to `account-reads.json` row for row, byte for byte (50 rows and a guard); a changed fixture row failed exactly its case. `AccountReads` now writes with `UnsafeRelaxedJsonEscaping`, so non-ASCII names match the CLI's bytes; emoji, U+2028/9, C1 controls and number forms still differ (measured, in the note). The lane table sends the fixture to the driver gate (7a85c7bd). The table's widening and case-folding are AGENTREAD1c. Driver fast half 4298 → 4356. Detail: D125's AGENTREAD1b note; commit 30c1bd18.

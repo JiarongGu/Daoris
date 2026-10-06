@@ -230,6 +230,42 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// CONVNOTE1b (D125 TOOL4d; LANG1a): a turn refused for an account's limit cools the account, and the record's note carries
+    /// the cooling line's code beside its English, as a refused sign-in's does, so the page words it in either language. The
+    /// turn ends, and the conversation goes on.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_refused_for_a_limit_records_its_cooling_line_by_code_and_the_conversation_goes_on()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        string Seen() => $"record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}:{e.Text}"))}]";
+        await Until(() => service.State(id) == "working", Seen);
+
+        Assert.True(runner.Say(id, "limited"));
+        Assert.True(runner.Say(id, "after"));
+        await Until(() => events.Page(id).Events.Count(e => e.Kind == SessionEventKind.Turn) == 2, Seen);
+
+        var turns = events.Page(id).Events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason).ToList();
+        Assert.Equal(["error", "end_turn"], turns);
+        var said = Assert.Single(events.Page(id).Events, e => e.Parts is { Count: > 0 } parts && parts[^1].Code == "account.cooling");
+        Assert.StartsWith("The account this conversation runs on is cooling until", said.Text);
+        Assert.Equal((said.Text, CoolingWhy.Default), (said.Parts![^1].Text, (string?)said.Parts[^1].Value("why")));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
     /// CHATTAKE1b (D126's CHATTAKE1 note): the agent a conversation runs is spawned naming its record, as a driven session's
     /// is, so a connector it starts from the repository's own server list says which conversation took a quest.
     /// </summary>
@@ -532,6 +568,12 @@ public sealed class ProtocolChatTests : IDisposable
                 // SIGNIN1b: the install's refusal of a sign-in, as Claude Code's adapter answers it (D125 ROSTER1b).
                 if (said === 'signed-out') {
                   send({ jsonrpc: '2.0', id: frame.id, error: { code: -32000, message: 'Authentication required' } });
+                  continue;
+                }
+                // CONVNOTE1b: a usage limit that names no time, as Claude Code's adapter words one (D125 TOOL4d).
+                if (said === 'limited') {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603,
+                    message: "Internal error: You've hit your individual spend limit · run /usage-credits to ask your admin for a higher limit" } });
                   continue;
                 }
                 await new Promise((resolve) => setTimeout(resolve, 150));
