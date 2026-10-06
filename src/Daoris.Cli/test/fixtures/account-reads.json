@@ -24,7 +24,13 @@
     ["a moment at an offset is read in UTC", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T15:45:00+05:45\"}}}}", "claude-code", "account-1", "in 2026-10-04T10:00:00.000Z"],
     ["a moment with a fraction is read with it", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00.5Z\"}}}}", "claude-code", "account-1", "in 2026-10-04T10:00:00.500Z"],
     ["one account written twice in any case is the last that reads", "{\"claude-code\":{\"accounts\":{\"Account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T11:00:00Z\"},\"account-1\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "account-1", "out 2026-10-04T10:00:00.000Z"],
-    ["a later one that does not read leaves the earlier", "{\"claude-code\":{\"accounts\":{\"Account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T11:00:00Z\"},\"account-1\":{\"login\":\"maybe\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "account-1", "in 2026-10-04T11:00:00.000Z"]
+    ["a later one that does not read leaves the earlier", "{\"claude-code\":{\"accounts\":{\"Account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T11:00:00Z\"},\"account-1\":{\"login\":\"maybe\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "account-1", "in 2026-10-04T11:00:00.000Z"],
+    ["a name in Chinese reads", "{\"claude-code\":{\"accounts\":{\"工作\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "工作", "out 2026-10-04T10:00:00.000Z"],
+    ["an accented name compares without case", "{\"claude-code\":{\"accounts\":{\"Café\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "CAFÉ", "in 2026-10-04T10:00:00.000Z"],
+    ["a letter whose capital is two letters is not those two: straße is not STRASSE", "{\"claude-code\":{\"accounts\":{\"straße\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "STRASSE", null],
+    ["a dotless i is not an I", "{\"claude-code\":{\"accounts\":{\"ışık\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "IŞIK", null],
+    ["a final sigma compares with its capital", "{\"claude-code\":{\"accounts\":{\"Νίκος\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "ΝΊΚΟΣ", "in 2026-10-04T10:00:00.000Z"],
+    ["a Greek letter with a subscript iota compares with its capital", "{\"claude-code\":{\"accounts\":{\"ᾠδή\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "ᾨΔΉ", "in 2026-10-04T10:00:00.000Z"]
   ],
   "keep": [
     ["a reading into no file", null, "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
@@ -44,7 +50,12 @@
     ["what it has no field for stays where it is", "{\"later\":true,\"claude-code\":{\"later\":1,\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}", "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"later\":true,\"claude-code\":{\"later\":1,\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
     ["an agent that is not an object is replaced where it stands", "{\"claude-code\":\"in\",\"codex\":{}}", "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}},\"codex\":{}}"],
     ["accounts that are not an object are replaced where they stand", "{\"claude-code\":{\"accounts\":[1],\"later\":1}}", "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}},\"later\":1}}"],
-    ["an unreadable file is nothing known, and the reading replaces it", "not json", "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"]
+    ["an unreadable file is nothing known, and the reading replaces it", "not json", "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
+    ["a name in Chinese is written as it is", null, "claude-code", "工作", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"工作\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
+    ["HTML's marks and a plus in a name are written as they are", null, "claude-code", "R&D+<team>'s", "out", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"R&D+<team>'s\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
+    ["an accented name found in another case is written under the name given", "{\"claude-code\":{\"accounts\":{\"Café\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"CAFÉ\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
+    ["words it has no field for are written as they are, escaped on disk or not", "{\"later\":\"\\u00e9 中文 \\u0026\"}", "codex", "work", "in", "2026-10-04T10:00:00Z", "{\"later\":\"é 中文 &\",\"codex\":{\"accounts\":{\"work\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
+    ["a name that differs by a letter whose capital is two letters is another account", "{\"claude-code\":{\"accounts\":{\"straße\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "STRASSE", "out", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"straße\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"STRASSE\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"]
   ],
   "forget": [
     ["an account's reading goes, and the rest stand", "{\"claude-code\":{\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"account-2\":{\"login\":\"out\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "account-1", "{\"claude-code\":{\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"accounts\":{\"account-2\":{\"login\":\"out\",\"read\":\"2026-10-04T09:00:00Z\"}}}}"],
@@ -54,6 +65,7 @@
     ["another agent's account is not this one's", "{\"codex\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "account-1", "unchanged"],
     ["the tool's own reading is no account's", "{\"claude-code\":{\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}", "claude-code", "own", "unchanged"],
     ["no file stays no file", null, "claude-code", "account-1", "unchanged"],
-    ["an unreadable file is left as it is", "not json", "claude-code", "account-1", "unchanged"]
+    ["an unreadable file is left as it is", "not json", "claude-code", "account-1", "unchanged"],
+    ["a name in Chinese is forgotten, and the rest written as they are", "{\"claude-code\":{\"accounts\":{\"工作\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"Café\":{\"login\":\"out\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "工作", "{\"claude-code\":{\"accounts\":{\"Café\":{\"login\":\"out\",\"read\":\"2026-10-04T09:00:00Z\"}}}}"]
   ]
 }
