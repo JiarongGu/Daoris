@@ -271,6 +271,24 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
+    /// HIST1b (D153; the history-clearing design §3.5): a person clears finished history on their own machine, and a
+    /// remote's history is the team's, so a shared host has neither the listing nor the press. Keyed, each finds no route.
+    /// </summary>
+    [Fact]
+    public async Task The_history_doors_do_not_exist_on_a_shared_host()
+    {
+        var key = (await host.MintAsync("clearer@a-machine")).Key;
+        var routes = host.Routes();
+
+        Assert.DoesNotContain(routes, route => route.Pattern.StartsWith("/api/history", StringComparison.Ordinal));
+        var listed = await host.GetAsync("/api/history?workspace=default", key: key);
+        var pressed = await host.SendAsync(
+            "POST", "/api/history/clear", DaorisHost.Loopback, key, """{ "units": [ { "kind": "quest", "id": "abc" } ] }""");
+        Assert.True(listed.Status is 404 or 405, $"GET /api/history answered {listed.Status}");
+        Assert.True(pressed.Status is 404 or 405, $"POST /api/history/clear answered {pressed.Status}");
+    }
+
+    /// <summary>
     /// DRIFT1d (D133 §4): the person's yes to a departure is said on their own machine, and travels from there as an
     /// operation, as a delete does — a shared host has no accept door.
     /// </summary>

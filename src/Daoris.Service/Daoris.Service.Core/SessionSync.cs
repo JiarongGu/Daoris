@@ -17,11 +17,17 @@ public sealed record SessionSyncReport(int Pushed, int Fetched, string? Problem)
 ///
 /// <para><b>What comes down</b> is filed in THIS sync's circle, by this machine's wiring, and keeps its
 /// `origin/id`: read-only here, and never this machine's lock (D47 §6).</para>
+///
+/// <para><b>Except a record of a quest this machine forgot</b> (HIST1b, D153 point 3): a clear took the quest and every
+/// record of it here, and a teammate's record fetched again, by a later move or from a cursor at zero, would name a quest
+/// nothing here holds. It is passed over and the cursor moves past it, as the quest fetch passes over the quest's
+/// operations. Which is why the quests are handed in: the forgotten mark is theirs.</para>
 /// </remarks>
 public static class SessionSync
 {
     public static async Task<SessionSyncReport> RunAsync(
-        SessionStore store, KnowledgeService service, IRemote remote, string workspace, CancellationToken ct = default)
+        SessionStore store, QuestStore quests, KnowledgeService service, IRemote remote, string workspace,
+        CancellationToken ct = default)
     {
         var circle = Workspaces.Normalize(workspace);
         var joined = (await service.RegistryAsync(ct: ct).ConfigureAwait(false))
@@ -64,16 +70,18 @@ public static class SessionSync
 
             pushed = feed.Count;
 
+            var forgotten = await quests.ForgottenAsync(ct).ConfigureAwait(false);
             var since = fetchedThrough;
             while (true)
             {
                 var page = await remote.FetchSessionsAsync(since, ct).ConfigureAwait(false);
                 foreach (var record in page.Records)
                 {
+                    if (record.Quest is { } quest && forgotten.Contains(quest)) continue;
                     await store.MirrorAsync(record with { Workspace = circle }, ct).ConfigureAwait(false);
+                    fetched++;
                 }
 
-                fetched += page.Records.Count;
                 since = Math.Max(since, page.Through);
                 if (!page.More) break;
             }

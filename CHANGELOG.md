@@ -27,6 +27,9 @@ with the version and date at release.
 - An account refused for its sign-in after Daoris last read it signed in is asked once more before it
   is passed over, so signing in again is noticed at the next start. `daoris-driver --once` and
   `--until-idle` print each report as it is made and wait for their sessions before exiting.
+- The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
+  quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
+  machine only. The driver, terminal and screen doors follow (HIST1c–e).
 - Deleting a quest or a conversation no longer lets the next change reuse a number a remote already
   holds, which could lose that change silently on a workspace with a remote.
 - A refused account rename, workspace choice or add-flow answer stays open with what was entered and
