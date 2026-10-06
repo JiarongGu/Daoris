@@ -101,6 +101,9 @@ public sealed class SessionsCommandTests : IDisposable
         new[] { "unarchive" },
         new[] { "delete" },
         new[] { "delete", "s1", "s2" },
+        new[] { "start-from" },
+        new[] { "start-from", "s1", "s2" },
+        new[] { "start-from", "--yes" },
     };
 
     [Theory]
@@ -109,6 +112,76 @@ public sealed class SessionsCommandTests : IDisposable
     {
         Assert.Null(SessionsCommand.Read(args, out var problem));
         Assert.False(string.IsNullOrWhiteSpace(problem));
+    }
+
+    // ——— MSG1f3 (D50, D137 §2.2): *Start a conversation with these words* at a terminal.
+
+    [Fact]
+    public void Start_from_takes_one_sessions_id_and_both_usages_name_it()
+    {
+        var ask = SessionsCommand.Read(["start-from", "c0ffee11"], out var problem);
+
+        Assert.Null(problem);
+        Assert.Equal(("start-from", "c0ffee11"), (ask!.Verb, ask.Ids[0]));
+        Assert.Null(SessionsCommand.Read(["start-from"], out problem));
+        Assert.Equal("`start-from` takes one session's id.", problem);
+        Assert.Contains("daoris-driver sessions start-from <id>", SessionsCommand.Usage);
+        Assert.Contains("\n  sessions start-from <id>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+    }
+
+    /// <summary>
+    /// The verb opens the terminal's own conversation, as <c>chat</c> does, through the world's door, which the host hands as
+    /// its chat console's; what that conversation came to is its exit. A world with no conversation to open says so, exit 2.
+    /// </summary>
+    [Fact]
+    public async Task Start_from_opens_the_terminals_conversation_through_the_worlds_door()
+    {
+        var ledger = Family();
+        using var service = ledger.Client();
+        string? opened = null;
+        var world = World(ledger, service) with
+        {
+            StartFrom = (id, _) =>
+            {
+                opened = id;
+                return Task.FromResult(0);
+            },
+        };
+
+        var (exit, _) = await RunAsync(ledger, ["start-from", "c0ffee11"], world: world);
+        var (none, said) = await RunAsync(ledger, ["start-from", "c0ffee11"]);
+
+        Assert.Equal((0, "c0ffee11"), (exit, opened));
+        Assert.Equal(2, none);
+        Assert.Equal("sessions: no conversation can be opened from here; run `daoris-driver sessions start-from c0ffee11` at a terminal.\n", said);
+    }
+
+    /// <summary>
+    /// What the chat runner's start-from came to, in one line: a refusal by its code and nothing started are exit 1, as
+    /// <c>chat</c>'s refusals are; a conversation that opened runs on in this terminal, its words taken or not.
+    /// </summary>
+    [Fact]
+    public void A_start_froms_answer_is_one_line_and_a_conversation_runs_on_only_where_one_opened()
+    {
+        var output = new StringWriter();
+
+        Assert.Equal(1, SessionsCommand.Started(
+            new StartedFrom(null, false, StartFrom.Carried, "#q1 is taken, so the driver carries these words on with it by itself."), output));
+        Assert.Equal(1, SessionsCommand.Started(new StartedFrom(null, false, null, "a conversation already runs in `engine`."), output));
+        Assert.Null(SessionsCommand.Started(
+            new StartedFrom("n3w00000", true, null, "conversation `n3w00000` starts with your words to session `c0ffee11`, which keeps them no longer."),
+            output));
+        Assert.Null(SessionsCommand.Started(
+            new StartedFrom("n3w00000", false, null, "conversation `n3w00000` opened, but your words did not reach it, so they stay on session `c0ffee11`."),
+            output));
+        Assert.Equal(
+            [
+                "sessions: #q1 is taken, so the driver carries these words on with it by itself.",
+                "sessions: a conversation already runs in `engine`.",
+                "sessions: conversation `n3w00000` starts with your words to session `c0ffee11`, which keeps them no longer.",
+                "sessions: conversation `n3w00000` opened, but your words did not reach it, so they stay on session `c0ffee11`.",
+            ],
+            output.ToString().ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
     }
 
     /// <summary>The listing is the one reader's, group by group in the order a person acts on them, each heading counted.</summary>
@@ -151,6 +224,80 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.Contains("Resumes later (1)", said);
         Assert.Contains("h0ld0000  completed  engine — Trim the readme", said);
         Assert.Contains("held: it waits: `engine` has not been opted into driving on this machine.", said);
+    }
+
+    /// <summary>A word the person said to a record after it ended, as the service answers this machine.</summary>
+    private static JsonObject Said(JsonObject record, string word)
+    {
+        record["said"] = new JsonArray(new JsonObject
+        {
+            ["id"] = word, ["text"] = "Also the readme.", ["at"] = T0.AddMinutes(70).ToString("O"), ["files"] = new JsonArray(), ["reopens"] = true,
+        });
+        return record;
+    }
+
+    /// <summary>
+    /// MSG1f3 (D137 §3.2, its MSG1f2 note): a chat the person wrote to after it ended goes on, since its runner takes the words
+    /// up at once, so it is listed under Working, <i>going on</i>; one its runner held says so under Resumes later, in the
+    /// runner's own line. Before, both were listed as they ended.
+    /// </summary>
+    [Fact]
+    public async Task A_chat_whose_words_wait_is_going_on_and_one_its_runner_held_resumes_later()
+    {
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        foreach (var chat in new[] { "g01ng000", "h0ld1ng0" })
+        {
+            events.Append(chat, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Why is the frame budget 4 ms?" });
+            events.Append(chat, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Also the readme.", Reaches = "resume" });
+        }
+
+        events.Append("h0ld1ng0", new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = ResumeWords.NotYet + "`engine` has no checkout on this machine any more. Your words wait on it.",
+        });
+        var ledger = new Ledger(
+            [
+                Said(Record("g01ng000", "completed", kind: "chat", minutes: 60), "w1"),
+                Said(Record("h0ld1ng0", "completed", kind: "chat", minutes: 61), "w2"),
+            ],
+            []);
+
+        var (exit, said) = await RunAsync(ledger, []);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Working (1)\n  g01ng000  going on  engine — Why is the frame budget 4 ms?", said);
+        Assert.Contains("Resumes later (1)\n  h0ld1ng0  completed  engine — Why is the frame budget 4 ms?", said);
+        Assert.Contains("held: it waits: `engine` has no checkout on this machine any more. Your words wait on it.", said);
+        Assert.DoesNotContain("Ended", said);
+    }
+
+    /// <summary>
+    /// MSG1f3: the terminal's listing plans afresh, and a fresh plan cannot see a cool-off, so words that resume on an account
+    /// that cools read <i>going on</i> there. The listing reads the record's own account's cool-off from the home, as
+    /// <c>go-on-new</c> judges it, and says the reset and the door out of the wait as the loop's look would.
+    /// </summary>
+    [Fact]
+    public async Task Words_whose_own_account_cools_are_listed_under_resumes_later_with_the_door_out()
+    {
+        var reset = DateTimeOffset.UtcNow.AddHours(3);
+        var cooling = new CoolingEntry("claude", "work", reset, Stated: true, Window: null, Seen: T0, Session: null);
+        var record = Said(Record("c00l1ng0", "completed", "q5", minutes: 60), "w1");
+        record["profile"] = "work";
+        var ledger = new Ledger([record], [Quest("q5", "Trim the readme", "Taken")]);
+        using var service = ledger.Client();
+        var world = World(ledger, service) with
+        {
+            Config = DriverConfig.Empty with { Drivable = ["engine"] },
+            CoolingOf = (adapter, profile) => adapter == "claude-code" && profile == "work" ? cooling : null,
+        };
+
+        var (exit, said) = await RunAsync(ledger, [], world: world);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Resumes later (1)\n  c00l1ng0  completed  engine — Trim the readme", said);
+        Assert.Contains("held: it waits: the `claude` account `work` is cooling until", said);
+        Assert.Contains("`daoris-driver sessions go-on-new c00l1ng0`.", said);
+        Assert.DoesNotContain("going on", said);
     }
 
     [Fact]
@@ -460,6 +607,8 @@ public sealed class SessionsCommandTests : IDisposable
                     return Answer(HttpStatusCode.OK, new JsonArray(new JsonObject
                     {
                         ["repository"] = "engine", ["adopted"] = true, ["registered"] = true, ["workspace"] = "default",
+                        // A checkout here, so a plan the listing makes can start what this machine drives (MSG1f3's cool-off).
+                        ["root"] = "/work/engine",
                     }));
                 }
 

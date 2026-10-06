@@ -11407,3 +11407,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6d — account attention from known facts** (web-shell, modules; absorbs TOOL4m). Contract/proof: UX6 §6.2–§6.3.
 
 **Outcome** 2026-10-07: What needs you lists, under Holding work, a start waiting on its accounts (an ask's intake among them, which the tick now forwards as facts: agent, account, workspace, until, the quests and asks it holds) and a signed-out account a list or default holds, each naming its accounts' last known state. Acts: *Sign in to …*, *Read …* and *Let … run …* (asks once, naming the join command); the door opens the agent's page. Nothing asks an agent anything (a test holds that no `HARNESSES` call refreshes). Rows meet ≤ 3 controls; two exceed the 30-word budget by a reset time and account ids, to be judged on the install. TOOL4m's remaining row is covered. Web vitest 4205 → 4246, modules fast 603 → 607. Detail: D150's UX6d note; commits 49c5907f, 01a42820.
+
+
+## INIT1b — the set-up brief names .gitattributes (2026-10-07, D25)
+
+> - [ ] **INIT1b — the set-up brief names `.gitattributes`** (driver). `SetupBrief` says a set-up changes no source, build or CI file, yet its `daoris init` step now writes `.gitattributes` where a repository has none (INIT1). Say so in the brief, and that an existing one is never touched. Contract: D25's INIT1 note. Proof: `SetupBriefTests` golden.
+
+**Outcome** 2026-10-07: the set-up brief's *Take up the doctrine* step and the whole set-up's bounds name the `.gitattributes` `daoris init` writes where there is none, keep one already there as the tool does, and have the session report one that pins nothing; a move set-up and the knowledge step alone say nothing of it. Detail: D25's INIT1b note; commit c441d74d.
+
+
+## MSG1f3 — start-from terminal and listing gaps (2026-10-07, D137)
+
+> - [ ] **MSG1f3 — start-from terminal and listing gaps** (driver). Route `sessions start-from`; classify waiting chats correctly and expose cool-off omitted by fresh plan. Contract: D50, D137 MSG1f2. Proof: commands/coverage/listing tests.
+
+**Outcome** 2026-10-07: `daoris-driver sessions start-from <id>` opens the terminal's own conversation through the chat runner's start-from, and every terminal line that pointed at `chat --repository` now names it. The listing shows an ended chat whose words wait as *going on*, or under Resumes later in its runner's words (with the reset where its account cools), and reads a cool-off a fresh plan misses from the home. Gaps in D137's note: nothing takes a held chat's words up at the reset (MSG1g2), and a chat a headless loop kept reads *going on* though only a window takes it up. The Desktop README's `SESSION_START_FROM` line should name the verb. Driver fast half 4297 → 4381 with main. Detail: D137's MSG1f3 note; commit 9e6a6079.

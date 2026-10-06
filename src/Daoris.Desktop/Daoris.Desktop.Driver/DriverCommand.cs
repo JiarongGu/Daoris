@@ -81,6 +81,9 @@ public static class DriverCommand
           sessions go-on-new <id>
               words that wait for the account a session ran on to cool: go on now in a new session at the driver's
               next look, handed them, without that session's conversation.
+          sessions start-from <id>
+              words a session cannot go on with: start a conversation here with them, as `chat` does, without that
+              session's context; they leave that session, naming the conversation.
           trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--yes]
                 | land <session> [--plan] | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
                 | state <session|branch> [--repository <name>] | sync [--repository <name>] [--all] [--yes]]

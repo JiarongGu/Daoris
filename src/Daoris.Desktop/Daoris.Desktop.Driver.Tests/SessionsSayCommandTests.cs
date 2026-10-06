@@ -292,7 +292,7 @@ public sealed class SessionsSayCommandTests : IDisposable
 
         Assert.Equal(1, exit);
         Assert.Contains("sessions: kept, but it cannot go on in this session, because the agent no longer has its conversation.", said);
-        Assert.Contains("daoris-driver chat --repository engine", said);
+        Assert.Contains("start a conversation with them instead: daoris-driver sessions start-from d0ne0000", said);
         Assert.Equal(["w1"], room.Said("d0ne0000"));
     }
 

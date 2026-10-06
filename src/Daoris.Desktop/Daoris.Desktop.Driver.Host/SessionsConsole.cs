@@ -23,7 +23,11 @@ internal static class SessionsConsole
         using var service = ServiceClient.FromEnvironment();
         var door = Wire(config);
 
-        return await SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log), Console.Out).ConfigureAwait(false);
+        return await SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, door, log)
+        {
+            // MSG1f3 (D50): *Start a conversation with these words* opens this terminal's own conversation, as `chat` does.
+            StartFrom = (id, _) => ChatConsole.StartFromAsync(id),
+        }, Console.Out).ConfigureAwait(false);
     }
 
     /// <summary>The configured agent's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>

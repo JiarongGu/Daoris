@@ -58,7 +58,8 @@ public sealed class SessionGroupsTests
     private static SessionLook Look(
         JsonObject[] records, QuestView[]? quests = null, Consideration[]? considered = null,
         (string Tree, TreeWork Work)[]? trees = null, string[]? archived = null, Func<string, int>? forgiven = null,
-        string[]? kept = null, (string Session, string[] Said)[]? unable = null, AccountWait[]? waits = null) =>
+        string[]? kept = null, (string Session, string[] Said)[]? unable = null, AccountWait[]? waits = null,
+        string[]? chats = null, (string Session, WordsHold Holds)[]? held = null) =>
         SessionLook.From(new JsonArray([.. records]).ToJsonString(), quests ?? [], considered ?? [], forgiven ?? (_ => 0)) with
         {
             Trees = (trees ?? []).ToDictionary(each => SessionGroups.Normal(each.Tree), each => each.Work, StringComparer.OrdinalIgnoreCase),
@@ -67,6 +68,8 @@ public sealed class SessionGroupsTests
             Unable = (unable ?? []).ToDictionary(
                 each => each.Session, each => new GoOnMark(each.Said, ContinueWhy.Refused, T0), StringComparer.Ordinal),
             Waits = waits ?? [],
+            ChatsWaiting = new HashSet<string>(chats ?? [], StringComparer.Ordinal),
+            Held = (held ?? []).ToDictionary(each => each.Session, each => each.Holds, StringComparer.Ordinal),
         };
 
     /// <summary>The planner's start of a record the person's words wait on (MSG1b's <c>GoOn</c>): it goes on itself.</summary>
@@ -77,6 +80,12 @@ public sealed class SessionGroupsTests
         new("claude-code", "Claude Code", "work", "default", Reset, Stated: true, "its account is cooling until 11:00.") { Quests = quests };
 
     private static readonly DateTimeOffset Reset = T0.AddHours(2);
+
+    /// <summary>What the chat runner said held a chat's words (MSG1f3): its conversation's last line, in the hold's words.</summary>
+    private static readonly WordsHold ChatHeld = new(WordsHold.Waits, "`engine` has no checkout on this machine any more. Your words wait on it.");
+
+    /// <summary>A record's own account cooling, read from the home where no loop's look held its start (MSG1f3). After the reset it names.</summary>
+    private static readonly WordsHold OwnCooling = new(WordsHold.Cooling, "work is cooling until 11:00.") { Until = Reset };
 
     /// <summary>One row of the table: what is on the machine, the session asked about, and where it is shown.</summary>
     public sealed record Case(SessionLook Look, string Session, string Group, string Shown)
@@ -348,8 +357,54 @@ public sealed class SessionGroupsTests
         ["an earlier session of a quest whose words wait on a later one is ended"] =
             new(Look([Record("s1", "failed", "q1", said: ["w1"]), Record("s2", "completed", "q1", at: 10, said: ["w2"])], [Taken], [GoesOn(Taken)]),
                 "s1", SessionGroup.Ended, "failed"),
-        ["a conversation's words are its runner's: it is grouped as it ended"] =
-            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])]), "s1", SessionGroup.Ended, "completed"),
+        // MSG1f3: a chat's words are its runner's, which takes them up at once, so a chat they wait on goes on, unless its
+        // runner said what holds them; one whose every word could not go on is not among them, and rests as it ended.
+        ["an ended chat whose words wait is going on: its runner takes them up at once"] =
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"]), "s1", SessionGroup.Working, ShownState.GoingOn)
+            {
+                Also = row => Assert.Null(row.Holds),
+            },
+        ["an archived chat whose words go on is working"] =
+            new(Look([Record("s1", "stopped", kind: "chat", said: ["w1"])], archived: ["s1"], chats: ["s1"]),
+                "s1", SessionGroup.Working, ShownState.GoingOn),
+        ["a chat its runner held resumes later, in the runner's words"] =
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"], held: [("s1", ChatHeld)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Same(ChatHeld, row.Holds),
+            },
+        ["a chat its account's cool-off held resumes later, until the reset"] =
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], chats: ["s1"], held: [("s1", OwnCooling)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (row.Holds!.Why, row.Holds.Until)),
+            },
+        ["an archived chat its runner held is archived, saying what holds it"] =
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])], archived: ["s1"], chats: ["s1"], held: [("s1", ChatHeld)]),
+                "s1", SessionGroup.Archived, "completed")
+            {
+                Also = row => Assert.Same(ChatHeld, row.Holds),
+            },
+        ["a chat with no words its runner could take rests as it ended"] =
+            new(Look([Record("s1", "completed", kind: "chat", said: ["w1"])]), "s1", SessionGroup.Ended, "completed")
+            {
+                Also = row => Assert.Null(row.Holds),
+            },
+        // MSG1f3: a fresh plan cannot see a cool-off, so the gatherer reads the record's own account's from the home; the
+        // planner's own holds still come first, and the loop's look says its own.
+        ["words whose own account cools resume later where no loop has looked, until its reset"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [GoesOn(Done)], held: [("s1", OwnCooling)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset, "work is cooling until 11:00."),
+                    (row.Holds!.Why, row.Holds.Until, row.Holds.Reason)),
+            },
+        ["the planner's own hold comes before a cool-off read from the home"] =
+            new(Look([Record("s1", "completed", "q1", said: ["w1"])], [Done], [Verdict(Done, StartVerdict.AtCapacity)], held: [("s1", OwnCooling)]),
+                "s1", SessionGroup.Later, "completed")
+            {
+                Also = row => Assert.Equal(WordsHold.Cap, row.Holds!.Why),
+            },
 
         // Ended: a record.
         ["completed is ended"] = new(Look([Record("s1", "completed", "q1")], [Done]), "s1", SessionGroup.Ended, "completed"),
