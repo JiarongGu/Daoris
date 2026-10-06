@@ -70,6 +70,26 @@ public sealed partial class McpToolDescriptionTests
         Assert.DoesNotMatch(DecisionNumber(), lexical);
     }
 
+    /// <summary>
+    /// HIST1b (D153, D37): removing a record is a person's act, so no connector tool clears history, and none is handed the
+    /// desk that would. Ask Daoris may only propose one (HIST1f), as it proposes a delete.
+    /// </summary>
+    [Fact]
+    public void No_tool_clears_history_or_is_handed_what_would()
+    {
+        var tools = typeof(KnowledgeTools).GetMethods()
+            .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
+            .OfType<string>()
+            .ToList();
+
+        Assert.Contains("quest_publish", tools);
+        Assert.DoesNotContain(tools, name => name.Contains("clear") || name.Contains("history") || name.Contains("forget"));
+        Assert.DoesNotContain(
+            typeof(KnowledgeTools).GetConstructors().SelectMany(constructor => constructor.GetParameters()),
+            parameter => parameter.ParameterType == typeof(Daoris.Knowledge.HistoryDesk)
+                         || parameter.ParameterType == typeof(Daoris.Knowledge.ComposedService));
+    }
+
     /// <summary>A server over a family of repositories says nothing more than its tools do, as before.</summary>
     [Fact]
     public void A_server_over_a_family_gives_no_instructions()

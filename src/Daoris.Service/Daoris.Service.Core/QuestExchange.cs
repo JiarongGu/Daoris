@@ -54,6 +54,12 @@ public enum QuestPublishRefusal
 
     /// <summary>A short title past <see cref="QuestTitles.MaxShort"/> characters, or over a line break (SESSUX1j).</summary>
     BadShortTitle,
+
+    /// <summary>
+    /// The same words as a quest this machine cleared after its remote numbered it (HIST1b, D153 point 3): the remote holds
+    /// it closed, and would refuse a fresh copy on every pass, so a new ask is a new title.
+    /// </summary>
+    Cleared,
 }
 
 /// <summary>
@@ -369,6 +375,17 @@ public sealed class QuestExchange(
         if (await JudgeQuotesAsync(from, required, ct).ConfigureAwait(false) is { } unquoted)
         {
             return new(unquoted.Refusal, unquoted.Message, Quest: null, addressable);
+        }
+
+        // A cleared quest a remote numbered is forgotten here (HIST1b, D153 point 3), and its words make its id again: the
+        // remote still holds it closed and would refuse a fresh copy on every pass, so this is answered as a closed quest is.
+        // Where the quest simply went (no remote ever numbered it), nothing is marked and the words make it again.
+        if (await quests.ForgottenIdAsync(from, to, title, lanes, ct).ConfigureAwait(false) is { } cleared)
+        {
+            return new(
+                QuestPublishRefusal.Cleared,
+                $"Quest `#{cleared}` was cleared from this machine; the remote for `{home}` holds it closed. A new ask is a new title.",
+                Quest: null, addressable);
         }
 
         var quest = await quests.PublishAsync(

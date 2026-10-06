@@ -54,17 +54,22 @@ public sealed class SessionSyncTests : IAsyncLifetime
         File.WriteAllText(Path.Combine(dir, "daoris.json"), manifest);
     }
 
+    /// <summary>Each machine's quests, on its own connection: what holds the quests it forgot (HIST1b).</summary>
+    private readonly Dictionary<SessionStore, QuestStore> _quests = [];
+
     private async Task<SessionStore> OpenAsync(SqliteConnection? connection = null)
     {
         connection ??= new SqliteConnection("Data Source=:memory:");
         if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
         _connections.Add(connection);
-        return await SessionStore.OpenAsync(connection);
+        var sessions = await SessionStore.OpenAsync(connection);
+        _quests[sessions] = await QuestStore.OpenAsync(connection);
+        return sessions;
     }
 
     /// <summary>One machine's pass, its feed keyed by <paramref name="caller"/> as its key would be.</summary>
     private Task<SessionSyncReport> SyncAsync(SessionStore machine, string caller, StoreRemote? remote = null) =>
-        SessionSync.RunAsync(machine, _service, remote ?? Remote(caller), Workspaces.Default);
+        SessionSync.RunAsync(machine, _quests[machine], _service, remote ?? Remote(caller), Workspaces.Default);
 
     private StoreRemote Remote(string caller) => new(null!, _remote, _service, caller);
 
@@ -366,7 +371,7 @@ public sealed class SessionSyncTests : IAsyncLifetime
     {
         await _a.CreateAsync("q1", "Shared", "stub", Now);
 
-        var pass = await SessionSync.RunAsync(_a, _service, new UnreachableRemote(), Workspaces.Default);
+        var pass = await SessionSync.RunAsync(_a, _quests[_a], _service, new UnreachableRemote(), Workspaces.Default);
         var untouched = await _a.CursorAsync(Workspaces.Default);
         var later = await SyncAsync(_a, "a@one");
 
