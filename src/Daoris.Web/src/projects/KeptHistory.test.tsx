@@ -3,7 +3,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
-import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN } from '../work/historyFixtures';
+import { WORKSPACE_EMPTY, WORKSPACE_KEPT, WORKSPACE_LEFT_OVER, WORKSPACE_PLAN, WORKSPACE_RECORDS_ONLY } from '../work/historyFixtures';
 import { KeptHistory } from './KeptHistory';
 
 // A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1): always the reading of what the
@@ -60,6 +60,14 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
     await userEvent.click(screen.getByRole('button', { name: 'Clear 5' }));
     expect(clear).toHaveBeenCalledWith([], expect.any(Function));
+  });
+
+  it('says what goes beside the press where the records it takes hold no file (HIST1k)', () => {
+    render(<KeptHistory workspace="aurora" plan={WORKSPACE_RECORDS_ONLY} onClear={() => {}} />);
+    const section = screen.getByRole('region');
+    expect(section).toHaveTextContent('A clear would take 1 closed quest: records only, with no files on this machine.');
+    expect(section).not.toHaveTextContent('A clear would take nothing now.');
+    expect(screen.getByRole('button', { name: 'Clear history…' })).toBeInTheDocument();
   });
 
   it('offers nothing where the plan lists nothing that may go, and says so', () => {

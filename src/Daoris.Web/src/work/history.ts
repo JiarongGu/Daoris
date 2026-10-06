@@ -300,20 +300,33 @@ export type ReadingSaid = {
 };
 
 /**
+ * What a clear would take now, said from the reading's counts as well as its bytes (HIST1k): a unit that goes takes its
+ * records whether or not they hold a file, and every workspace's clear takes the left-over files however small, so "nothing"
+ * is said only where `clearList` would offer no press. Records and files, records alone, or files alone each say so.
+ */
+function takesSaid(t: Translate, reading: HistoryReading): string {
+  const what = counted(t, {
+    quests: number(reading.takes?.quests), asks: number(reading.takes?.asks),
+    sessions: number(reading.takes?.sessions), teammates: number(reading.takes?.teammates),
+  });
+  const bytes = number(reading.takes?.bytes);
+  if (what) return t(bytes > 0 ? 'history.reading.takes' : 'history.reading.takesRecords', { what, size: size(bytes) });
+  if (bytes > 0 || number(reading.leftOver?.count) > 0) return t('history.reading.takesFiles', { size: size(bytes) });
+  return t('history.reading.takesNothing');
+}
+
+/**
  * What the home keeps of a workspace's finished work, in the reader's language (design §2.4): the closed quests and asks
  * and their sessions with their size, what a clear would take now, a count per reason that keeps the rest with its door
  * where the workspace's page holds one, the conversations only *Delete…* takes, and the home's own left-over files and log.
  */
 export function readingSaid(t: Translate, reading: HistoryReading): ReadingSaid {
   const held = counted(t, reading);
-  const takes = counted(t, reading.takes);
   const keptBy = reading.keptBy ?? {};
   const codes = [...KEPT_CODES.filter((code) => code in keptBy), ...Object.keys(keptBy).filter((code) => !KEPT_CODES.includes(code))];
   return {
     holds: held ? t('history.reading.holds', { what: held, size: size(number(reading.bytes?.total)) }) : t('history.reading.none'),
-    takes: number(reading.takes?.bytes) > 0
-      ? t(takes ? 'history.reading.takes' : 'history.reading.takesFiles', { what: takes, size: size(number(reading.takes.bytes)) })
-      : t('history.reading.takesNothing'),
+    takes: takesSaid(t, reading),
     kept: codes.filter((code) => number(keptBy[code]) > 0).map((code) => {
       const known = KEPT_CODES.includes(code);
       const door = code === 'HISTORY_TREE_HERE' || code === 'HISTORY_LANDING_STANDS'
