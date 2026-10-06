@@ -17,7 +17,7 @@ import type { ScopeActs } from '../settings/AccountUse';
 import { proposalChange } from '../settings/proposals';
 import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentMainNotice, AgentPage } from './AgentPage';
-import { type AgentPart, agentRows, signedOutHeld } from './agents';
+import { type AgentPart, accountName, agentRows, runsForLine, signedOutHeld } from './agents';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
@@ -154,12 +154,14 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
   const ruleAct = useRuleAction();
   const settle = useRuleProposal();
   const registry = useRegistry('machine');
-  const { running, runningProfile, signingInNew, busy: acting, run } = useHarnessRun();
+  const { running, runningProfile, signingInNew, busy: acting, run, added, settleAdded } = useHarnessRun();
   const onError = failure(notify);
   const door = tool.doors[0]!.harness;
   const product = tool.product ?? tool.name;
   const use = agentOf(accounts.data, tool.name);
   const busy = acting || act.isPending || accountUse.isPending || ruleAct.isPending || settle.isPending;
+  // The new account this agent's sign-in kept, waiting on its name and its lists (UX7b): the add flow's step 3.
+  const addedHere = added && added.harness === door ? added : null;
 
   // The list's Install (AGENTS2): the account-owning door's installer, as the first Install under *Ways in* runs it. Taken
   // once, by a ref, since a development build runs an effect twice and the run's own guard learns of the first only later.
@@ -176,9 +178,24 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
   }, [install, onInstallTaken, tool.present, run, door]);
 
   const labelOf = (name: string | null) => {
-    if (!name) return tool.ownAccount ?? t('agents.account.own');
+    if (!name) return t('agents.account.own');
     const account = tool.accounts.find((each) => each.name === name);
-    return account?.account ?? (account?.key ? t('harness.profile.keyName', { handle: account.key }) : name);
+    return account ? accountName(account) : name;
+  };
+
+  // ACCT2's rename and ACCT1's join, each the terminal's `daoris agent profile rename|join` (D50), said as they land.
+  const rename = async (account: string, name: string | null) => {
+    // Naming an account its own id gives it no name of its own (ACCT2): the one way to clear it at the door.
+    const answer = await act.mutateAsync({ harness: door, action: 'profile-rename', profile: account, name: name ?? account });
+    notify(answer.name
+      ? t('agents.renamed', { id: account, name: answer.name })
+      : t('agents.unnamed', { id: account }));
+    return answer.name ?? null;
+  };
+  const join = async (account: string, lists: (string | null)[], called?: string) => {
+    const answer = await act.mutateAsync({ harness: door, action: 'profile-join', profile: account, join: lists });
+    const places = (answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: place.default }));
+    notify(t('agents.joined', { account: called ?? labelOf(account), places: runsForLine(places) }));
   };
 
   const scope: ScopeActs = {
@@ -205,6 +222,21 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
     ),
     onDefault: (account, workspace) => run(door, 'profile-default', account ?? undefined, undefined, workspace),
     onRemove: (account) => run(door, 'profile-remove', account),
+    onRename: (account, name) => { rename(account, name).catch(onError); },
+    onJoin: (account, lists) => { join(account, lists).catch(onError); },
+    // The add flow's end (D152 §4.5): its name kept where the field holds one other than its id, then the lists joined;
+    // either refused leaves the question up, so nothing the person typed is lost.
+    onAddedAnswer: ({ name, join: lists }) => {
+      if (!addedHere) return;
+      const account = addedHere.profile;
+      const current = tool.accounts.find((each) => each.name === account)?.displayName?.trim() || null;
+      const wanted = name?.trim() || null;
+      void (async () => {
+        const called = wanted !== current && (wanted !== null || current !== null) ? await rename(account, wanted) : current;
+        if (lists.length > 0) await join(account, lists, called ?? undefined);
+        settleAdded();
+      })().catch(onError);
+    },
     onSaveSettings: (account, label, change) => tune.mutate({ harness: door, profile: account, ...change }, {
       onSuccess: () => notify(t('harness.settings.saved', { account: label })),
       onError,
@@ -263,6 +295,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
       signInNewPanel={signingInNew === door
         ? <SignIn id={`${door}:login-new`} harness={door} action="login-new" tool={product} />
         : null}
+      added={addedHere ? { account: addedHere.profile, who: addedHere.account } : null}
       doorRunning={doorRunning}
       doorConsole={running && doorRunning ? <SessionConsole id={running} /> : null}
       acts={acts}

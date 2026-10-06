@@ -2335,11 +2335,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             present = [];
         }
 
-        var before = Before(owner, named, Clock());
+        var names = AccountNames.Of(Home, owner);
+        var before = Before(owner, named, Clock(), names);
         var own = ResumeAccount.Judge(named, scope, kind, before, present);
         if (own == NextHold.Cooling && !newSession)
         {
-            return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(before.Cooling!, Zone)) { Cooling = before.Cooling }, own);
+            return new ResumeChoice(new HarnessSelection(ResumeWords.Waits(before.Cooling!, Zone, names)) { Cooling = before.Cooling }, own);
         }
 
         if (own != NextHold.Ready) return await ElsewhereAsync(own).ConfigureAwait(false);
@@ -2412,7 +2413,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             order = [.. AccountRotation.Order(scope, kind, HarnessSettings.Profiles(Home, owner), facts, now)];
         }
 
-        var states = order.Select(account => Before(owner, account, now)).ToList();
+        // What a hold says names each account by the person's name, read now, as it is said (ACCT2b); the selection's facts
+        // and the record's opening line keep the ids.
+        var names = AccountNames.Of(Home, owner);
+        var states = order.Select(account => Before(owner, account, now, names)).ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
         // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
@@ -2422,11 +2426,11 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             // A pick is the person's (§3.3): refused, never rotated, naming what they could pick instead.
             return picked is not null && states[0].Cooling is { } pick
-                ? new HarnessSelection(RotationWords.Picked(pick, await ReadyAsync(resolved.Name, toolchain, config, pick.Account, now, ct).ConfigureAwait(false), Zone))
+                ? new HarnessSelection(RotationWords.Picked(pick, await ReadyAsync(resolved.Name, toolchain, config, pick.Account, now, ct).ConfigureAwait(false), Zone, names))
                 {
                     Cooling = pick,
                 }
-                : Unready(owner, states, picked is null ? scope : null, circle, kind, now);
+                : Unready(owner, states, picked is null ? scope : null, circle, kind, now, names);
         }
 
         // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
@@ -2513,7 +2517,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 states[i] = states[i] with
                 {
                     Readiness = AccountReadiness.SignedOut,
-                    Refusal = $"the `{owner}` account `{account}` is not signed in, so a session would have "
+                    Refusal = $"the `{owner}` account `{AccountNames.Said(names, account)}` is not signed in, so a session would have "
                         + $"nothing to run as — `daoris agent login {owner} --profile {account}` runs "
                         + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
                         + "credential stays in the agent's own store.",
@@ -2524,7 +2528,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             at = i;
         }
 
-        if (at < 0) return Unready(owner, states, picked is null ? scope : null, circle, kind, now);
+        if (at < 0) return Unready(owner, states, picked is null ? scope : null, circle, kind, now, names);
 
         var runs = states[at].Account!;
         var home = HarnessSettings.ProfileHome(Home, owner, runs);
@@ -2622,11 +2626,12 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// What a start on this account would meet before any probe (TOOL4f, D125 §3.3): its cool-off, a file read, then a
     /// refusal its provider gave (AGT3b), held in memory; otherwise ready, until the agent says it is signed out.
     /// </summary>
-    private AccountState Before(string owner, string? account, DateTimeOffset now)
+    /// <param name="names">The owner's names by id, which a cooling account's hold names it by (ACCT2b); null says the id.</param>
+    private AccountState Before(string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null)
     {
         if (AccountCooling.Of(Home, owner, account, now) is { } cooling)
         {
-            return new AccountState(account, AccountReadiness.Cooling, cooling, CoolingWords.Hold(cooling, Zone));
+            return new AccountState(account, AccountReadiness.Cooling, cooling, CoolingWords.Hold(cooling, Zone, names));
         }
 
         return _refused.TryGetValue(AccountKey(owner, account), out var refused)
@@ -2648,18 +2653,20 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
     /// list keeps its sentence byte for byte (D125 §3.1's none).
     /// </remarks>
     /// <param name="scope">The start's scope, or null for a pick, which says nothing more.</param>
+    /// <param name="names">The owner's names by id, which the sentence says each account by (ACCT2b), and its facts carry.</param>
     private HarnessSelection Unready(
-        string owner, IReadOnlyList<AccountState> states, RotationScope? scope, string? workspace, StartKind kind, DateTimeOffset now)
+        string owner, IReadOnlyList<AccountState> states, RotationScope? scope, string? workspace, StartKind kind, DateTimeOffset now,
+        IReadOnlyDictionary<string, string> names)
     {
         var first = states.Where(state => state.Cooling is not null).Select(state => state.Cooling!).MinBy(cooling => cooling.Until);
         // TOOL6g: the accounts passed as not signed in are facts beside the sentence, and over a list with nothing cooling
         // each is named with its sign-in, where the first account's refusal alone named only its own.
-        var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } names ? new SignedOutAccounts(owner, names) : null;
+        var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } passed ? SignedOutAccounts.Of(owner, passed, names) : null;
         var held = states.Count == 1 || (first is null && signedOut is null)
             ? new HarnessSelection(states[0].Refusal) { Cooling = states[0].Cooling, NotReady = states[0].Readiness, SignedOut = signedOut }
             : first is null
-                ? new HarnessSelection(RotationWords.NoneReady(owner, states)) { SignedOut = signedOut }
-                : new HarnessSelection(RotationWords.Wait(owner, states, Zone)) { Cooling = first, SignedOut = signedOut };
+                ? new HarnessSelection(RotationWords.NoneReady(owner, states, names)) { SignedOut = signedOut }
+                : new HarnessSelection(RotationWords.Wait(owner, states, Zone, names)) { Cooling = first, SignedOut = signedOut };
         if (held.Cooling is null || scope?.Begins is null) return held;
 
         var sentence = held.Refusal!;
@@ -2669,7 +2676,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
             && !states.Any(state => string.Equals(state.Account, kept, StringComparison.OrdinalIgnoreCase))
             && Before(owner, kept, now).IsReady)
         {
-            sentence += " " + RotationWords.KeptAside(kept);
+            sentence += " " + RotationWords.KeptAside(kept, names);
         }
 
         if (scope.From == ChoiceFrom.Workspace || scope.List.Count > 0)
@@ -2683,7 +2690,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                 .ToList();
             if (outside.Count > 0)
             {
-                sentence += " " + RotationWords.Outside(owner, scope.From == ChoiceFrom.Workspace ? workspace : null, listed, outside);
+                sentence += " " + RotationWords.Outside(owner, scope.From == ChoiceFrom.Workspace ? workspace : null, listed, outside, names);
             }
         }
 

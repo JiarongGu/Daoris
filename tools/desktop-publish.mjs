@@ -326,12 +326,13 @@ function cliProblem(unpacked) {
  * the launchers written into `<install>/app/bin/`. Both folders are staged beside and swapped in whole, so a
  * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one
  * standing. Nothing is written under the home.
+ * Fresh package and launcher folders use `renameHeld`'s bounded wait; unrelated errors still throw.
  *
  * @returns the package's version, which is the canon's.
  * @throws naming the tarball and what is wrong, when it is not the release's `daoris` as npm packs it (every
  *   entry under `package/`), before anything is replaced.
  */
-export async function layCli(tarball, install) {
+export async function layCli(tarball, install, renameOptions = {}) {
   const app = join(install, SHELL_HOME[0]);
   mkdirSync(app, { recursive: true });
   const stagedCli = join(app, `.${CLI_HOME.at(-1)}-staging`);
@@ -356,7 +357,7 @@ export async function layCli(tarball, install) {
     const problem = cliProblem(unpacked);
     if (problem) throw new Error(problem);
     version = JSON.parse(readFileSync(join(unpacked, 'package.json'), 'utf8')).version;
-    renameSync(unpacked, join(modules, CLI_PACKAGE.at(-1)));
+    renameHeld(unpacked, join(modules, CLI_PACKAGE.at(-1)), renameOptions);
 
     mkdirSync(stagedBin, { recursive: true });
     for (const [name, text] of Object.entries(cliLaunchers())) {
@@ -370,7 +371,7 @@ export async function layCli(tarball, install) {
   for (const [staged, segments] of [[stagedCli, CLI_HOME], [stagedBin, CLI_BIN]]) {
     const target = join(install, ...segments);
     rmSync(target, { recursive: true, force: true });
-    renameSync(staged, target);
+    renameHeld(staged, target, renameOptions);
   }
   return { version };
 }

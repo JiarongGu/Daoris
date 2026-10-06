@@ -6,10 +6,10 @@ import { Button, DotMark, Pill, StripMark } from '../ui';
 import type { AgentRow } from './agents';
 
 /**
- * **The Agents place's list** (UX6e, D150 §5.1): each agent this build knows once, whatever doors reach it, installed or
- * not, in the roster's order (AGENTS2). A row is its name and maker, and its accounts in a phrase (*3 accounts · 2 signed
- * out*, *1 account*, *not installed*); a row with an account the person must act on wears the waiting mark, and one not
- * installed carries its *Install* beside it.
+ * **The Agents place's list** (UX6e, D150 §5.1): each agent this build knows once, whatever doors reach it, the installed in
+ * the roster's order and then *Not installed* as a group of its own (AGENTS2, D152 §4.6). A row is its name and maker, and its
+ * accounts in a phrase (*3 accounts · 2 signed out*, *1 account*, *not installed*); a row with an account the person must
+ * act on wears the waiting mark, and one not installed carries its *Install* beside it.
  *
  * @remarks
  * **A molecule**: the rows arrive worded (`agentRows`), and every press goes out. Each row is a row of its list
@@ -28,11 +28,18 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
   onInstall?: (agent: string) => void;
 }) {
   const { t } = useTranslation();
+  const absentFrom = installedFirst(rows).findIndex((row) => !row.installed);
   return (
     <ul className="m-0 list-none p-0" aria-label={t('nav.agents')}>
-      {rows.map((row) => {
+      {installedFirst(rows).map((row, at) => {
         const install = !row.installed && onInstall ? () => onInstall(row.name) : undefined;
-        return (
+        return [
+          // The agents not installed, a group of their own under the installed (D152 §4.6), named once at its head.
+          at === absentFrom && (
+            <li key="absent" role="presentation" className="pb-0.5 pl-[calc(0.625rem+3px)] pr-2.5 pt-2.5 text-meta font-medium uppercase tracking-[0.04em] text-ink-faint">
+              {t('agents.list.absent')}
+            </li>
+          ),
           <li key={row.name} data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, row, () => onChoose(row.name), install))}>
             <div className="min-w-0 flex-1">
               <RowDoor chosen={chosen === row.name} onPress={() => onChoose(row.name)}>
@@ -62,11 +69,16 @@ export function AgentList({ rows, chosen, onChoose, onInstall }: {
                 {t('harness.install')}
               </Button>
             )}
-          </li>
-        );
+          </li>,
+        ];
       })}
     </ul>
   );
+}
+
+/** The installed agents first, then those not installed, each in the roster's order (D152 §4.6). */
+function installedFirst(rows: readonly AgentRow[]): AgentRow[] {
+  return [...rows.filter((row) => row.installed), ...rows.filter((row) => !row.installed)];
 }
 
 /**
@@ -114,7 +126,7 @@ export function AgentStrip({ rows, chosen, onChoose }: {
   const { t } = useTranslation();
   return (
     <ul className="m-0 grid list-none justify-items-center gap-1 px-0 py-1.5">
-      {rows.map((row) => (
+      {installedFirst(rows).map((row) => (
         <StripMark
           key={row.name}
           label={row.waiting > 0 ? `${row.product} · ${t('agents.list.waiting', { count: row.waiting })}` : `${row.product} · ${row.phrase}`}

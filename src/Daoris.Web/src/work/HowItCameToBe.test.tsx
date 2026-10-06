@@ -50,6 +50,15 @@ describe('how this came to be', () => {
     expect(ask).toHaveTextContent('Its intake: session i1 · completed');
   });
 
+  /** ACCTNAME1 (D152 §4.2): a session's account by the person's name, where the page hands the roster's namer. */
+  it('names a session’s account by the person’s name where a namer is handed', () => {
+    const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'personal' ? 'home' : profile ?? '');
+    render(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(QUEST_CHAIN)} nameOf={nameOf} />);
+
+    const first = screen.getAllByRole('listitem').find((item) => /^Session s1/.test(item.textContent ?? ''))!;
+    expect(first).toHaveTextContent('agent claude-code · version 2.1.3 · account home');
+  });
+
   it('reads the quest: what the person required in their words, its check, and how its done answered', () => {
     render(<HowItCameToBe kind="quest" id="q1" open onToggle={() => {}} answer={answer(QUEST_CHAIN)} />);
 

@@ -3,8 +3,8 @@
 > Written 2026-09-21, executing `docs/archive/2026-09-21-dsh-direction.md`. **Driven, not read about**: every
 > probe below was run against an installed `dsh` over a scratch repository, and what is quoted is what
 > was observed. Where a probe could not be run to its pass shape, this note says so and why — a
-> half-evaluated option is recorded as exactly that. The decision this feeds is **D53** in
-> `docs/DECISIONS.md` (proposed here; the owner's call). The option space, the boundary inventory and
+> half-evaluated option is recorded as exactly that. The decision this feeds is
+> `docs/decisions/D53.md` (proposed here; the owner's call). The option space, the boundary inventory and
 > the probe list are the plan's and are not restated.
 
 ## 0. What ran, at which tier, on what

@@ -1,21 +1,23 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { clockOf, figure, list } from '../format';
-import type { AccountSettingsChange, Tool } from '../tools';
+import { clockOf, figure } from '../format';
+import type { Account, AccountSettingsChange, Tool } from '../tools';
 import {
-  Button, Chip, Icon, Inline, type MenuAct, Pill, Prose, SectionTitle, Tip,
+  Button, Chip, Icon, Inline, Menu, type MenuAct, Pill, Prose, SectionTitle, Tip,
 } from '../ui';
 import { PageHead, ViewMain } from '../work/ViewMain';
-import { type AccountScope, type AgentAccounts, listedIn, machineScope, workspaceScope } from '../settings/accounts';
+import {
+  type AccountScope, type AgentAccounts, cannotLeave, machineScope, offeredLine, ownLine, saidLine, workspaceScope,
+} from '../settings/accounts';
 import { AccountSettingsForm, AccountSettingsSummary } from '../settings/AccountSettings';
-import {
-  type AccountChoice, AccountFactsLines, OwnSignInLine, type ScopeActs, ScopeEditor, TermsLine, WorkspaceScope,
-} from '../settings/AccountUse';
+import { type AccountChoice, type ScopeActs, ScopeEditor, WorkspaceScope } from '../settings/AccountUse';
 import { AgentRules, type AgentRulesState, type RuleAddition, type RuleScopeName } from '../settings/AgentRules';
-import { AccountRow } from './AccountRow';
+import { ACCOUNT_COLUMNS, AccountColumnsHead, AccountRow } from './AccountRow';
+import { type BackAccount, PlaceAccount, RenameAccount, ReSignIn } from './AddAccount';
 import {
-  type AccountState, type AgentPart, type AgentUsage, accountStates, doorsSummary, latestRead, ownState, rulesSummary,
-  settingsSummary, sharesOwn, usageSummary, useSummary, workspacesSummary,
+  type AccountAct, type AccountState, type AgentPart, type AgentUsage, accountAct, accountName, accountStates, accountWho,
+  doorsSummary, joinChoices, latestRead, ownRunsFor, ownState, rulesSummary, runsFor, runsForLine, settingsSummary,
+  usageSummary, useSummary, versionOnly, workspacesSummary,
 } from './agents';
 
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
@@ -32,20 +34,31 @@ export type RuleActs = {
   onAnswer: (id: string, accept: boolean) => void;
 };
 
+/** The add flow's last step answered (D152 §4.5): the name in its field (empty is none), and the lists ticked, null for this machine's. */
+export type AddedAnswer = { name?: string; join: (string | null)[] };
+
 /** Every press on an agent's page, each the terminal's twin (D50). */
 export type AgentActs = {
   /** *Read again*: this agent's accounts, one at a time, and the tool's own sign-in (§5.3). */
   onReadAgain: () => void;
-  /** An account's own *Read again*, from its ⋯: that account alone (ROSTER1). */
+  /** An account's own *Read*, from its row or its ⋯: that account alone (ROSTER1). */
   onReadOne: (account: string) => void;
+  /** A sign-in that makes a new account (D66 §3), step 2 of *Add an account…*. */
   onSignInNew: () => void;
   onAddKey: (key: string) => void;
+  /** A sign-in to the account a row names, by its id (ACCT1). */
   onSignIn: (account: string) => void;
   /** *Try now*: an account's cool-off ended early, or the tool's own sign-in's with null. */
   onTryNow: (account: string | null, label: string) => void;
   /** A default set (an account) or cleared (null): the machine's, or a workspace's. */
   onDefault: (account: string | null, workspace?: string) => void;
   onRemove: (account: string) => void;
+  /** An account named by the person, or its name taken back with null (ACCT2, `daoris agent profile rename`). */
+  onRename: (account: string, name: string | null) => void;
+  /** An account put into the lists named, a workspace's or null for this machine's (ACCT1, `daoris agent profile join`). */
+  onJoin: (account: string, join: (string | null)[]) => void;
+  /** The new account's name and lists, at the add flow's end; *Not now* ticks none, and the account says *no workspace*. */
+  onAddedAnswer: (answer: AddedAnswer) => void;
   onSaveSettings: (account: string, label: string, change: AccountSettingsChange) => void;
   onDoor: (door: string, action: DoorAction) => void;
   onPin: (door: string, version: string) => void;
@@ -54,25 +67,28 @@ export type AgentActs = {
 };
 
 /**
- * **An agent's page** (UX6e, D150 §5.2): its header names the product, its maker and its version, whether it is installed,
- * and *Sign in to another account…*; then its accounts, one list whatever doors reach it, and its sections, each folded to
- * a line naming its values: how accounts are used, its workspaces, its ways in, what it may do, model and effort, usage.
+ * **An agent's page** (UX7b, D152 §4; first built by UX6e, D150 §5.2): its header is one line, the product, its maker, its
+ * version and whether it is installed, with *Add an account…* and a ⋯; then its accounts, one row each in columns that line
+ * up, each with the one act its state asks for, and your own sign-in last; then its sections, each folded to a line naming
+ * its values: how accounts are used, its workspaces, its ways in, what it may do, model and effort, usage.
  *
  * @remarks
  * **A molecule**: every state arrives as props, the panels a press opens arrive as nodes (a sign-in's, a door's console),
- * and every press goes out. It holds only what the person has open: a section, *Remove…*'s ask, a form.
+ * and every press goes out. It holds only what the person has open: a section, *Add an account…*'s first step, a row's
+ * question, *Remove…*'s ask, a form.
  *
  * - **A section appears only where the agent has that concept** (§5.1): what it may do only where Daoris hands its agent
  *   the rules file, model and effort only where Daoris knows the tool's settings, how accounts are used only where it has
  *   accounts of Daoris's own. Adding an agent adds a row to the list and this page to it, never a screen.
  * - **A door is a property, never a second roster** (D53, D57 §c): *Ways in* lists each door and its version; the accounts
  *   are the agent's.
- * - **Nothing is read when it opens** (§5.3): each account says its last known state and when it was read, and *Read
- *   again* asks on the press.
+ * - **Nothing is read when it opens** (§5.3): each account says its last known state and when it was read, and *Read* or
+ *   *Read again* asks on the press.
+ * - **Explanation folds** (D152 §4.4): your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
  */
 export function AgentPage({
   tool, use, rules, usage, workspaces, adapter, part, reading = false, busy = false, settingsBusy = false, signingIn = null,
-  signInPanel, signInNewPanel, doorRunning = null, doorConsole, acts, onAnchored, now,
+  signInPanel, signInNewPanel, added = null, doorRunning = null, doorConsole, acts, onAnchored, now,
 }: {
   tool: Tool;
   /** How its accounts are used (TOOL4g): null from a shell older than that, and the sections it feeds are absent. */
@@ -95,8 +111,10 @@ export function AgentPage({
   /** The account a sign-in is running for, whose row holds `signInPanel`. */
   signingIn?: string | null;
   signInPanel?: ReactNode;
-  /** A sign-in to another account, running, under the accounts. */
+  /** A sign-in to a new account, running: the add flow's step 2, under the header. */
   signInNewPanel?: ReactNode;
+  /** The new account a sign-in kept, by its id and who signed in, waiting on the add flow's step 3. */
+  added?: { account: string; who: string | null } | null;
   /** The door whose action runs, whose block holds `doorConsole`. */
   doorRunning?: string | null;
   doorConsole?: ReactNode;
@@ -115,10 +133,11 @@ export function AgentPage({
   const own = ownState(tool, use);
   // When any of its accounts was last read, said once at the head of the list beside *Read again*.
   const latest = latestRead([own, ...states.values()]);
-  const ownLabel = tool.ownAccount ?? t('agents.account.own');
+  const ownLabel = t('agents.account.own');
+  const accountOf = (name: string) => tool.accounts.find((each) => each.name === name);
   const labelOf = (name: string) => {
-    const account = tool.accounts.find((each) => each.name === name);
-    return account?.account ?? (account?.key ? t('harness.profile.keyName', { handle: account.key }) : name);
+    const account = accountOf(name);
+    return account ? accountName(account) : name;
   };
   const choices: AccountChoice[] = tool.accounts.map((account) => ({
     name: account.name, label: labelOf(account.name), login: account.login, keyed: Boolean(account.key),
@@ -134,8 +153,10 @@ export function AgentPage({
   const sessions = usage.reduce((sum, account) => sum + account.sessions, 0);
   const rulesShown = tool.takesRules && rules !== null;
   const settingsShown = Boolean(tool.settingsChoices) && tool.accounts.some((account) => account.settings);
+  const joinable = (name: string) => joinChoices(tool, use, scopeWorkspaces, labelOf, name);
 
-  // What the person has open: a section, *Remove…*'s ask, the model and effort form, a key's field, a pin's version.
+  // What the person has open: a section, the add flow's first step, a row's question or rename, *Remove…*'s ask, the model
+  // and effort form, a key's field, a pin's version, the plans and terms.
   const [open, setOpen] = useState<ReadonlySet<AgentSection>>(() => new Set<AgentSection>([
     ...(part === 'rules' ? ['rules' as const] : []),
     ...(part === 'usage' ? ['usage' as const] : []),
@@ -151,12 +172,16 @@ export function AgentPage({
     opened.current = true;
     setOpen((was) => new Set([...was, 'rules' as const]));
   }, [waiting]);
+  const [goingBack, setGoingBack] = useState(false);
+  const [placing, setPlacing] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [tuning, setTuning] = useState<string | null>(null);
   const [keying, setKeying] = useState(false);
   const [keyDraft, setKeyDraft] = useState('');
   const [pinning, setPinning] = useState<Record<string, string>>({});
   const [pinOpen, setPinOpen] = useState<string | null>(null);
+  const [termsOpen, setTermsOpen] = useState(false);
   const toggle = (section: AgentSection) => setOpen((was) => {
     const next = new Set(was);
     if (next.has(section)) next.delete(section);
@@ -192,39 +217,83 @@ export function AgentPage({
     acts.onAddKey(key);
   };
 
-  // The workspaces that may run on an account (D130 §3.2): this machine where its default or list names it, then each
-  // workspace whose default is it or whose own list holds it.
-  const mayRun = (name: string) => [
-    ...(tool.machineDefault === name || (machine?.list.includes(name) ?? false) ? [t('harness.use.machine')] : []),
-    ...new Set([
-      ...tool.workspaceDefaults.filter((circle) => circle.profile === name).map((circle) => circle.workspace),
-      ...(use ? listedIn(use, name) : []),
-    ]),
+  // *Add an account…*'s first step (D152 §4.5): the accounts a person signing one back in means, each signed out or unknown.
+  // With none, it starts the sign-in at once.
+  const back: BackAccount[] = tool.accounts
+    .filter((account) => !account.key && ['out', 'unknown'].includes(states.get(account.name)!.state))
+    .map((account) => ({
+      id: account.name, name: accountName(account), state: states.get(account.name)!,
+      runs: runsForLine(runsFor(tool, use, account.name)),
+    }));
+  const startAdding = () => {
+    if (back.length > 0) setGoingBack(true);
+    else acts.onSignInNew();
+  };
+
+  // The header's ⋯ (D152 §4.1): a door's own acts, which *Ways in* keeps too, and the agent's id, which left the head.
+  const owning = tool.doors.find((each) => each.present) ?? door;
+  const pinnable = tool.doors.find((each) => each.pinnable);
+  const headMenu: MenuAct[] = [
+    ...(tool.present && (owning.updates === 'pin' || owning.updates === 'tool')
+      ? [{ id: 'update', label: t('harness.update'), disabled: busy, onSelect: () => acts.onDoor(owning.harness, 'update') }] : []),
+    ...(pinnable && !pinnable.pinned
+      ? [{
+        id: 'pin', label: t('agents.head.pin'), disabled: busy,
+        onSelect: () => { setOpen((was) => new Set([...was, 'doors' as const])); setPinOpen(pinnable.harness); },
+      }] : []),
+    ...(pinnable?.pinned
+      ? [{ id: 'unpin', label: t('harness.pin.unpin'), disabled: busy, onSelect: () => acts.onDoor(pinnable.harness, 'unpin') }] : []),
+    { id: 'copy', label: t('contextMenu.act.copyAgent'), icon: 'copy' as const, copy: tool.name },
   ];
+  const version = tool.doors.find((each) => each.present)?.version;
+  const facts = [tool.maker, version ? versionOnly(version) : null, t(tool.present ? 'harness.installed' : 'harness.absent')]
+    .filter((fact): fact is string => Boolean(fact));
 
   const header = (
     <PageHead
       title={product}
-      version={tool.doors.find((each) => each.present)?.version ?? undefined}
-      pills={tool.present ? <Pill tone="neutral">{t('harness.installed')}</Pill> : <Pill tone="neutral">{t('harness.absent')}</Pill>}
-      id={tool.name}
-      line={tool.maker ?? undefined}
-      acts={tool.present && (signsIn || door.takesKey) ? (
+      pills={(
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-small text-ink-faint">
+          {facts.map((fact, at) => (
+            <span key={at} className="flex items-baseline gap-x-1.5">
+              {at > 0 && <span aria-hidden>·</span>}
+              <span>{fact}</span>
+            </span>
+          ))}
+        </span>
+      )}
+      acts={(
         <>
-          {signsIn && (
-            <Button disabled={busy} onClick={acts.onSignInNew}>
+          {tool.present && signsIn && (
+            <Button disabled={busy} onClick={startAdding}>
               <Icon name="plus" size={13} />
-              {t('harness.profile.signInNew')}
+              {t('agents.add.open')}
             </Button>
           )}
-          {door.takesKey && !keying && (
+          {tool.present && door.takesKey && !keying && (
             <Button variant="ghost" disabled={busy} onClick={() => setKeying(true)}>
               <Icon name="account" size={13} />
               {t('harness.profile.addKey')}
             </Button>
           )}
+          {/* An agent not installed heads with its own installer (D152 §4.6), the same one *Ways in* runs. */}
+          {!tool.present && (
+            <Button variant="primary" disabled={busy} onClick={() => acts.onDoor(door.harness, 'install')}>{t('harness.install')}</Button>
+          )}
+          <Menu.Root>
+            <Tip content={t('agents.head.more', { agent: product })}>
+              <Menu.Trigger asChild>
+                <Button variant="ghost" aria-label={t('agents.head.more', { agent: product })} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
+                  <Icon name="more" size={15} />
+                </Button>
+              </Menu.Trigger>
+            </Tip>
+            <Menu.Content side="bottom" align="end" className="min-w-48">
+              <Menu.Acts acts={headMenu} onCopy={(text) => { void navigator.clipboard?.writeText(text).catch(() => {}); }} />
+            </Menu.Content>
+          </Menu.Root>
         </>
-      ) : undefined}
+      )}
     />
   );
 
@@ -237,8 +306,13 @@ export function AgentPage({
     })),
   ];
 
-  const accountMenu = (name: string, state: AccountState): MenuAct[] => {
-    const account = tool.accounts.find((each) => each.name === name)!;
+  // The lists an account is in, the machine's and each workspace's own, for its ⋯'s *Remove from …'s list* (D152 §4.2).
+  const listsHolding = (name: string): { workspace: string | null; scope: AccountScope }[] => (use?.scopes ?? [])
+    .filter((scope) => scope.list.includes(name))
+    .map((scope) => ({ workspace: scope.workspace ?? null, scope }));
+
+  const accountMenu = (account: Account, state: AccountState): MenuAct[] => {
+    const name = account.name;
     return [
       ...(tool.machineDefault !== name && mayDefault(name)
         ? [{ id: 'default', label: t('agents.account.useDefault'), disabled: busy, onSelect: () => acts.onDefault(name) }] : []),
@@ -248,9 +322,21 @@ export function AgentPage({
           id: `default:${workspace}`, label: t('agents.account.useDefaultIn', { workspace }), disabled: busy,
           onSelect: () => acts.onDefault(name, workspace),
         })),
+      ...joinable(name).map((choice) => ({
+        id: `join:${choice.workspace ?? ''}`, disabled: busy,
+        label: choice.workspace ? t('agents.account.addTo', { workspace: choice.workspace }) : t('agents.account.addToMachine'),
+        onSelect: () => acts.onJoin(name, [choice.workspace]),
+      })),
+      // Taken out as `profile order` writes the list without it; a press the terminal would refuse is offered disabled.
+      ...listsHolding(name).map(({ workspace, scope }) => ({
+        id: `leave:${workspace ?? ''}`, disabled: busy || cannotLeave(scope, name) !== null,
+        label: workspace ? t('agents.account.removeFrom', { workspace }) : t('agents.account.removeFromMachine'),
+        onSelect: () => acts.scope.onOrder(workspace, scope.list.filter((each) => each !== name)),
+      })),
       ...(settingsShown && account.settings && tool.settingsChoices
         ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); setTuning(name); } }]
         : []),
+      { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => setRenaming(name) },
       ...(signsIn && !account.key && state.state !== 'out'
         ? [{ id: 'signIn', label: t('harness.login.again'), disabled: busy || !tool.present, onSelect: () => acts.onSignIn(name) }]
         : []),
@@ -262,115 +348,217 @@ export function AgentPage({
     ];
   };
 
-  const factsLine = (name: string) => {
-    const facts = use?.accounts.find((each) => each.name === name);
-    return facts ? <AccountFactsLines facts={{ ...facts, cooling: null }} label={labelOf(name)} busy={busy} onTryNow={() => {}} now={now} /> : null;
+  /** A row's one act, worded and wired (D152 §4.2's table). */
+  const actOf = (act: AccountAct | null, id: string | null, label: string) => {
+    if (!act) return undefined;
+    switch (act.act) {
+      case 'signIn':
+        return {
+          label: t('harness.login.action'), ariaLabel: t('agents.act.signInTo', { account: label }), loud: act.loud,
+          onPress: () => acts.onSignIn(id!), disabled: busy,
+        };
+      case 'read':
+        return {
+          label: t('agents.act.read'), ariaLabel: t('agents.act.readFor', { account: label }), loud: act.loud,
+          // Your own sign-in has no read of its own: *Read again* asks it with the agent's accounts (§5.3).
+          onPress: () => (id ? acts.onReadOne(id) : acts.onReadAgain()), disabled: reading || busy,
+        };
+      case 'tryNow':
+        return {
+          label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: label }),
+          onPress: () => acts.onTryNow(id, label), disabled: busy,
+        };
+      default:
+        return {
+          label: t('agents.act.place'), ariaLabel: t('agents.act.placeFor', { account: label }),
+          onPress: () => setPlacing(id), disabled: busy,
+        };
+    }
   };
+
+  const accountRow = (account: Account) => {
+    const name = accountName(account);
+    const state = states.get(account.name)!;
+    const runs = runsFor(tool, use, account.name);
+    const facts = use?.accounts.find((each) => each.name === account.name);
+    // *Use in a workspace…* only where there is a list to join; an older shell's page names none.
+    const act = accountAct(state, { signsIn: signsIn && !account.key, present: tool.present, runs: runs.length });
+    const offered = act?.act === 'place' && joinable(account.name).length === 0 ? null : act;
+    // What its agent last said, and since when it is offered again, under that row alone; a cool-off says its reset in the
+    // state's column already, so the second line does not say it twice.
+    const said = [
+      facts?.said && facts.said.windows.length > 0 && state.state !== 'cooling' ? saidLine(facts.said) : null,
+      facts?.offered && !facts.cooling ? offeredLine(facts.offered) : null,
+    ].filter(Boolean).join(' · ') || null;
+    return (
+      <AccountRow
+        key={account.home}
+        name={name}
+        who={accountWho(account)}
+        id={account.name}
+        home={account.home}
+        state={state}
+        runs={runsForLine(runs)}
+        current={typeof facts?.running === 'number' && facts.running > 0 ? t('agents.now.sessions', { count: facts.running }) : null}
+        said={said}
+        act={actOf(offered, account.name, name)}
+        menu={accountMenu(account, state)}
+        now={now}
+      >
+        {removing === account.name && (
+          <div
+            role="group"
+            aria-label={t('harness.profile.removeTitle', { account: name })}
+            className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+          >
+            <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('harness.profile.removeConfirm')}</span>
+            <Button variant="danger" disabled={busy} onClick={() => { setRemoving(null); acts.onRemove(account.name); }}>
+              {t('harness.profile.removeMeanIt')}
+            </Button>
+            <Button variant="ghost" onClick={() => setRemoving(null)}>{t('common.cancel')}</Button>
+          </div>
+        )}
+        {placing === account.name && (
+          <PlaceAccount
+            agent={tool.name}
+            account={account.name}
+            title={t('agents.place.title', { account: name })}
+            choices={joinable(account.name)}
+            busy={busy}
+            cancelLabel={t('common.cancel')}
+            onDone={({ join }) => { setPlacing(null); acts.onJoin(account.name, join); }}
+            onCancel={() => setPlacing(null)}
+          />
+        )}
+        {renaming === account.name && (
+          <RenameAccount
+            agent={tool.name}
+            account={account.name}
+            current={account.displayName?.trim() || null}
+            busy={busy}
+            onSave={(named) => { setRenaming(null); acts.onRename(account.name, named); }}
+            onCancel={() => setRenaming(null)}
+          />
+        )}
+        {signingIn === account.name && signInPanel}
+      </AccountRow>
+    );
+  };
+
+  // The add flow's step 3 offers the name the person gave at the sign-in, else who signed in (ACCT2), else none.
+  const addedAccount = added ? accountOf(added.account) : undefined;
+  const offeredName = addedAccount?.displayName?.trim() || added?.who || '';
+  const adding = (goingBack && !signInNewPanel && !added) || Boolean(signInNewPanel) || Boolean(added);
 
   return (
     <ViewMain header={header}>
-      {/* The accounts: one list, whatever doors reach the agent (D150 §5.2, TOOL6g). Never folded. */}
-      <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
-        <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <SectionTitle>{t('harness.accounts')}</SectionTitle>
-          <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
-            {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
-            {tool.present && (
-              <Tip content={t('agents.read.againTip', { agent: product })}>
-                <Button variant="ghost" disabled={reading || busy} aria-busy={reading || undefined} onClick={acts.onReadAgain}>
-                  <Icon name="refresh" size={13} />
-                  {reading ? t('agents.read.reading') : t('agents.read.again')}
-                </Button>
-              </Tip>
-            )}
-          </span>
-        </div>
-        <ul className="m-0 list-none p-0">
-          {/* An agent not installed has no sign-in of its own to say anything of. */}
-          {tool.present && <AccountRow
-            label={ownLabel}
-            state={own}
-            chip={tool.machineDefault === null && tool.present ? t('harness.profile.sessionsUse') : undefined}
-            lines={[t('harness.ownHome')]}
-            act={own.state === 'cooling' ? {
-              label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: ownLabel }),
-              onPress: () => acts.onTryNow(null, ownLabel), disabled: busy,
-            } : undefined}
-            menu={ownMenu}
-            now={now}
-          />}
-          {tool.accounts.map((account) => {
-            const label = labelOf(account.name);
-            const state = states.get(account.name)!;
-            const workspacesHere = mayRun(account.name);
-            return (
-              <AccountRow
-                key={account.home}
-                label={label}
-                name={account.name}
-                home={account.home}
-                state={state}
-                chip={tool.machineDefault === account.name ? t('harness.profile.sessionsUse') : undefined}
-                lines={[workspacesHere.length > 0 ? t('agents.account.mayRun', { workspaces: list(workspacesHere) }) : '']}
-                act={state.state === 'out' && signsIn && !account.key ? {
-                  label: t('harness.login.action'), onPress: () => acts.onSignIn(account.name), disabled: busy || !tool.present,
-                  loud: state.holdsWork,
-                } : state.state === 'cooling' ? {
-                  label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: label }),
-                  onPress: () => acts.onTryNow(account.name, label), disabled: busy,
-                } : undefined}
-                menu={accountMenu(account.name, state)}
-                now={now}
-              >
-                <span className="basis-full">{factsLine(account.name)}</span>
-                {removing === account.name && (
-                  <div
-                    role="group"
-                    aria-label={t('harness.profile.removeTitle', { account: label })}
-                    className="flex basis-full flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
-                  >
-                    <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('harness.profile.removeConfirm')}</span>
-                    <Button variant="danger" disabled={busy} onClick={() => { setRemoving(null); acts.onRemove(account.name); }}>
-                      {t('harness.profile.removeMeanIt')}
-                    </Button>
-                    <Button variant="ghost" onClick={() => setRemoving(null)}>{t('common.cancel')}</Button>
-                  </div>
-                )}
-                {signingIn === account.name && <div className="basis-full">{signInPanel}</div>}
-              </AccountRow>
-            );
-          })}
-        </ul>
-        {/* While a start would run on the tool's own sign-in, the page says so, and what giving Daoris accounts of its own
-            does (D125 §3.7). */}
-        {sharesOwn(tool, use) && (
-          <OwnSignInLine who={tool.ownAccount} cooling={use?.own.cooling} signsIn={signsIn} busy={busy || !tool.present} onSignIn={acts.onSignInNew} />
-        )}
-        {tool.accounts.length > 0 && <TermsLine />}
-        {signInNewPanel}
-        {keying && (
-          <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
-            <input
-              autoFocus
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              value={keyDraft}
-              onChange={(event) => setKeyDraft(event.target.value)}
-              aria-label={t('harness.profile.keyLabel', { tool: product })}
-              placeholder={t('harness.profile.keyPlaceholder')}
-              className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+      {/* *Add an account…* (D152 §4.5), under the header where it was started: step 1, the sign-in, or step 3. */}
+      {adding && (
+        <div className="mb-4 grid gap-2">
+          {goingBack && !signInNewPanel && !added && (
+            <ReSignIn
+              accounts={back}
+              busy={busy}
+              now={now}
+              onSignIn={(id) => { setGoingBack(false); acts.onSignIn(id); }}
+              onNew={() => { setGoingBack(false); acts.onSignInNew(); }}
+              onClose={() => setGoingBack(false)}
             />
-            <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
-            <Button variant="ghost" onClick={() => { setKeying(false); setKeyDraft(''); }}>{t('common.cancel')}</Button>
-            <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
-          </form>
-        )}
-      </section>
+          )}
+          {signInNewPanel}
+          {added && (
+            <PlaceAccount
+              key={added.account}
+              agent={tool.name}
+              account={added.account}
+              title={t('agents.add.title')}
+              signedIn={added.who}
+              offered={offeredName}
+              choices={joinable(added.account)}
+              busy={busy}
+              cancelLabel={t('agents.add.notNow')}
+              onDone={acts.onAddedAnswer}
+              onCancel={(answer) => acts.onAddedAnswer({ ...answer, join: [] })}
+            />
+          )}
+        </div>
+      )}
 
-      {/* How the accounts are used (TOOL4g; D130 §3.2, §16.6): this machine's list and settings. */}
+      {/* The accounts: one list, whatever doors reach the agent (D150 §5.2, TOOL6g), a row each (D152 §4.2). Never folded;
+          an agent not installed has none until it is (§4.6), and no list head stands over nothing. */}
+      {(tool.present || tool.accounts.length > 0) && (
+        <section id="agents-accounts" aria-label={t('harness.accounts')} className="scroll-mt-3">
+          <div className="mb-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <SectionTitle>{t('harness.accounts')}</SectionTitle>
+            <span className="ml-auto flex items-baseline gap-2 text-meta text-ink-faint">
+              {latest && <span>{t('agents.read.at', { when: clockOf(latest, now) })}</span>}
+              {tool.present && (
+                <Tip content={t('agents.read.againTip', { agent: product })}>
+                  <Button variant="ghost" disabled={reading || busy} aria-busy={reading || undefined} onClick={acts.onReadAgain}>
+                    <Icon name="refresh" size={13} />
+                    {reading ? t('agents.read.reading') : t('agents.read.again')}
+                  </Button>
+                </Tip>
+              )}
+            </span>
+          </div>
+          <ul className={ACCOUNT_COLUMNS}>
+            {(tool.accounts.length > 0 || tool.present) && <AccountColumnsHead />}
+            {tool.accounts.map(accountRow)}
+            {/* Your own sign-in last (D152 §4.3), its explanation on its name's ⓘ: the one sign-in no list holds, which an agent
+                not installed has none of. */}
+            {tool.present && (
+              <AccountRow
+                name={ownLabel}
+                who={tool.ownAccount}
+                why={ownLine(tool.ownAccount, use?.own.cooling)}
+                state={own}
+                runs={runsForLine(ownRunsFor(tool, use, scopeWorkspaces))}
+                act={actOf(own.state === 'cooling' || own.state === 'unknown' ? accountAct(own, { signsIn: false, present: tool.present, runs: 1 }) : null, null, ownLabel)}
+                menu={ownMenu}
+                now={now}
+              />
+            )}
+          </ul>
+          {/* Each account's own plan and terms apply (D130 point 12): one line at the list's foot that opens the paragraph. */}
+          {tool.accounts.length > 0 && (
+            <div className="mt-2">
+              <button
+                type="button"
+                aria-expanded={termsOpen}
+                onClick={() => setTermsOpen((was) => !was)}
+                className="flex items-center gap-1 rounded-control text-meta text-ink-faint hover:text-ink"
+              >
+                {t('agents.terms.show')}
+                <Icon name={termsOpen ? 'chevronDown' : 'chevronRight'} size={12} />
+              </button>
+              {termsOpen && <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.terms')}</p>}
+            </div>
+          )}
+          {keying && (
+            <form className="mt-2 flex flex-wrap items-center gap-2" onSubmit={(event) => { event.preventDefault(); addKey(); }}>
+              <input
+                autoFocus
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                value={keyDraft}
+                onChange={(event) => setKeyDraft(event.target.value)}
+                aria-label={t('harness.profile.keyLabel', { tool: product })}
+                placeholder={t('harness.profile.keyPlaceholder')}
+                className="min-w-72 flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint"
+              />
+              <Button type="submit" variant="primary" disabled={busy || !keyDraft.trim()}>{t('harness.profile.keySave')}</Button>
+              <Button variant="ghost" onClick={() => { setKeying(false); setKeyDraft(''); }}>{t('common.cancel')}</Button>
+              <span className="basis-full text-meta text-ink-faint">{t('harness.profile.keyHint')}</span>
+            </form>
+          )}
+        </section>
+      )}
+
+      {/* How the accounts are used (TOOL4g; D130 §3.2, §16.6): this machine's list and settings, folded to the scopes. */}
       {use && machine && tool.accounts.length > 0 && (
-        <Fold section="use" title={t('harness.use.title')} summary={useSummary(machine, labelOf)} open={open.has('use')} onToggle={toggle}>
+        <Fold section="use" title={t('harness.use.title')} summary={useSummary(use, labelOf)} open={open.has('use')} onToggle={toggle}>
           <ScopeEditor agent={use} product={product} scope={machine} accounts={choices} busy={busy} acts={acts.scope} />
         </Fold>
       )}
@@ -409,7 +597,7 @@ export function AgentPage({
               <Pill tone="neutral">{t(each.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe')}</Pill>
               <span className="font-mono text-small text-ink">{each.harness}</span>
               {each.present
-                ? <span className="font-mono text-small text-ink-faint">{each.version}</span>
+                ? <span className="font-mono text-small text-ink-faint">{versionOnly(each.version ?? '')}</span>
                 : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
               {each.harness === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
               {each.plugin && <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>}
@@ -532,32 +720,36 @@ export function AgentPage({
         </Fold>
       )}
 
-      {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so. */}
-      <Fold section="usage" title={t('usage.title')} summary={usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
-        <Prose className="text-small">{t('usage.body')}</Prose>
-        {usage.length > 0 && (
-          <ul className="m-0 mt-2 list-none p-0">
-            {usage.map((account) => {
-              const called = account.profile ? labelOf(account.profile) : ownLabel;
-              return (
-                <li key={`${account.harness}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
-                  <span className="font-mono text-small">{account.harness}</span>
-                  <Chip>{called}</Chip>
-                  <span className="text-small text-ink-soft">{t('usage.sessions', { count: account.sessions })}</span>
-                  <Tip content={t('usage.contextTip')}>
-                    <span className="ml-auto font-mono text-small text-ink-faint">{t('usage.context', { used: figure(account.used) })}</span>
-                  </Tip>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
-      </Fold>
+      {/* What each account has carried (TOOL3, D57 §4): measured, never priced, and nothing measured said so; an agent not
+          installed has carried nothing here, so it has no usage to fold (§5.1, D152 §4.6). */}
+      {(tool.present || sessions > 0) && (
+        <Fold section="usage" title={t('usage.title')} summary={usageSummary(sessions)} open={open.has('usage')} onToggle={toggle}>
+          <Prose className="text-small">{t('usage.body')}</Prose>
+          {usage.length > 0 && (
+            <ul className="m-0 mt-2 list-none p-0">
+              {usage.map((account) => {
+                const called = account.profile ? labelOf(account.profile) : ownLabel;
+                return (
+                  <li key={`${account.harness}:${account.profile ?? ''}`} className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0">
+                    <span className="font-mono text-small">{account.harness}</span>
+                    <Chip>{called}</Chip>
+                    <span className="text-small text-ink-soft">{t('usage.sessions', { count: account.sessions })}</span>
+                    <Tip content={t('usage.contextTip')}>
+                      <span className="ml-auto font-mono text-small text-ink-faint">{t('usage.context', { used: figure(account.used) })}</span>
+                    </Tip>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <p className="m-0 mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
+        </Fold>
+      )}
 
-      {/* The two doors stay in sight (D50). */}
+      {/* The two doors stay in sight (D50): the agent's id is said here, where the terminal types it; an agent not installed
+          has one door to name, its installer. */}
       <p className="m-0 mt-8 border-t border-line pt-3 text-meta text-ink-faint">
-        <Inline text={t('agents.page.terminal', { agent: tool.name })} />
+        <Inline text={t(tool.present ? 'agents.page.terminal' : 'agents.page.terminalAbsent', { agent: tool.name })} />
       </p>
     </ViewMain>
   );

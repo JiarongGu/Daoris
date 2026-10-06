@@ -1247,17 +1247,34 @@ test("a verdict stands until a path that reaches its gate changes: a browser tes
   assert.deepEqual(tool.verdictStanding({ ...judging('F'), from: 'F', gate: 'web' }), { standing: 'exact', paths: [], records: [] });
 });
 
-test("the records a stage forgives are the steward's lane and the records that merge by union, and nothing else", () => {
+test("a stage forgives only known records declared by the steward or union, never gate policy", () => {
   const isRecord = tool.recordMatcher({
     lanes: repoLanes, union: tool.unionRecords(repoRoot),
   });
-  for (const path of ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json', 'CHANGELOG.md', 'docs/decisions/D115.md', 'docs/FIX-LOG.md', 'docs/README.md', '.claude/knowledge/twins.md']) {
+  for (const path of ['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/decisions/D115.md', 'docs/FIX-LOG.md', 'docs/README.md', '.claude/knowledge/twins.md']) {
     assert.ok(isRecord(path), path);
   }
-  for (const path of ['README.md', 'docs/2026-09-30-parallel-development-design.md', 'canon/CHANGELOG.md', 'src/Daoris.Cli/src/cli.ts', 'tools/merge-branch.mjs']) {
+  for (const path of ['daoris.lanes.json', 'README.md', 'docs/2026-09-30-parallel-development-design.md', 'canon/CHANGELOG.md', 'src/Daoris.Cli/src/cli.ts', 'tools/merge-branch.mjs']) {
     assert.ok(!isRecord(path), path);
   }
   assert.equal(tool.VERDICTS_FILE, 'local/gate-verdicts.json', 'gitignored, under local/');
+});
+
+test('a changed lane map cannot forgive itself or source by broadening its steward lane or union patterns', () => {
+  const lanes = repoLanes.map((lane) => lane.steward ? { ...lane, paths: ['**'] } : lane);
+  const paths = ['daoris.lanes.json', 'src/Daoris.Web/src/App.tsx', 'TASKS.md'];
+  const judgement = tool.stageJudgement({
+    plan: ALL, tree: 'changed',
+    verdicts: ALL.map((gate) => ({ gate, verdict: 'PASS', tree: 'tested', at: hourOf(9) })),
+    drift: () => paths,
+    isRecord: tool.recordMatcher({ lanes, union: ['**'] }),
+    reaching: (gate, changed) => tool.pathsReaching(gate, changed, { lanes }),
+  });
+  assert.deepEqual(judgement.missing, ALL, 'editing the map changes what every verdict means');
+  for (const gate of judgement.gates) {
+    assert.ok(gate.stale?.paths.includes('daoris.lanes.json'), gate.name);
+    assert.deepEqual(gate.stale?.records, ['TASKS.md']);
+  }
 });
 
 // ---------------------------------------------------------------------------------------------------

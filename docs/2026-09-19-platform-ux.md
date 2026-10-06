@@ -468,13 +468,18 @@ controls are in the frame design's §3.
     the window has no side bar to move one to, and no stop, since nothing in it acts.
 - **Agents** (UX6e, D150 §5) — the activity bar's place after Search, shell-only, on the frame. Its list is each agent once,
   whatever doors reach it: its name and maker, its accounts in a phrase (*3 accounts · 2 signed out*, *not installed*), the
-  waiting mark on one with a signed-out account a list or a default holds. Every agent the build knows is listed, with no ⋯
-  to fold the ones not installed, each of which carries *Install* beside its row and in its right-click (AGENTS2). An agent's
-  page heads with its product, maker, version and *Sign in to another account*, then **its accounts, one list**: each with
-  its state as last known (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling until …* with *Try
-  now*, *unknown*), when it was read (*read 10:42*, *never read*), the workspaces that may run on it, what runs on it and
-  what its agent last said, its one act on its row and the rest in its ⋯. **Opening the page asks no account**: *Read again*
-  at the list's head asks that agent's accounts, one at a time, and an account's ⋯ has *Read again* for that one account
+  waiting mark on one with a signed-out account a list or a default holds. Every agent the build knows is listed, the ones
+  not installed under a *Not installed* head of their own, each carrying *Install* beside its row and in its right-click
+  (AGENTS2, UX7b). An agent's page heads in **one line** (D152 §4): its product, maker, the version alone and whether
+  installed, *Add an account…* and a ⋯; one not installed heads with *Install*. Then **its accounts, a row each, in columns
+  that line up** while the main area holds them (*Account*, *State*, *Runs for*, *Now*), stacking to three lines below 40rem:
+  the account's name leading (the person's, ACCT2), who signed in beside it where the two differ; its state as last known
+  (*signed in* neutral, *signed out* in open's hue where it holds work, *cooling* with its reset, *unknown*) and when; the
+  workspaces it runs for, *no workspace* said; what runs on it now; and **one act by state**, *Sign in* to that account,
+  *Read* that account, *Try now*, *Use in a workspace…*, the rest in its ⋯. *Your own sign-in* is the last row, its
+  explanation on its ⓘ. *Add an account…* offers a signed-out or unknown account's own *Sign in* first, then the tool's
+  sign-in, then the new account's name and the lists it joins. **Opening the page asks no account**: *Read again* at the
+  list's head asks that agent's accounts, one at a time, and a row's *Read* or its ⋯'s *Read again* asks that one account
   (ROSTER1). Then its sections, each folded to a line naming its values
   and opened by its chevron: *How accounts are used*, *Workspaces*, *Ways in* (a door is a property, never a second list),
   *What it may do* (only where Daoris hands the agent the rules file; a proposal waiting opens it), *Model and effort*
@@ -493,11 +498,11 @@ controls are in the frame design's §3.
   page (D141). *Running* is the neutral pill, never done's green. The `＋` asks Ask Daoris for a plugin first,
   then *Make a plugin…*, the kit in a drawer; the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
-  one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
-  *Driver*, *Tools*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
-  驱动, 工具, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116, and *Tools* by TOOLS7, D121; *Agents* left for a place of
-  its own, UX6e). Every way in opens the domain its
-  fact is set in, at the part it names, and a browser is offered only the first four, its list saying
+  one shown at a time and reachable by name. D150 moves Workspace and Permissions to the workspace
+  and repository pages, and Agents to its own place. The remaining domains are setup, appearance,
+  AI, driver, tools, plugins, browser and logs; `settings/domains.ts` and the translated catalogues
+  own their displayed names. Every way in opens the domain its
+  fact is set in, at the part it names, and a browser is offered only the first three, its list saying
   beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
   frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
   the domain from it, never stacked above it; the domain is the main area, its header naming it, and a
@@ -525,15 +530,12 @@ controls are in the frame design's §3.
     lists the person's, then the list built in, which cannot be removed.
   - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
     the strikes dial, and the install's update: what is staged, the drain, the last swap and the banner's three words,
-    UPDATE1b); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
-    and *What a start runs on*: one row per workspace and job, each part with the setting that chose
-    it, a job named once a circle has two, a blocked start's sentence whole, at the card's width);
-    *Permissions* (the rules file and the rules a workspace or a repository adds, a person's rules with a remove, and
-    nothing on the card ranking one scope over another, since precedence is the harness's; Daoris's defaults, the rules for
-    every session on this machine and the proposals are what an agent may do, on its page since UX6e, and the card says so
-    with a door); *Plugins* (a row per folder: what it
+    UPDATE1b); *Plugins* (a row per folder: what it
     declares and speaks on, running or off, the driver's sentence under a refused one, the switch and
     Remove).
+  - Workspace wiring, what a start runs on and scoped rules now belong to Repositories' workspace
+    and repository pages (D150 §3.1). Daoris's defaults, machine-wide session rules and proposals belong
+    to the agent's page. Precedence remains the harness's; no card ranks one scope over another.
 
 ## 6. Accessibility
 

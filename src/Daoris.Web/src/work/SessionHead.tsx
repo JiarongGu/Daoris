@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
+import type { AccountNamer } from '../tools';
 import { GoAheadList } from '../asks/GoAheadList';
 import { ago, elapsed, sessionTool, stamp } from '../format';
 import {
@@ -58,13 +59,15 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, onReview, headed = false, goAheads = [], onGoAhead, ownSignIn = false,
+  onAnswerSession, branch, onReview, headed = false, goAheads = [], onGoAhead, ownSignIn = false, nameOf,
 }: {
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
    * account (D125 §3.7, TOOL4m's rest with UX6e).
    */
   ownSignIn?: boolean;
+  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, the record's id is said. */
+  nameOf?: AccountNamer;
   /** The go-aheads this session asked on its quest's ask (KNOWUSE1a2), as the frame read them; shown while it is parked. */
   goAheads?: GoAhead[];
   /**
@@ -204,7 +207,9 @@ export function SessionHead({
           { label: t('work.head.tool'), value: sessionTool({ adapter: session.adapter, harnessVersion: session.harnessVersion }) },
           {
             label: t('work.head.account'),
-            value: session.profile ?? (ownSignIn ? t('quests.session.ownSignIn') : null),
+            value: session.profile
+              ? (nameOf ? nameOf(session.adapter, session.profile) : session.profile)
+              : ownSignIn ? t('quests.session.ownSignIn') : null,
           },
           { label: t('work.head.machine'), value: sessionOrigin(session) },
           { label: t('work.head.started'), value: `${stamp(session.created)} · ${ago(session.created)}` },

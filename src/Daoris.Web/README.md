@@ -1,7 +1,7 @@
 # Daoris.Web — the platform: the person's window over the family
 
-**Status: built.** A React application over `Daoris.Service`, served by `Daoris.Service.Http`. Both open
-questions in the original brief are settled — as `docs/DECISIONS.md` D30 and D31 — and it has since
+React application over `Daoris.Service`, served by `Daoris.Service.Http`. Both open
+questions in the original brief are settled — as `docs/decisions/D30.md` and `D31.md` — and it has since
 grown into the platform (D38, `docs/2026-09-19-platform-design.md`): knowledge, tasks and setup in one
 place.
 
@@ -13,15 +13,21 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 |---|---|
 | **Overview** | the landing: is anything sitting and for how long, the family's health as tiles, the repositories by what the index holds |
 | **Quests** | what has been asked of whom, grouped by where it is in its life; publish, take, done, decline — and, beside a driven quest, its session **record** (D46): state, adapter, note and evidence, read-only in a browser, with stop offered only where a shell's driver actually holds the process |
-| **Projects** | who is in the family, what each owns and accepts as scannable chips — and who cannot be asked yet, with the join steps proposed as text; in the desktop shell, the person's per-machine driver controls (drive / hold) per repository |
+| **Repositories** | repositories and workspaces, their ownership, setup and driver controls; workspace pages carry wiring, lines, landing and permissions (D150) |
 | **Convergence** | where two repositories reached the same conclusion independently — the knowledge half's lead view |
 | **Search** | what the family has already learned about X |
+| **Agents** | installed agents and accounts: names, sign-in state, known reading time, workspace lists and actions; desktop only |
+| **Plugins** | this machine's plugins and offers; desktop only |
 
 **Sessions** is the working surface — the agent sessions this machine runs, attended one at a
 time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
-**Settings** is everywhere: appearance in a browser, and in the desktop this machine's wiring,
-driver and agents too. Each domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
+**Settings** is everywhere: Get started, Appearance and AI in a browser; the desktop also offers
+Driver, Tools, Plugins, Browser and Logs. Agent accounts live in Agents; workspace controls live in
+Repositories. The desktop's seven menus share one command table, with shortcuts and a command palette
+(D152). Help → Update opens the update card in Driver.
+
+Each Settings domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
 `src/settings/domains.ts` lists them: the one place a domain is added, since the frame
 (`SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
 
@@ -118,9 +124,9 @@ host, so stop a locally running instance first, or the build fails on the locked
 Set `DAORIS_EMBED_MODEL` to turn the semantic tier on; without it the UI says so and convergence finds
 copies and restatements only.
 
-## Verified
+## Historical measurements
 
-Against the real family: **449 entries from 11 repositories**, convergence returning genuine groups —
+The original family corpus held **449 entries from 11 repositories**, convergence returning genuine groups —
 `phase-review` across two repositories at 0.947, `test-coverage-priorities` at 0.940, `doc-loader` across
 three at 0.913.
 

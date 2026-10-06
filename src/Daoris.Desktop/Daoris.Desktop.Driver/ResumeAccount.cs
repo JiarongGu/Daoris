@@ -87,9 +87,10 @@ public static class ResumeWords
     /// Why the words wait, for a start's hold and the record's conversation: the account, its reset and why it lasts until then,
     /// and that the conversation is there. The tool's own sign-in ends its cool-off on a refresh (D125 §3.7), said as a hold says it.
     /// </summary>
-    public static string Waits(CoolingEntry cooling, TimeZoneInfo zone)
+    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b); null says the id.</param>
+    public static string Waits(CoolingEntry cooling, TimeZoneInfo zone, IReadOnlyDictionary<string, string>? names = null)
     {
-        var said = $"{CoolingWords.Who(cooling)} is cooling until {CoolingWords.When(cooling.Until, zone)}, {CoolingWords.Why(cooling)}, "
+        var said = $"{CoolingWords.Who(cooling, names)} is cooling until {CoolingWords.When(cooling.Until, zone)}, {CoolingWords.Why(cooling)}, "
                    + "and its conversation is on that account, so your words wait to go on in it then.";
         // UX6e2: the refresh is the Agents place's Read again, since opening it asks nothing (D150 §5.3).
         return cooling.Account is null

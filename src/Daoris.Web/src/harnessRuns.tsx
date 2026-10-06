@@ -1,14 +1,28 @@
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { sentence } from './format';
-import { type DefaultStanding, useHarnessAction, useHarnessEnded } from './shell';
+import { type DefaultStanding, type HarnessRoster, useHarnessAction, useHarnessEnded } from './shell';
+import { byTool, type AccountPlace } from './tools';
+import { accountName } from './agents/agents';
+import { keys } from './queries';
 import type { Notify } from './ui';
 
 /** A process action a person started on a tool: an install, an update, a pin, or a sign-in. */
 export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove' | 'profile-default';
 
+/**
+ * A new account a sign-in kept (UX7b, ACCT1): which tool, its id, who signed in, and where it runs, which is none for an
+ * account just made. Held until the person answers the add flow's last step, its name and the lists it joins.
+ */
+export type AccountAdded = { harness: string; profile: string; account: string | null; places: AccountPlace[] };
+
 /** Which action runs on which tool, and for whom, while it runs — and how to start one. */
 export type HarnessRun = {
+  /** The new account the last sign-in to another account kept, waiting on its name and lists; null once answered. */
+  added: AccountAdded | null;
+  /** The add flow's last step answered or set aside: the account is no longer waiting on it. */
+  settleAdded: () => void;
   /** `<harness>:<action>` of the action last started, whose console is shown under the tool doing it. */
   running: string | null;
   /** The action still waiting on its end (a process answers `started` and ends as news), or null. */
@@ -52,6 +66,7 @@ export const defaultSaid = (
 /** The state of a tool's running action, and the one listener for its end. */
 function useRunState(notify: Notify): HarnessRun {
   const { t } = useTranslation();
+  const client = useQueryClient();
   const act = useHarnessAction();
   const [running, setRunning] = useState<string | null>(null);
   // 🔴 "Running" lasts until the END, not the request (REV3). A process action answers `started` at
@@ -61,8 +76,18 @@ function useRunState(notify: Notify): HarnessRun {
   const [inFlight, setInFlight] = useState<string | null>(null);
   const [runningProfile, setRunningProfile] = useState<string | null>(null);
   const [signingInNew, setSigningInNew] = useState<string | null>(null);
+  const [added, setAdded] = useState<AccountAdded | null>(null);
   // The same key, readable from the event handler without re-subscribing on every render.
   const runningRef = useRef<string | null>(null);
+
+  // Read the roster at the moment an action ends: a rename or a view change can happen while a sign-in runs.
+  // Looking in the shared cache asks no agent to read its sign-in again.
+  const called = (harness: string, profile: string) => {
+    const roster = client.getQueryData<HarnessRoster>(keys.harnesses);
+    const tool = byTool(roster?.harnesses ?? []).find((each) => each.doors.some((door) => door.harness === harness));
+    const account = tool?.accounts.find((each) => each.name === profile);
+    return account ? accountName(account) : null;
+  };
 
   /**
    * What an action's end means to the person — said once, whether it ended inside the request (a file
@@ -72,7 +97,7 @@ function useRunState(notify: Notify): HarnessRun {
    */
   const ended = (
     action: string, profile: string | undefined, exitCode: number, problem: string | null,
-    account?: string | null, kept?: boolean | null,
+    account?: string | null, kept?: boolean | null, places?: AccountPlace[] | null,
   ) => {
     setRunningProfile(null);
     setSigningInNew(null);
@@ -80,16 +105,25 @@ function useRunState(notify: Notify): HarnessRun {
       notify(problem, 'error');
       return;
     }
-    // Another account (D66 §3): kept only when the sign-in finished, and named by who signed in.
+    // Another account (D66 §3): kept only when the sign-in finished, and named by who signed in. One no list holds runs no
+    // start, which is how the install's work kept waiting on another account (ACCT1), so the sentence says so and the
+    // agent's page asks where it runs (UX7b).
     if (action === 'login-new') {
       if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
       else if (!kept) notify(t('harness.loginNew.nobody'), 'error');
-      else if (account) notify(t('harness.loginNew.done', { account }));
-      else notify(t('harness.loginNew.unnamed', { profile }));
+      else {
+        const nowhere = Array.isArray(places) && places.length === 0;
+        if (account) notify(t(nowhere ? 'harness.loginNew.doneNowhere' : 'harness.loginNew.done', { account }));
+        else notify(t(nowhere ? 'harness.loginNew.unnamedNowhere' : 'harness.loginNew.unnamed', { profile }));
+        const harness = runningRef.current?.split(':')[0];
+        if (harness && profile) setAdded({ harness, profile, account: account ?? null, places: places ?? [] });
+      }
       return;
     }
     if (action === 'login') {
-      if (exitCode === 0) notify(t('harness.login.done', { profile: account ?? profile }));
+      const harness = runningRef.current?.split(':')[0];
+      const name = harness && profile ? called(harness, profile) : null;
+      if (exitCode === 0) notify(t('harness.login.done', { profile: name ?? account ?? profile }));
       else notify(t('harness.login.failed', { code: exitCode }), 'error');
       return;
     }
@@ -103,7 +137,7 @@ function useRunState(notify: Notify): HarnessRun {
   useHarnessEnded((news) => {
     if (runningRef.current !== `${news.harness}:${news.action}`) return;
     setInFlight(null);
-    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept);
+    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept, news.places);
   });
 
   const run: HarnessRun['run'] = (harness, action, profile, version, workspace) => {
@@ -113,6 +147,8 @@ function useRunState(notify: Notify): HarnessRun {
     runningRef.current = `${harness}:${action}`;
     setRunningProfile(action === 'login' ? profile ?? null : null);
     setSigningInNew(action === 'login-new' ? harness : null);
+    // Another new account starts over: the last one's question was set aside.
+    if (action === 'login-new') setAdded(null);
     act.mutate({ harness, action, profile, version, workspace }, {
       // A file edit ends inside the request; a process answers `started` and ends as news, heard
       // above. Either way the end is said once, by the same sentence.
@@ -126,7 +162,8 @@ function useRunState(notify: Notify): HarnessRun {
         if (action === 'profile-default' && result.default && (result.exitCode ?? 0) === 0) {
           setRunningProfile(null);
           setSigningInNew(null);
-          notify(defaultSaid(t, harness, result.default));
+          const name = result.default.account ? called(harness, result.default.account) : null;
+          notify(defaultSaid(t, harness, { ...result.default, account: name ?? result.default.account }));
           return;
         }
         ended(action, profile, result.exitCode ?? 0, null);
@@ -147,7 +184,10 @@ function useRunState(notify: Notify): HarnessRun {
     setInFlight(`${harness}:${action}`);
   };
 
-  return { running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow };
+  return {
+    running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow,
+    added, settleAdded: () => setAdded(null),
+  };
 }
 
 /**

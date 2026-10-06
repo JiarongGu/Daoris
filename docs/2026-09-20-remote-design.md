@@ -2,8 +2,9 @@
 
 > Written 2026-09-20 (DRV3). This is the mechanism for **part 3 of D45** — the remote server, for
 > teams — which the decision deliberately left open, and it folds in the old SVC2 hardening. Read with
-> `docs/DECISIONS.md` D45/D46 (the direction and the driver), D21 (local-first, sharing as
-> configuration), the service design §§4–6/8 (`docs/2026-08-05-knowledge-service-design.md`), and the
+> `docs/decisions/D45.md` and `docs/decisions/D46.md` (the direction and the driver),
+> `docs/decisions/D21.md` (local-first, sharing as configuration), the service design §§4–6/8
+> (`docs/2026-08-05-knowledge-service-design.md`), and the
 > driver design §§4/7/9 (`docs/2026-09-19-driver-design.md`).
 >
 > 🔴 **§2's first rule, §5 and the quest half of §9 are superseded by D68**

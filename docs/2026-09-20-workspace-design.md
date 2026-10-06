@@ -6,7 +6,7 @@
 > manages a workspace's repositories. Designed under the owner's standing redesign grant — nothing is
 > deployed, so structure may change to fit rather than accrete. Read with
 > `docs/2026-08-05-knowledge-service-design.md` (§4 disclosure, §5 identity — this narrows both),
-> `docs/2026-09-20-remote-design.md` (the remote this multiplies), and D48 in `docs/DECISIONS.md`
+> `docs/2026-09-20-remote-design.md` (the remote this multiplies), and `docs/decisions/D48.md`
 > (the direction). The companion is `docs/2026-09-20-interactive-design.md`.
 >
 > **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
@@ -271,13 +271,16 @@ judges):
    work in flight: its session records and quests still travel (they are records of activity, not
    claims of truth), but its knowledge does not — unmerged lessons are not yet the family's. The
    default branch name rides the registration (the checkout knows it; the remote cannot ask git).
-2. **Replacement is monotonic by commit time.** The remote stores `{ commit, committedAt, origin }`
+2. **Original ordering, superseded by D68.** The remote stores `{ commit, committedAt, origin }`
    per repository beside its entries and refuses a feed whose `committedAt` is older than what it
    holds — answered plainly ("`aurora-engine` is already fed from a newer commit"), reported by the
    sync as information, not a problem. Same commit re-feeds are idempotent, as today. This keeps
    *update* and *delete* correct for free: the newest canonical checkout's view replaces wholesale,
    and an entry absent from it is deleted — a repository that deleted its knowledge means the deletion
    (the existing rule, now protected from stale writers).
+   D68 replaces commit-time ordering with ancestry, content digest and compare-and-swap;
+   `docs/2026-09-23-sync-design.md` §2 and §6 are the current contract. Commit time remains provenance,
+   not authority to replace knowledge.
 3. **Provenance is served, not implied.** `GET /api/repositories` on a shared host answers each
    repository's fed commit, time and origin, and the platform shows it — staleness a person can see
    beats freshness they must assume. This is `claims-need-checks` applied to the index itself: the
@@ -336,7 +339,8 @@ machine paths (D46/D47: paths never reach a browser).
   surface (D31) — the manifest is inert data (D26), not doctrine.
 - **Remove**: retire the registration, with the sentence saying what it does **not** do — no files
   deleted, no history touched; the repository simply stops being addressable and indexed here.
-- A browser over a keyed remote sees the workspace's registry read-only, as it sees everything.
+- A keyed remote serves the API, with no page until person-auth exists (D47). The person's window
+  uses its local host; machine controls stay on the desktop bridge.
 
 ## 8. What changes where
 

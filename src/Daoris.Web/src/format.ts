@@ -1,4 +1,5 @@
 import i18n from './i18n';
+import type { AccountNamer } from './tools';
 
 // Formatting for the management surface. Small on purpose: a helper here is one the views share,
 // not a utility belt.
@@ -200,12 +201,17 @@ export function sessionTool(
    * rest with UX6e). Left out, nothing is said of an account the record does not name.
    */
   ownSignIn = false,
+  /**
+   * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster: the record keeps the id, and the line says the
+   * name the person gave it, looked up as it is drawn. Left out, the id is said.
+   */
+  nameOf?: AccountNamer,
 ): string {
   return [
     session.adapter,
     session.harnessVersion || null,
     session.profile
-      ? i18n.t('quests.session.asProfile', { profile: session.profile })
+      ? i18n.t('quests.session.asProfile', { profile: nameOf ? nameOf(session.adapter, session.profile) : session.profile })
       : ownSignIn ? i18n.t('quests.session.ownSignIn') : null,
   ].filter(Boolean).join(' · ');
 }

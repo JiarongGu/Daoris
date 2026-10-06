@@ -2,7 +2,7 @@
 
 **Status: approved direction from the owner, 2026-09-19; written before the code.** The ask, verbatim
 in spirit: a task / knowledge / setup platform for Daoris — the *application* over the substrate —
-web or desktop based. This document argues its shape; `docs/DECISIONS.md` D38 records the decisions.
+web or desktop based. This document argues its shape; `docs/decisions/D38.md` records the decisions.
 
 ## 1. What it is for
 

@@ -2,7 +2,7 @@
 
 > Written 2026-09-19 (DRV1). This is the mechanism for **part 2 of D45** — the local driver — which the
 > decision deliberately left open. It is the contract for `Daoris.Desktop` re-scoped (DRV2). Read with
-> `docs/DECISIONS.md` D45 (the direction), D37 (the operating model), D32 (quests), D22/D23 (composition
+> `docs/decisions/D45.md` (the direction), D37 (the operating model), D32 (quests), D22/D23 (composition
 > and the one-supported-harness seam), and `src/Daoris.Desktop/README.md` (the brief this settles).
 >
 > **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63

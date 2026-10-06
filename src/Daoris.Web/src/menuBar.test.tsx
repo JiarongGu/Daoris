@@ -227,6 +227,26 @@ describe('the record in front (D152 §2)', () => {
   });
 });
 
+describe('Help › Update', () => {
+  it('brings the update card into view after the shell answers, and clears the anchor for a later Settings visit', async () => {
+    const scroll = vi.spyOn(HTMLElement.prototype, 'scrollIntoView');
+    try {
+      start();
+      const user = await openMenu('Help');
+      await user.click(await screen.findByRole('menuitem', { name: 'Update' }));
+      await waitFor(() => expect(scroll.mock.instances).toContain(document.getElementById('settings-update')));
+      expect(document.getElementById('settings-update')).not.toBeNull();
+      const calls = scroll.mock.calls.length;
+      await user.click(within(places()).getByRole('button', { name: /^Overview/ }));
+      fireEvent.keyDown(window, { key: ',', code: 'Comma', ctrlKey: true });
+      await screen.findByRole('navigation', { name: 'Settings domains' });
+      expect(scroll).toHaveBeenCalledTimes(calls);
+    } finally {
+      scroll.mockRestore();
+    }
+  });
+});
+
 describe('Help › Keyboard shortcuts', () => {
   it('opens a drawer listing every key by menu', async () => {
     start();

@@ -109,9 +109,9 @@ for it. Neither routes a ticket to a repository, so locating stays Daoris's own.
 onto D64 with nothing new. Lyntai's document storage fits no store here, so SQLite stays, and a
 persistent vector store is SEM1's question.
 
-**What else is open is decisions and triggers**, not work: the owner's calls and the held rows are in
-`TASKS.md`, each saying what it waits on. Surface work comes from looking at the deployed application
-after every change.
+`TASKS.md` holds implementation work, the owner's calls and held rows, with dependencies and proof.
+UI/UX work leads the current handover. Surface work is verified by looking at the application after
+every change; a merged implementation does not itself establish the installed result.
 
 ## The horizon after: work that proves itself (reviewed 2026-10-03)
 
@@ -123,10 +123,10 @@ recommendation, not a decision: the owner decides.
 
 | Step | What | State |
 |---|---|---|
-| **TRACE1** | One read from a commit back to its session, quest and ask, from what is recorded | Proposed |
-| **EVID1** | A requirement's check that Daoris verifies as a fact, not as the agent's word | Proposed; design first |
-| **CONTEXT1** | What a session was handed, section by section, with sizes | Proposed |
-| **OUTCOME1** | An outcome per quest, derived from the records and reported | Proposed |
+| **TRACE1** | One read from a commit back to its session, quest and ask, from what is recorded | D143 records the implementation; remaining work is in `TASKS.md` |
+| **EVID1** | A requirement's check that Daoris verifies as a fact, not as the agent's word | Design recorded in the task archive; implementation rows are in `TASKS.md` |
+| **CONTEXT1** | What a session was handed, section by section, with sizes | D143 records the implementation; remaining work is in `TASKS.md` |
+| **OUTCOME1** | An outcome per quest, derived from the records and reported | Completed build recorded in `docs/task-archive.md` |
 
 ---
 

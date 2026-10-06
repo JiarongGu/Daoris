@@ -6,6 +6,7 @@ import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
+import type { AccountNamer } from '../tools';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
@@ -103,8 +104,13 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, trace,
+  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, trace, nameOf,
 }: {
+  /**
+   * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster its organism holds: its session line, its chain
+   * and its trace say each account by it. Absent, as in a browser, each record's id is said.
+   */
+  nameOf?: AccountNamer;
   /**
    * How it came to be (TRACE1b, D143, D50), folded at the foot of its page: the page's organism holds the fold and the read.
    * Absent in a browser, which has no driver to read this machine's records (D47 §4).
@@ -616,6 +622,7 @@ export function QuestPage({
             chain={chain}
             onQuest={(other) => onOpenQuest(other.id)}
             onSession={onAttend ? (ran) => onAttend(ran.id) : undefined}
+            nameOf={nameOf}
           />
         </div>
       )}
@@ -632,7 +639,7 @@ export function QuestPage({
           <div className="flex flex-wrap items-center gap-2">
             <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
             <span className="font-mono text-meta text-ink-faint">
-              {session.id} · {sessionTool(session)}
+              {session.id} · {sessionTool(session, false, nameOf)}
               {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
             </span>
           </div>
@@ -660,6 +667,7 @@ export function QuestPage({
           onSession={onAttend}
           onQuest={onOpenQuest}
           onAsk={onOpenAsk}
+          nameOf={nameOf}
         />
       )}
     </ViewMain>

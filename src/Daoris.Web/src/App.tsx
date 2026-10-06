@@ -606,7 +606,7 @@ export function App() {
     setup: () => openSettings('start'),
     shortcuts: () => setShortcuts(true),
     // Settings → Driver, where the install's update is (UPDATE1b): nothing here checks a release channel.
-    update: () => openSettings('driver'),
+    update: () => openSettings('driver', 'update'),
     about: () => setAbout(true),
   };
   const translate = (key: string, values?: Record<string, unknown>) => (values ? t(key, values) : t(key));

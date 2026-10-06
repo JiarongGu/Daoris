@@ -399,9 +399,9 @@ const DESKTOP_SUITES = ['driver', 'modules', 'driver-process', 'modules-process'
  */
 export const REACH = Object.freeze([
   {
-    paths: ['daoris.gates.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs'],
+    paths: ['daoris.gates.json', 'daoris.lanes.json', 'package.json', 'package-lock.json', '.gitattributes', '.gitignore', 'tools/fsx.mjs'],
     gates: '*',
-    why: 'it changes how every gate runs: the declared gates, the scripts that run them, line endings, what is tracked, or the file helpers every rehearsal imports',
+    why: 'it changes how every gate runs or reaches a path: the gates, lanes, scripts, line endings, what is tracked, or the file helpers every rehearsal imports',
   },
   { paths: ['tools/rehearsal-kit.mjs'], gates: ['rehearse', 'rehearse-family', 'deployment'], why: "the rehearsals' kit" },
   { paths: ['tools/release-rehearsal.mjs', 'tools/release-prep.mjs', 'tools/service-publish.mjs'], gates: ['rehearse'], why: 'release tooling' },
@@ -743,9 +743,9 @@ function treeDrift(root, from, to) {
 }
 
 /**
- * The records the parent writes after a merge's gates and before its commit: the steward's lane and the
- * records that merge by union (`.gitattributes`). The install carries none of them, so a tree that
- * differs from a gated one only by these is the gated tree as far as a stage can tell. A union pattern
+ * The known records the parent writes after gates, when declared in the steward's lane or as union.
+ * Neither declaration may make gate policy or source a record: both come from the current checkout,
+ * so trusting their patterns alone would let an edit forgive itself and untested code. A union pattern
  * names the record at the root here, where git reads a pattern with no slash at any depth: the canon's
  * own `CHANGELOG.md` merges by union too, and the package ships it.
  */
@@ -753,7 +753,9 @@ export function recordMatcher({ lanes = [], union = [] } = {}) {
   const steward = lanes.find((lane) => lane.steward);
   const stewardOwns = steward ? laneMatcher(steward.paths) : () => false;
   const unionPatterns = union.map((pattern) => globToRegExp(pattern.replace(/^\//, '')));
-  return (path) => stewardOwns(path) || unionPatterns.some((pattern) => pattern.test(path));
+  const known = new Set(['TASKS.md', 'docs/task-archive.md', 'CHANGELOG.md', 'docs/FIX-LOG.md', 'docs/README.md', '.claude/knowledge/twins.md']);
+  const safe = (path) => known.has(path) || /^docs\/decisions\/D\d+\.md$/.test(path);
+  return (path) => safe(path) && (stewardOwns(path) || unionPatterns.some((pattern) => pattern.test(path)));
 }
 
 /**

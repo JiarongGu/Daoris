@@ -63,7 +63,7 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// ACCT2's <c>daoris agent profile rename</c> and the route's <c>profile-rename</c>: exempt, since an account's name is the
-    /// person's own word. The agent's page presses it once UX7b builds it, and this is its row then.
+    /// person's own word. The agent's page presses it (UX7b), and this is its control's row.
     /// </summary>
     private static readonly Exempt RenameDoor = new(
         "an account's name is the person's own word for it, offered at a sign-in's end as who signed in and kept only by "
@@ -72,7 +72,7 @@ public sealed partial class HelpCoverageTests
     /// <summary>
     /// ACCT1's <c>daoris agent profile join</c> and the route's <c>profile-join</c>: putting an account in a list widens what
     /// Daoris may spend, as <c>order</c> does, so it is the <c>agent</c> kind's <c>order</c> door, owed with it. The agent's page
-    /// presses it once UX7b builds it, and this is its row then.
+    /// presses it (UX7b), and this is its control's row.
     /// </summary>
     private static readonly Owed JoinDoor = AccountDoorOwed(
         "order", "putting an account in a list widens what Daoris may spend", "daoris agent profile join");
@@ -303,6 +303,9 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-remove", new Exempt(
             "it deletes an account with its sign-in, which only the person can make again (D89).")),
         ("agents", "useHarnessAction", "profile-default", new Door("agent", "default")),
+        // UX7b: the agent's page presses ACCT2's rename and ACCT1's join, at a new account's end and from a row.
+        ("agents", "useHarnessAction", "profile-rename", RenameDoor),
+        ("agents", "useHarnessAction", "profile-join", JoinDoor),
         ("agents", "useSetAgentSettings", null, new Door("account", "settings")),
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
 
@@ -810,6 +813,9 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("D66", RenameDoor.Reason);
         Assert.Contains("daoris agent profile join", JoinDoor.Reason);
         Assert.IsType<Exempt>(Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "login-new").Answer);
+        // UX7b: the page presses both, so each is its control's row.
+        Assert.Same(RenameDoor, Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "profile-rename").Answer);
+        Assert.Same(JoinDoor, Controls.Single(row => row.Hook == "useHarnessAction" && row.Action == "profile-join").Answer);
     }
 
     /// <summary>DRV8's <c>--share</c>, decided (D110): exempt, while the headless loop's usage still names it.</summary>

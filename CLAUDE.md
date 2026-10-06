@@ -1,6 +1,7 @@
 # CLAUDE.md — Daoris (道衍)
 
-> Auto-loaded every session. Keep short — detail lives in `docs/` and `.claude/`.
+> Project brief and development guide. Claude loads this automatically; other agents read it alongside
+> `AGENTS.md`. Detail lives in `docs/` and `.claude/`.
 
 ## What this is
 
@@ -37,14 +38,9 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Seventeen commands and a canon of 8 core rules, 6 core
-knowledge documents, 6 core skills and 7 packs; the test counts live in `TASKS.md`'s State, their one
-home. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
-`.claude/`. It was **adopted
-into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
-first contact — and that sibling **stepped off at its owner's request** (2026-08-17), so the proof
-stands and the **live consumer count is zero**. Adoption has to be near-free for the family to come
-back, which is what the automation-first direction is for; the archive has the account.
+Current counts, publication and adoption status live in `TASKS.md`'s State. Daoris carries its own
+manifest and syncs core into its `AGENTS.md` region and `.claude/`. The archive holds adoption outcomes;
+the automation-first direction aims to make adoption near-free.
 
 **All five artefacts exist and are built, and all three parts of D45 with them** — including
 `Daoris.Desktop`, the local driver (D45/D46): the shell brings up the local host, carries the

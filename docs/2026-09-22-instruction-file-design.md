@@ -3,7 +3,7 @@
 > Written 2026-09-22 (CANON8), after the owner saw a candidate adopter's layout and said it *"made a
 > common management style for different agents, which is good to take"*. This is the contract for
 > moving the always-loaded tier out of `.claude/rules/` and into the file every harness reads. Read
-> with `docs/DECISIONS.md` **D7** (the tier is the directory — amended here), **D19** (the sync state
+> with `docs/decisions/D7.md` (the tier is the directory — amended here), **D19** (the sync state
 > space — extended here), **D13** (drift is measured against the lock) and **D48 §2a** (doctrine must
 > not hard-require Daoris).
 

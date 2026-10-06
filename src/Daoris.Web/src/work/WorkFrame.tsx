@@ -13,6 +13,7 @@ import {
 } from '../shell';
 import { doorOf, toolOf } from '../tools';
 import { agentOf, machineScope, workspaceScope } from '../settings/accounts';
+import { namer } from '../settings/namer';
 import {
   boxOf, coolingFor, NATIVE_WORDS_LIMIT, neverSentence, type NewSessionAnswer, startFromRefusal, takesWords, tooLong,
 } from './say';
@@ -867,6 +868,9 @@ export function WorkFrame({
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
+  // What a person calls an account (ACCTNAME1, D152 §4.2): the roster's one namer, so the head's facts, its Details, its
+  // chain and its trace say the name the agent's page leads its row with.
+  const nameOf = namer(t, roster);
   // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
@@ -993,6 +997,7 @@ export function WorkFrame({
         grouping,
         ownSignIn: roster.some((row) => row.harness === attended.adapter),
         branch,
+        nameOf,
       })}
       acts={headActs}
       primary={headPrimary}
@@ -1168,6 +1173,7 @@ export function WorkFrame({
             headed
             // An agent on the roster has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7).
             ownSignIn={Boolean(attended && roster.some((row) => row.harness === attended.adapter))}
+            nameOf={nameOf}
             resolving={resolve.isPending || answer.isPending || parkGoAhead.isPending}
             onResolve={here ? onResolve : undefined}
             onAnswerSession={here && !answering ? onAnswerSession : undefined}

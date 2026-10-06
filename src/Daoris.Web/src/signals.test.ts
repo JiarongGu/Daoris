@@ -273,6 +273,30 @@ describe('sittingSentence', () => {
   });
 
   /**
+   * ACCT2b (D125's ACCT2b note): the tick carries the name the person gave each account beside its id, so 中文 says the
+   * name, as the driver's English does; an account with no name is said by its id; the sign-in keeps the id.
+   */
+  it('says each account by the name the tick carries, its sign-in by its id, and an unnamed one by its id', async () => {
+    const reason = 'the `claude-code` account `work` is cooling until Oct 6, 09:00 (Etc/UTC), as the agent said.';
+    const named: Consideration = {
+      ...sits('Blocked', reason),
+      waitsFor: { agent: 'claude-code', account: 'acct-3f9c1a2b', name: 'work', until: '2026-10-06T09:00:00Z', stated: true },
+      signedOut: { agent: 'claude-code', accounts: ['account-2', 'acct-77aa00ff'], names: ['personal', null] },
+    };
+
+    await i18n.changeLanguage('en');
+    expect(sittingSentence(named)).toBe(reason);
+
+    await i18n.changeLanguage('zh');
+    const said = sittingSentence(named);
+    expect(said).toContain('claude-code 的账户 work');
+    expect(said).not.toContain('acct-3f9c1a2b');
+    expect(said).toContain('personal、acct-77aa00ff 未登录');
+    expect(said).toContain('`daoris agent login claude-code --profile account-2`');
+    expect(sittingSentence({ ...named, waitsFor: undefined })).toContain('personal、acct-77aa00ff 未登录');
+  });
+
+  /**
    * PAUSE1e (D132 §2.3): a paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
    * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (a shell older than the
    * fact), the driver's words stand.

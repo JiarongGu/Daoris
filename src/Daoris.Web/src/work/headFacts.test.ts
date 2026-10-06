@@ -42,6 +42,18 @@ describe('a session’s facts line', () => {
       .toEqual(['engine', '2m', 'attempt 2: the one before it failed']);
   });
 
+  /** ACCTNAME1 (D152 §4.2): the account by the person's name, looked up on the roster as the head is drawn; the id without one. */
+  it('names the account by the person’s name where a namer is handed, and by its id where none is', () => {
+    const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'acct-3f9c1a2b' ? 'work' : profile ?? 'own');
+    expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working', nameOf }))
+      .toEqual(['engine', 'work', '2m']);
+    expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working' }))
+      .toEqual(['engine', 'acct-3f9c1a2b', '2m']);
+    // A record naming none ran on the tool's own sign-in, said as it was, never through the namer.
+    expect(sessionFacts(t, { session: session(), shown: 'working', ownSignIn: true, nameOf }))
+      .toEqual(['engine', 'on your own sign-in', '2m']);
+  });
+
   it('names the tool’s own sign-in where the record names no account and its agent has accounts', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', ownSignIn: true })).toEqual(['engine', 'on your own sign-in', '2m']);
   });

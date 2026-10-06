@@ -1,6 +1,6 @@
 # Daoris.Service — design
 
-**Status: design, nothing built.** Written before code so the shape is argued rather than discovered.
+**Original status: design.** Written before code so the shape is argued rather than discovered.
 The contract for the CLI is `2026-08-04-daoris-design.md`; this is its knowledge layer.
 
 > **Since written (2026-09-25):** built, as `src/Daoris.Service` — an MCP host and an HTTP host over

@@ -4,8 +4,8 @@
 > console display directly in Daoris (developing via claude code / codex from inside it), and Daoris
 > managing the agent CLIs themselves — install and update. This extends the driver design
 > (`docs/2026-09-19-driver-design.md`) without weakening its contract: sessions stay observed,
-> processes stay on the machine, and Daoris still makes no model calls at all. The direction is D49 in
-> `docs/DECISIONS.md`; the companion is `docs/2026-09-20-workspace-design.md`.
+> processes stay on the machine, and Daoris still makes no model calls at all. The direction is
+> `docs/decisions/D49.md`; the companion is `docs/2026-09-20-workspace-design.md`.
 >
 > **Paths.** `~/.daoris/…` below is the Daoris home as it was when this was written. Since D63
 > (2026-09-23) the home is `$DAORIS_HOME`, the install's own `data/`, and nothing lives under the user

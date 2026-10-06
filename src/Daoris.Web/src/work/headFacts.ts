@@ -3,6 +3,7 @@ import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
 import type { Consideration } from '../signals';
 import type { SweepBranch } from '../settings/Sweep';
+import type { AccountNamer } from '../tools';
 import { SESSION_ACTIVE } from '../ui';
 import type { SessionGrouping } from './groups';
 import { isIntake } from './identity';
@@ -24,11 +25,16 @@ export type SessionFactsOf = {
   ownSignIn?: boolean;
   /** What its own tree left, as the clean-up judged it (SESS1 S10): an ended session's landing. */
   branch?: SweepBranch | null;
+  /** What a person calls an account (ACCTNAME1), from the roster; absent, the record's id is said. */
+  nameOf?: AccountNamer;
 };
 
-/** The account it ran as, as the head says it: the profile it names, or the tool's own sign-in where it names none. */
-function account(t: TFunction, session: Session, ownSignIn: boolean): string | null {
-  if (session.profile) return session.profile;
+/**
+ * The account it ran as, as the head says it: the profile it names, by the person's name for it (ACCTNAME1, D152 §4.2), or
+ * the tool's own sign-in where it names none. The record keeps the id; the name is looked up as the head is drawn.
+ */
+function account(t: TFunction, session: Session, ownSignIn: boolean, nameOf?: AccountNamer): string | null {
+  if (session.profile) return nameOf ? nameOf(session.adapter, session.profile) : session.profile;
   return ownSignIn ? t('quests.session.ownSignIn') : null;
 }
 
@@ -38,7 +44,7 @@ function account(t: TFunction, session: Session, ownSignIn: boolean): string | n
  * earlier sessions failed; what holds it, from the row's own line where the reader placed it; an ended one's landing and
  * how long it ran. An intake says its ask. Nothing it has nothing to say: an absent fact is left out, never a dash.
  */
-export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn = false, branch }: SessionFactsOf): string[] {
+export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn = false, branch, nameOf }: SessionFactsOf): string[] {
   if (isIntake(session)) return [t('work.scope.ask', { id: session.ask }), t('work.intake.kind')];
 
   const facts: (string | null)[] = [session.repository];
@@ -60,7 +66,7 @@ export function sessionFacts(t: TFunction, { session, shown, grouping, ownSignIn
   }
 
   if (running) {
-    facts.push(account(t, session, ownSignIn));
+    facts.push(account(t, session, ownSignIn, nameOf));
     if (session.kind !== 'chat') facts.push(elapsed(session.created));
     // UX7c (D152): the fact that matters most on a retried quest, another try and how many failed before it.
     const failed = typeof grouping?.strikes === 'number' && grouping.strikes > 0 ? grouping.strikes : null;

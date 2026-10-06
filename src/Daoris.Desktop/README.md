@@ -4,6 +4,16 @@
 drives them end to end.** `docs/2026-09-19-driver-design.md` (D46) is the contract; how each part
 got its shape is in `docs/decisions/` and `docs/task-archive.md`, not here.
 
+For an isolated development start, run these from the repository root:
+
+```sh
+node tools/desktop.mjs build
+node tools/desktop.mjs run
+```
+
+The run uses its own home and copied examples. The [dev-loop section](#the-dev-loop--toolsdesktopmjs-2026-09-21)
+explains captures and shutdown; [Installing it](#installing-it-2026-09-22) explains the published layout.
+
 | Project | What it is |
 |---|---|
 | `Daoris.Desktop.Driver` | The library: the loop and the planner; the adapter seam, whose `Toolchain` declares a harness's binary, version question, configuration home and install, update and login flows (D49 §4), and whose `Wire` is the door a session is held over — the pipe, or ACP (`AcpSession`, with a permission request refused by construction); `ChatRunner` for conversations; `HarnessRoster` (is the harness here, and which account does this run as); and `RemoteSync`, which rides the tick once per workspace |

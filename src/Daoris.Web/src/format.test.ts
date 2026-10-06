@@ -1,6 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
-import { ago, compact, elapsed, figure, sentence, sittingDays, span, stamp } from './format';
+import { ago, compact, elapsed, figure, sentence, sessionTool, sittingDays, span, stamp } from './format';
+
+/** ACCTNAME1 (D152 §4.2): a session's agent line names its account by the person's name where the roster's namer is handed. */
+describe('sessionTool', () => {
+  const session = { adapter: 'claude-code', harnessVersion: '2.1.288', profile: 'acct-3f9c1a2b' };
+
+  it('names the account by the namer handed, by its id without one, and the own sign-in where the record names none', () => {
+    const nameOf = (owner: string, profile?: string | null) => (owner === 'claude-code' && profile === 'acct-3f9c1a2b' ? 'work' : profile ?? '');
+    expect(sessionTool(session, false, nameOf)).toBe('claude-code · 2.1.288 · as work');
+    expect(sessionTool(session)).toBe('claude-code · 2.1.288 · as acct-3f9c1a2b');
+    expect(sessionTool({ ...session, profile: null }, true, nameOf)).toBe('claude-code · 2.1.288 · on your own sign-in');
+  });
+});
 
 /** CONV5: a turn's span, which is seconds where a session's is minutes. */
 describe('span', () => {

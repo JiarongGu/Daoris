@@ -6,6 +6,7 @@ import type { ChainStep } from '../map/chain';
 import { ChainLine } from '../map/ChainLine';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
+import type { AccountNamer } from '../tools';
 import type { Resolution } from './AwaitingPerson';
 import { HowItCameToBe, type TraceDoor } from './HowItCameToBe';
 import type { Relations } from './relations';
@@ -45,10 +46,15 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, headed = false, goAheads, onGoAhead, trace,
-  ownSignIn = false,
+  ownSignIn = false, nameOf,
 }: {
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7), said in its head. */
   ownSignIn?: boolean;
+  /**
+   * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster the frame holds: its head's *Details*, its chain's
+   * rows and its trace say each account by it. Absent, each record's id is said.
+   */
+  nameOf?: AccountNamer;
   /**
    * How it came to be (TRACE1b, D143, D50), folded at the foot of its record, and the doors its chain opens by id: the page
    * holds the fold and the read. Absent where nothing can read the trace: a browser, which has no driver.
@@ -136,6 +142,7 @@ export function AttendedSession({
         goAheads={goAheads}
         onGoAhead={onGoAhead}
         ownSignIn={ownSignIn}
+        nameOf={nameOf}
       />
       {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens.
           One line of stops by default, since the whole strip stood 350 to 450px between the head and
@@ -143,14 +150,14 @@ export function AttendedSession({
       {chain.length > 1 && (chainWhole === session.id
         ? (
           <div className="grid justify-items-start gap-1">
-            <ChainStrip chain={chain} level={3} attended={session.id} onQuest={onQuest} onSession={onSession} />
+            <ChainStrip chain={chain} level={3} attended={session.id} onQuest={onQuest} onSession={onSession} nameOf={nameOf} />
             <Button variant="ghost" className="px-1.5 py-0 text-small" onClick={() => showChain(false)}>{t('chain.hide')}</Button>
           </div>
         )
         : <ChainLine chain={chain} onQuest={onQuest} onExpand={() => showChain(true)} />)}
       {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* Folded, a line above the conversation: nothing is read until the person opens it (TRACE1b). */}
-      {trace && <HowItCameToBe kind="session" id={session.id} {...trace} />}
+      {trace && <HowItCameToBe kind="session" id={session.id} {...trace} nameOf={nameOf} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
           here on a narrow window while the dock was hidden there; FRAME6 keeps the dock at every width,
           and the copy here drew it twice. Only a window with no dock carries it. */}

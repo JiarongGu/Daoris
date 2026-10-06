@@ -173,6 +173,32 @@ public sealed class TickConsiderationTests
             JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held with { SignedOut = null }), Wire).GetProperty("signedOut").ValueKind);
     }
 
+    /// <summary>
+    /// ACCT2b (D125's ACCT2b note): the wait and the accounts passed carry the name the person gave each account beside its id,
+    /// read when the look said them, so the page says them by name in either language; null where an account has none.
+    /// </summary>
+    [Fact]
+    public void A_held_quest_carries_each_account_s_name_beside_its_id()
+    {
+        var until = new DateTimeOffset(2026, 10, 3, 16, 2, 0, TimeSpan.Zero);
+        var held = new Consideration(Quest, StartVerdict.Blocked, "the `claude-code` account `work` is cooling until Oct 3, 16:02 (UTC).")
+        {
+            SignedOut = SignedOutAccounts.Of("claude-code", ["acct-3f9c1a2b", "account-2"], new Dictionary<string, string> { ["acct-3f9c1a2b"] = "spare" }),
+        };
+        var wait = new AccountWait("claude-code-acp", "claude-code", "account-1", "work", until, true, held.Reason) { Quests = ["q1"], Name = "work" };
+
+        var shape = JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held, null, wait), Wire);
+
+        var waits = shape.GetProperty("waitsFor");
+        Assert.Equal(("account-1", "work"), (waits.GetProperty("account").GetString(), waits.GetProperty("name").GetString()));
+        var signedOut = shape.GetProperty("signedOut");
+        Assert.Equal(["acct-3f9c1a2b", "account-2"], signedOut.GetProperty("accounts").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(["spare", null], signedOut.GetProperty("names").EnumerateArray().Select(each => each.GetString()));
+        Assert.Equal(JsonValueKind.Null,
+            JsonSerializer.SerializeToElement(DriverLoop.TickConsideration(held, null, wait with { Name = null }), Wire)
+                .GetProperty("waitsFor").GetProperty("name").ValueKind);
+    }
+
     /// <summary>Every other verdict holds by no session, and says none.</summary>
     [Fact]
     public void A_quest_no_stop_holds_names_no_session()

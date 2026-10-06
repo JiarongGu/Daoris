@@ -116,6 +116,24 @@ describe('the chain strip', () => {
     expect(screen.getByText('account-2')).toBeInTheDocument();
   });
 
+  /** ACCTNAME1 (D152 §4.2): each attempt's account by the person's name, where the surface hands the roster's namer. */
+  it('names each attempt’s account by the person’s name where a namer is handed', () => {
+    const nameOf = (_owner: string, profile?: string | null) => (profile === 'acct-3f9c1a2b' ? 'work' : profile ?? '');
+    const { unmount } = render(<ChainStrip nameOf={nameOf} chain={buildChain('a', QUESTS, [
+      run('s1', 'a', { state: 'failed', profile: 'acct-3f9c1a2b' }),
+      run('s2', 'a', { state: 'working', profile: 'account-2', created: '2026-09-23T02:00:00Z' }),
+    ])} />);
+
+    expect(screen.getByText('work')).toBeInTheDocument();
+    expect(screen.getByText('account-2')).toBeInTheDocument();
+    expect(screen.queryByText('acct-3f9c1a2b')).toBeNull();
+    unmount();
+
+    // A quest whose attempts ran on different agents says each one's line, its account by name too.
+    render(<ChainStrip nameOf={nameOf} chain={buildChain('a', QUESTS, [run('s1', 'a', { profile: 'acct-3f9c1a2b', harnessVersion: '2.1.270' })])} />);
+    expect(screen.getByText('claude-code · 2.1.270 · as work')).toBeInTheDocument();
+  });
+
   it('offers no door where the surface gave none', () => {
     render(<ChainStrip chain={buildChain('b', QUESTS, [run('s1', 'a')])} />);
 

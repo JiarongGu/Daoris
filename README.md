@@ -1,12 +1,15 @@
 # Daoris (道衍)
 
-**Cross-repo engineering doctrine.** One canonical set of agent-facing rules and knowledge,
-materialized into each repository, kept from drifting — and improved from wherever the improvement was
-discovered.
+Daoris drives agent sessions and shares engineering doctrine and knowledge across repositories. The
+desktop is the working surface: sessions, quests, repository setup and agent accounts. The connector
+keeps canonical rules in each repository; the service indexes knowledge and exchanges work.
 
-道衍 is *propagation and unfolding*: doctrine flows outward into the repositories, and refinements found
-in a repository flow back and evolve the canon. Both directions ship in the first release, because a
-one-way push would be distribution, not cultivation.
+Start with the [desktop guide](src/Daoris.Desktop/README.md) to run the application, or the CLI below
+to manage doctrine. Contributors should read [AGENTS.md](AGENTS.md), [the document router](docs/README.md)
+and [open tasks](TASKS.md). [ROADMAP.md](ROADMAP.md) explains direction; [decisions](docs/decisions/)
+hold the contracts and reasons.
+
+道衍 means *propagation and unfolding*: doctrine flows into repositories; their refinements evolve the canon.
 
 ## Ecosystem
 
@@ -18,16 +21,11 @@ Three public projects, deliberately independent:
 | [Shenora](https://github.com/JiarongGu/Shenora) | Desktop runtime — the shell an application is built in |
 | **Daoris** | Engineering doctrine — how the work itself is done |
 
-The CLI takes no dependency on either — it must run in repositories that have nothing installed. The
-knowledge service consumes Lyntai as a library, at released versions only (D22). Daoris is the only one
-of the three that installs *into* the others.
+The CLI has no dependency on either project. The service consumes released Lyntai libraries (D22).
 
 ## The problem
 
-The same doctrine gets independently re-derived in every repository, and the copies diverge. A rule that
-turns out to be wrong stays wrong in five places, because nothing knows the copies exist. Measured on
-this repository's own seeding: a doctrine set copied from a sibling **three days earlier** already
-differed in 12 of 19 files.
+Copied doctrine diverges. Daoris tracks its origin and carries reviewed improvements back to the canon.
 
 ## Install
 
@@ -119,26 +117,14 @@ refuse a repository a newer one synced, `--force` or not, naming `npx daoris@<th
 would collide, what already says the same thing under another name, and what the always-loaded budget
 becomes. It writes nothing, and `--json` gives an agent the exact facts to act on.
 
-The division of labour is deliberate. **Daoris supplies what must be exact** — which paths collide,
-which documents duplicate, what it costs — because an agent guessing at a collision is wrong in a way
-that destroys files. **The agent supplies judgement** — which packs fit this repository, whether a
-suspected twin really is one, how to resolve each collision — because a regex guessing at "is this a
-.NET library" is wrong in a way that costs a sentence. Then a person selects.
+Daoris reports collisions, possible duplicates and budget costs. The agent judges pack fit and resolves
+collisions; the person selects what to adopt.
 
-It is also the only command that compares the working tree against the **canon** rather than the lock,
-which is what lets it find a renamed twin *before* adoption rather than after — and, on this
-repository, what caught a set of stale provenance headers that every lock-based check agreed was fine.
+`analyze` compares against the canon rather than the lock, finding renamed twins before adoption.
 
-`doctor` exists because of the one thing the lock cannot catch: a repository's own rule that says the same
-thing as a canonical one under a different name is *local*, and local is invisible by design. Word overlap
-is a crude signal, so it only ever reports — a false positive that failed a build would be worse than the
-duplication it warns about.
-
-Its threshold is set from measurement against real sibling documents, not taste: near-verbatim copies
-score ~73%, twins that were *rewritten* rather than copied land at 34–43%, and unrelated documents at
-7–16%. It finds **restatement, not convergence** — a document that reaches the same principle through an
-entirely different vocabulary scores like an unrelated one, and no threshold separates those. Adoption
-still wants a read-through by hand; `doctor` shortens that job rather than replacing it.
+`doctor` reports local documents that may restate canonical ones under another name. It uses measured
+word overlap, which cannot find independently reached conclusions with different vocabulary. Its
+findings are advisory and adoption still requires a read-through.
 
 ## The manifest
 

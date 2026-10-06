@@ -92,6 +92,15 @@ public static class AccountNames
     /// <summary>What an account reads as: its name, else its id.</summary>
     public static string Shown(string home, string agent, string account) => NameOf(home, agent, account) ?? account;
 
+    /// <summary>
+    /// An account as a sentence a person reads says it (ACCT2b): the name the person gave it, from <paramref name="names"/>
+    /// read when the sentence is said, else its id. A record, a note and the log keep the id, and a command in a sentence takes
+    /// the id, which never moves; this is for the words around them.
+    /// </summary>
+    /// <param name="names">One agent's names by id, <see cref="Of(string, string)"/>; null says every account by its id.</param>
+    public static string Said(IReadOnlyDictionary<string, string>? names, string account) =>
+        names is not null && names.TryGetValue(account, out var name) ? name : account;
+
     /// <summary>Every name one agent's accounts were given, by id, compared without case; none where nothing was.</summary>
     public static IReadOnlyDictionary<string, string> Of(string home, string agent) => Of(Load(home).Root, agent);
 

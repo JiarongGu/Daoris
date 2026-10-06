@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -733,6 +733,32 @@ test('a launcher for each shell runs the package’s bin entry on the node PATH 
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
     // Bare `node`: the one the child's PATH finds, which is the one Tools resolves (D124 §1.3).
     assert.match(text, /no node on PATH/, `${name} says so when there is no node`);
+  }
+});
+
+test('laying the doctrine tool out retries a held rename at each package and launcher step', async () => {
+  const fx = makeFixture('publish-cli-held');
+  const tarball = packed(fx.root, 'daoris-0.4.2', releasePackage());
+  const install = join(fx.root, 'install');
+  const attempts = new Map<string, number>();
+
+  const laid = await layCli(tarball, install, {
+    tries: 2,
+    waitMs: 0,
+    rename: (from: string, to: string) => {
+      const attempt = (attempts.get(to) ?? 0) + 1;
+      attempts.set(to, attempt);
+      if (attempt === 1) throw Object.assign(new Error('file held'), { code: 'EPERM' });
+      renameSync(from, to);
+    },
+  });
+
+  assert.equal(attempts.size, 3, 'unpacked package, installed package and launchers each use the held-file retry');
+  assert.ok([...attempts.values()].every((attempt) => attempt === 2));
+  assert.deepEqual(laid, { version: '0.4.2' });
+  assert.equal(readFileSync(join(install, ...CLI_PACKAGE, ...CLI_ENTRY), 'utf8'), ECHO_BIN);
+  for (const [name, text] of Object.entries(cliLaunchers())) {
+    assert.equal(readFileSync(join(install, ...CLI_BIN, name), 'utf8'), text);
   }
 });
 

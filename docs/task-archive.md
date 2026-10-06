@@ -5,28 +5,47 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
-## Integration review (2026-10-06)
+## ACCT2b — account names in the driver's words (2026-10-06)
 
-- [x] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
-  2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
-  AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
-  too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
-  records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
-  the quest.
-  Completed 2026-10-06: integrated `b6c46ab2` and `3d3ec471`; seven selected gates passed.
-  CLI/driver strike-count twins, the page retry, and Ask Daoris retry use the recorded failure count.
+> - [x] **ACCT2b — the driver's words name an account by the person's name** (driver, modules; found building ACCT2). A
+>   held start's, rotation's and *What needs you*'s sentences still name an account by its id (`acct-…` for a new one),
+>   while the roster and the terminal say its name. Contract: D125's ACCT2 note. Proof: `RotationWords` and note-code
+>   cases with a named account; the page's sentences.
 
-- [x] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
-  compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
-  and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
-  its gate by the lane table (records already forgiven). Contract: GATE3, GATE5. Proof: a test where a web-only change
-  keeps the driver's verdicts and a driver change does not.
-  Completed 2026-10-06: integrated GATE6 and GATE6b, including checkout reruns and stale-gate remedies.
-  CLI and service gates passed; changes and tests are in `8ba56b64` and `2ba0a510`.
-- [x] **DUPNOTE1 — the records check finds a dated note held twice in one decision** (tools; found merging UX6g). D150
-  held PLUGTOOL1a's note twice after a union merge and `doc-duplicates` passed: it checks the other records for a line
-  twice, never a decision for a note twice. Contract: D106, D134 §3.4. Proof: a fixture decision with one note twice.
-  Completed 2026-10-06: integrated `7690583f`; duplicate-note fixtures and the repository records check pass.
+**Outcome.** Integrated `c0d28403`; driver and module suites pass, including named-account words and
+bridge facts. Recovered UI naming and completion-notice regressions pass; installed account-page
+proof remains UX7b. Review: `docs/2026-10-05-integration-review.md`.
+
+## RETRY1b — retry from real failures (2026-10-06)
+
+> - [x] **RETRY1b — a retry counts from the quest's real failures** (cli, driver, modules; found on the install,
+>   2026-10-04). `daoris driver retry <quest>` without `--at` marks the strike limit (3), right only on a first park: the
+>   AR-2203 quest had 6 failures after an earlier retry, so the mark left it parked, and the page's *Retry* left it so
+>   too. Both doors mark the quest's failure count as the driver counts it (the terminal reads it from the session
+>   records it already reaches, or says it cannot). Contract: RETRY1, D46 §3. Proof: a retry after a second park starts
+>   the quest.
+
+**Outcome.** Integrated `b6c46ab2` and `3d3ec471`; seven selected gates passed. CLI/driver strike-count
+twins, the page retry, and Ask Daoris retry use the recorded failure count.
+
+## GATE6 — preserve current verdicts (2026-10-06)
+
+> - [x] **GATE6 — a verdict stays good until a path its gate reaches changes** (tools; found staging UX6g). `--passed`
+>   compares whole trees, so a one-line fix to a browser test, re-gated by the web gate alone, voided every other verdict
+>   and cost a second full run before the stage. Count a kept verdict as current when no path changed since it reaches
+>   its gate by the lane table (records already forgiven). Contract: GATE3, GATE5. Proof: a test where a web-only change
+>   keeps the driver's verdicts and a driver change does not.
+
+**Outcome.** Integrated GATE6 and GATE6b, including checkout reruns and stale-gate remedies. CLI and
+service gates passed; changes and tests are in `8ba56b64` and `2ba0a510`.
+
+## DUPNOTE1 — duplicate decision notes (2026-10-06)
+
+> - [x] **DUPNOTE1 — the records check finds a dated note held twice in one decision** (tools; found merging UX6g). D150
+>   held PLUGTOOL1a's note twice after a union merge and `doc-duplicates` passed: it checks the other records for a line
+>   twice, never a decision for a note twice. Contract: D106, D134 §3.4. Proof: a fixture decision with one note twice.
+
+**Outcome.** Integrated `7690583f`; duplicate-note fixtures and the repository records check pass.
 
 ## Part 1 — v0.1: the CLI (2026-08-04)
 

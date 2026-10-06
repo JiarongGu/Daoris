@@ -4,6 +4,7 @@ import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { Consideration } from '../signals';
+import type { AccountNamer } from '../tools';
 import { Button, Icon, type IconName, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
 import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
@@ -74,8 +75,10 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, considered = [],
+  work, considered = [], nameOf,
 }: {
+  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, the intake's record's id is said. */
+  nameOf?: AccountNamer;
   ask: Ask;
   /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
   receivers: string[];
@@ -309,10 +312,10 @@ export function AskPage({
                     onClick={() => onAttend(intake.id)}
                     className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-accent underline-offset-2 hover:underline"
                   >
-                    {sessionTool(intake)}
+                    {sessionTool(intake, false, nameOf)}
                   </button>
                 ) : (
-                  <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(intake)}</span>
+                  <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(intake, false, nameOf)}</span>
                 )}
                 <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
               </p>

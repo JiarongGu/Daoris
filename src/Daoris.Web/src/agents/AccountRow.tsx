@@ -1,81 +1,141 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Chip, Icon, Menu, type MenuAct, Pill, Tip } from '../ui';
-import { type AccountState, readLine, stateWord } from './agents';
+import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../ui';
+import { type AccountState, readLine, stateWhen, stateWord } from './agents';
+
+// The columns' wide form is the main area at 40rem and over, a container query on it (D118 §3b), never the window: at the
+// install's 800 px main area the columns fit, and at 680 px the row stacks. Every class names it whole, `@min-[40rem]/main:`,
+// since the stylesheet is built from the class names the sources spell out.
 
 /**
- * **One account on its agent's page** (UX6e, D150 §5.2): who it is, its state as last known with when it was read, the
- * workspaces that may run on it, what runs on it now and what its agent last said; then the one act its state asks for
- * (*Sign in* while signed out, *Try now* while cooling) and its ⋯ with the rest.
+ * The accounts' columns (UX7b, D152 §4.2): *Account*, *State*, *Runs for*, *Now*, the act and the ⋯, on the list itself so
+ * every row's cells line up, each row a subgrid of it. Below 40rem of main area the list is no grid and each row stacks.
+ */
+export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[40rem]/main:grid-cols-[minmax(0,1.35fr)_minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,0.6fr)_auto_1.75rem] @min-[40rem]/main:gap-x-3';
+
+/**
+ * The columns' names over the rows, drawn only where the row is one line: at 680 px a header would name columns that are not
+ * there, and the stacked row names each fact by its place (the UX7 design §7). Hidden from a reader, whose row says each fact.
+ */
+export function AccountColumnsHead() {
+  const { t } = useTranslation();
+  const cell = 'text-meta font-medium uppercase tracking-[0.04em] text-ink-faint';
+  return (
+    <li aria-hidden className="hidden pb-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid @min-[40rem]/main:grid-cols-subgrid">
+      <span className={cell}>{t('agents.col.account')}</span>
+      <span className={cell}>{t('agents.col.state')}</span>
+      <span className={cell}>{t('agents.col.runs')}</span>
+      <span className={cell}>{t('agents.col.now')}</span>
+    </li>
+  );
+}
+
+/**
+ * **One account on its agent's page** (UX7b, D152 §4.2): one line at 1546 px, in the list's columns, and three short lines at
+ * 680. Its name leads, the account's, with who signed in beside it where the two differ, in the same place on every row and
+ * never one as title and the other faint; then its state as last known and when, the workspaces it runs for (*no workspace*
+ * said), what runs on it now, its one act by state and its ⋯ with the rest. What its agent last said is a second line under
+ * that row alone, and only when it said something: *nothing said yet* and *0 sessions* are not said.
  *
  * @remarks
  * **A molecule**: every state arrives as props, and every press goes out. Nothing here asks the agent anything: a state is
- * what was last read, and *Read again* is the person's press, the section's for every account and the ⋯'s for this one
- * (§5.3, ROSTER1). The panels a press opens on the row
- * (a sign-in, *Remove…*'s ask, the model and effort form) arrive as children, so they sit under the row that asked.
+ * what was last read, and reading again is the person's press (§5.3, ROSTER1). The panels a press opens on the row (a
+ * sign-in, *Remove…*'s ask, *Use in a workspace…*'s question, a rename) arrive as children, so they sit under the row that
+ * asked, across every column.
  */
-export function AccountRow({ label, name, home, state, chip, lines, act, menu, now, children }: {
-  /** What a person calls it: who signed in, a key's handle, the directory, or the tool's own sign-in. */
-  label: string;
-  /** The directory a terminal names, said beside who where the two differ; absent for the tool's own sign-in. */
-  name?: string;
-  /** Where its directory is, on the name's tip: the bridge is the one surface that carries a path (D47 §4). */
+export function AccountRow({ name, who, id, home, why, state, runs, current, said, act, menu, now, children }: {
+  /** What leads: the person's name for it, a key's handle, who signed in for a fresh id, its id, or *Your own sign-in*. */
+  name: string;
+  /** Who signed in, beside the name where the two differ. */
+  who?: string | null;
+  /** Its id, which a terminal types, on the name's tip with its directory; absent for your own sign-in. */
+  id?: string;
+  /** Where its directory is: the bridge is the one surface that carries a path (D47 §4). */
   home?: string;
+  /** What the row is, on its name's ⓘ: your own sign-in's explanation, one press away rather than a paragraph (§4.3). */
+  why?: string;
   state: AccountState;
-  /** A chip beside its state: *used by sessions* where the starts begin on it. */
-  chip?: string;
-  /** The lines under it: the workspaces that may run on it, what runs on it now, what its agent last said. */
-  lines: string[];
+  /** *Runs for*, in words. */
+  runs: string;
+  /** *Now*: *1 session* while something runs on it; null leaves the cell blank. */
+  current?: string | null;
+  /** What its agent last said, the row's second line; null says nothing. */
+  said?: string | null;
   /** The one act its state asks for. */
   act?: { label: string; ariaLabel?: string; onPress: () => void; disabled?: boolean; loud?: boolean };
   /** Its ⋯: the rest of what is done to it; none draws no ⋯. */
   menu: MenuAct[];
-  /** The moment *read 10:42* is measured against; now, unless a story's. */
+  /** The moment its read is measured against; now, unless a story's. */
   now?: Date;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const word = stateWord(state);
-  const read = readLine(state, now);
+  const when = stateWhen(state, now);
+  // The tip says the whole of it: when it was read, or a cool-off's until, how long and why.
+  const tip = readLine(state, now) ?? when;
+  const nameTip = id && id !== name ? (home ? `${id} · ${home}` : id) : home;
+  const named = <span className="min-w-0 text-body font-medium text-ink [overflow-wrap:anywhere]">{name}</span>;
   return (
-    <li aria-label={label} className="flex flex-wrap items-start gap-x-3 gap-y-1 border-t border-line py-2 first:border-t-0">
-      <span className="flex min-w-0 flex-1 basis-60 flex-col gap-0.5">
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <Icon name="account" size={13} className="text-ink-faint" />
-          <span className="min-w-0 text-body font-medium text-ink [overflow-wrap:anywhere]">{label}</span>
-          {name && name !== label && (
-            home
-              ? <Tip content={home}><span className="font-mono text-meta text-ink-faint">{name}</span></Tip>
-              : <span className="font-mono text-meta text-ink-faint">{name}</span>
-          )}
-          {/* 🔴 A key is never said to be signed in (AGT3): the tool says so for any key, a wrong one included, and the tip
-              says when a key is checked. */}
+    <li
+      aria-label={name}
+      // A line at 1546 px (D152 §4.2, a row at most 36 px): the act's own padding is the row's air, so the row adds little.
+      className="grid grid-cols-[minmax(0,1fr)_auto_1.75rem] items-center gap-x-3 gap-y-0.5 border-t border-line py-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid @min-[40rem]/main:py-0.5"
+    >
+      <span className="col-start-1 row-start-1 flex min-w-0 items-baseline gap-x-2">
+        {nameTip ? <Tip content={nameTip}>{named}</Tip> : named}
+        {why && <span className="self-center"><WhyGlyph why={why} /></span>}
+        {who && (
+          <Tip content={who}>
+            <span className="min-w-0 truncate text-small text-ink-soft">{who}</span>
+          </Tip>
+        )}
+      </span>
+
+      {/* State and *Runs for*: one line under the name when the row stacks, two cells of the row when it does not. */}
+      <span className="col-span-3 col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-small text-ink-soft @min-[40rem]/main:contents">
+        <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 @min-[40rem]/main:col-start-2 @min-[40rem]/main:row-start-1">
+          {/* 🔴 A key is never said to be signed in (AGT3): the tool says so for any key, a wrong one included. */}
           {state.state === 'keyed'
             ? <Tip content={t('harness.login.keyedTip')}><span><Pill tone={word.tone}>{word.label}</Pill></span></Tip>
             : <Pill tone={word.tone}>{word.label}</Pill>}
-          {read && <span className="text-meta text-ink-faint">{read}</span>}
-          {chip && <Chip accent>{chip}</Chip>}
+          {when && (
+            <Tip content={tip ?? when}>
+              <span className="text-small text-ink-faint">{when}</span>
+            </Tip>
+          )}
         </span>
-        {lines.filter(Boolean).map((line) => (
-          <span key={line} className="text-meta text-ink-faint [overflow-wrap:anywhere]">{line}</span>
-        ))}
+        <span className="min-w-0 [overflow-wrap:anywhere] before:mr-1.5 before:text-ink-faint before:content-['·'] @min-[40rem]/main:col-start-3 @min-[40rem]/main:row-start-1 @min-[40rem]/main:before:content-none">
+          {runs}
+        </span>
       </span>
-      <span className="ml-auto flex shrink-0 items-center gap-1">
-        {act && (
+
+      {current && (
+        <span className="col-span-3 col-start-1 row-start-3 text-small text-ink-soft @min-[40rem]/main:col-span-1 @min-[40rem]/main:col-start-4 @min-[40rem]/main:row-start-1">
+          {current}
+        </span>
+      )}
+
+      {act && (
+        <span className="col-start-2 row-start-1 @min-[40rem]/main:col-start-5">
           <Button
             variant={act.loud ? 'default' : 'ghost'}
             disabled={act.disabled}
             aria-label={act.ariaLabel}
             onClick={act.onPress}
+            className="whitespace-nowrap"
           >
             {act.label}
           </Button>
-        )}
-        {menu.length > 0 && (
+        </span>
+      )}
+
+      {menu.length > 0 && (
+        <span className="col-start-3 row-start-1 @min-[40rem]/main:col-start-6">
           <Menu.Root>
-            <Tip content={t('agents.account.more', { account: label })}>
+            <Tip content={t('agents.account.more', { account: name })}>
               <Menu.Trigger asChild>
-                <Button variant="ghost" aria-label={t('agents.account.more', { account: label })} className="h-7 w-7 justify-center px-0">
+                <Button variant="ghost" aria-label={t('agents.account.more', { account: name })} className="h-7 w-7 justify-center px-0">
                   <Icon name="more" size={15} />
                 </Button>
               </Menu.Trigger>
@@ -84,9 +144,14 @@ export function AccountRow({ label, name, home, state, chip, lines, act, menu, n
               <Menu.Acts acts={menu} />
             </Menu.Content>
           </Menu.Root>
-        )}
-      </span>
-      {children}
+        </span>
+      )}
+
+      {said && <span className="col-span-full col-start-1 text-meta text-ink-faint [overflow-wrap:anywhere]">{said}</span>}
+      {/* Only a panel that is open takes a line: the row's children are its closed panels' `false` as often as not. */}
+      {Children.toArray(children).length > 0 && (
+        <div className="col-span-full col-start-1 flex min-w-0 flex-col gap-2 pb-1 pt-1">{children}</div>
+      )}
     </li>
   );
 }
