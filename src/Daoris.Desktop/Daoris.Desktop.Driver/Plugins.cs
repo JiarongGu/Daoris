@@ -126,7 +126,11 @@ public sealed class PluginCatalog
     /// </summary>
     public const string DataPlaceholder = "${data}";
 
-    private static readonly Regex IdShape = new("^[a-z0-9][a-z0-9.-]*$", RegexOptions.CultureInvariant);
+    /// <summary>
+    /// A plugin id's shape, which the CLI's <c>ID_SHAPE</c> twins: it checks <see cref="IsId"/>, a manifest's id and a server's
+    /// name. <c>\z</c>, since .NET's <c>$</c> also passes a final line break the CLI's refuses (CASEFOLD1e).
+    /// </summary>
+    private static readonly Regex IdShape = new(@"^[a-z0-9][a-z0-9.-]*\z", RegexOptions.CultureInvariant);
 
     /// <summary>Every plugin found, sound or not, in folder order by id.</summary>
     public IReadOnlyList<PluginEntry> Plugins { get; }

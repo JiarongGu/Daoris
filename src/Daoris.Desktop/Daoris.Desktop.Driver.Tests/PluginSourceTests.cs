@@ -235,6 +235,8 @@ public sealed class PluginSourceTests : IDisposable
     [InlineData("source inside the home", "acme.gate", "inside Daoris's home")]
     [InlineData("a package", "acme.gate", "A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`")]
     [InlineData("not an id", "../acme.gate", "is not a plugin id")]
+    [InlineData("a dotted capital I lowers to no letter of an id", "acme.İ", "is not a plugin id")]
+    [InlineData("a line break after an id", "acme.gate\u000A", "is not a plugin id")]
     public void An_update_refuses_what_the_cli_refuses(string name, string id, string says)
     {
         var source = Checkout();
