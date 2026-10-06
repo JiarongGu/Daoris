@@ -88,7 +88,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 93 | 1682 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 54 | 1148 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 60 | 1235 |
-| `src/Daoris.Service/README.md` | 51 | 552 |
+| `src/Daoris.Service/README.md` | 51 | 553 |
 
 ### CLI (`cli`)
 
@@ -116,8 +116,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 48 | 998 |
 | `tools/family-rehearsal.mjs` | 277 | 5060 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
-| `tools/merge-branch.mjs` | 126 | 2317 |
-| `tools/orient-index.mjs` | 63 | 1379 |
+| `tools/merge-branch.mjs` | 126 | 2318 |
+| `tools/orient-index.mjs` | 63 | 1383 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
 ### No lane

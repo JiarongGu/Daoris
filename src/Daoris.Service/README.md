@@ -41,10 +41,11 @@ twin of the CLI's `documents.ts`).
 Since **ORIENT1g** (D134 §5 as amended) a decision in a folder is more than one entry: its text before its
 first dated note, at the id it always had, then each dated note an entry of its own, titled by the decision and
 the note's label (`D125 › Built 2026-10-04 (TOOL6g): …`) and anchored by that label. A note is found and
-labelled as the decisions digest (`docs/index/decisions.md`) finds and labels it (`DecisionNotes`), and
-`DecisionNotesTests` holds the two to one fixture's rows; measured when it was built, over this repository's 152
-decisions the split gave the digest's 291 note rows, the same lines and labels in the same order. A fix, an
-outcome and a decisions log in one file keep their notes inside.
+labelled as the decisions digest (`docs/index/decisions.md`) finds and labels it (`DecisionNotes`), and the
+two are held to one table, `tools/orient-index-fixtures/decision-notes.json`, row for row (ORIENT1h):
+`DecisionNotesTests` holds this side, `tools/orient-index.test.mjs` the digest's. Measured when it was built,
+over this repository's 152 decisions the split gave the digest's 291 note rows, the same lines and labels in the
+same order. A fix, an outcome and a decisions log in one file keep their notes inside.
 
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying

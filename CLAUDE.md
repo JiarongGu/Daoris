@@ -202,7 +202,8 @@ Run every command from the **workspace root**, not from a package directory.
   rather than compiling them, so without this a type error reaches `npm pack` and nothing sooner —
   FIX-LOG 2026-09-21), then every CLI test, `daoris check` against Daoris's own doctrine,
   `doc-budgets` (word ceilings for the prose a session reads whole; reported, never enforced — D54),
-  `doc-duplicates` (the union-merged records hold nothing twice — D106), then `release-prep --check` (every shipped version reference agrees, example pins included), then
+  `doc-duplicates` (the union-merged records hold nothing twice — D106), the decisions digest's note table
+  (`tools/orient-index.test.mjs`, ORIENT1h), then `release-prep --check` (every shipped version reference agrees, example pins included), then
   the devkit's universal gates (SEN1). Run before claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,

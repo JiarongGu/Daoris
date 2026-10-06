@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
@@ -8,67 +9,38 @@ namespace Daoris.Service.Tests;
 /// answered with the whole file, or not at all: the note was buried under every other.
 /// </summary>
 /// <remarks>
-/// The expected rows are what <c>tools/orient-index.mjs</c> wrote for <see cref="Decision"/>: the digest and the
-/// service read one file with code of their own, so this table is what each is held to (twins).
+/// The service's half of a TWIN with the digest, <c>tools/orient-index.mjs</c>: the two read a decision with code
+/// of their own, and both are held to one table, <c>tools/orient-index-fixtures/decision-notes.json</c>, row for
+/// row (ORIENT1h). <c>tools/orient-index.test.mjs</c> holds the digest to it. Before ORIENT1h this side was held
+/// to rows the digest wrote once, inline here, so a note's form changed on the digest's side alone passed every gate.
 /// </remarks>
 public sealed class DecisionNotesTests
 {
-    internal const string Decision = """
-        ## D7 — The tier is the directory (2026-08-04)
+    private static readonly JsonElement Table = ReadTable();
 
-        **Decision (TIER1, 2026-08-04).** The tier is where the file is, and an opening dated is never a note.
-
-        **Why.** Because the harness decides by path.
-
-        **Built 2026-10-02 (TOOL4a): the limit table and its reader** (point 1). The table reads the agent's words.
-        - A list item under the note.
-
-        ```markdown
-        **Built 2026-10-09 (FENCED): inside a fence, never a note**
-        ```
-
-        **Amended 2026-10-04 (ORIENT1b): a generated digest of the record, against point 2's "no index, hand-kept or
-        generated".** The design's reason was that a generated index needs a generator.
-
-        **DRIFT1a, built 2026-10-02: a note named by its task first.** Its text.
-
-        *As built (PLUGUI1d, 2026-10-01)*: an italic label.
-        **Fixed 2026-10-03: glued to the line above, so read as that note's text.**
-
-        **Proven without the rehearsal** — an emphasised sentence, not a note.
-
-        ### 2026-10-05 — a dated heading
-
-        Under the heading.
-
-        **Measured 2026-10-06: a rare word counts with a date.** Its text.
-
-        **Measured later: and not without one.** Still the note above.
-
-        **Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once per sign-out** (points 4, 6 and 7). One status question per account at a time (`ProbeLock`).
-
-        **Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once per sign-out** (a second time).
-        """;
+    /// <summary>
+    /// The table's first decision, D7: every form a note takes, a fence, a glued label and a label twice. The
+    /// scanner's tests write it as a decision's file.
+    /// </summary>
+    internal static string Decision => Text(Decided("D7"));
 
     /// <summary>The digest's rows for <see cref="Decision"/>: <c>D7:&lt;first&gt;-&lt;last&gt; &lt;label&gt;</c>.</summary>
-    internal static readonly string[] DigestRows =
-    [
-        "D7:7-12 Built 2026-10-02 (TOOL4a): the limit table and its reader",
-        "D7:14-15 Amended 2026-10-04 (ORIENT1b): a generated digest of the record, against point…",
-        "D7:17-17 DRIFT1a, built 2026-10-02: a note named by its task first.",
-        "D7:19-22 As built (PLUGUI1d, 2026-10-01)",
-        "D7:24-26 2026-10-05 — a dated heading",
-        "D7:28-30 Measured 2026-10-06: a rare word counts with a date.",
-        "D7:32-32 Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once…",
-        "D7:34-34 Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once…",
-    ];
+    internal static IReadOnlyList<string> DigestRows => Rows(Decided("D7"), "notes");
 
-    [Fact]
-    public void Each_note_is_found_on_the_lines_the_digest_gives_it_with_the_digest_s_label()
+    /// <summary>
+    /// Each decision of the table split as the digest splits it: each note on the digest's lines with its label,
+    /// and the decision's own entry on the lines of the digest's title row, the blank lines at its end left out.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Decisions))]
+    public void Each_note_is_found_on_the_lines_the_digest_gives_it_with_the_digest_s_label(string id)
     {
-        var (_, notes) = DecisionNotes.Split(Decision);
+        var decision = Decided(id);
 
-        Assert.Equal(DigestRows, notes.Select(note => $"D7:{note.First}-{note.Last} {note.Label}"));
+        var (entry, notes) = DecisionNotes.Split(Text(decision));
+
+        Assert.Equal(Rows(decision, "notes"), notes.Select(note => $"{id}:{note.First}-{note.Last} {note.Label}"));
+        Assert.Equal(decision.GetProperty("entry").GetString(), $"{id}:1-{LastWritten(entry)}");
     }
 
     /// <summary>The digest's title row says the entry's own lines before its notes: D7:1-5.</summary>
@@ -77,7 +49,7 @@ public sealed class DecisionNotesTests
     {
         var (entry, notes) = DecisionNotes.Split(Decision);
 
-        Assert.Equal(string.Join('\n', Decision.Replace("\r\n", "\n").Split('\n')[..5]), entry);
+        Assert.Equal(string.Join('\n', Decision.Split('\n')[..5]), entry);
         Assert.StartsWith("**Built 2026-10-02 (TOOL4a)", notes[0].Body);
         Assert.EndsWith("```", notes[0].Body);
         // A note's text is its lines, its label's first: the label stays searchable in full.
@@ -101,21 +73,73 @@ public sealed class DecisionNotesTests
     /// undated, cut to a row at a word with an ellipsis (the digest's <c>noteLabel</c>).
     /// </summary>
     [Theory]
-    [InlineData("**Built 2026-10-03 (DOC8b): the check** (point 4).", "Built 2026-10-03 (DOC8b): the check")]
-    [InlineData("**Built.** Undated, and a form the record writes.", "Built.")]
-    [InlineData("**As built (ACP1)**: undated too.", "As built (ACP1)")]
-    [InlineData("*Amended (UX6e)*: italic.", "Amended (UX6e)")]
-    [InlineData("**Noted 2026-10-01: a rarer word, dated**", "Noted 2026-10-01: a rarer word, dated")]
-    [InlineData("**ORIENT1c, built 2026-10-04: the server is a deployment.**", "ORIENT1c, built 2026-10-04: the server is a deployment.")]
-    [InlineData("**Reviewed 2026-10-01 with no closing mark", "Reviewed 2026-10-01 with no closing mark")]
-    [InlineData("**Noted, with no date.** A rarer word needs one.", null)]
-    [InlineData("**Proven without the rehearsal** — a sentence.", null)]
-    [InlineData("**Decision.** The opening's form.", null)]
-    [InlineData("* a list item 2026-10-01", null)]
-    [InlineData("Plain text dated 2026-10-01.", null)]
-    [InlineData("**", null)]
-    public void A_label_is_read_as_the_digest_reads_it(string line, string? label)
+    [MemberData(nameof(Labels))]
+    public void A_label_is_read_as_the_digest_reads_it(string why, string line, string? label)
     {
-        Assert.Equal(label, DecisionNotes.Label(line));
+        var read = DecisionNotes.Label(line);
+
+        Assert.True(read == label, $"{why}: expected {label ?? "none"}, read {read ?? "none"}");
+    }
+
+    /// <summary>A table read as empty would hold nothing, so each side checks it holds both kinds of row.</summary>
+    [Fact]
+    public void The_table_holds_a_decision_with_notes_and_one_without_and_a_label_and_a_line_that_is_none()
+    {
+        var decisions = Table.GetProperty("decisions").EnumerateArray().ToList();
+        Assert.Contains(decisions, decision => decision.GetProperty("notes").GetArrayLength() > 0);
+        Assert.Contains(decisions, decision => decision.GetProperty("notes").GetArrayLength() == 0);
+        Assert.Contains(Labels(), row => row[2] is not null);
+        Assert.Contains(Labels(), row => row[2] is null);
+    }
+
+    public static TheoryData<string> Decisions()
+    {
+        var data = new TheoryData<string>();
+        foreach (var decision in Table.GetProperty("decisions").EnumerateArray()) data.Add(decision.GetProperty("id").GetString()!);
+        return data;
+    }
+
+    public static TheoryData<string, string, string?> Labels()
+    {
+        var data = new TheoryData<string, string, string?>();
+        foreach (var row in Table.GetProperty("labels").EnumerateArray())
+        {
+            data.Add(row[0].GetString()!, row[1].GetString()!, row[2].ValueKind == JsonValueKind.Null ? null : row[2].GetString());
+        }
+
+        return data;
+    }
+
+    private static JsonElement Decided(string id) =>
+        Table.GetProperty("decisions").EnumerateArray().Single(decision => decision.GetProperty("id").GetString() == id);
+
+    /// <summary>A decision's file, its lines joined as the digest's test writes them.</summary>
+    private static string Text(JsonElement decision) =>
+        string.Join('\n', decision.GetProperty("lines").EnumerateArray().Select(line => line.GetString()!));
+
+    private static IReadOnlyList<string> Rows(JsonElement decision, string name) =>
+        [.. decision.GetProperty(name).EnumerateArray().Select(row => row.GetString()!)];
+
+    /// <summary>The last line of a text that is not blank, from 1: where the digest ends a part.</summary>
+    private static int LastWritten(string text)
+    {
+        var lines = text.Split('\n');
+        var last = lines.Length;
+        while (last > 1 && lines[last - 1].Trim().Length == 0) last--;
+        return last;
+    }
+
+    private static JsonElement ReadTable()
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "tools", "orient-index-fixtures", "decision-notes.json")));
+        return table.RootElement.Clone();
+    }
+
+    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
+    private static string Root()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json"))) directory = directory.Parent;
+        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
     }
 }
