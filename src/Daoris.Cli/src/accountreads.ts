@@ -35,6 +35,7 @@
 // No HTTP route reaches it (D47 §4), and this module opens no socket and spawns nothing.
 
 import { join } from 'node:path';
+import { findName } from './casefold.ts';
 import { isoMoment } from './cooling.ts';
 import { readJsonObject, writeTextAtomic } from './fsx.ts';
 
@@ -163,37 +164,7 @@ function child(parent: Node | null, name: string): Node | null {
   return found === null ? null : asNode(parent![found]);
 }
 
-/** The first key equal to `name` without case, as the driver finds one. */
+/** The first key equal to `name` without case, as the driver finds one (rule 1; `casefold.ts`). */
 function key(held: object, name: string): string | null {
-  const wanted = folded(name);
-  return Object.keys(held).find((each) => folded(each) === wanted) ?? null;
-}
-
-/**
- * A name as the driver's `OrdinalIgnoreCase` compares it (rule 1; AGENTREAD1c, D125's note): each code point to its one
- * capital, never a wider one, so `straße` is not `STRASSE` and two names of different lengths never meet. `toUpperCase`
- * alone maps the whole string in full, `ß` to `SS`, and found an account the driver does not.
- */
-function folded(name: string): string {
-  return Array.from(name, (letter) => {
-    const point = letter.codePointAt(0)!;
-    const iota = iotaCapital(point);
-    if (iota !== null) return String.fromCodePoint(iota);
-    const upper = letter.toUpperCase();
-    // A capital of two or more letters (ß, ŉ, ﬁ) is none: the letter keeps itself.
-    if (Array.from(upper).length !== 1) return letter;
-    // .NET keeps the two letters beyond ASCII whose capital is ASCII, ı and ſ, as themselves, as a JavaScript pattern's
-    // `i` flag without `u` does, so a dotless i is not an I.
-    return point > 0x7f && upper.codePointAt(0)! <= 0x7f ? letter : upper;
-  }).join('');
-}
-
-/**
- * A Greek small letter with a subscript iota, whose capital is two letters in full (`ᾳ` is `ΑΙ`) and one in the simple
- * mapping .NET compares by (`ᾳ` is `ᾼ`, the capital with the iota beside it): that one; null for any other.
- */
-function iotaCapital(point: number): number | null {
-  const row = point & ~0x7;
-  if (row === 0x1f80 || row === 0x1f90 || row === 0x1fa0) return point + 8;
-  return point === 0x1fb3 || point === 0x1fc3 || point === 0x1ff3 ? point + 9 : null;
+  return findName(Object.keys(held), name);
 }

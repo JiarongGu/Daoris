@@ -66,6 +66,18 @@ test('a quest’s failures are every strike against it, its id in any case, and 
   assert.equal(failuresOf(null, 'q1'), null);
 });
 
+/**
+ * A quest's id compares as `ReadStrikes` compares it, by `OrdinalIgnoreCase` (CASEFOLD1, `casefold.ts`): an id full case
+ * mapping would widen or lower to the same letters is another quest's, and its failures are none of this one's.
+ */
+test('a quest’s id in any case is one only as the driver finds it: straße is not STRASSE, İzmir not i̇zmir', () => {
+  const failed = (quest: string) => ({ id: 's1', quest, state: 'failed' });
+
+  assert.equal(failuresOf([failed('straße'), failed('STRASSE')], 'STRASSE'), 1);
+  assert.equal(failuresOf([failed('İzmir'), failed('i\u{307}zmir')], 'i\u{307}zmir'), 1);
+  assert.equal(failuresOf([failed('Νίκος')], 'ΝΊΚΟΣ'), 1);
+});
+
 // ——— The twin, held: the driver's table is this table, row for row and in this order, and its codes are these codes.
 
 const DRIVER = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop');

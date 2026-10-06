@@ -30,8 +30,10 @@ export function csharpRow(line: string, words: Record<string, Cell> = {}): Cell[
       let text = '';
       at += 1;
       while (line[at] !== '"') {
-        text += line[at] === '\\' ? line[at + 1] : line[at];
-        at += line[at] === '\\' ? 2 : 1;
+        // `\uXXXX` is the letter it names (CASEFOLD1: a row spells a combining dot above by its escape, so it can be seen).
+        const unit = line[at] === '\\' && line[at + 1] === 'u' ? /^[0-9A-Fa-f]{4}/.exec(line.slice(at + 2))?.[0] : undefined;
+        text += unit !== undefined ? String.fromCharCode(parseInt(unit, 16)) : line[at] === '\\' ? line[at + 1] : line[at];
+        at += unit !== undefined ? 6 : line[at] === '\\' ? 2 : 1;
       }
       cells.push(text);
       at += 1;
@@ -47,6 +49,18 @@ export function csharpRow(line: string, words: Record<string, Cell> = {}): Cell[
     }
   }
   return cells;
+}
+
+/**
+ * A CLI table as the driver's theory holds it while some of its rows wait for the driver's lane (CASEFOLD1): a row named in
+ * `waiting` that the driver's rows do not hold is left out, and one they hold stays in its place. So the rest are held cell
+ * for cell as before, a waiting row is held the same once the driver adds it, and one the driver words otherwise is an
+ * extra row there, which fails.
+ */
+export function heldSoFar<T extends readonly Cell[]>(driver: readonly (readonly Cell[])[], table: readonly T[], waiting: ReadonlySet<string>): T[] {
+  for (const name of waiting) assert.ok(table.some((row) => row[0] === name), `no row of the table is named ${name}`);
+  const held = (row: T) => driver.some((each) => each.length === row.length && each.every((cell, index) => cell === row[index]));
+  return table.filter((row) => !waiting.has(String(row[0])) || held(row));
 }
 
 /** The rows of one theory in a C# test class's source, in its order; the theory may be `void` or `async Task` (TOOLS4). */

@@ -13,7 +13,8 @@
 //   1. Missing or unreadable is no account cooling (D21's reading): an observation lost costs at most one start.
 //   2. An entry is an object with an `until` written as ISO 8601 and nothing else — a lenient parse would read *Oct 3*
 //      as this year's. `seen` is the `until` when it does not read; a flag is true only as JSON `true`; a word is text.
-//   3. An entry whose `until` is not after now is ready. Names compare without case, and are said as written.
+//   3. An entry whose `until` is not after now is ready. Names compare and order without case as the driver's
+//      `OrdinalIgnoreCase` does (`casefold.ts`, CASEFOLD1), so `straße` is not `STRASSE`, and are said as written.
 //   4. Ending writes the file whole only where an entry by that name was there: every passed or unreadable entry goes
 //      with the write, an agent left with none goes, and anything it has no field for stays as written.
 //
@@ -21,6 +22,7 @@
 // No HTTP route reaches it (D47 §4), and this module opens no socket and spawns nothing.
 
 import { join } from 'node:path';
+import { compareNames, findName, sameName } from './casefold.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { shellWord } from './shellword.ts';
 
@@ -51,15 +53,15 @@ export function coolingPath(home: string): string {
 
 /** Every account cooling at `now`, by agent and then account, as the driver orders them. */
 export function readCooling(home: string, now: Date): CoolingEntry[] {
-  const fold = (text: string) => text.toUpperCase();
   return entries(load(home))
     .filter((entry) => entry.until.getTime() > now.getTime())
-    .sort((a, b) => compare(fold(a.agent), fold(b.agent)) || compare(fold(a.account ?? ''), fold(b.account ?? '')));
+    .sort((a, b) => compareNames(a.agent, b.agent) || compareNames(a.account ?? '', b.account ?? ''));
 }
 
 /** One account's cool-off at `now`, or null when it is ready. */
 export function coolingOf(home: string, agent: string, account: string | null, now: Date): CoolingEntry | null {
-  return readCooling(home, now).find((entry) => same(entry.agent, agent) && same(entry.account ?? '', account ?? '')) ?? null;
+  return readCooling(home, now)
+    .find((entry) => sameName(entry.agent, agent) && sameName(entry.account ?? '', account ?? '')) ?? null;
 }
 
 /** End one account's cool-off early (rule 4). True when it was cooling. */
@@ -164,17 +166,9 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-/** The first key equal to `name` without case, as the driver finds one. */
+/** The first key equal to `name` without case, as the driver finds one (rule 3; `casefold.ts`). */
 function key(held: Node, name: string): string | null {
-  return Object.keys(held).find((each) => same(each, name)) ?? null;
-}
-
-function same(a: string, b: string): boolean {
-  return a.toUpperCase() === b.toUpperCase();
-}
-
-function compare(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0;
+  return findName(Object.keys(held), name);
 }
 
 /** The ISO 8601 forms the driver reads: to the second, with a fraction or not, in UTC or at an offset. */

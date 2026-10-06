@@ -1,0 +1,21 @@
+[
+  ["plain letters in any case are one name", "Account-1", "ACCOUNT-1", true, 0],
+  ["another name is another", "account-1", "account-2", false, -1],
+  ["a letter whose capital is two letters keeps itself: straße is not STRASSE", "straße", "STRASSE", false, 1],
+  ["nor is ß the capital sharp s", "ß", "ẞ", false, -1],
+  ["a ligature keeps itself: ﬁle is not FILE", "ﬁle", "FILE", false, 1],
+  ["a dotless i is not an I", "ışık", "IŞIK", false, 1],
+  ["a long s is not an S", "ſ", "S", false, 1],
+  ["a dotted capital I is not an i with a dot above, which its full lower case is", "İzmir", "i\u0307zmir", false, 1],
+  ["nor a plain i", "İ", "i", false, 1],
+  ["the Kelvin sign is not a k", "\u212A", "k", false, 1],
+  ["a final sigma and a medial one are one letter", "νίκος", "νίκοσ", true, 0],
+  ["Greek in any case", "Νίκος", "ΝΊΚΟΣ", true, 0],
+  ["a small letter with a subscript iota is its one-letter capital", "ᾳ", "ᾼ", true, 0],
+  ["and not the two letters its full capital is", "ᾳ", "ΑΙ", false, 1],
+  ["Cyrillic in any case", "Привет", "ПРИВЕТ", true, 0],
+  ["a letter beyond the basic plane compares with its capital", "𐐨", "𐐀", true, 0],
+  ["what has no case is itself", "账户", "账户", true, 0],
+  ["a small letter orders as its capital, before a mark", "a", "_", false, -1],
+  ["a shorter name orders first", "ab", "ABC", false, -1]
+]
