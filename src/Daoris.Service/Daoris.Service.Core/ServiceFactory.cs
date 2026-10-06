@@ -160,6 +160,12 @@ public sealed record ComposedService(
     /// <summary>This machine's remotes, by workspace — what a sync pass runs against (D69). Null on a remote.</summary>
     public IRemotes? Remotes { get; init; }
 
+    /// <summary>
+    /// Clearing finished history from this machine (HIST1b, D153): the records' half, judged in one place for both of a
+    /// local host's doors. Composed on every host and reached by none at a shared deployment, which maps no door to it.
+    /// </summary>
+    public HistoryDesk History { get; init; } = null!;
+
     public ValueTask DisposeAsync() => Store?.DisposeAsync() ?? ValueTask.CompletedTask;
 }
 
@@ -245,6 +251,9 @@ public static class ServiceFactory
         // the home's keeper; a shared host passes nothing — it holds names, never bytes — and so does a
         // local host with no home, whose exchange then refuses files with the home's sentence (D63).
         QuestFiles? files = null,
+        // The rule proposals a clear reads and tidies (HIST1b, design §2.2): a pending one keeps the work that made it, and
+        // a settled one goes with it. A local host passes the home's box; with none, no proposal is read or removed.
+        RuleProposalBox? proposals = null,
         CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(options.DatabasePath)!);
@@ -340,6 +349,7 @@ public static class ServiceFactory
             Remotes = remotes,
             // An ask's quests go through the same exchange every other door uses (D65 §1a).
             Asks = new AskDesk(service, asks, exchange, files),
+            History = new HistoryDesk(quests, sessions, asks, service, remotes, files, proposals),
         };
     }
 

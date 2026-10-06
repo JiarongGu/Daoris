@@ -240,6 +240,26 @@ public sealed record TakenRequest(IReadOnlyList<string?>? Said, string? By = nul
 public sealed record SessionDeletionResponse(
     bool Deletable, string? Error = null, string? Refusal = null,
     string? Quest = null, string? Ask = null, string? Origin = null, string? Workspace = null);
+// HIST1b (D153; the history-clearing design §6.3): why a unit stays, or a piece of it is kept, as SESSUX1f's refusals travel:
+// `error` the desk's sentence, `refusal` its word (`unknown`, `open`, `asked`, `live`, `needs-you`, `awaited`, `unpushed`,
+// `not-ours`), which the driver reads instead of the sentence, and the quest, ask, session, machine or workspace it names.
+public sealed record HistoryRefusalResponse(
+    string Refusal, string Error, string? Quest = null, string? Ask = null, string? Session = null, string? Origin = null,
+    string? Workspace = null);
+// One unit (`kind`: `quest`, `ask` or `failed`): what a clear takes, by id, and whether it may go now. `forgotten` is which of
+// its quests a remote numbered, forgotten here rather than simply removed; `teammates` this machine's copies of a teammate's
+// records; `kept` the pieces listed and kept while the unit goes (a teammate's failed session).
+public sealed record HistoryUnitResponse(
+    string Kind, string Id, string? Workspace, bool Clearable, IReadOnlyList<string> Quests, IReadOnlyList<string> Forgotten,
+    IReadOnlyList<string> Asks, IReadOnlyList<string> Sessions, IReadOnlyList<string> Teammates,
+    HistoryRefusalResponse? Refusal, IReadOnlyList<HistoryRefusalResponse> Kept);
+public sealed record HistoryPlanResponse(IReadOnlyList<HistoryUnitResponse> Units);
+// The second press names its units as the first listed them: each `kind` and `id`.
+public sealed record HistoryUnitRequest(string? Kind, string? Id);
+public sealed record HistoryClearRequest(IReadOnlyList<HistoryUnitRequest?>? Units);
+// What the press did to one unit: the unit as judged where it was cleared, whether it went, and the desk's sentence.
+public sealed record HistoryClearedResponse(HistoryUnitResponse Unit, bool Cleared, string Message);
+public sealed record HistoryClearResponse(IReadOnlyList<HistoryClearedResponse> Units);
 // STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
 public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
@@ -357,6 +377,9 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(SaidResponse))]
 [JsonSerializable(typeof(SessionSayRefusalResponse))]
 [JsonSerializable(typeof(TakenRequest))]
+[JsonSerializable(typeof(HistoryPlanResponse))]
+[JsonSerializable(typeof(HistoryClearRequest))]
+[JsonSerializable(typeof(HistoryClearResponse))]
 
 [JsonSerializable(typeof(FeedEntriesRequest))]
 [JsonSerializable(typeof(FeedCodeMapRequest))]

@@ -367,6 +367,12 @@ public sealed class QuestStore
                   behind    TEXT NOT NULL,
                   problem   TEXT NULL
                 );
+                -- The quests this machine cleared whose operations a remote had numbered (HIST1b, D153 point 3):
+                -- the absence made a record, since a fetch by cursor cannot carry one. Never pushed or served.
+                CREATE TABLE IF NOT EXISTS quest_forgotten (
+                  id TEXT PRIMARY KEY,
+                  at TEXT NOT NULL
+                );
                 """;
             await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
@@ -638,7 +644,7 @@ public sealed class QuestStore
         IReadOnlyList<QuestRequirement>? requirements = null,
         string? shortTitle = null)
     {
-        var sorted = (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        var sorted = Sorted(lanes);
         var id = MakeId(from, to, title, lanes: sorted);
         return await InTransactionAsync(async (transaction, inside) =>
         {
@@ -662,6 +668,27 @@ public sealed class QuestStore
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
         }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>The lanes a publish addresses, as its id and its record hold them: once each, sorted.</summary>
+    private static List<string> Sorted(IReadOnlyList<string>? lanes) =>
+        (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+
+    /// <summary>
+    /// The id these words would publish under, when this machine forgot that quest (HIST1b, D153 point 3), at either
+    /// width an id has had; null when it did not. The exchange asks it before a publish, so the same words asked again
+    /// are refused here rather than making a fresh quest the remote, which still holds the closed one, refuses for good (H5).
+    /// </summary>
+    internal async Task<string?> ForgottenIdAsync(
+        string from, string to, string title, IReadOnlyList<string>? lanes, CancellationToken ct)
+    {
+        var id = MakeId(from, to, title, lanes: Sorted(lanes));
+        foreach (var held in new[] { id, id[..LegacyIdLength] })
+        {
+            if (await ForgottenAsync(held, ct).ConfigureAwait(false)) return held;
+        }
+
+        return null;
     }
 
     /// <summary>Append a quest's `published` and write its row from the replay, inside a transaction.</summary>
@@ -817,7 +844,9 @@ public sealed class QuestStore
         string id, SqliteTransaction? transaction, CancellationToken ct)
     {
         await using var command = _connection.CreateCommand();
-        command.Transaction = transaction;
+        // None handed in keeps the one the command was made in: the connection hands a new command the transaction it
+        // has open, and a caller holding one without its object (HistoryDesk's, HistoryWithinAsync) must not lose it.
+        if (transaction is not null) command.Transaction = transaction;
         command.CommandText = $"""
             SELECT {OperationColumns} FROM quest_log WHERE quest = $id
             ORDER BY remote IS NULL, remote, position
@@ -1067,6 +1096,71 @@ public sealed class QuestStore
             return new QuestDeletion(quest, Deleted: true, tombstoned);
         }, ct);
 
+    // ——— Clearing finished history from this machine (HIST1b, D153 point 3, history-clearing design §3).
+
+    /// <summary>
+    /// Remove one quest from this machine: its row and its whole log together, since a row with no log is given a fresh
+    /// pending history at the next open and a log with no row lets a publish append to it (H3). Where a remote numbered any
+    /// of its operations it is <b>forgotten</b>: <c>quest_forgotten</c> keeps its id, and the fetch skips it from then on
+    /// (<see cref="IntegrateAsync"/>), so no later move and no cursor at zero brings it back (H4). No operation is
+    /// written, so nothing travels: the team's copy is untouched, and a new store fetches it whole.
+    /// </summary>
+    /// <remarks>
+    /// Blind, like every write here, and taking no gate of its own: <see cref="HistoryDesk"/> judges the unit and calls this
+    /// inside the one transaction it clears the unit in, so the mark, the log and the row go together or not at all.
+    /// </remarks>
+    /// <returns>Whether it was forgotten, rather than simply going because nothing of it was ever numbered.</returns>
+    internal async Task<bool> ForgetAsync(string id, DateTimeOffset at, CancellationToken ct)
+    {
+        bool numbered;
+        await using (var probe = _connection.CreateCommand())
+        {
+            probe.CommandText = "SELECT EXISTS (SELECT 1 FROM quest_log WHERE quest = $id AND remote IS NOT NULL)";
+            probe.Parameters.AddWithValue("$id", id);
+            numbered = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) != 0;
+        }
+
+        await using var command = _connection.CreateCommand();
+        command.CommandText = (numbered ? "INSERT OR IGNORE INTO quest_forgotten (id, at) VALUES ($id, $at);" : "")
+                              + "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id;";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$at", at.ToString("O"));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        return numbered;
+    }
+
+    /// <summary>Whether this machine forgot the quest (HIST1b): it cleared it after a remote numbered it.</summary>
+    public async Task<bool> ForgottenAsync(string id, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT EXISTS (SELECT 1 FROM quest_forgotten WHERE id = $id)";
+        command.Parameters.AddWithValue("$id", id);
+        return Convert.ToInt32(await command.ExecuteScalarAsync(ct).ConfigureAwait(false)) != 0;
+    }
+
+    /// <summary>Every quest this machine forgot (HIST1b): what the quest fetch and the session fetch skip.</summary>
+    public Task<IReadOnlySet<string>> ForgottenAsync(CancellationToken ct = default) =>
+        ForgottenAsync(transaction: null, ct);
+
+    private async Task<IReadOnlySet<string>> ForgottenAsync(SqliteTransaction? transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        if (transaction is not null) command.Transaction = transaction;
+        command.CommandText = "SELECT id FROM quest_forgotten";
+        var forgotten = new HashSet<string>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) forgotten.Add(reader.GetString(0));
+        return forgotten;
+    }
+
+    /// <summary>
+    /// A quest's history read inside a transaction the caller already holds — <see cref="HistoryDesk"/>'s, which judges a
+    /// unit again where it clears it. <see cref="HistoryAsync(string, CancellationToken)"/> takes the connection's gate,
+    /// which is not reentrant.
+    /// </summary>
+    internal Task<IReadOnlyList<QuestOperation>> HistoryWithinAsync(string id, CancellationToken ct) =>
+        HistoryAsync(id, transaction: null, ct);
+
     /// <summary>
     /// The taken quests waiting on <paramref name="question"/> (D79) — what keeps a question from being
     /// deleted: deleted, the quests waiting on it would wait on nothing for good.
@@ -1125,14 +1219,20 @@ public sealed class QuestStore
     /// was given; any other is kept under the machine that made it. Then every quest the fetch touched
     /// is replayed: accepted operations by number, then pending ones. A pending move that no longer
     /// applies becomes a <see cref="QuestOperationKind.Conflict"/> and is never dropped (design §5).
+    /// <para>An operation on a quest this machine forgot (<see cref="ForgetAsync"/>) is passed over, and the cursor still
+    /// moves past it (HIST1b): a closed quest still takes a conflict or a dismissal from another machine, and kept, either
+    /// would make half a quest here; a cursor back at zero would bring the whole of it.</para>
     /// </remarks>
     public Task<QuestIntegration> IntegrateAsync(
         string workspace, IReadOnlyList<QuestOperation> fetched, long through, CancellationToken ct = default) =>
         InTransactionAsync(async (transaction, inside) =>
         {
             var circle = Workspaces.Normalize(workspace);
+            var forgotten = await ForgottenAsync(transaction, inside).ConfigureAwait(false);
             var touched = new List<string>();
-            foreach (var operation in fetched.Where(o => o.Number is not null).OrderBy(o => o.Number))
+            foreach (var operation in fetched
+                         .Where(o => o.Number is not null && !forgotten.Contains(o.Quest))
+                         .OrderBy(o => o.Number))
             {
                 if (await PositionOfAsync(operation.Machine, operation.Sequence, transaction, inside).ConfigureAwait(false)
                     is { } held)
@@ -1202,7 +1302,7 @@ public sealed class QuestStore
             {
                 // The same ask, published first elsewhere: the first publish is the quest, as it
                 // always was, and a second copy was never anybody's decision.
-                await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
                 continue;
             }
 
@@ -1213,7 +1313,7 @@ public sealed class QuestStore
                 // work for a person to reconcile. The third thing a rebase drops. A yes to a departure
                 // that no longer waits (DRIFT1d) is the same: its done lost, or another machine's yes came
                 // first, and a second yes is the first. A step it published goes as a lost close's does.
-                await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
                 if (operation.Kind == QuestOperationKind.Accepted && quest is not { Accepted: not null })
                 {
                     await ForgetFollowUpsAsync(id, transaction, ct).ConfigureAwait(false);
@@ -1231,7 +1331,7 @@ public sealed class QuestStore
                 if (operation.Kind == QuestOperationKind.Conflict) continue;
                 if (QuestTransitions.Target(operation.Kind) is null)
                 {
-                    await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                    await ForgetOperationAsync(position, transaction, ct).ConfigureAwait(false);
                     continue;
                 }
             }
@@ -1291,7 +1391,7 @@ public sealed class QuestStore
             var history = await HistoryAsync(child, transaction, ct).ConfigureAwait(false);
             if (history is not [{ Kind: QuestOperationKind.Published, Number: null } only]) continue;
 
-            await ForgetAsync(
+            await ForgetOperationAsync(
                 (await PositionOfAsync(only.Machine, only.Sequence, transaction, ct).ConfigureAwait(false))!.Value,
                 transaction, ct).ConfigureAwait(false);
             await using var drop = _connection.CreateCommand();
@@ -1312,7 +1412,8 @@ public sealed class QuestStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
-    private async Task ForgetAsync(long position, SqliteTransaction transaction, CancellationToken ct)
+    /// <summary>Drop one pending operation a rebase found was never anybody's decision (a quest's clear is <see cref="ForgetAsync"/>).</summary>
+    private async Task ForgetOperationAsync(long position, SqliteTransaction transaction, CancellationToken ct)
     {
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
