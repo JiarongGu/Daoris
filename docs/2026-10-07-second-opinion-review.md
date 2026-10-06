@@ -45,4 +45,27 @@ counter's self-contained page function, which must serialize whole.
 
 ## UI/UX
 
-Pending: the re-run with read access stated.
+Read from source, catalogues and stories; nothing rendered. Five of its eight *must* findings were checked against the
+source before routing (marked ✓); the rest are plausible from the cited lines and go with their bundle's proof.
+
+| Finding | Verified | Row |
+|---|---|---|
+| Knowledge's mode switch: `Segmented` moves the value on arrows but not the focus, so Space reselects the old mode and a screen reader stays on the unchecked radio (`ui.tsx:1002`) | ✓ | UXFIX1 |
+| The folded menu's trigger is about 23 px tall, under the 28 px target floor (`AppMenu.tsx:119`, `py-1`, no minimum) | ✓ | UXFIX1 |
+| Menu checkmarks are visual only: the current workspace, place and region are not announced (`AppMenu.tsx:103`, `ui.tsx:1121`) | | UXFIX1 |
+| Destructive confirmations differ after the press: Clear history stays open while pending, but discard branch and delete close at once and refuse in a toast (`Sweep.tsx:218` ✓, `SessionHead.tsx:335`, `QuestPage.tsx:396`, `AskPage.tsx:260`) | ✓ | UXFIX2 |
+| Opening a confirmation neither focuses its explanation nor ties it to the confirming button, so a keyboard user reaches *Clear* without hearing what goes (`ClearAsk.tsx:101`, `Sweep.tsx:47`, `SessionPageHead.tsx:156`) | | UXFIX2 |
+| *Let … run …* may offer an account whose state is unknown: `outsideOf` falls back to `candidates[0]` (`accountAttention.ts:240`) | ✓ | UXFIX3 |
+| A signed-out row's age is its last reading, shown as *waiting*, so reading an account again makes an old blocker look new (`accountAttention.ts:347`) | ✓ | UXFIX3 |
+| Branch rows keep three columns down to the main area's 400 px floor, and a truncated branch name cannot be read whole (`Sweep.tsx:188,244`) | | UXFIX4 |
+| *consider:* dark danger text `#c74534` on `#0f0f12` is about 3.95:1 for control labels; a danger-text token (`ui.tsx:161`, `tokens.css:120`) | | UXFIX5 |
+| *consider:* history's English is harder to scan than its 中文 ("An ask asked it, and clears it with its own") (`en/history.json:44`) | | UXFIX5 |
+
+**Cross-cutting, adopted:** one inline-confirmation foundation for `ClearAsk`, `DiscardBranchAsk`, the delete and stop
+asks and the inline copies in the quest, ask and agent pages: focus on opening, the explanation describing the button,
+pending kept open, refusal inside, close on success or cancel; ACCTEDIT1's `answered.done/refused` is its exemplar.
+Measure assembled windows, not only component stories (UX6a2's counter on the install).
+
+**It said to keep:** Knowledge's shared place with separate mode memory; Settings alone at the bar's foot and the
+seven domains; the attention rows' control budget; history's held plan, exact listed-unit press and stated kept
+reasons; the account refusals' retained drafts; and the folded menu's reuse of the full menu's rows.
