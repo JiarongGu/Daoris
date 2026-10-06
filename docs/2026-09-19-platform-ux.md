@@ -27,8 +27,8 @@ D75), where its own rules live; this is what a view may assume of it.
 
 - **The app strip** (36px) is the title bar: the mark, the menus of verbs and places (*Workspace · Edit ·
   View · Go · Run · Terminal · Help*, D152), the command center naming the scope, and the window's controls. **The
-  activity bar** (48px) is the one navigation, a place per icon, and a badge counts what its place
-  holds: Overview the whole of *What needs you*, Sessions its own sessions waiting on the person
+  activity bar** (48px) is the one navigation, a place per icon and Settings alone at its foot (UX6j),
+  and a badge counts what its place holds: Overview the whole of *What needs you*, Sessions its own sessions waiting on the person
   (UX5 U20), its list's *Waiting on you*: a parked quest counts there too (D126 §2.5), and Agents the signed-out accounts a
   list or a default holds (UX6e, D150 §2.1). **The status bar** states the machine's standing facts: the driver, the active sessions,
   the workspace, the remote, the index and the recall tier (D24, stated on every screen). Global state
@@ -511,22 +511,26 @@ controls are in the frame design's §3.
   then *Make a plugin…*, the kit in a drawer; the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name. D150 moves Workspace and Permissions to the workspace
-  and repository pages, and Agents to its own place. The remaining domains are setup, appearance,
-  AI, driver, tools, plugins, browser and logs; `settings/domains.ts` and the translated catalogues
-  own their displayed names. Every way in opens the domain its
+  and repository pages, Agents to its own place, and Plugins to its place (UX6j). **Seven domains
+  remain**, the machine's and the person's: Get started, Appearance, AI features, Driver, Tools,
+  Browser and Machine log; `settings/domains.ts` and the translated catalogues own their displayed
+  names. A domain remembered from before it left opens where what it held stayed (Plugins at Driver),
+  else on Appearance. Every way in opens the domain its
   fact is set in, at the part it names, and a browser is offered only the first three, its list saying
   beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
   frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
   the domain from it, never stacked above it; the domain is the main area, its header naming it, and a
   machine domain's first load is skeleton rows in its cards' place. What the domains hold:
-  - **Setup** (D97): the six setup steps in order, each a row with its state pill (done's hue,
+  - **Get started** (D97; *Setup* from NAME1b until UX6j gave that name to a repository's and a
+    workspace's tab): the six setup steps in order, each a row with its state pill (done's hue,
     open's for *to do*, neutral for optional), what done means, its commands with a copy each, and the
     doors to the screens that do it at the right; a done step's doors are quiet, a step to do's are
     buttons. *Set up with Ask Daoris* is the head's one primary control, present only where Ask Daoris
     has an agent, and *Don't open at start* sits at the foot. A browser lists the one step it can know
     and says the rest is the desktop's, with neither control. The status bar's *setup: n of 5* leads
     here until the required steps are done.
-  - *Appearance*: the theme and the language, each a segmented choice.
+  - *Appearance*: the theme and the language, each a segmented choice. The language is also View's
+    *Language ▸* and the palette's, since it left the activity bar's foot (UX6j); each remembers it.
   - **AI features** (AGT6), for everyone, because which tier answers search is the service's
     answer and given to every browser: search and convergence with the service's tier and note
     verbatim, and beside them the page's own words for what changes it (the variables, read when the
@@ -540,11 +544,10 @@ controls are in the frame design's §3.
     before it applies, the keys the two gits read a checkout differently by, beside *Switch Git* and *Never mind*. A
     download is followed on its card (its console and *Stop download*), *Delete* asks once, and *Resource locations*
     lists the person's, then the list built in, which cannot be removed.
-  - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
-    the strikes dial, and the install's update: what is staged, the drain, the last swap and the banner's three words,
-    UPDATE1b); *Plugins* (a row per folder: what it
-    declares and speaks on, running or off, the driver's sentence under a refused one, the switch and
-    Remove).
+  - On the desktop only, the machine's domains: *Driver* (the home's path, the plugins folder under it with *Open
+    Plugins*, the notification switch, the strikes dial, the cool-off, and the install's update: what is staged, the
+    drain, the last swap and the banner's three words, UPDATE1b). Nothing about a plugin is set in Settings: its acts are
+    the Plugins place's (UX6j, D119 §5).
   - Workspace wiring, what a start runs on and scoped rules now belong to Repositories' workspace
     and repository pages (D150 §3.1). Daoris's defaults, machine-wide session rules and proposals belong
     to the agent's page. Precedence remains the harness's; no card ranks one scope over another.
