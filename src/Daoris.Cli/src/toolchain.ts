@@ -33,6 +33,9 @@
 //      an account by its id or its name, and writes its id (`accountnames.ts`, ACCT2).
 //  11. A sign-in into an account reaches one that is there, never a new folder; a new account's sign-in, and `profile
 //      join`, put it in the lists the person names, and both say which lists and defaults hold it (`rotation.ts`, ACCT1).
+//  12. Each account's sign-in this command reads, at `agent list` and at a sign-in's end, is kept in `reads.json` with
+//      when, under its owner, where the driver keeps its own readings; a question never asked keeps nothing, and a
+//      removed account's reading goes with it (`accountreads.ts`, AGENTREAD1).
 //
 // It is a MANAGEMENT command and it opens no socket. It does spawn processes — that is the whole
 // point: install, update and login are each harness's OWN mechanism, run by Daoris rather than
@@ -115,6 +118,8 @@ import {
   accountNames, accountsPath, forgetName, nameFor, nameProblem, newAccountId, renameAccount, resolveAccount, shownAs,
   signInRefusal, signInTarget, AccountNameError,
 } from './accountnames.ts';
+import { forgetRead, keepRead } from './accountreads.ts';
+import type { Login } from './accountreads.ts';
 import { coolingLine, coolingOf, coolingWhen, endCooling, machineZone, readCooling } from './cooling.ts';
 import { shellWord, shellWords } from './shellword.ts';
 import { saidLine, saidOf } from './windows.ts';
@@ -629,9 +634,11 @@ export function removeProfile(home: string, harness: string, profile: string): b
   const where = profileHome(home, harness, profile);
   // An account that was a key goes with its key (AGT3), even when its directory went by hand.
   removeKey(home, harness, profile);
-  // And with its cool-off (TOOL4e): an account made later by `profile add` under its name starts afresh. And its name (ACCT2).
+  // And with its cool-off (TOOL4e): an account made later by `profile add` under its name starts afresh. And its name (ACCT2),
+  // and its last reading (AGENTREAD1), as the driver's `Removed` forgets one, so one made later under its name is never read.
   endCooling(home, harness, profile, new Date());
   forgetName(home, harness, profile);
+  forgetRead(home, harness, profile);
   if (!existsSync(where)) return false;
   rmSync(where, { recursive: true, force: true, maxRetries: 3 });
   return true;
@@ -751,8 +758,6 @@ export interface HarnessReport {
   profiles: { name: string; home: string; login: Login; account: string | null; key: string | null }[];
 }
 
-type Login = 'in' | 'out' | 'unknown';
-
 /**
  * Run one of the harness's own reporting commands and collect what it said.
  *
@@ -835,14 +840,26 @@ export function probe(
 
       // The SAME binary the version came from. Asking the pin whether it runs and then asking PATH
       // whether it is logged in would answer about two different installs.
-      return {
-        name, home: where,
-        ...loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where, Boolean(pinned),
-          key ? { [toolchain.keyVariable!]: key } : {}, probeLockPath(home, owner, name)),
-        key: shown,
-      };
+      const said = loginAt([command!, ...toolchain.binary.slice(1)], toolchain, where, Boolean(pinned),
+        key ? { [toolchain.keyVariable!]: key } : {}, probeLockPath(home, owner, name));
+      // Kept where the driver keeps its own readings (AGENTREAD1), so the screen and the loop learn from this one too.
+      if (said.asked) keepReading(home, owner, name, said.login);
+      return { name, home: where, login: said.login, account: said.account, key: shown };
     }),
   };
+}
+
+/**
+ * Keep what one account's sign-in was just read as (AGENTREAD1, twin rule 12): in `reads.json`, under its owner, with now.
+ * A reading not written costs the screen what this one learned, never the answer the terminal gives, as a reading the
+ * driver could not write costs it a restart's knowledge.
+ */
+function keepReading(home: string, owner: string, account: string, login: Login): void {
+  try {
+    keepRead(home, owner, account, login, new Date());
+  } catch (error) {
+    if (typeof (error as NodeJS.ErrnoException).code !== 'string') throw error;
+  }
 }
 
 /**
@@ -853,27 +870,31 @@ export function probe(
  * 🔴 Asked under the home's probe lock (TOOL6g, `probelock.ts`) where one is named: the agent may refresh an expired token
  * to answer, and the desktop asking the same account at the same moment would spend one single-use refresh token twice
  * and sign the account out. A lock another holds past its patience is not asked about: unknown.
+ *
+ * `asked` says whether the question was put at all (ROSTER1, AGENTREAD1): one never asked — no login question, or a lock
+ * another kept — is no reading and is kept nowhere, as the driver's `LoginAnswer.Asked` says; one asked whose command did
+ * not run is a reading of unknown.
  */
 function loginAt(
   command: string[], toolchain: Toolchain, where: string, managed = false,
   account: Record<string, string> = {}, lock: string | null = null,
-): { login: Login; account: string | null } {
+): { login: Login; account: string | null; asked: boolean } {
   const check = toolchain.loginCheck;
-  if (!check) return { login: 'unknown', account: null };
+  if (!check) return { login: 'unknown', account: null, asked: false };
 
   const release = lock === null ? null : takeProbeLock(lock);
-  if (lock !== null && release === null) return { login: 'unknown', account: null };
+  if (lock !== null && release === null) return { login: 'unknown', account: null, asked: false };
   let answer: ReturnType<typeof ask>;
   try {
     answer = ask(command, check.args, where, toolchain, managed, account);
   } finally {
     release?.();
   }
-  if (!answer.ran) return { login: 'unknown', account: null };
+  if (!answer.ran) return { login: 'unknown', account: null, asked: true };
   if (check.in.test(answer.output)) {
-    return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null };
+    return { login: 'in', account: check.account?.exec(answer.output)?.[1]?.trim() || null, asked: true };
   }
-  return { login: check.out.test(answer.output) ? 'out' : 'unknown', account: null };
+  return { login: check.out.test(answer.output) ? 'out' : 'unknown', account: null, asked: true };
 }
 
 /**
@@ -1017,7 +1038,7 @@ export function signInNew(
     // Asked of the binary the login ran, so the answer is about the sign-in that just happened.
     const said = code === 0
       ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, id))
-      : { login: 'out' as const, account: null };
+      : { login: 'out' as const, account: null, asked: false };
 
     if (code !== 0 || said.login === 'out') {
       removeProfile(home, harness, id);
@@ -1027,6 +1048,8 @@ export function signInNew(
       // may hold another account now. And it is marked (TOOL6g), as the driver's `LoginAsync` marks one.
       endCooling(home, harness, id, new Date());
       markSignedIn(home, harness, id, new Date());
+      // A sign-in's end reads its account (ROSTER1), and the reading is kept as the screen's sign-in keeps its own.
+      if (said.asked) keepReading(home, harness, id, said.login);
       let called: string | null = null;
       if (wanted !== null) {
         try {
@@ -1079,10 +1102,11 @@ export function signInTo(
     markSignedIn(home, harness, account, new Date());
     const settings = options.path ? joinedAfterSignIn(options.path, before, harness, account, joins, write) : before;
     const named = nameFor(names, account);
-    // Who signed in is asked only to offer it as a name, where the account has none yet (D66 §3).
-    const who = named === null
-      ? loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, account)).account
-      : null;
+    // A sign-in's end reads its account (ROSTER1) and keeps the reading (AGENTREAD1), so an account the loop read signed out
+    // reads signed in on the screen too; who signed in is offered as a name only where the account has none (D66 §3).
+    const said = loginAt(toolchain.binary, toolchain, where, false, {}, probeLockPath(home, harness, account));
+    if (said.asked) keepReading(home, harness, account, said.login);
+    const who = named === null ? said.account : null;
     for (const line of endLines(harness, account, named, who, settings, home, Boolean(options.path))) write(line);
   }
   return signed;

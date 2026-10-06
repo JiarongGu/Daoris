@@ -18,6 +18,8 @@ with the version and date at release.
   start walks past it. A conversation's agent is told which session it is, so a quest it takes is
   marked on its record.
 - Downloading a managed tool waits briefly when Windows holds the folder just unpacked, at both doors.
+- `daoris agent list` and a terminal sign-in keep what they learn about an account's sign-in, so the
+  window and the driver loop see it too.
 - Development checks of documentation dates judge the commit an open merge would make, so a merge
   that changes source without its document is refused before it is committed.
 - An account refused for its sign-in after Daoris last read it signed in is asked once more before it
