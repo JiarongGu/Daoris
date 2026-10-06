@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { useState } from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { useEffect, useState } from 'react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { AppMenu, AppMenuBar, type BarMenu, focusMenuBar, type MenuItem } from './AppMenu';
@@ -174,5 +174,150 @@ describe('AppMenuBar (D152 §3.3)', () => {
 
     rerender(<Bar mnemonics menus={[{ id: 'workspace', label: '工作区', letter: 'W', items: [] }]} />);
     expect(screen.getByRole('button', { name: '工作区(W)' })).toBeInTheDocument();
+  });
+
+  /** UX7a2: a menu Alt opened from a field, not through a name, still hands the focus back to that field. */
+  it('hands the focus back to the field a menu was opened from without its name', async () => {
+    const onChoose = vi.fn();
+    render(<AltBar onChoose={onChoose} />);
+    const user = userEvent.setup();
+    const before = screen.getByRole('textbox', { name: 'before' });
+    before.focus();
+    fireEvent.keyDown(before, { key: 'e', code: 'KeyE', altKey: true });
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Find' })).toHaveFocus());
+    await user.keyboard('{Enter}');
+    expect(onChoose).toHaveBeenCalledWith('edit', 'b');
+    await waitFor(() => expect(before).toHaveFocus());
+  });
+});
+
+/**
+ * A bar whose menus Alt opens by their letter, as the window's key handler does (`App`): the key lands where the focus
+ * is, which is how Radix learns the menu was opened from the keyboard.
+ */
+function AltBar({ compact = false, mnemonics = false, onChoose = () => {} }: {
+  compact?: boolean; mnemonics?: boolean; onChoose?: (menu: string, item: string) => void;
+}) {
+  const [open, setOpen] = useState<string | null>(null);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const menu = FOLD_MENUS.find((each) => event.altKey && event.code === `Key${each.letter}`);
+      if (menu) setOpen(menu.id);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  return (
+    <Tooltip.Provider>
+      <input aria-label="before" />
+      <AppMenuBar
+        menus={FOLD_MENUS} open={open} onOpen={setOpen} onChoose={onChoose} mnemonics={mnemonics} label="Menu bar"
+        compact={compact} foldLabel="Menu"
+      />
+    </Tooltip.Provider>
+  );
+}
+
+const FOLD_MENUS: BarMenu[] = [
+  { id: 'workspace', label: 'Workspace', letter: 'W', items: [{ id: 'a', label: 'New ask…' }] },
+  { id: 'edit', label: 'Edit', letter: 'E', items: [{ id: 'b', label: 'Find' }, { id: 'b2', label: 'Copy ID' }] },
+  {
+    id: 'view', label: 'View', letter: 'V', items: [
+      { id: 'c', label: 'Commands' },
+      { id: 'view.theme', label: 'Theme', sub: [{ id: 'view.theme:light', label: 'Light', checked: true }, { id: 'view.theme:dark', label: 'Dark' }] },
+    ],
+  },
+];
+
+/**
+ * UX7a2 (D152's UX7a note, the design §3.3): below the width the seven names need, they fold into one menu whose rows are
+ * the menus, each opening its own rows to its side, and the keys still reach every row.
+ */
+describe('AppMenuBar folded into one menu (UX7a2)', () => {
+  const fold = () => within(screen.getByRole('navigation', { name: 'Menu bar' })).getByRole('button', { name: 'Menu' });
+  const openFold = async () => {
+    const user = userEvent.setup();
+    fold().focus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Workspace' })).toHaveFocus());
+    return user;
+  };
+
+  it('is one named button on the bar, whose menu\'s rows are the menus in order', async () => {
+    render(<AltBar compact />);
+    expect(within(screen.getByRole('navigation', { name: 'Menu bar' })).getAllByRole('button')).toHaveLength(1);
+    await openFold();
+    const rows = screen.getAllByRole('menuitem');
+    expect(rows.map((row) => row.textContent)).toEqual(['Workspace', 'Edit', 'View']);
+    for (const row of rows) expect(row).toHaveAttribute('aria-haspopup', 'menu');
+  });
+
+  it('walks the menus with ↓, opens one with → onto its first row, and goes back to its name with ←', async () => {
+    render(<AltBar compact />);
+    const user = await openFold();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toHaveFocus();
+    await user.keyboard('{ArrowRight}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Find' })).toHaveFocus());
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Copy ID' })).toHaveFocus();
+    await user.keyboard('{ArrowLeft}');
+    await waitFor(() => expect(screen.queryByRole('menuitem', { name: 'Find' })).toBeNull());
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toHaveFocus();
+  });
+
+  it('reaches a submenu inside a menu, View\'s Theme, and chooses in it', async () => {
+    const onChoose = vi.fn();
+    render(<AltBar compact onChoose={onChoose} />);
+    const user = await openFold();
+    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowRight}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Commands' })).toHaveFocus());
+    await user.keyboard('{ArrowDown}{ArrowRight}');
+    await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Light' })).toHaveFocus());
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(onChoose).toHaveBeenCalledWith('view', 'view.theme:dark');
+  });
+
+  it('opens the menu Alt names inside the fold, and hands the focus back once a row is chosen', async () => {
+    const onChoose = vi.fn();
+    render(<AltBar compact onChoose={onChoose} />);
+    const user = userEvent.setup();
+    const before = screen.getByRole('textbox', { name: 'before' });
+    before.focus();
+    fireEvent.keyDown(before, { key: 'e', code: 'KeyE', altKey: true });
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Find' })).toHaveFocus());
+    expect(screen.getByRole('menuitem', { name: 'Edit' })).toHaveAttribute('aria-expanded', 'true');
+
+    await user.keyboard('{Enter}');
+    expect(onChoose).toHaveBeenCalledWith('edit', 'b');
+    await waitFor(() => expect(before).toHaveFocus());
+    expect(screen.queryByRole('menuitem')).toBeNull();
+  });
+
+  it('closes onto the fold on Escape, and Escape on the fold hands the focus back to where it was', async () => {
+    render(<AltBar compact />);
+    const user = userEvent.setup();
+    const before = screen.getByRole('textbox', { name: 'before' });
+    before.focus();
+    act(() => { focusMenuBar(document); });
+    expect(fold()).toHaveFocus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'Workspace' })).toHaveFocus());
+    await user.keyboard('{ArrowRight}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'New ask…' })).toHaveFocus());
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menuitem')).toBeNull());
+    expect(fold()).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(before).toHaveFocus();
+  });
+
+  it('shows each menu\'s letter on its row while Alt is held, and names its key', async () => {
+    render(<AltBar compact mnemonics />);
+    await openFold();
+    const workspace = screen.getByRole('menuitem', { name: 'Workspace' });
+    expect(workspace.querySelector('u')?.textContent).toBe('W');
+    expect(workspace).toHaveAttribute('aria-keyshortcuts', 'Alt+W');
   });
 });

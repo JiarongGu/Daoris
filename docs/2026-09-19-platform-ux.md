@@ -25,8 +25,8 @@ everything else is the system sans. 道衍 sits beside the wordmark as the one b
 The frame is specified in `docs/2026-09-21-desktop-frame-design.md` §3 (D56, as amended by D66 and
 D75), where its own rules live; this is what a view may assume of it.
 
-- **The app strip** (36px) is the title bar: the mark, the menus by domain (*Daoris · Workspace ·
-  Agents · View*, D75), the command center naming the scope, and the window's controls. **The
+- **The app strip** (36px) is the title bar: the mark, the menus of verbs and places (*Workspace · Edit ·
+  View · Go · Run · Terminal · Help*, D152), the command center naming the scope, and the window's controls. **The
   activity bar** (48px) is the one navigation, a place per icon, and a badge counts what its place
   holds: Overview the whole of *What needs you*, Sessions its own sessions waiting on the person
   (UX5 U20), its list's *Waiting on you*: a parked quest counts there too (D126 §2.5), and Agents the signed-out accounts a
@@ -42,7 +42,8 @@ D75), where its own rules live; this is what a view may assume of it.
   section titles.
 - **Narrow, nothing hides behind a hamburger.** The activity bar keeps each place 36px and scrolls
   rather than crushing them (U22), and the command center gives way to the menus rather than covering
-  them (U15).
+  them (U15). The one exception is the menu bar below the width its seven names need (39rem of window,
+  UX7a2): they fold into one ☰ whose rows are the menus, and the keys reach it as they reach the bar.
 - **One frame for every view** (D118, FRAME1a; built view by view as FRAME1b–i). Each view has a list
   pane and a main area of its own, beside the frame's side bar and panel. Overview and Map have no list.
   Each view's list collapses, resizes, answers the same keys and is remembered as Sessions' rail is, and

@@ -69,7 +69,7 @@ import {
 } from './commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
-import { AppMenuBar, type BarMenu, focusMenuBar } from './work/AppMenu';
+import { AppMenuBar, type BarMenu, focusMenuBar, useMenuFold } from './work/AppMenu';
 import { useThemeChoice } from './theme';
 import { SETTINGS_DOMAINS } from './settings/domains';
 import { store, stored } from './lib/stored';
@@ -196,6 +196,8 @@ export function App() {
   // shows each menu's letter.
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mnemonics, setMnemonics] = useState(false);
+  // Whether the window is narrower than the seven names need, so they fold into one menu (UX7a2).
+  const foldMenus = useMenuFold();
   // What a menu, the palette or a key asked the Work frame to do with the session attended there (D118 §5): an event.
   const [workIntent, setWorkIntent] = useState<FrameIntent | null>(null);
   const { toasts, notify, dismiss } = useToasts();
@@ -923,6 +925,9 @@ export function App() {
             onOpen={setOpenMenu}
             onChoose={onMenu}
             mnemonics={mnemonics}
+            // Narrower than the seven names need, they fold into one menu (UX7a2), which the keys reach as they reach the bar.
+            compact={foldMenus}
+            foldLabel={t('menu.fold')}
           />
         )}
         // The palette's way in is the command center now, not a 14px glyph wedged against the

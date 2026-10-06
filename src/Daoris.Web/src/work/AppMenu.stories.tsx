@@ -5,7 +5,8 @@ import i18n from '../i18n';
 import { COMMANDS, type CommandState, MENUS, type MenuId, shortcutGroups, type Translate } from '../commands';
 import { isPress } from '../shortcuts';
 import { menuRows } from './appMenus';
-import { AppMenuBar } from './AppMenu';
+import { AppMenuBar, FOLD_OPEN, foldsMenus } from './AppMenu';
+import { BrowserDoor } from './BrowserDoor';
 import { CommandCenter } from './CommandCenter';
 import { AppStrip } from './frame';
 import { KeyboardShortcuts } from './KeyboardShortcuts';
@@ -14,7 +15,7 @@ import { ATTENDED, IN_A_BROWSER, menuWorld, OPEN_QUEST } from './menuFixtures';
 
 // The menu bar (UX7a, D152): the strip as the window draws it, with each menu open over the page, built from the one
 // table the palette and the keys read. `theme`, `language` and `world` are args, so one story is photographed in both
-// themes and both languages at 1546 and 680 px.
+// themes and both languages at 1546 and 680 px; `width` sets the window's, and below the names' room they fold (UX7a2).
 
 type World = 'shell' | 'attended' | 'quest' | 'browser';
 
@@ -38,7 +39,9 @@ function useTheme(theme: 'light' | 'dark') {
   }, [theme]);
 }
 
-function Strip({ menu, world, mnemonics, chinese }: { menu: MenuId | null; world: World; mnemonics: boolean; chinese: boolean }) {
+function Strip({ menu, world, mnemonics, chinese, width }: {
+  menu: MenuId | typeof FOLD_OPEN | null; world: World; mnemonics: boolean; chinese: boolean; width?: number;
+}) {
   // A reader of its own in either language: a 中文 one remembers 中文 for the next story, so English is asked for too.
   const reader = useMemo(() => i18n.cloneInstance({ lng: chinese ? 'zh' : 'en' }), [chinese]);
   const t = reader.t.bind(reader) as Translate;
@@ -48,21 +51,34 @@ function Strip({ menu, world, mnemonics, chinese }: { menu: MenuId | null; world
   const menus = MENUS.filter((each) => !each.shell || attached).map((each) => ({
     id: each.id, label: t(each.label), ...(attached ? { letter: each.letter } : {}), items: menuRows(entries, each.id),
   }));
+  // A story's window is the width it is given (UX7a2): the strip folds its menus where the window would.
+  const compact = width !== undefined && foldsMenus(width);
   return (
     <I18nextProvider i18n={reader}>
-      <div className="flex h-[40rem] flex-col bg-page text-ink">
+      <div className="flex h-[40rem] flex-col bg-page text-ink" style={width !== undefined ? { width } : undefined}>
         <AppStrip
           captionRoom={attached}
-          menus={<AppMenuBar label={t('menu.bar')} menus={menus} open={open} onOpen={setOpen} onChoose={() => {}} mnemonics={mnemonics} />}
+          menus={(
+            <AppMenuBar
+              label={t('menu.bar')} menus={menus} open={open} onOpen={setOpen} onChoose={() => {}} mnemonics={mnemonics}
+              compact={compact} foldLabel={t('menu.fold')}
+            />
+          )}
           center={<CommandCenter scope={t('scope.every', { count: 2 })} shortcut="Ctrl K" onOpen={() => {}} label={t('palette.open')} />}
           trailing={(
-            <div className="flex items-center max-[54rem]:hidden">
-              <LayoutToggles
-                regions={attached ? ['list', 'panel', 'right'] : ['list']}
-                list={t('layout.list.quests')}
-                closed={{ list: false, panel: false, right: true }}
-                onToggle={() => {}}
-              />
+            <div className="flex items-center gap-2">
+              {attached && <BrowserDoor onOpen={() => {}} />}
+              {/* At a story's own width, as the window's media query takes them off below 54rem. */}
+              {(width === undefined || width >= 54 * 16) && (
+                <div className="flex items-center max-[54rem]:hidden">
+                  <LayoutToggles
+                    regions={attached ? ['list', 'panel', 'right'] : ['list']}
+                    list={t('layout.list.quests')}
+                    closed={{ list: false, panel: false, right: true }}
+                    onToggle={() => {}}
+                  />
+                </div>
+              )}
             </div>
           )}
         />
@@ -71,22 +87,25 @@ function Strip({ menu, world, mnemonics, chinese }: { menu: MenuId | null; world
   );
 }
 
-function MenuBarStory({ menu, world = 'shell', theme = 'light', language = 'en', mnemonics = false }: {
-  menu: MenuId | 'none';
+function MenuBarStory({ menu, world = 'shell', theme = 'light', language = 'en', mnemonics = false, width }: {
+  menu: MenuId | typeof FOLD_OPEN | 'none';
   world?: World;
   theme?: 'light' | 'dark';
   language?: 'en' | 'zh';
   mnemonics?: boolean;
+  /** The window's width in CSS px; absent, the story's whole width. */
+  width?: number;
 }) {
   useTheme(theme);
   // Drawn anew for each set of args, so the menu named opens as the story opens.
   return (
     <Strip
-      key={`${menu}-${world}-${language}`}
+      key={`${menu}-${world}-${language}-${width ?? 'whole'}`}
       menu={menu === 'none' ? null : menu}
       world={world}
       mnemonics={mnemonics}
       chinese={language === 'zh'}
+      width={width}
     />
   );
 }
@@ -144,6 +163,24 @@ export const BrowserWorkspace: Story = { args: { menu: 'workspace', world: 'brow
 
 /** A browser's Go: its places, no keys. */
 export const BrowserGo: Story = { args: { menu: 'go', world: 'browser' } };
+
+/** At a 680 px window: the seven names still, the command center its glyph, the layout toggles gone (D152 §3.1). */
+export const At680: Story = { args: { menu: 'none', width: 680 } };
+
+/**
+ * At a 560 px window (UX7a2): narrower than the seven names need, so they fold into one menu, VS Code's ☰, beside the
+ * command center's glyph, the browser's door and the window's buttons.
+ */
+export const FoldedAt560: Story = { args: { menu: 'none', width: 560 } };
+
+/** The fold open: its rows are the seven menus in the bar's order, each opening to its side. */
+export const FoldedOpen: Story = { args: { menu: FOLD_OPEN, width: 560 } };
+
+/** The fold opened at Run, as Alt+R opens it: Run's rows to its side, its record groups named. */
+export const FoldedAtRun: Story = { args: { menu: 'run', width: 560 } };
+
+/** Alt held with the fold open: each menu's letter on its row, underlined, and after the name in 中文. */
+export const FoldedAltHeld: Story = { args: { menu: FOLD_OPEN, width: 560, mnemonics: true } };
 
 /** Help › Keyboard shortcuts: every key by menu. */
 export const Shortcuts: Story = {
