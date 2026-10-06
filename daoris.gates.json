@@ -2,7 +2,7 @@
   "devkit": "0.0.1",
 
   "gates": [
-    { "name": "universal", "run": "dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
+    { "name": "universal", "run": "node tools/as-merged.mjs dotnet run --project src/Daoris.Devkit/Daoris.Devkit.Cli -- verify --universal-only" },
     { "name": "cli", "run": "npm run verify" },
     { "name": "service", "run": "dotnet test src/Daoris.Service" },
     { "name": "devkit", "run": "dotnet test src/Daoris.Devkit" },

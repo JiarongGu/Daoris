@@ -47,7 +47,9 @@
  *    places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
  *    never run by a merge, reached or not: it says it is in the full set before staging. The lines before
  *    the run say why each gate runs or is skipped. `--full` runs the whole plan, and `--rerun` runs a long
- *    gate when it is named.
+ *    gate when it is named. The merge is gated before it is committed, so the devkit's universal gates, in their
+ *    own gate and in `verify`, run through `tools/as-merged.mjs` (GATE1): its docs gate dates each path from
+ *    HEAD's history, and there HEAD is the commit the merge would make.
  * 7. Each gate's whole output goes to `local/scratch/merge-<branch>/<gate>.log` (gitignored), written
  *    beside and renamed when the gate ends, and one line per gate says its result and that file. The
  *    first failing gate stops the run (`--keep-going` runs the rest), and what did not run is named. A
@@ -301,10 +303,11 @@ export const slug = (name) => name.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-
 /**
  * What kind of gate a command is, which orders it and never drops it: a devkit `dotnet run` and a tool's
  * `--check` (the orientation index, ORIENT1a) are checks, `npm run rehearse*` and `npm run test:*` are
- * rehearsals, and anything else is a suite.
+ * rehearsals, and anything else is a suite. A command run through `tools/as-merged.mjs` (GATE1) is the kind of
+ * what it runs: the universal gates read history as the merge would commit it, and are still the devkit's check.
  */
 export function gateKind(run) {
-  const command = run.trim();
+  const command = run.trim().replace(/^node tools\/as-merged\.mjs\s+/, '');
   if (/^dotnet run\b/.test(command) || /^node tools\/\S+\.mjs --check$/.test(command)) return 'check';
   const script = /^npm run (\S+)$/.exec(command)?.[1];
   if (script && /^(rehearse|test:)/.test(script)) return 'rehearsal';
