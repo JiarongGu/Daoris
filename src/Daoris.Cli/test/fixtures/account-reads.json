@@ -26,7 +26,11 @@
     ["one account written twice in any case is the last that reads", "{\"claude-code\":{\"accounts\":{\"Account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T11:00:00Z\"},\"account-1\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "account-1", "out 2026-10-04T10:00:00.000Z"],
     ["a later one that does not read leaves the earlier", "{\"claude-code\":{\"accounts\":{\"Account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T11:00:00Z\"},\"account-1\":{\"login\":\"maybe\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "account-1", "in 2026-10-04T11:00:00.000Z"],
     ["a name in Chinese reads", "{\"claude-code\":{\"accounts\":{\"工作\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "工作", "out 2026-10-04T10:00:00.000Z"],
-    ["an accented name compares without case", "{\"claude-code\":{\"accounts\":{\"Café\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "CAFÉ", "in 2026-10-04T10:00:00.000Z"]
+    ["an accented name compares without case", "{\"claude-code\":{\"accounts\":{\"Café\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "CAFÉ", "in 2026-10-04T10:00:00.000Z"],
+    ["a letter whose capital is two letters is not those two: straße is not STRASSE", "{\"claude-code\":{\"accounts\":{\"straße\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "STRASSE", null],
+    ["a dotless i is not an I", "{\"claude-code\":{\"accounts\":{\"ışık\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "IŞIK", null],
+    ["a final sigma compares with its capital", "{\"claude-code\":{\"accounts\":{\"Νίκος\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "ΝΊΚΟΣ", "in 2026-10-04T10:00:00.000Z"],
+    ["a Greek letter with a subscript iota compares with its capital", "{\"claude-code\":{\"accounts\":{\"ᾠδή\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}", "claude-code", "ᾨΔΉ", "in 2026-10-04T10:00:00.000Z"]
   ],
   "keep": [
     ["a reading into no file", null, "claude-code", "account-1", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
@@ -50,7 +54,8 @@
     ["a name in Chinese is written as it is", null, "claude-code", "工作", "in", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"工作\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
     ["HTML's marks and a plus in a name are written as they are", null, "claude-code", "R&D+<team>'s", "out", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"R&D+<team>'s\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
     ["an accented name found in another case is written under the name given", "{\"claude-code\":{\"accounts\":{\"Café\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"CAFÉ\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
-    ["words it has no field for are written as they are, escaped on disk or not", "{\"later\":\"\\u00e9 中文 \\u0026\"}", "codex", "work", "in", "2026-10-04T10:00:00Z", "{\"later\":\"é 中文 &\",\"codex\":{\"accounts\":{\"work\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"]
+    ["words it has no field for are written as they are, escaped on disk or not", "{\"later\":\"\\u00e9 中文 \\u0026\"}", "codex", "work", "in", "2026-10-04T10:00:00Z", "{\"later\":\"é 中文 &\",\"codex\":{\"accounts\":{\"work\":{\"login\":\"in\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"],
+    ["a name that differs by a letter whose capital is two letters is another account", "{\"claude-code\":{\"accounts\":{\"straße\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "STRASSE", "out", "2026-10-04T10:00:00Z", "{\"claude-code\":{\"accounts\":{\"straße\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"STRASSE\":{\"login\":\"out\",\"read\":\"2026-10-04T10:00:00Z\"}}}}"]
   ],
   "forget": [
     ["an account's reading goes, and the rest stand", "{\"claude-code\":{\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"accounts\":{\"account-1\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"account-2\":{\"login\":\"out\",\"read\":\"2026-10-04T09:00:00Z\"}}}}", "claude-code", "account-1", "{\"claude-code\":{\"own\":{\"login\":\"in\",\"read\":\"2026-10-04T09:00:00Z\"},\"accounts\":{\"account-2\":{\"login\":\"out\",\"read\":\"2026-10-04T09:00:00Z\"}}}}"],
