@@ -11582,3 +11582,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGUI1c — Settings keeps settings** (after b; five lanes). Retire its plugin domain, repoint anchors and move the folder row into Driver. Contract/proof: plugin-screen design.
 
 **Outcome** 2026-10-07: the core was built by UX6j: Settings' plugin domain retired, its anchors repointed (an Ask Daoris go to it lands on the Plugins place), and the folder row moved into Driver. The remainder is PLUGUI1c2. Detail: D150's UX6j note.
+
+
+## EVID1a — path evidence holds done (2026-10-07, D144)
+
+> - [ ] **EVID1a — path evidence holds done** (service; after DRIFT1d). Three publish doors accept evidence, defer gates to d and store `Evidenced` verdicts; found releases the step, missing holds it. Contract: §2–§3, §6. Proof: evidence/sync/local/shared/MCP tests.
+
+**Outcome** 2026-10-07: a requirement may name up to five evidence items, each a `path` (judged at every publish door and by a remote receiving a push, so no machine path is ever kept) or a `gate` (refused, naming the landing queue it waits for, EVID1d). A met answer on one holds the done (`evidence-unread`, then `evidence-missing`; `Held` covers them, `AwaitsEvidence` is said apart), and the local-only `POST /api/quests/{id}/evidence` keeps the driver's verdict as an `evidenced` operation that syncs and, when all is found, lifts the hold and publishes the held step in one transaction; the yes accepts an evidence hold as it stands. A step to another repository inherits requirements without evidence. The planner and `HelpAcceptProposals` still read only departures (EVID1b, EVID1c). Adding a quest operation kind touches eight places, written down nowhere. Service 1307 → 1364, HTTP 74 → 76. Detail: D144's EVID1a note; commits b9d7f2fb…e1e02aba.

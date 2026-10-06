@@ -23,9 +23,11 @@ public static class QuestWire
     public const string Shape =
         "every operation names its machine, sequence, quest, kind and time; a publish carries from, to, title and "
         + "body, every file its name, sha256 and size, every step its to, title and body, and every requirement "
-        + "its quote and check; a done's every answer names its requirement and says met or departed, a departure "
+        + "its quote and check, and any evidence at most 5 items, each a repository-relative path or a gate's name; "
+        + "a done's every answer names its requirement and says met or departed, a departure "
         + "with its quote; a decline's whileOpen, where it says one, is true or false; a conflict names "
-        + "what it attempted; a dismissal names the conflict's machine and sequence";
+        + "what it attempted; a dismissal names the conflict's machine and sequence; an evidenced verdict names "
+        + "the full commit read, how it was read, and each item's requirement, path or gate, and result";
 
     /// <summary>A page of what a remote accepted — the answer to a fetch.</summary>
     public static string Page(QuestFetch page) => Written(writer =>
@@ -141,6 +143,13 @@ public static class QuestWire
         {
             writer.WritePropertyName("answers");
             QuestStore.WriteAnswers(writer, answers);
+        }
+
+        // An evidenced operation's verdict (EVID1a): names and codes only; its when and machine are the operation's.
+        if (operation is { Kind: QuestOperationKind.Evidenced, Evidence: { } verdict })
+        {
+            writer.WritePropertyName("evidence");
+            verdict.Write(writer);
         }
 
         if (operation.Attempted is { } attempted) writer.WriteString("attempted", attempted.ToString());
@@ -300,12 +309,21 @@ public static class QuestWire
             var lanes = Items(asked, "lanes");
             if (lanes.Any(lane => lane.ValueKind != JsonValueKind.String)) return null;
 
-            // A requirement without its words or its check is half of one (DRIFT1c), never replayed blank.
+            // A requirement without its words or its check is half of one (DRIFT1c), never replayed blank. So is
+            // evidence naming both or neither, or a path that is not repository-relative (EVID1a): a machine's path
+            // never crosses (D47 §4).
             var requirements = new List<QuestRequirement>();
             foreach (var requirement in Items(asked, "requirements"))
             {
                 if (Text(requirement, "quote") is not { } quote || Text(requirement, "check") is not { } check) return null;
-                requirements.Add(new(quote, check));
+                IReadOnlyList<QuestEvidence> evidence = [];
+                if (requirement.TryGetProperty("evidence", out var named))
+                {
+                    if (QuestEvidence.Judged(named) is not { } judged) return null;
+                    evidence = judged;
+                }
+
+                requirements.Add(new(quote, check) { Evidence = evidence });
             }
 
             published = new Quest(quest, from, to, title, body, QuestStatus.Open, null, at, at)
@@ -349,9 +367,18 @@ public static class QuestWire
             whileOpen = open.ValueKind == JsonValueKind.True;
         }
 
+        // A verdict is an evidenced operation's whole point (EVID1a): one missing, or not whole, makes the operation half
+        // of one, which a replay would read as evidence found or missing on nobody's reading.
+        QuestEvidenceVerdict? verdict = null;
+        if (kind == QuestOperationKind.Evidenced
+            && (!item.TryGetProperty("evidence", out var read) || (verdict = QuestEvidenceVerdict.Judged(read)) is null))
+        {
+            return null;
+        }
+
         return new QuestOperation(
             quest, kind, machine, sequence, at, Text(item, "note"), published, attempted, numbered ? number : null,
-            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen);
+            dismisses, answers is { Count: > 0 } ? answers : null, whileOpen, verdict);
     }
 
 }

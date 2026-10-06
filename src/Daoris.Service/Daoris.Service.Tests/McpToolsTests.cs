@@ -317,6 +317,75 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// EVID1a (D144 §2): an intake names a requirement's evidence over the connector — a path the done's commit must hold —
+    /// and the list shows it beneath its requirement; a gate is refused, naming the queue it waits for, and nothing is published.
+    /// </summary>
+    [Fact]
+    public async Task An_intakes_requirement_names_its_evidence_and_a_gate_is_refused_naming_the_queue()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "write the bridge report into docs/report-bridge.md"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var session = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, session.Id));
+
+        var gated = await tools.PublishQuestAsync(
+            "intake", "Owner", "Write the bridge report", "For the review.",
+            requirements: [new Requirement("the bridge report", "The web gate passes.", [new RequirementEvidence(null, "web")])]);
+        Assert.Contains("queue", gated);
+        Assert.Empty(await _quests.ListAsync());
+
+        var published = await tools.PublishQuestAsync(
+            "intake", "Owner", "Write the bridge report", "For the review.",
+            requirements: [new Requirement("the bridge report", "It is in the file.", [new RequirementEvidence("docs/report-bridge.md", null)])]);
+
+        Assert.Contains("Published quest", published);
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        Assert.Equal([new QuestEvidence("docs/report-bridge.md")], quest.Requirements[0].Evidence);
+        Assert.Contains("evidence: path `docs/report-bridge.md`", await tools.ListQuestsAsync("Owner"));
+    }
+
+    /// <summary>
+    /// EVID1a (D144 §2, §6): a done over the connector meeting a requirement that names evidence is held until Daoris reads it
+    /// in the session's last commit, which the answer says, so the session can commit it first; the list says it waits on
+    /// its evidence, then, once the driver's verdict is kept, what was read and what was not found.
+    /// </summary>
+    [Fact]
+    public async Task A_met_done_over_the_connector_is_held_for_its_evidence_and_the_list_says_what_was_read()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files, asks: asks);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var ask = (await desk.AskAsync(new AskRequest("default", "write the bridge report into docs/report-bridge.md"), DateTimeOffset.UtcNow)).Ask!;
+        var published = await desk.PublishAsync(ask.Id, "Owner", DateTimeOffset.UtcNow, draft: new AskDraft("Write the bridge report", "For the review.")
+        {
+            Requirements = [new QuestRequirement("the bridge report", "It is in the file.") { Evidence = [new QuestEvidence("docs/report-bridge.md")] }],
+        });
+        var owner = new KnowledgeTools(_service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")));
+        await owner.RespondToQuestAsync(published.Quest!.Id, "take");
+
+        var closed = await owner.RespondToQuestAsync(
+            published.Quest.Id, "done", "Written.", answers: [new RequirementAnswer(1, "It is in the file.", null, null)]);
+
+        Assert.Contains("`docs/report-bridge.md`", closed);
+        Assert.Contains("last commit", closed);
+        Assert.Contains("held until Daoris reads its evidence", await owner.ListQuestsAsync("Owner"));
+
+        await exchange.EvidenceAsync(published.Quest.Id, new QuestEvidenceVerdict(
+            "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "session-end",
+            [new QuestEvidenceRead(1, "docs/report-bridge.md", null, "missing")]), DateTimeOffset.UtcNow);
+        var listed = await owner.ListQuestsAsync("Owner");
+        Assert.Contains("evidence read at `a1b2c3d`", listed);
+        Assert.Contains("`docs/report-bridge.md` missing", listed);
+        Assert.Contains("held for the person: its evidence was not found", listed);
+    }
+
+    /// <summary>
     /// The driver names the session on every connector it hands over (PERM2), so a rule proposal says
     /// who made it. With no ask that changes nothing about a publish: only an intake publishes as its ask.
     /// </summary>

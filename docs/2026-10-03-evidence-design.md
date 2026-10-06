@@ -1,7 +1,7 @@
 # Evidence Daoris checks — a met answer with a fact under it
 
-> EVID1, decided as D144 (2026-10-03). Nothing is built. The suggestion is the outside analysis's §1
-> ([`DAORIS_FUTURE_DIRECTIONS.md`](DAORIS_FUTURE_DIRECTIONS.md)), weighed in
+> EVID1, decided as D144 (2026-10-03). EVID1a is built (its note under D144); the rest is not. The suggestion is
+> the outside analysis's §1 ([`DAORIS_FUTURE_DIRECTIONS.md`](DAORIS_FUTURE_DIRECTIONS.md)), weighed in
 > [`2026-10-03-future-directions-review.md`](2026-10-03-future-directions-review.md) (its §1 row and the EVID1 slice).
 > `Dnn` is `docs/decisions/Dnn.md`. *The queue* is the self-development design's §4 (DEV5–DEV7, not built).
 

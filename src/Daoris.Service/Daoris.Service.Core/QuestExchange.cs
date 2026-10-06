@@ -151,8 +151,20 @@ public enum QuestRespondRefusal
     /// <summary>A departure quotes words the person never said (DRIFT1d) — the answer names them.</summary>
     NotQuoted,
 
-    /// <summary>A yes to a quest no departure holds (DRIFT1d): not closed done with one, or already accepted.</summary>
+    /// <summary>A yes to a quest nothing holds (DRIFT1d, EVID1a): not closed done held for the person, or already accepted.</summary>
     NotHeld,
+
+    /// <summary>
+    /// A verdict on a quest whose done waits on no evidence (EVID1a): not closed done, none of its met requirements names
+    /// any, its evidence was already found, or the person accepted the done as it stands.
+    /// </summary>
+    NotAwaitingEvidence,
+
+    /// <summary>
+    /// A verdict that is not one (EVID1a): no full commit id, a way of reading or a result nobody wrote, an item the quest
+    /// does not wait on or one read twice, or an item it waits on left unread — the answer names which.
+    /// </summary>
+    BadVerdict,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -561,7 +573,64 @@ public sealed class QuestExchange(
                             + "check in a few lines.");
             }
 
-            kept.Add(new QuestRequirement(quote, check));
+            var (evidence, unfit) = JudgeEvidence(index, requirement.Evidence ?? []);
+            if (unfit is not null) return ([], unfit);
+            kept.Add(new QuestRequirement(quote, check) { Evidence = evidence });
+        }
+
+        return (kept, null);
+    }
+
+    /// <summary>
+    /// A requirement's evidence as a quest keeps it (EVID1a, D144 §2): at most <see cref="QuestEvidence.MaxItems"/> items,
+    /// each exactly one of a path or a gate, a path trimmed at its ends and judged (<see cref="QuestEvidence.JudgePath"/>),
+    /// a gate's name judged — or why not, naming the requirement. A gate is refused for now, naming the queue it waits for.
+    /// </summary>
+    /// <remarks>
+    /// The shape alone, which a remote judges of a pushed quest too: written by whoever writes the requirement, never by
+    /// the session it will judge, and read later by the driver, never here.
+    /// </remarks>
+    private static (IReadOnlyList<QuestEvidence> Evidence, string? Refusal) JudgeEvidence(int index, IReadOnlyList<QuestEvidence> given)
+    {
+        if (given.Count > QuestEvidence.MaxItems)
+        {
+            return ([], $"Requirement {index} names {given.Count} items of evidence, and a requirement names at most "
+                        + $"{QuestEvidence.MaxItems}: the facts its check turns on, not an inventory of the work.");
+        }
+
+        var kept = new List<QuestEvidence>();
+        foreach (var (item, number) in given.Select((item, number) => (item, number + 1)))
+        {
+            var which = $"Requirement {index}'s evidence item {number}";
+            var path = item.Path?.Trim();
+            var gate = item.Gate?.Trim();
+            if (string.IsNullOrEmpty(path) == string.IsNullOrEmpty(gate))
+            {
+                return ([], $"{which} names exactly one of `path` or `gate`: a file or folder the done's commit must hold, "
+                            + "or a gate the receiving repository declares.");
+            }
+
+            if (!string.IsNullOrEmpty(path))
+            {
+                if (QuestEvidence.JudgePath(path) is { } why)
+                {
+                    return ([], $"{which}, `{Clip(path)}`, is not a path a commit can be asked for: {why}. Name it from the "
+                                + "receiving repository's root with forward slashes, e.g. `docs/report.md`.");
+                }
+
+                if (!kept.Any(each => each.Path == path)) kept.Add(new QuestEvidence(path));
+                continue;
+            }
+
+            if (QuestEvidence.JudgeGate(gate!) is { } unfit)
+            {
+                return ([], $"{which}, `{Clip(gate!)}`, is not a gate's name: {unfit}.");
+            }
+
+            // Until the landing queue reads gates (D144 point 5), nothing here could read one: refused, not kept unread.
+            return ([], $"{which} names the gate `{gate}`. A gate is read from the landing queue's verdict, and this build "
+                        + "has no landing queue to read it from yet, so a gate cannot be named. Say the gate in the check, "
+                        + "and name a path the work leaves if there is one.");
         }
 
         return (kept, null);
@@ -1075,9 +1144,10 @@ public sealed class QuestExchange(
     // ——— A done answers each requirement, and a departure holds what follows for the person's yes (DRIFT1d, D133 §4).
 
     /// <summary>
-    /// The person accepts a done's departure from what they required (DRIFT1d, D133 §4): what it held goes on — the
-    /// chain's next step is published now, and a quest waiting on it resumes at the driver's next look. Only a quest a
-    /// departure holds takes a yes; any other is refused saying why, as a state, not a malformed ask.
+    /// The person accepts a done's departure from what they required (DRIFT1d, D133 §4), or a done held for its evidence
+    /// as it stands (EVID1a, D144 §6): what it held goes on — the chain's next step is published now, and a quest waiting
+    /// on it resumes at the driver's next look. Only a held quest takes a yes; any other is refused saying why, as a
+    /// state, not a malformed ask.
     /// </summary>
     /// <remarks>
     /// The person's door, never an agent's: no connector tool reaches it. It commits here and travels like any verb (D68).
@@ -1110,11 +1180,181 @@ public sealed class QuestExchange(
             ? ""
             : $"\n\n{Listed(waiting)} {(waiting.Count == 1 ? "waits" : "wait")} on it, and {(waiting.Count == 1 ? "resumes" : "resume")} "
               + "at the driver's next look.";
-        return new(
-            QuestRespondRefusal.None,
-            $"Accepted the departure on quest `#{move.Quest.Id}`: what it held goes on.{resumes}{Then(move.FollowUp)}",
-            move.Quest);
+        // A done held for its evidence alone is accepted as it stands, unread or missing (EVID1a, D144 §6); a departure's
+        // words are as they were, since its yes is the same yes.
+        var accepted = move.Quest.Answers.Any(answer => answer.IsDeparture)
+            ? $"Accepted the departure on quest `#{move.Quest.Id}`"
+            : $"Accepted quest `#{move.Quest.Id}`'s done as it stands, its evidence {(move.Quest.Evidence is null ? "unread" : "not found")}";
+        return new(QuestRespondRefusal.None, $"{accepted}: what it held goes on.{resumes}{Then(move.FollowUp)}", move.Quest);
     }
+
+    /// <summary>
+    /// Daoris read a done's evidence (EVID1a, D144 §3): the driver's verdict at the end of the session that made the done,
+    /// the orphan sweep's, or the person's check at the terminal. The quest must be done and waiting on its evidence, and
+    /// the verdict must name the commit read and read every item of every met requirement, and nothing else. Found, what
+    /// the done held goes on — its next step published in the same transaction; missing, it waits for the person.
+    /// </summary>
+    /// <remarks>
+    /// <para>The driver's door, never an agent's: no connector tool reaches it, since the session a requirement judges
+    /// never writes its verdict (D144 §1). It commits here and travels like any verb (D68).</para>
+    ///
+    /// <para><b>A fact, with no model</b> (D24, D54): the exchange cannot read a commit, so it judges only that the verdict
+    /// reads what the done waits on, in codes, and keeps it. Whether the commit is the done's or follows it on the same
+    /// history is the reader's to settle, which has the tree.</para>
+    /// </remarks>
+    public async Task<QuestRespondOutcome> EvidenceAsync(
+        string id, QuestEvidenceVerdict verdict, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var name = id.TrimStart('#');
+        if (await quests.FindAsync(name, ct).ConfigureAwait(false) is not { } quest)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (NotAwaiting(quest) is { } why) return new(QuestRespondRefusal.NotAwaitingEvidence, why, Quest: null);
+        if (JudgeVerdict(quest, verdict) is { } unfit) return new(QuestRespondRefusal.BadVerdict, unfit + " Nothing was kept.", Quest: null);
+
+        var judged = verdict with { Commit = verdict.Commit.ToLowerInvariant() };
+        var move = await quests.EvidenceAsync(name, judged, now, ct).ConfigureAwait(false);
+        if (move.Quest is null)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{name}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        // Judged again inside the write: another verdict or the person's yes may have come first.
+        if (!move.Moved)
+        {
+            return new(QuestRespondRefusal.NotAwaitingEvidence, NotAwaiting(move.Quest)
+                ?? $"Quest `#{name}` no longer waits on what this verdict reads.", Quest: null);
+        }
+
+        return new(QuestRespondRefusal.None, await EvidencedAsync(move.Quest, judged, ct).ConfigureAwait(false) + Then(move.FollowUp), move.Quest);
+    }
+
+    /// <summary>Why a verdict on <paramref name="quest"/> is not taken, as a state — or null while its done waits on evidence.</summary>
+    private static string? NotAwaiting(Quest quest) => quest switch
+    {
+        { AwaitsEvidence: true } => null,
+        { Status: not QuestStatus.Done } =>
+            $"Quest `#{quest.Id}` is {quest.Status}: evidence is read on a done, once the session that closed it ends.",
+        { Accepted: { } at } =>
+            $"Quest `#{quest.Id}`'s done was accepted as it stood, {When(at)}: nothing waits on its evidence.",
+        { Evidence: { Found: true } found } =>
+            $"Quest `#{quest.Id}`'s evidence was already found, at `{Short(found.Commit)}`: nothing waits on it.",
+        _ => $"Quest `#{quest.Id}`'s done names no evidence on a requirement it met: nothing waits on it.",
+    };
+
+    /// <summary>
+    /// Why <paramref name="verdict"/> does not read exactly what <paramref name="quest"/> waits on, naming the first fault
+    /// and every item left unread — or null when it does.
+    /// </summary>
+    private static string? JudgeVerdict(Quest quest, QuestEvidenceVerdict verdict)
+    {
+        if (!QuestEvidenceCodes.IsObjectId(verdict.Commit))
+        {
+            return $"A verdict names the commit it read by its full id (40 or 64 hex characters), and `{Clip(verdict.Commit ?? "")}` is not one.";
+        }
+
+        if (!QuestEvidenceCodes.How.Contains(verdict.How ?? ""))
+        {
+            return $"A verdict says how its commit was chosen: `session-end`, `sweep` or `terminal`, and `{Clip(verdict.How ?? "")}` is none of them.";
+        }
+
+        if (verdict.Session is not null && !QuestEvidenceCodes.IsSessionId(verdict.Session))
+        {
+            return $"A verdict names the session whose end it read by its id, and `{Clip(verdict.Session)}` is not one.";
+        }
+
+        var wanted = quest.EvidenceWanted;
+        var read = new HashSet<(int, string?, string?)>();
+        foreach (var (item, index) in verdict.Items.Select((item, index) => (item, index + 1)))
+        {
+            var which = $"Item {index}";
+            if ((item.Path is null) == (item.Gate is null))
+            {
+                return $"{which} names exactly one of `path` or `gate`, as the requirement's evidence does.";
+            }
+
+            if (item.Path is { } path && QuestEvidence.JudgePath(path) is { } why)
+            {
+                return $"{which}, `{Clip(path)}`, is not a repository-relative path: {why}.";
+            }
+
+            var named = item.Path ?? item.Gate!;
+            if (!wanted.Any(each => each.Requirement == item.Requirement && item.Names(each.Item)))
+            {
+                return item.Requirement < 1 || item.Requirement > quest.Requirements.Count
+                    ? $"{which} reads requirement {item.Requirement}, and quest `#{quest.Id}` carries {quest.Requirements.Count}."
+                    : $"{which} reads `{Clip(named)}` for requirement {item.Requirement}, which its done does not wait on: "
+                      + "a verdict reads each item of each requirement the done met, as the requirement names it.";
+            }
+
+            if (!read.Add((item.Requirement, item.Path, item.Gate)))
+            {
+                return $"{which} reads `{Clip(named)}` for requirement {item.Requirement}, which is read twice: read each once.";
+            }
+
+            var codes = item.Path is not null ? QuestEvidenceCodes.PathResults : QuestEvidenceCodes.GateResults;
+            if (!codes.Contains(item.Result ?? ""))
+            {
+                return $"{which} says `{Clip(item.Result ?? "")}` of `{Clip(named)}`, and a {(item.Path is not null ? "path" : "gate")} "
+                       + $"is read as one of {string.Join(", ", codes.Select(code => $"`{code}`"))}.";
+            }
+
+            if (item.Object is not null && !QuestEvidenceCodes.IsObjectId(item.Object))
+            {
+                return $"{which} names the object found at `{Clip(named)}`, and `{Clip(item.Object)}` is not a full object id.";
+            }
+
+            if (item.Spelled is not null && (item.Result != "case" || QuestEvidence.JudgePath(item.Spelled) is not null))
+            {
+                return $"{which} names how the commit spells `{Clip(named)}`, which only a `case` read does, as a repository-relative path.";
+            }
+        }
+
+        var unread = wanted.Where(each => !read.Contains((each.Requirement, each.Item.Path, each.Item.Gate))).ToList();
+        return unread.Count == 0
+            ? null
+            : $"Quest `#{quest.Id}`'s done waits on {Count(wanted.Count, "item")} of evidence, and this verdict leaves "
+              + $"{(unread.Count == 1 ? "one" : unread.Count.ToString(System.Globalization.CultureInfo.InvariantCulture))} unread:\n\n"
+              + string.Join("\n", unread.Select(each => $"- requirement {each.Requirement}: `{each.Item.Named}`"))
+              + "\n\nRead each in the commit, and say what each was found to be.";
+    }
+
+    /// <summary>
+    /// What a kept verdict means for whoever posted it (EVID1a): found, and what the done held goes on; missing, which item
+    /// was not there and the person's two doors; or found beside a departure, which still waits for their yes.
+    /// </summary>
+    private async Task<string> EvidencedAsync(Quest quest, QuestEvidenceVerdict verdict, CancellationToken ct)
+    {
+        var at = $"Read the evidence of quest `#{quest.Id}` at `{Short(verdict.Commit)}`";
+        if (verdict.Found)
+        {
+            if (quest.Hold == QuestHold.Departed)
+            {
+                return $"{at}: each of its {Count(verdict.Items.Count, "item")} is there. It still departs from a requirement, "
+                       + $"so it waits for the person's yes: `daoris-driver quest accept {quest.Id}`.";
+            }
+
+            var waiting = await quests.WaitingOnAsync(quest.Id, ct).ConfigureAwait(false);
+            return $"{at}: each of its {Count(verdict.Items.Count, "item")} is there, so what it held goes on."
+                   + (waiting.Count == 0
+                       ? ""
+                       : $"\n\n{Listed(waiting)} {(waiting.Count == 1 ? "waits" : "wait")} on it, and "
+                         + $"{(waiting.Count == 1 ? "resumes" : "resume")} at the driver's next look.");
+        }
+
+        var missing = verdict.Items.Where(item => item.Result != QuestEvidenceCodes.Found).ToList();
+        return $"{at}: {missing.Count} of its {Count(verdict.Items.Count, "item")} {(missing.Count == 1 ? "is" : "are")} not "
+               + $"there, so it stays held for the person:\n\n"
+               + string.Join("\n", missing.Select(item => $"- requirement {item.Requirement}: `{item.Path ?? item.Gate}` {item.Result}"
+                   + (item.Spelled is { } spelled ? $" (the commit holds `{spelled}`)" : "")))
+               + $"\n\nThe person accepts the done as it stands with `daoris-driver quest accept {quest.Id}`, or reads it again "
+               + $"at a later commit on the same history with `daoris-driver quest check {quest.Id} --commit <sha>`.";
+    }
+
+    /// <summary>A commit as a sentence names it: its first seven characters.</summary>
+    private static string Short(string commit) => commit.Length > 7 ? commit[..7] : commit;
 
     /// <summary>
     /// The answers a done gives, judged against the quest's requirements (DRIFT1d, D133 §4): one for each, by its
@@ -1256,17 +1496,35 @@ public sealed class QuestExchange(
     {
         if (closed.Answers.Count == 0) return "";
         var departed = closed.Answers.Count(answer => answer.IsDeparture);
+        var met = closed.Answers.Count == 1 ? " Its requirement is met." : $" Each of its {closed.Answers.Count} requirements is met.";
+        if (!closed.Held) return met;
+
+        // What a met answer's evidence is, for the session that can still commit it (EVID1a, D144 §2): Daoris reads the
+        // work's last commit when the session ends, and a met answer without it holds the quest for the person.
+        var wanted = closed.EvidenceWanted;
+        var read = $"Daoris reads {string.Join(", ", wanted.Select(each => $"`{each.Item.Named}`").Distinct())} in this work's "
+                   + $"last commit when this session ends, so commit {(wanted.Count == 1 ? "it" : "them")} first if you have not";
         if (departed == 0)
         {
-            return closed.Answers.Count == 1 ? " Its requirement is met." : $" Each of its {closed.Answers.Count} requirements is met.";
+            return $"{met} It is held until Daoris reads its evidence: {read}. Until it is found, "
+                   + $"{string.Join("; and ", await HoldsAsync(closed, "it is found", ct).ConfigureAwait(false))}.";
         }
 
+        return $" It departed from {departed} of its {Count(closed.Answers.Count, "requirement")}, so it is held for the "
+               + $"person's yes: {string.Join("; and ", await HoldsAsync(closed, "they accept it", ct).ConfigureAwait(false))}. "
+               + $"The departure is kept on the quest, and the person accepts it with `daoris-driver quest accept {closed.Id}`."
+               + (closed.AwaitsEvidence ? $" Its evidence is read too: {read}." : "");
+    }
+
+    /// <summary>What a held done holds, each said as waiting <paramref name="until"/>: its next step, a quest waiting on it, or its ask.</summary>
+    private async Task<IReadOnlyList<string>> HoldsAsync(Quest closed, string until, CancellationToken ct)
+    {
         var holds = new List<string>();
         if (closed.Then.Count > 0)
         {
             var next = closed.Then[0];
             holds.Add($"the next step, \"{next.Title.Replace("{parent}", $"#{closed.Id}", StringComparison.Ordinal)}\" to "
-                      + $"`{next.To}`, is published only once they accept it");
+                      + $"`{next.To}`, is published only once {until}");
         }
 
         var waiting = await quests.WaitingOnAsync(closed.Id, ct).ConfigureAwait(false);
@@ -1276,11 +1534,8 @@ public sealed class QuestExchange(
                       + $"{(waiting.Count == 1 ? "resumes" : "resume")} only then");
         }
 
-        if (holds.Count == 0) holds.Add("nothing follows it, and what it was asked for stays open until they accept it");
-
-        return $" It departed from {departed} of its {Count(closed.Answers.Count, "requirement")}, so it is held for the "
-               + $"person's yes: {string.Join("; and ", holds)}. The departure is kept on the quest, and the person accepts "
-               + $"it with `daoris-driver quest accept {closed.Id}`.";
+        if (holds.Count == 0) holds.Add($"nothing follows it, and what it was asked for stays open until {until}");
+        return holds;
     }
 
     /// <summary>Quests by id and receiver, as an answer names them.</summary>

@@ -1082,7 +1082,8 @@ check(
 // naming them, with nothing published. The words they did say are kept on the quest with their check, and the chain's
 // step inherits them.
 const stubLines = (said) => said.split('\n').filter((line) => line.startsWith('stub:')).join('\n');
-const requiredAs = (quote) => JSON.stringify([{ quote, check: REQUIRED_CHECK }]);
+// EVID1a: every requirement reads its evidence, `[]` where it names none.
+const requiredAs = (quote) => JSON.stringify([{ quote, check: REQUIRED_CHECK, evidence: [] }]);
 const askedBySettled = newcomerQuests.filter((q) => q.from === `ask #${settledAskId}`);
 check(
   'a requirement quoting words the person never said is refused at the intake’s publish, naming them, and nothing of it is published',

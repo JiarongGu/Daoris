@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,349 CLI, 1,307 service, 74 HTTP host, 5,236 driver (4,522 fast, 714 Process), 749 modules (631 fast, 118 Process), 85 devkit, 4,363 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `0a00cdb` and that tree is on the install (LAND3c's one Process case since awaits the next full set); earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,349 CLI, 1,364 service, 76 HTTP host, 5,236 driver (4,522 fast, 714 Process), 749 modules (631 fast, 118 Process), 85 devkit, 4,363 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `0a00cdb` and that tree is on the install (LAND3c's one Process case since awaits the next full set); earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -59,6 +59,7 @@ Contracts: `docs/2026-10-01-plugins-screen-design.md` (D119) and `docs/2026-10-0
 
 ## Faster development
 
+- [ ] **QUESTOP1 — write down how a quest operation kind is added** (service, knowledge). EVID1a's `evidenced` took eight places, listed nowhere: the enum, the replay's rule, the log payload, the wire and its shape sentence, the rebase's drop list, the cache column, the HTTP response and the MCP listing. A knowledge document (or the service README's section) names them, and ideally a test fails when a kind misses one. Contract: D144's EVID1a note, D68. Proof: the document's index row; the test if built.
 - [ ] **MOD9b — the lane scan sees .NET reads under tools** (cli, tools). MOD9's scan in `merge-branch.test.ts` matches only .NET reads of paths starting `"src", "Daoris.…"`, so `DecisionNotesTests` reading `tools/orient-index-fixtures/` was not asked for a lane row; it was remembered (ORIENT1h). Match `"tools", …` too. Contract: MOD9, parallel-development design §3. Proof: the scan fails until such a fixture reaches its suite.
 - [ ] **CASEFOLD1e — the driver's id shape and the workspace maps' owed rows** (driver). `PluginCatalog.IdShape` (`Plugins.cs:129`) ends in `$`, which in .NET also matches before a final line break, so `acme.gate` plus a line break reads as an id the CLI refuses; use `\z` as `PluginTools.cs` does (it also checks manifests and harness names). Append the owed rows D125's CASEFOLD1b and CASEFOLD1c notes list to `PluginSourceTests`, `RotationTwinTests`, `RotationUseTwinTests`, `AccountJoinTwinTests` and `ProfileDefaultTwinTests`. Proof: the CLI's owed sets empty.
 - [ ] **CASEFOLD1f — the CLI's twin checks owe the driver nothing** (cli). Since CASEFOLD1d every row in the `DRIVER_OWES` sets is held by the driver's theories, so the sets are stale; remove them (and the CASEFOLD1b/c owed sets once CASEFOLD1e lands). Contract: D125's CASEFOLD1d note. Proof: each twin test holds the driver's rows with no owed set.
@@ -108,7 +109,6 @@ Contracts: D145, D148, D149; `docs/2026-10-04-plugin-hooks-design.md` for plugin
 
 Contracts: `docs/2026-10-03-evidence-design.md` (EVID1, D144) and `docs/2026-10-04-landing-and-proof-design.md` (EVID2, D146). Order EVID1a → b → c; each EVID2 follows corresponding EVID1; EVID1d also needs DEV5/7.
 
-- [ ] **EVID1a — path evidence holds done** (service; after DRIFT1d). Three publish doors accept evidence, defer gates to d and store `Evidenced` verdicts; found releases the step, missing holds it. Contract: §2–§3, §6. Proof: evidence/sync/local/shared/MCP tests.
 - [ ] **EVID1b — driver checks at session end** (driver; after a). Read paths at HEAD, post/store verdicts; prompts/intake name evidence; sweep and terminal check read remaining items. Contract: §2–§3, §5. Proof: git evidence, requirements, goldens, trace/command tests and family phase 7.
 - [ ] **EVID1c — quest evidence and hold reason** (web-shell, driver; after b/DRIFT1d2). Show result/commit versus session assertion, Check again and Ask Daoris check card. Contract: §5–§6. Proof: stories/vitest/catalogues/coverage and bilingual look.
 - [ ] **EVID1d — queue gate evidence** (driver, service; after DEV5/7/b). Add required gates to queue; read landing verdict and landed path evidence; report `no-queue` elsewhere. Contract: §4. Proof: stand-in gate tests and queue rehearsal.

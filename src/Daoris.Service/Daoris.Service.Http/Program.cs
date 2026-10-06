@@ -512,6 +512,35 @@ if (mode == ServiceMode.Local)
             _ => Results.Conflict(new ErrorResponse(outcome.Message)),
         };
     });
+
+    // What the driver read of a done's evidence (EVID1a, D144 §3): its verdict at the end of the session that made the
+    // done, the sweep's, or the person's check at the terminal. LOCAL mode only, as the yes is: the commit is read on the
+    // machine whose tree holds it, and the verdict travels from there as an operation (D68). No connector tool reaches it,
+    // since the session a requirement judges never writes its verdict.
+    app.MapPost("/api/quests/{id}/evidence", async (
+        ComposedService s, HttpContext http, string id, QuestEvidenceVerdictWire body, CancellationToken ct) =>
+    {
+        // A field left out arrives blank and is refused by the exchange naming which; when and where are the operation's.
+        var verdict = new QuestEvidenceVerdict(
+            body.Commit ?? "", body.How ?? "",
+            (body.Items ?? []).Select(i => new QuestEvidenceRead(i?.Requirement ?? 0, i?.Path, i?.Gate, i?.Result ?? "")
+            {
+                Object = i?.Object, Changed = i?.Changed, Spelled = i?.Spelled,
+            }).ToList())
+        {
+            Session = body.Session,
+        };
+        var outcome = await s.Exchange.EvidenceAsync(id, verdict, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestRespondRefusal.None => Results.Ok(
+                new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
+            QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Nothing waits on evidence: a state, the lock's own shape.
+            QuestRespondRefusal.NotAwaitingEvidence => Results.Conflict(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
 }
 
 // A person dismissing a conflict (SYNC6c): committed here like any verb, and carried by the next pass,
@@ -1547,17 +1576,31 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.PublishedBy,
     deletable,
     q.Lanes,
-    q.Requirements.Select(r => new QuestRequirementWire(r.Quote, r.Check)).ToList(),
+    q.Requirements.Select(r => new QuestRequirementWire(
+        r.Quote, r.Check, r.Evidence.Select(e => (QuestEvidenceWire?)new QuestEvidenceWire(e.Path, e.Gate)).ToList())).ToList(),
     q.Answers.Select(a => new QuestAnswerWire(a.Requirement, a.Met, a.Departed, a.Quote)).ToList(),
     q.Held,
     q.Accepted,
     // What a list calls it (SESSUX1j): the publisher's short title, else the name read from its words, from this host.
-    q.Name);
+    q.Name,
+    // Why it waits, and what was read of its evidence (EVID1a): codes and names, which every door may answer.
+    q.Hold is { } hold ? QuestEvidenceCodes.Spell(hold) : null,
+    q.AwaitsEvidence,
+    q.Evidence is { } read
+        ? new QuestEvidenceVerdictWire(
+            read.Commit, read.How, read.Session,
+            read.Items.Select(i => (QuestEvidenceReadWire?)new QuestEvidenceReadWire(i.Requirement, i.Path, i.Gate, i.Result, i.Object, i.Changed, i.Spelled)).ToList(),
+            read.At, read.Machine)
+        : null);
 
 // Requirements as a door hands them to the exchange (DRIFT1c): a half left out, or a whole one, arrives
-// blank and is refused there naming which — the same sentence every door gives.
+// blank and is refused there naming which — the same sentence every door gives. So does an evidence item
+// naming both or neither (EVID1a).
 static IReadOnlyList<QuestRequirement> RequirementsOf(IReadOnlyList<QuestRequirementWire?>? given) =>
-    (given ?? []).Select(r => new QuestRequirement(r?.Quote ?? "", r?.Check ?? "")).ToList();
+    (given ?? []).Select(r => new QuestRequirement(r?.Quote ?? "", r?.Check ?? "")
+    {
+        Evidence = [.. (r?.Evidence ?? []).Select(e => new QuestEvidence(e?.Path, e?.Gate))],
+    }).ToList();
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

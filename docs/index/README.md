@@ -80,15 +80,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 49 | 986 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 73 | 1419 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 116 | 2161 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 87 | 1674 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 125 | 2308 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 60 | 1081 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 93 | 1682 |
-| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 54 | 1148 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 65 | 1169 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 95 | 1725 |
+| `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 60 | 1274 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 51 | 555 |
+| `src/Daoris.Service/README.md` | 54 | 574 |
 
 ### CLI (`cli`)
 
@@ -114,7 +114,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 54 | 977 |
 | `tools/desktop.mjs` | 48 | 998 |
-| `tools/family-rehearsal.mjs` | 293 | 5322 |
+| `tools/family-rehearsal.mjs` | 293 | 5323 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
 | `tools/merge-branch.mjs` | 126 | 2319 |
 | `tools/orient-index.mjs` | 63 | 1383 |

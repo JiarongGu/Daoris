@@ -3,7 +3,7 @@
 > LAND2, decided as D145, and EVID2, decided as D146 (2026-10-04). LAND2a, LAND2b and LAND2c are built (their notes under
 > D145; D149 settles §3's related work and a merged pull request); the rest is not. `Dnn` is
 > `docs/decisions/Dnn.md`. EVID2 builds on EVID1 ([`2026-10-03-evidence-design.md`](2026-10-03-evidence-design.md),
-> D144), which is not built either. The owner, looking at a ticket's work in the work repository that Daoris recorded as
+> D144), of which only EVID1a is built. The owner, looking at a ticket's work in the work repository that Daoris recorded as
 > done: *"so the thing is it's closed? but there is no PR branch opened and there is nothing I can really review on and
 > there is no proof it's completed if the server is stopped (for local development) it should take some screenshot for
 > its completion state since there are tasks not really related to code, it's configuration based"*. Then: *"also I
