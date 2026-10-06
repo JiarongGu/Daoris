@@ -1,17 +1,19 @@
-import { useId, useState } from 'react';
+import { type ReactNode, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { elapsed } from '../format';
 import { cn } from '../lib/cn';
+import { shellWord } from '../shellWord';
 import type { TrustHold } from '../signals';
 import { Button, Dot, Icon, Inline, SelectField } from '../ui';
-import { ASKS_ONCE, type AttentionActId, attentionActs } from './attention';
+import type { AccountRowFacts } from './accountAttention';
+import { ASKS_ONCE, type AttentionActId, type AttentionOffer, attentionOffers } from './attention';
 import { Note } from './Note';
 import { hasNote, type NoteRecord } from './noteLines';
 import { TrustAsk } from './TrustAsk';
 
 /** The kinds of thing *What needs you* lists (design §6.2), each in one of its three groups (`ATTENTION_GROUP`). */
 export type AttentionKind =
-  | 'parked' | 'parked-quest' | 'go-ahead' | 'trust'
+  | 'parked' | 'parked-quest' | 'go-ahead' | 'trust' | 'account-wait' | 'signed-out'
   | 'proposal' | 'intake' | 'departure' | 'rule' | 'unanswerable'
   | 'review';
 
@@ -34,6 +36,10 @@ export type AttentionKind =
  * act; a `departure`, a done held for the person's yes because it departed from what they required (DRIFT1d2); and
  * `review`, finished work Sessions' list places *To review* (D126), which design §4 named first and could not build
  * until looking was recorded.
+ *
+ * **UX6d added the accounts** (design §6.2, TOOL4m's row): an `account-wait`, a start held because every account it may
+ * use is cooling or signed out, naming each account that would serve it as last known; and `signed-out`, an account a list
+ * or a default holds that read signed out, which no waiting start names.
  */
 export type Attention = {
   /**
@@ -58,9 +64,14 @@ export type Attention = {
   title: string;
   /**
    * Where it waits: the repository, or for an ask its circle, because an ask has no repository yet.
-   * For a `rule` row, who proposed it: the rules are the machine's, so the proposer is the place.
+   * For a `rule` row, who proposed it: the rules are the machine's, so the proposer is the place. For an account's row,
+   * the agent; for a start waiting on accounts, its repository, or its workspace where it holds more (`circle`).
    */
   where: string;
+  /** `where` is a workspace, said as one: a start waiting on accounts that holds an intake, or quests in several repositories. */
+  circle?: boolean;
+  /** An account row's agent, the accounts it names as last known, and the one it may let in (UX6d). */
+  account?: AccountRowFacts;
   /**
    * When it started waiting — a park's last move, a parked quest's last session's end, an ask's asking, a quest's filing, a
    * go-ahead's first asking, a held done's close, a reviewed session's end.
@@ -95,6 +106,12 @@ export type AttentionActs = {
   acceptRule?: (item: Attention) => void;
   /** An agent's widening of the rules declined: the rules stay as they were. */
   declineRule?: (item: Attention) => void;
+  /** An account's sign-in started (UX6d): the agent's own, through its door, as the agent's page starts it. */
+  signIn?: (item: Attention, account: string) => void;
+  /** One account read on the press (§5.3, ROSTER1): the one reading a person may ask for, never a look. */
+  read?: (item: Attention, account: string) => void;
+  /** A ready account let into the list the waiting start reads (D130 §3.3), after its question. */
+  letRun?: (item: Attention, account: string) => void;
 };
 
 /** Which handler each act needs. */
@@ -108,10 +125,16 @@ const HANDLER: Record<AttentionActId, keyof AttentionActs> = {
   'accept-departure': 'acceptDeparture',
   'accept-rule': 'acceptRule',
   'decline-rule': 'declineRule',
+  'sign-in': 'signIn',
+  read: 'read',
+  'let-run': 'letRun',
 };
 
 /** The kinds that wait in a circle rather than in a repository. */
 const IN_A_CIRCLE: ReadonlySet<Attention['kind']> = new Set(['proposal', 'intake']);
+
+/** The kinds whose door is an agent's page, named by the agent rather than *Open* (UX6d): the door says where it goes. */
+const AT_AN_AGENT: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
 
 /**
  * The kinds whose door is their one control, since their answer needs reading first (design §6.3): a park's question in
@@ -140,11 +163,15 @@ const DOOR_ONLY: Partial<Record<Attention['kind'], (item: Attention) => [string,
  * **A door opens something, or it is not a door** (platform language §4). Handed no `onOpen`, the row has nowhere to go,
  * as a parked session in a browser has no Sessions, and it shows no door: it still says what is waiting, because knowing
  * is the half that travels. A row whose answer needs reading has its door as its one control (*Answer…*, *Review*); every
- * other row's door is *Open* at its end, beside its acts.
+ * other row's door is *Open* at its end, beside its acts, and an account's row's is its agent's name (UX6d).
+ *
+ * **An account's row settles what one press can** (UX6d, §6.2): *Sign in* to each account read signed out, *Read* an
+ * account no read answered, and *Let … run …* (D130 §3.3), which widens what Daoris may spend and so asks once, naming the
+ * list it joins and its terminal twin. Its sign-in's steps are the band's to hand (`below`), since they follow a process.
  *
  * A molecule: it is handed the item, the acts and the door, and reports each press.
  */
-export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = null }: {
+export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = null, below = null }: {
   item: Attention;
   onOpen?: (item: Attention) => void;
   acts?: AttentionActs;
@@ -152,6 +179,8 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
   busy?: boolean;
   /** The act whose question stands open to start with: a story's, since a page opens it by a press. */
   opened?: AttentionActId | null;
+  /** What the band shows under the row while it follows one of its acts: an account's sign-in, step by step. */
+  below?: ReactNode;
 }) {
   const { t } = useTranslation();
   const titleId = useId();
@@ -159,19 +188,24 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
   const [asking, setAsking] = useState<AttentionActId | null>(opened);
   const [words, setWords] = useState('');
   const [choice, setChoice] = useState('');
-  const offered = attentionActs(item).filter((act) => acts[HANDLER[act]] !== undefined);
+  const offered = attentionOffers(item).filter((offer) => acts[HANDLER[offer.act]] !== undefined);
   const doorOnly = DOOR_ONLY[item.kind];
-  const where = IN_A_CIRCLE.has(item.kind) ? t('work.attention.circle', { circle: item.where }) : item.where;
+  const where = IN_A_CIRCLE.has(item.kind) || item.circle ? t('work.attention.circle', { circle: item.where }) : item.where;
+  // An account's name as the row says it: the person's, from what the row names (ACCT2).
+  const called = (account?: string) =>
+    item.account?.named.find((one) => one.id === account)?.label ?? item.account?.outside?.label ?? account ?? '';
 
   const done = () => { setAsking(null); setWords(''); setChoice(''); };
-  const press = (act: AttentionActId) => {
+  const press = ({ act, account }: AttentionOffer) => {
     if (ASKS_ONCE.has(act)) { setAsking(act); return; }
     if (act === 'publish') acts.publish?.(item, item.publishTo ?? []);
     else if (act === 'retry') acts.retry?.(item);
     else if (act === 'accept-departure') acts.acceptDeparture?.(item);
     else if (act === 'decline-rule') acts.declineRule?.(item);
+    else if (act === 'sign-in' && account) acts.signIn?.(item, account);
+    else if (act === 'read' && account) acts.read?.(item, account);
   };
-  const label = (act: AttentionActId): string => {
+  const label = (act: AttentionActId, account?: string): string => {
     switch (act) {
       case 'publish': return t('work.attention.act.publish', { repositories: (item.publishTo ?? []).join(', ') });
       case 'choose': return t((item.publishTo?.length ?? 0) > 0 ? 'work.attention.act.choose' : 'work.attention.act.chooseWhere');
@@ -182,6 +216,14 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
       case 'accept-departure': return t('work.attention.act.acceptDeparture');
       case 'accept-rule': return t('work.attention.act.acceptRule');
       case 'decline-rule': return t('work.attention.act.declineRule');
+      // A signed-out account's own row names it in its title, so its press is the agent page's own word.
+      case 'sign-in': return item.kind === 'signed-out'
+        ? t('harness.login.action')
+        : t('agents.act.signInTo', { account: called(account) });
+      case 'read': return t('agents.act.readFor', { account: called(account) });
+      case 'let-run': return t('work.attention.act.letRun', {
+        account: item.account?.outside?.label ?? '', workspace: item.account?.outside?.workspace ?? '',
+      });
     }
   };
 
@@ -225,11 +267,13 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
       </div>
       {(offered.length > 0 || onOpen) && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 @3xl/main:justify-end">
-          {offered.map((act) => (
-            <Button key={act} disabled={busy || asking !== null} onClick={() => press(act)}>{label(act)}</Button>
+          {offered.map((offer) => (
+            <Button key={`${offer.act}:${offer.account ?? ''}`} disabled={busy || asking !== null} onClick={() => press(offer)}>
+              {label(offer.act, offer.account)}
+            </Button>
           ))}
           {/* What the press does, said beside it: a retry starts a session, which spends an account (D126 §3.4). */}
-          {offered.includes('retry') && (
+          {offered.some((offer) => offer.act === 'retry') && (
             <span className="text-small text-ink-faint">{t('work.attention.act.retryDoes', { repository: item.where })}</span>
           )}
           {onOpen && (doorOnly
@@ -241,7 +285,8 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
                 aria-describedby={titleId}
                 className="ml-auto inline-flex min-h-[1.75rem] items-center gap-0.5 rounded-control px-1.5 text-small font-medium text-accent hover:bg-accent-soft @3xl/main:ml-0"
               >
-                {t('work.attention.door.open')}
+                {/* An account's row opens its agent's page, and says whose (D150 §6.2: *Claude Code ›*). */}
+                {AT_AN_AGENT.has(item.kind) && item.account ? item.account.product : t('work.attention.door.open')}
                 <Icon name="chevronRight" size={13} />
               </button>
             ))}
@@ -265,13 +310,30 @@ export function AttentionRow({ item, onOpen, acts = {}, busy = false, opened = n
               else if (asking === 'choose') acts.publish?.(item, [choice]);
               else if (asking === 'trust') acts.trust?.(item);
               else if (asking === 'accept-rule') acts.acceptRule?.(item);
+              else if (asking === 'let-run' && item.account?.outside) acts.letRun?.(item, item.account.outside.id);
               done();
             }}
           />
         </div>
       )}
+      {below && <div className="min-w-0 @3xl/main:col-span-2">{below}</div>}
     </li>
   );
+}
+
+/**
+ * What letting an account run a workspace does (D130 §3.3), before the press that does it: the list it joins, what Daoris
+ * may then start and spend, and the terminal's twin (D50, ACCT1's `profile join`), its account and workspace spelled for
+ * any shell (ACCTQUOTE1). This machine's list is said as one every workspace naming no account of its own runs on.
+ */
+function letRunSentence(
+  t: ReturnType<typeof useTranslation>['t'], agent: string, outside: NonNullable<AccountRowFacts['outside']>,
+): string {
+  const where = outside.list ? shellWord(outside.list, '<workspace>') : '--machine';
+  const command = `\`daoris agent profile join ${agent} ${shellWord(outside.id, '<account>')} ${where}\``;
+  return outside.list
+    ? t('work.attention.ask.letRun', { account: outside.label, workspace: outside.list, command })
+    : t('work.attention.ask.letRunMachine', { account: outside.label, workspace: outside.workspace, command });
 }
 
 /**
@@ -305,27 +367,32 @@ function AskOnce({ act, item, label, busy, words, onWords, choice, onChoice, onC
     );
   }
   const answering = act === 'approve' || act === 'refuse';
-  const sentence = act === 'approve'
-    ? t('work.attention.ask.approve', { id: item.ask ?? '' })
-    : act === 'refuse'
-      ? t('work.attention.ask.refuse', { id: item.ask ?? '' })
-      : act === 'accept-rule'
-        ? t('work.attention.ask.acceptRule', { change: item.title })
-        : t('work.attention.ask.choose', { workspace: item.where });
-  const move = act === 'approve'
-    ? t('asks.goAhead.approve')
-    : act === 'refuse'
-      ? t('asks.goAhead.refuse')
-      : act === 'accept-rule'
-        ? t('settings.rules.proposals.accept')
-        : t('asks.record.publish');
+  const outside = act === 'let-run' ? item.account?.outside ?? null : null;
+  const sentence = outside
+    ? letRunSentence(t, item.account!.agent, outside)
+    : act === 'approve'
+      ? t('work.attention.ask.approve', { id: item.ask ?? '' })
+      : act === 'refuse'
+        ? t('work.attention.ask.refuse', { id: item.ask ?? '' })
+        : act === 'accept-rule'
+          ? t('work.attention.ask.acceptRule', { change: item.title })
+          : t('work.attention.ask.choose', { workspace: item.where });
+  const move = outside
+    ? (outside.list ? t('agents.account.addTo', { workspace: outside.list }) : t('agents.account.addToMachine'))
+    : act === 'approve'
+      ? t('asks.goAhead.approve')
+      : act === 'refuse'
+        ? t('asks.goAhead.refuse')
+        : act === 'accept-rule'
+          ? t('settings.rules.proposals.accept')
+          : t('asks.record.publish');
   return (
     <div
       role="group"
       aria-label={label}
       className="mt-2 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
     >
-      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{sentence}</span>
+      <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft"><Inline text={sentence} /></span>
       {answering && (
         <input
           aria-label={t('asks.goAhead.words')}

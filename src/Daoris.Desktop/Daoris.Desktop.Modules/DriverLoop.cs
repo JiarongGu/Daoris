@@ -262,6 +262,48 @@ public sealed class DriverLoop(
     }
 
     /// <summary>
+    /// One wait as the tick hands it to the page (UX6d, D150 §6.2): starts held because every account they may use is
+    /// cooling, one per account (<see cref="TickReport.Waits"/>), so *What needs you* lists a start waiting for accounts.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>An ask's intake is among them.</b> A consideration names a quest alone, so a held intake reached the page
+    /// only as the driver's toast and its log line, and the band could not say it waited (the TOOL6g note, TOOL4m's row).
+    /// The asks are carried by id; where each would have run (<c>ask #id</c>) stays here, since the page names an intake by
+    /// its ask.</para>
+    /// <para><b>Facts, never the driver's English</b>: whose account, which and the name the person gave it (ACCT2b), the
+    /// workspace where the held starts share one, until when and whether the agent named the time, what it holds, and the
+    /// accounts the starts passed signed out (TOOL6g). The page says them in the reader's language. The adapter stays too:
+    /// the page names the agent, never a door.</para>
+    /// <para>🔴 <b>Nothing is asked to build it</b> (D150 §6.3): the look's own wait, read from the cool-offs and the refusals
+    /// its starts met (D125 §4), so no row on the page starts a process to find out. A profile name rides this bridge only
+    /// (D47 §4).</para>
+    /// </remarks>
+    public static object TickWait(AccountWait wait) => new
+    {
+        wait.Agent,
+        wait.Account,
+        wait.Name,
+        wait.Workspace,
+        wait.Until,
+        wait.Stated,
+        wait.Quests,
+        wait.Asks,
+        wait.SignedOut,
+    };
+
+    /// <summary>
+    /// What the waits SAY, as one string (UX6d), equal when the same accounts hold the same starts until the same time,
+    /// whatever the order. The tick is forwarded when it changes, as it is for the considerations' signature: a wait that
+    /// begins or ends for an intake alone moves no consideration.
+    /// </summary>
+    public static string WaitsSignature(IEnumerable<AccountWait> waits) =>
+        string.Join("\n", waits
+            .Select(wait => string.Join("\t",
+                wait.Agent, wait.Account ?? "", wait.Workspace ?? "", wait.Until.ToUnixTimeSeconds(), wait.Stated,
+                string.Join(",", wait.Quests), string.Join(",", wait.Asks), string.Join(",", wait.SignedOut)))
+            .OrderBy(line => line, StringComparer.Ordinal));
+
+    /// <summary>
     /// What the last tick held for the harness's trust (D73) — the only grants the screen may confirm.
     /// </summary>
     public TrustHolds Trust { get; } = new();
@@ -413,6 +455,7 @@ public sealed class DriverLoop(
         // A quest's park is said with its last session's facts, and Overview's row waits from its end (SESSUX1i).
         var parks = new QuestParkReader();
         string? lastConsidered = null;
+        var lastWaited = "";
         string? lastAsked = null;
         string? lastActive = null;
         string? lastRegistered = null;
@@ -462,6 +505,10 @@ public sealed class DriverLoop(
                 // still has to reach the row its wait and its number are said on.
                 var changed = considered != lastConsidered || read is not null;
                 lastConsidered = considered;
+                // …or what the waits say (UX6d): an intake held on its accounts, or let go, moves no consideration.
+                var waited = WaitsSignature(report.Waits);
+                changed |= waited != lastWaited;
+                lastWaited = waited;
 
                 // What this tick held for trust, kept for the screen's grant to be checked against
                 // (D73) — replaced whole, so a folder the driver stopped holding cannot be granted.
@@ -531,6 +578,9 @@ public sealed class DriverLoop(
                             hold.Quest,
                             hold.Ask,
                         }).ToArray(),
+                        // The starts held on cooling accounts, one per account, an ask's intake among them (UX6d): what
+                        // *What needs you* says waits for an account, from the look's own wait and nothing asked.
+                        Waits = report.Waits.Select(TickWait).ToArray(),
                     }).ConfigureAwait(false);
                 }
             },

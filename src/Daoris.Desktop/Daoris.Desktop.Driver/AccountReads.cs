@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -25,7 +26,10 @@ public sealed record AgentReads(AccountRead? Own, IReadOnlyDictionary<string, Ac
 /// <para><b>A word and a time, never who</b>: who signed in is read fresh and written nowhere (D66 §3), so after a restart an
 /// account says its state and when, and who once it is read again. Missing or unreadable is nothing known: never read, never
 /// signed in (D57). Beside <c>cooling.json</c> and <c>windows.json</c>, not in <c>harnesses.json</c>, which is the person's
-/// wiring. Written by the driver alone, atomically, LF, keeping what it has no field for. No HTTP route reaches it (D47 §4).</para>
+/// wiring. Written atomically, LF, keeping what it has no field for. No HTTP route reaches it (D47 §4).</para>
+/// <para><b>A TWIN with the CLI's <c>accountreads.ts</c></b> (AGENTREAD1), which a terminal's reading writes through: both are
+/// held, row for row, to one table, the CLI's <c>test/fixtures/account-reads.json</c>, which <c>AccountReadsTests</c> reads
+/// (AGENTREAD1b). A rule changed here is changed there in the same commit.</para>
 /// <para>The file's shape: <c>{ "&lt;agent&gt;": { "own": { "login": "in", "read": "…Z" }, "accounts": { "&lt;account&gt;":
 /// { "login": "out", "read": "…Z" } } } }</c>.</para>
 /// </remarks>
@@ -39,7 +43,14 @@ public static class AccountReads
     // One writer at a time in this process: a press and a start's question may answer together.
     private static readonly object Gate = new();
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, NewLine = "\n" };
+    // A name or a word beyond plain ASCII written as it is, as the CLI's `accountreads.ts` writes it (AGENTREAD1b), so the
+    // twins write the same bytes for a name in Chinese or one holding HTML's marks, not only the same JSON.
+    private static readonly JsonSerializerOptions Indented = new()
+    {
+        WriteIndented = true,
+        NewLine = "\n",
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     private static readonly AgentReads Nothing = new(null, new Dictionary<string, AccountRead>(StringComparer.OrdinalIgnoreCase));
 

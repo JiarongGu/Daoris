@@ -284,13 +284,16 @@ controls are in the frame design's §3.
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
   quest's page on Quests (FRAME1d); repository rows go to Repositories. **The page leads with *What needs you***
   (UX6c, D150 §6): *Holding work* (parked sessions, quests parked on their failed sessions, go-aheads, folders waiting on
-  trust), *Waiting for your word* (asks to publish or whose intake asked, departures, widenings, quests nobody can take)
+  trust, and since UX6d a start that *waits for an account*, an ask's intake among them, and a *signed out* account a list
+  holds that no waiting start names), *Waiting for your word* (asks to publish or whose intake asked, departures, widenings, quests nobody can take)
   and *Ready for you* (work to review, five rows then *N more in Sessions*), the longest waiting first in each group and
   an empty group not shown; with nothing waiting it is one line, *Nothing needs you* and the sessions working. A row reads
   `kind · what · where · how long` and its why, acts where one press is safe (*Publish to …*, *Try again*, *Accept the
   departure*), asks once under itself before a go-ahead's answer, a trust or a widening, and keeps a reading-first answer
-  (a park, an intake, a review) as its door alone; every other row's door is *Open* at its end. No row starts a process to
-  find out. Overview's badge counts every row. **The band is live, or it lies**: an
+  (a park, an intake, a review) as its door alone; every other row's door is *Open* at its end. **An account's row says each
+  account as last read, with when** (UX6d): *Sign in to …* for each read signed out, its steps under the row, *Read …* for one
+  never read, and *Let … run …*, which asks once since it widens what Daoris may spend; its door is the agent's page, named
+  by the agent. No row starts a process to find out. Overview's badge counts every row. **The band is live, or it lies**: an
   ask made by another door moves nothing else a tick reports, so the shell forwards a tick when the
   asks change and the page refetches them. A wait is a span (*waiting 4d 3h*, U40).
 - **Quests** (on the frame since FRAME1d, D118 §2) — a list pane and a main area. The list's `＋` offers

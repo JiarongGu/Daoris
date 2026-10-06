@@ -237,7 +237,7 @@ public sealed class AccountLimitHoldTests : IDisposable
         Assert.Equal(
             $"The account this conversation runs on is cooling until Oct 3, 16:02 ({Zone.Id}), as the agent said, and "
             + "nothing new starts on it until then.",
-            said);
+            said!.Note);
         var line = Assert.Single(lines);
         Assert.Equal("account.limited", line.Event);
         Assert.Equal("c1", line.Data.Single(f => f.Key == "session").Value);
@@ -245,6 +245,28 @@ public sealed class AccountLimitHoldTests : IDisposable
 
         Assert.Null(runner.Limited("c1", acp, profile: null, "the ACP agent refused the call: Internal error: Overloaded"));
         Assert.Single(lines);
+    }
+
+    /// <summary>
+    /// CONVNOTE1b (LANG1a; D125's TOOL4d note): a conversation's cooling note carries its line's code and values, as a session
+    /// record's cooling note does, so the page words it in the reader's language rather than showing the driver's English.
+    /// Its English stays the conversation's own sentence, and neither names the account (D125 §3.6).
+    /// </summary>
+    [Fact]
+    public void A_conversation_s_cooling_note_carries_its_code_so_the_page_words_it_in_either_language()
+    {
+        using var service = _ledger.Client();
+        using var runner = new ChatRunner(service, AdapterSet.Built(), _home, new SessionProcesses(), harnesses: Roster());
+
+        var said = runner.Limited("c1", AdapterSet.Built().Resolve("acp-stub"), "account-1", Refusal)!;
+
+        NoteAssert.Holds(said);
+        var line = Assert.Single(said.Parts);
+        Assert.Equal(("account.cooling", said.Note), (line.Code, line.Text));
+        Assert.Equal(("2026-10-03T10:17:00Z", CoolingWhy.Stated), ((string?)line.Value("until"), (string?)line.Value("why")));
+        Assert.Equal(["until", "why"], line.Values.Select(value => value.Key));
+        Assert.DoesNotContain(line.Values, value => value.Value is string text && text.Contains("account-1", StringComparison.Ordinal));
+        Assert.DoesNotContain("account-1", said.Note);
     }
 
     // ——— The hold (§4): a carry-on on a cooling account is held at spawn, waits, is never parked, and is said once.

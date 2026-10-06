@@ -25,12 +25,16 @@ export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
  * Its kind wears open's hue on the card's edge and on each row's (D41 §3: waiting on the person is open's hue, everywhere
  * it is shown). A molecule: handed the rows, their doors and acts, it draws them and reports each press.
  */
-export function AttentionList({ items, doors = {}, acts, acting = null, onSessions }: {
+export function AttentionList({ items, doors = {}, acts, acting = null, held, below, onSessions }: {
   items: readonly Attention[];
   doors?: AttentionDoors;
   acts?: AttentionActs;
   /** The row an act is on its way for (`attentionKey`). */
   acting?: string | null;
+  /** Rows whose acts are held by something on its way elsewhere: an account's while one of its agent's sign-ins runs (UX6d). */
+  held?: (item: Attention) => boolean;
+  /** What a row shows beneath itself while the band follows one of its acts: an account's sign-in, step by step. */
+  below?: (item: Attention) => ReactNode;
   /** Sessions itself, where *Ready for you*'s rows past its fifth are; absent, the count is words. */
   onSessions?: () => void;
 }) {
@@ -56,7 +60,8 @@ export function AttentionList({ items, doors = {}, acts, acting = null, onSessio
                   item={item}
                   onOpen={doors[item.kind]}
                   acts={acts}
-                  busy={acting === attentionKey(item)}
+                  busy={acting === attentionKey(item) || (held?.(item) ?? false)}
+                  below={below?.(item)}
                 />
               ))}
             </ul>

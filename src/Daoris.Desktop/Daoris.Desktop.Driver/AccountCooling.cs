@@ -291,6 +291,14 @@ public static class CoolingWords
         $"The account this conversation runs on is cooling until {When(entry.Until, zone)}, {Why(entry)}, and nothing new "
         + "starts on it until then.";
 
+    /// <summary>
+    /// <see cref="Conversation"/> with the code a session record's cooling line carries (CONVNOTE1b; <see cref="NoteOf"/>,
+    /// LANG1a), so the page words a conversation's cooling in the reader's language as it words a record's. Its English stays
+    /// the conversation's sentence, and it names no account, as neither sentence does.
+    /// </summary>
+    public static Noted ConversationOf(CoolingEntry entry, TimeZoneInfo zone) =>
+        Noted.Of(NoteCodes.AccountCooling, Conversation(entry, zone), ("until", NoteCodes.Moment(entry.Until)), ("why", CoolingWhy.Of(entry)));
+
     /// <summary>A moment as a person reads it here: <i>Oct 3, 16:02 (Asia/Kathmandu)</i>, in the machine's zone, named.</summary>
     public static string When(DateTimeOffset moment, TimeZoneInfo zone) =>
         $"{TimeZoneInfo.ConvertTime(moment, zone).ToString("MMM d, HH:mm", CultureInfo.InvariantCulture)} ({ZoneName(zone)})";

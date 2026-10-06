@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../queries';
-import type { Consideration, TrustHold } from '../signals';
+import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
 import type { LandingRule } from '../settings/Landings';
 import type { LanguageOption } from '../settings/Languages';
 import { call, refusedNotReady } from './call';
@@ -159,6 +159,17 @@ export const useConsidered = () => useQuery({
 export const useUntrusted = () => useQuery({
   queryKey: keys.untrusted,
   queryFn: () => [] as TrustHold[],
+  staleTime: Infinity,
+  gcTime: Infinity,
+});
+
+/**
+ * The starts the driver held on cooling accounts, an ask's intake among them (UX6d), as of its last tick — written by the
+ * tick like `useConsidered`, and empty in a browser and before the first tick.
+ */
+export const useWaits = () => useQuery({
+  queryKey: keys.waits,
+  queryFn: () => [] as AccountWaitTick[],
   staleTime: Infinity,
   gcTime: Infinity,
 });

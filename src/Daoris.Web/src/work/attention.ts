@@ -6,6 +6,7 @@ import { proposalAuthor, proposalChange } from '../settings/proposals';
 import { type Consideration, type TrustHold, sittingSentence } from '../signals';
 import { answeredPark } from '../ui';
 import { workspaceOf } from '../workspaces';
+import { accountAttention, type AccountsKnown } from './accountAttention';
 import type { SessionGrouping } from './groups';
 import { questName, sessionOrigin, sessionTitle } from './identity';
 import type { Attention, AttentionKind } from './AttentionRow';
@@ -31,6 +32,9 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
   'parked-quest': 'holding',
   'go-ahead': 'holding',
   trust: 'holding',
+  // A start waiting on its accounts holds that start; a signed-out account a list holds, the next start the list takes (UX6d).
+  'account-wait': 'holding',
+  'signed-out': 'holding',
   proposal: 'word',
   intake: 'word',
   departure: 'word',
@@ -51,32 +55,69 @@ export function attentionGroups(items: readonly Attention[]): { group: Attention
 
 /** An act a row offers (design §6.2–§6.3), named as the row's press. */
 export type AttentionActId =
-  | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule';
+  | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
+  | 'sign-in' | 'read' | 'let-run';
+
+/** An act a row offers, and for an account's act which account it is for (UX6d): a row may sign two in. */
+export type AttentionOffer = { act: AttentionActId; account?: string };
 
 /**
  * The acts that ask once under the row before they do anything (design §6.3, D41 §4): a go-ahead's yes or no, which every
- * session on its ask is handed; a folder's trust and a widening of the rules, which widen what Daoris may do; and a choice
- * of receiver, which is a choice before it is a press.
+ * session on its ask is handed; a folder's trust, a widening of the rules and an account let into a list (D130 §3.3), which
+ * widen what Daoris may do or spend; and a choice of receiver, which is a choice before it is a press.
  */
-export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set(['choose', 'approve', 'refuse', 'trust', 'accept-rule']);
+export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set(['choose', 'approve', 'refuse', 'trust', 'accept-rule', 'let-run']);
+
+/** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
+const ACCOUNT_ACTS = 2;
+
+/**
+ * What an account's row offers (UX6d, design §6.2–§6.3), each for one account: *Sign in* to each account the start passed
+ * signed out, in the order it names them; *Let … run …* for a ready account outside its list (D130 §3.3); and *Read* for
+ * one no read answered (§5.3: a reading only on the press). A signed-out account's own row signs it in. Never the tool's own
+ * sign-in, which is the person's, nor where Daoris runs no sign-in for the agent. Two at most: the rest are on the agent's
+ * page, the row's door, and its line says them.
+ */
+function accountOffers(item: Attention): AttentionOffer[] {
+  const facts = item.account;
+  if (!facts) return [];
+  const signIns: AttentionOffer[] = facts.signsIn
+    ? facts.named.filter((one) => one.state === 'out' && one.id).map((one) => ({ act: 'sign-in', account: one.id! }))
+    : [];
+  if (item.kind === 'signed-out') return signIns.slice(0, 1);
+  return [
+    ...signIns,
+    ...(facts.outside ? [{ act: 'let-run' as const, account: facts.outside.id }] : []),
+    ...facts.named.filter((one) => one.state === 'unknown' && one.id && !one.read).map((one) => ({ act: 'read' as const, account: one.id! })),
+  ].slice(0, ACCOUNT_ACTS);
+}
 
 /**
  * What a row offers, in the order it shows them (design §6.2–§6.3): an act only where one press is safe and the row says
  * what it does, and nothing where the answer needs reading first (a park's question, an intake's, a review), whose door is
  * the row's one control. **One rule per kind**, read by every row and the tests, so two rows of a kind cannot differ, and
  * each mirrors the record's own: a quest's page offers *Try again* on the planner's park and *Accept the departure* on a
- * held done; an ask's page publishes to what its declarations proposed and to any receiver its workspace can ask.
+ * held done; an ask's page publishes to what its declarations proposed and to any receiver its workspace can ask; an
+ * agent's page signs an account in and reads it on its row.
  */
-export function attentionActs(item: Attention): AttentionActId[] {
+export function attentionOffers(item: Attention): AttentionOffer[] {
+  const plain = (...acts: AttentionActId[]) => acts.map((act): AttentionOffer => ({ act }));
   switch (item.kind) {
-    case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? ['publish', 'choose'] : ['choose'];
-    case 'parked-quest': return ['retry'];
-    case 'go-ahead': return ['approve', 'refuse'];
-    case 'trust': return item.trust ? ['trust'] : [];
-    case 'departure': return ['accept-departure'];
-    case 'rule': return ['accept-rule', 'decline-rule'];
+    case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? plain('publish', 'choose') : plain('choose');
+    case 'parked-quest': return plain('retry');
+    case 'go-ahead': return plain('approve', 'refuse');
+    case 'trust': return item.trust ? plain('trust') : [];
+    case 'departure': return plain('accept-departure');
+    case 'rule': return plain('accept-rule', 'decline-rule');
+    case 'account-wait':
+    case 'signed-out': return accountOffers(item);
     default: return [];
   }
+}
+
+/** The acts a row offers, without the accounts they are for: what each kind's rule says, read by the tests. */
+export function attentionActs(item: Attention): AttentionActId[] {
+  return attentionOffers(item).map(({ act }) => act);
 }
 
 /** A go-ahead's act, as its ask's page names it: its kind in the reader's language where the page has a word, and the session's words. */
@@ -176,6 +217,11 @@ export function waitingInSessions(
  *
  * **Work to review is ready for the person** (D126): each session Sessions' list places *To review*, named from its
  * record where the page holds it and by its id where it does not, so nothing waiting is dropped.
+ *
+ * **The accounts hold work** (UX6d, TOOL4m's row): a start waiting on its accounts, an ask's intake among them, and a
+ * signed-out account a list or a default holds that no waiting start names (`accountAttention`). From the tick's waits and
+ * considerations, the roster's last readings with their times and the accounts' files: nothing a row would have to ask
+ * for. A browser has none of them.
  */
 export function needsAPerson(
   sessions: readonly Session[],
@@ -186,6 +232,7 @@ export function needsAPerson(
   proposals: readonly RuleProposal[] = [],
   considered: readonly Consideration[] = [],
   groups: readonly SessionGrouping[] = [],
+  accounts: AccountsKnown = { tools: [] },
 ): Attention[] {
   const live = asks.filter((ask) => ask.state === 'Open' || ask.state === 'Proposed');
   const intakeOf = (ask: Ask) =>
@@ -349,10 +396,13 @@ export function needsAPerson(
       detail: proposal.why,
     }));
 
+  // The starts waiting on their accounts, and the signed-out accounts no waiting start names (UX6d).
+  const accountRows = accountAttention(accounts, considered, quests, asks, registry);
+
   // Each group's kinds in §6.2's order, then the longest waiting first: a stable sort keeps §6.2's order for a tie.
   const oldestFirst = (a: Attention, b: Attention) => a.since.localeCompare(b.since);
   return [
-    [...parked, ...parkedQuests, ...goAheads, ...folders.values()],
+    [...accountRows, ...parked, ...parkedQuests, ...goAheads, ...folders.values()],
     [...waitingAsks, ...departures, ...widenings, ...unanswerable],
     reviews,
   ].flatMap((group) => group.sort(oldestFirst));

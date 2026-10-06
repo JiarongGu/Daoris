@@ -801,11 +801,12 @@ public sealed partial class ChatRunner : IDisposable
 
     /// <summary>
     /// A conversation's turn the door refused, read for an account's limit (TOOL4d, D125 §2.3): where the adapter's table
-    /// recognises it, the account the conversation runs as cools, the log says so, and the sentence for its record comes
-    /// back. Null is a refusal as today. The conversation goes on: the process is still there, and so is the person.
+    /// recognises it, the account the conversation runs as cools, the log says so, and the line for its record comes back
+    /// with its code (CONVNOTE1b), as a session record's cooling line carries it. Null is a refusal as today. The
+    /// conversation goes on: the process is still there, and so is the person.
     /// </summary>
     /// <param name="coolOff">The machine's <c>cooloff</c> (TOOL4e), for a limit that names no time; the default when null.</param>
-    internal string? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null)
+    internal Noted? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null)
     {
         (CoolingEntry Entry, LimitSeen Seen)? limited;
         try
@@ -821,7 +822,7 @@ public sealed partial class ChatRunner : IDisposable
 
         _service.AccountSaid(AccountLine.Limited(
             sessionId, adapter.Name, profile, read.Seen, Driver.TurnsEnded(_events, sessionId) + 1, used: null));
-        return CoolingWords.Conversation(read.Entry, _harnesses.Zone);
+        return CoolingWords.ConversationOf(read.Entry, _harnesses.Zone);
     }
 
     /// <summary>
@@ -1151,7 +1152,7 @@ public sealed partial class ChatRunner : IDisposable
     {
         private readonly TaskCompletionSource<AcpSession?> _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly Func<bool> _stopped;
-        private readonly Func<string, string?>? _limited;
+        private readonly Func<string, Noted?>? _limited;
         private readonly Func<string, Noted?>? _signedOut;
         private readonly Action? _wentOn;
         private Action<string> _line = _ => { };
@@ -1163,7 +1164,8 @@ public sealed partial class ChatRunner : IDisposable
         private readonly HashSet<string> _stoppedUnder = new(StringComparer.Ordinal);
 
         /// <param name="limited">
-        /// A refused turn's failure, read for an account's limit (TOOL4d): the sentence its record takes, or null.
+        /// A refused turn's failure, read for an account's limit (TOOL4d): the line its record takes, with its code
+        /// (CONVNOTE1b), or null.
         /// </param>
         /// <param name="signedOut">
         /// A refused call's failure, read for the account's sign-in (SIGNIN1b): the line its record takes, or null.
@@ -1172,7 +1174,7 @@ public sealed partial class ChatRunner : IDisposable
         /// <param name="wentOn">Told once the words it goes on with are on the wire (MSG1c).</param>
         public ProtocolChat(
             string? posture, object? meta, string cwd, IReadOnlyList<AcpMcpServer> servers,
-            Action<ChatQueue> changed, Func<bool> stopped, Func<string, string?>? limited = null,
+            Action<ChatQueue> changed, Func<bool> stopped, Func<string, Noted?>? limited = null,
             Func<string, Noted?>? signedOut = null, ResumeAsk? goOn = null, Action? wentOn = null)
         {
             _stopped = stopped;
@@ -1336,11 +1338,12 @@ public sealed partial class ChatRunner : IDisposable
                 _record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the turn could not be taken: {error.Message}" });
 
                 // A refusal the door carried, read for an account's limit (TOOL4d) before the turn's end is recorded, so
-                // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4).
+                // the refused turn is counted after the turns that ended. Never the transcript's words (D125 §1.4). Its English
+                // beside the line's parts (CONVNOTE1b), as a refused sign-in's is, so the page words it in either language.
                 if (error is DriverException && _limited?.Invoke(error.Message) is { } cooling)
                 {
-                    _line($"— {cooling}");
-                    _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling });
+                    _line($"— {cooling.Note}");
+                    _record(new SessionEvent { Kind = SessionEventKind.Note, Text = cooling.Note, Parts = cooling.Parts });
                 }
 
                 // And for the account's sign-in (SIGNIN1b), so the next start walks past an account its agent refused here.
