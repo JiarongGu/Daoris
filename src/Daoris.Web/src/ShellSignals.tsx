@@ -4,10 +4,10 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from './format';
 import { keys } from './queries';
 import { useDriverReady } from './shell';
-import { type Consideration, type TrustHold, newsFrom } from './signals';
+import { type AccountWaitTick, type Consideration, type TrustHold, newsFrom } from './signals';
 import type { Notify } from './ui';
 
-type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[] };
+type Tick = { events?: string[]; considered?: Consideration[]; untrusted?: TrustHold[]; waits?: AccountWaitTick[] };
 
 /**
  * The shell's push channel into the page (D46 §6): the driver's tick reports arrive as toasts, and
@@ -55,6 +55,9 @@ export function ShellSignals({ notify, onAttend }: {
     // And which of those holds are the agent's trust (D73), as facts the screen can offer the person
     // to grant. Replaced whole for the same reason; a shell older than the grant sends none.
     client.setQueryData(keys.untrusted, tick?.untrusted ?? []);
+    // And which starts wait on their accounts (UX6d), an ask's intake among them, which no consideration names: *What needs
+    // you* says each, from these facts and what the page already holds. Replaced whole; an older shell sends none.
+    client.setQueryData(keys.waits, tick?.waits ?? []);
 
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the
