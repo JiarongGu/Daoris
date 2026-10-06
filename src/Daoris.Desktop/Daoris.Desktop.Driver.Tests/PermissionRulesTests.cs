@@ -220,6 +220,28 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal(["Bash(rm:*)", "Bash(dd:*)"], file.Repositories["Engine"].Deny);
     }
 
+    /// <summary>
+    /// CASEFOLD1d: a scope is one in another case only as <c>OrdinalIgnoreCase</c> finds it, each letter to its one capital,
+    /// as the CLI's <c>composeRules</c> and <c>addRule</c> find it through <c>casefold.ts</c> (<c>permissions.test.ts</c> names
+    /// this behaviour): a name full case mapping would widen or lower to the same letters is another scope, neither handed
+    /// with it nor written into it, and a final sigma is the sigma it is.
+    /// </summary>
+    [Fact]
+    public void A_scope_in_any_case_is_one_only_as_OrdinalIgnoreCase_finds_it()
+    {
+        var dotted = $"i{(char)0x0307}zmir";
+        var file = PermissionRules.Load(_home);
+        file = PermissionRules.Add(file, RuleScope.Repository, "İzmir", RuleList.Deny, "WebFetch");
+        file = PermissionRules.Add(file, RuleScope.Repository, "straße", RuleList.Deny, "WebSearch");
+        file = PermissionRules.Add(file, RuleScope.Repository, dotted, RuleList.Ask, "Edit(/docs/**)");
+        file = PermissionRules.Add(file, RuleScope.Repository, "Νίκος", RuleList.Allow, "Bash(npm test)");
+
+        Assert.Equal(["İzmir", "straße", dotted, "Νίκος"], file.Repositories.Keys);
+        Assert.DoesNotContain("WebFetch", PermissionRules.Compose(file, "default", dotted).Deny);
+        Assert.DoesNotContain("WebSearch", PermissionRules.Compose(file, "default", "STRASSE").Deny);
+        Assert.Contains("Bash(npm test)", PermissionRules.Compose(file, "default", "νίκοσ").Allow);
+    }
+
     /// <summary>An intake serves an ask in a circle, and belongs to no repository.</summary>
     [Fact]
     public void A_session_of_no_repository_is_handed_its_circles_rules_and_no_repositorys()

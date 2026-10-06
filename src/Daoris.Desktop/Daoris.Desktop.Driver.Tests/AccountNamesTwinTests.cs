@@ -52,6 +52,8 @@ public sealed class AccountNamesTwinTests : IDisposable
     [InlineData("an agent that is not an object is none", """{"claude-code":[1]}""", "claude-code", "account-1", null)]
     [InlineData("agents and accounts compare without case", """{"claude-code":{"account-1":{"name":"work"}}}""", "Claude-Code", "ACCOUNT-1", "work")]
     [InlineData("a name in Chinese is read as written", """{"claude-code":{"acct-3f9c2a71":{"name":"工作"}}}""", "claude-code", "acct-3f9c2a71", "工作")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"claude-code":{"straße":{"name":"work"}}}""", "claude-code", "STRASSE", null)]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"claude-code":{"İzmir":{"name":"work"}}}""", "claude-code", "i\u0307zmir", null)]
     public void A_name_reads_as_the_cli_reads_it(string why, string? file, string agent, string account, string? name)
     {
         Holding(file);
@@ -73,6 +75,8 @@ public sealed class AccountNamesTwinTests : IDisposable
     [InlineData("a name whose account is gone names nothing", """["account-1"]""", """{"claude-code":{"account-9":{"name":"work"}}}""", "claude-code", "work", null)]
     [InlineData("another agent's name names nothing here", """["account-1"]""", """{"codex":{"account-1":{"name":"work"}}}""", "claude-code", "work", null)]
     [InlineData("nothing named is nothing", """["account-1"]""", null, "claude-code", "seat", null)]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """["account-1"]""", """{"claude-code":{"account-1":{"name":"straße"}}}""", "claude-code", "STRASSE", null)]
+    [InlineData("a dotted capital I is not an i with a dot above", """["account-1"]""", """{"claude-code":{"account-1":{"name":"İzmir"}}}""", "claude-code", "i\u0307zmir", null)]
     public void An_account_resolves_as_the_cli_resolves_it(string why, string accounts, string? file, string agent, string given, string? id)
     {
         Holding(file);
@@ -107,6 +111,8 @@ public sealed class AccountNamesTwinTests : IDisposable
     [InlineData("another account's id is refused, in any case", """["account-1","work"]""", null, "claude-code", "account-1", "Work", "refused taken work")]
     [InlineData("a name a gone account kept is free", """["account-1"]""", """{"claude-code":{"account-9":{"name":"work"}}}""", "claude-code", "account-1", "work", """{"claude-code":{"account-9":{"name":"work"},"account-1":{"name":"work"}}}""")]
     [InlineData("a file that does not read is refused and kept", """["account-1"]""", "not json", "claude-code", "account-1", "work", "refused unreadable")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """["account-1","account-2"]""", """{"claude-code":{"account-2":{"name":"straße"}}}""", "claude-code", "account-1", "STRASSE", """{"claude-code":{"account-2":{"name":"straße"},"account-1":{"name":"STRASSE"}}}""")]
+    [InlineData("a dotted capital I is not an i with a dot above", """["account-1","account-2"]""", """{"claude-code":{"account-2":{"name":"İzmir"}}}""", "claude-code", "account-1", "i\u0307zmir", """{"claude-code":{"account-2":{"name":"İzmir"},"account-1":{"name":"i\u0307zmir"}}}""")]
     public void A_name_is_given_as_the_cli_gives_it(string why, string accounts, string? file, string agent, string account, string? name, string after)
     {
         Holding(file);

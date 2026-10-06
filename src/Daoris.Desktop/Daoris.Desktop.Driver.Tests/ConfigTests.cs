@@ -190,6 +190,31 @@ public sealed class ConfigTests
         Assert.Empty(DriverConfig.Parse("{}").Trees);
     }
 
+    /// <summary>
+    /// CASEFOLD1d: a repository opted in, held or given trees is another only as <c>OrdinalIgnoreCase</c> parts them, each letter
+    /// to its one capital, as the CLI's <c>driverconfig.ts</c> parts them through <c>casefold.ts</c> (<c>driverconfig.test.ts</c>
+    /// names this behaviour): a name full case mapping would widen or lower to the same letters is another repository.
+    /// </summary>
+    [Fact]
+    public void A_repository_in_each_list_is_another_only_as_OrdinalIgnoreCase_parts_them()
+    {
+        var dotted = $"i{(char)0x0307}zmir";
+        var config = DriverConfig.Empty;
+        foreach (var name in new[] { "İzmir", dotted, "straße", "STRASSE" })
+        {
+            config = config.WithDrivable(name, true).WithHold(name, true);
+        }
+
+        config = config.WithTrees("İzmir", true).WithTrees(dotted, true).WithTrees(dotted, false);
+        var read = DriverConfig.Parse(config.ToJson());
+
+        Assert.Equal(["İzmir", dotted, "straße", "STRASSE"], read.Drivable);
+        Assert.Equal(["İzmir", dotted, "straße", "STRASSE"], read.Holds);
+        Assert.Equal(["İzmir"], read.Trees);
+        Assert.True(read.OpensOwnTree("İzmir"));
+        Assert.False(read.OpensOwnTree(dotted));
+    }
+
     [Fact]
     public void Save_writes_atomically_and_load_reads_it_back()
     {

@@ -29,6 +29,8 @@ public sealed class StandingTests
     [InlineData("another repository's answer is not this one's", """{"standing":{"api":{"says":"dev only"}}}""", "app", null, null)]
     [InlineData("a list is not a map", """{"standing":["app"]}""", "app", null, null)]
     [InlineData("null is absent", """{"standing":null}""", "app", null, null)]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"standing":{"straße":{"says":"dev only"}}}""", "STRASSE", null, null)]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"standing":{"İzmir":{"says":"dev only"}}}""", "i\u0307zmir", null, null)]
     public void Standing_reads_as_the_cli_reads_it(string name, string file, string repository, string? says, string? at)
     {
         var read = DriverConfig.Parse(file).StandingFor(repository);
