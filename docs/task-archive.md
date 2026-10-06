@@ -11498,3 +11498,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6i — Knowledge unites Search and Convergence** (web-shell). Contract/proof: UX6 §2.2.
 
 **Outcome** 2026-10-07: Knowledge is one place on the bar (Ctrl+6, eight places now), its list's head switching between Search and Convergence, each mode keeping its list, page and memory under its old keys; the mode is remembered. Every old door lands on its mode (Ctrl+Shift+F, "Search Daoris for it", a palette-only "Go to: Convergence" keeping `go.convergence`, the Map's finding), and an old place id Ask Daoris stored maps to Knowledge. Stories count the bar at 11 controls (the install measured 12; UX6j's footer reaches 9). The pane's old per-view width is not read once. Ask Daoris's driver and service words are UX6i2. Web vitest 4270 → 4299. Detail: D150's UX6i note; commits a43e4c54, b68a962e.
+
+
+## LANDSVC1 — proposals advertise auto-accept (2026-10-07, D145)
+
+> - [ ] **LANDSVC1 — proposals advertise auto-accept** (service). Add the flag to setting description and landing refusal so discovery matches the room. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
+
+**Outcome** 2026-10-07: `setting_propose`'s description and `value`, and the service box's landing refusal, name `--auto-accept` in the room's words (`HelpRoomLanding.cs`): on a branch rule, a quest's done lands its work and the rule's plugin pushes and opens a pull request with no press; the person's standing say-so, proposed only when asked and never on a merge. The box's shape check is unchanged. Service 1296 → 1300. Detail: D145's LANDSVC1 note; commit 7bae0068.

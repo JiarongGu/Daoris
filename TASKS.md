@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,334 CLI, 1,296 service, 73 HTTP host, 5,141 driver (4,427 fast, 714 Process), 747 modules (629 fast, 118 Process), 85 devkit, 4,270 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. The full set (14 gates) passed `0a00cdb` and that tree is on the install (LAND3c's one Process case since awaits the next full set); earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,334 CLI, 1,300 service, 73 HTTP host, 5,141 driver (4,427 fast, 714 Process), 747 modules (629 fast, 118 Process), 85 devkit, 4,270 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. The full set (14 gates) passed `0a00cdb` and that tree is on the install (LAND3c's one Process case since awaits the next full set); earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -106,7 +106,6 @@ Contracts: D145, D148, D149; `docs/2026-10-04-plugin-hooks-design.md` for plugin
 - [ ] **PLUGHOOK1b — GitHub work/state** (examples; after a). Query `gh pr view`/`list --head` so squash-merged branches can clear. Contract: hooks §2.7, D148 point 7. Proof: fake-gh `landing-plugins.test.ts`.
 - [ ] **PLUGHOOK1d — page reads/refreshes PR state** (modules, web-shell, web-settings; after c). Review Ask again, bilingual branch/sync codes, sweep kinds, query wording and failing-query cost. Contract: hooks §2.4–§2.5. Proof: route/vitest/stories/parity/names checks and look.
 - [ ] **LAND2d — show automatic acceptance and rehearse it** (web-shell, tools). Render `acceptedBy` and event parts; drive auto-accept with stub plugin/bare origin, leaving uncommitted work for review. Contract: D145 LAND2b note. Proof: vitest/stories and family phase covering branch, trace and review state.
-- [ ] **LANDSVC1 — proposals advertise auto-accept** (service). Add the flag to setting description and landing refusal so discovery matches the room. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
 
 ## Evidence and captured proof
 
