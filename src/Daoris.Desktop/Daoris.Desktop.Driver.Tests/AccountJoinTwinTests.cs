@@ -91,6 +91,8 @@ public sealed class AccountJoinTwinTests : IDisposable
     [InlineData("this machine first, then each workspace by name", """{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"zeta":{"claude-code":["account-1"]},"alpha":{"claude-code":["account-2","account-1"]}}}""", "claude-code", "account-1", """[{"workspace":null,"list":true,"default":false},{"workspace":"alpha","list":true,"default":false},{"workspace":"zeta","list":true,"default":false}]""")]
     [InlineData("another agent's places are not this one's", """{"defaults":{"codex":"account-1"},"rotation":{"codex":["account-1"]}}""", "claude-code", "account-1", "[]")]
     [InlineData("an account compares exactly, as the wiring compares it", """{"rotation":{"claude-code":["account-1"]}}""", "claude-code", "Account-1", "[]")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"workspaces":{"straße":{"claude-code":"account-1"}},"workspaceRotation":{"STRASSE":{"claude-code":["account-1"]}}}""", "claude-code", "account-1", """[{"workspace":"STRASSE","list":true,"default":false},{"workspace":"straße","list":false,"default":true}]""")]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"workspaces":{"İzmir":{"claude-code":"account-1"}},"workspaceRotation":{"i\u0307zmir":{"claude-code":["account-1"]}}}""", "claude-code", "account-1", """[{"workspace":"i\u0307zmir","list":true,"default":false},{"workspace":"İzmir","list":false,"default":true}]""")]
     public void An_account_s_places_read_as_the_cli_reads_them(string why, string wiring, string agent, string account, string places)
     {
         var read = Read(wiring).PlacesOf(agent, account);

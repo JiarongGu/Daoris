@@ -11554,3 +11554,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CASEFOLD1c — harnesses.json's workspace maps are read without case** (cli). The CLI reads `workspaces` and `workspaceRotation` by exact key where the driver's dictionaries ignore case: `placesOf` misses a list kept under `work` when the default is under `Work`, and `resolveRotation` finds no order for `WORK`. Contract: D125 §3.1 and its CASEFOLD1 note. Proof: case rows in `ORDER_ROWS`/`PLACE_ROWS` and the driver's theories.
 
 **Outcome** 2026-10-07: `harnesses.json`'s four workspace maps are found, edited and read once in any case through `casefold.ts`'s `byName` (each name once, spelled as first written, holding the last value, as a .NET dictionary set twice keeps) and `atName`; reads merge a workspace written twice in different cases, lookups and edits go under the existing spelling. The driver's rows are owed (CASEFOLD1e). Agent keys inside the file are still read by exact key. CLI 1345 → 1349. Detail: D125's CASEFOLD1c note; commit d9025a9b.
+
+
+## CASEFOLD1d — the driver holds the owed name-case rows (2026-10-07, D125)
+
+> - [ ] **CASEFOLD1d — the driver holds the owed name-case rows** (driver, tools). Append CASEFOLD1's straße, dotless-I and dotted-I rows to the driver's twin theories (cooling, windows, rotation, account join and names, released, standing, session language, paused work, line registration), add tests for strikes, permissions, remotes, plugins and `driver.json`, and a `NameCaseTests` over `name-case.json` (then the lane table sends it to the driver); empty the CLI's `DRIVER_OWES`. Contract: D125's CASEFOLD1 note lists each row. Proof: the CLI twin tests hold every row with nothing owed.
+
+**Outcome** 2026-10-07: every owed straße and I row is in its driver theory, held in place by the CLI's `heldSoFar`; strikes, permission scopes, remotes, plugins and `driver.json` have driver tests; `NameCaseTests` holds `OrdinalIgnoreCase` equality, hashes and order to `name-case.json` (the lane table sends it to the driver gate, afb22b10). Every row passed the driver unchanged: its comparisons already match the CLI's measured fold. The CLI's `DRIVER_OWES` sets are now stale (CASEFOLD1f). Driver fast +36. Detail: D125's CASEFOLD1d note; commit 032a92f3.
+
+
+## CARRY2b — the planner reads whose a take is (2026-10-07, D80)
+
+> - [ ] **CARRY2b — the planner reads whose a take is** (driver). Since CARRY2 the ledger refuses a carry-on over another machine's take, but `Planner.cs:576` still plans one for any failed last run, so every look asks and is refused (no strike, a repeated line). Read the claim and `took` as `WorkAbandoning.QuestAct` does (`WorkAbandoning.cs:705`) and give such a quest a sitting verdict with the ledger's sentence. Contract: D80's CARRY2 note. Proof: a `PlannerTests` row.
+
+**Outcome** 2026-10-07: a look asks `/api/quests/{id}/claim` only for taken quests whose last run here would be carried on (`Planner.CarriesOn`, one rule for the asking and the branch), reads `took` and the newest teammate record from the records the strikes come from, and gives a take that is not this machine's the new `StartVerdict.TakenElsewhere` with the ledger's sentence, before holds or strikes and taking no slot. An unmarked take made while the session ran is still carried on. The page shows the driver's English for it in both languages (CARRY2c). Driver fast +10. Detail: D80's CARRY2b note; commit 3b68ae36.

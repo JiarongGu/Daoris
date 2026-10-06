@@ -57,6 +57,8 @@ public sealed class WindowsTwinTests : IDisposable
     [InlineData("a reset or a seen that is not ISO 8601 is nothing said", """{"claude-code":{"account-1":{"session":{"reset":"Oct 3","used":0.5,"seen":"2026-10-02T11:00:00Z"},"weekly":{"reset":"2026-10-06T21:18:00Z","used":0.5,"seen":"today"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "account-1", null)]
     [InlineData("a window that is not an object, and an account that is not one, say nothing", """{"claude-code":{"account-1":{"session":"0.5"},"account-2":[1]}}""", "2026-10-02T12:00:00Z", "claude-code", "account-1", null)]
     [InlineData("a moment with an offset or a fraction is read in UTC, to the second", """{"claude-code":{"account-1":{"weekly":{"reset":"2026-10-07T03:03:00+05:45","used":0.25,"seen":"2026-10-02T11:00:00.5Z","session":"s2"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "account-1", """[{"window":"weekly","used":0.25,"reset":"2026-10-06T21:18:00Z","standing":null,"credits":false,"seen":"2026-10-02T11:00:00Z","session":"s2"}]""")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"claude-code":{"straße":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "STRASSE", null)]
+    [InlineData("a dotless i is not an I", """{"claude-code":{"ışık":{"session":{"reset":"2026-10-02T14:00:00Z","used":0.5,"seen":"2026-10-02T11:00:00Z"}}}}""", "2026-10-02T12:00:00Z", "claude-code", "IŞIK", null)]
     public void An_account_s_windows_read_as_the_cli_reads_them(string name, string? file, string now, string agent, string account, string? said)
     {
         if (file is not null) File.WriteAllText(AccountWindows.PathOf(_home), file);

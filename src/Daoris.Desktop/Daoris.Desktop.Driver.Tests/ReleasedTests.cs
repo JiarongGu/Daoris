@@ -23,6 +23,8 @@ public sealed class ReleasedTests
     [InlineData("another quest's release is not this one's", """{"released":{"q2":"s1"}}""", "q1", null)]
     [InlineData("a list is not a map", """{"released":["q1"]}""", "q1", null)]
     [InlineData("null is absent", """{"released":null}""", "q1", null)]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"released":{"straße":"s1"}}""", "STRASSE", null)]
+    [InlineData("a dotted capital I is not an i with a dot above", """{"released":{"İzmir":"s1"}}""", "i\u0307zmir", null)]
     public void Released_reads_as_the_cli_reads_it(string name, string file, string quest, string? session)
     {
         var read = DriverConfig.Parse(file).ReleasedFor(quest);

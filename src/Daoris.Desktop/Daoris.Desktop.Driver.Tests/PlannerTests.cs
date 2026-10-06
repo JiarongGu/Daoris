@@ -721,6 +721,212 @@ public sealed class PlannerTests
             Ran([Quest(status: "Taken")], ("q1", new PriorSession("s1", null, "completed", "reached done."))), Config()));
     }
 
+    // ── a carry-on asks whose the take is (CARRY2b) ───────────────────────────────────────────────
+    //
+    // Since CARRY2 the ledger refuses a carry-on over a take that is not this machine's (`TakenElsewhere`, a 409), and the
+    // planner still planned one for every cut-off, so each look asked and was refused: no strike, and the same line again.
+    // The take is read as an abandon reads it, by the claim and a record here marking `took`, and the quest sits with the
+    // ledger's own sentence.
+
+    private static readonly PriorSession Cut = new("s1", "D:/trees/s1", "failed", "timed out after 30 minutes and was killed.")
+    {
+        Updated = new DateTimeOffset(2026, 10, 7, 9, 30, 0, TimeSpan.Zero),
+    };
+
+    private static Snapshot TakenAfter(PriorSession last, QuestTake? take, DateTimeOffset? takenAt = null) =>
+        Ran([Quest(status: "Taken") with { Updated = takenAt }], ("q1", last)) with
+        {
+            Takes = take is null
+                ? new Dictionary<string, QuestTake>()
+                : new Dictionary<string, QuestTake>(StringComparer.OrdinalIgnoreCase) { ["q1"] = take },
+        };
+
+    [Fact]
+    public void A_cut_off_whose_quest_another_machine_took_sits_naming_that_machine_s_session()
+    {
+        var only = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("none", Teammate: "alice-laptop/ab12cd34")), Config()));
+
+        Assert.Equal(StartVerdict.TakenElsewhere, only.Verdict);
+        Assert.Equal(
+            "Quest `#q1` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, so session `s1` is "
+            + "not carried on over it.",
+            only.Reason);
+        Assert.Null(only.Resumes);
+    }
+
+    /// <summary>A take that lost the race to the remote (D68 §5) is another machine's; with no record of theirs here, unnamed.</summary>
+    [Fact]
+    public void A_cut_off_whose_take_was_lost_sits_naming_another_machine()
+    {
+        var only = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("lost")), Config()));
+
+        Assert.Equal(StartVerdict.TakenElsewhere, only.Verdict);
+        Assert.Equal("Quest `#q1` is taken on another machine: the take is theirs, so session `s1` is not carried on over it.", only.Reason);
+    }
+
+    /// <summary>A take made here after the session ended, which no record here marks, is a chat's or work outside Daoris.</summary>
+    [Fact]
+    public void A_take_made_here_after_the_session_ended_that_no_record_marks_sits()
+    {
+        var only = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("unconfirmed"), Cut.Updated!.Value.AddMinutes(5)), Config()));
+
+        Assert.Equal(StartVerdict.TakenElsewhere, only.Verdict);
+        Assert.Equal(
+            "Quest `#q1` was taken here after session `s1` ended, by a chat or by work outside Daoris: the take is theirs, so "
+            + "session `s1` is not carried on over it.",
+            only.Reason);
+    }
+
+    /// <summary>
+    /// 🔴 What the ledger still carries on, the planner plans: a take a record here marks, and an unmarked one made while the
+    /// session ran, which the HTTP door makes and the family rehearsal's stub takes by. A take with no time said, and one
+    /// not read, are the ledger's to judge, as every carry-on was.
+    /// </summary>
+    [Fact]
+    public void This_machine_s_take_is_carried_on_marked_or_made_while_the_session_ran_and_an_unread_one_is_planned()
+    {
+        var after = Cut.Updated!.Value.AddMinutes(5);
+        var during = Cut.Updated!.Value.AddMinutes(-5);
+
+        foreach (var (why, snapshot) in new[]
+                 {
+                     ("marked", TakenAfter(Cut, new QuestTake("held", Took: true), after)),
+                     ("made while it ran", TakenAfter(Cut, new QuestTake("unconfirmed"), during)),
+                     ("no time said", TakenAfter(Cut, new QuestTake("held"))),
+                     ("unread", TakenAfter(Cut, take: null, after)),
+                 })
+        {
+            var only = Assert.Single(Planner.Plan(snapshot, Config()));
+            Assert.True(only.Verdict == StartVerdict.Start, $"{why}: {only.Verdict} {only.Reason}");
+            Assert.Equal(Cut, only.Resumes);
+        }
+    }
+
+    /// <summary>Every carry-on asks it, as the ledger does: an interrupted stop, a released stop and an answered park too.</summary>
+    [Fact]
+    public void Every_carry_on_asks_whose_the_take_is()
+    {
+        var interrupted = new PriorSession("s1", "D:/trees/s1", "stopped", Orphans.Note, Interrupted: true);
+        var answered = new PriorSession("s1", "D:/trees/s1", "completed", "asked the person", Answer: "Go ahead.");
+
+        foreach (var (why, last, config) in new[]
+                 {
+                     ("interrupted", interrupted, Config()),
+                     ("released", PersonStop, Config().WithReleased("q1", "s1")),
+                     ("answered", answered, Config()),
+                 })
+        {
+            var only = Assert.Single(Planner.Plan(TakenAfter(last, new QuestTake("none")), config));
+            Assert.True(only.Verdict == StartVerdict.TakenElsewhere, $"{why}: {only.Verdict} {only.Reason}");
+        }
+    }
+
+    /// <summary>
+    /// Said before every other reason a carry-on sits for, since a take elsewhere stays so whatever is opted in or held here;
+    /// and it spends no slot, so the next quest starts where it would have.
+    /// </summary>
+    [Fact]
+    public void A_take_elsewhere_is_said_before_a_hold_and_spends_no_slot()
+    {
+        var held = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("none")), Config(holds: ["Game"])));
+        Assert.Equal(StartVerdict.TakenElsewhere, held.Verdict);
+
+        var snapshot = TakenAfter(Cut, new QuestTake("none")) with { Quests = [Quest(status: "Taken"), Quest("q2")] };
+        var plan = Planner.Plan(snapshot, Config(cap: 1));
+
+        Assert.Equal(StartVerdict.TakenElsewhere, Assert.Single(plan, c => c.Quest.Id == "q1").Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(plan, c => c.Quest.Id == "q2").Verdict);
+    }
+
+    /// <summary>
+    /// The records say the rest of whose a take is: a record of this machine's in any state marks `took` (as the ledger
+    /// asks it), and the newest teammate's record that did not stand down names another machine's take. A quest whose
+    /// claim was not read is not read.
+    /// </summary>
+    [Fact]
+    public void Whose_a_take_is_is_read_from_the_claim_and_the_records()
+    {
+        var takes = ServiceClient.ReadTakes("""
+            [{ "id": "s1", "quest": "q1", "state": "stood-down", "took": true, "created": "2026-10-07T09:00:00Z" },
+             { "id": "s2", "quest": "q1", "state": "failed", "created": "2026-10-07T09:10:00Z" },
+             { "id": "alice-laptop/a1", "quest": "q1", "state": "failed", "created": "2026-10-07T09:20:00Z" },
+             { "id": "bob-desk/b1", "quest": "q1", "state": "stood-down", "created": "2026-10-07T09:30:00Z" },
+             { "id": "s3", "quest": "q2", "state": "failed", "created": "2026-10-07T09:00:00Z" },
+             { "id": "carol/c1", "quest": "Q2", "state": "working", "took": true, "created": "2026-10-07T09:00:00Z" },
+             { "id": "s4", "quest": "q3", "state": "failed", "took": true, "created": "2026-10-07T09:00:00Z" }]
+            """, new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["q1"] = "held", ["q2"] = "none" });
+
+        Assert.Equal(new QuestTake("held", Took: true, Teammate: "alice-laptop/a1"), takes["q1"]);
+        Assert.Equal(new QuestTake("none", Took: false, Teammate: "carol/c1"), takes["Q2"]);
+        Assert.False(takes.ContainsKey("q3"));
+    }
+
+    /// <summary>
+    /// A look asks the claim of each taken quest it would carry on, and of nothing else: a taken quest whose session still
+    /// works is not asked. What the claim says reaches the plan, and a record's and a quest's moments reach the views.
+    /// </summary>
+    [Fact]
+    public async Task A_look_asks_whose_the_take_is_of_each_carry_on_and_of_nothing_else()
+    {
+        var ledger = new StandInLedger { Claim = "lost" };
+        ledger.Publish("q1", "Game");
+        ledger.Publish("q2", "Game");
+        using var service = ledger.Client();
+        var (cut, _) = await service.OpenSessionAsync("q1", "stub");
+        await service.AdvanceAsync(cut!, "failed", note: "timed out.");
+        var (working, _) = await service.OpenSessionAsync("q2", "stub");
+        await service.AdvanceAsync(working!, "working");
+        ledger.Move("q1", "Taken");
+        ledger.Move("q2", "Taken");
+
+        var snapshot = await service.SnapshotAsync();
+
+        Assert.Equal(new QuestTake("lost"), snapshot.Takes["q1"]);
+        Assert.False(snapshot.Takes.ContainsKey("q2"));
+        Assert.Equal(1, ledger.ClaimsAsked("q1"));
+        Assert.Equal(0, ledger.ClaimsAsked("q2"));
+        var sits = Assert.Single(Planner.Plan(snapshot with { Repositories = [Repo()] }, Config()));
+        Assert.Equal(StartVerdict.TakenElsewhere, sits.Verdict);
+        Assert.Equal($"Quest `#q1` is taken on another machine: the take is theirs, so session `{cut}` is not carried on over it.", sits.Reason);
+    }
+
+    /// <summary>A claim the host does not answer in time is unread, and the look plans the carry-on as before: the ledger judges.</summary>
+    [Fact]
+    public async Task A_claim_the_host_does_not_answer_leaves_the_carry_on_planned()
+    {
+        var ledger = new StandInLedger { ClaimHangs = true };
+        ledger.Publish("q1", "Game");
+        using var service = ledger.Client(TimeSpan.FromMilliseconds(300));
+        var (cut, _) = await service.OpenSessionAsync("q1", "stub");
+        await service.AdvanceAsync(cut!, "failed", note: "timed out.");
+        ledger.Move("q1", "Taken");
+
+        var snapshot = await service.SnapshotAsync();
+
+        Assert.Empty(snapshot.Takes);
+        Assert.Equal(1, ledger.ClaimsAsked("q1"));
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(snapshot with { Repositories = [Repo()] }, Config())).Verdict);
+    }
+
+    /// <summary>A record's and a quest's last move are read as the service writes them: what a take here is compared by.</summary>
+    [Fact]
+    public void A_record_s_and_a_quest_s_last_move_are_read_as_the_service_writes_them()
+    {
+        var last = ServiceClient.ReadLastRun("""
+            [{ "id": "s1", "quest": "q1", "state": "failed", "created": "2026-10-07T09:00:00Z", "updated": "2026-10-07T09:30:00+00:00" },
+             { "id": "s2", "quest": "q2", "state": "failed", "created": "2026-10-07T09:00:00Z" }]
+            """);
+        var quests = ServiceClient.ReadQuests("""
+            [{ "id": "q1", "to": "Game", "status": "Taken", "updated": "2026-10-07T09:35:00Z" },
+             { "id": "q2", "to": "Game", "status": "Taken" }]
+            """);
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 7, 9, 30, 0, TimeSpan.Zero), last["q1"].Updated);
+        Assert.Null(last["q2"].Updated);
+        Assert.Equal(new DateTimeOffset(2026, 10, 7, 9, 35, 0, TimeSpan.Zero), quests[0].Updated);
+        Assert.Null(quests[1].Updated);
+    }
+
     // ── a person's stop holds its quest, and Try again releases it (SESSUX1b, D126 §3.3, §3.4) ───────
     //
     // Read from the code (M3): a take the person stopped was never looked at again, so it sat with no sentence and no

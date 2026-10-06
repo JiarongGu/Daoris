@@ -42,7 +42,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 64 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 49 | 1025 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 60 | 1231 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PluginKitTests.cs` | 46 | 937 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/RemoteSyncTests.cs` | 65 | 1338 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/SessionGroupsTests.cs` | 43 | 733 |
@@ -56,8 +56,8 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 187 | 3484 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Hooks.cs` | 44 | 1004 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 47 | 844 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 78 | 1452 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/Planner.cs` | 52 | 919 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ServiceClient.cs` | 82 | 1523 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionGroups.cs` | 51 | 921 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.Sync.cs` | 68 | 1146 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/SessionTrees.cs` | 66 | 1163 |
@@ -116,7 +116,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 48 | 998 |
 | `tools/family-rehearsal.mjs` | 293 | 5322 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
-| `tools/merge-branch.mjs` | 126 | 2318 |
+| `tools/merge-branch.mjs` | 126 | 2319 |
 | `tools/orient-index.mjs` | 63 | 1383 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
@@ -124,7 +124,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 45 | 113 |
+| `.claude/knowledge/twins.md` | 47 | 114 |
 | `docs/2026-09-19-platform-ux.md` | 52 | 562 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 51 | 348 |

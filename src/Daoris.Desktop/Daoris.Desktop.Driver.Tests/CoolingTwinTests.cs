@@ -66,6 +66,8 @@ public sealed class CoolingTwinTests : IDisposable
     [InlineData("a flag that is not true is false, and a word that is not text is none", """{"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z","stated":"yes","window":7,"seen":"2026-10-01T08:15:00Z","session":"","assumedZone":1}}}""", "2026-10-01T08:15:00Z", "claude-code", "account-1", """{"agent":"claude-code","account":"account-1","until":"2026-10-03T10:17:00Z","stated":false,"window":null,"seen":"2026-10-01T08:15:00Z","session":null,"assumedZone":false,"notBelieved":false}""")]
     [InlineData("a moment with an offset or a fraction is read in UTC, to the second", """{"claude-code":{"account-1":{"until":"2026-10-03T16:02:00+05:45","stated":true,"seen":"2026-10-01T08:15:00.5Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "account-1", """{"agent":"claude-code","account":"account-1","until":"2026-10-03T10:17:00Z","stated":true,"window":null,"seen":"2026-10-01T08:15:00Z","session":null,"assumedZone":false,"notBelieved":false}""")]
     [InlineData("the zone assumed and the date not believed are read where true", """{"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z","stated":false,"seen":"2026-10-01T08:15:00Z","assumedZone":true,"notBelieved":true}}}""", "2026-10-01T08:15:00Z", "claude-code", "account-1", """{"agent":"claude-code","account":"account-1","until":"2026-10-03T10:17:00Z","stated":false,"window":null,"seen":"2026-10-01T08:15:00Z","session":null,"assumedZone":true,"notBelieved":true}""")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"claude-code":{"straße":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "STRASSE", null)]
+    [InlineData("a dotless i is not an I", """{"claude-code":{"ışık":{"until":"2026-10-03T10:17:00Z","stated":true,"seen":"2026-10-01T08:15:00Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "IŞIK", null)]
     public void An_entry_reads_as_the_cli_reads_it(string name, string? file, string now, string agent, string? account, string? entry)
     {
         if (file is not null) File.WriteAllText(File_, file);
@@ -92,6 +94,8 @@ public sealed class CoolingTwinTests : IDisposable
     [InlineData("an agent that is not an object is kept as written", """{"codex":[1],"claude-code":{"account-1":{"until":"2026-10-03T10:17:00Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "account-1", true, """{"codex":[1]}""")]
     [InlineData("a missing file ends nothing and makes none", null, "2026-10-01T08:15:00Z", "claude-code", "account-1", false, "unchanged")]
     [InlineData("a file that does not read ends nothing and is kept", "not json", "2026-10-01T08:15:00Z", "claude-code", "account-1", false, "unchanged")]
+    [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"claude-code":{"straße":{"until":"2026-10-03T10:17:00Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "STRASSE", false, "unchanged")]
+    [InlineData("a dotless i is not an I", """{"claude-code":{"ışık":{"until":"2026-10-03T10:17:00Z"}}}""", "2026-10-01T08:15:00Z", "claude-code", "IŞIK", false, "unchanged")]
     public void An_entry_ends_as_the_cli_ends_it(string name, string? file, string now, string agent, string? account, bool ended, string after)
     {
         if (file is not null) File.WriteAllText(File_, file);

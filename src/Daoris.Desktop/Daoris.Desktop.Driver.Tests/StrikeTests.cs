@@ -157,6 +157,32 @@ public sealed class StrikeTests
         Assert.Equal(strikes ? 1 : 0, counted.TryGetValue("q1", out var count) ? count : 0);
     }
 
+    /// <summary>
+    /// CASEFOLD1d: a quest's id compares by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
+    /// <c>failuresOf</c> compares it through <c>casefold.ts</c> (<c>strikes.test.ts</c> names this behaviour). An id full case
+    /// mapping would widen or lower to the same letters is another quest's, and a final sigma is the sigma it is.
+    /// </summary>
+    [Fact]
+    public void A_quest_s_id_in_any_case_is_one_only_as_OrdinalIgnoreCase_finds_it()
+    {
+        var dotted = $"i{(char)0x0307}zmir";
+        var strikes = ServiceClient.ReadStrikes($$"""
+            [{ "id": "s1", "quest": "straße", "state": "failed" },
+             { "id": "s2", "quest": "STRASSE", "state": "failed" },
+             { "id": "s3", "quest": "İzmir", "state": "failed" },
+             { "id": "s4", "quest": "{{dotted}}", "state": "failed" },
+             { "id": "s5", "quest": "Νίκος", "state": "failed" },
+             { "id": "s6", "quest": "ΝΊΚΟΣ", "state": "failed" }]
+            """);
+
+        Assert.Equal(1, strikes["STRASSE"]);
+        Assert.Equal(1, strikes["straße"]);
+        Assert.Equal(1, strikes[dotted]);
+        Assert.Equal(1, strikes["İzmir"]);
+        Assert.Equal(2, strikes["νίκοσ"]);
+        Assert.Equal(5, strikes.Count);
+    }
+
     /// <summary>The words alone spare nothing: a record whose English says it, with no coded line, is a strike as it was.</summary>
     [Fact]
     public void An_account_s_words_with_no_coded_line_are_still_a_strike()
