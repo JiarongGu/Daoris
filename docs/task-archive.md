@@ -11358,3 +11358,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEV3b — a client timeout is not a close** (driver). The headless host reads any `OperationCanceledException` as Ctrl+C, so a look whose own request times out prints *driver: stopped.* and exits 0. Contract: D115's DEV3a note. Proof: a host test that a timeout exits 2, naming it.
 
 **Outcome** 2026-10-07: the headless host's close is only the person's Ctrl+C ("driver: stopped.", exit 0); a client timeout is "driver: the service did not answer in time — …" on stderr, exit 2, and any other cancellation is a failure (`DriverCommand.Cancelled`). Other `daoris-driver` verbs meeting a client timeout now exit 2 too. Driver fast half +5. Detail: D115's DEV3b note, FIX-LOG; commit 800812d7.
+
+
+## HIST1b — the service clears closed records (2026-10-07, D153)
+
+> - [ ] **HIST1b — service clears closed records** (service; after a). `HistoryDesk` judges and clears quest, ask and failed-session units behind local-only `GET /api/history` and `POST /api/history/clear`; numbered quests are forgotten (`quest_forgotten`) and fetches skip them. Contract: §1, §2.1, §3, §6.3. Proof: desk tests; sync tests (skipped, never refetched or pushed, fetched by a second store); no shared door.
+
+**Outcome** 2026-10-07: `HistoryDesk` lists (`GET /api/history`, one scope: workspace, quest, a quest's failed sessions, or ask) and clears (`POST /api/history/clear`, exactly the units named, each judged again in one transaction) a closed quest's work, an ask's work whole or not at all, and a closed quest's failed sessions; a refused unit stays whole with its word. A record that never left goes, row and log; a numbered quest is forgotten (`quest_forgotten`), both fetches skip it while their cursors move past, nothing is pushed, and its words published again are refused (409). Local host only, no MCP door. Gaps: a clear between the publish check and the publish; the listing untimed on a large store. Service 1178 → 1215, HTTP 68 → 73. Detail: D153's HIST1b note, the service README; commits 96958b65, 9ee3a8f2.
+
+
+## UX6a — the counter (2026-10-07, D150)
+
+> - [ ] **UX6a — counter and installed baseline** (tools). Contract/proof: UX6 §9.1–§9.3.
+
+**Outcome** 2026-10-07: built (the counter); the install's baseline is UX6a2. `tools/ux-count.mjs` counts a screen's regions (list, main, the frame apart) in §9.1's concepts, controls, words and screens, from one page function sent unchanged to Playwright over stories (`--stories`, en light and 中文 dark at 1546 and 680 px) and to the window through `npm run desktop -- eval --file` (`--window`, then `--window --read`). Presses are a declared, unmeasured table. It reproduces UX6f's scratch counts exactly. `tools/ux-count.test.mjs` (18) runs in the web's own chromium. Detail: D150's UX6a note; commits 29d8c8bf, 32d00de8.

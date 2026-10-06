@@ -115,6 +115,14 @@ starts a holder process in the plugin's folder, kills it, then waited a fixed 30
 the holder had not ended within the wait plus the cleanup's five seconds of retries. Each now waits for the holder's
 `exit`, as `setup-kit.test.ts`'s stub runs already wait for `close`.
 
+*Open sightings, 2026-10-07, all under three worktrees building beside a merge's gates, each passing alone or rerun:*
+`merge-branch.test.ts`'s `--rerun` cases met git failing on their scratch repositories three ways (a subagent's
+`git diff` exiting 2, another's `spawnSync git EPERM`, and UX6a's merge gate's `git merge both failed: fatal: stash
+failed`): git's own files held for a moment, most likely by the scanner, the same shape as the publishing renames.
+`setup-kit.test.ts:668` (ANSWER1b's stub resumes) met EPERM in `_fixture` cleanup once in INIT1's verify, although
+`speak` waits for the stub's `close` on every path; what still held the folder (a git the stub started, or the
+scanner) was not captured.
+
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle
 machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit threw

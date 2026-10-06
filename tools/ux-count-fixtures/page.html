@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The counter's fixed page</title>
+<!--
+  UX6a's fixed page (tools/ux-count.test.mjs): a window in miniature, its counts known by hand. Each part's
+  comment says what it adds to its region, by the test's own terms (TERMS there). A change here changes the
+  test's table with it.
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; border: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font: 16px/20px monospace; display: flex; flex-direction: column; }
+  .strip, .status { height: 30px; flex: none; }
+  .row { display: flex; height: 400px; flex: none; }
+  nav { width: 48px; display: flex; flex-direction: column; }
+  nav button { width: 36px; height: 36px; }
+  aside[data-region="list"] { width: 280px; height: 400px; overflow-y: auto; }
+  main { position: relative; width: 600px; height: 400px; overflow-y: auto; }
+  .content { position: relative; height: 1000px; }
+  aside[data-region="side"] { width: 200px; }
+  .clamp { height: 20px; overflow: hidden; }
+  .bottom { position: absolute; top: 960px; left: 0; }
+  /* Tailwind's sr-only, as the page's atoms use it. */
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+  <!-- The frame, unmarked: 2 words (Daoris, Help), 1 control (the link). -->
+  <header class="strip">Daoris <a href="#help">Help</a></header>
+  <div class="row">
+    <!-- The frame's activity bar: 3 controls, 1 word (the badge's 2). A name only in aria-label is no text: no concept. -->
+    <nav data-region="activity" aria-label="Places">
+      <button aria-label="Overview" aria-current="page"></button>
+      <button aria-label="Sessions"><span>2</span></button>
+      <button aria-label="Quests"></button>
+    </nav>
+    <!-- The list: 4 controls, 6 words, 3 rows, 1 concept (repository, from the placeholder). The first row holds a
+         control, so the row is not counted and its button is. -->
+    <aside data-region="list" aria-label="Repositories">
+      <input type="search" placeholder="Filter repositories">
+      <div data-list-row role="button" tabindex="0">engine <button aria-label="More">&#x22EF;</button></div>
+      <button data-list-row>game held</button>
+      <a data-list-row href="#tools">tools</a>
+    </aside>
+    <!-- The main area: 8 controls, 23 words, 3 concepts (quest, session, workspace), 1000 px over 400: 2.5 screens. -->
+    <main data-region="main">
+      <div class="content">
+        <h1>Sessions of the workspace</h1>
+        <p>Two quests are open.</p>
+        <button>Open</button>
+        <label><input type="checkbox"> Drive here</label>
+        <select><option>English</option><option selected>Chinese</option></select>
+        <input value="main">
+        <!-- A disabled control still shows: 1 control, 1 word. -->
+        <button disabled>Save</button>
+        <!-- A folded section: its summary is 1 control and 1 word; what it folds is nothing (hold). -->
+        <details><summary>Driving</summary><button>Hold</button> folded rows</details>
+        <!-- A closed menu: its trigger is 1 control and 1 word; its item is nothing (delete). -->
+        <div><button aria-haspopup="menu">More</button><div role="menu" hidden><div role="menuitem">Delete</div></div></div>
+        <!-- Nothing of these. -->
+        <p hidden>hidden attribute words</p>
+        <p style="display: none">display none words</p>
+        <p style="visibility: hidden">invisible words <button>Unseen</button></p>
+        <p style="opacity: 0">clear words <button>Ghost</button></p>
+        <span class="sr-only">screen reader words</span>
+        <!-- One line of two shows: 2 words; the second line's word and control are clipped. -->
+        <p class="clamp">alpha beta<br>gamma <button>Delta</button></p>
+        <!-- Past the fold, one scroll away: 5 words, 1 control. -->
+        <p class="bottom">Bottom of the page <button>Top</button></p>
+      </div>
+    </main>
+    <!-- The frame's side bar: 2 words. -->
+    <aside data-region="side">Ask Daoris</aside>
+  </div>
+  <!-- The frame's status bar: 6 words (driver, ready, 2, sessions, Sync, now), 1 control, 1 concept (session). -->
+  <footer class="status" data-region="status">driver ready &#xB7; 2 sessions <button>Sync now</button></footer>
+</body>
+</html>

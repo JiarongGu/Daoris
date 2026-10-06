@@ -79,15 +79,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Service/Daoris.Service.Core/Asks.cs` | 48 | 928 |
 | `src/Daoris.Service/Daoris.Service.Core/KnowledgeService.cs` | 49 | 986 |
-| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 72 | 1402 |
-| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 110 | 2060 |
+| `src/Daoris.Service/Daoris.Service.Core/QuestExchange.cs` | 73 | 1419 |
+| `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 116 | 2161 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 59 | 1150 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 62 | 1129 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 51 | 929 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 88 | 1613 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 58 | 1054 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 93 | 1682 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 54 | 1148 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 60 | 1235 |
-| `src/Daoris.Service/README.md` | 46 | 509 |
+| `src/Daoris.Service/README.md` | 49 | 532 |
 
 ### CLI (`cli`)
 
@@ -112,7 +112,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 54 | 977 |
-| `tools/desktop.mjs` | 47 | 974 |
+| `tools/desktop.mjs` | 48 | 998 |
 | `tools/family-rehearsal.mjs` | 277 | 5060 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
 | `tools/merge-branch.mjs` | 126 | 2316 |
@@ -123,7 +123,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 41 | 110 |
+| `.claude/knowledge/twins.md` | 42 | 111 |
 | `docs/2026-09-19-platform-ux.md` | 50 | 548 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 47 | 341 |

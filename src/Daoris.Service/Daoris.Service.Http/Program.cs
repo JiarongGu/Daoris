@@ -149,7 +149,9 @@ var composed = await ServiceFactory.CreateAsync(
     source: mode == ServiceMode.Shared ? new EmptyKnowledgeSource() : null,
     // A quest's files are kept by the machine that has them (D65 §2): a local host keeps them under
     // its home, and a shared host keeps none — it holds names, and its door refuses bytes outright.
-    files: mode == ServiceMode.Local ? QuestFiles.FromEnvironment() : null);
+    files: mode == ServiceMode.Local ? QuestFiles.FromEnvironment() : null,
+    // The rule proposals a clear of history reads and tidies (HIST1b) are this machine's files; a shared host has none.
+    proposals: mode == ServiceMode.Local ? RuleProposalBox.FromEnvironment() : null);
 builder.Services.AddSingleton(composed);
 
 // Source-generated serialization: this host publishes AOT-friendly and reflection-based JSON would be
@@ -460,6 +462,8 @@ app.MapPost("/api/quests", async (
         // Two circles that were never joined is a state conflict, not a malformed ask — the same 409
         // shape the quest lock teaches. The sentence names both sides (D48 §4).
         QuestPublishRefusal.CrossWorkspace => Results.Conflict(new ErrorResponse(outcome.Message)),
+        // The words of a quest this machine forgot (HIST1b): the remote holds it closed, a state conflict as a closed quest's move is.
+        QuestPublishRefusal.Cleared => Results.Conflict(new ErrorResponse(outcome.Message)),
         _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
     };
 });
@@ -863,6 +867,61 @@ if (mode == ServiceMode.Local)
             SessionSayRefusal.Empty => Results.BadRequest(refused),
             _ => Results.Conflict(refused),
         };
+    });
+}
+
+// Clearing finished history from this machine (HIST1b, D153; the history-clearing design §6.3), listed first and then
+// pressed (D88): the desk judges the records' half for both doors, and the driver, which judges the trees, the landings
+// and the processes, calls these and then removes what the home kept (HIST1c). LOCAL mode only, as D95's and D126's
+// deletes are: a person clears their own machine, and a remote's history is the team's, so a shared deployment maps
+// neither. Nothing here travels: a quest a remote numbered is forgotten here, and the team keeps its copy.
+if (mode == ServiceMode.Local)
+{
+    // What each unit holds and would take, or why it stays: a workspace's finished history, one quest's work, one quest's
+    // failed sessions, or one ask's work. Deletes nothing. Every unit is answered, a refused one with its word.
+    app.MapGet("/api/history", async (
+        ComposedService s, string? workspace, string? quest, string? ask, bool? failed, CancellationToken ct) =>
+    {
+        var named = new[] { workspace, quest, ask }.Count(scope => !string.IsNullOrWhiteSpace(scope));
+        if (named != 1 || (failed == true && string.IsNullOrWhiteSpace(quest)))
+        {
+            return Results.BadRequest(new ErrorResponse(
+                "name one scope: `workspace`, `quest` or `ask`, and `failed=true` only beside a quest"));
+        }
+
+        IReadOnlyList<HistoryUnit> units = !string.IsNullOrWhiteSpace(workspace)
+            ? await s.History.PlanWorkspaceAsync(workspace, ct)
+            : [await s.History.PlanAsync(
+                !string.IsNullOrWhiteSpace(quest)
+                    ? new HistoryUnitRef(failed == true ? HistoryUnitKind.Failed : HistoryUnitKind.Quest, quest)
+                    : new HistoryUnitRef(HistoryUnitKind.Ask, ask!),
+                ct)];
+        return Results.Ok(new HistoryPlanResponse([.. units.Select(ToHistoryUnit)]));
+    });
+
+    // The second press: exactly the units named, each judged again where it is cleared, and cleared or kept with its word.
+    app.MapPost("/api/history/clear", async (ComposedService s, HistoryClearRequest body, CancellationToken ct) =>
+    {
+        var units = new List<HistoryUnitRef>();
+        foreach (var unit in body.Units ?? [])
+        {
+            if (HistoryUnitRef.Parse(unit?.Kind) is not { } kind || string.IsNullOrWhiteSpace(unit!.Id))
+            {
+                return Results.BadRequest(new ErrorResponse(
+                    "each unit names its `kind` (`quest`, `ask` or `failed`) and its `id`, as the listing gave them"));
+            }
+
+            units.Add(new HistoryUnitRef(kind, unit.Id.Trim()));
+        }
+
+        if (units.Count == 0)
+        {
+            return Results.BadRequest(new ErrorResponse("`units` names what to clear, as the listing gave them; it named none"));
+        }
+
+        var outcomes = await s.History.ClearAsync(units, DateTimeOffset.UtcNow, ct);
+        return Results.Ok(new HistoryClearResponse(
+            [.. outcomes.Select(outcome => new HistoryClearedResponse(ToHistoryUnit(outcome.Unit), outcome.Cleared, outcome.Message))]));
     });
 }
 
@@ -1335,7 +1394,7 @@ else
         }
 
         var quests = await QuestSync.RunAsync(s.Quests, s.Service, remote, circle, ct);
-        var sessions = await SessionSync.RunAsync(s.Sessions, s.Service, remote, circle, ct);
+        var sessions = await SessionSync.RunAsync(s.Sessions, s.Quests, s.Service, remote, circle, ct);
         // The team's code maps come down on the same pass (MAP3e): pulling one needs no git, so it is
         // the host's to do, and the host is what answers the page for a repository with no checkout here.
         var maps = await CodeMapSync.RunAsync(s.Service, remote, circle, ct);
@@ -1596,6 +1655,16 @@ static SessionDeletionResponse ToDeletion(SessionDeleteOutcome outcome) => outco
             _ => "on-remote",
         },
         outcome.Quest, outcome.Ask, outcome.Origin, outcome.Workspace);
+
+// A unit of finished history as its doors answer it (HIST1b): ids only, never a path or a title, and a refusal as its word
+// beside the desk's sentence, as a session delete's is (SESSUX1f).
+static HistoryUnitResponse ToHistoryUnit(HistoryUnit unit) => new(
+    HistoryUnitRef.Spell(unit.Kind), unit.Id, unit.Workspace, unit.Clearable, unit.Quests, unit.Forgotten, unit.Asks,
+    unit.Sessions, unit.Teammates, unit.Refusal is { } refusal ? ToHistoryRefusal(refusal) : null,
+    [.. unit.Kept.Select(ToHistoryRefusal)]);
+
+static HistoryRefusalResponse ToHistoryRefusal(HistoryKept kept) => new(
+    HistoryKept.Spell(kept.Refusal), kept.Message, kept.Quest, kept.Ask, kept.Session, kept.Origin, kept.Workspace);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

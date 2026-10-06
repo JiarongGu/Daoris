@@ -15,6 +15,12 @@ namespace Daoris.Knowledge;
 public sealed record RuleChange(
     string Action, string Scope, string? Name, string? List, string? Rule, string? Default, bool? On);
 
+/// <summary>One rule proposal as clearing history reads it (HIST1b): its file's id, who made it, and whether it waits.</summary>
+/// <param name="Session">The session that proposed it, when its connector named one.</param>
+/// <param name="Ask">The ask that session answers, when it is an intake.</param>
+/// <param name="Pending">Whether the person or the driver has yet to settle it.</param>
+public sealed record RuleProposalNote(string Id, string? Session, string? Ask, bool Pending);
+
 /// <summary>
 /// Where an agent's proposals to change the rules are written (PERM2, D74): one file each, under the
 /// Daoris home beside the rules they would change.
@@ -123,6 +129,58 @@ public sealed class RuleProposalBox(string? home)
             $"Proposed `#{id}`: {Describe(change)}. If it narrows what agents may do, the driver applies it at "
             + "its next look; if it widens it, it waits for the person's yes. Either way the record says this "
             + "session proposed it, and why.");
+    }
+
+    /// <summary>
+    /// Every proposal under the home, as clearing history reads them (HIST1b, design §2.2): who made it, and whether it
+    /// still waits. One the person or the driver has not settled (<c>proposed</c>, <c>waiting</c>, or a state this build
+    /// does not know, read as the driver reads it) waits on the person, and keeps the work that made it. A file that will
+    /// not parse is passed over, as the driver passes it over.
+    /// </summary>
+    public IReadOnlyList<RuleProposalNote> Notes()
+    {
+        var directory = Home is null ? null : Path.Combine(Home, Folder);
+        if (directory is null || !Directory.Exists(directory)) return [];
+
+        var notes = new List<RuleProposalNote>();
+        foreach (var path in Directory.EnumerateFiles(directory, "*.json"))
+        {
+            try
+            {
+                if (JsonFields.ParseObject(File.ReadAllText(path)) is not { } root) continue;
+                var by = root.TryGetProperty("by", out var named) ? named : default;
+                notes.Add(new RuleProposalNote(
+                    Path.GetFileNameWithoutExtension(path),
+                    JsonFields.Text(by, "session"),
+                    JsonFields.Text(by, "ask"),
+                    Pending: JsonFields.Text(root, "state")?.ToLowerInvariant()
+                        is not ("applied" or "refused" or "unchanged" or "accepted" or "declined")));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                // Unreadable is no proposal anybody can settle, and no record a clear may take.
+            }
+        }
+
+        return notes;
+    }
+
+    /// <summary>
+    /// Remove one settled proposal whose session or ask a clear took (HIST1b): it is history, and it would name a record
+    /// that is gone. Best effort, as a quest's kept files are: a file the disk will not let go of stays.
+    /// </summary>
+    public void Forget(string id)
+    {
+        if (Home is null || id.Length == 0 || id.IndexOfAny(['/', '\\', '.']) >= 0) return;
+
+        try
+        {
+            File.Delete(Path.Combine(Home, Folder, $"{id}.json"));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Held open by another process, or refused by the disk: the record it names is gone either way.
+        }
     }
 
     /// <summary>The change in a line — the rule is the harness's own words, quoted.</summary>

@@ -914,6 +914,131 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.Equal("not-found", missing.Json.GetProperty("refusal").GetString());
     }
 
+    // ——— Clearing finished history (HIST1b, D153; the history-clearing design §6.3): listed first, then pressed (D88).
+
+    /// <summary>A quest of <c>Asker</c>'s to <c>Keeper</c>, taken and closed done through the respond door.</summary>
+    private async Task<string> ClosedAsync(string title)
+    {
+        var quest = await PublishAsync(title);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "done", reason = "Landed." })).Status);
+        return quest;
+    }
+
+    private async Task<bool> HeldAsync(string quest) =>
+        (await host.GetAsync("/api/quests?includeClosed=true")).Json.EnumerateArray()
+            .Any(row => row.GetProperty("id").GetString() == quest);
+
+    /// <summary>
+    /// A closed quest is listed with what a clear takes, by its quest and with its workspace, deleting nothing; the press
+    /// names it and clears exactly it, and the answer says what went. Here nothing was ever numbered by a remote, so it
+    /// simply goes, row and log together.
+    /// </summary>
+    [Fact]
+    public async Task A_closed_quest_is_listed_then_cleared_through_the_history_doors()
+    {
+        var quest = await ClosedAsync("A quest whose history is cleared");
+
+        var listed = await host.GetAsync($"/api/history?quest={quest}");
+        var workspace = await host.GetAsync("/api/history?workspace=default");
+
+        Assert.Equal((200, 200), (listed.Status, workspace.Status));
+        var unit = Assert.Single(listed.Json.GetProperty("units").EnumerateArray());
+        Assert.Equal(("quest", quest, true), (unit.GetProperty("kind").GetString(), unit.GetProperty("id").GetString(), unit.GetProperty("clearable").GetBoolean()));
+        Assert.Equal([quest], unit.GetProperty("quests").EnumerateArray().Select(id => id.GetString()));
+        Assert.Empty(unit.GetProperty("forgotten").EnumerateArray());
+        Assert.False(unit.TryGetProperty("refusal", out _));
+        Assert.Contains(workspace.Json.GetProperty("units").EnumerateArray(), row => row.GetProperty("id").GetString() == quest);
+        Assert.True(await HeldAsync(quest));
+
+        var cleared = await host.PostAsync("/api/history/clear", new { units = new[] { new { kind = "quest", id = quest } } });
+
+        Assert.Equal(200, cleared.Status);
+        var outcome = Assert.Single(cleared.Json.GetProperty("units").EnumerateArray());
+        Assert.True(outcome.GetProperty("cleared").GetBoolean());
+        Assert.StartsWith($"Cleared `#{quest}` from this machine", outcome.GetProperty("message").GetString());
+        Assert.Equal(quest, outcome.GetProperty("unit").GetProperty("id").GetString());
+        Assert.False(await HeldAsync(quest));
+        Assert.Empty(await host.Composed.Quests.HistoryAsync(quest));
+    }
+
+    /// <summary>
+    /// A unit that may not go is listed with its refusal's word, the desk's sentence as <c>error</c> and what it names,
+    /// as SESSUX1f's refusals are, so the driver reads the word and never the sentence; pressed, it stays.
+    /// </summary>
+    [Fact]
+    public async Task A_unit_that_stays_answers_its_word_the_desks_sentence_and_what_it_names()
+    {
+        var quest = await PublishAsync("A quest still open, so its history stays");
+
+        var listed = await host.GetAsync($"/api/history?quest={quest}");
+        var pressed = await host.PostAsync("/api/history/clear", new { units = new[] { new { kind = "quest", id = quest } } });
+
+        Assert.Equal(200, listed.Status);
+        var refusal = listed.Json.GetProperty("units")[0].GetProperty("refusal");
+        Assert.Equal(("open", quest), (refusal.GetProperty("refusal").GetString(), refusal.GetProperty("quest").GetString()));
+        Assert.Equal(
+            (await host.Composed.History.PlanAsync(new HistoryUnitRef(HistoryUnitKind.Quest, quest))).Refusal!.Message,
+            refusal.GetProperty("error").GetString());
+        var outcome = pressed.Json.GetProperty("units")[0];
+        Assert.Equal((200, false), (pressed.Status, outcome.GetProperty("cleared").GetBoolean()));
+        Assert.Equal("open", outcome.GetProperty("unit").GetProperty("refusal").GetProperty("refusal").GetString());
+        Assert.True(await ListedAsync(quest));
+    }
+
+    /// <summary>A listing names exactly one scope, and a press names each unit by a kind it knows and an id: anything else is 400.</summary>
+    [Fact]
+    public async Task The_history_doors_refuse_a_request_that_names_no_unit()
+    {
+        foreach (var query in new[] { "", "?workspace=default&quest=abc", "?ask=abcdef&failed=true", "?workspace=default&failed=true" })
+        {
+            var refused = await host.GetAsync($"/api/history{query}");
+            Assert.True(refused.Status == 400, $"GET /api/history{query} answered {refused.Status}");
+        }
+
+        foreach (var body in new object[]
+                 {
+                     new { },
+                     new { units = Array.Empty<object>() },
+                     new { units = new[] { new { kind = "workspace", id = "default" } } },
+                     new { units = new[] { new { kind = "quest", id = " " } } },
+                 })
+        {
+            Assert.Equal(400, (await host.PostAsync("/api/history/clear", body)).Status);
+        }
+    }
+
+    /// <summary>
+    /// The same words as a quest this machine forgot are refused at the publish door with 409, the exchange's sentence,
+    /// as a closed quest's move is: the remote still holds it closed (HIST1b, H5). Forgotten here by the store's own rows,
+    /// as a clear of a quest a remote numbered leaves them, since this host has no remote.
+    /// </summary>
+    [Fact]
+    public async Task The_same_words_as_a_forgotten_quest_are_refused_at_the_publish_door_with_409()
+    {
+        var quest = await ClosedAsync("A quest a remote held, forgotten here");
+        await using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={host.Database}"))
+        {
+            await connection.OpenAsync();
+            await using var forget = connection.CreateCommand();
+            forget.CommandText = """
+                INSERT INTO quest_forgotten (id, at) VALUES ($id, '2026-10-07T10:00:00Z');
+                DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id;
+                """;
+            forget.Parameters.AddWithValue("$id", quest);
+            await forget.ExecuteNonQueryAsync();
+        }
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "A quest a remote held, forgotten here", body = "Asked again.",
+        });
+
+        Assert.Equal(409, refused.Status);
+        Assert.StartsWith($"Quest `#{quest}` was cleared from this machine;", refused.Error);
+        Assert.False(await HeldAsync(quest));
+    }
+
     /// <summary>
     /// The page is served here — which is what makes the shared host's 404 for the same file a refusal
     /// rather than a missing file.
