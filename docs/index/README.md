@@ -97,7 +97,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
 | `src/Daoris.Cli/src/plugins.ts` | 67 | 1340 |
 | `src/Daoris.Cli/src/toolchain.ts` | 136 | 2677 |
-| `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 867 |
+| `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 42 | 755 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 72 | 1408 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 140 | 2233 |
