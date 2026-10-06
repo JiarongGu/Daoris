@@ -1,8 +1,8 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
-import { I18nextProvider, useTranslation } from 'react-i18next';
-import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import { HandedAccount } from './HandedAccount';
 import { BARE, CLAIMED, CUT, NEWER, UNREAD } from './handedFixtures';
 
@@ -11,9 +11,6 @@ import { BARE, CLAIMED, CUT, NEWER, UNREAD } from './handedFixtures';
 // carry-on whose every bound left something out; words that could not be read; a quest that carries nothing on an agent
 // that takes no rules; a target from before the account was kept; a newer driver's codes; and each in 中文 and in dark.
 
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 /** The target's own card, which the account sits at the foot of on the page (`ConversationView`'s ask). */

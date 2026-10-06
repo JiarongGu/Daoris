@@ -1,9 +1,8 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactNode, useState } from 'react';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
 import { cn } from '../lib/cn';
 import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import type { DiffFile, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
 import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
@@ -12,9 +11,6 @@ import { ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFr
 // each kind of refusal with its next move, loaded, and reading again behind the last answer — in light and dark, and
 // 中文 where its words differ.
 
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 const KNOWN: ReviewKnown = {

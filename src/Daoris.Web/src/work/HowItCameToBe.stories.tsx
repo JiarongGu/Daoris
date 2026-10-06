@@ -1,8 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { type ComponentProps, useState } from 'react';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
 import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import { HowItCameToBe } from './HowItCameToBe';
 import {
   answer, MISSING_CHAIN, NO_ASK_CHAIN, NOTHING, OLD_CHAIN, QUEST_CHAIN, SESSION_CHAIN, UNREAD_ANSWER, WAITING_CHAIN,
@@ -14,9 +13,6 @@ import {
 // merge kept only as the acceptance, and a teammate's record; a store that did not answer; nothing found; reading; a
 // refusal; and each in 中文, in dark and narrow.
 
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 const narrow: Decorator = (Story) => <div style={{ width: 360 }}><Story /></div>;
 

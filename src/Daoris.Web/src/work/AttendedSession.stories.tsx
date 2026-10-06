@@ -1,9 +1,9 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
-import { I18nextProvider } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import i18n from '../i18n';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
+import { chinese } from '../storyLanguage';
 import { AttendedSession } from './AttendedSession';
 import { sessionFacts } from './headFacts';
 import { questName } from './identity';
@@ -11,9 +11,6 @@ import { SessionPageHead } from './SessionPageHead';
 import { answer, SESSION_CHAIN } from './traceFixtures';
 import { ViewMain } from './ViewMain';
 
-/** A reader of 中文, whatever the window's language, sharing the catalogues. */
-const zh = i18n.cloneInstance({ lng: 'zh' });
-const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // The assembled region: the record and the observed layer over it. The stream is deliberately not

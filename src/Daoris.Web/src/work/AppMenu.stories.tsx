@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useLayoutEffect, useMemo, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import i18n from '../i18n';
 import { COMMANDS, type CommandState, MENUS, type MenuId, shortcutGroups, type Translate } from '../commands';
 import { isPress } from '../shortcuts';
+import { readerIn } from '../storyLanguage';
 import { menuRows } from './appMenus';
 import { AppMenuBar, FOLD_OPEN, foldsMenus } from './AppMenu';
 import { BrowserDoor } from './BrowserDoor';
@@ -42,8 +42,8 @@ function useTheme(theme: 'light' | 'dark') {
 function Strip({ menu, world, mnemonics, chinese, width }: {
   menu: MenuId | typeof FOLD_OPEN | null; world: World; mnemonics: boolean; chinese: boolean; width?: number;
 }) {
-  // A reader of its own in either language: a 中文 one remembers 中文 for the next story, so English is asked for too.
-  const reader = useMemo(() => i18n.cloneInstance({ lng: chinese ? 'zh' : 'en' }), [chinese]);
+  // A reader of its own in either language, so English is English whatever the window speaks; neither is remembered (STORY2).
+  const reader = useMemo(() => readerIn(chinese ? 'zh' : 'en'), [chinese]);
   const t = reader.t.bind(reader) as Translate;
   const [open, setOpen] = useState<string | null>(menu);
   const attached = world !== 'browser';
@@ -236,7 +236,7 @@ function KeyProbe({ theme }: { theme: 'light' | 'dark' }) {
 
 function ShortcutsStory({ theme, language, world }: { theme: 'light' | 'dark'; language: 'en' | 'zh'; world: World }) {
   useTheme(theme);
-  const reader = useMemo(() => i18n.cloneInstance({ lng: language }), [language]);
+  const reader = useMemo(() => readerIn(language), [language]);
   const t = reader.t.bind(reader) as Translate;
   return (
     <I18nextProvider i18n={reader}>
