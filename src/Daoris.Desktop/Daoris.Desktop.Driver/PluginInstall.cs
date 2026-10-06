@@ -247,7 +247,7 @@ public static class PluginInstall
             CopyTree(folder, staging);
             // Where it came from, in the copy before it is renamed in (PLUG9 c): one move for both.
             PluginSource.Write(staging, source);
-            Directory.Move(staging, target);
+            AtomicFile.MoveFolder(staging, target);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -381,7 +381,7 @@ public static class PluginInstall
 
         try
         {
-            Directory.Move(staging, target);
+            AtomicFile.MoveFolder(staging, target);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

@@ -19,10 +19,11 @@
 // the one module that may open a socket, and a test hands in a table instead. So a doctrine command
 // that somehow reached this file still could not fetch anything.
 
-import { chmodSync, existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { DaorisError } from './errors.ts';
+import { renameHeld } from './fsx.ts';
 import { fingerprintOf, spaced, verifyDetached } from './openpgp.ts';
 import { extractTarGz } from './tarball.ts';
 
@@ -253,7 +254,8 @@ export async function installFromChannel(install: ChannelInstall): Promise<strin
       rmSync(install.where, { recursive: true, force: true });
     }
     mkdirSync(join(install.where, '..'), { recursive: true });
-    renameSync(join(staging, 'package'), install.where);
+    // The scanner opens the executables just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+    renameHeld(join(staging, 'package'), install.where);
     return join(install.where, executable);
   } finally {
     rmSync(staging, { recursive: true, force: true });

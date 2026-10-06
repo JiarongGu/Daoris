@@ -45,7 +45,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameS
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { foldName, sameName } from './casefold.ts';
 import { DaorisError } from './errors.ts';
-import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
+import { onPath, readJsonObject, readText, renameHeld, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
@@ -1034,7 +1034,7 @@ export function applyUpdate(home: string, id: string, reserved: Iterable<string>
       + 'update it again. The installed version is untouched.');
   }
   try {
-    renameSync(staging, target);
+    renameHeld(staging, target);
   } catch (error) {
     renameSync(aside, target);
     rmSync(staging, { recursive: true, force: true });
@@ -1220,14 +1220,14 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
             + `running desktop's hook process, most likely. \`daoris plugin disable ${manifest.id}\`, give the `
             + 'desktop a moment to stop it, then add it again. The installed version is untouched.');
         }
-        renameSync(staging, target);
+        renameHeld(staging, target);
         try {
           rmSync(aside, { recursive: true, force: true });
         } catch {
           // A dot-folder is never read as a plugin; one that cannot be deleted now is nobody's.
         }
       } else {
-        renameSync(staging, target);
+        renameHeld(staging, target);
       }
 
       write(`daoris: ${replacing ? 'replaced' : 'added'} plugin \`${manifest.id}\` at ${target}`);
