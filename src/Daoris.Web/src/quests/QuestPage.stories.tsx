@@ -2,6 +2,8 @@ import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { buildChain } from '../map/chain';
 import { InTheme } from '../plugins/storyIcons';
 import { chinese } from '../storyLanguage';
+import type { HistoryDoor } from '../work/history';
+import { FAILED_PLAN, QUEST_ASKED, QUEST_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';
 import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausingFixtures';
 import { answer, QUEST_CHAIN } from '../work/traceFixtures';
@@ -114,6 +116,20 @@ export const Declined: Story = { args: { quest: DECLINED } };
 
 /** Done: nothing left to do here. */
 export const Done: Story = { args: { quest: DONE } };
+
+/** A closed quest's two clears on this machine (HIST1e, D153 §6.1): *Clear from this machine…* and *Clear failed sessions…* in its ⋯. */
+const clears: HistoryDoor = {
+  plan: { ...QUEST_PLAN, id: DONE.id, units: [{ ...QUEST_PLAN.units[0]!, id: DONE.id, quests: [DONE.id] }] },
+  failed: { ...FAILED_PLAN, id: DONE.id, units: [{ ...FAILED_PLAN.units[0]!, id: DONE.id }] },
+  busy: false,
+  onClear: nothing,
+};
+
+/** Done, with both clears in its ⋯, each listing under the header on its first press (`Work/Clear`). */
+export const DoneWithItsClears: Story = { args: { quest: DONE, history: clears } };
+
+/** Done, and asked by an ask: no clear is offered here, since the ask's page clears it. */
+export const DoneAskedByAnAsk: Story = { args: { quest: DONE, history: { ...clears, plan: { ...QUEST_ASKED, id: DONE.id }, failed: null } } };
 
 /** Nobody has started on it, so the service says it may go (D95): *Delete…* in its ⋯ (UX7c). */
 export const Deletable: Story = { args: { quest: DELETABLE } };

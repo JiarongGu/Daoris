@@ -197,6 +197,8 @@ public static class WorkPausing
     [
         StartVerdict.Paused, StartVerdict.Stopped, StartVerdict.Exhausted, StartVerdict.Held,
         StartVerdict.NotDrivable, StartVerdict.NotAdopted, StartVerdict.NoRoot,
+        // A take that is not this machine's (CARRY2b): a resume carries nothing on over it.
+        StartVerdict.TakenElsewhere,
     ];
 
     /// <summary>

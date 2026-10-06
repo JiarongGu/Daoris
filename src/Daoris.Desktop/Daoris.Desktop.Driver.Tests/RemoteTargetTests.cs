@@ -149,6 +149,34 @@ public sealed class RemoteTargetTests : IDisposable
     }
 
     /// <summary>
+    /// CASEFOLD1d: a workspace is one in another case only as <c>OrdinalIgnoreCase</c> finds it, each letter to its one
+    /// capital, as the CLI's <c>remotemap.ts</c> finds it through <c>casefold.ts</c> (<c>remotes.test.ts</c> names this
+    /// behaviour): a name full case mapping would widen or lower to the same letters is another workspace with its own row,
+    /// and the map is written back sorted ordinally, as the CLI writes it.
+    /// </summary>
+    [Fact]
+    public void A_workspace_is_one_only_as_OrdinalIgnoreCase_finds_it()
+    {
+        var dotted = $"i{(char)0x0307}zmir";
+        RemoteTarget.Save(ConfigPath, new Dictionary<string, RemoteTarget>
+        {
+            ["İzmir"] = new("https://izmir.example.com", "dk_izmirkey0000"),
+            ["straße"] = new("https://strasse.example.com", "dk_strassekey00"),
+            [dotted] = new("https://other.example.com", "dk_otherkey0000"),
+            ["STRASSE"] = new("https://other.example.com", "dk_otherkey0000"),
+        });
+
+        var remotes = RemoteTarget.LoadFile(ConfigPath);
+
+        Assert.Equal(4, remotes.Count);
+        Assert.Equal("https://izmir.example.com", remotes["İzmir"].Url);
+        Assert.Equal("https://other.example.com", remotes[dotted].Url);
+        Assert.Equal("https://strasse.example.com", remotes["straße"].Url);
+        using var written = System.Text.Json.JsonDocument.Parse(File.ReadAllText(ConfigPath));
+        Assert.Equal(["STRASSE", dotted, "straße", "İzmir"], written.RootElement.EnumerateObject().Select(entry => entry.Name));
+    }
+
+    /// <summary>
     /// An EDITOR reads the file even when the environment outranks it — otherwise a machine with the
     /// env pair set could never wire a second workspace, and the surface would silently write over
     /// whatever it had just failed to see.

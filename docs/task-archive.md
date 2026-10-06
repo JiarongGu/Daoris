@@ -11526,3 +11526,45 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CARRY2 — carry-on verifies ownership** (service). A pre-take failure must not continue over someone else's take. Contract: D80, D126 SESSUX1b2 note. Proof: failing-first ledger refusal.
 
 **Outcome** 2026-10-07: every carry-on asks whose the take is (`SessionLedger.TakenElsewhereAsync`, after the existing not-open refusal), and one over another machine's take (the log's machine, whatever the clocks say) or a take made here after the session ended is refused as `TakenElsewhere` (409 at the HTTP door), naming the teammate's newest record or "another machine". An unmarked take made while the session ran is still carried on, since the HTTP door marks no take. Closes the two gaps D126's SESSUX1b2 note named. The planner still asks at every look (CARRY2b). Service +7 (1307 with main), HTTP 73 → 74. Detail: D80's CARRY2 note; commit 260a43f1.
+
+
+## HIST1g — the family rehearsal clears (2026-10-07, D153)
+
+> - [ ] **HIST1g — family rehearsal clears** (tools; after d; the parent runs it). On the two-machine circle, a closed quest cleared on one machine stays on the other and the remote, does not return after a pass, and its words asked again are refused. Contract: §3, §12. Proof: the phase, run at the merge.
+
+**Outcome** 2026-10-07: phase 11a of the family rehearsal clears on the two-machine circle: a closed quest is forgotten on machine a while machine b and the remote keep it, its words are refused (409), a teammate's later take and dismissal on it are passed over by a's fetch (scanned in a's store bytes, since an orphan replays to no quest), and a no-remote workspace's quest simply goes and its words make it again; the machine log holds three `history.cleared` lines, door terminal, counts only. Family rehearsal 374 → 390 checks. A workspace renamed and fetched from zero, and a third machine's first fetch, are left to `HistorySyncTests`. Detail: D153's HIST1g note; commit 4144ff91.
+
+
+## HIST1e — clear on the screen (2026-10-07, D153)
+
+> - [ ] **HIST1e — clear on the screen** (web-shell; after c). The quest page's two clears, the ask page's, and the workspace page's *Kept on this machine* reading with *Clear history…*, each listed then pressed; names and the glossary's *clear*. Contract: §6.1, §8. Proof: stories, mocked-bridge vitest (the second press sends the list), parity, `names:check --strict`, bilingual look.
+
+**Outcome** 2026-10-07: a closed quest's ⋯ offers *Clear from this machine…* and *Clear failed sessions…*, a done ask's new header ⋯ its clear, and a workspace's Details ends in *Kept on this machine* (the reading) with *Clear history…*; each lists What goes and What stays (each kept unit's sentence and its door) and the second press sends exactly that list (`ClearAsk` holds the plan it opened on). `work/history.ts` holds the shapes and rules, `work/historyActs.ts` the one owner of the press, `bridge/history.ts` the hooks; the glossary gains *clear* (清除). The workspace asks in place rather than under the header (D153's note). The merge adds `useClearHistory`'s Owed row to `HelpCoverageTests`. A web twin of `HistoryAnswers`' field lists is not yet held. Web vitest 4299 → 4383 with main. Detail: D153's HIST1e note; commits 0a7cbe62, a087be72, 226c7c61.
+
+
+## CASEFOLD1b — a plugin id's shape check lowers as the driver does (2026-10-07, D125)
+
+> - [ ] **CASEFOLD1b — a plugin id's shape check lowers as the driver does** (cli). `plugins.ts` checks `ID_SHAPE` against `id.toLowerCase()` (around :949, :1065, :1162), which lowers `İ` to two letters where the driver's `ToLowerInvariant` gives `i`, so `plugin update|remove|add --offer` with an `İ` refuses as "not an id" from the CLI and "no plugin" from the driver. Contract: D125's CASEFOLD1 note. Proof: a row in `plugin-sources` and `PluginSourceTests`.
+
+**Outcome** 2026-10-07: the premise was wrong, measured on .NET 10 over every code point: `ToLowerInvariant` keeps `İ`, so both doors already refuse it as no id, and `toLowerCase` agrees with it for the shape check everywhere but Unicode 16/17 letters. The real divergence is the driver's `IdShape` `$` matching before a final line break (CASEFOLD1e). Guards, not fixes: a comment at `ID_SHAPE`, two owed rows, and a test that update, remove and `add --offer` refuse both. Detail: D125's CASEFOLD1b note; commit 8ed87a55.
+
+
+## CASEFOLD1c — harnesses.json's workspace maps are read without case (2026-10-07, D125)
+
+> - [ ] **CASEFOLD1c — harnesses.json's workspace maps are read without case** (cli). The CLI reads `workspaces` and `workspaceRotation` by exact key where the driver's dictionaries ignore case: `placesOf` misses a list kept under `work` when the default is under `Work`, and `resolveRotation` finds no order for `WORK`. Contract: D125 §3.1 and its CASEFOLD1 note. Proof: case rows in `ORDER_ROWS`/`PLACE_ROWS` and the driver's theories.
+
+**Outcome** 2026-10-07: `harnesses.json`'s four workspace maps are found, edited and read once in any case through `casefold.ts`'s `byName` (each name once, spelled as first written, holding the last value, as a .NET dictionary set twice keeps) and `atName`; reads merge a workspace written twice in different cases, lookups and edits go under the existing spelling. The driver's rows are owed (CASEFOLD1e). Agent keys inside the file are still read by exact key. CLI 1345 → 1349. Detail: D125's CASEFOLD1c note; commit d9025a9b.
+
+
+## CASEFOLD1d — the driver holds the owed name-case rows (2026-10-07, D125)
+
+> - [ ] **CASEFOLD1d — the driver holds the owed name-case rows** (driver, tools). Append CASEFOLD1's straße, dotless-I and dotted-I rows to the driver's twin theories (cooling, windows, rotation, account join and names, released, standing, session language, paused work, line registration), add tests for strikes, permissions, remotes, plugins and `driver.json`, and a `NameCaseTests` over `name-case.json` (then the lane table sends it to the driver); empty the CLI's `DRIVER_OWES`. Contract: D125's CASEFOLD1 note lists each row. Proof: the CLI twin tests hold every row with nothing owed.
+
+**Outcome** 2026-10-07: every owed straße and I row is in its driver theory, held in place by the CLI's `heldSoFar`; strikes, permission scopes, remotes, plugins and `driver.json` have driver tests; `NameCaseTests` holds `OrdinalIgnoreCase` equality, hashes and order to `name-case.json` (the lane table sends it to the driver gate, afb22b10). Every row passed the driver unchanged: its comparisons already match the CLI's measured fold. The CLI's `DRIVER_OWES` sets are now stale (CASEFOLD1f). Driver fast +36. Detail: D125's CASEFOLD1d note; commit 032a92f3.
+
+
+## CARRY2b — the planner reads whose a take is (2026-10-07, D80)
+
+> - [ ] **CARRY2b — the planner reads whose a take is** (driver). Since CARRY2 the ledger refuses a carry-on over another machine's take, but `Planner.cs:576` still plans one for any failed last run, so every look asks and is refused (no strike, a repeated line). Read the claim and `took` as `WorkAbandoning.QuestAct` does (`WorkAbandoning.cs:705`) and give such a quest a sitting verdict with the ledger's sentence. Contract: D80's CARRY2 note. Proof: a `PlannerTests` row.
+
+**Outcome** 2026-10-07: a look asks `/api/quests/{id}/claim` only for taken quests whose last run here would be carried on (`Planner.CarriesOn`, one rule for the asking and the branch), reads `took` and the newest teammate record from the records the strikes come from, and gives a take that is not this machine's the new `StartVerdict.TakenElsewhere` with the ledger's sentence, before holds or strikes and taking no slot. An unmarked take made while the session ran is still carried on. The page shows the driver's English for it in both languages (CARRY2c). Driver fast +10. Detail: D80's CARRY2b note; commit 3b68ae36.

@@ -762,6 +762,10 @@ export function App() {
     onAddOpened: () => setAddRequested(false),
     importRequested,
     onImportOpened: () => setImportRequested(false),
+    // A workspace's clear names what it keeps, each with the page that frees it (HIST1e, D153 §5).
+    onOpenQuest: openQuest,
+    onOpenAsk: openAsk,
+    onAttend: attached ? openInWork : undefined,
   });
   // Knowledge (UX6i, D150 §2.2): Search and Convergence (FRAME1f, D118 §2) as one place, held on every view as Quests is
   // and asking the service nothing until in front. Each mode's list memory is its chosen item and its one filter, *local

@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { sentence } from '../format';
 import { useSyncStanding } from '../queries';
 import type { LandingRule } from '../settings/Landings';
 import { namer } from '../settings/namer';
 import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
-  stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, usePlugins, useRemotes, useRuleAction, useRules,
+  stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, useHistoryPlan, usePlugins, useRemotes, useRuleAction, useRules,
   useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetReadAcross, useStarts, useSweep, useSweepPlan,
   useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
 } from '../shell';
 import { byTool } from '../tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
+import type { KeptDoors } from '../work/ClearAsk';
+import { useHistoryActs } from '../work/historyActs';
+import { KeptHistory } from './KeptHistory';
 import type { WorkspaceSection, WorkspaceTab } from './tabs';
 import { accountsHere, hostOf } from './workspace';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
@@ -42,9 +46,14 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  *
  * **A browser is handed what it may know** (D47 §4): its repositories, and whether it syncs, read from this machine's own
  * host without a host's name (D48 §5). No tab, no branch, no setting and no account.
+ *
+ * **Its Details reads what this machine keeps of its finished work, and clears it** (HIST1e, D153 §6.1): the reading, and
+ * *Clear history…* while anything may go, `daoris-driver history clear --workspace`'s screen twin (D50). A kept unit's door
+ * opens its Branches, *Sync now*, or the quest's, the ask's or the session's page where the application hands those doors.
  */
 export function WorkspaceView({
   workspace, repositories, attached, tab, onTab, asked = null, notify, onOpenRepository, onOpenAgent, onSyncNow, syncing = false,
+  onOpenQuest, onOpenAsk, onAttend,
 }: {
   workspace: string;
   /** Its repositories in the list's registry, by name. */
@@ -62,6 +71,10 @@ export function WorkspaceView({
   /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
+  /** Open a quest's page, an ask's, or a session in Sessions: the doors that free a unit its clear keeps (HIST1e). */
+  onOpenQuest?: (id: string) => void;
+  onOpenAsk?: (id: string) => void;
+  onAttend?: (session: string) => void;
 }) {
   const remotes = useRemotes();
   // Where it syncs, for a browser, from this machine's own host: wired or not, never where (D48 §5).
@@ -78,6 +91,7 @@ export function WorkspaceView({
     setWiring(false);
     onTab(next);
   };
+  const onSync = attached && wired && onSyncNow ? () => onSyncNow(workspace) : undefined;
 
   const body = !attached
     ? <WorkspaceDetails repositories={repositories} onOpen={onOpenRepository} />
@@ -92,6 +106,7 @@ export function WorkspaceView({
             notify={notify}
             onOpenRepository={onOpenRepository}
             onOpenAgent={onOpenAgent}
+            doors={{ branches: () => chooseTab('branches'), sync: onSync, quest: onOpenQuest, ask: onOpenAsk, session: onAttend }}
           />
         );
 
@@ -103,7 +118,7 @@ export function WorkspaceView({
       tab={attached ? tab : undefined}
       onTab={attached ? chooseTab : undefined}
       syncing={syncing}
-      onSync={attached && wired && onSyncNow ? () => onSyncNow(workspace) : undefined}
+      onSync={onSync}
       onWire={attached && map && !wired ? () => { setWiring(true); onTab('setup'); } : undefined}
     >
       {body}
@@ -111,31 +126,51 @@ export function WorkspaceView({
   );
 }
 
-/** Details: its repositories, what a start in it runs on (MAP1b), and the accounts its work may run on (D130 §3.2). */
-function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpenAgent }: {
+/**
+ * Details: its repositories, what a start in it runs on (MAP1b), the accounts its work may run on (D130 §3.2), and what this
+ * machine keeps of its finished work with its clear (HIST1e, D153 §6.1), read only while Details shows, since the reading
+ * walks the home's files.
+ */
+function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpenAgent, doors }: {
   workspace: string;
   repositories: string[];
   notify: Notify;
   onOpenRepository: (repository: string) => void;
   onOpenAgent?: (agent: string) => void;
+  /** The doors that free a unit the clear keeps. */
+  doors: KeptDoors;
 }) {
   const { t } = useTranslation();
   const roster = useHarnesses();
   const accounts = useAccounts();
   const answer = useStarts([workspace]);
+  const history = useHistoryPlan({ scope: 'workspace', id: workspace });
+  const historyActs = useHistoryActs({ notify });
   useErrorNotify(answer.error, notify);
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   const nameOf = namer(t, harnesses);
   // An older shell has never heard of the question: the section is absent rather than the page blank.
   const starts = Array.isArray(answer.data?.starts) ? mine(answer.data.starts, workspace) : null;
   return (
-    <WorkspaceDetails
-      repositories={repositories}
-      onOpen={onOpenRepository}
-      starts={starts && { list: starts, nameOf }}
-      accounts={roster.data ? accountsHere(byTool(harnesses), accounts.data, workspace, nameOf) : null}
-      onOpenAgent={onOpenAgent}
-    />
+    <>
+      <WorkspaceDetails
+        repositories={repositories}
+        onOpen={onOpenRepository}
+        starts={starts && { list: starts, nameOf }}
+        accounts={roster.data ? accountsHere(byTool(harnesses), accounts.data, workspace, nameOf) : null}
+        onOpenAgent={onOpenAgent}
+      />
+      <KeptHistory
+        workspace={workspace}
+        plan={history.plan}
+        reading={history.loading}
+        // The reading is always said (§6.1), so a refusal is said in its place rather than in a toast.
+        refusal={history.error ? sentence(history.error) : null}
+        busy={historyActs.busy}
+        doors={doors}
+        onClear={(units, done) => historyActs.clear({ scope: 'workspace', id: workspace }, units, () => done())}
+      />
+    </>
   );
 }
 

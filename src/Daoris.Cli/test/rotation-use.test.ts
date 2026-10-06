@@ -8,7 +8,7 @@ import { USE_DEFAULTS, USE_MODES, resolveScope, scopeProblem, withRotation, with
 import type { RotationUse, UseChange } from '../src/rotation.ts';
 import { COOLING_FILE } from '../src/cooling.ts';
 import { WINDOWS_FILE } from '../src/windows.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -103,6 +103,7 @@ const SCOPE_ROWS: [name: string, file: string, agent: string, workspace: Cell, f
   ['a workspace\'s list for another agent is not this one\'s', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"codex":["account-9"]}},"workspaceRotationUse":{"work":{"codex":{"early":false}}}}', 'claude-code', 'work', 'machine', '["account-1"]', 'account-1', 'none'],
   ['one account in a list: every setting as written, nothing counted', '{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"order","early":false}}}', 'claude-code', null, 'machine', '["account-1"]', 'account-1', 'order early=off'],
   ['a file that does not read is none', 'not json', 'claude-code', null, 'machine', null, null, 'none'],
+  ['a workspace is read in any case: its default, its list and its settings', '{"workspaces":{"Work":{"claude-code":"account-3"}},"workspaceRotation":{"work":{"claude-code":["account-2","account-3"]}},"workspaceRotationUse":{"WORK":{"claude-code":{"early":false}}}}', 'claude-code', 'wORK', 'workspace', '["account-2","account-3"]', 'account-3', 'early=off'],
 ];
 
 test('a scope is read as the driver reads it: its list, where it begins, and its settings only with that list', () => {
@@ -137,6 +138,7 @@ const EDIT_ROWS: [why: string, before: string, agent: string, change: string, wo
   ['a value this build does not know is replaced when that setting is set', '{"rotationUse":{"claude-code":{"use":"pace"}}}', 'claude-code', '{"use":"order"}', null, '{"rotationUse":{"claude-code":{"use":"order"}}}'],
   ['the retired prefer and parallel go with any edit', '{"rotationUse":{"claude-code":{"prefer":"left","parallel":true,"near":85}}}', 'claude-code', '{"use":"order"}', null, '{"rotationUse":{"claude-code":{"use":"order","near":85}}}'],
   ['no change changes nothing', '{"rotationUse":{"claude-code":{"near":85}}}', 'claude-code', '{}', null, '{"rotationUse":{"claude-code":{"near":85}}}'],
+  ['a workspace\'s settings set in another case change the ones there, as first written', '{"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}', 'claude-code', '{"early":false}', 'WORK', '{"workspaceRotationUse":{"work":{"claude-code":{"use":"order","early":false}}}}'],
 ];
 
 test('settings are set and cleared as the driver writes them (the twin\'s table)', () => {
@@ -155,7 +157,17 @@ const ORDER_ROWS: [why: string, before: string, agent: string, order: Cell, work
   ['a workspace\'s list cleared takes its settings with it, the machine\'s kept', '{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"order"}},"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"early":false}}}}', 'claude-code', null, 'work', '{"rotationUse":{"claude-code":{"use":"order"}}}'],
   ['a list replaced keeps its settings', '{"rotation":{"claude-code":["account-1","account-2"]},"rotationUse":{"claude-code":{"use":"order","keep":"account-2"}}}', 'claude-code', '["account-2","account-1"]', null, '{"rotationUse":{"claude-code":{"use":"order","keep":"account-2"}}}'],
   ['a list of nobody is a clear, and its settings go', '{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"early":false}}}', 'claude-code', '[]', null, '{}'],
+  ['a workspace\'s list cleared in another case takes its settings with it', '{"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"early":false}}}}', 'claude-code', null, 'WORK', '{}'],
 ];
+
+/**
+ * CASEFOLD1c's rows, which `RotationUseTwinTests` does not hold yet: a workspace is found and edited in any case, as the
+ * driver's dictionaries (`OrdinalIgnoreCase`) find one, under the spelling first written. The twin check below holds each
+ * the driver adds, cell for cell and in place.
+ */
+const SCOPES_OWED = new Set(['a workspace is read in any case: its default, its list and its settings']);
+const EDITS_OWED = new Set(['a workspace\'s settings set in another case change the ones there, as first written']);
+const ORDERS_OWED = new Set(['a workspace\'s list cleared in another case takes its settings with it']);
 
 test('a list\'s settings go with it, as the driver writes them', () => {
   const fx = makeFixture('rotation-use-order');
@@ -533,8 +545,11 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'RotationUseTwinTests');
 
-  assert.deepEqual(rows('A_scope_is_read_as_the_cli_reads_it'), SCOPE_ROWS);
-  assert.deepEqual(rows('Settings_are_set_and_cleared_as_the_cli_writes_them'), EDIT_ROWS);
-  assert.deepEqual(rows('A_lists_settings_go_with_it_as_the_cli_writes_them'), ORDER_ROWS);
+  const scopes = rows('A_scope_is_read_as_the_cli_reads_it');
+  const edits = rows('Settings_are_set_and_cleared_as_the_cli_writes_them');
+  const orders = rows('A_lists_settings_go_with_it_as_the_cli_writes_them');
+  assert.deepEqual(scopes, heldSoFar(scopes, SCOPE_ROWS, SCOPES_OWED));
+  assert.deepEqual(edits, heldSoFar(edits, EDIT_ROWS, EDITS_OWED));
+  assert.deepEqual(orders, heldSoFar(orders, ORDER_ROWS, ORDERS_OWED));
   assert.deepEqual(rows('A_scope_is_refused_as_the_cli_refuses_it'), PROBLEM_ROWS);
 });
