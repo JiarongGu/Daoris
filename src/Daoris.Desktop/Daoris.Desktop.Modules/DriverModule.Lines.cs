@@ -140,16 +140,10 @@ public sealed partial class DriverModule
         var (repositories, inUse) = await CheckoutsAndSessionsAsync(null, cancellationToken);
         var trees = new SessionTrees(_loop.Home);
 
-        object Row(SweepItem item) => new
-        {
-            item.Repository, item.Workspace, item.Branch, HasTree = item.Tree is not null,
-            item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
-        };
-
         if (request.Type == "SWEEP_PLAN")
         {
             var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
-            return new { Branches = plan.Sessions.Select(Row).ToArray(), Landed = plan.Landed.Select(LandedRow).ToArray() };
+            return new { Branches = plan.Sessions.Select(SweepRow).ToArray(), Landed = plan.Landed.Select(LandedRow).ToArray() };
         }
 
         HashSet<string>? only = null;
@@ -162,7 +156,7 @@ public sealed partial class DriverModule
         _loop.Nudge();
         return new
         {
-            Results = done.Sessions.Select(result => new { Branch = Row(result.Item), result.Removed, result.Message }).ToArray(),
+            Results = done.Sessions.Select(result => new { Branch = SweepRow(result.Item), result.Removed, result.Message }).ToArray(),
             Landed = done.Landed.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
             // The empty folders trees left where something held them open, each removed or still held (WSR6's first run).
             Folders = done.Folders ?? [],
@@ -257,6 +251,19 @@ public sealed partial class DriverModule
         request.Payload is { } payload && payload.TryGetProperty(field, out var names) && names.ValueKind == JsonValueKind.Array
             ? names.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal)
             : new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// A session branch's row: what the proof found (D88), and whether its discard is offered beside it (LAND3b), by the
+    /// driver's own rule, so the page offers it beside the rows `daoris-driver trees clean` prints its line beside: a
+    /// failed or superseded attempt's commits, which no clean-up takes. The tree's path stays here; the page is told only
+    /// whether there is one.
+    /// </summary>
+    public static object SweepRow(SweepItem item) => new
+    {
+        item.Repository, item.Workspace, item.Branch, HasTree = item.Tree is not null,
+        item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
+        Discardable = SessionTrees.RemovalOffered(item) is not null,
+    };
 
     /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do (WSR5).</summary>
     private static object LandedRow(LandedItem item) => new

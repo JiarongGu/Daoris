@@ -137,6 +137,32 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LAND3b (D102's LAND3 note): a clean-up row says whether its discard is offered beside it, by the driver's own rule
+    /// (<see cref="SessionTrees.RemovalOffered"/>, the line `trees clean` prints beside such a row), so the page and the
+    /// terminal offer it beside the same rows: a failed or superseded attempt's commits, which no clean-up takes.
+    /// </summary>
+    [Fact]
+    public void A_clean_up_row_says_whether_its_discard_is_offered_beside_it_as_the_terminal_s_list_does()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        SweepItem[] items =
+        [
+            new("engine", "aurora", "daoris/s-1a2b3c4d", null, SweepKind.Unlanded, 2, null, "a1b2c3d the work"),
+            new("engine", "aurora", "daoris/s-2b3c4d5e", "tree", SweepKind.Unlanded, 1, null, "e4f5a6b more work"),
+            new("engine", "aurora", "daoris/s-3c4d5e6f", null, SweepKind.Unlanded, 0, null, "git could not tell"),
+            new("engine", "aurora", "daoris/s-4d5e6f7a", null, SweepKind.Empty, 0, "main", null),
+            new("engine", "aurora", "daoris/s-5e6f7a8b", null, SweepKind.Landed, 3, "feature/x", null),
+            new("engine", "aurora", "daoris/s-6f7a8b9c", "tree", SweepKind.Dirty, 0, null, "2 path(s)"),
+            new("engine", "aurora", "daoris/s-7a8b9c0d", "tree", SweepKind.InUse, 0, null, null),
+        ];
+
+        var offered = items.Select(item => JsonSerializer.SerializeToElement(DriverModule.SweepRow(item), camel).GetProperty("discardable").GetBoolean()).ToArray();
+
+        Assert.Equal([true, true, false, false, false, false, false], offered);
+        Assert.Equal(items.Select(item => SessionTrees.RemovalOffered(item) is not null), offered);
+    }
+
+    /// <summary>
     /// Bringing repositories up to date (WSR6) reads the registry's checkouts and the sessions in use, as the clean-up
     /// does, so before the driver is up both its list and its press are the cold-start sentence — and nothing is fetched.
     /// </summary>
