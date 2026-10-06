@@ -60,6 +60,24 @@ lock whose semantics took four corrections to get right (D19); a second implemen
 second answer to a question that already has one, committed by the tool that exists to remove exactly
 that. The two artefacts meet at a process boundary and an integer.
 
+### `docs` during a merge
+
+`docs` dates each side by the last commit that touched it, never by file times. 🔴 **With a merge open**
+(a `MERGE_HEAD` in the git folder, as `git merge --no-commit` or a stopped merge leaves it), that is the
+commit the merge would make (GATE1b): the checkout as `git add -A` would stage it, on HEAD and each
+`MERGE_HEAD`, built on a copy of the index and named by no ref. A path the merge takes from one side keeps
+that side's date, a path the merge itself changes is dated the day the gate runs, and the verdict ends
+*judged as the open merge would commit it*. A merge with unmerged paths has no commit yet, and fails the
+gate naming them. Nothing about the merge is written: not the index, not HEAD, not `MERGE_HEAD`. Outside a
+merge it runs the same `git log` it always ran.
+
+The reason is any tool that gates a merge before committing it, as this repository's merge tool does.
+Dated from HEAD, which is still the branch being merged into, neither side had moved: a README the merge
+left behind passed, and failed `verify` once committed (`docs/FIX-LOG.md`, GATE1). This repository's
+`tools/as-merged.mjs` builds the same commit for any command that reads history from HEAD; the docs gate
+no longer needs it, and run through it sees no merge and HEAD already the commit, so the verdict is the
+same.
+
 ### What the sensitive scan carries over
 
 It is canonized from the one copy that had been through a real incident — a leak that reached history

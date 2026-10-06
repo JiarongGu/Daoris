@@ -12,6 +12,11 @@
  * (`docs/FIX-LOG.md`, GATE1). The other docs checks (the budgets, shapes and duplicates, the orientation index, and the
  * devkit's other gates) read files or the index, and already saw the merge.
  *
+ * Since GATE1b the devkit's docs gate builds this same commit itself when a merge is open (`DocsGate.cs`), so it no
+ * longer needs this tool. The gates still run it through this one, where it is handed a git folder with no merge open
+ * and HEAD already the merge, and reaches the same verdict. This tool stays for any other command that reads history
+ * from HEAD.
+ *
  * ## What it does
  *
  * Outside a merge it runs the command as it is: the same environment, its own exit, nothing said.

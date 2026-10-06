@@ -28,7 +28,8 @@ with the version and date at release.
 - `daoris agent list` and a terminal sign-in keep what they learn about an account's sign-in, so the
   window and the driver loop see it too.
 - Development checks of documentation dates judge the commit an open merge would make, so a merge
-  that changes source without its document is refused before it is committed.
+  that changes source without its document is refused before it is committed; the devkit's own docs
+  gate does this too, for any repository that gates a merge before committing it.
 - An account refused for its sign-in after Daoris last read it signed in is asked once more before it
   is passed over, so signing in again is noticed at the next start. `daoris-driver --once` and
   `--until-idle` print each report as it is made and wait for their sessions before exiting.

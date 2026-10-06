@@ -17,7 +17,12 @@ public static class Process
     /// pipe it is not being read from blocks forever, and the program most likely to do that is a build
     /// producing thousands of warning lines on stderr — which is exactly what a gate runs.
     /// </remarks>
-    public static ProcessOutput Run(string file, IReadOnlyList<string> arguments, string workingDirectory)
+    /// <param name="environment">Variables set for this child alone, over the devkit's own.</param>
+    public static ProcessOutput Run(
+        string file,
+        IReadOnlyList<string> arguments,
+        string workingDirectory,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         (file, arguments) = Resolve(file, arguments);
         var start = new ProcessStartInfo
@@ -31,6 +36,7 @@ public static class Process
             UseShellExecute = false,
         };
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
+        foreach (var (name, value) in environment ?? new Dictionary<string, string>()) start.Environment[name] = value;
 
         using var process = System.Diagnostics.Process.Start(start)
             ?? throw new DevkitException($"could not start '{file}'");

@@ -18,12 +18,13 @@ export function readText(file: string): string {
 /**
  * Write beside the target, then rename — a crash never leaves a half-written
  * rule on disk. Node writes UTF-8 without a BOM, and the text is already LF.
+ * The rename waits while something holds the file it replaces (FLAKE1, 2026-10-07).
  */
 export function writeTextAtomic(file: string, text: string): void {
   mkdirSync(dirname(file), { recursive: true });
   const tmp = `${file}.daoris-tmp`;
   writeFileSync(tmp, text, 'utf8');
-  renameSync(tmp, file);
+  renameHeld(tmp, file);
 }
 
 /**
@@ -83,7 +84,7 @@ export function writeBytesAtomic(file: string, bytes: Buffer): void {
   mkdirSync(dirname(file), { recursive: true });
   const tmp = `${file}.daoris-tmp`;
   writeFileSync(tmp, bytes);
-  renameSync(tmp, file);
+  renameHeld(tmp, file);
 }
 
 /** The refusals that mean something still holds a file in the way, and give way once it lets go. */

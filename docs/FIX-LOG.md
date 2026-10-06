@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a story's language remembered for the page
+
+### Web: after a 中文 story, every later story came up in 中文 (STORY2)
+- **Symptom:** found by TRACE1b on its stories: once a 中文 story had been shown, the next story loaded in that browser profile, an English one too, came up in 中文.
+- **Root cause:** nine story modules made their 中文 reader at module scope with `i18n.cloneInstance({ lng: 'zh' })`, a habit since LANG1b (`d18c7619`). An i18next clone shares the page's services, its language detector among them, and the clone's own start runs `changeLanguage`, which hands the language to the detector's cache: `zh` under `daoris.language`, the key the page reads at its next load. Storybook imports a story's module to show any story in it, so opening an English story in such a file was enough. The menu bar's stories cloned at render in either language, so they also overwrote a 中文 choice with English.
+- **Fix:** `src/Daoris.Web/src/storyLanguage.tsx`: `readerIn(language)` builds a reader with `i18n.createInstance` from the page's options. It has no detector, so it has nothing to remember with. `chinese` is the one 中文 decorator the stories share. The page's own switch still remembers.
+- **Verify:** `storyLanguage.test.tsx`: a 中文 story's module, imported and rendered with `daoris.language` set, leaves it as found (failed first: `zh`); every story module imported leaves it absent (failed: `zh`); no story calls `cloneInstance` (failed: ten files); the page's switch still remembers. `stories.test.tsx` clears the key before each story and fails one that writes it (the menu bar's nineteen failed first). Commit `8d537188`. Not run: the stories in a browser, which the parent shoots.
+
 ## 2026-10-07 — the driver's commands and a timeout read as a close
 
 ### Driver: a command the driver named broke when pasted, and its join refusal left the CLI's (ACCTQUOTE1b)
@@ -31,9 +39,9 @@ repository.
 ### Gates: a merge passed the docs gate, then failed it once committed (TOOL4e)
 - **Symptom:** the 2026-10-02 merge of TOOL4e and SESSUX1a (`435cfef3`) passed every gate the merge tool ran, then `verify` failed on main: the devkit's docs gate found the root README, last committed 2026-10-01 (`f60afc69`), a day behind `src/Daoris.Cli/src`, which TOOL4e changed on 2026-10-02 (`0a861ef0`). Main stayed red until the next merge (`cf76bc7f`) edited the README; its message says every gate passed but the docs-date check.
 - **Root cause:** the merge tool merges `--no-ff --no-commit` and gates before the commit exists, and `DocsGate.cs` dates each side by `git log -1 --format=%aI -- <path>` from HEAD. During the merge HEAD was still main, where the README and the CLI's source had both last changed on 2026-10-01; the branch's commits were reachable only from MERGE_HEAD. The other docs checks (budgets, shapes, duplicates, the orientation index, the devkit's other gates) read files or the index, and saw the merge. No one change introduced it: the merge tool has gated before committing since MOD9.
-- **Fix:** `tools/as-merged.mjs` runs a command with git's HEAD as the commit an open merge would make: the tree `git add -A` would stage, on HEAD and MERGE_HEAD, behind a git folder holding only HEAD, an index copy and `commondir`. Outside a merge it runs the command unchanged. The `universal` gate and `verify`'s devkit step run through it, and `gateKind` orders a wrapped command as what it wraps. The devkit is unchanged.
-- **Verify:** `node --test tools/as-merged.test.mjs` (8), in scratch repositories of TOOL4e's shape: the gate's rule alone, the devkit's own docs gate and the merge tool's run each fail the open merge through it and pass it bare, all seen passing with the old pass-through first; a README fixed in the merge passes; outside a merge the command's output and exit are its own. `npm run verify` passes.
-- **Commit:** `bc373b74`.
+- **Fix:** `tools/as-merged.mjs` runs a command with git's HEAD as the commit an open merge would make: the tree `git add -A` would stage, on HEAD and MERGE_HEAD, behind a git folder holding only HEAD, an index copy and `commondir`. Outside a merge it runs the command unchanged. The `universal` gate and `verify`'s devkit step run through it, and `gateKind` orders a wrapped command as what it wraps. The devkit's own half is GATE1b: the docs gate builds the same commit when a `MERGE_HEAD` exists (D26's GATE1b note).
+- **Verify:** `node --test tools/as-merged.test.mjs` (8), in scratch repositories of TOOL4e's shape: the gate's rule alone, the devkit's own docs gate and the merge tool's run each fail the open merge through it and pass it bare, all seen passing with the old pass-through first; a README fixed in the merge passes; outside a merge the command's output and exit are its own. `npm run verify` passes. GATE1b: `DocsGateMergeTests` (5), three seen failing first; the devkit case in `as-merged.test.mjs` now fails the merge bare too.
+- **Commit:** `bc373b74`; GATE1b `c3da356e`.
 
 ## 2026-10-07 — account edits and hints
 
@@ -128,6 +136,11 @@ twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It hand
 first an injected refusal, so the second, a real move of files just unpacked, had no retry left when the scanner held
 them: the very condition the code under test survives. The stub's real move now waits as `renameHeld` does; only the
 injected refusal is counted.
+
+*And in the CLI's own writer:* `sync.test.ts:221` met EPERM renaming `.claude/INDEX.md.daoris-tmp` over its target in
+GATE1b's verify. `writeTextAtomic` and `writeBytesAtomic` in `src/fsx.ts`, through which every CLI write goes, still
+renamed bare; a consumer's editor or scanner holding the file would refuse a real `sync` the same way. Both now rename
+through `renameHeld`, which `fsx.test.ts` holds.
 
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle

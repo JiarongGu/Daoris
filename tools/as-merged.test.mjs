@@ -264,7 +264,7 @@ test("this repository's gates that run the devkit's docs gate run it through thi
   });
 });
 
-test("the devkit's own docs gate, run through it, fails the merge TOOL4e made and passes it once the README is fixed", { timeout: 600_000 }, () => {
+test("the devkit's own docs gate fails the merge TOOL4e made, bare and through it, and passes it once the README is fixed", { timeout: 600_000 }, () => {
   const devkit = JSON.parse(readFileSync(join(root, 'daoris.gates.json'), 'utf8')).devkit;
   const declaration = {
     devkit,
@@ -275,16 +275,21 @@ test("the devkit's own docs gate, run through it, fails the merge TOOL4e made an
   const repo = mergeOpen('devkit', { files: { 'daoris.gates.json': `${JSON.stringify(declaration, null, 2)}\n` } });
   const verify = ['run', '--project', join(root, 'src', 'Daoris.Devkit', 'Daoris.Devkit.Cli'), '--', 'verify', '--universal-only', '--allow-builtins-only'];
 
+  // GATE1b: the devkit judges the open merge itself, and says so. Before it, this run passed on HEAD.
   const direct = run(repo, 'dotnet', verify);
-  assert.equal(direct.status, 0, `${direct.stdout}${direct.stderr}`);
-  assert.match(direct.stdout, /docs\s+1 document\(s\) keeping up/);
+  assert.equal(direct.status, 1, `${direct.stdout}${direct.stderr}`);
+  assert.match(direct.stdout, /README\.md last changed 2026-01-01, but src changed 2026-01-05/);
+  assert.match(direct.stdout, /judged as the open merge would commit it/);
 
+  // Through this tool the devkit is handed a git folder with no merge open, and HEAD already the merge: the same verdict.
   const judged = through(repo, 'dotnet', verify);
   assert.equal(judged.status, 1, `${judged.stdout}${judged.stderr}`);
   assert.match(judged.stdout, /README\.md last changed 2026-01-01, but src changed 2026-01-05/);
+  assert.doesNotMatch(judged.stdout, /open merge would commit it/);
 
   writeFileSync(join(repo, 'README.md'), '# Fixture\n\nWhat src does, both lines.\n');
-  const fixed = through(repo, 'dotnet', verify);
-  assert.equal(fixed.status, 0, `${fixed.stdout}${fixed.stderr}`);
-  assert.match(fixed.stdout, /docs\s+1 document\(s\) keeping up/);
+  for (const fixed of [run(repo, 'dotnet', verify), through(repo, 'dotnet', verify)]) {
+    assert.equal(fixed.status, 0, `${fixed.stdout}${fixed.stderr}`);
+    assert.match(fixed.stdout, /docs\s+1 document\(s\) keeping up/);
+  }
 });
