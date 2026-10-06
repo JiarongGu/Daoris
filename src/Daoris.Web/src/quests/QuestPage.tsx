@@ -10,7 +10,9 @@ import type { AccountNamer } from '../tools';
 import { type Consideration, sittingSentence, type TrustHold, waitsForAccount } from '../signals';
 import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
+import { ClearAsk } from '../work/ClearAsk';
 import { DetailsFold } from '../work/DetailsFold';
+import { clearOffered, type HistoryDoor, type HistoryTarget } from '../work/history';
 import { questFacts } from '../work/headFacts';
 import { HowItCameToBe, type TraceDoor } from '../work/HowItCameToBe';
 import { questName } from '../work/identity';
@@ -21,7 +23,9 @@ import { type MainNotice, PageHead, PageSection, ViewMain } from '../work/ViewMa
 import { AbandonAsk, AbandonedWork, PauseAsk } from '../work/WorkAsks';
 
 /** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
-type QuestAct = 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'accept' | 'resume' | 'retry' | 'trust' | 'session';
+type QuestAct =
+  | 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'clear' | 'clearFailed' | 'accept' | 'resume' | 'retry'
+  | 'trust' | 'session';
 
 /** Each act's name, the one its button says, and its glyph in a menu. */
 const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
@@ -31,6 +35,8 @@ const QUEST_ACT: Record<QuestAct, { label: string; icon?: IconName }> = {
   decline: { label: 'quests.detail.decline' },
   abandon: { label: 'quests.detail.abandon' },
   delete: { label: 'quests.detail.delete', icon: 'remove' },
+  clear: { label: 'quests.detail.clear' },
+  clearFailed: { label: 'quests.detail.clearFailed' },
   accept: { label: 'quests.requirements.accept', icon: 'check' },
   resume: { label: 'quests.detail.resume', icon: 'resume' },
   retry: { label: 'quests.detail.retry', icon: 'refresh' },
@@ -100,11 +106,16 @@ function Fact({ name, children }: { name: string; children: ReactNode }) {
  *   its check, met or departed with the reason and the words it relied on, after the body. A departure that holds the
  *   quest for their yes is what it waits on, so it moves above the body, as a conflict sits, with *Accept the departure*:
  *   one press, the service's accept door, and its header says *awaits your yes*.
+ * - **A closed quest's work is cleared from this machine here** (HIST1e, D153; the history-clearing design §6.1): *Clear
+ *   from this machine…* and *Clear failed sessions…* in its ⋯, each where its plan says something may go and absent where
+ *   it does not (a quest an ask asked is cleared on the ask's page), listing under the header first and clearing on the
+ *   second press exactly what it listed (§5). A browser has no driver, and offers neither.
  */
 export function QuestPage({
   quest, lanes, question, sitting, hold, chain = [], session,
   busy = false, retrying = false, trusting = false, granting = false, dismissing = false, accepting = false,
-  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, trace, nameOf,
+  onRespond, onDelete, onDismiss, onRetry, onTrusting, onGrant, onOpenQuest, onAttend, onOpenAsk, onAccept, work, history, trace,
+  nameOf,
 }: {
   /**
    * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster its organism holds: its session line, its chain
@@ -165,10 +176,16 @@ export function QuestPage({
   onAccept?: () => void;
   /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
+  /**
+   * Clearing its finished work from this machine (HIST1e, D153 §6.1): the plans of its work and of its failed sessions, and
+   * the second press. Absent in a browser, which has no driver and no home.
+   */
+  history?: HistoryDoor;
 }) {
   const { t } = useTranslation();
-  // One question asks under the header at a time: a decline's reason, a delete's sentence, a pause's, the abandon's list.
-  const [asking, setAsking] = useState<'decline' | 'delete' | 'pause' | 'abandon' | null>(null);
+  // One question asks under the header at a time: a decline's reason, a delete's sentence, a pause's, the abandon's list, a
+  // clear's list.
+  const [asking, setAsking] = useState<'decline' | 'delete' | 'pause' | 'abandon' | 'clear' | 'clearFailed' | null>(null);
   // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
   const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
@@ -182,7 +199,12 @@ export function QuestPage({
   const because = sitting?.verdict === 'Waiting' ? null : sitting ?? null;
   const target: WorkTarget = { scope: 'quest', id: quest.id };
   const offers = workOffers(work?.plan);
-  const waiting = busy || work?.busy === true;
+  const waiting = busy || work?.busy === true || history?.busy === true;
+  // Its clears, where it is closed and its plans say something may go (§6.1): absent, never disabled, anywhere else.
+  const closed = quest.status === 'Done' || quest.status === 'Declined';
+  const clearable = closed && clearOffered(history?.plan);
+  const failedClearable = closed && clearOffered(history?.failed);
+  const clearTarget = (scope: 'clear' | 'clearFailed'): HistoryTarget => ({ scope: scope === 'clear' ? 'quest' : 'failed', id: quest.id });
   const pauseLines = work?.plan ? pauseAsk(work.plan, { wired: work.wired }) : null;
   const abandoned = lastAbandon(work);
   // Whose pause holds it, from the tick's verdict: its own is resumed here, an ask's or another quest's on that page.
@@ -199,13 +221,18 @@ export function QuestPage({
 
   // The header's acts, in its order (D118 §3b), each where it applies. While one asks under the header, its first press
   // is not offered twice. One list for its buttons and the page's right-click (CTX1), so the two never disagree.
-  const headActs: QuestAct[] = !(moving || offers.abandon) ? [] : [
-    ...(quest.status === 'Open' ? ['take' as const] : []),
-    ...(moving ? ['done' as const] : []),
-    ...(offers.pause && moving && asking !== 'pause' ? ['pause' as const] : []),
-    ...(moving && !declining ? ['decline' as const] : []),
-    ...(offers.abandon && asking !== 'abandon' ? ['abandon' as const] : []),
-    ...(deletable && !deleting ? ['delete' as const] : []),
+  const headActs: QuestAct[] = [
+    ...(!(moving || offers.abandon) ? [] : [
+      ...(quest.status === 'Open' ? ['take' as const] : []),
+      ...(moving ? ['done' as const] : []),
+      ...(offers.pause && moving && asking !== 'pause' ? ['pause' as const] : []),
+      ...(moving && !declining ? ['decline' as const] : []),
+      ...(offers.abandon && asking !== 'abandon' ? ['abandon' as const] : []),
+      ...(deletable && !deleting ? ['delete' as const] : []),
+    ]),
+    // A closed quest's two clears (HIST1e), in its ⋯ (§6.1).
+    ...(clearable && asking !== 'clear' ? ['clear' as const] : []),
+    ...(failedClearable && asking !== 'clearFailed' ? ['clearFailed' as const] : []),
   ];
   // What its body offers (the sitting line's Resume, Try again and trust, its session's door), which the right-click
   // offers after the header's.
@@ -232,6 +259,8 @@ export function QuestPage({
       case 'decline': setAsking('decline'); return;
       case 'abandon': setListed(work!.plan); setAsking('abandon'); return;
       case 'delete': setAsking('delete'); return;
+      case 'clear': setAsking('clear'); return;
+      case 'clearFailed': setAsking('clearFailed'); return;
       case 'accept': onAccept?.(); return;
       case 'resume': work?.onResume(); return;
       case 'retry': onRetry?.(); return;
@@ -335,6 +364,23 @@ export function QuestPage({
           busy={waiting}
           onAbandon={(why) => work.onAbandon(why, listed.abandon.pieces, () => { setAsking(null); setListed(null); })}
           onCancel={() => { setAsking(null); setListed(null); }}
+        />
+      )}
+
+      {history && (asking === 'clear' || asking === 'clearFailed') && (asking === 'clear' ? history.plan : history.failed) && (
+        /* 🔴 A clear removes what this machine kept, which nothing gives back (D153): the first press lists what goes and
+           what stays, held from here, and the second sends exactly that (§5). */
+        <ClearAsk
+          key={asking}
+          className="mb-4"
+          target={clearTarget(asking)}
+          plan={(asking === 'clear' ? history.plan : history.failed)!}
+          meanIt={asking === 'clear'
+            ? t('quests.detail.clearMeanIt')
+            : (list) => t('quests.detail.clearFailedMeanIt', { count: list.sessions })}
+          busy={waiting}
+          onClear={(units) => history.onClear(clearTarget(asking), units, () => setAsking(null))}
+          onCancel={() => setAsking(null)}
         />
       )}
 

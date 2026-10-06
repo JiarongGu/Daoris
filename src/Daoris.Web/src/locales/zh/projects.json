@@ -189,5 +189,8 @@
   "projects.workspace.twin.rules": "`daoris agent rules allow|ask|deny|remove \"<rule>\" --workspace {{workspace}}`",
   "projects.workspace.summary.noLine": "各检出自己的主线",
   "projects.workspace.gone.headline": "此工作区已不在这里",
-  "projects.workspace.gone.body": "这里注册的仓库都已不在其中，或者本窗口没有显示它。请在列表中另选一个。"
+  "projects.workspace.gone.body": "这里注册的仓库都已不在其中，或者本窗口没有显示它。请在列表中另选一个。",
+  "projects.workspace.kept": "本机保留的记录",
+  "projects.workspace.clear": "清除记录…",
+  "projects.workspace.clearMeanIt": "清除 {{count}} 项"
 }

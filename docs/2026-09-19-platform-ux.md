@@ -315,7 +315,10 @@ controls are in the frame design's §3.
   **its head leads with its state** (UX7c, D152 §7): the pill, then its name (the short title, else the title, two lines at
   most, whole on *Show all*), then one line of facts, whom it asks, who asked, when, and the one live fact; the loud act is
   the quest's next step, *Take* while it is open, *Mark done* once it is taken (U31), then *Decline…*, which asks its reason
-  under the header, and ⋯ with the rest and its id. Its id, lanes and full times fold into *Details*; then the ask, its first
+  under the header, and ⋯ with the rest and its id. A closed quest's ⋯ adds *Clear from this machine…* and *Clear failed
+  sessions…*, and a done ask's header a ⋯ with its own, each only where its plan says something may go, listing what goes
+  and what stays under the header before its second press (HIST1e, D153); a workspace's Details ends in *Kept on this
+  machine*, the same clear for all its finished work. Its id, lanes and full times fold into *Details*; then the ask, its first
   line left out where it is the title the head said, and the note. The
   page stays on the quest as each act leaves it, and with nothing chosen the main area says how to
   choose and offers the `＋`'s two kinds. A row is for reading. What a quest carries (D65 §2) is **counted on its

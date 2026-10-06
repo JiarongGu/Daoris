@@ -21,7 +21,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 55 | 954 |
 | `src/Daoris.Web/src/App.test.tsx` | 47 | 914 |
-| `src/Daoris.Web/src/App.tsx` | 67 | 1238 |
+| `src/Daoris.Web/src/App.tsx` | 67 | 1242 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 63 | 1161 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 56 | 1100 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 832 |
@@ -40,7 +40,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AbandonTests.cs` | 43 | 786 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/AcpTests.cs` | 111 | 2065 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/HarnessTests.cs` | 48 | 1089 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 64 | 1068 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Help/HelpCoverageTests.cs` | 64 | 1070 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/IntakeTests.cs` | 46 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PlannerTests.cs` | 49 | 1025 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/PluginKitTests.cs` | 46 | 937 |
@@ -125,9 +125,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 45 | 113 |
-| `docs/2026-09-19-platform-ux.md` | 51 | 559 |
+| `docs/2026-09-19-platform-ux.md` | 52 | 562 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
-| `docs/2026-09-21-working-surface-components.md` | 50 | 345 |
+| `docs/2026-09-21-working-surface-components.md` | 51 | 348 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
 | `docs/2026-09-30-machine-log-design.md` | 40 | 427 |

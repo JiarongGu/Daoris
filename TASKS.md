@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,345 CLI, 1,307 service, 74 HTTP host, 5,190 driver (4,476 fast, 714 Process), 749 modules (631 fast, 118 Process), 85 devkit, 4,299 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `0a00cdb` and that tree is on the install (LAND3c's one Process case since awaits the next full set); earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,345 CLI, 1,307 service, 74 HTTP host, 5,190 driver (4,476 fast, 714 Process), 749 modules (631 fast, 118 Process), 85 devkit, 4,383 web unit and 24 Playwright; rehearsals: release 114, family 390, deployment 110. The full set (14 gates) passed `0a00cdb` and that tree is on the install (LAND3c's one Process case since awaits the next full set); earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -43,7 +43,6 @@ Today only an untaken open quest (D95) and a chat that served no quest (D126 §5
 
 Contract: `docs/2026-10-07-history-clearing-design.md` (D153), §9 rows/proofs. Order: a → b (service); c (driver, modules) after b; d and e after c; f after e and SESSUX1h; g after d; h last. HIST1a alone closes H1–H2, which D95's and D126's deletes reach today, so it goes first.
 
-- [ ] **HIST1e — clear on the screen** (web-shell; after c). The quest page's two clears, the ask page's, and the workspace page's *Kept on this machine* reading with *Clear history…*, each listed then pressed; names and the glossary's *clear*. Contract: §6.1, §8. Proof: stories, mocked-bridge vitest (the second press sends the list), parity, `names:check --strict`, bilingual look.
 - [ ] **HIST1f — Ask Daoris proposes a clear** (driver, service, web-shell; after e and SESSUX1h). A `clear` kind whose card is the first press and whose Apply sends what it listed; the room's doors and *The machine now*. Contract: §6.4. Proof: clear-proposal, kinds and coverage tests, the room's golden files, `ProposalCard.test.tsx`.
 - [ ] **HIST1h — installed clear** (parent; after a republish carrying a–f). Clear a workspace's finished history on the install. Contract: §12. Proof: a dated ledger of counts and bytes before and after, `history` matching the page, both themes and languages at 1280, 888 and 680 px.
 

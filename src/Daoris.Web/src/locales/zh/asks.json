@@ -54,6 +54,8 @@
   "asks.record.deleteTitle": "删除这个需求",
   "asks.record.deleteConfirm": "这会把这个需求从本机移除，它变成的每项委托也会一并删除。无法撤销。",
   "asks.record.deleteMeanIt": "确认删除需求",
+  "asks.record.clear": "从本机清除…",
+  "asks.record.clearMeanIt": "确认清除需求",
   "asks.tier.intake": "由受理会话读取后发布",
   "asks.tierShort.intake": "由受理会话",
   "asks.record.intake": "受理会话",

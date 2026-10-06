@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ASK_PLAN } from '../work/historyFixtures';
 import type { WorkDoor } from '../work/pausing';
 import {
   ABANDON_ANSWER, ABANDONED_ASK, ABANDONED_ENTRY, LISTED_ASK, LISTED_CONSIDERED, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK,
@@ -47,6 +48,16 @@ export const Named: Story = { args: { ask: NAMED } };
 export const RefusedReceiver: Story = { args: { ask: REFUSED } };
 /** Every quest it became has closed: done. */
 export const Done: Story = { args: { ask: DONE } };
+/**
+ * Done, and its plan says its work may go (HIST1e, D153 §6.1): *Clear from this machine…* in its header's ⋯, listing under
+ * the header on its first press (`Work/Clear`'s ask).
+ */
+export const DoneWithItsClear: Story = {
+  args: {
+    ask: DONE,
+    history: { plan: { ...ASK_PLAN, id: DONE.id, units: [{ ...ASK_PLAN.units[0]!, id: DONE.id, asks: [DONE.id] }] }, busy: false, onClear: nothing },
+  },
+};
 /** Nothing stands on its quests, so the service says it may go (D95): *Delete…* beside *Close ask*. */
 export const Deletable: Story = { args: { ask: { ...PUBLISHED, deletable: true } } };
 /** Closed with its reason: nothing more to do. */
