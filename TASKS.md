@@ -40,6 +40,16 @@ Contracts: `docs/2026-10-05-ux7-design.md` (D152) and `docs/2026-10-04-ux6-redes
 - [ ] **QUESTBACK1 — hand back a taken quest without a session** (service, driver, web-shell). Offer Hand back at both doors when no live session holds it, preserve its note and show who took it when. Contract: D32, D46 §3, D132. Proof: store transition, route and mocked-bridge press tests.
 - [ ] **LANDNAME1 — person names the landing branch** (driver, web-shell). Review Accept and `trees land --branch` take an entered name; the existing default derives from the short title. Contract: D145, D149, D126 SESSUX1j note. Proof: `LandingTests` and mocked-bridge field tests.
 
+## Clearing finished history
+
+Today only an untaken open quest (D95) and a chat that served no quest (D126 §5.4) can be deleted; archive only hides. Nothing clears a done or declined quest, its ask, the sessions that served it (failed attempts included) or what the home kept of them. On 2026-10-07 the owner's install held 35 closed quests, 76 such sessions and 24 MB of transcripts; it was purged by hand, with a backup under `local/backups/`.
+
+- [ ] **HIST1 — design clearing finished history** (design; D153 reserved). Decide what a person may clear on this machine (closed quests with their asks, sessions and files; failed sessions), what stays, how a wired workspace's remote copy and the strike count (D58, D80) are respected, the doors (D50) and the refusals. Contract: D95, D126 §5, D132, D68. Proof: design document and D153; its build rows replace HIST1a–d.
+- [ ] **HIST1a — service clears a closed quest's records** (service; after HIST1; provisional). Ledger removes a closed quest, its log and ask, and the sessions that served it, refusing open or remote-held work. Proof: ledger and route tests.
+- [ ] **HIST1b — driver removes what the home kept** (driver; after a; provisional). Transcripts, events, kept files, intake roots, proposals and landing records go with their records; trees and branches are never touched. Proof: driver tests over a scratch home.
+- [ ] **HIST1c — both doors and a size reading** (modules, web-shell, cli; after b; provisional). Listed first, then pressed, as D88; the terminal twin; what the home holds per workspace. Proof: vitest, stories, parity and bilingual look.
+- [ ] **HIST1d — installed clear** (parent; after c). Clear a closed workspace's history on the install. Proof: dated ledger of counts before and after.
+
 ## Consistent product screens
 
 Contracts: `docs/2026-10-01-plugins-screen-design.md` (D119) and `docs/2026-10-01-frame-model-design.md` (D118). Order: PLUGUI1c → f → g; FRAME1i → PLUGUI1h. Look on the install in both themes/languages.
