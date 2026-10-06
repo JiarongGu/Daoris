@@ -18,7 +18,7 @@ public sealed record TidiedBranch(string Branch, bool Removed, bool Tree, string
 public sealed partial class SessionTrees
 {
     /// <summary>The prefix every session branch Daoris makes carries (<see cref="OpenAsync"/>), and the only kind this removes.</summary>
-    private const string SessionPrefix = "daoris/";
+    internal const string SessionPrefix = "daoris/";
 
     /// <summary>
     /// The rest of a landing's tidy (LAND3, D102's note): every session branch recorded for the repository whose tip the
@@ -193,7 +193,8 @@ public sealed partial class SessionTrees
     /// <remarks>
     /// Unforced it is the clean-up's proof (D88): it goes only where a branch of the person's holds every commit, and the
     /// refusal names the commits it would lose. <paramref name="force"/> is the person saying it again, meaning it. The record
-    /// forgets it once it is gone.
+    /// forgets it once it is gone. <b>It asks no sessions</b>, so forced it would take a tree a live session holds: the
+    /// person's doors reach it through <see cref="SessionBranchDiscard"/>, which keeps such a branch (LAND3c).
     /// </remarks>
     public async Task<TreeRemoval> RemoveBranchAsync(string root, string repository, string branch, bool force = false, CancellationToken ct = default)
     {

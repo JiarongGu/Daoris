@@ -35,55 +35,15 @@ internal static class TreesConsole
     internal static bool LooksLikePath(string named) => SessionTrees.NamesAPath(named);
 
     /// <summary>
-    /// A session branch the person removes by its door (LAND3): named by the branch (<c>daoris/s-…</c> or <c>s-…</c>), found in
-    /// the record of where branches grew from, or by the session, whose record names its tree. Its tree goes with it while
-    /// it is here. The checkout is the registry's, so the service is asked.
+    /// A session branch the person removes by its door (LAND3): named by the branch (<c>daoris/s-…</c> or <c>s-…</c>) or by the
+    /// session, its tree with it while it is here. The driver's one discard, the call the screen's <c>DISCARD_SESSION_BRANCH</c>
+    /// ends in (LAND3c), so a branch a live session's tree holds is kept here as there. The service answers the sessions in use
+    /// and the registry's checkout.
     /// </summary>
     private static async Task<TreeRemoval> RemoveSessionBranchAsync(SessionTrees trees, string named, string? repository, bool force)
     {
         using var service = ServiceClient.FromEnvironment();
-        string? owner;
-        string branch;
-        if (named.StartsWith("daoris/", StringComparison.Ordinal) || named.StartsWith("s-", StringComparison.Ordinal))
-        {
-            var found = trees.FindBranches(named, repository);
-            var owners = found.Select(entry => entry.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-            if (owners.Count > 1)
-            {
-                return new(false, $"`{named}` names a session branch in {string.Join(", ", owners.Select(r => $"`{r}`"))} — say which with "
-                    + "`--repository <name>`.");
-            }
-
-            owner = owners.FirstOrDefault() ?? repository;
-            branch = found.FirstOrDefault()?.Branch ?? (named.StartsWith("daoris/", StringComparison.Ordinal) ? named : $"daoris/{named}");
-            if (owner is null)
-            {
-                return new(false, $"`{named}` names no session branch this machine recorded — say which repository holds it with "
-                    + "`--repository <name>`.");
-            }
-        }
-        else
-        {
-            var (tree, _) = await service.SessionGroundAsync(named).ConfigureAwait(false);
-            if (string.IsNullOrWhiteSpace(tree))
-            {
-                return new(false, $"session `{named}` names no working tree on this machine, so it left no session branch here.");
-            }
-
-            if (Directory.Exists(tree)) return await trees.RemoveAsync(tree, force).ConfigureAwait(false);
-            if (trees.BranchOfTree(tree) is not { } of)
-            {
-                return new(false, $"session `{named}`'s tree is not one this machine's trees home holds, so Daoris removes nothing for it.");
-            }
-
-            (owner, branch) = (of.Repository, of.Branch);
-        }
-
-        var root = (await service.RegistryAsync().ConfigureAwait(false))
-            .FirstOrDefault(row => string.Equals(row.Repository, owner, StringComparison.OrdinalIgnoreCase))?.Root;
-        return string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)
-            ? new(false, $"`{owner}` has no checkout here, so its branch `{branch}` cannot be removed from this machine.")
-            : await trees.RemoveBranchAsync(root, owner, branch, force).ConfigureAwait(false);
+        return await new SessionBranchDiscard(trees).DiscardNamedAsync(service, named, repository, force).ConfigureAwait(false);
     }
 
     /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
@@ -175,7 +135,8 @@ internal static class TreesConsole
 
             // A tree by its path, as it always was; or a session's branch by the session or the branch (LAND3): a failed or
             // superseded attempt's, which no landing's tidy and no clean-up takes since its commits are on no branch of the
-            // person's. Its tree goes with it where it is still here. --force means it.
+            // person's. Its tree goes with it where it is still here. --force means it, except over a tree a session still
+            // running or waiting holds, which the driver's one discard keeps for both doors (LAND3c).
             case ["remove", var named, ..]:
             {
                 var force = args.Contains("--force");
@@ -493,7 +454,8 @@ internal static class TreesConsole
                 Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
                 Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
                 Console.Error.WriteLine("  A session or its branch removes a failed or superseded attempt's branch,");
-                Console.Error.WriteLine("  with its tree where it is still here (LAND3).");
+                Console.Error.WriteLine("  with its tree where it is still here (LAND3); one whose tree a session");
+                Console.Error.WriteLine("  still running or waiting holds is kept, even with --force (LAND3c).");
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
                 Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88), and every");
                 Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");

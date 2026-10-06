@@ -119,6 +119,22 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// LAND3c: the terminal's `trees remove &lt;session|branch&gt;` is the driver's one discard, the call the screen's
+    /// <c>DISCARD_SESSION_BRANCH</c> ends in, so it keeps a branch a live session's tree holds as the screen does. The host
+    /// composes none of its pieces itself: no layout read, no removal by branch. <c>SessionBranchDiscardTests</c> holds the act.
+    /// </summary>
+    [Fact]
+    public void The_terminals_branch_removal_is_the_drivers_one_discard()
+    {
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+
+        Assert.Contains("new SessionBranchDiscard(trees).DiscardNamedAsync(service, named, repository, force)", program);
+        Assert.DoesNotContain("RemoveBranchAsync(", program);
+        Assert.DoesNotContain("BranchOfTree(", program);
+        Assert.DoesNotContain("FindBranches(", program);
+    }
+
+    /// <summary>
     /// PLUGDIST1a: a plugin package is installed from a terminal, a door the usage names, and the host asks for it
     /// before the `plugins` words the kit answers, which would otherwise take it.
     /// </summary>
