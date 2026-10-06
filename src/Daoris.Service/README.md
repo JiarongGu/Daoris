@@ -460,6 +460,17 @@ Choices worth knowing about:
   the frontmatter and with a heading's hashes, `**`, `__` and backticks dropped, so it reads as a
   sentence and never as the file's machinery. A lone `_` or `*` stays, since it may be part of an
   identifier. The frontmatter is still searched; only the window skips it.
+- **An identifier is found by its words, and a question asks its words joined too** (ORIENT1f). FTS5's
+  `unicode61` keeps `ProbeLock` as one token, so a question in plain words never reached the entry that named
+  it. Each index row spells an identifier's words beside it (`ProbeLock Probe Lock`, `probe_lock probelock`),
+  cut at underscores and where the case turns, never at a digit alone, so `TOOL6g` stays one word; the stored
+  body is unchanged and an excerpt reads as written. A question asks its words, then each two and three
+  adjacent words joined as an identifier spells them, a join counted once for each word it joins. So
+  `ProbeLock`, `probeLock`, `probe_lock` and *probe lock* each find the others, and the entry that names the
+  identifier outranks one that only says its words. An index written before is rebuilt when it opens (schema
+  4). Held by `TextTests`, `SearchTests`, `SqliteStoreTests` and `ProbeLockQuestionTests`, whose miniature of
+  this repository's records answers *what decided the probe lock* with the fix that names `ProbeLock`, where a
+  design section titled with *lock* and *decided* answered before.
 - **Search returns scored hits, not a list.** Scores are what let two searches be merged, so hybrid
   is a composition rather than a third implementation.
 - **Hybrid fuses on rank, not on score.** BM25 returns an unbounded figure and cosine similarity a

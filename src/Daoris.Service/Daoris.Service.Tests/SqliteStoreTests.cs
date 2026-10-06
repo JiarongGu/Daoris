@@ -204,6 +204,51 @@ public sealed class SqliteStoreTests : IAsyncLifetime
     {
         Assert.Null(SqliteKnowledgeSearch.BuildMatchExpression("a of to"));
         Assert.Null(SqliteKnowledgeSearch.BuildMatchExpression(""));
-        Assert.Equal("\"drift\" OR \"lock\"", SqliteKnowledgeSearch.BuildMatchExpression("drift lock"));
+        // The adjacent words joined as well, as an identifier spells them, and asked once for each word the
+        // join stands for: bm25 adds a phrase each time the expression names it (ORIENT1f).
+        Assert.Equal(
+            "\"drift\" OR \"lock\" OR \"driftlock\" OR \"driftlock\"",
+            SqliteKnowledgeSearch.BuildMatchExpression("drift lock"));
+    }
+
+    /// <summary>
+    /// An index written before ORIENT1f holds its identifiers as one token each, so a question in words would
+    /// still miss them there: opening it rebuilds it, as every schema bump does, rather than serving old rows.
+    /// </summary>
+    [Fact]
+    public async Task An_index_written_before_identifiers_were_spelled_is_rebuilt()
+    {
+        await _store.ReplaceRepositoryAsync("alpha", [Entry("alpha", "Named", "Held by `ProbeLock`.")]);
+        await _store.DisposeAsync();
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        await using (var older = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={_file}"))
+        {
+            await older.OpenAsync();
+            await using var command = older.CreateCommand();
+            command.CommandText = "PRAGMA user_version = 3;";
+            await command.ExecuteNonQueryAsync();
+        }
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+
+        _store = await SqliteKnowledgeStore.OpenAsync(_file);
+
+        Assert.True(_store.Rebuilt);
+        Assert.Empty(await _store.AllAsync());
+    }
+
+    /// <summary>
+    /// The FTS row is fed by <see cref="Text.Segment"/> (ORIENT1f): an identifier is indexed whole and by its
+    /// words, so the question in words finds it, and a body read back is still the body as written.
+    /// </summary>
+    [Fact]
+    public async Task An_identifier_in_a_row_is_found_by_its_words_and_read_back_as_written()
+    {
+        var entry = Entry("alpha", "The status question", "One question per account at a time (`ProbeLock`).");
+        await _store.ReplaceRepositoryAsync("alpha", [entry, Entry("alpha", "Unrelated", "The merge order of branches.")]);
+
+        var hit = Assert.Single(await new SqliteKnowledgeSearch(_store).SearchAsync(new KnowledgeQuery("probe lock")));
+
+        Assert.Equal(entry, hit.Entry);
+        Assert.Contains("ProbeLock", hit.Excerpt);
     }
 }

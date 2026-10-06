@@ -27,7 +27,9 @@ public sealed class SqliteKnowledgeStore : IKnowledgeStore, IAsyncDisposable
     /// <remarks>2 — entries carry their workspace (D48).</remarks>
     // 3: the FTS rows carry CJK text cut into bigrams (`Text.Segment`), so every existing index is
     //    rebuilt from the raw entries on open — the rows it held were never findable in 中文.
-    private const int SchemaVersion = 3;
+    // 4: the FTS rows carry each identifier's words beside it (`Text.Segment`, ORIENT1f): a row written
+    //    before holds `ProbeLock` as one token, which a question in words never finds.
+    private const int SchemaVersion = 4;
 
     private readonly SqliteConnection _connection;
 
