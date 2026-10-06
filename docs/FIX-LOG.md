@@ -12,6 +12,7 @@ repository.
 - **Root cause:** since DEV3, `RunOnceAsync` waits for its sessions in `SettleAsync`, whose passes beside them caught only the close. Anything else a pass threw left the run with its sessions working and the lines it had gathered, a lost-claim stop's included. The claim question's client timeout was such a throw (the stop caught only an unreachable host), and the host's catch read it as a close: *driver: stopped.*, exit 0. `--until-idle` printed nothing until the whole run returned, so a later failed look dropped every earlier look's lines.
 - **Fix:** the stop reads the client's timeout as no answer; a failed pass beside the sessions is a line and the next pass runs; both runs hand each report to `said` as it is made, and what ended before a failure or close lets go; the headless host prints from it.
 - **Verify:** four failing-first cases in `SessionsOutliveTheirLookTests` over the stand-in ledger, its claim door stalled past a 200 ms client timeout (the timeout escaped with the session working). Not run: the rehearsal, which never kept the failed run's transcript, so this is the cause the code admits. Note under D115.
+
 ## 2026-10-07 — account edits and hints
 
 ### Agents: a refused account edit lost what the person entered (ACCTEDIT1)
