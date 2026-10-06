@@ -3,11 +3,12 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import userEvent from '@testing-library/user-event';
 import { findingId } from './knowledge/records';
 import { code } from './test/code';
-import { chooseRow, listOf, mainArea, pageTitled, showConvergence } from './test/knowledgeViews';
+import { chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showConvergence, switchTo } from './test/knowledgeViews';
 
 // The view over a stubbed service, like SearchView's: the shapes the endpoint returns, no host. Since FRAME1f the view
 // is a list pane and a page (D118 §2): the similarity and the findings are the list, and the finding chosen is read in
-// the main area, the service's sentence and then each entry whole, where each entry was the reader drawer.
+// the main area, the service's sentence and then each entry whole, where each entry was the reader drawer. Since UX6i
+// (D150 §2.2) it is Knowledge's Convergence, held through the place.
 
 const GROUP = {
   method: 'Restatement', similarity: 0.91, repositories: ['engine', 'game'],
@@ -25,11 +26,12 @@ const BODIES: Record<string, string> = {
 const FILTERS = 'daoris.list.convergence.filters';
 const CHOSEN = 'daoris.list.convergence.chosen';
 
-/** The service: its findings at any similarity, and each entry by its id. */
+/** The service: its findings at any similarity, each entry by its id, and no hits, for Knowledge's other mode. */
 function service(groups: unknown[] = [GROUP]) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.startsWith('/api/convergence')) return Response.json(groups);
+    if (url.startsWith('/api/search')) return Response.json([]);
     if (url.startsWith('/api/entry')) {
       const id = decodeURIComponent(url.slice(url.indexOf('id=') + 3));
       const entry = GROUP.entries.find((candidate) => candidate.id === id);
@@ -41,7 +43,7 @@ function service(groups: unknown[] = [GROUP]) {
   });
 }
 
-const slider = () => within(listOf('Convergence')).getByRole('slider');
+const slider = () => within(knowledgeList()).getByRole('slider');
 
 describe('Convergence', () => {
   afterEach(() => {
@@ -59,7 +61,7 @@ describe('Convergence', () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => { answer = resolve; })));
     const { container } = showConvergence();
 
-    expect(await within(listOf('Convergence')).findByText('comparing…')).toBeInTheDocument();
+    expect(await within(knowledgeList()).findByText('comparing…')).toBeInTheDocument();
     expect(container.querySelectorAll('[aria-hidden="true"] > i').length).toBeGreaterThan(0);
 
     answer(Response.json([GROUP]));
@@ -75,7 +77,7 @@ describe('Convergence', () => {
   it("reads a finding in the main area: the service's sentence, then each entry whole", async () => {
     vi.stubGlobal('fetch', service());
     showConvergence();
-    const page = await chooseRow('Convergence', 'a');
+    const page = await chooseRow('a');
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(within(page).getByText(/A copy that has drifted/)).toBeInTheDocument();
@@ -93,7 +95,7 @@ describe('Convergence', () => {
     try {
       vi.stubGlobal('fetch', service());
       showConvergence();
-      const page = await chooseRow('Convergence', 'a');
+      const page = await chooseRow('a');
 
       expect(await within(page).findByText(/No longer in the index/)).toBeInTheDocument();
       expect(await within(page).findByText(/The engine says \*\*this\*\*/)).toBeInTheDocument();
@@ -108,7 +110,7 @@ describe('Convergence', () => {
     vi.stubGlobal('fetch', fetch);
     showConvergence();
     fireEvent.change(slider(), { target: { value: '0.66' } });
-    await chooseRow('Convergence', 'a');
+    await chooseRow('a');
 
     await vi.waitFor(() => expect(JSON.parse(window.localStorage.getItem(FILTERS) ?? '{}')).toEqual({ threshold: 0.66 }));
     expect(window.localStorage.getItem(CHOSEN)).toBe(findingId(GROUP));
@@ -147,6 +149,26 @@ describe('Convergence', () => {
     showConvergence();
     expect(within(mainArea()).getByText('Choose a finding')).toBeInTheDocument();
   });
+
+  /**
+   * UX6i (D150 §2.2): Convergence is Knowledge's other mode, its list the place's while Convergence is chosen at its head.
+   * The similarity and the finding chosen are Convergence's still when the person comes back from Search.
+   */
+  it('keeps its similarity and the finding chosen while Search is in front, and gives them back', async () => {
+    vi.stubGlobal('fetch', service());
+    showConvergence();
+    expect(within(modeChoice()).getByRole('radio', { name: 'Convergence' })).toHaveAttribute('aria-checked', 'true');
+    fireEvent.change(slider(), { target: { value: '0.66' } });
+    await chooseRow('a');
+
+    await switchTo('Search');
+    expect(within(knowledgeList()).queryByRole('slider')).toBeNull();
+    expect(within(mainArea()).getByText('Choose a result')).toBeInTheDocument();
+
+    await switchTo('Convergence');
+    expect(slider()).toHaveValue('0.66');
+    expect(await pageTitled('a')).toBeInTheDocument();
+  });
 });
 
 describe('Convergence, looked at on the window (POLISH4)', () => {
@@ -160,7 +182,7 @@ describe('Convergence, looked at on the window (POLISH4)', () => {
     vi.stubGlobal('fetch', service());
     showConvergence();
 
-    expect(within(listOf('Convergence')).getByText(/Without an embedding endpoint/)).toBeInTheDocument();
+    expect(within(knowledgeList()).getByText(/Without an embedding endpoint/)).toBeInTheDocument();
   });
 
   /** An empty answer was a bare line; an empty state names the fact and offers what changes it. */

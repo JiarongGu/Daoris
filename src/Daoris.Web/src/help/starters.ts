@@ -1,5 +1,6 @@
 import type { AgentPart } from '../agents/agents';
 import type { View } from '../commands';
+import type { KnowledgeMode } from '../knowledge/modes';
 import type { ProjectTab, WorkspaceSection, WorkspaceTab } from '../projects/tabs';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { Machine } from './machine';
@@ -9,7 +10,8 @@ import type { Machine } from './machine';
  * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
  * folder (SETUP1a). Since FRAME1c it may name the item it opens in its view — a session, a quest, a
  * repository, a plugin — which the application's one opener chooses there (D118 §3i); since UX6e an agent
- * and the part of its page; since UX6g a workspace's page, its tab and the section of its Setup.
+ * and the part of its page; since UX6g a workspace's page, its tab and the section of its Setup; since UX6i Knowledge's
+ * mode, Search or Convergence.
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
@@ -22,6 +24,8 @@ export type StarterDoor = {
    */
   workspaceTab?: WorkspaceTab;
   workspaceSection?: WorkspaceSection;
+  /** Knowledge's mode (UX6i): a door into Search or Convergence, which are Knowledge's two lists. */
+  knowledge?: KnowledgeMode;
 };
 
 /**

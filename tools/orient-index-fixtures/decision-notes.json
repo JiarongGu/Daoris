@@ -1,0 +1,159 @@
+{
+  "_why": "ORIENT1h (D134's ORIENT1g note; .claude/knowledge/twins.md): a decision's dated notes as the decisions digest finds and labels them, one table its two readers are held to row for row. tools/orient-index.mjs writes the digest, over doc-duplicates.mjs' fenced and isNoteLabel, and tools/orient-index.test.mjs holds it here; the service's DecisionNotes splits a decision into entries, and DecisionNotesTests holds it here. Each decision: its file's lines, joined by a newline, its heading first and a last empty line for the newline a file ends with; its entry, the lines of its own text before its first note, `<id>:<first>-<last>`; and each note as the digest's row, `<id>:<first>-<last> <label>`, lines from 1 and the blank lines at a part's end left out. Each label row: why, a line, and the label it opens, or null for none.",
+
+  "decisions": [
+    {
+      "id": "D7",
+      "why": "every form a note takes, a fence, a glued label, a sentence that is not one, a dated heading, and a label twice",
+      "lines": [
+        "## D7 — The tier is the directory (2026-08-04)",
+        "",
+        "**Decision (TIER1, 2026-08-04).** The tier is where the file is, and an opening dated is never a note.",
+        "",
+        "**Why.** Because the harness decides by path.",
+        "",
+        "**Built 2026-10-02 (TOOL4a): the limit table and its reader** (point 1). The table reads the agent's words.",
+        "- A list item under the note.",
+        "",
+        "```markdown",
+        "**Built 2026-10-09 (FENCED): inside a fence, never a note**",
+        "```",
+        "",
+        "**Amended 2026-10-04 (ORIENT1b): a generated digest of the record, against point 2's \"no index, hand-kept or",
+        "generated\".** The design's reason was that a generated index needs a generator.",
+        "",
+        "**DRIFT1a, built 2026-10-02: a note named by its task first.** Its text.",
+        "",
+        "*As built (PLUGUI1d, 2026-10-01)*: an italic label.",
+        "**Fixed 2026-10-03: glued to the line above, so read as that note's text.**",
+        "",
+        "**Proven without the rehearsal** — an emphasised sentence, not a note.",
+        "",
+        "### 2026-10-05 — a dated heading",
+        "",
+        "Under the heading.",
+        "",
+        "**Measured 2026-10-06: a rare word counts with a date.** Its text.",
+        "",
+        "**Measured later: and not without one.** Still the note above.",
+        "",
+        "**Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once per sign-out** (points 4, 6 and 7). One status question per account at a time (`ProbeLock`).",
+        "",
+        "**Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once per sign-out** (a second time).",
+        ""
+      ],
+      "entry": "D7:1-5",
+      "notes": [
+        "D7:7-12 Built 2026-10-02 (TOOL4a): the limit table and its reader",
+        "D7:14-15 Amended 2026-10-04 (ORIENT1b): a generated digest of the record, against point…",
+        "D7:17-17 DRIFT1a, built 2026-10-02: a note named by its task first.",
+        "D7:19-22 As built (PLUGUI1d, 2026-10-01)",
+        "D7:24-26 2026-10-05 — a dated heading",
+        "D7:28-30 Measured 2026-10-06: a rare word counts with a date.",
+        "D7:32-32 Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once…",
+        "D7:34-34 Built 2026-10-07 (TOOL6g): a signed-out account is said, and asked about once…"
+      ]
+    },
+    {
+      "id": "D1",
+      "why": "a note over a fence runs to the next, an italic label holds a date in brackets, and the undated common form",
+      "lines": [
+        "## D1 — The first decision, which is long enough to show (2026-08-04)",
+        "",
+        "Body.",
+        "",
+        "**Built 2026-08-05 (TASK1): the first build.** More words.",
+        "",
+        "```md",
+        "**Amended 2026-08-06: inside a fence**",
+        "```",
+        "",
+        "*Amended by D2 (TASK2, 2026-08-07): a later reading.* And more.",
+        "",
+        "**As built**, the undated form.",
+        ""
+      ],
+      "entry": "D1:1-3",
+      "notes": [
+        "D1:5-9 Built 2026-08-05 (TASK1): the first build.",
+        "D1:11-11 Amended by D2 (TASK2, 2026-08-07): a later reading.",
+        "D1:13-13 As built"
+      ]
+    },
+    {
+      "id": "D2",
+      "why": "an opening dated in a label's form is the decision's own, so a decision with no note is its entry whole",
+      "lines": [
+        "## D2 — The second (2026-08-07)",
+        "",
+        "*Decided 2026-08-07, in its own first paragraph.*",
+        "",
+        "Body.",
+        ""
+      ],
+      "entry": "D2:1-5",
+      "notes": []
+    },
+    {
+      "id": "D9",
+      "why": "an opening in a build's form, an undated heading, a fourth-level one, an indented fence, a bold span inside an italic label, a long dated heading cut, and blank lines at the end",
+      "lines": [
+        "## D9 — Edges the record has met (2026-09-01)",
+        "",
+        "**Built 2026-09-01 (EDGE1): an opening in a note's form is still the opening.** It is never a note.",
+        "",
+        "### Why not a heading?",
+        "",
+        "An undated heading is text.",
+        "",
+        "#### 2026-09-02 — a fourth-level heading is not a note",
+        "",
+        "  ```text",
+        "**Amended 2026-09-02: an indented fence still fences**",
+        "  ```",
+        "",
+        "*Amended by LEFT1 (2026-09-30), from the owner. **A look fetches four** at once.* More.",
+        "",
+        "### 2026-10-05 — a dated heading long enough to be cut where a row would run past its eighty characters",
+        "",
+        "**LAND3, built 2026-10-04: a landing tidies every branch.** On the owner's ask.",
+        "",
+        "",
+        ""
+      ],
+      "entry": "D9:1-13",
+      "notes": [
+        "D9:15-15 Amended by LEFT1 (2026-09-30), from the owner. **A look fetches four** at once.",
+        "D9:17-17 2026-10-05 — a dated heading long enough to be cut where a row would run past…",
+        "D9:19-19 LAND3, built 2026-10-04: a landing tidies every branch."
+      ]
+    }
+  ],
+
+  "labels": [
+    ["a dated bold span, the text after it left out", "**Built 2026-10-03 (DOC8b): the check** (point 4).", "Built 2026-10-03 (DOC8b): the check"],
+    ["a common form undated", "**Built.** Undated, and a form the record writes.", "Built."],
+    ["a common form undated, its span ended before a comma", "**Built**, as the design says.", "Built"],
+    ["a common form with its task in brackets", "**As built (ACP1)**: undated too.", "As built (ACP1)"],
+    ["an italic common form", "*Amended (UX6e)*: italic.", "Amended (UX6e)"],
+    ["an italic span alone", "*Built*", "Built"],
+    ["a rarer word, dated", "**Noted 2026-10-01: a rarer word, dated**", "Noted 2026-10-01: a rarer word, dated"],
+    ["a note named by its task first", "**ORIENT1c, built 2026-10-04: the server is a deployment.**", "ORIENT1c, built 2026-10-04: the server is a deployment."],
+    ["a note named by its task first, text after it", "**LAND3, built 2026-10-04: a landing tidies every branch.** On the owner's ask.", "LAND3, built 2026-10-04: a landing tidies every branch."],
+    ["an italic span runs past a bold one inside it", "*Amended by LEFT1 (2026-09-30), from the owner. **A look fetches four** at once.* More.", "Amended by LEFT1 (2026-09-30), from the owner. **A look fetches four** at once."],
+    ["a span with no closing mark runs to the line's end", "**Reviewed 2026-10-01 with no closing mark", "Reviewed 2026-10-01 with no closing mark"],
+    ["three marks: the bold span opens, and the third is its text", "***Built 2026-10-01: bold and italic***", "*Built 2026-10-01: bold and italic"],
+    ["spaces and a tab read as one space", "**Built 2026-10-01:   spaced\tout**", "Built 2026-10-01: spaced out"],
+    ["a long label cut at a word, with an ellipsis", "**Built 2026-10-01 (DEV3): a word a word a word a word a word a word a word a word a word a word a word a word a word a word a word a word a word a word a word a word **", "Built 2026-10-01 (DEV3): a word a word a word a word a word a word a word a…"],
+    ["a cut drops the comma before its ellipsis", "**Built 2026-10-01 (DEV3): one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve**", "Built 2026-10-01 (DEV3): one, two, three, four, five, six, seven, eight, nine…"],
+    ["a cut with no space past its middle is cut at 80 characters", "**Built 2026-10-01 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789**", "Built 2026-10-01 012345678901234567890123456789012345678901234567890123456789012…"],
+    ["a rarer word needs a date", "**Noted, with no date.** A rarer word needs one.", null],
+    ["an emphasised sentence is not a note", "**Proven without the rehearsal** — a sentence.", null],
+    ["an emphasised sentence, a comma after it", "**Proven without the rehearsal**, by a unit test.", null],
+    ["the opening's form, undated", "**Decision.** The opening's form.", null],
+    ["a list item, dated", "* a list item 2026-10-01", null],
+    ["plain text, dated", "Plain text dated 2026-10-01.", null],
+    ["two marks and nothing in them", "**", null],
+    ["one mark and nothing in it", "*", null]
+  ]
+}

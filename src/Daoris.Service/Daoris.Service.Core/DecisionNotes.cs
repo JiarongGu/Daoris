@@ -27,8 +27,9 @@ public sealed record DecisionNote(string Label, int First, int Last, string Body
 /// note, dated or not (<c>**Decision (DOC8, …)**</c>). A label glued to the line above is that line's text, as
 /// the digest reads it, and the record's own check refuses it.</para>
 ///
-/// <para>A twin of the digest's reader with no code shared: <c>DecisionNotesTests</c> holds this one to the rows
-/// the digest wrote for one fixture.</para>
+/// <para>A twin of the digest's reader with no code shared: both are held to one table,
+/// <c>tools/orient-index-fixtures/decision-notes.json</c>, row for row (ORIENT1h), this one by
+/// <c>DecisionNotesTests</c> and the digest by <c>tools/orient-index.test.mjs</c>.</para>
 /// </remarks>
 public static partial class DecisionNotes
 {

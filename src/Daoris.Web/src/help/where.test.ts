@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../api';
+import { VIEWS } from '../commands';
 import type { SettingsSection } from '../SettingsView';
 import { en } from '../locales';
 import { PLACE_DOMAINS, PLACE_VIEWS } from './places';
@@ -25,7 +26,8 @@ describe('where the person is', () => {
    * English name — the one the activity bar and Settings' domain list show — never a name of its own.
    */
   it("names every view and every domain as the window's English does", () => {
-    for (const view of PLACE_VIEWS.filter((name) => name !== 'settings')) {
+    // Knowledge is named with its mode, below; the twin's Search and Convergence are its two modes (UX6i).
+    for (const view of VIEWS.map((each) => each.view).filter((name) => name !== 'settings' && name !== 'knowledge')) {
       expect(prefaceOf({ view, workspace: null }), view)
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
@@ -34,6 +36,18 @@ describe('where the person is', () => {
     for (const domain of PLACE_DOMAINS.filter((name): name is SettingsSection => name !== 'workspace' && name !== 'permissions')) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
+    }
+  });
+
+  /** UX6i (D150 §2.2): Knowledge is one place in two modes, and the helper is told which, by the names its choice shows. */
+  it("names Knowledge's mode, by the names its list's choice shows", () => {
+    expect(prefaceOf({ view: 'knowledge', workspace: null, knowledge: 'convergence' }))
+      .toBe(`Where the person is now: the ${en['nav.knowledge']} view, showing ${en['nav.convergence']}, every workspace.`);
+    expect(prefaceOf({ view: 'knowledge', workspace: 'aurora', knowledge: 'search' }))
+      .toBe('Where the person is now: the Knowledge view, showing Search, workspace `aurora`.');
+    // Each mode a go may name is one the preface names.
+    for (const mode of PLACE_VIEWS.filter((name) => name === 'search' || name === 'convergence')) {
+      expect(prefaceOf({ view: 'knowledge', workspace: null, knowledge: mode })).toContain(`showing ${en[`nav.${mode}`]}`);
     }
   });
 

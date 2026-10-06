@@ -10,10 +10,17 @@ import type { ChoiceStanding, ListPanes } from './listPanes';
 export type ListSpec = {
   /** Which view's list: its bounds (`LIST_BOUNDS`) and its memory (`listPanes.ts`). */
   view: ListView;
+  /**
+   * The list whose memory holds the chosen item, where it is not the pane's own: Knowledge's mode (UX6i, D150 §2.2), whose
+   * chosen item and filters are Search's or Convergence's while the pane's closing and width are Knowledge's.
+   */
+  chosenIn?: ListView;
   name: string;
   labels: { open: string; close: string; resize: string };
   make?: ListMake;
   more?: ReactNode;
+  /** What heads the list above its rows, outside their scroll: Knowledge's two-way choice (UX6i). */
+  head?: ReactNode;
   strip?: ReactNode;
   loading?: boolean;
   empty?: { headline: string; body: string };
@@ -108,9 +115,10 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
   }, [chosen, laid, onOver]);
   const { settle } = lists;
   const standing = chosen ? spec.standing : undefined;
+  const memory = spec.chosenIn ?? spec.view;
   useLayoutEffect(() => {
-    if (standing) settle(spec.view, standing);
-  }, [settle, spec.view, standing]);
+    if (standing) settle(memory, standing);
+  }, [settle, memory, standing]);
 
   const make = spec.make;
   return (
@@ -121,6 +129,7 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
       bounds={LIST_BOUNDS[spec.view]}
       make={make && { ...make, onMake: (kind) => { if (laid) onOver(false); make.onMake(kind); } }}
       more={spec.more}
+      head={spec.head}
       strip={spec.strip}
       loading={spec.loading}
       empty={spec.empty}

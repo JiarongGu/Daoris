@@ -543,9 +543,10 @@ describe('the views, in a browser', () => {
   /**
    * FRAME1f (D118 §2, §4): Search's list is the box, *local only* and the hits, and Convergence's the similarity and the
    * findings, each beside its main area in a browser too; each makes nothing, so neither list has a ＋. Neither asks the
-   * service anything until it is in front: a comparison over a real index takes seconds.
+   * service anything until it is in front: a comparison over a real index takes seconds. Since UX6i (D150 §2.2) the two
+   * are one place on the bar, Knowledge, whose list's head switches between them.
    */
-  it("keeps Search's and Convergence's lists and their main areas, asking nothing until each is in front", async () => {
+  it("holds Search's and Convergence's lists as one place, Knowledge, asking nothing until each is in front", async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.startsWith('/api/convergence')) return Response.json([]);
@@ -553,22 +554,60 @@ describe('the views, in a browser', () => {
     });
     shell();
     const views = await screen.findByRole('navigation', { name: 'Views' });
+    expect(within(views).queryByRole('button', { name: 'Search' })).toBeNull();
+    expect(within(views).queryByRole('button', { name: 'Convergence' })).toBeNull();
     expect(requested().some((url) => url.startsWith('/api/convergence') || url.startsWith('/api/search'))).toBe(false);
 
-    await userEvent.click(within(views).getByRole('button', { name: 'Search' }));
-    const results = await screen.findByRole('complementary', { name: 'Search' });
-    expect(within(results).getByRole('searchbox', { name: 'search knowledge' })).toHaveFocus();
-    expect(within(results).getByRole('checkbox', { name: "Each repository's own only" })).toBeChecked();
+    await userEvent.click(within(views).getByRole('button', { name: 'Knowledge' }));
+    const list = await screen.findByRole('complementary', { name: 'Knowledge' });
+    expect(within(list).getByRole('radio', { name: 'Search' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(list).getByRole('searchbox', { name: 'search knowledge' })).toHaveFocus();
+    expect(within(list).getByRole('checkbox', { name: "Each repository's own only" })).toBeChecked();
     expect(screen.getByRole('button', { name: 'show or hide the result list (Ctrl+B)' })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByText('Choose a result')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(requested().some((url) => url.startsWith('/api/convergence'))).toBe(false);
 
-    await userEvent.click(within(views).getByRole('button', { name: 'Convergence' }));
-    const findings = await screen.findByRole('complementary', { name: 'Convergence' });
-    expect(await within(findings).findByText('Nothing converges at 0.75 or above')).toBeInTheDocument();
+    await userEvent.click(within(list).getByRole('radio', { name: 'Convergence' }));
+    expect(await within(list).findByText('Nothing converges at 0.75 or above')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'show or hide the finding list (Ctrl+B)' })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByText('Choose a finding')).toBeInTheDocument();
-    expect(within(findings).queryByRole('button', { name: /^New|^Add/ })).toBeNull();
+    expect(within(list).queryByRole('button', { name: /^New|^Add/ })).toBeNull();
+    // The place is still the one in front on the bar, whichever mode it shows.
+    expect(within(views).getByRole('button', { name: /^Knowledge/ })).toHaveAttribute('aria-current', 'page');
+  });
+
+  /**
+   * UX6i: every door into either list still reaches it. Ctrl+Shift+F is Knowledge's Search, its box in front, whatever the
+   * place was left on; the palette's *Go to: Convergence* its Convergence; and the place on the bar opens as it was left.
+   */
+  it("opens Knowledge's Search by Ctrl+Shift+F and its Convergence by the palette, and opens as it was left", async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/convergence')) return Response.json([]);
+      return respond(url);
+    });
+    window.localStorage.setItem('daoris.list.knowledge.mode', 'convergence');
+    shell();
+    const views = await screen.findByRole('navigation', { name: 'Views' });
+
+    expect(fireEvent.keyDown(window, { key: 'F', code: 'KeyF', ctrlKey: true, shiftKey: true })).toBe(false);
+    const list = await screen.findByRole('complementary', { name: 'Knowledge' });
+    expect(within(list).getByRole('radio', { name: 'Search' })).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(within(list).getByRole('searchbox', { name: 'search knowledge' })).toHaveFocus());
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Overview' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Commands (Ctrl+K)' }));
+    await userEvent.keyboard('Go to: Convergence');
+    await userEvent.click(await screen.findByRole('option', { name: /Go to: Convergence/ }));
+    const again = await screen.findByRole('complementary', { name: 'Knowledge' });
+    expect(within(again).getByRole('radio', { name: 'Convergence' })).toHaveAttribute('aria-checked', 'true');
+    expect(window.localStorage.getItem('daoris.list.knowledge.mode')).toBe('convergence');
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Overview' }));
+    await userEvent.click(within(views).getByRole('button', { name: 'Knowledge' }));
+    expect(within(await screen.findByRole('complementary', { name: 'Knowledge' })).getByRole('radio', { name: 'Convergence' }))
+      .toHaveAttribute('aria-checked', 'true');
   });
 
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {

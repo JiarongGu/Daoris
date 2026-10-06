@@ -10,7 +10,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp,
+  Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, BookOpen, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp,
   ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info,
   Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
   Monitor, Network,
@@ -36,6 +36,9 @@ const ICONS = {
   // The workspace map (MAP2): repositories as nodes, and what moved between them.
   map: Network,
   search: Search,
+  // Knowledge (UX6i, D150 §2.2): the one place for Search and Convergence, an open book, since each of its modes keeps
+  // its own glyph inside it.
+  knowledge: BookOpen,
   // A GEAR (D66): Settings is the application's settings page now, and a gear is what every
   // application draws for one. The sliders it wore as "Machine" read as a mixer, not a place.
   settings: Settings,
@@ -987,12 +990,14 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
  * keys moving the choice the way every radiogroup's do. For two to four options that fit a line: a
  * select would hide what a person is choosing between.
  */
-export function Segmented<T extends string>({ label, value, options, onChange }: {
+export function Segmented<T extends string>({ label, value, options, onChange, fill = false }: {
   /** The group's accessible name — the row's label, since the options alone say nothing of what. */
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  /** Spread over its row, each option an equal share: a list's head, Knowledge's two modes (UX6i). */
+  fill?: boolean;
 }) {
   const move = (by: number) => {
     const at = options.findIndex((option) => option.value === value);
@@ -1009,7 +1014,7 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
         else return;
         event.preventDefault();
       }}
-      className="inline-flex rounded-control border border-line-strong bg-raised p-0.5"
+      className={cn('rounded-control border border-line-strong bg-raised p-0.5', fill ? 'flex w-full' : 'inline-flex')}
     >
       {options.map((option) => (
         <button
@@ -1022,6 +1027,7 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
           onClick={() => onChange(option.value)}
           className={cn(
             'inline-flex items-center rounded-[4px] px-2.5 py-1 text-small transition-colors duration-(--speed)',
+            fill && 'min-w-0 flex-1 justify-center',
             value === option.value ? 'bg-accent text-accent-ink' : 'text-ink-soft hover:text-ink',
           )}
         >

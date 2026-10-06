@@ -388,14 +388,14 @@ describe('the doors into the Plugins view', () => {
 
   const bar = () => screen.getByRole('navigation', { name: 'Views' });
 
-  it('is a place on the activity bar after Search, which opens the view and its list', async () => {
+  it('is a place on the activity bar after Agents, which opens the view and its list', async () => {
     start();
 
     // A shell-only place is on the bar once the driver has answered.
     await within(bar()).findByRole('button', { name: 'Plugins' });
     const names = within(bar()).getAllByRole('button').map((place) => place.getAttribute('aria-label') ?? place.textContent);
-    // After Agents, the place UX6e put after Search (D150 §2.1).
-    expect(names.indexOf('Agents')).toBe(names.indexOf('Search') + 1);
+    // After Agents, the place UX6e put after Search, which is Knowledge since UX6i (D150 §2.1).
+    expect(names.indexOf('Agents')).toBe(names.indexOf('Knowledge') + 1);
     expect(names.indexOf('Plugins')).toBe(names.indexOf('Agents') + 1);
     await userEvent.click(within(bar()).getByRole('button', { name: 'Plugins' }));
     expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
