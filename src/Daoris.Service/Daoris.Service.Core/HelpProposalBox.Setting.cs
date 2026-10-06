@@ -51,9 +51,13 @@ public sealed partial class HelpProposalBox
             case "line" or "landing":
                 if (named == circle) return $"a {door} is set for a repository or a workspace — name exactly one.";
                 if (door == "line") return string.IsNullOrWhiteSpace(value) ? "a line is a branch, or `--clear`." : null;
+                // LANDSVC1: the sentence names a branch rule's switches as the room and the terminal do, `--auto-accept`
+                // (LAND2a) among them; a branch's words past its pattern are the driver's to judge.
                 return value is "merge" or "--clear" or "merge --tidy" || (value?.StartsWith("branch ", StringComparison.Ordinal) ?? false)
                     ? null
-                    : "a landing is `merge`, `branch <pattern>` (with `--tidy` to remove the tree once landed, and `--plugin <id>` for an installed plugin that pushes it and opens the pull request), or `--clear`.";
+                    : "a landing is `merge`, `branch <pattern>` (with `--tidy` to remove the tree once landed, `--plugin <id>` for an "
+                      + "installed plugin that pushes it and opens the pull request, and `--auto-accept` for a quest's done to land it "
+                      + "with no press), or `--clear`.";
             case "intake" or "helper":
                 return string.IsNullOrWhiteSpace(value) ? $"`{door}` is set to an agent, or `off`." : null;
             case "strikes":

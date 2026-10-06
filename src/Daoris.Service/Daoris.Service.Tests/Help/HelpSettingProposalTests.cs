@@ -40,6 +40,44 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
             new SettingChange("landing", Target: "engine", Workspace: null, Value: "rebase"), "why", session: "h1e1p000", Now).Message);
     }
 
+    /// <summary>
+    /// LANDSVC1 (LAND2a, LAND2b): a branch rule that accepts automatically passes the shape as the terminal spells it, and
+    /// a landing refused for its shape names the switch beside `--tidy` and `--plugin`, so the helper learns it as the room
+    /// says it; whether the plugin lands work here, and a merge carrying it, are the driver's to judge.
+    /// </summary>
+    [Fact]
+    public void A_landing_that_accepts_automatically_is_written_and_the_refusal_names_the_switch()
+    {
+        var (id, _) = Box().ProposeSetting(
+            new SettingChange("landing", Target: null, Workspace: "work", Value: "branch feature/{quest}-{slug} --plugin example.lands --auto-accept"),
+            "the person asked for done work to land itself and open its pull request", session: "h1e1p000", Now);
+
+        Assert.Equal("branch feature/{quest}-{slug} --plugin example.lands --auto-accept", Written(id!).GetProperty("value").GetString());
+        Assert.Contains("`--auto-accept` for a quest's done to land it with no press", Box().ProposeSetting(
+            new SettingChange("landing", Target: "engine", Workspace: null, Value: "rebase"), "why", session: "h1e1p000", Now).Message);
+    }
+
+    /// <summary>
+    /// LANDSVC1 (D145 points 1 and 5): the tool tells the helper a branch rule may accept automatically, what that does, and
+    /// that it is the person's standing say-so for a push, proposed only when they ask and never on a merge, as the room
+    /// says it, so an agent finding what it may propose learns the switch from the tool and not from the room alone.
+    /// </summary>
+    [Fact]
+    public void The_tool_says_a_branch_rule_may_accept_automatically_and_only_when_the_person_asks()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var value = method.GetParameters().Single(parameter => parameter.Name == "value")
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        Assert.Contains("`--tidy`, `--plugin <id>` and `--auto-accept` if wanted", value);
+        Assert.Contains("a `landing` on a branch may add `--auto-accept`: a quest's done then lands its work with no press", tool);
+        Assert.Contains("the rule's plugin pushes it and opens a pull request without asking each time", tool);
+        Assert.Contains("the person's standing say-so for that push, so propose it only when they ask for it, and never on a merge", tool);
+    }
+
     /// <summary>HELP9: reading and writing across (D107), a cap and an adapter pass the shape as the terminal spells them.</summary>
     [Theory]
     [InlineData("across", "engine", null, "read off")]
@@ -143,6 +181,9 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("line", "engine", "work", "develop", "a repository or a workspace")]
     [InlineData("line", "engine", null, null, "a branch, or `--clear`")]
     [InlineData("landing", "engine", null, "rebase", "`merge`, `branch <pattern>`")]
+    // LANDSVC1: a merge carrying the switch is no shape the box takes, and its sentence says the switch rides a branch.
+    [InlineData("landing", "engine", null, "merge --auto-accept", "`branch <pattern>` (with `--tidy`")]
+    [InlineData("landing", "engine", null, "merge --auto-accept", "`--auto-accept` for a quest's done")]
     [InlineData("intake", null, null, null, "an agent, or `off`")]
     [InlineData("strikes", null, null, "many", "a whole number")]
     [InlineData("timeout", null, null, "0", "a whole number of minutes, 1 or more")]
