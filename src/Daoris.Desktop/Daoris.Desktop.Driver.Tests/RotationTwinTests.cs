@@ -76,6 +76,9 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("a file that does not read is none", "not json", "claude-code", null, null, "unset")]
     [InlineData("a letter whose capital is two letters is not those two: straße is not STRASSE", """{"rotation":{"claude-code":["straße","STRASSE"]}}""", "claude-code", null, """["straße","STRASSE"]""", "machine")]
     [InlineData("a dotted capital I is not an i with a dot above", """{"rotation":{"claude-code":["İzmir","i\u0307zmir"]}}""", "claude-code", null, """["İzmir","i\u0307zmir"]""", "machine")]
+    [InlineData("a workspace is found in any case", """{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-2"]}}}""", "claude-code", "WORK", """["account-2"]""", "workspace")]
+    [InlineData("a workspace written twice in any case is one, holding the later's orders", """{"workspaceRotation":{"work":{"claude-code":["account-1"]},"WORK":{"claude-code":["account-2"]}}}""", "claude-code", "work", """["account-2"]""", "workspace")]
+    [InlineData("a workspace whose capital is two letters is not those two: straße has no order of STRASSE's", """{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"STRASSE":{"claude-code":["account-2"]}}}""", "claude-code", "straße", """["account-1"]""", "machine")]
     public void An_order_resolves_as_the_cli_resolves_it(string name, string file, string agent, string? workspace, string? order, string from)
     {
         var (resolved, rung) = Read(file).ResolveRotationFrom(agent, workspace);
@@ -98,6 +101,8 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("an order of nobody is a clear", """{"rotation":{"claude-code":["account-1"]}}""", "claude-code", "[]", null, "{}")]
     [InlineData("clearing what is not set changes nothing", """{"rotation":{"codex":["account-1"]}}""", "claude-code", null, "work", """{"rotation":{"codex":["account-1"]}}""")]
     [InlineData("a name is kept trimmed", "{}", "claude-code", """[" account-1 "]""", null, """{"rotation":{"claude-code":["account-1"]}}""")]
+    [InlineData("a workspace order set in another case replaces the one there, as first written", """{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}""", "claude-code", """["account-2"]""", "WORK", """{"workspaceRotation":{"work":{"claude-code":["account-2"]}}}""")]
+    [InlineData("a workspace order cleared in another case", """{"workspaceRotation":{"work":{"claude-code":["account-2"]},"lab":{"codex":["account-1"]}}}""", "claude-code", null, "WORK", """{"workspaceRotation":{"lab":{"codex":["account-1"]}}}""")]
     public void An_order_is_set_and_cleared_as_the_cli_writes_it(string why, string before, string agent, string? order, string? workspace, string after)
     {
         Read(before).WithRotation(agent, order is null ? null : Names(order), workspace).Save(Wiring);
@@ -155,6 +160,7 @@ public sealed class RotationTwinTests : IDisposable
     [InlineData("a value and a setting this build does not know go back as read, after the ones it knows", """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"weekly":"pace","near":120,"use":"drain"}}}""", null, """{"defaults":{},"workspaces":{},"versions":{},"workspaceVersions":{},"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"drain","near":120,"weekly":"pace"}}}""")]
     [InlineData("the retired prefer and parallel are not written back, and an entry naming nothing else goes", """{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"prefer":"left","keep":"account-1","parallel":true},"codex":{"prefer":"soonest"}}}""", null, """{"defaults":{},"workspaces":{},"versions":{},"workspaceVersions":{},"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"keep":"account-1"}}}""")]
     [InlineData("settings with no list are written back as read, and read only with one", """{"rotationUse":{"claude-code":{"early":false}},"workspaceRotationUse":{"work":{"codex":{"keep":"account-1"}}}}""", null, """{"defaults":{},"workspaces":{},"versions":{},"workspaceVersions":{},"rotationUse":{"claude-code":{"early":false}},"workspaceRotationUse":{"work":{"codex":{"keep":"account-1"}}}}""")]
+    [InlineData("a workspace written twice in any case is written once, as first written, holding the later's", """{"workspaces":{"work":{"claude-code":"account-1"},"WORK":{"claude-code":"account-2"}},"workspaceVersions":{"Lab":{"codex":"0.50.0"},"lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-1"]},"Work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}},"WORK":{"claude-code":{"use":"order"}}}}""", null, """{"defaults":{},"workspaces":{"work":{"claude-code":"account-2"}},"versions":{},"workspaceVersions":{"Lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}""")]
     public void Both_twins_write_the_same_file(string why, string before, string? codexDefault, string after)
     {
         var settings = Read(before);
