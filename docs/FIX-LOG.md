@@ -12,7 +12,7 @@ repository.
 - **Root cause:** WSSETUP2 (`2cd170b8`) used bare `renameSync` for the unpacked package and both installed folders, bypassing the existing held-file retry used by build staging.
 - **Fix:** all three CLI layout renames use the shared `renameHeld` helper. Its bounded wait applies only to held-file errors; other errors still fail.
 - **Verify:** a failing-first injected `EPERM` regression retries each of the three real filesystem moves and verifies package/launcher bytes. Both focused CLI layout tests and all 1,294 CLI cases pass; family (374) and deployment (110) rehearsals pass.
-- **Commit:** pending integration commit.
+- **Commit:** `975978dc`.
 
 ## 2026-10-06 — integration review
 
@@ -21,21 +21,21 @@ repository.
 - **Root cause:** record matching trusted declarations from the current checkout; `daoris.lanes.json` forgave itself. Matcher introduced by `12f87a63`, reused by GATE6 (`8ba56b64`).
 - **Fix:** record forgiveness requires a stable known-record allowlist; lane policy reaches every gate. Gate declarations cannot classify source as records.
 - **Verify:** failing-first regression and all 67 `merge-branch.test.ts` cases pass, including the tool's end-to-end checks.
-- **Commit:** pending integration commit.
+- **Commit:** `975978dc`.
 
 ### Accounts: completion notices ignored the chosen name
 - **Symptom:** the recovered Agents regression said an email at sign-in completion and an internal id after changing a default.
 - **Root cause:** `harnessRuns.tsx` interpolated bridge identities without resolving them against the roster; the account naming change missed this producer.
 - **Fix:** resolve the current cached roster when saying either completion; do not trigger another credential read. Commands and records retain stable ids.
 - **Verify:** Agents and menu suites pass all 72 tests; the existing named-account completion case failed before the fix.
-- **Commit:** pending integration commit.
+- **Commit:** `975978dc`.
 
 ### Menus: Help → Update opened above its card
 - **Symptom:** Help → Update opened the Driver domain at the top, leaving the update card out of view.
 - **Root cause:** UX7a's opener omitted the anchor, and `SettingsAnchor` omitted `update`; the card already had its id. Introduced by `f4e46361`.
 - **Fix:** pass the update anchor through the shared Settings opener; the existing observer waits for the card and clears the anchor after scrolling.
 - **Verify:** failing-first full-App regression passes, including a later ordinary Settings visit that does not scroll again.
-- **Commit:** pending integration commit.
+- **Commit:** `975978dc`.
 
 ## FLAKE1 (open): real-process tests that fail under load and pass alone (since 2026-09-25)
 

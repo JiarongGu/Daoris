@@ -79,7 +79,7 @@ changes no row (D127).
 | `2026-10-04-ux6-redesign.md` | contract | Simpler as it grows: a setting on its thing, a repository's setup and git on its page, Agents a place with one account list, What needs you leading Overview, a plugin's tools, each screen measured (UX6, PLUGTOOL1) | Designed (D150), amended by D152. Amends D66, D75, D118 §2, D147 §6–§7, D121 §1, D64 §3 |
 | `2026-10-04-orientation-everywhere-design.md` | contract | Every driven repository keeps a generated index of where things are, checked by its own tooling so a clone without Daoris works; the service indexes it, hits name lines, driven sessions measured (ORIENT2) | Designed (D151); nothing built. Amends the map design's ORIENT1a note, D122 §2.7, D124 §3, §7 and D128 §3 |
 | `2026-10-05-ux7-design.md` | contract | Menu bar, account rows, session and quest heads (UX7) | Current (D152); amends D75, D150 §2.4/§5.2, D126 §3.2 and D118 §3b. D152 holds build notes; TASKS holds remaining work |
-| `2026-10-05-integration-review.md` | evidence | Branch recovery, review findings, verification and cleanup | In progress; durable handover for INTEGRATE1 |
+| `2026-10-05-integration-review.md` | evidence | Branch recovery, review findings, verification and cleanup | Completed 2026-10-07; remaining UI proof is in `TASKS.md` |
 
 ## Studies and evidence
 

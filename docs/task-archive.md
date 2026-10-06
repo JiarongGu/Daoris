@@ -5,6 +5,17 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## INTEGRATE1 — consolidate branches and review the product (2026-10-07)
+
+> - [x] **INTEGRATE1 — consolidate branches and review the product** (2026-10-05, in progress).
+>   Preserve unfinished work, integrate it into `main`, review UI/UX and code, simplify documentation,
+>   and remove integrated branches. Working state and proof: `docs/2026-10-05-integration-review.md`.
+
+**Outcome.** Recovered unfinished changes and integrated six outstanding tips. All 31 saved heads
+are reachable from `main`; 30 additional worktrees/branches removed after preservation checks.
+Four defects fixed, docs condensed, open UI work retained. All 14 gates pass. Scope and receipts:
+`docs/2026-10-05-integration-review.md`; fixes: `975978dc`.
+
 ## ACCT2b — account names in the driver's words (2026-10-06)
 
 > - [x] **ACCT2b — the driver's words name an account by the person's name** (driver, modules; found building ACCT2). A

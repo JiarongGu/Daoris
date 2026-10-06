@@ -12,11 +12,9 @@ A section's contract supplies detailed acceptance criteria. Owner-marked rows re
 
 ## Start here
 
-Daoris drives development and shares doctrine and knowledge. Prioritize the existing UI/UX work: finish the account page and compact menu, verify the merged heads and menus on the installed application, then complete the remaining screen consolidation. New findings from INTEGRATE1 join the corresponding section after review.
+Prioritize UI/UX: retain refused account edits, quote terminal hints, finish the compact menu, verify recovered accounts and heads on the installed application, then complete the remaining screen consolidation. Review evidence and coverage: `docs/2026-10-05-integration-review.md`.
 
 Read `AGENTS.md`, `CLAUDE.md`, `.claude/INDEX.md`, `docs/README.md`, then the row's contract. Use `doc-loader` and `dispatch-subagent`; integrate through `tools/merge-branch.mjs`. Rehearsals run serially without competing builds. Owner-marked rows retain their grants, downloads, runs or decisions; held rows wait for their triggers.
-
-- [ ] **INTEGRATE1 — consolidate branches and review the product** (in progress). Preserve unfinished work, integrate into `main`, review UI/UX and code, simplify documentation and remove integrated branches. Working state and proof: `docs/2026-10-05-integration-review.md`.
 
 ## UI/UX first
 

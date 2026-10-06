@@ -5,14 +5,21 @@
 Owner request: integrate unfinished work, retain only `main`, review the code with UI/UX priority,
 improve documentation, and leave open work ready for the next agent.
 
+Completed 2026-10-07. The recovered work and four review fixes are committed as `975978dc`.
+Only the main checkout and `main` branch remain locally; the live remote also has only `main`.
+All 31 branch heads saved before cleanup are reachable from `main`. Open UI findings and
+installed-window proof remain in `TASKS.md`; manual review coverage is stated below.
+
+### Initial inventory
+
 - Initial `main`: `7ccd0372`, clean, matching the local `origin/main` reference.
-- Thirty additional worktrees inspected. Six branches contain commits outside `main`:
+- Thirty additional worktrees inspected. Six branches contained commits outside `main`:
   `integrate-ab`, and agent branches ending `a71c125219d8b3385`, `a8286a6a46e668262`,
   `ab9b50d02cf2af17f`, `adc4c6791584c614d`, `af1eb8af7a2a45393`.
-- The account-naming branch (`a8286a6a46e668262`) also contains 22 modified UI files and one
-  untracked test. Preserve and review these before removing its worktree.
-- Five worktree locks reference a process no longer present at inspection. Recheck before cleanup.
-- No stash entries found. Other worktrees have no tracked or untracked changes reported by Git.
+- The account-naming branch (`a8286a6a46e668262`) also contained 22 modified UI files and one
+  untracked test, recovered as `f6572c88` before cleanup.
+- Five worktree locks referenced a process absent at inspection, rechecked before unlocking.
+- No stash entries found. Other worktrees had no tracked or untracked changes reported by Git.
 
 ## Findings and handover
 
@@ -32,7 +39,7 @@ Post-feature audit: shared Settings wiring, roster-cache naming, optional bridge
 stable account ids and English/Chinese catalogue counterparts were checked. Changelog, fix log,
 decisions, router and task records reflect the integrated work. Explicit follow-ups are UX7b/UX7e
 (installed-window proof), UX7a2 (compact menu), ACCTQUOTE1 and ACCTEDIT1; their contracts and proofs
-are in the open backlog. The final gate receipt and branch cleanup are still pending.
+are in the open backlog. The final gate receipt and branch cleanup are recorded below.
 
 ## Plan
 
@@ -53,14 +60,13 @@ are in the open backlog. The final gate receipt and branch cleanup are still pen
   `installFromChannel`. Both tests passed immediately when run together in isolation (2/2).
   Full CLI rerun passed all 1,283 tests; service passed 1,170 and HTTP host 68. These transient
   failures remain recorded. GATE6/GATE6b and DUPNOTE1 are integrated after five selected gates passed.
-- UI validation, remaining merges and cleanup pending.
 - 2026-10-06: `integrate-ab` merged with five selected gates passing. Its effective change is
   removal of one stray D137 note fragment; its other historical merge tips are now reachable.
   Parallel review agents stopped on a workspace credit error; their incomplete passes are not
   counted as completed reviews. Documentation findings returned before that error are retained.
 - RETRY1b integrated after seven selected gates passed. The page and helper now use the planner's
   total failures; the terminal reads records with the driver's twin count rather than assuming the
-  strike limit. Full process/deployment gates have not run in this review.
+  strike limit. At that checkpoint, full process/deployment gates had not run.
 - Review finding: gate reuse trusts the current steward lane to classify forgiven records, including
   `daoris.lanes.json`. A lane edit can forgive itself and untested source paths. Add a regression and
   restrict forgiven records to stable record paths; lane configuration must invalidate every gate.
@@ -90,8 +96,8 @@ are in the open backlog. The final gate receipt and branch cleanup are still pen
   are component evidence, not installed frameless-window proof; UX7b/UX7e keep that distinction.
 - Cleanup checkpoint: 28 worktrees and their merged branches removed with ancestry checks and
   ordinary `git branch -d`, after ignored material was preserved. Five stale locks were rechecked
-  against their recorded process before unlocking. The two account-related branches remain until
-  their pending merge is committed. Live remote-head inventory contains only `main`.
+  against their recorded process before unlocking. The two account-related branches still remained
+  at that checkpoint, awaiting their merge commit. Live remote-head inventory contained only `main`.
 - Keyboard story check: Escape returned from Help to its trigger; Left then Enter opened Terminal
   and focused its first item. Viewport overrides and the temporary browser tab were cleaned up.
 - Records checkpoint: ACCT2b moved to the archive with its original wording and verification.
@@ -104,8 +110,8 @@ are in the open backlog. The final gate receipt and branch cleanup are still pen
   No hint was executed. The backlog requests supported-shell quoting or explicit placeholders and
   covers workspace arguments too; narrowing the shared naming contract is not an incidental UI fix.
 - Full-run checkpoint: universal, code-map, orientation, CLI (1,293), service (1,170 plus 68 HTTP),
-  devkit (80), fast driver (4,240) and fast modules (603) passed. Serial driver Process tests are
-  running; full Process, web and deployment proof is pending. Do not read the fast counts as totals.
+  devkit (80), fast driver (4,240) and fast modules (603) passed. Process, web and deployment gates
+  were pending at that checkpoint. Do not read the fast counts as totals.
 - Process results: driver 709/709 in 27 minutes and modules 118/118 in 21 seconds, with no failures
   or skipped cases. Combined totals are 4,949 driver and 721 module tests. Gate logs and per-test
   timing receipts are under `local/scratch/merge-worktree-agent-a8286a6a46e668262/`.
@@ -114,9 +120,18 @@ are in the open backlog. The final gate receipt and branch cleanup are still pen
 - Web checkpoint: 4,129/4,129 unit tests passed, then production typechecking stopped on an optional
   roster passed to `byTool` and an unused parameter in the recovered ChainStrip fixture. Added the
   missing-cache empty-array fallback and marked the fixture's unused owner explicitly. Re-run web
-  and affected fast readers; keep the valid Process receipts. Deployment has not run yet.
+  and affected fast readers, keeping valid Process receipts. Deployment had not run at that point.
 - 2026-10-07: CLI re-verification hit the repeated `layCli` Windows `EPERM` failure (1,292/1,293).
   D139 and the update contract were loaded; `promoteStage` and shared `renameHeld` supplied the pattern.
   A failing-first injection exposed the missing retry wiring. All three package/launcher renames now
   use that helper; focused tests pass (2/2). No unrelated filesystem failure is hidden. The full
   rerun must include CLI, family and deployment gates affected by this change.
+- Final source verification (2026-10-07): all 14 gates pass, confirmed by
+  `node tools/merge-branch.mjs --passed`. CLI 1,294, web unit 4,129 and browser 24; family 374,
+  deployment 110. Other suite totals are in `TASKS.md`. Full gate logs are under the scratch
+  directory cited above. The production build checks 3,088 translation keys across 78 areas.
+- Final cleanup: the remaining two worktrees and branches were removed with clean-tree,
+  ignored-material, live-process, path-boundary and ancestry checks. No forced deletion was used.
+  All 31 saved branch heads are reachable from committed `main`. The verified Git bundle and
+  recovered local material remain under the ignored `local/` directory. INTEGRATE1 is archived;
+  the handover contains only open work. Final document records receive fresh baseline/service gates.
