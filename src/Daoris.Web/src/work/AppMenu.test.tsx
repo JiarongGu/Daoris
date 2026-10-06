@@ -321,3 +321,35 @@ describe('AppMenuBar folded into one menu (UX7a2)', () => {
     expect(workspace).toHaveAttribute('aria-keyshortcuts', 'Alt+W');
   });
 });
+
+/**
+ * UXFIX1: a menu's name and the fold's ☰ are each a target of 28 px at least, the platform language's floor (§6), and no
+ * taller than the 36 px strip they sit in (`AppStrip`'s `h-9`). At `py-1` alone the ☰ was about 23 px tall.
+ */
+describe('the bar\'s triggers as targets', () => {
+  /** A Tailwind spacing class's size in px, on the 4 px step. */
+  const px = (className: string, prefix: string) => {
+    const step = new RegExp(`(?:^|\\s)${prefix}-(\\d+(?:\\.\\d+)?)(?:\\s|$)`).exec(className)?.[1];
+    return step === undefined ? undefined : Number(step) * 4;
+  };
+  const triggers = () => within(screen.getByRole('navigation', { name: 'Menu bar' })).getAllByRole('button');
+
+  it('gives every name on the bar a box of 28 px at least, within the strip', () => {
+    render(<AltBar />);
+    expect(triggers()).toHaveLength(3);
+    for (const name of triggers()) {
+      expect(px(name.className, 'min-h'), name.textContent ?? '').toBeGreaterThanOrEqual(28);
+      expect(px(name.className, 'min-h'), name.textContent ?? '').toBeLessThanOrEqual(36);
+      expect(px(name.className, 'min-w'), name.textContent ?? '').toBeGreaterThanOrEqual(28);
+    }
+  });
+
+  it('gives the fold\'s ☰ the same box', () => {
+    render(<AltBar compact />);
+    const [fold] = triggers();
+    expect(fold).toHaveAccessibleName('Menu');
+    expect(px(fold!.className, 'min-h')).toBeGreaterThanOrEqual(28);
+    expect(px(fold!.className, 'min-h')).toBeLessThanOrEqual(36);
+    expect(px(fold!.className, 'min-w')).toBeGreaterThanOrEqual(28);
+  });
+});

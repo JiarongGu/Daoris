@@ -117,6 +117,9 @@ const NAME = cn(
   // disclosure arrows at all. A menu bar is a convention strong enough not to need marking,
   // and eight chevrons in a title bar is eight pieces of furniture.
   'inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-small',
+  // A target of 28 px at least (UXFIX1, the platform language §6): `py-1` alone left the fold's ☰ about 23 px tall and a
+  // name 24. A minimum, not a height, so the strip (`h-9`, 36 px) stays as tall as it was and centres the 28 in it.
+  'min-h-7 min-w-7 justify-center',
   'transition-colors duration-(--speed)',
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
   'text-ink-soft hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
