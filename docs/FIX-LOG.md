@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a single run left before what it caused had landed
+
+### Driver: `--once` could end with its session working and its stop unsaid (DEV3a)
+- **Symptom:** the family rehearsal's *its driver stops its own losing session* failed once under load (311/312, FLAKE1 below): the record stood down, and the run's print had no `stop  session` line.
+- **Root cause:** since DEV3, `RunOnceAsync` waits for its sessions in `SettleAsync`, whose passes beside them caught only the close. Anything else a pass threw left the run with its sessions working and the lines it had gathered, a lost-claim stop's included. The claim question's client timeout was such a throw (the stop caught only an unreachable host), and the host's catch read it as a close: *driver: stopped.*, exit 0. `--until-idle` printed nothing until the whole run returned, so a later failed look dropped every earlier look's lines.
+- **Fix:** the stop reads the client's timeout as no answer; a failed pass beside the sessions is a line and the next pass runs; both runs hand each report to `said` as it is made, and what ended before a failure or close lets go; the headless host prints from it.
+- **Verify:** four failing-first cases in `SessionsOutliveTheirLookTests` over the stand-in ledger, its claim door stalled past a 200 ms client timeout (the timeout escaped with the session working). Not run: the rehearsal, which never kept the failed run's transcript, so this is the cause the code admits. Note under D115.
+
 ## 2026-10-07 — account edits and hints
 
 ### Agents: a refused account edit lost what the person entered (ACCTEDIT1)

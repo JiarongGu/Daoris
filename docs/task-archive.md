@@ -11295,3 +11295,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HIST1a — store numbers never go back** (service; first). Keep high-water marks for operation sequences and session revisions, so no removal reissues a number the remote or push cursor passed. This closes H1–H2, which D95's and D126's deletes already reach. Contract: history-clearing §0.3, §3.3. Proof: store tests removing the newest rows; sync tests over the real wire.
 
 **Outcome** 2026-10-07: removing a store's newest rows no longer hands out a sequence or revision a remote or push cursor passed. The marks are `quest_machine.sequence` and a one-row `session_revision`, moved by triggers in the statement that writes the number and seeded at migration from what the store holds, so a store that never removed anything behaves as before. Building it found H1's second route: a fetch brings the remote's operation back under the reused number and marks the new move accepted. Service 1170 → 1178. Detail: D153's HIST1a note, FIX-LOG 2026-10-07; commits 08b135ec, 8d60d08b.
+
+
+## TOOL6h — recheck an account after a refused start (2026-10-07, D125)
+
+> - [ ] **TOOL6h — recheck account after refused start** (driver). Previously signed-in account gets one fresh reading after refusal. Contract: D125 TOOL6g note. Proof: refused-start tick case.
+
+**Outcome** 2026-10-07: a sign-in refusal on an account last read signed in owes that account one fresh reading, taken by the next start that walks to it and honoured; the reading it makes never owes another, so an agent that says signed in while refusing costs one extra start, never one per look. Never the tool's own sign-in. Held in memory: after a restart the mark or the hour applies as before. Driver fast half +7; one Process case awaits the full set. Detail: D125's TOOL6h note; commit 4fc87199.
+
+
+## DEV3a — the stop report lands before the run exits (2026-10-07, D115)
+
+> - [ ] **DEV3a — stop report before run exits** (driver). `--once`/`--until-idle` wait for reports they caused. Contract: DEV3. Proof: driver test; retain failed lost-claim rehearsal evidence.
+
+**Outcome** 2026-10-07: `--once` no longer leaves before its sessions end: a failed pass beside them becomes a line and the next pass runs, and the lost-claim check's own client timeout is no answer rather than a throw. Both runs print each report as it is made (`said`), and `LetGoAsync` hands over what ended while the run waited. The cause is the one the code shows; the failed rehearsal's transcript was never kept, and FLAKE1's sighting stays. A client timeout read as a close remains (DEV3b). Driver fast half +4. Detail: D115's DEV3a note, FIX-LOG 2026-10-07; commit abc9e6fb.

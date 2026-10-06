@@ -424,15 +424,17 @@ try
     if (once)
     {
         // One look, then what it started to its end (DEV3): a look no longer waits for its sessions, and a
-        // single run that let go of them would leave them working with nothing watching.
-        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events).RunOnceAsync(closing.Token));
+        // single run that let go of them would leave them working with nothing watching. Each part is printed
+        // as it is said (DEV3a), so a stop or an ending already made is never lost with the process.
+        await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events)
+            .RunOnceAsync(closing.Token, said: report => Print(report));
     }
     else if (untilIdle)
     {
-        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events).RunUntilIdleAsync(closing.Token))
-        {
-            Print(report);
-        }
+        // Each look printed as it ends, and what ended before a failure or a close lets go (DEV3a), where every
+        // look used to be printed only once the whole run returned.
+        await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events)
+            .RunUntilIdleAsync(closing.Token, said: report => Print(report));
     }
     else
     {
