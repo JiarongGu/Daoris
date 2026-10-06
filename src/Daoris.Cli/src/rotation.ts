@@ -48,6 +48,7 @@
 // The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; `early` and `near` pass an
 // account its agent said is near, where the agent's door carries that word (`windows.json`, the toolchain's `windows`).
 
+import { shellWord } from './shellword.ts';
 import type { HarnessSettings } from './toolchain.ts';
 
 /** Agent → the accounts rotation may use, in order. */
@@ -208,7 +209,7 @@ export function joinProblem(settings: HarnessSettings, agent: string, workspace:
 export function joinRefusal(agent: string, workspace: string): string {
   return `\`${workspace}\` names no \`${agent}\` account or list of its own, so its starts take this machine's list — join this `
     + `machine's list, or give \`${workspace}\` a list of its own first (\`daoris agent profile order ${agent} <account>… `
-    + `--workspace ${workspace}\`).`;
+    + `--workspace ${shellWord(workspace, '<workspace>')}\`).`;
 }
 
 /**

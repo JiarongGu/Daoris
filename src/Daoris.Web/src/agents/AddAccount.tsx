@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { list } from '../format';
+import { shellWord } from '../shellWord';
 import { Button, CheckField, Inline, Pill } from '../ui';
 import { type AccountState, type JoinChoice, stateWhen, stateWord } from './agents';
 
@@ -124,11 +125,16 @@ export function PlaceAccount({
   const asksName = offered !== undefined;
   const join = choices.map((choice) => choice.workspace).filter((workspace) => ticked.has(workspace));
   const joining = join.length > 0;
+  // Each argument spelled for whichever shell the twin is pasted into (ACCTQUOTE1).
+  const id = shellWord(account, '<account>');
   const commands = [
-    ...(asksName && name.trim() ? [`\`daoris agent profile rename ${agent} ${account} ${name.trim()}\``] : []),
+    ...(asksName && name.trim() ? [`\`daoris agent profile rename ${agent} ${id} ${shellWord(name.trim(), '<name>')}\``] : []),
     ...(choices.length > 0
-      ? [`\`daoris agent profile join ${agent} ${account} ${joining
-        ? [...join.filter((each): each is string => each !== null), ...(join.includes(null) ? ['--machine'] : [])].join(' ')
+      ? [`\`daoris agent profile join ${agent} ${id} ${joining
+        ? [
+          ...join.filter((each): each is string => each !== null).map((workspace) => shellWord(workspace, '<workspace>')),
+          ...(join.includes(null) ? ['--machine'] : []),
+        ].join(' ')
         : '<workspace>…|--machine'}\``]
       : []),
   ];
@@ -222,7 +228,9 @@ export function RenameAccount({ agent, account, current, busy = false, refusal =
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(current ?? '');
-  const twin = `\`daoris agent profile rename ${agent} ${account} ${name.trim() || account}\``;
+  // Spelled for whichever shell the twin is pasted into (ACCTQUOTE1).
+  const twin = `\`daoris agent profile rename ${agent} ${shellWord(account, '<account>')} `
+    + `${shellWord(name.trim() || account, '<name>')}\``;
   return (
     <form
       aria-label={t('agents.rename.title', { account: current ?? account })}

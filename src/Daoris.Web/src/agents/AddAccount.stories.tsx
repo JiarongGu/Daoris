@@ -100,6 +100,14 @@ export const Rename: StoryObj<typeof RenameAccount> = {
   render: () => <RenameAccount agent="claude-code" account="acct-5e1f0a2b" current={null} onSave={nothing} onCancel={nothing} />,
 };
 
+/**
+ * A name no one spelling holds in every shell (ACCTQUOTE1): `R&D` is a name, and its twin names `<name>` rather than a
+ * command that runs `D` in Command Prompt.
+ */
+export const RenameUnspellable: StoryObj<typeof RenameAccount> = {
+  render: () => <RenameAccount agent="claude-code" account="acct-5e1f0a2b" current="R&D" onSave={nothing} onCancel={nothing} />,
+};
+
 /** A rename refused (ACCTEDIT1): the name typed kept in its field, and the driver's sentence under it, whole. */
 export const RenameRefused: StoryObj<typeof RenameAccount> = {
   render: () => (

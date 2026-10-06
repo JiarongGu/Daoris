@@ -1491,6 +1491,36 @@ describe('how accounts are used', () => {
     expect(notify).toHaveBeenCalledWith('work runs work in orbit now.');
   });
 
+  /**
+   * ACCTQUOTE1 (D125's ACCTQUOTE1 note): a twin is a command a person pastes into whichever shell they have, so a workspace
+   * with a space is in double quotes, a name a shell can take is printed, and one no spelling holds in every shell (`R&D`) is
+   * a placeholder rather than a command that runs something else.
+   */
+  it('spells each argument of the terminal twins for a shell, a name none can take a placeholder', async () => {
+    const spaced = {
+      agents: [{ ...ACCOUNTS.agents[0]!, scopes: [MACHINE, { ...MACHINE, workspace: 'my team', list: ['personal'] }] }],
+    };
+    invoke.mockImplementation(answer(ROSTER, spaced));
+    place();
+
+    const work = await screen.findByRole('listitem', { name: 'work' });
+    await userEvent.click(await within(work).findByRole('button', { name: 'Use work in a workspace…' }));
+    const where = within(work).getByRole('region', { name: 'Where work runs work' });
+    await userEvent.click(within(where).getByRole('checkbox', { name: 'my team' }));
+    expect([...where.querySelectorAll('code')].map((each) => each.textContent))
+      .toEqual(['daoris agent profile join claude-code work "my team"']);
+    await userEvent.click(within(where).getByRole('button', { name: 'Never mind' }));
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Rename…' }));
+    const form = within(work).getByRole('form', { name: 'Rename work' });
+    const twin = () => [...form.querySelectorAll('code')].map((each) => each.textContent);
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Its name' }), 'R&D');
+    expect(twin()).toEqual(['daoris agent profile rename claude-code work <name>']);
+    await userEvent.clear(within(form).getByRole('textbox', { name: 'Its name' }));
+    await userEvent.type(within(form).getByRole('textbox', { name: 'Its name' }), "O'Brien");
+    expect(twin()).toEqual(['daoris agent profile rename claude-code work "O\'Brien"']);
+  });
+
   it('says starts run on the tool\'s own sign-in while the machine names no account, with its cool-off', async () => {
     const shared = { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0]!, machineDefault: null, ownAccount: 'someone@example.invalid' }] };
     const cooling = {
