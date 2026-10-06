@@ -47,6 +47,13 @@ public enum QuestOperationKind
     /// one, and it moves no status.
     /// </summary>
     Accepted,
+
+    /// <summary>
+    /// Daoris read a done's evidence (EVID1a, D144 point 3): the commit read, and what each item it waits on was found
+    /// to be. It applies only to a done that waits on its evidence and reads exactly that, so a second machine's
+    /// verdict on evidence already found is no move; found, it lets go what the done held, and it moves no status.
+    /// </summary>
+    Evidenced,
 }
 
 /// <summary>
@@ -84,6 +91,7 @@ public sealed record QuestOperationRef(string Machine, long Sequence);
 /// D132 point 10), so pushed after another machine's take it becomes a conflict rather than declining their work.
 /// False on every other kind, and on every decline made before it, which is a plain one.
 /// </param>
+/// <param name="Evidence">For a <see cref="QuestOperationKind.Evidenced"/>: what was read (EVID1a). Null on every other kind.</param>
 public sealed record QuestOperation(
     string Quest,
     QuestOperationKind Kind,
@@ -96,7 +104,8 @@ public sealed record QuestOperation(
     long? Number = null,
     QuestOperationRef? Dismisses = null,
     IReadOnlyList<QuestAnswer>? Answers = null,
-    bool WhileOpen = false);
+    bool WhileOpen = false,
+    QuestEvidenceVerdict? Evidence = null);
 
 /// <summary>Where this machine's claim on a quest stands (D68 §4, D69).</summary>
 public enum QuestClaim
@@ -214,8 +223,11 @@ public static class QuestLog
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
         QuestOperationKind.Waited => quest is { Status: QuestStatus.Taken } && !string.IsNullOrEmpty(operation.Note),
         QuestOperationKind.Deleted => quest is { Status: QuestStatus.Open },
-        // A yes only while a departure waits for one (DRIFT1d): a second machine's yes is the same yes, never a move.
+        // A yes only while something holds the done (DRIFT1d, EVID1a): a second machine's yes is the same yes, never a move.
         QuestOperationKind.Accepted => quest is { Held: true },
+        // A verdict only while the done waits on its evidence, and only one that reads exactly that (EVID1a): a second
+        // machine's verdict on evidence already found is no move, and a verdict on what the done never named is none.
+        QuestOperationKind.Evidenced => quest is { AwaitsEvidence: true } && operation.Evidence?.Covers(quest) == true,
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -246,6 +258,11 @@ public static class QuestLog
         },
         QuestOperationKind.Waited => quest! with { Awaits = operation.Note, Updated = operation.At },
         QuestOperationKind.Accepted => quest! with { Accepted = operation.At, Updated = operation.At },
+        // The verdict as the quest keeps it: when and by which machine are the operation's own (EVID1a).
+        QuestOperationKind.Evidenced => quest! with
+        {
+            Evidence = operation.Evidence! with { At = operation.At, Machine = operation.Machine }, Updated = operation.At,
+        },
         // A done carries how it answered each requirement (DRIFT1d); a take or a decline answers none.
         _ => quest! with
         {

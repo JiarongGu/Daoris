@@ -38,7 +38,19 @@ public sealed record QuestAttachmentResponse(string Name, string Sha256, long By
 public sealed record QuestStepWire(string? To, string? Title, string? Body);
 // A requirement (DRIFT1c, D133 §3): the person's words, quoted, and the check that proves them — the same
 // shape both ways. Nullable on the way in and judged by the exchange, which refuses one missing a half.
-public sealed record QuestRequirementWire(string? Quote, string? Check);
+// `Evidence` (EVID1a, D144 §2): what Daoris reads itself, each item a `path` or a `gate`; answered `[]` for none.
+public sealed record QuestRequirementWire(string? Quote, string? Check, IReadOnlyList<QuestEvidenceWire?>? Evidence = null);
+// One evidence item (EVID1a): exactly one of the two, judged by the exchange, which names the requirement at fault.
+public sealed record QuestEvidenceWire(string? Path, string? Gate = null);
+// What Daoris read of a done's evidence (EVID1a, D144 §3, §5): the commit, how it was chosen (`session-end`, `sweep`,
+// `terminal`), the session whose end was read, and each item's code — the same shape both ways. `At` and `Machine` are
+// answered only: when and where it was read, which the operation keeps. Nullable on the way in and judged by the exchange.
+public sealed record QuestEvidenceReadWire(
+    int? Requirement, string? Path, string? Gate, string? Result, string? Object = null, bool? Changed = null,
+    string? Spelled = null);
+public sealed record QuestEvidenceVerdictWire(
+    string? Commit, string? How, string? Session = null, IReadOnlyList<QuestEvidenceReadWire?>? Items = null,
+    DateTimeOffset? At = null, string? Machine = null);
 // How a done answers one requirement (DRIFT1d, D133 §4): its number, and `Met` with how its check was met, or
 // `Departed` with the reason and `Quote`, the person's words it turns on — the same shape both ways. Nullable on the
 // way in and judged by the exchange, which refuses one that says both or neither, naming which.
@@ -68,7 +80,11 @@ public sealed record QuestResponse(
     IReadOnlyList<QuestAnswerWire>? Answers = null, bool Held = false, DateTimeOffset? Accepted = null,
     // What a list calls it (SESSUX1j): its publisher's short title, else a name read from its own words. A host from
     // before the field answers none, and a reader names it by its title.
-    string? Short = null);
+    string? Short = null,
+    // Why it is held (EVID1a, D144 §6): `departed`, `evidence-unread` or `evidence-missing`, null when `Held` is false.
+    // `AwaitsEvidence` whether its done waits for Daoris to find its evidence, a departure beside it or not; `Evidence`
+    // what was last read of it, null while nothing was. A host from before answers none of the three.
+    string? Hold = null, bool AwaitsEvidence = false, QuestEvidenceVerdictWire? Evidence = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -345,6 +361,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(PublishQuestRequest))]
 [JsonSerializable(typeof(RespondQuestRequest))]
 [JsonSerializable(typeof(DismissConflictRequest))]
+[JsonSerializable(typeof(QuestEvidenceVerdictWire))]
 [JsonSerializable(typeof(AskRequestBody))]
 [JsonSerializable(typeof(AskPublishRequest))]
 [JsonSerializable(typeof(AskCloseRequest))]

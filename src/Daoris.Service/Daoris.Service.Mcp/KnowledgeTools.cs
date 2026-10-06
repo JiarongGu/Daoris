@@ -375,7 +375,8 @@ public sealed partial class KnowledgeTools(
             "What the person requires, for a quest an ask asks: each one their own words, quoted exactly as they "
             + "gave them in the ask or said on it since, with the check that proves the work meets them. A quote "
             + "they never said is refused, naming it; your reading of their words belongs in the body. Every step "
-            + "of the chain inherits them. A quest one repository asks of another carries none.")]
+            + "of the chain inherits them. A quest one repository asks of another carries none. A requirement may "
+            + "name its evidence: a path the done's commit must hold, which Daoris reads itself before what follows goes on.")]
         Requirement[]? requirements = null,
         [Description(
             "A short title: the few words that tell this quest apart in a list, at most 40 characters, about 20 in Chinese. "
@@ -395,8 +396,14 @@ public sealed partial class KnowledgeTools(
         }
 
         var steps = (then ?? []).Select(step => new QuestStep(step.To ?? "", step.Title ?? "", step.Body ?? "")).ToList();
-        // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c).
-        var required = (requirements ?? []).Select(r => new QuestRequirement(r.Quote ?? "", r.Check ?? "")).ToList();
+        // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c); so does an evidence item
+        // naming both or neither (EVID1a).
+        var required = (requirements ?? [])
+            .Select(r => new QuestRequirement(r.Quote ?? "", r.Check ?? "")
+            {
+                Evidence = [.. (r.Evidence ?? []).Select(item => new QuestEvidence(item?.Path, item?.Gate))],
+            })
+            .ToList();
 
         // An intake publishes AS ITS ASK (D65 §1b): the room is no repository, so `from` could name
         // nothing addressable — the ask is the asker, in its own circle, carrying its own links and
@@ -484,6 +491,11 @@ public sealed partial class KnowledgeTools(
                 foreach (var requirement in quest.Requirements)
                 {
                     text.AppendLine($"  requires \"{requirement.Quote}\" — check: {requirement.Check}");
+                    // The facts its check turns on that Daoris reads itself (EVID1a).
+                    if (requirement.Evidence.Count > 0)
+                    {
+                        text.AppendLine($"    evidence: {string.Join(" · ", requirement.Evidence.Select(item => $"{item.Kind} `{item.Named}`"))}");
+                    }
                 }
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
@@ -496,10 +508,29 @@ public sealed partial class KnowledgeTools(
                         : $"  requirement {answer.Requirement} met: {answer.Met}");
                 }
 
-                if (quest.Held) text.AppendLine("  ⚠ held for the person's yes: what follows it waits until they accept the departure.");
+                // What Daoris last read of its evidence (EVID1a): the commit, and each item's code.
+                if (quest.Evidence is { } read)
+                {
+                    text.AppendLine($"  evidence read at `{read.Commit[..Math.Min(7, read.Commit.Length)]}` ({read.How}): "
+                        + string.Join(" · ", read.Items.Select(item => $"requirement {item.Requirement} `{item.Path ?? item.Gate}` {item.Result}")));
+                }
+
+                if (quest.Hold is { } hold)
+                {
+                    text.AppendLine(hold switch
+                    {
+                        QuestHold.Departed => "  ⚠ held for the person's yes: what follows it waits until they accept the departure.",
+                        QuestHold.EvidenceUnread =>
+                            "  ⚠ held until Daoris reads its evidence: the driver reads it when the session that closed it ends, and "
+                            + "what follows it waits until it is found or the person accepts the done as it stands.",
+                        _ =>
+                            "  ⚠ held for the person: its evidence was not found in the commit read, and what follows it waits until "
+                            + "a later commit holds it or they accept the done as it stands.",
+                    });
+                }
                 if (quest.Accepted is { } accepted)
                 {
-                    text.AppendLine("  the person accepted the departure "
+                    text.AppendLine((quest.Answers.Any(answer => answer.IsDeparture) ? "  the person accepted the departure " : "  the person accepted the done as it stood ")
                         + accepted.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture));
                 }
             }
@@ -528,7 +559,9 @@ public sealed partial class KnowledgeTools(
             "For done, on a quest that carries the person's requirements: one answer for each, by its number. Met, saying "
             + "how its check was met; or departed, with the reason and the person's own words it turns on (quote), "
             + "copied exactly. A done that leaves one unanswered is refused. A departure is shown to the person, and "
-            + "what follows the quest waits for their yes. A quest with no requirements takes none.")]
+            + "what follows the quest waits for their yes. Where a met requirement names evidence, Daoris reads it in your "
+            + "last commit when you end, and a met answer without it holds the quest for the person, so commit it before "
+            + "you finish. A quest with no requirements takes none.")]
         RequirementAnswer[]? answers = null,
         CancellationToken ct = default)
     {
@@ -642,7 +675,24 @@ public sealed record Requirement(
     [property: Description("The person's own words, copied exactly from what they asked or said since — never reworded.")]
     string? Quote,
     [property: Description("How to tell the work meets them, in the terms of the repository asked.")]
-    string? Check);
+    string? Check,
+    [property: Description(
+        "Optional: what Daoris reads itself to tell the check was met, at most 5 items. Name a path only where the work "
+        + "plainly leaves a file or folder the person can name.")]
+    RequirementEvidence[]? Evidence = null);
+
+/// <summary>
+/// One fact a requirement names as its evidence, as an agent writes it (EVID1a) — nullable for the chain step's reason:
+/// the exchange refuses an item that names both or neither, or a path that is not one, naming which.
+/// </summary>
+public sealed record RequirementEvidence(
+    [property: Description(
+        "A file or folder the work's last commit must hold: forward slashes, relative to the receiving repository's root, "
+        + "e.g. docs/report.md.")]
+    string? Path,
+    [property: Description(
+        "A gate the receiving repository declares. Not read yet: a gate is refused until its landing queue reads gates.")]
+    string? Gate);
 
 /// <summary>
 /// How a done answers one requirement, as an agent writes it (DRIFT1d) — nullable for the chain step's reason: the

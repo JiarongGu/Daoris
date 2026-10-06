@@ -514,6 +514,94 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// EVID1a (D144 §2–§3, §6): the publish doors take a requirement's evidence and answer it on the quest; a gate is
+    /// refused naming the queue. A met done waits for its evidence (<c>hold</c> <c>evidence-unread</c>); the evidence
+    /// door takes the driver's verdict: missing keeps it held (<c>evidence-missing</c>), a verdict that is not one is 400,
+    /// found releases it, and a second is 409, an unknown quest 404.
+    /// </summary>
+    [Fact]
+    public async Task A_met_done_waits_for_its_evidence_and_the_evidence_door_takes_the_verdict()
+    {
+        var asked = await host.PostAsync("/api/asks", new
+        {
+            workspace = "default", sentence = "Write the bridge report into docs/report-bridge.md for the weekly review.",
+        });
+        var ask = asked.Json.GetProperty("ask").GetProperty("id").GetString()!;
+        var gated = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the bridge report", body = "For the review.",
+            requirements = new[] { new { quote = "the bridge report", check = "The web gate passes.", evidence = new[] { new { gate = "web" } } } },
+        });
+        Assert.Equal(409, gated.Status);
+        Assert.Contains("queue", gated.Error);
+        var noAsk = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Keeper", title = "A gate at the quest door", body = "b",
+            requirements = new[] { new { quote = "q", check = "c", evidence = new[] { new { gate = "web" } } } },
+        });
+        Assert.Equal(400, noAsk.Status);
+        Assert.Contains("queue", noAsk.Error);
+
+        var published = await host.PostAsync($"/api/asks/{ask}/publish", new
+        {
+            to = "Keeper", title = "Write the bridge report", body = "For the review.",
+            requirements = new[]
+            {
+                new { quote = "Write the bridge report into docs/report-bridge.md", check = "The report is in the file.", evidence = new[] { new { path = "docs/report-bridge.md" } } },
+            },
+        });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest").GetProperty("id").GetString()!;
+        var evidence = published.Json.GetProperty("quest").GetProperty("requirements")[0].GetProperty("evidence");
+        Assert.Equal("docs/report-bridge.md", Assert.Single(evidence.EnumerateArray().ToList()).GetProperty("path").GetString());
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+
+        var closed = await host.PostAsync($"/api/quests/{quest}/respond", new
+        {
+            action = "done", reason = "Written.", answers = new[] { new { requirement = 1, met = "It is in the file." } },
+        });
+        Assert.Equal(200, closed.Status);
+        var waiting = closed.Json.GetProperty("quest");
+        Assert.True(waiting.GetProperty("held").GetBoolean());
+        Assert.Equal("evidence-unread", waiting.GetProperty("hold").GetString());
+        Assert.True(waiting.GetProperty("awaitsEvidence").GetBoolean());
+
+        Assert.Contains(("POST", "/api/quests/{id}/evidence"), host.Routes());
+        const string Commit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+        var missing = await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "session-end", session = "s1a2b3c4",
+            items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "uncommitted" } },
+        });
+        Assert.Equal(200, missing.Status);
+        var stillHeld = missing.Json.GetProperty("quest");
+        Assert.Equal("evidence-missing", stillHeld.GetProperty("hold").GetString());
+        Assert.Equal(Commit, stillHeld.GetProperty("evidence").GetProperty("commit").GetString());
+        Assert.Equal("uncommitted", stillHeld.GetProperty("evidence").GetProperty("items")[0].GetProperty("result").GetString());
+        Assert.Contains($"daoris-driver quest check {quest}", missing.Json.GetProperty("message").GetString());
+
+        var unread = await host.PostAsync($"/api/quests/{quest}/evidence", new { commit = Commit, how = "terminal", items = Array.Empty<object>() });
+        Assert.Equal(400, unread.Status);
+        Assert.Contains("`docs/report-bridge.md`", unread.Error);
+
+        var found = await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = "0123456789abcdef0123456789abcdef01234567", how = "terminal",
+            items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found", @object = "fedcba9876543210fedcba9876543210fedcba98", changed = true } },
+        });
+        Assert.Equal(200, found.Status);
+        Assert.False(found.Json.GetProperty("quest").GetProperty("held").GetBoolean());
+        // Nothing holds it: the host leaves a null out, as it does every other.
+        Assert.False(found.Json.GetProperty("quest").TryGetProperty("hold", out var hold) && hold.ValueKind != JsonValueKind.Null);
+        Assert.True(found.Json.GetProperty("quest").GetProperty("evidence").GetProperty("items")[0].GetProperty("changed").GetBoolean());
+        Assert.Equal(409, (await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "terminal", items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "found" } },
+        })).Status);
+        Assert.Equal(404, (await host.PostAsync("/api/quests/feedfacecafe/evidence", new { commit = Commit, how = "terminal" })).Status);
+    }
+
+    /// <summary>
     /// DRIFT1a: the added door keeps nothing for a session on no ask, and says so with a 200 — its own record
     /// holds what was said, which is no error; it refuses a session it does not hold, 404, and no words, 400.
     /// </summary>

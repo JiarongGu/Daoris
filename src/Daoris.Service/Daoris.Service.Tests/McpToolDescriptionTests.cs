@@ -90,6 +90,27 @@ public sealed partial class McpToolDescriptionTests
                          || parameter.ParameterType == typeof(Daoris.Knowledge.ComposedService));
     }
 
+    /// <summary>
+    /// EVID1a (D144 §1, §3): the session a requirement will judge never writes its verdict — the driver reads the commit and
+    /// posts it to a local door no connector tool reaches. What the session is told is to commit what its evidence names,
+    /// since Daoris reads its last commit when it ends; and the publish says a requirement may name its evidence.
+    /// </summary>
+    [Fact]
+    public void No_tool_records_evidence_and_the_tools_say_what_is_read()
+    {
+        var tools = typeof(KnowledgeTools).GetMethods()
+            .Select(method => method.GetCustomAttribute<McpServerToolAttribute>()?.Name)
+            .OfType<string>()
+            .ToList();
+        var respond = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_respond").Select(d => d.Text));
+        var publish = string.Join(" ", Descriptions().Where(d => d.Tool == "quest_publish").Select(d => d.Text));
+
+        Assert.DoesNotContain(tools, name => name.Contains("evidence") || name.Contains("verdict"));
+        Assert.Contains("evidence", respond);
+        Assert.Contains("last commit", respond);
+        Assert.Contains("evidence", publish);
+    }
+
     /// <summary>A server over a family of repositories says nothing more than its tools do, as before.</summary>
     [Fact]
     public void A_server_over_a_family_gives_no_instructions()

@@ -426,6 +426,132 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, Assert.Single(standing.Conflicts).Attempted);
     }
 
+    // ——— Evidence (EVID1a, D144): names and codes travel like every verb, never bytes or a machine's path.
+
+    private static readonly QuestRequirement Reported =
+        new("the bridge report in docs", "The report is in docs/report-bridge.md.") { Evidence = [new QuestEvidence("docs/report-bridge.md")] };
+
+    private static QuestEvidenceVerdict Verdict(string result = "found") =>
+        new("a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "session-end",
+            [new QuestEvidenceRead(1, "docs/report-bridge.md", null, result)]);
+
+    /// <summary>A chain's parent naming evidence (EVID1a), closed done met on B: held there, and on A once synced, for its evidence.</summary>
+    private async Task<Quest> AwaitingOnBothAsync()
+    {
+        var parent = await _a.PublishAsync(
+            "ask #a1", "Federated", "Report", "b", Now, then: [new QuestStep("Federated", "Verify {parent}", "c")],
+            requirements: [Reported]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.Equal([Reported], (await _b.FindAsync(parent.Id))!.Requirements);
+        await _b.MoveAsync(parent.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        var closed = await _b.MoveAsync(parent.Id, QuestStatus.Done, "Built.", Now.AddHours(2), answers: [new QuestAnswer(1, Met: "Written.")]);
+        Assert.Null(closed.FollowUp);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+        Assert.Equal(QuestHold.EvidenceUnread, (await _a.FindAsync(parent.Id))!.Hold);
+        return parent;
+    }
+
+    /// <summary>
+    /// 🔴 EVID1a: a verdict read on B reaches A and the remote as an operation, the hold lifts on every machine, and the step
+    /// its release published is one quest everywhere.
+    /// </summary>
+    [Fact]
+    public async Task A_verdict_read_on_one_machine_releases_the_done_on_every_machine()
+    {
+        var parent = await AwaitingOnBothAsync();
+
+        var read = await _b.EvidenceAsync(parent.Id, Verdict(), Now.AddHours(3));
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.True(read.Moved);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var standing = (await store.FindAsync(parent.Id))!;
+            Assert.False(standing.Held);
+            Assert.Equal("found", Assert.Single(standing.Evidence!.Items).Result);
+            Assert.Equal(_b.Machine, standing.Evidence.Machine);
+            Assert.Single(await store.HistoryAsync(read.FollowUp!.Id), operation => operation.Kind == QuestOperationKind.Published);
+        }
+    }
+
+    /// <summary>
+    /// EVID1a: a verdict found on two machines before either pushes is one: the second no longer applies when it lands on
+    /// the first, and rebases away as a second yes does, with no conflict and the step published once.
+    /// </summary>
+    [Fact]
+    public async Task Two_verdicts_finding_one_dones_evidence_are_one()
+    {
+        var parent = await AwaitingOnBothAsync();
+
+        var onA = await _a.EvidenceAsync(parent.Id, Verdict(), Now.AddHours(3));
+        var onB = await _b.EvidenceAsync(parent.Id, Verdict(), Now.AddHours(4));
+        await SyncAsync(_a);
+        var second = await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Equal(onA.FollowUp!.Id, onB.FollowUp!.Id);
+        Assert.Empty(second.Refused);
+        Assert.Empty(second.Conflicts);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Single(await store.HistoryAsync(parent.Id), operation => operation.Kind == QuestOperationKind.Evidenced);
+            Assert.Equal(_a.Machine, (await store.FindAsync(parent.Id))!.Evidence!.Machine);
+        }
+    }
+
+    /// <summary>
+    /// EVID1a: a verdict on a done that lost goes with it, and so does the step its release published: there is no done
+    /// left whose evidence it read, and the chain did not move.
+    /// </summary>
+    [Fact]
+    public async Task A_verdict_on_a_done_that_lost_goes_with_it_and_its_step_too()
+    {
+        var parent = await _a.PublishAsync(
+            "ask #a1", "Federated", "Report", "b", Now, then: [new QuestStep("Federated", "Verify {parent}", "c")],
+            requirements: [Reported]);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _a.MoveAsync(parent.Id, QuestStatus.Declined, "Not ours.", Now.AddHours(1));
+        await _b.MoveAsync(parent.Id, QuestStatus.Done, "Built.", Now.AddHours(2), answers: [new QuestAnswer(1, Met: "Written.")]);
+        var step = (await _b.EvidenceAsync(parent.Id, Verdict(), Now.AddHours(3))).FollowUp!;
+        await SyncAsync(_a);
+        var lost = await SyncAsync(_b);
+
+        Assert.Empty(lost.Refused);
+        Assert.DoesNotContain(await _b.HistoryAsync(parent.Id), operation => operation.Kind == QuestOperationKind.Evidenced);
+        Assert.Null(await _b.FindAsync(step.Id));
+        Assert.Null(await _remote.FindAsync(step.Id));
+        Assert.Equal(QuestStatus.Declined, (await _b.FindAsync(parent.Id))!.Status);
+    }
+
+    /// <summary>
+    /// EVID1a: a missing verdict on one machine and a later found one on the other both stand, in order: the first keeps
+    /// the done held, the second lets it go, on every machine.
+    /// </summary>
+    [Fact]
+    public async Task A_missing_verdict_then_a_found_one_from_another_machine_both_stand()
+    {
+        var parent = await AwaitingOnBothAsync();
+
+        await _b.EvidenceAsync(parent.Id, Verdict("missing"), Now.AddHours(3));
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+        Assert.Equal(QuestHold.EvidenceMissing, (await _a.FindAsync(parent.Id))!.Hold);
+        await _a.EvidenceAsync(parent.Id, Verdict(), Now.AddHours(4));
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Equal(2, (await store.HistoryAsync(parent.Id)).Count(operation => operation.Kind == QuestOperationKind.Evidenced));
+            Assert.False((await store.FindAsync(parent.Id))!.Held);
+        }
+    }
+
     /// <summary>
     /// A store written by the build before this one — a log with no numbers, a quests table that still
     /// marks mirror rows — opens as a machine with nothing fetched: the mirror row goes (the first fetch

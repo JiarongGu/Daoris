@@ -301,6 +301,39 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
     }
 
     /// <summary>
+    /// EVID1a (D144 §3): a done's evidence is read on the machine whose tree holds the commit, and the verdict travels from
+    /// there as an operation — a shared host has no evidence door. What a push carries is names and codes: a requirement
+    /// whose evidence names a machine's path, or a verdict that does, is not whole, 400, and nothing of it is kept.
+    /// </summary>
+    [Fact]
+    public async Task The_evidence_door_does_not_exist_and_a_machine_path_never_crosses_a_push()
+    {
+        Assert.DoesNotContain(("POST", "/api/quests/{id}/evidence"), host.Routes());
+        var key = (await host.MintAsync("evidence@a-machine")).Key;
+        var refused = await host.SendAsync("POST", "/api/quests/abcdefabcdef/evidence", DaorisHost.Loopback, key,
+            """{ "commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678", "how": "terminal", "items": [] }""");
+        Assert.True(refused.Status is 404 or 405, $"POST /api/quests/{{id}}/evidence answered {refused.Status}");
+
+        await RegisterAsync("EvidenceKeeper", key);
+        const string Push = """
+            { "base": 0, "operations": [{ "machine": "m1", "sequence": 1, "quest": "e1e2e3e4e5e6", "kind": "published",
+              "at": "2026-10-03T09:00:00Z",
+              "asked": { "from": "ask #a1b2c3", "to": "EvidenceKeeper", "title": "t", "body": "b", "links": [], "attachments": [], "then": [],
+                "requirements": [{ "quote": "q", "check": "c", "evidence": [{ "path": "PATH" }] }] } }] }
+            """;
+
+        var machinePath = await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key,
+            Push.Replace("PATH", JsonEncodedText.Encode(Path.Combine(host.Scratch, "checkouts", "EvidenceKeeper", "report.md")).ToString()));
+        var named = await host.SendAsync("POST", "/api/quests/operations", DaorisHost.Loopback, key, Push.Replace("PATH", "docs/report.md"));
+
+        Assert.Equal(400, machinePath.Status);
+        Assert.Equal(200, named.Status);
+        var listed = await host.GetAsync("/api/quests?includeClosed=true", key: key);
+        var kept = Assert.Single(listed.Json.EnumerateArray(), row => row.GetProperty("id").GetString() == "e1e2e3e4e5e6");
+        Assert.Equal("docs/report.md", kept.GetProperty("requirements")[0].GetProperty("evidence")[0].GetProperty("path").GetString());
+    }
+
+    /// <summary>
     /// MSG1a (D137 §2.3): the person's words wait on a record of their own machine's, and only there does it go on — so a
     /// shared host, which holds the team's records and runs no session, has neither the say door nor the taken door.
     /// </summary>
