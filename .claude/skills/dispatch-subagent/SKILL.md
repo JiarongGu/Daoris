@@ -76,6 +76,10 @@ Follow the dispatch-subagent skill's subagent half.
   refusal), search for the old words in every test you may not run: the desktop suites' `Process` half,
   `tools/*rehearsal*.mjs` and the web's `e2e/` specs. Update each hit, and list them in the hand-back.
   NAME1b's renames passed every gate it could run and failed three it could not, all on words it had changed.
+- **A new bridge hook the page presses owes Ask Daoris a door or a reason.** The driver's `HelpCoverageTests` lists
+  every page control with its `Door` or `Exempt`, and a branch outside the driver lane cannot run it. Name the row
+  the hook needs, door or exemption with its reason, in the hand-back; the parent adds it at the merge. LAND3b's
+  `useDiscardSessionBranch` passed every gate it could run and failed the driver's.
 - **Report a flake; do not chase it.** If a real-process test fails under load and passes alone, say so.
   If you think a failure is not yours, name it in the hand-back with the evidence (for example, it
   fails the same way on main). Never skip it silently.
