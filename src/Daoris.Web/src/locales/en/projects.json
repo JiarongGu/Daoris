@@ -189,5 +189,8 @@
   "projects.workspace.twin.rules": "`daoris agent rules allow|ask|deny|remove \"<rule>\" --workspace {{workspace}}`",
   "projects.workspace.summary.noLine": "each checkout's own line",
   "projects.workspace.gone.headline": "This workspace is no longer here",
-  "projects.workspace.gone.body": "No repository registered here is in it now, or this window is not showing it. Choose another in the list."
+  "projects.workspace.gone.body": "No repository registered here is in it now, or this window is not showing it. Choose another in the list.",
+  "projects.workspace.kept": "Kept on this machine",
+  "projects.workspace.clear": "Clear history…",
+  "projects.workspace.clearMeanIt": "Clear {{count}}"
 }

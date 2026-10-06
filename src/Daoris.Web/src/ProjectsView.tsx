@@ -52,6 +52,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
   onOpenCode, onOpenAgent, onSyncNow, syncing = false, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+  onOpenQuest, onOpenAsk, onAttend,
 }: {
   /** The view is in front: only then are its errors said. */
   active: boolean;
@@ -87,6 +88,13 @@ export function useProjectsView({
   /** And its *Import a folder…* (D77): the same kind of event, for the import drawer. */
   importRequested?: boolean;
   onImportOpened?: () => void;
+  /**
+   * A quest's page, an ask's, or a session in Sessions: the doors a workspace's clear offers beside a unit it keeps, where
+   * the page that frees it is (HIST1e, D153 §5). Absent where there is no such page to open.
+   */
+  onOpenQuest?: (id: string) => void;
+  onOpenAsk?: (id: string) => void;
+  onAttend?: (session: string) => void;
 }): ViewLayout {
   const { t } = useTranslation();
   // A chosen item names a workspace or a repository (UX6g, §4.1).
@@ -362,6 +370,9 @@ export function useProjectsView({
           onOpenAgent={onOpenAgent}
           onSyncNow={onSyncNow}
           syncing={syncing}
+          onOpenQuest={onOpenQuest}
+          onOpenAsk={onOpenAsk}
+          onAttend={onAttend}
         />
       )
       : goneOrLoading('workspace')

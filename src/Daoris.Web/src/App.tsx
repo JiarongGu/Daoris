@@ -751,6 +751,10 @@ export function App() {
     onAddOpened: () => setAddRequested(false),
     importRequested,
     onImportOpened: () => setImportRequested(false),
+    // A workspace's clear names what it keeps, each with the page that frees it (HIST1e, D153 §5).
+    onOpenQuest: openQuest,
+    onOpenAsk: openAsk,
+    onAttend: attached ? openInWork : undefined,
   });
   // Search and Convergence (FRAME1f, D118 §2): held on every view, as Quests is, and asking the service nothing until
   // in front; each list's memory is its chosen item and its one filter, *local only* and the similarity (§3f).

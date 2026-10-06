@@ -5,7 +5,9 @@ import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
 import type { Consideration } from '../signals';
 import type { AccountNamer } from '../tools';
-import { Button, Icon, type IconName, Inline, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
+import { Button, Icon, type IconName, Inline, Menu, Pill, Prose, SelectField, SESSION_TONE } from '../ui';
+import { ClearAsk } from '../work/ClearAsk';
+import { clearOffered, type HistoryDoor } from '../work/history';
 import { Note } from '../work/Note';
 import { lastAbandon, pauseAsk, type WorkDoor, workOffers, type WorkPlan, type WorkTarget } from '../work/pausing';
 import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
@@ -71,11 +73,15 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  * doors into Sessions (`AskWork`), so what a pause or an abandon reaches is seen before either is pressed. While the plan is
  * on its way, and in a browser, it lists the quests the ask became, as the service names them.
  *
+ * **Its finished work is cleared from this machine here** (HIST1e, D153; the history-clearing design §6.1): *Clear from this
+ * machine…* in its header's ⋯ once it is done or closed and its plan says its work may go, whole or not at all, listing under
+ * the header first and clearing on the second press exactly what it listed (§5). A browser has no driver, and offers none.
+ *
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function AskPage({
   ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
-  work, considered = [], nameOf,
+  work, history, considered = [], nameOf,
 }: {
   /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, the intake's record's id is said. */
   nameOf?: AccountNamer;
@@ -98,13 +104,18 @@ export function AskPage({
   onAnswerGoAhead?: (number: number, approved: boolean, words?: string) => void;
   /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
+  /**
+   * Clearing its finished work from this machine (HIST1e, D153 §6.1): the plan of its work, and the second press. Absent in a
+   * browser, which has no driver and no home.
+   */
+  history?: HistoryDoor;
   /** The driver's last look at each quest (the tick's `considered`), which says why one of its work sits (PAUSE1h). */
   considered?: readonly Consideration[];
 }) {
   const { t } = useTranslation();
   const [another, setAnother] = useState('');
-  // One question asks under the header at a time: closing, deleting, pausing, or the abandon's list.
-  const [asking, setAsking] = useState<'close' | 'delete' | 'pause' | 'abandon' | null>(null);
+  // One question asks under the header at a time: closing, deleting, pausing, the abandon's list, or the clear's.
+  const [asking, setAsking] = useState<'close' | 'delete' | 'pause' | 'abandon' | 'clear' | null>(null);
   // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
   const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
@@ -113,7 +124,9 @@ export function AskPage({
   const rest = ask.sentence.split('\n').slice(1).join('\n').trim();
   const target: WorkTarget = { scope: 'ask', id: ask.id };
   const offers = workOffers(work?.plan);
-  const waiting = busy || work?.busy === true;
+  const waiting = busy || work?.busy === true || history?.busy === true;
+  // Its clear, once its work closed and its plan says it may go (§6.1): absent, never disabled, anywhere else.
+  const clearable = (ask.state === 'Done' || ask.state === 'Closed') && clearOffered(history?.plan) && asking !== 'clear';
   const pauseLines = work?.plan ? pauseAsk(work.plan, { wired: work.wired }) : null;
   const abandoned = lastAbandon(work);
   // Its work as the plan answers it (PAUSE1h); none while the plan is on its way, or in a browser.
@@ -145,7 +158,9 @@ export function AskPage({
       case 'delete': setAsking('delete'); return;
     }
   };
-  const acts = headActs.length > 0 && (
+  // The clear, in the header's ⋯ (§6.1): drawn only where it is offered, so a page with nothing to clear keeps its header.
+  const clearAct = { id: 'clear', label: t('asks.record.clear'), disabled: waiting, onSelect: () => setAsking('clear') };
+  const acts = (headActs.length > 0 || clearable) && (
     <>
       {headActs.map((act) => (
         <Button key={act} variant={ASK_ACT[act].variant} disabled={waiting} onClick={() => press(act)}>
@@ -153,6 +168,18 @@ export function AskPage({
           {t(ASK_ACT[act].label)}
         </Button>
       ))}
+      {clearable && (
+        <Menu.Root>
+          <Menu.Trigger asChild>
+            <Button variant="ghost" aria-label={t('work.head.more')} className="h-[1.9rem] w-[1.9rem] justify-center px-0">
+              <Icon name="more" size={15} />
+            </Button>
+          </Menu.Trigger>
+          <Menu.Content side="bottom" align="end" className="min-w-48">
+            <Menu.Acts acts={[clearAct]} />
+          </Menu.Content>
+        </Menu.Root>
+      )}
     </>
   );
   const menu = {
@@ -161,6 +188,7 @@ export function AskPage({
       ...headActs.map((act) => ({
         id: act, label: t(ASK_ACT[act].label), icon: ASK_ACT[act].icon, disabled: waiting, onSelect: () => press(act),
       })),
+      ...(clearable ? [clearAct] : []),
       { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy' as const, copy: ask.id },
     ],
   };
@@ -203,6 +231,20 @@ export function AskPage({
           busy={waiting}
           onAbandon={(why) => work.onAbandon(why, listed.abandon.pieces, () => { setAsking(null); setListed(null); })}
           onCancel={() => { setAsking(null); setListed(null); }}
+        />
+      )}
+
+      {asking === 'clear' && history?.plan && (
+        /* 🔴 A clear removes what this machine kept of the ask's work, which nothing gives back (D153): the first press
+           lists it, held from here, and the second sends exactly that (§5). */
+        <ClearAsk
+          className="mb-4"
+          target={{ scope: 'ask', id: ask.id }}
+          plan={history.plan}
+          meanIt={t('asks.record.clearMeanIt')}
+          busy={waiting}
+          onClear={(units) => history.onClear({ scope: 'ask', id: ask.id }, units, () => setAsking(null))}
+          onCancel={() => setAsking(null)}
         />
       )}
 

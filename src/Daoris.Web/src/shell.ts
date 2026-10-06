@@ -14,6 +14,7 @@ export * from './bridge/console';
 export * from './bridge/conversation';
 export * from './bridge/driver';
 export * from './bridge/help';
+export * from './bridge/history';
 export * from './bridge/lines';
 export * from './bridge/log';
 export * from './bridge/plugins';

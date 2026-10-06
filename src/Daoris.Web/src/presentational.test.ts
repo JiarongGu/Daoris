@@ -53,6 +53,9 @@ const ORGANISMS = new Set<string>([
   // The one owner of a pause, a resume and an abandon (PAUSE1e, D132 §7.1): it holds the bridge's hooks, so the ask's page,
   // the quest's page and a session's header, which each press them, hold none.
   './work/workActs.ts',
+  // The one owner of a clear (HIST1e, D153 §6.1): it holds the bridge's hook, so the quest's page, the ask's page and a
+  // workspace's Details, which each press it, hold none.
+  './work/historyActs.ts',
   './work/WorkFrame.tsx',
   // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',
