@@ -118,6 +118,83 @@ public sealed class SignInRefusalTickTests : IDisposable
     }
 
     /// <summary>
+    /// TOOL6h through real ticks: account-1 was last read signed in, and its agent refuses it while its status question still
+    /// says signed in. The refusal owes account-1 one fresh reading: the next look asks it, alone, and honours the yes by starting
+    /// on it, which the agent refuses again; that refusal owes none, so the look after asks nothing and walks past account-1 to
+    /// account-2, which closes the quest. One status question in three looks, and never one per look.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_account_last_read_signed_in_is_asked_once_and_its_answer_honoured_never_at_every_look()
+    {
+        await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
+        var adapters = AdapterSet.Built();
+        var roster = new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")) { Clock = () => Seen, Zone = Zone };
+        using var client = new ServiceClient(service.Url, null);
+        var config = DriverConfig.Empty with
+        {
+            Drivable = ["engine"],
+            Trees = ["engine"],
+            Adapter = "acp-stub",
+            TimeoutMinutes = 1,
+            PollSeconds = 1,
+            Strikes = 1,
+            Commands = new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["acp-stub"] = ["node", AcpAgent(), Log],
+                // The door's accounts are the stub's (AGT7), so its status question is the stub's command's.
+                ["stub"] = ["node", StatusScript(), AskedLog],
+            },
+        };
+        var driver = new Daoris.Driver.Driver(client, config, adapters, _home, processes: new SessionProcesses(), harnesses: roster);
+        AccountReads.Keep(_home, "stub", "account-1", LoginState.In, Seen.AddMinutes(-30));
+
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var retried = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        var next = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
+
+        // One status question, of account-1 alone, at the look after its refusal; the yes ran it, and nothing asked it again.
+        Assert.Equal(["status account-1"], Asked.Where(line => line.StartsWith("status ", StringComparison.Ordinal)));
+        Assert.Equal(
+            [("failed", "account-1"), ("failed", "account-1"), ("completed", "account-2")],
+            new[] { "s1", "s2", "s3" }.Select(id => service.Session(id))
+                .Select(record => (record["state"]!.GetValue<string>(), record["profile"]!.GetValue<string>())));
+        Assert.Equal("Done", service.Status("q1"));
+        var runs = File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!).ToList();
+        Assert.Equal(
+            [("account-1", "session/new"), ("account-1", "session/new"), ("account-2", "session/new"), ("account-2", "session/prompt")],
+            runs.Select(run => (run["account"]!.GetValue<string>(), run["method"]!.GetValue<string>())));
+        Assert.Equal(new AccountRead(LoginState.Out, Seen), AccountReads.Of(_home, "stub").Accounts["account-1"]);
+        Assert.DoesNotContain(new[] { retried, next }.SelectMany(look => look.Considerations), c => c.Verdict == StartVerdict.Exhausted);
+    }
+
+    private string AskedLog => Path.Combine(_home, "asked.log");
+
+    private IReadOnlyList<string> Asked => File.Exists(AskedLog) ? File.ReadAllLines(AskedLog) : [];
+
+    /// <summary>
+    /// The stub's own command, asked only its version and its status question (TOOL6g's exemplar, <c>SignedOutLooksTests</c>):
+    /// each written to the log, and the status answered signed in, as an agent whose local credential outlived its sign-in says.
+    /// </summary>
+    private string StatusScript()
+    {
+        var script = Path.Combine(_home, "status.mjs");
+        File.WriteAllText(script, """
+            import fs from 'node:fs';
+            import path from 'node:path';
+            const log = process.argv[2];
+            const home = process.env.DAORIS_STUB_CONFIG_DIR;
+            if (process.argv.includes('--version')) { fs.appendFileSync(log, 'version\n'); console.log('stub 1.0'); process.exit(0); }
+            if (process.argv.includes('--login-state')) {
+              fs.appendFileSync(log, 'status ' + (home ? path.basename(home) : '(own)') + '\n');
+              console.log('logged-in');
+              process.exit(0);
+            }
+            process.exit(1);
+            """);
+        return script;
+    }
+
+    /// <summary>
     /// The protocol door's stand-in: on account-1, <c>session/new</c> is refused as Claude Code's adapter refused on the
     /// install, <c>-32000 Authentication required</c>; on any other account it opens, and a prompt takes the quest and closes it.
     /// </summary>
