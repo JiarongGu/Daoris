@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a history verb's printed command broke on a spaced workspace
+
+### Driver: `history` and `history clear --workspace` printed the workspace bare in the command they name (HIST1i)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install: the reading's *`daoris-driver history clear --workspace <name>` lists it first* and the list's *`… --yes` clears what this list holds* printed `my team` as two arguments and `R&D` as a command Command Prompt runs.
+- **Root cause:** HIST1d's `HistoryCommand.Door` interpolated the workspace as it was; ACCTQUOTE1b had spelled every driver command that named a workspace before HIST1d added one.
+- **Fix:** `Door` spells the workspace through `ShellWord.Of(…, ShellWord.Workspace)`; D153's HIST1i note says why a quest's or an ask's id needs no spelling.
+- **Verify:** `HistoryCommandTests.A_workspace_in_a_printed_command_is_spelled_for_any_shell`, a spaced and an `R&D` row, failed first on the reading's line, then passed. Not covered: a command a later verb adds goes through `ShellWord` only if its author sends it there.
+
 ## 2026-10-07 — a deleted conversation's files left behind
 
 ### Driver: *Delete…* of a conversation left four of its files under the home (HIST1c)

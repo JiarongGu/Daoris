@@ -439,6 +439,34 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.Contains("\"scope\":\"workspace\"", line);
     }
 
+    /// <summary>
+    /// A workspace's name in a command the verbs print is spelled for any shell (HIST1i, D125's ACCTQUOTE1 and ACCTQUOTE1b notes):
+    /// in double quotes where PowerShell, Command Prompt and a POSIX shell all keep it whole, and its placeholder where none does,
+    /// so <c>R&amp;D</c> pasted into Command Prompt never runs <c>D</c>. The words around the command name it as it is.
+    /// </summary>
+    [Theory]
+    [InlineData("my team", "\"my team\"")]
+    [InlineData("R&D", "<workspace>")]
+    public async Task A_workspace_in_a_printed_command_is_spelled_for_any_shell(string workspace, string spelled)
+    {
+        Kept("s1");
+        var service = new HistoryStandIn { Records = [Record("s1", "q1", workspace: workspace)], Quests = [Quest("q1", workspace: workspace)] };
+        service.Listings[$"workspace={workspace}"] = [Unit("quest", "q1", workspace, quests: ["q1"], sessions: ["s1"])];
+
+        var (readExit, read) = await HistoryAsync(service, "--workspace", workspace);
+        var (listedExit, listed) = await HistoryAsync(service, "clear", "--workspace", workspace);
+
+        Assert.Equal((0, 0), (readExit, listedExit));
+        Assert.StartsWith($"daoris-driver: {workspace} keeps 1 closed quest on this machine, with 1 session: ", read);
+        Assert.Contains(read.Split('\n'), line => line.StartsWith("  a clear would take 1 quest and 1 session, ", StringComparison.Ordinal)
+            && line.EndsWith($": `daoris-driver history clear --workspace {spelled}` lists it first.", StringComparison.Ordinal));
+        var first = listed.Split('\n')[0];
+        Assert.StartsWith($"daoris-driver: clearing {workspace}'s finished history would take 1 quest and 1 session, ", first);
+        Assert.EndsWith(
+            $", and keep 0; `daoris-driver history clear --workspace {spelled} --yes` clears what this list holds. Nothing brings it back.", first);
+        Assert.Empty(service.Pressed);
+    }
+
     /// <summary>A workspace with nothing that may go says so: information, exit 0, and the press sends nothing.</summary>
     [Fact]
     public async Task A_workspace_with_nothing_to_clear_says_so()
