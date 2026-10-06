@@ -1,6 +1,7 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
+import { clockOf, list, moment } from '../format';
 import i18n from '../i18n';
 import { InTheme } from '../plugins/storyIcons';
 import { AnsweredPark } from './AnsweredPark';
@@ -26,12 +27,62 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 /** Every act handed, as a shell's band hands them; a story reports nothing. */
 const ACTS: Required<AttentionActs> = {
   publish: () => {}, retry: () => {}, answer: () => {}, trust: () => {}, acceptDeparture: () => {}, acceptRule: () => {},
-  declineRule: () => {},
+  declineRule: () => {}, signIn: () => {}, read: () => {}, letRun: () => {},
 };
 /** Every door, as a shell's Overview hands them. */
 const DOORS: AttentionDoors = {
   parked: () => {}, 'parked-quest': () => {}, 'go-ahead': () => {}, trust: () => {}, proposal: () => {}, intake: () => {},
-  departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {},
+  departure: () => {}, rule: () => {}, unanswerable: () => {}, review: () => {}, 'account-wait': () => {}, 'signed-out': () => {},
+};
+
+/** A reset tomorrow early, and a reading at this morning's clock: what the account rows say their times from. */
+const RESET = new Date(Date.now() + 18 * 3_600_000).toISOString();
+const READ = at(8);
+const resetSaid = moment(RESET, 'en');
+const readSaid = clockOf(READ, new Date(), 'en');
+
+/** Claude Code, whose accounts the rows below name: the agent's page is each one's door. */
+const CLAUDE = { agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true } as const;
+
+/**
+ * The owner's morning (D150 §6.3's drawing, UX6d): the intake for two asks held behind `home`'s cool-off, having passed two
+ * accounts read signed out. Its why says each as last read, and each signed-out one is a press.
+ */
+const ACCOUNT_WAIT: Attention = {
+  id: 'wait:claude-code/account-2', kind: 'account-wait', title: 'Intake for 2 asks', where: 'work', circle: true, since: at(25),
+  detail: `home cools until ${resetSaid}; account-1 and account-3 read signed out at ${readSaid}.`,
+  account: {
+    ...CLAUDE, outside: null,
+    named: [
+      { id: 'account-2', label: 'home', state: 'cooling', read: READ, until: RESET },
+      { id: 'account-1', label: 'account-1', state: 'out', read: READ, until: null },
+      { id: 'account-3', label: 'account-3', state: 'out', read: READ, until: null },
+    ],
+  },
+};
+
+/**
+ * A quest whose only account cools, with a ready account outside `work`'s list (D130 §3.3) and one no read answered:
+ * *Let … run …*, which asks once, and *Read* for that one account.
+ */
+const LET_IN: Attention = {
+  id: 'quest:claude-code/account-2', kind: 'account-wait', title: 'Read the media field names from config', where: 'engine',
+  since: at(70), detail: `home cools until ${resetSaid}; spare unknown, never read.`,
+  account: {
+    ...CLAUDE,
+    named: [
+      { id: 'account-2', label: 'home', state: 'cooling', read: READ, until: RESET },
+      { id: 'acct-3f9c1a2b', label: 'spare', state: 'unknown', read: null, until: null },
+    ],
+    outside: { id: 'account-4', label: 'account-4', list: 'work', workspace: 'work' },
+  },
+};
+
+/** A signed-out account a list holds that no waiting start names: its own row, its sign-in, its agent's page. */
+const SIGNED_OUT: Attention = {
+  id: 'signed-out:claude-code/account-5', kind: 'signed-out', title: 'you@work.example', where: 'Claude Code', since: at(300),
+  detail: `Read signed out at ${readSaid}. It runs work in this machine and aurora.`,
+  account: { ...CLAUDE, outside: null, named: [{ id: 'acct-7d01e3aa', label: 'you@work.example', state: 'out', read: READ, until: null }] },
 };
 
 /** Overview's main area: the container the row's layout follows, at the width a story gives it. */
@@ -137,11 +188,12 @@ export default meta;
 
 /**
  * Overview's lead as the install would have shown it the morning the asks sat (UX6c, design §6): what holds work (a
- * go-ahead, a quest parked on its failed sessions, a folder held for trust, a parked session), what waits for the person's
- * word (two proposed asks, a departure, a widening), and seven sessions to review, five shown and two counted.
+ * signed-out account a list holds, a folder held for trust, a quest and the asks' intake waiting on their accounts, a quest
+ * parked on its failed sessions, a go-ahead, a parked session), what waits for the person's word (two proposed asks, a
+ * departure, a widening), and seven sessions to review, five shown and two counted.
  */
 const BAND: Attention[] = [
-  PARKED_QUEST, GO_AHEAD, TRUST_ROW, PARKED,
+  SIGNED_OUT, TRUST_ROW, LET_IN, PARKED_QUEST, GO_AHEAD, PARKED, ACCOUNT_WAIT,
   PROPOSAL, { ...PROPOSAL, id: '1b2c3d4e5f6a', title: 'Fix the pipeline’s knowledge check', since: at(170), publishTo: ['engine'], detail: 'The declarations propose engine. Nothing is published until you choose.' },
   DEPARTURE, RULE,
   ...REVIEWS,
@@ -204,6 +256,147 @@ export const Asking: StoryObj = {
         <AttentionRow item={RULE} acts={ACTS} onOpen={() => {}} opened="accept-rule" />
         <AttentionRow item={{ ...PROPOSAL, publishTo: [] }} acts={ACTS} onOpen={() => {}} opened="choose" />
         <AttentionRow item={TRUST_ROW} acts={ACTS} onOpen={() => {}} opened="trust" />
+        {/* UX6d: an account let into the workspace's list, and into this machine's, each saying what it lets Daoris spend. */}
+        <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} opened="let-run" />
+        <AttentionRow
+          item={{ ...LET_IN, id: 'machine', account: { ...LET_IN.account!, outside: { ...LET_IN.account!.outside!, list: null } } }}
+          acts={ACTS}
+          onOpen={() => {}}
+          opened="let-run"
+        />
+      </ul>
+    </Main>
+  ),
+};
+
+/**
+ * The accounts' rows (UX6d, design §6.2–§6.3): the intake waiting behind a cooling account with a sign-in for each account it
+ * passed signed out; a quest whose one account cools, letting a ready one in and reading one never read; a signed-out account
+ * a list holds; the tool's own sign-in cooling, which only the person signs in; three signed out, two pressed and the third
+ * said; the tick's word before the roster answers, nothing to press; a row held while a sign-in runs; a long 中文 name.
+ */
+export const AccountRows: StoryObj = {
+  render: () => (
+    <Main width={1180}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        <AttentionRow item={ACCOUNT_WAIT} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={SIGNED_OUT} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow
+          item={{
+            ...ACCOUNT_WAIT, id: 'own', title: 'Expose a streaming budget on the chunk API', where: 'engine', circle: false,
+            detail: `Your own sign-in cools until ${resetSaid}.`,
+            account: { ...CLAUDE, outside: null, named: [{ id: null, label: 'Your own sign-in', state: 'cooling', read: null, until: RESET }] },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
+        <AttentionRow
+          item={{
+            ...ACCOUNT_WAIT, id: 'three', title: '2 quests', where: 'game', circle: false,
+            detail: `account-1, account-3, and account-6 read signed out at ${readSaid}.`,
+            account: {
+              ...CLAUDE, outside: null,
+              named: ['account-1', 'account-3', 'account-6'].map((id) => ({ id, label: id, state: 'out' as const, read: READ, until: null })),
+            },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
+        <AttentionRow
+          item={{
+            ...ACCOUNT_WAIT, id: 'tick',
+            detail: `home cools until ${resetSaid}; account-1 and account-3 signed out.`,
+            account: { ...ACCOUNT_WAIT.account!, harness: null, signsIn: false, product: 'claude-code' },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
+        <AttentionRow item={{ ...SIGNED_OUT, id: 'held' }} acts={ACTS} onOpen={() => {}} busy />
+        <AttentionRow
+          item={{
+            ...SIGNED_OUT, id: 'cjk', title: '工作账户（团队席位，周额度）',
+            detail: `Read signed out at ${readSaid}. It runs work in 世界流式加载引擎.`,
+            account: { ...CLAUDE, outside: null, named: [{ id: 'acct-1a2b3c4d', label: '工作账户（团队席位，周额度）', state: 'out', read: READ, until: null }] },
+          }}
+          acts={ACTS}
+          onOpen={() => {}}
+        />
+      </ul>
+    </Main>
+  ),
+};
+
+/**
+ * The rows as 中文 derives them (`accountAttention` words each from the catalogue, in the reader's language): the titles and
+ * the lines in 中文, the accounts' names and the reset's moment as the reader's language writes them.
+ */
+function chineseRows(): Attention[] {
+  const t = zh.t.bind(zh);
+  const line = (...clauses: string[]) => t('work.attention.accounts.line', { clauses: clauses.join(t('work.attention.accounts.join')) });
+  const cooling = t('work.attention.accounts.cooling', { account: 'home', when: moment(RESET, 'zh') });
+  const read = clockOf(READ, new Date(), 'zh');
+  return [
+    {
+      ...ACCOUNT_WAIT, title: t('work.attention.held.intakes', { count: 2 }),
+      detail: line(cooling, t('work.attention.accounts.out', { accounts: list(['account-1', 'account-3'], 'zh'), when: read })),
+    },
+    {
+      ...LET_IN, title: '从配置读取媒体字段名',
+      detail: line(cooling, t('work.attention.accounts.never', { accounts: 'spare' })),
+    },
+    {
+      ...SIGNED_OUT,
+      detail: [t('work.attention.signedOut.read', { when: read }), t('work.attention.signedOut.runs', { runs: list([t('agents.runs.machine'), 'aurora'], 'zh') })].join(''),
+    },
+    {
+      ...ACCOUNT_WAIT, id: 'own', title: '在区块 API 上暴露流式预算', where: 'engine', circle: false,
+      detail: line(t('work.attention.accounts.cooling', { account: t('agents.account.own'), when: moment(RESET, 'zh') })),
+      account: { ...CLAUDE, outside: null, named: [{ id: null, label: t('agents.account.own'), state: 'cooling', read: null, until: RESET }] },
+    },
+    {
+      ...SIGNED_OUT, id: 'own-out', title: t('agents.account.own'),
+      detail: [t('work.attention.signedOut.read', { when: read }), t('work.attention.signedOut.own')].join(''),
+      account: { ...CLAUDE, outside: null, named: [{ id: null, label: t('agents.account.own'), state: 'out', read: READ, until: null }] },
+    },
+  ];
+}
+
+/** The accounts' rows in 中文, each title and line as 中文 says it; the tool's own sign-in read signed out, with no press. */
+export const AccountRowsChinese: StoryObj = {
+  decorators: [chinese],
+  render: () => (
+    <Main width={1180}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        {chineseRows().map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} onOpen={() => {}} />)}
+      </ul>
+    </Main>
+  ),
+};
+
+/** The accounts' rows in dark. */
+export const AccountRowsDark: StoryObj = { ...AccountRows, decorators: [dark] };
+
+/** The accounts' rows at 680 px: each act under its row, the door at the end. */
+export const AccountRowsNarrow: StoryObj = {
+  render: () => (
+    <Main width={600}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        <AttentionRow item={ACCOUNT_WAIT} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={LET_IN} acts={ACTS} onOpen={() => {}} />
+        <AttentionRow item={SIGNED_OUT} acts={ACTS} onOpen={() => {}} />
+      </ul>
+    </Main>
+  ),
+};
+
+/** Narrow, in 中文, in dark. */
+export const AccountRowsNarrowChinese: StoryObj = {
+  decorators: [chinese, dark],
+  render: () => (
+    <Main width={600}>
+      <ul className="m-0 grid list-none gap-1 border border-line bg-raised p-0 py-2">
+        {chineseRows().slice(0, 3).map((item) => <AttentionRow key={item.id} item={item} acts={ACTS} onOpen={() => {}} />)}
       </ul>
     </Main>
   ),

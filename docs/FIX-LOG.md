@@ -123,6 +123,12 @@ failed`): git's own files held for a moment, most likely by the scanner, the sam
 `speak` waits for the stub's `close` on every path; what still held the folder (a git the stub started, or the
 scanner) was not captured.
 
+*Fixed the same day:* `desktop-publish.test.ts`'s "retries a held rename at each package and launcher step" failed
+twice (AGENTREAD1's verify, ACCTQUOTE1d's merge gate) with a real EPERM. It handed `layCli` two tries with no wait, the
+first an injected refusal, so the second, a real move of files just unpacked, had no retry left when the scanner held
+them: the very condition the code under test survives. The stub's real move now waits as `renameHeld` does; only the
+injected refusal is counted.
+
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle
 machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit threw

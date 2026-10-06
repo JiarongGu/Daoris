@@ -3,9 +3,13 @@ import i18n from '../i18n';
 import type { Ask, GoAhead, Quest, Registration, Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
 import type { Consideration } from '../signals';
+import { byTool } from '../tools';
+import type { AccountRowFacts, NamedAccount } from './accountAttention';
 import type { Attention } from './AttentionRow';
 import type { SessionGrouping } from './groups';
-import { ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, needsAPerson, waitingInSessions } from './attention';
+import {
+  ASKS_ONCE, ATTENTION_GROUP, attentionActs, attentionGroups, attentionOffers, needsAPerson, waitingInSessions,
+} from './attention';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
@@ -675,6 +679,7 @@ describe('the groups', () => {
   it('puts each kind in its group', () => {
     expect(ATTENTION_GROUP).toEqual({
       parked: 'holding', 'parked-quest': 'holding', 'go-ahead': 'holding', trust: 'holding',
+      'account-wait': 'holding', 'signed-out': 'holding',
       proposal: 'word', intake: 'word', departure: 'word', rule: 'word', unanswerable: 'word',
       review: 'ready',
     });
@@ -721,6 +726,73 @@ describe('what a row offers', () => {
   });
 
   it('asks once before what widens what Daoris may do, and before a choice', () => {
-    expect([...ASKS_ONCE].sort()).toEqual(['accept-rule', 'approve', 'choose', 'refuse', 'trust']);
+    expect([...ASKS_ONCE].sort()).toEqual(['accept-rule', 'approve', 'choose', 'let-run', 'refuse', 'trust']);
+  });
+});
+
+/**
+ * UX6d (design §6.2–§6.3): an account's row offers what settles it in one press, *Sign in* to an account read signed out and
+ * *Read* for one no read answered, and *Let … run …* (D130 §3.3), which asks once since it widens what Daoris may spend. Two
+ * at most beside the door, so a row holds three controls (§9.3).
+ */
+describe('what an account’s row offers', () => {
+  const named = (id: string | null, state: NamedAccount['state'], read: string | null = '2026-10-05T10:42:00Z'): NamedAccount =>
+    ({ id, label: id ?? 'Your own sign-in', state, read, until: null });
+  const facts = (over: Partial<AccountRowFacts> = {}): AccountRowFacts => ({
+    agent: 'claude-code', product: 'Claude Code', harness: 'claude-code', signsIn: true, named: [], outside: null, ...over,
+  });
+  const row = (kind: 'account-wait' | 'signed-out', account: AccountRowFacts): Attention =>
+    ({ id: 'x', kind, title: 't', where: 'w', since: '2026-10-05T10:00:00Z', account });
+
+  it('holds work, whichever it is', () => {
+    expect(ATTENTION_GROUP['account-wait']).toBe('holding');
+    expect(ATTENTION_GROUP['signed-out']).toBe('holding');
+  });
+
+  it('signs in each account a waiting start passed signed out, in the order it names them', () => {
+    const item = row('account-wait', facts({ named: [named('account-2', 'cooling'), named('account-1', 'out'), named('account-3', 'out')] }));
+    expect(attentionOffers(item)).toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'sign-in', account: 'account-3' }]);
+    expect(attentionActs(item)).toEqual(['sign-in', 'sign-in']);
+  });
+
+  it('lets a ready account in, and reads one no read answered, after the sign-ins, two at most', () => {
+    const outside = { id: 'account-4', label: 'account-4', list: 'work', workspace: 'work' };
+    expect(attentionOffers(row('account-wait', facts({ named: [named('account-2', 'cooling'), named('account-5', 'unknown', null)], outside }))))
+      .toEqual([{ act: 'let-run', account: 'account-4' }, { act: 'read', account: 'account-5' }]);
+    expect(attentionOffers(row('account-wait', facts({
+      named: [named('account-1', 'out'), named('account-3', 'out'), named('account-6', 'out')], outside,
+    })))).toEqual([{ act: 'sign-in', account: 'account-1' }, { act: 'sign-in', account: 'account-3' }]);
+  });
+
+  /** A read that failed is a reading: *Read* is for an account never read (§6.3), as the agent's page offers it. */
+  it('reads only an account never read, and signs in nothing where Daoris runs no sign-in', () => {
+    expect(attentionOffers(row('account-wait', facts({ named: [named('account-5', 'unknown')] })))).toEqual([]);
+    expect(attentionOffers(row('account-wait', facts({ signsIn: false, named: [named('account-1', 'out')] })))).toEqual([]);
+  });
+
+  it('signs a signed-out account in, and never the tool’s own sign-in, which is the person’s', () => {
+    expect(attentionOffers(row('signed-out', facts({ named: [named('account-1', 'out')] }))))
+      .toEqual([{ act: 'sign-in', account: 'account-1' }]);
+    expect(attentionOffers(row('signed-out', facts({ named: [named(null, 'out')] })))).toEqual([]);
+    expect(attentionOffers(row('signed-out', facts({ signsIn: false, named: [named('account-1', 'out')] })))).toEqual([]);
+  });
+});
+
+/** UX6d: the account rows are What needs you's holding work, the longest waiting first among the rest (§6.2). */
+describe('what needs a person, with the accounts as last known', () => {
+  it('lists a signed-out account a list holds beside a parked session, the longest waiting first', () => {
+    const tools = byTool([{
+      harness: 'claude-code', present: true, product: 'Claude Code', signsIn: true, machineDefault: 'account-1',
+      profiles: [{ name: 'account-1', home: 'H/account-1', login: 'out', read: '2026-09-21T09:30:00Z' }],
+    }]);
+
+    const rows = needsAPerson(
+      [session({ state: 'awaiting-person' })], [], [registration('engine')], [], [], [], [], [], { tools, use: null, waits: [] },
+    );
+
+    expect(rows.map(({ kind, id }) => [kind, id])).toEqual([
+      ['signed-out', 'signed-out:claude-code/account-1'], ['parked', 's1a2b3c4'],
+    ]);
+    expect(attentionGroups(rows).map(({ group }) => group)).toEqual(['holding']);
   });
 });

@@ -29,7 +29,9 @@ import '../i18n';
 import { keys } from '../queries';
 import { WorkspaceScopeProvider } from '../scope';
 import type { RuleProposal } from '../settings/AgentRules';
-import type { Consideration, TrustHold } from '../signals';
+import { type AccountScope, type AccountsAnswer, USE_DEFAULTS } from '../settings/accounts';
+import type { HarnessRoster } from '../shell';
+import type { AccountWaitTick, Consideration, TrustHold } from '../signals';
 import { AttentionBand, type AttentionDoors } from './AttentionBand';
 import type { SessionGrouping } from './groups';
 import { sessionTitle } from './identity';
@@ -61,6 +63,36 @@ const review = (session: string): SessionGrouping => ({
   session, group: 'review', shown: 'completed', archived: false, teammate: false, work: { commits: 2, uncommitted: 0 },
 });
 
+// UX6d: the accounts as the roster last read them (ROSTER1) and as their files say (TOOL4g). `work` may run on two
+// accounts: one cooling, one read signed out; a third, outside its list, read signed in.
+const READ = '2026-10-01T10:42:00Z';
+const ROSTER: HarnessRoster = {
+  settingsPath: 'harnesses.json', adapter: 'claude-code',
+  harnesses: [{
+    harness: 'claude-code', present: true, product: 'Claude Code', maker: 'Anthropic', signsIn: true, wire: 'pipe',
+    profiles: [
+      { name: 'account-1', home: 'H/account-1', login: 'out', read: READ },
+      { name: 'account-2', home: 'H/account-2', login: 'in', read: READ },
+      { name: 'account-4', home: 'H/account-4', login: 'in', read: READ },
+    ],
+  }],
+};
+const scope = (over: Partial<AccountScope>): AccountScope => ({
+  workspace: null, default: null, list: [], begins: null, use: USE_DEFAULTS, unknown: [], problem: null, near: [], ...over,
+});
+const ACCOUNTS = (list: string[]): AccountsAnswer => ({
+  agents: [{
+    agent: 'claude-code', speaks: true, own: {},
+    accounts: [{ name: 'account-2', cooling: { until: '2026-10-02T04:42:00Z', stated: true, seen: READ, assumedZone: false, notBelieved: false } }],
+    scopes: [scope({}), scope({ workspace: 'default', list, begins: list[0] ?? null })],
+  }],
+});
+/** The intake for an ask, held behind `account-2`'s cool-off, having passed `account-1` signed out. */
+const WAIT: AccountWaitTick = {
+  agent: 'claude-code', account: 'account-2', workspace: 'default', until: '2026-10-02T04:42:00Z', stated: true,
+  quests: [], asks: ['a1'], signedOut: ['account-1'],
+};
+
 function respond(url: string): Response {
   if (url.startsWith('/api/registry')) {
     return Response.json([{ repository: 'engine', workspace: 'default', registered: true, adopted: true, owns: [], accepts: [], packs: [] }]);
@@ -71,13 +103,20 @@ function respond(url: string): Response {
   return Response.json([]);
 }
 
-function start({ considered = [], untrusted = [], proposals = [], groups = [] }: {
+function start({ considered = [], untrusted = [], proposals = [], groups = [], waits = [], roster = {}, accounts = {} }: {
   considered?: Consideration[]; untrusted?: TrustHold[]; proposals?: RuleProposal[]; groups?: SessionGrouping[];
+  waits?: AccountWaitTick[]; roster?: HarnessRoster | object; accounts?: AccountsAnswer | object;
 }, props: { doors?: AttentionDoors; notify?: (text: string, kind?: 'ok' | 'error') => void; onSessions?: () => void } = {}) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: Record<string, unknown> }) => {
     if (type === 'RULES') return { proposals };
     if (type === 'SESSION_GROUPS') return { sessions: groups };
+    if (type === 'HARNESSES') return roster;
+    if (type === 'ACCOUNTS') return accounts;
+    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'login') return { harness: 'claude-code', action: 'login', started: true };
+    if (type === 'HARNESS_ACTION' && request?.payload?.action === 'profile-join') {
+      return { harness: 'claude-code', action: 'profile-join', profile: 'account-4', places: [{ workspace: 'default', list: true, default: false }] };
+    }
     if (type === 'RETRY_QUEST') return { drivable: [], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {}, retried: { quest: 'q1', did: 'marked' } };
     if (type === 'TRUST_FOLDER') return { folder: HOLD.folder, key: 'k', changed: true, verified: true, message: 'Trusted `C:/somewhere/engine` for the agent.' };
     if (type === 'RULE_PROPOSAL') return { path: 'permissions.json', defaults: [], scopes: [], proposals: [{ ...WIDENING, state: request?.payload?.accept ? 'accepted' : 'declined' }] };
@@ -87,6 +126,7 @@ function start({ considered = [], untrusted = [], proposals = [], groups = [] }:
   // What the last tick told the page, as `ShellSignals` writes it.
   client.setQueryData(keys.considered, considered);
   client.setQueryData(keys.untrusted, untrusted);
+  client.setQueryData(keys.waits, waits);
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
@@ -110,13 +150,67 @@ describe('What needs you on a machine', () => {
 
   /**
    * 🔴 No row starts a process to find out (design §6.3): the band reads what the frame already holds, the session list's
-   * groups and the rules file, and asks nothing else of the machine until the person presses.
+   * groups, the rules file, the roster's last readings and the accounts' files, and asks nothing else of the machine until
+   * the person presses. The roster is asked as it was last read, never refreshed: a refresh asks the agents (UX6d, D150
+   * point 5).
    */
   it('asks the machine nothing but the answers it already holds', async () => {
-    start({ considered: [PARKED], untrusted: [HOLD], proposals: [WIDENING], groups: [review('r3v13w00')] });
+    start({
+      considered: [PARKED], untrusted: [HOLD], proposals: [WIDENING], groups: [review('r3v13w00')], waits: [WAIT],
+      roster: ROSTER, accounts: ACCOUNTS(['account-2', 'account-1']),
+    });
     await screen.findByRole('group', { name: 'Ready for you' });
+    await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
 
-    expect([...new Set(asked())].sort()).toEqual(['RULES', 'SESSION_GROUPS']);
+    expect([...new Set(asked())].sort()).toEqual(['ACCOUNTS', 'HARNESSES', 'RULES', 'SESSION_GROUPS']);
+    const roster = invoke.mock.calls.filter(([, type]) => type === 'HARNESSES');
+    expect(roster.every(([, , request]) => !request?.payload?.refresh)).toBe(true);
+  });
+
+  /**
+   * UX6d (design §6.2, §9.4): the intake waiting behind a cooling account says so, and signs in the account it passed signed
+   * out in one press, whose steps follow under the row (the platform language §4: a step happens where it was started).
+   */
+  it('signs in an account a waiting start needs from its row, its steps under the row', async () => {
+    start({ waits: [WAIT], roster: ROSTER, accounts: ACCOUNTS(['account-2', 'account-1']) });
+    const row = await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
+    expect(within(row).getByText('waits for an account')).toBeInTheDocument();
+    // As the roster last read it, once its answer is in.
+    expect(await within(row).findByText(/account-1 read signed out at/)).toBeInTheDocument();
+
+    await userEvent.click(within(row).getByRole('button', { name: 'Sign in to account-1' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'login', profile: 'account-1' },
+    });
+    expect(await within(row).findByRole('region', { name: 'Signing in to account-1' })).toBeInTheDocument();
+  });
+
+  /** D130 §3.3: a ready account outside the workspace's list joins it only after the row says what that lets Daoris spend. */
+  it('lets a ready account run the workspace after asking once, saying where it runs now', async () => {
+    const notify = vi.fn();
+    start({ waits: [{ ...WAIT, signedOut: [] }], roster: ROSTER, accounts: ACCOUNTS(['account-2']) }, { notify });
+    const row = await screen.findByRole('listitem', { name: 'Intake for ask #a1' });
+
+    await userEvent.click(await within(row).findByRole('button', { name: 'Let account-4 run default…' }));
+    expect(asked()).not.toContain('HARNESS_ACTION');
+    await userEvent.click(within(row).getByRole('button', { name: "Add to default's list" }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-join', profile: 'account-4', join: ['default'] },
+    }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('account-4 runs work in default now.'));
+  });
+
+  /** A signed-out account a list holds is a row of its own where no waiting start names it, its door the agent's page. */
+  it('lists a signed-out account a list holds, and opens its agent', async () => {
+    const door = vi.fn();
+    start({ roster: ROSTER, accounts: ACCOUNTS(['account-1']) }, { doors: { 'signed-out': door } });
+    const row = await screen.findByRole('listitem', { name: 'account-1' });
+
+    expect(within(row).getByText('signed out')).toBeInTheDocument();
+    await userEvent.click(within(row).getByRole('button', { name: 'Claude Code' }));
+    expect(door).toHaveBeenCalledWith(expect.objectContaining({ kind: 'signed-out', account: expect.objectContaining({ agent: 'claude-code' }) }));
   });
 
   /** Review can be many (§6.2): five rows, then the rest counted, a door into Sessions, where they are. */
