@@ -1218,8 +1218,8 @@ public sealed partial class ChatRunner : IDisposable
 
         /// <summary>
         /// A call the door refused, opening the session or taking a turn, read for the account's sign-in (SIGNIN1b, D125
-        /// ROSTER1b): where it was, the account reads signed out and the record says so, with the line's code so the page words
-        /// it. Only the door's failure is read (AGT3c), as a driven start's conclusion reads it.
+        /// ROSTER1b): where it was, the account reads signed out and the record says so, its English beside the line's parts as
+        /// a session record's note carries them. Only the door's failure is read (AGT3c), as a driven start's conclusion reads it.
         /// </summary>
         public void ReadSignIn(Exception error)
         {
