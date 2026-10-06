@@ -364,7 +364,14 @@ controls are in the frame design's §3.
   outlives the door is offered with the door said beside it: on a machine whose adapter rides the
   direct door, a quest there sits, and the page says so under the control. The steps' paragraph claims
   only what is proven. *Manage* edits the declaration in the face it is read in (U37).
-- **Convergence / Search** (on the frame since FRAME1f, D118 §2) — each a list pane and a main area.
+- **Knowledge: Search and Convergence** (on the frame since FRAME1f, D118 §2; one place since UX6i, D150 §2.2) — a list
+  pane and a main area, the pane named *Knowledge* and headed by a two-way choice, *Search · Convergence*, remembered for
+  the place and held above the rows as they scroll. Each mode keeps its list, its page and its memory as it had them as a
+  place: its chosen item and its filter, and what was typed in Search while Convergence is in front. The pane's closing
+  and width are the place's, and its strip is the two modes by their glyphs. Every door into either opens the place in
+  that mode: Edit's *Search knowledge* (Ctrl+Shift+F) and a right-click's *Search Daoris for it* on Search, the palette's
+  *Go to: Convergence*, an empty search's *Look in Convergence* and the map's shared finding on Convergence; the bar's place
+  and Go's (Ctrl+6) open it as it was left.
   **Search's list is the box, *each repository's own only* and the hits**: ↓ goes from the box into the
   hits, Escape clears it, and a hit is its title, its repository and kind, and its excerpt. **Convergence's
   list is the similarity, its tier's note, then the findings**: a row is its entries' titles, its kind of
@@ -474,7 +481,7 @@ controls are in the frame design's §3.
   - **A detached session's console is the output panel** (FRAME1h, D118 §4): grown, hidden, and Ctrl+J,
     kept for every detached window apart from the main window's panel. It offers no views menu, since
     the window has no side bar to move one to, and no stop, since nothing in it acts.
-- **Agents** (UX6e, D150 §5) — the activity bar's place after Search, shell-only, on the frame. Its list is each agent once,
+- **Agents** (UX6e, D150 §5) — the activity bar's place after Knowledge, shell-only, on the frame. Its list is each agent once,
   whatever doors reach it: its name and maker, its accounts in a phrase (*3 accounts · 2 signed out*, *not installed*), the
   waiting mark on one with a signed-out account a list or a default holds. Every agent the build knows is listed, the ones
   not installed under a *Not installed* head of their own, each carrying *Install* beside its row and in its right-click

@@ -11491,3 +11491,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT1h — the digest and the scanner read one note fixture** (tools, service). `DecisionNotesTests` checks the service against rows `orient-index.mjs` wrote once for an inline fixture, so a note format changed only on the tools side (`orient-index.mjs`, `doc-duplicates.mjs`) passes every gate. Move the fixture to a shared file both suites read. Contract: D134's ORIENT1g note, twins.md. Proof: changing one row fails both suites.
 
 **Outcome** 2026-10-07: the decisions digest and the service's scanner are held to one note table, `tools/orient-index-fixtures/decision-notes.json` (four decisions, 24 label lines), row for row; a changed row failed both suites. The digest's half (`tools/orient-index.test.mjs`) runs in `verify`, a step CLAUDE.md now names; the lane table sends the table to the service gate (separate commit). The CLI suite's own digest cases keep their copies. Service 1281 → 1296. Detail: D134's ORIENT1h note, twins.md; commit 9ac3f4c3.
+
+
+## UX6i — Knowledge unites Search and Convergence (2026-10-07, D150)
+
+> - [ ] **UX6i — Knowledge unites Search and Convergence** (web-shell). Contract/proof: UX6 §2.2.
+
+**Outcome** 2026-10-07: Knowledge is one place on the bar (Ctrl+6, eight places now), its list's head switching between Search and Convergence, each mode keeping its list, page and memory under its old keys; the mode is remembered. Every old door lands on its mode (Ctrl+Shift+F, "Search Daoris for it", a palette-only "Go to: Convergence" keeping `go.convergence`, the Map's finding), and an old place id Ask Daoris stored maps to Knowledge. Stories count the bar at 11 controls (the install measured 12; UX6j's footer reaches 9). The pane's old per-view width is not read once. Ask Daoris's driver and service words are UX6i2. Web vitest 4270 → 4299. Detail: D150's UX6i note; commits a43e4c54, b68a962e.
+
+
+## LANDSVC1 — proposals advertise auto-accept (2026-10-07, D145)
+
+> - [ ] **LANDSVC1 — proposals advertise auto-accept** (service). Add the flag to setting description and landing refusal so discovery matches the room. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
+
+**Outcome** 2026-10-07: `setting_propose`'s description and `value`, and the service box's landing refusal, name `--auto-accept` in the room's words (`HelpRoomLanding.cs`): on a branch rule, a quest's done lands its work and the rule's plugin pushes and opens a pull request with no press; the person's standing say-so, proposed only when asked and never on a merge. The box's shape check is unchanged. Service 1296 → 1300. Detail: D145's LANDSVC1 note; commit 7bae0068.
+
+
+## HIST1d — terminal history verbs (2026-10-07, D153)
+
+> - [ ] **HIST1d — terminal history verbs** (driver; after c). `daoris-driver history`, `history clear --workspace`, `quest clear [--failed]` and `ask --clear`, each listing until `--yes`, so a machine with no screen clears as the window does (D50). Contract: §6.2. Proof: in-process command tests with exits, usage golden, and a `--json` field twin against `HISTORY_PLAN`.
+
+**Outcome** 2026-10-07: `daoris-driver history [--workspace] [--json]` reads what each workspace keeps, what a clear would take and kept units by reason with the line that frees them; `history clear --workspace`, `quest clear <id> [--failed]` and `ask --clear <id>` list until `--yes`, then clear through `HistoryClearing` at the door `terminal`, printing each kept unit's sentence verbatim. Exits 0 done or listed, 1 a named unit kept or unknown, 2 a removal or usage error. The route's answer moved into the driver library (`HistoryAnswers`, `HistoryCodes`), so `--json` equals `HISTORY_PLAN` field for field, held by a modules test; `ClearDoor` is an Owed row in `HelpCoverageTests` for HIST1f. Driver fast +37, modules fast +2. Detail: D153's HIST1d note; commits 697ce2ef, c9c61c10.
+
+
+## CASEFOLD1 — the CLI's other twins fold names as the driver does (2026-10-07, D125)
+
+> - [ ] **CASEFOLD1 — the CLI's other twins fold names as the driver does** (cli). `cooling.ts`, `windows.ts`, `rotation.ts`, `permissions.ts` and `driverconfig.ts` fold with `toUpperCase`/`toLowerCase`, so `straße` meets `STRASSE` where the driver's `OrdinalIgnoreCase` does not. One helper holding `accountreads.ts`'s fold makes them agree. Contract: D125's AGENTREAD1c note, twins.md. Proof: a `straße` row in each twin's shared table or parsed theory.
+
+**Outcome** 2026-10-07: every CLI twin of a driver file compares names through `casefold.ts` (AGENTREAD1c's fold moved out unchanged: `foldName`, `sameName`, `findName`, `compareNames`), held to `test/fixtures/name-case.json`, nineteen pairs .NET 10 answered under ICU and invariant mode alike; `connect.ts`'s `usesOf` no longer uses the locale's collation. Each parsed twin table gained straße and I rows that failed first; the rows the driver's theories do not hold yet are owed (`DRIVER_OWES`, `heldSoFar`), listed for the driver as CASEFOLD1d. Two gaps found: CASEFOLD1b, CASEFOLD1c. CLI 1334 → 1345. Detail: D125's CASEFOLD1 note, twins.md's name-case row; commit f6ccc63f.

@@ -22,6 +22,7 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
   language: 'en',
   agents: [],
   domains: [],
+  knowledge: 'search',
   session: null,
   quest: null,
   record: false,
@@ -34,7 +35,7 @@ const doors = (): CommandDoors => ({
   ask: vi.fn(), quest: vi.fn(), scope: vi.fn(), add: vi.fn(), import: vi.fn(), workspaceSetup: vi.fn(), sync: vi.fn(),
   wire: vi.fn(), settings: vi.fn(), edit: vi.fn(), find: vi.fn(), searchKnowledge: vi.fn(), copyId: vi.fn(), palette: vi.fn(),
   toggle: vi.fn(), reset: vi.fn(), frame: vi.fn(), monitor: vi.fn(), browser: vi.fn(), theme: vi.fn(), language: vi.fn(),
-  refresh: vi.fn(), go: vi.fn(), agent: vi.fn(), agentPart: vi.fn(), region: vi.fn(), sessionAct: vi.fn(), questAct: vi.fn(), help: vi.fn(),
+  refresh: vi.fn(), go: vi.fn(), knowledge: vi.fn(), agent: vi.fn(), agentPart: vi.fn(), region: vi.fn(), sessionAct: vi.fn(), questAct: vi.fn(), help: vi.fn(),
   quickAsk: vi.fn(), setup: vi.fn(), shortcuts: vi.fn(), update: vi.fn(), about: vi.fn(),
 });
 
@@ -87,10 +88,10 @@ describe('each menu (the design §3.2)', () => {
     ]);
   });
 
-  it('Go: every place but Search and Settings, Ctrl+1 to Ctrl+8 in the bar\'s order, then the regions', () => {
+  it('Go: every place but Settings, Ctrl+1 to Ctrl+8 in the bar\'s order, then the regions', () => {
     const go = inMenu(table(), 'go');
     expect(ids(go)).toEqual([
-      'go.overview', 'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.agents', 'go.plugins',
+      'go.overview', 'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.knowledge', 'go.agents', 'go.plugins',
       'go.nextRegion', 'go.previousRegion',
     ]);
     expect(go.slice(0, 8).map((each) => each.keys[0]?.combo)).toEqual(
@@ -130,7 +131,7 @@ describe('in a browser (D152 §3.6, D47 §4)', () => {
       'view.language:zh', 'view.refresh',
     ]);
     expect(ids(inMenu(browser, 'go'))).toEqual([
-      'go.overview', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.nextRegion', 'go.previousRegion',
+      'go.overview', 'go.quests', 'go.projects', 'go.map', 'go.knowledge', 'go.nextRegion', 'go.previousRegion',
     ]);
     expect(ids(inMenu(browser, 'run'))).toEqual(['run.quest.take', 'run.quest.done', 'run.quest.decline']);
     expect(inMenu(browser, 'terminal')).toEqual([]);
@@ -197,11 +198,57 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
     expect(entry(table({ view: 'map', list: null }), 'view.list')).toBeUndefined();
   });
 
+  /** UX6i: Knowledge's list is its mode's, the result list or the finding list, as each was named when it was a place. */
+  it("names Knowledge's list by what it holds in the mode in front", () => {
+    expect(entry(table({ view: 'knowledge', knowledge: 'search', list: { shown: true } }), 'view.list')?.label)
+      .toBe('layout.menu.list.search');
+    expect(entry(table({ view: 'knowledge', knowledge: 'convergence', list: { shown: true } }), 'view.list')?.label)
+      .toBe('layout.menu.list.convergence');
+  });
+
   it('says no workspace yet, and offers no choice, with none', () => {
     const none = table({ workspaces: [] });
     expect(inMenu(none, 'workspace').find((each) => each.id.startsWith('workspace.scope'))).toMatchObject({
       id: 'workspace.scope:none', label: 'menu.workspace.none', enabled: false, palette: false,
     });
+  });
+});
+
+/**
+ * UX6i (D150 §2.2): Search and Convergence are one place, Knowledge, and every door either had still reaches its list: Go
+ * › Knowledge (Ctrl+6, where Convergence was) opens the place in the mode it was left in, Edit › Search knowledge
+ * (Ctrl+Shift+F) its Search, and the palette's *Go to: Convergence* its Convergence, in no menu, since Go's row is the
+ * place.
+ */
+describe("Knowledge's doors", () => {
+  it('Go › Knowledge is the place, at Ctrl+6, ticked whichever mode is in front', () => {
+    const on = doors();
+    const go = entry(table({}, on), 'go.knowledge');
+    expect(go).toMatchObject({ label: 'nav.knowledge', title: 'command.goTo(nav.knowledge)', icon: 'knowledge', menuItem: true });
+    expect(go?.keys.map((key) => key.combo)).toEqual(['Ctrl+6']);
+    go!.run();
+    expect(on.go).toHaveBeenCalledWith('knowledge');
+    expect(entry(table({ view: 'knowledge', knowledge: 'convergence' }), 'go.knowledge')?.checked).toBe(true);
+  });
+
+  it('Edit › Search knowledge opens its Search', () => {
+    const on = doors();
+    entry(table({}, on), 'edit.search')!.run();
+    expect(on.searchKnowledge).toHaveBeenCalledOnce();
+  });
+
+  it("the palette's Go to: Convergence opens its Convergence, in no menu, and not while Convergence is in front", () => {
+    const on = doors();
+    const row = paletteCommands(table({}, on)).find((each) => each.id === 'go.convergence');
+    expect(row).toMatchObject({ title: 'command.goTo(nav.convergence)', group: 'menu.go', icon: 'convergence' });
+    row!.run();
+    expect(on.knowledge).toHaveBeenCalledWith('convergence');
+    expect(entry(table(), 'go.convergence')?.menuItem).toBe(false);
+    // Knowledge on Search still offers it; Knowledge on Convergence does not, as the place in front is not offered.
+    expect(ids(paletteCommands(table({ view: 'knowledge', knowledge: 'search' })))).toContain('go.convergence');
+    expect(ids(paletteCommands(table({ view: 'knowledge', knowledge: 'convergence' })))).not.toContain('go.convergence');
+    // A browser has Knowledge and both its modes: the index is the service's, which every browser is given.
+    expect(ids(paletteCommands(table({ attached: false })))).toEqual(expect.arrayContaining(['go.convergence', 'edit.search']));
   });
 });
 
@@ -317,6 +364,7 @@ describe('matching what was typed', () => {
     'command.goTo': `Go to: ${String(values?.place ?? '')}`,
     'nav.overview': 'Overview',
     'nav.convergence': 'Convergence',
+    'nav.knowledge': 'Knowledge',
     'nav.sessions': 'Sessions',
     'menu.edit.search': 'Search knowledge',
     'menu.settings': 'Settings',
@@ -332,6 +380,7 @@ describe('matching what was typed', () => {
 
   it('matches a subsequence, not only a substring', () => {
     expect(matching(list, 'cnv').map((c) => c.id)).toContain('go.convergence');
+    expect(matching(list, 'knw').map((c) => c.id)).toContain('go.knowledge');
     expect(matching(list, 'sas').map((c) => c.id)).toContain('run.start');
   });
 

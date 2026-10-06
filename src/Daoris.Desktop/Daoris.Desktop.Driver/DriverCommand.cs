@@ -64,6 +64,13 @@ public static class DriverCommand
           quest delete <id>  ·  quest accept <id>
               delete a quest nobody has started on, or accept a done's departure from what you required, so what
               it held (the chain's next step, a quest waiting on it) goes on.
+          history [--workspace <name>] [--json]
+              what this machine keeps of finished work, per workspace: quests, asks, sessions and bytes, what a
+              clear would take, and what it keeps and why.
+          history clear --workspace <name> [--yes]
+          quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]
+              list what clearing a workspace's finished history, one closed quest's work (or, with --failed, its
+              failed sessions) or one ask's work would take and keep; with --yes, clear it from this machine.
           answer <session> ["…"]
               answer a session that parked to ask you; the same session goes on with your words at the
               driver's next look.

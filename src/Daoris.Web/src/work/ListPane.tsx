@@ -45,7 +45,7 @@ const OPENED_ELSEWHERE = `[data-radix-popper-content-wrapper], [role="menu"], [r
  * The rows carry `data-list-row`, and ↑, ↓, Home and End move between them (`listKeys`).
  */
 export function ListPane({
-  name, labels, layout, bounds, make, more, strip, loading = false, empty, onOpen, onClose, onDismiss, onResize, children,
+  name, labels, layout, bounds, make, more, head, strip, loading = false, empty, onOpen, onClose, onDismiss, onResize, children,
 }: {
   /** The list's name, as its header says it. */
   name: string;
@@ -56,6 +56,11 @@ export function ListPane({
   make?: ListMake;
   /** The view's ⋯: its list's own filters and menu. */
   more?: ReactNode;
+  /**
+   * What heads the list under its header, outside its rows' scroll, so it stays in reach as they scroll: Knowledge's
+   * two-way choice (UX6i, D150 §2.2). Open and laid over; a strip's marks stand for it.
+   */
+  head?: ReactNode;
   /** The view's marks on its strip (`StripMark`s), where it has them. */
   strip?: ReactNode;
   /** The list's first load: skeleton rows, and the strip its controls alone. */
@@ -141,6 +146,7 @@ export function ListPane({
     return (
       <aside ref={aside} aria-label={name} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
         {header}
+        {head}
         {body}
         {edge}
       </aside>
@@ -183,6 +189,7 @@ export function ListPane({
           style={{ width: layout.width }}
         >
           {header}
+          {head}
           {body}
           {edge}
         </div>

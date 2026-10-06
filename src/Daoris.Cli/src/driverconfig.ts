@@ -11,12 +11,17 @@
 // EVERY EDIT PRESERVES WHAT IT DID NOT TOUCH. The driver writes fields this build has no verb for
 // (`pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the file from its own
 // idea of the shape would silently delete the command that makes the stub run.
+//
+// A name or an id the file holds (a repository, a workspace, a quest, an ask, a plugin) is matched "in any case" as the
+// driver's `OrdinalIgnoreCase` matches it, through `casefold.ts` (CASEFOLD1): `straße` is not `STRASSE`, and `İzmir` is not
+// an `i` with a dot above, which a lowered `İzmir` would have met.
 
 import { dirname } from 'node:path';
 import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
 import { flagValue, operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
+import { findName, sameName } from './casefold.ts';
 import { isoMoment } from './cooling.ts';
 import { readPlugins, type PluginCatalog } from './plugins.ts';
 import { normalizeWorkspace } from './remotemap.ts';
@@ -144,8 +149,8 @@ export function languageFor(choices: DriverChoices, repository: string, workspac
 }
 
 function entryIn(map: Record<string, string>, name: string): string | null {
-  const key = Object.keys(map).find((each) => each.toLowerCase() === name.toLowerCase());
-  return key === undefined ? null : map[key]!;
+  const key = findName(Object.keys(map), name);
+  return key === null ? null : map[key]!;
 }
 
 /** A standing answer (KNOWUSE1b): the person's words, and when they set them, or null where the file does not say. */
@@ -189,7 +194,7 @@ const EMPTY: DriverChoices = {
  */
 export function writeAcrossProblem(repository: string, to: string): string | null {
   if (to.trim().length === 0) return 'a relationship names the repository it may write into.';
-  return repository.trim().toLowerCase() === to.trim().toLowerCase()
+  return sameName(repository.trim(), to.trim())
     ? `\`${repository.trim()}\` writes in its own tree already — a relationship names another repository.`
     : null;
 }
@@ -293,7 +298,7 @@ export function landingProblem(rule: LandingRule): string | null {
  * The driver's `LandingRules.PluginProblem` is the twin, and asks again at the press.
  */
 export function landingPluginProblem(plugin: string, catalog: PluginCatalog): string | null {
-  const entry = catalog.plugins.find((p) => p.manifest.id.toLowerCase() === plugin.toLowerCase());
+  const entry = catalog.plugins.find((p) => sameName(p.manifest.id, plugin));
   if (!entry) {
     return `the landing rule names plugin \`${plugin}\`, which is not installed on this machine — `
       + '`daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is.';
@@ -508,7 +513,7 @@ export function commandDriver(
       }
 
       const on = direction === 'on';
-      const kept = choices.trees.filter((name) => name.toLowerCase() !== repository.toLowerCase());
+      const kept = choices.trees.filter((name) => !sameName(name, repository));
       writeDriverChoices(path, { ...choices, trees: on ? [...kept, repository] : kept });
 
       write(on
@@ -604,7 +609,7 @@ export function commandDriver(
             + '(`--at <n>`) — a stop is not a strike, so the two never go together.');
         }
 
-        const key = Object.keys(choices.released).find((name) => name.toLowerCase() === quest.toLowerCase()) ?? quest;
+        const key = findName(Object.keys(choices.released), quest) ?? quest;
         writeDriverChoices(path, { ...choices, released: { ...choices.released, [key]: session } });
         write(`daoris: quest \`#${quest}\` is released from your stop of session \`${session}\`.`);
         write('  The driver takes it up again at its next look: a taken quest is carried on in the tree that session');
@@ -968,7 +973,7 @@ export function commandDriver(
       }
 
       // The repository's spelling first written, when it has one in another case: one entry, never two.
-      const key = Object.keys(choices.standing).find((name) => name.toLowerCase() === repository.toLowerCase()) ?? repository;
+      const key = findName(Object.keys(choices.standing), repository) ?? repository;
       const rest = Object.fromEntries(Object.entries(choices.standing).filter(([name]) => name !== key));
       writeDriverChoices(path, { ...choices, standing: clear ? rest : { ...rest, [key]: { says, at: new Date() } } });
 
@@ -1006,7 +1011,7 @@ export function commandDriver(
 
       const map = workspace ? choices.workspaceLanguages : choices.languages;
       // The name's spelling first written, when it has one in another case: one entry, never two.
-      const key = Object.keys(map).find((each) => each.toLowerCase() === name.toLowerCase()) ?? name;
+      const key = findName(Object.keys(map), name) ?? name;
       const rest = Object.fromEntries(Object.entries(map).filter(([each]) => each !== key));
       const next = code === null ? rest : { ...rest, [key]: code };
       writeDriverChoices(path, workspace ? { ...choices, workspaceLanguages: next } : { ...choices, languages: next });
@@ -1089,8 +1094,8 @@ export function commandDriver(
     }
 
     for (const repository of choices.drivable) {
-      const held = choices.holds.some((name) => name.toLowerCase() === repository.toLowerCase());
-      const trees = choices.trees.some((name) => name.toLowerCase() === repository.toLowerCase());
+      const held = findName(choices.holds, repository) !== null;
+      const trees = findName(choices.trees, repository) !== null;
       write(`  drivable   ${repository}`
         + `${held ? '  (held by you — `daoris driver resume` releases it)' : ''}`
         + `${trees ? '  (sessions open their own tree — D51)' : ''}`);
@@ -1099,7 +1104,7 @@ export function commandDriver(
     // Trees on something not drivable is standing configuration, not an error — the desktop's chat
     // door reads it too — but naming it keeps the list the whole truth.
     for (const repository of choices.trees) {
-      if (!choices.drivable.some((name) => name.toLowerCase() === repository.toLowerCase())) {
+      if (findName(choices.drivable, repository) === null) {
         write(`  trees      ${repository}  (sessions there open their own tree when anything spawns one)`);
       }
     }
@@ -1160,7 +1165,7 @@ export function commandDriver(
     // and is not. Reported even when NOTHING is drivable — which is exactly the machine where a
     // person is most likely to believe a hold is what is stopping things.
     for (const held of choices.holds) {
-      if (!choices.drivable.some((name) => name.toLowerCase() === held.toLowerCase())) {
+      if (findName(choices.drivable, held) === null) {
         write(`  held       ${held}  (not drivable anyway — the hold changes nothing)`);
       }
     }
@@ -1169,7 +1174,7 @@ export function commandDriver(
   }
 
   function toggle(field: 'drivable' | 'holds', repository: string, present: boolean): ExitCode {
-    const kept = choices[field].filter((name) => name.toLowerCase() !== repository.toLowerCase());
+    const kept = choices[field].filter((name) => !sameName(name, repository));
     const next = present ? [...kept, repository] : kept;
     writeDriverChoices(path, { ...choices, [field]: next });
 
@@ -1206,8 +1211,8 @@ export function commandDriver(
  * driver's `DriverConfig.ReleasedFor` matches it.
  */
 export function releasedFor(choices: DriverChoices, quest: string): string | null {
-  const key = Object.keys(choices.released).find((name) => name.toLowerCase() === quest.toLowerCase());
-  return key === undefined ? null : choices.released[key]!;
+  const key = findName(Object.keys(choices.released), quest);
+  return key === null ? null : choices.released[key]!;
 }
 
 /**
@@ -1215,9 +1220,8 @@ export function releasedFor(choices: DriverChoices, quest: string): string | nul
  * `DriverConfig.StandingFor` matches it.
  */
 export function standingFor(choices: DriverChoices, repository: string): StandingAnswer | null {
-  const named = repository.trim().toLowerCase();
-  const key = Object.keys(choices.standing).find((name) => name.toLowerCase() === named);
-  return key === undefined ? null : choices.standing[key]!;
+  const key = findName(Object.keys(choices.standing), repository.trim());
+  return key === null ? null : choices.standing[key]!;
 }
 
 /**
@@ -1233,7 +1237,7 @@ function standings(value: unknown): Record<string, StandingAnswer> {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry) || repository.trim().length === 0) continue;
     const { says, at } = entry as Record<string, unknown>;
     if (typeof says !== 'string' || says.trim().length === 0) continue;
-    if (Object.keys(held).some((name) => name.toLowerCase() === repository.toLowerCase())) continue;
+    if (findName(Object.keys(held), repository) !== null) continue;
     held[repository] = { says: says.trim(), at: isoMoment(at) };
   }
 
@@ -1252,7 +1256,7 @@ function languageMap(value: unknown): Record<string, string> {
     const code = languageCode(spelled);
     const named = name.trim();
     if (code === null || named.length === 0) continue;
-    if (Object.keys(held).some((each) => each.toLowerCase() === named.toLowerCase())) continue;
+    if (findName(Object.keys(held), named) !== null) continue;
     held[named] = code;
   }
 
@@ -1270,9 +1274,8 @@ export function pausedQuest(choices: DriverChoices, quest: string): WorkPause | 
 }
 
 function pauseOf(pauses: Record<string, WorkPause>, id: string): WorkPause | null {
-  const named = id.trim().replace(/^#+/, '').trim().toLowerCase();
-  const key = Object.keys(pauses).find((name) => name.toLowerCase() === named);
-  return key === undefined ? null : pauses[key]!;
+  const key = findName(Object.keys(pauses), id.trim().replace(/^#+/, '').trim());
+  return key === null ? null : pauses[key]!;
 }
 
 /**
@@ -1285,7 +1288,7 @@ function pauses(value: unknown): Record<string, WorkPause> {
   const held: Record<string, WorkPause> = {};
   for (const [id, entry] of Object.entries(value as Record<string, unknown>)) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry) || id.length === 0) continue;
-    if (Object.keys(held).some((name) => name.toLowerCase() === id.toLowerCase())) continue;
+    if (findName(Object.keys(held), id) !== null) continue;
     const { at, stopped } = entry as Record<string, unknown>;
     held[id] = { at: isoMoment(at), stopped: releases(stopped) };
   }
@@ -1303,7 +1306,7 @@ function releases(value: unknown): Record<string, string> {
   const held: Record<string, string> = {};
   for (const [quest, session] of Object.entries(value as Record<string, unknown>)) {
     if (typeof session !== 'string' || session.trim().length === 0 || quest.length === 0) continue;
-    if (Object.keys(held).some((name) => name.toLowerCase() === quest.toLowerCase())) continue;
+    if (findName(Object.keys(held), quest) !== null) continue;
     held[quest] = session.trim();
   }
 
@@ -1334,7 +1337,7 @@ function branchMap(value: unknown): Record<string, string> {
 
 /** The map with `key` set to `value`, or removed — matched without case, as the driver matches it. */
 function withEntry<T>(map: Record<string, T>, key: string, value: T | null): Record<string, T> {
-  const kept = Object.fromEntries(Object.entries(map).filter(([name]) => name.toLowerCase() !== key.toLowerCase()));
+  const kept = Object.fromEntries(Object.entries(map).filter(([name]) => !sameName(name, key)));
   return value === null ? kept : { ...kept, [key]: value };
 }
 
@@ -1343,9 +1346,9 @@ function withEntry<T>(map: Record<string, T>, key: string, value: T | null): Rec
  * driver matches it, keeping the repository's existing spelling. The last one taken back leaves no entry.
  */
 function withTarget(map: Record<string, string[]>, repository: string, to: string, allow: boolean): Record<string, string[]> {
-  const key = Object.keys(map).find((name) => name.toLowerCase() === repository.trim().toLowerCase()) ?? repository.trim();
+  const key = findName(Object.keys(map), repository.trim()) ?? repository.trim();
   const held = map[key] ?? [];
-  const same = (name: string) => name.toLowerCase() === to.trim().toLowerCase();
+  const same = (name: string) => sameName(name, to.trim());
   const kept = allow ? (held.some(same) ? held : [...held, to.trim()]) : held.filter((name) => !same(name));
   const rest = Object.fromEntries(Object.entries(map).filter(([name]) => name !== key));
   return kept.length > 0 ? { ...rest, [key]: kept } : rest;
@@ -1375,7 +1378,7 @@ function targetMap(value: unknown): Record<string, string[]> {
     const targets: string[] = [];
     for (const item of list) {
       if (typeof item !== 'string' || writeAcrossProblem(name, item) !== null) continue;
-      if (!targets.some((target) => target.toLowerCase() === item.trim().toLowerCase())) targets.push(item.trim());
+      if (findName(targets, item.trim()) === null) targets.push(item.trim());
     }
 
     if (targets.length > 0) held[name.trim()] = targets;

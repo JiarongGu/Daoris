@@ -119,7 +119,7 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `plugins/` since PLUGUI1b: the Plugins view's list, strip and pages, drawn from props — PluginsView holds the catalogue.
 // `quests/` since FRAME1d: Quests' list, a quest's page and its composer, drawn from props — QuestsView holds the queries.
 // `knowledge/` since FRAME1f: Search's and Convergence's lists and pages, drawn from props — SearchView and
-// ConvergenceView hold the queries.
+// ConvergenceView hold the queries; since UX6i Knowledge's head and strip too, and KnowledgeView holds the two.
 // `update/` since UPDATE1: the update's banner, drawn from props — the application holds the update's hooks.
 // `menus/` since CTX1: the right-click menu and its one handler, handed the frame's doors — App and the secondary
 // window's root hold the bridge, so a surface that offers its acts reaches no data through it.

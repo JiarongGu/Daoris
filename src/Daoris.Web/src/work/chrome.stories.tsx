@@ -8,13 +8,16 @@ import { Button, Icon, LanguageSwitcher } from '../ui';
 // are molecules — every state below is reached by passing props, with no shell and no service behind
 // them (components plan §2).
 
+// The bar's places as a shell draws them since UX6i (D150 §2.1): Search and Convergence are one place, Knowledge.
 const VIEWS = [
   { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
   { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 2, tone: 'open' as const },
   { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, badge: 1 },
   { tab: 'projects' as const, label: 'Repositories', icon: 'projects' as const },
-  { tab: 'convergence' as const, label: 'Convergence', icon: 'convergence' as const },
-  { tab: 'search' as const, label: 'Search', icon: 'search' as const },
+  { tab: 'map' as const, label: 'Map', icon: 'map' as const },
+  { tab: 'knowledge' as const, label: 'Knowledge', icon: 'knowledge' as const },
+  { tab: 'agents' as const, label: 'Agents', icon: 'account' as const },
+  { tab: 'plugins' as const, label: 'Plugins', icon: 'plug' as const },
 ];
 const SETTINGS = [{ tab: 'settings' as const, label: 'Settings', icon: 'settings' as const }];
 
@@ -81,7 +84,7 @@ export const CaptionRoomReserved: Story = { args: { captionRoom: true } };
  */
 export const Bar: StoryObj<typeof ActivityBar> = {
   render: () => (
-    <Tooltip.Provider><div className="flex h-[26rem] border border-line">
+    <Tooltip.Provider><div className="flex h-[30rem] border border-line">
       <ActivityBar
         label="Views"
         items={VIEWS}
@@ -98,20 +101,20 @@ export const Bar: StoryObj<typeof ActivityBar> = {
 /** Settings current — the foot place wears the marking the list's places do. */
 export const BarOnSettings: StoryObj<typeof ActivityBar> = {
   render: () => (
-    <Tooltip.Provider><div className="flex h-[26rem] border border-line">
+    <Tooltip.Provider><div className="flex h-[30rem] border border-line">
       <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="settings" onSelect={() => {}} />
       <div className="flex-1 bg-page" />
     </div></Tooltip.Provider>
   ),
 };
 
-/** A browser has no Sessions at all — an absent item, never a disabled one. */
+/** A browser has no Sessions, Agents or Plugins at all — an absent item, never a disabled one. */
 export const BarInABrowser: StoryObj<typeof ActivityBar> = {
   render: () => (
-    <Tooltip.Provider><div className="flex h-[26rem] border border-line">
+    <Tooltip.Provider><div className="flex h-[30rem] border border-line">
       <ActivityBar
         label="Views"
-        items={VIEWS.filter((item) => item.tab !== 'sessions')}
+        items={VIEWS.filter((item) => item.tab !== 'sessions' && item.tab !== 'agents' && item.tab !== 'plugins')}
         end={SETTINGS}
         active="overview"
         onSelect={() => {}}

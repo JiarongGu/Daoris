@@ -18,6 +18,9 @@ namespace Daoris.Desktop;
 /// which of its sentences is meant as <c>context</c>; read by the driver library from the service's word and the records it
 /// names, never from the service's sentence. A word this build does not know is a newer service's, said verbatim as the
 /// driver's refusal.</para>
+///
+/// <para><b>The answers are the driver library's projection</b> (<see cref="HistoryAnswers"/>, HIST1d), which
+/// <c>daoris-driver history --json</c> prints too, so the terminal's answer is this route's field for field (D50).</para>
 /// </remarks>
 public sealed partial class DriverModule
 {
@@ -33,38 +36,8 @@ public sealed partial class DriverModule
         var plan = await HistoryClearing.PlanAsync(HistoryWorldOf(), scope, id, cancellationToken).ConfigureAwait(false);
         if (scope != HistoryScope.Workspace && plan.Units is [{ Keep.Word: HistoryWords.Unknown } unknown]) throw HistoryKept(unknown.Keep!);
 
-        return new
-        {
-            Scope = HistoryClearing.Word(plan.Scope),
-            plan.Id,
-            Units = plan.Units.Select(HistoryUnit).ToArray(),
-            Reading = plan.Reading is { } reading
-                ? new
-                {
-                    reading.Workspace,
-                    reading.Quests,
-                    reading.Asks,
-                    reading.Sessions,
-                    reading.Teammates,
-                    Bytes = Sizes(reading.Bytes),
-                    reading.Intake,
-                    Takes = new
-                    {
-                        reading.Takes.Quests,
-                        reading.Takes.Asks,
-                        reading.Takes.Sessions,
-                        reading.Takes.Teammates,
-                        reading.Takes.Bytes,
-                    },
-                    KeptBy = reading.KeptBy
-                        .GroupBy(each => HistoryCode(each.Key), StringComparer.Ordinal)
-                        .ToDictionary(group => group.Key, group => group.Sum(each => each.Value), StringComparer.Ordinal),
-                    Conversations = new { Count = reading.Conversations, Bytes = reading.ConversationBytes },
-                    LeftOver = new { Count = reading.LeftOver, Bytes = reading.LeftOverBytes },
-                    reading.Log,
-                }
-                : null,
-        };
+        // HIST1d: the driver library's projection, which `daoris-driver history --json` prints too, field for field.
+        return HistoryAnswers.Plan(plan);
     }
 
     /// <summary>
@@ -82,23 +55,7 @@ public sealed partial class DriverModule
         if (scope != HistoryScope.Workspace && outcome is { Cleared.Count: 0, Changed: [var stayed] }) throw HistoryKept(stayed.Keep!);
 
         _loop.Nudge();
-        return new
-        {
-            Scope = HistoryClearing.Word(outcome.Scope),
-            outcome.Id,
-            outcome.Listed,
-            Cleared = outcome.Cleared.Select(unit => new { unit.Kind, unit.Id }).ToArray(),
-            outcome.Quests,
-            outcome.Asks,
-            outcome.Sessions,
-            outcome.Teammates,
-            outcome.Forgotten,
-            outcome.Bytes,
-            outcome.LeftOver,
-            outcome.Intake,
-            outcome.Failed,
-            Changed = outcome.Changed.Select(unit => new { unit.Kind, unit.Id, Keep = Reason(unit.Keep!) }).ToArray(),
-        };
+        return HistoryAnswers.Cleared(outcome);
     }
 
     /// <summary>The scope a history route names: exactly one of <c>workspace</c>, <c>quest</c> and <c>ask</c>; <c>failed</c> only beside a quest.</summary>
@@ -132,60 +89,6 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
         return new HistoryWorld(service, _loop.Home, _loop.ConfigPath, _loop.Processes) { Events = _loop.Events, Log = _loop.Log };
     }
-
-    private static object HistoryUnit(HistoryUnitPlan unit) => new
-    {
-        unit.Kind,
-        unit.Id,
-        unit.Workspace,
-        unit.Clearable,
-        unit.Quests,
-        unit.Forgotten,
-        unit.Asks,
-        unit.Sessions,
-        unit.Teammates,
-        Keep = unit.Keep is { } keep ? Reason(keep) : null,
-        Kept = unit.Kept.Select(Reason).ToArray(),
-        Bytes = Sizes(unit.Bytes),
-    };
-
-    private static object Sizes(HistoryBytes bytes) =>
-        new { bytes.Conversations, bytes.Transcripts, bytes.Files, bytes.Kept, bytes.Other, bytes.Total };
-
-    /// <summary>A reason as the page reads it: its code, which of its sentences, and what it names; the sentence only for a word this build does not know.</summary>
-    private static object Reason(HistoryKeep keep)
-    {
-        var code = HistoryCode(keep.Word);
-        return new
-        {
-            Code = code,
-            keep.Context,
-            keep.Quest,
-            keep.Ask,
-            keep.Session,
-            keep.Machine,
-            keep.Workspace,
-            keep.Repository,
-            keep.Branch,
-            Message = code == Refusals.DriverRefused ? keep.Message : null,
-        };
-    }
-
-    /// <summary>The catalogue's code for a word: the service's and this machine's, and the driver's verbatim refusal for a newer word.</summary>
-    private static string HistoryCode(string word) => word switch
-    {
-        HistoryWords.Unknown => Refusals.HistoryUnknown,
-        HistoryWords.Open => Refusals.HistoryOpen,
-        HistoryWords.Asked => Refusals.HistoryAsked,
-        HistoryWords.Live => Refusals.HistoryLive,
-        HistoryWords.NeedsYou => Refusals.HistoryNeedsYou,
-        HistoryWords.Awaited => Refusals.HistoryAwaited,
-        HistoryWords.TreeHere => Refusals.HistoryTreeHere,
-        HistoryWords.LandingStands => Refusals.HistoryLandingStands,
-        HistoryWords.Unpushed => Refusals.HistoryUnpushed,
-        HistoryWords.NotOurs => Refusals.HistoryNotOurs,
-        _ => Refusals.DriverRefused,
-    };
 
     /// <summary>A unit kept, refused in its code with the facts its sentence names and which of its sentences is meant.</summary>
     private static Exception HistoryKept(HistoryKeep keep)

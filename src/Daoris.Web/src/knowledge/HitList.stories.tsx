@@ -3,11 +3,13 @@ import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
 import { ListPane } from '../work/ListPane';
 import { CJK_HIT, HITS } from './fixtures';
 import { HitList, type HitsAnswer } from './HitList';
+import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 
-// Search's list (FRAME1f, D118 §2) on its list pane, in every state the design names: nothing typed, the hits with one
-// chosen, capped, found by words alone on a deployment that matches meaning, the first search on its way, a newer one
-// on its way with the last hits held, no matches by each tier, nothing answering, an error with no answer ever, a 中文
-// hit, everything rather than local only, the strip, and laid over the main area.
+// Search's list (FRAME1f, D118 §2) on Knowledge's pane (UX6i, D150 §2.2), under the place's two-way choice, in every state
+// the design names: nothing typed, the hits with one chosen, capped, found by words alone on a deployment that matches
+// meaning, the first search on its way, a newer one on its way with the last hits held, no matches by each tier,
+// nothing answering, an error with no answer ever, a 中文 hit, everything rather than local only, the strip, and laid
+// over the main area.
 
 const open = (width: number): ListLayout => ({ mode: 'open', width, beside: width, auto: false });
 const CLOSED: ListLayout = { mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false };
@@ -24,14 +26,16 @@ type Args = {
   layout?: ListLayout;
 };
 
-/** The list as the view hands it to its pane: no ＋, since Search makes nothing, and its body. */
-function SearchListPane({ query, answer, localOnly = true, semantic = false, chosen = null, layout = open(LIST_BOUNDS.search.initial) }: Args) {
+/** The list as the place hands it to its pane: no ＋, since Search makes nothing, the place's choice, and its body. */
+function SearchListPane({ query, answer, localOnly = true, semantic = false, chosen = null, layout = open(LIST_BOUNDS.knowledge.initial) }: Args) {
   return (
     <ListPane
-      name="Search"
+      name="Knowledge"
       labels={{ open: 'Show the result list', close: 'Hide the result list', resize: 'result list width' }}
       layout={layout}
-      bounds={LIST_BOUNDS.search}
+      bounds={LIST_BOUNDS.knowledge}
+      head={<KnowledgeModes mode="search" onMode={() => {}} />}
+      strip={<KnowledgeStrip mode="search" onMode={() => {}} />}
       onOpen={() => {}}
       onClose={() => {}}
       onDismiss={() => {}}
@@ -113,4 +117,4 @@ export const Everything: Story = { args: { localOnly: false } };
 export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */
-export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.search.initial, beside: LIST_STRIP, auto: true } } };
+export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.knowledge.initial, beside: LIST_STRIP, auto: true } } };

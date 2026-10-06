@@ -9,7 +9,8 @@
 // The rules both keep:
 //
 //   1. Read: each name trimmed; a blank, or a name that is not text, skipped; a name written twice, in any case, read
-//      once where first written. A list that is not one, or names nobody, is none; so is a workspace naming none.
+//      once where first written. A list that is not one, or names nobody, is none; so is a workspace naming none. "In any
+//      case" here and below is the driver's `OrdinalIgnoreCase` (`casefold.ts`, CASEFOLD1): `straße` is not `STRASSE`.
 //   2. Resolved as a default is: the workspace's order for the agent, else the machine's, else none — and none is no
 //      rotation at all, a cooling account holding its starts as it did before (D48 §2a).
 //   3. Written only when set: an order replaced whole, cleared by naming nobody, and a workspace left with none dropped.
@@ -48,6 +49,7 @@
 // The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; `early` and `near` pass an
 // account its agent said is near, where the agent's door carries that word (`windows.json`, the toolchain's `windows`).
 
+import { findName, foldName } from './casefold.ts';
 import { shellWord } from './shellword.ts';
 import type { HarnessSettings } from './toolchain.ts';
 
@@ -63,7 +65,7 @@ export function readOrders(value: unknown): Orders {
     const order: string[] = [];
     for (const item of list) {
       const name = typeof item === 'string' ? item.trim() : '';
-      if (name.length > 0 && !order.some((held) => held.toLowerCase() === name.toLowerCase())) order.push(name);
+      if (name.length > 0 && findName(order, name) === null) order.push(name);
     }
     if (order.length > 0) orders[agent] = order;
   }
@@ -137,8 +139,8 @@ export function rotationProblem(accounts: string[], order: string[]): { account:
   for (const raw of order) {
     const name = raw.trim();
     if (!accounts.includes(name)) return { account: name, twice: false };
-    if (named.has(name.toLowerCase())) return { account: name, twice: true };
-    named.add(name.toLowerCase());
+    if (named.has(foldName(name))) return { account: name, twice: true };
+    named.add(foldName(name));
   }
   return null;
 }
@@ -240,7 +242,7 @@ export function placesOf(settings: HarnessSettings, agent: string, account: stri
   add(null, settings.rotation[agent], settings.defaults[agent]);
   const seen = new Set<string>();
   const workspaces = [...Object.keys(settings.workspaces), ...Object.keys(settings.workspaceRotation)]
-    .filter((workspace) => !seen.has(workspace.toLowerCase()) && seen.add(workspace.toLowerCase()))
+    .filter((workspace) => !seen.has(foldName(workspace)) && seen.add(foldName(workspace)))
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   for (const workspace of workspaces) {
     add(workspace, settings.workspaceRotation[workspace]?.[agent], settings.workspaces[workspace]?.[agent]);

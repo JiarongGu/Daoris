@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { commandHarness, profileHome, readHarnessSettings, withDefault, writeHarnessSettings } from '../src/toolchain.ts';
 import { resolveRotation, rotationProblem, withRotation, withoutAccount } from '../src/rotation.ts';
-import { driverRows as csharpRows } from './_csharp.ts';
+import { driverRows as csharpRows, heldSoFar } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -52,7 +52,19 @@ const ORDER_ROWS: [name: string, file: string, agent: string, workspace: Cell, o
   ['a rotation that is not an object is none', '{"rotation":["account-1"]}', 'claude-code', null, null, 'unset'],
   ['a workspace\'s orders that are not an object are none', '{"workspaceRotation":{"work":["account-1"]}}', 'claude-code', 'work', null, 'unset'],
   ['a file that does not read is none', 'not json', 'claude-code', null, null, 'unset'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"rotation":{"claude-code":["straße","STRASSE"]}}', 'claude-code', null, '["straße","STRASSE"]', 'machine'],
+  ['a dotted capital I is not an i with a dot above', '{"rotation":{"claude-code":["İzmir","i\\u0307zmir"]}}', 'claude-code', null, '["İzmir","i\\u0307zmir"]', 'machine'],
 ];
+
+/**
+ * CASEFOLD1's rows, which `RotationTwinTests` does not hold yet: names compare as the driver's `OrdinalIgnoreCase` does
+ * (`casefold.ts`), so a name full case mapping would widen or lower to two letters is read as its own. The twin check below
+ * holds each the driver holds, cell for cell.
+ */
+const DRIVER_OWES = new Set([
+  'a letter whose capital is two letters is not those two: straße is not STRASSE',
+  'a dotted capital I is not an i with a dot above',
+]);
 
 test('an order resolves as the driver resolves it: the workspace\'s, else the machine\'s, else none', () => {
   const fx = makeFixture('rotation-resolve');
@@ -96,6 +108,8 @@ const PROBLEM_ROWS: [why: string, accounts: string, order: string, refused: Cell
   ['a name in another case than its directory\'s names no account', '["account-1"]', '["Account-1"]', 'missing Account-1'],
   ['one account twice in another case, where both directories are there', '["account-1","ACCOUNT-1"]', '["account-1","ACCOUNT-1"]', 'twice ACCOUNT-1'],
   ['the first problem in the order is the one said', '["account-1"]', '["account-8","account-1","account-1"]', 'missing account-8'],
+  ['a letter whose capital is two letters is not those two: straße is not STRASSE', '["straße","STRASSE"]', '["straße","STRASSE"]', null],
+  ['a dotted capital I is not an i with a dot above', '["İzmir","i\\u0307zmir"]', '["İzmir","i\\u0307zmir"]', null],
 ];
 
 test('an order is refused as the driver refuses it', () => {
@@ -254,9 +268,11 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   const source = readFileSync(DRIVER_TABLE, 'utf8').replace(/\r\n/g, '\n');
   const rows = (method: string) => csharpRows(source, method, {}, 'RotationTwinTests');
 
-  assert.deepEqual(rows('An_order_resolves_as_the_cli_resolves_it'), ORDER_ROWS);
+  const orders = rows('An_order_resolves_as_the_cli_resolves_it');
+  const problems = rows('An_order_is_refused_as_the_cli_refuses_it');
+  assert.deepEqual(orders, heldSoFar(orders, ORDER_ROWS, DRIVER_OWES));
   assert.deepEqual(rows('An_order_is_set_and_cleared_as_the_cli_writes_it'), EDIT_ROWS);
-  assert.deepEqual(rows('An_order_is_refused_as_the_cli_refuses_it'), PROBLEM_ROWS);
+  assert.deepEqual(problems, heldSoFar(problems, PROBLEM_ROWS, DRIVER_OWES));
   assert.deepEqual(rows('An_account_removed_leaves_the_wiring_as_the_cli_leaves_it'), REMOVE_ROWS);
   assert.deepEqual(rows('Both_twins_write_the_same_file'), FILE_ROWS);
 });

@@ -3,12 +3,13 @@ import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../work/layout';
 import { ListPane } from '../work/ListPane';
 import { CJK_FINDING, CONVERGENT, FINDINGS } from './fixtures';
 import { FindingList, type FindingsAnswer } from './FindingList';
+import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import { findingId } from './records';
 
-// Convergence's list (FRAME1f, D118 §2) on its list pane, in every state the design names: the findings with one chosen,
-// each kind of likeness, capped, the first comparison on its way, a moved similarity on its way with the last findings
-// held, nothing converging, at the floor, an error with no answer ever, the semantic tier's note, a 中文 finding, the
-// strip, and laid over the main area.
+// Convergence's list (FRAME1f, D118 §2) on Knowledge's pane (UX6i, D150 §2.2), under the place's two-way choice, in every
+// state the design names: the findings with one chosen, each kind of likeness, capped, the first comparison on its way, a
+// moved similarity on its way with the last findings held, nothing converging, at the floor, an error with no answer
+// ever, the semantic tier's note, a 中文 finding, the strip, and laid over the main area.
 
 const open = (width: number): ListLayout => ({ mode: 'open', width, beside: width, auto: false });
 const CLOSED: ListLayout = { mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false };
@@ -24,14 +25,16 @@ type Args = {
   layout?: ListLayout;
 };
 
-/** The list as the view hands it to its pane: no ＋, since Convergence makes nothing, and its body. */
-function ConvergenceListPane({ threshold = 0.75, answer, semantic = false, chosen = null, layout = open(LIST_BOUNDS.convergence.initial) }: Args) {
+/** The list as the place hands it to its pane: no ＋, since Convergence makes nothing, the place's choice, and its body. */
+function ConvergenceListPane({ threshold = 0.75, answer, semantic = false, chosen = null, layout = open(LIST_BOUNDS.knowledge.initial) }: Args) {
   return (
     <ListPane
-      name="Convergence"
+      name="Knowledge"
       labels={{ open: 'Show the finding list', close: 'Hide the finding list', resize: 'finding list width' }}
       layout={layout}
-      bounds={LIST_BOUNDS.convergence}
+      bounds={LIST_BOUNDS.knowledge}
+      head={<KnowledgeModes mode="convergence" onMode={() => {}} />}
+      strip={<KnowledgeStrip mode="convergence" onMode={() => {}} />}
       onOpen={() => {}}
       onClose={() => {}}
       onDismiss={() => {}}
@@ -97,4 +100,4 @@ export const ChineseFinding: Story = { args: { answer: answered({ findings: [CJK
 export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */
-export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.convergence.initial, beside: LIST_STRIP, auto: true } } };
+export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.knowledge.initial, beside: LIST_STRIP, auto: true } } };

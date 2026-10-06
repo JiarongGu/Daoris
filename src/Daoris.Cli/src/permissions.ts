@@ -18,6 +18,7 @@
 // It is a MANAGEMENT verb and it opens no socket and spawns nothing: it reads and writes one file.
 
 import { flagValue, operands as positionals } from './args.ts';
+import { findName, sameName } from './casefold.ts';
 import { DaorisError } from './errors.ts';
 import type { ExitCode } from './errors.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
@@ -169,9 +170,10 @@ export function composeRules(file: PermissionFile, workspace: string | null, rep
     .filter((shipped) => !file.defaultsOff.includes(shipped.id))
     .map((shipped) => ({ ...empty(), [shipped.list]: shipped.rules }));
   layers.push(file.machine);
-  // A scope is a person's name, matched in any case — every matching one, as the driver's `Compose` does.
+  // A scope is a person's name, matched in any case — every matching one, as the driver's `Compose` does, by its
+  // `OrdinalIgnoreCase` (`casefold.ts`, CASEFOLD1).
   const named = (scopes: Record<string, RuleLists>, name: string) =>
-    Object.entries(scopes).filter(([held]) => held.toLowerCase() === name.toLowerCase()).map(([, lists]) => lists);
+    Object.entries(scopes).filter(([held]) => sameName(held, name)).map(([, lists]) => lists);
   layers.push(...named(file.workspaces, normalizeWorkspace(workspace)));
   if (repository?.trim()) layers.push(...named(file.repositories, repository.trim()));
 
@@ -299,7 +301,7 @@ function edit(file: PermissionFile, scope: RuleScope, name: string | null, chang
 
   const field = scope === 'workspace' ? 'workspaces' : 'repositories';
   // The scope's existing spelling, in any case: one scope, never two — the driver's `Edit` twin (REV3).
-  const key = Object.keys(file[field]).find((held) => held.toLowerCase() === name.trim().toLowerCase()) ?? name.trim();
+  const key = findName(Object.keys(file[field]), name.trim()) ?? name.trim();
   const next = { ...file[field], [key]: change(file[field][key] ?? empty()) };
   if (isEmpty(next[key]!)) delete next[key];
   return { ...file, [field]: next };

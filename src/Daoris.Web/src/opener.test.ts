@@ -103,14 +103,28 @@ describe('the opener', () => {
       opening('projects', null, { workspaceSection: 'defaults' }, 'forge'));
   });
 
-  /** FRAME1f: an entry by its id in Search's list, and a finding by its entries in Convergence's. */
-  it('chooses the entry or the finding a door names', () => {
-    expect(opening('search', 'game:.claude/knowledge/world-streaming.md')).toEqual({
-      view: 'search', chosen: { view: 'search', item: 'game:.claude/knowledge/world-streaming.md' },
+  /**
+   * FRAME1f: an entry by its id in Search's list, and a finding by its entries in Convergence's. Since UX6i (D150 §2.2)
+   * both are Knowledge's, and a door names the mode with the item: each mode's list keeps its own chosen item.
+   */
+  it('chooses the entry or the finding a door names, on Knowledge in its mode', () => {
+    expect(opening('knowledge', 'game:.claude/knowledge/world-streaming.md', { knowledge: 'search' })).toEqual({
+      view: 'knowledge', knowledge: 'search', chosen: { view: 'search', item: 'game:.claude/knowledge/world-streaming.md' },
     });
-    expect(opening('convergence', 'engine:a.md\ngame:a.md')).toEqual({
-      view: 'convergence', chosen: { view: 'convergence', item: 'engine:a.md\ngame:a.md' },
+    expect(opening('knowledge', 'engine:a.md\ngame:a.md', { knowledge: 'convergence' })).toEqual({
+      view: 'knowledge', knowledge: 'convergence', chosen: { view: 'convergence', item: 'engine:a.md\ngame:a.md' },
     });
+  });
+
+  /** UX6i: a door into Search or Convergence names the mode; one into the place names none, and it opens as it was left. */
+  it('opens Knowledge in the mode a door names, or as it was left where it names none', () => {
+    expect(opening('knowledge', null, { knowledge: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
+    expect(opening('knowledge')).toEqual({ view: 'knowledge' });
+    // An item with no mode could be either list's, so nothing is chosen rather than a guess.
+    expect(opening('knowledge', 'engine:a.md')).toEqual({ view: 'knowledge' });
+    // A mode means nothing to another view.
+    expect(opening('quests', null, { knowledge: 'search' })).toEqual({ view: 'quests' });
+    expect(doorOpening({ view: 'knowledge', knowledge: 'search' })).toEqual(opening('knowledge', null, { knowledge: 'search' }));
   });
 
   it('keeps no chosen item for a view with no list', () => {

@@ -25,6 +25,8 @@ with the version and date at release.
   agent anything.
 - Below about 620 px the window's seven menus fold into one menu, reached and walked by keyboard as
   the bar is. A conversation's notes that an account is signed out or cooling read in Chinese too.
+- The terminal compares account, workspace and other names without case exactly as the driver does,
+  so a name like `straße` is never mistaken for `STRASSE` at one door and not the other.
 - `daoris agent list` and a terminal sign-in keep what they learn about an account's sign-in, so the
   window and the driver loop see it too.
 - Development checks of documentation dates judge the commit an open merge would make, so a merge
@@ -35,12 +37,16 @@ with the version and date at release.
   `--until-idle` print each report as it is made and wait for their sessions before exiting.
 - `daoris init` writes a `.gitattributes` holding `* text=auto eol=lf` where a repository has none, so
   the files `sync` writes keep their line endings on Windows; an existing one is never touched.
+- Search and Convergence are one place, Knowledge, whose list switches between them; each keeps what
+  it showed, and every way that reached either still lands there.
 - Knowledge search finds an identifier from its words (`ProbeLock` from "probe lock") and lists each
   dated note of a decision as its own result, so a question lands on the note that answers it.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
   machine only. The driver now clears what the home kept of them too, never a tree in use or a standing
-  branch; the terminal and screen doors follow (HIST1d–e). Deleting a conversation now also takes the
+  branch. At a terminal, `daoris-driver history` says what each workspace keeps, and `history clear
+  --workspace`, `quest clear` and `ask --clear` list what would go until `--yes`; the screen follows
+  (HIST1e). Deleting a conversation now also takes the
   four small files it used to leave behind.
 - Deleting a quest or a conversation no longer lets the next change reuse a number a remote already
   holds, which could lose that change silently on a workspace with a remote.

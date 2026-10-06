@@ -16,13 +16,13 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `index` | doctrine | `cli/index.ts:6` | `indexgen.ts:147` commandIndex | say where the roster is: the rules in AGENTS.md, the |
 | `status` | doctrine | `cli/status.ts:5` | `commands.ts:142` commandStatus | summary of packs, drift, local files, and any pending |
 | `doctor` | doctrine | `cli/doctor.ts:5` | `twins.ts:142` commandDoctor | report local documents that look like canonical ones |
-| `connect` | management | `cli/connect.ts:5` | `connect.ts:150` commandConnect | register this repo with a knowledge service: what it owns |
+| `connect` | management | `cli/connect.ts:5` | `connect.ts:154` commandConnect | register this repo with a knowledge service: what it owns |
 | `retire` | management | `cli/retire.ts:5` | `manage.ts:31` commandRetire | [name] take a repository off this machine's registry. Ends the |
 | `import` | management | `cli/import.ts:5` | `manage.ts:57` commandImport | [folder] register a folder's subdirectories in one go; safe to |
 | `remote` | management | `cli/remote.ts:5` | `remotes.ts:90` commandRemote | [verb] this machine's remotes, one per workspace: |
-| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1388` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
-| `driver` | management | `cli/driver.ts:6` | `driverconfig.ts:476` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
-| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1101` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
+| `agent` | management | `cli/agent.ts:6` | `toolchain.ts:1389` commandHarness | [verb] this machine's agents — Claude Code, Codex, dsh — and the |
+| `driver` | management | `cli/driver.ts:6` | `driverconfig.ts:481` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
+| `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1103` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
 | `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
 
@@ -32,22 +32,23 @@ Routed in `src/Daoris.Desktop/Daoris.Desktop.Driver.Host/Program.cs`, its usage 
 
 | Verb | Routed at | Handled in | Sub-verbs |
 |---|---|---|---|
-| `trace` | `Program.cs:194` | `Daoris.Desktop.Driver.Host/TraceConsole.cs:8` TraceConsole | commit `TraceCommand.cs:6` · session `TraceCommand.cs:7` · quest `TraceCommand.cs:8` |
-| `git` | `Program.cs:200` | `Daoris.Desktop.Driver.Host/GitConsole.cs:9` GitConsole | branches |
-| `chat` | `Program.cs:220` | `Daoris.Desktop.Driver.Host/ChatConsole.cs:28` ChatConsole | — |
-| `ask` | `Program.cs:227` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:26` AskConsole | — |
-| `setup` | `Program.cs:242` | `Daoris.Desktop.Driver.Host/SetupConsole.cs:9` SetupConsole | — |
-| `register` | `Program.cs:249` | `Daoris.Desktop.Driver.Host/RegisterConsole.cs:8` RegisterConsole | — |
-| `quest` | `Program.cs:257` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:264` · accept `Program.cs:264` |
-| `answer` | `Program.cs:282` | `Program.cs:282` (inline) | — |
-| `sessions` | `Program.cs:293` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:129` · finish `SessionsCommand.cs:134` · decline `SessionsCommand.cs:141` · archive `SessionsCommand.cs:146` · unarchive `SessionsCommand.cs:155` · delete `SessionsCommand.cs:160` · say `SessionsCommand.cs:165` · go-on-new `SessionsCommand.cs:167` · start-from `SessionsCommand.cs:172` |
-| `trees` | `Program.cs:300` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:116` · remove `TreesConsole.cs:140` · clean `TreesConsole.cs:154` · land `TreesConsole.cs:286` · hand `TreesConsole.cs:357` · state `TreesConsole.cs:413` · sync `TreesConsole.cs:213` |
-| `sync` | `Program.cs:306` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:30` · dismiss `SyncConsole.cs:31` |
-| `plugins install` | `Program.cs:313` | `Daoris.Desktop.Driver/PluginPackage.cs:395` PluginPackageCommand | — |
-| `update` | `Program.cs:320` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
-| `logs` | `Program.cs:330` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
-| `plugins` | `Program.cs:337` | `Daoris.Desktop.Driver/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:313` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
-| `drive` | `Program.cs:344` | `Daoris.Desktop.Driver/DriverCommand.cs:136` DriverCommand.Read | — |
+| `trace` | `Program.cs:205` | `Daoris.Desktop.Driver.Host/TraceConsole.cs:8` TraceConsole | commit `TraceCommand.cs:6` · session `TraceCommand.cs:7` · quest `TraceCommand.cs:8` |
+| `git` | `Program.cs:211` | `Daoris.Desktop.Driver.Host/GitConsole.cs:9` GitConsole | branches |
+| `chat` | `Program.cs:231` | `Daoris.Desktop.Driver.Host/ChatConsole.cs:28` ChatConsole | — |
+| `ask` | `Program.cs:238` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole; `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole; `Daoris.Desktop.Driver.Host/AskConsole.cs:26` AskConsole | — |
+| `setup` | `Program.cs:260` | `Daoris.Desktop.Driver.Host/SetupConsole.cs:9` SetupConsole | — |
+| `register` | `Program.cs:267` | `Daoris.Desktop.Driver.Host/RegisterConsole.cs:8` RegisterConsole | — |
+| `quest` | `Program.cs:277` | `Daoris.Desktop.Driver.Host/WorkConsole.cs:10` WorkConsole | pause `WorkCommand.cs:39` · resume `WorkCommand.cs:39` · abandon `WorkCommand.cs:39` · delete `Program.cs:289` · accept `Program.cs:289` · clear |
+| `answer` | `Program.cs:307` | `Program.cs:307` (inline) | — |
+| `sessions` | `Program.cs:318` | `Daoris.Desktop.Driver.Host/SessionsConsole.cs:8` SessionsConsole | stop `SessionsCommand.cs:129` · finish `SessionsCommand.cs:134` · decline `SessionsCommand.cs:141` · archive `SessionsCommand.cs:146` · unarchive `SessionsCommand.cs:155` · delete `SessionsCommand.cs:160` · say `SessionsCommand.cs:165` · go-on-new `SessionsCommand.cs:167` · start-from `SessionsCommand.cs:172` |
+| `history` | `Program.cs:326` | `Daoris.Desktop.Driver.Host/HistoryConsole.cs:11` HistoryConsole | clear `HistoryCommand.cs:54` |
+| `trees` | `Program.cs:333` | `Daoris.Desktop.Driver.Host/TreesConsole.cs:15` TreesConsole | list `TreesConsole.cs:116` · remove `TreesConsole.cs:140` · clean `TreesConsole.cs:154` · land `TreesConsole.cs:286` · hand `TreesConsole.cs:357` · state `TreesConsole.cs:413` · sync `TreesConsole.cs:213` |
+| `sync` | `Program.cs:339` | `Daoris.Desktop.Driver.Host/SyncConsole.cs:20` SyncConsole | status `SyncConsole.cs:30` · dismiss `SyncConsole.cs:31` |
+| `plugins install` | `Program.cs:346` | `Daoris.Desktop.Driver/PluginPackage.cs:395` PluginPackageCommand | — |
+| `update` | `Program.cs:353` | `Daoris.Desktop.Driver/UpdateCommand.cs:19` UpdateCommand | — |
+| `logs` | `Program.cs:363` | `Daoris.Desktop.Driver.Host/LogsConsole.cs:18` LogsConsole | — |
+| `plugins` | `Program.cs:370` | `Daoris.Desktop.Driver/PluginsCommand.cs:25` PluginsCommand | install `Program.cs:346` · new `PluginsCommand.cs:47` · try `PluginsCommand.cs:47` · show `PluginsCommand.cs:49` · activity `PluginsCommand.cs:51` |
+| `drive` | `Program.cs:377` | `Daoris.Desktop.Driver/DriverCommand.cs:143` DriverCommand.Read | — |
 
 ## `daoris-devkit`
 

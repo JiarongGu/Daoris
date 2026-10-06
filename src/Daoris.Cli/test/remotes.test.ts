@@ -205,6 +205,20 @@ test('a workspace name is a person\'s name — case does not make a second row, 
   fx.cleanup();
 });
 
+test('a workspace is one only as the driver\'s OrdinalIgnoreCase finds it: İzmir is not i̇zmir, straße not STRASSE', async () => {
+  // CASEFOLD1: the C# twins' `OrdinalIgnoreCase` maps each letter to its one capital (`casefold.ts`), so a name full case
+  // mapping would widen or lower to the same letters is another workspace, with its own row.
+  const fx = makeFixture('remotes-fold');
+  const path = mapAt(fx);
+  await run(['add', 'İzmir', '--url', 'https://izmir.example.com', '--key', KEY], path);
+  await run(['add', 'straße', '--url', 'https://strasse.example.com', '--key', KEY], path);
+  await run(['add', 'i\u{307}zmir', '--url', 'https://other.example.com', '--key', KEY], path);
+  await run(['add', 'STRASSE', '--url', 'https://other.example.com', '--key', KEY], path);
+
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(path, 'utf8'))), ['STRASSE', 'i\u{307}zmir', 'straße', 'İzmir']);
+  fx.cleanup();
+});
+
 /** REV3: an address with no scheme was wired, and every sync with it then failed at the service's door. */
 test('an address with no scheme is refused before it is wired', async () => {
   const fx = makeFixture('remotes-scheme');
