@@ -414,6 +414,8 @@ public sealed partial class ChatRunner : IDisposable
                 new ChatTarget(place.Name, workTree, _service.BaseUrl)
                 {
                     Resume = resolved.Wire == SessionWire.Pipe ? goOn?.Ask.Conversation : null,
+                    // Its own record, so a take through the connector its harness starts marks it (CHATTAKE1b).
+                    Session = sessionId,
                 },
                 config.Commands.GetValueOrDefault(resolved.Name));
             if (resolved.Toolchain is { } toolchain)
