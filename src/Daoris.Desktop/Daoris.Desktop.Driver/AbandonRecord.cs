@@ -135,6 +135,23 @@ public sealed class AbandonRecord(string home)
         }
     }
 
+    /// <summary>
+    /// Drop the entries whose ask or quest no longer has a record here (HIST1c, the history-clearing design §2.2), as
+    /// <see cref="Write"/> drops them beside a new one: a clear takes the record, and its abandon's trace with it. How many went
+    /// comes back; nothing is written when none did.
+    /// </summary>
+    public int Forget(Func<AbandonEntry, bool> known)
+    {
+        lock (Gate)
+        {
+            var all = Entries();
+            var kept = all.Where(known).ToList();
+            if (kept.Count == all.Count) return 0;
+            AtomicFile.WriteText(FilePath, ToJson(kept));
+            return all.Count - kept.Count;
+        }
+    }
+
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
     private static string ToJson(IReadOnlyList<AbandonEntry> entries)
     {

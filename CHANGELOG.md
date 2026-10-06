@@ -39,7 +39,9 @@ with the version and date at release.
   dated note of a decision as its own result, so a question lands on the note that answers it.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
-  machine only. The driver, terminal and screen doors follow (HIST1c–e).
+  machine only. The driver now clears what the home kept of them too, never a tree in use or a standing
+  branch; the terminal and screen doors follow (HIST1d–e). Deleting a conversation now also takes the
+  four small files it used to leave behind.
 - Deleting a quest or a conversation no longer lets the next change reuse a number a remote already
   holds, which could lose that change silently on a workspace with a remote.
 - A refused account rename, workspace choice or add-flow answer stays open with what was entered and

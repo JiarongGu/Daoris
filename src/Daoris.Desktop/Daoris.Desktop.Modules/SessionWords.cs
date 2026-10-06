@@ -76,7 +76,8 @@ public sealed class SessionWords : IDisposable
     /// Where words held while a session winds up are kept across a restart (MSG1d4): each in the order said, with its session,
     /// its text, the names its files are kept under and the door it was said at. Absent while nothing is held.
     /// </summary>
-    public static string HeldPath(string home) => Path.Combine(home, "sessions", "held-words.json");
+    /// <remarks>Its place is the driver library's (<see cref="HeldWordsFile"/>), which takes a cleared or deleted session's words out of it (HIST1c).</remarks>
+    public static string HeldPath(string home) => HeldWordsFile.PathOf(home);
 
     /// <summary>The longest held words wait for a move before they are tried again: a move made by another client says nothing here.</summary>
     public TimeSpan Poll { get; init; } = TimeSpan.FromSeconds(30);

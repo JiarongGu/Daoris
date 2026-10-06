@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 /// the contract, and a driver that could reach the store directly would drift from every client that
 /// cannot.
 /// </summary>
-public sealed class ServiceClient : IDisposable
+public sealed partial class ServiceClient : IDisposable
 {
     private readonly HttpClient _http;
     private readonly string _base;
