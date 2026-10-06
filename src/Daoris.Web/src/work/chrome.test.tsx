@@ -208,39 +208,24 @@ describe('ActivityBar', () => {
    * layout, so this holds the rules and the window shows them.
    */
   it('keeps every place its full size, and scrolls when the window is too short to hold them', () => {
-    render(
-      <ActivityBar
-        label="Views"
-        items={VIEWS}
-        end={SETTINGS}
-        active="overview"
-        onSelect={() => {}}
-        footer={<button type="button">refresh</button>}
-      />,
-    );
+    render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={() => {}} />);
 
     const bar = screen.getByRole('navigation', { name: 'Views' });
     expect(bar).toHaveClass('min-h-0', 'overflow-y-auto');
     for (const { label } of [...VIEWS, ...SETTINGS]) {
       expect(screen.getByRole('button', { name: label })).toHaveClass('shrink-0');
     }
-    expect(screen.getByRole('button', { name: 'refresh' }).parentElement).toHaveClass('shrink-0');
+    expect(screen.getByRole('button', { name: 'Settings' }).parentElement).toHaveClass('mt-auto', 'shrink-0');
   });
 
-  /** Actions, then the places at the foot — Settings last, where every workbench keeps its gear. */
-  it('holds its footer actions and then its foot places, below the list', () => {
-    render(
-      <ActivityBar
-        label="Views"
-        items={VIEWS}
-        end={SETTINGS}
-        active="overview"
-        onSelect={() => {}}
-        footer={<button type="button">refresh</button>}
-      />,
-    );
-    const names = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent);
-    expect(names.slice(-2)).toEqual(['refresh', 'Settings']);
+  /**
+   * UX6j (D150 §2.1): the bar is places alone, its foot Settings, where every workbench keeps its gear. The index's
+   * refresh and the language were actions at its foot, and left for View, the palette and Settings → Appearance.
+   */
+  it('holds its places, then at its foot Settings alone', () => {
+    render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={() => {}} />);
+    const names = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'));
+    expect(names).toEqual(['Overview', 'Sessions', 'Quests', 'Settings']);
   });
 });
 

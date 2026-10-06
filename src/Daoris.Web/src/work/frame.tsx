@@ -234,14 +234,15 @@ export type ActivityItem<T extends string> = {
  * leaves the machine), because a greyed row implies the thing exists somewhere you could get to.
  */
 export function ActivityBar<T extends string>({
-  label, items, end = [], active, onSelect, onToggleCurrent, footer,
+  label, items, end = [], active, onSelect, onToggleCurrent,
 }: {
   /** The bar's accessible name — passed in, so this stays a molecule with no i18n of its own. */
   label: string;
   items: ActivityItem<T>[];
   /**
-   * The places at the FOOT, below the actions — Settings, where every workbench puts its gear.
-   * Places rather than actions, so they wear the current-place marking the list above does.
+   * The places at the FOOT — Settings, where every workbench puts its gear, and nothing else (UX6j, D150 §2.1): the
+   * index's refresh and the language were actions here, and left for View, the palette and Settings → Appearance.
+   * Places, so they wear the current-place marking the list above does.
    */
   end?: ActivityItem<T>[];
   active: T;
@@ -251,8 +252,6 @@ export function ActivityBar<T extends string>({
    * bar toggles its side bar. Absent where the view has no list, and the press then selects it again.
    */
   onToggleCurrent?: () => void;
-  /** Actions, not state: refresh and language. State went to the status bar. */
-  footer?: ReactNode;
 }) {
   const place = ({ tab, label: name, icon, badge, tone, keys }: ActivityItem<T>) => (
     <Tip key={tab} content={keys ? `${name} (${keys})` : name} side="right">
@@ -293,9 +292,8 @@ export function ActivityBar<T extends string>({
     >
       {items.map(place)}
 
-      {(footer || end.length > 0) && (
+      {end.length > 0 && (
         <div className="mt-auto flex shrink-0 flex-col items-center gap-0.5">
-          {footer}
           {end.map(place)}
         </div>
       )}

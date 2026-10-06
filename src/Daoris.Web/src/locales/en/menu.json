@@ -30,6 +30,7 @@
   "menu.view.theme": "Theme",
   "menu.language": "Language",
   "menu.refresh": "Refresh the index",
+  "menu.refreshing": "Refreshing the index…",
   "menu.go.nextRegion": "Next region",
   "menu.go.previousRegion": "Previous region",
   "menu.run.start": "Start a session…",

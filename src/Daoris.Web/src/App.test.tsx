@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { App } from './App';
+import i18n from './i18n';
 import { keys, useRefreshIndex, useRegistry } from './queries';
 import { WorkspaceScopeProvider } from './scope';
 
@@ -56,81 +57,19 @@ function shell(initial: string | null = null) {
 
 const requested = () => fetchMock.mock.calls.map((call) => String(call[0]));
 
-/**
- * REV3: the service names a registered repository whose checkout is not where the registry says — "a
- * repository that quietly stops contributing looks exactly like one with nothing to say" — and the
- * toast read only the count. It says which, as the error it is. Pressed with `fireEvent`, not
- * `userEvent`: the latter's hover opened the refresh button's tooltip, which outlived the render and
- * made the scope test that ran after it miss its options.
- */
-describe('a refresh, said whole', () => {
-  beforeEach(() => {
-    fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
-      (String(input) === '/api/refresh' && init?.method === 'POST'
-        ? Response.json({ entries: 3, repositories: 1, withheld: 0, absent: ['studio'] })
-        : respond(String(input))));
-    vi.stubGlobal('fetch', fetchMock);
-  });
-  afterEach(() => vi.unstubAllGlobals());
-
-  it('a refresh that could not find a registered checkout says which', async () => {
-    shell();
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
-
-    expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
-    expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
-    // Absent is never zero (SEM3b): a refresh the semantic half did not run in says nothing of embedding.
-    expect(screen.queryByText(/Embedded|vectors/)).toBeNull();
-  });
-
-  /**
-   * SEM3b (D123): the service embeds every part of a long entry, in pieces the deployment's window
-   * bounds, and its refresh answer says what that made. The notice says it beside the count, the
-   * figures grouped as the reader's language groups them.
-   */
-  it('a refresh the semantic half ran in says what it embedded, at what window, and how many it split', async () => {
-    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
-      (String(input) === '/api/refresh' && init?.method === 'POST'
-        ? Response.json({
-          entries: 636, repositories: 3, withheld: 0,
-          embedded: { entries: 636, pieces: 1267, split: 322, window: 2000 },
-        })
-        : respond(String(input))));
-    shell();
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
-
-    expect(await screen.findByText(
-      'Indexed 636 entries from 3 repositories. Embedded 636 entries as 1,267 vectors of at most 2,000 '
-      + 'characters; 322 longer than that were split.')).toBeTruthy();
-  });
-
-  it('a refresh that split nothing says none was, rather than a zero', async () => {
-    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
-      (String(input) === '/api/refresh' && init?.method === 'POST'
-        ? Response.json({
-          entries: 2, repositories: 1, withheld: 0, embedded: { entries: 2, pieces: 2, split: 0, window: 8000 },
-        })
-        : respond(String(input))));
-    shell();
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
-
-    expect(await screen.findByText(/at most 8,000 characters; none was longer, so none was split\.$/)).toBeTruthy();
-  });
-});
-
 describe('the shell in a browser, over two workspaces', () => {
   beforeEach(() => {
     fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
     vi.stubGlobal('fetch', fetchMock);
   });
-  afterEach(() => {
+  afterEach(async () => {
     vi.unstubAllGlobals();
     // A menu opens Settings at a domain, and the domain is remembered per viewer (D75); a door chooses Quests' item.
     window.localStorage.removeItem('daoris.settings');
     window.localStorage.removeItem('daoris.list.quests.chosen');
+    // The language a menu switched, which i18n remembers as well as shows (UX6j).
+    if (i18n.language !== 'en') await act(async () => { await i18n.changeLanguage('en'); });
+    window.localStorage.removeItem('daoris.language');
   });
 
   /**
@@ -314,6 +253,23 @@ describe('the shell in a browser, over two workspaces', () => {
     window.localStorage.removeItem('daoris.theme');
   });
 
+  /**
+   * UX6j (D150 §2.1): the language left the activity bar for View's *Language ▸*, the palette and Settings → Appearance,
+   * and is remembered under `daoris.language` as the bar's switch remembered it.
+   */
+  it('switches the language from View › Language, remembered under daoris.language', async () => {
+    shell();
+    const user = await openMenu('View');
+    await screen.findByRole('menuitem', { name: /^Commands/ });
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    screen.getByRole('menuitem', { name: 'Language' }).focus();
+    await user.keyboard('{ArrowRight}');
+    await user.click(await screen.findByRole('menuitemradio', { name: '中文' }));
+
+    expect(await screen.findByRole('heading', { name: '总览' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.language')).toBe('zh');
+  });
+
   /** D152 §3.6: a browser's Go holds its places with no keys, since a browser keeps Ctrl+1–8 for its tabs. */
   it('Go opens a place, with no key printed in a browser', async () => {
     shell();
@@ -444,6 +400,17 @@ describe('the views, in a browser', () => {
     expect(within(bar).queryByRole('button', { name: 'Sessions' })).toBeNull();
     expect(screen.queryByRole('group', { name: /mode/i })).toBeNull();
     expect(within(bar).getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  /**
+   * UX6j (D150 §2.1): the bar holds places alone, and its foot Settings. Refreshing the index and the language left it for
+   * View, the palette and Settings → Appearance, each a door it already had.
+   */
+  it('holds its places and, at its foot, Settings alone: no refresh and no language', async () => {
+    shell();
+    const bar = await screen.findByRole('navigation', { name: 'Views' });
+    expect(within(bar).getAllByRole('button').map((button) => button.getAttribute('aria-label')))
+      .toEqual(['Overview', 'Quests', 'Repositories', 'Map', 'Knowledge', 'Settings']);
   });
 
   /**
@@ -910,5 +877,83 @@ describe('the attention band', () => {
     } finally {
       ASKS = [];
     }
+  });
+});
+
+/**
+ * View › *Refresh the index*: the activity bar's foot holds Settings alone since UX6j (D150 §2.1). The menu is opened from
+ * the keyboard, as the other menus' tests open theirs.
+ */
+async function refreshFromView() {
+  const user = userEvent.setup();
+  (await screen.findByRole('button', { name: 'View' })).focus();
+  await user.keyboard('{Enter}');
+  await user.click(await screen.findByRole('menuitem', { name: 'Refresh the index' }));
+}
+
+/**
+ * REV3: the service names a registered repository whose checkout is not where the registry says — "a
+ * repository that quietly stops contributing looks exactly like one with nothing to say" — and the
+ * toast read only the count. It says which, as the error it is.
+ *
+ * Last in the file since UX6j: its door is a menu now, and in jsdom a menu opened and closed in one test leaves the
+ * scope's select, clicked in a later test, closed (seen, not explained: the click reaches it). Nothing after this opens a
+ * select.
+ */
+describe('a refresh, said whole', () => {
+  beforeEach(() => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({ entries: 3, repositories: 1, withheld: 0, absent: ['studio'] })
+        : respond(String(input))));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('a refresh that could not find a registered checkout says which', async () => {
+    shell();
+
+    await refreshFromView();
+
+    expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
+    expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
+    // Absent is never zero (SEM3b): a refresh the semantic half did not run in says nothing of embedding.
+    expect(screen.queryByText(/Embedded|vectors/)).toBeNull();
+  });
+
+  /**
+   * SEM3b (D123): the service embeds every part of a long entry, in pieces the deployment's window
+   * bounds, and its refresh answer says what that made. The notice says it beside the count, the
+   * figures grouped as the reader's language groups them.
+   */
+  it('a refresh the semantic half ran in says what it embedded, at what window, and how many it split', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({
+          entries: 636, repositories: 3, withheld: 0,
+          embedded: { entries: 636, pieces: 1267, split: 322, window: 2000 },
+        })
+        : respond(String(input))));
+    shell();
+
+    await refreshFromView();
+
+    expect(await screen.findByText(
+      'Indexed 636 entries from 3 repositories. Embedded 636 entries as 1,267 vectors of at most 2,000 '
+      + 'characters; 322 longer than that were split.')).toBeTruthy();
+  });
+
+  it('a refresh that split nothing says none was, rather than a zero', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({
+          entries: 2, repositories: 1, withheld: 0, embedded: { entries: 2, pieces: 2, split: 0, window: 8000 },
+        })
+        : respond(String(input))));
+    shell();
+
+    await refreshFromView();
+
+    expect(await screen.findByText(/at most 8,000 characters; none was longer, so none was split\.$/)).toBeTruthy();
   });
 });

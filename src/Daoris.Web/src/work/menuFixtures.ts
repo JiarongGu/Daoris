@@ -31,6 +31,7 @@ export const MENU_STATE: CommandState = {
   record: false,
   find: true,
   field: false,
+  refreshing: false,
 };
 
 /** A session attended on Sessions, working: its header offers its stop and its own window; its card takes no answer. */

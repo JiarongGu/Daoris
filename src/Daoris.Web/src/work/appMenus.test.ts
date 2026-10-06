@@ -12,7 +12,7 @@ const state = (over: Partial<CommandState> = {}): CommandState => ({
   attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false,
   workspaces: [{ name: 'work', repositories: 4 }, { name: 'forge', repositories: 2 }], scope: null, circle: 'work', wired: true,
   theme: 'dark', language: 'en', agents: [], domains: [], knowledge: 'search', session: null, quest: null, record: false, find: false,
-  field: false, ...over,
+  field: false, refreshing: false, ...over,
 });
 const doors = new Proxy({}, { get: () => vi.fn() }) as never;
 const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), doors, i18n.t.bind(i18n));

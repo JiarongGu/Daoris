@@ -1,7 +1,5 @@
 {
   "sidebar.count": "{{entries}} entries · {{repositories}} repositories",
-  "sidebar.refresh": "Refresh the index",
-  "sidebar.refreshing": "Refreshing…",
   "sidebar.refreshed": "Indexed {{entries}} entries from {{repositories}} repositories.",
   "sidebar.embedded_zero": "Embedded {{entries}} entries as {{pieces}} vectors of at most {{window}} characters; none was longer, so none was split.",
   "sidebar.embedded": "Embedded {{entries}} entries as {{pieces}} vectors of at most {{window}} characters; {{split}} longer than that was split.",

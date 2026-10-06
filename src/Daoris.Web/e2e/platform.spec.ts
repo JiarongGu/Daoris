@@ -948,7 +948,9 @@ test("a browser's main area lays its columns out by its own width, beside no sid
 
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: '中文' }).click();
+  // The activity bar's foot holds Settings alone (UX6j, D150 §2.1): the language is the palette's, View's and Appearance's.
+  await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
+  await page.getByRole('dialog').getByRole('option', { name: /Switch language/ }).click();
   await expect(page.getByRole('heading', { name: '总览' })).toBeVisible();
   await expect(nav(page, '委托')).toBeVisible();
 });

@@ -30,6 +30,7 @@
   "menu.view.theme": "主题",
   "menu.language": "语言",
   "menu.refresh": "刷新索引",
+  "menu.refreshing": "正在刷新索引…",
   "menu.go.nextRegion": "下一个区域",
   "menu.go.previousRegion": "上一个区域",
   "menu.run.start": "开启会话…",
