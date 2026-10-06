@@ -1073,8 +1073,39 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.True(outcome.GetProperty("cleared").GetBoolean());
         Assert.StartsWith($"Cleared `#{quest}` from this machine", outcome.GetProperty("message").GetString());
         Assert.Equal(quest, outcome.GetProperty("unit").GetProperty("id").GetString());
+        Assert.False(outcome.TryGetProperty("failed", out _));
         Assert.False(await HeldAsync(quest));
         Assert.Empty(await host.Composed.Quests.HistoryAsync(quest));
+    }
+
+    /// <summary>
+    /// A kept file the disk will not let go of is named in the press's answer (HIST1j), additively: <c>failed</c> names the quest
+    /// whose kept files stayed, and an answer where every removal was made carries none, so a driver from before reads both. On
+    /// Windows a file held open without delete sharing is the disk refusing; the desk's tests inject it on every platform.
+    /// </summary>
+    [Fact]
+    public async Task A_kept_file_the_disk_keeps_is_named_in_the_press_answer()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var quest = await ClosedAsync("A quest whose kept file is held open");
+        var kept = Path.Combine(host.Home, QuestFiles.Folder, quest, "attachments", "held.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(kept)!);
+        await File.WriteAllTextAsync(kept, "held open");
+
+        Answer cleared;
+        using (File.Open(kept, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            cleared = await host.PostAsync("/api/history/clear", new { units = new[] { new { kind = "quest", id = quest } } });
+        }
+
+        Assert.Equal(200, cleared.Status);
+        var outcome = Assert.Single(cleared.Json.GetProperty("units").EnumerateArray());
+        Assert.True(outcome.GetProperty("cleared").GetBoolean());
+        Assert.Equal([quest], outcome.GetProperty("failed").GetProperty("quests").EnumerateArray().Select(id => id.GetString()));
+        Assert.Empty(outcome.GetProperty("failed").GetProperty("asks").EnumerateArray());
+        Assert.True(File.Exists(kept));
+        Assert.False(await HeldAsync(quest));
+        Directory.Delete(Path.Combine(host.Home, QuestFiles.Folder, quest), recursive: true);
     }
 
     /// <summary>

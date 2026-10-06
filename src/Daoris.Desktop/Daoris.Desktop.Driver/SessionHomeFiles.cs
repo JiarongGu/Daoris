@@ -34,8 +34,19 @@ public sealed record HistoryBytes(long Conversations, long Transcripts, long Fil
 }
 
 /// <summary>
-/// Every file the home keeps of one session (HIST1c, D153 point 6, the history-clearing design §2.2), removed by the one
-/// helper both a clear and D126's delete call once the service has said yes, so a delete and a clear take the same files.
+/// What <see cref="SessionHomeFiles.Remove"/> took (HIST1j): each session's names that went, in the inventory's order, and the
+/// bytes that went with them, by kind; and each path the disk would not let go of, which stays, left over (the history-clearing
+/// design §2.3).
+/// </summary>
+public sealed record SessionFilesRemoved(
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Went,
+    IReadOnlyDictionary<string, HistoryBytes> Bytes,
+    IReadOnlyList<string> Failed);
+
+/// <summary>
+/// Every file the home keeps of one session (HIST1c, D153 point 6, the history-clearing design §2.2), held in one inventory that
+/// measures them, removes them and reads a left-over one by its name (HIST1j): the one helper both a clear and D126's delete call
+/// once the service has said yes, so a delete and a clear take the same files, and a clear says the bytes that went.
 /// </summary>
 /// <remarks>
 /// <para><b>What goes, by name</b>, in this order: its conversation, its transcript, its files (the whole
@@ -47,10 +58,11 @@ public sealed record HistoryBytes(long Conversations, long Transcripts, long Fil
 /// (§1.3), or an automatic landing still trying, which a clear refuses before it (<c>HISTORY_LIVE</c>). An id that is not a
 /// session's (a teammate's, <c>origin/id</c>) removes no file, since this machine keeps none of it; only its archive mark.</para>
 ///
-/// <para><b>A file the disk will not let go of is left</b>, named in <c>failed</c>: it is left over (§2.3), and the next
-/// clear of a workspace takes it.</para>
+/// <para><b>A file the disk will not let go of is left</b>, named in what failed, and none of its bytes count as gone: it is
+/// left over (§2.3), and the next clear of a workspace takes it. A folder the disk let go of only in part counts the part that
+/// went. Until HIST1j a clear measured each session before the removal and counted it whole, whatever failed.</para>
 /// </remarks>
-public sealed class SessionHomeFiles(string home)
+public sealed class SessionHomeFiles(string home, Action<string, bool>? remover = null)
 {
     public const string Conversation = "conversation";
     public const string Transcript = "transcript";
@@ -64,12 +76,53 @@ public sealed class SessionHomeFiles(string home)
     public const string Landing = "landing";
     public const string Archived = "archived";
 
-    /// <summary>The suffixes a session's own files under <c>sessions/</c> carry after its id, the longest first.</summary>
-    internal static readonly string[] SessionSuffixes =
-        [NewSessionChoices.Suffix, ".events.jsonl", HarnessConversations.Suffix, GoOnMarks.Suffix, ".log", ".pid"];
+    /// <summary>Where a session's file lies under the home.</summary>
+    private enum Place
+    {
+        /// <summary><c>sessions/</c>.</summary>
+        Sessions,
 
-    /// <summary>The suffixes a session's spawn files carry after its id under <c>spawn/</c>.</summary>
-    internal static readonly string[] SpawnSuffixes = [".mcp.json", ".settings.json"];
+        /// <summary><c>spawn/</c>, where a session's servers and settings are handed to it (<see cref="SpawnServers"/>).</summary>
+        Spawn,
+    }
+
+    /// <summary>
+    /// One file the home keeps of a session: the name it goes under, where it lies, what follows the session's id in its name,
+    /// whether it is a folder, and the kind of <see cref="HistoryBytes"/> its size counts in.
+    /// </summary>
+    private sealed record SessionFile(string Name, Place Place, string Suffix, bool Folder, Func<long, HistoryBytes> Counts);
+
+    /// <summary>
+    /// The inventory (§2.2), in the order the files go, written once (HIST1j): what a reading measures, what a clear and a delete
+    /// remove, and what a left-over file is read by. A per-session file a later change adds is named here, and every door takes it.
+    /// </summary>
+    private static readonly SessionFile[] Inventory =
+    [
+        new(Conversation, Place.Sessions, ".events.jsonl", false, bytes => HistoryBytes.None with { Conversations = bytes }),
+        new(Transcript, Place.Sessions, ".log", false, bytes => HistoryBytes.None with { Transcripts = bytes }),
+        new(Files, Place.Sessions, "", true, bytes => HistoryBytes.None with { Files = bytes }),
+        new(Harness, Place.Sessions, HarnessConversations.Suffix, false, Beside),
+        new(Marker, Place.Sessions, ".pid", false, Beside),
+        new(Mark, Place.Sessions, GoOnMarks.Suffix, false, Beside),
+        new(Choice, Place.Sessions, NewSessionChoices.Suffix, false, Beside),
+        new(Spawn, Place.Spawn, ".mcp.json", false, Beside),
+        new(Spawn, Place.Spawn, ".settings.json", false, Beside),
+    ];
+
+    /// <summary>The suffixes a session's own files under <c>sessions/</c> carry after its id, the longest first.</summary>
+    internal static readonly string[] SessionSuffixes = Suffixes(Place.Sessions);
+
+    /// <summary>The suffixes a session's spawn files carry after its id under <c>spawn/</c>, the longest first.</summary>
+    internal static readonly string[] SpawnSuffixes = Suffixes(Place.Spawn);
+
+    private readonly Action<string, bool> _remove = remover ?? FromDisk;
+
+    /// <summary>A path removed from the disk: a file, or a folder and everything in it.</summary>
+    public static void FromDisk(string path, bool folder)
+    {
+        if (folder) Directory.Delete(path, recursive: true);
+        else File.Delete(path);
+    }
 
     /// <summary>The home whose files these are.</summary>
     public string Home => home;
@@ -78,68 +131,51 @@ public sealed class SessionHomeFiles(string home)
 
     private string SpawnFolder => Path.Combine(home, SpawnServers.Folder);
 
-    /// <summary>The session's own files, each with the name it goes under and whether it is a folder.</summary>
-    private IEnumerable<(string Name, string Path, bool Folder)> Own(string id) =>
+    private static HistoryBytes Beside(long bytes) => HistoryBytes.None with { Other = bytes };
+
+    private static string[] Suffixes(Place place) =>
     [
-        (Conversation, Path.Combine(Sessions, $"{id}.events.jsonl"), false),
-        (Transcript, Path.Combine(Sessions, $"{id}.log"), false),
-        (Files, Path.Combine(Sessions, id), true),
-        (Harness, Path.Combine(Sessions, id + HarnessConversations.Suffix), false),
-        (Marker, Path.Combine(Sessions, id + ".pid"), false),
-        (Mark, Path.Combine(Sessions, id + GoOnMarks.Suffix), false),
-        (Choice, Path.Combine(Sessions, id + NewSessionChoices.Suffix), false),
-        .. SpawnSuffixes.Select(suffix => (Spawn, Path.Combine(SpawnFolder, id + suffix), false)),
+        .. Inventory.Where(file => file.Place == place && !file.Folder).Select(file => file.Suffix).OrderByDescending(suffix => suffix.Length),
     ];
 
-    /// <summary>What the home keeps of one session, by kind; nothing for an id that is not a session's.</summary>
-    public HistoryBytes Size(string id)
-    {
-        if (!SessionEvents.IsId(id)) return HistoryBytes.None;
-        long conversation = 0, transcript = 0, files = 0, other = 0;
-        foreach (var (name, path, _) in Own(id))
-        {
-            var bytes = HistoryBytes.Of(path);
-            switch (name)
-            {
-                case Conversation: conversation += bytes; break;
-                case Transcript: transcript += bytes; break;
-                case Files: files += bytes; break;
-                default: other += bytes; break;
-            }
-        }
+    private string PathOf(SessionFile file, string id) => Path.Combine(file.Place == Place.Spawn ? SpawnFolder : Sessions, id + file.Suffix);
 
-        return new HistoryBytes(conversation, transcript, files, 0, other);
-    }
+    /// <summary>What the home keeps of one session, by kind; nothing for an id that is not a session's.</summary>
+    public HistoryBytes Size(string id) =>
+        SessionEvents.IsId(id)
+            ? Inventory.Aggregate(HistoryBytes.None, (sum, file) => sum + file.Counts(HistoryBytes.Of(PathOf(file, id))))
+            : HistoryBytes.None;
 
     /// <summary>
-    /// Remove what the home keeps of each session, once its record is gone: each name that went, per id, in the order
-    /// above. The held words, the closed automatic landings and the archive marks are each one file, written once.
+    /// Remove what the home keeps of each session, once its record is gone: each name that went, per id, in the inventory's
+    /// order, and the bytes that went with them; what the disk would not let go of stays, named in what failed, and only what
+    /// went is counted (HIST1j). The held words, the closed automatic landings and the archive marks are each one file, written
+    /// once.
     /// </summary>
     /// <param name="events">The loop's record of conversations, so it forgets their numbering too; null removes the files alone.</param>
-    /// <param name="failed">Where each path the disk would not let go of is named; null drops them.</param>
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> Remove(
-        IReadOnlyCollection<string> ids, SessionEvents? events, ICollection<string>? failed = null)
+    public SessionFilesRemoved Remove(IReadOnlyCollection<string> ids, SessionEvents? events)
     {
         var removed = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        foreach (var id in ids) removed.TryAdd(id, []);
-        var sessions = removed.Keys.Where(SessionEvents.IsId).ToList();
+        var bytes = new Dictionary<string, HistoryBytes>(StringComparer.Ordinal);
+        var failed = new List<string>();
+        foreach (var id in ids)
+        {
+            removed.TryAdd(id, []);
+            bytes.TryAdd(id, HistoryBytes.None);
+        }
 
+        var sessions = removed.Keys.Where(SessionEvents.IsId).ToList();
         foreach (var id in sessions)
         {
-            var went = removed[id];
-            foreach (var (name, path, folder) in Own(id))
+            foreach (var file in Inventory)
             {
-                try
-                {
-                    var gone = name == Conversation && events is not null ? events.Forget(id)
-                        : folder ? FolderGone(path)
-                        : FileGone(path);
-                    if (gone && !went.Contains(name)) went.Add(name);
-                }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-                {
-                    failed?.Add(path);
-                }
+                var path = PathOf(file, id);
+                // The conversation goes through the loop's record where there is one, so its numbering is forgotten too.
+                var (gone, went) = file.Name == Conversation && events is not null
+                    ? Take(path, () => events.Forget(id), failed)
+                    : Take(path, file.Folder, failed);
+                bytes[id] += file.Counts(went);
+                if (gone && !removed[id].Contains(file.Name)) removed[id].Add(file.Name);
             }
         }
 
@@ -160,7 +196,8 @@ public sealed class SessionHomeFiles(string home)
             }, Archived);
         }
 
-        return removed.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)pair.Value, StringComparer.Ordinal);
+        return new SessionFilesRemoved(
+            removed.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)pair.Value, StringComparer.Ordinal), bytes, failed);
 
         void Each(string file, Func<IReadOnlyCollection<string>> forget, string name)
         {
@@ -173,23 +210,37 @@ public sealed class SessionHomeFiles(string home)
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                failed?.Add(file);
+                failed.Add(file);
             }
         }
     }
 
-    private static bool FileGone(string path)
-    {
-        if (!File.Exists(path)) return false;
-        File.Delete(path);
-        return true;
-    }
+    /// <summary>
+    /// Remove one path of the home, a file or a folder whole, through this home's remover (HIST1j): whether it went, and the bytes
+    /// that went with it. Where the disk will not let go of it, the path is named in <paramref name="failed"/>, and only what it
+    /// let go of before refusing counts. Nothing, for a path that is not there.
+    /// </summary>
+    internal (bool Gone, long Bytes) Take(string path, bool folder, ICollection<string> failed) =>
+        Take(path, () =>
+        {
+            if (folder ? !Directory.Exists(path) : !File.Exists(path)) return false;
+            _remove(path, folder);
+            return true;
+        }, failed);
 
-    private static bool FolderGone(string path)
+    /// <summary>Measured before, removed by <paramref name="remove"/>, and on a refusal measured again: what went is the difference.</summary>
+    private static (bool Gone, long Bytes) Take(string path, Func<bool> remove, ICollection<string> failed)
     {
-        if (!Directory.Exists(path)) return false;
-        Directory.Delete(path, recursive: true);
-        return true;
+        var before = HistoryBytes.Of(path);
+        try
+        {
+            return remove() ? (true, before) : (false, 0);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            failed.Add(path);
+            return (false, Math.Max(0, before - HistoryBytes.Of(path)));
+        }
     }
 }
 

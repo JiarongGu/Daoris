@@ -286,6 +286,39 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.True(Holds("s1") && Holds("s2"));
     }
 
+    /// <summary>
+    /// A file the disk would not let go of is said, and the size said is what went (HIST1j): the transcript a process holds stays,
+    /// left over for the next clear of a workspace, and the press is 2, as an abandon's failed step is.
+    /// </summary>
+    [Fact]
+    public async Task A_file_the_disk_keeps_is_said_and_its_bytes_are_not_counted()
+    {
+        Kept("s1");
+        var transcript = Path.Combine(Sessions, "s1.log");
+        var went = new FileInfo(Path.Combine(Sessions, "s1.events.jsonl")).Length + new FileInfo(Path.Combine(Sessions, "s1", "files", "shot.png")).Length;
+        var service = new HistoryStandIn { Records = [Record("s1", "q1")], Quests = [Quest("q1")] };
+        service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], sessions: ["s1"])];
+        var world = World(service) with
+        {
+            Remover = (path, folder) =>
+            {
+                if (path == transcript) throw new IOException("held by a process");
+                if (folder) Directory.Delete(path, recursive: true);
+                else File.Delete(path);
+            },
+        };
+        var output = new StringWriter();
+
+        var exit = await HistoryCommand.RunAsync(HistoryCommand.Read(WorkScope.Quest, ["clear", "q1", "--yes"], out _)!, world, output);
+
+        Assert.Equal(2, exit);
+        Assert.Equal(
+            $"daoris-driver: cleared #q1 from this machine: 1 quest and 1 session, {HistoryCommand.Size(went)}.\n"
+            + "  1 file could not be removed and is left over; the next clear of a workspace takes it.\n",
+            output.ToString().ReplaceLineEndings("\n"));
+        Assert.True(File.Exists(transcript));
+    }
+
     /// <summary>A host older than the door says so as the library's sentence, which the host prints as a tool error, exit 2.</summary>
     [Fact]
     public async Task A_service_with_no_history_door_is_the_libraries_sentence()

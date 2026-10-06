@@ -273,8 +273,11 @@ public sealed record HistoryPlanResponse(IReadOnlyList<HistoryUnitResponse> Unit
 // The second press names its units as the first listed them: each `kind` and `id`.
 public sealed record HistoryUnitRequest(string? Kind, string? Id);
 public sealed record HistoryClearRequest(IReadOnlyList<HistoryUnitRequest?>? Units);
-// What the press did to one unit: the unit as judged where it was cleared, whether it went, and the desk's sentence.
-public sealed record HistoryClearedResponse(HistoryUnitResponse Unit, bool Cleared, string Message);
+// What the press did to one unit: the unit as judged where it was cleared, whether it went, and the desk's sentence. HIST1j:
+// `failed`, only where a removal failed, names the quests and asks whose kept files the disk would not let go of, so the driver
+// counts them as failed and frees none of their bytes; absent otherwise, so a driver from before reads the answer as it did.
+public sealed record HistoryClearedResponse(HistoryUnitResponse Unit, bool Cleared, string Message, HistoryFailedResponse? Failed = null);
+public sealed record HistoryFailedResponse(IReadOnlyList<string> Quests, IReadOnlyList<string> Asks);
 public sealed record HistoryClearResponse(IReadOnlyList<HistoryClearedResponse> Units);
 // STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
 public sealed record AnswerSessionRequest(string? Answer);
