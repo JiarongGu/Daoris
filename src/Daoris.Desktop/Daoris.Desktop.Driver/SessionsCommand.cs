@@ -4,10 +4,13 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris-driver sessions</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2; MSG1g's <c>go-on-new</c>).</summary>
+/// <summary>
+/// What <c>daoris-driver sessions</c> was asked (D126 §7.1; MSG1e's <c>say</c>, D137 §5.2; MSG1g's <c>go-on-new</c>; MSG1f3's
+/// <c>start-from</c>).
+/// </summary>
 /// <param name="Verb">
-/// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c> or
-/// <c>go-on-new</c>.
+/// <c>list</c>, <c>stop</c>, <c>finish</c>, <c>decline</c>, <c>archive</c>, <c>unarchive</c>, <c>delete</c>, <c>say</c>,
+/// <c>go-on-new</c> or <c>start-from</c>.
 /// </param>
 public sealed record SessionsAsk(string Verb)
 {
@@ -67,6 +70,13 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// from this home's cool-offs by the account's owner, as the roster reads them, plugins' harnesses included.
     /// </summary>
     public Func<string?, string?, CoolingEntry?>? CoolingOf { get; init; }
+
+    /// <summary>
+    /// The terminal's own conversation, opened with the words a session could not go on with (MSG1f3's <c>start-from</c>, D50):
+    /// the host's chat door, which runs it through the chat runner's one act the screen's route calls and answers its exit.
+    /// Null where nothing here can hold a conversation.
+    /// </summary>
+    public Func<string, CancellationToken, Task<int>>? StartFrom { get; init; }
 }
 
 /// <summary>
@@ -87,6 +97,10 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
 /// a conversation's are refused, since nothing here could open it. What never goes on is judged first, by
 /// <see cref="WordsNever"/>, before anything is asked. One line says where the words stand.</para>
 ///
+/// <para><b>Start-from is the screen's *Start a conversation with these words*</b> (MSG1f3, D137 §2.2, D50): a conversation
+/// in this terminal, as <c>chat</c> opens one, its first message the words a session could not go on with, which then leave
+/// that session naming it, through the chat runner's own act (<see cref="ChatRunner.StartFromAsync"/>).</para>
+///
 /// <para>Exit codes are the family's: 0 done, listed, or the words taken or held · 1 refused, a policy answer · 2 could not,
 /// the usage among them.</para>
 /// </remarks>
@@ -99,6 +113,7 @@ public static class SessionsCommand
                daoris-driver sessions archive <id>… | --ended [--yes]  ·  sessions unarchive <id>…  ·  sessions delete <id>
                daoris-driver sessions say <id> "…" [--file <path>]…
                daoris-driver sessions go-on-new <id>
+               daoris-driver sessions start-from <id>
         """;
 
     /// <summary>The fields of a row in <c>--json</c>, in order: <c>SESSION_GROUPS</c>' row, field for field.</summary>
@@ -153,6 +168,11 @@ public static class SessionsCommand
                 return new SessionsAsk("go-on-new") { Ids = [id] };
             case ["go-on-new", ..]:
                 problem = "`go-on-new` takes one session's id.";
+                return null;
+            case ["start-from", var id] when Id(id):
+                return new SessionsAsk("start-from") { Ids = [id] };
+            case ["start-from", ..]:
+                problem = "`start-from` takes one session's id.";
                 return null;
         }
 
@@ -217,6 +237,7 @@ public static class SessionsCommand
         {
             "say" => await SayAsync(world, ask, output, ct).ConfigureAwait(false),
             "go-on-new" => await GoOnNewAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
+            "start-from" => await StartFromAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "stop" => await StopAsync(world, ask.Ids[0], output, ct).ConfigureAwait(false),
             "finish" or "decline" => await ResolveAsync(world, ask, output, ct).ConfigureAwait(false),
             "archive" when ask.Ended => await ArchiveEndedAsync(world, ask.Yes, output, ct).ConfigureAwait(false),
@@ -300,7 +321,9 @@ public static class SessionsCommand
 
     private static async Task<int> ListAsync(SessionsWorld world, SessionsAsk ask, TextWriter output, CancellationToken ct)
     {
-        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct).ConfigureAwait(false);
+        // A fresh plan, which sees no cool-off: the look reads the home's for words resumed on an account (MSG1f3).
+        var look = await SessionGroups.LookAsync(world.Service, world.Config, world.Door, lastLook: null, world.Home, ct: ct, coolingOf: world.CoolingOf)
+            .ConfigureAwait(false);
         var records = look.Records.GroupBy(record => record.Id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var rows = SessionGroups.Read(look)
             .Where(row => ask.Group is null || row.Group == ask.Group)
@@ -750,7 +773,8 @@ public static class SessionsCommand
             if (note is not null)
             {
                 output.WriteLine($"sessions: kept, but it cannot go on in this session, because {Because(note)}.");
-                output.WriteLine($"  start a conversation with them instead: daoris-driver chat --repository {record.Repository}");
+                // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
+                output.WriteLine($"  start a conversation with them instead: daoris-driver sessions start-from {record.Id}");
                 return 1;
             }
 
@@ -901,19 +925,35 @@ public static class SessionsCommand
     private static async Task<int> GoOnNewAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
         var answer = await GoOnNew.AskAsync(
-                world.Service, world.Home, world.CoolingOf ?? CoolingOn(world.Home), id, DateTimeOffset.UtcNow, ct)
+                world.Service, world.Home, world.CoolingOf ?? SessionGroups.CoolingOn(world.Home), id, DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);
         output.WriteLine($"sessions: {answer.Message}");
         return answer.Sent ? 0 : answer.Why is null ? 2 : 1;
     }
 
-    /// <summary>The home's cool-offs as a start reads them: by the account's owner, the build's harnesses and the plugins' (D64).</summary>
-    private static Func<string?, string?, CoolingEntry?> CoolingOn(string home)
+    // ——— Start a conversation with these words (MSG1f3, D137 §2.2, D50): the screen's press, at a terminal.
+
+    /// <summary>
+    /// The terminal's own conversation, opened by the host's chat door with the words a session could not go on with; its exit
+    /// is the conversation's. A world with no door to open one has nothing to start it in.
+    /// </summary>
+    private static async Task<int> StartFromAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
-        var built = AdapterSet.Built();
-        var adapters = built.WithPlugins(PluginCatalog.Load(home, built.Names));
-        var roster = new HarnessRoster(adapters, Path.Combine(home, "harnesses.json"));
-        return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
+        if (world.StartFrom is { } open) return await open(id, ct).ConfigureAwait(false);
+
+        output.WriteLine($"sessions: no conversation can be opened from here; run `daoris-driver sessions start-from {id}` at a terminal.");
+        return 2;
+    }
+
+    /// <summary>
+    /// What the chat runner's start-from came to, in one line (<see cref="StartFrom.RunAsync"/>'s sentence): null where a
+    /// conversation opened, which then runs on in this terminal, its words taken or left where they were; else the exit, 1, a
+    /// refusal by its code or a start the runner refused, as <c>chat</c>'s refusals are.
+    /// </summary>
+    public static int? Started(StartedFrom started, TextWriter output)
+    {
+        output.WriteLine($"sessions: {started.Message}");
+        return started.SessionId is null ? 1 : null;
     }
 
     // ——— Archive, unarchive and delete: the screen's owners.

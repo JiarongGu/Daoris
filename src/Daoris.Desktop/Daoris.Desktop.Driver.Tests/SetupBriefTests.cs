@@ -139,21 +139,49 @@ public sealed partial class SetupBriefTests
         }
     }
 
-    /// <summary>D124 §2.6: what a set-up writes, and the bounds it never crosses.</summary>
+    /// <summary>
+    /// D124 §2.6: what a set-up writes, and the bounds it never crosses. INIT1b (D25's INIT1 note): the whole set-up's
+    /// `daoris init` writes a `.gitattributes` where there is none, so the list of what it writes names that file, and the
+    /// bounds keep one already there as the tool keeps it.
+    /// </summary>
     [Fact]
     public void The_body_says_what_it_writes_and_what_it_never_does()
     {
         var (_, body) = SetupBrief.Compose(Input(SetupCase.Whole));
 
         Assert.Contains("Write only in this tree, on this branch", body);
+        Assert.Contains("the `.gitattributes` that `daoris init` writes where there is none, holding `* text=auto eol=lf`", body);
         foreach (var never in new[]
         {
             "push, merge or open a pull request", "write outside this tree", "publish a request to another repository",
-            "run `daoris connect` or `daoris upstream`", "`remote.join` or `remote.knowledge`", "change a source, build or CI file",
+            "run `daoris connect` or `daoris upstream`", "`remote.join` or `remote.knowledge`",
+            "change a `.gitattributes` this repository already has", "change a source, build or CI file",
         })
         {
             Assert.Contains(never, body);
         }
+    }
+
+    /// <summary>
+    /// INIT1b: the step that runs `daoris init` says what it writes besides the manifest, a `.gitattributes` pinning LF
+    /// where the repository has none, and that one already there is never touched, as the playbook's step says (the
+    /// twin). A move and the knowledge step alone run no `init`, so neither says it.
+    /// </summary>
+    [Fact]
+    public void Taking_up_the_doctrine_says_init_writes_a_gitattributes_only_where_there_is_none()
+    {
+        var (_, whole) = SetupBrief.Compose(Input(SetupCase.Whole));
+        var (_, moving) = SetupBrief.Compose(Input(SetupCase.Move));
+        var (_, declaring) = SetupBrief.Compose(Input(SetupCase.Declare));
+
+        var step = whole.Split('\n').Single(line => line.Contains("**Take up the doctrine.**", StringComparison.Ordinal));
+        Assert.Contains(
+            "Where this repository has no `.gitattributes`, it writes one holding `* text=auto eol=lf`, so every checkout holds "
+            + "the line endings the tool writes, whatever its machine's `core.autocrlf`; it never touches one already here, and "
+            + "names it where it pins no line endings: say so in your close, since adding that line is the person's choice.",
+            step);
+        Assert.DoesNotContain(".gitattributes", moving);
+        Assert.DoesNotContain(".gitattributes", declaring);
     }
 
     /// <summary>D124 §2.7: the close names what the owner reviews.</summary>

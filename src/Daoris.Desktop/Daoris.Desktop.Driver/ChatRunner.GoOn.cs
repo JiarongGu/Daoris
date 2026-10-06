@@ -278,7 +278,7 @@ public sealed partial class ChatRunner
             .ConfigureAwait(false);
         if (resume.Waits)
         {
-            Note(sessionId, $"— it does not go on yet: {resume.Selection.Refusal} {ResumeWords.ChatDoor(record.Repository!)}");
+            Note(sessionId, $"{ResumeWords.NotYet}{resume.Selection.Refusal} {ResumeWords.ChatDoor(sessionId)}");
             return new(null, resume.Selection.Refusal);
         }
 
@@ -425,7 +425,7 @@ public sealed partial class ChatRunner
     /// </summary>
     private ChatStart Held(string sessionId, string why)
     {
-        Note(sessionId, $"— it does not go on yet: {why.TrimEnd('.', ' ')}. Your words wait on it.");
+        Note(sessionId, $"{ResumeWords.NotYet}{why.TrimEnd('.', ' ')}. Your words wait on it.");
         return new(null, why);
     }
 

@@ -111,6 +111,12 @@ using Daoris.Driver;
 //                 to go on now in a new session, kept under the home for the driver's next look, which carries them on
 //                 handed them, without the session's conversation. A conversation, a closed quest's session and an
 //                 account that is not cooling are refused, exit 1. The screen's *Go on in a new session* is the other door.
+//   sessions start-from <id>
+//                 words a session cannot go on with, which nothing carries on by itself (MSG1f3, D137 §2.2): a conversation
+//                 in this terminal, as `chat` opens one, its first message the words, which then leave that session naming
+//                 it, through the chat runner's act the screen's route calls. What never goes on, a session still running, no
+//                 words and a quest the driver carries on are refused, exit 1. *Start a conversation with these words* is the
+//                 other door.
 //
 //   trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--yes]
 //         | land <session> [--plan] | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]

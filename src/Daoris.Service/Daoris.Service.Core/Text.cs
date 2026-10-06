@@ -36,9 +36,56 @@ public static partial class Text
     /// rule, in the same words, lives in the platform's excerpt marker: found by its test in the
     /// other language, which is what a test in the other language is for.
     /// </remarks>
-    public static List<string> Tokenize(string? text)
+    public static List<string> Tokenize(string? text) => Words(Segment(text ?? string.Empty));
+
+    /// <summary>
+    /// What a question asks: its <see cref="Tokenize">tokens</see>, then each two and three of its adjacent
+    /// words joined, as an identifier spells them (ORIENT1f), each once, with how many words it stands for.
+    /// </summary>
+    /// <remarks>
+    /// <para>The index holds <c>ProbeLock</c> whole as well as by its words (<see cref="Segment"/>), and a
+    /// question in plain words says <i>probe lock</i>. Its words alone find every entry that says probe and
+    /// lock anywhere; joined, they find the one that names the identifier. A join that spells nothing matches
+    /// nothing and costs nothing.</para>
+    ///
+    /// <para><b>A join counts once for each word it joins.</b> Matched, it is those words in the one form the
+    /// code gives them, so it stands for each of them again. Measured on this repository's index (ORIENT1f,
+    /// D134's ORIENT1g note): asked once, <i>what decided the probe lock</i> still ranked a design section
+    /// titled with <i>lock</i> and <i>decided</i> above the FIX-LOG entry and the decision note that name
+    /// <c>ProbeLock</c>; counted as its two words, the note came first and the fix second. A phrase of the
+    /// adjacent words instead ranked first the note that quotes the question, and proximity is not what the
+    /// question asks.</para>
+    ///
+    /// <para>Only the question's own words are joined, never an identifier's words again, and never a word in
+    /// a script whose bigrams joined are no word. The joins come after the tokens, so an excerpt still opens
+    /// on the first word the question said.</para>
+    /// </remarks>
+    public static List<QueryTerm> QueryTerms(string? text)
     {
-        var lowered = Segment(text ?? string.Empty).ToLowerInvariant();
+        var terms = Tokenize(text).Distinct(StringComparer.Ordinal).Select(token => new QueryTerm(token, 1)).ToList();
+        var words = Words(Bigrams(text ?? string.Empty));
+        for (var length = 2; length <= JoinedWords; length++)
+        {
+            for (var start = 0; start + length <= words.Count; start++)
+            {
+                var run = words.GetRange(start, length);
+                if (run.Any(IsShortWordScript)) continue;
+                var joined = string.Concat(run);
+                if (terms.Any(term => term.Term == joined)) continue;
+                terms.Add(new QueryTerm(joined, length));
+            }
+        }
+
+        return terms;
+    }
+
+    /// <summary>The most adjacent words a question joins: an identifier of three words is common, of four rare.</summary>
+    private const int JoinedWords = 3;
+
+    /// <summary>The words of already-segmented text, lower-cased, the floor applied.</summary>
+    private static List<string> Words(string segmented)
+    {
+        var lowered = segmented.ToLowerInvariant();
         var tokens = new List<string>();
         var start = -1;
         for (var i = 0; i <= lowered.Length; i++)
@@ -55,6 +102,117 @@ public static partial class Text
         }
         return tokens;
     }
+
+    /// <summary>
+    /// The same text cut so a tokenizer that splits on spaces and punctuation finds every word in it: each
+    /// run of ideographs as its overlapping two-character bigrams, and each identifier with its words
+    /// spelled beside it (<see cref="Identifiers"/>, ORIENT1f).
+    /// </summary>
+    /// <remarks>
+    /// Applied at index time (the FTS row) and at query time (through <see cref="Tokenize"/>), never to the
+    /// stored body, so an excerpt reads the original. Prose with neither is returned byte for byte.
+    /// </remarks>
+    public static string Segment(string text) => Identifiers(Bigrams(text));
+
+    /// <summary>
+    /// The same text with every identifier followed by its words: <c>ProbeLock</c> becomes
+    /// <c>ProbeLock Probe Lock</c>, and <c>probe_lock</c> becomes <c>probe_lock probelock</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b><c>unicode61</c> keeps <c>ProbeLock</c> as ONE token</b>, as it keeps a run of
+    /// ideographs (ORIENT1f). The question <i>what decided the probe lock</i> never reached the decision that
+    /// named it: no word of the question was its token (D24's ORIENT1c note). An underscore already
+    /// separates, so <c>probe_lock</c> was its words and never itself whole. Each shape now matches the
+    /// others and the words, and still matches itself.</para>
+    ///
+    /// <para><b>Where the words are</b>: a run of letters, digits and underscores, cut at its underscores and
+    /// where its case turns: before an upper-case letter after a lower-case one (<c>probe|Lock</c>), and
+    /// before the last capital of a run of capitals or a digit when a lower-case letter follows it
+    /// (<c>HTTP|Server</c>, <c>UTF8|Encoding</c>), except a plural's <c>s</c> (<c>APIs</c>,
+    /// <c>URLs|For</c>). A digit is no boundary on its own, so a task's id (<c>TOOL6g</c>, <c>D125</c>)
+    /// stays one word. A run with one word, or with an ideograph in it, is left as it is.</para>
+    ///
+    /// <para><b>What is added</b>: the run joined where underscores cut it, then each cut piece's case
+    /// words where it has two or more, each of three characters or more, since the query's floor never asks
+    /// for a shorter one. Hyphens are not joined: a hyphen is prose as often as an identifier's.</para>
+    /// </remarks>
+    private static string Identifiers(string text)
+    {
+        var builder = new System.Text.StringBuilder(text.Length + 16);
+        var spelled = false;
+        var start = -1;
+        for (var i = 0; i <= text.Length; i++)
+        {
+            if (i < text.Length && (char.IsLetterOrDigit(text[i]) || text[i] == '_'))
+            {
+                if (start < 0) start = i;
+                continue;
+            }
+
+            if (start >= 0)
+            {
+                builder.Append(text, start, i - start);
+                foreach (var word in WordsOf(text, start, i))
+                {
+                    builder.Append(' ').Append(word);
+                    spelled = true;
+                }
+                start = -1;
+            }
+            if (i < text.Length) builder.Append(text[i]);
+        }
+
+        return spelled ? builder.ToString() : text;
+    }
+
+    /// <summary>The words an identifier is spelled with, beside it; empty for a run that is one word.</summary>
+    private static List<string> WordsOf(string text, int start, int end)
+    {
+        var words = new List<string>();
+        var run = text.AsSpan(start, end - start);
+        var hasLetter = false;
+        foreach (var c in run)
+        {
+            if (IsIdeograph(c)) return words;
+            hasLetter |= char.IsLetter(c);
+        }
+        if (!hasLetter) return words;
+
+        var pieces = run.ToString().Split('_', StringSplitOptions.RemoveEmptyEntries);
+        if (pieces.Length > 1) words.Add(string.Concat(pieces));
+        foreach (var piece in pieces)
+        {
+            var parts = CaseWords(piece);
+            if (parts.Count < 2) continue;
+            words.AddRange(parts.Where(part => part.Length > 2));
+        }
+        return words;
+    }
+
+    /// <summary>One piece of an identifier, cut where its case turns.</summary>
+    private static List<string> CaseWords(string piece)
+    {
+        var parts = new List<string>();
+        var from = 0;
+        for (var i = 1; i < piece.Length; i++)
+        {
+            if (!char.IsUpper(piece[i])) continue;
+            var before = piece[i - 1];
+            var turns = char.IsLower(before)
+                || ((char.IsUpper(before) || char.IsDigit(before))
+                    && i + 1 < piece.Length && char.IsLower(piece[i + 1])
+                    && !IsPluralS(piece, i + 1));
+            if (!turns) continue;
+            parts.Add(piece[from..i]);
+            from = i;
+        }
+        parts.Add(piece[from..]);
+        return parts;
+    }
+
+    /// <summary>A lone <c>s</c> after capitals, at the end or before the next word: a plural, not a word.</summary>
+    private static bool IsPluralS(string piece, int at) =>
+        piece[at] == 's' && (at + 1 == piece.Length || char.IsUpper(piece[at + 1]));
 
     /// <summary>
     /// The same text with every run of ideographs cut into its overlapping two-character bigrams,
@@ -76,7 +234,7 @@ public static partial class Text
     /// stored body — an excerpt reads the original. A lone ideograph stays a unigram. Latin text is
     /// returned untouched, byte for byte.</para>
     /// </remarks>
-    public static string Segment(string text)
+    private static string Bigrams(string text)
     {
         var builder = new System.Text.StringBuilder(text.Length + text.Length / 2);
         var run = 0;   // length of the current ideograph run, counted in chars
@@ -216,3 +374,8 @@ public static partial class Text
     public static string ReadDocument(string path) =>
         File.ReadAllText(path).TrimStart('﻿').ReplaceLineEndings("\n").Trim();
 }
+
+/// <summary>One term a question asks (ORIENT1f): a word, or adjacent words joined, and how many words it stands for.</summary>
+/// <param name="Term">The term as the index holds it, lower-cased.</param>
+/// <param name="Words">1 for a word; the number of words joined for a join.</param>
+public readonly record struct QueryTerm(string Term, int Words);

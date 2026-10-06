@@ -91,10 +91,10 @@ public sealed class GoOnNewTests : IDisposable
         { "w0rk1ng0", GoOnNew.Running, "w0rk1ng0 is working: words reach it there, so it needs no new session." },
         { "ch4t0000", GoOnNew.Conversation,
             "ch4t0000 is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
-            + "`daoris-driver chat --repository engine`." },
+            + "`daoris-driver sessions start-from ch4t0000`." },
         { "cl0sed00", GoOnNew.Closed,
             "#q4 has closed, so nothing carries its session's words on by itself: start a conversation with them instead: "
-            + "`daoris-driver chat --repository engine`." },
+            + "`daoris-driver sessions start-from cl0sed00`." },
     };
 
     /// <summary>

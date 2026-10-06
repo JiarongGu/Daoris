@@ -93,4 +93,77 @@ public sealed class TextTests
         foreach (var term in Text.Tokenize("记录")) Assert.Contains(term, body);
         foreach (var term in Text.Tokenize("会话")) Assert.Contains(term, body);
     }
+
+    // ── identifiers (ORIENT1f) ───────────────────────────────────────────────────────────────────
+    //
+    // `unicode61` keeps `ProbeLock` as one token, as it keeps a run of ideographs: a question in plain
+    // words ("probe lock") matched nothing inside it, and the decision that named the identifier was never
+    // found by its words. An identifier is cut into its words beside itself, so it matches both ways.
+
+    [Theory]
+    [InlineData("ProbeLock", new[] { "probelock", "probe", "lock" })]
+    [InlineData("probeLock", new[] { "probelock", "probe", "lock" })]
+    [InlineData("probe_lock", new[] { "probe", "lock", "probelock" })]
+    [InlineData("PROBE_LOCK", new[] { "probe", "lock", "probelock" })]
+    [InlineData("HTTPServer", new[] { "httpserver", "http", "server" })]
+    [InlineData("UTF8Encoding", new[] { "utf8encoding", "utf8", "encoding" })]
+    [InlineData("URLsFor", new[] { "urlsfor", "urls", "for" })]
+    [InlineData("probe_lockFile", new[] { "probe", "lockfile", "probelockfile", "lock", "file" })]
+    public void An_identifier_is_tokenized_whole_and_as_its_words(string identifier, string[] expected)
+    {
+        Assert.Equal(expected, Text.Tokenize(identifier));
+    }
+
+    /// <summary>
+    /// No inner boundary, no words: a task id's digit and letter, a plural acronym, a capitalised or
+    /// lower-case word, and an underscore at an edge are not identifiers made of words.
+    /// </summary>
+    [Theory]
+    [InlineData("TOOL6g", "tool6g")]
+    [InlineData("ORIENT1f", "orient1f")]
+    [InlineData("APIs", "apis")]
+    [InlineData("PRs", "prs")]
+    [InlineData("README", "readme")]
+    [InlineData("Lock", "lock")]
+    [InlineData("probelock", "probelock")]
+    [InlineData("__init__", "init")]
+    public void A_word_with_no_inner_boundary_stays_one_token(string word, string token)
+    {
+        Assert.Equal([token], Text.Tokenize(word));
+    }
+
+    /// <summary>
+    /// The FTS row is fed what <see cref="Text.Segment"/> returns, so the words are spelled out beside the
+    /// identifier, which stays as written; a part of two letters or fewer is not added, as the query floor
+    /// would never ask for it.
+    /// </summary>
+    [Fact]
+    public void The_segmenter_spells_an_identifier_s_words_beside_it()
+    {
+        Assert.Equal("held by `ProbeLock Probe Lock`.", Text.Segment("held by `ProbeLock`."));
+        Assert.Equal("probe_lock probelock", Text.Segment("probe_lock"));
+        Assert.Equal("macOS mac", Text.Segment("macOS"));
+        // A run of ideographs is cut first, so an identifier glued to one is still found.
+        Assert.Equal("记录 ProbeLock Probe Lock", Text.Segment("记录ProbeLock"));
+    }
+
+    /// <summary>
+    /// A question's adjacent words are also asked joined, as an identifier spells them, so "probe lock"
+    /// reaches the entry that names <c>ProbeLock</c> whole as well as by its words. A join counts for each
+    /// word it joins. Never across an ideograph, whose bigrams joined are no word.
+    /// </summary>
+    [Fact]
+    public void A_question_asks_its_adjacent_words_joined_as_well()
+    {
+        Assert.Equal(
+            [new QueryTerm("probe", 1), new QueryTerm("lock", 1), new QueryTerm("probelock", 2)],
+            Text.QueryTerms("probe lock"));
+        Assert.Equal(
+            ["account", "rotation", "tests", "accountrotation", "rotationtests", "accountrotationtests"],
+            Text.QueryTerms("account rotation tests").Select(term => term.Term));
+        Assert.Equal([1, 1, 1, 2, 2, 3], Text.QueryTerms("account rotation tests").Select(term => term.Words));
+        Assert.Equal(["probelock", "probe", "lock"], Text.QueryTerms("ProbeLock").Select(term => term.Term));
+        Assert.Equal(["记录", "会话"], Text.QueryTerms("记录 会话").Select(term => term.Term));
+        Assert.Empty(Text.QueryTerms("a of to"));
+    }
 }

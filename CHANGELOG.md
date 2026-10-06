@@ -32,6 +32,8 @@ with the version and date at release.
   `--until-idle` print each report as it is made and wait for their sessions before exiting.
 - `daoris init` writes a `.gitattributes` holding `* text=auto eol=lf` where a repository has none, so
   the files `sync` writes keep their line endings on Windows; an existing one is never touched.
+- Knowledge search finds an identifier from its words (`ProbeLock` from "probe lock") and lists each
+  dated note of a decision as its own result, so a question lands on the note that answers it.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
   machine only. The driver, terminal and screen doors follow (HIST1c–e).
@@ -42,6 +44,9 @@ with the version and date at release.
   Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would; Settings'
   account hints spell them the same way, and so do the driver's own sentences and Ask Daoris's
   terminal lines.
+- `daoris-driver sessions start-from <id>` carries a conversation's words into a new one at a terminal,
+  as the window's *Start from* does. The sessions list shows a chat whose words wait as going on, or
+  as resuming later with its reset time.
 - `daoris-driver` exits 2 naming the timeout when the service does not answer in time; only Ctrl+C
   reads as a stop.
 

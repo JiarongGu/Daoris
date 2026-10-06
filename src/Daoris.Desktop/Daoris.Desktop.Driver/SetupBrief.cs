@@ -68,7 +68,7 @@ public static class SetupBrief
         Asked(body, input);
         Read(body, input);
         Steps(body, input);
-        Bounds(body);
+        Bounds(body, input);
         Close(body, input);
         return (SetupQuests.Title(stem, input.Day), body.ToString().TrimEnd() + "\n");
     }
@@ -182,10 +182,18 @@ public static class SetupBrief
         $"**The tool.** Run `daoris --version`. It prints `{version}`. If it prints anything else, or `daoris` is not "
         + "found, stop and decline: *the doctrine command could not run here*, with what it printed.";
 
+    /// <remarks>
+    /// INIT1b: <c>init</c> writes a <c>.gitattributes</c> where there is none and keeps one already there byte for byte
+    /// (D25's INIT1 note), so the step says it, as the playbook's does: a set-up bound to change no build file would
+    /// otherwise find a file it did not ask for in its diff.
+    /// </remarks>
     private static string TakeUp(LayoutFacts facts) =>
         "**Take up the doctrine.** Run `daoris init --harness agents`, and read what it prints: the packs, this "
         + "repository's own documents, and the records it seems to keep by role (`daoris analyze --json` says the same "
-        + "for a machine to read). " + Moves(facts);
+        + "for a machine to read). Where this repository has no `.gitattributes`, it writes one holding "
+        + "`* text=auto eol=lf`, so every checkout holds the line endings the tool writes, whatever its machine's "
+        + "`core.autocrlf`; it never touches one already here, and names it where it pins no line endings: say so in your "
+        + "close, since adding that line is the person's choice. " + Moves(facts);
 
     private static string MoveLayout(LayoutFacts facts) =>
         "**Move to the agents layout.** In `daoris.json`, set `\"harness\": \"agents\"` and `\"target\": \".agents\"` "
@@ -314,17 +322,28 @@ public static class SetupBrief
     private static string Commit() =>
         "**Commit** on this branch as each step lands: the branch is what is reviewed, and this session never pushes it.";
 
-    private static void Bounds(StringBuilder body) =>
+    /// <remarks>
+    /// INIT1b: only the whole set-up runs <c>daoris init</c>, so only its bounds name the <c>.gitattributes</c> init writes
+    /// where there is none, and keep one already there as the tool keeps it (D25's INIT1 note).
+    /// </remarks>
+    private static void Bounds(StringBuilder body, SetupBriefInput input)
+    {
+        var init = input.Case == SetupCase.Whole;
         body.Append("**What this writes, and what it never does.** Write only in this tree, on this branch: `daoris.json` ")
-            .Append("and `daoris.lock`; `AGENTS.md` and `CLAUDE.md` (the region, the brief, the import); `.agents/`, with the ")
+            .Append("and `daoris.lock`; ")
+            .Append(init ? "the `.gitattributes` that `daoris init` writes where there is none, holding `* text=auto eol=lf`; " : "")
+            .Append("`AGENTS.md` and `CLAUDE.md` (the region, the brief, the import); `.agents/`, with the ")
             .Append("shared documents and this repository's own knowledge; the copies under `.claude/skills/` the tool ")
             .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; and a document that keeps a ")
             .Append("collision's mechanism. Never push, merge or open a pull request; never write outside this tree (another ")
             .Append("repository's checkout you may read is read only); never publish a request to another repository; never ")
             .Append("run `daoris connect` or `daoris upstream`; never set `remote.join` or `remote.knowledge` in `daoris.json`, ")
-            .Append("since what may leave this machine is the person's call and silence keeps it here; and never change a ")
+            .Append("since what may leave this machine is the person's call and silence keeps it here; ")
+            .Append(init ? "never change a `.gitattributes` this repository already has, which the tool keeps as it is; " : "")
+            .Append("and never change a ")
             .Append("source, build or CI file: anything that needs one is named in your close, as work for a request the ")
             .Append("person may publish.\n\n");
+    }
 
     private static void Close(StringBuilder body, SetupBriefInput input)
     {
