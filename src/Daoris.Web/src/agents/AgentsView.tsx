@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { sentence } from '../format';
 import { useHarnessRun, WithHarnessRuns } from '../harnessRuns';
 import { useRegistry } from '../queries';
 import { SessionConsole } from '../SessionConsole';
@@ -16,7 +17,7 @@ import { agentOf } from '../settings/accounts';
 import type { ScopeActs } from '../settings/AccountUse';
 import { proposalChange } from '../settings/proposals';
 import { AgentList, AgentStrip } from './AgentList';
-import { type AgentActs, AgentMainNotice, AgentPage } from './AgentPage';
+import { type AgentActs, AgentMainNotice, AgentPage, type Answered } from './AgentPage';
 import { type AgentPart, accountName, agentRows, runsForLine, signedOutHeld } from './agents';
 
 /** What a door runs, and so what streams under it in *Ways in* (D49 §2). */
@@ -198,6 +199,13 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
     notify(t('agents.joined', { account: called ?? labelOf(account), places: runsForLine(places) }));
   };
 
+  // ACCTEDIT1: a question's act told back to it: done once it lands, so it closes then and not on the press; refused, its
+  // sentence is said in the question, whole, with what the person entered kept. A press with no question (an ⋯ item) has
+  // no form to say it in, so it is a toast (the platform language §4).
+  const told = (landing: Promise<unknown>, answered?: Answered) => {
+    landing.then(() => answered?.done(), (error: unknown) => (answered ? answered.refused(sentence(error)) : onError(error)));
+  };
+
   const scope: ScopeActs = {
     onOrder: (workspace, list) => accountUse.mutate({ harness: door, action: 'order', accounts: list, ...(workspace ? { workspace } : {}) }, { onError }),
     onUse: (workspace, change) => accountUse.mutate({ harness: door, action: 'use', ...(workspace ? { workspace } : {}), ...change }, { onError }),
@@ -222,20 +230,20 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, install = false, 
     ),
     onDefault: (account, workspace) => run(door, 'profile-default', account ?? undefined, undefined, workspace),
     onRemove: (account) => run(door, 'profile-remove', account),
-    onRename: (account, name) => { rename(account, name).catch(onError); },
-    onJoin: (account, lists) => { join(account, lists).catch(onError); },
+    onRename: (account, name, answered) => told(rename(account, name), answered),
+    onJoin: (account, lists, answered) => told(join(account, lists), answered),
     // The add flow's end (D152 §4.5): its name kept where the field holds one other than its id, then the lists joined;
-    // either refused leaves the question up, so nothing the person typed is lost.
-    onAddedAnswer: ({ name, join: lists }) => {
+    // either refused leaves the question up, so nothing the person typed is lost, and says why in it.
+    onAddedAnswer: ({ name, join: lists }, answered) => {
       if (!addedHere) return;
       const account = addedHere.profile;
       const current = tool.accounts.find((each) => each.name === account)?.displayName?.trim() || null;
       const wanted = name?.trim() || null;
-      void (async () => {
+      told((async () => {
         const called = wanted !== current && (wanted !== null || current !== null) ? await rename(account, wanted) : current;
         if (lists.length > 0) await join(account, lists, called ?? undefined);
         settleAdded();
-      })().catch(onError);
+      })(), answered);
     },
     onSaveSettings: (account, label, change) => tune.mutate({ harness: door, profile: account, ...change }, {
       onSuccess: () => notify(t('harness.settings.saved', { account: label })),

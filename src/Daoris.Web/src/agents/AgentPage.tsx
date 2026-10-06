@@ -37,6 +37,15 @@ export type RuleActs = {
 /** The add flow's last step answered (D152 §4.5): the name in its field (empty is none), and the lists ticked, null for this machine's. */
 export type AddedAnswer = { name?: string; join: (string | null)[] };
 
+/**
+ * How a question asked in the page hears how its act ended (ACCTEDIT1): `done` once it landed, and `refused` with the
+ * sentence the person reads, said in the question with what they entered kept.
+ */
+export type Answered = { done: () => void; refused: (sentence: string) => void };
+
+/** The questions that wait on their act's answer: a row's rename, a row's *Use in a workspace…*, the add flow's last step. */
+type Question = 'rename' | 'place' | 'added';
+
 /** Every press on an agent's page, each the terminal's twin (D50). */
 export type AgentActs = {
   /** *Read again*: this agent's accounts, one at a time, and the tool's own sign-in (§5.3). */
@@ -54,11 +63,14 @@ export type AgentActs = {
   onDefault: (account: string | null, workspace?: string) => void;
   onRemove: (account: string) => void;
   /** An account named by the person, or its name taken back with null (ACCT2, `daoris agent profile rename`). */
-  onRename: (account: string, name: string | null) => void;
-  /** An account put into the lists named, a workspace's or null for this machine's (ACCT1, `daoris agent profile join`). */
-  onJoin: (account: string, join: (string | null)[]) => void;
+  onRename: (account: string, name: string | null, answered: Answered) => void;
+  /**
+   * An account put into the lists named, a workspace's or null for this machine's (ACCT1, `daoris agent profile join`): from a
+   * row's question, which hears the answer, or from its ⋯, which has no question to say a refusal in.
+   */
+  onJoin: (account: string, join: (string | null)[], answered?: Answered) => void;
   /** The new account's name and lists, at the add flow's end; *Not now* ticks none, and the account says *no workspace*. */
-  onAddedAnswer: (answer: AddedAnswer) => void;
+  onAddedAnswer: (answer: AddedAnswer, answered: Answered) => void;
   onSaveSettings: (account: string, label: string, change: AccountSettingsChange) => void;
   onDoor: (door: string, action: DoorAction) => void;
   onPin: (door: string, version: string) => void;
@@ -75,7 +87,7 @@ export type AgentActs = {
  * @remarks
  * **A molecule**: every state arrives as props, the panels a press opens arrive as nodes (a sign-in's, a door's console),
  * and every press goes out. It holds only what the person has open: a section, *Add an account…*'s first step, a row's
- * question, *Remove…*'s ask, a form.
+ * question, *Remove…*'s ask, a form, and why a question's act was refused (ACCTEDIT1).
  *
  * - **A section appears only where the agent has that concept** (§5.1): what it may do only where Daoris hands its agent
  *   the rules file, model and effort only where Daoris knows the tool's settings, how accounts are used only where it has
@@ -182,6 +194,19 @@ export function AgentPage({
   const [pinning, setPinning] = useState<Record<string, string>>({});
   const [pinOpen, setPinOpen] = useState<string | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
+  // ACCTEDIT1: a question closes once its act lands, never on the press, so a refused one keeps what the person entered and
+  // says why in it; the refusal is the question's, by its kind and its account, and goes when it is asked again or closed.
+  const [refused, setRefused] = useState<{ question: Question; account: string; sentence: string } | null>(null);
+  const answered = (question: Question, account: string, close: () => void = () => {}): Answered => {
+    setRefused(null);
+    return { done: close, refused: (sentence) => setRefused({ question, account, sentence }) };
+  };
+  const refusalOf = (question: Question, account: string) =>
+    (refused?.question === question && refused.account === account ? refused.sentence : null);
+  const ask = (question: 'rename' | 'place', account: string | null) => {
+    setRefused(null);
+    (question === 'rename' ? setRenaming : setPlacing)(account);
+  };
   const toggle = (section: AgentSection) => setOpen((was) => {
     const next = new Set(was);
     if (next.has(section)) next.delete(section);
@@ -336,7 +361,7 @@ export function AgentPage({
       ...(settingsShown && account.settings && tool.settingsChoices
         ? [{ id: 'settings', label: t('agents.account.settings'), onSelect: () => { setOpen((was) => new Set([...was, 'settings' as const])); setTuning(name); } }]
         : []),
-      { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => setRenaming(name) },
+      { id: 'rename', label: t('agents.account.rename'), disabled: busy, onSelect: () => ask('rename', name) },
       ...(signsIn && !account.key && state.state !== 'out'
         ? [{ id: 'signIn', label: t('harness.login.again'), disabled: busy || !tool.present, onSelect: () => acts.onSignIn(name) }]
         : []),
@@ -371,7 +396,7 @@ export function AgentPage({
       default:
         return {
           label: t('agents.act.place'), ariaLabel: t('agents.act.placeFor', { account: label }),
-          onPress: () => setPlacing(id), disabled: busy,
+          onPress: () => ask('place', id), disabled: busy,
         };
     }
   };
@@ -425,9 +450,12 @@ export function AgentPage({
             title={t('agents.place.title', { account: name })}
             choices={joinable(account.name)}
             busy={busy}
+            refusal={refusalOf('place', account.name)}
             cancelLabel={t('common.cancel')}
-            onDone={({ join }) => { setPlacing(null); acts.onJoin(account.name, join); }}
-            onCancel={() => setPlacing(null)}
+            onDone={({ join }) => acts.onJoin(account.name, join, answered('place', account.name, () => {
+              setPlacing((was) => (was === account.name ? null : was));
+            }))}
+            onCancel={() => ask('place', null)}
           />
         )}
         {renaming === account.name && (
@@ -436,8 +464,11 @@ export function AgentPage({
             account={account.name}
             current={account.displayName?.trim() || null}
             busy={busy}
-            onSave={(named) => { setRenaming(null); acts.onRename(account.name, named); }}
-            onCancel={() => setRenaming(null)}
+            refusal={refusalOf('rename', account.name)}
+            onSave={(named) => acts.onRename(account.name, named, answered('rename', account.name, () => {
+              setRenaming((was) => (was === account.name ? null : was));
+            }))}
+            onCancel={() => ask('rename', null)}
           />
         )}
         {signingIn === account.name && signInPanel}
@@ -476,9 +507,11 @@ export function AgentPage({
               offered={offeredName}
               choices={joinable(added.account)}
               busy={busy}
+              refusal={refusalOf('added', added.account)}
               cancelLabel={t('agents.add.notNow')}
-              onDone={acts.onAddedAnswer}
-              onCancel={(answer) => acts.onAddedAnswer({ ...answer, join: [] })}
+              // The organism closes this step once both acts land (`added` goes); a refusal is said in it.
+              onDone={(answer) => acts.onAddedAnswer(answer, answered('added', added.account))}
+              onCancel={(answer) => acts.onAddedAnswer({ ...answer, join: [] }, answered('added', added.account))}
             />
           )}
         </div>

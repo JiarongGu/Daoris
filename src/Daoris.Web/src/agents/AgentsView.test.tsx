@@ -511,6 +511,43 @@ describe('the Agents place', () => {
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an account' })).toBeNull());
   });
 
+  /** ACCTEDIT1: the add flow's last step, refused, stays up with the name and the lists as they were and says why in it. */
+  it('keeps the add flow’s last step up with its name and lists when its rename is refused, and says why in it', async () => {
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION') {
+        const action = options?.payload?.action;
+        if (action === 'profile-rename') {
+          throw Object.assign(new Error('refused'), {
+            code: 'DRIVER_REFUSED', parameters: { message: '`work` already names `work` — each `claude-code` account has a name of its own.' },
+          });
+        }
+        return { harness: 'claude-code', action, started: true };
+      }
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Add an account…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add a new account' }));
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login-new', profile: 'acct-1a2b3c4d', exitCode: 0, problem: null,
+        account: 'spare@example.invalid', kept: true, places: [],
+      });
+    });
+    const asking = await screen.findByRole('region', { name: 'Add an account' });
+    const name = within(asking).getByRole('textbox', { name: /Its name/ });
+    await userEvent.clear(name);
+    await userEvent.type(name, 'work');
+    await userEvent.click(within(asking).getByRole('button', { name: 'Not now' }));
+
+    expect(await within(asking).findByRole('alert')).toHaveProperty(
+      'textContent', 'work already names work — each claude-code account has a name of its own.');
+    expect(within(asking).getByRole('textbox', { name: /Its name/ })).toHaveProperty('value', 'work');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+  });
+
   /** *Not now* joins nothing, keeps the name in the field, and the account says *no workspace* with *Use in a workspace…*. */
   it('Not now leaves the new account in no list, which its row says, with Use in a workspace… as its act', async () => {
     let roster: unknown = ROSTER;
@@ -639,6 +676,70 @@ describe('the Agents place', () => {
       payload: { harness: 'claude-code', action: 'profile-rename', profile: 'work', name: 'office' },
     });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('work is called office now.'));
+  });
+
+  /**
+   * ACCTEDIT1: a rename stays open until its act lands. Refused, it keeps the name the person typed and says why under it,
+   * whole, as a refused start is said in its form (UX5 U68); a retry that lands closes it, and *Never mind* is the one other
+   * way out.
+   */
+  it('keeps a refused rename open with the name typed, says why in it, and closes once a retry lands', async () => {
+    let refuse = true;
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESS_ACTION') {
+        if (refuse) {
+          refuse = false;
+          throw Object.assign(new Error('refused'), {
+            code: 'DRIVER_REFUSED',
+            parameters: { message: '`office` already names `personal` — each `claude-code` account has a name of its own, and an id is one.' },
+          });
+        }
+        return { harness: 'claude-code', action: 'profile-rename', exitCode: 0, profile: 'work', name: options?.payload?.name };
+      }
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Rename…' }));
+    const row = screen.getByRole('listitem', { name: 'work' });
+    await userEvent.type(within(row).getByRole('textbox', { name: 'Its name' }), 'office');
+    await userEvent.click(within(row).getByRole('button', { name: 'Save the name' }));
+
+    const form = within(row).getByRole('form', { name: 'Rename work' });
+    expect(await within(form).findByRole('alert')).toHaveProperty(
+      'textContent', 'office already names personal — each claude-code account has a name of its own, and an id is one.');
+    expect(within(form).getByRole('textbox', { name: 'Its name' })).toHaveProperty('value', 'office');
+    // Said where it was asked, not as a corner toast as well.
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await userEvent.click(within(form).getByRole('button', { name: 'Save the name' }));
+    await waitFor(() => expect(within(row).queryByRole('form', { name: 'Rename work' })).toBeNull());
+    expect(notify).toHaveBeenCalledWith('work is called office now.');
+    expect(invoke.mock.calls.filter(([, type]) => type === 'HARNESS_ACTION')).toHaveLength(2);
+  });
+
+  it('a refused rename taken back with Never mind closes, and opens again with no refusal under it', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') {
+        throw Object.assign(new Error('refused'), { code: 'DRIVER_REFUSED', parameters: { message: 'not a name a terminal can type.' } });
+      }
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    place();
+
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Rename…' }));
+    const row = screen.getByRole('listitem', { name: 'work' });
+    await userEvent.type(within(row).getByRole('textbox', { name: 'Its name' }), 'o');
+    await userEvent.click(within(row).getByRole('button', { name: 'Save the name' }));
+    expect(await within(row).findByRole('alert')).toBeTruthy();
+    await userEvent.click(within(row).getByRole('button', { name: 'Never mind' }));
+    expect(within(row).queryByRole('form', { name: 'Rename work' })).toBeNull();
+
+    // Asked again, it opens on the account's name as it is, with nothing said under it.
+    await userEvent.click(within(await more('work')).getByRole('menuitem', { name: 'Rename…' }));
+    expect(within(row).getByRole('textbox', { name: 'Its name' })).toHaveProperty('value', '');
+    expect(within(row).queryByRole('alert')).toBeNull();
   });
 
   /** 🔴 Remove REMOVES (D66 §3): it deletes the sign-in, so its first press only asks, and says what the second will do. */
@@ -1347,6 +1448,47 @@ describe('how accounts are used', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACCOUNT_USE', {
       payload: { harness: 'claude-code', action: 'order', accounts: ['personal'] },
     });
+  });
+
+  /**
+   * ACCTEDIT1: a row's *Use in a workspace…* stays open until its join lands. Refused, it keeps the lists ticked and says why
+   * under them, whole; a retry that lands closes it.
+   */
+  it('keeps a refused Use in a workspace… open with its lists ticked, says why in it, and closes once a retry lands', async () => {
+    const nowhere = {
+      agents: [{ ...ACCOUNTS.agents[0]!, scopes: [MACHINE, { ...MACHINE, workspace: 'orbit', list: ['personal'] }] }],
+    };
+    let refuse = true;
+    invoke.mockImplementation(async (module: string, type: string, args?: { payload?: { action?: string } }) => {
+      if (type === 'HARNESS_ACTION') {
+        if (refuse) {
+          refuse = false;
+          throw Object.assign(new Error('refused'), {
+            code: 'DRIVER_REFUSED',
+            parameters: { message: '`orbit` names no `claude-code` account or list of its own, so its starts take this machine\'s list.' },
+          });
+        }
+        return { harness: 'claude-code', action: 'profile-join', exitCode: 0, profile: 'work', places: [{ workspace: 'orbit', list: true, default: false }] };
+      }
+      return answer(ROSTER, nowhere)(module, type, args);
+    });
+    const notify = vi.fn();
+    place(notify);
+
+    const work = await screen.findByRole('listitem', { name: 'work' });
+    await userEvent.click(await within(work).findByRole('button', { name: 'Use work in a workspace…' }));
+    const where = within(work).getByRole('region', { name: 'Where work runs work' });
+    await userEvent.click(within(where).getByRole('checkbox', { name: 'orbit' }));
+    await userEvent.click(within(where).getByRole('button', { name: 'Add to the lists' }));
+
+    expect(await within(where).findByRole('alert')).toHaveProperty(
+      'textContent', 'orbit names no claude-code account or list of its own, so its starts take this machine\'s list.');
+    expect(within(where).getByRole('checkbox', { name: 'orbit' }).getAttribute('aria-checked')).toBe('true');
+    expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
+
+    await userEvent.click(within(where).getByRole('button', { name: 'Add to the lists' }));
+    await waitFor(() => expect(within(work).queryByRole('region', { name: 'Where work runs work' })).toBeNull());
+    expect(notify).toHaveBeenCalledWith('work runs work in orbit now.');
   });
 
   it('says starts run on the tool\'s own sign-in while the machine names no account, with its cool-off', async () => {
