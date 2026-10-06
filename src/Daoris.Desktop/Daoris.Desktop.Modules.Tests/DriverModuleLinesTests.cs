@@ -180,48 +180,48 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "DISCARD_SESSION_BRANCH", new { branch = "daoris/s-1a2b3c4d" }));
     }
 
-    /// <summary>No sessions in use, as the service's ledger answers when nothing runs.</summary>
-    private static Task<IReadOnlySet<string>> NoneInUse(CancellationToken _) => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
+    /// <summary>The route's module over a loop come up on <paramref name="service"/>, standing in for the service.</summary>
+    private async Task<DriverModule> ModuleOverAsync(DiscardService service)
+    {
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(service)));
+        return new DriverModule(Bus, loop);
+    }
 
     /// <summary>
     /// The branch is removed in its repository's own checkout, which the registry names (LAND3b): with none on this
-    /// machine, the terminal's sentence, and nothing is asked of git.
+    /// machine, the terminal's sentence as an answer, and nothing is asked of git.
     /// </summary>
     [Fact]
     public async Task A_session_branch_is_discarded_only_where_its_repository_has_a_checkout_here()
     {
-        var removal = await DriverModule.DiscardBranchAsync(
-            new SessionTrees(Home), "engine", "daoris/s-1a2b3c4d", force: true,
-            checkout: _ => Task.FromResult<string?>(null), inUse: NoneInUse, CancellationToken.None);
+        var module = await ModuleOverAsync(new DiscardService(root: null));
 
-        Assert.False(removal.Removed);
-        Assert.Equal("`engine` has no checkout here, so its branch `daoris/s-1a2b3c4d` cannot be removed from this machine.", removal.Message);
+        var answer = await AnswerAsync(module, "DISCARD_SESSION_BRANCH", new { repository = "engine", branch = "daoris/s-1a2b3c4d", force = true });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal("`engine` has no checkout here, so its branch `daoris/s-1a2b3c4d` cannot be removed from this machine.",
+            answer.GetProperty("message").GetString());
     }
 
     /// <summary>
     /// A branch whose tree a session still running or waiting names is kept, whatever the press says (D88's keep): forced,
-    /// the driver's removal would take that tree with it. The checkout is not asked for.
+    /// the driver's removal would take that tree with it. The route ends in the driver's one discard, the terminal's too
+    /// (LAND3c), so the answer is its sentence, and the checkout is not asked for.
     /// </summary>
     [Fact]
     public async Task A_branch_whose_tree_a_session_still_holds_is_kept_even_forced()
     {
-        var tree = Path.Combine(Home, "trees", "aurora", "Engine", "s-1a2b3c4d");
-        var asked = false;
+        var service = new DiscardService(root: Home, live: Path.Combine(Home, "trees", "aurora", "Engine", "s-1a2b3c4d"));
+        var module = await ModuleOverAsync(service);
 
-        var removal = await DriverModule.DiscardBranchAsync(
-            new SessionTrees(Home), "engine", "daoris/s-1a2b3c4d", force: true,
-            checkout: _ =>
-            {
-                asked = true;
-                return Task.FromResult<string?>(Home);
-            },
-            inUse: _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>(StringComparer.OrdinalIgnoreCase) { tree }),
-            CancellationToken.None);
+        var answer = await AnswerAsync(module, "DISCARD_SESSION_BRANCH", new { repository = "engine", branch = "daoris/s-1a2b3c4d", force = true });
 
-        Assert.False(removal.Removed);
-        Assert.Contains("still running or waiting", removal.Message);
-        Assert.Contains("`daoris/s-1a2b3c4d`", removal.Message);
-        Assert.False(asked);
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Equal(SessionBranchDiscard.Held("engine", "daoris/s-1a2b3c4d"), answer.GetProperty("message").GetString());
+        Assert.Equal("daoris/s-1a2b3c4d", answer.GetProperty("branch").GetString());
+        Assert.Contains("/api/sessions", service.Asked);
+        Assert.DoesNotContain("/api/registry", service.Asked);
     }
 
     /// <summary>
@@ -231,12 +231,61 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     [Fact]
     public async Task Only_a_session_branch_is_discarded_and_its_refusal_is_the_drivers()
     {
-        var removal = await DriverModule.DiscardBranchAsync(
-            new SessionTrees(Home), "engine", "feature/0fda18-fix", force: true,
-            checkout: _ => Task.FromResult<string?>(Home), inUse: NoneInUse, CancellationToken.None);
+        var module = await ModuleOverAsync(new DiscardService(root: Home));
 
-        Assert.False(removal.Removed);
-        Assert.Contains("is not a session branch", removal.Message);
+        var answer = await AnswerAsync(module, "DISCARD_SESSION_BRANCH", new { repository = "engine", branch = "feature/0fda18-fix", force = true });
+
+        Assert.False(answer.GetProperty("done").GetBoolean());
+        Assert.Contains("is not a session branch", answer.GetProperty("message").GetString());
+    }
+
+    /// <summary>
+    /// LAND3c: the screen's discard composes none of the driver's pieces itself, so it cannot part from the terminal's door
+    /// again. Read from the modules' sources, as a reviewer would: the keep, the checkout and the removal are
+    /// <see cref="SessionBranchDiscard"/>'s.
+    /// </summary>
+    [Fact]
+    public void The_screens_discard_is_the_drivers_one_discard()
+    {
+        var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
+        var sources = Directory.EnumerateFiles(modules, "DriverModule*.cs").Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
+
+        Assert.Contains(sources, source => source.File == "DriverModule.Lines.cs" && source.Text.Contains(".DiscardAsync(service, repository, branch, force,", StringComparison.Ordinal));
+        Assert.All(sources, source =>
+        {
+            Assert.DoesNotContain("RemoveBranchAsync(", source.Text);
+            Assert.DoesNotContain("BranchOfTree(", source.Text);
+        });
+    }
+
+    /// <summary>
+    /// The service standing in for a discard: the registry with <c>engine</c>'s checkout at <paramref name="root"/> (none where
+    /// null), and the sessions running or waiting, one per tree in <paramref name="live"/>. Each path asked is kept.
+    /// </summary>
+    private sealed class DiscardService(string? root, params string[] live) : HttpMessageHandler
+    {
+        private readonly List<string> _asked = [];
+
+        public IReadOnlyList<string> Asked
+        {
+            get { lock (_asked) return [.. _asked]; }
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            lock (_asked) _asked.Add(path);
+            object body = path switch
+            {
+                "/api/registry" => root is null ? Array.Empty<object>() : new object[] { new { repository = "engine", workspace = "aurora", root } },
+                "/api/sessions" => live.Select((tree, at) => (object)new { id = $"s{at + 1}", repository = "engine", state = "working", tree }).ToArray(),
+                _ => Array.Empty<object>(),
+            };
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(body), System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
     }
 
     /// <summary>
