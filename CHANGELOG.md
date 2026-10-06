@@ -27,7 +27,8 @@ with the version and date at release.
   holds, which could lose that change silently on a workspace with a remote.
 - A refused account rename, workspace choice or add-flow answer stays open with what was entered and
   says why inside it. Terminal hints spell account and workspace names so they paste as one argument in
-  Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would.
+  Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would; Settings'
+  account hints spell them the same way.
 
 The first version: doctrine that installs, is checked, and flows back.
 

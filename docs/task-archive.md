@@ -11316,3 +11316,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **GATE1 — docs gate sees proposed merge commit** (tools). Committed-date checks miss changed source during merge. Proof: proposed-commit gate seen failing before the fix; preserve TOOL4e incident in the supporting record.
 
 **Outcome** 2026-10-07: the universal gates, in their gate and in `verify`, run through `tools/as-merged.mjs`, where git's HEAD is the commit an open merge would make (its tree as `git add -A` would stage it, its parents HEAD and each MERGE_HEAD, in a throwaway git folder); outside a merge nothing changes, and the index, HEAD and open merge are never written. Only the devkit's docs gate read committed history. The same day it struck a second time: HIST1a's merge passed with `Daoris.Service.Core` changed and its README not, and main went red once committed, fixed by d6f25a63. `tools/as-merged.test.mjs` (8) is outside `verify`, as the benches are. The devkit side is GATE1b. Detail: FIX-LOG GATE1 (with TOOL4e); commits bc373b74, 55fc907c.
+
+
+## ACCTQUOTE1c — Settings' twins spell their arguments (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1c — Settings' twins spell their arguments** (web-settings). `settings/AccountUse.tsx:132/186/412` and `settings/AccountSettings.tsx:142` print `--workspace`/`--account` values bare. Contract: D125's ACCTQUOTE1 note. Proof: vitest with a spaced and an `R&D` workspace and account.
+
+**Outcome** 2026-10-07: Settings' account-use hints and the account settings form spell their workspace and account through `shellWord` (quoted, or `<workspace>`/`<account>`); prose naming a workspace stays as named. No other Settings command takes an account or workspace. Web vitest 4177 → 4185. Detail: D125's ACCTQUOTE1c note; commit 80f100a9.
