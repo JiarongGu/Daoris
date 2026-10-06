@@ -9,7 +9,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// attempt's branch stayed, and <c>session-branches.json</c> still listed branches already gone. Each branch recorded for
 /// the repository whose tip the landed ref contains goes, with its tree where it has one and nothing uncommitted, never one
 /// a running session holds; what went is said in the landing's sentence, which its note keeps; and the record drops what is
-/// gone. A failed attempt's branch is no part of the landing and waits for its own door. Real git, as the other tree tests.
+/// gone. A failed attempt's branch is no part of the landing and waits for its own door, which keeps one a live session's
+/// tree holds (LAND3c). Real git, as the other tree tests.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class LandingTidyTests : IDisposable
@@ -123,6 +124,35 @@ public sealed class LandingTidyTests : IDisposable
         // Only Daoris's own session branches go through it: a branch of the person's is theirs.
         Assert.Contains("only Daoris's own", (await trees.RemoveBranchAsync(root, "engine", "main", force: true)).Message);
         Assert.True(await BranchAsync(root, "main"));
+    }
+
+    /// <summary>
+    /// LAND3c: the discard both doors call keeps an attempt's branch whose real tree a session still running holds, forced,
+    /// tree and branch alike; once the ledger no longer names that tree, the same call takes both, as LAND3b's screen did.
+    /// </summary>
+    [Fact]
+    public async Task The_shared_discard_keeps_a_branch_whose_tree_a_live_session_holds_until_it_is_let_go()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var attempt = await trees.OpenAsync(root, "engine", "aurora");
+        await CommitAsync(attempt.Path, "attempt.txt", "an attempt", "an attempt");
+        var ledger = new DiscardLedger { Registry = [("engine", root)], Live = [("s1", "working", attempt.Path)] };
+        var discard = new SessionBranchDiscard(trees);
+
+        var kept = await discard.DiscardAsync(ledger.Client(), "engine", attempt.Branch, force: true);
+
+        Assert.False(kept.Removed);
+        Assert.Equal(SessionBranchDiscard.Held("engine", attempt.Branch), kept.Message);
+        Assert.True(Directory.Exists(attempt.Path));
+        Assert.True(await BranchAsync(root, attempt.Branch));
+
+        ledger.Live = [];
+        var removed = await discard.DiscardAsync(ledger.Client(), "engine", attempt.Branch, force: true);
+
+        Assert.True(removed.Removed, removed.Message);
+        Assert.False(Directory.Exists(attempt.Path));
+        Assert.False(await BranchAsync(root, attempt.Branch));
     }
 
     /// <summary>
