@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useSyncStanding } from '../queries';
 import type { LandingRule } from '../settings/Landings';
 import { namer } from '../settings/namer';
-import { SweepList } from '../settings/Sweep';
+import { sayDiscard, sweepKey, SweepList } from '../settings/Sweep';
 import { SyncSection } from '../settings/Sync';
 import {
   stoppedWaiting, useAccounts, useAcross, useDriver, useHarnesses, usePlugins, useRemotes, useRuleAction, useRules,
-  useSetLanding, useSetLanguage, useSetLine, useSetReadAcross, useStarts, useSweep, useSweepPlan, useTreesSync, useTreesSyncPlan,
-  useTreesSyncScope, useUnwireRemote, useWireRemote,
+  useDiscardSessionBranch, useSetLanding, useSetLanguage, useSetLine, useSetReadAcross, useStarts, useSweep, useSweepPlan,
+  useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
 } from '../shell';
 import { byTool } from '../tools';
 import { failure, type Notify, useErrorNotify } from '../ui';
@@ -36,7 +36,8 @@ const ruleOf = ({ form, pattern, tidy, plugin, autoAccept }: LandingRule): Landi
  *
  * @remarks
  * **Every control is the screen's half of a terminal verb** (D50): `daoris driver line|landing|language|across --workspace`,
- * `daoris remote add|remove`, `daoris agent rules … --workspace`, `daoris-driver trees clean|sync`. A refusal is the driver's
+ * `daoris remote add|remove`, `daoris agent rules … --workspace`, `daoris-driver trees clean|sync`, and a failed attempt's
+ * branch discarded as `daoris-driver trees remove <branch> --repository <name> --force` (LAND3b). A refusal is the driver's
  * sentence, in a toast. They are where Settings → Workspace and Settings → Permissions held them (§3.1).
  *
  * **A browser is handed what it may know** (D47 §4): its repositories, and whether it syncs, read from this machine's own
@@ -148,6 +149,8 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
   const { t } = useTranslation();
   const plan = useSweepPlan();
   const sweep = useSweep();
+  // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris-driver trees remove … --force`.
+  const discard = useDiscardSessionBranch();
   const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan();
   const sync = useTreesSync();
@@ -172,6 +175,8 @@ function BranchesPart({ workspace, notify }: { workspace: string; notify: Notify
         onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
         onError: failure(notify),
       })}
+      onDiscard={(branch) => discard.mutate(branch, { onSuccess: sayDiscard(notify, t), onError: failure(notify) })}
+      discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
       sync={(
         <SyncSection
           plan={answered

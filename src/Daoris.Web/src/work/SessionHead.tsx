@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SweepBranch } from '../settings/Sweep';
+import { DiscardBranchAsk, type SweepBranch } from '../settings/Sweep';
 import type { GoAhead, Quest, Session } from '../api';
 import type { AccountNamer } from '../tools';
 import { GoAheadList } from '../asks/GoAheadList';
@@ -50,7 +50,8 @@ import { RunningIntake } from './RunningIntake';
  * is the answer, and a parked one's note is its card's.
  *
  * **What it left comes with its move** (SESS2): work no branch of the person's holds has *review*
- * beside it, where the metadata's last pair used to say it with nothing to press.
+ * beside it, where the metadata's last pair used to say it with nothing to press. A failed attempt's branch whose tree is
+ * gone has *Discard branch…* too (LAND3b), asking once, since no clean-up takes it and the review has no tree to discard.
  *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
@@ -59,7 +60,8 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
-  onAnswerSession, branch, onReview, headed = false, goAheads = [], onGoAhead, ownSignIn = false, nameOf,
+  onAnswerSession, branch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
+  ownSignIn = false, nameOf,
 }: {
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
@@ -91,6 +93,13 @@ export function SessionHead({
    * where, or what only it holds. Absent where it has no tree of its own here, or nothing has answered.
    */
   branch?: SweepBranch | null;
+  /**
+   * Discard that branch, its commits with it (LAND3b): offered once its tree is gone, where the driver says its commits are a
+   * failed or superseded attempt's, and asked once first. Absent where nothing here can press it.
+   */
+  onDiscardBranch?: () => void;
+  /** That discard is on its way: its presses wait for it. */
+  discardingBranch?: boolean;
   /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
   taking?: boolean;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
@@ -188,7 +197,10 @@ export function SessionHead({
 
       {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}
-      {branch && <Left branch={branch} onReview={onReview} />}
+      {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). */}
+      {branch && (
+        <Left key={branch.branch} branch={branch} onReview={onReview} onDiscard={onDiscardBranch} discarding={discardingBranch} />
+      )}
 
       {/* The reference (UX7c, D152 §7): the meta line's eight pairs became a folded *Details*, its line naming the quest,
           the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine
@@ -285,19 +297,48 @@ function Said({ note, parts }: { note?: string | null; parts?: Session['notePart
   );
 }
 
-/** What its own tree left, and whether the person has anything to do about it (SESS1 S10, SESS2 H4). */
-function Left({ branch, onReview }: { branch: SweepBranch; onReview?: () => void }) {
+/**
+ * What its own tree left, and whether the person has anything to do about it (SESS1 S10, SESS2 H4). A failed or superseded
+ * attempt's branch whose tree is gone is discarded here (LAND3b, D102's LAND3 note), asking once under the line: no clean-up
+ * takes its commits, and the review has no tree left to discard. While the tree is here, the review's Discard serves.
+ */
+function Left({ branch, onReview, onDiscard, discarding = false }: {
+  branch: SweepBranch;
+  onReview?: () => void;
+  onDiscard?: () => void;
+  discarding?: boolean;
+}) {
   const { t } = useTranslation();
+  const [asking, setAsking] = useState(false);
   const theirs = branch.kind === 'unlanded' || branch.kind === 'dirty';
+  const discardable = Boolean(onDiscard && !branch.hasTree && branch.discardable);
   return (
-    <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
-      <span className="text-ink-faint">{t('work.head.itsWork')}</span>
-      <span className={theirs ? 'text-st-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
-      <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{branch.branch}</span>
-      {theirs && onReview && (
-        <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
+    <>
+      <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+        <span className="text-ink-faint">{t('work.head.itsWork')}</span>
+        <span className={theirs ? 'text-st-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
+        <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{branch.branch}</span>
+        {theirs && onReview && (
+          <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
+        )}
+        {discardable && !asking && (
+          <Button variant="danger" className="px-2 py-0.5 text-small" disabled={discarding} onClick={() => setAsking(true)}>
+            {t('settings.sweep.discard')}
+          </Button>
+        )}
+      </p>
+      {discardable && asking && (
+        <DiscardBranchAsk
+          branch={branch}
+          busy={discarding}
+          onDiscard={() => {
+            setAsking(false);
+            onDiscard!();
+          }}
+          onCancel={() => setAsking(false)}
+        />
       )}
-    </p>
+    </>
   );
 }
 

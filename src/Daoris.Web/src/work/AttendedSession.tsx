@@ -45,8 +45,8 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, lastTurn, resolving, onResolve, onAnswerAsk, onAnswerSession,
-  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, headed = false, goAheads, onGoAhead, trace,
-  ownSignIn = false, nameOf,
+  chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch, onDiscardBranch, discardingBranch,
+  headed = false, goAheads, onGoAhead, trace, ownSignIn = false, nameOf,
 }: {
   /** Its agent has accounts, so a record naming none ran on the tool's own sign-in (D125 §3.7), said in its head. */
   ownSignIn?: boolean;
@@ -77,6 +77,10 @@ export function AttendedSession({
   onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
   branch?: SweepBranch | null;
+  /** Passed straight through to the head: that branch discarded once its tree is gone (LAND3b). */
+  onDiscardBranch?: () => void;
+  /** That discard is on its way. */
+  discardingBranch?: boolean;
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
   quest?: Quest | null;
@@ -138,6 +142,8 @@ export function AttendedSession({
         onAnswerSession={onAnswerSession}
         branch={branch}
         onReview={onReview}
+        onDiscardBranch={onDiscardBranch}
+        discardingBranch={discardingBranch}
         headed={headed}
         goAheads={goAheads}
         onGoAhead={onGoAhead}

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SweepList, type LandedBranch, type SweepBranch } from './Sweep';
+import { DiscardBranchAsk, SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 
 // Session branches (WSR3, D88), in the shape the driver's SWEEP_PLAN answer takes: every kind a
 // branch can be, and a machine with none.
@@ -48,6 +48,43 @@ export const WithLandedBranches: Story = {
       landed({ repository: 'game', branch: 'feature/0fda24-unknown', kind: 'unknown', detail: 'there is no `develop` here, nor `origin/develop`, to compare it with' }),
     ],
   },
+};
+
+/**
+ * LAND3b: failed or superseded attempts' branches, which no clean-up takes, each offering *Discard branch…* where the
+ * driver says it may: one whose tree is gone, one whose tree is still here. Neither the empty nor the unsure offers it.
+ */
+export const FailedAttempts: Story = {
+  args: {
+    onDiscard: () => {},
+    branches: [
+      branch({ branch: 'daoris/s-1f2e3d4c', kind: 'empty', where: 'main', removable: true }),
+      branch({ branch: 'daoris/s-9e0f1a2b', hasTree: false, kind: 'unlanded', commits: 2, detail: 'a1b2c3d the work\ne4f5a6b more work', discardable: true }),
+      branch({ branch: 'daoris/s-4a5b6c7d', kind: 'unlanded', commits: 1, detail: 'c3d4e5f a superseded attempt', discardable: true }),
+      branch({ branch: 'daoris/s-8e9f0a1b', hasTree: false, kind: 'unlanded', commits: 0 }),
+    ],
+  },
+};
+
+/** A discard on its way: that row's press waits for it. */
+export const Discarding: Story = { args: { ...FailedAttempts.args, discarding: 'engine:daoris/s-9e0f1a2b' } };
+
+/** The ask a discard opens under its row, naming the branch and its commits; with its tree where it still has one. */
+export const DiscardAsk: Story = {
+  render: () => (
+    <div className="grid max-w-2xl gap-3">
+      <DiscardBranchAsk
+        branch={{ repository: 'engine', branch: 'daoris/s-9e0f1a2b', commits: 2, hasTree: false }}
+        onDiscard={() => {}}
+        onCancel={() => {}}
+      />
+      <DiscardBranchAsk
+        branch={{ repository: 'engine', branch: 'daoris/s-4a5b6c7d', commits: 1, hasTree: true }}
+        onDiscard={() => {}}
+        onCancel={() => {}}
+      />
+    </div>
+  ),
 };
 
 export const Cleaning: Story = { args: { ...EveryKind.args, busy: true } };

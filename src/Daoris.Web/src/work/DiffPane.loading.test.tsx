@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
 
 import '../i18n';
 import { keys } from '../queries';
-import { useSweep, useTreesSync } from '../shell';
+import { useDiscardSessionBranch, useSweep, useTreesSync } from '../shell';
 import { DiffPane } from './DiffPane';
 
 const ENDED: Session = {
@@ -311,6 +311,29 @@ describe('the review while git reads (REVIEW4)', () => {
     });
     await act(async () => {
       await result.current.mutateAsync([]);
+    });
+    await waitFor(() => expect(diffs()).toHaveLength(2));
+  });
+
+  /** LAND3b: discarding a session branch takes its tree where it still has one, so it reads every kept review again too. */
+  it('reads a kept review again after a session branch is discarded', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'DISCARD_SESSION_BRANCH') {
+        return { repository: 'report-ui', branch: 'daoris/s-2394e5d9', done: true, message: 'removed the session branch.' };
+      }
+      if (type === 'HANDOFF_PLAN') return { session: 's1a2b3c4', branch: null };
+      return {};
+    });
+    const client = newClient();
+    render(pane(client));
+    expect(await screen.findByText('src/report/header.ts')).toBeTruthy();
+
+    const { result } = renderHook(() => useDiscardSessionBranch(), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await act(async () => {
+      await result.current.mutateAsync({ repository: 'report-ui', branch: 'daoris/s-2394e5d9' });
     });
     await waitFor(() => expect(diffs()).toHaveLength(2));
   });
