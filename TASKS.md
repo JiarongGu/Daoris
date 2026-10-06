@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,334 CLI, 1,215 service, 73 HTTP host, 5,069 driver (4,356 fast; four new Process cases await the full set), 725 modules (607 fast), 80 devkit, 4,246 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,334 CLI, 1,281 service, 73 HTTP host, 5,094 driver (4,381 fast; four new Process cases await the full set), 725 modules (607 fast), 80 devkit, 4,246 web unit and 24 Playwright; rehearsals: release 114, family 374, deployment 110. All 14 gates pass; receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,064 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -65,8 +65,7 @@ Contracts: `docs/2026-10-01-plugins-screen-design.md` (D119) and `docs/2026-10-0
 
 ## Faster development
 
-- [ ] **ORIENT1f — search splits identifiers** (service). Index/query camelCase and snake_case as words so the probe-lock question finds its decision. Contract: `Text.Tokenize`/`Segment`. Proof: `SearchTests`; FIX-LOG or D125 TOOL6g is first.
-- [ ] **ORIENT1g — index dated decision notes separately** (service). Prevent long decisions burying individual notes; match digest labels. Contract: amended D134 §5. Proof: probe-lock question lands on D125 TOOL6g.
+- [ ] **ORIENT1h — the digest and the scanner read one note fixture** (tools, service). `DecisionNotesTests` checks the service against rows `orient-index.mjs` wrote once for an inline fixture, so a note format changed only on the tools side (`orient-index.mjs`, `doc-duplicates.mjs`) passes every gate. Move the fixture to a shared file both suites read. Contract: D134's ORIENT1g note, twins.md. Proof: changing one row fails both suites.
 - [ ] **AGENTREAD1c — the reads twins agree on names** (cli). Add the driver's seven non-ASCII rows (Chinese, accented, HTML marks, kept escapes) to `account-reads.json`, refresh `accountreads.ts`'s stale header, and decide case-folding: the CLI's `toUpperCase` finds `straße` for `STRASSE`, the driver's `OrdinalIgnoreCase` does not. Contract: D125's AGENTREAD1b note, twins.md. Proof: both suites over the widened table.
 - [ ] **AGENTS2a — measure DeepSeek API-key support** (driver, cli). Probe `dsh --profile acp` with invalid/no key before declaring `DEEPSEEK_API_KEY` in both twins. Contract: D57 AGENTS2, AGT3, D67 §1. Proof: evidence beside ACP3 and twin tables.
 - [ ] **PROC1 — Process suite under ten minutes** (driver tests, tools). Measure classes, reuse/copy expensive git fixtures, isolate homes/ports for parallel workers and replace unnecessary processes with fakes. Contract: MOD8, FLAKE1. Proof: three serial-equivalent green runs with timings; retain original measured class durations in supporting evidence.
@@ -134,7 +133,6 @@ Contracts: `docs/2026-10-02-session-management-design.md` (D126, §9 rows/proofs
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (driver, service, web-shell; after d–g/FRAME1i). Contract/proof: session-management §7.3/§9.
 - [ ] **MSG1d2 — queued chat words survive restart** (driver, web-shell; with MSG1c). Record ids/reach, take by id and record withdrawals. Contract: messages §3.1, D137 MSG1d. Proof: `ChatTurns`, conversation tests.
 - [ ] **MSG1g3 — coded cooling notes and twin test** (driver, web-shell). Code the untranslated held line; test `newSessionSaid` against `GoOnNew.cs`/`WordsNever`. Contract: D137 MSG1g/g2, D142 point 1. Proof: note-code twins and parsed declarations.
-- [ ] **MSG1f3 — start-from terminal and listing gaps** (driver). Route `sessions start-from`; classify waiting chats correctly and expose cool-off omitted by fresh plan. Contract: D50, D137 MSG1f2. Proof: commands/coverage/listing tests.
 - [ ] **MSG1h — Codex next-step messages** (driver; after STEER3 Codex turn). Contract/proof: messages §8.
 - [ ] **MSG1i — native next-step messages** (driver; after STEER3 native turn). Contract/proof: messages §8.
 - [ ] **MSG1j — installed canary** (parent). Contract/proof: messages §8–§9; a–f already installed per original record.
@@ -163,7 +161,6 @@ Contracts: `docs/2026-10-01-workspace-setup-design.md` §8 (D124), `docs/2026-10
 - [ ] **WSSETUP14b — knowledge stays in place** (after a). Declare `documents.knowledge`; index/service read it and sync never writes it. Contract: pilot §1.2–§1.3. Proof: twin tables.
 - [ ] **WSSETUP14c — heading without frontmatter** (after a). Contract: pilot §3.1–§3.2. Proof: `node --test`.
 - [ ] **WSSETUP14d — setup keeps checks green** (after b; absorbs SETUP2). Check before/after; preserve knowledge, repoint moved paths/readers, never finish red; list hand indexes without deletion and use subject names. Contract: pilot §1.1, §1.4–§1.6, §3.3; D129 §4.5. Proof: brief/playbook twins and moved-path family phase.
-- [ ] **INIT1b — the set-up brief names `.gitattributes`** (driver). `SetupBrief` says a set-up changes no source, build or CI file, yet its `daoris init` step now writes `.gitattributes` where a repository has none (INIT1). Say so in the brief, and that an existing one is never touched. Contract: D25's INIT1 note. Proof: `SetupBriefTests` golden.
 - [ ] **WSSETUP14e — finish setup branch** (after d). Exact merge rule in follow-up quest. Contract: pilot §4.2. Proof: composer/press tests and family setup phase.
 - [ ] **WSSETUP14f — finish pilot** (owner; after republish). Both repositories: checks green, knowledge declared, root under 32,768 bytes, default budget restored. Contract: pilot §4. Proof: real pilot.
 - [ ] **KNOW3a — 169-document opaque-name bench**. Measure index whole-reading and skill truncation at scale. Contract: bench results §5/§6.1. Proof: `knowledge-bench.mjs` rerun, tests in verify.

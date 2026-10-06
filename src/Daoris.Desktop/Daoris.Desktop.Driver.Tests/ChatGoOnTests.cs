@@ -164,7 +164,8 @@ public sealed class ChatGoOnTests : IDisposable
         var held = await NoteAsync(events, "c1", e => e.Text?.Contains("does not go on yet") == true);
         Assert.Contains("the `stub` account `account-1` is cooling until", held.Text);
         Assert.Contains("its conversation is on that account, so your words wait to go on in it then.", held.Text);
-        Assert.EndsWith("`daoris-driver chat --repository engine`.", held.Text);
+        Assert.EndsWith("`daoris-driver sessions start-from c1`.", held.Text);
+        Assert.StartsWith(ResumeWords.NotYet, held.Text);
         Assert.Null(held.Words);
         Assert.Equal(("completed", 0), (ledger.State("c1"), ledger.Moves("c1").Count));
         Assert.Equal(["w1"], ledger.Said("c1"));

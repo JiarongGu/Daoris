@@ -170,13 +170,72 @@ public sealed class RepositoryScannerTests : IDisposable
         Write("docs/decisions/D130.md", "## D130 — The accounts are used by a goal (2026-10-02)\n\n**Decision.** Why.\n\n**Built 2026-10-03.** A note.\n");
         Write("docs/adr/0001-one.md", "Not declared, never read.\n");
 
-        var record = Assert.Single(new RepositoryScanner().Scan(_root), e => e.Kind == EntryKind.Decision);
+        var record = Assert.Single(new RepositoryScanner().Scan(_root), e => e.Kind == EntryKind.Decision && e.Anchor is null);
 
         Assert.Equal("D130 — The accounts are used by a goal (2026-10-02)", record.Title);
         // Located by its path, as before: a title is what a search shows, never what the index keys on.
         Assert.Equal($"{new DirectoryInfo(_root).Name}:docs/decisions/D130.md", record.Id);
-        Assert.Null(record.Anchor);
-        Assert.Contains("A note.", record.Body);
+        Assert.Contains("Why.", record.Body);
+        // Its dated note is an entry of its own since ORIENT1g (the tests below).
+        Assert.DoesNotContain("A note.", record.Body);
+    }
+
+    // ── a decision's dated notes (ORIENT1g; D134 §5 as amended) ──────────────────────────────────────
+    //
+    // D125 is one file and twenty-two dated notes, read as one entry: a question about one note was answered
+    // with the whole file, or by a shorter entry elsewhere, and the note itself was buried under the rest.
+
+    /// <summary>
+    /// Each dated note is an entry of its own, labelled as the decisions digest labels it and titled by its
+    /// decision and that label; the decision's own entry is its text before its first note, its id unchanged.
+    /// </summary>
+    [Fact]
+    public void Each_dated_note_under_a_decision_is_an_entry_of_its_own()
+    {
+        DeclareFolders("""{"decisions":"docs/decisions"}""");
+        Write("docs/decisions/D7.md", DecisionNotesTests.Decision);
+
+        var entries = new RepositoryScanner().Scan(_root).Where(e => e.Kind == EntryKind.Decision).ToList();
+
+        var decision = Assert.Single(entries, e => e.Anchor is null);
+        Assert.Equal("D7 — The tier is the directory (2026-08-04)", decision.Title);
+        Assert.Equal($"{new DirectoryInfo(_root).Name}:docs/decisions/D7.md", decision.Id);
+        Assert.EndsWith("**Why.** Because the harness decides by path.", decision.Body);
+
+        var notes = entries.Where(e => e.Anchor is not null).ToList();
+        var labels = DecisionNotesTests.DigestRows.Select(row => row[(row.IndexOf(' ') + 1)..]).ToList();
+        Assert.Equal(labels.Select(label => $"D7 › {label}"), notes.Select(e => e.Title));
+        Assert.All(notes, e => Assert.Equal("docs/decisions/D7.md", e.RelativePath));
+        Assert.All(notes, e => Assert.Equal(Provenance.Local, e.Provenance));
+        // Each note's id names its label; a label twice in one file is told apart, the first unchanged.
+        Assert.Equal(labels[0], notes[0].Anchor);
+        Assert.Equal($"{labels[7]} (2)", notes[7].Anchor);
+        Assert.Equal(entries.Count, entries.Select(e => e.Id).Distinct().Count());
+        Assert.StartsWith("**Built 2026-10-07 (TOOL6g)", notes[6].Body);
+        Assert.Contains("`ProbeLock`", notes[6].Body);
+        Assert.DoesNotContain("ProbeLock", decision.Body);
+    }
+
+    /// <summary>
+    /// Only a decision's notes: a fix or a task outcome is one record with a date in it, and a decisions log
+    /// in one file keeps one entry per decision as it always did.
+    /// </summary>
+    [Fact]
+    public void A_fix_an_outcome_and_a_decisions_log_keep_their_notes_inside()
+    {
+        DeclareFolders("""{"fixes":"docs/fixes","archive":"docs/done"}""");
+        Write("docs/fixes/2026-10-03-wrap.md", "## 2026-10-03 — a flag broke its line\n\nFixed.\n\n**Built 2026-10-04 (X1): a later note.** Text.\n");
+        Write("docs/done/LOOK5.md", "## LOOK5 — closed\n\nDone.\n\n**Amended 2026-10-05: a later note.** Text.\n");
+        Write("docs/DECISIONS.md", "## D1 — one\n\nA.\n\n**Built 2026-10-04 (X2): a note.** Text.\n");
+
+        var entries = new RepositoryScanner().Scan(_root);
+
+        Assert.Equal(3, entries.Count);
+        Assert.Contains("a later note", Assert.Single(entries, e => e.Kind == EntryKind.Fix).Body);
+        Assert.Contains("a later note", Assert.Single(entries, e => e.Kind == EntryKind.TaskOutcome).Body);
+        var decision = Assert.Single(entries, e => e.Kind == EntryKind.Decision);
+        Assert.Equal("D1 — one", decision.Title);
+        Assert.Contains("a note.", decision.Body);
     }
 
     /// <summary>

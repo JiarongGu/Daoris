@@ -132,7 +132,7 @@ public sealed partial class Driver
     /// </summary>
     private static string WaitsFor(QuestView quest, PriorSession record, HarnessSelection held) =>
         $"{held.Refusal} "
-        + (quest.Status is "Open" or "Taken" ? ResumeWords.NewSessionDoor(record.Session) : ResumeWords.ChatDoor(record.Repository ?? quest.To));
+        + (quest.Status is "Open" or "Taken" ? ResumeWords.NewSessionDoor(record.Session) : ResumeWords.ChatDoor(record.Session));
 
     /// <summary>
     /// The record's conversation says why its words wait (MSG1g, D143 point 1), once for each wait: a look that finds it saying
@@ -141,7 +141,7 @@ public sealed partial class Driver
     /// </summary>
     private void HeldForAccount(PriorSession record, string why)
     {
-        var line = $"— it does not go on yet: {why}";
+        var line = $"{ResumeWords.NotYet}{why}";
         try
         {
             if (_events.Page(record.Session, limit: 1).Events is [{ Kind: SessionEventKind.Note, Text: var last }] && last == line) return;

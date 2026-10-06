@@ -175,16 +175,17 @@ public static class GoOnNew
 
         if (record.Kind == "chat" || record.Quest is null)
         {
+            // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
             return Refused(Conversation,
                 $"{id} is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
-                + $"`daoris-driver chat --repository {record.Repository}`.");
+                + $"`daoris-driver sessions start-from {id}`.");
         }
 
         if (await service.FindQuestAsync(record.Quest, ct).ConfigureAwait(false) is not { Status: "Open" or "Taken" })
         {
             return Refused(Closed,
                 $"#{record.Quest} has closed, so nothing carries its session's words on by itself: start a conversation with them "
-                + $"instead: `daoris-driver chat --repository {record.Repository}`.");
+                + $"instead: `daoris-driver sessions start-from {id}`.");
         }
 
         CoolingEntry? cooling;

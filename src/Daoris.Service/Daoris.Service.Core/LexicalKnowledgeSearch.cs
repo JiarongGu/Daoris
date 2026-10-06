@@ -20,6 +20,11 @@ public sealed class LexicalKnowledgeSearch(IKnowledgeStore store) : IKnowledgeSe
     {
         var entries = await store.AllAsync(ct).ConfigureAwait(false);
         var terms = Text.Tokenize(query.Text);
+        // The question's adjacent words joined, as an identifier spells them (ORIENT1f): a bonus where one
+        // matches, counted once for each word it joins as the SQLite search counts it, and no part of how much
+        // of the question an entry covers.
+        var asked = Text.QueryTerms(query.Text);
+        var joined = asked.Where(term => term.Words > 1).ToList();
         var admitted = entries.Where(query.Admits);
 
         if (terms.Count == 0)
@@ -37,8 +42,8 @@ public sealed class LexicalKnowledgeSearch(IKnowledgeStore store) : IKnowledgeSe
         foreach (var entry in admitted)
         {
             ct.ThrowIfCancellationRequested();
-            var score = Score(entry, terms);
-            if (score > 0) hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, terms)));
+            var score = Score(entry, terms, joined);
+            if (score > 0) hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, asked.Select(term => term.Term))));
         }
 
         return hits
@@ -48,7 +53,7 @@ public sealed class LexicalKnowledgeSearch(IKnowledgeStore store) : IKnowledgeSe
             .ToList();
     }
 
-    private static double Score(KnowledgeEntry entry, IReadOnlyCollection<string> terms)
+    private static double Score(KnowledgeEntry entry, IReadOnlyCollection<string> terms, IReadOnlyCollection<QueryTerm> joined)
     {
         var title = Text.Tokenize(entry.Title);
         var body = Text.Tokenize(entry.Body);
@@ -57,22 +62,30 @@ public sealed class LexicalKnowledgeSearch(IKnowledgeStore store) : IKnowledgeSe
         var matched = 0;
         foreach (var term in terms)
         {
-            // A title match is worth far more than a body match: a title is what the author chose to
-            // call the thing, and an entry titled for the query is almost always the one wanted.
-            var inTitle = title.Contains(term);
-            var bodyHits = body.Count(t => t == term);
-            if (!inTitle && bodyHits == 0) continue;
+            var found = Found(term);
+            if (found == 0) continue;
 
             matched++;
-            if (inTitle) score += 8;
-            // Diminishing, so one long entry repeating a word cannot outrank a short exact one.
-            score += Math.Log(1 + bodyHits) * 2;
+            score += found;
         }
 
         if (matched == 0) return 0;
+        foreach (var join in joined) score += Found(join.Term) * join.Words;
 
         // Reward covering more of the query. A hit on every term beats a hit on one, which raw term
         // frequency alone gets backwards.
         return score * (1.0 + (double)matched / terms.Count);
+
+        double Found(string term)
+        {
+            // A title match is worth far more than a body match: a title is what the author chose to
+            // call the thing, and an entry titled for the query is almost always the one wanted.
+            var inTitle = title.Contains(term);
+            var bodyHits = body.Count(t => t == term);
+            if (!inTitle && bodyHits == 0) return 0;
+
+            // Diminishing, so one long entry repeating a word cannot outrank a short exact one.
+            return (inTitle ? 8 : 0) + Math.Log(1 + bodyHits) * 2;
+        }
     }
 }

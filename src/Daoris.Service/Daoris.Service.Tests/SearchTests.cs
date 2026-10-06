@@ -2,7 +2,7 @@ using Daoris.Knowledge;
 
 namespace Daoris.Service.Tests;
 
-public class SearchTests
+public class SearchTests : IAsyncLifetime
 {
     private static KnowledgeEntry Entry(
         string repository, string title, string body,
@@ -18,6 +18,89 @@ public class SearchTests
         }
 
         return new LexicalKnowledgeSearch(store);
+    }
+
+    // The SQLite search over a file of its own, for the cases that hold both searches: the FTS row is fed
+    // by `Text.Segment` and asked by `Text.QueryTerms`, where the lexical search reads the same two.
+    private readonly List<(SqliteKnowledgeStore Store, string File)> _sqlite = [];
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync()
+    {
+        foreach (var (store, _) in _sqlite) await store.DisposeAsync();
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        foreach (var (_, file) in _sqlite) File.Delete(file);
+    }
+
+    private async Task<IKnowledgeSearch> Over(bool sqlite, params KnowledgeEntry[] entries)
+    {
+        if (!sqlite) return await SearchOver(entries);
+
+        var file = Path.Combine(Path.GetTempPath(), $"daoris-search-{Guid.NewGuid():N}.db");
+        var store = await SqliteKnowledgeStore.OpenAsync(file);
+        _sqlite.Add((store, file));
+        foreach (var group in entries.GroupBy(e => e.Repository))
+        {
+            await store.ReplaceRepositoryAsync(group.Key, group.ToList());
+        }
+
+        return new SqliteKnowledgeSearch(store);
+    }
+
+    // ── identifiers (ORIENT1f) ───────────────────────────────────────────────────────────────────
+    //
+    // *What decided the probe lock* never reached the decision that named `ProbeLock` (D24's ORIENT1c
+    // note): the code's word was one token, and no word of the question was it.
+
+    public static TheoryData<string, string, bool> Spellings()
+    {
+        var data = new TheoryData<string, string, bool>();
+        foreach (var sqlite in new[] { false, true })
+        {
+            foreach (var named in new[] { "ProbeLock", "probeLock", "probe_lock" })
+            {
+                foreach (var asked in new[] { "probe lock", "ProbeLock", "probeLock", "probe_lock" })
+                {
+                    data.Add(named, asked, sqlite);
+                }
+            }
+        }
+
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(Spellings))]
+    public async Task An_identifier_is_found_by_its_words_and_by_each_spelling_of_it(string named, string asked, bool sqlite)
+    {
+        var search = await Over(sqlite,
+            Entry("alpha", "The status question", $"One question per account at a time, held by `{named}`."),
+            Entry("beta", "Unrelated", "A note about the merge order of branches."));
+
+        var hits = await search.SearchAsync(new KnowledgeQuery(asked));
+
+        Assert.Equal("The status question", Assert.Single(hits).Entry.Title);
+    }
+
+    /// <summary>
+    /// An identifier still matches itself whole, and best: the entry that names it outranks one that only
+    /// says its words, asked by the identifier or by its words.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task The_entry_naming_an_identifier_outranks_one_that_only_says_its_words(bool sqlite)
+    {
+        var search = await Over(sqlite,
+            Entry("alpha", "Prose", "A probe can hold a lock while it asks the agent."),
+            Entry("beta", "Named", "The status question is asked under `ProbeLock` alone."),
+            Entry("gamma", "Unrelated", "Nothing of the kind is said here at all."));
+
+        Assert.Equal("Named", (await search.SearchAsync(new KnowledgeQuery("ProbeLock")))[0].Entry.Title);
+        Assert.Equal(
+            ["Named", "Prose"],
+            (await search.SearchAsync(new KnowledgeQuery("probe lock"))).Select(hit => hit.Entry.Title));
     }
 
     [Fact]
