@@ -38,6 +38,14 @@ router is indexed as one document. A declaration adds a path and is never requir
 refuses is read as none, so the scanner reads its candidates as it did before (`RepositoryDocuments`, a
 twin of the CLI's `documents.ts`).
 
+Since **ORIENT1g** (D134 §5 as amended) a decision in a folder is more than one entry: its text before its
+first dated note, at the id it always had, then each dated note an entry of its own, titled by the decision and
+the note's label (`D125 › Built 2026-10-04 (TOOL6g): …`) and anchored by that label. A note is found and
+labelled as the decisions digest (`docs/index/decisions.md`) finds and labels it (`DecisionNotes`), and
+`DecisionNotesTests` holds the two to one fixture's rows; measured when it was built, over this repository's 152
+decisions the split gave the digest's 291 note rows, the same lines and labels in the same order. A fix, an
+outcome and a decisions log in one file keep their notes inside.
+
 Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
 as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
 the file's path, and the part before the first heading is titled *README*. It claims no role, and is never
@@ -460,6 +468,18 @@ Choices worth knowing about:
   the frontmatter and with a heading's hashes, `**`, `__` and backticks dropped, so it reads as a
   sentence and never as the file's machinery. A lone `_` or `*` stays, since it may be part of an
   identifier. The frontmatter is still searched; only the window skips it.
+- **An identifier is found by its words, and a question asks its words joined too** (ORIENT1f). FTS5's
+  `unicode61` keeps `ProbeLock` as one token, so a question in plain words never reached the entry that named
+  it. Each index row spells an identifier's words beside it (`ProbeLock Probe Lock`, `probe_lock probelock`),
+  cut at underscores and where the case turns, never at a digit alone, so `TOOL6g` stays one word; the stored
+  body is unchanged and an excerpt reads as written. A question asks its words, then each two and three
+  adjacent words joined as an identifier spells them, a join counted once for each word it joins. So
+  `ProbeLock`, `probeLock`, `probe_lock` and *probe lock* each find the others, and the entry that names the
+  identifier outranks one that only says its words. An index written before is rebuilt when it opens (schema
+  4). Held by `TextTests`, `SearchTests`, `SqliteStoreTests` and `ProbeLockQuestionTests`, whose miniature of
+  this repository's records answers *what decided the probe lock* with the decision note that names
+  `ProbeLock` (ORIENT1g, above), then the fix, where a design section titled with *lock* and *decided*
+  answered before.
 - **Search returns scored hits, not a list.** Scores are what let two searches be merged, so hybrid
   is a composition rather than a third implementation.
 - **Hybrid fuses on rank, not on score.** BM25 returns an unbounded figure and cosine similarity a

@@ -11421,3 +11421,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **MSG1f3 — start-from terminal and listing gaps** (driver). Route `sessions start-from`; classify waiting chats correctly and expose cool-off omitted by fresh plan. Contract: D50, D137 MSG1f2. Proof: commands/coverage/listing tests.
 
 **Outcome** 2026-10-07: `daoris-driver sessions start-from <id>` opens the terminal's own conversation through the chat runner's start-from, and every terminal line that pointed at `chat --repository` now names it. The listing shows an ended chat whose words wait as *going on*, or under Resumes later in its runner's words (with the reset where its account cools), and reads a cool-off a fresh plan misses from the home. Gaps in D137's note: nothing takes a held chat's words up at the reset (MSG1g2), and a chat a headless loop kept reads *going on* though only a window takes it up. The Desktop README's `SESSION_START_FROM` line should name the verb. Driver fast half 4297 → 4381 with main. Detail: D137's MSG1f3 note; commit 9e6a6079.
+
+
+## ORIENT1f — search splits identifiers (2026-10-07, D134)
+
+> - [ ] **ORIENT1f — search splits identifiers** (service). Index/query camelCase and snake_case as words so the probe-lock question finds its decision. Contract: `Text.Tokenize`/`Segment`. Proof: `SearchTests`; FIX-LOG or D125 TOOL6g is first.
+
+**Outcome** 2026-10-07: the index carries each identifier whole and by its words (`ProbeLock` → `Probe Lock`, `probe_lock` → `probelock`; a digit is no split, so `TOOL6g` stays one word), and a question also asks its adjacent words joined, counted once per word they join (chosen by measuring four alternatives on the real index, recorded in the note). Stored text is unchanged; the index schema moves to 4 and rebuilds on open. The probe-lock question went from neither answer in the top ten to the FIX-LOG entry first. The web's search highlighting does not know identifier words. Detail: D134's ORIENT1g note, the service README; commit fb53e6ee.
+
+
+## ORIENT1g — index dated decision notes separately (2026-10-07, D134)
+
+> - [ ] **ORIENT1g — index dated decision notes separately** (service). Prevent long decisions burying individual notes; match digest labels. Contract: amended D134 §5. Proof: probe-lock question lands on D125 TOOL6g.
+
+**Outcome** 2026-10-07: each dated note of a decision in the declared folder is its own entry (`…/D<n>.md#<label>`, titled `D125 › <label>`), labelled exactly as `orient-index.mjs` labels the digest (296 of 296 rows matched); the decision's own entry keeps its id and holds only the text before its first note, so `knowledge_get` on a decision returns its opening. The probe-lock question lands on D125's TOOL6g note first (19.81, FIX-LOG 19.63). Service 1215 → 1281. Detail: D134's ORIENT1g note, twins.md; commit 5d2370a6.

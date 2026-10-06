@@ -88,7 +88,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 93 | 1682 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 54 | 1148 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 60 | 1235 |
-| `src/Daoris.Service/README.md` | 49 | 532 |
+| `src/Daoris.Service/README.md` | 51 | 552 |
 
 ### CLI (`cli`)
 
@@ -124,7 +124,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 42 | 111 |
+| `.claude/knowledge/twins.md` | 43 | 112 |
 | `docs/2026-09-19-platform-ux.md` | 50 | 551 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 48 | 342 |

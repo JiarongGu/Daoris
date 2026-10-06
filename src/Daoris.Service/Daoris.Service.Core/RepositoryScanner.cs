@@ -21,7 +21,8 @@ namespace Daoris.Knowledge;
 /// A repository may still say where its records are, in its manifest's <c>documents</c> (DOC5; D122
 /// §2.7, <see cref="RepositoryDocuments"/>). A declaration adds a path and is never required: the
 /// declared decisions, fixes or archive is the first candidate for its log, a file or a folder of
-/// records, each titled by its first heading (DOC8c), and the declared router is read as a document. A
+/// records, each titled by its first heading (DOC8c), a decision's dated notes each an entry of its own
+/// (ORIENT1g, <see cref="DecisionNotes"/>), and the declared router is read as a document. A
 /// declaration the CLI refuses is read as none, so the candidates are read as before it was written. One
 /// file is one place in the index.
 ///
@@ -381,7 +382,39 @@ public sealed class RepositoryScanner(string? documents = null, string? index = 
             if (ReadDocument(root, relative) is not { } body) continue;
 
             var title = (byHeading ? MarkdownSections.FirstHeading(body) : null) ?? Path.GetFileNameWithoutExtension(relative);
+            if (byHeading && kind == EntryKind.Decision)
+            {
+                foreach (var entry in Decision(repository, relative, title, body)) yield return entry;
+                continue;
+            }
             yield return new KnowledgeEntry(repository, kind, Provenance.Local, title, body, relative);
+        }
+    }
+
+    /// <summary>
+    /// A decision in a folder of records (ORIENT1g; D134 §5 as amended): its text before its first dated note,
+    /// at the id it always had, then each note an entry of its own, titled by the decision's file and the
+    /// note's label and anchored by that label, as the decisions digest gives them (<see cref="DecisionNotes"/>).
+    /// </summary>
+    /// <remarks>
+    /// A question about one note landed on the whole decision, or past it, while every other note's words
+    /// diluted the one that answered (D125's twenty-two). A label twice in one file is told apart by its count,
+    /// as a heading twice is (REV3), so one file never yields one id twice.
+    /// </remarks>
+    private static IEnumerable<KnowledgeEntry> Decision(string repository, string relative, string title, string text)
+    {
+        var (entry, notes) = DecisionNotes.Split(text);
+        yield return new KnowledgeEntry(repository, EntryKind.Decision, Provenance.Local, title, entry, relative);
+
+        var name = Path.GetFileNameWithoutExtension(relative);
+        var used = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var note in notes)
+        {
+            var seen = used.GetValueOrDefault(note.Label) + 1;
+            used[note.Label] = seen;
+            yield return new KnowledgeEntry(
+                repository, EntryKind.Decision, Provenance.Local, $"{name} › {note.Label}", note.Body, relative,
+                seen == 1 ? note.Label : $"{note.Label} ({seen})");
         }
     }
 

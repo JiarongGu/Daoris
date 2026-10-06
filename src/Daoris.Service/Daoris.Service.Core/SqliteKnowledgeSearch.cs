@@ -71,6 +71,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
         foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
 
         var hits = new List<KnowledgeHit>();
+        var asked = Text.QueryTerms(query.Text).Select(term => term.Term).ToList();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
         {
@@ -78,7 +79,7 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
             // The rank rides one past the entry's own columns — so it moves whenever they do. It moved
             // once already, when entries gained their workspace.
             var score = match is null ? 0 : -reader.GetDouble(RankOrdinal);
-            hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, Text.Tokenize(query.Text))));
+            hits.Add(new KnowledgeHit(entry, score, Text.Excerpt(entry.Body, asked)));
         }
 
         return hits;
@@ -95,18 +96,27 @@ public sealed class SqliteKnowledgeSearch(SqliteKnowledgeStore store) : IKnowled
     /// Terms are joined with OR so a partial match still returns something; BM25 then ranks the
     /// entries matching more of the query above those matching less, which is the behaviour wanted
     /// without making a missing word fatal.
+    ///
+    /// The terms are the question's words and its adjacent words joined (<see cref="Text.QueryTerms"/>,
+    /// ORIENT1f): the row holds an identifier whole beside its words, so <i>probe lock</i> reaches
+    /// <c>ProbeLock</c> by both. A join is named once for each word it joins, which is how it counts that
+    /// many times: FTS5's bm25 adds every phrase of the expression, a phrase named twice twice, and takes
+    /// no weight per phrase.
     /// </remarks>
     internal static string? BuildMatchExpression(string text)
     {
-        var terms = Text.Tokenize(text).Distinct(StringComparer.Ordinal).ToList();
+        var terms = Text.QueryTerms(text);
 
         if (terms.Count == 0) return null;
 
         var builder = new StringBuilder();
         foreach (var term in terms)
         {
-            if (builder.Length > 0) builder.Append(" OR ");
-            builder.Append('"').Append(term.Replace("\"", "\"\"")).Append('"');
+            for (var named = 0; named < term.Words; named++)
+            {
+                if (builder.Length > 0) builder.Append(" OR ");
+                builder.Append('"').Append(term.Term.Replace("\"", "\"\"")).Append('"');
+            }
         }
 
         return builder.ToString();
