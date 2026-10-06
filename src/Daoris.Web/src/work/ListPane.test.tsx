@@ -86,6 +86,26 @@ describe('the list pane, open', () => {
     const names = within(header).getAllByRole('button').map((button) => button.getAttribute('aria-label') ?? button.textContent);
     expect(names).toEqual(['Start a session', 'filters', 'Hide the session list']);
   });
+
+  /**
+   * UX6i (D150 §2.2): what heads a list sits under its header and above its rows, outside their scroll, so it stays in
+   * reach as they scroll: Knowledge's two-way choice. The arrows that move between rows are not its.
+   */
+  it('holds what heads the list under its header and outside its rows\' scroll', () => {
+    pane(OPEN, { head: <div><button type="button">mode</button></div> });
+    const mode = screen.getByRole('button', { name: 'mode' });
+    const rows = screen.getByRole('button', { name: 'first' }).closest('ul')!.parentElement!;
+    expect(rows).not.toContainElement(mode);
+    expect(mode.compareDocumentPosition(screen.getByText('Sessions')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy();
+    expect(mode.compareDocumentPosition(rows) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('holds what heads the list laid over too, and leaves it off the strip, whose marks stand for it', () => {
+    pane(OVER, { head: <button type="button">mode</button> });
+    expect(within(screen.getByRole('region', { name: 'Sessions' })).getByRole('button', { name: 'mode' })).toBeInTheDocument();
+    pane(CLOSED, { head: <button type="button">strip mode</button> });
+    expect(screen.queryByRole('button', { name: 'strip mode' })).toBeNull();
+  });
 });
 
 describe('the list pane, closed to its strip', () => {

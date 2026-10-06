@@ -1,3 +1,4 @@
+import type { KnowledgeMode } from './knowledge/modes';
 import type { ThemeChoice } from './theme';
 import type { IconName } from './ui';
 
@@ -8,7 +9,14 @@ import type { IconName } from './ui';
 
 /** The application's views (D66): one list, the activity bar's. */
 export type View =
-  | 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'agents' | 'plugins' | 'settings';
+  | 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'knowledge' | 'agents' | 'plugins' | 'settings';
+
+/**
+ * Whose list a view shows (UX6i, D150 §2.2): Knowledge's is its mode's, Search's results or Convergence's findings, each
+ * with the chosen item, the filters and the names it had as a place; any other view's is its own.
+ */
+export const listOf = (view: View, knowledge: KnowledgeMode): Exclude<View, 'knowledge'> | KnowledgeMode =>
+  (view === 'knowledge' ? knowledge : view);
 
 /**
  * Every view, in the activity bar's order, with the glyph the bar, the Go menu and the palette show. The bar is it
@@ -23,8 +31,9 @@ export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; sh
   { view: 'projects', icon: 'projects', keywords: 'projects 项目' },
   // The workspace map (MAP2, D67 §3): how the repositories are wired, read at a glance.
   { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
-  { view: 'convergence', icon: 'convergence' },
-  { view: 'search', icon: 'search' },
+  // Search and Convergence as one place since UX6i (D150 §2.2): two views of one index, neither with an act. Each old
+  // name still finds it.
+  { view: 'knowledge', icon: 'knowledge', keywords: 'knowledge search convergence entries findings 知识 搜索 同归' },
   // A place of its own since UX6e (D150 §5), before Plugins: an agent is a product with accounts, and its accounts are this
   // machine's (D47 §4), so a browser is shown no Agents, as it is shown no Sessions.
   { view: 'agents', icon: 'account', keywords: 'agents agent account accounts sign in claude codex harness 智能体 账户', shellOnly: true },
@@ -95,6 +104,8 @@ export type CommandState = {
   agents: readonly { name: string; label: string }[];
   /** Settings' domains this window offers, by id and their name's key: the palette opens each. */
   domains: readonly { id: string; label: string }[];
+  /** The mode Knowledge shows, or opens in where it is not in front (UX6i): Search or Convergence. */
+  knowledge: KnowledgeMode;
   /**
    * The session attended on Sessions, while it is in front: the acts its page header offers (D126 §3.2), and whether its
    * card takes an answer. Null anywhere else.
@@ -136,6 +147,8 @@ export type CommandDoors = {
   language: (language: 'en' | 'zh') => void;
   refresh: () => void;
   go: (view: View) => void;
+  /** Knowledge in one of its modes (UX6i), as a door into Search or Convergence opened that place. */
+  knowledge: (mode: KnowledgeMode) => void;
   agent: (name: string) => void;
   /** A part of an agent's page, on the agent that has it (UX6e): its accounts, what it may do, its usage. */
   agentPart: (part: 'accounts' | 'rules' | 'usage') => void;
@@ -182,6 +195,8 @@ export type CommandSpec = {
   present?: (state: CommandState) => boolean;
   /** Not in the palette: the field's six, which act on the field the palette takes the focus from, and Commands. */
   palette?: false;
+  /** Only in the palette: a door its menu reaches by its place, Knowledge's Convergence under Go › Knowledge (UX6i). */
+  paletteOnly?: true;
   /** Extra words that MATCH in the palette but are not shown: *settings* finding Machine, and 中文. */
   keywords?: string;
   /** Whether it can be done now; disabled in its menu and omitted from the palette when not. */
@@ -227,8 +242,11 @@ export const GROUP_HEADINGS: Readonly<Record<string, { label: string; tip: strin
   'run.quest': { label: 'menu.run.quest', tip: 'menu.run.questTip' },
 };
 
-/** The bar's places in order, each with its key: Search is Edit's *Search knowledge* and Settings is Workspace's. */
-const GO_PLACES: readonly View[] = ['overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'agents', 'plugins'];
+/**
+ * The bar's places in order, each with its key: Settings is Workspace's. Knowledge opens in the mode it was left in; its
+ * Search is Edit's *Search knowledge* too, and its Convergence the palette's *Go to: Convergence* (UX6i).
+ */
+const GO_PLACES: readonly View[] = ['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins'];
 
 const sessionAct = (act: string, label: string, icon: IconName, menu: MenuId = 'run', group = 'run.session'): CommandSpec => ({
   id: menu === 'run' ? `run.session.${act}` : `terminal.${act === 'terminal' ? 'here' : 'folder'}`,
@@ -334,7 +352,7 @@ export const COMMANDS: readonly CommandSpec[] = [
     palette: false, run: (doors) => doors.palette(),
   },
   {
-    id: 'view.list', menu: 'view', group: 'layout', label: (state) => `layout.menu.list.${state.view}`, icon: 'layoutRail',
+    id: 'view.list', menu: 'view', group: 'layout', label: (state) => `layout.menu.list.${listOf(state.view, state.knowledge)}`, icon: 'layoutRail',
     keys: ['Ctrl+B'], present: (state) => state.list !== null, checked: (state) => state.list?.shown ?? false,
     keywords: 'list toggle hide show 列表', run: (doors) => doors.toggle('list'),
   },
@@ -381,6 +399,14 @@ export const COMMANDS: readonly CommandSpec[] = [
       radio: true, checked: (state) => state.view === place, run: (doors) => doors.go(place),
     };
   }),
+  {
+    // Knowledge's Convergence (UX6i, D150 §2.2), the palette's alone: Go's row is the place, and the palette's row is the
+    // door Convergence had while it was a place, under the id it had then, so the machine log still names it.
+    id: 'go.convergence', menu: 'go', group: 'places', label: 'nav.convergence', title: (label, t) => t('command.goTo', { place: label }),
+    icon: 'convergence', paletteOnly: true, keywords: 'convergence converge findings same lesson 同归 知识',
+    radio: true, checked: (state) => state.view === 'knowledge' && state.knowledge === 'convergence',
+    run: (doors) => doors.knowledge('convergence'),
+  },
   {
     id: 'go.nextRegion', menu: 'go', group: 'regions', label: 'menu.go.nextRegion', keys: ['F6'], keywords: 'focus region part',
     run: (doors) => doors.region(false),
@@ -631,7 +657,7 @@ export function commandTable(state: CommandState, doors: CommandDoors, t: Transl
       keys: bindings(spec, state.attached),
       enabled,
       ...(checked !== undefined ? { checked } : {}),
-      menuItem: true,
+      menuItem: !spec.paletteOnly,
       palette: spec.palette !== false && enabled && !(spec.radio && checked),
       ...heading(spec.group),
       ...(spec.keywords ? { keywords: spec.keywords } : {}),

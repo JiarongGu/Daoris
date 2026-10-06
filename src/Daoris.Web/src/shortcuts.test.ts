@@ -65,8 +65,8 @@ describe("the frame's keys, everywhere", () => {
 describe('which command a press runs', () => {
   const state = (over: Partial<CommandState> = {}): CommandState => ({
     attached: true, view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, moved: false, workspaces: [],
-    scope: null, circle: null, wired: false, theme: 'system', language: 'en', agents: [], domains: [], session: null, quest: null,
-    record: false, find: true, field: false, ...over,
+    scope: null, circle: null, wired: false, theme: 'system', language: 'en', agents: [], domains: [], knowledge: 'search',
+    session: null, quest: null, record: false, find: true, field: false, ...over,
   });
   const doors = new Proxy({}, { get: () => vi.fn() }) as never;
   const entries = (over: Partial<CommandState> = {}) => commandTable(state(over), doors, (key) => key);

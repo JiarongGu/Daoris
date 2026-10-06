@@ -150,3 +150,45 @@ describe("a view's remembered choice", () => {
     expect(screen.getByRole('heading', { level: 1, name: DONE })).toBeInTheDocument();
   });
 });
+
+/**
+ * UX6i (D150 §2.2): Knowledge's pane is one, and the list on it is its mode's. The mode's list keeps its chosen item, so a
+ * remembered one that went is let go there; the pane's closing and width are the place's, whichever mode is drawn.
+ */
+function Moded({ standing }: { standing: ChoiceStanding }) {
+  const lists = useListPanes();
+  const [over, setOver] = useState(false);
+  const chosen = lists.pane('convergence').chosen;
+  const list: ListSpec = {
+    view: 'knowledge',
+    chosenIn: 'convergence',
+    name: 'Knowledge',
+    labels: { open: 'Show the finding list', close: 'Hide the finding list', resize: 'finding list width' },
+    head: <p>the two-way choice</p>,
+    chosen,
+    standing: chosen ? standing : undefined,
+    body: <ul><li data-list-row=""><button type="button">a finding</button></li></ul>,
+  };
+  return (
+    <ViewFrame
+      layout={{ list, main: <ViewMain><h1>{chosen ?? 'Nothing chosen'}</h1></ViewMain> }}
+      lists={lists}
+      over={over}
+      onOver={setOver}
+    />
+  );
+}
+
+describe("a pane drawing another list's memory", () => {
+  it("lets go of that list's remembered item, and closes as the pane's own", async () => {
+    window.localStorage.setItem('daoris.list.convergence.chosen', 'engine:a.md\ngame:a.md');
+    render(<Tooltip.Provider><Moded standing="gone" /></Tooltip.Provider>);
+    expect(screen.getByRole('main')).toHaveTextContent('Nothing chosen');
+    expect(window.localStorage.getItem('daoris.list.convergence.chosen')).toBeNull();
+    expect(within(screen.getByRole('complementary', { name: 'Knowledge' })).getByText('the two-way choice')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Hide the finding list' }));
+    expect(window.localStorage.getItem('daoris.list.knowledge.closed')).toBe('1');
+    expect(window.localStorage.getItem('daoris.list.convergence.closed')).toBeNull();
+  });
+});

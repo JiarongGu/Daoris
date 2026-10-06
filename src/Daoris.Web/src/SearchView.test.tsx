@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { chooseRow, listOf, mainArea, pageTitled, showSearch } from './test/knowledgeViews';
+import {
+  chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showKnowledge, showSearch, switchTo,
+} from './test/knowledgeViews';
 
 // The view over a stubbed service, like QuestsView's: the shapes the endpoint returns, no host. Since FRAME1f the view
 // is a list pane and a page (D118 §2): the box, *local only* and the hits are the list, and the entry a hit names is
-// read in the main area, where it was the reader drawer.
+// read in the main area, where it was the reader drawer. Since UX6i (D150 §2.2) it is Knowledge's Search, held through
+// the place: Knowledge's list is Search's while Search is chosen at its head.
 
 const HITS = [{
   id: 'engine:docs/FIX-LOG.md#encoding', repository: 'engine', kind: 'Fix', path: 'docs/FIX-LOG.md',
@@ -19,11 +22,12 @@ const ENTRY = {
 const FILTERS = 'daoris.list.search.filters';
 const CHOSEN = 'daoris.list.search.chosen';
 
-/** The service: the hits for any search, and the one entry by its id. */
+/** The service: the hits for any search, the one entry by its id, and no findings, for Knowledge's other mode. */
 function service(hits: unknown = HITS, tier?: string) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url.startsWith('/api/search')) return Response.json(hits, tier ? { headers: { 'x-daoris-tier': tier } } : undefined);
+    if (url.startsWith('/api/convergence')) return Response.json([]);
     if (url.startsWith('/api/entry')) {
       return url.includes(encodeURIComponent(ENTRY.id))
         ? Response.json(ENTRY)
@@ -33,7 +37,7 @@ function service(hits: unknown = HITS, tier?: string) {
   });
 }
 
-const box = () => within(listOf('Search')).getByRole('searchbox', { name: 'search knowledge' });
+const box = () => within(knowledgeList()).getByRole('searchbox', { name: 'search knowledge' });
 
 describe('Search', () => {
   beforeEach(() => vi.stubGlobal('fetch', service()));
@@ -71,7 +75,7 @@ describe('Search', () => {
     showSearch();
     await userEvent.type(box(), 'encoding');
 
-    expect(await within(listOf('Search')).findByText('An encoding trap')).toBeInTheDocument();
+    expect(await within(knowledgeList()).findByText('An encoding trap')).toBeInTheDocument();
     expect(screen.getByText('encoding', { selector: 'mark' })).toBeInTheDocument();
     // Its tint adds no space beside the word (UX5 U61): *syllables .* read as a gap before the stop.
     expect(screen.getByText('encoding', { selector: 'mark' })).toHaveClass('-mx-0.5');
@@ -84,12 +88,12 @@ describe('Search', () => {
   it('reads the entry a hit names in the main area, as it is written, and in no drawer', async () => {
     showSearch();
     await userEvent.type(box(), 'encoding');
-    const page = await chooseRow('Search', 'An encoding trap');
+    const page = await chooseRow('An encoding trap');
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(within(page).getByText(/Set the \*\*encoding\*\* first/).tagName).toBe('PRE');
     expect(within(page).getByText('engine · docs/FIX-LOG.md')).toBeInTheDocument();
-    const row = within(listOf('Search')).getByRole('listitem', { name: 'An encoding trap' });
+    const row = within(knowledgeList()).getByRole('listitem', { name: 'An encoding trap' });
     expect(within(row).getByRole('button')).toHaveAttribute('aria-current', 'true');
   });
 
@@ -97,7 +101,7 @@ describe('Search', () => {
   it('moves from the box into the hits on ↓', async () => {
     showSearch();
     await userEvent.type(box(), 'encoding');
-    const row = await within(listOf('Search')).findByRole('listitem', { name: 'An encoding trap' });
+    const row = await within(knowledgeList()).findByRole('listitem', { name: 'An encoding trap' });
 
     await userEvent.keyboard('{ArrowDown}');
     expect(within(row).getByRole('button')).toHaveFocus();
@@ -108,9 +112,9 @@ describe('Search', () => {
     const fetch = service();
     vi.stubGlobal('fetch', fetch);
     showSearch();
-    await userEvent.click(within(listOf('Search')).getByRole('checkbox', { name: "Each repository's own only" }));
+    await userEvent.click(within(knowledgeList()).getByRole('checkbox', { name: "Each repository's own only" }));
     await userEvent.type(box(), 'encoding');
-    await chooseRow('Search', 'An encoding trap');
+    await chooseRow('An encoding trap');
 
     expect(JSON.parse(window.localStorage.getItem(FILTERS) ?? '{}')).toEqual({ localOnly: false });
     expect(window.localStorage.getItem(CHOSEN)).toBe(ENTRY.id);
@@ -118,12 +122,12 @@ describe('Search', () => {
 
     cleanup();
     showSearch();
-    expect(within(listOf('Search')).getByRole('checkbox', { name: "Each repository's own only" })).not.toBeChecked();
+    expect(within(knowledgeList()).getByRole('checkbox', { name: "Each repository's own only" })).not.toBeChecked();
     expect(box()).toHaveValue('');
     expect(await pageTitled('An encoding trap')).toBeInTheDocument();
 
     // Local only again is the default, so it is kept as nothing.
-    await userEvent.click(within(listOf('Search')).getByRole('checkbox', { name: "Each repository's own only" }));
+    await userEvent.click(within(knowledgeList()).getByRole('checkbox', { name: "Each repository's own only" }));
     expect(window.localStorage.getItem(FILTERS)).toBeNull();
   });
 
@@ -166,21 +170,21 @@ describe('Search', () => {
     const { container } = showSearch();
 
     await userEvent.type(box(), 'encoding');
-    expect(await within(listOf('Search')).findByText('searching…')).toBeInTheDocument();
+    expect(await within(knowledgeList()).findByText('searching…')).toBeInTheDocument();
     expect(container.querySelectorAll('[aria-hidden="true"] > i').length).toBeGreaterThan(0);
 
     await settle('encoding', Response.json(HITS));
-    expect(await within(listOf('Search')).findByText('1 result')).toBeInTheDocument();
+    expect(await within(knowledgeList()).findByText('1 result')).toBeInTheDocument();
     expect(container.querySelectorAll('[aria-hidden="true"] > i')).toHaveLength(0);
 
     await userEvent.type(box(), ' trap');
-    expect(await within(listOf('Search')).findByText('searching…')).toBeInTheDocument();
-    const held = within(listOf('Search')).getByRole('listitem', { name: 'An encoding trap' });
+    expect(await within(knowledgeList()).findByText('searching…')).toBeInTheDocument();
+    const held = within(knowledgeList()).getByRole('listitem', { name: 'An encoding trap' });
     expect(held.closest('ul')).toHaveClass('opacity-60');
     expect(container.querySelectorAll('[aria-hidden="true"] > i')).toHaveLength(0);
 
     await settle('encoding trap', Response.json([]));
-    expect(await within(listOf('Search')).findByText('No matches')).toBeInTheDocument();
+    expect(await within(knowledgeList()).findByText('No matches')).toBeInTheDocument();
   });
 
   /**
@@ -191,14 +195,15 @@ describe('Search', () => {
    */
   it("answers nothing as an empty state, in its tier's words, with the way to convergence", async () => {
     vi.stubGlobal('fetch', service([]));
-    const onConverge = vi.fn();
-    const { unmount } = showSearch({ onConverge });
+    const { unmount } = showSearch();
 
     await userEvent.type(box(), 'zebra quartz');
     expect(await screen.findByText('No matches')).toBeInTheDocument();
     expect(screen.getByText(/matches words, so a repository that reached the same conclusion/)).toBeInTheDocument();
+    // Since UX6i the way to Convergence is Knowledge's other mode: the place switches, its head says so.
     await userEvent.click(screen.getByRole('button', { name: 'Look in Convergence' }));
-    expect(onConverge).toHaveBeenCalledOnce();
+    expect(within(modeChoice()).getByRole('radio', { name: 'Convergence' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(knowledgeList()).getByRole('slider')).toBeInTheDocument();
     unmount();
 
     showSearch({ semantic: true });
@@ -235,5 +240,63 @@ describe('Search', () => {
     await userEvent.type(box(), 'zebra quartz');
     expect(await screen.findByText('Nothing answered')).toBeInTheDocument();
     expect(screen.queryByText('No matches')).toBeNull();
+  });
+});
+
+/**
+ * UX6i (D150 §2.2): Search and Convergence are one place, Knowledge, whose list's head switches between them, remembered.
+ * Each mode keeps its list, its main area and its memory, so what was typed, the entry chosen and *local only* are
+ * Search's still when the person comes back from Convergence.
+ */
+describe("Search, as Knowledge's mode", () => {
+  beforeEach(() => vi.stubGlobal('fetch', service()));
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  it("is Knowledge's list while Search is chosen at its head, the pane named for the place", () => {
+    showSearch();
+    expect(within(modeChoice()).getByRole('radio', { name: 'Search' })).toHaveAttribute('aria-checked', 'true');
+    expect(box()).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Search' })).toBeNull();
+  });
+
+  it('keeps what was typed, the entry chosen and local only while Convergence is in front, and gives them back', async () => {
+    showSearch();
+    await userEvent.click(within(knowledgeList()).getByRole('checkbox', { name: "Each repository's own only" }));
+    await userEvent.type(box(), 'encoding');
+    await chooseRow('An encoding trap');
+
+    await switchTo('Convergence');
+    expect(within(knowledgeList()).queryByRole('searchbox')).toBeNull();
+    expect(within(mainArea()).getByText('Choose a finding')).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.knowledge.mode')).toBe('convergence');
+
+    await switchTo('Search');
+    expect(box()).toHaveValue('encoding');
+    expect(within(knowledgeList()).getByRole('checkbox', { name: "Each repository's own only" })).not.toBeChecked();
+    expect(await pageTitled('An encoding trap')).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.knowledge.mode')).toBeNull();
+  });
+
+  it('opens in the mode it was left in', async () => {
+    showSearch();
+    await switchTo('Convergence');
+    cleanup();
+    showKnowledge();
+    expect(within(modeChoice()).getByRole('radio', { name: 'Convergence' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('closes as the place, and its strip stands for the choice', async () => {
+    showSearch();
+    await userEvent.click(screen.getByRole('button', { name: 'Hide the result list' }));
+    expect(window.localStorage.getItem('daoris.list.knowledge.closed')).toBe('1');
+    expect(window.localStorage.getItem('daoris.list.search.closed')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Convergence' }));
+    expect(screen.getByRole('button', { name: 'Convergence' })).toHaveAttribute('aria-current', 'true');
+    // Still closed: the closing is the place's, so the other mode's list does not open itself.
+    expect(screen.getByRole('button', { name: 'Show the finding list' })).toBeInTheDocument();
   });
 });
