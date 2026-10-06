@@ -85,6 +85,17 @@ using Daoris.Driver;
 //                 held — the chain's next step, a quest waiting on it — goes on, and the yes travels like any
 //                 verb. Nothing else answers a quest here, since a quest is answered by the session that takes it.
 //
+//   history [--workspace <name>] [--json]
+//   history clear --workspace <name> [--yes]
+//   quest clear <id> [--failed] [--yes] · ask --clear <id> [--yes]
+//                 finished history on this machine (HIST1d, D153, the history-clearing design §6.2): what the home keeps
+//                 of each workspace's finished work, or the one named, what a clear would take and what it keeps and why,
+//                 and --json HISTORY_PLAN's answer field for field; then a clear of a workspace's, one closed quest's work,
+//                 its failed sessions alone, or one ask's work. Without --yes a clear lists and changes nothing; with it,
+//                 each unit is judged again and what may go goes, records first and then what the home kept of them, and
+//                 the machine log says the terminal's door. Never a tree, a branch, open work, or the team's copy on a
+//                 remote. A quest's or an ask's page and the workspace's *Kept on this machine* are the other doors.
+//
 //   answer <session> ["…"]
 //                 answer a driven session that parked to ask you (STANDDOWN2): its record stays parked with
 //                 your words, and at the next tick the same session goes on with them (D131), its own
@@ -229,6 +240,13 @@ try
         return await Daoris.Driver.Host.WorkConsole.RunAsync(WorkScope.Ask, workArgs, log);
     }
 
+    // Clearing an ask's work from this machine (HIST1d, D153, the history-clearing design §6.2, D50): the ask's page is the
+    // other door. Asked for before the ask's other words, which would take `--clear` as the words of a new ask.
+    if (args is ["ask", .. var clearArgs] && HistoryCommand.Asks(WorkScope.Ask, clearArgs))
+    {
+        return await Daoris.Driver.Host.HistoryConsole.RunAsync(WorkScope.Ask, clearArgs, log);
+    }
+
     // An ask from a terminal (D65 §1a, D50): the page's composer at workspace scope is the other door.
     if (args is ["ask", .. var askArgs])
     {
@@ -253,7 +271,9 @@ try
 
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door. Accepting a done's
     // departure from what the person required (DRIFT1d, D133 §4): the quest page's yes and Ask Daoris's are owed. Pausing,
-    // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door.
+    // resuming and abandoning one quest's work (PAUSE1b, PAUSE1d, D132 §7.2): the quest's page is the other door. Clearing a
+    // closed quest's work, or its failed sessions, from this machine (HIST1d, D153, the history-clearing design §6.2): the quest's
+    // page is the other door.
     if (args is ["quest", .. var questArgs])
     {
         if (WorkCommand.Asks(WorkScope.Quest, questArgs))
@@ -261,11 +281,16 @@ try
             return await Daoris.Driver.Host.WorkConsole.RunAsync(WorkScope.Quest, questArgs, log);
         }
 
+        if (HistoryCommand.Asks(WorkScope.Quest, questArgs))
+        {
+            return await Daoris.Driver.Host.HistoryConsole.RunAsync(WorkScope.Quest, questArgs, log);
+        }
+
         if (questArgs is not [("delete" or "accept") and var verb, var questId])
         {
             Console.Error.WriteLine(
                 "usage: daoris-driver quest delete <id>  ·  quest accept <id>  ·  quest pause <id>  ·  quest resume <id>  ·  "
-                + "quest abandon <id> [--reason \"…\" --yes]");
+                + "quest abandon <id> [--reason \"…\" --yes]  ·  quest clear <id> [--failed] [--yes]");
             return 2;
         }
 
@@ -293,6 +318,14 @@ try
     if (args is ["sessions", .. var sessionsArgs])
     {
         return await Daoris.Driver.Host.SessionsConsole.RunAsync(sessionsArgs, log);
+    }
+
+    // Finished history from a terminal (HIST1d, D153, the history-clearing design §6.2, D50): what this machine keeps of it, per
+    // workspace, and a workspace's clear, listed first and pressed with --yes. The workspace page's *Kept on this machine* is the
+    // other door; a clear's log line says this one.
+    if (args is ["history", .. var historyArgs])
+    {
+        return await Daoris.Driver.Host.HistoryConsole.RunAsync(historyArgs, log);
     }
 
     // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —

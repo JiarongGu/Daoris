@@ -42,7 +42,9 @@ with the version and date at release.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
   machine only. The driver now clears what the home kept of them too, never a tree in use or a standing
-  branch; the terminal and screen doors follow (HIST1d–e). Deleting a conversation now also takes the
+  branch. At a terminal, `daoris-driver history` says what each workspace keeps, and `history clear
+  --workspace`, `quest clear` and `ask --clear` list what would go until `--yes`; the screen follows
+  (HIST1e). Deleting a conversation now also takes the
   four small files it used to leave behind.
 - Deleting a quest or a conversation no longer lets the next change reuse a number a remote already
   holds, which could lose that change silently on a workspace with a remote.

@@ -147,6 +147,64 @@ public sealed class DriverModuleHistoryTests : DriverModuleBridge
         Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), plan.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// HIST1d (D50; the history-clearing design §6.2): <c>daoris-driver history --workspace --json</c> prints this route's answer
+    /// field for field. Both serialize the driver library's one projection (<see cref="HistoryAnswers"/>): here the route's
+    /// answer, as the page receives it, is the terminal's for the same home and service, value for value, and each object's
+    /// fields are the lists the terminal's own test holds.
+    /// </summary>
+    [Fact]
+    public async Task The_terminals_history_json_is_this_routes_answer_field_for_field()
+    {
+        Kept("s1");
+        Kept("c1");
+        using var service = Service(new Dictionary<string, string>
+        {
+            ["workspace=aurora"] = Unit("quest", "q1", sessions: """["s1"]""", quests: """["q1"]""") + ","
+                                   + Unit("quest", "qt", refusal: """{"refusal":"open","error":"taken","quest":"qt"}"""),
+        });
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient(service.Address, null));
+        var module = new DriverModule(Bus, loop);
+
+        var page = await AnswerAsync(module, "HISTORY_PLAN", new { workspace = "aurora" });
+        var output = new StringWriter();
+        var exit = await HistoryCommand.RunAsync(
+            HistoryCommand.Read(["--workspace", "aurora", "--json"], out _)!,
+            new HistoryWorld(new ServiceClient(service.Address, null), loop.Home, loop.ConfigPath, loop.Processes),
+            output);
+
+        Assert.Equal(0, exit);
+        var terminal = System.Text.Json.Nodes.JsonNode.Parse(output.ToString());
+        var route = System.Text.Json.Nodes.JsonNode.Parse(page.GetRawText());
+        Assert.True(System.Text.Json.Nodes.JsonNode.DeepEquals(route, terminal), $"the route answered {route}, the terminal printed {terminal}");
+        Assert.Equal(HistoryAnswers.PlanFields, page.EnumerateObject().Select(field => field.Name));
+        var units = page.GetProperty("units").EnumerateArray().ToList();
+        Assert.All(units, unit => Assert.Equal(HistoryAnswers.UnitFields, unit.EnumerateObject().Select(field => field.Name)));
+        var keep = units.Single(unit => unit.GetProperty("id").GetString() == "qt").GetProperty("keep");
+        Assert.Equal(HistoryAnswers.ReasonFields, keep.EnumerateObject().Select(field => field.Name));
+        Assert.Equal(HistoryAnswers.ReadingFields, page.GetProperty("reading").EnumerateObject().Select(field => field.Name));
+    }
+
+    /// <summary>The catalogue's history codes are the driver library's, which the terminal prints, and its verbatim refusal the shell's.</summary>
+    [Fact]
+    public void The_history_codes_are_the_driver_librarys()
+    {
+        Assert.Equal(Refusals.DriverRefused, HistoryCodes.Refused);
+        Assert.Equal(
+            [
+                Refusals.HistoryUnknown, Refusals.HistoryOpen, Refusals.HistoryAsked, Refusals.HistoryLive, Refusals.HistoryNeedsYou,
+                Refusals.HistoryAwaited, Refusals.HistoryTreeHere, Refusals.HistoryLandingStands, Refusals.HistoryUnpushed,
+                Refusals.HistoryNotOurs,
+            ],
+            new[]
+            {
+                HistoryWords.Unknown, HistoryWords.Open, HistoryWords.Asked, HistoryWords.Live, HistoryWords.NeedsYou, HistoryWords.Awaited,
+                HistoryWords.TreeHere, HistoryWords.LandingStands, HistoryWords.Unpushed, HistoryWords.NotOurs,
+            }.Select(HistoryCodes.Of));
+        Assert.Equal(Refusals.DriverRefused, HistoryCodes.Of("a-word-from-later"));
+    }
+
     /// <summary>The service's word for a unit, the code the catalogue says it in, and a fact the sentence names.</summary>
     public static TheoryData<string, string, string> ServiceRefusals => new()
     {

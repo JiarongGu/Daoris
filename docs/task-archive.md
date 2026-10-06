@@ -11505,3 +11505,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **LANDSVC1 — proposals advertise auto-accept** (service). Add the flag to setting description and landing refusal so discovery matches the room. Contract: D145 point 1. Proof: `HelpSettingProposalTests`.
 
 **Outcome** 2026-10-07: `setting_propose`'s description and `value`, and the service box's landing refusal, name `--auto-accept` in the room's words (`HelpRoomLanding.cs`): on a branch rule, a quest's done lands its work and the rule's plugin pushes and opens a pull request with no press; the person's standing say-so, proposed only when asked and never on a merge. The box's shape check is unchanged. Service 1296 → 1300. Detail: D145's LANDSVC1 note; commit 7bae0068.
+
+
+## HIST1d — terminal history verbs (2026-10-07, D153)
+
+> - [ ] **HIST1d — terminal history verbs** (driver; after c). `daoris-driver history`, `history clear --workspace`, `quest clear [--failed]` and `ask --clear`, each listing until `--yes`, so a machine with no screen clears as the window does (D50). Contract: §6.2. Proof: in-process command tests with exits, usage golden, and a `--json` field twin against `HISTORY_PLAN`.
+
+**Outcome** 2026-10-07: `daoris-driver history [--workspace] [--json]` reads what each workspace keeps, what a clear would take and kept units by reason with the line that frees them; `history clear --workspace`, `quest clear <id> [--failed]` and `ask --clear <id>` list until `--yes`, then clear through `HistoryClearing` at the door `terminal`, printing each kept unit's sentence verbatim. Exits 0 done or listed, 1 a named unit kept or unknown, 2 a removal or usage error. The route's answer moved into the driver library (`HistoryAnswers`, `HistoryCodes`), so `--json` equals `HISTORY_PLAN` field for field, held by a modules test; `ClearDoor` is an Owed row in `HelpCoverageTests` for HIST1f. Driver fast +37, modules fast +2. Detail: D153's HIST1d note; commits 697ce2ef, c9c61c10.

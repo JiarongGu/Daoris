@@ -161,6 +161,17 @@ public sealed partial class HelpCoverageTests
         + "kind and the `delete` kind's `session` door, while finishing and declining stay the person's answer (D126 §7.3).");
 
     /// <summary>
+    /// HIST1d's <c>daoris-driver history clear --workspace</c>, <c>quest clear [--failed]</c> and <c>ask --clear</c> (D153 point 7,
+    /// the history-clearing design §6.4), verbs of the headless host: doors Ask Daoris owes until HIST1f builds the <c>clear</c>
+    /// kind, its doors <c>quest</c>, <c>ask</c> and <c>workspace</c>. The reading, <c>history</c>, changes nothing.
+    /// </summary>
+    private static readonly Owed ClearDoor = new(
+        "clearing a closed quest's work, an ask's or a workspace's finished history removes records and what this machine kept "
+        + "of them, a press the person makes on a list, so Ask Daoris should propose it as a card whose Apply is that press and "
+        + "never clear itself; that is HIST1f's `clear` kind, its doors `quest`, `ask` and `workspace` (D153, design §6.4), while "
+        + "`daoris-driver history` reads and changes nothing.");
+
+    /// <summary>
     /// MSG1e's <c>daoris-driver sessions say</c> (D137 §5.4), a verb of the headless host: exempt, since the words said to a
     /// session are the person's (D133 §1). The room says where the box is and names the command, so the helper points there.
     /// </summary>
@@ -507,6 +518,7 @@ public sealed partial class HelpCoverageTests
             .Append(SessionArchiveDoor)
             .Append(SessionDeleteDoor)
             .Append(SessionsVerbDoor)
+            .Append(ClearDoor)
             .Append(AbandonDoor)
             .Append(SayDoor)
             .Append(GoOnNewDoor)
@@ -800,6 +812,20 @@ public sealed partial class HelpCoverageTests
         Assert.Contains("sessions archive <id>… | --ended [--yes]", DriverCommand.Usage);
         Assert.Null(HelpProposalKinds.Find("session"));
         Assert.Contains("SESSUX1h", SessionsVerbDoor.Reason);
+    }
+
+    /// <summary>
+    /// HIST1d: the headless host's history clears are doors owed to HIST1f's <c>clear</c> kind (D153, design §6.4) while the
+    /// host's usage spells them and no kind of that name is built. When the kind lands, this owed door becomes its doors.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_history_clears_are_doors_owed_to_the_clear_kind()
+    {
+        Assert.Contains("history clear --workspace <name> [--yes]", DriverCommand.Usage);
+        Assert.Contains("quest clear <id> [--failed] [--yes]  ·  ask --clear <id> [--yes]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("clear"));
+        Assert.Contains("HIST1f", ClearDoor.Reason);
+        Assert.Contains("§6.4", ClearDoor.Reason);
     }
 
     /// <summary>
