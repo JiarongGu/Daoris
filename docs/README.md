@@ -80,6 +80,7 @@ changes no row (D127).
 | `2026-10-04-orientation-everywhere-design.md` | contract | Every driven repository keeps a generated index of where things are, checked by its own tooling so a clone without Daoris works; the service indexes it, hits name lines, driven sessions measured (ORIENT2) | Designed (D151); nothing built. Amends the map design's ORIENT1a note, D122 §2.7, D124 §3, §7 and D128 §3 |
 | `2026-10-05-ux7-design.md` | contract | Menu bar, account rows, session and quest heads (UX7) | Current (D152); amends D75, D150 §2.4/§5.2, D126 §3.2 and D118 §3b. D152 holds build notes; TASKS holds remaining work |
 | `2026-10-05-integration-review.md` | evidence | Branch recovery, review findings, verification and cleanup | Completed 2026-10-07; remaining UI proof is in `TASKS.md` |
+| `2026-10-07-second-opinion-review.md` | evidence | A read-only second opinion (Codex) on code shape and UI/UX after the 2026-10-07 run, with each finding verified and routed | Its rows are in `TASKS.md` (HIST1i–l, REFAC1–3, CANONREAD1) |
 | `2026-10-07-history-clearing-design.md` | contract | Clearing finished history from this machine: a closed quest's or an ask's work, failed sessions, a workspace at once; a remote's copy forgotten here, never deleted; the store's numbers never go back (HIST1) | Designed (D153); nothing built. Amends D95, D126 §5 and §11, the sync design's §8 |
 
 ## Studies and evidence
