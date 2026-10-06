@@ -82,6 +82,25 @@ describe("a workspace's Setup", () => {
     expect(screen.getByText(code('daoris driver across --workspace aurora read on|off|--clear'))).toBeInTheDocument();
   });
 
+  /**
+   * ACCTQUOTE1 (D125's ACCTQUOTE1 note): a workspace is a person's name, and a twin is pasted into a shell, so a name with a
+   * space is in double quotes and one no spelling holds in every shell is a placeholder.
+   */
+  it('spells the workspace in each twin for a shell', async () => {
+    at({ workspace: 'my team' });
+    await userEvent.click(section('Defaults'));
+    expect(screen.getByText(code('daoris driver line --workspace "my team" <branch>|--clear'))).toBeInTheDocument();
+    await userEvent.click(section('Remote and reach'));
+    expect(screen.getByText(code('daoris remote add "my team" --url <url>'))).toBeInTheDocument();
+    expect(screen.getByText(code('daoris remote remove "my team"'))).toBeInTheDocument();
+  });
+
+  it('names a workspace no shell can take by a placeholder in each twin', async () => {
+    at({ workspace: 'R&D' });
+    await userEvent.click(section('Defaults'));
+    expect(screen.getByText(code('daoris driver line --workspace <workspace> <branch>|--clear'))).toBeInTheDocument();
+  });
+
   it('sets a default where none is: its line, how its work lands, its language and its reading', async () => {
     const { acts } = at();
     const user = userEvent.setup();

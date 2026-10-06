@@ -11274,3 +11274,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **HIST1 — design clearing finished history** (design; D153 reserved). Decide what a person may clear on this machine (closed quests with their asks, sessions and files; failed sessions), what stays, how a wired workspace's remote copy and the strike count (D58, D80) are respected, the doors (D50) and the refusals. Contract: D95, D126 §5, D132, D68. Proof: design document and D153; its build rows replace HIST1a–d.
 
 **Outcome** 2026-10-07: designed. *Clear* takes a closed quest's or an ask's work, a closed quest's failed sessions, or a workspace's finished history, listed then pressed; a remote's copy is forgotten here and never deleted, and the store's numbers never go back. It found two latent hazards in today's deletes (H1, an operation sequence that can go back; H2, a session revision that can) and four files D126's delete leaves behind; HIST1a closes the first two. Build rows HIST1a–h replaced the provisional ones. Detail: D153, the design's §0–§9; commit c28484a7.
+
+
+## ACCTEDIT1 — retain refused account edits (2026-10-07)
+
+> - [ ] **ACCTEDIT1 — retain refused account edits** (web-shell). Inline rename and workspace questions close before their asynchronous mutations finish, losing the draft on refusal. Locations: `src/Daoris.Web/src/agents/AgentPage.tsx:429` and `:439`. Close on success, retain entered names/selections on failure, and keep cancellation explicit. Proof: rejected bridge mutations preserve each draft and successful retry closes it.
+
+**Outcome** 2026-10-07: a refused Rename…, Use in a workspace… or add-flow answer stays open with its draft and shows the driver's sentence inside it (`role="alert"`, as the start form's refused-start line); it closes once the act lands, and *Never mind* is disabled while an answer is pending. The ⋯ menu's form-less "Add to X's list" still toasts. Web vitest 4129 → 4177 with ACCTQUOTE1. Installed look is ACCTEDIT1b. Detail: FIX-LOG 2026-10-07; commit 50a5b692.
+
+
+## ACCTQUOTE1 — account terminal hints preserve arguments (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1 — account terminal hints preserve arguments** (web-shell, cli). Valid names such as `R&D` appear unquoted in rename hints and change meaning when pasted into a shell. Contract: D125 ACCT2 and `src/Daoris.Web/src/agents/AddAccount.tsx:112`. Choose quoting for supported shells or explicit placeholders; prove metacharacter names and workspace arguments remain single arguments without tightening the naming contract.
+
+**Outcome** 2026-10-07: every CLI command and page twin built from an account or workspace value goes through one spelling (`shellword.ts`, `shellWord.ts`, one table `shell-words.json`): bare, double-quoted, or a placeholder where no spelling holds in cmd, PowerShell 5.1 (through `daoris.cmd`) and sh alike. The CLI test passes each row through the install's real launchers. The naming rule is unchanged. The driver's and Settings' sentences remain (ACCTQUOTE1b, c). CLI 1294 → 1302. Detail: D125's ACCTQUOTE1 note; commit 30461847.

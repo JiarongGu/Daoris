@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { list } from '../format';
+import { shellWord } from '../shellWord';
 import { Button, CheckField, Inline, Pill } from '../ui';
 import { type AccountState, type JoinChoice, stateWhen, stateWord } from './agents';
 
@@ -11,6 +12,18 @@ import { type AccountState, type JoinChoice, stateWhen, stateWord } from './agen
 
 const FIELD = 'min-w-0 max-w-full flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint';
 const PANEL = 'rounded-card border border-line bg-raised p-3';
+
+/**
+ * Why the question's act was refused, in the sentence the person reads (ACCTEDIT1): said under it, whole, where it was
+ * pressed, as a refused start is said in its form (UX5 U68). A toast is for an error with no form to stand in.
+ */
+function Refused({ sentence }: { sentence: string }) {
+  return (
+    <p role="alert" className="m-0 basis-full whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+      <Inline text={sentence} />
+    </p>
+  );
+}
 
 /** An account step 1 offers back: its id, its name, its state as last known and where it runs. */
 export type BackAccount = { id: string; name: string; state: AccountState; runs: string };
@@ -79,10 +92,12 @@ function choiceDetail(t: ReturnType<typeof useTranslation>['t'], choice: JoinCho
  * Step 3, and a row's *Use in a workspace…* (§4.5): the account's name, its email offered and the person's to change (ACCT2),
  * where a name is asked; then *Let it run work in:*, a box per list, each saying who it holds and, where ticking it moves
  * where a workspace's work starts, that it does; *Add to the lists* and the way out, with the terminal's twin under them.
- * An account placed in no list keeps *Use in a workspace…* on its row, so the question is never lost by *Not now*.
+ * An account placed in no list keeps *Use in a workspace…* on its row, so the question is never lost by *Not now*. It stays
+ * open until the organism says its answer landed: refused, it keeps the name and the boxes as they were and says why under
+ * them (ACCTEDIT1).
  */
 export function PlaceAccount({
-  agent, account, title, signedIn, offered, choices, busy = false, cancelLabel, onDone, onCancel,
+  agent, account, title, signedIn, offered, choices, busy = false, refusal = null, cancelLabel, onDone, onCancel,
 }: {
   /** The agent's id and the account's, which the terminal's twin names. */
   agent: string;
@@ -95,6 +110,8 @@ export function PlaceAccount({
   offered?: string;
   choices: readonly JoinChoice[];
   busy?: boolean;
+  /** Why the last answer was refused, said under the question until it is answered again or closed; null when none was. */
+  refusal?: string | null;
   /** The way out's word: *Not now* at a sign-in's end, *Never mind* on a row. */
   cancelLabel: string;
   /** The answer: the name in the field where one was asked (empty is none), and the lists ticked, null for this machine's. */
@@ -108,11 +125,16 @@ export function PlaceAccount({
   const asksName = offered !== undefined;
   const join = choices.map((choice) => choice.workspace).filter((workspace) => ticked.has(workspace));
   const joining = join.length > 0;
+  // Each argument spelled for whichever shell the twin is pasted into (ACCTQUOTE1).
+  const id = shellWord(account, '<account>');
   const commands = [
-    ...(asksName && name.trim() ? [`\`daoris agent profile rename ${agent} ${account} ${name.trim()}\``] : []),
+    ...(asksName && name.trim() ? [`\`daoris agent profile rename ${agent} ${id} ${shellWord(name.trim(), '<name>')}\``] : []),
     ...(choices.length > 0
-      ? [`\`daoris agent profile join ${agent} ${account} ${joining
-        ? [...join.filter((each): each is string => each !== null), ...(join.includes(null) ? ['--machine'] : [])].join(' ')
+      ? [`\`daoris agent profile join ${agent} ${id} ${joining
+        ? [
+          ...join.filter((each): each is string => each !== null).map((workspace) => shellWord(workspace, '<workspace>')),
+          ...(join.includes(null) ? ['--machine'] : []),
+        ].join(' ')
         : '<workspace>…|--machine'}\``]
       : []),
   ];
@@ -175,6 +197,7 @@ export function PlaceAccount({
             : <Button type="submit" variant="primary" disabled={busy}>{t('agents.rename.save')}</Button>}
           <Button variant="ghost" disabled={busy} onClick={() => onCancel(answer())}>{cancelLabel}</Button>
         </div>
+        {refusal && <Refused sentence={refusal} />}
         {commands.length > 0 && (
           <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
             <Inline text={t('agents.add.terminal', { commands: commands.join(' · ') })} />
@@ -187,21 +210,27 @@ export function PlaceAccount({
 
 /**
  * A rename, under its row (ACCT2's screen twin of `daoris agent profile rename`): the name in a field, *Save the name* and
- * *Never mind*. Emptying it gives the account no name of its own, and it reads as its id again.
+ * *Never mind*. Emptying it gives the account no name of its own, and it reads as its id again. It stays open until the
+ * organism says the name landed: refused, the name typed stays in the field and the refusal is said under it (ACCTEDIT1),
+ * and *Never mind* is the one other way out, held while the answer is on its way so a refusal is never said to nobody.
  */
-export function RenameAccount({ agent, account, current, busy = false, onSave, onCancel }: {
+export function RenameAccount({ agent, account, current, busy = false, refusal = null, onSave, onCancel }: {
   agent: string;
   account: string;
   /** Its name now, null where it has none. */
   current: string | null;
   busy?: boolean;
+  /** Why the last save was refused, said under the field until it is saved again or closed; null when none was. */
+  refusal?: string | null;
   /** The name to keep, or null for none. */
   onSave: (name: string | null) => void;
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(current ?? '');
-  const twin = `\`daoris agent profile rename ${agent} ${account} ${name.trim() || account}\``;
+  // Spelled for whichever shell the twin is pasted into (ACCTQUOTE1).
+  const twin = `\`daoris agent profile rename ${agent} ${shellWord(account, '<account>')} `
+    + `${shellWord(name.trim() || account, '<name>')}\``;
   return (
     <form
       aria-label={t('agents.rename.title', { account: current ?? account })}
@@ -224,7 +253,8 @@ export function RenameAccount({ agent, account, current, busy = false, onSave, o
         />
       </label>
       <Button type="submit" variant="primary" disabled={busy || name.trim() === (current ?? '')}>{t('agents.rename.save')}</Button>
-      <Button variant="ghost" onClick={onCancel}>{t('common.cancel')}</Button>
+      <Button variant="ghost" disabled={busy} onClick={onCancel}>{t('common.cancel')}</Button>
+      {refusal && <Refused sentence={refusal} />}
       <span className="basis-full text-meta text-ink-faint [overflow-wrap:anywhere]">
         <Inline text={t('agents.add.terminal', { commands: twin })} />
       </span>

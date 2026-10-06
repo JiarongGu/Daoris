@@ -4,6 +4,7 @@ import type { RuleListName } from '../settings/AgentRules';
 import { type Accepting, AcceptingNote, LandingField, type LandingRule } from '../settings/Landings';
 import { LanguageChoice, type LanguageOption } from '../settings/Languages';
 import { LineField } from '../settings/Lines';
+import { shellWord } from '../shellWord';
 import { Button, Icon, Inline, PathText, Prose, Segmented, SettingRow, Tip } from '../ui';
 import { RepositoryRules, type RuleLists } from './RepositoryRules';
 import { Inheritable, landingSays, SetupSection } from './SetupParts';
@@ -69,7 +70,8 @@ const plain = (text: string) => text.replace(/`/g, '');
  * @remarks
  * **What Daoris decides folds; what the person decides shows** (§1 rule 4): a value the workspace does not set reads as
  * Daoris's default, marked, and offers *Set for this workspace*; one it sets carries *Clear*, and opens its section. Each
- * row's hint is its terminal twin (D41 §4, D50), the same file either door edits, so a refusal is the driver's sentence.
+ * row's hint is its terminal twin (D41 §4, D50), the same file either door edits, so a refusal is the driver's sentence;
+ * the workspace in it is spelled for whichever shell it is pasted into (`shellWord`, ACCTQUOTE1).
  * **A key goes in and never comes out**: the remote shows the audit prefix the wiring answered, and the form lets the key
  * go once it has landed.
  *
@@ -121,7 +123,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
             <Inheritable
               setHere={t('projects.workspace.setHere')}
               label={t('projects.line')}
-              twin={t('projects.workspace.twin.line', { workspace })}
+              twin={t('projects.workspace.twin.line', { workspace: shellWord(workspace, '<workspace>') })}
               why={plain(t('settings.lines.body'))}
               says={line.set
                 ? t('settings.lines.from.workspace', { branch: line.set, workspace })
@@ -146,7 +148,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
             <Inheritable
               setHere={t('projects.workspace.setHere')}
               label={t('projects.language.label')}
-              twin={t('projects.workspace.twin.language', { workspace })}
+              twin={t('projects.workspace.twin.language', { workspace: shellWord(workspace, '<workspace>') })}
               why={plain(t('settings.sessionLanguage.body'))}
               says={language.set
                 ? t('projects.workspace.says.language', {
@@ -170,7 +172,7 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
             <Inheritable
               setHere={t('projects.workspace.setHere')}
               label={t('projects.workspace.read')}
-              twin={t('projects.workspace.twin.read', { workspace })}
+              twin={t('projects.workspace.twin.read', { workspace: shellWord(workspace, '<workspace>') })}
               why={plain(t('settings.across.body'))}
               says={[
                 (read.set ?? true) ? t('settings.across.readBy', { workspace }) : t('settings.across.readByNone'),
@@ -206,7 +208,10 @@ export function WorkspaceSetup({ workspace, defaults, remote, busy = false, open
             <Wiring workspace={workspace} wiring={remote.wiring} busy={busy} startOpen={startWiring} />
           )}
           {remote.rules && (
-            <SettingRow label={t('projects.setup.rules')} hint={t('projects.workspace.twin.rules', { workspace })}>
+            <SettingRow
+              label={t('projects.setup.rules')}
+              hint={t('projects.workspace.twin.rules', { workspace: shellWord(workspace, '<workspace>') })}
+            >
               <RepositoryRules
                 rules={remote.rules.lists}
                 busy={busy}
@@ -258,7 +263,7 @@ function LandingDefault({ workspace, landing, busy }: {
     <Inheritable
       setHere={t('projects.workspace.setHere')}
       label={t('projects.setup.landing')}
-      twin={t('projects.workspace.twin.landing', { workspace })}
+      twin={t('projects.workspace.twin.landing', { workspace: shellWord(workspace, '<workspace>') })}
       why={plain(t('settings.landing.body'))}
       says={says}
       own={set !== undefined}
@@ -312,7 +317,7 @@ function Wiring({ workspace, wiring, busy, startOpen }: {
   return (
     <SettingRow
       label={t('projects.workspace.remote')}
-      hint={t('projects.workspace.twin.remote', { workspace })}
+      hint={t('projects.workspace.twin.remote', { workspace: shellWord(workspace, '<workspace>') })}
       why={plain(t('settings.wiring.body'))}
       control={control || undefined}
     >

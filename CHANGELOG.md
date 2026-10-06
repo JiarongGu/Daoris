@@ -18,6 +18,9 @@ with the version and date at release.
   start walks past it. A conversation's agent is told which session it is, so a quest it takes is
   marked on its record.
 - Downloading a managed tool waits briefly when Windows holds the folder just unpacked, at both doors.
+- A refused account rename, workspace choice or add-flow answer stays open with what was entered and
+  says why inside it. Terminal hints spell account and workspace names so they paste as one argument in
+  Command Prompt, PowerShell and POSIX shells, or name the argument where no spelling would.
 
 The first version: doctrine that installs, is checked, and flows back.
 
