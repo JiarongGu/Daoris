@@ -14,13 +14,18 @@ const LIST_WIDE: ListBounds = { min: 264, max: 420, initial: 280 };
  *
  * The monitor window's rail is a list of its own (D118 §4, FRAME1h): the session list, live, so its bounds
  * are Sessions', and what it remembers is the monitor's rather than the main window's.
+ *
+ * Knowledge's pane is one (UX6i, D150 §2.2): its bounds, its closing and its width are the place's. Search and Convergence
+ * are its two modes, each still a list's memory, its chosen item and its filters under the keys it had as a place, and
+ * their bounds are Knowledge's, since that is the pane they are drawn on.
  */
 export const LIST_BOUNDS = {
   sessions: LIST_WIDE,
   quests: LIST_WIDE,
   projects: LIST_WIDE,
-  convergence: LIST_WIDE,
+  knowledge: LIST_WIDE,
   search: LIST_WIDE,
+  convergence: LIST_WIDE,
   agents: LIST_WIDE,
   plugins: LIST_WIDE,
   settings: { min: 176, max: 320, initial: 176 },

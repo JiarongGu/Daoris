@@ -25,10 +25,12 @@ describe('the places a go may name', () => {
    * views in this table and the driver's `HelpPlaces` together, since the twins change together (D119 §5).
    * Settings → Tools (TOOLS7) is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together (D121 §4.3).
    * Workspace and Permissions left Settings with UX6g, and a go still names them until the twins move them together: the
-   * door opens their new homes.
+   * door opens their new homes. Search and Convergence became Knowledge's two modes with UX6i, and a go still names each
+   * until the twins move them together: the door opens Knowledge in that mode.
    */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
-    expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view).filter((view) => view !== 'plugins').sort());
+    const bar = VIEWS.map(({ view }) => view as string).filter((view) => view !== 'plugins' && view !== 'knowledge');
+    expect([...PLACE_VIEWS].sort()).toEqual([...bar, 'search', 'convergence'].sort());
     const moved = new Set(['workspace', 'permissions']);
     expect([...PLACE_DOMAINS].filter((domain) => !moved.has(domain)).sort())
       .toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
@@ -60,6 +62,17 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'sweep' })).toEqual({ view: 'projects', workspaceTab: 'branches' });
     expect(placeDoor({ view: 'settings', domain: 'permissions' })).toEqual({ view: 'agents', agentPart: 'rules' });
     expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'across' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
+  });
+
+  /**
+   * UX6i (D150 §2.2): Search and Convergence are Knowledge's two modes, and a go naming either, including one kept in an
+   * earlier conversation, opens Knowledge in that mode rather than nowhere. Neither has parts.
+   */
+  it("open Search or Convergence as Knowledge's mode", () => {
+    expect(placeDoor({ view: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
+    expect(placeDoor({ view: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
+    expect(placeDoor({ view: 'convergence', part: 'findings' })).toBeNull();
+    expect(placeDoor({ view: 'search', domain: 'ai' })).toBeNull();
   });
 
   it('refuse a place the window does not have, rather than guess at one', () => {

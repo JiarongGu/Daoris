@@ -701,4 +701,19 @@ describe('the segmented choice', () => {
     fireEvent.keyDown(screen.getByRole('radiogroup'), { key: 'ArrowLeft' });
     expect(chosen).toEqual(['light', 'dark']);
   });
+
+  /** UX6i: a list's head spreads its choice over the row, each option an equal share (Knowledge's Search · Convergence). */
+  it('fills its row where asked, each option an equal share, and sits at its own width otherwise', () => {
+    render(
+      <Segmented
+        label="mode" value="a" onChange={() => {}} fill
+        options={[{ value: 'a', label: 'Search' }, { value: 'b', label: 'Convergence' }]}
+      />,
+    );
+    expect(screen.getByRole('radiogroup', { name: 'mode' })).toHaveClass('flex', 'w-full');
+    for (const option of screen.getAllByRole('radio')) expect(option).toHaveClass('flex-1', 'justify-center');
+    render(<Theme onChange={() => {}} />);
+    expect(screen.getByRole('radiogroup', { name: 'theme' })).toHaveClass('inline-flex');
+    expect(screen.getByRole('radio', { name: 'Dark' })).not.toHaveClass('flex-1');
+  });
 });

@@ -26,7 +26,7 @@
       "case": "sentence",
       "keys": [
         "menu.edit", "menu.fold", "menu.go", "menu.help", "menu.run", "menu.terminal", "menu.view", "menu.workspace",
-        "nav.agents", "nav.convergence", "nav.map", "nav.overview",
+        "nav.agents", "nav.convergence", "nav.knowledge", "nav.map", "nav.overview",
         "nav.plugins", "nav.projects", "nav.quests", "nav.search", "nav.sessions", "nav.settings", "settings.domain.*"
       ]
     },
