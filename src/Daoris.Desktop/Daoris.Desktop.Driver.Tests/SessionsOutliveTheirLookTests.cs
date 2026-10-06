@@ -530,6 +530,47 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         Assert.Equal(report.Concluded, said.SelectMany(each => each.Concluded));
     }
 
+    // ——— DEV3b (D115's DEV3a note): a run whose own look meets the client's timeout fails, and the headless host says so and
+    // exits 2; only the person's own close is a close, *driver: stopped.*, exit 0. The host hands what ended the run to
+    // `DriverCommand.Cancelled` and prints what it answers, so these are the host's ending, held over the real throw.
+
+    /// <summary>🔴 A look whose own request the service never answers ends the run as a failure that names the timeout.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_run_whose_own_look_times_out_ends_the_host_naming_the_timeout_exit_2(bool once)
+    {
+        _ledger.Publish("q1", "engine");
+        _ledger.QuestsHang = true;
+        var (driver, _) = Driver(Config(), timeout: TimeSpan.FromMilliseconds(200));
+        using var closing = new CancellationTokenSource();
+
+        var failed = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            (once ? (Task)driver.RunOnceAsync(closing.Token) : driver.RunUntilIdleAsync(closing.Token)).WaitAsync(Bound));
+        var ended = DriverCommand.Cancelled(failed, closing.IsCancellationRequested);
+
+        Assert.Equal(2, ended.Exit);
+        Assert.True(ended.Failed);
+        Assert.StartsWith("driver: the service did not answer in time — ", ended.Said, StringComparison.Ordinal);
+        Assert.Contains("Timeout", ended.Said, StringComparison.Ordinal);
+    }
+
+    /// <summary>The person's close while a look waits on the service is still the close: <i>driver: stopped.</i>, exit 0.</summary>
+    [Fact]
+    public async Task A_close_while_a_look_waits_on_the_service_is_still_the_close_exit_0()
+    {
+        _ledger.QuestsHang = true;
+        var (driver, _) = Driver(Config());
+        using var closing = new CancellationTokenSource();
+        var run = driver.RunOnceAsync(closing.Token);
+        await Poll.Until(() => _ledger.QuestsAsked >= 1, within: Bound);
+
+        await closing.CancelAsync();
+        var closed = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run.WaitAsync(Bound));
+
+        Assert.Equal(new LoopEnded(0, "driver: stopped.", Failed: false), DriverCommand.Cancelled(closed, closing.IsCancellationRequested));
+    }
+
     private string State(string session) => _ledger.Session(session)["state"]!.GetValue<string>();
 
     /// <summary>A look's or a watch's end, waited for within the bound, whatever it ended on.</summary>

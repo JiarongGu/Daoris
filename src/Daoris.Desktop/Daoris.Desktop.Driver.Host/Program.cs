@@ -201,6 +201,10 @@ if (args is ["git", .. var gitArgs])
 using var log = MachineLog.Open("driver");
 log.WatchUnhandled();
 
+// The loop's close (REV3), cancelled only by the person's Ctrl+C, which is registered below once a loop is asked for. Made
+// here, outside the one catch, so that catch can tell that close from any other cancellation (DEV3b).
+using var closing = new CancellationTokenSource();
+
 // Every door inside the one catch, so a missing home or service is exit 2 and a sentence, never a
 // stack trace (REV3: `trees` with no home was an unhandled exception).
 try
@@ -345,7 +349,6 @@ try
     // 🔴 Ctrl+C ends the loop, not the process (REV3): killed outright, this host left every session
     // it ran working in its record and its agent running on. Cancelled, each session is ended and says
     // so, as the desktop's close does. Registered here, after the subcommands: `chat` has its own.
-    using var closing = new CancellationTokenSource();
     Console.CancelKeyPress += (_, press) =>
     {
         press.Cancel = true;
@@ -471,12 +474,16 @@ try
     log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
     return 0;
 }
-catch (OperationCanceledException)
+catch (OperationCanceledException cancelled)
 {
-    // Ctrl+C during --once or --until-idle: the tick ended its sessions before it let go.
-    Console.WriteLine("driver: stopped.");
-    log.Info("app.stopped");
-    return 0;
+    // Ctrl+C during --once or --until-idle is the close: the tick ended its sessions before it let go. Any other cancellation,
+    // a look's own request meeting the client's timeout among them, is a failure that says so, exit 2 (DEV3b): it used to
+    // print the close's line and exit 0.
+    var ending = DriverCommand.Cancelled(cancelled, closing.IsCancellationRequested);
+    (ending.Failed ? Console.Error : Console.Out).WriteLine(ending.Said);
+    if (ending.Failed) log.Failed("the headless driver, waiting on the service", cancelled);
+    else log.Info("app.stopped");
+    return ending.Exit;
 }
 catch (DriverException error)
 {

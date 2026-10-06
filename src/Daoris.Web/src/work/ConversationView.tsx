@@ -3,9 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { compact, moment, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Tip } from '../ui';
+import type { NotePart } from '../api';
 import { type Ask, type Block, CONVERSATION_CODES, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import { HandedAccount } from './HandedAccount';
 import { Markdown } from './Markdown';
+import { Note } from './Note';
+import { noteText } from './noteLines';
 import { type NewSessionAnswer, newSessionSaid, reasonOf, type ReasonValues } from './say';
 import { ToolCard } from './ToolCard';
 
@@ -471,7 +474,8 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
       // A note about the person's words (MSG1f): where they went, or why they cannot go on here.
       if (block.to) return <WentLine block={block} />;
       if (block.why) return <CannotLine block={block} />;
-      return <NoteLine text={block.text ?? ''} />;
+      // A note worded by its parts (CONVNOTE1), or the driver's English where it has none.
+      return <NoteLine text={block.text ?? ''} parts={block.parts} />;
     case 'held':
       return <HeldAsk block={block} />;
     default:
@@ -594,16 +598,21 @@ const LONG_NOTE = 240;
  * The driver's own sentence about the session — a refusal, a missing connector. A long one shows two
  * lines and the rest on a press (SESS1 S6): records written before the refusal named its call carry the
  * request's JSON, four lines each, and nothing reads that JSON to shorten it.
+ *
+ * A note with parts (CONVNOTE1: a refused sign-in since SIGNIN1b, a landing's line since LAND2b) is worded from them as a
+ * session record's note is (`Note`, LANG1b): each coded line in the reader's language, and a line the page cannot word as
+ * its record keeps it, marked. Its English is shown only where it has none.
  */
-function NoteLine({ text }: { text: string }) {
-  const { t } = useTranslation();
-  const long = text.length > LONG_NOTE;
+function NoteLine({ text, parts }: { text: string; parts?: readonly NotePart[] }) {
+  const { t, i18n } = useTranslation();
+  const worded = parts?.length ? noteText(t, { note: text, parts }, i18n.language) : text;
+  const long = worded.length > LONG_NOTE;
   const [open, setOpen] = useState(!long);
   return (
     <div className="text-small text-ink-soft">
       <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
         <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
-        {text}
+        {parts?.length ? <Note note={text} parts={parts} compact /> : text}
       </p>
       {long && (
         <button

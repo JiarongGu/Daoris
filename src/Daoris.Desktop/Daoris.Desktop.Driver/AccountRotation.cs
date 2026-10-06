@@ -623,10 +623,12 @@ public static class RotationWords
     /// <summary>
     /// The sign-in for each account not signed in, after <paramref name="lead"/>, both doors named (D50): the terminal's for
     /// each account, and the screen's, the agent's page in the Agents place since UX6e (UX6e2, D150 §5.2). Empty where none is.
+    /// Each id is spelled for any shell (ACCTQUOTE1b).
     /// </summary>
     private static string SignIn(string agent, IReadOnlyList<string> accounts, string lead) => accounts.Count == 0
         ? ""
-        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --profile {account}`"))}, or Agents → the agent's page → Accounts.";
+        : $" {lead}: {string.Join(", ", accounts.Select(account => $"`daoris agent login {agent} --profile {ShellWord.Of(account, ShellWord.Account)}`"))}, "
+          + "or Agents → the agent's page → Accounts.";
 
     /// <summary>
     /// A conversation the person started on an account they picked, which is cooling (§3.3): refused, since the person
@@ -814,14 +816,17 @@ public static class RotationWords
     /// </summary>
     /// <param name="listed">The accounts the scope may use: its list, or its one account where it names no list.</param>
     /// <param name="outside">The agent's other accounts, neither cooling nor refused, in name order.</param>
-    /// <param name="names">The owner's names by id, read as the wait is said (ACCT2b): the door keeps the ids.</param>
+    /// <param name="names">
+    /// The owner's names by id, read as the wait is said (ACCT2b): the door keeps the ids, each spelled for any shell, as its
+    /// workspace is (ACCTQUOTE1b).
+    /// </param>
     public static string Outside(
         string agent, string? workspace, IReadOnlyList<string> listed, IReadOnlyList<string> outside,
         IReadOnlyDictionary<string, string>? names = null)
     {
         var who = workspace is { } name ? $"`{name}`" : "this machine's starts";
-        var door = $"daoris agent profile order {agent} {string.Join(' ', [.. listed, outside[0]])}"
-                   + (workspace is { } scoped ? $" --workspace {scoped}" : "");
+        var door = $"daoris agent profile order {agent} {ShellWord.Words([.. listed, outside[0]], ShellWord.Account)}"
+                   + (workspace is { } scoped ? $" --workspace {ShellWord.Of(scoped, ShellWord.Workspace)}" : "");
         return $"Not cooling, and not among the accounts {who} may use: {string.Join(", ", outside.Select(account => $"`{AccountNames.Said(names, account)}`"))} — "
                + $"Daoris starts nothing on them unless a list names them; `{door}` adds `{AccountNames.Said(names, outside[0])}`.";
     }

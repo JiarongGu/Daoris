@@ -157,6 +157,53 @@ describe('the bar from the keyboard (the design §3.3)', () => {
   });
 });
 
+/**
+ * UX7a2 (D152's UX7a note, the design §3.3): the seven names need about 590 CSS px of strip beside the command center's glyph
+ * and the window's buttons, so below that they fold into one menu, and the keys reach it as they reach the bar.
+ */
+describe('a narrow window\'s menu bar', () => {
+  const atWidth = (width: number) => act(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+    window.dispatchEvent(new Event('resize'));
+  });
+  afterEach(() => atWidth(1024));
+
+  it('folds the seven menus into one at 560 px, and unfolds them at 680', async () => {
+    atWidth(560);
+    start();
+    const bar = await screen.findByRole('navigation', { name: 'Menu bar' });
+    await waitFor(() => expect(within(bar).getAllByRole('button').map((button) => button.getAttribute('aria-label')))
+      .toEqual(['Menu']));
+
+    atWidth(680);
+    expect(within(await menuBar()).getAllByRole('button').map((button) => button.textContent)).toEqual(
+      ['Workspace', 'Edit', 'View', 'Go', 'Run', 'Terminal', 'Help']);
+  });
+
+  it('opens the menu Alt names inside the fold, and puts the focus on the fold for Alt alone and F10', async () => {
+    atWidth(560);
+    start();
+    // The driver answers after the first render: the strip is the desktop's once its browser door is there.
+    await screen.findByRole('button', { name: "Open Daoris's browser" });
+    const fold = within(screen.getByRole('navigation', { name: 'Menu bar' })).getByRole('button', { name: 'Menu' });
+
+    fireEvent.keyDown(window, { key: 'Alt', code: 'AltLeft', altKey: true });
+    fireEvent.keyUp(window, { key: 'Alt', code: 'AltLeft' });
+    expect(fold).toHaveFocus();
+    act(() => { fold.blur(); });
+    fireEvent.keyDown(window, { key: 'F10', code: 'F10' });
+    expect(fold).toHaveFocus();
+    act(() => { fold.blur(); });
+
+    within(places()).getByRole('button', { name: /^Overview/ }).focus();
+    fireEvent.keyDown(window, { key: 'r', code: 'KeyR', altKey: true });
+    const run = await screen.findByRole('menuitem', { name: 'Run' });
+    expect(run).toHaveAttribute('aria-expanded', 'true');
+    expect(await screen.findByRole('menuitem', { name: /^Start a session/ })).toHaveTextContent('Ctrl+Shift+N');
+    expect(screen.getByRole('menuitem', { name: 'Terminal' })).toBeInTheDocument();
+  });
+});
+
 describe('the keys (D152 §3.4)', () => {
   it('opens Settings on Ctrl+, and the palette on Ctrl+Shift+P, grouped by menu', async () => {
     start();

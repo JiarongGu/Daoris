@@ -12,7 +12,8 @@ import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp,
   ClipboardPaste, Cloud, CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info,
-  Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
+  Keyboard, KeyRound, Languages, LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Menu as MenuGlyph, Minimize2,
+  Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Pause, Play, Plug, Plus, Redo2, Reply,
   RotateCw, Scissors, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, TextSelect, Trash2, TriangleAlert,
   Undo2, Wrench, X,
@@ -135,6 +136,8 @@ const ICONS = {
   selectAll: TextSelect,
   // Help › Keyboard shortcuts (UX7a): the list of every key the window answers.
   keyboard: Keyboard,
+  // The menu bar folded into one on a narrow window (UX7a2): VS Code's own glyph for the same menu.
+  menu: MenuGlyph,
 } as const;
 
 export type IconName = keyof typeof ICONS;

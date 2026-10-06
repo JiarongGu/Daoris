@@ -306,6 +306,44 @@ public sealed class DriverCommandTests
         Assert.Contains("new LandingPlugins(home, say: (id, line) => Console.WriteLine($\"  plugin:{id}  {line}\"), log: log)", console);
     }
 
+    // ——— DEV3b (D115's DEV3a note): a loop the host runs ends on a cancellation two ways, and only the person's close is a close.
+
+    /// <summary>
+    /// 🔴 The host read every cancellation as Ctrl+C, so a look whose own request met the client's timeout printed
+    /// <i>driver: stopped.</i> and exited 0. A close is the person's: the timeout is a failure that names itself, exit 2, and a
+    /// cancellation nothing asked for is one too.
+    /// </summary>
+    [Fact]
+    public void A_cancellation_is_a_close_only_where_the_person_closed_the_run()
+    {
+        var timeout = new TaskCanceledException(
+            "The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.", new TimeoutException());
+        var other = new OperationCanceledException("The operation was canceled.");
+
+        Assert.Equal(new LoopEnded(0, "driver: stopped.", Failed: false), DriverCommand.Cancelled(timeout, closed: true));
+        Assert.Equal(new LoopEnded(0, "driver: stopped.", Failed: false), DriverCommand.Cancelled(other, closed: true));
+        Assert.Equal(
+            new LoopEnded(2, "driver: the service did not answer in time — The request was canceled due to the configured "
+                + "HttpClient.Timeout of 100 seconds elapsing.", Failed: true),
+            DriverCommand.Cancelled(timeout, closed: false));
+        Assert.Equal(
+            new LoopEnded(2, "driver: a request was cancelled though nothing closed the run — The operation was canceled.", Failed: true),
+            DriverCommand.Cancelled(other, closed: false));
+    }
+
+    /// <summary>The host hands every cancellation to that reading, with whether its own close was asked for, and prints its answer.</summary>
+    [Fact]
+    public void The_host_reads_a_cancellation_by_whether_its_close_was_asked_for()
+    {
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+
+        Assert.Contains("catch (OperationCanceledException cancelled)", program);
+        Assert.Contains("DriverCommand.Cancelled(cancelled, closing.IsCancellationRequested)", program);
+        Assert.Contains("(ending.Failed ? Console.Error : Console.Out).WriteLine(ending.Said);", program);
+        Assert.Contains("return ending.Exit;", program);
+        Assert.DoesNotContain("Console.WriteLine(\"driver: stopped.\");", program);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

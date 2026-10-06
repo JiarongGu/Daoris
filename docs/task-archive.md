@@ -11323,3 +11323,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTQUOTE1c — Settings' twins spell their arguments** (web-settings). `settings/AccountUse.tsx:132/186/412` and `settings/AccountSettings.tsx:142` print `--workspace`/`--account` values bare. Contract: D125's ACCTQUOTE1 note. Proof: vitest with a spaced and an `R&D` workspace and account.
 
 **Outcome** 2026-10-07: Settings' account-use hints and the account settings form spell their workspace and account through `shellWord` (quoted, or `<workspace>`/`<account>`); prose naming a workspace stays as named. No other Settings command takes an account or workspace. Web vitest 4177 → 4185. Detail: D125's ACCTQUOTE1c note; commit 80f100a9.
+
+
+## AGENTREAD1 — persist terminal account readings (2026-10-07, D125)
+
+> - [ ] **AGENTREAD1 — persist terminal account readings** (cli). Make `daoris agent list` inform the screen and loop. Contract: D50, D150 §5.3, D125 ROSTER1, `reads.json` twin. Proof: both twins read the same table.
+
+**Outcome** 2026-10-07: built (CLI half). `daoris agent list`, a terminal sign-in's end and `profile remove` keep or forget account readings in the home's `reads.json` as the driver's `AccountReads` does (`accountreads.ts`, its new twin); only a status actually asked is kept, so a door or a held probe lock keeps nothing. A sign-in to a named account now always reads its status at the end (ROSTER1's rule; one more status call). Both twins share one table, `src/Daoris.Cli/test/fixtures/account-reads.json`; the driver's test of it is AGENTREAD1b. CLI 1304 → 1313. Detail: D125's AGENTREAD1 note; commits da489af7…aa2b6f9f.
+
+
+## UX7a2 — compact menu follow-through (2026-10-07, D152)
+
+> - [ ] **UX7a2 — compact menu follow-through** (web-shell). Fold seven menus below about 590 CSS px, retaining keyboard access and focus return. The Update anchor is fixed and regression-tested during INTEGRATE1. Contract: D152's UX7a note, UX7 design §3. Proof: 560 px story and keyboard tests.
+
+**Outcome** 2026-10-07: below a 624 px window (39rem; 590 was measured on stories without the strip's browser door) the seven menus fold into one ☰ whose rows are the menus, each opening its own rows to the side. Alt/F10 focus it, Alt+letter opens it at that menu, the arrows move and open, Escape closes onto it and returns the focus, and held Alt shows the letters. `MenuRows` is shared by the bar and the fold. platform-ux §2 names the fold as the one exception to "nothing hides behind a hamburger". Installed look is UX7e's. Detail: D152's UX7a2 note; commit c091e9e7.
+
+
+## CONVNOTE1 — conversation notes read their parts (2026-10-07)
+
+> - [ ] **CONVNOTE1 — conversation notes read their parts** (web-shell). A driver note on a conversation (a refused sign-in since SIGNIN1b, a chat's cooling) carries `parts`, but `src/Daoris.Web/src/work/conversation.ts:451-475` keeps only `text` and `code`, so 中文 shows the driver's English. Contract: LANG1a/LAND2b note parts, D125's SIGNIN1b note. Proof: vitest rendering `account.signed-out` from both catalogues.
+
+**Outcome** 2026-10-07: a conversation's driver note with parts is worded through the catalogues as session record notes are (`Note`, `noteText`), so `account.signed-out` reads in 中文; an unknown code shows its English marked as recorded. A chat's cooling note still has no parts (CONVNOTE1b). Web vitest 4177 → 4205 with UX7a2 and main. Detail: commit 81e07cb2.
+
+
+## ACCTQUOTE1b — the driver's commands spell their arguments (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1b — the driver's commands spell their arguments** (driver). The driver's sentences print account and workspace names bare (`Harnesses.Accounts.cs` `JoinProblem.Sentence`, `AccountRotation.cs:629/:823`, `Driver.cs:1451`, `Harnesses.cs:2521`, `HelpAgentProposals.cs:158/185/236`), so they break when pasted, and `JoinProblem.Sentence` now differs from the CLI's `joinRefusal`. Contract: D125's ACCTQUOTE1 note, `shell-words.json`. Proof: a C# twin reading the same table; twinned sentence tests.
+
+**Outcome** 2026-10-07: every command the driver prints from an account id or a workspace name goes through `ShellWord`, the twin of `shellword.ts` held to `shell-words.json` (read by code point, as the JS `u` regexes): rotation and sign-in sentences, the signed-out holds, `ClaudeTrust`'s `--profile`, Ask Daoris's terminal lines and the workspace plan's commands; `JoinProblem.Sentence` matches `joinRefusal` again. The lane table sends the fixture to the driver and web gates (separate commit). Repository names, agent ids and free text stay unspelled. Driver fast half +32. Detail: D125's ACCTQUOTE1b note, twins.md, FIX-LOG; commit b885c8df.
+
+
+## DEV3b — a client timeout is not a close (2026-10-07, D115)
+
+> - [ ] **DEV3b — a client timeout is not a close** (driver). The headless host reads any `OperationCanceledException` as Ctrl+C, so a look whose own request times out prints *driver: stopped.* and exits 0. Contract: D115's DEV3a note. Proof: a host test that a timeout exits 2, naming it.
+
+**Outcome** 2026-10-07: the headless host's close is only the person's Ctrl+C ("driver: stopped.", exit 0); a client timeout is "driver: the service did not answer in time — …" on stderr, exit 2, and any other cancellation is a failure (`DriverCommand.Cancelled`). Other `daoris-driver` verbs meeting a client timeout now exit 2 too. Driver fast half +5. Detail: D115's DEV3b note, FIX-LOG; commit 800812d7.

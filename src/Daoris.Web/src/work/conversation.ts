@@ -11,6 +11,8 @@
  * read the same as an absence.
  */
 
+import type { NotePart } from '../api';
+
 /**
  * The codes a driver's note in a conversation carries, each the key the page words it by (MSG1c3, D142 point 1): the
  * driver's `SessionEventCodes`, a twin held code for code by `conversation.test.ts`, which parses the driver's declarations.
@@ -73,6 +75,12 @@ export type SessionEvent = {
    * English, which stands for a code this page does not know.
    */
   code?: string | null;
+  /**
+   * For a driver's note whose lines are worded by code (LAND2b, LANG1a; SIGNIN1b's refused sign-in): its parts, as a session
+   * record's note carries them, which the page words in the reader's language (CONVNOTE1). `text` beside them is the
+   * driver's whole English, for the console and a page that does not read parts.
+   */
+  parts?: NotePart[] | null;
   /** For `user`: the names of the files the person attached (CONV4c). */
   files?: string[] | null;
   title?: string | null;
@@ -201,6 +209,8 @@ export type Block = {
   words?: string[];
   /** For a `note` the page words itself (MSG1c3): its code, a key of `CONVERSATION_CODES`. */
   code?: string | null;
+  /** For a `note` worded by its parts (CONVNOTE1): each line's code and values, or someone's words, as its record keeps them. */
+  parts?: NotePart[];
   /**
    * For a `note` about the person's words (MSG1f): what they said, in the order said, where the page holds every word
    * the note names — what *Start a conversation with these words* starts with. Absent where it holds only some.
@@ -471,7 +481,7 @@ export function toTurns(
           key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}),
           ...(event.to ? { to: event.to } : {}), ...(event.why ? { why: event.why } : {}),
           ...(named.length > 0 ? { words: named } : {}), ...(said ? { said } : {}),
-          ...(event.code ? { code: event.code } : {}),
+          ...(event.code ? { code: event.code } : {}), ...(event.parts?.length ? { parts: event.parts } : {}),
         };
         if (said) for (const id of named) handing.set(id, note);
         here(key).items.push(note);

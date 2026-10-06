@@ -325,6 +325,9 @@ test('a plugin whose folder a running process holds is not updated, and stays wh
   const installed = join(pluginsRoot(home), 'acme.gate');
   const { spawn } = await import('node:child_process');
   const holder = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 20000)'], { cwd: installed, stdio: 'ignore' });
+  // The folder is let go when the holder has ended, not a fixed while after the kill: under load that while was too
+  // short and the cleanup met EPERM (FLAKE1, 2026-10-07).
+  const ended = new Promise((resolve) => holder.once('exit', resolve));
   try {
     await new Promise((resolve) => setTimeout(resolve, 300));
     assert.match(refused(['update', 'acme.gate', '--yes'], home).message, /was not updated/);
@@ -332,7 +335,7 @@ test('a plugin whose folder a running process holds is not updated, and stays wh
     assert.deepEqual(readdirSync(pluginsRoot(home)), ['acme.gate']);
   } finally {
     holder.kill();
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await ended;
     fx.cleanup();
   }
 });

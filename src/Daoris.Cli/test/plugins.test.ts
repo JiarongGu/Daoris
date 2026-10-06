@@ -417,6 +417,8 @@ test('a plugin whose folder a running process holds is refused whole, never half
   const folder = join(pluginsRoot(fx.root), 'acme.held');
   const { spawn } = await import('node:child_process');
   const holder = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 20000)'], { cwd: folder, stdio: 'ignore' });
+  // The folder is let go when the holder has ended, not a fixed while after the kill (FLAKE1, 2026-10-07).
+  const ended = new Promise((resolve) => holder.once('exit', resolve));
   try {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const error = captureError(() => run(['remove', 'acme.held'], fx.root));
@@ -424,7 +426,7 @@ test('a plugin whose folder a running process holds is refused whole, never half
     assert.equal(existsSync(join(folder, 'plugin.json')), true, 'the removal took the manifest and stranded the plugin');
   } finally {
     holder.kill();
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await ended;
     fx.cleanup();
   }
 });

@@ -5,6 +5,20 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — the driver's commands and a timeout read as a close
+
+### Driver: a command the driver named broke when pasted, and its join refusal left the CLI's (ACCTQUOTE1b)
+- **Symptom:** read from the code, not seen on an install: the driver's holds, refusals and Ask Daoris's terminal twins printed an account's id or a workspace's name bare, so `--workspace my team` handed two words and `--profile R&D` ran `D` in Command Prompt; `JoinProblem.Sentence` differed from the CLI's `joinRefusal` for a workspace that needs quotes.
+- **Root cause:** ACCTQUOTE1 spelled the CLI's hints and the page's twins only; every driver producer still interpolated the value as it was.
+- **Fix:** `ShellWord`, the driver's twin of `shellword.ts`, reading the same table; every producer goes through it. D125's ACCTQUOTE1b note lists them.
+- **Verify:** `ShellWordTests` holds every row of `shell-words.json`; `AccountJoinTwinTests` holds the join refusal to the CLI's words for a spaced and an `R&D` workspace; each producer's case failed first. Commit `b885c8df`. Not run: the shells themselves, which the CLI's suite holds the table against.
+
+### Driver host: a look that timed out printed *driver: stopped.* and exited 0 (DEV3b)
+- **Symptom:** read from the code and DEV3a's note: a `--once` or `--until-idle` run whose own request met the client's timeout ended as a person's close, so a stalled service read as a clean run.
+- **Root cause:** the host's one catch took every `OperationCanceledException` for Ctrl+C, and its close token lived inside the try, so the catch could not ask whether the close was asked for.
+- **Fix:** the close is made before the try, and `DriverCommand.Cancelled` reads a cancellation by it: the close is still exit 0; the client's timeout is a failure naming it, exit 2.
+- **Verify:** `SessionsOutliveTheirLookTests`' DEV3b cases over a quest list that never answers, for both runs and a close; `DriverCommandTests` on the reading and the host's catch. Not run: the host as a process. Note under D115.
+
 ## 2026-10-07 — a single run left before what it caused had landed
 
 ### Driver: `--once` could end with its session working and its stop unsaid (DEV3a)
@@ -94,6 +108,12 @@ FLAKE1 row keeps what to do and its proof; this entry keeps the evidence the cau
 `plugins.test.ts`, `setup-kit.test.ts:522`, three sightings that day) is a child still letting go of the folder; the
 shared fixture's cleanup (`test/_fixture.ts`) now retries, as the rehearsals' cleans do. Twelve test files still delete
 their own folders once; a sighting from one of them is the same kind.
+
+*A second kind found and fixed (2026-10-07):* `plugin-sources.test.ts:317` and `plugins.test.ts:409` still met EPERM in
+that retrying cleanup, three sightings under parallel load (a subagent's verify twice, UX7a2's merge gate once). Each test
+starts a holder process in the plugin's folder, kills it, then waited a fixed 300 ms: a kill only asks, and under load
+the holder had not ended within the wait plus the cleanup's five seconds of retries. Each now waits for the holder's
+`exit`, as `setup-kit.test.ts`'s stub runs already wait for `close`.
 
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle

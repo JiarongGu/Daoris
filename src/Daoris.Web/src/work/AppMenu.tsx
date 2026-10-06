@@ -1,4 +1,4 @@
-import { type FocusEvent, type KeyboardEvent, type ReactNode, useRef } from 'react';
+import { type FocusEvent, type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import { Icon, type IconName, Menu, Tip } from '../ui';
 import { cn } from '../lib/cn';
 
@@ -62,6 +62,66 @@ function Row({ item, glyphs }: { item: MenuItem; glyphs: boolean }) {
  * **Presentational, and it imports no hook from the data** (components §3): a row's check, its count, its key and its
  * group's name are props on the row.
  */
+/**
+ * A menu's rows (D152 §3.2): a rule before a new group, a record group's name over its first row, a row that opens a
+ * submenu to its side, and every other row an act. The bar's menus and the fold's (UX7a2) draw the same rows.
+ */
+function MenuRows({ items, choose }: { items: readonly MenuItem[]; choose: (id: string) => void }) {
+  const glyphs = items.some((item) => item.icon);
+  return (
+    <>
+      {items.map((item) => (
+        <div key={item.id}>
+          {item.separated && <Menu.Separator />}
+          {item.heading && (
+            item.heading.tip
+              ? (
+                <Tip content={item.heading.tip} side="right">
+                  <span className="block"><Menu.Label>{item.heading.label}</Menu.Label></span>
+                </Tip>
+              )
+              : <Menu.Label>{item.heading.label}</Menu.Label>
+          )}
+          {item.sub ? (
+            <Menu.Sub>
+              <Menu.SubTrigger>
+                {glyphs && <span aria-hidden className="w-[13px] shrink-0" />}
+                <span className="truncate">{item.label}</span>
+              </Menu.SubTrigger>
+              <Menu.SubContent className="min-w-40">
+                <Menu.RadioGroup value={item.sub.find((choice) => choice.checked)?.id ?? ''} onValueChange={choose}>
+                  {item.sub.map((choice) => (
+                    <Menu.RadioItem key={choice.id} value={choice.id} disabled={choice.disabled}>
+                      <span className="truncate">{choice.label}</span>
+                    </Menu.RadioItem>
+                  ))}
+                </Menu.RadioGroup>
+              </Menu.SubContent>
+            </Menu.Sub>
+          ) : (
+            // The tick column is always reserved, so the labels line up whether or not anything is ticked.
+            <Menu.Item tick={Boolean(item.checked)} disabled={item.disabled} onSelect={() => choose(item.id)}>
+              <Row item={item} glyphs={glyphs} />
+            </Menu.Item>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** A menu name's look on the strip: plain words at small gaps, as VS Code's bar is, and the fold's glyph beside them. */
+const NAME = cn(
+  // 🔴 No chevron, and tight. Measured against a real VS Code window: its menu bar is plain
+  // words at small gaps — File Edit Selection View Go Run Terminal Help — and carries no
+  // disclosure arrows at all. A menu bar is a convention strong enough not to need marking,
+  // and eight chevrons in a title bar is eight pieces of furniture.
+  'inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-small',
+  'transition-colors duration-(--speed)',
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
+  'text-ink-soft hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
+);
+
 export function AppMenu({
   label, items, onChoose, trigger, open, onOpenChange, letter, mnemonic = false, onTriggerKey, onHover, onWalk, onCloseFocus, onChosen,
 }: {
@@ -87,7 +147,6 @@ export function AppMenu({
   /** A row was chosen: the close that follows hands the focus back to where it was. */
   onChosen?: () => void;
 }) {
-  const glyphs = items.some((item) => item.icon);
   const choose = (id: string) => {
     onChosen?.();
     onChoose(trigger, id);
@@ -100,16 +159,7 @@ export function AppMenu({
         {...(letter ? { 'aria-keyshortcuts': `Alt+${letter}` } : {})}
         onPointerEnter={onHover}
         onKeyDown={onTriggerKey}
-        className={cn(
-          // 🔴 No chevron, and tight. Measured against a real VS Code window: its menu bar is plain
-          // words at small gaps — File Edit Selection View Go Run Terminal Help — and carries no
-          // disclosure arrows at all. A menu bar is a convention strong enough not to need marking,
-          // and eight chevrons in a title bar is eight pieces of furniture.
-          'inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-small',
-          'transition-colors duration-(--speed)',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
-          'text-ink-soft hover:bg-raised hover:text-ink data-[state=open]:bg-raised data-[state=open]:text-ink',
-        )}
+        className={NAME}
       >
         <Name label={label} letter={letter} shown={mnemonic} />
       </Menu.Trigger>
@@ -127,42 +177,7 @@ export function AppMenu({
           onWalk(event.key === 'ArrowRight' ? 1 : -1);
         }}
       >
-        {items.map((item) => (
-          <div key={item.id}>
-            {item.separated && <Menu.Separator />}
-            {item.heading && (
-              item.heading.tip
-                ? (
-                  <Tip content={item.heading.tip} side="right">
-                    <span className="block"><Menu.Label>{item.heading.label}</Menu.Label></span>
-                  </Tip>
-                )
-                : <Menu.Label>{item.heading.label}</Menu.Label>
-            )}
-            {item.sub ? (
-              <Menu.Sub>
-                <Menu.SubTrigger>
-                  {glyphs && <span aria-hidden className="w-[13px] shrink-0" />}
-                  <span className="truncate">{item.label}</span>
-                </Menu.SubTrigger>
-                <Menu.SubContent className="min-w-40">
-                  <Menu.RadioGroup value={item.sub.find((choice) => choice.checked)?.id ?? ''} onValueChange={choose}>
-                    {item.sub.map((choice) => (
-                      <Menu.RadioItem key={choice.id} value={choice.id} disabled={choice.disabled}>
-                        <span className="truncate">{choice.label}</span>
-                      </Menu.RadioItem>
-                    ))}
-                  </Menu.RadioGroup>
-                </Menu.SubContent>
-              </Menu.Sub>
-            ) : (
-              // The tick column is always reserved, so the labels line up whether or not anything is ticked.
-              <Menu.Item tick={Boolean(item.checked)} disabled={item.disabled} onSelect={() => choose(item.id)}>
-                <Row item={item} glyphs={glyphs} />
-              </Menu.Item>
-            )}
-          </div>
-        ))}
+        <MenuRows items={items} choose={choose} />
       </Menu.Content>
     </Menu.Root>
   );
@@ -182,6 +197,33 @@ export function focusMenuBar(root: ParentNode): boolean {
 }
 
 /**
+ * The window's width, in CSS px, below which the seven menus fold into one (UX7a2, the design §3.3). UX7a measured a
+ * shell's strip on its stories at about 590 px for the seven names beside the command center's glyph and the window's
+ * buttons (D152's UX7a note); those stories drew no browser door, which the window's strip holds, 28 px more. 39rem keeps
+ * that clear. A browser's six names fit a narrower window and fold at the same width, which was not measured apart.
+ */
+export const MENU_FOLD_BELOW = 624;
+
+/** Whether the bar's names fold at a window this wide. A width nothing measured (0) folds nothing. */
+export function foldsMenus(width: number): boolean {
+  return width > 0 && width < MENU_FOLD_BELOW;
+}
+
+/** Whether the window is narrower than the bar's names need, followed as it resizes (the window decides, as FRAME6's does). */
+export function useMenuFold(): boolean {
+  const [width, setWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return foldsMenus(width);
+}
+
+/** What the caller's `open` holds while the fold is open with none of its menus open in it (UX7a2). */
+export const FOLD_OPEN = 'fold';
+
+/**
  * The application's menu bar (UX7a, D152 §3.3): the menus side by side, behaving as every Windows menu bar does.
  *
  * @remarks
@@ -192,9 +234,14 @@ export function focusMenuBar(root: ParentNode): boolean {
  *   front of the person at that moment rather than when the strip last drew.
  * - Built on the dropdown the strip already had, so its names stay buttons that open a menu (`aria-haspopup`): a
  *   menubar primitive would have changed every name's role, and the tests across the page that open the View menu by it.
+ * - **Narrower than its names need, it folds** (`compact`, UX7a2): one button, VS Code's ☰, whose menu's rows are the
+ *   menus, each opening its own rows to its side. The keys reach it as they reach the bar: Alt alone and F10 focus it,
+ *   Alt with a letter opens it at that menu, ↓ and ↑ walk the menus, → opens one onto its first row and ← goes back to
+ *   its name, Escape closes onto the button and Escape there hands the focus back, as choosing a row does.
  */
-export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, label }: {
+export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, label, compact = false, foldLabel }: {
   menus: readonly BarMenu[];
+  /** The menu open, by its id; folded, `FOLD_OPEN` while the fold is open with no menu open in it. */
   open: string | null;
   onOpen: (menu: string | null) => void;
   onChoose: (menu: string, item: string) => void;
@@ -202,6 +249,10 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
   mnemonics?: boolean;
   /** The bar's own name, for a screen reader. */
   label?: string;
+  /** The window is narrower than the names need (`useMenuFold`): the menus fold into one. */
+  compact?: boolean;
+  /** The fold's name, its tip and what a screen reader calls it. */
+  foldLabel?: string;
 }): ReactNode {
   const bar = useRef<HTMLElement>(null);
   // Where the focus was before the bar took it, which Escape on a name and a chosen row hand it back to.
@@ -228,6 +279,18 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
     if (was?.isConnected) was.focus();
     else (document.activeElement as HTMLElement | null)?.blur();
   };
+  // A row was chosen: the focus goes back to where it was, as a menu bar's does.
+  const closeFocus = (event: Event) => {
+    if (!chose.current) return;
+    chose.current = false;
+    event.preventDefault();
+    giveBack();
+  };
+
+  // Widened with the fold open and none of its menus: no menu of the bar is open, so none is said to be.
+  useEffect(() => {
+    if (!compact && open === FOLD_OPEN) onOpen(null);
+  }, [compact, open, onOpen]);
 
   return (
     <nav
@@ -235,13 +298,31 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
       aria-label={label}
       {...{ [MENU_BAR]: '' }}
       className="flex items-center gap-0.5"
+      // React's focus events travel the component tree, so a menu's rows, in their portal, are the bar's here: the focus
+      // that came onto a name or into a menu from outside both is where it goes back to.
       onFocus={(event: FocusEvent<HTMLElement>) => {
         // The focus came onto the bar from outside it: remember from where.
         const from = event.relatedTarget;
         if (from instanceof HTMLElement && !event.currentTarget.contains(from) && !from.closest('[role="menu"]')) before.current = from;
       }}
     >
-      {menus.map((menu, index) => (
+      {compact ? (
+        <Fold
+          menus={menus}
+          open={open}
+          label={foldLabel ?? label ?? ''}
+          mnemonics={mnemonics}
+          onOpen={onOpen}
+          isOpen={(id) => openNow.current === id}
+          anyOpen={() => openNow.current !== null}
+          onEscape={giveBack}
+          onChoose={(menu, item) => {
+            chose.current = true;
+            onChoose(menu, item);
+          }}
+          onCloseFocus={closeFocus}
+        />
+      ) : menus.map((menu, index) => (
         <AppMenu
           key={menu.id}
           trigger={menu.id}
@@ -273,16 +354,92 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
               event.preventDefault();
               return;
             }
-            // A row was chosen: the focus goes back to where it was, as a menu bar's does.
-            if (chose.current) {
-              chose.current = false;
-              event.preventDefault();
-              giveBack();
-            }
+            closeFocus(event);
           }}
           onChoose={onChoose}
         />
       ))}
     </nav>
+  );
+}
+
+/**
+ * The bar folded into one menu (UX7a2): VS Code's ☰ on a narrow window, its rows the menus in the bar's order, each one's
+ * rows opening to its side. Which is open is still the bar's caller's, so Alt with a letter opens the fold at that menu
+ * and the pointer moving down the rows opens each in turn, one at a time.
+ */
+function Fold({ menus, open, label, mnemonics, onOpen, isOpen, anyOpen, onEscape, onChoose, onCloseFocus }: {
+  menus: readonly BarMenu[];
+  open: string | null;
+  label: string;
+  mnemonics: boolean;
+  onOpen: (menu: string | null) => void;
+  /** Whether this menu is the one open now, read when Radix says one closed: a newer open may have taken its place. */
+  isOpen: (id: string) => boolean;
+  anyOpen: () => boolean;
+  /** Escape on the button: the focus goes back to where it was. */
+  onEscape: () => void;
+  onChoose: (menu: string, item: string) => void;
+  onCloseFocus: (event: Event) => void;
+}) {
+  // 🔴 Whether the fold's own rows hold the focus yet. Alt with a letter asks for the fold and a menu in it at once, and a
+  // menu whose rows open before the fold's take the focus is closed by them: the fold, opening, focuses its rows, and a
+  // submenu shuts on any focus outside it. So a menu opens in the fold only once the fold has taken the focus.
+  const [settled, setSettled] = useState(false);
+  if (open === null && settled) setSettled(false);
+
+  return (
+    // Never modal, as no menu is: the window stays draggable under a menu in the title bar (`Menu.Root`).
+    <Menu.Root
+      open={open !== null}
+      onOpenChange={(next) => {
+        if (next) onOpen(FOLD_OPEN);
+        else if (anyOpen()) onOpen(null);
+      }}
+    >
+      <Tip content={label}>
+        <Menu.Trigger asChild>
+          <button
+            type="button"
+            aria-label={label}
+            className={NAME}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape' || anyOpen()) return;
+              event.preventDefault();
+              onEscape();
+            }}
+          >
+            <Icon name="menu" size={15} />
+          </button>
+        </Menu.Trigger>
+      </Tip>
+
+      <Menu.Content
+        align="start"
+        className="min-w-48"
+        // The fold takes the focus as it opens, its own or its first row's; a menu asked for opens after that.
+        onFocus={() => { if (!settled) setSettled(true); }}
+        onCloseAutoFocus={onCloseFocus}
+      >
+        {menus.map((menu) => (
+          <Menu.Sub
+            key={menu.id}
+            open={settled && open === menu.id}
+            onOpenChange={(next) => {
+              // One menu open at a time, as on the bar; a menu that closed with another already open leaves that one be.
+              if (next) onOpen(menu.id);
+              else if (isOpen(menu.id)) onOpen(FOLD_OPEN);
+            }}
+          >
+            <Menu.SubTrigger {...(menu.letter ? { 'aria-keyshortcuts': `Alt+${menu.letter}` } : {})}>
+              <span className="truncate"><Name label={menu.label} letter={menu.letter} shown={mnemonics} /></span>
+            </Menu.SubTrigger>
+            <Menu.SubContent className="min-w-56">
+              <MenuRows items={menu.items} choose={(item) => onChoose(menu.id, item)} />
+            </Menu.SubContent>
+          </Menu.Sub>
+        ))}
+      </Menu.Content>
+    </Menu.Root>
   );
 }
