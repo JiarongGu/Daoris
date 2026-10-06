@@ -31,6 +31,53 @@ public sealed class AtomicFileTests : IDisposable
     }
 
     [Fact]
+    public void A_folder_move_refused_while_something_holds_a_file_is_tried_again_until_it_gives_way()
+    {
+        foreach (Exception held in new Exception[] { new UnauthorizedAccessException("held"), new IOException("held") })
+        {
+            var calls = 0;
+            AtomicFile.MoveFolder("a.part", "a", tries: 5, waitMs: 1, move: (_, _) =>
+            {
+                if (++calls <= 2) throw held;
+            });
+            Assert.Equal(3, calls);
+        }
+    }
+
+    [Fact]
+    public void A_folder_move_refused_for_any_other_reason_throws_at_once_and_a_held_one_after_its_tries()
+    {
+        var missing = 0;
+        Assert.Throws<DirectoryNotFoundException>(() => AtomicFile.MoveFolder("a.part", "a", tries: 5, waitMs: 1, move: (_, _) =>
+        {
+            missing++;
+            throw new DirectoryNotFoundException("gone");
+        }));
+        Assert.Equal(1, missing);
+
+        var held = 0;
+        Assert.Throws<UnauthorizedAccessException>(() => AtomicFile.MoveFolder("a.part", "a", tries: 3, waitMs: 1, move: (_, _) =>
+        {
+            held++;
+            throw new UnauthorizedAccessException("held");
+        }));
+        Assert.Equal(3, held);
+    }
+
+    [Fact]
+    public void A_folder_moves_into_place()
+    {
+        var from = Path.Combine(_folder, "1.0.part");
+        Directory.CreateDirectory(from);
+        File.WriteAllText(Path.Combine(from, "tool.json"), "{}\n");
+
+        AtomicFile.MoveFolder(from, Path.Combine(_folder, "1.0"));
+
+        Assert.True(File.Exists(Path.Combine(_folder, "1.0", "tool.json")));
+        Assert.False(Directory.Exists(from));
+    }
+
+    [Fact]
     public void Text_is_written_without_a_byte_order_mark()
     {
         var path = Path.Combine(_folder, "rules.json");

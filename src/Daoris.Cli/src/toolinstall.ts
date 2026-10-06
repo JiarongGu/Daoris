@@ -20,12 +20,12 @@
 // `service.ts` is still the one module that may open a socket — so a doctrine command that somehow reached this
 // file still could not fetch anything (the dogfood tests hold both).
 
-import { chmodSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { operands } from './args.ts';
 import type { Fetcher } from './channels.ts';
 import { DaorisError, RefusalError, type ExitCode } from './errors.ts';
-import { writeBytesAtomic, writeJsonAtomic } from './fsx.ts';
+import { renameHeld, writeBytesAtomic, writeJsonAtomic } from './fsx.ts';
 import { HOME_SENTENCE, daorisHome } from './home.ts';
 import {
   ARCHIVES, BUILT_IN, builtInList, compareVersions, currentPlatform, locationCopy, mergeResources, parseResources, readLists,
@@ -212,7 +212,8 @@ export async function downloadVersion({ home, tool: id, offered, platform, fetch
       write(`  replacing ${folder}, which held nothing that runs`);
       rmSync(folder, { recursive: true, force: true });
     }
-    renameSync(staging, folder);
+    // The scanner opens the executable just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+    renameHeld(staging, folder);
     write(`  unpacked into ${join(folder, TOOL_PACKAGE)}`);
     return join(folder, TOOL_PACKAGE, ...offered.exe.split('/'));
   } finally {

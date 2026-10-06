@@ -825,6 +825,13 @@ public sealed record ChatTarget(string Repository, string Root, string ServiceUr
     /// a new conversation. A native door hands it to its harness's own resume; a protocol door resumes on its wire.
     /// </summary>
     public string? Resume { get; init; }
+
+    /// <summary>
+    /// The conversation's own record (CHATTAKE1b, D126's CHATTAKE1 note), named on its spawn as a driven session's is (SESS1):
+    /// a connector its harness starts itself inherits it, so a take or a publication through it says which conversation made
+    /// it. Null names none.
+    /// </summary>
+    public string? Session { get; init; }
 }
 
 /// <summary>How the driver talks to the spawned process once it is running (D53).</summary>
@@ -1063,14 +1070,17 @@ internal static class Spawning
     /// <remarks>
     /// The quest variables are absent rather than empty: a conversation serves no quest, and a blank
     /// `DAORIS_QUEST_ID` would read to a session as an id it failed to parse. What it gets is what is
-    /// true — which repository it is the agent for, and where to reach the service if the conversation
-    /// turns into a quest worth taking or publishing.
+    /// true — which repository it is the agent for, where to reach the service if the conversation
+    /// turns into a quest worth taking or publishing, and which record it is.
     /// </remarks>
     public static ProcessStartInfo ChatInRoot(
         ChatTarget target, string fileName, IEnumerable<string> arguments)
     {
         var info = Shell(target.Root, fileName, arguments, target.Repository, target.ServiceUrl);
         info.RedirectStandardInput = true;
+        // Its own record, as a driven session's is named (CHATTAKE1b): a connector its harness starts on the pipe door from the
+        // repository's own server list inherits it, so a take there marks this conversation's record.
+        if (target.Session is { } session) info.Environment[IntakeRoom.SessionVariable] = session;
         return info;
     }
 

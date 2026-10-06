@@ -1428,18 +1428,30 @@ public sealed partial class Driver(
     /// </remarks>
     /// <param name="turnFailed">What the protocol door said refusing the call (ACPEND1), or null.</param>
     internal SessionConclusion AccountSignedOut(
-        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed)
+        SessionConclusion conclusion, ISessionAdapter adapter, HarnessSelection selection, string? turnFailed) =>
+        conclusion.State == "failed" && SignInRefused(_harnesses, adapter, selection.Profile, turnFailed) is { } line
+            ? conclusion.Then(" ", line)
+            : conclusion;
+
+    /// <summary>
+    /// The one reading of a door's failure for a refused sign-in (ROSTER1b), a driven start's conclusion's and a conversation's
+    /// refused turn's (SIGNIN1b): where the adapter's table recognises <paramref name="failure"/>, the account reads signed out,
+    /// the tool's own sign-in is held until a person looks again, and the line for the record comes back. Null where the table
+    /// does not recognise it, and nothing is written.
+    /// </summary>
+    /// <param name="failure">What the door said refusing the call (ACPEND1), never the transcript (AGT3c).</param>
+    internal static Noted? SignInRefused(HarnessRoster harnesses, ISessionAdapter adapter, string? profile, string? failure)
     {
-        if (conclusion.State != "failed" || turnFailed is not { Length: > 0 } || adapter.Toolchain is not { } toolchain
-            || !SignInRefusals.Read(_harnesses.SignInOf(adapter.Name), turnFailed))
+        if (failure is not { Length: > 0 } || adapter.Toolchain is not { } toolchain
+            || !SignInRefusals.Read(harnesses.SignInOf(adapter.Name), failure))
         {
-            return conclusion;
+            return null;
         }
 
         var owner = toolchain.Owner(adapter.Name);
-        _harnesses.SignedOut(adapter.Name, selection.Profile);
-        if (selection.Profile is null) _harnesses.Refuse(adapter.Name, null, $"an earlier session found that {SignedOutReason(owner, null)}");
-        return conclusion.Then(" ", SignedOutNote(owner, selection.Profile));
+        harnesses.SignedOut(adapter.Name, profile);
+        if (profile is null) harnesses.Refuse(adapter.Name, null, $"an earlier session found that {SignedOutReason(owner, null)}");
+        return SignedOutNote(owner, profile);
     }
 
     /// <summary>

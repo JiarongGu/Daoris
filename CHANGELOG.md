@@ -14,6 +14,10 @@ with the version and date at release.
 - Trying a parked quest again counts from its recorded failures, including after an earlier retry,
   through the page, terminal and Ask Daoris.
 - Publishing the packaged CLI waits briefly when Windows holds a fresh package or launcher folder.
+- A conversation refused because its account is signed out marks that account signed out, so the next
+  start walks past it. A conversation's agent is told which session it is, so a quest it takes is
+  marked on its record.
+- Downloading a managed tool waits briefly when Windows holds the folder just unpacked, at both doors.
 
 The first version: doctrine that installs, is checked, and flows back.
 

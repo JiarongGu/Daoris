@@ -24,7 +24,7 @@ Each verb is a module of `src/Daoris.Cli/src/cli/`, its row in `COMMANDS` (`src/
 | `driver` | management | `cli/driver.ts:6` | `driverconfig.ts:476` commandDriver | [verb] what this machine drives ($DAORIS_HOME/driver.json): |
 | `plugin` | management | `cli/plugin.ts:5` | `plugins.ts:1101` commandPlugin | [verb] this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json): |
 | `browser` | management | `cli/browser.ts:5` | `browser.ts:316` commandBrowser | [verb] Daoris's browser: its favorites and its settings… |
-| `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:428` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
+| `tool` | management | `cli/tool.ts:7` | `toolinstall.ts:429` commandTool | [verb] the programs Daoris runs beside its agents — Git, Node.js, |
 
 ## `daoris-driver` (the driver's headless host)
 

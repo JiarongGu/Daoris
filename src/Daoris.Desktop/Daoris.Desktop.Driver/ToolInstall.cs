@@ -221,7 +221,8 @@ public static partial class ToolInstall
                 Directory.Delete(folder, recursive: true);
             }
 
-            Directory.Move(staging, folder);
+            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+            AtomicFile.MoveFolder(staging, folder);
             write($"  unpacked into {Path.Combine(folder, Tools.Package)}");
             log.Info("tool.download.verified", ("tool", tool), ("version", version));
             return Path.Combine([folder, Tools.Package, .. offered.Exe.Split('/')]);

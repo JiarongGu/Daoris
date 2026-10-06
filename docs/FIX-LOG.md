@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a downloaded tool's folder held by Windows
+
+### Tools: a managed download could not move into place while the scanner held it
+- **Symptom:** `toolinstall.test.ts`'s download case failed with `EPERM ... rename '<home>/tools/gh/2.62.0.part' -> '.../2.62.0'` twice in one day, at a subagent's verify and at SIGNIN1b's merge gate, both under parallel load; it passed alone.
+- **Root cause:** both twins moved the staging folder with a bare rename (`renameSync` in `toolinstall.ts`, `Directory.Move` in `ToolInstall.cs`) just after unpacking an executable into it. The scanner opens a new executable, and a folder cannot be renamed while a file in it is held. It is the 2026-10-03 and 2026-10-07 publishing defect in a third place; on an install it would refuse a real tool download.
+- **Fix:** the CLI gains `renameHeld` in `src/fsx.ts`, the zero-dependency twin of `tools/fsx.mjs`'s, and the driver gains `AtomicFile.MoveFolder`; each retries only held-file refusals for a bounded time, and every other failure throws at once.
+- **Verify:** failing-first injected-refusal tests in `fsx.test.ts` and `AtomicFileTests` (retried until it gives way, a missing folder throws at once, a held one throws after its tries); `toolinstall.test.ts` and `ToolInstallTests` pass.
+
 ## 2026-10-07 — packaged CLI publication
 
 ### Publishing: a fresh folder held by Windows stopped the CLI layout

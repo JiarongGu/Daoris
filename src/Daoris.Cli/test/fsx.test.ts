@@ -3,7 +3,36 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { makeFixture } from './_fixture.ts';
-import { normalize, readText, writeTextAtomic, sha256, listMarkdown, onPath } from '../src/fsx.ts';
+import { normalize, readText, writeTextAtomic, sha256, listMarkdown, onPath, renameHeld } from '../src/fsx.ts';
+
+/** A rename that refuses with `code` for its first `refusals` calls, then records the move. */
+function refusing(code: string, refusals: number): { rename: (from: string, to: string) => void; calls: string[][] } {
+  const calls: string[][] = [];
+  return {
+    calls,
+    rename: (from, to) => {
+      calls.push([from, to]);
+      if (calls.length <= refusals) throw Object.assign(new Error(`${code}: held`), { code });
+    },
+  };
+}
+
+test('a rename refused while something holds a file is tried again until it gives way', () => {
+  for (const code of ['EPERM', 'EACCES', 'EBUSY']) {
+    const held = refusing(code, 2);
+    renameHeld('a.part', 'a', { tries: 5, waitMs: 1, rename: held.rename });
+    assert.equal(held.calls.length, 3, code);
+  }
+});
+
+test('a rename refused for any other reason throws at once, and a held one throws after its tries', () => {
+  const missing = refusing('ENOENT', 1);
+  assert.throws(() => renameHeld('a.part', 'a', { tries: 5, waitMs: 1, rename: missing.rename }), /ENOENT/);
+  assert.equal(missing.calls.length, 1);
+  const held = refusing('EPERM', 10);
+  assert.throws(() => renameHeld('a.part', 'a', { tries: 3, waitMs: 1, rename: held.rename }), /EPERM/);
+  assert.equal(held.calls.length, 3);
+});
 
 test('normalize strips a BOM and converts CRLF to LF', () => {
   assert.equal(normalize('﻿a\r\nb\r\n'), 'a\nb\n');
