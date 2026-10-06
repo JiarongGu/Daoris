@@ -11,7 +11,8 @@ import { makeFixture } from './_fixture.ts';
 /**
  * An account put into a scope's list, and where an account runs (ACCT1, D125's ACCT1 note; D130 §3.1). The CLI's half of a
  * TWIN with the driver's `Harnesses.Accounts.cs`: 🔴 `AccountJoinTwinTests.cs` holds the same tables, row for row and in
- * the same order, and the last test here holds each to this one, cell for cell.
+ * the same order, and the last test here holds each to this one, cell for cell: the join, the places, and a refused join's
+ * sentence (ACCTQUOTE1d).
  *
  * A scope is a workspace's name, or `null` for this machine's list. An `after` is the sections a write leaves, compared as
  * JSON, or `refused borrows` where the workspace has no list or default of its own and so takes this machine's.
@@ -86,6 +87,27 @@ test('a refused join names this machine\'s list and the workspace\'s own, as the
   assert.match(sentence, /daoris agent profile order claude-code <account>… --workspace forge/);
 });
 
+// ACCTQUOTE1d: the refusal word for word, the workspace in its command spelled for any shell (`shellWord`) and as itself in
+// the sentence around it. The driver's `JoinProblem.Sentence` copies these words, so this table is what it is held to.
+const REFUSAL_ROWS: [why: string, workspace: string, sentence: string][] = [
+  ['a plain workspace is itself', 'forge', '`forge` names no `claude-code` account or list of its own, so its starts take this machine\'s list — join this machine\'s list, or give `forge` a list of its own first (`daoris agent profile order claude-code <account>… --workspace forge`).'],
+  ['a space is kept whole in double quotes', 'my team', '`my team` names no `claude-code` account or list of its own, so its starts take this machine\'s list — join this machine\'s list, or give `my team` a list of its own first (`daoris agent profile order claude-code <account>… --workspace "my team"`).'],
+  ['an ampersand has no spelling, so its placeholder', 'R&D', '`R&D` names no `claude-code` account or list of its own, so its starts take this machine\'s list — join this machine\'s list, or give `R&D` a list of its own first (`daoris agent profile order claude-code <account>… --workspace <workspace>`).'],
+];
+
+test('a refused join is said as the driver says it (the twin\'s table)', () => {
+  for (const [index, [why, workspace, sentence]] of REFUSAL_ROWS.entries()) {
+    const fx = makeFixture(`refusal-${index}`);
+    const path = join(fx.root, 'harnesses.json');
+    writeFileSync(path, '{}', 'utf8');
+
+    const problem = joinProblem(readHarnessSettings(path), 'claude-code', workspace);
+    assert.notEqual(problem, null, `${why}: refused`);
+    assert.equal(joinRefusal('claude-code', problem!.workspace), sentence, why);
+    fx.cleanup();
+  }
+});
+
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
 const DRIVER_TABLE = join(
@@ -97,4 +119,5 @@ test('the driver’s tables are these tables, row for row and in this order', ()
 
   assert.deepEqual(rows('An_account_joins_a_list_as_the_cli_joins_it'), JOIN_ROWS);
   assert.deepEqual(rows('An_account_s_places_read_as_the_cli_reads_them'), PLACE_ROWS);
+  assert.deepEqual(rows('A_refused_join_is_said_as_the_cli_says_it'), REFUSAL_ROWS);
 });

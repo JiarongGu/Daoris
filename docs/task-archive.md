@@ -11379,3 +11379,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **INIT1 — stable initial line endings**. If absent, init creates `.gitattributes` with `* text=auto eol=lf` to prevent bytewise drift under autocrlf. Contract: original setup finding.
 
 **Outcome** 2026-10-07: `init` writes `.gitattributes` (`* text=auto eol=lf`) where a repository has nothing at that path, applied before the manifest so a failed run leaves a file a re-run keeps; an existing one is kept byte for byte, and named when its last `*` eol rule does not pin LF. It is deliberately never recorded in `daoris.lock`: a locked path the canon does not hold reads as a retirement (D19), so the file is the repository's own from then on, as `daoris.json` is. A driven set-up's brief (`SetupBrief`) does not yet say init may write it. CLI 1313 → 1333. Detail: D25's 2026-10-07 note; commit c6f21162.
+
+
+## ACCTQUOTE1d — the CLI holds the driver's join sentences (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1d — the CLI holds the driver's join sentences** (cli). `account-join.test.ts` should parse the driver's `A_refused_join_is_said_as_the_cli_says_it` rows and hold `joinRefusal` to each, cell for cell, as it holds the join and places tables; today the driver copies the CLI's sentences and nothing on the CLI side checks them. Contract: D125's ACCTQUOTE1b note, twins.md. Proof: a CLI test reading that theory.
+
+**Outcome** 2026-10-07: `account-join.test.ts` parses the driver's `A_refused_join_is_said_as_the_cli_says_it` theory with the same reader the join and places tables use, and holds `joinRefusal` to each row cell for cell (`forge` bare, `my team` quoted, `R&D` as `<workspace>`); a sentence changed on either side alone now fails verify. No lane-table row is needed: every merge runs the CLI suite. CLI +1. Detail: D125's ACCTQUOTE1d note; commit facdb579.
