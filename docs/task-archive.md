@@ -11372,3 +11372,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **UX6a — counter and installed baseline** (tools). Contract/proof: UX6 §9.1–§9.3.
 
 **Outcome** 2026-10-07: built (the counter); the install's baseline is UX6a2. `tools/ux-count.mjs` counts a screen's regions (list, main, the frame apart) in §9.1's concepts, controls, words and screens, from one page function sent unchanged to Playwright over stories (`--stories`, en light and 中文 dark at 1546 and 680 px) and to the window through `npm run desktop -- eval --file` (`--window`, then `--window --read`). Presses are a declared, unmeasured table. It reproduces UX6f's scratch counts exactly. `tools/ux-count.test.mjs` (18) runs in the web's own chromium. Detail: D150's UX6a note; commits 29d8c8bf, 32d00de8.
+
+
+## INIT1 — stable initial line endings (2026-10-07, D25)
+
+> - [ ] **INIT1 — stable initial line endings**. If absent, init creates `.gitattributes` with `* text=auto eol=lf` to prevent bytewise drift under autocrlf. Contract: original setup finding.
+
+**Outcome** 2026-10-07: `init` writes `.gitattributes` (`* text=auto eol=lf`) where a repository has nothing at that path, applied before the manifest so a failed run leaves a file a re-run keeps; an existing one is kept byte for byte, and named when its last `*` eol rule does not pin LF. It is deliberately never recorded in `daoris.lock`: a locked path the canon does not hold reads as a retirement (D19), so the file is the repository's own from then on, as `daoris.json` is. A driven set-up's brief (`SetupBrief`) does not yet say init may write it. CLI 1313 → 1333. Detail: D25's 2026-10-07 note; commit c6f21162.
+
+
+## ACCTQUOTE1d — the CLI holds the driver's join sentences (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1d — the CLI holds the driver's join sentences** (cli). `account-join.test.ts` should parse the driver's `A_refused_join_is_said_as_the_cli_says_it` rows and hold `joinRefusal` to each, cell for cell, as it holds the join and places tables; today the driver copies the CLI's sentences and nothing on the CLI side checks them. Contract: D125's ACCTQUOTE1b note, twins.md. Proof: a CLI test reading that theory.
+
+**Outcome** 2026-10-07: `account-join.test.ts` parses the driver's `A_refused_join_is_said_as_the_cli_says_it` theory with the same reader the join and places tables use, and holds `joinRefusal` to each row cell for cell (`forge` bare, `my team` quoted, `R&D` as `<workspace>`); a sentence changed on either side alone now fails verify. No lane-table row is needed: every merge runs the CLI suite. CLI +1. Detail: D125's ACCTQUOTE1d note; commit facdb579.
+
+
+## CONVNOTE1b — a chat's cooling note carries its parts (2026-10-07, D125)
+
+> - [ ] **CONVNOTE1b — a chat's cooling note carries its parts** (driver). `ChatRunner.cs` records the cooling note as text only, so 中文 shows the driver's English though the page already words `account.cooling` from parts (CONVNOTE1). Contract: D125's TOOL4d and SIGNIN1b notes, LANG1a. Proof: a driver test that the note carries `account.cooling` parts.
+
+**Outcome** 2026-10-07: a conversation's cooling note carries an `account.cooling` part (`until` in UTC, `why` a `CoolingWhy` code) beside its unchanged English (`CoolingWords.ConversationOf`), so the page words it in 中文 too; the page uses the record's catalogue sentence rather than a conversation-specific one. Driver fast half +1; one Process case written, run in the full set. Detail: D125's CONVNOTE1b note; commit 411a1d5e.
+
+
+## AGENTREAD1b — the driver reads the shared reads table (2026-10-07, D125)
+
+> - [ ] **AGENTREAD1b — the driver reads the shared reads table** (driver, tools). `AccountReadsTests` reads `src/Daoris.Cli/test/fixtures/account-reads.json` row for row, and the merge tool's lane table sends that fixture to the driver gate, so a rule changed on one side of `reads.json` fails both suites; consider `UnsafeRelaxedJsonEscaping` so bytes match for non-ASCII names. Contract: D125's AGENTREAD1 note, `.claude/knowledge/twins.md`. Proof: a changed fixture row fails the driver's fast half.
+
+**Outcome** 2026-10-07: `AccountReadsTests` holds `AccountReads` to `account-reads.json` row for row, byte for byte (50 rows and a guard); a changed fixture row failed exactly its case. `AccountReads` now writes with `UnsafeRelaxedJsonEscaping`, so non-ASCII names match the CLI's bytes; emoji, U+2028/9, C1 controls and number forms still differ (measured, in the note). The lane table sends the fixture to the driver gate (7a85c7bd). The table's widening and case-folding are AGENTREAD1c. Driver fast half 4298 → 4356. Detail: D125's AGENTREAD1b note; commit 30c1bd18.
+
+
+## UX6d — account attention from known facts (2026-10-07, D150)
+
+> - [ ] **UX6d — account attention from known facts** (web-shell, modules; absorbs TOOL4m). Contract/proof: UX6 §6.2–§6.3.
+
+**Outcome** 2026-10-07: What needs you lists, under Holding work, a start waiting on its accounts (an ask's intake among them, which the tick now forwards as facts: agent, account, workspace, until, the quests and asks it holds) and a signed-out account a list or default holds, each naming its accounts' last known state. Acts: *Sign in to …*, *Read …* and *Let … run …* (asks once, naming the join command); the door opens the agent's page. Nothing asks an agent anything (a test holds that no `HARNESSES` call refreshes). Rows meet ≤ 3 controls; two exceed the 30-word budget by a reset time and account ids, to be judged on the install. TOOL4m's remaining row is covered. Web vitest 4205 → 4246, modules fast 603 → 607. Detail: D150's UX6d note; commits 49c5907f, 01a42820.

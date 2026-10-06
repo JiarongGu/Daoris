@@ -58,7 +58,7 @@ import { MONITOR_WINDOW } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import { ViewFrame, type ViewLayout } from './work/ViewFrame';
 import { ViewMain } from './work/ViewMain';
-import type { AttentionDoors } from './work/AttentionBand';
+import { type AttentionDoors, useAccountsKnown } from './work/AttentionBand';
 import type { Attention } from './work/AttentionRow';
 import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
@@ -325,6 +325,8 @@ export function App() {
   });
   // Its badge (D150 §2.1): the accounts a list or a default holds that read signed out, in open's hue. A browser has none.
   const agentsWaiting = useAgentsWaiting();
+  // The same accounts as *What needs you* reads them, with the tick's waits (UX6d), for Overview's badge.
+  const accountsKnown = useAccountsKnown();
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
   // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
@@ -410,10 +412,11 @@ export function App() {
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
   // Overview's badge, from the one derivation the band uses and every input it reads, the rule proposals, the parked
   // quests (SESSUX1i) and the work to review (UX6c) among them — two answers to "how many need me" would disagree the
-  // first time either was edited. Sessions' badge is its own sessions only (U20).
+  // first time either was edited. Sessions' badge is its own sessions only (U20). The accounts' rows too (UX6d), from the
+  // roster and the accounts' files the Agents badge reads, and the tick's waits.
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? [],
-    proposals, considered.data ?? [], sessionGroups.data ?? []).length;
+    proposals, considered.data ?? [], sessionGroups.data ?? [], accountsKnown).length;
   const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
@@ -818,6 +821,11 @@ export function App() {
     ...(attached ? { rule: () => open('agents', null, { agentPart: 'rules' }) } : {}),
     // Work to review opens in Sessions with its review open (D126, D113): accepting needs looking. A shell's alone.
     ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent('review'); } } : {}),
+    // An account's row opens its agent's page at its accounts (UX6d, D150 §6.2), where every account's act is. A shell's alone.
+    ...(attached ? {
+      'account-wait': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),
+      'signed-out': (item: Attention) => open('agents', item.account?.agent ?? null, { agentPart: 'accounts' }),
+    } : {}),
   };
 
   // Settings on the frame (FRAME1g): its domains are its list pane and the domain chosen its main area.

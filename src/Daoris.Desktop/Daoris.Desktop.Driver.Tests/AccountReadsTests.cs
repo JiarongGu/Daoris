@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Daoris.Driver;
 
@@ -7,6 +11,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// ROSTER1 (D150 §5.3): <c>reads.json</c> under the home keeps what was last read of each account's sign-in, and of the tool's
 /// own, with when, so a restart starts from what was last read rather than from a probe. Nothing here starts a process.
 /// </summary>
+/// <remarks>
+/// The driver's half of a TWIN with the CLI's <c>accountreads.ts</c> (AGENTREAD1, AGENTREAD1b): both are held, row for row, to
+/// one table, the CLI's <c>test/fixtures/account-reads.json</c> (reading, keeping, forgetting), and the CLI's suite holds this
+/// class's <see cref="What_does_not_read_is_nothing_known"/> rows to it, cell for cell.
+/// </remarks>
 public sealed class AccountReadsTests : IDisposable
 {
     private static readonly DateTimeOffset Ten = new(2026, 10, 4, 10, 0, 0, TimeSpan.Zero);
@@ -107,5 +116,154 @@ public sealed class AccountReadsTests : IDisposable
         File.WriteAllText(AccountReads.PathOf(_home), file);
 
         Assert.Empty(AccountReads.Of(_home, "claude-code").Accounts);
+    }
+
+    // ——— The shared table (AGENTREAD1b): the CLI's twin is held to the same rows, so a rule changed on one side fails both.
+
+    public static IEnumerable<object?[]> Reads => Table("read");
+
+    public static IEnumerable<object?[]> Keeps => Table("keep");
+
+    public static IEnumerable<object?[]> Forgets => Table("forget");
+
+    [Fact]
+    public void The_shared_table_holds_rows_of_each_kind()
+    {
+        Assert.NotEmpty(Reads);
+        Assert.NotEmpty(Keeps);
+        Assert.NotEmpty(Forgets);
+    }
+
+    /// <param name="said">The reading as <c>&lt;login&gt; &lt;ISO 8601 in UTC, to the millisecond&gt;</c>; null for nothing known.</param>
+    [Theory]
+    [MemberData(nameof(Reads))]
+    public void A_reading_reads_as_the_shared_table_says(string why, string? file, string agent, string? account, string? said)
+    {
+        Holding(file);
+
+        var reads = AccountReads.Of(_home, agent);
+        var read = account is null ? reads.Own : reads.Accounts.GetValueOrDefault(account);
+
+        Same(why, said, read is null ? null : $"{Word(read.Login)} {read.At.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture)}");
+    }
+
+    /// <param name="after">The file's JSON once written, or <c>unchanged</c> where nothing is written.</param>
+    [Theory]
+    [MemberData(nameof(Keeps))]
+    public void A_reading_is_kept_as_the_shared_table_says_byte_for_byte(
+        string why, string? file, string agent, string? account, string login, string at, string after)
+    {
+        Holding(file);
+
+        AccountReads.Keep(_home, agent, account, Login(login), DateTimeOffset.Parse(at, CultureInfo.InvariantCulture));
+
+        Same(why, after == "unchanged" ? file : Written(after), OnDisk());
+    }
+
+    /// <param name="after">The file's JSON once written, or <c>unchanged</c> where nothing is written.</param>
+    [Theory]
+    [MemberData(nameof(Forgets))]
+    public void A_removed_account_is_forgotten_as_the_shared_table_says_byte_for_byte(
+        string why, string? file, string agent, string account, string after)
+    {
+        Holding(file);
+
+        AccountReads.Forget(_home, agent, account);
+
+        Same(why, after == "unchanged" ? file : Written(after), OnDisk());
+    }
+
+    // ——— The driver's own rows, in the table's shape (AGENTREAD1b): a name or a word beyond plain ASCII is written as the CLI
+    // writes it, as it is, where System.Text.Json's default encoder would escape it. Proposed for the shared table.
+
+    [Theory]
+    [InlineData("a name in Chinese reads", """{"claude-code":{"accounts":{"工作":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""", "claude-code", "工作", "out 2026-10-04T10:00:00.000Z")]
+    [InlineData("an accented name compares without case", """{"claude-code":{"accounts":{"Café":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""", "claude-code", "CAFÉ", "in 2026-10-04T10:00:00.000Z")]
+    public void A_name_beyond_plain_ascii_reads(string why, string? file, string agent, string? account, string? said) =>
+        A_reading_reads_as_the_shared_table_says(why, file, agent, account, said);
+
+    [Theory]
+    [InlineData("a name in Chinese is written as it is", null, "claude-code", "工作", "in", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"工作":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""")]
+    [InlineData("HTML's marks and a plus in a name are written as they are", null, "claude-code", "R&D+<team>'s", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"R&D+<team>'s":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""")]
+    [InlineData("an accented name found in another case is written under the name given", """{"claude-code":{"accounts":{"Café":{"login":"in","read":"2026-10-04T09:00:00Z"}}}}""", "claude-code", "CAFÉ", "out", "2026-10-04T10:00:00Z", """{"claude-code":{"accounts":{"CAFÉ":{"login":"out","read":"2026-10-04T10:00:00Z"}}}}""")]
+    [InlineData("words it has no field for are written as they are, escaped on disk or not", "{\"later\":\"\\u00e9 中文 \\u0026\"}", "codex", "work", "in", "2026-10-04T10:00:00Z", """{"later":"é 中文 &","codex":{"accounts":{"work":{"login":"in","read":"2026-10-04T10:00:00Z"}}}}""")]
+    public void A_name_beyond_plain_ascii_is_kept_as_the_cli_writes_it(
+        string why, string? file, string agent, string? account, string login, string at, string after)
+    {
+        A_reading_is_kept_as_the_shared_table_says_byte_for_byte(why, file, agent, account, login, at, after);
+
+        // Held apart from the expected bytes' own encoder: JSON.stringify escapes none of these.
+        Assert.DoesNotContain("\\u", OnDisk());
+    }
+
+    [Theory]
+    [InlineData("a name in Chinese is forgotten, and the rest written as they are", """{"claude-code":{"accounts":{"工作":{"login":"in","read":"2026-10-04T09:00:00Z"},"Café":{"login":"out","read":"2026-10-04T09:00:00Z"}}}}""", "claude-code", "工作", """{"claude-code":{"accounts":{"Café":{"login":"out","read":"2026-10-04T09:00:00Z"}}}}""")]
+    public void A_name_beyond_plain_ascii_is_forgotten_as_the_cli_writes_it(string why, string? file, string agent, string account, string after)
+    {
+        A_removed_account_is_forgotten_as_the_shared_table_says_byte_for_byte(why, file, agent, account, after);
+
+        Assert.DoesNotContain("\\u", OnDisk());
+    }
+
+    /// <summary>
+    /// The file as the CLI writes it, <c>JSON.stringify(…, null, 2)</c> and a final newline: two spaces, LF, every letter of the
+    /// basic plane and HTML's marks as they are. The relaxed encoder writes them so (<see cref="AccountNames"/> writes with it too).
+    /// </summary>
+    private static readonly JsonSerializerOptions AsTheCliWrites = new()
+    {
+        WriteIndented = true,
+        NewLine = "\n",
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    private static string Written(string after) => JsonNode.Parse(after)!.ToJsonString(AsTheCliWrites) + "\n";
+
+    private void Holding(string? file)
+    {
+        if (file is null) return;
+        Directory.CreateDirectory(_home);
+        File.WriteAllText(AccountReads.PathOf(_home), file);
+    }
+
+    /// <summary>The file's bytes as text, a byte-order mark included; null where there is no file.</summary>
+    private string? OnDisk() =>
+        File.Exists(AccountReads.PathOf(_home)) ? Encoding.UTF8.GetString(File.ReadAllBytes(AccountReads.PathOf(_home))) : null;
+
+    private static void Same(string why, string? expected, string? actual) =>
+        Assert.True(expected == actual, $"{why}\nexpected: {expected ?? "(none)"}\nactual:   {actual ?? "(none)"}");
+
+    private static LoginState Login(string word) => word switch
+    {
+        "in" => LoginState.In,
+        "out" => LoginState.Out,
+        "unknown" => LoginState.Unknown,
+        _ => throw new ArgumentException($"no login word `{word}`", nameof(word)),
+    };
+
+    private static string Word(LoginState login) => login switch
+    {
+        LoginState.In => "in",
+        LoginState.Out => "out",
+        _ => "unknown",
+    };
+
+    /// <summary>One kind of the shared table's rows, each its cells as the file spells them, a JSON null as null.</summary>
+    private static IEnumerable<object?[]> Table(string kind)
+    {
+        using var table = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root(), "src", "Daoris.Cli", "test", "fixtures", "account-reads.json")));
+        return [.. table.RootElement.GetProperty(kind).EnumerateArray()
+            .Select(row => row.EnumerateArray().Select(cell => cell.ValueKind == JsonValueKind.Null ? null : (object?)cell.GetString()).ToArray())];
+    }
+
+    /// <summary>The workspace root, found by walking up from the test binaries to <c>daoris.json</c>.</summary>
+    private static string Root()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException("no workspace root above the test binaries");
     }
 }

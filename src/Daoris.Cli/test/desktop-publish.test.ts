@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +16,8 @@ import {
   writeManifest,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
+// @ts-expect-error — untyped workspace tooling; see above
+import { renameHeld } from '../../../tools/fsx.mjs';
 import { resolveCanonRoot } from '../src/canon.ts';
 import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
 import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/resources.ts';
@@ -749,7 +751,9 @@ test('laying the doctrine tool out retries a held rename at each package and lau
       const attempt = (attempts.get(to) ?? 0) + 1;
       attempts.set(to, attempt);
       if (attempt === 1) throw Object.assign(new Error('file held'), { code: 'EPERM' });
-      renameSync(from, to);
+      // The second attempt is a real move of files just unpacked, which the scanner may really hold: it waits as the
+      // shipped default does, so only the injected refusal is counted (FLAKE1, 2026-10-07).
+      renameHeld(from, to);
     },
   });
 

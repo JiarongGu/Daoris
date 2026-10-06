@@ -21,7 +21,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Web/e2e/platform.spec.ts` | 55 | 942 |
 | `src/Daoris.Web/src/App.test.tsx` | 45 | 875 |
-| `src/Daoris.Web/src/App.tsx` | 65 | 1229 |
+| `src/Daoris.Web/src/App.tsx` | 66 | 1237 |
 | `src/Daoris.Web/src/ProjectsView.test.tsx` | 60 | 1124 |
 | `src/Daoris.Web/src/QuestsView.test.tsx` | 56 | 1100 |
 | `src/Daoris.Web/src/agents/AgentPage.tsx` | 43 | 832 |
@@ -50,7 +50,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/AccountRotation.cs` | 49 | 849 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Acp.cs` | 86 | 1767 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Adapters.cs` | 100 | 1829 |
-| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1517 |
+| `src/Daoris.Desktop/Daoris.Desktop.Driver/ChatRunner.cs` | 80 | 1520 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Driver.cs` | 134 | 2324 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/DriverConfig.cs` | 51 | 967 |
 | `src/Daoris.Desktop/Daoris.Desktop.Driver/Harnesses.cs` | 187 | 3484 |
@@ -70,7 +70,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/DriverModuleSessionsTests.cs` | 41 | 682 |
-| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 43 | 812 |
+| `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverLoop.cs` | 46 | 862 |
 | `src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.Agents.cs` | 60 | 1125 |
 
 ### Service (`service`)
@@ -115,7 +115,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/desktop.mjs` | 48 | 998 |
 | `tools/family-rehearsal.mjs` | 277 | 5060 |
 | `tools/knowledge-bench.mjs` | 46 | 906 |
-| `tools/merge-branch.mjs` | 126 | 2316 |
+| `tools/merge-branch.mjs` | 126 | 2317 |
 | `tools/orient-index.mjs` | 63 | 1379 |
 | `tools/usage-report.mjs` | 57 | 1254 |
 
@@ -124,9 +124,9 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | File | KB | Lines |
 |---|---|---|
 | `.claude/knowledge/twins.md` | 42 | 111 |
-| `docs/2026-09-19-platform-ux.md` | 50 | 548 |
+| `docs/2026-09-19-platform-ux.md` | 50 | 551 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
-| `docs/2026-09-21-working-surface-components.md` | 47 | 341 |
+| `docs/2026-09-21-working-surface-components.md` | 48 | 342 |
 | `docs/2026-09-25-rev3-review.md` | 51 | 407 |
 | `docs/2026-09-26-ux5-screen-audit.md` | 46 | 141 |
 | `docs/2026-10-01-account-rotation-design.md` | 52 | 613 |

@@ -42,6 +42,11 @@ would stop listing it, and nothing would say so). Search the repository too for 
 hand-over. A third list, the records the repository seems to keep by role (a changelog, a decisions file
 or folder, a fix log, a backlog), is what step 8 declares; `init` writes none of them.
 
+With no `.gitattributes`, `init` writes one pinning LF (`* text=auto eol=lf`), so a machine with
+`core.autocrlf` holds the bytes `sync` wrote. The lock never names it: it is the repository's own from
+then on. One already there is kept byte for byte, and named when it pins no line endings; adding the
+line is the repository's choice.
+
 An adopter already on `claude-code` moves by its manifest: `"harness": "agents"` and `"target": ".agents"`,
 then the same `git mv` and the steps below.
 

@@ -126,6 +126,25 @@ describe('the shell push channel (ShellSignals)', () => {
     await waitFor(() => expect(screen.queryByText(/sitting —/)).not.toBeInTheDocument());
   });
 
+  /**
+   * UX6d (D150 §6.2): the starts the look held on cooling accounts, an ask's intake among them, land where *What needs you*
+   * reads them, replaced whole by each tick, and a tick that says none, or a shell older than them, leaves none.
+   */
+  it('keeps the starts a tick held on its accounts, replaced whole by the next', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    show(<ShellSignals notify={() => {}} />, client);
+    const wait = {
+      agent: 'claude-code', account: 'account-2', workspace: 'work', until: '2026-10-06T04:42:00Z', stated: true,
+      quests: [], asks: ['a1', 'a2'], signedOut: ['account-1'],
+    };
+
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [], waits: [wait] });
+    expect(client.getQueryData(keys.waits)).toEqual([wait]);
+
+    eventHandlers.get('DAORIS.DRIVER_TICK')!({ events: [] });
+    expect(client.getQueryData(keys.waits)).toEqual([]);
+  });
+
   it("a driver error arrives as an error toast, the driver's own sentence verbatim", () => {
     const notify = vi.fn();
     show(<ShellSignals notify={notify} />);
