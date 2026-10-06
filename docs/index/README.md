@@ -96,15 +96,15 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 |---|---|---|
 | `src/Daoris.Cli/src/driverconfig.ts` | 75 | 1427 |
 | `src/Daoris.Cli/src/materialize.ts` | 47 | 936 |
-| `src/Daoris.Cli/src/plugins.ts` | 67 | 1342 |
-| `src/Daoris.Cli/src/toolchain.ts` | 136 | 2678 |
+| `src/Daoris.Cli/src/plugins.ts` | 67 | 1346 |
+| `src/Daoris.Cli/src/toolchain.ts` | 137 | 2690 |
 | `src/Daoris.Cli/test/desktop-publish.test.ts` | 48 | 871 |
 | `src/Daoris.Cli/test/dogfood.test.ts` | 42 | 755 |
 | `src/Daoris.Cli/test/driverconfig.test.ts` | 76 | 1474 |
 | `src/Daoris.Cli/test/merge-branch.test.ts` | 140 | 2233 |
-| `src/Daoris.Cli/test/rotation-use.test.ts` | 43 | 540 |
+| `src/Daoris.Cli/test/rotation-use.test.ts` | 45 | 555 |
 | `src/Daoris.Cli/test/setup-kit.test.ts` | 44 | 820 |
-| `src/Daoris.Cli/test/toolchain.test.ts` | 84 | 1664 |
+| `src/Daoris.Cli/test/toolchain.test.ts` | 87 | 1706 |
 | `src/Daoris.Cli/test/usage-report.test.ts` | 71 | 1226 |
 
 ### Tools (`tools`)

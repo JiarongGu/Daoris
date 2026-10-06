@@ -54,6 +54,9 @@ const ORDER_ROWS: [name: string, file: string, agent: string, workspace: Cell, o
   ['a file that does not read is none', 'not json', 'claude-code', null, null, 'unset'],
   ['a letter whose capital is two letters is not those two: straße is not STRASSE', '{"rotation":{"claude-code":["straße","STRASSE"]}}', 'claude-code', null, '["straße","STRASSE"]', 'machine'],
   ['a dotted capital I is not an i with a dot above', '{"rotation":{"claude-code":["İzmir","i\\u0307zmir"]}}', 'claude-code', null, '["İzmir","i\\u0307zmir"]', 'machine'],
+  ['a workspace is found in any case', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"work":{"claude-code":["account-2"]}}}', 'claude-code', 'WORK', '["account-2"]', 'workspace'],
+  ['a workspace written twice in any case is one, holding the later\'s orders', '{"workspaceRotation":{"work":{"claude-code":["account-1"]},"WORK":{"claude-code":["account-2"]}}}', 'claude-code', 'work', '["account-2"]', 'workspace'],
+  ['a workspace whose capital is two letters is not those two: straße has no order of STRASSE\'s', '{"rotation":{"claude-code":["account-1"]},"workspaceRotation":{"STRASSE":{"claude-code":["account-2"]}}}', 'claude-code', 'straße', '["account-1"]', 'machine'],
 ];
 
 /**
@@ -65,6 +68,22 @@ const DRIVER_OWES = new Set([
   'a letter whose capital is two letters is not those two: straße is not STRASSE',
   'a dotted capital I is not an i with a dot above',
 ]);
+
+/**
+ * CASEFOLD1c's rows, which `RotationTwinTests` does not hold yet either: a workspace is found, edited and read once in any
+ * case, as the driver's dictionaries hold one (`OrdinalIgnoreCase`): spelled as first written, holding the last read.
+ */
+const ORDERS_OWED = new Set([
+  ...DRIVER_OWES,
+  'a workspace is found in any case',
+  'a workspace written twice in any case is one, holding the later\'s orders',
+  'a workspace whose capital is two letters is not those two: straße has no order of STRASSE\'s',
+]);
+const EDITS_OWED = new Set([
+  'a workspace order set in another case replaces the one there, as first written',
+  'a workspace order cleared in another case',
+]);
+const FILES_OWED = new Set(['a workspace written twice in any case is written once, as first written, holding the later\'s']);
 
 test('an order resolves as the driver resolves it: the workspace\'s, else the machine\'s, else none', () => {
   const fx = makeFixture('rotation-resolve');
@@ -88,6 +107,8 @@ const EDIT_ROWS: [why: string, before: string, agent: string, order: Cell, works
   ['an order of nobody is a clear', '{"rotation":{"claude-code":["account-1"]}}', 'claude-code', '[]', null, '{}'],
   ['clearing what is not set changes nothing', '{"rotation":{"codex":["account-1"]}}', 'claude-code', null, 'work', '{"rotation":{"codex":["account-1"]}}'],
   ['a name is kept trimmed', '{}', 'claude-code', '[" account-1 "]', null, '{"rotation":{"claude-code":["account-1"]}}'],
+  ['a workspace order set in another case replaces the one there, as first written', '{"workspaceRotation":{"work":{"claude-code":["account-1"]}}}', 'claude-code', '["account-2"]', 'WORK', '{"workspaceRotation":{"work":{"claude-code":["account-2"]}}}'],
+  ['a workspace order cleared in another case', '{"workspaceRotation":{"work":{"claude-code":["account-2"]},"lab":{"codex":["account-1"]}}}', 'claude-code', null, 'WORK', '{"workspaceRotation":{"lab":{"codex":["account-1"]}}}'],
 ];
 
 test('an order is set and cleared as the driver writes it (the twin\'s table)', () => {
@@ -153,6 +174,7 @@ const FILE_ROWS: [why: string, before: string, codexDefault: Cell, after: string
   ['a value and a setting this build does not know go back as read, after the ones it knows', '{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"weekly":"pace","near":120,"use":"drain"}}}', null, '{"defaults":{},"workspaces":{},"versions":{},"workspaceVersions":{},"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"use":"drain","near":120,"weekly":"pace"}}}'],
   ['the retired prefer and parallel are not written back, and an entry naming nothing else goes', '{"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"prefer":"left","keep":"account-1","parallel":true},"codex":{"prefer":"soonest"}}}', null, '{"defaults":{},"workspaces":{},"versions":{},"workspaceVersions":{},"rotation":{"claude-code":["account-1"]},"rotationUse":{"claude-code":{"keep":"account-1"}}}'],
   ['settings with no list are written back as read, and read only with one', '{"rotationUse":{"claude-code":{"early":false}},"workspaceRotationUse":{"work":{"codex":{"keep":"account-1"}}}}', null, '{"defaults":{},"workspaces":{},"versions":{},"workspaceVersions":{},"rotationUse":{"claude-code":{"early":false}},"workspaceRotationUse":{"work":{"codex":{"keep":"account-1"}}}}'],
+  ['a workspace written twice in any case is written once, as first written, holding the later\'s', '{"workspaces":{"work":{"claude-code":"account-1"},"WORK":{"claude-code":"account-2"}},"workspaceVersions":{"Lab":{"codex":"0.50.0"},"lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-1"]},"Work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"goal"}},"WORK":{"claude-code":{"use":"order"}}}}', null, '{"defaults":{},"workspaces":{"work":{"claude-code":"account-2"}},"versions":{},"workspaceVersions":{"Lab":{"codex":"0.51.0"}},"workspaceRotation":{"work":{"claude-code":["account-2"]}},"workspaceRotationUse":{"work":{"claude-code":{"use":"order"}}}}'],
 ];
 
 test('both twins write the same file: every section, in the same order, as the same bytes', () => {
@@ -270,9 +292,11 @@ test('the driver’s tables are these tables, row for row and in this order', ()
 
   const orders = rows('An_order_resolves_as_the_cli_resolves_it');
   const problems = rows('An_order_is_refused_as_the_cli_refuses_it');
-  assert.deepEqual(orders, heldSoFar(orders, ORDER_ROWS, DRIVER_OWES));
-  assert.deepEqual(rows('An_order_is_set_and_cleared_as_the_cli_writes_it'), EDIT_ROWS);
+  const edits = rows('An_order_is_set_and_cleared_as_the_cli_writes_it');
+  const files = rows('Both_twins_write_the_same_file');
+  assert.deepEqual(orders, heldSoFar(orders, ORDER_ROWS, ORDERS_OWED));
+  assert.deepEqual(edits, heldSoFar(edits, EDIT_ROWS, EDITS_OWED));
   assert.deepEqual(problems, heldSoFar(problems, PROBLEM_ROWS, DRIVER_OWES));
   assert.deepEqual(rows('An_account_removed_leaves_the_wiring_as_the_cli_leaves_it'), REMOVE_ROWS);
-  assert.deepEqual(rows('Both_twins_write_the_same_file'), FILE_ROWS);
+  assert.deepEqual(files, heldSoFar(files, FILE_ROWS, FILES_OWED));
 });

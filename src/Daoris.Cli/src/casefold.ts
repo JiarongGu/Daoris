@@ -44,6 +44,26 @@ export function findName(names: Iterable<string>, name: string): string | null {
 }
 
 /**
+ * Entries held as a driver dictionary that ignores case holds what is set into it, one by one (`map[name] = value`): each
+ * name once, under its spelling first set, holding the value set last (CASEFOLD1c; `HarnessSettings`' maps are read so).
+ */
+export function byName<T>(entries: Iterable<readonly [string, T]>): Record<string, T> {
+  const held: [string, T][] = [];
+  for (const [name, value] of entries) {
+    const at = held.findIndex(([each]) => sameName(each, name));
+    if (at === -1) held.push([name, value]);
+    else held[at] = [held[at]![0], value];
+  }
+  return Object.fromEntries(held);
+}
+
+/** What a map keyed by name holds under `name` in any case, as a driver dictionary that ignores case finds it; undefined for none. */
+export function atName<T>(map: Record<string, T>, name: string): T | undefined {
+  const key = findName(Object.keys(map), name);
+  return key === null ? undefined : map[key];
+}
+
+/**
  * How two names order without case, as the driver's `StringComparer.OrdinalIgnoreCase` orders them: by their folds, a UTF-16
  * unit at a time, as .NET compares each capital.
  */

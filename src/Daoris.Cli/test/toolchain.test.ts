@@ -141,6 +141,41 @@ test('the pin is the pick, then the workspace default, then the machine default,
 });
 
 /**
+ * CASEFOLD1c: a workspace's default and pin are found in any case, as the driver's `Choose` finds them in dictionaries that
+ * ignore case (`OrdinalIgnoreCase`), and a workspace written twice in any case is read once, as first written, holding the
+ * later's. A letter whose capital is two letters is still not those two.
+ */
+test('a workspace\'s default and pin are found in any case, as the driver finds them', () => {
+  const fx = makeFixture('harness-workspace-case');
+  writeFileSync(at(fx), JSON.stringify({
+    defaults: { 'claude-code': 'personal' },
+    workspaces: { aurora: { 'claude-code': 'work' }, AURORA: { 'claude-code': 'later' }, STRASSE: { 'claude-code': 'wide' } },
+    versions: { 'claude-code': '1.2.3' },
+    workspaceVersions: { Aurora: { 'claude-code': '2.0.0' } },
+  }), 'utf8');
+  const settings = readHarnessSettings(at(fx));
+
+  assert.deepEqual(Object.keys(settings.workspaces), ['aurora', 'STRASSE']);
+  assert.equal(resolveProfile(settings, 'claude-code', 'Aurora', null), 'later');
+  assert.equal(resolveProfile(settings, 'claude-code', 'straße', null), 'personal');
+  assert.equal(resolveVersion(settings, 'claude-code', 'aURORA', null), '2.0.0');
+
+  run(['unpin', 'claude-code', '--workspace', 'AURORA'], at(fx));
+  assert.deepEqual(readHarnessSettings(at(fx)).workspaceVersions, {});
+
+  // A later spelling naming none still replaces a workspace's defaults, and replaces nothing of its orders, as the
+  // driver's `ReadCircles` and `ReadOrderCircles` set each.
+  writeFileSync(at(fx), JSON.stringify({
+    workspaces: { aurora: { 'claude-code': 'work' }, AURORA: {} },
+    workspaceRotation: { aurora: { 'claude-code': ['work'] }, AURORA: { 'claude-code': [] } },
+  }), 'utf8');
+  const later = readHarnessSettings(at(fx));
+  assert.deepEqual(later.workspaces, { aurora: {} });
+  assert.deepEqual(later.workspaceRotation, { aurora: { 'claude-code': ['work'] } });
+  fx.cleanup();
+});
+
+/**
  * 🔴 The rule that must never regress, and the twin of "no profile means the harness's own home".
  * Nothing pinned means `PATH` — not an empty managed directory, and not a refusal.
  */
@@ -276,6 +311,13 @@ const DEFAULT_EDITS: [why: string, before: Pick<HarnessSettings, 'defaults' | 'w
     'claude-code', null, 'aurora', { defaults: { 'claude-code': 'play' }, workspaces: { lab: { codex: 'play' } } }],
   ['clearing what is not set changes nothing', { defaults: { codex: 'play' }, workspaces: {} }, 'claude-code', null, 'aurora',
     { defaults: { codex: 'play' }, workspaces: {} }],
+  // CASEFOLD1c: a workspace is edited in any case, under the spelling first written, as the driver's dictionaries hold one.
+  ['a workspace default set in another case replaces the one there, as first written',
+    { defaults: {}, workspaces: { aurora: { 'claude-code': 'work' } } }, 'claude-code', 'play', 'AURORA',
+    { defaults: {}, workspaces: { aurora: { 'claude-code': 'play' } } }],
+  ['a workspace default cleared in another case',
+    { defaults: {}, workspaces: { aurora: { 'claude-code': 'work' }, lab: { codex: 'play' } } }, 'claude-code', null, 'Aurora',
+    { defaults: {}, workspaces: { lab: { codex: 'play' } } }],
 ];
 
 test('an account\'s default is set and cleared as the screen\'s own write sets and clears it (the twin\'s table)', () => {
