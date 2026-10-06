@@ -11309,3 +11309,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **DEV3a — stop report before run exits** (driver). `--once`/`--until-idle` wait for reports they caused. Contract: DEV3. Proof: driver test; retain failed lost-claim rehearsal evidence.
 
 **Outcome** 2026-10-07: `--once` no longer leaves before its sessions end: a failed pass beside them becomes a line and the next pass runs, and the lost-claim check's own client timeout is no answer rather than a throw. Both runs print each report as it is made (`said`), and `LetGoAsync` hands over what ended while the run waited. The cause is the one the code shows; the failed rehearsal's transcript was never kept, and FLAKE1's sighting stays. A client timeout read as a close remains (DEV3b). Driver fast half +4. Detail: D115's DEV3a note, FIX-LOG 2026-10-07; commit abc9e6fb.
+
+
+## GATE1 — the docs gate sees the proposed merge commit (2026-10-07)
+
+> - [ ] **GATE1 — docs gate sees proposed merge commit** (tools). Committed-date checks miss changed source during merge. Proof: proposed-commit gate seen failing before the fix; preserve TOOL4e incident in the supporting record.
+
+**Outcome** 2026-10-07: the universal gates, in their gate and in `verify`, run through `tools/as-merged.mjs`, where git's HEAD is the commit an open merge would make (its tree as `git add -A` would stage it, its parents HEAD and each MERGE_HEAD, in a throwaway git folder); outside a merge nothing changes, and the index, HEAD and open merge are never written. Only the devkit's docs gate read committed history. The same day it struck a second time: HIST1a's merge passed with `Daoris.Service.Core` changed and its README not, and main went red once committed, fixed by d6f25a63. `tools/as-merged.test.mjs` (8) is outside `verify`, as the benches are. The devkit side is GATE1b. Detail: FIX-LOG GATE1 (with TOOL4e); commits bc373b74, 55fc907c.
