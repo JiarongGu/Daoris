@@ -1,4 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n';
 import { ConversationView } from './ConversationView';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
@@ -6,8 +8,11 @@ import { CLAIMED } from './handedFixtures';
 // Every state of a conversation (D76, CONV2), built by the same fold the organism uses, so what a
 // reviewer designs against is what a session shows: a finished turn folded, a running one open, a
 // driven session's composed target with what it was handed beneath it (CONTEXT1), the kinds a tool call
-// can be, a plan, the driver's own note, an update this version does not know, a door that carries only
+// can be, a plan, the driver's own note and one worded from its parts (CONVNOTE1), an update this version does not know, a door that carries only
 // text, words a cooling account holds with *Go on in a new session* and what it came to (MSG1g2), and 中文.
+
+const zh = i18n.cloneInstance({ lng: 'zh' });
+const chinese: Decorator = (Story) => <I18nextProvider i18n={zh}><Story /></I18nextProvider>;
 
 let seq = 0;
 // A second and a half between events, so a finished turn's meter reads a span a session could take (CONV5).
@@ -113,6 +118,21 @@ const CUT_OFF: SessionEvent[] = [
   ev({ kind: 'turn', stopReason: 'cancelled' }),
 ];
 
+/**
+ * CONVNOTE1 (D125's SIGNIN1b note): a chat's turn its agent refused for the account's sign-in. The driver's note carries its
+ * parts, and the page words the line from them in the reader's language; its English is the console's.
+ */
+const SIGNED_OUT_ENGLISH = 'The agent refused the claude-code account it ran on for its sign-in, so it reads signed out.';
+const SIGN_IN_REFUSED: SessionEvent[] = [
+  ev({ kind: 'user', origin: 'person', text: 'Where does the streamer read its budget?' }),
+  ev({ kind: 'note', text: 'the turn could not be taken: the ACP agent refused the call: Authentication required' }),
+  ev({
+    kind: 'note', text: SIGNED_OUT_ENGLISH,
+    parts: [{ code: 'account.signed-out', values: { owner: 'claude-code' }, text: SIGNED_OUT_ENGLISH }],
+  }),
+  ev({ kind: 'turn', stopReason: 'refusal' }),
+];
+
 const CHINESE: SessionEvent[] = [
   ev({ kind: 'user', origin: 'person', text: '把每帧的加载上限做成可配置的。' }),
   ev({ kind: 'message', text: '已在 `level.rs` 中加入 `streaming_budget` 字段，默认值为 **4**。' }),
@@ -138,6 +158,10 @@ export const ChatWrittenToAfterItEnded: Story = { args: { turns: settle(toTurns(
 export const WordsWentToANewSession: Story = { args: { turns: settle(toTurns(WENT).turns, false), onSession: () => {} } };
 export const WordsCannotGoOnHere: Story = { args: { turns: settle(toTurns(CANNOT).turns, false), onStartFrom: () => {} } };
 export const WordCutOffByAStop: Story = { args: { turns: toTurns(CUT_OFF).turns, chat: true } };
+/** CONVNOTE1: a turn refused for its sign-in, the driver's line worded from its parts. */
+export const RefusedForItsSignIn: Story = { args: { turns: toTurns(SIGN_IN_REFUSED).turns, chat: true } };
+/** CONVNOTE1, in 中文: the same line from the other catalogue, never the driver's English. */
+export const RefusedForItsSignInChinese: Story = { ...RefusedForItsSignIn, decorators: [chinese] };
 
 /** MSG1g2 (D137 §2.2): the account it ran on cools until a reset the agent named, so the words wait, with the door out. */
 const COOLING_UNTIL = '2026-09-25T13:10:00Z';
