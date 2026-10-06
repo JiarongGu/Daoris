@@ -137,6 +137,11 @@ first an injected refusal, so the second, a real move of files just unpacked, ha
 them: the very condition the code under test survives. The stub's real move now waits as `renameHeld` does; only the
 injected refusal is counted.
 
+*And in the CLI's own writer:* `sync.test.ts:221` met EPERM renaming `.claude/INDEX.md.daoris-tmp` over its target in
+GATE1b's verify. `writeTextAtomic` and `writeBytesAtomic` in `src/fsx.ts`, through which every CLI write goes, still
+renamed bare; a consumer's editor or scanner holding the file would refuse a real `sync` the same way. Both now rename
+through `renameHeld`, which `fsx.test.ts` holds.
+
 *Narrowed by MOD8 (2026-09-30): every class that starts a real process or runs a real tick carries the `Process`
 category, subagents never run it, and the parent and the release run it serially; the final serial run on an idle
 machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit threw
