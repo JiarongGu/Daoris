@@ -279,6 +279,22 @@ describe('toTurns', () => {
     expect(items[1]).toMatchObject({ code: 'lost', words: ['said-1'] });
   });
 
+  /**
+   * CONVNOTE1 (D125's SIGNIN1b note): a driver's note whose lines are worded by code carries its parts, as a session record's
+   * note does (LANG1a), so the page words each line in the reader's language. Its English stays beside them.
+   */
+  it('carries a note’s parts beside its English', () => {
+    const parts = [{ code: 'account.signed-out', values: { owner: 'claude-code' }, text: 'The agent refused the account.' }];
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'hello' }),
+      e(2, { kind: 'note', text: 'The agent refused the account.', parts }),
+    ]);
+
+    expect(turns[0]!.items[0]).toMatchObject({ kind: 'note', text: 'The agent refused the account.', parts });
+    // A note with none keeps none.
+    expect(toTurns([e(1, { kind: 'note', text: 'no connector here' })]).turns[0]!.items[0]).not.toHaveProperty('parts');
+  });
+
   /** A tool call and its updates are one card, where it first appeared, carrying its latest state. */
   it('merges a tool call\'s updates into the one card, in the place it began', () => {
     const { turns } = toTurns([

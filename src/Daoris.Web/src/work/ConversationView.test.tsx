@@ -532,6 +532,41 @@ describe('ConversationView', () => {
   });
 
   /**
+   * CONVNOTE1 (D125's SIGNIN1b note): a conversation its agent refused for its sign-in carries the driver's note with its
+   * parts, and the page words it from them in the reader's language, as a session record's note is (LANG1b). The driver's
+   * English is never shown where the page could word it, and a part the page cannot word shows as recorded, marked.
+   */
+  it('words a driver’s note from its parts in the reader’s language: a refused sign-in', async () => {
+    const english = 'The agent refused the claude-code account it ran on for its sign-in.';
+    const refused = () => [
+      ev({ kind: 'user', origin: 'person', text: 'hello' }),
+      ev({ kind: 'note', text: english, parts: [{ code: 'account.signed-out', values: { owner: 'claude-code' }, text: english }] }),
+      ev({ kind: 'turn', stopReason: 'refusal' }),
+    ];
+    const { unmount } = view(refused());
+    expect(screen.getByText(/^The agent refused the claude-code account it ran on for its sign-in, so it reads signed out/))
+      .toBeTruthy();
+    expect(screen.queryByText(english)).toBeNull();
+    expect(screen.getByText('Driver')).toBeTruthy();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    try {
+      const { unmount: shown } = view(refused());
+      expect(screen.getByText(/^智能体以登录为由拒绝了它运行时用的 claude-code 账户/)).toBeTruthy();
+      expect(screen.queryByText(/refused/)).toBeNull();
+      shown();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+
+    // A code this page does not know: the part's own English, marked as recorded.
+    view([ev({ kind: 'note', text: 'a newer line.', parts: [{ code: 'account.newer', text: 'A newer line.' }] })]);
+    expect(screen.getByText('A newer line.')).toBeTruthy();
+    expect(screen.getByText('shown as recorded')).toBeTruthy();
+  });
+
+  /**
    * MSG1g2 (D137 §2.2, MSG1g's note): words a resume holds while the account its record ran on cools say so, naming its
    * reset, and offer *Go on in a new session*, saying the new session starts without this conversation's context. What the
    * press came to is said in the page's words; where nothing carries the words on by itself, the door is a conversation.

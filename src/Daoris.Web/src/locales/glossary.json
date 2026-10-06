@@ -20,12 +20,12 @@
 
   "kinds": {
     "nav": {
-      "what": "A place a person goes to: the activity bar (its tip and the view's header), Settings' domain list, the menu bar's seven menus.",
+      "what": "A place a person goes to: the activity bar (its tip and the view's header), Settings' domain list, the menu bar's seven menus and the one they fold into.",
       "room": "Settings' domain list: 11rem less its padding and rail, 150px of text-body on one line; one word on the bar's tip.",
       "budget": { "en": 16, "zh": 5 },
       "case": "sentence",
       "keys": [
-        "menu.edit", "menu.go", "menu.help", "menu.run", "menu.terminal", "menu.view", "menu.workspace",
+        "menu.edit", "menu.fold", "menu.go", "menu.help", "menu.run", "menu.terminal", "menu.view", "menu.workspace",
         "nav.agents", "nav.convergence", "nav.map", "nav.overview",
         "nav.plugins", "nav.projects", "nav.quests", "nav.search", "nav.sessions", "nav.settings", "settings.domain.*"
       ]

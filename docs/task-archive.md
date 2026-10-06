@@ -11330,3 +11330,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AGENTREAD1 — persist terminal account readings** (cli). Make `daoris agent list` inform the screen and loop. Contract: D50, D150 §5.3, D125 ROSTER1, `reads.json` twin. Proof: both twins read the same table.
 
 **Outcome** 2026-10-07: built (CLI half). `daoris agent list`, a terminal sign-in's end and `profile remove` keep or forget account readings in the home's `reads.json` as the driver's `AccountReads` does (`accountreads.ts`, its new twin); only a status actually asked is kept, so a door or a held probe lock keeps nothing. A sign-in to a named account now always reads its status at the end (ROSTER1's rule; one more status call). Both twins share one table, `src/Daoris.Cli/test/fixtures/account-reads.json`; the driver's test of it is AGENTREAD1b. CLI 1304 → 1313. Detail: D125's AGENTREAD1 note; commits da489af7…aa2b6f9f.
+
+
+## UX7a2 — compact menu follow-through (2026-10-07, D152)
+
+> - [ ] **UX7a2 — compact menu follow-through** (web-shell). Fold seven menus below about 590 CSS px, retaining keyboard access and focus return. The Update anchor is fixed and regression-tested during INTEGRATE1. Contract: D152's UX7a note, UX7 design §3. Proof: 560 px story and keyboard tests.
+
+**Outcome** 2026-10-07: below a 624 px window (39rem; 590 was measured on stories without the strip's browser door) the seven menus fold into one ☰ whose rows are the menus, each opening its own rows to the side. Alt/F10 focus it, Alt+letter opens it at that menu, the arrows move and open, Escape closes onto it and returns the focus, and held Alt shows the letters. `MenuRows` is shared by the bar and the fold. platform-ux §2 names the fold as the one exception to "nothing hides behind a hamburger". Installed look is UX7e's. Detail: D152's UX7a2 note; commit c091e9e7.
+
+
+## CONVNOTE1 — conversation notes read their parts (2026-10-07)
+
+> - [ ] **CONVNOTE1 — conversation notes read their parts** (web-shell). A driver note on a conversation (a refused sign-in since SIGNIN1b, a chat's cooling) carries `parts`, but `src/Daoris.Web/src/work/conversation.ts:451-475` keeps only `text` and `code`, so 中文 shows the driver's English. Contract: LANG1a/LAND2b note parts, D125's SIGNIN1b note. Proof: vitest rendering `account.signed-out` from both catalogues.
+
+**Outcome** 2026-10-07: a conversation's driver note with parts is worded through the catalogues as session record notes are (`Note`, `noteText`), so `account.signed-out` reads in 中文; an unknown code shows its English marked as recorded. A chat's cooling note still has no parts (CONVNOTE1b). Web vitest 4177 → 4205 with UX7a2 and main. Detail: commit 81e07cb2.
