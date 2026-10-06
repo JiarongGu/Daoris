@@ -143,6 +143,79 @@ public sealed class QuestLogTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 HIST1a (D153 point 4, H1): the sequence never goes back. Removing this machine's newest operations, as D95's
+    /// delete of a quest that never left does, leaves the next one numbered past them, even from a store opened again,
+    /// because a remote that already holds a number answers a second operation under it as a retried push.
+    /// </summary>
+    [Fact]
+    public async Task Removing_the_newest_operations_never_hands_their_sequence_out_again()
+    {
+        await Publish("Kept");
+        var newest = await Publish("Removed");
+        Assert.True((await _quests.DeleteAsync(newest.Id, Now.AddHours(1), travels: false)).Deleted);
+        Assert.Empty(await _quests.HistoryAsync(newest.Id));
+
+        var next = await _quests.PublishAsync("Asker", "Owner", "Next", "b", Now.AddHours(2));
+        var reopened = await QuestStore.OpenAsync(_connection);
+        var after = await reopened.PublishAsync("Asker", "Owner", "After", "b", Now.AddHours(3));
+
+        Assert.Equal(3L, Assert.Single(await _quests.HistoryAsync(next.Id)).Sequence);
+        Assert.Equal(4L, Assert.Single(await reopened.HistoryAsync(after.Id)).Sequence);
+    }
+
+    /// <summary>
+    /// HIST1a: an operation of this machine's that a fetch brings back, as one does after a hand purge made before the mark
+    /// once a cursor is at zero (H4), raises the mark as well: the remote holds that number, so removing it again must
+    /// not hand it out a second time.
+    /// </summary>
+    [Fact]
+    public async Task An_operation_of_this_machines_fetched_back_raises_the_mark_too()
+    {
+        await _quests.IntegrateAsync(
+            Workspaces.Default,
+            [new QuestOperation("abcdefabcdef", QuestOperationKind.Deleted, _quests.Machine, 5, Now, Number: 1)],
+            through: 1);
+        await using (var purge = _connection.CreateCommand())
+        {
+            purge.CommandText = "DELETE FROM quest_log WHERE quest = 'abcdefabcdef'";
+            Assert.Equal(1, await purge.ExecuteNonQueryAsync());
+        }
+
+        var next = await Publish("Next");
+
+        Assert.Equal(6L, Assert.Single(await _quests.HistoryAsync(next.Id)).Sequence);
+    }
+
+    /// <summary>
+    /// HIST1a: a store from before the mark starts it at the highest sequence this machine issued, so a removal made
+    /// after the upgrade cannot take the sequence back either. Another machine's sequences are theirs, and count for nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_store_from_before_the_mark_starts_it_at_the_highest_sequence_it_issued()
+    {
+        var kept = await Publish("Kept");
+        await _quests.MoveAsync(kept.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        var newest = await Publish("Removed");
+        await using (var older = _connection.CreateCommand())
+        {
+            // The build before HIST1a: no mark, and nothing that moves one. Another machine's operation, far ahead.
+            older.CommandText = """
+                DROP TRIGGER IF EXISTS quest_sequence_issued;
+                ALTER TABLE quest_machine DROP COLUMN sequence;
+                INSERT INTO quest_log (quest, kind, machine, sequence, at, payload, remote)
+                VALUES ('ffffffffffff', 'taken', 'anothermachine00', 90, '2026-09-23T10:00:00Z', '{}', 1);
+                """;
+            await older.ExecuteNonQueryAsync();
+        }
+
+        var upgraded = await QuestStore.OpenAsync(_connection);
+        Assert.True((await upgraded.DeleteAsync(newest.Id, Now.AddHours(2), travels: false)).Deleted);
+        var next = await upgraded.PublishAsync("Asker", "Owner", "Next", "b", Now.AddHours(3));
+
+        Assert.Equal(4L, Assert.Single(await upgraded.HistoryAsync(next.Id)).Sequence);
+    }
+
+    /// <summary>
     /// The claim SYNC1 exists to make true: what the platform reads is what replaying the history
     /// gives — for every quest, whatever it carries and however it ended, a chain's step included.
     /// </summary>

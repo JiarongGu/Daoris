@@ -11288,3 +11288,38 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ACCTQUOTE1 — account terminal hints preserve arguments** (web-shell, cli). Valid names such as `R&D` appear unquoted in rename hints and change meaning when pasted into a shell. Contract: D125 ACCT2 and `src/Daoris.Web/src/agents/AddAccount.tsx:112`. Choose quoting for supported shells or explicit placeholders; prove metacharacter names and workspace arguments remain single arguments without tightening the naming contract.
 
 **Outcome** 2026-10-07: every CLI command and page twin built from an account or workspace value goes through one spelling (`shellword.ts`, `shellWord.ts`, one table `shell-words.json`): bare, double-quoted, or a placeholder where no spelling holds in cmd, PowerShell 5.1 (through `daoris.cmd`) and sh alike. The CLI test passes each row through the install's real launchers. The naming rule is unchanged. The driver's and Settings' sentences remain (ACCTQUOTE1b, c). CLI 1294 → 1302. Detail: D125's ACCTQUOTE1 note; commit 30461847.
+
+
+## HIST1a — store numbers never go back (2026-10-07, D153)
+
+> - [ ] **HIST1a — store numbers never go back** (service; first). Keep high-water marks for operation sequences and session revisions, so no removal reissues a number the remote or push cursor passed. This closes H1–H2, which D95's and D126's deletes already reach. Contract: history-clearing §0.3, §3.3. Proof: store tests removing the newest rows; sync tests over the real wire.
+
+**Outcome** 2026-10-07: removing a store's newest rows no longer hands out a sequence or revision a remote or push cursor passed. The marks are `quest_machine.sequence` and a one-row `session_revision`, moved by triggers in the statement that writes the number and seeded at migration from what the store holds, so a store that never removed anything behaves as before. Building it found H1's second route: a fetch brings the remote's operation back under the reused number and marks the new move accepted. Service 1170 → 1178. Detail: D153's HIST1a note, FIX-LOG 2026-10-07; commits 08b135ec, 8d60d08b.
+
+
+## TOOL6h — recheck an account after a refused start (2026-10-07, D125)
+
+> - [ ] **TOOL6h — recheck account after refused start** (driver). Previously signed-in account gets one fresh reading after refusal. Contract: D125 TOOL6g note. Proof: refused-start tick case.
+
+**Outcome** 2026-10-07: a sign-in refusal on an account last read signed in owes that account one fresh reading, taken by the next start that walks to it and honoured; the reading it makes never owes another, so an agent that says signed in while refusing costs one extra start, never one per look. Never the tool's own sign-in. Held in memory: after a restart the mark or the hour applies as before. Driver fast half +7; one Process case awaits the full set. Detail: D125's TOOL6h note; commit 4fc87199.
+
+
+## DEV3a — the stop report lands before the run exits (2026-10-07, D115)
+
+> - [ ] **DEV3a — stop report before run exits** (driver). `--once`/`--until-idle` wait for reports they caused. Contract: DEV3. Proof: driver test; retain failed lost-claim rehearsal evidence.
+
+**Outcome** 2026-10-07: `--once` no longer leaves before its sessions end: a failed pass beside them becomes a line and the next pass runs, and the lost-claim check's own client timeout is no answer rather than a throw. Both runs print each report as it is made (`said`), and `LetGoAsync` hands over what ended while the run waited. The cause is the one the code shows; the failed rehearsal's transcript was never kept, and FLAKE1's sighting stays. A client timeout read as a close remains (DEV3b). Driver fast half +4. Detail: D115's DEV3a note, FIX-LOG 2026-10-07; commit abc9e6fb.
+
+
+## GATE1 — the docs gate sees the proposed merge commit (2026-10-07)
+
+> - [ ] **GATE1 — docs gate sees proposed merge commit** (tools). Committed-date checks miss changed source during merge. Proof: proposed-commit gate seen failing before the fix; preserve TOOL4e incident in the supporting record.
+
+**Outcome** 2026-10-07: the universal gates, in their gate and in `verify`, run through `tools/as-merged.mjs`, where git's HEAD is the commit an open merge would make (its tree as `git add -A` would stage it, its parents HEAD and each MERGE_HEAD, in a throwaway git folder); outside a merge nothing changes, and the index, HEAD and open merge are never written. Only the devkit's docs gate read committed history. The same day it struck a second time: HIST1a's merge passed with `Daoris.Service.Core` changed and its README not, and main went red once committed, fixed by d6f25a63. `tools/as-merged.test.mjs` (8) is outside `verify`, as the benches are. The devkit side is GATE1b. Detail: FIX-LOG GATE1 (with TOOL4e); commits bc373b74, 55fc907c.
+
+
+## ACCTQUOTE1c — Settings' twins spell their arguments (2026-10-07, D125)
+
+> - [ ] **ACCTQUOTE1c — Settings' twins spell their arguments** (web-settings). `settings/AccountUse.tsx:132/186/412` and `settings/AccountSettings.tsx:142` print `--workspace`/`--account` values bare. Contract: D125's ACCTQUOTE1 note. Proof: vitest with a spaced and an `R&D` workspace and account.
+
+**Outcome** 2026-10-07: Settings' account-use hints and the account settings form spell their workspace and account through `shellWord` (quoted, or `<workspace>`/`<account>`); prose naming a workspace stays as named. No other Settings command takes an account or workspace. Web vitest 4177 → 4185. Detail: D125's ACCTQUOTE1c note; commit 80f100a9.

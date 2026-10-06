@@ -24,6 +24,11 @@ const acts = (): ScopeActs & { calls: unknown[][] } => {
 
 const wrap = (node: React.ReactElement) => render(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
+/** Every terminal twin drawn, in the page's order: each hint's code span that is a command. */
+const twins = () => [...document.querySelectorAll('code')]
+  .map((span) => span.textContent ?? '')
+  .filter((text) => text.startsWith('daoris '));
+
 describe('an account\'s facts', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -302,6 +307,13 @@ describe('a workspace\'s scope', () => {
     expect(pressed.calls).toEqual([['inherit', 'work']]);
   });
 
+  /** Its hint is the terminal's twin that returns it to this machine's accounts, or gives it a list of its own. */
+  it('names the terminal twin for its workspace', () => {
+    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
+
+    expect(twins()).toEqual(['daoris agent profile order claude-code <account>…|--clear --workspace lab']);
+  });
+
   /** A workspace on this machine's accounts where the machine has none says the tool's own sign-in, or the default. */
   it('says the tool\'s own sign-in, or this machine\'s default, where the machine has no list', () => {
     const { unmount } = wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={scopeOf()} accounts={CHOICES} acts={acts()} />);
@@ -310,5 +322,66 @@ describe('a workspace\'s scope', () => {
 
     wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="lab" scope={null} machine={scopeOf({ default: 'account-2', begins: 'account-2', use: USE_DEFAULTS })} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByText("Its starts run on this machine's default, home@example.invalid.")).toBeTruthy();
+  });
+});
+
+/**
+ * ACCTQUOTE1c (D125's ACCTQUOTE1 note): each hint is a command a person pastes into whichever shell they have, so a workspace
+ * with a space is in double quotes, and one no spelling holds in every shell (`R&D`) is the placeholder `<workspace>`.
+ */
+describe('a scope\'s terminal twins', () => {
+  const scoped = (workspace: string) => ({ ...OFFERED_AGAIN.scopes[1]!, workspace });
+  const editor = (workspace?: string) => wrap(
+    <ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={workspace ? scoped(workspace) : OFFERED_AGAIN.scopes[0]!} accounts={CHOICES} workspace={workspace} acts={acts()} />,
+  );
+  // The next start's, then the list's, then each of how the list is used.
+  const scopeTwins = (flag: string) => [
+    `daoris agent profile use claude-code${flag}`,
+    `daoris agent profile order claude-code <account>…${flag}`,
+    `daoris agent profile use claude-code goal|order${flag}`,
+    `daoris agent profile use claude-code --keep <account>|--no-keep${flag}`,
+    `daoris agent profile use claude-code --early on|off${flag}`,
+    `daoris agent profile use claude-code --near <percent>${flag}`,
+  ];
+
+  it('names no workspace on this machine\'s scope', () => {
+    editor();
+    expect(twins()).toEqual(scopeTwins(''));
+  });
+
+  it('names a workspace a shell takes as it is', () => {
+    editor('work');
+    expect(twins()).toEqual(scopeTwins(' --workspace work'));
+  });
+
+  it('quotes a workspace with a space in each twin', () => {
+    editor('my team');
+    expect(twins()).toEqual(scopeTwins(' --workspace "my team"'));
+  });
+
+  it('names a workspace no shell can take by a placeholder in each twin', () => {
+    editor('R&D');
+    expect(twins()).toEqual(scopeTwins(' --workspace <workspace>'));
+  });
+
+  it('spells the workspace in its scope\'s twin', () => {
+    const { unmount } = wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="my team" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
+    expect(twins()).toEqual(['daoris agent profile order claude-code <account>…|--clear --workspace "my team"']);
+    unmount();
+
+    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="R&D" scope={null} machine={THREE.scopes[0]!} accounts={CHOICES} acts={acts()} />);
+    expect(twins()).toEqual(['daoris agent profile order claude-code <account>…|--clear --workspace <workspace>']);
+  });
+
+  /** The workspace's own name is said as it is wherever the page says it rather than prints a command: only twins spell it. */
+  it('says the workspace as it is outside the twins', async () => {
+    const pressed = acts();
+    wrap(<WorkspaceScope agent={THREE} product="Claude Code" workspace="R&D" scope={{ ...THREE.scopes[1]!, workspace: 'R&D' }} machine={THREE.scopes[0]!} accounts={CHOICES} acts={pressed} />);
+
+    expect(screen.getByText('Workspace R&D')).toBeTruthy();
+    await userEvent.click(screen.getByRole('radio', { name: "This machine's accounts" }));
+    expect(screen.getByText(/^This clears R&D's own default, list and settings for claude-code/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: "Use this machine's accounts" }));
+    expect(pressed.calls).toEqual([['inherit', 'R&D']]);
   });
 });

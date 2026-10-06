@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a single run left before what it caused had landed
+
+### Driver: `--once` could end with its session working and its stop unsaid (DEV3a)
+- **Symptom:** the family rehearsal's *its driver stops its own losing session* failed once under load (311/312, FLAKE1 below): the record stood down, and the run's print had no `stop  session` line.
+- **Root cause:** since DEV3, `RunOnceAsync` waits for its sessions in `SettleAsync`, whose passes beside them caught only the close. Anything else a pass threw left the run with its sessions working and the lines it had gathered, a lost-claim stop's included. The claim question's client timeout was such a throw (the stop caught only an unreachable host), and the host's catch read it as a close: *driver: stopped.*, exit 0. `--until-idle` printed nothing until the whole run returned, so a later failed look dropped every earlier look's lines.
+- **Fix:** the stop reads the client's timeout as no answer; a failed pass beside the sessions is a line and the next pass runs; both runs hand each report to `said` as it is made, and what ended before a failure or close lets go; the headless host prints from it.
+- **Verify:** four failing-first cases in `SessionsOutliveTheirLookTests` over the stand-in ledger, its claim door stalled past a 200 ms client timeout (the timeout escaped with the session working). Not run: the rehearsal, which never kept the failed run's transcript, so this is the cause the code admits. Note under D115.
+## 2026-10-07 — GATE1, the docs gate blind at a merge
+
+### Gates: a merge passed the docs gate, then failed it once committed (TOOL4e)
+- **Symptom:** the 2026-10-02 merge of TOOL4e and SESSUX1a (`435cfef3`) passed every gate the merge tool ran, then `verify` failed on main: the devkit's docs gate found the root README, last committed 2026-10-01 (`f60afc69`), a day behind `src/Daoris.Cli/src`, which TOOL4e changed on 2026-10-02 (`0a861ef0`). Main stayed red until the next merge (`cf76bc7f`) edited the README; its message says every gate passed but the docs-date check.
+- **Root cause:** the merge tool merges `--no-ff --no-commit` and gates before the commit exists, and `DocsGate.cs` dates each side by `git log -1 --format=%aI -- <path>` from HEAD. During the merge HEAD was still main, where the README and the CLI's source had both last changed on 2026-10-01; the branch's commits were reachable only from MERGE_HEAD. The other docs checks (budgets, shapes, duplicates, the orientation index, the devkit's other gates) read files or the index, and saw the merge. No one change introduced it: the merge tool has gated before committing since MOD9.
+- **Fix:** `tools/as-merged.mjs` runs a command with git's HEAD as the commit an open merge would make: the tree `git add -A` would stage, on HEAD and MERGE_HEAD, behind a git folder holding only HEAD, an index copy and `commondir`. Outside a merge it runs the command unchanged. The `universal` gate and `verify`'s devkit step run through it, and `gateKind` orders a wrapped command as what it wraps. The devkit is unchanged.
+- **Verify:** `node --test tools/as-merged.test.mjs` (8), in scratch repositories of TOOL4e's shape: the gate's rule alone, the devkit's own docs gate and the merge tool's run each fail the open merge through it and pass it bare, all seen passing with the old pass-through first; a README fixed in the merge passes; outside a merge the command's output and exit are its own. `npm run verify` passes.
+- **Commit:** `bc373b74`.
+
 ## 2026-10-07 — account edits and hints
 
 ### Agents: a refused account edit lost what the person entered (ACCTEDIT1)
@@ -18,6 +34,13 @@ repository.
 - **Root cause:** every producer interpolated the value as it was. Quoting alone does not fix it: Windows PowerShell 5.1 drops the quotes of a space-free argument handed to a batch file, and the install's `daoris` is `daoris.cmd`.
 - **Fix:** one spelling, twinned in the CLI and the page: bare, double-quoted, or a placeholder where no spelling holds in all three shells.
 - **Verify:** `shellword.test.ts` passes each table row through the install's real cmd, PowerShell 5.1 and sh launchers. Commit `30461847`; D125's ACCTQUOTE1 note.
+## 2026-10-07 — store numbers taken back by a removal
+
+### Service: a removal could hand out again a number a remote or a push cursor had passed
+- **Symptom:** read from the code, not seen on an install (D153's design §0.3, H1 and H2): after D126's delete took the newest session record, the next record was written at a revision the push cursor had passed, so it never went up. After a quest's numbered operations were removed, as the hand purge removed them, the next move took a sequence the remote held: the next fetch took the remote's operation for it, or the remote answered its push as a retry, and the move was lost without an error.
+- **Root cause:** an operation's sequence was `MAX(sequence) + 1` over this machine's rows in `quest_log`, and a revision `MAX(revision) + 1` over `sessions` (SYNC1, SYNC4). A maximum over rows goes back when the newest rows go, and another party keys by both numbers: a remote and a fetch name an operation by machine and sequence, and a push sends what was written past its cursor. Latent until a record could be removed: SESSUX1f's delete (`96b932c4`) reached H2 directly; D95's outright removal reaches H1 only narrowly.
+- **Fix:** HIST1a: high-water marks in the store, `quest_machine.sequence` and a one-row `session_revision`, each moved by a trigger in the statement that writes the number; the next number is one past the larger of the rows' maximum and the mark, and a store from before seeds each at what it holds. D153's HIST1a note says what building it settled.
+- **Verify:** eight tests in `QuestLogTests`, `SessionStoreTests`, `QuestSyncTests` and `SessionSyncTests`, the last two over the wire. Six failed before the build; each seed and trigger, broken in turn, fails the tests that hold it, the two written after the build among them. `dotnet test src/Daoris.Service` passes 1178 and 68.
 
 ## 2026-10-07 — a downloaded tool's folder held by Windows
 

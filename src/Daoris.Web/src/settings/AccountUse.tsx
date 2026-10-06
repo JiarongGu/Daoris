@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { moment } from '../format';
+import { shellWord } from '../shellWord';
 import { Button, CheckField, Icon, Inline, Pill, Prose, Segmented, SelectField, SettingRow, Tip } from '../ui';
 import {
   type AccountCooling, type AccountFacts, type AccountScope, type AccountUseChange, type AgentAccounts, cannotLeave,
@@ -10,6 +11,12 @@ import {
 // How each agent's accounts are used, as Settings → Agents shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6).
 // Molecules: every state arrives as props, so a cooling account, a scope with six accounts, a workspace on this machine's
 // accounts and an agent whose sessions say nothing are each a story. The Agents domain holds the hooks.
+
+/**
+ * A scope's `--workspace` as its terminal twins print it, or nothing for this machine's scope. The twin is pasted into
+ * whichever shell a person has, so the workspace is spelled for every shell (`shellWord`, ACCTQUOTE1c).
+ */
+const scopedFlag = (workspace?: string) => (workspace ? ` --workspace ${shellWord(workspace, '<workspace>')}` : '');
 
 /** An account as a list row names it: its directory, what a person calls it, and whether it is signed in. */
 export type AccountChoice = { name: string; label: string; login?: 'in' | 'out' | 'unknown'; keyed?: boolean };
@@ -129,7 +136,7 @@ export function NextStartRow({ agent, product, scope, labelOf, workspace }: {
   return (
     <SettingRow
       label={t('harness.next.label')}
-      hint={listed ? t('harness.next.hint', { agent: agent.agent, scoped: workspace ? ` --workspace ${workspace}` : '' }) : undefined}
+      hint={listed ? t('harness.next.hint', { agent: agent.agent, scoped: scopedFlag(workspace) }) : undefined}
       why={listed ? t(scope.use.use === 'order' ? 'harness.next.whyOrder' : 'harness.next.whyGoal') : undefined}
     >
       <p className="m-0 text-small text-ink">
@@ -183,7 +190,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
   const nearOf = (name: string) => scope.near.find((each) => each.account === name);
   const coolingOf = (name: string) => agent.accounts.find((account) => account.name === name)?.cooling;
   // Each hint is the terminal's twin for this scope, so a workspace's names its `--workspace`.
-  const hinted = { agent: agent.agent, scoped: workspace ? ` --workspace ${workspace}` : '' };
+  const hinted = { agent: agent.agent, scoped: scopedFlag(workspace) };
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
@@ -409,7 +416,7 @@ export function WorkspaceScope({ agent, product, workspace, scope, machine, acco
     <div className="mt-2 border-t border-line pt-2">
       <SettingRow
         label={t('harness.use.workspace', { workspace })}
-        hint={own ? undefined : t('harness.use.scope.hint', { agent: agent.agent, workspace })}
+        hint={own ? undefined : t('harness.use.scope.hint', { agent: agent.agent, workspace: shellWord(workspace, '<workspace>') })}
         control={(
           <Segmented
             label={`${t('harness.use.scope.label')} · ${workspace}`}

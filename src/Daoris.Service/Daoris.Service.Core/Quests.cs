@@ -346,9 +346,12 @@ public sealed class QuestStore
                   UNIQUE (machine, sequence)
                 );
                 CREATE INDEX IF NOT EXISTS quest_log_quest ON quest_log (quest, position);
+                -- `sequence` is the highest this machine has issued (HIST1a): the log's own maximum
+                -- goes back when its newest rows are removed, and a remote already holds that number.
                 CREATE TABLE IF NOT EXISTS quest_machine (
-                  one INTEGER PRIMARY KEY CHECK (one = 1),
-                  id  TEXT NOT NULL
+                  one      INTEGER PRIMARY KEY CHECK (one = 1),
+                  id       TEXT NOT NULL,
+                  sequence INTEGER NOT NULL DEFAULT 0
                 );
                 CREATE TABLE IF NOT EXISTS quest_cursor (
                   workspace TEXT PRIMARY KEY COLLATE NOCASE,
@@ -446,6 +449,35 @@ public sealed class QuestStore
                 ALTER TABLE quests DROP COLUMN home;
                 """;
             await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // HIST1a: a store from before the mark starts it at the highest sequence its own machine holds in the log, which
+        // is what every number so far was one past. Nothing changes for a store that never removed anything; one that
+        // removes rows after the upgrade cannot take the sequence back.
+        if (!await SchemaColumns.HasAsync(_connection, "quest_machine", "sequence", ct).ConfigureAwait(false))
+        {
+            await using var mark = _connection.CreateCommand();
+            mark.CommandText = """
+                ALTER TABLE quest_machine ADD COLUMN sequence INTEGER NOT NULL DEFAULT 0;
+                UPDATE quest_machine SET sequence =
+                  (SELECT COALESCE(MAX(sequence), 0) FROM quest_log WHERE machine = quest_machine.id);
+                """;
+            await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // After the column, which it names. The mark is moved by the statement that writes the operation, not by its
+        // callers, so no way into the log can forget it (the registry's tombstones are kept the same way). An operation
+        // of this machine's kept back from a remote raises it too: that number was this machine's, and is held there.
+        await using (var trigger = _connection.CreateCommand())
+        {
+            trigger.CommandText = """
+                CREATE TRIGGER IF NOT EXISTS quest_sequence_issued AFTER INSERT ON quest_log
+                BEGIN
+                  UPDATE quest_machine SET sequence = NEW.sequence
+                  WHERE one = 1 AND id = NEW.machine AND sequence < NEW.sequence;
+                END;
+                """;
+            await trigger.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -646,6 +678,12 @@ public sealed class QuestStore
     /// Append one operation, stamped with this machine and its next sequence number — counted inside
     /// the caller's write transaction, so two hosts over one file cannot take the same number.
     /// </summary>
+    /// <remarks>
+    /// The next number is one past the larger of the log's highest for this machine and the store's mark (HIST1a),
+    /// which the insert's trigger then moves. The log alone goes back when its newest rows are removed, and the number
+    /// handed out again is one a remote already holds: it answers a push of it as a retry, and a fetch brings its own
+    /// operation back under it, so the new move is lost without an error (H1).
+    /// </remarks>
     private async Task<QuestOperation> AppendAsync(
         string quest, QuestOperationKind kind, DateTimeOffset at, string? note, Quest? published,
         SqliteTransaction transaction, CancellationToken ct, QuestOperationRef? dismisses = null,
@@ -656,7 +694,9 @@ public sealed class QuestStore
         command.CommandText = """
             INSERT INTO quest_log (quest, kind, machine, sequence, at, payload)
             VALUES ($quest, $kind, $machine,
-                    (SELECT COALESCE(MAX(sequence), 0) + 1 FROM quest_log WHERE machine = $machine),
+                    (SELECT MAX(
+                       COALESCE((SELECT MAX(sequence) FROM quest_log WHERE machine = $machine), 0),
+                       COALESCE((SELECT sequence FROM quest_machine WHERE one = 1 AND id = $machine), 0)) + 1),
                     $at, $payload)
             RETURNING sequence
             """;

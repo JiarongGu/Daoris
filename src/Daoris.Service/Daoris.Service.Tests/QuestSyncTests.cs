@@ -251,6 +251,41 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// 🔴 HIST1a (D153 point 4, H1): both sides know an operation by machine and sequence alone, so a sequence handed out
+    /// twice loses the second move without an error: the remote answers its push as the retry above, and the fetch before
+    /// the push brings the remote's operation back under that number and takes it for the new move. Here the machine's
+    /// newest operations are removed after the remote numbered them, as the hand purge of 2026-10-07 removed them and a
+    /// clear will forget them (HIST1b), and the next move still reaches the remote and the other machine.
+    /// </summary>
+    [Fact]
+    public async Task A_move_made_after_the_newest_operations_were_removed_reaches_the_remote_and_is_no_retry()
+    {
+        var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        _connections.Add(connection);
+        var machine = await QuestStore.OpenAsync(connection);
+        var kept = await Publish(machine, "Kept");
+        var removed = await Publish(machine, "Removed");
+        await SyncAsync(machine);
+        await using (var purge = connection.CreateCommand())
+        {
+            purge.CommandText = "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id";
+            purge.Parameters.AddWithValue("$id", removed.Id);
+            await purge.ExecuteNonQueryAsync();
+        }
+
+        Assert.True((await machine.MoveAsync(kept.Id, QuestStatus.Taken, "Machine A's session.", Now.AddHours(1))).Moved);
+        var pass = await SyncAsync(machine);
+        await SyncAsync(_b);
+
+        Assert.Equal((1, (string?)null), (pass.Pushed, pass.Problem));
+        Assert.Equal(QuestStatus.Taken, (await _remote.FindAsync(kept.Id))!.Status);
+        Assert.Equal(QuestStatus.Taken, (await _b.FindAsync(kept.Id))!.Status);
+        Assert.Equal(QuestStatus.Open, (await _remote.FindAsync(removed.Id))!.Status);
+        Assert.Equal(QuestClaim.Held, await machine.ClaimAsync(kept.Id));
+    }
+
+    /// <summary>
     /// The remote re-judges: a move on a quest it never had published does not apply, and a publish its
     /// exchange refuses is not kept. Either is refused for that quest alone, in the remote's own words.
     /// </summary>

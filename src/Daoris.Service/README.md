@@ -168,6 +168,15 @@ before the answer returns. A quest that never left simply goes. The `deletable` 
 asks a local host lists (and on a quest a publish, a response or a dismissal answers with) is the same
 judgement, so a page offers the verb only where the door would take it.
 
+**A number the store has issued is never issued again** (HIST1a, D153 point 4). An operation's sequence
+is one past the larger of the log's highest for this machine and `quest_machine.sequence`, and a session
+record's revision one past the larger of the table's newest and the one-row `session_revision`. Triggers
+move both marks in the statement that writes the number. Without them, removing the newest rows (a
+delete, and the history clearing D153 designs) reissued a number a remote already held: the remote
+answered the push as a retry, a fetch brought its own operation back under that number, and the new
+move was lost with no error. A store from before the marks seeds them from what it holds, so numbers
+may now have gaps, and nothing reads them as contiguous.
+
 **A decline may apply only while the quest is open** (PAUSE1c, D132 point 10): `whileOpen: true` on
 `POST /api/quests/{id}/respond`, which an abandon sends, and no MCP tool does. It is refused, 409, on a
 quest taken here. It travels with the flag, and one that reaches the remote after another machine's

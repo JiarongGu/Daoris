@@ -403,6 +403,133 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         }
     }
 
+    // ——— DEV3a: a run the headless host makes (`--once`, `--until-idle`) lets go only once what it caused has landed: each
+    // session's ending written and said, and what a pass beside the sessions met said, rather than lost with the process.
+
+    /// <summary>
+    /// 🔴 The family rehearsal's lost-claim case, failed once under load: the pass beside a running session asks where this
+    /// machine's claim stands, and the host stalls past the client's timeout. That question unanswered is no answer, as a host
+    /// that is down is; the single run does not let go there, but once its session has ended, its ending written and in the
+    /// report.
+    /// </summary>
+    [Fact]
+    public async Task Run_once_lets_go_only_once_its_session_has_ended_when_a_claim_question_times_out_beside_it()
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q1", "engine");
+        _ledger.ClaimHangs = true;
+        var (driver, runs) = Driver(Config(), sync, timeout: TimeSpan.FromMilliseconds(200));
+        // Ended only once a claim question beside it has met the client's timeout.
+        runs.OnOpen = quest => _ = Task.Run(async () =>
+        {
+            await Poll.Until(() => _ledger.ClaimsAsked(quest) >= 1, within: Bound);
+            await Task.Delay(600);
+            runs.End(quest);
+        });
+
+        var report = await driver.RunOnceAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.True(_ledger.ClaimsAsked("q1") >= 1);
+        Assert.Equal("completed", State("s1"));
+        Assert.Contains(report.Events, line => line.StartsWith("completed  session s1", StringComparison.Ordinal));
+        Assert.Equal("s1", Assert.Single(report.Concluded).Session);
+        Assert.True(driver.Running.Idle);
+    }
+
+    /// <summary>
+    /// A pass beside the running session that fails for any reason (here the remotes map, unreadable while it is rewritten) is
+    /// said, and the next pass tries again: the single run still waits for its session, and says its ending.
+    /// </summary>
+    [Fact]
+    public async Task Run_once_says_a_failed_pass_beside_its_session_and_still_waits_for_its_ending()
+    {
+        // The set reads the map once as it is made and once at the look; every pass after finds it unreadable.
+        var loads = 0;
+        using var sync = RemoteSyncSet.Watching(StandInLedger.Url, null, () =>
+            Interlocked.Increment(ref loads) <= 2
+                ? new Dictionary<string, RemoteTarget>()
+                : throw new IOException("the remotes map is being written"));
+        _ledger.Publish("q1", "engine");
+        var (driver, runs) = Driver(Config(), sync);
+        runs.OnOpen = quest => _ = Task.Run(async () =>
+        {
+            await Poll.Until(() => Volatile.Read(ref loads) >= 3, within: Bound);
+            runs.End(quest);
+        });
+
+        var report = await driver.RunOnceAsync(_closing.Token).WaitAsync(Bound);
+
+        Assert.Equal("completed", State("s1"));
+        Assert.Contains(report.Events, line => line.StartsWith("completed  session s1", StringComparison.Ordinal));
+        Assert.Contains(
+            report.Events,
+            line => line == "sync  a pass beside the running sessions failed, and the next tries again: the remotes map is being written");
+    }
+
+    /// <summary>
+    /// <c>--until-idle</c> says each look as it ends, not all of them once the run is over, and a look that fails lets go only
+    /// once every session it started has ended, its record written and its ending said: the looks before it and the endings after
+    /// it reach the person, where they used to go with the process.
+    /// </summary>
+    [Fact]
+    public async Task Until_idle_says_each_look_as_it_ends_and_a_failed_look_says_the_endings_it_waited_for()
+    {
+        _ledger.Publish("q1", "engine");
+        var (driver, runs) = Driver(Config());
+        var said = new List<TickReport>();
+        string? whenSaid = null;
+        runs.OnOpen = quest =>
+        {
+            // The next look fails, as against a service that went away, while the session still works; it ends after.
+            _ledger.Down = true;
+            _ = Task.Delay(1500).ContinueWith(_ => runs.End(quest), TaskScheduler.Default);
+        };
+
+        var failed = await Assert.ThrowsAsync<DriverException>(() => driver.RunUntilIdleAsync(_closing.Token, said: report =>
+        {
+            lock (said) said.Add(report);
+            if (report.Concluded.Count > 0) whenSaid = State("s1");
+        }).WaitAsync(Bound));
+
+        Assert.Contains("503", failed.Message);
+        lock (said)
+        {
+            Assert.Equal(2, said.Count);
+            Assert.Equal(StartVerdict.Start, Assert.Single(said[0].Considerations).Verdict);
+            Assert.Contains(said[1].Events, line => line.StartsWith("completed  session s1", StringComparison.Ordinal));
+            Assert.Equal("s1", Assert.Single(said[1].Concluded).Session);
+        }
+
+        Assert.Equal("completed", whenSaid);
+        Assert.True(driver.Running.Idle);
+    }
+
+    /// <summary>A single run says its look as soon as it ends, then what ended, which together are the report it returns.</summary>
+    [Fact]
+    public async Task Run_once_says_its_look_then_what_ended_which_together_are_its_report()
+    {
+        _ledger.Publish("q1", "engine");
+        var (driver, runs) = Driver(Config());
+        var said = new List<TickReport>();
+        string? whenLookSaid = null;
+        runs.OnOpen = quest => _ = Task.Delay(300).ContinueWith(_ => runs.End(quest), TaskScheduler.Default);
+
+        var report = await driver.RunOnceAsync(_closing.Token, said: each =>
+        {
+            lock (said)
+            {
+                if (said.Count == 0) whenLookSaid = State("s1");
+                said.Add(each);
+            }
+        }).WaitAsync(Bound);
+
+        Assert.Equal("working", whenLookSaid);
+        Assert.Equal(2, said.Count);
+        Assert.Equal(report.Considerations, said[0].Considerations);
+        Assert.Equal(report.Events, said.SelectMany(each => each.Events));
+        Assert.Equal(report.Concluded, said.SelectMany(each => each.Concluded));
+    }
+
     private string State(string session) => _ledger.Session(session)["state"]!.GetValue<string>();
 
     /// <summary>A look's or a watch's end, waited for within the bound, whatever it ended on.</summary>
@@ -421,9 +548,10 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         Trees = trees ? ["engine"] : [],
     };
 
-    private (Daoris.Driver.Driver Driver, StandInRuns Runs) Driver(DriverConfig config, RemoteSyncSet? sync = null)
+    /// <param name="timeout">The client's own timeout, where a test meets it; the client's default otherwise.</param>
+    private (Daoris.Driver.Driver Driver, StandInRuns Runs) Driver(DriverConfig config, RemoteSyncSet? sync = null, TimeSpan? timeout = null)
     {
-        var service = _ledger.Client();
+        var service = _ledger.Client(timeout);
         var runs = new StandInRuns(service, _ledger);
         var adapters = AdapterSet.Built();
         var driver = new Daoris.Driver.Driver(
