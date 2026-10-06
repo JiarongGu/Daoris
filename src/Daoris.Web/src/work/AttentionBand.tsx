@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { runsForLine } from '../agents/agents';
+import { useHarnessRun, WithHarnessRuns } from '../harnessRuns';
 import {
   useAcceptQuest, useAnswerGoAhead, useAsks, usePublishAsk, useQuests, useRegistry, useSessions,
 } from '../queries';
 import {
-  retryNotice, useConsidered, useNudge, useRetryQuest, useRuleProposal, useRules, useSessionGroups, useTrustFolder,
-  useUntrusted,
+  retryNotice, useAccounts, useConsidered, useHarnessAction, useHarnesses, useNudge, useRefreshHarnesses, useRetryQuest,
+  useRuleProposal, useRules, useSessionGroups, useTrustFolder, useUntrusted, useWaits,
 } from '../shell';
+import { SignIn } from '../SignIn';
+import { byTool } from '../tools';
 import { failure, type Notify } from '../ui';
+import type { AccountsKnown } from './accountAttention';
 import type { Attention, AttentionActs } from './AttentionRow';
 import { attentionKey, AttentionList, type AttentionDoors, AttentionRegion, NothingNeedsYou } from './AttentionList';
 import { needsAPerson } from './attention';
@@ -16,6 +21,22 @@ export type { AttentionDoors } from './AttentionList';
 
 /** The sessions working now, which the line says when nothing needs the person (design §6.1). */
 const WORKING: ReadonlySet<string> = new Set(['starting', 'working']);
+
+/** The kinds that are an account's (UX6d): their acts wait while a sign-in of their agent's runs. */
+const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
+
+/**
+ * What the band reads of the accounts (UX6d): the roster as last read and the accounts' files, which the frame already
+ * holds (the Agents place and its badge read the same two), and the tick's waits. Never a refresh: opening Overview asks
+ * no agent about an account (D150 point 5).
+ */
+export function useAccountsKnown(): AccountsKnown {
+  const roster = useHarnesses();
+  const accounts = useAccounts();
+  const waits = useWaits();
+  const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
+  return { tools: byTool(harnesses), use: accounts.data, waits: waits.data ?? [] };
+}
 
 /**
  * Overview's **what needs you**, the page's lead (UX6c, design §6).
@@ -32,6 +53,11 @@ const WORKING: ReadonlySet<string> = new Set(['starting', 'working']);
  * to find out**: every fact here is a list the page already holds or the tick hands it (`needsAPerson`), the session
  * groups included, which the frame reads on every view of a shell and this reads under the same key.
  *
+ * **The accounts** (UX6d): a start waiting on its accounts and a signed-out account a list holds, from the tick's waits,
+ * the roster's last readings and the accounts' files. *Sign in* runs the agent's own sign-in through the application's one
+ * running action (SIGNIN1), the agent page's own, so it outlives leaving Overview and its steps follow under the row;
+ * *Read* reads that one account (ROSTER1); *Let … run …* joins the list (ACCT1's `profile-join`) after its question.
+ *
  * **With nothing waiting it is one line**, *Nothing needs you*, and what is working (§6.1).
  *
  * The organism: it holds the queries and the acts, so the list and its rows hold none (components §2).
@@ -43,6 +69,15 @@ export function AttentionBand({ doors = {}, notify = () => {}, onSessions }: {
   /** Sessions itself, where *Ready for you*'s rows past its fifth are: a shell's alone. */
   onSessions?: () => void;
 }) {
+  // The application's running action where it holds one (a sign-in outlives the view, SIGNIN1); its own where drawn alone.
+  return (
+    <WithHarnessRuns notify={notify}>
+      <Band doors={doors} notify={notify} onSessions={onSessions} />
+    </WithHarnessRuns>
+  );
+}
+
+function Band({ doors, notify, onSessions }: { doors: AttentionDoors; notify: Notify; onSessions?: () => void }) {
   const { t } = useTranslation();
   const sessions = useSessions(null, false);
   const quests = useQuests(null, false);
@@ -63,6 +98,8 @@ export function AttentionBand({ doors = {}, notify = () => {}, onSessions }: {
   // while there is one to name, so a browser, which has no groups, asks nothing more.
   const reviewing = (groups.data ?? []).some((placed) => placed.group === 'review');
   const ended = useSessions(null, true, reviewing);
+  // The accounts as last known and the tick's waits (UX6d): a browser has none.
+  const accounts = useAccountsKnown();
 
   const publish = usePublishAsk();
   const answerGoAhead = useAnswerGoAhead();
@@ -71,12 +108,15 @@ export function AttentionBand({ doors = {}, notify = () => {}, onSessions }: {
   const trust = useTrustFolder();
   const settle = useRuleProposal();
   const nudge = useNudge();
+  const readOne = useRefreshHarnesses();
+  const harnessAct = useHarnessAction();
+  const harnessRun = useHarnessRun();
   // The row an act is on its way for: its acts are held until it answers.
   const [acting, setActing] = useState<string | null>(null);
 
   const waiting = needsAPerson(
     (reviewing ? ended.data : undefined) ?? sessions.data ?? [], quests.data ?? [], registry.data ?? [], asks.data ?? [],
-    untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? []);
+    untrusted.data ?? [], Array.isArray(proposals) ? proposals : [], considered.data ?? [], groups.data ?? [], accounts);
 
   if (waiting.length === 0) {
     return (
@@ -116,11 +156,59 @@ export function AttentionBand({ doors = {}, notify = () => {}, onSessions }: {
       () => notify(t('settings.rules.proposals.accepted', { change: item.title }))),
     declineRule: (item) => run(item, () => settle.mutateAsync({ id: item.id, accept: false }),
       () => notify(t('settings.rules.proposals.declined', { change: item.title }))),
+    // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
+    // person is, and the roster read again then, which reads that account (ROSTER1).
+    signIn: (item, account) => {
+      const harness = item.account?.harness;
+      if (harness) harnessRun.run(harness, 'login', account);
+    },
+    // That one account, read on the press (ROSTER1): the reading a person may ask for, one account at a time.
+    read: (item, account) => {
+      const agent = item.account?.agent;
+      if (agent) run(item, () => readOne.mutateAsync({ agent, profile: account }), () => {});
+    },
+    // Into the list the waiting start reads (D130 §3.3), as the agent page's *Add to …'s list* (ACCT1): said where it runs now.
+    letRun: (item, account) => {
+      const facts = item.account;
+      const outside = facts?.outside;
+      if (!facts?.harness || !outside || outside.id !== account) return;
+      const harness = facts.harness;
+      run(
+        item,
+        () => harnessAct.mutateAsync({ harness, action: 'profile-join', profile: account, join: [outside.list] }),
+        (answer) => notify(t('agents.joined', {
+          account: outside.label,
+          places: runsForLine((answer.places ?? []).map((place) => ({ workspace: place.workspace ?? null, first: place.default }))),
+        })),
+      );
+    },
+  };
+
+  // A sign-in in flight is shown under the first row that names its account, where it was started (platform language §4).
+  const signing = harnessRun.running?.endsWith(':login') && harnessRun.runningProfile
+    ? { harness: harnessRun.running.slice(0, -':login'.length), account: harnessRun.runningProfile }
+    : null;
+  const signingRow = signing
+    ? waiting.find((item) => item.account?.harness === signing.harness
+      && item.account.named.some((one) => one.id === signing.account))
+    : undefined;
+  const below = (item: Attention) => {
+    if (!signing || item !== signingRow) return null;
+    const label = item.account?.named.find((one) => one.id === signing.account)?.label ?? signing.account;
+    return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} />;
   };
 
   return (
     <AttentionRegion>
-      <AttentionList items={waiting} doors={doors} acts={acts} acting={acting} onSessions={onSessions} />
+      <AttentionList
+        items={waiting}
+        doors={doors}
+        acts={acts}
+        acting={acting}
+        held={(item) => ACCOUNT_KINDS.has(item.kind) && harnessRun.busy}
+        below={below}
+        onSessions={onSessions}
+      />
     </AttentionRegion>
   );
 }

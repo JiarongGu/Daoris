@@ -18,6 +18,9 @@ with the version and date at release.
   start walks past it. A conversation's agent is told which session it is, so a quest it takes is
   marked on its record.
 - Downloading a managed tool waits briefly when Windows holds the folder just unpacked, at both doors.
+- What needs you lists work waiting on its accounts and signed-out accounts that hold work, with
+  *Sign in*, *Read* and *Let … run* beside each, from what Daoris already knows and without asking an
+  agent anything.
 - Below about 620 px the window's seven menus fold into one menu, reached and walked by keyboard as
   the bar is. A conversation's notes that an account is signed out or cooling read in Chinese too.
 - `daoris agent list` and a terminal sign-in keep what they learn about an account's sign-in, so the

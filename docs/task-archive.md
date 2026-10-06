@@ -11400,3 +11400,10 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **AGENTREAD1b — the driver reads the shared reads table** (driver, tools). `AccountReadsTests` reads `src/Daoris.Cli/test/fixtures/account-reads.json` row for row, and the merge tool's lane table sends that fixture to the driver gate, so a rule changed on one side of `reads.json` fails both suites; consider `UnsafeRelaxedJsonEscaping` so bytes match for non-ASCII names. Contract: D125's AGENTREAD1 note, `.claude/knowledge/twins.md`. Proof: a changed fixture row fails the driver's fast half.
 
 **Outcome** 2026-10-07: `AccountReadsTests` holds `AccountReads` to `account-reads.json` row for row, byte for byte (50 rows and a guard); a changed fixture row failed exactly its case. `AccountReads` now writes with `UnsafeRelaxedJsonEscaping`, so non-ASCII names match the CLI's bytes; emoji, U+2028/9, C1 controls and number forms still differ (measured, in the note). The lane table sends the fixture to the driver gate (7a85c7bd). The table's widening and case-folding are AGENTREAD1c. Driver fast half 4298 → 4356. Detail: D125's AGENTREAD1b note; commit 30c1bd18.
+
+
+## UX6d — account attention from known facts (2026-10-07, D150)
+
+> - [ ] **UX6d — account attention from known facts** (web-shell, modules; absorbs TOOL4m). Contract/proof: UX6 §6.2–§6.3.
+
+**Outcome** 2026-10-07: What needs you lists, under Holding work, a start waiting on its accounts (an ask's intake among them, which the tick now forwards as facts: agent, account, workspace, until, the quests and asks it holds) and a signed-out account a list or default holds, each naming its accounts' last known state. Acts: *Sign in to …*, *Read …* and *Let … run …* (asks once, naming the join command); the door opens the agent's page. Nothing asks an agent anything (a test holds that no `HARNESSES` call refreshes). Rows meet ≤ 3 controls; two exceed the 30-word budget by a reset time and account ids, to be judged on the install. TOOL4m's remaining row is covered. Web vitest 4205 → 4246, modules fast 603 → 607. Detail: D150's UX6d note; commits 49c5907f, 01a42820.
