@@ -132,7 +132,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `tools/deployment-rehearsal.mjs` | 93 | 1645 |
 | `tools/desktop-publish.mjs` | 53 | 972 |
 | `tools/desktop.mjs` | 48 | 998 |
-| `tools/family-rehearsal.mjs` | 308 | 5521 |
+| `tools/family-rehearsal.mjs` | 312 | 5570 |
 | `tools/knowledge-bench.mjs` | 46 | 900 |
 | `tools/merge-branch.mjs` | 127 | 2333 |
 | `tools/orient-index.mjs` | 66 | 1435 |
@@ -142,7 +142,7 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 
 | File | KB | Lines |
 |---|---|---|
-| `.claude/knowledge/twins.md` | 48 | 115 |
+| `.claude/knowledge/twins.md` | 49 | 116 |
 | `docs/2026-09-19-platform-ux.md` | 57 | 611 |
 | `docs/2026-09-21-dsh-evaluation.md` | 43 | 483 |
 | `docs/2026-09-21-working-surface-components.md` | 52 | 349 |

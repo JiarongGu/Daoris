@@ -94,14 +94,17 @@ public static class DriverCommand
           sessions start-from <id>
               words a session cannot go on with: start a conversation here with them, as `chat` does, without that
               session's context; they leave that session, naming the conversation.
-          trees [list | remove <path|session|branch> [--repository <name>] [--force] | clean [--yes]
-                | land <session> [--plan] | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
-                | state <session|branch> [--repository <name>] | sync [--repository <name>] [--all] [--yes]]
+          trees [list | remove <path|session|branch> [--repository <name>] [--force]
+                | clean [--workspace <name>] [--yes] | land <session> [--plan]
+                | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
+                | state <session|branch> [--repository <name>]
+                | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]
               this machine's session trees and the branches its landings made; remove takes a failed or
               superseded attempt's branch, with its tree where it is still here, on --force; state asks a
               landed branch's plugin again whether its pull request completed, and says what that proves here;
               sync brings each repository up to date after a pull request merged, listed first (it fetches,
-              never pushes): those holding Daoris's branches, every one with --all.
+              never pushes): those holding Daoris's branches, every one with --all. For clean and sync,
+              --workspace takes one workspace's checkouts alone, as its Branches tab does.
           sync [status | dismiss <quest>] [--workspace <name>]
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]

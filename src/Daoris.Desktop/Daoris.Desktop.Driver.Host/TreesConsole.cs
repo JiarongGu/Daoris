@@ -148,26 +148,31 @@ internal static class TreesConsole
                 return removal.Removed ? 0 : 1;
             }
 
-            // The clean-up (WSR3, D88): the list first, and with --yes the press — the screen's Settings →
-            // Workspace → Session branches is the other door (D50). The checkouts and the sessions in use
-            // are the service's, so this one asks it.
+            // The clean-up (WSR3, D88): the list first, and with --yes the press — a workspace's Branches tab is the
+            // other door (D50), and --workspace takes that workspace's checkouts alone, as the tab does (BRSCOPE1a). The
+            // checkouts and the sessions in use are the service's, so this one asks it, once its words read.
             case ["clean", ..]:
             {
+                if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);
                 using var service = ServiceClient.FromEnvironment();
-                var repositories = (await service.RegistryAsync().ConfigureAwait(false))
-                    .Where(row => !string.IsNullOrWhiteSpace(row.Root))
-                    .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
-                    .ToList();
+                var taken = TreesCommand.Take(await service.RegistryAsync().ConfigureAwait(false), ask);
+                if (taken.Refusal is { } refusal)
+                {
+                    Console.Error.WriteLine($"trees: {refusal}");
+                    return 1;
+                }
+
+                var repositories = taken.Repositories;
                 var inUse = (await service.ActiveSessionsAsync().ConfigureAwait(false))
                     .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                if (!args.Contains("--yes"))
+                if (!ask.Yes)
                 {
                     var plan = await asking.CleanPlanAsync(repositories, inUse).ConfigureAwait(false);
                     if (plan.Sessions.Count == 0 && plan.Landed.Count == 0)
                     {
-                        Console.WriteLine("trees: no session branches, and no branch a landing made, in any repository with a checkout here.");
+                        Console.WriteLine(TreesCommand.NothingToClean(ask));
                         return 0;
                     }
 
@@ -182,7 +187,7 @@ internal static class TreesConsole
                     var going = plan.Sessions.Count(item => item.Removable) + plan.Landed.Count(item => item.Removable);
                     Console.WriteLine(going == 0
                         ? "trees: nothing to clean — every branch listed holds something of its own."
-                        : $"trees: {going} branch(es) would go, a session's with its tree. `daoris-driver trees clean --yes` removes them.");
+                        : $"trees: {going} branch(es) would go, a session's with its tree. `{TreesCommand.Press(ask)}` removes them.");
                     return 0;
                 }
 
@@ -207,27 +212,26 @@ internal static class TreesConsole
             }
 
             // Bringing repositories up to date after a pull request merged (WSR6, D109): the list first — it fetches
-            // each line, which moves only origin's refs — and with --yes the press. Settings → Workspace → Session
-            // branches is the other door (D50). The checkouts and the sessions in use are the service's. It takes the
-            // repositories holding Daoris's branches (D112): --all takes every one, and a repository named is taken.
+            // each line, which moves only origin's refs — and with --yes the press. A workspace's Branches tab is the
+            // other door (D50), and --workspace takes that workspace's checkouts alone, as the tab does (BRSCOPE1a). The
+            // checkouts and the sessions in use are the service's. It takes the repositories holding Daoris's branches
+            // (D112): --all takes every one, and a repository named is taken.
             case ["sync", ..]:
             {
-                var named = Option(args, "--repository");
-                var scope = args.Contains("--all") ? SyncScope.Everything
-                    : named is null ? SyncScope.Held
-                    : SyncScope.Named([named]);
+                if (TreesCommand.Read(args, out var problem) is not { } ask) return Usage(problem);
+                var scope = TreesCommand.Scope(ask);
                 using var service = ServiceClient.FromEnvironment();
-                var repositories = (await service.RegistryAsync().ConfigureAwait(false))
-                    .Where(row => !string.IsNullOrWhiteSpace(row.Root))
-                    .Where(row => named is null || string.Equals(row.Repository, named, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(row => row.Repository, StringComparer.Ordinal)
-                    .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
-                    .ToList();
+                var taken = TreesCommand.Take(await service.RegistryAsync().ConfigureAwait(false), ask);
+                if (taken.Refusal is { } refusal)
+                {
+                    Console.Error.WriteLine($"trees: {refusal}");
+                    return 1;
+                }
+
+                var repositories = taken.Repositories;
                 if (repositories.Count == 0)
                 {
-                    Console.Error.WriteLine(named is null
-                        ? "trees: no repository has a checkout here, so there is nothing to bring up to date."
-                        : $"trees: `{named}` has no checkout here, so there is nothing to bring up to date.");
+                    Console.Error.WriteLine(TreesCommand.NothingToSync(ask));
                     return 1;
                 }
 
@@ -235,7 +239,7 @@ internal static class TreesConsole
                     .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-                if (!args.Contains("--yes"))
+                if (!ask.Yes)
                 {
                     // Its fetch first, then its plugin asks where git cannot tell (PLUGHOOK1c, design §2.1 occasion 3).
                     var plan = await asking.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope).ConfigureAwait(false);
@@ -247,9 +251,9 @@ internal static class TreesConsole
                     foreach (var item in plan.Deletes) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")}  {LandedWords.Describe(item)}");
                     if (SyncWords.Apart(plan.Apart) is { } apart) Console.WriteLine(apart);
                     var acts = plan.Lines.Count(pull => pull.Moves) + plan.Rebases.Count(item => item.Replays) + plan.Deletes.Count(item => item.Removable);
-                    Console.WriteLine(plan.Looked.Count == 0 ? "trees: no repository with a checkout here holds a branch of Daoris's."
+                    Console.WriteLine(plan.Looked.Count == 0 ? TreesCommand.NoneHeld(ask)
                         : acts == 0 ? "trees: everything here is up to date."
-                        : $"trees: {acts} thing(s) would change. `daoris-driver trees sync{Carried(args, named)} --yes` does them — Daoris fetches, and never pushes.");
+                        : $"trees: {acts} thing(s) would change. `{TreesCommand.Press(ask)}` does them — Daoris fetches, and never pushes.");
                     return 0;
                 }
 
@@ -446,38 +450,47 @@ internal static class TreesConsole
             }
 
             default:
-                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
-                Console.Error.WriteLine("                           | clean [--yes] | land <session> [--plan]");
-                Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
-                Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
-                Console.Error.WriteLine("                           | sync [--repository <name>] [--all] [--yes]]");
-                Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
-                Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
-                Console.Error.WriteLine("  A session or its branch removes a failed or superseded attempt's branch,");
-                Console.Error.WriteLine("  with its tree where it is still here (LAND3); one whose tree a session");
-                Console.Error.WriteLine("  still running or waiting holds is kept, even with --force (LAND3c).");
-                Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
-                Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88), and every");
-                Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");
-                Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
-                Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule that tidies");
-                Console.Error.WriteLine("  also removes every other session branch the landed work holds (LAND3). A rule naming a");
-                Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
-                Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
-                Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");
-                Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
-                Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
-                Console.Error.WriteLine("  state asks the plugin that pushed a landed branch, else the rule's, again whether");
-                Console.Error.WriteLine("  its pull request completed, keeps the answer, and says what it proves here; the");
-                Console.Error.WriteLine("  clean-up and sync act on what it kept, and ask too where git cannot tell (D148).");
-                Console.Error.WriteLine("  sync brings each repository up to date after a pull request merged: it fetches");
-                Console.Error.WriteLine("  the line and fast-forwards it, replays the branches still at work onto it (only");
-                Console.Error.WriteLine("  their own commits), and deletes the landed branches whose work reached it. It");
-                Console.Error.WriteLine("  lists first; --yes does it. Daoris fetches, and never pushes (WSR6). It takes");
-                Console.Error.WriteLine("  the repositories holding Daoris's branches and names the rest; --all takes");
-                Console.Error.WriteLine("  every one, and --repository the one named (D112).");
-                return 2;
+                return Usage(null);
         }
+    }
+
+    /// <summary>The verb's usage, after what was not understood where something was said; exit 2.</summary>
+    private static int Usage(string? problem)
+    {
+        if (problem is not null) Console.Error.WriteLine($"trees: {problem}");
+        Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path|session|branch> [--repository <name>] [--force]");
+        Console.Error.WriteLine("                           | clean [--workspace <name>] [--yes] | land <session> [--plan]");
+        Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
+        Console.Error.WriteLine("                           | state <session|branch> [--repository <name>]");
+        Console.Error.WriteLine("                           | sync [--repository <name>] [--workspace <name>] [--all] [--yes]]");
+        Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
+        Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
+        Console.Error.WriteLine("  A session or its branch removes a failed or superseded attempt's branch,");
+        Console.Error.WriteLine("  with its tree where it is still here (LAND3); one whose tree a session");
+        Console.Error.WriteLine("  still running or waiting holds is kept, even with --force (LAND3c).");
+        Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
+        Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88), and every");
+        Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");
+        Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
+        Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule that tidies");
+        Console.Error.WriteLine("  also removes every other session branch the landed work holds (LAND3). A rule naming a");
+        Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
+        Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
+        Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");
+        Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
+        Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
+        Console.Error.WriteLine("  state asks the plugin that pushed a landed branch, else the rule's, again whether");
+        Console.Error.WriteLine("  its pull request completed, keeps the answer, and says what it proves here; the");
+        Console.Error.WriteLine("  clean-up and sync act on what it kept, and ask too where git cannot tell (D148).");
+        Console.Error.WriteLine("  sync brings each repository up to date after a pull request merged: it fetches");
+        Console.Error.WriteLine("  the line and fast-forwards it, replays the branches still at work onto it (only");
+        Console.Error.WriteLine("  their own commits), and deletes the landed branches whose work reached it. It");
+        Console.Error.WriteLine("  lists first; --yes does it. Daoris fetches, and never pushes (WSR6). It takes");
+        Console.Error.WriteLine("  the repositories holding Daoris's branches and names the rest; --all takes");
+        Console.Error.WriteLine("  every one, and --repository the one named (D112).");
+        Console.Error.WriteLine("  For clean and sync, --workspace takes one workspace's checkouts alone, as its");
+        Console.Error.WriteLine("  Branches tab does; a workspace the registry does not name is refused (BRSCOPE1a).");
+        return 2;
     }
 
     /// <summary>What handing a landed branch on would do, in one line — and what would refuse it (WSR5b).</summary>
@@ -489,10 +502,6 @@ internal static class TreesConsole
         if (plan.PullRequest is { } pr) line += $" Its last pull request: {pr}";
         return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
     }
-
-    /// <summary>The list's own scope, said again in the press it suggests (D112), so `--yes` takes what was listed.</summary>
-    private static string Carried(string[] args, string? named) =>
-        (named is null ? "" : $" --repository {named}") + (args.Contains("--all") ? " --all" : "");
 
     /// <summary>The word after <paramref name="name"/>, or null where it is absent or ends the line.</summary>
     private static string? Option(string[] args, string name)
