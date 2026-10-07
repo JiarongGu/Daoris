@@ -16,9 +16,25 @@ network.
   writes the file through a language's file API, as BOM-less UTF-8 in the repository's line endings,
   never through the console's redirection, and reads it back; a helper script it needs is scratch like
   any other. The rule told every reader to compose with the file-writing tools and gave a harness that
-  offers only a shell no direction, the gap `file-tool-discipline` closed for reading just below.
+  offers only a shell no direction, the gap `file-tool-discipline`'s entry below closed for reading.
   **Adopting repositories:** run `daoris sync`; nothing else. The always-loaded region grows by 340
   bytes, the rule's three new lines and its longer row in the region's table.
+- **`development-documents`, `doc-loader` and `set-up-documents` teach an index of where things are.**
+  One folder, generated and committed: by what a session looks for (an entry point, a command, a key, a
+  fixture), each row naming a file and its lines; an outline of each file too long to read whole; and a
+  digest of the decisions record. `development-documents` gains the `index` role and a section saying
+  how it is kept: a generator in the repository's own toolchain, its check in the command that means
+  done, a conflict resolved by writing it again, and every index the repository already keeps left
+  where it is. `doc-loader` gains a step: where the brief names an index, every search of the code
+  starts at its row and reads the lines it names. `set-up-documents` gains a step to make one, a clause
+  in its close, `templates/index.md`, and an `index` row in the brief template's *Where things are*.
+  None of it needs a doctrine tool, to write or to read. Drawn from one repository where a third of each
+  session's calls came before its first edit, spent finding its way, and from a second that met the same
+  need with indexes kept by hand. **Adopting repositories:** run `daoris sync`; the always-loaded region
+  does not change until you declare an index. To keep one, run `set-up-documents`' new step; one you
+  already keep stays as it is. Then declare its README as `index` in `daoris.json`'s `documents`: `sync`
+  gives it a row in the region's *Where things are*, after the router's (119 bytes in the repository this
+  changelog ships from), and `check` fails while the path is missing.
 - **`file-tool-discipline` says what a harness with no dedicated file tools does.** Its shell's
   read-only commands are its read tools, since a read changes nothing; the rest of the rule still
   binds: no edit scripted through another language's escaping, no deletion by computed offsets, no side

@@ -22,7 +22,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "aa7b02b2edd090aec2303bb70e07f2b7f095ee46d1342a2e47ee101fe78845fb"
+      "sha256": "abad3c713fc5f7f74fb9739b68036dbe14be476df51ebad654f6f1a01b72788d"
     },
     {
       "pack": "core",
@@ -121,7 +121,7 @@
       "source": "core/skills/doc-loader/SKILL.md",
       "target": "skills/doc-loader/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "b5b4ab7e0d285e2b0ec4b0fd63065f6768ad2ddf9720be898f13f9064d76e70d"
+      "sha256": "4d74e991886ab04f3a7b405ee0449e6a37fd554d4d993880a30da9ed3665939c"
     },
     {
       "pack": "core",
@@ -149,7 +149,7 @@
       "source": "core/skills/set-up-documents/SKILL.md",
       "target": "skills/set-up-documents/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "fa95e22528dd58e6b785c0049d1cffc808e6e04d082f81d7a13998b6bf160782"
+      "sha256": "7b038a0770d01aef33bbabb783259ffd2687ac80a0ef2bd39964dd750b71d585"
     },
     {
       "pack": "core",
@@ -170,7 +170,7 @@
       "source": "core/skills/set-up-documents/templates/brief.md",
       "target": "skills/set-up-documents/templates/brief.md",
       "canonVersion": "0.0.1",
-      "sha256": "3baa34012e0166a850c5e460822ae2569f852653463a6b36a55104ec33e444cd"
+      "sha256": "17a381ab89d9c12714c142c8b70cdaaa148abfb65e70617ca883048cb0eefe24"
     },
     {
       "pack": "core",
@@ -178,6 +178,13 @@
       "target": "skills/set-up-documents/templates/decision.md",
       "canonVersion": "0.0.1",
       "sha256": "618fbd12b72653025199257210d958f94a83ec070fb5845480964d7e0f299a38"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/index.md",
+      "target": "skills/set-up-documents/templates/index.md",
+      "canonVersion": "0.0.1",
+      "sha256": "294275e445c81014f18b118adabb53bc6ac6b2eceaa8fa4e0e70faf9b1fb695f"
     },
     {
       "pack": "core",

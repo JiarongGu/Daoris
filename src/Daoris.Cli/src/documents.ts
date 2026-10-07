@@ -37,6 +37,10 @@ export const ROLES: readonly { role: string; binding: Binding; job: string }[] =
   { role: 'brief', binding: 'ceiling', job: 'what this is, the constraint every change serves, and where everything else is' },
   { role: 'room', binding: 'ceiling', job: "one folder's conventions, traps and checks" },
   { role: 'router', binding: 'path', job: 'every document, its kind and its standing' },
+  // ORIENT2b (D151 point 4): the generated index of where things are, the row that sends a session to it
+  // before it searches. The service's copy (`RepositoryDocuments.Roles`) reads it as undeclared until it
+  // indexes the declared index (ORIENT2e).
+  { role: 'index', binding: 'path', job: 'where things are in the code and the records, generated: open it before searching' },
   { role: 'decisions', binding: 'path', job: 'numbered decisions, with why and what each rejected' },
   { role: 'backlog', binding: 'path', job: 'open work only' },
   { role: 'archive', binding: 'path', job: 'finished work, with its date and outcome' },

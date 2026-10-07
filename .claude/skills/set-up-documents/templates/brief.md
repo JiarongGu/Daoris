@@ -34,6 +34,7 @@ the records there and let it write the list.>
 | Role | Where |
 |---|---|
 | router | `<path>` |
+| index | `<path>`: open it before searching |
 | decisions | `<path>` |
 | backlog | `<path>` |
 | archive | `<path>` |
