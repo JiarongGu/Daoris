@@ -638,6 +638,195 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         }
     }
 
+    // ——— DEV3c (D115's DEV3b note on the losing session): a look that fails says what it had said before the failure, so a stop
+    // it made, or an ending it drained, is not lost with the look; `--until-idle` and the watch looked that way, and `--once`'s
+    // own look too.
+
+    /// <summary>
+    /// 🔴 The row's own case: under <c>--until-idle</c> a later look finds the take lost and stops the session, then fails at the
+    /// quest list, as against a service that went away. The stop is said, once, before the ending the run waited for.
+    /// </summary>
+    [Fact]
+    public async Task Until_idle_says_a_stop_its_look_made_before_that_look_failed()
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q1", "engine");
+        _ledger.Claim = "lost";
+        var (driver, runs) = Driver(Config(), sync);
+        // The look that started it asked no claim; the next asks, stops it, and then meets the quest list down.
+        runs.OnOpen = _ => _ledger.Down = true;
+        var said = new List<TickReport>();
+
+        var failed = await Assert.ThrowsAsync<DriverException>(() => driver.RunUntilIdleAsync(_closing.Token, said: each =>
+        {
+            lock (said) said.Add(each);
+        }).WaitAsync(Bound));
+
+        Assert.Contains("503", failed.Message);
+        Assert.Equal(("stood-down", "ended.lost-claim"), (State("s1"), _ledger.Session("s1")["noteParts"]![0]!["code"]!.GetValue<string>()));
+        lock (said)
+        {
+            var lines = said.SelectMany(each => each.Events).ToList();
+            var stop = lines.IndexOf($"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}");
+            var ended = lines.FindIndex(line => line.StartsWith("stood-down  session s1 (#q1 → engine)", StringComparison.Ordinal));
+            Assert.True(stop >= 0 && ended > stop, string.Join(" | ", lines));
+            Assert.Single(lines, line => line.StartsWith("stop  session s1", StringComparison.Ordinal));
+            Assert.Equal("s1", Assert.Single(said.SelectMany(each => each.Concluded)).Session);
+        }
+    }
+
+    /// <summary>
+    /// The gap DEV3a's note named: a look drains what ended, then its own sync after the endings fails. What it drained is said,
+    /// the line and the fact, rather than lost with the look whose report would have carried it.
+    /// </summary>
+    [Fact]
+    public async Task Until_idle_says_the_endings_a_look_drained_before_its_own_sync_failed()
+    {
+        // Made, the first look's sync, and the next look's first sync read the map; the sync after its endings finds it unreadable.
+        var loads = 0;
+        using var sync = RemoteSyncSet.Watching(StandInLedger.Url, null, () =>
+            Interlocked.Increment(ref loads) <= 3
+                ? new Dictionary<string, RemoteTarget>()
+                : throw new IOException("the remotes map is being written"));
+        _ledger.Publish("q1", "engine");
+        var (driver, runs) = Driver(Config(), sync);
+        var said = new List<TickReport>();
+
+        var failed = await Assert.ThrowsAsync<IOException>(() => driver.RunUntilIdleAsync(_closing.Token, said: each =>
+        {
+            lock (said) said.Add(each);
+            // Ended once the look that started it is said, so its ending is the next look's to drain.
+            if (each.Progressed) runs.End("q1");
+        }).WaitAsync(Bound));
+
+        Assert.Equal("the remotes map is being written", failed.Message);
+        Assert.Equal("completed", State("s1"));
+        lock (said)
+        {
+            Assert.Contains(
+                said.SelectMany(each => each.Events), line => line.StartsWith("completed  session s1 (#q1 → engine)", StringComparison.Ordinal));
+            Assert.Equal("s1", Assert.Single(said.SelectMany(each => each.Concluded)).Session);
+        }
+    }
+
+    /// <summary><c>--once</c>'s own look, the same way: what it said before it failed is said, here its sync meeting a remote away.</summary>
+    [Fact]
+    public async Task Run_once_says_what_its_look_said_before_the_look_failed()
+    {
+        const string Away = "the remote could not be reached";
+        using var sync = RemoteSyncSet.Watching(
+            StandInLedger.Url, null, () => new Dictionary<string, RemoteTarget> { ["default"] = new("http://remote.test", "dk_test") }, _ledger);
+        _ledger.Publish("q1", "engine");
+        _ledger.SyncProblem = Away;
+        _ledger.Down = true;
+        var (driver, _) = Driver(Config(), sync);
+        var said = new List<TickReport>();
+
+        var failed = await Assert.ThrowsAsync<DriverException>(() => driver.RunOnceAsync(_closing.Token, said: each =>
+        {
+            lock (said) said.Add(each);
+        }).WaitAsync(Bound));
+
+        Assert.Contains("503", failed.Message);
+        lock (said) Assert.Equal([$"sync  default: quests: {Away}"], said.SelectMany(each => each.Events));
+    }
+
+    /// <summary>
+    /// 🔴 The watch, where its door says a part of a look alone (the headless host's): a look stops the session and then fails,
+    /// and the stop is said before the failure ends the loop. A failed look returns no report, so <c>onReport</c> never had it.
+    /// </summary>
+    [Fact]
+    public async Task The_watch_says_a_stop_its_look_made_before_that_look_failed()
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q1", "engine");
+        _ledger.Claim = "lost";
+        var (watch, runs) = Watch(sync: sync);
+        runs.OnOpen = _ => _ledger.Down = true;
+        var reports = new List<TickReport>();
+        var said = new List<TickReport>();
+
+        var failed = await Assert.ThrowsAsync<DriverException>(() => watch.RunAsync(
+            (report, _) =>
+            {
+                lock (reports) reports.Add(report);
+                return Task.CompletedTask;
+            },
+            onError: null, _closing.Token, said: each =>
+            {
+                lock (said) said.Add(each);
+            }).WaitAsync(Bound));
+
+        Assert.Contains("503", failed.Message);
+        Assert.Equal("stood-down", State("s1"));
+        lock (said)
+        {
+            var part = Assert.Single(said);
+            Assert.Empty(part.Considerations);
+            Assert.Equal([$"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}"], part.Events);
+        }
+
+        lock (reports) Assert.DoesNotContain(reports.SelectMany(each => each.Events), line => line.StartsWith("stop  ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The watch whose door says only whole looks (the desktop's, which keeps watching through a failure): a failed look's lines
+    /// and what it ended join the next look's report, as the orphan sweep's do, rather than a part that would replace the page's
+    /// standing answers with nothing. Said once, after the failure.
+    /// </summary>
+    [Fact]
+    public async Task Without_a_door_for_a_part_the_watch_carries_a_failed_looks_lines_into_the_next_report()
+    {
+        using var sync = new RemoteSyncSet([]);
+        _ledger.Publish("q1", "engine");
+        _ledger.Claim = "lost";
+        var (watch, runs) = Watch(sync: sync);
+        runs.OnOpen = _ => _ledger.Down = true;
+        var heard = new List<object>();
+        var stopLine = $"stop  session s1 (#q1): {Daoris.Driver.Driver.LostClaim}";
+        bool Carried()
+        {
+            lock (heard) return heard.OfType<TickReport>().Any(each => each.Events.Contains(stopLine));
+        }
+
+        var watching = watch.RunAsync(
+            (report, _) =>
+            {
+                lock (heard) heard.Add(report);
+                return Task.CompletedTask;
+            },
+            error =>
+            {
+                lock (heard) heard.Add(error);
+                // The service comes back for the next look.
+                _ledger.Down = false;
+                return Task.CompletedTask;
+            },
+            _closing.Token);
+        try
+        {
+            await Poll.Until(
+                Carried, () => { lock (heard) return string.Join(" | ", heard.OfType<TickReport>().SelectMany(each => each.Events)); }, Bound);
+        }
+        finally
+        {
+            await _closing.CancelAsync();
+            await Settled(watching);
+        }
+
+        lock (heard)
+        {
+            var error = heard.FindIndex(each => each is DriverException);
+            var carrying = heard.FindIndex(each => each is TickReport report && report.Events.Contains(stopLine));
+            Assert.True(error >= 0 && carrying > error, string.Join(" | ", heard.Select(each => each.GetType().Name)));
+            var next = (TickReport)heard[carrying];
+            Assert.Equal(stopLine, next.Events[0]);
+            Assert.Contains(next.Events, line => line.StartsWith("stood-down  session s1 (#q1 → engine)", StringComparison.Ordinal));
+            Assert.Equal("s1", Assert.Single(next.Concluded).Session);
+            Assert.Single(heard.OfType<TickReport>().SelectMany(each => each.Events), line => line == stopLine);
+        }
+    }
+
     private string State(string session) => _ledger.Session(session)["state"]!.GetValue<string>();
 
     /// <summary>A look's or a watch's end, waited for within the bound, whatever it ended on.</summary>
@@ -672,7 +861,7 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         return (driver, runs);
     }
 
-    private (DriverWatch Watch, StandInRuns Runs) Watch(int pollSeconds = 1)
+    private (DriverWatch Watch, StandInRuns Runs) Watch(int pollSeconds = 1, RemoteSyncSet? sync = null)
     {
         var config = Path.Combine(_home, "driver.json");
         File.WriteAllText(config, $$"""
@@ -681,10 +870,11 @@ public sealed class SessionsOutliveTheirLookTests : IDisposable
         var service = _ledger.Client();
         var runs = new StandInRuns(service, _ledger);
         var watch = new DriverWatch(
-            service, config, _home, new SessionProcesses(), sync: null,
+            service, config, _home, new SessionProcesses(), sync,
             harnesses: new HarnessRoster(AdapterSet.Built(), Path.Combine(_home, "harnesses.json")))
         {
             Runner = runs.Runner,
+            Stops = runs.Stops,
         };
         runs.Keeping = watch.Running;
         return (watch, runs);

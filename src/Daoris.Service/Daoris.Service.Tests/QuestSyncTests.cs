@@ -1298,11 +1298,26 @@ public sealed class QuestSyncTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// The pass a build before WAITCLAIM4 ran on a quest whose take lost: its rebase left a move or a wait made on that take
+    /// as it was, so the pass pushed it. The fetch is not rebased, which on such a quest is all that build's pass did
+    /// differently: the push stands on everything the remote numbered, and what it gave numbers to stops being pending.
+    /// </summary>
+    private async Task<QuestSyncReport> PushAsAnOlderBuildAsync(QuestStore machine)
+    {
+        var remote = new StoreRemote(_remote);
+        var fetched = await remote.FetchQuestsAsync(await machine.CursorAsync(Workspaces.Default));
+        var push = await remote.PushQuestsAsync(fetched.Through, await machine.PendingAsync(Workspaces.Default, _ => true));
+        await machine.AcceptedAsync(push.Accepted);
+        return new QuestSyncReport(push.Accepted.Count, [], push.Refused, push.Behind, Problem: null);
+    }
+
+    /// <summary>
     /// 🔴 A machine on an older build goes on after its take lost and closes, declines or waits: its store does not refuse
     /// it, so the next pass pushes it. The remote judges it by the claim the store judges by (QuestLog.Claim) and refuses
     /// it for that quest, answering in the lost take's words: the winner's quest neither closes nor waits, on the remote
     /// or the winner's machine. The older machine's pass reads the refusal, its claim reads lost so its driver stops the
-    /// session, and what it made stays pending there, since only its own build could rewrite it.
+    /// session, and what it made stays pending there, since only its own build could rewrite it. Its pass is that build's
+    /// (PushAsAnOlderBuildAsync): this build's rebase loses the operation before it is pushed (WAITCLAIM4).
     /// </summary>
     [Theory]
     [InlineData(QuestOperationKind.Done, "Finished after the take lost.")]
@@ -1324,7 +1339,7 @@ public sealed class QuestSyncTests : IAsyncLifetime
         var question = await Publish(_b, "B's question for its owner");
         var note = said ?? question.Id;
         await WriteAsAnOlderBuildAsync(_connections[1], _b, quest.Id, kind, note, Now.AddHours(3));
-        var next = await SyncAsync(_b);
+        var next = await PushAsAnOlderBuildAsync(_b);
         await SyncAsync(_a);
 
         foreach (var store in new[] { _a, _remote })
@@ -1423,6 +1438,75 @@ public sealed class QuestSyncTests : IAsyncLifetime
             var held = (await store.FindAsync(quest.Id))!;
             Assert.Equal((QuestStatus.Done, "Landed."), (held.Status, held.Note));
         }
+    }
+
+    // ——— What an older build left pending on a lost take, after the upgrade (WAITCLAIM4, D69's note).
+
+    /// <summary>
+    /// 🔴 Upgraded, a machine still holds the done, decline or wait its older build made after its take's conflict was
+    /// written, which the remote refused at every pass. Its rebase now reads the claim as the remote does
+    /// (QuestLog.OnALostTake), on a quest no fetch touched: a done or a decline becomes a conflict of its own, kept for a
+    /// person with its note as D69 keeps a move made on a take that lost; a wait names no status a conflict could carry,
+    /// and is forgotten. The pass pushes clean, the next has nothing to push, and every machine holds one quest: the
+    /// winner's take, the loser's take-conflict and, for a move, the move's conflict.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestOperationKind.Done, "Finished after the take lost.")]
+    [InlineData(QuestOperationKind.Declined, "Not ours after all.")]
+    [InlineData(QuestOperationKind.Waited, null)]
+    public async Task A_move_or_a_wait_an_older_build_left_pending_on_its_lost_take_becomes_its_loss_and_the_circle_pushes_clean(
+        QuestOperationKind kind, string? said)
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.True((await _a.MoveAsync(quest.Id, QuestStatus.Taken, "A's session.", Now.AddHours(1))).Moved);
+        Assert.True((await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2))).Moved);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        var question = await Publish(_b, "B's question for its owner");
+
+        // A quiet pass fetches the take's conflict back, so no later fetch touches the raced quest.
+        await SyncAsync(_b);
+        await WriteAsAnOlderBuildAsync(_connections[1], _b, quest.Id, kind, said ?? question.Id, Now.AddHours(3));
+        Assert.Equal(quest.Id, Assert.Single((await PushAsAnOlderBuildAsync(_b)).Refused).Quest);
+
+        var upgraded = await SyncAsync(_b);
+        var after = await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.Null(upgraded.Problem);
+        Assert.Empty(upgraded.Refused.Concat(after.Refused));
+        Assert.Empty(after.Conflicts);
+        Assert.Equal(0, after.Pushed);
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+
+        var attempted = QuestTransitions.Target(kind);
+        if (attempted is null)
+        {
+            Assert.Empty(upgraded.Conflicts);
+        }
+        else
+        {
+            var reported = Assert.Single(upgraded.Conflicts);
+            Assert.Equal((quest.Id, attempted, said), (reported.Quest, reported.Attempted, reported.Note));
+        }
+
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal((QuestStatus.Taken, "A's session.", (string?)null), (held.Status, held.Note, held.Awaits));
+            Assert.Equal(
+                attempted is { } move
+                    ? [(_b.Machine, QuestStatus.Taken, "B's session."), (_b.Machine, move, said)]
+                    : new[] { (_b.Machine, QuestStatus.Taken, (string?)"B's session.") },
+                held.Conflicts.Select(c => (c.Machine, c.Attempted, c.Note)));
+            Assert.DoesNotContain(await store.HistoryAsync(quest.Id), o => o.Kind == kind);
+            Assert.Empty(await store.WaitingOnAsync(question.Id));
+        }
+
+        Assert.NotNull(await _remote.FindAsync(question.Id));
     }
 
     // ——— A decline that applies only while open (PAUSE1c, D132 point 10, design §5.2): an abandon judged its decline

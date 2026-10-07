@@ -374,11 +374,15 @@ public static class RemoteSyncPayloads
             }
         }
 
+        // Said as what was refused: the push of the quest, whose operation the reason names (a publish, a move or a wait).
+        // A take is one move among them, and a lost take's refusal says the take lost, so "not taken" misread it
+        // (WAITCLAIM4). The answer's shape is read as every host sends it; only these words are the driver's.
         if (root.TryGetProperty("refused", out var no) && no.ValueKind == JsonValueKind.Array)
         {
             foreach (var refusal in no.EnumerateArray())
             {
-                notes.Add($"quest `#{Text(refusal, "quest")}` was not taken by the remote: {Text(refusal, "reason")}");
+                var refused = $"quest `#{Text(refusal, "quest")}`: the remote refused what this machine pushed for it.";
+                notes.Add(Text(refusal, "reason") is { Length: > 0 } reason ? $"{refused} {reason}" : refused);
             }
         }
 

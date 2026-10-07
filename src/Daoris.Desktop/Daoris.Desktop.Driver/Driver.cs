@@ -232,10 +232,35 @@ public sealed partial class Driver(
     /// session record or come to nothing, never waiting for a session to end (DEV3, D115 §3.1): the sessions
     /// run on, and what ended since the last look joins this one's report.
     /// </summary>
-    public async Task<TickReport> TickAsync(CancellationToken ct = default)
+    /// <param name="failed">
+    /// Handed what the look had said when it fails or is closed (DEV3c): its lines and what ended, which its report would have
+    /// carried, when there is any; the failure then goes on as it was. A look that stopped a session and then failed lost the
+    /// stop's line, the record written and the line not. Never called for a look that returns.
+    /// </param>
+    public async Task<TickReport> TickAsync(CancellationToken ct = default, Action<TickReport>? failed = null)
     {
         var events = new List<string>();
 
+        // What ended, structurally — the half of the report a watcher can act on (SURF5b): a parked intake
+        // this look ends, and every session that ended since the last look (DEV3).
+        var concluded = new List<SessionEnded>();
+
+        try
+        {
+            return await LookAsync(events, concluded, ct).ConfigureAwait(false);
+        }
+        catch when (failed is not null)
+        {
+            List<string> lines;
+            lock (events) lines = [.. events];
+            if (lines.Count > 0 || concluded.Count > 0) failed(new TickReport([], lines, Progressed: false, Concluded: [.. concluded]));
+            throw;
+        }
+    }
+
+    /// <summary><see cref="TickAsync"/>'s look, saying into <paramref name="events"/> and <paramref name="concluded"/> as it goes.</summary>
+    private async Task<TickReport> LookAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
+    {
         await SyncAsync(events, ct).ConfigureAwait(false);
 
         // The sync runs BESIDE the sessions, not only around them (D68 §6): every look syncs, and a look comes
@@ -290,10 +315,6 @@ public sealed partial class Driver(
         _harnesses.Look(snapshot.Started, mark);
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
-
-        // What ended, structurally — the half of the report a watcher can act on (SURF5b): a parked intake
-        // this look ends, and every session that ended since the last look (DEV3).
-        var concluded = new List<SessionEnded>();
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
         // the report's considerations, so "why is this sitting" is answered for the holds a real
@@ -640,8 +661,9 @@ public sealed partial class Driver(
     /// written how it ended, as a look that waited for its sessions did (REV3), and has said what ended (DEV3a).
     /// </remarks>
     /// <param name="said">
-    /// Handed each look's report as the look ends (DEV3a), and before a failure or a close lets go, what ended while it
-    /// waited: what the headless host prints, so a look's lines reach the person whatever ends the run after it.
+    /// Handed each look's report as the look ends (DEV3a), a look that failed or was closed what it had said before (DEV3c), and
+    /// before a failure or a close lets go, what ended while it waited: what the headless host prints, so a look's lines reach
+    /// the person whatever ends the run after it.
     /// </param>
     public async Task<IReadOnlyList<TickReport>> RunUntilIdleAsync(CancellationToken ct = default, Action<TickReport>? said = null)
     {
@@ -650,7 +672,7 @@ public sealed partial class Driver(
         {
             while (true)
             {
-                var report = await TickAsync(ct).ConfigureAwait(false);
+                var report = await TickAsync(ct, failed: said).ConfigureAwait(false);
                 reports.Add(report);
                 said?.Invoke(report);
                 if (!report.Progressed && _runs.Idle) return reports;
@@ -679,14 +701,14 @@ public sealed partial class Driver(
     /// <param name="said">
     /// Handed the look's report as the look ends, each pass beside its sessions that said anything as that pass ends (DEV3b),
     /// then what ended (DEV3a), which together are the report returned: what the headless host prints, so a line reaches the
-    /// person as it is made, whatever ends the run after it.
+    /// person as it is made, whatever ends the run after it. A look that fails hands it what it had said before (DEV3c).
     /// </param>
     public async Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null)
     {
         TickReport look;
         try
         {
-            look = await TickAsync(ct).ConfigureAwait(false);
+            look = await TickAsync(ct, failed: said).ConfigureAwait(false);
         }
         catch
         {

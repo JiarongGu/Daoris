@@ -13,6 +13,14 @@ repository.
 - **Fix:** the CLI's `markdownFence`, which `firstHeading` reads by, and the driver's `SelfDescription.Fence` read a fence as `MarkdownFence` and `fenced` do, each with code of its own; both and the tools' `fenced` are held to one table, `src/Daoris.Cli/test/fixtures/fence-cases.json`, which a `REACH` row sends to the driver's suite at a merge. D151's ORIENT2h6 note has the choices.
 - **Verify:** `markdown-fence.test.ts` (the CLI's reader against the table, and four first headings) and `SelfDescriptionTests` (the table, and four READMEs) failed first, then passed with the CLI suite and the driver's fast half; the lane scan in `merge-branch.test.ts` failed until the `REACH` row. No tracked markdown file here, 518, reads a line or a first heading differently. Not covered: the service's suite does not read the table.
 - **Commit:** `56c2d4e2`
+## 2026-10-07 — a look that failed took its own lines with it
+
+### Driver: a stop made early in a look went unsaid when the look failed later (DEV3c)
+- **Symptom:** read from the code and DEV3b's note, not seen on a run: under `--until-idle` and the watch, a look that stopped a session for a lost take and then failed (the quest list down, its sync after the endings unreadable) left the record stood down and printed no `stop  session` line. A look that drained an ending before its own sync failed printed neither the ending nor its fact.
+- **Root cause:** `TickAsync` gathered every line and ending into lists it handed over only in the report it returned, and a look that threw returned none. DEV3a and DEV3b made each finished look and each pass beside `--once`'s sessions said as it ends; a look cut short had no such door.
+- **Fix:** `TickAsync` takes `failed`, handed what the look had said when it fails or is closed. `RunUntilIdleAsync` and `RunOnceAsync` hand it their `said`. `DriverWatch.RunAsync` takes `said` for a part of a look, which the headless host prints; with none, the part joins the next look's report, as the orphan sweep's lines do. D115's DEV3c note has the rest.
+- **Verify:** five `SessionsOutliveTheirLookTests` DEV3c cases over the stand-in ledger, each seen failing first (the until-idle stop case said the ending without the stop; the others said nothing; the two watch cases failed with the carry removed), and `DriverCommandTests.The_hosts_watch_prints_what_a_failed_look_had_said`, failing with the host's `said` removed; then the driver's fast half passed (4686). Not run: the family rehearsal, the `Process` half and the deployment rehearsal.
+- **Commit:** `bbe9510b`.
 
 ## 2026-10-07 — a losing session's stop that its run made and never said
 
@@ -45,6 +53,12 @@ repository.
 - **Verify:** three new decisions in `tools/orient-index-fixtures/decision-notes.json` failed first in `DecisionNotesTests` and `tools/orient-index.test.mjs`, and `doc-shapes.test.ts`' longer and tilde fences; then passed, with the service suite (1538), the CLI suite (1371) and `verify`. No tracked markdown file here reads differently. Not covered: the CLI's `document.ts` and the driver's `SelfDescription` still toggle.
 
 ## 2026-10-07 — a session whose take had lost closed the winner's quest
+
+### Service and driver: an upgraded machine pushed the move its older build left on a lost take, refused every pass (WAITCLAIM4)
+- **Symptom:** named by WAITCLAIM3's note, not seen on an install: a machine upgraded from a build before WAITCLAIM2 still held the done, decline or wait it made after its take's conflict was written. Every pass pushed it and the remote refused that quest's whole push, so the circle never pushed clean, and the driver said each refusal as *quest `#x` was not taken by the remote*, beside a reason saying the take had lost.
+- **Root cause:** `QuestStore.RebaseAsync` read a lost claim only as it rewrote a pending take, so an operation made after the take's conflict was written applied as the table allows. And `IntegrateAsync` rebased only quests the fetch touched, which this quest no longer was once the conflict had come back.
+- **Fix:** the rebase judges each pending operation by `QuestLog.OnALostTake` on the history it has replayed: a done or a decline becomes a conflict, a wait is forgotten. `IntegrateAsync` also rebases each quest of the circle holding such an operation beside this machine's take-conflict. `RemoteSyncPayloads.Pass` says *the remote refused what this machine pushed for it.* and then the reason. D69's WAITCLAIM4 note has the choice and what it rejected.
+- **Verify:** `QuestSyncTests.A_move_or_a_wait_an_older_build_left_pending_on_its_lost_take_becomes_its_loss_and_the_circle_pushes_clean` failed first for a done, a decline and a wait, and again without the sweep, then passed with the service suite (1565) and the HTTP suite (93); `RemoteSyncTests.A_refused_push_is_said_as_what_this_machine_pushed_with_the_remotes_reason_after_it` failed first, then passed with the driver's fast half (4681). Not covered: a chain step an older done already pushed stays; the family rehearsal, read and not run.
 
 ### Service: a remote applied a move pushed by a machine on an older build whose take had lost (WAITCLAIM3)
 - **Symptom:** named by WAITCLAIM2's note, not seen on an install: a machine on a build before WAITCLAIM2 closed, declined or waited after the pass that found its take lost, and its next pass pushed it. The remote kept it, so the winner's quest was Done on the loser's note, Declined, or waited on the loser's question, on every machine.

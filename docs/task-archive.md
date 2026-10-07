@@ -11987,3 +11987,17 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **ORIENT2h6 — the last fence toggles read as Markdown does** (cli, driver; after ORIENT2h4). After ORIENT2h3 and ORIENT2h4 the service and the tools read fences as CommonMark does, but the CLI's `src/Daoris.Cli/src/document.ts` and the driver's `SelfDescription.cs` still toggle on any three backticks or tildes, so a longer fence quoting a heading or a frontmatter line misreads there. Each implements the rule in its own language, held by the shared `decision-notes.json` fence rows or a fixture of their own. Contract: D151's ORIENT2h3/2h4 notes, `twins.md`. Proof: a four-backtick fence case seen failing in each.
 
 **Outcome** 2026-10-07: the CLI's `firstHeading` and the driver's `SelfDescription` read a fence as Markdown does, each with code of its own, held with the tools' `fenced` to `fence-cases.json` (17 cases); no tracked markdown file reads differently (519 compared). Follow-up: ORIENT2h6b. Detail: D151's ORIENT2h6 note, FIX-LOG; commits 56c2d4e2, cd037d60.
+
+
+## DEV3c — a look that fails after stopping a session keeps its lines (2026-10-07, D115)
+
+> - [ ] **DEV3c — a look that fails after stopping a session keeps its lines** (driver; after DEV3b). DEV3b made `--once` say each pass beside its sessions as it ends; in `--until-idle` and the watch, a look that stops a session and then fails later in the same look still loses that look's lines (the record is still written). Say each pass's lines as they are made there too. Contract: D115's DEV3a and DEV3b notes. Proof: a stand-in test where a look stops a session, then fails; the stop's line is said.
+
+**Outcome** 2026-10-07: a look that fails or is closed hands what it had said (its lines, a lost-claim stop among them, and what ended) to `--until-idle`'s, `--once`'s and the headless watch's `said` before the failure; the desktop's loop carries it into the next look's report. Detail: D115's DEV3c note, FIX-LOG; commits bbe9510b, 3fecd196.
+
+
+## WAITCLAIM4 — a move an older build left pending on a lost take becomes a conflict (2026-10-07, D69)
+
+> - [ ] **WAITCLAIM4 — a move an older build left pending on a lost take becomes a conflict** (service, driver; after WAITCLAIM3). An upgraded machine keeps the done its older build pushed and the remote refused pending, so every pass is refused for that quest, and its rebase applies the done because it reads a lost claim only while rewriting a pending take. Now that the verbs and the remote refuse, weigh again reading the lost claim from a conflict already written, for these stray operations only. The driver also frames a remote refusal as *quest `#x` was not taken by the remote: …*, which reads oddly beside the lost take's sentence; word it for what was refused. Contract: D69's WAITCLAIM3 note ("What the gates do not cover"). Proof: a sync test where a hand-written pending done after a numbered take-conflict becomes a conflict at the next pass and the workspace then pushes clean; the driver's note for a refused move.
+
+**Outcome** 2026-10-07: the rebase judges each pending operation on the history replayed so far, so a done, decline or wait an older build left on a lost take is lost after an upgrade (a move becomes a conflict, a wait is forgotten) and the circle pushes clean; the driver says a refusal as what this machine pushed. Detail: D69's WAITCLAIM4 note, FIX-LOG; commits bfca56b7, 59f4b02a.
