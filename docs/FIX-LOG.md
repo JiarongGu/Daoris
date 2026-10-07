@@ -5,6 +5,22 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a clear counted a held file as freed
+
+### Driver, service: a clear of finished history counted bytes the disk kept, and the service hid its failed removals (HIST1j)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install: a transcript a process held stayed on the disk while the size the clear said and its `history.cleared` line's `bytes` counted it; a kept file the service could not remove was neither counted as failed nor left out of the bytes.
+- **Root cause:** HIST1c measured each cleared session before removing it and summed the measure whatever the removal did, and added the kept files' size as the press read them, though the service removes those; `QuestFiles.Forget` swallowed its failures as D95's best-effort delete had, so they never reached the answer. The suffix list and `SessionHomeFiles.Own` described the same files twice.
+- **Fix:** one descriptor inventory in `SessionHomeFiles` that measures, removes and names a left-over file; `Remove` returns what went, its bytes, and what failed, each path measured again where the disk refuses; the driver frees kept bytes only as far as they left the disk; `QuestFiles.Forget` says whether anything stayed and the history press answers `failed: { quests, asks }`, additively. D153's HIST1j note has the detail.
+- **Verify:** `HistoryClearingTests`' held-file and service-failed cases, `HistoryCommandTests`' exit 2 case, `HistoryDeskTests`' and `LocalHostTests`' `failed` cases each failed first, then passed. Not covered: a real disk letting a folder go in part, and the route's real hold off Windows.
+
+## 2026-10-07 — a history verb's printed command broke on a spaced workspace
+
+### Driver: `history` and `history clear --workspace` printed the workspace bare in the command they name (HIST1i)
+- **Symptom:** found by the second-opinion review of 2026-10-07 and verified in the code, not seen on an install: the reading's *`daoris-driver history clear --workspace <name>` lists it first* and the list's *`… --yes` clears what this list holds* printed `my team` as two arguments and `R&D` as a command Command Prompt runs.
+- **Root cause:** HIST1d's `HistoryCommand.Door` interpolated the workspace as it was; ACCTQUOTE1b had spelled every driver command that named a workspace before HIST1d added one.
+- **Fix:** `Door` spells the workspace through `ShellWord.Of(…, ShellWord.Workspace)`; D153's HIST1i note says why a quest's or an ask's id needs no spelling.
+- **Verify:** `HistoryCommandTests.A_workspace_in_a_printed_command_is_spelled_for_any_shell`, a spaced and an `R&D` row, failed first on the reading's line, then passed. Not covered: a command a later verb adds goes through `ShellWord` only if its author sends it there.
+
 ## 2026-10-07 — a deleted conversation's files left behind
 
 ### Driver: *Delete…* of a conversation left four of its files under the home (HIST1c)

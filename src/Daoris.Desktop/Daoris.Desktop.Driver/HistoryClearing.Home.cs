@@ -188,24 +188,19 @@ public static partial class HistoryClearing
         }
     }
 
-    /// <summary>A workspace's clear takes the home's left-over files (§2.3, §5 step 4): how many went and their bytes.</summary>
+    /// <summary>
+    /// A workspace's clear takes the home's left-over files (§2.3, §5 step 4): how many went and the bytes that went, through the
+    /// helper that measures as it removes (HIST1j), so one the disk keeps is failed and counts only what it let go of.
+    /// </summary>
     private static (int Count, long Bytes) RemoveLeftOver(HistoryWorld world, Facts after, Machine machine, List<string> failed)
     {
         var count = 0;
         var bytes = 0L;
         foreach (var file in LeftOver(world, after, machine))
         {
-            try
-            {
-                if (file.Folder) Directory.Delete(file.Path, recursive: true);
-                else File.Delete(file.Path);
-                count += 1;
-                bytes += file.Bytes;
-            }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-            {
-                failed.Add(file.Path);
-            }
+            var (gone, went) = machine.Files.Take(file.Path, file.Folder, failed);
+            if (gone) count += 1;
+            bytes += went;
         }
 
         return (count, bytes);
@@ -213,25 +208,12 @@ public static partial class HistoryClearing
 
     /// <summary>
     /// A workspace's clear that leaves it no ask takes its intake's room (§2.2): one room per workspace, rendered again at the
-    /// next intake's open. A workspace that keeps an ask keeps its room.
+    /// next intake's open. A workspace that keeps an ask keeps its room. Only the bytes that went are counted (HIST1j).
     /// </summary>
-    private static (bool Went, long Bytes) RemoveRoom(HistoryWorld world, string workspace, Facts after, List<string> failed)
-    {
-        if (after.Asks.Any(ask => Here(ask.Workspace, workspace))) return (false, 0);
-        var room = IntakeRoom.PathOf(world.Home, workspace);
-        if (!Directory.Exists(room)) return (false, 0);
-        var bytes = HistoryBytes.Of(room);
-        try
-        {
-            Directory.Delete(room, recursive: true);
-            return (true, bytes);
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        {
-            failed.Add(room);
-            return (false, 0);
-        }
-    }
+    private static (bool Went, long Bytes) RemoveRoom(HistoryWorld world, string workspace, Facts after, SessionHomeFiles files, List<string> failed) =>
+        after.Asks.Any(ask => Here(ask.Workspace, workspace))
+            ? (false, 0)
+            : files.Take(IntakeRoom.PathOf(world.Home, workspace), folder: true, failed);
 
     /// <summary>
     /// What names a cleared record, tidied (§5 step 4, §4): an empty folder a cleared session's tree left and its empty parents,

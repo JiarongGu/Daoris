@@ -53,7 +53,14 @@ public sealed record HistoryUnitView(string Kind, string Id, string? Workspace)
 }
 
 /// <summary>What the service's press did to one unit: the unit as judged where it was cleared, whether it went, and its sentence.</summary>
-public sealed record HistoryClearedView(HistoryUnitView Unit, bool Cleared, string Message);
+public sealed record HistoryClearedView(HistoryUnitView Unit, bool Cleared, string Message)
+{
+    /// <summary>The quests whose kept files the service could not remove (HIST1j's <c>failed</c>); none from a host before it.</summary>
+    public IReadOnlyList<string> FailedQuests { get; init; } = [];
+
+    /// <summary>The asks whose kept files the service could not remove; none from a host before it.</summary>
+    public IReadOnlyList<string> FailedAsks { get; init; } = [];
+}
 
 /// <summary>
 /// The service's history doors, a local host's only (HIST1b, D153; the history-clearing design §6.3): what a clear of finished
@@ -100,10 +107,19 @@ public sealed partial class ServiceClient
         var root = Answered(ok, status, payload);
         return
         [
-            .. Units(root, "units").Select(each => new HistoryClearedView(
-                each.TryGetProperty("unit", out var unit) ? ReadHistoryUnit(unit) : new HistoryUnitView("", "", null),
-                Flag(each, "cleared"),
-                Text(each, "message") ?? "")),
+            .. Units(root, "units").Select(each =>
+            {
+                // Additive (HIST1j): absent where every removal was made, and from a host before it.
+                var failed = each.TryGetProperty("failed", out var named) && named.ValueKind == JsonValueKind.Object;
+                return new HistoryClearedView(
+                    each.TryGetProperty("unit", out var unit) ? ReadHistoryUnit(unit) : new HistoryUnitView("", "", null),
+                    Flag(each, "cleared"),
+                    Text(each, "message") ?? "")
+                {
+                    FailedQuests = failed ? Strings(named, "quests") : [],
+                    FailedAsks = failed ? Strings(named, "asks") : [],
+                };
+            }),
         ];
     }
 

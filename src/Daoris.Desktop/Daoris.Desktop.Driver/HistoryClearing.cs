@@ -256,6 +256,12 @@ public sealed record HistoryWorld(ServiceClient Service, string Home, string Con
 
     /// <summary>How long nothing must have touched a file before it is left over (§2.3): an hour.</summary>
     public TimeSpan Untouched { get; init; } = TimeSpan.FromHours(1);
+
+    /// <summary>
+    /// How the clear removes a file, or a folder whole, of the home (HIST1j): from the disk. A test hands one that refuses a path,
+    /// as a process holding a transcript makes the disk refuse it, so what a clear frees is held on every platform.
+    /// </summary>
+    public Action<string, bool> Remover { get; init; } = SessionHomeFiles.FromDisk;
 }
 
 /// <summary>
@@ -317,7 +323,8 @@ public static partial class HistoryClearing
         var going = judged.Where(unit => unit.Clearable).ToList();
 
         // 2. The records, each unit in one transaction of the service's; what it keeps is the service's to remove.
-        var cleared = new List<HistoryUnitPlan>();
+        var failed = new List<string>();
+        var answered = new List<HistoryUnitPlan>();
         if (going.Count > 0)
         {
             foreach (var answer in await world.Service.ClearHistoryAsync([.. going.Select(unit => unit.Name)], ct).ConfigureAwait(false))
@@ -331,17 +338,26 @@ public static partial class HistoryClearing
                     continue;
                 }
 
-                // Measured before the files go: the sessions' now, the kept files' as the list read them, since the service took those.
-                var bytes = answer.Unit.Sessions.Aggregate(HistoryBytes.None, (sum, session) => sum + machine.Files.Size(session))
-                            + new HistoryBytes(0, 0, 0, before?.Bytes.Kept ?? 0, 0);
-                cleared.Add(Plan(answer.Unit, keep: null, facts, machine.Files) with { Bytes = bytes });
+                // The kept files the service removed with the records (HIST1j): what this press measured of them, less what is still
+                // on the disk, so one the disk kept frees nothing whether or not the service said so. What it says it could not
+                // remove is failed, and left over for the next clear of a workspace (§2.3).
+                failed.AddRange(answer.FailedQuests.Select(quest => $"{QuestFolder}/{quest}"));
+                failed.AddRange(answer.FailedAsks.Select(ask => $"{AskFolder}/{ask}"));
+                var kept = Math.Max(0, (before?.Bytes.Kept ?? 0) - KeptFiles(machine.Files, answer.Unit.Quests, answer.Unit.Asks).Kept);
+                answered.Add(Plan(answer.Unit, keep: null, facts, machine.Files) with { Bytes = HistoryBytes.None with { Kept = kept } });
             }
         }
 
-        // 3. What the home kept of each cleared session, after the service's yes.
-        var failed = new List<string>();
-        var gone = cleared.SelectMany(unit => unit.Sessions.Concat(unit.Teammates)).Distinct(StringComparer.Ordinal).ToList();
-        new SessionHomeFiles(world.Home).Remove(gone, world.Events, failed);
+        // 3. What the home kept of each cleared session, after the service's yes: measured as it goes, so only what went is counted.
+        var gone = answered.SelectMany(unit => unit.Sessions.Concat(unit.Teammates)).Distinct(StringComparer.Ordinal).ToList();
+        var removed = machine.Files.Remove(gone, world.Events);
+        failed.AddRange(removed.Failed);
+        var cleared = answered
+            .Select(unit => unit with
+            {
+                Bytes = unit.Sessions.Aggregate(unit.Bytes, (sum, session) => sum + removed.Bytes.GetValueOrDefault(session, HistoryBytes.None)),
+            })
+            .ToList();
 
         // 4. What names it, read against the records as they stand after the clear; nothing that reads them where they did not answer.
         var after = await Facts.TryReadAsync(world.Service, ct).ConfigureAwait(false);
@@ -350,7 +366,7 @@ public static partial class HistoryClearing
             ? RemoveLeftOver(world, after, new Machine(world), failed)
             : (0, 0L);
         var (intake, intakeBytes) = scope == HistoryScope.Workspace && after is not null
-            ? RemoveRoom(world, named, after, failed)
+            ? RemoveRoom(world, named, after, machine.Files, failed)
             : (false, 0L);
 
         var outcome = new HistoryOutcome(scope, named)
@@ -589,7 +605,7 @@ public static partial class HistoryClearing
         private readonly IReadOnlyList<LandedBranch> _standing = new LandedBranches(world.Home).All();
         private readonly IReadOnlyList<AutoLanding> _landing = new AutoLandings(world.Home).Open();
 
-        public SessionHomeFiles Files { get; } = new(world.Home);
+        public SessionHomeFiles Files { get; } = new(world.Home, world.Remover);
 
         public SessionTrees Trees => _trees;
 

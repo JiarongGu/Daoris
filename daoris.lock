@@ -57,7 +57,7 @@
       "source": "core/rules/file-tool-discipline.md",
       "target": "rules/file-tool-discipline.md",
       "canonVersion": "0.0.1",
-      "sha256": "7304353355a3d0febfd472a693507d0b521802fcd36c7f4ef6c0c451601dec18",
+      "sha256": "50352b177527b425f15d9d08a85dd415e0d0ebafffac89c9d41365ea3f31c87c",
       "in": "AGENTS.md"
     },
     {

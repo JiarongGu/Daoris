@@ -950,7 +950,9 @@ if (mode == ServiceMode.Local)
 
         var outcomes = await s.History.ClearAsync(units, DateTimeOffset.UtcNow, ct);
         return Results.Ok(new HistoryClearResponse(
-            [.. outcomes.Select(outcome => new HistoryClearedResponse(ToHistoryUnit(outcome.Unit), outcome.Cleared, outcome.Message))]));
+            [.. outcomes.Select(outcome => new HistoryClearedResponse(
+                ToHistoryUnit(outcome.Unit), outcome.Cleared, outcome.Message,
+                outcome.Failed.Any ? new HistoryFailedResponse(outcome.Failed.Quests, outcome.Failed.Asks) : null))]));
     });
 }
 

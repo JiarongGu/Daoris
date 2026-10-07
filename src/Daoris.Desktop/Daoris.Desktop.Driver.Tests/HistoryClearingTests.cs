@@ -507,6 +507,83 @@ public sealed class HistoryClearingTests : IDisposable
     }
 
     /// <summary>
+    /// A disk that will not let go of <paramref name="held"/>, as a process holding a file makes it refuse: a held file stays, and a
+    /// folder holding one loses everything else in it first and then refuses, as a folder deleted whole on Windows does.
+    /// </summary>
+    private static Action<string, bool> Holding(params string[] held) => (path, folder) =>
+    {
+        if (!folder)
+        {
+            if (held.Contains(path, StringComparer.OrdinalIgnoreCase)) throw new IOException($"`{path}` is held.");
+            File.Delete(path);
+            return;
+        }
+
+        var inside = held.Where(file => file.StartsWith(path + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (inside.Count == 0)
+        {
+            Directory.Delete(path, recursive: true);
+            return;
+        }
+
+        foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories).Except(inside, StringComparer.OrdinalIgnoreCase))
+        {
+            File.Delete(file);
+        }
+
+        throw new IOException($"`{inside[0]}` is held.");
+    };
+
+    /// <summary>
+    /// 🔴 A clear says the bytes it freed (HIST1j): a file the disk will not let go of stays, is counted as failed and frees none of
+    /// its bytes, and a folder the disk let go of only in part frees the part that went. The rest of the unit goes as before.
+    /// </summary>
+    [Fact]
+    public async Task A_file_the_disk_keeps_stays_counted_as_failed_and_frees_none_of_its_bytes()
+    {
+        Kept("s1");
+        Kept("s2");
+        File.WriteAllText(Path.Combine(Sessions, "s2", "files", "notes.md"), "notes that go with the rest of the folder");
+        var transcript = Path.Combine(Sessions, "s1.log");
+        var shot = Path.Combine(Sessions, "s2", "files", "shot.png");
+        var service = new StandIn { Records = [Record("s1", "q1"), Record("s2", "q1")], Quests = [Quest("q1")] };
+        service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], sessions: ["s1", "s2"])];
+        var world = World(service) with { Remover = Holding(transcript, shot) };
+        var unit = Assert.Single((await HistoryClearing.PlanAsync(world, HistoryScope.Quest, "q1")).Units);
+
+        var outcome = await HistoryClearing.ClearAsync(world, HistoryScope.Quest, "q1", [unit.Name], PluginEvents.Screen);
+
+        Assert.Equal((1, 2, 2), (outcome.Quests, outcome.Sessions, outcome.Failed));
+        Assert.Equal(unit.Bytes.Total - new FileInfo(transcript).Length - new FileInfo(shot).Length, outcome.Bytes);
+        Assert.Equal([transcript, Path.Combine(Sessions, "s2")], KeptOf("s1").Concat(KeptOf("s2")));
+        Assert.Equal([shot], Directory.GetFiles(Path.Combine(Sessions, "s2"), "*", SearchOption.AllDirectories));
+    }
+
+    /// <summary>
+    /// Kept files the service could not remove (HIST1j): its answer names their quest, which the clear counts as failed, and none
+    /// of their bytes count as freed; they stay, left over for the next clear of a workspace. An answer from a host before it
+    /// names none, and the bytes still on the disk are still not counted.
+    /// </summary>
+    [Fact]
+    public async Task Kept_files_the_service_could_not_remove_are_counted_as_failed_and_free_none_of_their_bytes()
+    {
+        Kept("s1");
+        KeptFiles("quests", "q1");
+        var service = new StandIn { Records = [Record("s1", "q1")], Quests = [Quest("q1")] };
+        service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], sessions: ["s1"])];
+        service.HoldingKept.Add("q1");
+        var unit = Assert.Single((await HistoryClearing.PlanAsync(World(service), HistoryScope.Quest, "q1")).Units);
+        Assert.True(unit.Bytes.Kept > 0);
+
+        var outcome = await HistoryClearing.ClearAsync(World(service), HistoryScope.Quest, "q1", [unit.Name], PluginEvents.Screen);
+
+        Assert.Equal((1, 1, 1), (outcome.Quests, outcome.Sessions, outcome.Failed));
+        Assert.Equal(unit.Bytes.Total - unit.Bytes.Kept, outcome.Bytes);
+        Assert.True(Directory.Exists(Path.Combine(_home, "quests", "q1")));
+        Assert.Empty(KeptOf("s1"));
+    }
+
+    /// <summary>
     /// A press on one quest's page clears that quest's unit and no other, whatever else it sends; a unit the service no longer
     /// knows is kept as unknown.
     /// </summary>
