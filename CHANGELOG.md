@@ -25,10 +25,14 @@ with the version and date at release.
   agent anything.
 - Below about 620 px the window's seven menus fold into one menu, reached and walked by keyboard as
   the bar is. A conversation's notes that an account is signed out or cooling read in Chinese too.
+- Doctrine: the canon teaches a generated index of where things are (a role, a section, a doc-loader
+  step, a set-up step and a template), and a manifest may declare `index` beside its router.
 - Doctrine: the file-tool rule tells an agent harness that has no dedicated read tools to read with its
   shell's read-only commands, so such a harness no longer stops at a read-only task. Run `daoris sync`.
 - The index lists a repository's knowledge document that has no frontmatter by its first heading, in a
   table of its own, and `check` says how many once, never failing.
+- A workspace with a remote no longer stops syncing for good when a person's wait on a quest crosses
+  another machine closing it; that wait is now dropped rather than sent as a move the remote refuses.
 - A permission rule followed by a line break is refused at every door, as the terminal already refused
   it; the window could write one into the rules file before.
 - The terminal compares account, workspace and other names without case exactly as the driver does,
@@ -50,6 +54,9 @@ with the version and date at release.
   it showed, and every way that reached either still lands there.
 - Knowledge search finds an identifier from its words (`ProbeLock` from "probe lock") and lists each
   dated note of a decision as its own result, so a question lands on the note that answers it.
+- A quest's requirement may name files the done must have committed: the driver reads them at the
+  session's end (and `daoris-driver quest check` reads them from a terminal), and the done is held until
+  they are found or the person says yes.
 - The local service can list and clear finished history: a closed quest's work, an ask's, or a closed
   quest's failed sessions, each judged again as it goes. A quest a remote holds is forgotten on this
   machine only. The driver now clears what the home kept of them too, never a tree in use or a standing

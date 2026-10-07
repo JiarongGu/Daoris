@@ -568,6 +568,14 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
 
         Assert.Contains(("POST", "/api/quests/{id}/evidence"), host.Routes());
         const string Commit = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+        // REFAC3: the door hands every field to the one judge of a verdict's shape, which keeps `spelled` to a `case` read.
+        var astray = await host.PostAsync($"/api/quests/{quest}/evidence", new
+        {
+            commit = Commit, how = "session-end",
+            items = new[] { new { requirement = 1, path = "docs/report-bridge.md", result = "uncommitted", spelled = "docs/Report-Bridge.md" } },
+        });
+        Assert.Equal(400, astray.Status);
+        Assert.Contains("read `uncommitted`: only a `case` read", astray.Error);
         var missing = await host.PostAsync($"/api/quests/{quest}/evidence", new
         {
             commit = Commit, how = "session-end", session = "s1a2b3c4",

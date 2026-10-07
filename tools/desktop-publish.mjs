@@ -55,7 +55,7 @@ import { dirname, isAbsolute, join, posix, relative, resolve, sep } from 'node:p
 import { fileURLToPath } from 'node:url';
 // The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
 import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
-import { copyTree, isMain, renameHeld } from './fsx.mjs';
+import { copyTree, isMain, renameHeld, writeAtomic } from './fsx.mjs';
 import { running } from './processes.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -217,10 +217,7 @@ export function layResources(source, install) {
   }
 
   const target = join(install, ...RESOURCES);
-  mkdirSync(dirname(target), { recursive: true });
-  const staged = `${target}.staging`;
-  copyFileSync(source, staged);
-  renameSync(staged, target);
+  writeAtomic(target, readFileSync(source));
   return target;
 }
 
@@ -435,9 +432,7 @@ export function stagedManifest(root, { id, version, commit = null, at }) {
 /** Write the build's manifest into `root`: beside, then renamed, LF. */
 export function writeManifest(root, identity) {
   const target = join(root, BUILD_MANIFEST);
-  const staging = `${target}.writing`;
-  writeFileSync(staging, `${JSON.stringify(stagedManifest(root, identity), null, 2)}\n`);
-  renameSync(staging, target);
+  writeAtomic(target, `${JSON.stringify(stagedManifest(root, identity), null, 2)}\n`);
   return target;
 }
 

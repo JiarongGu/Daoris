@@ -40,7 +40,7 @@
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { isMain } from './fsx.mjs';
+import { isMain, stagedTree } from './fsx.mjs';
 
 export const USAGE = 'usage: node tools/as-merged.mjs <command> [<argument>…]';
 
@@ -113,16 +113,18 @@ export function prepare(cwd) {
   sweep(gitDir);
   const commonDir = git(top, ['rev-parse', '--path-format=absolute', '--git-common-dir']);
   const index = resolve(top, git(top, ['rev-parse', '--git-path', 'index']));
+  // The tree as `git add -A` would stage it, on an index of its own: an unstaged fix in the merge is in it. The merge
+  // tool records its verdicts against the same tree, built by the same helper.
+  let tree;
+  try {
+    tree = stagedTree(top);
+  } catch (error) {
+    throw new AsMergedError(error.message);
+  }
   const folder = join(gitDir, `${FOLDER}${process.pid}`);
   rmSync(folder, { recursive: true, force: true });
   mkdirSync(folder, { recursive: true });
   try {
-    // The tree as `git add -A` would stage it, on an index of its own: an unstaged fix in the merge is in it.
-    const staging = join(folder, 'staging.index');
-    copyFileSync(index, staging);
-    git(top, ['add', '-A'], { GIT_INDEX_FILE: staging });
-    const tree = git(top, ['write-tree'], { GIT_INDEX_FILE: staging });
-    rmSync(staging, { force: true });
     const parents = [git(top, ['rev-parse', 'HEAD']), ...heads];
     const commit = git(top, ['commit-tree', tree, ...parents.flatMap((parent) => ['-p', parent]), '-m', 'The commit this merge would make (GATE1)'], IDENTITY);
 

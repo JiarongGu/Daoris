@@ -263,6 +263,30 @@ public sealed class DriverCommandTests
     }
 
     /// <summary>
+    /// EVID1b (D144 §5, D50): <c>quest check</c> is a door the usage names, routed by the host to its console inside the one
+    /// catch with this host's log, where the read's <c>evidence.checked</c> line goes; asked for before the quest's other words,
+    /// which would take it as a usage mistake. The words are the library's, which <c>QuestCheckCommandTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_quest_check_and_the_host_routes_it_with_its_log()
+    {
+        Assert.Contains("\n  quest check <id> [--commit <sha>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var log = program.IndexOf("using var log = MachineLog.Open(", StringComparison.Ordinal);
+        var check = program.IndexOf("QuestCheckCommand.Asks(questArgs)", StringComparison.Ordinal);
+        var questUsage = program.IndexOf("usage: daoris-driver quest delete <id>", StringComparison.Ordinal);
+        Assert.True(check > log && questUsage > check, $"`quest check` asked for at {check}, the log opened at {log}, the quest's usage at {questUsage}");
+        Assert.Contains("QuestCheckConsole.RunAsync(questArgs, log)", program);
+        Assert.Contains("quest check <id> [--commit <sha>]", program[questUsage..]);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "QuestCheckConsole.cs"));
+        Assert.Contains("QuestCheckCommand.Read(args, out var problem)", console);
+        Assert.Contains("service.EvidenceLined += line => SessionLog.WriteEvidence(log, line);", console);
+        Assert.Contains("QuestCheckCommand.RunAsync(ask, new QuestCheckWorld(service), Console.Out)", console);
+    }
+
+    /// <summary>
     /// HIST1d (D153 point 7, the history-clearing design §6.2, D50): the history verbs are doors the usage names, routed by the
     /// host to its console inside the one catch, with this host's log, where a clear's line says the terminal's door. <c>quest
     /// clear</c> and <c>ask --clear</c> are asked for before the quest's other words and an ask's words, which would take them as

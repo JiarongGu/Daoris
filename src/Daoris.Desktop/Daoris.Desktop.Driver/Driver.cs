@@ -1132,7 +1132,13 @@ public sealed partial class Driver(
                     conclusion = AccountSignedOut(conclusion, adapter, selection, turnFailed);
                     (conclusion, var limited) = AccountLimited(conclusion, adapter, selection, turnFailed, sessionId, used);
 
-                    var evidence = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
+                    var commits = await WorkingTree.CommitsSinceAsync(workTree, before, ct).ConfigureAwait(false);
+                    // EVID1b (D144 §3): a done that waits on its evidence is read here, after the quest and before the record,
+                    // at the tree's HEAD now, and the verdict goes to the evidence door and beneath the commits on the record.
+                    var evidence = await EvidenceCheck.AtEndAsync(
+                            service, after, new EvidenceAt(workTree, EvidenceCodes.SessionEnd) { Base = before, Session = sessionId },
+                            commits, ct)
+                        .ConfigureAwait(false);
                     await service.AdvanceAsync(
                         sessionId, conclusion.State, note: conclusion.Note, evidence: evidence, ct: ct, limit: limited,
                         parts: conclusion.Parts).ConfigureAwait(false);

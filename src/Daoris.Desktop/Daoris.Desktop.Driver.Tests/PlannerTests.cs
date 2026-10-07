@@ -562,6 +562,57 @@ public sealed class PlannerTests
     }
 
     /// <summary>
+    /// EVID1b (D144 §6): a question whose done waits on its evidence while the session that made it still runs is not yet the
+    /// person's: the sentence says its evidence is read when that session ends, and names no yes.
+    /// </summary>
+    [Fact]
+    public void A_question_whose_evidence_is_read_when_its_running_session_ends_is_not_yet_the_persons()
+    {
+        var held = Quest("q2", to: "Backend", status: "Done") with { Held = true, Hold = EvidenceCodes.Unread, AwaitsEvidence = true };
+        var snapshot = Ran([WaitingOn("q2"), held], ("q1", new PriorSession("s1", "D:/trees/s1"))) with
+        {
+            Active = [new SessionView("s9", "Backend", "working") { Quest = "q2" }],
+        };
+
+        var waiting = Assert.Single(Planner.Plan(snapshot, Config()), c => c.Quest.Id == "q1");
+
+        Assert.Equal(StartVerdict.Waiting, waiting.Verdict);
+        Assert.Equal(
+            "waits on `#q2`, which `Backend` closed done: its evidence is read when session `s9` ends — it resumes, in the same "
+            + "tree, once that evidence is found.",
+            waiting.Reason);
+    }
+
+    /// <summary>
+    /// EVID1b (D144 §6): evidence nobody read, with no session running on it, and evidence read and not found, are the person's:
+    /// the sentence names the cause and both doors, the check and the yes. The check names a commit where no session here ran it.
+    /// </summary>
+    [Fact]
+    public void A_question_held_for_its_evidence_names_the_cause_and_both_doors()
+    {
+        var unread = Quest("q2", to: "Backend", status: "Done") with { Held = true, Hold = EvidenceCodes.Unread, AwaitsEvidence = true };
+        var missing = unread with { Hold = EvidenceCodes.MissingHold };
+
+        var driven = Ran([WaitingOn("q2"), unread], ("q1", new PriorSession("s1", "D:/trees/s1")), ("q2", new PriorSession("s9", "D:/trees/s9", "completed")));
+        var outside = Ran([WaitingOn("q2"), unread], ("q1", new PriorSession("s1", "D:/trees/s1")));
+        var notFound = Ran([WaitingOn("q2"), missing], ("q1", new PriorSession("s1", "D:/trees/s1")), ("q2", new PriorSession("s9", "D:/trees/s9", "completed")));
+
+        string Reason(Snapshot snapshot) => Assert.Single(Planner.Plan(snapshot, Config()), c => c.Quest.Id == "q1").Reason;
+
+        Assert.Equal(
+            "waits on `#q2`, which `Backend` closed done, and its evidence is not read yet — it resumes, in the same tree, once "
+            + "the evidence is found, `daoris-driver quest check q2`, or once you accept the done as it stands, your yes: "
+            + "`daoris-driver quest accept q2`.",
+            Reason(driven));
+        Assert.Contains("`daoris-driver quest check q2 --commit <sha>`", Reason(outside));
+        Assert.Equal(
+            "waits on `#q2`, which `Backend` closed done without the evidence it names — it resumes, in the same tree, once a later "
+            + "commit holds it, `daoris-driver quest check q2 --commit <sha>`, or once you accept the done as it stands, your yes: "
+            + "`daoris-driver quest accept q2`.",
+            Reason(notFound));
+    }
+
+    /// <summary>
     /// The open list holds open and taken quests, and a done a departure holds (DRIFT1d), so a question absent from
     /// it has closed — and the quest resumes where its earlier session left off, carrying which session that was.
     /// </summary>

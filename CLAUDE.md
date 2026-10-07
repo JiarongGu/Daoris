@@ -60,7 +60,7 @@ screen can set, a terminal can.
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Three things to know before changing anything.** The always-loaded core sits at **20,428 of 26,000
+**Three things to know before changing anything.** The always-loaded core sits at **20,547 of 26,000
 bytes** (CANON7, D28 as amended: this repository's number caps *the canon's core*, a different
 question from the 30000 an adopter starts at). **The budget
 reports and never fails** (D54): a fact gates, a judgement reports. The answer to a full budget is to
@@ -203,7 +203,8 @@ Run every command from the **workspace root**, not from a package directory.
   FIX-LOG 2026-09-21), then every CLI test, `daoris check` against Daoris's own doctrine,
   `doc-budgets` (word ceilings for the prose a session reads whole; reported, never enforced — D54),
   `doc-duplicates` (the union-merged records hold nothing twice — D106), the decisions digest's note table
-  (`tools/orient-index.test.mjs`, ORIENT1h), then `release-prep --check` (every shipped version reference agrees, example pins included), then
+  (`tools/orient-index.test.mjs`, ORIENT1h) and the tooling's one atomic write and tree snapshot
+  (`tools/fsx.test.mjs`, REFAC2), then `release-prep --check` (every shipped version reference agrees, example pins included), then
   the devkit's universal gates (SEN1). Run before claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,

@@ -202,8 +202,27 @@ public static class WorkingTree
     /// <summary>What landed since — the reviewable half of the record (D46 §4).</summary>
     public static async Task<string> CommitsSinceAsync(string root, string? before, CancellationToken ct = default)
     {
-        var range = before is null ? "HEAD" : $"{before}..HEAD";
-        var (code, stdout, _) = await GitAsync(root, ["log", "--oneline", range], ct).ConfigureAwait(false);
+        var (code, stdout, _) = await GitAsync(root, ["log", "--oneline", Since(before)], ct).ConfigureAwait(false);
+        return Landed(code, stdout);
+    }
+
+    /// <inheritdoc cref="CommitsSinceAsync(string, string?, CancellationToken)"/>
+    /// <param name="git">How git is read: the review's seam (REVIEW3), through which the sweep reads a lost session's (EVID1b).</param>
+    internal static async Task<string> CommitsSinceAsync(string root, string? before, GitRead git, CancellationToken ct)
+    {
+        var stdout = new StringBuilder();
+        var code = await git(root, ["log", "--oneline", Since(before)], piece =>
+        {
+            stdout.Append(piece.Span);
+            return true;
+        }, ct).ConfigureAwait(false);
+        return Landed(code, stdout.ToString());
+    }
+
+    private static string Since(string? before) => before is null ? "HEAD" : $"{before}..HEAD";
+
+    private static string Landed(int code, string stdout)
+    {
         if (code != 0) return "no commits readable";
 
         var commits = stdout.Trim();
@@ -704,8 +723,9 @@ public static class WorkingTree
     internal static Task<bool> IsTopLevelAsync(string root, CancellationToken ct) => IsTopLevelAsync(root, WholeAsync, ct);
 
     /// <inheritdoc cref="IsTopLevelAsync(string, CancellationToken)"/>
-    /// <param name="git">How git is read: the review's seam (REVIEW3), so its tests count this start with the range's.</param>
-    private static async Task<bool> IsTopLevelAsync(string root, GitRead git, CancellationToken ct)
+    /// <param name="git">How git is read: the review's seam (REVIEW3), so its tests count this start with the range's, and
+    /// evidence's (EVID1b).</param>
+    internal static async Task<bool> IsTopLevelAsync(string root, GitRead git, CancellationToken ct)
     {
         // A folder that is not there: git would refuse to start in it, and nothing here is asked of the one above.
         if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return false;

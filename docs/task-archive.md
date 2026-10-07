@@ -11638,3 +11638,45 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **CANONREAD1 — the file-tool rule names a harness with no file tools** (canon, examples). Codex, asked for a read-only review on 2026-10-07, refused to read any file: `file-tool-discipline` says to use the dedicated read/search tools rather than the shell, and its harness has none, so it stopped. Say that where a harness offers no dedicated tool, its shell's read-only commands are the read tools, and the rule's point (no scripted edits, no side channel past approval) still binds. Contract: `canon-authoring.md`, D48 §2a. Proof: canon tests, examples re-synced, core bytes measured.
 
 **Outcome** 2026-10-07: `file-tool-discipline` tells a harness with no dedicated read or search tool that its shell's read-only commands are the read tools (a read changes nothing, so stopping protects nothing), while scripted edits, deletions by computed offsets and side channels past an approval stay barred; its `enforces` row says so too. The always-loaded core grows 364 bytes (20,064 → 20,428 of 26,000; each example 19,309 → 19,673 of 30,000), this repository and both examples re-synced, and the canon changelog's Unreleased entry tells adopters to sync. `no-tmp-for-repo-files` has the same gap for writing (CANONREAD2). Detail: the canon changelog; commit 46425744.
+
+
+## REFAC3 — one evidence-verdict validator (2026-10-07, D144)
+
+> - [ ] **REFAC3 — one evidence-verdict validator** (service). `QuestEvidence.cs` and `QuestExchange.cs` validate a verdict's fields separately and already differ on `spelled`. Return structured failures from one validator, keeping coverage and state checks apart. Contract: the review's refactor 3, D144's EVID1a note. Proof: evidence tests over both doors with one table.
+
+**Outcome** 2026-10-07: `QuestEvidenceVerdict.JudgeShape` is the one judge of a verdict's shape at both doors (ingestion over the wire and the local exchange), returning the first fault as `QuestVerdictFault(Field, Item, Why)`; the wire side checks only JSON kinds before it, the exchange words a fault as its 400, and coverage and state checks stay apart. `spelled` is a `case` read's alone and must name the same path in another case (design §3, §5). Refused now: `spelled` on another result over the wire, and a `spelled` that is not the path in another case at both doors; nothing writes verdicts yet (EVID1b). One table of 31 shapes runs through both doors. Service +31. Detail: D144's REFAC3 note, FIX-LOG; commit 73b970a0.
+
+
+## QUESTOP1 — write down how a quest operation kind is added (2026-10-07, D68)
+
+> - [ ] **QUESTOP1 — write down how a quest operation kind is added** (service, knowledge). EVID1a's `evidenced` took eight places, listed nowhere: the enum, the replay's rule, the log payload, the wire and its shape sentence, the rebase's drop list, the cache column, the HTTP response and the MCP listing. A knowledge document (or the service README's section) names them, and ideally a test fails when a kind misses one. Contract: D144's EVID1a note, D68. Proof: the document's index row; the test if built.
+
+**Outcome** 2026-10-07: `.claude/knowledge/quest-operations.md` names the eleven places a quest operation kind goes (the kind, the replay's rule, the log payload, the wire and its shape sentence, the rebase's rule, the cache column, the HTTP answer, the MCP listing, the operation's field, the quest's property, the verb's doors), and `QuestOperationKindsTests` (five theories over every kind) and `QuestResponseTests` fail on a place a kind misses. Listing them found a live defect since D79: a taker's lost `waited` was rebased into a conflict naming no status, which the wire refuses, so the remote answered every later push of that circle with 400; the rebase's rule is now one table (`QuestLog.Lost`) and such a wait is forgotten. A wait on a take that lost is a decision (WAITCLAIM1). Service +51, HTTP +1. Detail: the knowledge document, FIX-LOG 2026-10-07; commits 74bbb550, c5b17699, e970347f.
+
+
+## ORIENT2a — the canon teaches the index (2026-10-07, D151)
+
+> - [ ] **ORIENT2a — canon teaches the index** (canon, examples). Add index role/section, skill steps and template; update canon changelog and sync examples. Contract: design §1.3, D151 §3. Proof: canon tests, D48 §2a scan, unchanged core bytes.
+
+**Outcome** 2026-10-07: the canon teaches a generated, committed index of where things are, kept true by the repository's own check: `development-documents` gains the `index` role, its section and a sentence in *Without the tool*; `doc-loader` gains step 3 (start every search at the index's row, read the lines it names); `set-up-documents` gains step 5 and `templates/index.md` (*Kept by hand* first, then *Generated*). Nothing always-loaded changed (core unchanged at 20,428); this repository and both examples re-synced. Detail: D151's ORIENT2a note; commit 1250ed14.
+
+
+## ORIENT2b — declare the index (2026-10-07, D151)
+
+> - [ ] **ORIENT2b — declare the index** (cli). Add `index` after `router`, render its location, fail missing paths and declare `docs/index/README.md`. Contract: §1.4, D151 §4. Proof: documents tests and measured region growth.
+
+**Outcome** 2026-10-07: `index` joins the CLI's `ROLES` after `router`, so `sync` renders its row after the router's, `check` and `status` name a missing declared path, and a ceiling with no path is refused; Daoris declares `docs/index/README.md`. The region grows 119 bytes as the design measured, to 20,547 of 26,000. A dogfood test holds the canon's roles table and `ROLES` to one order. The service's twin `RepositoryDocuments.Roles` gains `index` in ORIENT2e. CLI 1359 → 1366. Detail: D151's ORIENT2b note; commit dc9dd921.
+
+
+## REFAC2 — tooling writes and snapshots through one helper each (2026-10-07)
+
+> - [ ] **REFAC2 — tooling writes and snapshots through one helper each** (tools). Tools assemble write-beside-then-rename themselves (`ux-count.mjs` still renames bare), and `as-merged.mjs` and `merge-branch.mjs` each build the staged tree. Give `tools/fsx.mjs` an atomic write and one staged-tree snapshot both use. Contract: the review's refactors 4, 5. Proof: the tools' tests and `merge-branch.test.ts` green; the counter's write retried.
+
+**Outcome** 2026-10-07: `tools/fsx.mjs` gains `writeAtomic` (a unique beside name, `renameHeld` into place, the beside file removed on failure) and `stagedTree` (the tree `git add -A` would stage, on a copy of the index git uses there, a linked worktree's own, never writing the person's index); every replacement write in the tools (the counter's script, both benches, the orientation index, the publish's resources and manifest, the merge tool's notes, verdicts and state, the knowledge server's stamp) and the snapshots in the merge tool and `as-merged` go through them. A gate's streaming log, folder installs and the rehearsals' scripted moves are left, each with its reason. `tools/fsx.test.mjs` (10) runs in `verify`. Detail: FIX-LOG's held-folder entry; commits 27f58f70, b7f5b6ff.
+
+
+## EVID1b — the driver checks evidence at session end (2026-10-07, D144)
+
+> - [ ] **EVID1b — driver checks at session end** (driver; after a). Read paths at HEAD, post/store verdicts; prompts/intake name evidence; sweep and terminal check read remaining items. Contract: §2–§3, §5. Proof: git evidence, requirements, goldens, trace/command tests and family phase 7.
+
+**Outcome** 2026-10-07: the driver reads a done's path evidence at a session's end, in the orphan sweep and from `daoris-driver quest check`, and posts the verdict to EVID1a's door; prompts, intake, planner and trace name it. The family rehearsal's phase is EVID1b2. Detail: D144's EVID1b note; commits 55aa650f…f946b4a3.

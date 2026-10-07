@@ -79,6 +79,22 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     public IReadOnlyList<QuestAnswerView> Answers { get; init; } = [];
 
     /// <summary>
+    /// Why a held done waits (EVID1a, D144 §6), as the service answers <c>hold</c>: <c>departed</c>, <c>evidence-unread</c> or
+    /// <c>evidence-missing</c> (<see cref="EvidenceCodes"/>). Null when nothing holds it, and from a host before the field,
+    /// whose only hold was a departure.
+    /// </summary>
+    public string? Hold { get; init; }
+
+    /// <summary>
+    /// Whether its done waits for Daoris to find its evidence (EVID1a, D144 §3): a met answer names some and none was found
+    /// yet, a departure beside it or not. What a session's end, the sweep and the terminal's check read. Absent is false.
+    /// </summary>
+    public bool AwaitsEvidence { get; init; }
+
+    /// <summary>What Daoris last read of its evidence (EVID1a, D144 §5), or null while nothing was.</summary>
+    public EvidenceVerdict? Evidence { get; init; }
+
+    /// <summary>
     /// When its status last moved, as the service answered it (<c>updated</c>). For a taken quest that waits on nothing it is
     /// when it was taken (CARRY2b): a wait is the one other move a taken quest makes, and it leaves the quest waiting. Null
     /// from a host that answers none.
@@ -87,7 +103,20 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 }
 
 /// <summary>One thing the person requires of a quest (DRIFT1c), as the service answers it: their words, and the check that proves them.</summary>
-public sealed record QuestRequirementView(string Quote, string Check);
+public sealed record QuestRequirementView(string Quote, string Check)
+{
+    /// <summary>
+    /// What Daoris reads itself to tell the check was met (EVID1a, D144 §2): each a path the done's commit must hold, or a
+    /// gate. Empty for a requirement that names none, and from a host before evidence.
+    /// </summary>
+    public IReadOnlyList<QuestEvidenceItem> Evidence { get; init; } = [];
+
+    // A list compares by what it holds, so two reads of one requirement are one requirement.
+    public bool Equals(QuestRequirementView? other) =>
+        other is not null && Quote == other.Quote && Check == other.Check && Evidence.SequenceEqual(other.Evidence);
+
+    public override int GetHashCode() => HashCode.Combine(Quote, Check, Evidence.Count);
+}
 
 /// <summary>
 /// How a done answered one requirement (DRIFT1d), as the service answers it: its number, and <paramref name="Met"/> with
@@ -283,6 +312,12 @@ public sealed record SessionView(
     /// started it (DEV3), so the next look can find its quest still open, and must not start it again.
     /// </summary>
     public string? Quest { get; init; }
+
+    /// <summary>
+    /// The commit its tree stood at when it opened (SURF6), or null where unsaid: what a lost session's done is read as changed
+    /// from when the sweep ends it (EVID1b, D144 §3). Answered on loopback alone, beside the tree.
+    /// </summary>
+    public string? BaseCommit { get; init; }
 
     /// <summary>Its note's lines by code (LANG1a), handed on wherever its note is; null for a record from before parts.</summary>
     public IReadOnlyList<NotePart>? NoteParts { get; init; }
@@ -750,11 +785,11 @@ public static class Planner
                 string.Equals(q.Id, awaits, StringComparison.OrdinalIgnoreCase));
             // A question closed done departing from what the person required stays on the open list, held for their yes
             // (DRIFT1d, D133 §4), and what waits on it waits with it: the sentence names whose move it is, and its door.
+            // One held for its evidence (EVID1b, D144 §6) is not the person's while the session that made the done runs, since
+            // its end reads the evidence; after it, the sentence names the cause and both doors, the check and the yes.
             if (question is { Held: true })
             {
-                return new(quest, StartVerdict.Waiting,
-                    $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
-                    + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.");
+                return new(quest, StartVerdict.Waiting, HeldQuestion(question));
             }
 
             if (question is not null)
@@ -768,6 +803,31 @@ public static class Planner
             return considered.Verdict == StartVerdict.Start
                 ? considered with { Reason = $"resuming in `{quest.To}` — `#{awaits}` is answered.", Resumes = prior }
                 : considered;
+        }
+
+        // Why a held question waits, and whose move it is (DRIFT1d; EVID1b, D144 §6). A host before evidence answers no cause,
+        // and its one hold was a departure. The check names a commit where no session here ended on the question, since a done
+        // no driven end read must be read at a commit the person names (D144 §3).
+        string HeldQuestion(QuestView question)
+        {
+            var yes = $"once you accept the done as it stands, your yes: `daoris-driver quest accept {question.Id}`.";
+            var named = snapshot.LastRun.ContainsKey(question.Id) ? "" : " --commit <sha>";
+            return question.Hold switch
+            {
+                EvidenceCodes.Unread when snapshot.Active.FirstOrDefault(s => string.Equals(s.Quest, question.Id, StringComparison.OrdinalIgnoreCase))
+                    is { } running =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done: its evidence is read when session `{running.Id}` "
+                    + "ends — it resumes, in the same tree, once that evidence is found.",
+                EvidenceCodes.Unread =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done, and its evidence is not read yet — it resumes, in "
+                    + $"the same tree, once the evidence is found, `daoris-driver quest check {question.Id}{named}`, or {yes}",
+                EvidenceCodes.MissingHold =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done without the evidence it names — it resumes, in the "
+                    + $"same tree, once a later commit holds it, `daoris-driver quest check {question.Id} --commit <sha>`, or {yes}",
+                _ =>
+                    $"waits on `#{question.Id}`, which `{question.To}` closed done departing from what you required — it "
+                    + $"resumes, in the same tree, once you accept that, your yes: `daoris-driver quest accept {question.Id}`.",
+            };
         }
 
         // `into`: the earlier session whose tree a resume or a carry-on goes back into — the one tree a

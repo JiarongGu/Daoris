@@ -39,11 +39,23 @@ const MANIFEST_ROWS: { name: string; documents: unknown; harness?: string; read:
     ],
   },
   { name: 'an object with a path and no ceiling', documents: { router: { path: 'docs/README.md' } }, read: [{ role: 'router', path: 'docs/README.md', words: null }] },
+  // ORIENT2b (D151 point 4, the orientation design §1.4): the index of where things are is a path, read
+  // after the router.
+  {
+    name: 'the index of where things are, a path, after the router',
+    documents: { decisions: 'docs/decisions', index: 'docs/index/README.md', router: 'docs/README.md' },
+    read: [
+      { role: 'router', path: 'docs/README.md', words: null },
+      { role: 'index', path: 'docs/index/README.md', words: null },
+      { role: 'decisions', path: 'docs/decisions', words: null },
+    ],
+  },
 ];
 
 const REFUSED_ROWS: { name: string; documents?: unknown; raw?: string; harness?: string; says: RegExp }[] = [
   { name: 'a list', documents: ['docs/DECISIONS.md'], says: /documents as \["docs\/DECISIONS\.md"\] — it is a map from a role to its path/ },
-  { name: 'an unknown role, naming the known ones', documents: { roadmap: 'ROADMAP.md' }, says: /'roadmap', which is not a role daoris knows — the roles are brief, room, router, decisions, backlog, archive, fixes, changelog, glossary, gates/ },
+  { name: 'an unknown role, naming the known ones', documents: { roadmap: 'ROADMAP.md' }, says: /'roadmap', which is not a role daoris knows — the roles are brief, room, router, index, decisions, backlog, archive, fixes, changelog, glossary, gates/ },
+  { name: 'a ceiling alone on the index, which takes a path', documents: { index: { words: 100 } }, says: /documents\.index has no path/ },
   { name: 'a tier the index already lists', documents: { knowledge: 'docs/notes' }, says: /'knowledge', which the index lists from \.claude\/knowledge\/ — it is not declared here/ },
   { name: 'a skill, the same', documents: { skill: 'x' }, says: /'skill', which the index lists from \.claude\/skills\/ — it is not declared here/ },
   { name: 'a path on the brief', documents: { brief: 'BRIEF.md' }, says: /documents\.brief takes a ceiling and no path/ },

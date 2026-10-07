@@ -75,6 +75,48 @@ public sealed class RequirementsHandedTests
         Assert.Contains("waits until the person accepts it", close);
     }
 
+    /// <summary>
+    /// EVID1b (D144 §2): beneath a requirement naming evidence the session is told what Daoris reads in its branch's last commit
+    /// when it ends, and that a met answer without it holds the quest, so it can commit a missing file itself, which costs
+    /// nothing. A gate is said to be read from the landing queue (EVID1d). A requirement naming none reads as it did.
+    /// </summary>
+    [Fact]
+    public void A_requirement_naming_evidence_tells_the_session_what_Daoris_reads_in_its_last_commit()
+    {
+        var one = Bridge with { Evidence = [new QuestEvidenceItem("docs/bridge.md")] };
+        var two = Common with { Evidence = [new QuestEvidenceItem("docs/report.md"), new QuestEvidenceItem("src/report.json"), new QuestEvidenceItem(null, "web")] };
+
+        var prompt = TargetPrompt.Compose(Target(one, two, Bridge with { Quote = "no evidence here" }));
+
+        Assert.Contains(
+            "  Check: " + Bridge.Check + "\n\n  Evidence: Daoris reads `docs/bridge.md` in your branch's last commit when you end. "
+            + "A met answer without it holds the quest for the person, so commit it first.\n",
+            prompt);
+        Assert.Contains(
+            "\n\n  Evidence: Daoris reads `docs/report.md` and `src/report.json` in your branch's last commit when you end. A met "
+            + "answer without them holds the quest for the person, so commit them first. Gate `web` is read from the landing "
+            + "queue, which this machine does not run for it, so a met answer on it waits for the person.\n",
+            prompt);
+        // The third names none, and reads as a requirement always did.
+        var third = prompt[prompt.IndexOf("  > no evidence here", StringComparison.Ordinal)..];
+        Assert.DoesNotContain("Evidence:", third[..third.IndexOf("When you close it", StringComparison.Ordinal)]);
+    }
+
+    /// <summary>The instruction's bound counts a requirement's evidence beside its words and check (CONTEXT1's one rule).</summary>
+    [Fact]
+    public void The_bound_counts_each_requirements_evidence()
+    {
+        var heavy = Enumerable.Range(1, 6)
+            .Select(number => new QuestRequirementView($"words {number} " + new string('w', 500), $"check {number}")
+            {
+                Evidence = [.. Enumerable.Range(1, 5).Select(item => new QuestEvidenceItem($"docs/{number}/{item}/" + new string('p', 280)))],
+            })
+            .ToArray();
+
+        Assert.True(TargetPrompt.RequirementsShown(heavy) < heavy.Length);
+        Assert.Equal(heavy.Length, TargetPrompt.RequirementsShown([.. heavy.Select(each => each with { Evidence = [] })]));
+    }
+
     /// <summary>A quest with no requirements reads exactly as it did: nothing is said of requirements or answers.</summary>
     [Fact]
     public void A_quest_with_no_requirements_reads_as_it_did()

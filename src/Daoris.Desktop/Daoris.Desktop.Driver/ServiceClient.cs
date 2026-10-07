@@ -78,6 +78,16 @@ public sealed partial class ServiceClient : IDisposable
     /// <summary>Tell the watchers a landing's line (<see cref="LandingLined"/>).</summary>
     public void LandingSaid(LandingLine line) => Raise(LandingLined, line);
 
+    /// <summary>
+    /// A done's evidence read (EVID1b, D144 §5): <c>evidence.checked</c>, one per read, counts and codes. A session's end, the
+    /// sweep and the terminal's check each post their verdict through this client, so a watcher here logs each read as it logs
+    /// the opens and moves, without the reader knowing the log.
+    /// </summary>
+    public event Action<EvidenceLine>? EvidenceLined;
+
+    /// <summary>Tell the watchers an evidence read's line (<see cref="EvidenceLined"/>).</summary>
+    public void EvidenceSaid(EvidenceLine line) => Raise(EvidenceLined, line);
+
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 
@@ -795,6 +805,27 @@ public sealed partial class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// What Daoris read of a done's evidence, posted to the one door that takes it (EVID1a, EVID1b; D144 §3): the local host's
+    /// <c>POST /api/quests/{id}/evidence</c>, with this client's key, as records are written. A refusal is an answer, in the
+    /// service's words: the done no longer waits on evidence (409), the verdict does not read what it waits on (400), or no
+    /// such quest (404); and a host older than the door is said to be.
+    /// </summary>
+    /// <exception cref="HttpRequestException">The host did not answer: the caller says so, and posts again at a later read.</exception>
+    public async Task<EvidencePosted> EvidenceAsync(string id, EvidenceVerdict verdict, CancellationToken ct = default)
+    {
+        var (ok, status, payload, root) = await PostJsonAsync(
+            $"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}/evidence", verdict.Json(), ct).ConfigureAwait(false);
+        if (root is not { } answer)
+        {
+            return new(EvidencePosted.NoDoor, $"the service at {_base} has no evidence door ({status}) — is it older than this driver?");
+        }
+
+        return ok ? new(EvidencePosted.Kept, Text(answer, "message") ?? "")
+            : status == (int)System.Net.HttpStatusCode.Conflict ? new(EvidencePosted.NotWaiting, Text(answer, "error") ?? payload)
+            : new(EvidencePosted.Refused, Text(answer, "error") ?? payload);
+    }
+
+    /// <summary>
     /// Every session record, closed ones included, as the service answers them, with this client's key: what the session
     /// list's reader and a session delete read (SESSUX1a, SESSUX1f).
     /// </summary>
@@ -1036,10 +1067,16 @@ public sealed partial class ServiceClient : IDisposable
                 // each keeps its place. Absent is none: a host from before requirements.
                 Requirements = quest.TryGetProperty("requirements", out var required) && required.ValueKind == JsonValueKind.Array
                     ? required.EnumerateArray()
-                        .Select(r => new QuestRequirementView(Text(r, "quote") ?? "", Text(r, "check") ?? "")).ToList()
+                        .Select(r => new QuestRequirementView(Text(r, "quote") ?? "", Text(r, "check") ?? "") { Evidence = EvidenceOf(r) })
+                        .ToList()
                     : [],
-                // Whether a departure holds it for the person's yes (DRIFT1d). Absent is false: a host from before answers.
+                // Whether a done is held for the person's yes (DRIFT1d) or its evidence (EVID1a). Absent is false: a host from before.
                 Held = Flag(quest, "held"),
+                // Why, and whether its done waits on evidence, and what was last read of it (EVID1a, D144 §3, §6). Absent is
+                // none: a host from before evidence, whose one hold was a departure.
+                Hold = Text(quest, "hold") is { Length: > 0 } hold ? hold : null,
+                AwaitsEvidence = Flag(quest, "awaitsEvidence"),
+                Evidence = EvidenceVerdict.Read(quest),
                 // How its done answered each requirement (DRIFT1d), which an accept shows before the yes (DRIFT1d2). Absent
                 // is none: a quest no done answered, or a host from before answers. A number left out reads as 0, no requirement's.
                 Answers = quest.TryGetProperty("answers", out var answered) && answered.ValueKind == JsonValueKind.Array
@@ -1055,6 +1092,25 @@ public sealed partial class ServiceClient : IDisposable
         }
 
         return quests;
+    }
+
+    /// <summary>
+    /// A requirement's evidence (EVID1a), each item exactly one of a path or a gate; an item naming both or neither is passed
+    /// over, as half of a fact is none. Empty, never a list of its own, where it names none.
+    /// </summary>
+    internal static IReadOnlyList<QuestEvidenceItem> EvidenceOf(JsonElement requirement)
+    {
+        if (requirement.ValueKind != JsonValueKind.Object || !requirement.TryGetProperty("evidence", out var items)
+            || items.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var read = items.EnumerateArray()
+            .Select(item => new QuestEvidenceItem(Text(item, "path"), Text(item, "gate")))
+            .Where(item => (item.Path is null) != (item.Gate is null))
+            .ToList();
+        return read.Count == 0 ? [] : read;
     }
 
     private static IReadOnlyList<RepoView> ReadRegistry(string json)
@@ -1146,6 +1202,8 @@ public sealed partial class ServiceClient : IDisposable
                 Tree = Text(session, "tree"),
                 // The quest it serves, which it holds while it works (DEV3).
                 Quest = Text(session, "quest"),
+                // Where its tree stood when it opened (SURF6): what the sweep reads a lost done's evidence as changed from (EVID1b).
+                BaseCommit = Text(session, "baseCommit") is { Length: > 0 } baseCommit ? baseCommit : null,
                 // Its note's lines by code (LANG1a), handed on wherever the note is; null for a record from before parts.
                 NoteParts = NotePart.Read(session),
             });

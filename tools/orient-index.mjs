@@ -40,11 +40,11 @@
  * Exit codes: 0 written or fresh · 1 stale · 2 a tool error (usage, not a work tree's top).
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync, rmdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { byNumber, declaredDecisions, fenced, isNoteLabel } from './doc-duplicates.mjs';
-import { isMain } from './fsx.mjs';
+import { isMain, writeAtomic } from './fsx.mjs';
 import { laneMatcher, readLanes } from './merge-branch.mjs';
 
 export const INDEX = 'docs/index';
@@ -1343,10 +1343,7 @@ export function applyIndex(root, planned) {
       rmSync(file, { force: true });
       continue;
     }
-    mkdirSync(dirname(file), { recursive: true });
-    const beside = `${file}.${process.pid}.tmp`;
-    writeFileSync(beside, planned.get(path), 'utf8');
-    renameSync(beside, file);
+    writeAtomic(file, planned.get(path));
   }
   removeEmpty(join(root, INDEX));
   return changed;

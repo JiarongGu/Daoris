@@ -140,6 +140,9 @@ public static class QuestEvidenceCodes
     /// <summary>The one result that is the evidence there: every other leaves the done held.</summary>
     public const string Found = "found";
 
+    /// <summary>A path the commit holds only in another case: the one result that may name that spelling (<c>spelled</c>).</summary>
+    public const string Case = "case";
+
     /// <summary>Whether <paramref name="id"/> is a git object's full id: 40 hex characters, or 64 under SHA-256.</summary>
     public static bool IsObjectId(string? id) => id is { Length: 40 or 64 } && id.All(char.IsAsciiHexDigit);
 
@@ -161,13 +164,56 @@ public sealed record QuestEvidenceRead(int Requirement, string? Path, string? Ga
     /// <summary>Whether this work changed it, between the tree's base and the commit read; null where that was not read.</summary>
     public bool? Changed { get; init; }
 
-    /// <summary>For <c>case</c>: the path as the commit spells it, differing only in case — named, and still missing.</summary>
+    /// <summary>
+    /// For <c>case</c> alone: the path as the commit spells it, differing only in case — named, and still missing. On any
+    /// other result, or naming another path, it is no verdict (<see cref="QuestEvidenceVerdict.JudgeShape"/>).
+    /// </summary>
     public string? Spelled { get; init; }
 
     /// <summary>Whether it names what <paramref name="item"/> names.</summary>
     public bool Names(QuestEvidence item) =>
         string.Equals(Path, item.Path, StringComparison.Ordinal) && string.Equals(Gate, item.Gate, StringComparison.Ordinal);
 }
+
+/// <summary>Which field of a verdict is not one in shape (REFAC3): on the verdict, or on one of its items.</summary>
+public enum QuestVerdictField
+{
+    /// <summary>The commit read is not a full object id.</summary>
+    Commit,
+
+    /// <summary>How the commit was chosen is none of <see cref="QuestEvidenceCodes.How"/>.</summary>
+    How,
+
+    /// <summary>The session whose end was read is not a session's id.</summary>
+    Session,
+
+    /// <summary>An item's requirement is not numbered from 1.</summary>
+    Requirement,
+
+    /// <summary>An item names both a path and a gate, or neither.</summary>
+    PathOrGate,
+
+    /// <summary>An item's path is not one a commit can be asked for (<see cref="QuestEvidence.JudgePath"/>).</summary>
+    Path,
+
+    /// <summary>An item's gate is not a gate's name (<see cref="QuestEvidence.JudgeGate"/>).</summary>
+    Gate,
+
+    /// <summary>An item's result is not one its kind may have.</summary>
+    Result,
+
+    /// <summary>An item's object is not a full object id.</summary>
+    Object,
+
+    /// <summary>An item's <c>spelled</c> is not a <c>case</c> read's spelling of the path it names.</summary>
+    Spelled,
+}
+
+/// <summary>
+/// Why a verdict is not one in shape (REFAC3): the field at fault, the item it is on, numbered from 1 (null for the
+/// verdict's own), and, for a path, a gate or a spelling, why it is not one. Each door words it, or refuses on it, itself.
+/// </summary>
+public sealed record QuestVerdictFault(QuestVerdictField Field, int? Item = null, string? Why = null);
 
 /// <summary>
 /// What Daoris read of a done's evidence (EVID1a, D144 points 3 and 6): the commit read and how it was chosen, and each
@@ -209,6 +255,46 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
         return true;
     }
 
+    /// <summary>
+    /// Why this verdict is not one in shape, naming the first field at fault — or null when every field is one (REFAC3,
+    /// D144 §3, §5). The one judge both doors call: the exchange, before it judges whether the verdict reads what the done
+    /// waits on, and the wire (<see cref="Judged"/>), whose replay judges that by <see cref="Covers"/>. Whether the quest
+    /// waits on evidence at all, and what it waits on, are never this judge's: it reads the verdict alone.
+    /// </summary>
+    public QuestVerdictFault? JudgeShape()
+    {
+        if (!QuestEvidenceCodes.IsObjectId(Commit)) return new(QuestVerdictField.Commit);
+        if (!QuestEvidenceCodes.How.Contains(How ?? "")) return new(QuestVerdictField.How);
+        if (Session is not null && !QuestEvidenceCodes.IsSessionId(Session)) return new(QuestVerdictField.Session);
+
+        foreach (var (item, number) in Items.Select((item, index) => (item, index + 1)))
+        {
+            if (item.Requirement < 1) return new(QuestVerdictField.Requirement, number);
+            if ((item.Path is null) == (item.Gate is null)) return new(QuestVerdictField.PathOrGate, number);
+            if (item.Path is { } path && QuestEvidence.JudgePath(path) is { } unfit) return new(QuestVerdictField.Path, number, unfit);
+            if (item.Gate is { } gate && QuestEvidence.JudgeGate(gate) is { } misnamed) return new(QuestVerdictField.Gate, number, misnamed);
+
+            var codes = item.Path is not null ? QuestEvidenceCodes.PathResults : QuestEvidenceCodes.GateResults;
+            if (!codes.Contains(item.Result ?? "")) return new(QuestVerdictField.Result, number);
+            if (item.Object is not null && !QuestEvidenceCodes.IsObjectId(item.Object)) return new(QuestVerdictField.Object, number);
+            if (item.Spelled is { } spelled && JudgeSpelled(item, spelled) is { } astray) return new(QuestVerdictField.Spelled, number, astray);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Why <paramref name="spelled"/> is not how the commit spells <paramref name="item"/>'s path, or null when it is
+    /// (REFAC3, D144 §3): only a <c>case</c> read names a spelling, and it names the same path in another case. On any
+    /// other result, or naming another path, it would say the commit holds a file the read did not find.
+    /// </summary>
+    private static string? JudgeSpelled(QuestEvidenceRead item, string spelled) =>
+        item.Result != QuestEvidenceCodes.Case ? "only a `case` read names how the commit spells the path"
+        : QuestEvidence.JudgePath(spelled) is { } unfit ? unfit
+        : string.Equals(spelled, item.Path, StringComparison.OrdinalIgnoreCase) && !string.Equals(spelled, item.Path, StringComparison.Ordinal)
+            ? null
+            : "a `case` read names the path as the commit spells it, differing from the one named only in case";
+
     public bool Equals(QuestEvidenceVerdict? other) =>
         other is not null && Commit == other.Commit && How == other.How && Session == other.Session && At == other.At
         && Machine == other.Machine && Items.SequenceEqual(other.Items);
@@ -246,43 +332,38 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
     }
 
     /// <summary>
-    /// A verdict read from JSON, judged as the wire judges what it reads: null when it is not whole — no full commit, a
-    /// way of reading or a result nobody wrote, an item naming both or neither, or a path or object that is not one.
+    /// A verdict read from JSON, judged as the wire judges what it reads: null when it is not whole. The JSON's own kinds
+    /// are read here — a field the verdict needs left out, or one of the wrong kind — and every value then goes to
+    /// <see cref="JudgeShape"/>, the exchange's own judge, so the wire refuses exactly the shapes the evidence door does.
     /// The store's own column is read through the same judge, since it only ever holds what passed it.
     /// </summary>
     internal static QuestEvidenceVerdict? Judged(JsonElement verdict)
     {
         if (verdict.ValueKind != JsonValueKind.Object
-            || Text(verdict, "commit") is not { } commit || !QuestEvidenceCodes.IsObjectId(commit)
-            || Text(verdict, "how") is not { } how || !QuestEvidenceCodes.How.Contains(how)
+            || Text(verdict, "commit") is not { } commit
+            || Text(verdict, "how") is not { } how
             || !verdict.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array)
         {
             return null;
         }
 
         var session = Text(verdict, "session");
-        if (verdict.TryGetProperty("session", out _) && !QuestEvidenceCodes.IsSessionId(session)) return null;
+        if (verdict.TryGetProperty("session", out _) && session is null) return null;
 
         var read = new List<QuestEvidenceRead>();
         foreach (var item in items.EnumerateArray())
         {
             if (item.ValueKind != JsonValueKind.Object
-                || Number(item, "requirement") is not { } requirement || requirement is < 1 or > int.MaxValue
+                || Number(item, "requirement") is not { } requirement || requirement is < int.MinValue or > int.MaxValue
                 || Text(item, "result") is not { } result)
             {
                 return null;
             }
 
-            var path = Text(item, "path");
-            var gate = Text(item, "gate");
-            if ((path is null) == (gate is null)) return null;
-            if (path is not null && (QuestEvidence.JudgePath(path) is not null || !QuestEvidenceCodes.PathResults.Contains(result))) return null;
-            if (gate is not null && (QuestEvidence.JudgeGate(gate) is not null || !QuestEvidenceCodes.GateResults.Contains(result))) return null;
-
             var found = Text(item, "object");
-            if (item.TryGetProperty("object", out _) && !QuestEvidenceCodes.IsObjectId(found)) return null;
+            if (item.TryGetProperty("object", out _) && found is null) return null;
             var spelled = Text(item, "spelled");
-            if (item.TryGetProperty("spelled", out _) && (spelled is null || QuestEvidence.JudgePath(spelled) is not null)) return null;
+            if (item.TryGetProperty("spelled", out _) && spelled is null) return null;
             bool? changed = null;
             if (item.TryGetProperty("changed", out var flag))
             {
@@ -290,15 +371,19 @@ public sealed record QuestEvidenceVerdict(string Commit, string How, IReadOnlyLi
                 changed = flag.ValueKind == JsonValueKind.True;
             }
 
-            read.Add(new QuestEvidenceRead((int)requirement, path, gate, result) { Object = found, Changed = changed, Spelled = spelled });
+            read.Add(new QuestEvidenceRead((int)requirement, Text(item, "path"), Text(item, "gate"), result)
+            {
+                Object = found, Changed = changed, Spelled = spelled,
+            });
         }
 
         DateTimeOffset? at = Text(verdict, "at") is { } when && DateTimeOffset.TryParse(when, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var parsed)
             ? parsed
             : null;
-        return new QuestEvidenceVerdict(commit.ToLowerInvariant(), how, read)
+        var judged = new QuestEvidenceVerdict(commit, how, read)
         {
             Session = session, At = at, Machine = Text(verdict, "machine"),
         };
+        return judged.JudgeShape() is null ? judged with { Commit = commit.ToLowerInvariant() } : null;
     }
 }
