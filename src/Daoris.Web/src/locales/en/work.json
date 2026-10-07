@@ -89,6 +89,7 @@
   "work.code.copy": "Copy",
   "work.code.copied": "copied",
   "work.code.plain": "text",
+  "work.confirm.pending": "working…",
   "work.find.label": "Find in this session",
   "work.find.firstFailure": "First failure",
   "work.find.lastWords": "Last words",

@@ -82,6 +82,32 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
     expect(screen.getByRole('button', { name: 'Clear history…' })).toHaveFocus();
   });
 
+  /**
+   * UXFIX2c (the second-opinion review, `InlineConfirm.tsx:163`, `KeptHistory.tsx:69`): *Clear history…* is not offered
+   * while it asks, so a clear that landed gave the focus back to a press no longer drawn, and it fell to the page's body. It
+   * goes to *Clear history…* drawn again, and where nothing more may go and none is drawn, to the section.
+   */
+  it('gives the focus to Clear history… drawn again once a clear lands, or to the section where none is', async () => {
+    const clear = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<KeptHistory workspace="aurora" plan={WORKSPACE_PLAN} onClear={clear} />);
+
+    await user.click(screen.getByRole('button', { name: 'Clear history…' }));
+    await user.click(within(screen.getByRole('group', { name: 'clear from this machine' })).getByRole('button', { name: 'Clear 3' }));
+    act(() => (clear.mock.calls[0]![1] as Answered).done());
+    expect(screen.queryByRole('group', { name: 'clear from this machine' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Clear history…' })).toHaveFocus();
+
+    // Read again while it asked, the plan offers nothing more: no press is drawn, and the section holds the focus.
+    await user.click(screen.getByRole('button', { name: 'Clear history…' }));
+    rerender(<KeptHistory workspace="aurora" plan={WORKSPACE_KEPT} onClear={clear} />);
+    await user.click(within(screen.getByRole('group', { name: 'clear from this machine' })).getByRole('button', { name: 'Clear 3' }));
+    act(() => (clear.mock.calls[1]![1] as Answered).done());
+    expect(screen.queryByRole('button', { name: 'Clear history…' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Kept on this machine' })).toHaveFocus();
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
   it('sends no unit where only left-over files and the intake’s room go', async () => {
     const clear = vi.fn();
     render(<KeptHistory workspace="aurora" plan={WORKSPACE_LEFT_OVER} onClear={clear} />);

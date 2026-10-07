@@ -89,6 +89,7 @@
   "work.code.copy": "复制",
   "work.code.copied": "已复制",
   "work.code.plain": "文本",
+  "work.confirm.pending": "处理中…",
   "work.find.label": "在本会话中查找",
   "work.find.firstFailure": "首次失败",
   "work.find.lastWords": "最后的话",

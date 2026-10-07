@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { composeStories } from '@storybook/react-vite';
 import { useState } from 'react';
 import i18n from '../i18n';
 import { Button, Icon, Menu } from '../ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
+import * as stories from './InlineConfirm.stories';
 
 // The one inline confirmation for a destructive act (UXFIX2; the second-opinion review's cross-cutting note), as a molecule:
 // inline, never a modal; its explanation takes the focus on opening and describes the move; the move first, then *Never
@@ -29,6 +31,34 @@ function Page({ onConfirm = () => {}, opener = 'removed' }: {
         <InlineConfirm label="delete this quest" says={SAYS} meanIt="Delete quest" onConfirm={onConfirm} onClose={() => setAsking(false)} />
       )}
     </div>
+  );
+}
+
+/** Records in a list, each with its own *Delete…*, whose delete takes its record away once it lands. */
+function Records() {
+  const [records, setRecords] = useState(['First', 'Second', 'Third']);
+  const [asking, setAsking] = useState<string | null>(null);
+  return (
+    <ul aria-label="Quests">
+      {records.map((record) => (
+        <li key={record} aria-label={record}>
+          {record}
+          {asking !== record && <Button variant="danger" onClick={() => setAsking(record)}>Delete…</Button>}
+          {asking === record && (
+            <InlineConfirm
+              label="delete this quest"
+              says={SAYS}
+              meanIt="Delete quest"
+              onConfirm={(told) => {
+                setRecords((was) => was.filter((each) => each !== record));
+                told.done();
+              }}
+              onClose={() => setAsking(null)}
+            />
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -119,6 +149,65 @@ describe('an inline confirmation', () => {
 
     act(() => answered!.done());
     await waitFor(() => expect(screen.queryByRole('group', { name: 'delete this quest' })).toBeNull());
+  });
+
+  /**
+   * UXFIX2c (the second-opinion review, `InlineConfirm.tsx:175`): the press disabled both presses and moved the focus, and
+   * nothing said the act had started. A status there from the first draw says it, politely, and the ask is busy while it
+   * waits; the move keeps its name and its place.
+   */
+  it('says its act started, politely, and is busy until it answers, the move keeping its name', async () => {
+    let answered: Answered | undefined;
+    const user = userEvent.setup();
+    render(<Page onConfirm={(told) => { answered = told; }} />);
+    await user.click(screen.getByRole('button', { name: 'Delete…' }));
+    const ask = screen.getByRole('group', { name: 'delete this quest' });
+    // There before it speaks, so a reader hears it when it does.
+    const status = within(ask).getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+    expect(ask).not.toHaveAttribute('aria-busy');
+
+    await user.click(within(ask).getByRole('button', { name: 'Delete quest' }));
+    expect(status).toHaveTextContent('working…');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(ask).toHaveAttribute('aria-busy', 'true');
+    expect(within(ask).getByRole('button', { name: 'Delete quest' })).toBeDisabled();
+
+    act(() => answered!.refused('No.'));
+    expect(status).toBeEmptyDOMElement();
+    expect(ask).not.toHaveAttribute('aria-busy');
+  });
+
+  it('says nothing started while only the page’s own act waits', () => {
+    render(<InlineConfirm label="decline" says={SAYS} meanIt="Decline" busy onConfirm={() => {}} onClose={() => {}} />);
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
+  /**
+   * UXFIX2c (`InlineConfirm.tsx:163`): landed, the ask gave the focus back only to the press that opened it, which a page
+   * that does not offer a press twice had taken away, so the focus fell to the page's body. It finds the press drawn again,
+   * as a cancel does.
+   */
+  it('gives the focus back to the press drawn again once its act lands', async () => {
+    const user = userEvent.setup();
+    render(<Page onConfirm={(told) => told.done()} />);
+    await user.click(screen.getByRole('button', { name: 'Delete…' }));
+    await user.click(screen.getByRole('button', { name: 'Delete quest' }));
+    expect(screen.queryByRole('group', { name: 'delete this quest' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete…' })).toHaveFocus();
+  });
+
+  it('gives the focus to the list it sat in where its act removed its own record, never the page’s body', async () => {
+    const user = userEvent.setup();
+    render(<Records />);
+    const second = within(screen.getByRole('listitem', { name: 'Second' }));
+    await user.click(second.getByRole('button', { name: 'Delete…' }));
+    await user.click(second.getByRole('button', { name: 'Delete quest' }));
+
+    expect(screen.queryByRole('listitem', { name: 'Second' })).toBeNull();
+    // Not a neighbour's *Delete…*, which only shares the name.
+    expect(screen.getByRole('list', { name: 'Quests' })).toHaveFocus();
+    expect(document.activeElement).not.toBe(document.body);
   });
 
   it('says a refusal inside itself, word for word, stays open, and lets the move be pressed again', async () => {
@@ -213,10 +302,26 @@ describe('an inline confirmation', () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
-  it('says never mind in 中文', async () => {
+  it('says never mind, and that its act started, in 中文', async () => {
     await i18n.changeLanguage('zh');
     render(<InlineConfirm label="删除这个委托" says="无法撤销。" meanIt="确认删除委托" onConfirm={() => {}} onClose={() => {}} />);
-    expect(within(screen.getByRole('group', { name: '删除这个委托' })).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['确认删除委托', '取消']);
+    const ask = screen.getByRole('group', { name: '删除这个委托' });
+    expect(within(ask).getAllByRole('button').map((button) => button.textContent)).toEqual(['确认删除委托', '取消']);
+    await userEvent.click(within(ask).getByRole('button', { name: '确认删除委托' }));
+    expect(within(ask).getByRole('status')).toHaveTextContent('处理中…');
+  });
+
+  /**
+   * UXFIX2c (`InlineConfirm.tsx:16`): a refusal kept its line breaks but could not break an unbroken token (a long id, a raw
+   * error), so the token widened its flex or grid item past the main area's 400 px floor. It shrinks with its column and
+   * breaks anywhere; the stories draw it at the floor in both themes.
+   */
+  it('wraps a refusal’s unbroken token inside the main area’s floor', () => {
+    const { RefusedUnbrokenAtTheFloor, RefusedUnbrokenAtTheFloorDark } = composeStories(stories);
+    for (const Story of [RefusedUnbrokenAtTheFloor, RefusedUnbrokenAtTheFloorDark]) {
+      const { unmount } = render(<Story />);
+      expect(screen.getByRole('alert')).toHaveClass('min-w-0', 'wrap-anywhere');
+      unmount();
+    }
   });
 });

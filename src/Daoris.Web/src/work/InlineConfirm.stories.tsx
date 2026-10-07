@@ -8,7 +8,8 @@ import { InlineConfirm } from './InlineConfirm';
 // The one inline confirmation for a destructive act (UXFIX2): a sentence on one line with the move first and *Never mind*;
 // a body of rows (a clear's *What goes* and *What stays*); its wait, the page's busy and its refusal said inside it, word for
 // word; and *Close* alone where nothing can be confirmed. Its words are the quest's delete's and a workspace's clear's, read
-// in the story's language, at the main area's width beside a 1546 px window and at 680 px, in both themes.
+// in the story's language, at the main area's width beside a 1546 px window and at 680 px, in both themes. UXFIX2c adds the
+// move pressed, saying its act started, and a refusal with a token nothing breaks at the main area's 400 px floor.
 
 const nothing = () => {};
 
@@ -19,10 +20,19 @@ function Main({ width, children }: { width: number; children: ReactNode }) {
 
 const wide: Decorator = (Story) => <Main width={1180}><Story /></Main>;
 const narrow: Decorator = (Story) => <Main width={600}><Story /></Main>;
+/** The main area's floor (UXFIX2c), 400 px beside an open list and side bar in a wider window. */
+const atFloor: Decorator = (Story) => <Main width={400}><Story /></Main>;
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
+/**
+ * A refusal with tokens nothing breaks (UXFIX2c): a raw error naming an object by its 64-digit id, then the same id as code,
+ * each wider than the floor on one line, with no hyphen or space a line could break at.
+ */
+const OBJECT = '3f9a1c7e5b2d8f4a6c0e9b7d5f3a1c8e6b4d2f0a9c7e5b3d1f8a6c4e2b0d9f7a';
+const UNBROKEN = `git refused: fatal: bad object ${OBJECT}, so \`${OBJECT}\` stays where it was.`;
+
 /** A quest's delete, in the story's language: one sentence, then *Delete quest* and *Never mind*. */
-function QuestDelete({ busy = false, refused = false }: { busy?: boolean; refused?: boolean }) {
+function QuestDelete({ busy = false, refused = false, unbroken = false }: { busy?: boolean; refused?: boolean; unbroken?: boolean }) {
   const { t } = useTranslation();
   return (
     <InlineConfirm
@@ -30,12 +40,17 @@ function QuestDelete({ busy = false, refused = false }: { busy?: boolean; refuse
       says={t('quests.detail.deleteConfirm')}
       meanIt={t('quests.detail.deleteMeanIt')}
       busy={busy}
-      refused={refused ? t('errors.QUEST_PAUSED', { id: 'abc123', pause: 'a1b2c3' }) : null}
+      refused={unbroken ? UNBROKEN : refused ? t('errors.QUEST_PAUSED', { id: 'abc123', pause: 'a1b2c3' }) : null}
       onConfirm={nothing}
       onClose={nothing}
     />
   );
 }
+
+/** The move pressed, its act on its way and never answering: the ask says it started (UXFIX2c). */
+const pressTheMove: StoryObj<typeof QuestDelete>['play'] = async ({ canvasElement }) => {
+  canvasElement.querySelector<HTMLButtonElement>('[role="group"] button')?.click();
+};
 
 /** A body of rows, as a workspace's clear lists: what it takes, what goes and what stays, then *Clear 3*. */
 function Rows({ refused = false, nothingToConfirm = false }: { refused?: boolean; nothingToConfirm?: boolean }) {
@@ -93,6 +108,12 @@ export const SentenceNarrow: Story = { decorators: [narrow] };
 /** Another act on the record is on its way: both presses wait. */
 export const Waiting: Story = { args: { busy: true } };
 
+/** Pressed (UXFIX2c): its act on its way, both presses wait, the move keeps its name, and a status beside them says so. */
+export const Pending: Story = { play: pressTheMove };
+
+/** Pressed, in 中文 and dark, at 680 px. */
+export const PendingNarrowChineseDark: Story = { decorators: [chinese, dark, narrow], play: pressTheMove };
+
 /** Refused: the sentence said inside it, whole, under the presses, which may be pressed again. */
 export const Refused: Story = { args: { refused: true } };
 
@@ -104,6 +125,12 @@ export const RefusedDark: Story = { args: { refused: true }, decorators: [dark] 
 
 /** Refused at 680 px, in 中文 and dark. */
 export const RefusedNarrowChineseDark: Story = { args: { refused: true }, decorators: [chinese, dark, narrow] };
+
+/** Refused at the main area's 400 px floor with a token nothing breaks (UXFIX2c): it breaks inside, and the ask stays 400 px. */
+export const RefusedUnbrokenAtTheFloor: Story = { args: { unbroken: true }, decorators: [atFloor] };
+
+/** The same, in dark. */
+export const RefusedUnbrokenAtTheFloorDark: Story = { args: { unbroken: true }, decorators: [atFloor, dark] };
 
 /** A body of rows, as a clear lists what goes and what stays. */
 export const RowsOfABody: Story = { render: () => <Rows /> };
