@@ -430,6 +430,12 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Desktop/README.md'], gates: ['modules', 'service'], why: "the modules' route test reads its table, and the service's suite reads this repository's documents" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**'], gates: ['driver', 'driver-process'], why: "the driver's tests, both halves" },
   { paths: ['src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**'], gates: ['modules', 'modules-process'], why: "the modules' tests, both halves" },
+  // Before the service's tests, which would place it first: the driver's twin reads it too.
+  {
+    paths: ['src/Daoris.Service/Daoris.Service.Tests/fixtures/history-words.json'],
+    gates: ['service', 'driver'],
+    why: "the service's and the driver's HistoryWordsTwinTests read the history words' table (HIST1m)",
+  },
   { paths: ['src/Daoris.Service/Daoris.Service.Tests/**', 'src/Daoris.Service/Daoris.Service.Http.Tests/**'], gates: ['service'], why: "the service's tests" },
   { paths: ['src/Daoris.Cli/test/fixtures/vendor/**'], gates: ['driver', 'driver-process'], why: "the driver's release-channel tests read the vendor's files" },
   { paths: ['src/Daoris.Cli/test/fixtures/shell-words.json'], gates: ['driver', 'web'], why: "the driver's ShellWord twin and the page's shellWord read the shell-word table (ACCTQUOTE1b)" },

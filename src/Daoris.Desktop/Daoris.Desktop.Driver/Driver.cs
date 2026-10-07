@@ -133,6 +133,12 @@ public sealed partial class Driver(
     internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
 
     /// <summary>
+    /// How a running session is stopped for a take that lost (D68 §5): its process ended through <see cref="SessionProcesses"/>,
+    /// unless a test hands in its stand-in run's stop beside <see cref="Runner"/> (DEV3b). True when the session was running here.
+    /// </summary>
+    internal Func<string, Noted, bool>? Stops { get; init; }
+
+    /// <summary>
     /// The world a look's workspace plans read (WSSETUP6): <see cref="WorkspaceSetupWorld"/> over this driver's client, unless
     /// a test hands in a stand-in, since every real press reads a line with git and asks the tools their version.
     /// </summary>
@@ -591,6 +597,10 @@ public sealed partial class Driver(
     /// machine's host where its claim on the session's quest stands. A driver stops only its own
     /// processes (D47 §6), and the record says why, not that the person did.
     /// </summary>
+    /// <remarks>
+    /// Once each (DEV3b): a session already stopped for its lost take is still running until it has written how it ended, and
+    /// a pass in between asked again and said a second stop.
+    /// </remarks>
     private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
     {
         foreach (var (quest, session) in _runs.Live)
@@ -607,12 +617,16 @@ public sealed partial class Driver(
                 continue; // The host did not answer; the next pass asks again.
             }
 
-            if (claim == "lost" && _processes.Stop(session, LostClaimNoted))
+            if (claim == "lost" && (Stops ?? StopForLostClaim)(session, LostClaimNoted))
             {
                 lock (events) events.Add($"stop  session {session} (#{quest}): {LostClaim}");
             }
         }
     }
+
+    /// <summary>The process's stop, unless the driver already stopped it for its reason: true only when it stopped it now.</summary>
+    private bool StopForLostClaim(string session, Noted reason) =>
+        _processes.StopReason(session) is null && _processes.Stop(session, reason);
 
     /// <summary>
     /// Look until nothing runs and a look starts nothing — the deterministic mode a gate drives (D115 §3.1):
@@ -663,8 +677,9 @@ public sealed partial class Driver(
     /// left there let the process end with its sessions still working, and a lost-claim stop already made went unsaid.
     /// </remarks>
     /// <param name="said">
-    /// Handed the look's report as the look ends, then what ended (DEV3a), which together are the report returned: what the
-    /// headless host prints, so the look's lines reach the person whatever ends the run after it.
+    /// Handed the look's report as the look ends, each pass beside its sessions that said anything as that pass ends (DEV3b),
+    /// then what ended (DEV3a), which together are the report returned: what the headless host prints, so a line reaches the
+    /// person as it is made, whatever ends the run after it.
     /// </param>
     public async Task<TickReport> RunOnceAsync(CancellationToken ct = default, Action<TickReport>? said = null)
     {
@@ -683,7 +698,6 @@ public sealed partial class Driver(
 
         said?.Invoke(look);
         var settled = await SettleAsync(ct, said).ConfigureAwait(false);
-        said?.Invoke(settled);
         return look with
         {
             Events = [.. look.Events, .. settled.Events],
@@ -712,13 +726,33 @@ public sealed partial class Driver(
     /// </summary>
     /// <remarks>
     /// A pass that fails is said and the next tries again (DEV3a), as a look's sync is, since leaving here would leave the
-    /// sessions with nothing watching. Only the close leaves, and what was said and what ended is handed to
+    /// sessions with nothing watching. Only the close leaves, and what was gathered and what ended is handed to
     /// <paramref name="said"/> before it does.
     /// </remarks>
+    /// <param name="said">
+    /// Handed each pass that said anything as the pass ends (DEV3b), then what ended: together, the report returned.
+    /// </param>
     private async Task<TickReport> SettleAsync(CancellationToken ct, Action<TickReport>? said = null)
     {
         var events = new List<string>();
         var concluded = new List<SessionEnded>();
+        // What is gathered and not yet said. 🔴 Each pass is said as it ends (DEV3b): kept for the run's end, a lost-claim stop
+        // the family rehearsal's run had made went with the process, ended from outside before its sessions had all ended.
+        var pending = new List<string>();
+        void Say(IReadOnlyList<SessionEnded> ended)
+        {
+            List<string> lines;
+            lock (pending)
+            {
+                lines = [.. pending];
+                pending.Clear();
+            }
+
+            if (lines.Count == 0 && ended.Count == 0) return;
+            events.AddRange(lines);
+            said?.Invoke(new TickReport([], lines, Progressed: false, Concluded: ended));
+        }
+
         var settled = _runs.SettledAsync();
         try
         {
@@ -731,8 +765,8 @@ public sealed partial class Driver(
 
                 try
                 {
-                    await SyncAsync(events, ct).ConfigureAwait(false);
-                    await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+                    await SyncAsync(pending, ct).ConfigureAwait(false);
+                    await StopLostClaimsAsync(pending, ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
@@ -742,28 +776,31 @@ public sealed partial class Driver(
                 }
                 catch (Exception error)
                 {
-                    lock (events) events.Add($"sync  a pass beside the running sessions failed, and the next tries again: {error.Message}");
+                    lock (pending) pending.Add($"sync  a pass beside the running sessions failed, and the next tries again: {error.Message}");
                 }
+
+                Say([]);
             }
 
             await settled.ConfigureAwait(false);
 
             try
             {
-                await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
+                await EndingsAsync(pending, concluded, ct).ConfigureAwait(false);
             }
             catch (Exception error) when (!ct.IsCancellationRequested)
             {
                 // What ended is drained into the report before the pass after it runs, so a failed pass loses none of it.
-                lock (events) events.Add($"sync  the pass after the sessions ended failed, and the next look tries again: {error.Message}");
+                lock (pending) pending.Add($"sync  the pass after the sessions ended failed, and the next look tries again: {error.Message}");
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            said?.Invoke(new TickReport([], events, Progressed: false, Concluded: concluded));
+            Say(concluded);
             throw;
         }
 
+        Say(concluded);
         return new TickReport([], events, Progressed: false, Concluded: concluded);
     }
 

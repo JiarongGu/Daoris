@@ -1272,6 +1272,127 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         }
     }
 
+    /// <summary>
+    /// HIST1m: an <c>open</c> names how the work in progress stands, in <c>stands</c>, and an <c>awaited</c> the open work that
+    /// names it, in <c>by</c>, at both doors, as HIST1l's <c>waits</c> rides beside <c>needs-you</c> (design §6.3). Additive: the
+    /// words are unchanged, and each field rides beside its own word alone.
+    /// </summary>
+    [Theory]
+    [InlineData("open", "open", "stands", "open")]
+    [InlineData("taken", "open", "stands", "taken")]
+    [InlineData("failed sessions of a taken quest", "open", "stands", "taken")]
+    [InlineData("question", "awaited", "by", "question")]
+    [InlineData("asker", "awaited", "by", "asker")]
+    [InlineData("step", "awaited", "by", "step")]
+    public async Task An_open_or_an_awaited_names_its_variant_beside_its_word(string variant, string word, string field, string said)
+    {
+        var tidy = new List<Func<Task>>();
+        try
+        {
+            var query = await VariantAsync(variant, tidy);
+
+            var listed = await host.GetAsync($"/api/history?{query}");
+            var unit = listed.Json.GetProperty("units")[0];
+            var pressed = await host.PostAsync("/api/history/clear", new
+            {
+                units = new[] { new { kind = unit.GetProperty("kind").GetString(), id = unit.GetProperty("id").GetString() } },
+            });
+
+            Assert.Equal((200, 200), (listed.Status, pressed.Status));
+            var refusal = unit.GetProperty("refusal");
+            Assert.Equal((word, said), (refusal.GetProperty("refusal").GetString(), refusal.GetProperty(field).GetString()));
+            foreach (var other in new[] { "waits", "stands", "by" }.Where(name => name != field))
+            {
+                Assert.False(refusal.TryGetProperty(other, out _), $"`{other}` rode beside `{word}`");
+            }
+
+            var kept = pressed.Json.GetProperty("units")[0];
+            Assert.False(kept.GetProperty("cleared").GetBoolean());
+            Assert.Equal(said, kept.GetProperty("unit").GetProperty("refusal").GetProperty(field).GetString());
+        }
+        finally
+        {
+            foreach (var each in tidy) await each();
+        }
+    }
+
+    /// <summary>
+    /// The records for one of <see cref="An_open_or_an_awaited_names_its_variant_beside_its_word"/>'s rows; the history door's
+    /// query. Each quest left open or taken is declined afterwards, and each session removed, through <paramref name="tidy"/>, so
+    /// nothing outstanding reaches another test on this shared host.
+    /// </summary>
+    private async Task<string> VariantAsync(string variant, List<Func<Task>> tidy)
+    {
+        var now = DateTimeOffset.UtcNow;
+        void Decline(string quest) => tidy.Add(() => host.Composed.Quests.MoveAsync(quest, QuestStatus.Declined, "Tidied by the test.", DateTimeOffset.UtcNow));
+        async Task<Session> ServedAsync(string quest, SessionState state)
+        {
+            var session = await host.Composed.Sessions.CreateAsync(quest, "Keeper", "stub", now, workspace: Workspaces.Default);
+            tidy.Add(() => host.Composed.Sessions.DeleteAsync(session.Id));
+            return (await host.Composed.Sessions.SetStateAsync(session.Id, state, null, null, null, now))!;
+        }
+
+        async Task<string> TakenAsync(string title)
+        {
+            var quest = await PublishAsync(title);
+            Decline(quest);
+            Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+            return quest;
+        }
+
+        switch (variant)
+        {
+            case "open":
+            {
+                var quest = await PublishAsync("A quest still open, so its history stays, said as open");
+                Decline(quest);
+                return $"quest={quest}";
+            }
+
+            case "taken":
+                return $"quest={await TakenAsync("A quest taken, so its history stays, said as taken")}";
+
+            case "failed sessions of a taken quest":
+            {
+                var quest = await TakenAsync("A taken quest whose failed sessions are its strikes");
+                await ServedAsync(quest, SessionState.Failed);
+                return $"quest={quest}&failed=true";
+            }
+
+            case "question":
+            {
+                var quest = await ClosedAsync("A quest whose session asked a question still open");
+                var session = await ServedAsync(quest, SessionState.Completed);
+                var question = (await host.Composed.Exchange.PublishAsync(
+                    new QuestAsk("Keeper", "Asker", "Still being asked of the history", "why") { PublishedBy = session.Id }, now)).Quest!;
+                Decline(question.Id);
+                return $"quest={quest}";
+            }
+
+            case "asker":
+            {
+                var question = await ClosedAsync("A question a taken quest waits on");
+                var waiting = await TakenAsync("A taken quest waiting on its answer");
+                await host.Composed.Quests.WaitAsync(waiting, question, now);
+                return $"quest={question}";
+            }
+
+            default:
+            {
+                var parent = (await host.Composed.Exchange.PublishAsync(
+                    new QuestAsk("Asker", "Keeper", "A chain's first step, so its history stays", "why")
+                    {
+                        Then = [new QuestStep("Keeper", "Then verify {parent}", "b")],
+                    },
+                    now)).Quest!;
+                await host.Composed.Quests.MoveAsync(parent.Id, QuestStatus.Taken, null, now);
+                var step = (await host.Composed.Quests.MoveAsync(parent.Id, QuestStatus.Done, "Landed.", now)).FollowUp!;
+                Decline(step.Id);
+                return $"quest={parent.Id}";
+            }
+        }
+    }
+
     /// <summary>A listing names exactly one scope, and a press names each unit by a kind it knows and an id: anything else is 400.</summary>
     [Fact]
     public async Task The_history_doors_refuse_a_request_that_names_no_unit()
