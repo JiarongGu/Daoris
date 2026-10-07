@@ -126,8 +126,24 @@ public sealed record HistoryUnit(HistoryUnitKind Kind, string Id, string? Worksp
     public bool Clearable => Refusal is null;
 }
 
+/// <summary>
+/// The quests and asks of a cleared unit whose kept files the disk would not let go of (HIST1j): they stay, named by nothing, and
+/// the driver's next clear of a workspace takes them as left over (design §2.3).
+/// </summary>
+public sealed record HistoryFailed(IReadOnlyList<string> Quests, IReadOnlyList<string> Asks)
+{
+    public static HistoryFailed None { get; } = new([], []);
+
+    /// <summary>Whether any removal failed.</summary>
+    public bool Any => Quests.Count + Asks.Count > 0;
+}
+
 /// <summary>What the press did to one unit: the unit as judged where it was cleared, whether it went, and the sentence.</summary>
-public sealed record HistoryOutcome(HistoryUnit Unit, bool Cleared, string Message);
+public sealed record HistoryOutcome(HistoryUnit Unit, bool Cleared, string Message)
+{
+    /// <summary>What of a cleared unit's kept files stayed (HIST1j); none where every removal was made, and for a unit kept.</summary>
+    public HistoryFailed Failed { get; init; } = HistoryFailed.None;
+}
 
 /// <summary>
 /// The records' half of clearing finished history from this machine (HIST1b, D153; the history-clearing design §1, §2.1,
@@ -231,8 +247,8 @@ public sealed class HistoryDesk(
                 return (judged, true);
             }, ct).ConfigureAwait(false);
 
-            if (cleared) Tidy(unit);
-            outcomes.Add(new HistoryOutcome(unit, cleared, cleared ? Said(unit) : unit.Refusal!.Message));
+            var failed = cleared ? Tidy(unit) : HistoryFailed.None;
+            outcomes.Add(new HistoryOutcome(unit, cleared, cleared ? Said(unit) : unit.Refusal!.Message) { Failed = failed });
         }
 
         return outcomes;
@@ -646,15 +662,28 @@ public sealed class HistoryDesk(
     /// <summary>
     /// What the service keeps for a cleared unit, removed once its records are gone (design §2.2, §5 step 2): each quest's and
     /// the ask's kept files, and each settled rule proposal naming a cleared session or the ask. Best effort, as D95's delete
-    /// removes kept files: a file the disk will not let go of is left over, and nothing names it any more.
+    /// removes kept files: a file the disk will not let go of is left over, and nothing names it any more. The quests and asks
+    /// whose kept files stayed come back (HIST1j), so the driver counts them as failed rather than freed; a rule proposal that
+    /// stays is not among them, since no clear of a workspace takes one as left over.
     /// </summary>
-    private void Tidy(HistoryUnit unit)
+    private HistoryFailed Tidy(HistoryUnit unit)
     {
-        foreach (var quest in unit.Quests) files?.Forget(quest);
-        var askFiles = files?.For(AskDesk.Folder);
-        foreach (var ask in unit.Asks) askFiles?.Forget(ask);
+        var questsKept = new List<string>();
+        foreach (var quest in unit.Quests)
+        {
+            if (files?.Forget(quest) == false) questsKept.Add(quest);
+        }
 
-        if (proposals is null) return;
+        var askFiles = files?.For(AskDesk.Folder);
+        var asksKept = new List<string>();
+        foreach (var ask in unit.Asks)
+        {
+            if (askFiles?.Forget(ask) == false) asksKept.Add(ask);
+        }
+
+        var failed = questsKept.Count + asksKept.Count == 0 ? HistoryFailed.None : new HistoryFailed(questsKept, asksKept);
+
+        if (proposals is null) return failed;
         var sessionsGone = unit.Sessions.ToHashSet(StringComparer.Ordinal);
         var asksGone = unit.Asks.ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var note in proposals.Notes().Where(note => !note.Pending
@@ -662,6 +691,8 @@ public sealed class HistoryDesk(
         {
             proposals.Forget(note.Id);
         }
+
+        return failed;
     }
 
     /// <summary>What a cleared unit's answer says: what went, and, where a remote numbered it, that the team keeps its copy.</summary>

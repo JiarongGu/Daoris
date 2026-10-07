@@ -84,11 +84,11 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `src/Daoris.Service/Daoris.Service.Core/Quests.cs` | 125 | 2308 |
 | `src/Daoris.Service/Daoris.Service.Core/SessionLedger.cs` | 62 | 1198 |
 | `src/Daoris.Service/Daoris.Service.Core/Sessions.cs` | 63 | 1146 |
-| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 65 | 1169 |
-| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 95 | 1725 |
+| `src/Daoris.Service/Daoris.Service.Http.Tests/LocalHostTests.cs` | 67 | 1200 |
+| `src/Daoris.Service/Daoris.Service.Http/Program.cs` | 95 | 1727 |
 | `src/Daoris.Service/Daoris.Service.Tests/QuestSyncTests.cs` | 60 | 1274 |
 | `src/Daoris.Service/Daoris.Service.Tests/SessionLedgerTests.cs` | 67 | 1385 |
-| `src/Daoris.Service/README.md` | 54 | 574 |
+| `src/Daoris.Service/README.md` | 54 | 576 |
 
 ### CLI (`cli`)
 
@@ -149,4 +149,4 @@ Each has its outline at `outlines/<its path>.md`: open the outline, then read th
 | `docs/2026-10-05-ux7-design.md` | 66 | 784 |
 | `docs/2026-10-07-history-clearing-design.md` | 51 | 615 |
 | `docs/DAORIS_FUTURE_DIRECTIONS.md` | 51 | 3466 |
-| `src/Daoris.Desktop/README.md` | 46 | 288 |
+| `src/Daoris.Desktop/README.md` | 47 | 288 |

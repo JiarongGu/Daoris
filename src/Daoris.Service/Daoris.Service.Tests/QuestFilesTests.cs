@@ -38,6 +38,27 @@ public sealed class QuestFilesTests : IDisposable
     }
 
     /// <summary>
+    /// Forgetting a record's kept files says whether nothing of them is left (HIST1j): gone, or never kept here, is true; a folder
+    /// the disk will not let go of is false and stays, for a history clear to report. An ask's keeper is held alike.
+    /// </summary>
+    [Fact]
+    public async Task Forgetting_says_whether_the_disk_let_go_of_the_files()
+    {
+        var upload = new QuestUpload("notes.txt", Encoding.UTF8.GetBytes("notes"));
+        await new QuestFiles(_home).KeepAsync("a1b2c3", upload);
+        await new QuestFiles(_home).For("asks").KeepAsync("d4e5f6", upload);
+        var held = new QuestFiles(_home, QuestFiles.Folder, remove: path => throw new IOException($"`{path}` is held."));
+
+        Assert.False(held.Forget("a1b2c3"));
+        Assert.False(held.For("asks").Forget("d4e5f6"));
+        Assert.True(Directory.Exists(Path.Combine(_home, "quests", "a1b2c3")));
+        Assert.True(Directory.Exists(Path.Combine(_home, "asks", "d4e5f6")));
+        Assert.True(new QuestFiles(_home).Forget("a1b2c3"));
+        Assert.False(Directory.Exists(Path.Combine(_home, "quests", "a1b2c3")));
+        Assert.True(new QuestFiles(_home).Forget("f0f0f0"));
+    }
+
+    /// <summary>
     /// Two pasted screenshots are both called <c>image.png</c> — the hash in the file name is what
     /// keeps them two files, and the same file dropped twice one.
     /// </summary>

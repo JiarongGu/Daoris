@@ -124,7 +124,7 @@ public sealed class SessionDeletion(string home)
 
         // HIST1c: the one helper a clear also calls, so a delete takes every file §2.2 lists, the four it once left included.
         var removed = new List<string> { "record" };
-        removed.AddRange(new SessionHomeFiles(home).Remove([id], events)[id]);
+        removed.AddRange(new SessionHomeFiles(home).Remove([id], events).Went[id]);
 
         log?.Info("session.deleted", ("session", id), ("kind", KindOf(record)), ("door", door));
         return new(id, DeleteVerdict.Deleted, $"Deleted session `{id}`: its record, and its words, transcript and files on this machine.")

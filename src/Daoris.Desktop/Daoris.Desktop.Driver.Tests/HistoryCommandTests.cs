@@ -286,6 +286,39 @@ public sealed class HistoryCommandTests : IDisposable
         Assert.True(Holds("s1") && Holds("s2"));
     }
 
+    /// <summary>
+    /// A file the disk would not let go of is said, and the size said is what went (HIST1j): the transcript a process holds stays,
+    /// left over for the next clear of a workspace, and the press is 2, as an abandon's failed step is.
+    /// </summary>
+    [Fact]
+    public async Task A_file_the_disk_keeps_is_said_and_its_bytes_are_not_counted()
+    {
+        Kept("s1");
+        var transcript = Path.Combine(Sessions, "s1.log");
+        var went = new FileInfo(Path.Combine(Sessions, "s1.events.jsonl")).Length + new FileInfo(Path.Combine(Sessions, "s1", "files", "shot.png")).Length;
+        var service = new HistoryStandIn { Records = [Record("s1", "q1")], Quests = [Quest("q1")] };
+        service.Listings["quest=q1"] = [Unit("quest", "q1", quests: ["q1"], sessions: ["s1"])];
+        var world = World(service) with
+        {
+            Remover = (path, folder) =>
+            {
+                if (path == transcript) throw new IOException("held by a process");
+                if (folder) Directory.Delete(path, recursive: true);
+                else File.Delete(path);
+            },
+        };
+        var output = new StringWriter();
+
+        var exit = await HistoryCommand.RunAsync(HistoryCommand.Read(WorkScope.Quest, ["clear", "q1", "--yes"], out _)!, world, output);
+
+        Assert.Equal(2, exit);
+        Assert.Equal(
+            $"daoris-driver: cleared #q1 from this machine: 1 quest and 1 session, {HistoryCommand.Size(went)}.\n"
+            + "  1 file could not be removed and is left over; the next clear of a workspace takes it.\n",
+            output.ToString().ReplaceLineEndings("\n"));
+        Assert.True(File.Exists(transcript));
+    }
+
     /// <summary>A host older than the door says so as the library's sentence, which the host prints as a tool error, exit 2.</summary>
     [Fact]
     public async Task A_service_with_no_history_door_is_the_libraries_sentence()
@@ -437,6 +470,34 @@ public sealed class HistoryCommandTests : IDisposable
             each => each.Contains("\"history.cleared\"", StringComparison.Ordinal));
         Assert.Contains("\"door\":\"terminal\"", line);
         Assert.Contains("\"scope\":\"workspace\"", line);
+    }
+
+    /// <summary>
+    /// A workspace's name in a command the verbs print is spelled for any shell (HIST1i, D125's ACCTQUOTE1 and ACCTQUOTE1b notes):
+    /// in double quotes where PowerShell, Command Prompt and a POSIX shell all keep it whole, and its placeholder where none does,
+    /// so <c>R&amp;D</c> pasted into Command Prompt never runs <c>D</c>. The words around the command name it as it is.
+    /// </summary>
+    [Theory]
+    [InlineData("my team", "\"my team\"")]
+    [InlineData("R&D", "<workspace>")]
+    public async Task A_workspace_in_a_printed_command_is_spelled_for_any_shell(string workspace, string spelled)
+    {
+        Kept("s1");
+        var service = new HistoryStandIn { Records = [Record("s1", "q1", workspace: workspace)], Quests = [Quest("q1", workspace: workspace)] };
+        service.Listings[$"workspace={workspace}"] = [Unit("quest", "q1", workspace, quests: ["q1"], sessions: ["s1"])];
+
+        var (readExit, read) = await HistoryAsync(service, "--workspace", workspace);
+        var (listedExit, listed) = await HistoryAsync(service, "clear", "--workspace", workspace);
+
+        Assert.Equal((0, 0), (readExit, listedExit));
+        Assert.StartsWith($"daoris-driver: {workspace} keeps 1 closed quest on this machine, with 1 session: ", read);
+        Assert.Contains(read.Split('\n'), line => line.StartsWith("  a clear would take 1 quest and 1 session, ", StringComparison.Ordinal)
+            && line.EndsWith($": `daoris-driver history clear --workspace {spelled}` lists it first.", StringComparison.Ordinal));
+        var first = listed.Split('\n')[0];
+        Assert.StartsWith($"daoris-driver: clearing {workspace}'s finished history would take 1 quest and 1 session, ", first);
+        Assert.EndsWith(
+            $", and keep 0; `daoris-driver history clear --workspace {spelled} --yes` clears what this list holds. Nothing brings it back.", first);
+        Assert.Empty(service.Pressed);
     }
 
     /// <summary>A workspace with nothing that may go says so: information, exit 0, and the press sends nothing.</summary>
