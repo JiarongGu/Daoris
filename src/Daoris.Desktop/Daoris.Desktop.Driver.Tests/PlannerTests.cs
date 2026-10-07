@@ -829,6 +829,28 @@ public sealed class PlannerTests
     }
 
     /// <summary>
+    /// CARRY2c: the sentence was the driver's English in both languages, since the tick carried nothing the page could word it
+    /// from. The consideration now names whose the take is as facts: the machine and its session where a teammate's record
+    /// names them, a take made here, and the session here not carried on. The sentence stays as it was, for the terminal and
+    /// an older page; every other verdict names none.
+    /// </summary>
+    [Fact]
+    public void A_take_elsewhere_names_the_machine_and_session_that_took_it_as_facts()
+    {
+        var named = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("none", Teammate: "alice-laptop/ab12cd34")), Config()));
+        var unnamed = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("lost")), Config()));
+        var here = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("unconfirmed"), Cut.Updated!.Value.AddMinutes(5)), Config()));
+        var carried = Assert.Single(Planner.Plan(TakenAfter(Cut, new QuestTake("held", Took: true)), Config()));
+
+        Assert.Equal(new TakenBy("s1", Machine: "alice-laptop", Session: "alice-laptop/ab12cd34"), named.TakenBy);
+        Assert.StartsWith("Quest `#q1` is taken on `alice-laptop`", named.Reason, StringComparison.Ordinal);
+        Assert.Equal(new TakenBy("s1"), unnamed.TakenBy);
+        Assert.Equal(new TakenBy("s1", Here: true), here.TakenBy);
+        Assert.Equal(StartVerdict.Start, carried.Verdict);
+        Assert.Null(carried.TakenBy);
+    }
+
+    /// <summary>
     /// 🔴 What the ledger still carries on, the planner plans: a take a record here marks, and an unmarked one made while the
     /// session ran, which the HTTP door makes and the family rehearsal's stub takes by. A take with no time said, and one
     /// not read, are the ledger's to judge, as every carry-on was.
