@@ -26,6 +26,12 @@ internal sealed class StandInGit(string top)
     /// <summary>A start that fails, as a git that cannot run does: every call answers -1.</summary>
     public bool Broken { get; init; }
 
+    /// <summary>
+    /// The calls git started and could not answer (EVID1b3), as a store it cannot read makes it: each answers 128 with nothing
+    /// said. None by default.
+    /// </summary>
+    public Func<IReadOnlyList<string>, bool> Fails { get; set; } = _ => false;
+
     /// <summary>A commit holding <paramref name="files"/> (path → content), whose parent is HEAD; HEAD moves to it.</summary>
     public string Commit(string name, params (string Path, string Content)[] files)
     {
@@ -44,6 +50,7 @@ internal sealed class StandInGit(string top)
     {
         Calls.Add([.. arguments]);
         if (Broken) return Task.FromResult(-1);
+        if (Fails(arguments)) return Task.FromResult(128);
         var (code, output) = Answer(arguments);
         if (output.Length > 0) take(output.AsMemory());
         return Task.FromResult(code);

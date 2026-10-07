@@ -4,7 +4,7 @@ Open work only. Finished rows move to `docs/task-archive.md`; `CHANGELOG.md` des
 
 ## State
 
-Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,368 CLI, 1,533 service, 87 HTTP host, 5,370 driver (4,656 fast, 714 Process; EVID1b's real-git class awaits the full set), 757 modules (639 fast, 118 Process), 85 devkit, 4,469 web unit and 24 Playwright; rehearsals: release 114, family 400, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
+Development remains at `0.0.x`; nothing is published. Verified 2026-10-07: 1,368 CLI, 1,533 service, 87 HTTP host, 5,376 driver (4,662 fast, 714 Process; EVID1b's real-git class awaits the full set), 757 modules (639 fast, 118 Process), 85 devkit, 4,469 web unit and 24 Playwright; rehearsals: release 114, family 400, deployment 110. The full set (14 gates) passed `6394ec1` and that tree is on the install; earlier receipts and coverage are in `docs/2026-10-05-integration-review.md`. Canon: 8 core rules, 6 knowledge documents, 6 skills, 7 packs; always-loaded core 20,887 bytes, advisory budget 26,000.
 
 Live consumer count is zero. Adoption is the owner's call. The existing desktop-runtime rehearsal remains evidence: 6 collisions, 2 twins to retire, budget 40,000, check at 38,782 bytes; supporting mechanics are in `docs/adoption/shenora-repo-mechanics.md`.
 
@@ -119,7 +119,6 @@ Contracts: `docs/2026-10-03-evidence-design.md` (EVID1, D144) and `docs/2026-10-
 - [ ] **EVID2a — captured proof requirement** (service; after EVID1a). Screenshot/answer kinds, done proof and capture verdicts; no bytes/address/path travel across machines. Contract: §9–§10, §12. Proof: evidence/sync/MCP/local/shared tests.
 - [ ] **EVID2b — keep captured proof** (driver, examples; after EVID1b/EVID2a). Hand `${proof}` to browser plugins, check/redact/copy named captures and manifest, post verdict; prompts/intake request captures. Contract: §9–§11. Proof: proof/requirements/goldens/browser tests and family rehearsal.
 - [ ] **EVID2c — proof pages and terminal** (web-shell, modules, driver; after EVID1c/EVID2b). Session/review/quest Proof sections, Capture through reopen, Remove, terminal save/remove. Contract: §11–§12. Proof: stories/vitest/catalogues/coverage/command tests and bilingual look.
-- [ ] **EVID1b3 — an evidence read that failed says unread** (driver). Codex's second review, verified: `SpelledAsync` treats a failed `ls-tree` as an empty folder and `InTree` turns an unreadable folder into false, so a read that established nothing posts `missing` or `uncommitted` (`EvidenceReader.cs:225-230,263`, posted by `EvidenceCheck.cs:104`), while the object lookup already says unread. Give each lookup three outcomes (found, absent, unread) and post unread; share the two test files' `QuestView` wire fixture (`EvidenceAtEndTests.cs:167`, `QuestCheckCommandTests.cs:266`), which already differ. Contract: D144 §2–§3 and its EVID1b note. Proof: a failing `ls-tree` and an unreadable folder each give unread.
 
 ## Session management
 

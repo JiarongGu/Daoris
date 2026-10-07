@@ -227,6 +227,88 @@ public sealed class EvidenceReaderTests : IDisposable
         Assert.NotNull(reading.Unread);
     }
 
+    /// <summary>
+    /// 🔴 EVID1b3: a folder git did not list during the case walk, the commit's root or one beneath it, says nothing about
+    /// the path, so the read is unread and nothing is posted, as a lookup git did not answer is: never <c>missing</c>.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_listing_git_did_not_give_during_the_case_walk_is_unread_never_missing(bool root)
+    {
+        var (git, _, head) = History();
+        git.Fails = call => call is ["ls-tree", _, var treeish] && root == (treeish == head);
+
+        var reading = await EvidenceReader.ReadAsync(
+            new EvidenceAt(_tree, EvidenceCodes.SessionEnd), [new WantedEvidence(2, Path_("docs/report.md"))], git.Read, CancellationToken.None);
+
+        Assert.Null(reading.Verdict);
+        Assert.Equal($"git did not list a folder of `{head[..8]}` while `docs/report.md` was looked for in another case.", reading.Unread);
+    }
+
+    /// <summary>
+    /// EVID1b3: the base's lookup is part of the item's read, so a base git did not answer makes the read unread too, as the
+    /// commit's own lookup does, rather than a found item whose change went unsaid for a reason nobody kept.
+    /// </summary>
+    [Fact]
+    public async Task A_lookup_at_the_base_git_did_not_answer_is_unread()
+    {
+        var (git, before, _) = History();
+        git.Fails = call => call is ["rev-parse", "--verify", "--quiet", var spec] && spec.StartsWith(before + ":", StringComparison.Ordinal);
+
+        var reading = await EvidenceReader.ReadAsync(
+            new EvidenceAt(_tree, EvidenceCodes.SessionEnd) { Base = before }, [new WantedEvidence(1, Path_("README.md"))], git.Read,
+            CancellationToken.None);
+
+        Assert.Null(reading.Verdict);
+        Assert.Equal($"git did not answer while `README.md` was read in `{before[..8]}`.", reading.Unread);
+    }
+
+    /// <summary>
+    /// EVID1b3: a listing the read never needs fails nothing. A path found asks for none, and a path no folder of the root
+    /// spells in any case needs the root's alone, so either is read as before while every folder beneath it fails to list.
+    /// </summary>
+    [Fact]
+    public async Task A_listing_the_read_did_not_need_changes_nothing()
+    {
+        var (git, _, head) = History();
+        git.Fails = call => call is ["ls-tree", _, var treeish] && treeish != head;
+
+        var reading = await EvidenceReader.ReadAsync(
+            new EvidenceAt(_tree, EvidenceCodes.SessionEnd), [new WantedEvidence(1, Path_("README.md")), new WantedEvidence(4, Path_("missing.md"))],
+            git.Read, CancellationToken.None);
+
+        Assert.Equal(
+            [
+                new EvidenceRead(1, "README.md", null, EvidenceCodes.Found) { Object = StandInGit.Blob("r2") },
+                new EvidenceRead(4, "missing.md", null, EvidenceCodes.Missing),
+            ],
+            reading.Verdict!.Items);
+    }
+
+    /// <summary>
+    /// 🔴 EVID1b3: a folder in the tree the disk would not list says nothing about what stands in it, so the read is unread and
+    /// nothing is posted: neither <c>missing</c>, which it once fell to, nor <c>uncommitted</c>. The folder is named from the
+    /// tree's own root, never by its place on this machine. The refusal stands in at the listing's seam, the disk answering
+    /// every other folder: a deny on listing does not stop a process that opens folders with backup semantics, so a real one
+    /// is no premise a run can count on.
+    /// </summary>
+    [Theory]
+    [InlineData(true, "access was refused")]
+    [InlineData(false, "the disk did not answer")]
+    public async Task A_folder_in_the_tree_that_cannot_be_listed_is_unread_never_missing_or_uncommitted(bool refused, string why)
+    {
+        var (git, _, _) = History();
+        Exception Failure() => refused ? new UnauthorizedAccessException("Access to the path is denied.") : new IOException("The device is not ready.");
+
+        var reading = await EvidenceReader.ReadAsync(
+            new EvidenceAt(_tree, EvidenceCodes.SessionEnd), [new WantedEvidence(2, Path_("notes/draft.md"))], git.Read, CancellationToken.None,
+            folder => folder.Name == "notes" ? throw Failure() : folder.EnumerateFileSystemInfos());
+
+        Assert.Null(reading.Verdict);
+        Assert.Equal($"the tree's folder `notes` could not be listed while `notes/draft.md` was looked for uncommitted: {why}.", reading.Unread);
+    }
+
     [Fact]
     public async Task Nothing_wanted_is_nothing_to_read()
     {

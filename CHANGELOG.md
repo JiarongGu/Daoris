@@ -112,6 +112,8 @@ with the version and date at release.
 - A repository whose documents repeat a heading next to one already numbered, such as `A`, `A` and
   `A (2)`, no longer fails its knowledge refresh, and a table quoted inside a longer code fence is no
   longer read as part of the index.
+- A quest's evidence that could not be read (git did not answer, or a folder was refused) is said as
+  not read, instead of as missing.
 
 The first version: doctrine that installs, is checked, and flows back.
 

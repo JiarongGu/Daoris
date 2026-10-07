@@ -23,6 +23,9 @@ public sealed record EvidenceAt(string Tree, string How)
 /// <summary>What one read came to: a verdict, or why nothing was read. Unread is never found (D57, D143), and says why.</summary>
 public sealed record EvidenceReading(EvidenceVerdict? Verdict, string? Unread);
 
+/// <summary>How a folder of the tree is listed (EVID1b3): the disk's own listing, which a test stands a refusal in at.</summary>
+internal delegate IEnumerable<FileSystemInfo> FolderList(DirectoryInfo folder);
+
 /// <summary>Where a commit stands to the done's on its history (D144 §3): the same, after it, elsewhere, or not known here.</summary>
 public enum EvidencePlace
 {
@@ -49,6 +52,11 @@ public enum EvidencePlace
 ///
 /// <para>🔴 <b>git walks UP</b>: a tree that is gone, or is not the top of its own repository, is unread, since git would answer
 /// for the repository above it.</para>
+///
+/// <para>🔴 <b>A failure is never absence</b> (EVID1b3): each lookup, the commit's object, the base's, the case walk's listings
+/// and the tree's own folders, comes to found, absent or unread, and an unread one anywhere in an item's read makes the read
+/// unread, so nothing is posted and the done waits as it would for a git that did not answer. Otherwise a read that
+/// established nothing would post <c>missing</c> or <c>uncommitted</c> and hold a done for a fact nobody read.</para>
 /// </remarks>
 public static class EvidenceReader
 {
@@ -74,9 +82,12 @@ public static class EvidenceReader
 
     /// <inheritdoc cref="ReadAsync(EvidenceAt, IReadOnlyList{WantedEvidence}, CancellationToken)"/>
     /// <param name="git">How git is read: the review's seam (REVIEW3), which a test stands git in at.</param>
+    /// <param name="list">How a folder of the tree is listed: the disk's own listing where null, and a test's stand-in else.</param>
     internal static async Task<EvidenceReading> ReadAsync(
-        EvidenceAt at, IReadOnlyList<WantedEvidence> wanted, WorkingTree.GitRead git, CancellationToken ct)
+        EvidenceAt at, IReadOnlyList<WantedEvidence> wanted, WorkingTree.GitRead git, CancellationToken ct, FolderList? list = null)
     {
+        list ??= folder => folder.EnumerateFileSystemInfos();
+
         if (wanted.Count == 0) return Unread("its done waits on no evidence: the requirements it answered met name none.");
 
         // Judged again before any of it reaches git, and before git is asked anything at all.
@@ -121,30 +132,46 @@ public static class EvidenceReader
                 continue;
             }
 
-            var (code, found) = await ObjectAsync(at.Tree, commit, path, git, ct).ConfigureAwait(false);
-            if (code is not (0 or 1)) return Unread($"git did not answer while `{path}` was read in `{Short(commit)}`.");
+            // Each lookup below is found, absent or unread, and an unread one, wherever in the item's read, makes the read
+            // unread (EVID1b3): a lookup that established nothing is never the item's absence.
+            var (looked, found) = await ObjectAsync(at.Tree, commit, path, git, ct).ConfigureAwait(false);
+            if (looked is Looked.Unread) return Unread($"git did not answer while `{path}` was read in `{Short(commit)}`.");
 
             bool? changed = null;
             if (before is not null)
             {
-                var (baseCode, was) = await ObjectAsync(at.Tree, before, path, git, ct).ConfigureAwait(false);
-                if (baseCode is 0 or 1) changed = !string.Equals(was, found, StringComparison.Ordinal);
+                var (wasLooked, was) = await ObjectAsync(at.Tree, before, path, git, ct).ConfigureAwait(false);
+                if (wasLooked is Looked.Unread) return Unread($"git did not answer while `{path}` was read in `{Short(before)}`.");
+                changed = !string.Equals(was, found, StringComparison.Ordinal);
             }
 
-            if (found is not null)
+            if (looked is Looked.Found)
             {
                 items.Add(new EvidenceRead(requirement, path, null, EvidenceCodes.Found) { Object = found, Changed = changed });
                 continue;
             }
 
-            if (await SpelledAsync(at.Tree, commit, path, listings, git, ct).ConfigureAwait(false) is { } spelled)
+            var (spelledLooked, spelled) = await SpelledAsync(at.Tree, commit, path, listings, git, ct).ConfigureAwait(false);
+            if (spelledLooked is Looked.Unread)
+            {
+                return Unread($"git did not list a folder of `{Short(commit)}` while `{path}` was looked for in another case.");
+            }
+
+            if (spelledLooked is Looked.Found)
             {
                 items.Add(new EvidenceRead(requirement, path, null, EvidenceCodes.Case) { Spelled = spelled, Changed = changed });
                 continue;
             }
 
+            var standing = InTree(at.Tree, path, list);
+            if (standing.Looked is Looked.Unread)
+            {
+                var folder = standing.Unlisted is { Length: > 0 } unlisted ? $"folder `{unlisted}`" : "own folder";
+                return Unread($"the tree's {folder} could not be listed while `{path}` was looked for uncommitted: {standing.Why}.");
+            }
+
             items.Add(new EvidenceRead(
-                requirement, path, null, InTree(at.Tree, path) ? EvidenceCodes.Uncommitted : EvidenceCodes.Missing)
+                requirement, path, null, standing.Looked is Looked.Found ? EvidenceCodes.Uncommitted : EvidenceCodes.Missing)
             {
                 Changed = changed,
             });
@@ -194,21 +221,29 @@ public static class EvidenceReader
 
     /// <summary>
     /// The object <paramref name="commit"/> holds at <paramref name="path"/>, matched exactly: a file's blob or a folder's tree.
-    /// git's code beside it: 0 found, 1 not there, anything else git failing to answer.
+    /// Found with its id on git's 0, absent on its 1, and unread on anything else, an answer that is no id included.
     /// </summary>
-    private static async Task<(int Code, string? Object)> ObjectAsync(string tree, string commit, string path, WorkingTree.GitRead git, CancellationToken ct)
+    private static async Task<(Looked Looked, string? Object)> ObjectAsync(
+        string tree, string commit, string path, WorkingTree.GitRead git, CancellationToken ct)
     {
         // One argument, `commit:path`: a tree entry is looked up by its bytes, whatever the filesystem folds.
         var (code, output) = await RunAsync(tree, ["rev-parse", "--verify", "--quiet", $"{commit}:{path}"], git, ct).ConfigureAwait(false);
         var id = output.Trim().ToLowerInvariant();
-        return code == 0 ? (EvidenceCodes.IsObjectId(id) ? (0, id) : (-1, null)) : (code, null);
+        return code switch
+        {
+            0 when EvidenceCodes.IsObjectId(id) => (Looked.Found, id),
+            1 => (Looked.Absent, null),
+            _ => (Looked.Unread, null),
+        };
     }
 
     /// <summary>
-    /// How <paramref name="commit"/> spells <paramref name="path"/> where it holds it only in another case, or null: each folder's
-    /// entries listed in turn, a few spellings followed at each. The first in ordinal order is named, judged as a path first.
+    /// How <paramref name="commit"/> spells <paramref name="path"/> where it holds it only in another case: each folder's entries
+    /// listed in turn, a few spellings followed at each. The first in ordinal order is named, judged as a path first. Absent
+    /// where every listing the walk needed was given and none spells it; unread where git did not give one (EVID1b3), since
+    /// that folder may hold the first spelling, so what the walk would name is not known.
     /// </summary>
-    private static async Task<string?> SpelledAsync(
+    private static async Task<(Looked Looked, string? Spelled)> SpelledAsync(
         string tree, string commit, string path, Dictionary<string, IReadOnlyList<TreeEntry>?> listings, WorkingTree.GitRead git,
         CancellationToken ct)
     {
@@ -227,7 +262,10 @@ public static class EvidenceReader
                     listings[treeish] = entries;
                 }
 
-                foreach (var entry in entries ?? [])
+                // Kept as null, so a later item that needs the same folder is unread for the same reason.
+                if (entries is null) return (Looked.Unread, null);
+
+                foreach (var entry in entries)
                 {
                     if (!string.Equals(entry.Name, segments[depth], StringComparison.OrdinalIgnoreCase)) continue;
                     if (!last && entry.Type != "tree") continue;
@@ -238,36 +276,58 @@ public static class EvidenceReader
             walking = [.. next.OrderBy(each => each.Item2, StringComparer.Ordinal).Take(CaseCandidates)];
         }
 
-        return walking
+        var first = walking
             .Select(each => each.Spelled)
             .FirstOrDefault(spelled => !string.Equals(spelled, path, StringComparison.Ordinal) && EvidencePaths.Judge(spelled) is null);
+        return first is null ? (Looked.Absent, null) : (Looked.Found, first);
     }
 
     /// <summary>
     /// Whether <paramref name="path"/> stands in the tree as named, its case included: each folder listed in turn rather than
-    /// asked by name, since a filesystem that folds case would say yes to another spelling.
+    /// asked by name, since a filesystem that folds case would say yes to another spelling. Found or absent once each listing
+    /// it needed was given (a file where a folder is named holds nothing beneath it); unread where the disk would not list one
+    /// (EVID1b3), naming that folder from the tree's root and why.
     /// </summary>
-    private static bool InTree(string tree, string path)
+    private static Standing InTree(string tree, string path, FolderList list)
     {
-        var at = tree;
-        foreach (var segment in path.Split('/'))
+        var segments = path.Split('/');
+        var at = new DirectoryInfo(tree);
+        for (var depth = 0; depth < segments.Length; depth++)
         {
-            if (!Directory.Exists(at)) return false;
+            FileSystemInfo? entry;
             try
             {
-                var next = Directory.EnumerateFileSystemEntries(at)
-                    .FirstOrDefault(entry => string.Equals(Path.GetFileName(entry), segment, StringComparison.Ordinal));
-                if (next is null) return false;
-                at = next;
+                entry = list(at).FirstOrDefault(each => string.Equals(each.Name, segments[depth], StringComparison.Ordinal));
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                return false;
+                // The folder's name as the path spells it, which is how it was found: never its place on this machine.
+                return new(Looked.Unread, string.Join('/', segments.Take(depth)),
+                    error is UnauthorizedAccessException ? "access was refused" : "the disk did not answer");
             }
+
+            if (entry is null) return new(Looked.Absent);
+            if (depth == segments.Length - 1) return new(Looked.Found);
+            if (entry is not DirectoryInfo folder) return new(Looked.Absent);
+            at = folder;
         }
 
-        return true;
+        return new(Looked.Absent);
     }
+
+    /// <summary>
+    /// What one lookup came to (EVID1b3): found, absent, or unread, where git or the disk did not answer and so established
+    /// nothing. Unread is never absent.
+    /// </summary>
+    private enum Looked
+    {
+        Found,
+        Absent,
+        Unread,
+    }
+
+    /// <summary>Whether a path stands in the tree; where unread, the folder that would not list, from the tree's root, and why.</summary>
+    private readonly record struct Standing(Looked Looked, string? Unlisted = null, string? Why = null);
 
     /// <summary>git's whole answer, and its code.</summary>
     private static async Task<(int Code, string Output)> RunAsync(
