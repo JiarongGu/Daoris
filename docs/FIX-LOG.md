@@ -5,6 +5,14 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-07 — a clear that took nothing closed as done
+
+### Web: a workspace's clear closed its list in the `ok` tone when every unit it listed was kept (HIST1n)
+- **Symptom:** found by the second-opinion review's afternoon round and verified in the code, not seen on an install: a workspace's *Clear history…* whose every listed unit changed before the press closed its list with *Cleared 0 of 3 from aurora, 0 B. 3 changed since the list and were kept.* as a success; a press that cleared some was said in the tone of one that cleared all; and records of 0 B were read as *records only, no files here* above a line naming left-over files of 0 B.
+- **Root cause:** UXFIX2 gave the clear ACCTEDIT1's `answered`, and `useHistoryActs` called `done()` on every answer. The driver refuses a lone quest's, ask's or failed sessions' clear that stays, but answers a workspace's, so an answer's arrival was read as the act's success, and `clearSaid` toned it `ok`. HIST1k's `takesSaid` chose its sentence from `takes.bytes`, a size that says nothing of whether files exist.
+- **Fix:** `clearWent` judges the answer before the ask closes, as `sayDiscard` judges a discard; one that took nothing calls `answered.refused` with `clearRefusal`'s lines, and a partial clear's notice wears the error's tone. Records say their size through `history.reading.takes`. D153's HIST1n note has the detail.
+- **Verify:** `history.test.ts`' wholly-kept, partial and records-beside-empty-files cases, `KeptHistory.test.tsx`'s and `ProjectsView.history.test.tsx`'s each failed first, then passed. Not covered: the window.
+
 ## 2026-10-07 — a wait on a lost take held the winner's quest
 
 ### Service: a wait made after this machine's take still applied to the winner's quest when that take lost (WAITCLAIM1)
