@@ -11680,3 +11680,9 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **EVID1b — driver checks at session end** (driver; after a). Read paths at HEAD, post/store verdicts; prompts/intake name evidence; sweep and terminal check read remaining items. Contract: §2–§3, §5. Proof: git evidence, requirements, goldens, trace/command tests and family phase 7.
 
 **Outcome** 2026-10-07: the driver reads a done's path evidence at a session's end, in the orphan sweep and from `daoris-driver quest check`, and posts the verdict to EVID1a's door; prompts, intake, planner and trace name it. The family rehearsal's phase is EVID1b2. Detail: D144's EVID1b note; commits 55aa650f…f946b4a3.
+
+## CANONREAD2 — the scratch rule names a harness with no file-writing tool (2026-10-07)
+
+> - [ ] **CANONREAD2 — the scratch rule names a harness with no file-writing tool** (canon, examples). `no-tmp-for-repo-files` says to compose finals with the file-writing tools, and a harness with none gets no direction, as CANONREAD1 found for reading. Say what such a harness writes with, keeping the rule's point (never via OS temp, never by console redirection that mangles non-ASCII). Contract: `canon-authoring.md`, D48 §2a, CANONREAD1's changelog entry. Proof: canon tests, examples re-synced, core bytes measured.
+
+**Outcome** 2026-10-07: `no-tmp-for-repo-files` says that where a harness has no file-writing tool, a program writes the file through a language's file API (BOM-less UTF-8, the repository's line endings, read back once written), never console redirection, and a helper script is scratch. Core 20,547 → 20,887 bytes; examples re-synced. Detail: `canon/CHANGELOG.md`; commit 469503e9.

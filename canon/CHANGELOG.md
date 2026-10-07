@@ -12,6 +12,13 @@ network.
 
 ## Unreleased
 
+- **`no-tmp-for-repo-files` says what a harness with no file-writing tool writes with.** A program
+  writes the file through a language's file API, as BOM-less UTF-8 in the repository's line endings,
+  never through the console's redirection, and reads it back; a helper script it needs is scratch like
+  any other. The rule told every reader to compose with the file-writing tools and gave a harness that
+  offers only a shell no direction, the gap `file-tool-discipline`'s entry below closed for reading.
+  **Adopting repositories:** run `daoris sync`; nothing else. The always-loaded region grows by 340
+  bytes, the rule's three new lines and its longer row in the region's table.
 - **`development-documents`, `doc-loader` and `set-up-documents` teach an index of where things are.**
   One folder, generated and committed: by what a session looks for (an entry point, a command, a key, a
   fixture), each row naming a file and its lines; an outline of each file too long to read whole; and a

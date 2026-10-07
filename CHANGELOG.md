@@ -29,6 +29,9 @@ with the version and date at release.
   step, a set-up step and a template), and a manifest may declare `index` beside its router.
 - Doctrine: the file-tool rule tells an agent harness that has no dedicated read tools to read with its
   shell's read-only commands, so such a harness no longer stops at a read-only task. Run `daoris sync`.
+- Doctrine: the scratch rule tells a harness with no file-writing tool to write a file through a
+  program's file API, never the console's redirection, and to treat a helper script as scratch. Run
+  `daoris sync`.
 - The index lists a repository's knowledge document that has no frontmatter by its first heading, in a
   table of its own, and `check` says how many once, never failing.
 - A workspace with a remote no longer stops syncing for good when a person's wait on a quest crosses
