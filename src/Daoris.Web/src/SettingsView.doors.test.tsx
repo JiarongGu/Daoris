@@ -105,7 +105,8 @@ describe("Settings' list, on the window", () => {
     expect(screen.getByRole('separator', { name: EDGE })).toHaveAttribute('aria-valuenow', '176');
     await waitFor(() => expect(screen.getByRole('button', { name: TOGGLE })).toHaveAttribute('aria-pressed', 'true'));
     await viewMenu();
-    expect(screen.getByRole('menuitem', { name: /^Settings list/ })).toBeInTheDocument();
+    // A toggle, said as one (UXFIX1).
+    expect(screen.getByRole('menuitemcheckbox', { name: /^Settings list/ })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('closes on a press of the Settings place, on Ctrl+B and from the View menu, as Settings\' own', async () => {
@@ -122,7 +123,7 @@ describe("Settings' list, on the window", () => {
     expect(await screen.findByRole('separator', { name: EDGE })).toBeInTheDocument();
 
     const user = await viewMenu();
-    await user.click(screen.getByRole('menuitem', { name: /^Settings list/ }));
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /^Settings list/ }));
     await waitFor(() => expect(screen.queryByRole('separator', { name: EDGE })).toBeNull());
   });
 

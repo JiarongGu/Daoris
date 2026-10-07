@@ -11,8 +11,13 @@ export interface MenuItem {
   badge?: number;
   /** Separated from what came before — the shape VS Code uses for "and also". */
   separated?: boolean;
-  /** Ticked whatever is on screen: the workspace the window is scoped to (D75), the place in front, a region shown. */
+  /**
+   * Ticked whatever is on screen: the workspace the window is scoped to (D75), the place in front, a region shown. Said,
+   * not only drawn (UXFIX1): a toggle (a region shown) as a checkbox item, with `radio` one choice among its rows.
+   */
   checked?: boolean;
+  /** Its tick is one choice among the rows beside it (the place, the scope): a radio item, in one group with them. */
+  radio?: true;
   /** Said, and not choosable: "no workspace yet" is a fact in a menu, and *Stop…* with nothing running keeps its place. */
   disabled?: boolean;
   /** Its key, shown at the right as VS Code's menus show one (DOCK1c, D152 §3). */
@@ -63,49 +68,83 @@ function Row({ item, glyphs }: { item: MenuItem; glyphs: boolean }) {
  * group's name are props on the row.
  */
 /**
+ * A menu's rows in blocks: a row alone, or a run of choices (`radio`) together, since one radio group holds the rows a
+ * choice is among. A rule or a group's name ends a run, as it ends a group.
+ */
+function blocksOf(items: readonly MenuItem[]): MenuItem[][] {
+  const blocks: MenuItem[][] = [];
+  for (const item of items) {
+    const run = blocks.at(-1);
+    if (item.radio && run?.[0]?.radio && !item.separated && !item.heading) run.push(item);
+    else blocks.push([item]);
+  }
+  return blocks;
+}
+
+/**
  * A menu's rows (D152 §3.2): a rule before a new group, a record group's name over its first row, a row that opens a
  * submenu to its side, and every other row an act. The bar's menus and the fold's (UX7a2) draw the same rows.
+ *
+ * @remarks
+ * **A tick is said, not only drawn** (UXFIX1): a toggle (a region shown) is a checkbox item and a choice (the place, the
+ * scope) a radio item among its rows, each with `aria-checked`, so a screen reader hears the workspace in force and
+ * whether a region is shown. Every row is still chosen through `choose`, the table's run, whatever its kind, and the tick
+ * column is reserved on every row so the names line up.
  */
 function MenuRows({ items, choose }: { items: readonly MenuItem[]; choose: (id: string) => void }) {
   const glyphs = items.some((item) => item.icon);
   return (
     <>
-      {items.map((item) => (
-        <div key={item.id}>
-          {item.separated && <Menu.Separator />}
-          {item.heading && (
-            item.heading.tip
-              ? (
-                <Tip content={item.heading.tip} side="right">
-                  <span className="block"><Menu.Label>{item.heading.label}</Menu.Label></span>
-                </Tip>
-              )
-              : <Menu.Label>{item.heading.label}</Menu.Label>
-          )}
-          {item.sub ? (
-            <Menu.Sub>
-              <Menu.SubTrigger>
-                {glyphs && <span aria-hidden className="w-[13px] shrink-0" />}
-                <span className="truncate">{item.label}</span>
-              </Menu.SubTrigger>
-              <Menu.SubContent className="min-w-40">
-                <Menu.RadioGroup value={item.sub.find((choice) => choice.checked)?.id ?? ''} onValueChange={choose}>
-                  {item.sub.map((choice) => (
-                    <Menu.RadioItem key={choice.id} value={choice.id} disabled={choice.disabled}>
-                      <span className="truncate">{choice.label}</span>
-                    </Menu.RadioItem>
-                  ))}
-                </Menu.RadioGroup>
-              </Menu.SubContent>
-            </Menu.Sub>
-          ) : (
-            // The tick column is always reserved, so the labels line up whether or not anything is ticked.
-            <Menu.Item tick={Boolean(item.checked)} disabled={item.disabled} onSelect={() => choose(item.id)}>
-              <Row item={item} glyphs={glyphs} />
-            </Menu.Item>
-          )}
-        </div>
-      ))}
+      {blocksOf(items).map((block) => {
+        const item = block[0]!;
+        return (
+          <div key={item.id}>
+            {item.separated && <Menu.Separator />}
+            {item.heading && (
+              item.heading.tip
+                ? (
+                  <Tip content={item.heading.tip} side="right">
+                    <span className="block"><Menu.Label>{item.heading.label}</Menu.Label></span>
+                  </Tip>
+                )
+                : <Menu.Label>{item.heading.label}</Menu.Label>
+            )}
+            {item.radio ? (
+              <Menu.RadioGroup value={block.find((choice) => choice.checked)?.id ?? ''}>
+                {block.map((choice) => (
+                  <Menu.RadioItem key={choice.id} value={choice.id} disabled={choice.disabled} onSelect={() => choose(choice.id)}>
+                    <Row item={choice} glyphs={glyphs} />
+                  </Menu.RadioItem>
+                ))}
+              </Menu.RadioGroup>
+            ) : item.sub ? (
+              <Menu.Sub>
+                <Menu.SubTrigger>
+                  {glyphs && <span aria-hidden className="w-[13px] shrink-0" />}
+                  <span className="truncate">{item.label}</span>
+                </Menu.SubTrigger>
+                <Menu.SubContent className="min-w-40">
+                  <Menu.RadioGroup value={item.sub.find((choice) => choice.checked)?.id ?? ''} onValueChange={choose}>
+                    {item.sub.map((choice) => (
+                      <Menu.RadioItem key={choice.id} value={choice.id} disabled={choice.disabled}>
+                        <span className="truncate">{choice.label}</span>
+                      </Menu.RadioItem>
+                    ))}
+                  </Menu.RadioGroup>
+                </Menu.SubContent>
+              </Menu.Sub>
+            ) : item.checked !== undefined ? (
+              <Menu.CheckboxItem checked={item.checked} disabled={item.disabled} onSelect={() => choose(item.id)}>
+                <Row item={item} glyphs={glyphs} />
+              </Menu.CheckboxItem>
+            ) : (
+              <Menu.Item tick={false} disabled={item.disabled} onSelect={() => choose(item.id)}>
+                <Row item={item} glyphs={glyphs} />
+              </Menu.Item>
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }

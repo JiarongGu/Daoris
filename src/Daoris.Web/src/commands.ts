@@ -206,9 +206,12 @@ export type CommandSpec = {
   keywords?: string;
   /** Whether it can be done now; disabled in its menu and omitted from the palette when not. */
   applies?: (state: CommandState) => boolean;
-  /** Ticked in its menu: what is shown, or the one chosen. */
+  /** Ticked in its menu: what is shown, or the one chosen. Without `radio`, a toggle, which its menu says as a checkbox. */
   checked?: (state: CommandState) => boolean;
-  /** One choice among several (the place, the scope, the theme): the palette omits the one in force. */
+  /**
+   * One choice among several (the place, the scope, the theme): the palette omits the one in force, and its menu says its
+   * tick as a radio among the rows it is one of (UXFIX1).
+   */
   radio?: true;
   run: (doors: CommandDoors, state: CommandState) => void;
 };
@@ -229,6 +232,8 @@ type FamilyRow = {
   badge?: number;
   enabled?: boolean;
   checked?: boolean;
+  /** One choice among the family's rows (a workspace, a theme, a language), said as a radio (UXFIX1). */
+  radio?: true;
   /** A shell's alone. */
   shell?: true;
   /** Only in the palette: an agent and a Settings domain are reached in the menus by their place. */
@@ -513,15 +518,15 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
         ? [{
           id: 'workspace.scope:*', label: t('scope.every', { count: state.workspaces.length }),
           title: t('command.scope', { workspace: t('scope.every', { count: state.workspaces.length }) }),
-          checked: state.scope === null, run: (doors: CommandDoors) => doors.scope(null),
+          checked: state.scope === null, radio: true as const, run: (doors: CommandDoors) => doors.scope(null),
         }]
         : [];
       return [
         ...every,
         ...state.workspaces.map((workspace) => ({
           id: `workspace.scope:${workspace.name}`, label: workspace.name, title: t('command.scope', { workspace: workspace.name }),
-          badge: workspace.repositories, checked: only || state.scope === workspace.name, keywords: 'workspace scope 工作区',
-          run: (doors: CommandDoors) => doors.scope(workspace.name),
+          badge: workspace.repositories, checked: only || state.scope === workspace.name, radio: true as const,
+          keywords: 'workspace scope 工作区', run: (doors: CommandDoors) => doors.scope(workspace.name),
         })),
       ];
     },
@@ -540,7 +545,7 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     rows: (state, t) => (['system', 'light', 'dark'] as const).map((choice) => ({
       id: `view.theme:${choice}`, label: t(`settings.theme.${choice}`),
       title: t('command.theme', { theme: t(`settings.theme.${choice}`) }), submenu: 'menu.view.theme',
-      checked: state.theme === choice, keywords: 'theme appearance dark light system 主题 深色 浅色',
+      checked: state.theme === choice, radio: true as const, keywords: 'theme appearance dark light system 主题 深色 浅色',
       run: (doors: CommandDoors) => doors.theme(choice),
     })),
   },
@@ -550,7 +555,7 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     family: 'view.language', menu: 'view', group: 'look', after: 'view.browser',
     rows: (state, t) => (['en', 'zh'] as const).map((language) => ({
       id: `view.language:${language}`, label: t(`language.${language}`), title: t('command.language'), submenu: 'menu.language',
-      checked: state.language === language, keywords: '中文 chinese english language 语言',
+      checked: state.language === language, radio: true as const, keywords: '中文 chinese english language 语言',
       run: (doors: CommandDoors) => doors.language(language),
     })),
   },
@@ -592,6 +597,11 @@ export type CommandEntry = {
   keys: readonly KeyBinding[];
   enabled: boolean;
   checked?: boolean;
+  /**
+   * Its tick is one choice among its rows (the place, the scope, the theme, the language), which a menu says as a radio; a
+   * tick without it is a toggle (a region shown), said as a checkbox (UXFIX1).
+   */
+  radio?: true;
   badge?: number;
   /** In its menu: false for a row only the palette lists (an agent, a Settings domain). */
   menuItem: boolean;
@@ -636,6 +646,7 @@ export function commandTable(state: CommandState, doors: CommandDoors, t: Transl
           keys: [],
           enabled: rowEnabled,
           ...(row.checked !== undefined ? { checked: row.checked } : {}),
+          ...(row.radio ? { radio: row.radio } : {}),
           ...(row.badge !== undefined ? { badge: row.badge } : {}),
           menuItem: !row.paletteOnly,
           palette: !row.menuOnly && rowEnabled && !row.checked,
@@ -666,6 +677,7 @@ export function commandTable(state: CommandState, doors: CommandDoors, t: Transl
       keys: bindings(spec, state.attached),
       enabled,
       ...(checked !== undefined ? { checked } : {}),
+      ...(spec.radio ? { radio: spec.radio } : {}),
       menuItem: !spec.paletteOnly,
       palette: spec.palette !== false && enabled && !(spec.radio && checked),
       ...heading(spec.group),

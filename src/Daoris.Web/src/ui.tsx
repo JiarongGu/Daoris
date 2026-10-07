@@ -1128,8 +1128,13 @@ function MenuContent({ highlight = 'raised', className, children, ...props }: Co
 
 /**
  * An act. `tick` says the tick column: absent, the row has none; false, it is reserved and empty; true, the row is the
- * current one, ticked and in the full ink, as the size a map is at or the workspace a window is scoped to. It stays a
- * `menuitem`: choosing it acts, where a checkbox item toggles.
+ * current one, ticked and in the full ink, as the size a map is at. It stays a `menuitem`: choosing it acts, where a
+ * checkbox item toggles.
+ *
+ * @remarks
+ * **Its tick is drawn, not said**: a screen reader hears a `menuitem` with no state. Where the person must hear what is
+ * current, a toggle is a `CheckboxItem` and a choice among rows a `RadioItem` in a `RadioGroup`, each with `aria-checked`,
+ * as the menu bar's regions, places and workspaces are (UXFIX1).
  */
 function MenuRow({ tick, className, children, ...props }: ComponentProps<typeof DropdownMenu.Item> & { tick?: boolean }) {
   const row = useMenuRow(className, tick && 'text-ink');

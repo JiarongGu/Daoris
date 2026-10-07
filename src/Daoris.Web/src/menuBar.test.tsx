@@ -106,8 +106,9 @@ describe('the menu bar on the desktop (D152 §1)', () => {
   it('prints every place\'s key under Go, and the key goes there', async () => {
     start();
     await openMenu('Go');
-    expect(await screen.findByRole('menuitem', { name: /^Sessions/ })).toHaveTextContent('Ctrl+2');
-    expect(screen.getByRole('menuitem', { name: /^Plugins/ })).toHaveTextContent('Ctrl+8');
+    // Each place is one choice among Go's places, said as a radio (UXFIX1).
+    expect(await screen.findByRole('menuitemradio', { name: /^Sessions/ })).toHaveTextContent('Ctrl+2');
+    expect(screen.getByRole('menuitemradio', { name: /^Plugins/ })).toHaveTextContent('Ctrl+8');
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
 
     // The bar's place says its key too, in its tip (the design §7: a position is shown in the menu and the bar's tip).

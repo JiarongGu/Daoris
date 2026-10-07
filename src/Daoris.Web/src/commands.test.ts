@@ -212,6 +212,47 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
     expect(inMenu(none, 'workspace').find((each) => each.id.startsWith('workspace.scope'))).toMatchObject({
       id: 'workspace.scope:none', label: 'menu.workspace.none', enabled: false, palette: false,
     });
+    expect(entry(none, 'workspace.scope:none')).not.toHaveProperty('radio');
+  });
+});
+
+/**
+ * UXFIX1: what a tick means is the table's, so a menu can say it and not only draw it. A region shown is a toggle; the
+ * place, the scope, the theme and the language are each one choice among their rows; a door has no tick.
+ */
+describe('what each tick means (UXFIX1)', () => {
+  const all = table({ view: 'quests', list: { shown: true }, panelShown: true, sideShown: false, theme: 'dark' });
+
+  it('says a region shown is a toggle', () => {
+    for (const [id, shown] of [['view.list', true], ['view.panel', true], ['view.side', false]] as const) {
+      expect(entry(all, id), id).toMatchObject({ checked: shown });
+      expect(entry(all, id), id).not.toHaveProperty('radio');
+    }
+  });
+
+  it('says the place, the scope, the theme and the language are each one choice among their rows', () => {
+    const choices = (prefix: string) => all.filter((each) => each.menuItem && each.id.startsWith(prefix))
+      .map((each) => [each.id, each.checked, each.radio]);
+    expect(choices('go.').slice(0, 3)).toEqual([
+      ['go.overview', false, true], ['go.sessions', false, true], ['go.quests', true, true],
+    ]);
+    expect(choices('workspace.scope')).toEqual([
+      ['workspace.scope:*', true, true], ['workspace.scope:work', false, true], ['workspace.scope:forge', false, true],
+    ]);
+    expect(choices('view.theme')).toEqual([
+      ['view.theme:system', false, true], ['view.theme:light', false, true], ['view.theme:dark', true, true],
+    ]);
+    expect(choices('view.language')).toEqual([['view.language:en', true, true], ['view.language:zh', false, true]]);
+    // One workspace is the scope whatever the scope says: a choice of one, chosen.
+    expect(entry(table({ workspaces: [{ name: 'work', repositories: 4 }] }), 'workspace.scope:work'))
+      .toMatchObject({ checked: true, radio: true });
+  });
+
+  it('gives a door no tick', () => {
+    for (const id of ['go.nextRegion', 'view.commands', 'workspace.newAsk']) {
+      expect(entry(all, id), id).not.toHaveProperty('checked');
+      expect(entry(all, id), id).not.toHaveProperty('radio');
+    }
   });
 });
 

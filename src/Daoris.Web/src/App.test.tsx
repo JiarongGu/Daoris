@@ -197,12 +197,16 @@ describe('the shell in a browser, over two workspaces', () => {
     shell();
     await screen.findByRole('combobox', { name: 'workspace' });
     const user = await openMenu('Workspace');
-    const every = await screen.findByRole('menuitem', { name: /Every workspace · 2/ });
+    // The scope is one choice among the workspaces, said as a radio and not only ticked (UXFIX1).
+    const every = await screen.findByRole('menuitemradio', { name: /Every workspace · 2/ });
+    expect(every).toHaveAttribute('aria-checked', 'true');
     expect(every.querySelector('svg')).not.toBeNull();
     // A browser is offered the list, and none of the machine's acts.
     expect(screen.queryByRole('menuitem', { name: /Add repository/ })).toBeNull();
 
-    await user.click(screen.getByRole('menuitem', { name: /aurora/ }));
+    const aurora = screen.getByRole('menuitemradio', { name: /aurora/ });
+    expect(aurora).toHaveAttribute('aria-checked', 'false');
+    await user.click(aurora);
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora'));
   });
 
@@ -275,9 +279,11 @@ describe('the shell in a browser, over two workspaces', () => {
   it('Go opens a place, with no key printed in a browser', async () => {
     shell();
     const user = await openMenu('Go');
-    const quests = await screen.findByRole('menuitem', { name: 'Quests' });
+    // A place is one choice among Go's places, said as a radio (UXFIX1); the absence below is asked by that role too, so
+    // it is Sessions' and not a role's.
+    const quests = await screen.findByRole('menuitemradio', { name: 'Quests' });
     expect(quests).not.toHaveTextContent('Ctrl+3');
-    expect(screen.queryByRole('menuitem', { name: /Sessions/ })).toBeNull();
+    expect(screen.queryByRole('menuitemradio', { name: /Sessions/ })).toBeNull();
 
     await user.click(quests);
     const places = screen.getByRole('navigation', { name: 'Views' });

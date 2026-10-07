@@ -51,14 +51,63 @@ describe('AppMenu', () => {
   /** The workspace the window is scoped to wears the check (D75); nothing else does. */
   it('ticks the checked item and no other', async () => {
     const items: MenuItem[] = [
-      { id: 'default', label: 'default', checked: true },
-      { id: 'studio', label: 'studio' },
+      { id: 'default', label: 'default', checked: true, radio: true },
+      { id: 'studio', label: 'studio', checked: false, radio: true },
     ];
     render(<AppMenu label="Workspace" trigger="workspace" items={items} onChoose={() => {}} />);
     await open('Workspace');
 
-    expect(screen.getByRole('menuitem', { name: /default/ }).querySelector('svg')).not.toBeNull();
-    expect(screen.getByRole('menuitem', { name: /studio/ }).querySelector('svg')).toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: /default/ }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: /studio/ }).querySelector('svg')).toBeNull();
+  });
+
+  /**
+   * UXFIX1: a tick is said, not only drawn. A toggle (a region shown) is a checkbox item, a choice among its rows (the
+   * place, the workspace) a radio item in one group with the rows it is among, and a door neither; each says whether it
+   * is checked, and each is chosen as any row is.
+   */
+  it('says each tick: a toggle as a checkbox, a choice as a radio among its rows, a door as neither', async () => {
+    const onChoose = vi.fn();
+    const items: MenuItem[] = [
+      { id: 'view.panel', label: 'Panel', checked: true, shortcut: 'Ctrl+J' },
+      { id: 'view.side', label: 'Side bar', checked: false },
+      { id: 'go.overview', label: 'Overview', checked: false, radio: true, separated: true },
+      { id: 'go.quests', label: 'Quests', checked: true, radio: true, badge: 3 },
+      { id: 'go.nextRegion', label: 'Next region', separated: true },
+    ];
+    render(<AppMenu label="View" trigger="view" items={items} onChoose={onChoose} />);
+    let user = await open('View');
+
+    const panel = screen.getByRole('menuitemcheckbox', { name: /^Panel/ });
+    expect(panel).toHaveAttribute('aria-checked', 'true');
+    expect(panel).toHaveTextContent('Ctrl+J');
+    expect(panel.querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Side bar' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Side bar' }).querySelector('svg')).toBeNull();
+
+    const quests = screen.getByRole('menuitemradio', { name: /^Quests/ });
+    expect(quests).toHaveAttribute('aria-checked', 'true');
+    expect(quests).toHaveTextContent('3');
+    expect(screen.getByRole('menuitemradio', { name: 'Overview' })).toHaveAttribute('aria-checked', 'false');
+    // One choice: the two places share a group, and nothing else is in it.
+    const group = quests.closest<HTMLElement>('[role="group"]')!;
+    expect(within(group).getAllByRole('menuitemradio').map((row) => row.textContent)).toEqual(['Overview', 'Quests3']);
+    expect(within(group).queryByRole('menuitemcheckbox')).toBeNull();
+    expect(within(group).queryByRole('menuitem')).toBeNull();
+
+    const door = screen.getByRole('menuitem', { name: 'Next region' });
+    expect(door).not.toHaveAttribute('aria-checked');
+    expect(screen.getAllByRole('menuitem')).toEqual([door]);
+
+    // The keys reach each kind in order, and choosing one says which.
+    await user.keyboard('{ArrowDown}{Enter}');
+    expect(onChoose).toHaveBeenLastCalledWith('view', 'view.side');
+    user = await open('View');
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+    expect(onChoose).toHaveBeenLastCalledWith('view', 'go.overview');
+    user = await open('View');
+    await user.keyboard('{End}{Enter}');
+    expect(onChoose).toHaveBeenLastCalledWith('view', 'go.nextRegion');
   });
 
   /** UX7a (D152 §3.2): each row prints its key, a record's group is named, and an act that does not apply keeps its place. */
@@ -101,17 +150,62 @@ describe('AppMenuBar (D152 §3.3)', () => {
     { id: 'view', label: 'View', letter: 'V', items: [{ id: 'c', label: 'Commands' }] },
   ];
 
-  function Bar({ mnemonics = false, menus = MENUS, onChoose = () => {} }: {
-    mnemonics?: boolean; menus?: BarMenu[]; onChoose?: (menu: string, item: string) => void;
+  function Bar({ mnemonics = false, menus = MENUS, onChoose = () => {}, compact = false }: {
+    mnemonics?: boolean; menus?: BarMenu[]; onChoose?: (menu: string, item: string) => void; compact?: boolean;
   }) {
     const [open, setOpen] = useState<string | null>(null);
     return (
-      <>
+      <Tooltip.Provider>
         <input aria-label="before" />
-        <AppMenuBar menus={menus} open={open} onOpen={setOpen} onChoose={onChoose} mnemonics={mnemonics} label="Menu bar" />
-      </>
+        <AppMenuBar
+          menus={menus} open={open} onOpen={setOpen} onChoose={onChoose} mnemonics={mnemonics} label="Menu bar"
+          compact={compact} foldLabel="Menu"
+        />
+      </Tooltip.Provider>
     );
   }
+
+  /** UXFIX1: View's regions are toggles and Go's places one choice; the bar's keys treat those rows as any other. */
+  const TICKED: BarMenu[] = [
+    { id: 'view', label: 'View', letter: 'V', items: [{ id: 'view.panel', label: 'Panel', checked: true }] },
+    { id: 'go', label: 'Go', letter: 'G', items: [{ id: 'go.quests', label: 'Quests', checked: true, radio: true }] },
+  ];
+
+  it('walks the bar with ← and → from a ticked row, and hands the focus back once one is chosen (UXFIX1)', async () => {
+    const onChoose = vi.fn();
+    render(<Bar menus={TICKED} onChoose={onChoose} />);
+    const user = userEvent.setup();
+    const before = screen.getByRole('textbox', { name: 'before' });
+    before.focus();
+    act(() => { focusMenuBar(document); });
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(screen.getByRole('menuitemcheckbox', { name: 'Panel' })).toHaveFocus());
+
+    await user.keyboard('{ArrowRight}');
+    expect(await screen.findByRole('menuitemradio', { name: 'Quests' })).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(screen.queryByRole('menuitemcheckbox', { name: 'Panel' })).toBeNull());
+    await user.keyboard('{ArrowLeft}');
+    expect(await screen.findByRole('menuitemcheckbox', { name: 'Panel' })).toHaveAttribute('aria-checked', 'true');
+
+    await waitFor(() => expect(screen.getByRole('menuitemcheckbox', { name: 'Panel' })).toHaveFocus());
+    await user.keyboard('{Enter}');
+    expect(onChoose).toHaveBeenCalledWith('view', 'view.panel');
+    await waitFor(() => expect(before).toHaveFocus());
+  });
+
+  it('says the same ticks folded, where each menu\'s rows open to its side (UXFIX1)', async () => {
+    render(<Bar menus={TICKED} compact />);
+    const user = userEvent.setup();
+    within(screen.getByRole('navigation', { name: 'Menu bar' })).getByRole('button', { name: 'Menu' }).focus();
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: 'View' })).toHaveFocus());
+    await user.keyboard('{ArrowRight}');
+    await waitFor(() => expect(screen.getByRole('menuitemcheckbox', { name: 'Panel' })).toHaveFocus());
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Panel' })).toHaveAttribute('aria-checked', 'true');
+    await user.keyboard('{ArrowLeft}{ArrowDown}{ArrowRight}');
+    await waitFor(() => expect(screen.getByRole('menuitemradio', { name: 'Quests' })).toHaveFocus());
+    expect(screen.getByRole('menuitemradio', { name: 'Quests' })).toHaveAttribute('aria-checked', 'true');
+  });
 
   it('opens the menu under the pointer once one is open, as every Windows menu bar does', async () => {
     render(<Bar />);
