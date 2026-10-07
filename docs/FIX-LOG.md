@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-10-08 — the window's bar froze while its page worked
+
+### Web shell and desktop: an endless pulse drew at the display's rate, and nothing said what held the window's thread (FREEZE1)
+- **Symptom:** on the install the owner saw the window's strip frozen while the page still worked. The main `Daoris.Desktop`
+  process had used about 1,600 CPU-s in some 90 minutes, its GPU process about 1,740, its renderer about 660. After a
+  restart a one-minute sampler showed the GPU process climbing about 15 CPU-s a minute from the window's start, the main
+  process under 1 a minute until the in-app browser opened at 08:22:47, then about 12 a minute in bursts (2 to 36 a
+  sample) while the renderer doubled. The page made no requests in 5 s and drew 601 frames in 5 s.
+- **Root cause, proven:** the GPU and renderer burn is the live dot's `motion-safe:animate-pulse`, Tailwind's
+  `infinite` pulse: one endless animation keeps the window drawing at the display's rate for as long as any session is
+  live. **The browser is not the cause**: nothing in the window's process speaks to it once it is up, and with the
+  `in-app-browser` plugin every session start brings it up (`InAppBrowserServers.HandAsync`), so its opening marks a
+  session starting. **Not proven:** what held the window's thread. The strip's move is the page's `START_DRAG` (FRAME2),
+  dispatched on that thread, and the caption buttons are its own, so a thread busy or behind freezes the bar; every bridge
+  route runs there until its first wait, and the kit's flush serializes every bus event there each 50 ms. Nothing measured
+  the thread, so the sighting could say only a CPU total. The suspects, unmeasured: a running session's traffic (large tool
+  results serialized on the thread by the flush), a route's synchronous part, a full collection.
+- **Fix:** `tokens.css` gives `--animate-pulse` a count of three, so the live dot pulses as it turns live and settles
+  (D41's motion line, `docs/2026-09-19-platform-ux.md` §3). `UiStallWatch` posts a probe to the window's thread each second
+  and writes `ui.stalled` (warn) when one waits 250 ms or more: the longest wait, how long, the route found on the thread and
+  the slowest route's synchronous part, how many routes ran, the bus events and full collections meanwhile; once a minute
+  while it lasts (the machine log design §4). The shell composes it beside `RefusalLog`; the form starts it on Load.
+- **Verify:** `motion.test.ts` compiles the live mark's classes from `tokens.css` as the build does, and failed first
+  (`pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`); `UiStallWatchTests` (8) drive a stall by hand through the kit's
+  dispatcher, and five failed first against a stub. Not run: the window. Owed on the install: the sampler with a session
+  live, before and after this build, where the GPU process should fall well below its 15 CPU-s a minute once the dot has
+  settled, drawing only as the page changes; and at the next frozen bar, the `ui.stalled` lines, which name what held the
+  thread.
+
 ## 2026-10-08 — a stub's slow start counted as its silence
 
 ### CLI tests: the setup kit's bound counted a stub's start under load as its silence (STUB3b)
